@@ -118,10 +118,14 @@ PanelWindow {
             if (filteredApps.length > 0)
                 selectedIndex = Math.max(selectedIndex - 1, 0);
         }
+
+        // --- MODIFIED FUNCTION ---
         function activateSelected() {
             if (filteredApps.length === 0)
                 return;
+
             var modelData = filteredApps[selectedIndex];
+
             if (modelData.isCalculator) {
                 Qt.callLater(function() {
                     Quickshell.clipboardText = String(modelData.result);
@@ -131,17 +135,25 @@ PanelWindow {
                         `${modelData.expr} = ${modelData.result} (copied to clipboard)`
                     ]);
                 });
-            } else if (modelData.execString) {
-                Quickshell.execDetached(["sh", "-c", modelData.execString]);
-            } else if (modelData.exec) {
-                Quickshell.execDetached(["sh", "-c", modelData.exec]);
             } else {
-                if (!modelData.isCalculator)
-                    console.warn("Cannot launch app:", modelData.name, "missing execString or exec", modelData);
+                var execCmd = modelData.execString || modelData.exec || "";
+                
+                // This regular expression removes common field codes (%f, %F, %u, %U, %i, %c, %k, %v).
+                var cleanedCmd = execCmd.replace(/\s%[fFuUickv]/g, '').trim();
+
+                if (cleanedCmd) {
+                    Quickshell.execDetached(["sh", "-c", cleanedCmd]);
+                } else {
+                    if (!modelData.isCalculator) {
+                        console.warn("Cannot launch app:", modelData.name, "missing or empty exec string after cleaning.", modelData);
+                    }
+                }
             }
+
             appLauncherPanel.hidePanel();
             searchField.text = "";
         }
+        
         Component.onCompleted: updateFilter()
         ColumnLayout {
             anchors.left: parent.left
