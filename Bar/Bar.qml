@@ -128,20 +128,20 @@ Scope {
                 }
 
                 PanelWindow {
-                    id: topCornerPanel
+                    id: topLeftPanel
                     anchors.top: true
                     anchors.left: true
-                    anchors.right: true
                     color: "transparent"
                     screen: modelData
                     margins.top: 36
                     WlrLayershell.exclusionMode: ExclusionMode.Ignore
                     visible: true
+                    aboveWindows: false
 
                     implicitHeight: 24
 
                     Corners {
-                        id: topleftCorner
+                        id: topLeftCorner
                         position: "bottomleft"
                         size: 1.3
                         fillColor: (Theme.backgroundPrimary !== undefined && Theme.backgroundPrimary !== null) ? Theme.backgroundPrimary : "#222"
@@ -149,9 +149,23 @@ Scope {
                         offsetY: 0
                         anchors.top: parent.top
                     }
+                }
+                
+                PanelWindow {
+                    id: topRightPanel
+                    anchors.top: true
+                    anchors.right: true
+                    color: "transparent"
+                    screen: modelData
+                    margins.top: 36
+                    WlrLayershell.exclusionMode: ExclusionMode.Ignore
+                    visible: true
+                    aboveWindows: false
+
+                    implicitHeight: 24
 
                     Corners {
-                        id: toprightCorner
+                        id: topRightCorner
                         position: "bottomright"
                         size: 1.3
                         fillColor: (Theme.backgroundPrimary !== undefined && Theme.backgroundPrimary !== null) ? Theme.backgroundPrimary : "#222"
@@ -169,6 +183,7 @@ Scope {
                     screen: modelData
                     WlrLayershell.exclusionMode: ExclusionMode.Ignore
                     visible: true
+                    aboveWindows: false
 
                     implicitHeight: 24
 
@@ -184,14 +199,15 @@ Scope {
                 }
 
                 PanelWindow {
-                    id: bottomRightCornerPanel
+                    id: bottomRightPanel
                     anchors.bottom: true
                     anchors.right: true
                     color: "transparent"
                     screen: modelData
                     WlrLayershell.exclusionMode: ExclusionMode.Ignore
                     visible: true
-
+                    aboveWindows: false
+                    
                     implicitHeight: 24
 
                     Corners {
