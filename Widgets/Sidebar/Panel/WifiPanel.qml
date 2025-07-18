@@ -45,9 +45,28 @@ Item {
                     var security = parts[1];
                     var signal = parseInt(parts[2]);
                     var inUse = parts[3] === "*";
-                    if (ssid && !seen[ssid]) {
-                        nets.push({ ssid: ssid, security: security, signal: signal, connected: inUse });
-                        seen[ssid] = true;
+                    if (ssid) {
+                        if (!seen[ssid]) {
+                            // First time seeing this SSID
+                            nets.push({ ssid: ssid, security: security, signal: signal, connected: inUse });
+                            seen[ssid] = true;
+                        } else {
+                            // SSID already exists, update if this entry has better signal or is connected
+                            for (var j = 0; j < nets.length; ++j) {
+                                if (nets[j].ssid === ssid) {
+                                    // Update connection status if this entry is connected
+                                    if (inUse) {
+                                        nets[j].connected = true;
+                                    }
+                                    // Update signal if this entry has better signal
+                                    if (signal > nets[j].signal) {
+                                        nets[j].signal = signal;
+                                        nets[j].security = security;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
                 wifiLogic.networks = nets;
@@ -402,7 +421,7 @@ Item {
                 }
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 520
+                    Layout.preferredHeight: 640
                     Layout.alignment: Qt.AlignHCenter
                     Layout.margins: 0
                     color: Theme.surfaceVariant
@@ -448,7 +467,7 @@ Item {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 42
                                         radius: 8
-                                        color: modelData.connected ? Qt.rgba(Theme.accentPrimary.r, Theme.accentPrimary.g, Theme.accentPrimary.b, 0.18) : (networkMouseArea.containsMouse || (modelData.ssid === wifiLogic.passwordPromptSsid && wifiLogic.showPasswordPrompt) ? Theme.highlight : "transparent")
+                                        color: modelData.connected ? Qt.rgba(Theme.accentPrimary.r, Theme.accentPrimary.g, Theme.accentPrimary.b, 0.44) : (networkMouseArea.containsMouse || (modelData.ssid === wifiLogic.passwordPromptSsid && wifiLogic.showPasswordPrompt) ? Theme.highlight : "transparent")
                                         RowLayout {
                                             anchors.fill: parent
                                             anchors.leftMargin: 12
@@ -500,13 +519,6 @@ Item {
                                                             }
                                                         }
                                                     }
-                                                    
-                                                    Spinner {
-                                                        visible: wifiLogic.connectingSsid === modelData.ssid
-                                                        running: wifiLogic.connectingSsid === modelData.ssid
-                                                        color: Theme.textPrimary
-                                                        size: 18
-                                                    }
                                                 }
                                                 Text {
                                                     text: modelData.security && modelData.security !== "--" ? modelData.security : "Open"
@@ -534,6 +546,18 @@ Item {
                                                 verticalAlignment: Text.AlignVCenter
                                                 Layout.alignment: Qt.AlignVCenter
                                             }
+                                                                                                Item {
+                                                        Layout.alignment: Qt.AlignVCenter
+                                                        Layout.preferredHeight: 22
+                                                        Layout.preferredWidth: 22
+                                                        Spinner {
+                                                            visible: wifiLogic.connectingSsid === modelData.ssid
+                                                            running: wifiLogic.connectingSsid === modelData.ssid
+                                                            color: Theme.accentPrimary
+                                                            anchors.centerIn: parent
+                                                            size: 22
+                                                        }
+                                                    }
                                         }
                                         MouseArea {
                                             id: networkMouseArea

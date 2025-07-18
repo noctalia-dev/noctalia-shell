@@ -148,7 +148,7 @@ Item {
                 // Content area (centered, in a card)
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 520
+                    Layout.preferredHeight: 640
                     Layout.alignment: Qt.AlignHCenter
                     Layout.margins: 0
                     color: Theme.surfaceVariant
