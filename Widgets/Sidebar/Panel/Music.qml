@@ -171,8 +171,8 @@ Rectangle {
                 color: Qt.rgba(Theme.textPrimary.r, Theme.textPrimary.g, Theme.textPrimary.b, 0.15)
                 Layout.fillWidth: true
 
-                property real progressRatio: MusicManager.trackLength > 0 ? 
-                                           (MusicManager.currentPosition / MusicManager.trackLength) : 0
+                property real progressRatio: Math.min(1, MusicManager.trackLength > 0 ? 
+                                           (MusicManager.currentPosition / MusicManager.trackLength) : 0)
 
                 Rectangle {
                     id: progressFill
@@ -212,6 +212,7 @@ Rectangle {
                     id: progressMouseArea
                     anchors.fill: parent
                     hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
                     enabled: MusicManager.trackLength > 0 && MusicManager.canSeek
 
                     onClicked: function(mouse) {
@@ -247,6 +248,7 @@ Rectangle {
                         id: previousButton
                         anchors.fill: parent
                         hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
                         enabled: MusicManager.canGoPrevious
                         onClicked: MusicManager.previous()
                     }
@@ -273,6 +275,7 @@ Rectangle {
                         id: playButton
                         anchors.fill: parent
                         hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
                         enabled: MusicManager.canPlay || MusicManager.canPause
                         onClicked: MusicManager.playPause()
                     }
@@ -299,6 +302,7 @@ Rectangle {
                         id: nextButton
                         anchors.fill: parent
                         hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
                         enabled: MusicManager.canGoNext
                         onClicked: MusicManager.next()
                     }
