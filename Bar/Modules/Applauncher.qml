@@ -143,12 +143,15 @@ PanelWithOverlay {
                     return;
 
                 var modelData = filteredApps[selectedIndex];
+                const termEmu = Quickshell.env("TERMINAL") || Quickshell.env("TERM_PROGRAM") || none;
 
                 if (modelData.isCalculator) {
                     Qt.callLater(function () {
                         Quickshell.clipboardText = String(modelData.result);
                         Quickshell.execDetached(["notify-send", "Calculator Result", `${modelData.expr} = ${modelData.result} (copied to clipboard)`]);
                     });
+                } else if (modelData.runInTerminal && termEmu){
+                    Quickshell.execDetached([termEmu, "-e", modelData.execString.trim()])
                 } else if (modelData.execute) {
                     modelData.execute();
                 } else {
