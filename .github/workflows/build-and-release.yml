@@ -25,6 +25,9 @@ jobs:
       run: |
         git clone https://git.pika-os.com/wm-packages/pikabar.git
         
+    - name: Create Programs directory
+      run: mkdir -p ${{ github.workspace }}/Programs
+        
     - name: Build zigstat
       run: |
         cd pikabar/src/zigstat
