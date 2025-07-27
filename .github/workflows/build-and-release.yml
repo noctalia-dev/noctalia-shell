@@ -1,0 +1,80 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Zig
+      uses: mlugg/setup-zig@v2
+      with:
+        version: 0.14.0
+        
+    - name: Clone pikabar source
+      run: |
+        git clone https://git.pika-os.com/wm-packages/pikabar.git
+        
+    - name: Build zigstat
+      run: |
+        cd pikabar/src
+        zig build-exe zigstat/main.zig -O ReleaseSmall -mcpu x86_64_v2 --name zigstat
+        mv zigstat ${{ github.workspace }}/Programs/
+        
+    - name: Build zigbrightness
+      run: |
+        cd pikabar/src
+        zig build-exe zigbrightness/main.zig -O ReleaseSmall -mcpu x86_64_v2 --name zigbrightness
+        mv zigbrightness ${{ github.workspace }}/Programs/
+        
+    - name: Create release archive
+      run: |
+        tar -czf noctalia-${{ github.ref_name }}.tar.gz \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='pikabar' \
+          .
+        cp noctalia-${{ github.ref_name }}.tar.gz noctalia-latest.tar.gz
+        
+    - name: Upload Release Asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./noctalia-${{ github.ref_name }}.tar.gz
+        asset_name: noctalia-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: Upload Latest Release Asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./noctalia-latest.tar.gz
+        asset_name: noctalia-latest.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: Create Release
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          noctalia-${{ github.ref_name }}.tar.gz
+          noctalia-latest.tar.gz
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -94,16 +94,16 @@ yay -S quickshell-git
 
 or use any other way of installing quickshell-git (flake, paru etc).
 
-_Git clone the repo:_
+_Download and install the latest release:_
 
 ```
-git clone https://github.com/Ly-sec/Noctalia.git
+curl -sL https://github.com/Ly-sec/Noctalia/releases/latest/download/noctalia-latest.tar.gz | tar -xz -C ~/.config/quickshell/
 ```
 
-_Move content to ~/.config/quickshell_
+Or download manually from [releases](https://github.com/Ly-sec/Noctalia/releases) and extract:
 
 ```
-cd Noctalia && mv * ~/.config/quickshell/
+tar -xzf noctalia-*.tar.gz -C ~/.config/quickshell/
 ```
 
 ### _niri only_
@@ -177,7 +177,9 @@ You will need to install a few things to get everything working:
 - `swww` to add fancy wallpaper animations (optional)
 - `wallust` to theme the setup based on wallpaper (optional)
 
-## zigstat and zigbrightnesss is bundled - source can be found [here](https://git.pika-os.com/wm-packages/pikabar/src/branch/main/src)
+## zigstat and zigbrightness
+
+The zigstat and zigbrightness utilities are automatically built from source during release creation. Source code can be found [here](https://git.pika-os.com/wm-packages/pikabar/src/branch/main/src).
 
 ## Known issues
 
