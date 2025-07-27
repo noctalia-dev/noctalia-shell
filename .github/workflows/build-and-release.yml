@@ -42,13 +42,22 @@ jobs:
         
     - name: Create release archive
       run: |
-        tar -czf noctalia-${{ github.ref_name }}.tar.gz \
-          --exclude='.git' \
-          --exclude='.github' \
-          --exclude='pikabar' \
-          --exclude='noctalia-*.tar.gz' \
-          .
+        # Create a clean output directory
+        mkdir -p ../noctalia-release
+        
+        # Copy all files except .git, .github, and pikabar
+        cp -r . ../noctalia-release/
+        rm -rf ../noctalia-release/.git
+        rm -rf ../noctalia-release/.github
+        rm -rf ../noctalia-release/pikabar
+        
+        # Create the archives
+        cd ..
+        tar -czf noctalia-${{ github.ref_name }}.tar.gz noctalia-release/
         cp noctalia-${{ github.ref_name }}.tar.gz noctalia-latest.tar.gz
+        
+        # Move archives to workspace
+        mv *.tar.gz ${{ github.workspace }}/
         
     - name: Upload Release Asset
       if: github.event_name == 'release'
