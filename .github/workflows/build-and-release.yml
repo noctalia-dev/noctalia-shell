@@ -27,14 +27,14 @@ jobs:
         
     - name: Build zigstat
       run: |
-        cd pikabar/src
-        zig build-exe zigstat/main.zig -O ReleaseSmall -mcpu x86_64_v2 --name zigstat
+        cd pikabar/src/zigstat
+        zig build-exe main.zig -O ReleaseSmall -mcpu x86_64_v2 --name zigstat
         mv zigstat ${{ github.workspace }}/Programs/
         
     - name: Build zigbrightness
       run: |
-        cd pikabar/src
-        zig build-exe zigbrightness/main.zig -O ReleaseSmall -mcpu x86_64_v2 --name zigbrightness
+        cd pikabar/src/zigbrightness
+        zig build-exe main.zig -O ReleaseSmall -mcpu x86_64_v2 --name zigbrightness
         mv zigbrightness ${{ github.workspace }}/Programs/
         
     - name: Create release archive
