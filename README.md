@@ -97,13 +97,13 @@ or use any other way of installing quickshell-git (flake, paru etc).
 _Download and install the latest release:_
 
 ```
-curl -sL https://github.com/Ly-sec/Noctalia/releases/latest/download/noctalia-latest.tar.gz | tar -xz -C ~/.config/quickshell/
+curl -sL https://github.com/Ly-sec/Noctalia/releases/latest/download/noctalia-latest.tar.gz | tar -xz --strip-components=1 -C ~/.config/quickshell/
 ```
 
 Or download manually from [releases](https://github.com/Ly-sec/Noctalia/releases) and extract:
 
 ```
-tar -xzf noctalia-*.tar.gz -C ~/.config/quickshell/
+tar -xzf noctalia-*.tar.gz --strip-components=1 -C ~/.config/quickshell/
 ```
 
 ### _niri only_
