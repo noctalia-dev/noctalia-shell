@@ -46,6 +46,7 @@ jobs:
           --exclude='.git' \
           --exclude='.github' \
           --exclude='pikabar' \
+          --exclude='noctalia-*.tar.gz' \
           .
         cp noctalia-${{ github.ref_name }}.tar.gz noctalia-latest.tar.gz
         
