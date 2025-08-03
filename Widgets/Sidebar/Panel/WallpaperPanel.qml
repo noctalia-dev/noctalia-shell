@@ -30,7 +30,7 @@ PanelWindow {
     }
 
     onVisibleChanged: {
-        if (wallpaperPanelModal.visible) {
+        if (wallpaperPanelLoader.active) {
             wallpapers = WallpaperManager.wallpaperList
         } else {
             wallpapers = []
@@ -81,7 +81,7 @@ PanelWindow {
                         id: closeButtonArea
                         anchors.fill: parent
                         hoverEnabled: true
-                        onClicked: wallpaperPanelModal.visible = false
+                        onClicked: wallpaperPanelLoader.active = false;
                         cursorShape: Qt.PointingHandCursor
                     }
                 }
@@ -136,12 +136,23 @@ PanelWindow {
                                     source: modelData
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
-                                    cache: true
+                                    cache: false
                                     smooth: true
                                     mipmap: true
                                     // Limit memory usage
                                     sourceSize.width: 480
                                     sourceSize.height: 270
+                                }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: Theme.textPrimary
+                                    opacity: (wallpaperImage.status == Image.Ready) ? 0.0 : 1.0
+                                    Behavior on opacity {
+                                        NumberAnimation {
+                                            duration: 500
+                                            easing.type: Easing.OutCubic
+                                        }
+                                    }
                                 }
                                 MouseArea {
                                     anchors.fill: parent

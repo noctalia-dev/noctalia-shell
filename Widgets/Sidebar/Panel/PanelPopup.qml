@@ -59,15 +59,15 @@ PanelWithOverlay {
             if (sidebarPopupRect.settingsModal && sidebarPopupRect.settingsModal.visible) {
                 sidebarPopupRect.settingsModal.visible = false;
             }
-            if (sidebarPopupRect.wallpaperPanelModal && sidebarPopupRect.wallpaperPanelModal.visible) {
-                sidebarPopupRect.wallpaperPanelModal.visible = false;
+            if (wallpaperPanelLoader && wallpaperPanelLoader.active) {
+                wallpaperPanelLoader.active = false;
             }
-                if (sidebarPopupRect.wifiPanelModal && sidebarPopupRect.wifiPanelModal.visible) {
-                    sidebarPopupRect.wifiPanelModal.visible = false;
-                }
-                if (sidebarPopupRect.bluetoothPanelModal && sidebarPopupRect.bluetoothPanelModal.visible) {
-                    sidebarPopupRect.bluetoothPanelModal.visible = false;
-                }
+            if (sidebarPopupRect.wifiPanelModal && sidebarPopupRect.wifiPanelModal.visible) {
+                sidebarPopupRect.wifiPanelModal.visible = false;
+            }
+            if (sidebarPopupRect.bluetoothPanelModal && sidebarPopupRect.bluetoothPanelModal.visible) {
+                sidebarPopupRect.bluetoothPanelModal.visible = false;
+            }
             if (sidebarPopup.visible) {
                 slideAnim.from = 0;
                 slideAnim.to = width;
@@ -125,7 +125,6 @@ PanelWithOverlay {
         }
 
         property alias settingsModal: settingsModal
-        property alias wallpaperPanelModal: wallpaperPanelModal
         property alias wifiPanelModal: wifiPanel.panel
         property alias bluetoothPanelModal: bluetoothPanel.panel
         SettingsModal {
@@ -313,9 +312,7 @@ PanelWithOverlay {
                     onSettingsRequested: {
                         settingsModal.visible = true;
                     }
-                    onWallpaperRequested: {
-                        wallpaperPanelModal.visible = true;
-                    }
+                    onWallpaperRequested: wallpaperPanelLoader.active = true;
                 }
             }
             Keys.onEscapePressed: sidebarPopupRect.hidePopup()
@@ -402,16 +399,20 @@ PanelWithOverlay {
             }
         }
 
-        WallpaperPanel {
-            id: wallpaperPanelModal
-            visible: false
-            Component.onCompleted: {
-                if (parent) {
-                    wallpaperPanelModal.anchors.top = parent.top;
-                    wallpaperPanelModal.anchors.right = parent.right;
+        LazyLoader {
+            id: wallpaperPanelLoader
+            loading: false
+
+            WallpaperPanel {
+                // Need to keep this visible so it shows once loaded
+                visible: true
+                Component.onCompleted: {
+                    if (parent) {
+                        anchors.top = parent.top;
+                        anchors.right = parent.right;
+                    }
                 }
             }
-            // Add a close button inside WallpaperPanel.qml for user to close the modal
         }
     }
 }
