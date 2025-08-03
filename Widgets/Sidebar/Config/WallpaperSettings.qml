@@ -1,12 +1,13 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Layouts
 import qs.Settings
 
 Rectangle {
     id: wallpaperSettingsCard
+
     Layout.fillWidth: true
-    Layout.preferredHeight: 720
+    Layout.preferredHeight: Settings.settings.useSWWW ? 720 : 360
     color: Theme.surface
     radius: 18
 
@@ -15,26 +16,29 @@ Rectangle {
         anchors.margins: 18
         spacing: 12
 
-    // Header
-    RowLayout {
-        Layout.fillWidth: true
-        spacing: 12
-        Text {
-            text: "image"
-            font.family: "Material Symbols Outlined"
-            font.pixelSize: 20
-            color: Theme.accentPrimary
-        }
-        Text {
-            text: "Wallpaper Settings"
-            font.family: Theme.fontFamily
-            font.pixelSize: 16
-            font.bold: true
-            color: Theme.textPrimary
+        // Header
+        RowLayout {
             Layout.fillWidth: true
-        }
-    }
+            spacing: 12
 
+            Text {
+                text: "image"
+                font.family: "Material Symbols Outlined"
+                font.pixelSize: 20
+                color: Theme.accentPrimary
+            }
+
+            Text {
+                text: "Wallpaper Settings"
+                font.family: Theme.fontFamily
+                font.pixelSize: 16
+                font.bold: true
+                color: Theme.textPrimary
+                Layout.fillWidth: true
+            }
+        }
+
+        // Wallpaper Path
         ColumnLayout {
             spacing: 8
             Layout.fillWidth: true
@@ -55,8 +59,10 @@ Rectangle {
                 color: Theme.surfaceVariant
                 border.color: folderInput.activeFocus ? Theme.accentPrimary : Theme.outline
                 border.width: 1
+
                 TextInput {
                     id: folderInput
+
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.top: parent.top
@@ -77,70 +83,20 @@ Rectangle {
                     onTextChanged: {
                         Settings.settings.wallpaperFolder = text;
                     }
+
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.IBeamCursor
                         onClicked: folderInput.forceActiveFocus()
                     }
+
                 }
+
             }
+
         }
 
-        // Use SWWW Setting
-        RowLayout {
-            spacing: 8
-            Layout.fillWidth: true
-            Layout.topMargin: 8
 
-            Text {
-                text: "Use SWWW"
-                font.pixelSize: 13
-                font.bold: true
-                color: Theme.textPrimary
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            // Custom Material 3 Switch
-            Rectangle {
-                id: swwwSwitch
-                width: 52
-                height: 32
-                radius: 16
-                color: Settings.settings.useSWWW ? Theme.accentPrimary : Theme.surfaceVariant
-                border.color: Settings.settings.useSWWW ? Theme.accentPrimary : Theme.outline
-                border.width: 2
-
-                Rectangle {
-                    id: swwwThumb
-                    width: 28
-                    height: 28
-                    radius: 14
-                    color: Theme.surface
-                    border.color: Theme.outline
-                    border.width: 1
-                    y: 2
-                    x: Settings.settings.useSWWW ? swwwSwitch.width - width - 2 : 2
-
-                    Behavior on x {
-                        NumberAnimation {
-                            duration: 200
-                            easing.type: Easing.OutCubic
-                        }
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        Settings.settings.useSWWW = !Settings.settings.useSWWW;
-                    }
-                }
-            }
-        }
 
         // Random Wallpaper Setting
         RowLayout {
@@ -162,6 +118,7 @@ Rectangle {
             // Custom Material 3 Switch
             Rectangle {
                 id: randomWallpaperSwitch
+
                 width: 52
                 height: 32
                 radius: 16
@@ -171,6 +128,7 @@ Rectangle {
 
                 Rectangle {
                     id: randomWallpaperThumb
+
                     width: 28
                     height: 28
                     radius: 14
@@ -185,7 +143,9 @@ Rectangle {
                             duration: 200
                             easing.type: Easing.OutCubic
                         }
+
                     }
+
                 }
 
                 MouseArea {
@@ -195,7 +155,9 @@ Rectangle {
                         Settings.settings.randomWallpaper = !Settings.settings.randomWallpaper;
                     }
                 }
+
             }
+
         }
 
         // Use Wallpaper Theme Setting
@@ -218,6 +180,7 @@ Rectangle {
             // Custom Material 3 Switch
             Rectangle {
                 id: wallpaperThemeSwitch
+
                 width: 52
                 height: 32
                 radius: 16
@@ -227,6 +190,7 @@ Rectangle {
 
                 Rectangle {
                     id: wallpaperThemeThumb
+
                     width: 28
                     height: 28
                     radius: 14
@@ -241,7 +205,9 @@ Rectangle {
                             duration: 200
                             easing.type: Easing.OutCubic
                         }
+
                     }
+
                 }
 
                 MouseArea {
@@ -251,7 +217,9 @@ Rectangle {
                         Settings.settings.useWallpaperTheme = !Settings.settings.useWallpaperTheme;
                     }
                 }
+
             }
+
         }
 
         // Wallpaper Interval Setting
@@ -262,6 +230,7 @@ Rectangle {
 
             RowLayout {
                 Layout.fillWidth: true
+
                 Text {
                     text: "Wallpaper Interval (seconds)"
                     font.pixelSize: 13
@@ -278,16 +247,21 @@ Rectangle {
                     font.pixelSize: 13
                     color: Theme.textPrimary
                 }
+
             }
 
             Slider {
                 id: intervalSlider
+
                 Layout.fillWidth: true
                 from: 10
                 to: 900
                 stepSize: 10
                 value: Settings.settings.wallpaperInterval
                 snapMode: Slider.SnapAlways
+                onMoved: {
+                    Settings.settings.wallpaperInterval = Math.round(value);
+                }
 
                 background: Rectangle {
                     x: intervalSlider.leftPadding
@@ -305,6 +279,7 @@ Rectangle {
                         color: Theme.accentPrimary
                         radius: 2
                     }
+
                 }
 
                 handle: Rectangle {
@@ -318,10 +293,70 @@ Rectangle {
                     border.width: 2
                 }
 
-                onMoved: {
-                    Settings.settings.wallpaperInterval = Math.round(value);
-                }
             }
+
+        }
+
+        // Use SWWW Setting
+        RowLayout {
+            spacing: 8
+            Layout.fillWidth: true
+            Layout.topMargin: 8
+
+            Text {
+                text: "Use SWWW"
+                font.pixelSize: 13
+                font.bold: true
+                color: Theme.textPrimary
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            // Custom Material 3 Switch
+            Rectangle {
+                id: swwwSwitch
+
+                width: 52
+                height: 32
+                radius: 16
+                color: Settings.settings.useSWWW ? Theme.accentPrimary : Theme.surfaceVariant
+                border.color: Settings.settings.useSWWW ? Theme.accentPrimary : Theme.outline
+                border.width: 2
+
+                Rectangle {
+                    id: swwwThumb
+
+                    width: 28
+                    height: 28
+                    radius: 14
+                    color: Theme.surface
+                    border.color: Theme.outline
+                    border.width: 1
+                    y: 2
+                    x: Settings.settings.useSWWW ? swwwSwitch.width - width - 2 : 2
+
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: 200
+                            easing.type: Easing.OutCubic
+                        }
+
+                    }
+
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        Settings.settings.useSWWW = !Settings.settings.useSWWW;
+                    }
+                }
+
+            }
+
         }
 
         // Resize Mode Setting
@@ -329,6 +364,7 @@ Rectangle {
             spacing: 12
             Layout.fillWidth: true
             Layout.topMargin: 16
+            visible: Settings.settings.useSWWW
 
             Text {
                 text: "Resize Mode"
@@ -339,10 +375,14 @@ Rectangle {
 
             ComboBox {
                 id: resizeComboBox
+
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
                 model: ["no", "crop", "fit", "stretch"]
                 currentIndex: model.indexOf(Settings.settings.wallpaperResize)
+                onActivated: {
+                    Settings.settings.wallpaperResize = model[index];
+                }
 
                 background: Rectangle {
                     implicitWidth: 120
@@ -385,7 +425,9 @@ Rectangle {
                         model: resizeComboBox.popup.visible ? resizeComboBox.delegateModel : null
                         currentIndex: resizeComboBox.highlightedIndex
 
-                        ScrollIndicator.vertical: ScrollIndicator {}
+                        ScrollIndicator.vertical: ScrollIndicator {
+                        }
+
                     }
 
                     background: Rectangle {
@@ -394,10 +436,13 @@ Rectangle {
                         border.width: 1
                         radius: 16
                     }
+
                 }
 
                 delegate: ItemDelegate {
                     width: resizeComboBox.width
+                    highlighted: resizeComboBox.highlightedIndex === index
+
                     contentItem: Text {
                         text: modelData
                         font.family: Theme.fontFamily
@@ -406,17 +451,15 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
                     }
-                    highlighted: resizeComboBox.highlightedIndex === index
 
                     background: Rectangle {
                         color: highlighted ? Theme.accentPrimary.toString().replace(/#/, "#1A") : "transparent"
                     }
+
                 }
 
-                onActivated: {
-                    Settings.settings.wallpaperResize = model[index];
-                }
             }
+
         }
 
         // Transition Type Setting
@@ -424,6 +467,7 @@ Rectangle {
             spacing: 12
             Layout.fillWidth: true
             Layout.topMargin: 16
+            visible: Settings.settings.useSWWW
 
             Text {
                 text: "Transition Type"
@@ -434,10 +478,14 @@ Rectangle {
 
             ComboBox {
                 id: transitionTypeComboBox
+
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
                 model: ["none", "simple", "fade", "left", "right", "top", "bottom", "wipe", "wave", "grow", "center", "any", "outer", "random"]
                 currentIndex: model.indexOf(Settings.settings.transitionType)
+                onActivated: {
+                    Settings.settings.transitionType = model[index];
+                }
 
                 background: Rectangle {
                     implicitWidth: 120
@@ -480,7 +528,9 @@ Rectangle {
                         model: transitionTypeComboBox.popup.visible ? transitionTypeComboBox.delegateModel : null
                         currentIndex: transitionTypeComboBox.highlightedIndex
 
-                        ScrollIndicator.vertical: ScrollIndicator {}
+                        ScrollIndicator.vertical: ScrollIndicator {
+                        }
+
                     }
 
                     background: Rectangle {
@@ -489,10 +539,13 @@ Rectangle {
                         border.width: 1
                         radius: 16
                     }
+
                 }
 
                 delegate: ItemDelegate {
                     width: transitionTypeComboBox.width
+                    highlighted: transitionTypeComboBox.highlightedIndex === index
+
                     contentItem: Text {
                         text: modelData
                         font.family: Theme.fontFamily
@@ -501,17 +554,15 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
                     }
-                    highlighted: transitionTypeComboBox.highlightedIndex === index
 
                     background: Rectangle {
                         color: highlighted ? Theme.accentPrimary.toString().replace(/#/, "#1A") : "transparent"
                     }
+
                 }
 
-                onActivated: {
-                    Settings.settings.transitionType = model[index];
-                }
             }
+
         }
 
         // Transition FPS Setting
@@ -519,9 +570,11 @@ Rectangle {
             spacing: 12
             Layout.fillWidth: true
             Layout.topMargin: 16
+            visible: Settings.settings.useSWWW
 
             RowLayout {
                 Layout.fillWidth: true
+
                 Text {
                     text: "Transition FPS"
                     font.pixelSize: 13
@@ -538,16 +591,21 @@ Rectangle {
                     font.pixelSize: 13
                     color: Theme.textPrimary
                 }
+
             }
 
             Slider {
                 id: fpsSlider
+
                 Layout.fillWidth: true
                 from: 30
                 to: 500
                 stepSize: 5
                 value: Settings.settings.transitionFps
                 snapMode: Slider.SnapAlways
+                onMoved: {
+                    Settings.settings.transitionFps = Math.round(value);
+                }
 
                 background: Rectangle {
                     x: fpsSlider.leftPadding
@@ -565,6 +623,7 @@ Rectangle {
                         color: Theme.accentPrimary
                         radius: 2
                     }
+
                 }
 
                 handle: Rectangle {
@@ -578,10 +637,8 @@ Rectangle {
                     border.width: 2
                 }
 
-                onMoved: {
-                    Settings.settings.transitionFps = Math.round(value);
-                }
             }
+
         }
 
         // Transition Duration Setting
@@ -589,9 +646,11 @@ Rectangle {
             spacing: 12
             Layout.fillWidth: true
             Layout.topMargin: 16
-
+            visible: Settings.settings.useSWWW
+            
             RowLayout {
                 Layout.fillWidth: true
+
                 Text {
                     text: "Transition Duration (seconds)"
                     font.pixelSize: 13
@@ -608,16 +667,21 @@ Rectangle {
                     font.pixelSize: 13
                     color: Theme.textPrimary
                 }
+
             }
 
             Slider {
                 id: durationSlider
+
                 Layout.fillWidth: true
-                from: 0.250
-                to: 10.0
-                stepSize: 0.050
+                from: 0.25
+                to: 10
+                stepSize: 0.05
                 value: Settings.settings.transitionDuration
                 snapMode: Slider.SnapAlways
+                onMoved: {
+                    Settings.settings.transitionDuration = value;
+                }
 
                 background: Rectangle {
                     x: durationSlider.leftPadding
@@ -635,6 +699,7 @@ Rectangle {
                         color: Theme.accentPrimary
                         radius: 2
                     }
+
                 }
 
                 handle: Rectangle {
@@ -648,10 +713,10 @@ Rectangle {
                     border.width: 2
                 }
 
-                onMoved: {
-                    Settings.settings.transitionDuration = value;
-                }
             }
+
         }
+
     }
+
 }

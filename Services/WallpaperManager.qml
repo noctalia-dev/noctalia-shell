@@ -17,7 +17,6 @@ Singleton {
     }
 
     property var wallpaperList: []
-    property var wallpaperSwwwList: [] // Swww support more wallpapers format
     property string currentWallpaper: Settings.settings.currentWallpaper
     property bool scanning: false
     property string transitionType: Settings.settings.transitionType
@@ -26,7 +25,6 @@ Singleton {
     function loadWallpapers() {
         scanning = true;
         wallpaperList = [];
-        wallpaperSwwwList = [];
         folderModel.folder = "";
         folderModel.folder = "file://" + (Settings.settings.wallpaperFolder !== undefined ? Settings.settings.wallpaperFolder : "");
     }
@@ -57,8 +55,8 @@ Singleton {
     }
 
     function setRandomWallpaper() {
-        var randomIndex = Math.floor(Math.random() * wallpaperSwwwList.length);
-        var randomPath = wallpaperSwwwList[randomIndex];
+        var randomIndex = Math.floor(Math.random() * wallpaperList.length);
+        var randomPath = wallpaperList[randomIndex];
         if (!randomPath) {
             return;
         }
@@ -98,31 +96,20 @@ Singleton {
 
     FolderListModel {
         id: folderModel
-        // Swww supports many images format, Quickshell only support a subset of those.
-        nameFilters: ["*.avif", "*.jpg", "*.jpeg", "*.png", "*.gif", "*.pnm", "*.tga", "*.tiff", "*.webp", "*.bmp", "*.ff"]
+        // Swww supports many images format but Quickshell only support a subset of those.
+        nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.pnm", "*.bmp"]
         showDirs: false
         sortField: FolderListModel.Name
         onStatusChanged: {
             if (status === FolderListModel.Ready) {
-                // Quickshell only supports a subset of images format
-                var qsCompatibleExt = ["jpg", "jpeg", "png", "gif", "pnm", "bmp"]
                 var files = [];
                 var filesSwww = [];
                 for (var i = 0; i < count; i++) {
                     var filepath = (Settings.settings.wallpaperFolder !== undefined ? Settings.settings.wallpaperFolder : "") + "/" + get(i, "fileName");
-                    filesSwww.push(filepath);
-
-                    // Second filter for remove all extension incompatible with QuickShell
-                    var ext = filepath.split('.').pop().toLowerCase();
-                    if (qsCompatibleExt.includes(ext)) {
-                        files.push(filepath);
-                    }
+                    files.push(filepath);
                 }
                 wallpaperList = files;
-                wallpaperSwwwList = filesSwww;
                 scanning = false;
-                // console.log(wallpaperList.length);
-                // console.log(wallpaperSwwwList.length);
             }
         }
     }
