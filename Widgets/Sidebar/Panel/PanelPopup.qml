@@ -59,8 +59,8 @@ PanelWithOverlay {
             if (sidebarPopupRect.settingsModal && sidebarPopupRect.settingsModal.visible) {
                 sidebarPopupRect.settingsModal.visible = false;
             }
-            if (wallpaperPanelLoader && wallpaperPanelLoader.active) {
-                wallpaperPanelLoader.active = false;
+            if (wallpaperPanel && wallpaperPanel.visible) {
+                wallpaperPanel.visible = false;
             }
             if (sidebarPopupRect.wifiPanelModal && sidebarPopupRect.wifiPanelModal.visible) {
                 sidebarPopupRect.wifiPanelModal.visible = false;
@@ -312,7 +312,9 @@ PanelWithOverlay {
                     onSettingsRequested: {
                         settingsModal.visible = true;
                     }
-                    onWallpaperRequested: wallpaperPanelLoader.active = true;
+                    onWallpaperRequested: {
+                        wallpaperPanel.visible =  true;
+                    }
                 }
             }
             Keys.onEscapePressed: sidebarPopupRect.hidePopup()
@@ -399,18 +401,12 @@ PanelWithOverlay {
             }
         }
 
-        LazyLoader {
-            id: wallpaperPanelLoader
-            loading: false
-
-            WallpaperPanel {
-                // Need to keep this visible so it shows once loaded
-                visible: true
-                Component.onCompleted: {
-                    if (parent) {
-                        anchors.top = parent.top;
-                        anchors.right = parent.right;
-                    }
+        WallpaperPanel {
+            id: wallpaperPanel
+            Component.onCompleted: {
+                if (parent) {
+                    anchors.top = parent.top;
+                    anchors.right = parent.right;
                 }
             }
         }
