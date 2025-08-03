@@ -161,14 +161,21 @@ WlSessionLock {
                 radius: 40
                 color: Theme.accentPrimary
 
+                Rectangle {
+                    anchors.fill: parent
+                    color: "transparent"
+                    radius: 40
+                    border.color: Theme.accentPrimary
+                    border.width: 3
+                    z: 2
+                }
+
                 Avatar {}
 
                 layer.enabled: true
                 layer.effect: MultiEffect {
                     shadowEnabled: true
                     shadowColor: Theme.accentPrimary
-                    // radius: 8
-                    // samples: 16
                 }
             }
 

@@ -7,6 +7,11 @@ import QtQuick.Effects
 Item {
     anchors.fill: parent
 
+    anchors.leftMargin: 2
+    anchors.rightMargin: 2
+    anchors.topMargin: 2
+    anchors.bottomMargin: 2
+
     IconImage {
         id: avatarImage
         anchors.fill: parent
@@ -18,7 +23,7 @@ Item {
     }
 
     MultiEffect {
-        anchors.fill: avatarImage
+        anchors.fill: parent
         source: avatarImage
         maskEnabled: true
         maskSource: mask
@@ -27,13 +32,11 @@ Item {
 
     Item {
         id: mask
-
-        anchors.fill: avatarImage
+        anchors.fill: parent
         layer.enabled: true
         visible: false
-
         Rectangle {
-            anchors.fill: avatarImage
+            anchors.fill: parent
             radius: avatarImage.width / 2
         }
     }

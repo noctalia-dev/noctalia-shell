@@ -55,13 +55,21 @@ Rectangle {
                 spacing: 8
                 Layout.fillWidth: true
 
+                // Profile image
                 Rectangle {
-                    width: 40
-                    height: 40
-                    radius: 20
-                    color: Theme.surfaceVariant
-                    border.color: profileImageInput.activeFocus ? Theme.accentPrimary : Theme.outline
-                    border.width: 1
+                    width: 48
+                    height: 48
+                    radius: 24
+
+                    // Border
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        radius: 24
+                        border.color: profileImageInput.activeFocus ? Theme.accentPrimary : Theme.outline
+                        border.width: 2
+                        z: 2
+                    }
 
                     Avatar {}
                 }
