@@ -171,6 +171,14 @@ PanelWithOverlay {
                 if (filteredApps.length > 0)
                     selectedIndex = Math.max(selectedIndex - 1, 0);
             }
+            function selectNextPage() {
+                if (filteredApps.length > 0)
+                    selectedIndex = Math.min(selectedIndex + 10, filteredApps.length - 1);
+            }
+            function selectPrevPage() {
+                if (filteredApps.length > 0)
+                    selectedIndex = Math.max(selectedIndex - 10, 0);
+            }
 
             function activateSelected() {
                 if (filteredApps.length === 0)
@@ -227,6 +235,23 @@ PanelWithOverlay {
                         anchors.leftMargin: 14
                         anchors.rightMargin: 14
                         spacing: 10
+
+                        Keys.onDownPressed: root.selectNext()
+                        Keys.onUpPressed: root.selectPrev()
+                        Keys.onEnterPressed: root.activateSelected()
+                        Keys.onReturnPressed: root.activateSelected()
+                        Keys.onEscapePressed: appLauncherPanel.hidePanel()
+                        Keys.onPressed: (event) => {
+                            if (event.key === Qt.Key_PageDown) {
+                                root.selectNextPage()
+                                event.accepted = true; 
+                            } 
+                            else if (event.key === Qt.Key_PageUp) {
+                                root.selectPrevPage()
+                                event.accepted = true;
+                            }
+                        }
+                        
                         Text {
                             text: "search"
                             font.family: "Material Symbols Outlined"
@@ -257,12 +282,6 @@ PanelWithOverlay {
                             font.bold: true
                             Component.onCompleted: contentItem.cursorColor = Theme.textPrimary
                             onActiveFocusChanged: contentItem.cursorColor = Theme.textPrimary
-
-                            Keys.onDownPressed: root.selectNext()
-                            Keys.onUpPressed: root.selectPrev()
-                            Keys.onEnterPressed: root.activateSelected()
-                            Keys.onReturnPressed: root.activateSelected()
-                            Keys.onEscapePressed: appLauncherPanel.hidePanel()
                         }
                     }
                     Behavior on border.color {
