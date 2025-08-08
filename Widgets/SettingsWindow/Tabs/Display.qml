@@ -422,7 +422,7 @@ ColumnLayout {
                                 }
                             }
 
-                            // Scale slider (staged; applied via Apply button)
+                            // Scale slider (auto-applies with debounce)
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 4 * Theme.scale(screen)
@@ -432,6 +432,19 @@ ColumnLayout {
                                     spacing: 8 * Theme.scale(screen)
                                     // Value read from settings override, default to Theme.scale(modelData)
                                     property real currentValue: (Settings.settings.monitorScaleOverrides && Settings.settings.monitorScaleOverrides[monitorCard.monitorName] !== undefined) ? Settings.settings.monitorScaleOverrides[monitorCard.monitorName] : Theme.scale(modelData)
+                                    // Debounce timer to avoid excessive reloads while dragging
+                                    Timer {
+                                        id: applyScaleTimer
+                                        interval: 400
+                                        repeat: false
+                                        onTriggered: {
+                                            let current = Settings.settings.monitorScaleOverrides || {};
+                                            let merged = Object.assign({}, current);
+                                            merged[monitorCard.monitorName] = scaleSlider.value;
+                                            Settings.settings.monitorScaleOverrides = merged;
+                                            //Quickshell.reload(true);
+                                        }
+                                    }
                                     // Reusable slider component (exact style from Wallpaper.qml)
                                     ThemedSlider {
                                         id: scaleSlider
@@ -444,49 +457,13 @@ ColumnLayout {
                                         value: parent.currentValue
                                         onMoved: {
                                             if (isFinite(value)) {
-                                                // Stage value without writing to settings
-                                                let staged = Object.assign({}, root.pendingScaleOverrides || {});
-                                                staged[monitorCard.monitorName] = value;
-                                                root.pendingScaleOverrides = staged;
                                                 parent.currentValue = value;
+                                                applyScaleTimer.restart();
                                             }
                                         }
                                     }
                                     Text { text: parent.currentValue.toFixed(2); font.pixelSize: 12 * Theme.scale(screen); color: Theme.textPrimary; width: 36 }
-                                    Rectangle {
-                                        id: perMonitorApply
-                                        width: 80 * Theme.scale(screen)
-                                        height: 28 * Theme.scale(screen)
-                                        radius: 14
-                                        color: Theme.accentPrimary
-                                        border.color: Theme.accentPrimary
-                                        border.width: 1
-                                        Layout.alignment: Qt.AlignRight
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: "Apply"
-                                            font.pixelSize: 12 * Theme.scale(screen)
-                                            color: Theme.onAccent
-                                        }
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                // Apply only this monitor's scale
-                                                let current = Settings.settings.monitorScaleOverrides || {};
-                                                let merged = Object.assign({}, current);
-                                                merged[monitorCard.monitorName] = scaleSlider.value;
-                                                Settings.settings.monitorScaleOverrides = merged;
-                                                // Clear staged for this monitor
-                                                if (root.pendingScaleOverrides && root.pendingScaleOverrides.hasOwnProperty(monitorCard.monitorName)) {
-                                                    let staged = Object.assign({}, root.pendingScaleOverrides);
-                                                    delete staged[monitorCard.monitorName];
-                                                    root.pendingScaleOverrides = staged;
-                                                }
-                                                Quickshell.reload(true);
-                                            }
-                                        }
-                                    }
+                                    // Apply button removed; auto-apply enabled
                                 }
                             }
                         }
