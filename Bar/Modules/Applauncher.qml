@@ -787,7 +787,7 @@ PanelWithOverlay {
                                     anchors.left: parent.left
                                     anchors.right: parent.right
                                     anchors.bottom: parent.bottom
-                                    height: 1
+                                    height: Math.max(1, 1 * Theme.scale(screen))
                                     color: Theme.outline
                                     opacity: index === appList.count - 1 ? 0 : 0.10
                                 }

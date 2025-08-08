@@ -66,22 +66,6 @@ Scope {
         });
     }
 
-    // Timer {
-    //     id: settingsTimer
-
-    //     running: true
-    //     interval: 100
-    //     repeat: true
-    //     onTriggered: {
-    //         if (typeof Settings === "undefined") {
-    //             console.log("Settings Singleton not ready");
-    //             return false;
-    //         }
-    //         root.isReady = true;
-    //         settingsTimer.running = false;
-    //     }
-    // }
-
     // Keep the Background off the main loader, this will initialize the Settings singleton
     Background {
     }
@@ -123,8 +107,10 @@ Scope {
         target: Quickshell
     }
 
+    
     Loader {
         id: mainLoader
+        
 
         active: isReady
 
@@ -134,7 +120,6 @@ Scope {
 
             Bar {
                 id: bar
-
                 property var notificationHistoryWin: notificationHistoryLoader.active ? notificationHistoryLoader.item : null
 
                 shell: root

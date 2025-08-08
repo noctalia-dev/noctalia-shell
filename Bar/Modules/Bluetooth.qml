@@ -150,7 +150,7 @@ Item {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        height: 1
+                        height: Math.max(4, 1 * Theme.scale(Screen))
                         color: Theme.outline
                         opacity: 0.12
                     }

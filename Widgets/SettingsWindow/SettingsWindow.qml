@@ -275,7 +275,7 @@ PanelWithOverlay {
                         Rectangle {
                             width: 32 * Theme.scale(screen)
                             height: 32 * Theme.scale(screen)
-                            radius: 16
+                            radius: width * 0.5
                             color: closeButtonArea.containsMouse ? Theme.accentPrimary : "transparent"
                             border.color: Theme.accentPrimary
                             border.width: 1 * Theme.scale(screen)
@@ -311,7 +311,7 @@ PanelWithOverlay {
                 }
 
                 Rectangle {
-                    height: 1 // Don't scale divider
+                    height: Math.max(1, 1 * Theme.scale(screen))
                     color: Theme.outline
                     opacity: 0.3
 
@@ -484,7 +484,7 @@ PanelWithOverlay {
 
                             Rectangle {
                                 width: parent.width
-                                height: 1 // Don't scale divider
+                                height: Math.max(1, 1 * Theme.scale(screen))
                                 color: Theme.outline
                                 opacity: 0.6
                                 visible: index < (repeater.count - 1)

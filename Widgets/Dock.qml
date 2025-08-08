@@ -75,7 +75,7 @@ Variants {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                height: 10
+                height: 10 * Theme.scale(dockWindow.screen)
                 hoverEnabled: true
                 propagateComposedEvents: true
 

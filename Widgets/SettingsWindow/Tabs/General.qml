@@ -58,12 +58,12 @@ ColumnLayout {
                 Rectangle {
                     width: 48 * Theme.scale(screen)
                     height: 48 * Theme.scale(screen)
-                    radius: 24
+                    radius: width * 0.5
 
                     Rectangle {
                         anchors.fill: parent
                         color: "transparent"
-                        radius: 24
+                        radius: width * 0.5
                         border.color: profileImageInput.activeFocus ? Theme.accentPrimary : Theme.outline
                         border.width: 2 * Theme.scale(screen)
                         z: 2
@@ -77,7 +77,7 @@ ColumnLayout {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40 * Theme.scale(screen)
-                    radius: 16
+                    radius: 16 * Theme.scale(screen)
                     color: Theme.surfaceVariant
                     border.color: profileImageInput.activeFocus ? Theme.accentPrimary : Theme.outline
                     border.width: 1 * Theme.scale(screen)
@@ -119,7 +119,7 @@ ColumnLayout {
                 Layout.fillWidth: true
                 Layout.topMargin: 26 * Theme.scale(screen)
                 Layout.bottomMargin: 18 * Theme.scale(screen)
-                height: 1 // Don't scale divider
+                height: Math.max(1, 1 * Theme.scale(screen))
                 color: Theme.outline
                 opacity: 0.3
             }
