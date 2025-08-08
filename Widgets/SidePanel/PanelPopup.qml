@@ -212,7 +212,13 @@ PanelWithOverlay {
 
                 System {
                     id: systemWidget
-                    width: 420 * Theme.scale(screen)
+                    width: {
+                        var w = 420;
+                        var s = Theme.scale(screen);
+                        var finalWidth = w * s;
+                        console.log("[" + screen.name + "] w:" + finalWidth + " s: " + s);
+                        return finalWidth;
+                    }
                     height: 80 * Theme.scale(screen)
                     settingsModal: settingsModal
                     Layout.alignment: Qt.AlignHCenter
