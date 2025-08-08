@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Effects
 import qs.Settings
 
-// Reusable themed slider styled like the sliders in Wallpaper.qml
 Slider {
     id: slider
 
@@ -13,9 +12,7 @@ Slider {
     readonly property real trackHeight: 12 * Theme.scale(screen)
     readonly property real knobDiameter: 28 * Theme.scale(screen)
     // Optional color to cut the track beneath the knob (should match surrounding background)
-    // If not provided, falls back to Theme.backgroundPrimary
     property var cutoutColor
-    // Extra radius for the cutout so it shows around the knob edges
     readonly property real cutoutExtra: 8 * Theme.scale(screen)
 
     snapMode: snapAlways ? Slider.SnapAlways : Slider.SnapOnRelease
@@ -44,7 +41,7 @@ Slider {
             }
         }
 
-        // Circular cutout centered under the knob to create the "notch" on both sides
+        // Circular cutout
         Rectangle {
             id: knobCutout
             width: knobDiameter + cutoutExtra
