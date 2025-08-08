@@ -61,11 +61,21 @@ Scope {
 
     Component.onCompleted: {
         Quickshell.shell = root;
+    }
 
-        // This will trigger the mainLoader
-        Qt.callLater(function() {
-            isReady = true;
-        });
+    Timer {
+        id: settingsTimer
+        running: true
+        interval: 100
+        repeat: true
+        onTriggered: {
+            if (typeof Settings === "undefined") {
+                console.log("Settings Singleton not ready");
+                return false;
+            }
+            root.isReady = true;
+            settingsTimer.running = false;
+        }
     }
 
     // Keep the Background off the main loader, this will initialize the Settings singleton
