@@ -43,7 +43,7 @@ Item {
         anchors.centerIn: parent
         text: "person"
         font.family: "Material Symbols Outlined"
-        font.pixelSize: 24
+        font.pixelSize: 24 * Theme.scale(Screen)
         color: Theme.onAccent
         visible: Settings.settings.profileImage === undefined || Settings.settings.profileImage === ""
         z: 0

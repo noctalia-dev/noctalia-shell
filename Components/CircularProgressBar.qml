@@ -5,21 +5,20 @@ Rectangle {
     id: circularProgressBar
     color: "transparent"
     
-    // Properties
-    property real progress: 0.0 // 0.0 to 1.0
+    property real progress: 0.0
     property int size: 80
     property color backgroundColor: Theme.surfaceVariant
     property color progressColor: Theme.accentPrimary
-    property int strokeWidth: 6
+    property int strokeWidth: 6 * Theme.scale(Screen)
     property bool showText: true
     property string units: "%"
     property string text: Math.round(progress * 100) + units
-    property int textSize: 10
+    property int textSize: 10 * Theme.scale(Screen)
     property color textColor: Theme.textPrimary
     
     // Notch properties
     property bool hasNotch: false
-    property real notchSize: 0.25 // Size of the notch as a fraction of the circle
+    property real notchSize: 0.25
     property string notchIcon: ""
     property int notchIconSize: 12
     property color notchIconColor: Theme.accentPrimary
@@ -32,6 +31,7 @@ Rectangle {
         anchors.fill: parent
         
         onPaint: {
+            // Setup canvas context and calculate dimensions
             var ctx = getContext("2d")
             var centerX = width / 2
             var centerY = height / 2
@@ -41,25 +41,22 @@ Rectangle {
             var notchStartAngle = -notchAngle / 2
             var notchEndAngle = notchAngle / 2
             
-            // Clear canvas
             ctx.reset()
-            
-            // Background circle
             ctx.strokeStyle = backgroundColor
             ctx.lineWidth = strokeWidth
             ctx.lineCap = "round"
             ctx.beginPath()
             
             if (hasNotch) {
-                // Draw background circle with notch on the right side
-                // Draw the arc excluding the notch area (notch is at 0 radians, right side)
+                // Draw background arc with notch gap
                 ctx.arc(centerX, centerY, radius, notchEndAngle, 2 * Math.PI + notchStartAngle)
             } else {
+                // Draw full background circle
                 ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
             }
             ctx.stroke()
             
-            // Progress arc
+            // Draw progress arc
             if (progress > 0) {
                 ctx.strokeStyle = progressColor
                 ctx.lineWidth = strokeWidth
@@ -67,15 +64,11 @@ Rectangle {
                 ctx.beginPath()
                 
                 if (hasNotch) {
-                    // Calculate progress with notch consideration
+                    // Calculate progress arc with notch gap
                     var availableAngle = 2 * Math.PI - notchAngle
                     var progressAngle = availableAngle * progress
-                    
-                    // Start from where the notch cutout begins (top-right) and go clockwise
                     var adjustedStartAngle = notchEndAngle
                     var adjustedEndAngle = adjustedStartAngle + progressAngle
-                    
-                    // Ensure we don't exceed the available space
                     if (adjustedEndAngle > 2 * Math.PI + notchStartAngle) {
                         adjustedEndAngle = 2 * Math.PI + notchStartAngle
                     }
@@ -84,6 +77,7 @@ Rectangle {
                         ctx.arc(centerX, centerY, radius, adjustedStartAngle, adjustedEndAngle)
                     }
                 } else {
+                    // Draw full progress arc
                     ctx.arc(centerX, centerY, radius, startAngle, startAngle + (2 * Math.PI * progress))
                 }
                 ctx.stroke()

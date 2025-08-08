@@ -1,11 +1,11 @@
+import "../../Helpers/Holidays.js" as Holidays
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Wayland
 import qs.Components
 import qs.Settings
-import Quickshell.Wayland
-import "../../Helpers/Holidays.js" as Holidays
 
 PanelWithOverlay {
     id: calendarOverlay
@@ -21,6 +21,11 @@ PanelWithOverlay {
         anchors.right: parent.right
         anchors.topMargin: 4
         anchors.rightMargin: 4
+
+        // Prevent closing when clicking in the panel bg
+        MouseArea {
+            anchors.fill: parent
+        }
 
         ColumnLayout {
             anchors.fill: parent
@@ -47,7 +52,7 @@ PanelWithOverlay {
                     text: calendar.title
                     color: Theme.textPrimary
                     opacity: 0.7
-                    font.pixelSize: 13
+                    font.pixelSize: 13 * Theme.scale(Screen)
                     font.family: Theme.fontFamily
                     font.bold: true
                 }
@@ -60,33 +65,30 @@ PanelWithOverlay {
                         calendar.month = newDate.getMonth();
                     }
                 }
+
             }
 
             DayOfWeekRow {
                 Layout.fillWidth: true
                 spacing: 0
-                Layout.leftMargin: 8  // Align with grid
+                Layout.leftMargin: 8 // Align with grid
                 Layout.rightMargin: 8
+
                 delegate: Text {
                     text: shortName
                     color: Theme.textPrimary
                     opacity: 0.8
-                    font.pixelSize: 13
+                    font.pixelSize: 13 * Theme.scale(Screen)
                     font.family: Theme.fontFamily
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                     width: 32
                 }
+
             }
 
             MonthGrid {
                 id: calendar
-                Layout.fillWidth: true
-                Layout.leftMargin: 8
-                Layout.rightMargin: 8
-                spacing: 0
-                month: Time.date.getMonth()
-                year: Time.date.getFullYear()
 
                 property var holidays: []
 
@@ -96,12 +98,19 @@ PanelWithOverlay {
                         calendar.holidays = holidays;
                     });
                 }
+
+                Layout.fillWidth: true
+                Layout.leftMargin: 8
+                Layout.rightMargin: 8
+                spacing: 0
+                month: Time.date.getMonth()
+                year: Time.date.getFullYear()
                 onMonthChanged: updateHolidays()
                 onYearChanged: updateHolidays()
                 Component.onCompleted: updateHolidays()
+
                 // Optionally, update when the panel becomes visible
                 Connections {
-                    target: calendarOverlay
                     function onVisibleChanged() {
                         if (calendarOverlay.visible) {
                             calendar.month = Time.date.getMonth();
@@ -109,29 +118,35 @@ PanelWithOverlay {
                             calendar.updateHolidays();
                         }
                     }
+
+                    target: calendarOverlay
                 }
 
                 delegate: Rectangle {
-                    width: 32
-                    height: 32
-                    radius: 8
                     property var holidayInfo: calendar.holidays.filter(function(h) {
                         var d = new Date(h.date);
                         return d.getDate() === model.day && d.getMonth() === model.month && d.getFullYear() === model.year;
                     })
                     property bool isHoliday: holidayInfo.length > 0
+
+                    width: 32
+                    height: 32
+                    radius: 8
                     color: {
                         if (model.today)
                             return Theme.accentPrimary;
+
                         if (mouseArea2.containsMouse)
                             return Theme.backgroundTertiary;
+
                         return "transparent";
                     }
 
                     // Holiday dot indicator
                     Rectangle {
                         visible: isHoliday
-                        width: 4; height: 4
+                        width: 4
+                        height: 4
                         radius: 4
                         color: Theme.accentTertiary
                         anchors.top: parent.top
@@ -145,14 +160,15 @@ PanelWithOverlay {
                         anchors.centerIn: parent
                         text: model.day
                         color: model.today ? Theme.onAccent : Theme.textPrimary
-                        opacity: model.month === calendar.month ? (mouseArea2.containsMouse ? 1.0 : 0.7) : 0.3
-                        font.pixelSize: 13
+                        opacity: model.month === calendar.month ? (mouseArea2.containsMouse ? 1 : 0.7) : 0.3
+                        font.pixelSize: 13 * Theme.scale(Screen)
                         font.family: Theme.fontFamily
                         font.bold: model.today ? true : false
                     }
 
                     MouseArea {
                         id: mouseArea2
+
                         anchors.fill: parent
                         hoverEnabled: true
                         onEntered: {
@@ -167,21 +183,28 @@ PanelWithOverlay {
                         onExited: holidayTooltip.tooltipVisible = false
                     }
 
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: 150
-                        }
-                    }
-
                     StyledTooltip {
                         id: holidayTooltip
+
                         text: ""
                         tooltipVisible: false
                         targetItem: null
                         delay: 100
                     }
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 150
+                        }
+
+                    }
+
                 }
+
             }
+
         }
+
     }
+
 }

@@ -128,7 +128,7 @@ PopupWindow {
                         color: (modelData?.enabled ?? true) ? bg.hoverTextColor : Theme.textDisabled;
                         text: modelData?.text ?? "";
                         font.family: Theme.fontFamily;
-                        font.pixelSize: Theme.fontSizeSmall;
+                        font.pixelSize: Theme.fontSizeSmall * Theme.scale(Screen);
                         verticalAlignment: Text.AlignVCenter;
                         elide: Text.ElideRight;
                     }
@@ -145,7 +145,7 @@ PopupWindow {
                         // Material Symbols Outlined chevron right for submenu
                         text: modelData?.hasChildren ? "menu" : "";
                         font.family: "Material Symbols Outlined";
-                        font.pixelSize: 18;
+                        font.pixelSize: 18 * Theme.scale(Screen);
                         verticalAlignment: Text.AlignVCenter;
                         visible: modelData?.hasChildren ?? false;
                         color: Theme.textPrimary;
@@ -362,7 +362,7 @@ PopupWindow {
                                 color: (modelData?.enabled ?? true) ? bg.hoverTextColor : Theme.textDisabled;
                                 text: modelData?.text ?? "";
                                 font.family: Theme.fontFamily;
-                                font.pixelSize: Theme.fontSizeSmall;
+                                font.pixelSize: Theme.fontSizeSmall * Theme.scale(Screen);
                                 verticalAlignment: Text.AlignVCenter;
                                 elide: Text.ElideRight;
                             }
@@ -378,7 +378,7 @@ PopupWindow {
                             Text {
                                 text: modelData?.hasChildren ? "\uE5CC" : "";
                                 font.family: "Material Symbols Outlined";
-                                font.pixelSize: 18;
+                                font.pixelSize: 18 * Theme.scale(Screen);
                                 verticalAlignment: Text.AlignVCenter;
                                 visible: modelData?.hasChildren ?? false;
                                 color: Theme.textPrimary;

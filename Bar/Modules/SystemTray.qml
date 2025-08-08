@@ -21,43 +21,27 @@ Row {
     Repeater {
         model: systemTray.items
         delegate: Item {
-            width: 24
-            height: 24
-            // Hide Spotify icon, or adjust to your liking
-            visible: modelData && modelData.id !== "spotify"
+            width: 24 * Theme.scale(Screen)
+            height: 24 * Theme.scale(Screen)
+
+            visible: modelData
             property bool isHovered: trayMouseArea.containsMouse
 
-            // Hover scale animation
-            scale: isHovered ? 1.15 : 1.0
-            Behavior on scale {
-                NumberAnimation {
-                    duration: 150
-                    easing.type: Easing.OutCubic
-                }
-            }
-
-            // Subtle rotation on hover
-            rotation: isHovered ? 5 : 0
-            Behavior on rotation {
-                NumberAnimation {
-                    duration: 200
-                    easing.type: Easing.OutCubic
-                }
-            }
+            // No animations - static display
 
             Rectangle {
                 anchors.centerIn: parent
-                width: 16
-                height: 16
-                radius: 6
+                width: 16 * Theme.scale(Screen)
+                height: 16 * Theme.scale(Screen)
+                radius: 6 * Theme.scale(Screen)
                 color: "transparent"
                 clip: true
 
                 IconImage {
                     id: trayIcon
                     anchors.centerIn: parent
-                    width: 16
-                    height: 16
+                    width: 16 * Theme.scale(Screen)
+                    height: 16 * Theme.scale(Screen)
                     smooth: false
                     asynchronous: true
                     backer.fillMode: Image.PreserveAspectFit
@@ -74,13 +58,6 @@ Row {
                         return icon;
                     }
                     opacity: status === Image.Ready ? 1 : 0
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 300
-                            easing.type: Easing.OutCubic
-                        }
-                    }
                     Component.onCompleted: {}
                 }
             }
@@ -122,7 +99,7 @@ Row {
                         if (modelData.hasMenu && modelData.menu && trayMenu) {
                             // Anchor the menu to the tray icon item (parent) and position it below the icon
                             const menuX = (width / 2) - (trayMenu.width / 2);
-                            const menuY = height + 20;
+                            const menuY = height + 20 * Theme.scale(Screen);
                             trayMenu.menu = modelData.menu;
                             trayMenu.showAt(parent, menuX, menuY);
                         } else

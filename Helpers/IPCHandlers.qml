@@ -14,9 +14,9 @@ IpcHandler {
         idleInhibitor.toggle()
     }
 
-
     function toggleNotificationPopup(): void {
         console.log("[IPC] NotificationPopup toggle() called")
+        // Use the global toggle function from the notification manager
         notificationPopup.togglePopup();
     }
 

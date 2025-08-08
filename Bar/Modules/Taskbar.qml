@@ -83,7 +83,7 @@ Item {
                     visible: !appIcon.visible
                     text: appButton.appId ? appButton.appId.charAt(0).toUpperCase() : "?"
                     font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(10, Settings.settings.taskbarIconSize * 0.4375)
+                    font.pixelSize: Math.max(10, Settings.settings.taskbarIconSize * 0.4375 * Theme.scale(Screen))
                     font.bold: true
                     color: appButton.isActive ? Theme.onAccent : Theme.textPrimary
                 }

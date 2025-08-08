@@ -3,10 +3,10 @@ import Quickshell.Io
 Process {
     id: idleRoot
     
-    // Example: systemd-inhibit to prevent idle/sleep
+    // Uses systemd-inhibit to prevent idle/sleep
     command: ["systemd-inhibit", "--what=idle:sleep", "--who=noctalia", "--why=User requested", "sleep", "infinity"]
     
-    // Keep process running in background
+    // Track background process state
     property bool isRunning: running
     
     onStarted: {
@@ -17,7 +17,7 @@ Process {
         console.log("[IdleInhibitor] Process finished:", exitCode)
     }
 
-    // Control functions
+
     function start() {
         if (!running) {
             console.log("[IdleInhibitor] Starting idle inhibitor...")

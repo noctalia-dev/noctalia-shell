@@ -8,35 +8,37 @@ import qs.Settings
 
 Rectangle {
     id: systemMonitor
-    width: 70
-    height: 250
+    width: 70 * Theme.scale(Screen)
+    height: 250 * Theme.scale(Screen)
     color: "transparent"
 
+    // Track visibility state for panel integration
     property bool isVisible: false
 
     Rectangle {
         id: card
         anchors.fill: parent
         color: Theme.surface
-        radius: 18
+        radius: 18 * Theme.scale(Screen)
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 8
-            spacing: 12
+            anchors.margins: 8 * Theme.scale(Screen)
+            spacing: 12 * Theme.scale(Screen)
             Layout.alignment: Qt.AlignVCenter
 
-            // CPU Usage
+    
+            // CPU usage indicator with circular progress bar
             Item {
-                width: 50; height: 50
+                width: 50 * Theme.scale(Screen); height: 50 * Theme.scale(Screen)
                 CircularProgressBar {
                     id: cpuBar
                     progress: Sysinfo.cpuUsage / 100
-                    size: 50
-                    strokeWidth: 4
+                    size: 50 * Theme.scale(Screen)
+                    strokeWidth: 4 * Theme.scale(Screen)
                     hasNotch: true
                     notchIcon: "speed"
-                    notchIconSize: 14
+                    notchIconSize: 14 * Theme.scale(Screen)
                     Layout.alignment: Qt.AlignHCenter
                 }
                 MouseArea {
@@ -55,18 +57,19 @@ Rectangle {
                 }
             }
 
-            // Cpu Temp
+    
+            // CPU temperature indicator with circular progress bar
             Item {
-                width: 50; height: 50
+                width: 50 * Theme.scale(Screen); height: 50 * Theme.scale(Screen)
                 CircularProgressBar {
                     id: tempBar
                     progress: Sysinfo.cpuTemp / 100
-                    size: 50
-                    strokeWidth: 4
+                    size: 50 * Theme.scale(Screen)
+                    strokeWidth: 4 * Theme.scale(Screen)
                     hasNotch: true
                     units: "°C"
                     notchIcon: "thermometer"
-                    notchIconSize: 14
+                    notchIconSize: 14 * Theme.scale(Screen)
                     Layout.alignment: Qt.AlignHCenter
                 }
                 MouseArea {
@@ -85,17 +88,18 @@ Rectangle {
                 }
             }
 
-            // Memory Usage
+    
+            // Memory usage indicator with circular progress bar
             Item {
-                width: 50; height: 50
+                width: 50 * Theme.scale(Screen); height: 50 * Theme.scale(Screen)
                 CircularProgressBar {
                     id: memBar
                     progress: Sysinfo.memoryUsagePer / 100
-                    size: 50
-                    strokeWidth: 4
+                    size: 50 * Theme.scale(Screen)
+                    strokeWidth: 4 * Theme.scale(Screen)
                     hasNotch: true
                     notchIcon: "memory"
-                    notchIconSize: 14
+                    notchIconSize: 14 * Theme.scale(Screen)
                     Layout.alignment: Qt.AlignHCenter
                 }
                 MouseArea {
@@ -114,17 +118,18 @@ Rectangle {
                 }
             }
 
-            // Disk Usage
+    
+            // Disk usage indicator with circular progress bar
             Item {
-                width: 50; height: 50
+                width: 50 * Theme.scale(Screen); height: 50 * Theme.scale(Screen)
                 CircularProgressBar {
                     id: diskBar
                     progress: Sysinfo.diskUsage / 100
-                    size: 50
-                    strokeWidth: 4
+                    size: 50 * Theme.scale(Screen)
+                    strokeWidth: 4 * Theme.scale(Screen)
                     hasNotch: true
                     notchIcon: "storage"
-                    notchIconSize: 14
+                    notchIconSize: 14 * Theme.scale(Screen)
                     Layout.alignment: Qt.AlignHCenter
                 }
                 MouseArea {

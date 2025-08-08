@@ -204,19 +204,19 @@ Item {
 
             wifiLogic.connectingSsid = params.ssid;
 
-            // Find the target network in our networks data
+
             const targetNetwork = wifiLogic.networks[params.ssid];
 
-            // Check if profile already exists using existing field
+
             if (targetNetwork && targetNetwork.existing) {
-                // Profile exists, just bring it up (no password prompt)
+
                 upConnectionProcess.profileName = params.ssid;
                 upConnectionProcess.running = true;
                 wifiLogic.pendingConnect = null;
                 return;
             }
 
-            // No existing profile, proceed with normal connection flow
+
             if (params.security && params.security !== "--") {
                 getInterfaceProcess.running = true;
                 return;
@@ -232,7 +232,7 @@ Item {
         }
     }
 
-    // Disconnect, delete profile, refresh
+    
     Process {
         id: disconnectProfileProcess
         property string connectionName: ""
@@ -291,7 +291,7 @@ Item {
     }
 
 
-    // Handles connecting to a Wi-Fi network, with or without password
+    
     Process {
         id: connectProcess
         property string ssid: ""
@@ -336,7 +336,7 @@ Item {
         }
     }
 
-    // Finds the correct Wi-Fi interface for connection
+    
     Process {
         id: getInterfaceProcess
         running: false
@@ -370,7 +370,7 @@ Item {
         }
     }
 
-    // Adds a new Wi-Fi connection profile
+    
     Process {
         id: addConnectionProcess
         property string ifname: ""
@@ -403,7 +403,7 @@ Item {
         }
     }
 
-    // Brings up the new connection profile and finalizes connection state
+    
     Process {
         id: upConnectionProcess
         property string profileName: ""
@@ -436,7 +436,7 @@ Item {
         }
     }
 
-    // Wifi button (no background card)
+    
     Rectangle {
         id: wifiButton
         width: 36
@@ -516,8 +516,8 @@ Item {
                         Layout.alignment: Qt.AlignVCenter
                         visible: false
                         running: false
-                        color: Theme.accentPrimary // Assuming Spinner supports color property
-                        size: 22 // Based on the existing Spinner usage
+                                    color: Theme.accentPrimary
+            size: 22
                     }
                     IconButton {
                         id: refreshButton
@@ -704,7 +704,7 @@ Item {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             onClicked: {
-                                                // Toggle the action panel for this network
+                                        
                                                 if (wifiLogic.actionPanelSsid === modelData.ssid) {
                                                     wifiLogic.actionPanelSsid = ""; // Close if already open
                                                 } else {
@@ -791,7 +791,7 @@ Item {
                                             }
                                         }
                                     }
-                                    // Action panel for network connection controls
+                            
                                     Rectangle {
                                         visible: modelData.ssid === wifiLogic.actionPanelSsid
                                         Layout.fillWidth: true
@@ -806,7 +806,7 @@ Item {
                                             anchors.fill: parent
                                             anchors.margins: 12
                                             spacing: 10
-                                            // Password field for new secured networks
+                                
                                             Item {
                                                 Layout.fillWidth: true
                                                 Layout.preferredHeight: 36
@@ -830,7 +830,7 @@ Item {
                                                         inputMethodHints: Qt.ImhNone
                                                         echoMode: TextInput.Password
                                                         onAccepted: {
-                                                            // Connect with the entered password
+                                                
                                                             wifiLogic.pendingConnect = {
                                                                 ssid: modelData.ssid,
                                                                 security: modelData.security,
@@ -843,7 +843,7 @@ Item {
                                                     }
                                                 }
                                             }
-                                            // Connect/Disconnect button
+                                
                                             Rectangle {
                                                 Layout.preferredWidth: 80
                                                 Layout.preferredHeight: 36
@@ -861,12 +861,12 @@ Item {
                                                     anchors.fill: parent
                                                     onClicked: {
                                                         if (modelData.connected) {
-                                                            // Disconnect from network
+                                            
                                                             wifiLogic.disconnectNetwork(modelData.ssid);
                                                         } else {
-                                                            // For secured networks, check if we need password
+                                            
                                                             if (wifiLogic.isSecured(modelData.security) && !modelData.existing) {
-                                                                // If password field is visible and has content, use it
+                                                
                                                                 if (actionPanelPasswordField.text.length > 0) {
                                                                     wifiLogic.pendingConnect = {
                                                                         ssid: modelData.ssid,
@@ -875,10 +875,9 @@ Item {
                                                                     };
                                                                     wifiLogic.doConnect();
                                                                 }
-                                                                // For new networks without password entered, we might want to show an error or handle differently
-                                                                // For now, we'll just close the panel
+                                                                
                                                             } else {
-                                                                // Connect to open network
+                                                
                                                                 wifiLogic.connectNetwork(modelData.ssid, modelData.security);
                                                             }
                                                         }

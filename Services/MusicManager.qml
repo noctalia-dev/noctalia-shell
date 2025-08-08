@@ -8,7 +8,7 @@ import qs.Components
 Singleton {
     id: manager
 
-    // Properties
+
     property var currentPlayer: null
     property real currentPosition: 0
     property int selectedPlayerIndex: 0
@@ -25,14 +25,14 @@ Singleton {
     property bool canSeek: currentPlayer ? currentPlayer.canSeek : false
     property bool hasPlayer: getAvailablePlayers().length > 0
 
-    // Initialize
+
     Item {
         Component.onCompleted: {
             updateCurrentPlayer()
         }
     }
 
-    // Returns available MPRIS players
+
     function getAvailablePlayers() {
         if (!Mpris.players || !Mpris.players.values) {
             return []
@@ -51,14 +51,14 @@ Singleton {
         return controllablePlayers
     }
 
-    // Returns active player or first available
+
     function findActivePlayer() {
         let availablePlayers = getAvailablePlayers()
         if (availablePlayers.length === 0) {
             return null
         }
         
-        // Use selected player if valid, otherwise use first available
+
         if (selectedPlayerIndex < availablePlayers.length) {
             return availablePlayers[selectedPlayerIndex]
         } else {
@@ -67,7 +67,8 @@ Singleton {
         }
     }
 
-    // Updates currentPlayer and currentPosition
+
+    // Switch to the most recently active player
     function updateCurrentPlayer() {
         let newPlayer = findActivePlayer()
         if (newPlayer !== currentPlayer) {
@@ -76,7 +77,7 @@ Singleton {
         }
     }
 
-    // Player control functions
+
     function playPause() {
         if (currentPlayer) {
             if (currentPlayer.isPlaying) {
@@ -118,6 +119,7 @@ Singleton {
         }
     }
 
+    // Seek to position based on ratio (0.0 to 1.0)
     function seekByRatio(ratio) {
         if (currentPlayer && currentPlayer.canSeek && currentPlayer.length > 0) {
             let seekPosition = ratio * currentPlayer.length
@@ -126,7 +128,7 @@ Singleton {
         }
     }
 
-    // Updates progress bar every second
+    // Update progress bar every second while playing
     Timer {
         id: positionTimer
         interval: 1000
@@ -141,14 +143,14 @@ Singleton {
         }
     }
 
-    // Reset position when player state changes
+    // Reset position when switching to inactive player
     onCurrentPlayerChanged: {
         if (!currentPlayer || !currentPlayer.isPlaying || currentPlayer.playbackState !== MprisPlaybackState.Playing) {
             currentPosition = 0
         }
     }
 
-    // Reacts to player list changes
+    // Update current player when available players change
     Connections {
         target: Mpris.players
         function onValuesChanged() {

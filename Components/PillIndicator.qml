@@ -13,8 +13,8 @@ Item {
     property color iconCircleColor: Theme.accentPrimary
     property color iconTextColor: Theme.backgroundPrimary
     property color collapsedIconColor: Theme.textPrimary
-    property int pillHeight: 22
-    property int iconSize: 22
+    property int pillHeight: 22 * Theme.scale(Screen)
+    property int iconSize: 22 * Theme.scale(Screen)
     property int pillPaddingHorizontal: 14
     property bool autoHide: false
 
@@ -47,7 +47,7 @@ Item {
             id: textItem
             anchors.centerIn: parent
             text: revealPill.text
-            font.pixelSize: Theme.fontSizeSmall
+            font.pixelSize: Theme.fontSizeSmall * Theme.scale(Screen)
             font.family: Theme.fontFamily
             font.weight: Font.Bold
             color: textColor
@@ -89,7 +89,7 @@ Item {
         Text {
             anchors.centerIn: parent
             font.family: showPill ? "Material Symbols Rounded" : "Material Symbols Outlined"
-            font.pixelSize: Theme.fontSizeSmall
+            font.pixelSize: Theme.fontSizeSmall * Theme.scale(Screen)
             text: revealPill.icon
             color: showPill ? iconTextColor : collapsedIconColor
         }

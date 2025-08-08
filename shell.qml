@@ -9,18 +9,25 @@ import qs.Bar.Modules
 import qs.Widgets
 import qs.Widgets.LockScreen
 import qs.Widgets.Notification
+import qs.Widgets.SettingsWindow
 import qs.Settings
 import qs.Helpers
-
-import "./Helpers/IdleInhibitor.qml"
-import "./Helpers/IPCHandlers.qml"
 
 Scope {
     id: root
 
     property alias appLauncherPanel: appLauncherPanel
-    property var notificationHistoryWin: notificationHistoryWin
+    property var notificationHistoryWin: notificationHistoryLoader.active ? notificationHistoryLoader.item : null
+    property var settingsWindow: null
     property bool pendingReload: false
+    
+    // Function to load notification history
+    function loadNotificationHistory() {
+        if (!notificationHistoryLoader.active) {
+            notificationHistoryLoader.loading = true;
+        }
+        return notificationHistoryLoader;
+    }
 
     // Helper function to round value to nearest step
     function roundToStep(value, step) {
@@ -47,10 +54,22 @@ Scope {
         Quickshell.shell = root;
     }
 
+    Background {}
+    Overview {}
+
     Bar {
         id: bar
         shell: root
-        property var notificationHistoryWin: notificationHistoryWin
+        property var notificationHistoryWin: notificationHistoryLoader.active ? notificationHistoryLoader.item : null
+    }
+
+    Variants {
+        model: Quickshell.screens
+        
+        Dock {
+            id: dock
+            property var modelData
+        }
     }
 
     Dock {
@@ -79,13 +98,14 @@ Scope {
     NotificationServer {
         id: notificationServer
         onNotification: function (notification) {
-            console.log("Notification received:", notification.appName);
+            console.log("[Notification] Received notification:", notification.appName, "-", notification.summary);
             notification.tracked = true;
             if (notificationPopup.notificationsVisible) {
+                // Add notification to the popup manager
                 notificationPopup.addNotification(notification);
             }
-            if (notificationHistoryWin) {
-                notificationHistoryWin.addToHistory({
+            if (notificationHistoryLoader.active && notificationHistoryLoader.item) {
+                notificationHistoryLoader.item.addToHistory({
                     id: notification.id,
                     appName: notification.appName || "Notification",
                     summary: notification.summary || "",
@@ -99,11 +119,35 @@ Scope {
 
     NotificationPopup {
         id: notificationPopup
-        barVisible: bar.visible
     }
 
-    NotificationHistory {
-        id: notificationHistoryWin
+    // LazyLoader for NotificationHistory - only load when needed
+    LazyLoader {
+        id: notificationHistoryLoader
+        loading: false
+        component: NotificationHistory {}
+    }
+
+    // Centralized LazyLoader for SettingsWindow - prevents crashes on multiple opens
+    LazyLoader {
+        id: settingsWindowLoader
+        loading: false
+        component: SettingsWindow {
+            Component.onCompleted: {
+                root.settingsWindow = this;
+            }
+        }
+    }
+
+    // Function to safely show/hide settings window
+    function toggleSettingsWindow() {
+        if (!settingsWindowLoader.active) {
+            settingsWindowLoader.loading = true;
+        }
+        
+        if (settingsWindowLoader.item) {
+            settingsWindowLoader.item.visible = !settingsWindowLoader.item.visible;
+        }
     }
 
     // Reference to the default audio sink from Pipewire
@@ -144,13 +188,14 @@ Scope {
         function onScreensChanged() {
             if (lockScreen.locked) {
                 pendingReload = true;
-            } else {
+            } /*else {
                 reloadTimer.restart();
-            }
+            } */
+            // ^commented out for now to fix QS crash on monitor wake.
+            // if it reintroduces the notification bug (https://github.com/Ly-sec/Noctalia/issues/32)...
+            // we need to find a different fix
         }
     }
-
-    // --- NEW: Keep volume property in sync with actual Pipewire audio sink volume ---
 
     Connections {
         target: defaultAudioSink ? defaultAudioSink.audio : null
@@ -172,4 +217,5 @@ Scope {
             }
         }
     }
+
 }

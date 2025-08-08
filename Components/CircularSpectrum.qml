@@ -4,11 +4,11 @@ import qs.Settings
 
 Item {
     id: root
-    property int innerRadius: 34
-    property int outerRadius: 48
+    property int innerRadius: 34 * Theme.scale(Screen)
+    property int outerRadius: 48 * Theme.scale(Screen)
     property color fillColor: "#fff"
     property color strokeColor: "#fff"
-    property int strokeWidth: 0
+    property int strokeWidth: 0 * Theme.scale(Screen)
     property var values: []
     property int usableOuter: 48
 
@@ -24,7 +24,7 @@ Item {
         Rectangle {
             property real value: root.values[index]
             property real angle: (index / root.values.length) * 360
-            width: Math.max(2, (root.innerRadius * 2 * Math.PI) / root.values.length - 4)
+            width: Math.max(2 * Theme.scale(Screen), (root.innerRadius * 2 * Math.PI) / root.values.length - 4 * Theme.scale(Screen))
             height: Settings.settings.visualizerType === "diamond" ? value * 2 * (usableOuter - root.innerRadius) : value * (usableOuter - root.innerRadius)
             radius: width / 2
             color: root.fillColor

@@ -45,9 +45,10 @@ Singleton {
             property string wallpaperFolder: "/usr/share/wallpapers"
             property string currentWallpaper: ""
             property string videoPath: "~/Videos/"
+            property bool showActiveWindow: true
             property bool showActiveWindowIcon: false
             property bool showSystemInfoInBar: false
-            property bool showCorners: true
+            property bool showCorners: false
             property bool showTaskbar: true
             property bool showMediaInBar: false
             property bool useSWWW: false
@@ -68,6 +69,19 @@ Singleton {
 
             property bool showDock: true
             property bool dockExclusive: false
+            property bool wifiEnabled: false
+            property bool bluetoothEnabled: false
+            property int recordingFrameRate: 60
+            property string recordingQuality: "very_high"
+            property string recordingCodec: "h264"
+            property string audioCodec: "opus"
+            property bool showCursor: true
+            property string colorRange: "limited"
+            
+            // Monitor/Display Settings
+            property var barMonitors: [] // Array of monitor names to show the bar on
+            property var dockMonitors: [] // Array of monitor names to show the dock on
+            property var notificationMonitors: [] // Array of monitor names to show notifications on, "*" means all monitors
         }
     }
 
@@ -76,5 +90,7 @@ Singleton {
         function onRandomWallpaperChanged() { WallpaperManager.toggleRandomWallpaper() }
         function onWallpaperIntervalChanged() { WallpaperManager.restartRandomWallpaperTimer() }
         function onWallpaperFolderChanged() { WallpaperManager.loadWallpapers() }
+        function onNotificationMonitorsChanged() { 
+        }
     }
 }

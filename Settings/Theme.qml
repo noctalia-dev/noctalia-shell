@@ -8,6 +8,22 @@ import qs.Settings
 Singleton {
     id: root
 
+    // Design screen width
+    readonly property int designScreenWidth: 1920
+    
+    // Scaling dampening factor - reduces the scaling effect for higher resolutions
+    readonly property real scalingDampening: 0.2
+    
+    // Automatic scaling based on screen width
+    function scale(currentScreen) {
+        if (currentScreen !== undefined) {
+            var rawRatio = currentScreen.width / designScreenWidth
+            // Apply dampening to reduce scaling for higher resolutions
+            return Math.min(2.0, 1.0 + (rawRatio - 1.0) * scalingDampening)
+        }
+        return 1.0
+    }
+
     function applyOpacity(color, opacity) {
         return color.replace("#", "#" + opacity);
     }

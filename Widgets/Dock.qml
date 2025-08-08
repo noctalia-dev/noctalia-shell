@@ -8,7 +8,9 @@ import qs.Components
 
 PanelWindow {
     id: taskbarWindow
-    visible: Settings.settings.showDock
+    visible: Settings.settings.showDock && 
+             (Settings.settings.dockMonitors.includes(modelData.name) ||
+                                   (Settings.settings.dockMonitors.length === 0))
     screen: (typeof modelData !== 'undefined' ? modelData : null)
     exclusionMode: ExclusionMode.Ignore
     anchors.bottom: true
@@ -245,7 +247,7 @@ PanelWindow {
                 contextMenuVisible = false;
                 contextMenuTarget = null;
                 contextMenuToplevel = null;
-                hidden = true;  // Hide dock when context menu closes by clicking outside
+                hidden = true; // Hide dock when context menu closes
             }
         }
 
@@ -281,7 +283,7 @@ PanelWindow {
                 spacing: 4
                 width: parent.width
 
-                // Close
+
                 Rectangle {
                     width: parent.width
                     height: 32
@@ -300,7 +302,7 @@ PanelWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "close"
                             font.family: "Material Symbols Outlined"
-                            font.pixelSize: 14
+                            font.pixelSize: 14 * Theme.scale(Screen)
                             color: Theme.textPrimary
                         }
 
@@ -308,7 +310,7 @@ PanelWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Close"
                             font.family: Theme.fontFamily
-                            font.pixelSize: 14
+                            font.pixelSize: 14 * Theme.scale(Screen)
                             color: Theme.textPrimary
                         }
                     }
@@ -322,7 +324,7 @@ PanelWindow {
                         onClicked: {
                             if (contextMenuToplevel?.close) contextMenuToplevel.close();
                             contextMenuVisible = false;
-                            hidden = true;  // Hide the dock here as well
+                            hidden = true;
                         }
                     }
                 }

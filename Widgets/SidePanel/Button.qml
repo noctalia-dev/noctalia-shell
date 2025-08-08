@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import qs.Settings
-import qs.Widgets.Sidebar.Panel
 
 Item {
     id: buttonRoot
@@ -45,7 +44,7 @@ Item {
         id: iconText
         text: "dashboard"
         font.family: isActive ? "Material Symbols Rounded" : "Material Symbols Outlined"
-        font.pixelSize: 16
+        font.pixelSize: 16 * Theme.scale(Screen)
         color: sidebarPopup.visible ? Theme.accentPrimary : Theme.textPrimary
         anchors.centerIn: parent
         z: 1

@@ -8,25 +8,49 @@ Item {
     id: root
     width: 22; height: 22
     property bool isSilence: false
+    property var shell: null
 
-    // Process for executing CLI commands
     Process {
         id: rightClickProcess
         command: ["qs","ipc", "call", "globalIPC", "toggleNotificationPopup"]
     }
 
-    // Bell icon/button
+    // Timer to check when NotificationHistory is loaded
+    Timer {
+        id: checkHistoryTimer
+        interval: 50
+        repeat: true
+        onTriggered: {
+            if (shell && shell.notificationHistoryWin) {
+                shell.notificationHistoryWin.visible = true;
+                checkHistoryTimer.stop();
+            }
+        }
+    }
+
     Item {
         id: bell
         width: 22; height: 22
         Text {
             id: bellText
             anchors.centerIn: parent
-            text: notificationHistoryWin.hasUnread ? "notifications_unread" : "notifications"
+            text: {
+                if (shell && shell.notificationHistoryWin && shell.notificationHistoryWin.hasUnread) {
+                    return "notifications_unread";
+                } else {
+                    return "notifications";
+                }
+            }
             font.family: mouseAreaBell.containsMouse ? "Material Symbols Rounded" : "Material Symbols Outlined"
-            font.pixelSize: 16
-            font.weight: notificationHistoryWin.hasUnread ? Font.Bold : Font.Normal
-            color: mouseAreaBell.containsMouse ? Theme.accentPrimary : (notificationHistoryWin.hasUnread ? Theme.accentPrimary : Theme.textDisabled)
+            font.pixelSize: 16 * Theme.scale(Screen)
+            font.weight: {
+                if (shell && shell.notificationHistoryWin && shell.notificationHistoryWin.hasUnread) {
+                    return Font.Bold;
+                } else {
+                    return Font.Normal;
+                }
+            }
+            color: mouseAreaBell.containsMouse ? Theme.accentPrimary : (shell && shell.notificationHistoryWin && shell.notificationHistoryWin.hasUnread ? Theme.accentPrimary : Theme.textDisabled)
         }
         MouseArea {
             id: mouseAreaBell
@@ -42,10 +66,18 @@ Item {
                 }
 
                 if (mouse.button === Qt.LeftButton){
-                     notificationHistoryWin.visible = !notificationHistoryWin.visible
-                     return;
+                    if (shell) {
+                        if (!shell.notificationHistoryWin) {
+                            // Use the shell function to load notification history
+                            shell.loadNotificationHistory();
+                            checkHistoryTimer.start();
+                        } else {
+                            // Already loaded, just toggle visibility
+                            shell.notificationHistoryWin.visible = !shell.notificationHistoryWin.visible;
+                        }
+                    }
+                    return;
                 }
-
             }
             onEntered: notificationTooltip.tooltipVisible = true
             onExited: notificationTooltip.tooltipVisible = false

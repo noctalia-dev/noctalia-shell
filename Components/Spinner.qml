@@ -1,4 +1,5 @@
 import QtQuick
+import qs.Settings
 
 Item {
     id: root
@@ -6,7 +7,7 @@ Item {
     property bool running: false
     property color color: "white"
     property int size: 16
-    property int strokeWidth: 2
+    property int strokeWidth: 2 * Theme.scale(Screen)
     property int duration: 1000
     
     implicitWidth: size

@@ -34,15 +34,15 @@ ShellRoot {
                 cache: true
                 smooth: true
                 mipmap: false
-                visible: wallpaperSource !== "" // Show the original for FastBlur input
+                visible: wallpaperSource !== ""
             }
             MultiEffect {
                 id: overviewBgBlur
                 anchors.fill: parent
                 source: bgImage
                 blurEnabled: true
-                blur: 0.48   // controls blur strength (0 to 1)
-                blurMax: 128 // max blur radius in pixels
+                            blur: 0.48
+            blurMax: 128
             }
             Rectangle {
                 anchors.fill: parent

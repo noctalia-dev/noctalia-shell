@@ -2,12 +2,12 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import qs.Settings
-import "../../../Helpers/Weather.js" as WeatherHelper
+import "../../Helpers/Weather.js" as WeatherHelper
 
 Rectangle {
     id: weatherRoot
-    width: 440
-    height: 180
+    width: 440 * Theme.scale(Screen)
+    height: 180 * Theme.scale(Screen)
     color: "transparent"
     anchors.horizontalCenterOffset: -2
 
@@ -15,6 +15,20 @@ Rectangle {
     property var weatherData: null
     property string errorString: ""
     property bool isVisible: false
+    property int lastFetchTime: 0
+    property bool isLoading: false
+
+    // Auto-refetch weather when city changes
+    Connections {
+        target: Settings.settings
+        function onWeatherCityChanged() {
+            if (isVisible && city !== "") {
+                // Force refresh when city changes
+                lastFetchTime = 0;
+                fetchCityWeather();
+            }
+        }
+    }
 
     Component.onCompleted: {
         if (isVisible) {
@@ -23,20 +37,42 @@ Rectangle {
     }
 
     function fetchCityWeather() {
+        if (!city || city.trim() === "") {
+            errorString = "No city configured";
+            return;
+        }
+        
+        // Check if we should fetch new data (avoid fetching too frequently)
+        var currentTime = Date.now();
+        var timeSinceLastFetch = currentTime - lastFetchTime;
+        
+        // Only skip if we have recent data AND lastFetchTime is not 0 (initial state)
+        if (lastFetchTime > 0 && timeSinceLastFetch < 60000) { // 1 minute
+            return; // Skip if last fetch was less than 1 minute ago
+        }
+        
+        isLoading = true;
+        errorString = "";
+        
         WeatherHelper.fetchCityWeather(city,
             function(result) {
                 weatherData = result.weather;
+                lastFetchTime = currentTime;
                 errorString = "";
+                isLoading = false;
             },
             function(err) {
                 errorString = err;
+                isLoading = false;
             }
         );
     }
 
     function startWeatherFetch() {
         isVisible = true
-        fetchCityWeather()
+        // Force refresh when panel opens, regardless of time check
+        lastFetchTime = 0;
+        fetchCityWeather();
     }
 
     function stopWeatherFetch() {
@@ -47,81 +83,90 @@ Rectangle {
         id: card
         anchors.fill: parent
         color: Theme.surface
-        radius: 18
+        radius: 18 * Theme.scale(Screen)
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 18
-            spacing: 12
+            anchors.margins: 18 * Theme.scale(Screen)
+            spacing: 12 * Theme.scale(Screen)
 
-            // Current weather row
+    
             RowLayout {
-                spacing: 12
+                spacing: 12 * Theme.scale(Screen)
                 Layout.fillWidth: true
 
-                // Weather icon and basic info section
-                RowLayout {
-                    spacing: 12
-                    Layout.preferredWidth: 140
 
-                    // Weather icon
+                RowLayout {
+                    spacing: 12 * Theme.scale(Screen)
+                    Layout.preferredWidth: 140 * Theme.scale(Screen)
+
+
                     Text {
                         id: weatherIcon
-                        text: weatherData && weatherData.current_weather ? materialSymbolForCode(weatherData.current_weather.weathercode) : "cloud"
+                        text: isLoading ? "sync" : (weatherData && weatherData.current_weather ? materialSymbolForCode(weatherData.current_weather.weathercode) : "cloud")
                         font.family: "Material Symbols Outlined"
-                        font.pixelSize: 28
+                        font.pixelSize: 28 * Theme.scale(Screen)
                         verticalAlignment: Text.AlignVCenter
-                        color: Theme.accentPrimary
+                        color: isLoading ? Theme.accentPrimary : Theme.accentPrimary
                         Layout.alignment: Qt.AlignVCenter
+                        
+                        // Add rotation animation for loading state
+                        RotationAnimation on rotation {
+                            running: isLoading
+                            from: 0
+                            to: 360
+                            duration: 1000
+                            loops: Animation.Infinite
+                        }
                     }
 
                     ColumnLayout {
-                        spacing: 2
+                        spacing: 2 * Theme.scale(Screen)
                         RowLayout {
-                            spacing: 4
+                            spacing: 4 * Theme.scale(Screen)
                             Text {
                                 text: city
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 14
+                                font.pixelSize: 14 * Theme.scale(Screen)
                                 font.bold: true
                                 color: Theme.textPrimary
                             }
                             Text {
                                 text: weatherData && weatherData.timezone_abbreviation ? `(${weatherData.timezone_abbreviation})` : ""
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 10
+                                font.pixelSize: 10 * Theme.scale(Screen)
                                 color: Theme.textSecondary
-                                leftPadding: 2
+                                leftPadding: 2 * Theme.scale(Screen)
                             }
                         }
                         Text {
                             text: weatherData && weatherData.current_weather ? ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? `${Math.round(weatherData.current_weather.temperature * 9/5 + 32)}°F` : `${Math.round(weatherData.current_weather.temperature)}°C`) : ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? "--°F" : "--°C")
                             font.family: Theme.fontFamily
-                            font.pixelSize: 24
+                            font.pixelSize: 24 * Theme.scale(Screen)
                             font.bold: true
                             color: Theme.textPrimary
                         }
                     }
                 }
-                // Spacer to push content to the right
+    
                 Item {
                     Layout.fillWidth: true
                 }
             }
 
-            // Separator line
+
             Rectangle {
                 width: parent.width
-                height: 1
+                height: 1 * Theme.scale(Screen)
                 color: Qt.rgba(Theme.textSecondary.g, Theme.textSecondary.g, Theme.textSecondary.b, 0.12)
                 Layout.fillWidth: true
-                Layout.topMargin: 2
-                Layout.bottomMargin: 2
+                Layout.topMargin: 2 * Theme.scale(Screen)
+                Layout.bottomMargin: 2 * Theme.scale(Screen)
             }
 
-            // 5-day forecast row
+
             RowLayout {
-                spacing: 12
+                spacing: 12 * Theme.scale(Screen)
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignHCenter
                 visible: weatherData && weatherData.daily && weatherData.daily.time
@@ -129,31 +174,31 @@ Rectangle {
                 Repeater {
                     model: weatherData && weatherData.daily && weatherData.daily.time ? 5 : 0
                     delegate: ColumnLayout {
-                        spacing: 2
+                        spacing: 2 * Theme.scale(Screen)
                         Layout.alignment: Qt.AlignHCenter
                         Text {
-                            // Day of the week (e.g., Mon)
+            
                             text: Qt.formatDateTime(new Date(weatherData.daily.time[index]), "ddd")
                             font.family: Theme.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: 12 * Theme.scale(Screen)
                             color: Theme.textSecondary
                             horizontalAlignment: Text.AlignHCenter
                             Layout.alignment: Qt.AlignHCenter
                         }
                         Text {
-                            // Material Symbol icon
+                
                             text: materialSymbolForCode(weatherData.daily.weathercode[index])
                             font.family: "Material Symbols Outlined"
-                            font.pixelSize: 22
+                            font.pixelSize: 22 * Theme.scale(Screen)
                             color: Theme.accentPrimary
                             horizontalAlignment: Text.AlignHCenter
                             Layout.alignment: Qt.AlignHCenter
                         }
                         Text {
-                            // High/low temp
+                
                             text: weatherData && weatherData.daily ? ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? `${Math.round(weatherData.daily.temperature_2m_max[index] * 9/5 + 32)}° / ${Math.round(weatherData.daily.temperature_2m_min[index] * 9/5 + 32)}°` : `${Math.round(weatherData.daily.temperature_2m_max[index])}° / ${Math.round(weatherData.daily.temperature_2m_min[index])}°`) : ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? "--° / --°" : "--° / --°")
                             font.family: Theme.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: 12 * Theme.scale(Screen)
                             color: Theme.textPrimary
                             horizontalAlignment: Text.AlignHCenter
                             Layout.alignment: Qt.AlignHCenter
@@ -162,29 +207,29 @@ Rectangle {
                 }
             }
 
-            // Error message
+    
             Text {
                 text: errorString
                 color: Theme.error
                 visible: errorString !== ""
                 font.family: Theme.fontFamily
-                font.pixelSize: 10
+                font.pixelSize: 10 * Theme.scale(Screen)
                 horizontalAlignment: Text.AlignHCenter
                 Layout.alignment: Qt.AlignHCenter
             }
         }
     }
 
-    // Weather code to Material Symbol ligature mapping
+    
     function materialSymbolForCode(code) {
-        if (code === 0) return "sunny"; // Clear
-        if (code === 1 || code === 2) return "partly_cloudy_day"; // Mainly clear/partly cloudy
-        if (code === 3) return "cloud"; // Overcast
-        if (code >= 45 && code <= 48) return "foggy"; // Fog
-        if (code >= 51 && code <= 67) return "rainy"; // Drizzle
-        if (code >= 71 && code <= 77) return "weather_snowy"; // Snow
-        if (code >= 80 && code <= 82) return "rainy"; // Rain showers
-        if (code >= 95 && code <= 99) return "thunderstorm"; // Thunderstorm
+        if (code === 0) return "sunny";
+        if (code === 1 || code === 2) return "partly_cloudy_day";
+        if (code === 3) return "cloud";
+        if (code >= 45 && code <= 48) return "foggy";
+        if (code >= 51 && code <= 67) return "rainy";
+        if (code >= 71 && code <= 77) return "weather_snowy";
+        if (code >= 80 && code <= 82) return "rainy";
+        if (code >= 95 && code <= 99) return "thunderstorm";
         return "cloud";
     }
     function weatherDescriptionForCode(code) {

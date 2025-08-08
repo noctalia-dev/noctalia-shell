@@ -7,22 +7,22 @@ import qs.Components
 
 Rectangle {
     id: card
-    width: 200
-    height: 70
+    width: 200 * Theme.scale(Screen)
+    height: 70 * Theme.scale(Screen)
     color: Theme.surface
-    radius: 18
+    radius: 18 * Theme.scale(Screen)
 
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 20
+        spacing: 20 * Theme.scale(Screen)
 
-        // Performance
+
         Rectangle {
-            width: 36; height: 36
-            radius: 18
+            width: 36 * Theme.scale(Screen); height: 36 * Theme.scale(Screen)
+            radius: 18 * Theme.scale(Screen)
             border.color: Theme.accentPrimary
-            border.width: 1
+            border.width: 1 * Theme.scale(Screen)
             color: (typeof PowerProfiles !== 'undefined' && PowerProfiles.profile === PowerProfile.Performance)
                 ? Theme.accentPrimary
                 : (perfMouseArea.containsMouse ? Theme.accentPrimary : "transparent")
@@ -33,7 +33,7 @@ Rectangle {
                 anchors.centerIn: parent
                 text: "speed"
                 font.family: "Material Symbols Outlined"
-                font.pixelSize: 22
+                font.pixelSize: 22 * Theme.scale(Screen)
                 color: (typeof PowerProfiles !== 'undefined' && PowerProfiles.profile === PowerProfile.Performance) || perfMouseArea.containsMouse
                     ? Theme.backgroundPrimary
                     : Theme.accentPrimary
@@ -63,12 +63,12 @@ Rectangle {
             }
         }
 
-        // Balanced
+
         Rectangle {
-            width: 36; height: 36
-            radius: 18
+            width: 36 * Theme.scale(Screen); height: 36 * Theme.scale(Screen)
+            radius: 18 * Theme.scale(Screen)
             border.color: Theme.accentPrimary
-            border.width: 1
+            border.width: 1 * Theme.scale(Screen)
             color: (typeof PowerProfiles !== 'undefined' && PowerProfiles.profile === PowerProfile.Balanced)
                 ? Theme.accentPrimary
                 : (balMouseArea.containsMouse ? Theme.accentPrimary : "transparent")
@@ -79,7 +79,7 @@ Rectangle {
                 anchors.centerIn: parent
                 text: "balance"
                 font.family: "Material Symbols Outlined"
-                font.pixelSize: 22
+                font.pixelSize: 22 * Theme.scale(Screen)
                 color: (typeof PowerProfiles !== 'undefined' && PowerProfiles.profile === PowerProfile.Balanced) || balMouseArea.containsMouse
                     ? Theme.backgroundPrimary
                     : Theme.accentPrimary
@@ -109,12 +109,12 @@ Rectangle {
             }
         }
 
-        // Power Saver
+
         Rectangle {
-            width: 36; height: 36
-            radius: 18
+            width: 36 * Theme.scale(Screen); height: 36 * Theme.scale(Screen)
+            radius: 18 * Theme.scale(Screen)
             border.color: Theme.accentPrimary
-            border.width: 1
+            border.width: 1 * Theme.scale(Screen)
             color: (typeof PowerProfiles !== 'undefined' && PowerProfiles.profile === PowerProfile.PowerSaver)
                 ? Theme.accentPrimary
                 : (saveMouseArea.containsMouse ? Theme.accentPrimary : "transparent")
@@ -125,7 +125,7 @@ Rectangle {
                 anchors.centerIn: parent
                 text: "eco"
                 font.family: "Material Symbols Outlined"
-                font.pixelSize: 22
+                font.pixelSize: 22 * Theme.scale(Screen)
                 color: (typeof PowerProfiles !== 'undefined' && PowerProfiles.profile === PowerProfile.PowerSaver) || saveMouseArea.containsMouse
                     ? Theme.backgroundPrimary
                     : Theme.accentPrimary

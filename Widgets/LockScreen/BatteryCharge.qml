@@ -6,7 +6,7 @@ import qs.Components
 import qs.Settings
 
 Item {
-    // Test mode
+
     property bool testMode: false
     property int testPercent: 49
     property bool testCharging: true
@@ -21,7 +21,7 @@ Item {
     height: row.height
     visible: testMode || (isReady && battery.isLaptopBattery)
 
-    // Choose icon based on charge and charging state
+
     function batteryIcon() {
         if (!show)
             return "";
@@ -32,7 +32,7 @@ Item {
         if (percent >= 95)
             return "battery_android_full";
 
-        // Hardcoded battery symbols
+    
         if (percent >= 85)
             return "battery_android_6";
         if (percent >= 70)

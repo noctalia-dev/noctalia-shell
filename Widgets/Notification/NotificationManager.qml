@@ -14,7 +14,7 @@ PanelWindow {
     
     anchors.top: true
     anchors.right: true
-    margins.top: -20    // keep as you want
+            margins.top: -20
     margins.right: 6
 
     property var notifications: []
@@ -52,7 +52,7 @@ PanelWindow {
         anchors.right: parent.right
         spacing: window.spacing
         width: parent.width
-        clip: false    // prevent clipping during animation
+        clip: false // Prevent clipping during animation
 
         Repeater {
             model: notifications

@@ -9,7 +9,6 @@ Window {
     property Item targetItem: null
     property int delay: 300
 
-    // New property to control positioning: true => above, false => below
     property bool positionAbove: true
 
     flags: Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
@@ -34,8 +33,8 @@ Window {
     }
 
     function _showNow() {
-        width = Math.max(50, tooltipText.implicitWidth + 24)
-        height = Math.max(50, tooltipText.implicitHeight + 16)
+        width = Math.max(50 * Theme.scale(Screen), tooltipText.implicitWidth + 24 * Theme.scale(Screen))
+        height = Math.max(50 * Theme.scale(Screen), tooltipText.implicitHeight + 16 * Theme.scale(Screen))
 
         if (!targetItem) return;
 
@@ -76,10 +75,10 @@ Window {
 
     Rectangle {
         anchors.fill: parent
-        radius: 20
+        radius: 20 * Theme.scale(Screen)
         color: Theme.backgroundTertiary || "#222"
         border.color: Theme.outline || "#444"
-        border.width: 1
+        border.width: 1 * Theme.scale(Screen)
         opacity: 0.97
         z: 1
     }
@@ -89,7 +88,7 @@ Window {
         text: tooltipWindow.text
         color: Theme.textPrimary
         font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSizeSmall
+        font.pixelSize: Theme.fontSizeSmall * Theme.scale(Screen)
         anchors.centerIn: parent
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
@@ -106,7 +105,7 @@ Window {
     }
 
     onTextChanged: {
-        width = Math.max(minimumWidth, tooltipText.implicitWidth + 24);
-        height = Math.max(minimumHeight, tooltipText.implicitHeight + 16);
+        width = Math.max(minimumWidth * Theme.scale(Screen), tooltipText.implicitWidth + 24 * Theme.scale(Screen));
+        height = Math.max(minimumHeight * Theme.scale(Screen), tooltipText.implicitHeight + 16 * Theme.scale(Screen));
     }
 }
