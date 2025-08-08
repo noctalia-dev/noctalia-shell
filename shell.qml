@@ -111,6 +111,18 @@ Scope {
 
     }
 
+    Connections {
+        function onReloadCompleted() {
+            Quickshell.inhibitReloadPopup();
+        }
+
+        function onReloadFailed() {
+            Quickshell.inhibitReloadPopup();
+        }
+
+        target: Quickshell
+    }
+
     Loader {
         id: mainLoader
 
@@ -192,17 +204,7 @@ Scope {
                 notificationPopup: notificationPopup
             }
 
-            Connections {
-                function onReloadCompleted() {
-                    Quickshell.inhibitReloadPopup();
-                }
-
-                function onReloadFailed() {
-                    Quickshell.inhibitReloadPopup();
-                }
-
-                target: Quickshell
-            }
+            // moved reload popup suppression Connections to root scope so it is active outside Loader
 
             Connections {
                 // ^commented out for now to fix QS crash on monitor wake.
