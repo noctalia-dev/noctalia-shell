@@ -476,7 +476,7 @@ ColumnLayout {
                                                 // Apply only this monitor's scale
                                                 let current = Settings.settings.monitorScaleOverrides || {};
                                                 let merged = Object.assign({}, current);
-                                                merged[monitorCard.monitorName] = parent.currentValue;
+                                                merged[monitorCard.monitorName] = scaleSlider.value;
                                                 Settings.settings.monitorScaleOverrides = merged;
                                                 // Clear staged for this monitor
                                                 if (root.pendingScaleOverrides && root.pendingScaleOverrides.hasOwnProperty(monitorCard.monitorName)) {
