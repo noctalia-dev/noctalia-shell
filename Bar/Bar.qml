@@ -42,6 +42,9 @@ Scope {
                     anchors.left: true
                     anchors.right: true
                     visible: Settings.settings.barMonitors.includes(modelData.name) || (Settings.settings.barMonitors.length === 0)
+                    Component.onCompleted: {
+                        console.log("Bar initialized on " + screen.name);
+                    }
 
                     Rectangle {
                         id: barBackground
@@ -52,7 +55,6 @@ Scope {
                         anchors.top: parent.top
                         anchors.left: parent.left
                     }
-
 
                     Row {
                         id: leftWidgetsRow

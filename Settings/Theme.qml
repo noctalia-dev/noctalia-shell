@@ -13,7 +13,6 @@ Singleton {
     
     // Automatic scaling based on screen width
     function scale(currentScreen) {
-        return 1.0
         // Per-monitor override from settings
         try {
             const overrides = Settings.settings.monitorScaleOverrides || {};
@@ -23,11 +22,6 @@ Singleton {
         } catch (e) {
             // ignore
         }
-        // if (currentScreen && currentScreen.width != 0) {
-        //     var ratio = currentScreen.width / designScreenWidth;
-        //     // Limit the final scale range between [0.8...2]
-        //     return Math.max(0.8, Math.min(2.0, ratio));
-        // }
         return 1.0;
     }
 

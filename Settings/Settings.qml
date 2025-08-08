@@ -29,6 +29,7 @@ Singleton {
             reload()
         }
         onLoaded: function() {
+            console.log("--- Settings loaded ---");
             Qt.callLater(function () {
                 WallpaperManager.setCurrentWallpaper(settings.currentWallpaper, true);
             })
