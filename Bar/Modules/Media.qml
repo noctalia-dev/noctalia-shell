@@ -8,9 +8,11 @@ import qs.Services
 import qs.Components
 
 Item {
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
+
     id: mediaControl
     width: visible ? mediaRow.width : 0
-    height: 36 * Theme.scale(Screen)
+    height: 36 * Theme.scale(screen)
     visible: Settings.settings.showMediaInBar && MusicManager.currentPlayer
 
     RowLayout {
@@ -20,8 +22,8 @@ Item {
 
         Item {
             id: albumArtContainer
-            width: 24 * Theme.scale(Screen)
-            height: 24 * Theme.scale(Screen)
+            width: 24 * Theme.scale(screen)
+            height: 24 * Theme.scale(screen)
             Layout.alignment: Qt.AlignVCenter
 
             // Circular spectrum visualizer
@@ -29,8 +31,8 @@ Item {
                 id: spectrum
                 values: MusicManager.cavaValues
                 anchors.centerIn: parent
-                innerRadius: 10 * Theme.scale(Screen)
-                outerRadius: 18 * Theme.scale(Screen)
+                innerRadius: 10 * Theme.scale(screen)
+                outerRadius: 18 * Theme.scale(screen)
                 fillColor: Theme.accentPrimary
                 strokeColor: Theme.accentPrimary
                 strokeWidth: 0
@@ -40,8 +42,8 @@ Item {
             // Album art image
             Rectangle {
                 id: albumArtwork
-                width: 20 * Theme.scale(Screen)
-                height: 20 * Theme.scale(Screen)
+                width: 20 * Theme.scale(screen)
+                height: 20 * Theme.scale(screen)
                 anchors.centerIn: parent
                 radius: 12 // circle
                 color: Qt.darker(Theme.surface, 1.1)
@@ -79,7 +81,7 @@ Item {
                     anchors.centerIn: parent
                     text: "music_note"
                     font.family: "Material Symbols Outlined"
-                    font.pixelSize: 14 * Theme.scale(Screen)
+                    font.pixelSize: 14 * Theme.scale(screen)
                     color: Qt.rgba(Theme.textPrimary.r, Theme.textPrimary.g, Theme.textPrimary.b, 0.4)
                     visible: !albumArt.visible
                 }
@@ -96,7 +98,7 @@ Item {
                         anchors.centerIn: parent
                         text: MusicManager.isPlaying ? "pause" : "play_arrow"
                         font.family: "Material Symbols Outlined"
-                        font.pixelSize: 14 * Theme.scale(Screen)
+                        font.pixelSize: 14 * Theme.scale(screen)
                         color: "white"
                     }
                 }
@@ -117,7 +119,7 @@ Item {
             text: MusicManager.trackTitle + " - " + MusicManager.trackArtist
             color: Theme.textPrimary
             font.family: Theme.fontFamily
-            font.pixelSize: 12 * Theme.scale(Screen)
+            font.pixelSize: 12 * Theme.scale(screen)
             elide: Text.ElideRight
             Layout.maximumWidth: 300
             Layout.alignment: Qt.AlignVCenter

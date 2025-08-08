@@ -15,14 +15,15 @@ Row {
     spacing: 8
     Layout.alignment: Qt.AlignVCenter
 
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
     property bool containsMouse: false
     property var systemTray: SystemTray
 
     Repeater {
         model: systemTray.items
         delegate: Item {
-            width: 24 * Theme.scale(Screen)
-            height: 24 * Theme.scale(Screen)
+            width: 24 * Theme.scale(screen)
+            height: 24 * Theme.scale(screen)
 
             visible: modelData
             property bool isHovered: trayMouseArea.containsMouse
@@ -31,8 +32,8 @@ Row {
 
             Rectangle {
                 anchors.centerIn: parent
-                width: 16 * Theme.scale(Screen)
-                height: 16 * Theme.scale(Screen)
+                width: 16 * Theme.scale(screen)
+                height: 16 * Theme.scale(screen)
                 radius: 6
                 color: "transparent"
                 clip: true
@@ -40,8 +41,8 @@ Row {
                 IconImage {
                     id: trayIcon
                     anchors.centerIn: parent
-                    width: 16 * Theme.scale(Screen)
-                    height: 16 * Theme.scale(Screen)
+                    width: 16 * Theme.scale(screen)
+                    height: 16 * Theme.scale(screen)
                     smooth: false
                     asynchronous: true
                     backer.fillMode: Image.PreserveAspectFit
@@ -99,7 +100,7 @@ Row {
                         if (modelData.hasMenu && modelData.menu && trayMenu) {
                             // Anchor the menu to the tray icon item (parent) and position it below the icon
                             const menuX = (width / 2) - (trayMenu.width / 2);
-                            const menuY = height + 20 * Theme.scale(Screen);
+                            const menuY = height + 20 * Theme.scale(screen);
                             trayMenu.menu = modelData.menu;
                             trayMenu.showAt(parent, menuX, menuY);
                         } else

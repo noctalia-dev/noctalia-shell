@@ -6,9 +6,11 @@ import qs.Settings
 import qs.Components
 
 Rectangle {
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
+
     id: card
     color: Theme.surface
-    radius: 18 * Theme.scale(Screen)
+    radius: 18 * Theme.scale(screen)
 
     Row {
         anchors.horizontalCenter: parent.horizontalCenter

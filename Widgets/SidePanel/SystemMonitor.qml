@@ -12,12 +12,13 @@ Rectangle {
 
     // Track visibility state for panel integration
     property bool isVisible: false
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
 
     Rectangle {
         id: card
         anchors.fill: parent
         color: Theme.surface
-        radius: 18 * Theme.scale(Screen)
+        radius: 18 * Theme.scale(screen)
 
         ColumnLayout {
             anchors.fill: parent

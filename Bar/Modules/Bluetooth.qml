@@ -1,83 +1,91 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
 import Quickshell.Bluetooth
-import qs.Settings
+import Quickshell.Wayland
 import qs.Components
+import qs.Settings
 
 Item {
     id: root
+
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
+    property bool menuVisible: false
+
     width: Settings.settings.bluetoothEnabled ? 22 : 0
     height: Settings.settings.bluetoothEnabled ? 22 : 0
-
-    property bool menuVisible: false
 
     // Bluetooth icon/button
     Item {
         id: bluetoothIcon
-        width: 22; height: 22
-        visible: Settings.settings.bluetoothEnabled
 
-            // Check if any devices are currently connected
-    property bool hasConnectedDevices: {
-        if (!Bluetooth.defaultAdapter) return false;
-        
-        for (let i = 0; i < Bluetooth.defaultAdapter.devices.count; i++) {
-            if (Bluetooth.defaultAdapter.devices.valueAt(i).connected) {
-                return true;
+        // Check if any devices are currently connected
+        property bool hasConnectedDevices: {
+            if (!Bluetooth.defaultAdapter)
+                return false;
+
+            for (let i = 0; i < Bluetooth.defaultAdapter.devices.count; i++) {
+                if (Bluetooth.defaultAdapter.devices.valueAt(i).connected)
+                    return true;
+
             }
+            return false;
         }
-        return false;
-    }
+
+        width: 22
+        height: 22
+        visible: Settings.settings.bluetoothEnabled
 
         Text {
             id: bluetoothText
+
             anchors.centerIn: parent
             text: {
-                if (!Bluetooth.defaultAdapter || !Bluetooth.defaultAdapter.enabled) {
-                    return "bluetooth_disabled"
-                } else if (parent.hasConnectedDevices) {
-                    return "bluetooth_connected"
-                } else {
-                    return "bluetooth"
-                }
+                if (!Bluetooth.defaultAdapter || !Bluetooth.defaultAdapter.enabled)
+                    return "bluetooth_disabled";
+                else if (parent.hasConnectedDevices)
+                    return "bluetooth_connected";
+                else
+                    return "bluetooth";
             }
             font.family: mouseAreaBluetooth.containsMouse ? "Material Symbols Rounded" : "Material Symbols Outlined"
-            font.pixelSize: 16 * Theme.scale(Screen)
+            font.pixelSize: 16 * Theme.scale(screen)
             color: mouseAreaBluetooth.containsMouse ? Theme.accentPrimary : Theme.textPrimary
         }
 
         MouseArea {
             id: mouseAreaBluetooth
+
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-                if (!bluetoothMenuLoader.active) {
+                if (!bluetoothMenuLoader.active)
                     bluetoothMenuLoader.loading = true;
-                }
+
                 if (bluetoothMenuLoader.item) {
                     bluetoothMenuLoader.item.visible = !bluetoothMenuLoader.item.visible;
                     // Enable adapter and start discovery when menu opens
                     if (bluetoothMenuLoader.item.visible && Bluetooth.defaultAdapter) {
-                        if (!Bluetooth.defaultAdapter.enabled) {
+                        if (!Bluetooth.defaultAdapter.enabled)
                             Bluetooth.defaultAdapter.enabled = true;
-                        }
-                        if (!Bluetooth.defaultAdapter.discovering) {
+
+                        if (!Bluetooth.defaultAdapter.discovering)
                             Bluetooth.defaultAdapter.discovering = true;
-                        }
+
                     }
                 }
             }
             onEntered: bluetoothTooltip.tooltipVisible = true
             onExited: bluetoothTooltip.tooltipVisible = false
         }
+
     }
 
     StyledTooltip {
         id: bluetoothTooltip
+
         text: "Bluetooth Devices"
         positionAbove: false
         tooltipVisible: false
@@ -88,9 +96,12 @@ Item {
     // LazyLoader for Bluetooth menu
     LazyLoader {
         id: bluetoothMenuLoader
+
         loading: false
+
         component: PanelWindow {
             id: bluetoothMenu
+
             implicitWidth: 320
             implicitHeight: 480
             visible: false
@@ -100,12 +111,11 @@ Item {
             margins.right: 0
             margins.top: 0
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
-
             onVisibleChanged: {
                 // Stop discovery when menu closes to save battery
-                if (!visible && Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.discovering) {
+                if (!visible && Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.discovering)
                     Bluetooth.defaultAdapter.discovering = false;
-                }
+
             }
 
             Rectangle {
@@ -125,13 +135,13 @@ Item {
                         Text {
                             text: "bluetooth"
                             font.family: "Material Symbols Outlined"
-                            font.pixelSize: 24 * Theme.scale(Screen)
+                            font.pixelSize: 24 * Theme.scale(screen)
                             color: Theme.accentPrimary
                         }
 
                         Text {
                             text: "Bluetooth Devices"
-                            font.pixelSize: 18 * Theme.scale(Screen)
+                            font.pixelSize: 18 * Theme.scale(screen)
                             font.bold: true
                             color: Theme.textPrimary
                             Layout.fillWidth: true
@@ -141,22 +151,24 @@ Item {
                             icon: "close"
                             onClicked: {
                                 bluetoothMenu.visible = false;
-                                if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.discovering) {
+                                if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.discovering)
                                     Bluetooth.defaultAdapter.discovering = false;
-                                }
+
                             }
                         }
+
                     }
 
                     Rectangle {
                         Layout.fillWidth: true
-                        height: Math.max(4, 1 * Theme.scale(Screen))
+                        height: Math.max(4, 1 * Theme.scale(screen))
                         color: Theme.outline
                         opacity: 0.12
                     }
 
                     ListView {
                         id: deviceList
+
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         model: Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.devices : []
@@ -180,7 +192,7 @@ Item {
                                     Text {
                                         text: modelData.connected ? "bluetooth" : "bluetooth_disabled"
                                         font.family: "Material Symbols Outlined"
-                                        font.pixelSize: 18 * Theme.scale(Screen)
+                                        font.pixelSize: 18 * Theme.scale(screen)
                                         color: deviceMouseArea.containsMouse ? Theme.backgroundPrimary : (modelData.connected ? Theme.accentPrimary : Theme.textSecondary)
                                     }
 
@@ -193,13 +205,13 @@ Item {
                                                 let deviceName = modelData.name || modelData.deviceName || "Unknown Device";
                                                 // Hide MAC addresses and show "Unknown Device" instead
                                                 let macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
-                                                if (macPattern.test(deviceName)) {
+                                                if (macPattern.test(deviceName))
                                                     return "Unknown Device";
-                                                }
+
                                                 return deviceName;
                                             }
                                             color: deviceMouseArea.containsMouse ? Theme.backgroundPrimary : (modelData.connected ? Theme.accentPrimary : Theme.textPrimary)
-                                            font.pixelSize: 14 * Theme.scale(Screen)
+                                            font.pixelSize: 14 * Theme.scale(screen)
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
                                         }
@@ -208,19 +220,19 @@ Item {
                                             text: {
                                                 let deviceName = modelData.name || modelData.deviceName || "";
                                                 let macPattern = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
-                                                if (macPattern.test(deviceName)) {
+                                                if (macPattern.test(deviceName))
                                                     // Show MAC address in subtitle for unnamed devices
                                                     return modelData.address + " • " + (modelData.paired ? "Paired" : "Available");
-                                                } else {
+                                                else
                                                     // Show only status for named devices
                                                     return modelData.paired ? "Paired" : "Available";
-                                                }
                                             }
                                             color: deviceMouseArea.containsMouse ? Theme.backgroundPrimary : (modelData.connected ? Theme.accentPrimary : Theme.textSecondary)
-                                            font.pixelSize: 11 * Theme.scale(Screen)
+                                            font.pixelSize: 11 * Theme.scale(screen)
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
                                         }
+
                                     }
 
                                     Item {
@@ -235,26 +247,31 @@ Item {
                                             anchors.centerIn: parent
                                             size: 22
                                         }
+
                                     }
+
                                 }
 
                                 MouseArea {
                                     id: deviceMouseArea
+
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     onClicked: {
                                         // Handle device actions: disconnect, pair, or connect
-                                        if (modelData.connected) {
+                                        if (modelData.connected)
                                             modelData.disconnect();
-                                        } else if (!modelData.paired) {
+                                        else if (!modelData.paired)
                                             modelData.pair();
-                                        } else {
+                                        else
                                             modelData.connect();
-                                        }
                                     }
                                 }
+
                             }
+
                         }
+
                     }
 
                     // Discovering indicator
@@ -265,7 +282,7 @@ Item {
 
                         Text {
                             text: "Scanning for devices..."
-                            font.pixelSize: 12 * Theme.scale(Screen)
+                            font.pixelSize: 12 * Theme.scale(screen)
                             color: Theme.textSecondary
                         }
 
@@ -274,9 +291,15 @@ Item {
                             color: Theme.accentPrimary
                             size: 16
                         }
+
                     }
+
                 }
+
             }
+
         }
+
     }
+
 }

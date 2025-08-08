@@ -1,21 +1,23 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import qs.Settings
 import qs.Components
 import qs.Services
+import qs.Settings
 
 Item {
     id: root
-    width: Settings.settings.wifiEnabled ? 22 : 0
-    height: Settings.settings.wifiEnabled ? 22 : 0
 
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
     property bool menuVisible: false
     property string passwordPromptSsid: ""
     property string passwordInput: ""
     property bool showPasswordPrompt: false
+
+    width: Settings.settings.wifiEnabled ? 22 : 0
+    height: Settings.settings.wifiEnabled ? 22 : 0
 
     Network {
         id: network
@@ -24,21 +26,24 @@ Item {
     // WiFi icon/button
     Item {
         id: wifiIcon
-        width: 22; height: 22
-        visible: Settings.settings.wifiEnabled
 
         property int currentSignal: {
             let maxSignal = 0;
             for (const net in network.networks) {
-                if (network.networks[net].connected && network.networks[net].signal > maxSignal) {
+                if (network.networks[net].connected && network.networks[net].signal > maxSignal)
                     maxSignal = network.networks[net].signal;
-                }
+
             }
             return maxSignal;
         }
 
+        width: 22
+        height: 22
+        visible: Settings.settings.wifiEnabled
+
         Text {
             id: wifiText
+
             anchors.centerIn: parent
             text: {
                 let connected = false;
@@ -48,38 +53,40 @@ Item {
                         break;
                     }
                 }
-                return connected ? network.signalIcon(parent.currentSignal) : "wifi_off"
+                return connected ? network.signalIcon(parent.currentSignal) : "wifi_off";
             }
             font.family: mouseAreaWifi.containsMouse ? "Material Symbols Rounded" : "Material Symbols Outlined"
-            font.pixelSize: 16 * Theme.scale(Screen)
+            font.pixelSize: 16 * Theme.scale(screen)
             color: mouseAreaWifi.containsMouse ? Theme.accentPrimary : Theme.textPrimary
         }
 
         MouseArea {
             id: mouseAreaWifi
+
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-                if (!wifiMenuLoader.active) {
+                if (!wifiMenuLoader.active)
                     wifiMenuLoader.loading = true;
-                }
+
                 if (wifiMenuLoader.item) {
                     wifiMenuLoader.item.visible = !wifiMenuLoader.item.visible;
-                    if (wifiMenuLoader.item.visible) {
+                    if (wifiMenuLoader.item.visible)
                         network.onMenuOpened();
-                    } else {
+                    else
                         network.onMenuClosed();
-                    }
                 }
             }
             onEntered: wifiTooltip.tooltipVisible = true
             onExited: wifiTooltip.tooltipVisible = false
         }
+
     }
 
     StyledTooltip {
         id: wifiTooltip
+
         text: "WiFi Networks"
         positionAbove: false
         tooltipVisible: false
@@ -90,9 +97,12 @@ Item {
     // LazyLoader for WiFi menu
     LazyLoader {
         id: wifiMenuLoader
+
         loading: false
+
         component: PanelWindow {
             id: wifiMenu
+
             implicitWidth: 320
             implicitHeight: 480
             visible: false
@@ -120,13 +130,13 @@ Item {
                         Text {
                             text: "wifi"
                             font.family: "Material Symbols Outlined"
-                            font.pixelSize: 24 * Theme.scale(Screen)
+                            font.pixelSize: 24 * Theme.scale(screen)
                             color: Theme.accentPrimary
                         }
 
                         Text {
                             text: "WiFi Networks"
-                            font.pixelSize: 18 * Theme.scale(Screen)
+                            font.pixelSize: 18 * Theme.scale(screen)
                             font.bold: true
                             color: Theme.textPrimary
                             Layout.fillWidth: true
@@ -144,6 +154,7 @@ Item {
                                 network.onMenuClosed();
                             }
                         }
+
                     }
 
                     Rectangle {
@@ -155,6 +166,7 @@ Item {
 
                     ListView {
                         id: networkList
+
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         model: Object.values(network.networks)
@@ -183,7 +195,7 @@ Item {
                                         Text {
                                             text: network.signalIcon(modelData.signal)
                                             font.family: "Material Symbols Outlined"
-                                            font.pixelSize: 18 * Theme.scale(Screen)
+                                            font.pixelSize: 18 * Theme.scale(screen)
                                             color: networkMouseArea.containsMouse ? Theme.backgroundPrimary : (modelData.connected ? Theme.accentPrimary : Theme.textSecondary)
                                         }
 
@@ -194,7 +206,7 @@ Item {
                                             Text {
                                                 text: modelData.ssid || "Unknown Network"
                                                 color: networkMouseArea.containsMouse ? Theme.backgroundPrimary : (modelData.connected ? Theme.accentPrimary : Theme.textPrimary)
-                                                font.pixelSize: 14 * Theme.scale(Screen)
+                                                font.pixelSize: 14 * Theme.scale(screen)
                                                 elide: Text.ElideRight
                                                 Layout.fillWidth: true
                                             }
@@ -202,7 +214,7 @@ Item {
                                             Text {
                                                 text: modelData.security && modelData.security !== "--" ? modelData.security : "Open"
                                                 color: networkMouseArea.containsMouse ? Theme.backgroundPrimary : (modelData.connected ? Theme.accentPrimary : Theme.textSecondary)
-                                                font.pixelSize: 11 * Theme.scale(Screen)
+                                                font.pixelSize: 11 * Theme.scale(screen)
                                                 elide: Text.ElideRight
                                                 Layout.fillWidth: true
                                             }
@@ -211,10 +223,11 @@ Item {
                                                 visible: network.connectStatusSsid === modelData.ssid && network.connectStatus === "error" && network.connectError.length > 0
                                                 text: network.connectError
                                                 color: Theme.error
-                                                font.pixelSize: 11 * Theme.scale(Screen)
+                                                font.pixelSize: 11 * Theme.scale(screen)
                                                 elide: Text.ElideRight
                                                 Layout.fillWidth: true
                                             }
+
                                         }
 
                                         Item {
@@ -234,7 +247,7 @@ Item {
                                                 visible: network.connectStatus === "success" && !network.connectingSsid
                                                 text: "check_circle"
                                                 font.family: "Material Symbols Outlined"
-                                                font.pixelSize: 18 * Theme.scale(Screen)
+                                                font.pixelSize: 18 * Theme.scale(screen)
                                                 color: "#43a047"
                                                 anchors.centerIn: parent
                                             }
@@ -243,22 +256,25 @@ Item {
                                                 visible: network.connectStatus === "error" && !network.connectingSsid
                                                 text: "error"
                                                 font.family: "Material Symbols Outlined"
-                                                font.pixelSize: 18 * Theme.scale(Screen)
+                                                font.pixelSize: 18 * Theme.scale(screen)
                                                 color: Theme.error
                                                 anchors.centerIn: parent
                                             }
+
                                         }
 
                                         Text {
                                             visible: modelData.connected
                                             text: "connected"
                                             color: networkMouseArea.containsMouse ? Theme.backgroundPrimary : Theme.accentPrimary
-                                            font.pixelSize: 11 * Theme.scale(Screen)
+                                            font.pixelSize: 11 * Theme.scale(screen)
                                         }
+
                                     }
 
                                     MouseArea {
                                         id: networkMouseArea
+
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         onClicked: {
@@ -276,11 +292,13 @@ Item {
                                             }
                                         }
                                     }
+
                                 }
 
                                 // Password prompt section
                                 Rectangle {
                                     id: passwordPromptSection
+
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: modelData.ssid === passwordPromptSsid && showPasswordPrompt ? 60 : 0
                                     Layout.margins: 8
@@ -306,10 +324,11 @@ Item {
 
                                                 TextInput {
                                                     id: passwordInputField
+
                                                     anchors.fill: parent
                                                     anchors.margins: 12
                                                     text: passwordInput
-                                                    font.pixelSize: 13 * Theme.scale(Screen)
+                                                    font.pixelSize: 13 * Theme.scale(screen)
                                                     color: Theme.textPrimary
                                                     verticalAlignment: TextInput.AlignVCenter
                                                     clip: true
@@ -326,11 +345,15 @@ Item {
 
                                                     MouseArea {
                                                         id: passwordInputMouseArea
+
                                                         anchors.fill: parent
                                                         onClicked: passwordInputField.forceActiveFocus()
                                                     }
+
                                                 }
+
                                             }
+
                                         }
 
                                         Rectangle {
@@ -340,13 +363,7 @@ Item {
                                             color: Theme.accentPrimary
                                             border.color: Theme.accentPrimary
                                             border.width: 0
-                                            opacity: 1.0
-
-                                            Behavior on color {
-                                                ColorAnimation {
-                                                    duration: 100
-                                                }
-                                            }
+                                            opacity: 1
 
                                             MouseArea {
                                                 anchors.fill: parent
@@ -364,17 +381,35 @@ Item {
                                                 anchors.centerIn: parent
                                                 text: "Connect"
                                                 color: Theme.backgroundPrimary
-                                                font.pixelSize: 14 * Theme.scale(Screen)
+                                                font.pixelSize: 14 * Theme.scale(screen)
                                                 font.bold: true
                                             }
+
+                                            Behavior on color {
+                                                ColorAnimation {
+                                                    duration: 100
+                                                }
+
+                                            }
+
                                         }
+
                                     }
+
                                 }
+
                             }
+
                         }
+
                     }
+
                 }
+
             }
+
         }
+
     }
+
 }

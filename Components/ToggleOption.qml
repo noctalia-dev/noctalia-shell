@@ -7,7 +7,7 @@ import qs.Settings
 ColumnLayout {
     id: root
 
-    property var screen
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
 
     property string label: ""
     property string description: ""

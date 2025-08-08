@@ -10,7 +10,9 @@ import qs.Widgets.SettingsWindow
 // Record and Wallpaper card
 Rectangle {
     color: Theme.surface
-    radius: 18 * Theme.scale(Screen)
+    radius: 18 * Theme.scale(screen)
+
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
 
     Row {
         anchors.horizontalCenter: parent.horizontalCenter

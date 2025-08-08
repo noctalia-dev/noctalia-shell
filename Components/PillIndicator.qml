@@ -6,6 +6,7 @@ Item {
     id: revealPill
 
     // External properties
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
     property string icon: ""
     property string text: ""
     property color pillColor: Theme.surfaceVariant
@@ -13,8 +14,8 @@ Item {
     property color iconCircleColor: Theme.accentPrimary
     property color iconTextColor: Theme.backgroundPrimary
     property color collapsedIconColor: Theme.textPrimary
-    property int pillHeight: 22 * Theme.scale(Screen)
-    property int iconSize: 22 * Theme.scale(Screen)
+    property int pillHeight: 22 * Theme.scale(screen)
+    property int iconSize: 22 * Theme.scale(screen)
     property int pillPaddingHorizontal: 14
     property bool autoHide: false
 
@@ -47,7 +48,7 @@ Item {
             id: textItem
             anchors.centerIn: parent
             text: revealPill.text
-            font.pixelSize: Theme.fontSizeSmall * Theme.scale(Screen)
+            font.pixelSize: Theme.fontSizeSmall * Theme.scale(screen)
             font.family: Theme.fontFamily
             font.weight: Font.Bold
             color: textColor
@@ -89,7 +90,7 @@ Item {
         Text {
             anchors.centerIn: parent
             font.family: showPill ? "Material Symbols Rounded" : "Material Symbols Outlined"
-            font.pixelSize: Theme.fontSizeSmall * Theme.scale(Screen)
+            font.pixelSize: Theme.fontSizeSmall * Theme.scale(screen)
             text: revealPill.icon
             color: showPill ? iconTextColor : collapsedIconColor
         }

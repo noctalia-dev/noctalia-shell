@@ -13,12 +13,13 @@ Singleton {
         // Per-monitor override from settings
         try {
             const overrides = Settings.settings.monitorScaleOverrides || {};
-            if (currentScreen && currentScreen.name && overrides[currentScreen.name] !== undefined) {
+            if (currentScreen && currentScreen.name && overrides.hasOwnProperty(currentScreen.name)) {
                 return overrides[currentScreen.name];
             }
         } catch (e) {
             // ignore
         }
+        console.log("Oh no, returning default scale for: " + currentScreen.name);
         return 1.0;
     }
 
