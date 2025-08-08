@@ -4,7 +4,7 @@ import qs.Settings
 
 Item {
     id: buttonRoot
-    property Item barBackground
+
     property var screen
     width: iconText.implicitWidth + 0
     height: iconText.implicitHeight + 0
@@ -12,8 +12,6 @@ Item {
     property color hoverColor: Theme.rippleEffect
     property real hoverOpacity: 0.0
     property bool isActive: mouseArea.containsMouse || (sidebarPopup && sidebarPopup.visible)
-
-    property var sidebarPopup
 
     MouseArea {
         id: mouseArea

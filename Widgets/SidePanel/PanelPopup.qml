@@ -213,7 +213,11 @@ PanelWithOverlay {
                 System {
                     id: systemWidget
 
-                    width: 420 * Theme.scale(screen)
+                    width: {
+                        var w = 420 * Theme.scale(screen)
+                        console.log(Screen.name + ": " + w);
+                        return w;
+                    }
                     height: 80 * Theme.scale(screen)
                     settingsModal: settingsModal
                     Layout.alignment: Qt.AlignHCenter
@@ -245,7 +249,6 @@ PanelWithOverlay {
 
                 }
 
-
                 RowLayout {
                     spacing: 8 * Theme.scale(screen)
                     Layout.fillWidth: true
@@ -262,6 +265,7 @@ PanelWithOverlay {
                         height: 70 * Theme.scale(screen)
                         Layout.alignment: Qt.AlignVCenter
                     }
+
                 }
 
                 Rectangle {

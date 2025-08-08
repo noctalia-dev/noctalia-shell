@@ -151,15 +151,12 @@ Scope {
 
                         PanelPopup {
                             id: sidebarPopup
-
                             shell: rootScope.shell
                         }
 
-                        Button {
-                            barBackground: barBackground
+                        SidePanelButton {
                             anchors.verticalCenter: parent.verticalCenter
                             screen: modelData
-                            sidebarPopup: sidebarPopup
                         }
 
                     }
