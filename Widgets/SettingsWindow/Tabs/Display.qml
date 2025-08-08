@@ -27,8 +27,11 @@ ColumnLayout {
     anchors.fill: parent
     anchors.margins: 0
 
+        // Staged scale overrides; applied via the Apply button
+        property var pendingScaleOverrides: ({})
+
     function orientationToString(o) {
-        // Map common Qt orientations; fallback to string
+        // Map common Qt orientations
         if (o === Qt.LandscapeOrientation) return "Landscape";
         if (o === Qt.PortraitOrientation) return "Portrait";
         if (o === Qt.InvertedLandscapeOrientation) return "Inverted Landscape";
@@ -419,43 +422,78 @@ ColumnLayout {
                                 }
                             }
 
-                            // Scale slider (temporarily disabled)
-                            // ColumnLayout {
-                            //     Layout.fillWidth: true
-                            //     spacing: 4 * Theme.scale(screen)
-                            //     Text { text: "Scale"; color: Theme.textSecondary; font.pixelSize: 10 * Theme.scale(screen) }
-                            //     RowLayout {
-                            //         Layout.fillWidth: true
-                            //         spacing: 8 * Theme.scale(screen)
-                            //         // Value read from settings override, default to Theme.scale(modelData)
-                            //         property real currentValue: (Settings.settings.monitorScaleOverrides && Settings.settings.monitorScaleOverrides[monitorCard.monitorName] !== undefined) ? Settings.settings.monitorScaleOverrides[monitorCard.monitorName] : Theme.scale(modelData)
-                            //         // Reusable slider component (exact style from Wallpaper.qml)
-                            //         ThemedSlider {
-                            //             id: scaleSlider
-                            //             Layout.fillWidth: true
-                            //             screen: modelData
-                            //             cutoutColor: Theme.surface
-                            //             from: 0.8
-                            //             to: 2.0
-                            //             stepSize: 0.05
-                            //             snapAlways: true
-                            //             value: parent.currentValue
-                            //             onMoved: {
-                            //                 if (isFinite(value)) {
-                            //                     let overrides = Settings.settings.monitorScaleOverrides || {};
-                            //                     overrides = Object.assign({}, overrides);
-                            //                     overrides[monitorCard.monitorName] = value;
-                            //                     Settings.settings.monitorScaleOverrides = overrides;
-                            //                     parent.currentValue = value;
-                            //                 }
-                            //             }
-                            //         }
-                            //         Text { text: parent.currentValue.toFixed(2); font.pixelSize: 12 * Theme.scale(screen); color: Theme.textPrimary; width: 36 }
-                            //     }
-                            // }
+                            // Scale slider (staged; applied via Apply button)
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4 * Theme.scale(screen)
+                                Text { text: "Scale"; color: Theme.textSecondary; font.pixelSize: 10 * Theme.scale(screen) }
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8 * Theme.scale(screen)
+                                    // Value read from settings override, default to Theme.scale(modelData)
+                                    property real currentValue: (Settings.settings.monitorScaleOverrides && Settings.settings.monitorScaleOverrides[monitorCard.monitorName] !== undefined) ? Settings.settings.monitorScaleOverrides[monitorCard.monitorName] : Theme.scale(modelData)
+                                    // Reusable slider component (exact style from Wallpaper.qml)
+                                    ThemedSlider {
+                                        id: scaleSlider
+                                        Layout.fillWidth: true
+                                        screen: modelData
+                                        cutoutColor: Theme.surface
+                                        from: 0.8
+                                        to: 2.0
+                                        stepSize: 0.05
+                                        snapAlways: true
+                                        value: parent.currentValue
+                                        onMoved: {
+                                            if (isFinite(value)) {
+                                                // Stage value without writing to settings
+                                                let staged = Object.assign({}, root.pendingScaleOverrides || {});
+                                                staged[monitorCard.monitorName] = value;
+                                                root.pendingScaleOverrides = staged;
+                                                parent.currentValue = value;
+                                            }
+                                        }
+                                    }
+                                    Text { text: parent.currentValue.toFixed(2); font.pixelSize: 12 * Theme.scale(screen); color: Theme.textPrimary; width: 36 }
+                                    Rectangle {
+                                        id: perMonitorApply
+                                        width: 80 * Theme.scale(screen)
+                                        height: 28 * Theme.scale(screen)
+                                        radius: 14
+                                        color: Theme.accentPrimary
+                                        border.color: Theme.accentPrimary
+                                        border.width: 1
+                                        Layout.alignment: Qt.AlignRight
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "Apply"
+                                            font.pixelSize: 12 * Theme.scale(screen)
+                                            color: Theme.onAccent
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                // Apply only this monitor's scale
+                                                let current = Settings.settings.monitorScaleOverrides || {};
+                                                let merged = Object.assign({}, current);
+                                                merged[monitorCard.monitorName] = parent.currentValue;
+                                                Settings.settings.monitorScaleOverrides = merged;
+                                                // Clear staged for this monitor
+                                                if (root.pendingScaleOverrides && root.pendingScaleOverrides.hasOwnProperty(monitorCard.monitorName)) {
+                                                    let staged = Object.assign({}, root.pendingScaleOverrides);
+                                                    delete staged[monitorCard.monitorName];
+                                                    root.pendingScaleOverrides = staged;
+                                                }
+                                                Quickshell.reload(true);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+                // Apply-all button removed; per-monitor apply added next to each slider
             }
                 RowLayout {
                     visible: false
