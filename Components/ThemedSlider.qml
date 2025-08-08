@@ -6,8 +6,7 @@ import qs.Settings
 Slider {
     id: slider
 
-    // Defaults to using the screen that the slider is displayed on. Can be overridden
-    property var screen: Screen
+    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
     property bool snapAlways: true
 
     readonly property real trackHeight: 12 * Theme.scale(screen)

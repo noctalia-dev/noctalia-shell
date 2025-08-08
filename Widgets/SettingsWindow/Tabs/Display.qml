@@ -367,6 +367,7 @@ ColumnLayout {
 
                             // Bar toggle
                             ToggleOption {
+                                screen: Screen // force current screen
                                 label: "Bar"
                                 description: "Display the top bar on this monitor"
                                 value: monitorCard.barChecked
@@ -386,6 +387,7 @@ ColumnLayout {
 
                             // Dock toggle
                             ToggleOption {
+                                screen: Screen // force current screen
                                 label: "Dock"
                                 description: "Display the dock on this monitor"
                                 value: monitorCard.dockChecked
@@ -405,6 +407,7 @@ ColumnLayout {
 
                             // Notification toggle
                             ToggleOption {
+                                screen: Screen // force current screen
                                 label: "Notifications"
                                 description: "Display notifications on this monitor"
                                 value: monitorCard.notifChecked
@@ -448,6 +451,7 @@ ColumnLayout {
                                     // Reusable slider component (exact style from Wallpaper.qml)
                                     ThemedSlider {
                                         id: scaleSlider
+                                        screen: Screen // force current screen
                                         Layout.fillWidth: true
                                         cutoutColor: Theme.surface
                                         from: 0.8
