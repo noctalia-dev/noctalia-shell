@@ -12,11 +12,6 @@ Process {
     onStarted: {
         console.log("[IdleInhibitor] Process started - idle inhibited")
     }
-    
-    onExited: function(exitCode, exitStatus) {
-        console.log("[IdleInhibitor] Process finished:", exitCode)
-    }
-
 
     function start() {
         if (!running) {
