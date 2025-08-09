@@ -110,6 +110,11 @@ Scope {
                             id: externalTrayMenu
                         }
 
+                        IdleToggle {
+                            shell: rootScope.shell
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
                         NotificationIcon {
                             shell: rootScope.shell
                             anchors.verticalCenter: parent.verticalCenter
