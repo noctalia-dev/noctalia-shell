@@ -16,8 +16,9 @@ Item {
     IpcHandler {
         target: "globalIPC"
 
-        function toggleIdleInhibitor(): void {
+        function toggleIdleInhibitor(): bool {
             root.idleInhibitor.toggle()
+            return root.idleInhibitor.isRunning
         }
 
         function toggleNotificationPopup(): void {
