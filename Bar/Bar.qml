@@ -115,6 +115,12 @@ Scope {
                             shell: rootScope.shell
                             anchors.verticalCenter: parent.verticalCenter
                         }
+                        
+                        IdleToggle {
+                            shell: rootScope.shell
+                            screen: modelData
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
 
                         Wifi {
                             anchors.verticalCenter: parent.verticalCenter
