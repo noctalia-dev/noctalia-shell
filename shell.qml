@@ -25,6 +25,7 @@ Scope {
     // Reference to the default audio sink from Pipewire
     property var defaultAudioSink: Pipewire.defaultAudioSink
     property bool isReady: false
+    property alias mainLoaderRef: mainLoader
 
     // Function to load notification history
     function loadNotificationHistory() {
@@ -112,9 +113,11 @@ Scope {
         id: mainLoader
         
 
-        active: isReady
+        active: root.isReady
 
         sourceComponent: Item {
+            property alias idleInhibitorRef: idleInhibitor
+
             Overview {
             }
 
