@@ -49,6 +49,8 @@ Scope {
         volume = stepped;
     }
 
+    property alias idleInhibitorRef: idleInhibitor
+
     Component.onCompleted: {
         Quickshell.shell = root;
     }
