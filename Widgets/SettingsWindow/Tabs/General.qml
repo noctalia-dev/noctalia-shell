@@ -58,12 +58,12 @@ ColumnLayout {
                 Rectangle {
                     width: 48 * Theme.scale(screen)
                     height: 48 * Theme.scale(screen)
-                    radius: 24
+                    radius: 24 * Theme.scale(screen)
 
                     Rectangle {
                         anchors.fill: parent
                         color: "transparent"
-                        radius: 24
+                        radius: 24 * Theme.scale(screen)
                         border.color: profileImageInput.activeFocus ? Theme.accentPrimary : Theme.outline
                         border.width: 2 * Theme.scale(screen)
                         z: 2

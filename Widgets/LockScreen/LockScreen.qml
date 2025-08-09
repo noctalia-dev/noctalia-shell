@@ -156,15 +156,19 @@ WlSessionLock {
 
             Rectangle {
                 Layout.alignment: Qt.AlignHCenter
-                width: 80 * Theme.scale(Screen)
-                height: 80 * Theme.scale(Screen)
-                radius: 40
+                Layout.preferredWidth: 80 * Theme.scale(Screen)
+                Layout.preferredHeight: 80 * Theme.scale(Screen)
+                Layout.minimumWidth: 80 * Theme.scale(Screen)
+                Layout.minimumHeight: 80 * Theme.scale(Screen)
+                Layout.maximumWidth: 80 * Theme.scale(Screen)
+                Layout.maximumHeight: 80 * Theme.scale(Screen)
+                radius: width * 0.5
                 color: Theme.accentPrimary
 
                 Rectangle {
                     anchors.fill: parent
                     color: "transparent"
-                    radius: 40
+                    radius: width * 0.5
                     border.color: Theme.accentPrimary
                     border.width: 3 * Theme.scale(Screen)
                     z: 2

@@ -80,9 +80,14 @@ Rectangle {
                 spacing: 12 * Theme.scale(screen)
  
                 Rectangle {
-                    width: 48 * Theme.scale(screen)
-                    height: 48 * Theme.scale(screen)
-                    radius: 24 * Theme.scale(screen)
+                    // Use layout sizing inside RowLayout
+                    Layout.preferredWidth: 48 * Theme.scale(screen)
+                    Layout.preferredHeight: 48 * Theme.scale(screen)
+                    Layout.minimumWidth: 48 * Theme.scale(screen)
+                    Layout.minimumHeight: 48 * Theme.scale(screen)
+                    Layout.maximumWidth: 48 * Theme.scale(screen)
+                    Layout.maximumHeight: 48 * Theme.scale(screen)
+                    radius: width * 0.5
                     color: Theme.accentPrimary
  
                     Rectangle {

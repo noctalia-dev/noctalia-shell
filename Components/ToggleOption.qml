@@ -7,7 +7,8 @@ import qs.Settings
 ColumnLayout {
     id: root
 
-    property var screen
+    // Local scale convenience with safe fallback
+    readonly property real s: (typeof screen !== 'undefined' && screen) ? Theme.scale(screen) : 1.0
 
     property string label: ""
     property string description: ""
@@ -21,19 +22,19 @@ ColumnLayout {
         Layout.fillWidth: true
 
         ColumnLayout {
-            spacing: 4 * Theme.scale(screen)
+            spacing: 4 * s
             Layout.fillWidth: true
 
             Text {
                 text: label
-                font.pixelSize: 13 * Theme.scale(screen)
+                font.pixelSize: 13 * s
                 font.bold: true
                 color: Theme.textPrimary
             }
 
             Text {
                 text: description
-                font.pixelSize: 12 * Theme.scale(screen)
+                font.pixelSize: 12 * s
                 color: Theme.textSecondary
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
@@ -44,22 +45,22 @@ ColumnLayout {
         Rectangle {
             id: switcher
 
-            width: 52 * Theme.scale(screen)
-            height: 32 * Theme.scale(screen)
-            radius: 16
+            width: 52 * s
+            height: 32 * s
+            radius: height / 2
             color: value ? Theme.accentPrimary : Theme.surfaceVariant
             border.color: value ? Theme.accentPrimary : Theme.outline
-            border.width: 2 * Theme.scale(screen)
+            border.width: 2 * s
 
             Rectangle {
-                width: 28 * Theme.scale(screen)
-                height: 28 * Theme.scale(screen)
-                radius: 14
+                width: 28 * s
+                height: 28 * s
+                radius: height / 2
                 color: Theme.surface
                 border.color: Theme.outline
-                border.width: 1 * Theme.scale(screen)
-                y: 2
-                x: value ? switcher.width - width - 2 : 2
+                border.width: 1 * s
+                y: 2 * s
+                x: value ? switcher.width - width - 2 * s : 2 * s
 
                 Behavior on x {
                     NumberAnimation {
@@ -84,7 +85,7 @@ ColumnLayout {
     }
 
     Rectangle {
-        height: 8 * Theme.scale(screen)
+        height: 8 * s
     }
 
 }
