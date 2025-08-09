@@ -1,7 +1,7 @@
 import QtQuick
 import qs.Settings
 import qs.Components
-import Quickshell.Io
+import qs.Helpers
 
 Item {
     id: idleToggle
@@ -9,8 +9,8 @@ Item {
     // Provided by Bar
     property var shell
     property var screen: (typeof modelData !== 'undefined' ? modelData : null)
-
-    property bool inhibited: true
+    property IdleInhibitor inhibitor: idleToggle.shell.mainLoaderRef.item.idleInhibitorRef
+    property bool inhibited: inhibitor.isRunning
 
     width: 22
     height: 22
@@ -19,29 +19,11 @@ Item {
     Text {
         id: iconText
         anchors.centerIn: parent
-        text: idleToggle.inhibited ? "bedtime" : "wb_sunny"
+        text: idleToggle.inhibited ? "wb_sunny" : "bedtime"
         // Use filled vs outlined to indicate state
         font.family: (mouseArea.containsMouse || idleToggle.inhibited) ? "Material Symbols Rounded" : "Material Symbols Outlined"
         font.pixelSize: 16 * Theme.scale(screen)
         color: idleToggle.inhibited ? Theme.accentPrimary : (mouseArea.containsMouse ? Theme.accentPrimary : Theme.textPrimary)
-    }
-
-    Process {
-        id: executor
-        command: ["qs", "ipc", "call", "globalIPC", "toggleIdleInhibitor"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const out = text.trim();
-                if (out === "true" || out === "false") {
-                    idleToggle.inhibited = (out === "true");
-                } else {
-                    console.warn("[IdleToggle] Unexpected output:", out);
-                }
-            }
-        }
-        onExited: {
-            console.log("[IdleToggle] toggleLauncher finished");
-        }
     }
 
     // Tooltip
@@ -61,7 +43,7 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
-            executor.running = true;
+            idleToggle.inhibitor.toggle()
         }
     }
 }
