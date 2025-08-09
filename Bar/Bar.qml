@@ -41,10 +41,8 @@ Scope {
                     anchors.top: true
                     anchors.left: true
                     anchors.right: true
-                    visible: Settings.settings.barMonitors.includes(modelData.name) || (Settings.settings.barMonitors.length === 0)
-                    Component.onCompleted: {
-                        console.log("Bar initialized on " + screen.name);
-                    }
+                    visible: (Settings.settings.barMonitors.includes("*") ||
+                              Settings.settings.barMonitors.includes(modelData.name))
 
                     Rectangle {
                         id: barBackground
@@ -55,6 +53,7 @@ Scope {
                         anchors.top: parent.top
                         anchors.left: parent.left
                     }
+
 
                     Row {
                         id: leftWidgetsRow
@@ -151,12 +150,17 @@ Scope {
 
                         PanelPopup {
                             id: sidebarPopup
+
+                            // Ensure per-monitor scaling works inside the side panel
+                            screen: modelData
                             shell: rootScope.shell
                         }
 
-                        SidePanelButton {
+                        Button {
+                            barBackground: barBackground
                             anchors.verticalCenter: parent.verticalCenter
                             screen: modelData
+                            sidebarPopup: sidebarPopup
                         }
 
                     }
@@ -164,7 +168,9 @@ Scope {
                 }
 
                 Loader {
-                    active: Settings.settings.showCorners && (Settings.settings.barMonitors.includes(modelData.name) || (Settings.settings.barMonitors.length === 0))
+                    active: Settings.settings.showCorners &&
+                            (Settings.settings.barMonitors.includes("*") ||
+                             Settings.settings.barMonitors.includes(modelData.name))
 
                     sourceComponent: Item {
                         PanelWindow {
@@ -176,7 +182,7 @@ Scope {
                             screen: modelData
                             margins.top: 36 * Theme.scale(screen) - 1
                             WlrLayershell.exclusionMode: ExclusionMode.Ignore
-                            WlrLayershell.layer: WlrLayer.Top
+                            WlrLayershell.layer: WlrLayer.B
                             WlrLayershell.namespace: "swww-daemon"
                             aboveWindows: false
                             implicitHeight: 24
@@ -203,7 +209,7 @@ Scope {
                             screen: modelData
                             margins.top: 36 * Theme.scale(screen) - 1
                             WlrLayershell.exclusionMode: ExclusionMode.Ignore
-                            WlrLayershell.layer: WlrLayer.Top
+                            WlrLayershell.layer: WlrLayer.Bottom
                             WlrLayershell.namespace: "swww-daemon"
                             aboveWindows: false
                             implicitHeight: 24
@@ -229,7 +235,7 @@ Scope {
                             color: "transparent"
                             screen: modelData
                             WlrLayershell.exclusionMode: ExclusionMode.Ignore
-                            WlrLayershell.layer: WlrLayer.Top
+                            WlrLayershell.layer: WlrLayer.Bottom
                             WlrLayershell.namespace: "swww-daemon"
                             aboveWindows: false
                             implicitHeight: 24
@@ -255,7 +261,7 @@ Scope {
                             color: "transparent"
                             screen: modelData
                             WlrLayershell.exclusionMode: ExclusionMode.Ignore
-                            WlrLayershell.layer: WlrLayer.Top
+                            WlrLayershell.layer: WlrLayer.Bottom
                             WlrLayershell.namespace: "swww-daemon"
                             aboveWindows: false
                             implicitHeight: 24

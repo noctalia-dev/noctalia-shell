@@ -12,8 +12,6 @@ Item {
     height: Settings.settings.taskbarIconSize
     visible: Settings.settings.showTaskbar
 
-    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
-
     // Attach custom tooltip
     StyledTooltip {
         id: styledTooltip
@@ -85,7 +83,7 @@ Item {
                     visible: !appIcon.visible
                     text: appButton.appId ? appButton.appId.charAt(0).toUpperCase() : "?"
                     font.family: Theme.fontFamily
-                    font.pixelSize: Math.max(10, Settings.settings.taskbarIconSize * 0.4375 * Theme.scale(screen))
+                    font.pixelSize: Math.max(10, Settings.settings.taskbarIconSize * 0.4375 * Theme.scale(Screen))
                     font.bold: true
                     color: appButton.isActive ? Theme.onAccent : Theme.textPrimary
                 }

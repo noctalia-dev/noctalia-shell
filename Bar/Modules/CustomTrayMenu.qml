@@ -104,7 +104,7 @@ PopupWindow {
             Rectangle {
                 anchors.centerIn: parent;
                 width: parent.width - 20;
-                height: Math.max(1, 1 * Theme.scale(screen))
+                height: 1;
                 color: Qt.darker(Theme.backgroundPrimary || "#222", 1.4);
                 visible: modelData?.isSeparator ?? false;
             }
@@ -338,7 +338,7 @@ PopupWindow {
                     Rectangle {
                         anchors.centerIn: parent;
                         width: parent.width - 20;
-                        height: Math.max(1, 1 * Theme.scale(screen))
+                        height: 1;
                         color: Qt.darker(Theme.surfaceVariant || "#222", 1.4);
                         visible: modelData?.isSeparator ?? false;
                     }

@@ -6,7 +6,7 @@ import qs.Settings
 Slider {
     id: slider
 
-    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
+    property var screen
     property bool snapAlways: true
 
     readonly property real trackHeight: 12 * Theme.scale(screen)

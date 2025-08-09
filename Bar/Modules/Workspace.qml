@@ -21,26 +21,28 @@ Item {
     property bool effectsActive: false
     property color effectColor: Theme.accentPrimary
 
-    property int horizontalPadding: 16
-    property int spacingBetweenPills: 8
+    // Unified scale
+    property real s: Theme.scale(screen)
+    property int horizontalPadding: Math.round(16 * s)
+    property int spacingBetweenPills: Math.round(8 * s)
 
     width: {
         let total = 0;
         for (let i = 0; i < localWorkspaces.count; i++) {
             const ws = localWorkspaces.get(i);
             if (ws.isFocused)
-                total += 44;
+                total += Math.round(44 * s);
             else if (ws.isActive)
-                total += 28;
+                total += Math.round(28 * s);
             else
-                total += 16;
+                total += Math.round(16 * s);
         }
         total += Math.max(localWorkspaces.count - 1, 0) * spacingBetweenPills;
         total += horizontalPadding * 2;
         return total;
     }
 
-    height: 36 * Theme.scale(screen)
+    height: Math.round(36 * s)
 
     Component.onCompleted: {
         localWorkspaces.clear();
@@ -115,14 +117,14 @@ Item {
 
     Rectangle {
         id: workspaceBackground
-        width: parent.width - 15 * Theme.scale(screen)
-        height: 26 * Theme.scale(screen)
+        width: parent.width - Math.round(15 * s)
+        height: Math.round(26 * s)
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
-        radius: 12
+        radius: Math.round(12 * s)
         color: Theme.surfaceVariant
         border.color: Qt.rgba(Theme.textPrimary.r, Theme.textPrimary.g, Theme.textPrimary.b, 0.1)
-        border.width: 1 * Theme.scale(screen)
+        border.width: Math.max(1, Math.round(1 * s))
         layer.enabled: true
         layer.effect: MultiEffect {
             shadowColor: "black"
@@ -145,14 +147,14 @@ Item {
             model: localWorkspaces
             Item {
                 id: workspacePillContainer
-                height: 12 * Theme.scale(screen)
+                height: Math.round(12 * s)
                 width: {
                     if (model.isFocused)
-                        return 44;
+                        return Math.round(44 * s);
                     else if (model.isActive)
-                        return 28;
+                        return Math.round(28 * s);
                     else
-                        return 16;
+                        return Math.round(16 * s);
                 }
 
                 Rectangle {
@@ -160,10 +162,10 @@ Item {
                     anchors.fill: parent
                     radius: {
                         if (model.isFocused)
-                            return 12;
+                            return Math.round(12 * s);
                         else
                             // half of focused height (if you want to animate this too)
-                            return 6;
+                            return Math.round(6 * s);
                     }
                     color: {
                         if (model.isFocused)
@@ -250,7 +252,7 @@ Item {
                     radius: width / 2
                     color: "transparent"
                     border.color: root.effectColor
-                    border.width: (2 + 6 * (1.0 - root.masterProgress)) * Theme.scale(screen)
+                    border.width: Math.max(1, Math.round((2 + 6 * (1.0 - root.masterProgress)) * s))
                     opacity: root.effectsActive && model.isFocused ? (1.0 - root.masterProgress) * 0.7 : 0
                     visible: root.effectsActive && model.isFocused
                     z: 1

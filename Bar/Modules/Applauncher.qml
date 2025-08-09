@@ -15,7 +15,7 @@ PanelWithOverlay {
         id: clipboardTimer
         interval: 1000
         repeat: true
-        running: appLauncherPanel.visible && searchField.text.startsWith(">clip")
+        running: appLauncherPanel.visible
         onTriggered: {
             updateClipboardHistory();
         }
@@ -68,9 +68,14 @@ PanelWithOverlay {
                     };
                     
     
-                    // Always create a new image entry, even if identical to an existing one
-                    clipboardHistory = [entry].concat(clipboardHistory).slice(0, 20);
-                    root.updateFilter();
+                    const exists = clipboardHistory.find(item => 
+                        item.type === 'image' && item.data === entry.data
+                    );
+
+                    if (!exists) {
+                        clipboardHistory = [entry, ...clipboardHistory].slice(0, 20);
+                        root.updateFilter();
+                    }
                 }
             }
             
@@ -90,7 +95,9 @@ PanelWithOverlay {
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 0) {
                 const content = String(stdout.text).trim();
-                if (content && !content.startsWith("vscode-file://")) {
+                // Only filter out self path to avoid capturing this file
+                const isSelfPath = content.indexOf("/home/lysec/.config/quickshell/Bar/Modules/Applauncher.qml") !== -1;
+                if (content && !isSelfPath) {
                     const entry = {
                         type: 'text',
                         content: content,
@@ -98,19 +105,29 @@ PanelWithOverlay {
                     };
 
     
-                    var newHistory = clipboardHistory.map(item => {
-                        if (typeof item === 'string') {
-                            return {
-                                type: 'text',
-                                content: item,
-                                timestamp: 0
-                            };
+                    const exists = clipboardHistory.find(item => {
+                        if (item.type === 'text') {
+                            return item.content === content;
                         }
-                        return item;
+        
+                        return item === content;
                     });
 
-                    // Always add a new text entry, even if content matches an existing entry
-                    clipboardHistory = [entry].concat(newHistory).slice(0, 20);
+                    if (!exists) {
+        
+                        const newHistory = clipboardHistory.map(item => {
+                            if (typeof item === 'string') {
+                                return {
+                                    type: 'text',
+                                    content: item,
+                                    timestamp: new Date().getTime()
+                                };
+                            }
+                            return item;
+                        });
+                        
+                        clipboardHistory = [entry, ...newHistory].slice(0, 20);
+                    }
                 }
             } else {
 
@@ -121,6 +138,101 @@ PanelWithOverlay {
             root.updateFilter();
         }
 
+        stdout: StdioCollector {}
+    }
+
+    Process {
+        id: clipboardImageCopyProcess
+        property string mimeType: ""
+        property string pendingBase64: ""
+        // Simple FIFO queue for repeated copy requests
+        property var queue: []
+        stdinEnabled: true
+
+        command: [
+            "sh",
+            "-c",
+            "base64 -d | wl-copy -t '" + mimeType + "'"
+        ]
+        function copyBase64(mime, base64) {
+            // If a copy is in progress or pending, queue the next request
+            if (running || (pendingBase64 && pendingBase64.length > 0)) {
+                var q = queue.slice();
+                q.push({ mime: mime, base64: base64 });
+                queue = q;
+                return;
+            }
+            mimeType = mime;
+            pendingBase64 = base64;
+            running = true;
+        }
+        onStarted: {
+            // ensure stdin is open for each new run
+            stdinEnabled = true;
+            if (pendingBase64 && pendingBase64.length > 0) {
+                write(pendingBase64);
+            }
+            // Close stdin to signal EOF so base64 exits
+            stdinEnabled = false;
+        }
+        onExited: (exitCode, exitStatus) => {
+            pendingBase64 = "";
+            // re-open stdin for the next run so we can copy repeatedly
+            stdinEnabled = true;
+            if (queue.length > 0) {
+                var next = queue[0];
+                // pop front
+                var q2 = queue.slice(1);
+                queue = q2;
+                mimeType = next.mime;
+                pendingBase64 = next.base64;
+                running = true;
+            }
+        }
+        stdout: StdioCollector {}
+    }
+
+    // Process to copy arbitrary text via stdin to avoid quoting/ARG_MAX issues
+    Process {
+        id: clipboardTextCopyProcess
+        property string pendingText: ""
+        property var queue: []
+        stdinEnabled: true
+
+        command: [
+            "sh",
+            "-c",
+            "cat | wl-copy -t text/plain;charset=utf-8"
+        ]
+
+        function copyText(text) {
+            if (running || (pendingText && pendingText.length > 0)) {
+                var q = queue.slice();
+                q.push(text);
+                queue = q;
+                return;
+            }
+            pendingText = text;
+            running = true;
+        }
+
+        onStarted: {
+            stdinEnabled = true;
+            if (pendingText && pendingText.length > 0) {
+                write(pendingText);
+            }
+            stdinEnabled = false;
+        }
+        onExited: (exitCode, exitStatus) => {
+            pendingText = "";
+            stdinEnabled = true;
+            if (queue.length > 0) {
+                var next = queue[0];
+                queue = queue.slice(1);
+                pendingText = next;
+                running = true;
+            }
+        }
         stdout: StdioCollector {}
     }
 
@@ -187,6 +299,8 @@ PanelWithOverlay {
             root.selectedIndex = 0;
             root.appModel = DesktopEntries.applications.values;
             root.updateFilter();
+            // Start clipboard refresh immediately on open so >clip is ready
+            updateClipboardHistory();
         }
 
         function hidePanel() {
@@ -301,10 +415,10 @@ PanelWithOverlay {
                                     type: 'image',
                                     data: clip.data,
                                     execute: function() {
-                                        // Convert base64 image data back to binary and copy to clipboard
+                                        // Restore image via stdin to avoid command-length limits
                                         const base64Data = clip.data.split(',')[1];
-                                        clipboardTypeProcess.command = ["sh", "-c", `echo '${base64Data}' | base64 -d | wl-copy -t '${clip.mimeType}'`];
-                                        clipboardTypeProcess.running = true;
+                                        clipboardImageCopyProcess.copyBase64(clip.mimeType, base64Data);
+                                        Quickshell.execDetached(["notify-send", "Clipboard", "Image copied: " + clip.mimeType]);
                                     }
                                 };
                             } else {
@@ -328,7 +442,11 @@ PanelWithOverlay {
                                     content: previewContent || textContent,
                                     icon: "content_paste",
                                     execute: function() {
-                                        Quickshell.execDetached(["sh", "-c", "echo -n '" + textContent.replace(/'/g, "'\\''") + "' | wl-copy"]);
+                                        // Set Quickshell clipboard as primary path; also stream to wl-copy for system clipboard
+                                        Quickshell.clipboardText = String(textContent);
+                                        clipboardTextCopyProcess.copyText(String(textContent));
+                                        var preview = (textContent.length > 50) ? textContent.slice(0,50) + "…" : textContent;
+                                        Quickshell.execDetached(["notify-send", "Clipboard", "Text copied: " + preview]);
                                     }
                                 };
                             }

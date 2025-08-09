@@ -7,7 +7,7 @@ import qs.Settings
 ColumnLayout {
     id: root
 
-    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
+    property var screen
 
     property string label: ""
     property string description: ""
@@ -46,7 +46,7 @@ ColumnLayout {
 
             width: 52 * Theme.scale(screen)
             height: 32 * Theme.scale(screen)
-            radius: width * 0.5
+            radius: 16
             color: value ? Theme.accentPrimary : Theme.surfaceVariant
             border.color: value ? Theme.accentPrimary : Theme.outline
             border.width: 2 * Theme.scale(screen)
@@ -54,11 +54,11 @@ ColumnLayout {
             Rectangle {
                 width: 28 * Theme.scale(screen)
                 height: 28 * Theme.scale(screen)
-                radius: width * 0.5
+                radius: 14
                 color: Theme.surface
                 border.color: Theme.outline
                 border.width: 1 * Theme.scale(screen)
-                y: 2* Theme.scale(screen)
+                y: 2
                 x: value ? switcher.width - width - 2 : 2
 
                 Behavior on x {

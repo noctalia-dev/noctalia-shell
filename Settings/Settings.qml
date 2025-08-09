@@ -29,9 +29,25 @@ Singleton {
             reload()
         }
         onLoaded: function() {
-            console.log("--- Settings loaded ---");
             Qt.callLater(function () {
                 WallpaperManager.setCurrentWallpaper(settings.currentWallpaper, true);
+                // One-time migration: normalize old configs where empty arrays meant "all".
+                try {
+                    if (settings.monitorListsNormalized !== true) {
+                        if (!Array.isArray(settings.barMonitors) || settings.barMonitors.length === 0) {
+                            settings.barMonitors = ["*"]
+                        }
+                        if (!Array.isArray(settings.dockMonitors) || settings.dockMonitors.length === 0) {
+                            settings.dockMonitors = ["*"]
+                        }
+                        if (!Array.isArray(settings.notificationMonitors) || settings.notificationMonitors.length === 0) {
+                            settings.notificationMonitors = ["*"]
+                        }
+                        settings.monitorListsNormalized = true
+                    }
+                } catch (e) {
+                    console.warn("Failed to normalize monitor lists:", e)
+                }
             })
         }
         onLoadFailed: function(error) {
@@ -40,6 +56,8 @@ Singleton {
         }
         JsonAdapter {
             id: settingAdapter
+            // Marks that legacy monitor arrays have been normalized
+            property bool monitorListsNormalized: false
             property string weatherCity: "Dinslaken"
             property string profileImage: Quickshell.env("HOME") + "/.face"
             property bool useFahrenheit: false
@@ -80,9 +98,10 @@ Singleton {
             property string colorRange: "limited"
             
             // Monitor/Display Settings
-            property var barMonitors: [] // Array of monitor names to show the bar on
-            property var dockMonitors: [] // Array of monitor names to show the dock on
-            property var notificationMonitors: [] // Array of monitor names to show notifications on, "*" means all monitors
+            // Use ["*"] to represent "all monitors". Use [] to represent "none".
+            property var barMonitors: ["*"]
+            property var dockMonitors: ["*"]
+            property var notificationMonitors: ["*"]
             property var monitorScaleOverrides: {} // Map of monitor name -> scale override (e.g., 0.8..2.0). When set, Theme.scale() returns this value
         }
     }

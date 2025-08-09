@@ -4,8 +4,8 @@ import qs.Settings
 
 Item {
     id: root
-
-    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
+    // Provide a screen context for Theme.scale
+    property var screen
     property int innerRadius: 34 * Theme.scale(screen)
     property int outerRadius: 48 * Theme.scale(screen)
     property color fillColor: "#fff"
@@ -16,17 +16,16 @@ Item {
 
     width: usableOuter * 2
     height: usableOuter * 2
+
     onOuterRadiusChanged: () => {
         usableOuter = Settings.settings.visualizerType === "fire" ? outerRadius * 0.85 : outerRadius;
     }
 
     Repeater {
         model: root.values.length
-
         Rectangle {
             property real value: root.values[index]
             property real angle: (index / root.values.length) * 360
-
             width: Math.max(2 * Theme.scale(screen), (root.innerRadius * 2 * Math.PI) / root.values.length - 4 * Theme.scale(screen))
             height: Settings.settings.visualizerType === "diamond" ? value * 2 * (usableOuter - root.innerRadius) : value * (usableOuter - root.innerRadius)
             radius: width / 2
@@ -34,7 +33,9 @@ Item {
             border.color: root.strokeColor
             border.width: root.strokeWidth
             antialiasing: true
+
             x: Settings.settings.visualizerType === "radial" ? root.width / 2 - width / 2 : root.width / 2 + root.innerRadius * Math.cos(Math.PI / 2 + 2 * Math.PI * index / root.values.length) - width / 2
+
             y: Settings.settings.visualizerType === "radial" ? root.height / 2 - height : Settings.settings.visualizerType === "diamond" ? root.height / 2 - root.innerRadius * Math.sin(Math.PI / 2 + 2 * Math.PI * index / root.values.length) - height / 2 : root.height / 2 - root.innerRadius * Math.sin(Math.PI / 2 + 2 * Math.PI * index / root.values.length) - height
             transform: [
                 Rotation {
@@ -52,11 +53,7 @@ Item {
                 SmoothedAnimation {
                     duration: 120
                 }
-
             }
-
         }
-
     }
-
 }

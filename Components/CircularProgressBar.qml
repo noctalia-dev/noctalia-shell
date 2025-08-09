@@ -9,11 +9,12 @@ Rectangle {
     property int size: 80
     property color backgroundColor: Theme.surfaceVariant
     property color progressColor: Theme.accentPrimary
-    property int strokeWidth: 6 * Theme.scale(screen)
+    // Scale stroke with Theme.scale if a screen is passed through parent context; else default 6
+    property int strokeWidth: 6 * (typeof screen !== 'undefined' && screen ? Theme.scale(screen) : 1.0)
     property bool showText: true
     property string units: "%"
     property string text: Math.round(progress * 100) + units
-    property int textSize: 10 * Theme.scale(screen)
+    property int textSize: 10 * (typeof screen !== 'undefined' && screen ? Theme.scale(screen) : 1.0)
     property color textColor: Theme.textPrimary
     
     // Notch properties
