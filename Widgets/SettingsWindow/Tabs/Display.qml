@@ -493,7 +493,7 @@ ColumnLayout {
                                     ThemedSlider {
                                         id: scaleSlider
                                         Layout.fillWidth: true
-                                        screen: modelData
+                                        screen: screen
                                         cutoutColor: Theme.surface
                                         from: 0.8
                                         to: 2.0

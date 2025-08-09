@@ -94,8 +94,7 @@ Rectangle {
                         z: 2
                     }
  
-                    Avatar {
-                    }
+                    Avatar {}
  
                 }
  

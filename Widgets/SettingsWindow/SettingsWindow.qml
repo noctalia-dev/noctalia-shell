@@ -230,7 +230,7 @@ PanelWithOverlay {
                         Rectangle {
                             width: 160 * Theme.scale(screen)
                             height: 32 * Theme.scale(screen)
-                            radius: 16
+                            radius: 16 * Theme.scale(screen)
                             color: wallpaperButtonArea.containsMouse ? Theme.accentPrimary : "transparent"
                             border.color: Theme.accentPrimary
                             border.width: 1 * Theme.scale(screen)
@@ -275,7 +275,7 @@ PanelWithOverlay {
                         Rectangle {
                             width: 32 * Theme.scale(screen)
                             height: 32 * Theme.scale(screen)
-                            radius: 16
+                            radius: 16 * Theme.scale(screen)
                             color: closeButtonArea.containsMouse ? Theme.accentPrimary : "transparent"
                             border.color: Theme.accentPrimary
                             border.width: 1 * Theme.scale(screen)
