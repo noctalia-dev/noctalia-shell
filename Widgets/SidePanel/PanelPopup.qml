@@ -11,6 +11,8 @@ PanelWithOverlay {
     id: sidebarPopup
 
     property var shell: null
+    // Screen context for scaling passed down from Bar/Bar.qml
+    property var screen
 
     function showAt() {
         sidebarPopupRect.showAt();
@@ -44,8 +46,11 @@ PanelWithOverlay {
 
         property real slideOffset: width
         property bool isAnimating: false
-        property int leftPadding: 20 * Theme.scale(screen)
-        property int bottomPadding: 20 * Theme.scale(screen)
+        // Unified scale context and padding for the panel
+        readonly property real scale: Theme.scale(sidebarPopup.screen)
+        readonly property int padding: Math.round(16 * scale)
+        readonly property int topPadding: padding
+        readonly property int bottomPadding: Math.round(padding * 0.6)
         // Recording properties
         property bool isRecording: false
 
@@ -113,8 +118,12 @@ PanelWithOverlay {
             isRecording = false;
         }
 
-        width: 480 * Theme.scale(screen)
-        height: 660 * Theme.scale(screen)
+        width: {
+            const maxW = (screen ? screen.width : 1920) * 0.5
+            const base = 420 * scale
+            return Math.round(Math.min(Math.max(360 * scale, base), maxW))
+        }
+        height: contentCol.implicitHeight + topPadding + bottomPadding
         visible: parent.visible
         color: "transparent"
         anchors.top: parent.top
@@ -170,13 +179,12 @@ PanelWithOverlay {
         Rectangle {
             id: mainRectangle
 
-            // anchors.top: sidebarPopupRect.top
-            width: sidebarPopupRect.width - sidebarPopupRect.leftPadding
-            height: sidebarPopupRect.height - sidebarPopupRect.bottomPadding
-            x: sidebarPopupRect.leftPadding + sidebarPopupRect.slideOffset
+            width: sidebarPopupRect.width
+            height: contentCol.implicitHeight + sidebarPopupRect.topPadding + sidebarPopupRect.bottomPadding
+            x: sidebarPopupRect.slideOffset
             y: 0
             color: Theme.backgroundPrimary
-            bottomLeftRadius: 20
+            bottomLeftRadius: Math.round(20 * sidebarPopupRect.scale)
 
             Behavior on x {
                 enabled: !sidebarPopupRect.isAnimating
@@ -203,76 +211,79 @@ PanelWithOverlay {
 
         Item {
             anchors.fill: mainRectangle
-            x: sidebarPopupRect.slideOffset
             Keys.onEscapePressed: sidebarPopupRect.hidePopup()
 
             ColumnLayout {
+                id: contentCol
                 anchors.fill: parent
-                spacing: 8 * Theme.scale(screen)
+                anchors.leftMargin: sidebarPopupRect.topPadding
+                anchors.topMargin: sidebarPopupRect.topPadding
+                anchors.rightMargin: sidebarPopupRect.topPadding
+                anchors.bottomMargin: sidebarPopupRect.bottomPadding
+                spacing: Math.round(8 * sidebarPopupRect.scale)
 
-                System {
-                    id: systemWidget
-                    width: {
-                        var w = 420;
-                        var s = Theme.scale(screen);
-                        var finalWidth = w * s;
-                        console.log("[" + screen.name + "] w:" + finalWidth + " s: " + s);
-                        return finalWidth;
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.round(80 * sidebarPopupRect.scale)
+                    System {
+                        id: systemWidget
+                        anchors.fill: parent
+                        // Pass screen to enable per-monitor scaling inside
+                        screen: sidebarPopup.screen
+                        settingsModal: settingsModal
                     }
-                    height: 80 * Theme.scale(screen)
-                    settingsModal: settingsModal
-                    Layout.alignment: Qt.AlignHCenter
                 }
 
-                Weather {
-                    id: weather
-
-                    width: 420 * Theme.scale(screen)
-                    height: 180 * Theme.scale(screen)
-                    Layout.alignment: Qt.AlignHCenter
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.round(180 * sidebarPopupRect.scale)
+                    Weather {
+                        id: weather
+                        anchors.fill: parent
+                        // Weather uses Theme.scale(Screen); keep default
+                    }
                 }
 
                 // Music and System Monitor row
                 RowLayout {
-                    spacing: 8 * Theme.scale(screen)
+                    spacing: Math.round(8 * sidebarPopupRect.scale)
                     Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignHCenter
 
                     Music {
-                        width: 332 * Theme.scale(screen)
-                        height: 250 * Theme.scale(screen)
+                        screen: sidebarPopup.screen
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.round(250 * sidebarPopupRect.scale)
                     }
 
                     SystemMonitor {
-                        width: 80 * Theme.scale(screen)
-                        height: 250 * Theme.scale(screen)
+                        screen: sidebarPopup.screen
+                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                        // Size to content so it stays within its card across scales
+                        Layout.preferredWidth: implicitWidth
+                        Layout.preferredHeight: implicitHeight
                     }
 
                 }
 
+
                 RowLayout {
-                    spacing: 8 * Theme.scale(screen)
+                    spacing: Math.round(8 * sidebarPopupRect.scale)
                     Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignHCenter
 
                     PowerProfile {
-                        width: 206 * Theme.scale(screen)
-                        height: 70 * Theme.scale(screen)
-                        Layout.alignment: Qt.AlignVCenter
+                        screen: sidebarPopup.screen
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.round(70 * sidebarPopupRect.scale)
                     }
 
                     Shortcuts {
-                        width: 206 * Theme.scale(screen)
-                        height: 70 * Theme.scale(screen)
-                        Layout.alignment: Qt.AlignVCenter
+                        screen: sidebarPopup.screen
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.round(70 * sidebarPopupRect.scale)
                     }
-
                 }
 
-                Rectangle {
-                    height: 8 * Theme.scale(screen)
-                    color: "transparent"
-                }
+                Rectangle { height: Math.round(4 * sidebarPopupRect.scale); color: "transparent" }
 
             }
 

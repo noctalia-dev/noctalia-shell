@@ -35,9 +35,9 @@ Variants {
         PanelWindow {
 
             id: dockWindow
-            visible: Settings.settings.showDock && 
-                    (Settings.settings.dockMonitors.includes(modelData.name) ||
-                                        (Settings.settings.dockMonitors.length === 0))
+            visible: Settings.settings.showDock &&
+                     (Settings.settings.dockMonitors.includes("*") ||
+                      Settings.settings.dockMonitors.includes(modelData.name))
             screen: modelData
             exclusionMode: ExclusionMode.Ignore
             anchors.bottom: true
@@ -75,7 +75,7 @@ Variants {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                height: 10 * Theme.scale(dockWindow.screen)
+                height: 10
                 hoverEnabled: true
                 propagateComposedEvents: true
 

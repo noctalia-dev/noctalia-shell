@@ -27,11 +27,8 @@ ColumnLayout {
     anchors.fill: parent
     anchors.margins: 0
 
-        // Staged scale overrides; applied via the Apply button
-        property var pendingScaleOverrides: ({})
-
     function orientationToString(o) {
-        // Map common Qt orientations
+        // Map common Qt orientations; fallback to string
         if (o === Qt.LandscapeOrientation) return "Landscape";
         if (o === Qt.PortraitOrientation) return "Portrait";
         if (o === Qt.InvertedLandscapeOrientation) return "Inverted Landscape";
@@ -304,11 +301,20 @@ ColumnLayout {
                     model: root.sortedMonitors
                     delegate: Rectangle {
                         id: monitorCard
-                        // Stable local state per monitor to avoid binding glitches
                         property string monitorName: modelData.name || ""
-                        property bool barChecked: (Settings.settings.barMonitors || []).includes(monitorName)
-                        property bool dockChecked: (Settings.settings.dockMonitors || []).includes(monitorName)
-                        property bool notifChecked: (Settings.settings.notificationMonitors || []).includes(monitorName)
+                        // Treat empty lists as "all monitors" so toggles reflect reality
+                        property bool barChecked: {
+                            const list = Settings.settings.barMonitors || []
+                            return list.includes("*") || list.includes(monitorName)
+                        }
+                        property bool dockChecked: {
+                            const list = Settings.settings.dockMonitors || []
+                            return list.includes("*") || list.includes(monitorName)
+                        }
+                        property bool notifChecked: {
+                            const list = Settings.settings.notificationMonitors || []
+                            return list.includes("*") || list.includes(monitorName)
+                        }
                         Layout.fillWidth: true
                         radius: 12 * Theme.scale(screen)
                         color: Theme.surface
@@ -367,65 +373,105 @@ ColumnLayout {
 
                             // Bar toggle
                             ToggleOption {
-                                screen: Screen // force current screen
                                 label: "Bar"
                                 description: "Display the top bar on this monitor"
                                 value: monitorCard.barChecked
                                 onToggled: function() {
-                                    let monitors = Settings.settings.barMonitors || [];
-                                    monitors = [...monitors];
-                                    if (!monitorCard.barChecked) {
-                                        if (!monitors.includes(monitorCard.monitorName)) monitors.push(monitorCard.monitorName);
-                                        monitorCard.barChecked = true;
-                                    } else {
-                                        monitors = monitors.filter(name => name !== monitorCard.monitorName);
-                                        monitorCard.barChecked = false;
+                                    let monitors = Settings.settings.barMonitors || []
+                                    monitors = [...monitors]
+                                    const name = monitorCard.monitorName
+                                    const allNames = (root.sortedMonitors || []).map(m => m.name).filter(n => !!n)
+                                    const isSingle = allNames.length <= 1
+                                    const isAll = monitors.includes("*")
+                                    const isOn = isAll || monitors.includes(name)
+
+                                    if (isSingle) {
+                                        Settings.settings.barMonitors = isOn ? [] : ["*"]
+                                        return
                                     }
-                                    Settings.settings.barMonitors = monitors;
+
+                                    if (isOn) {
+                                        if (isAll) {
+                                            // From all -> all except this one
+                                            monitors = allNames.filter(n => n !== name)
+                                        } else {
+                                            monitors = monitors.filter(n => n !== name)
+                                        }
+                                    } else {
+                                        if (!monitors.includes(name)) monitors.push(name)
+                                    }
+
+                                    Settings.settings.barMonitors = monitors
                                 }
                             }
 
                             // Dock toggle
                             ToggleOption {
-                                screen: Screen // force current screen
                                 label: "Dock"
                                 description: "Display the dock on this monitor"
                                 value: monitorCard.dockChecked
                                 onToggled: function() {
-                                    let monitors = Settings.settings.dockMonitors || [];
-                                    monitors = [...monitors];
-                                    if (!monitorCard.dockChecked) {
-                                        if (!monitors.includes(monitorCard.monitorName)) monitors.push(monitorCard.monitorName);
-                                        monitorCard.dockChecked = true;
-                                    } else {
-                                        monitors = monitors.filter(name => name !== monitorCard.monitorName);
-                                        monitorCard.dockChecked = false;
+                                    let monitors = Settings.settings.dockMonitors || []
+                                    monitors = [...monitors]
+                                    const name = monitorCard.monitorName
+                                    const allNames = (root.sortedMonitors || []).map(m => m.name).filter(n => !!n)
+                                    const isSingle = allNames.length <= 1
+                                    const isAll = monitors.includes("*")
+                                    const isOn = isAll || monitors.includes(name)
+
+                                    if (isSingle) {
+                                        Settings.settings.dockMonitors = isOn ? [] : ["*"]
+                                        return
                                     }
-                                    Settings.settings.dockMonitors = monitors;
+
+                                    if (isOn) {
+                                        if (isAll) {
+                                            monitors = allNames.filter(n => n !== name)
+                                        } else {
+                                            monitors = monitors.filter(n => n !== name)
+                                        }
+                                    } else {
+                                        if (!monitors.includes(name)) monitors.push(name)
+                                    }
+
+                                    Settings.settings.dockMonitors = monitors
                                 }
                             }
 
                             // Notification toggle
                             ToggleOption {
-                                screen: Screen // force current screen
                                 label: "Notifications"
                                 description: "Display notifications on this monitor"
                                 value: monitorCard.notifChecked
                                 onToggled: function() {
-                                    let monitors = Settings.settings.notificationMonitors || [];
-                                    monitors = [...monitors];
-                                    if (!monitorCard.notifChecked) {
-                                        if (!monitors.includes(monitorCard.monitorName)) monitors.push(monitorCard.monitorName);
-                                        monitorCard.notifChecked = true;
-                                    } else {
-                                        monitors = monitors.filter(name => name !== monitorCard.monitorName);
-                                        monitorCard.notifChecked = false;
+                                    let monitors = Settings.settings.notificationMonitors || []
+                                    monitors = [...monitors]
+                                    const name = monitorCard.monitorName
+                                    const allNames = (root.sortedMonitors || []).map(m => m.name).filter(n => !!n)
+                                    const isSingle = allNames.length <= 1
+                                    const isAll = monitors.includes("*")
+                                    const isOn = isAll || monitors.includes(name)
+
+                                    if (isSingle) {
+                                        Settings.settings.notificationMonitors = isOn ? [] : ["*"]
+                                        return
                                     }
-                                    Settings.settings.notificationMonitors = monitors;
+
+                                    if (isOn) {
+                                        if (isAll) {
+                                            monitors = allNames.filter(n => n !== name)
+                                        } else {
+                                            monitors = monitors.filter(n => n !== name)
+                                        }
+                                    } else {
+                                        if (!monitors.includes(name)) monitors.push(name)
+                                    }
+
+                                    Settings.settings.notificationMonitors = monitors
                                 }
                             }
 
-                            // Scale slider (auto-applies with debounce)
+                            // Scale slider
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 4 * Theme.scale(screen)
@@ -435,45 +481,34 @@ ColumnLayout {
                                     spacing: 8 * Theme.scale(screen)
                                     // Value read from settings override, default to Theme.scale(modelData)
                                     property real currentValue: (Settings.settings.monitorScaleOverrides && Settings.settings.monitorScaleOverrides[monitorCard.monitorName] !== undefined) ? Settings.settings.monitorScaleOverrides[monitorCard.monitorName] : Theme.scale(modelData)
-                                    // Debounce timer to avoid excessive reloads while dragging
-                                    Timer {
-                                        id: applyScaleTimer
-                                        interval: 400
-                                        repeat: false
-                                        onTriggered: {
-                                            let current = Settings.settings.monitorScaleOverrides || {};
-                                            let merged = Object.assign({}, current);
-                                            merged[monitorCard.monitorName] = scaleSlider.value;
-                                            Settings.settings.monitorScaleOverrides = merged;
-                                            //Quickshell.reload(true);
-                                        }
+                                    function commitScale(newValue) {
+                                        if (!isFinite(newValue)) return
+                                        let overrides = Settings.settings.monitorScaleOverrides || {}
+                                        overrides = Object.assign({}, overrides)
+                                        overrides[monitorCard.monitorName] = newValue
+                                        Settings.settings.monitorScaleOverrides = overrides
+                                        parent.currentValue = newValue
                                     }
-                                    // Reusable slider component (exact style from Wallpaper.qml)
+                                    // Reusable slider component
                                     ThemedSlider {
                                         id: scaleSlider
-                                        screen: Screen // force current screen
                                         Layout.fillWidth: true
+                                        screen: modelData
                                         cutoutColor: Theme.surface
                                         from: 0.8
                                         to: 2.0
-                                        stepSize: 0.05
-                                        snapAlways: true
+                                        stepSize: 0.02
+                                        snapAlways: false
                                         value: parent.currentValue
-                                        onMoved: {
-                                            if (isFinite(value)) {
-                                                parent.currentValue = value;
-                                                applyScaleTimer.restart();
-                                            }
-                                        }
+                                        onMoved: parent.currentValue = value
+                                        onPressedChanged: if (!pressed) parent.commitScale(value)
                                     }
-                                    Text { text: parent.currentValue.toFixed(2); font.pixelSize: 12 * Theme.scale(screen); color: Theme.textPrimary; width: 36 }
-                                    // Apply button removed; auto-apply enabled
+                                    Text { text: parent.currentValue.toFixed(2); font.pixelSize: 12 * Theme.scale(screen); color: Theme.textPrimary; width: 40 }
                                 }
                             }
                         }
                     }
                 }
-                // Apply-all button removed; per-monitor apply added next to each slider
             }
                 RowLayout {
                     visible: false

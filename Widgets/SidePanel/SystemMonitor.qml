@@ -12,7 +12,16 @@ Rectangle {
 
     // Track visibility state for panel integration
     property bool isVisible: false
-    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
+    // Propagate screen context for Theme.scale usage
+    property var screen
+    readonly property real scale: Theme.scale(screen)
+    readonly property int margin: Math.round(8 * scale)
+    readonly property int rowSpacing: Math.round(12 * scale)
+    readonly property int circleSize: Math.round(50 * scale)
+
+    // Constrain size to keep content within card at small scales
+    implicitWidth: Math.max(72, Math.round(80 * scale))
+    implicitHeight: Math.max(margin * 2 + circleSize * 4 + rowSpacing * 3, Math.round(200 * scale))
 
     Rectangle {
         id: card
@@ -20,26 +29,27 @@ Rectangle {
         color: Theme.surface
         radius: 18 * Theme.scale(screen)
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 8 * Theme.scale(screen)
-            spacing: 12 * Theme.scale(screen)
-            Layout.alignment: Qt.AlignVCenter
+        Column {
+            id: gauges
+            width: circleSize
+            height: circleSize * 4 + rowSpacing * 3
+            anchors.centerIn: parent
+            spacing: rowSpacing
 
     
             // CPU usage indicator with circular progress bar
             Item {
-                width: 50 * Theme.scale(screen)
-                height: 50 * Theme.scale(screen)
+                width: circleSize
+                height: circleSize
                 CircularProgressBar {
                     id: cpuBar
                     progress: Sysinfo.cpuUsage / 100
-                    size: 50 * Theme.scale(screen)
-                    strokeWidth: 4 * Theme.scale(screen)
+                    size: circleSize
+                    strokeWidth: Math.max(2, Math.round(4 * scale))
                     hasNotch: true
                     notchIcon: "speed"
-                    notchIconSize: 14 * Theme.scale(screen)
-                    Layout.alignment: Qt.AlignHCenter
+                    notchIconSize: Math.max(10, Math.round(14 * scale))
+                    anchors.centerIn: parent
                 }
                 MouseArea {
                     id: cpuBarMouse
@@ -60,17 +70,17 @@ Rectangle {
     
             // CPU temperature indicator with circular progress bar
             Item {
-                width: 50 * Theme.scale(screen); height: 50 * Theme.scale(screen)
+                width: circleSize; height: circleSize
                 CircularProgressBar {
                     id: tempBar
                     progress: Sysinfo.cpuTemp / 100
-                    size: 50 * Theme.scale(screen)
-                    strokeWidth: 4 * Theme.scale(screen)
+                    size: circleSize
+                    strokeWidth: Math.max(2, Math.round(4 * scale))
                     hasNotch: true
                     units: "°C"
                     notchIcon: "thermometer"
-                    notchIconSize: 14 * Theme.scale(screen)
-                    Layout.alignment: Qt.AlignHCenter
+                    notchIconSize: Math.max(10, Math.round(14 * scale))
+                    anchors.centerIn: parent
                 }
                 MouseArea {
                     id: tempBarMouse
@@ -91,16 +101,16 @@ Rectangle {
     
             // Memory usage indicator with circular progress bar
             Item {
-                width: 50 * Theme.scale(screen); height: 50 * Theme.scale(screen)
+                width: circleSize; height: circleSize
                 CircularProgressBar {
                     id: memBar
                     progress: Sysinfo.memoryUsagePer / 100
-                    size: 50 * Theme.scale(screen)
-                    strokeWidth: 4 * Theme.scale(screen)
+                    size: circleSize
+                    strokeWidth: Math.max(2, Math.round(4 * scale))
                     hasNotch: true
                     notchIcon: "memory"
-                    notchIconSize: 14 * Theme.scale(screen)
-                    Layout.alignment: Qt.AlignHCenter
+                    notchIconSize: Math.max(10, Math.round(14 * scale))
+                    anchors.centerIn: parent
                 }
                 MouseArea {
                     id: memBarMouse
@@ -121,16 +131,16 @@ Rectangle {
     
             // Disk usage indicator with circular progress bar
             Item {
-                width: 50 * Theme.scale(screen); height: 50 * Theme.scale(screen)
+                width: circleSize; height: circleSize
                 CircularProgressBar {
                     id: diskBar
                     progress: Sysinfo.diskUsage / 100
-                    size: 50 * Theme.scale(screen)
-                    strokeWidth: 4 * Theme.scale(screen)
+                    size: circleSize
+                    strokeWidth: Math.max(2, Math.round(4 * scale))
                     hasNotch: true
                     notchIcon: "storage"
-                    notchIconSize: 14 * Theme.scale(screen)
-                    Layout.alignment: Qt.AlignHCenter
+                    notchIconSize: Math.max(10, Math.round(14 * scale))
+                    anchors.centerIn: parent
                 }
                 MouseArea {
                     id: diskBarMouse

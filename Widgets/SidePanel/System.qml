@@ -15,6 +15,9 @@ import qs.Widgets.LockScreen
 Rectangle {
     id: systemWidget
  
+    // Screen context for scaling
+    property var screen
+
     property string uptimeText: "--:--"
     property bool panelVisible: false
     property var settingsModal: null
@@ -62,11 +65,14 @@ Rectangle {
  
         anchors.fill: parent
         color: Theme.surface
-        radius: 18 * Theme.scale(screen)
+            radius: 18 * Theme.scale(screen)
  
-        ColumnLayout {
+            ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 18 * Theme.scale(screen)
+            anchors.leftMargin: 18 * Theme.scale(screen)
+            anchors.topMargin: 18 * Theme.scale(screen)
+            anchors.bottomMargin: 18 * Theme.scale(screen)
+            anchors.rightMargin: 12 * Theme.scale(screen)
             spacing: 12 * Theme.scale(screen)
  
             RowLayout {
@@ -76,7 +82,7 @@ Rectangle {
                 Rectangle {
                     width: 48 * Theme.scale(screen)
                     height: 48 * Theme.scale(screen)
-                    radius: width * 0.5
+                    radius: 24 * Theme.scale(screen)
                     color: Theme.accentPrimary
  
                     Rectangle {
@@ -120,22 +126,22 @@ Rectangle {
  
                 Rectangle {
                     id: settingsButton
- 
-                    width: 32 * Theme.scale(screen)
-                    height: 32 * Theme.scale(screen)
+                    Layout.preferredWidth: 32 * Theme.scale(screen)
+                    Layout.preferredHeight: 32 * Theme.scale(screen)
                     radius: width * 0.5
                     color: settingsButtonArea.containsMouse || settingsButtonArea.pressed ? Theme.accentPrimary : "transparent"
                     border.color: Theme.accentPrimary
                     border.width: 1 * Theme.scale(screen)
  
+                    // Compute icon size as a proportion of the button to keep consistent padding across scales
+                    property int iconSize: Math.round(Math.min(width, height) * 0.55)
+
                     Text {
-                        anchors.fill: parent
+                        anchors.centerIn: parent
                         text: "settings"
                         font.family: "Material Symbols Outlined"
-                        font.pixelSize: 16 * Theme.scale(screen)
+                        font.pixelSize: settingsButton.iconSize
                         color: settingsButtonArea.containsMouse || settingsButtonArea.pressed ? Theme.backgroundPrimary : Theme.accentPrimary
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
                     }
  
                     MouseArea {
@@ -163,22 +169,22 @@ Rectangle {
  
                 Rectangle {
                     id: systemButton
- 
-                    width: 32 * Theme.scale(screen)
-                    height: 32 * Theme.scale(screen)
+                    Layout.preferredWidth: 32 * Theme.scale(screen)
+                    Layout.preferredHeight: 32 * Theme.scale(screen)
                     radius: width * 0.5
                     color: systemButtonArea.containsMouse || systemButtonArea.pressed ? Theme.accentPrimary : "transparent"
                     border.color: Theme.accentPrimary
                     border.width: 1 * Theme.scale(screen)
  
+                    // Compute icon size as a proportion of the button to keep consistent padding across scales
+                    property int iconSize: Math.round(Math.min(width, height) * 0.55)
+
                     Text {
-                        anchors.fill: parent
+                        anchors.centerIn: parent
                         text: "power_settings_new"
                         font.family: "Material Symbols Outlined"
-                        font.pixelSize: 16 * Theme.scale(screen)
+                        font.pixelSize: systemButton.iconSize
                         color: systemButtonArea.containsMouse || systemButtonArea.pressed ? Theme.backgroundPrimary : Theme.accentPrimary
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
                     }
  
                     MouseArea {
@@ -215,18 +221,18 @@ Rectangle {
         anchors.right: systemButton.right
  
         Rectangle {
-            width: 160 * Theme.scale(screen)
-            height: 220 * Theme.scale(screen)
+                width: 160 * Theme.scale(screen)
+                height: 220 * Theme.scale(screen)
             color: Theme.surface
-            radius: 8 * Theme.scale(screen)
+                radius: 8 * Theme.scale(screen)
             border.color: Theme.outline
-            border.width: 1 * Theme.scale(screen)
+                border.width: 1 * Theme.scale(screen)
             visible: true
             z: 9999
             anchors.top: parent.top
             anchors.right: parent.right
-            anchors.rightMargin: 32 * Theme.scale(screen)
-            anchors.topMargin: systemButton.y + systemButton.height + 48 * Theme.scale(screen)
+                anchors.rightMargin: 32 * Theme.scale(screen)
+                anchors.topMargin: systemButton.y + systemButton.height + 48 * Theme.scale(screen)
  
             // Prevent closing when clicking in the panel bg
             MouseArea {
@@ -462,20 +468,20 @@ Rectangle {
  
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 36 * Theme.scale(screen)
-                    radius: 6 * Theme.scale(screen)
+                    Layout.preferredHeight: 36 * Theme.scale(Screen)
+                    radius: 6 * Theme.scale(Screen)
                     color: shutdownButtonArea.containsMouse ? Theme.accentPrimary : "transparent"
  
                     Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 12 * Theme.scale(screen)
-                        anchors.rightMargin: 12 * Theme.scale(screen)
+                        anchors.leftMargin: 12 * Theme.scale(Screen)
+                        anchors.rightMargin: 12 * Theme.scale(Screen)
  
                         Row {
                             id: shutdownRow
-                            spacing: 8 * Theme.scale(screen)
+                            spacing: 8 * Theme.scale(Screen)
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.verticalCenter: parent.verticalCenter
@@ -483,20 +489,20 @@ Rectangle {
                             Text {
                                 text: "power_settings_new"
                                 font.family: "Material Symbols Outlined"
-                                font.pixelSize: 16 * Theme.scale(screen)
+                                font.pixelSize: 16 * Theme.scale(Screen)
                                 color: shutdownButtonArea.containsMouse ? Theme.onAccent : Theme.textPrimary
                                 verticalAlignment: Text.AlignVCenter
                                 anchors.verticalCenter: parent.verticalCenter
-                                anchors.verticalCenterOffset: 1 * Theme.scale(screen)
+                                anchors.verticalCenterOffset: 1 * Theme.scale(Screen)
                             }
  
                             Text {
                                 text: "Shutdown"
-                                font.pixelSize: 14 * Theme.scale(screen)
+                                font.pixelSize: 14 * Theme.scale(Screen)
                                 color: shutdownButtonArea.containsMouse ? Theme.onAccent : Theme.textPrimary
                                 verticalAlignment: Text.AlignVCenter
                                 anchors.verticalCenter: parent.verticalCenter
-                                anchors.verticalCenterOffset: 1 * Theme.scale(screen)
+                                anchors.verticalCenterOffset: 1 * Theme.scale(Screen)
                             }
                         }
                     }
@@ -522,30 +528,18 @@ Rectangle {
     }
  
     Process {
-    id: uptimeProcess
-    command: ["cat", "/proc/uptime"]
-    running: false
-
-    stdout: StdioCollector {
-        onStreamFinished: {
-            var uptimeSeconds = parseFloat(this.text.trim().split(' ')[0]);
-            
-            var minutes = Math.floor(uptimeSeconds / 60) % 60;
-            var hours = Math.floor(uptimeSeconds / 3600) % 24;
-            var days = Math.floor(uptimeSeconds / 86400);
-            
-            // Format the output
-            if (days > 0) {
-                uptimeText = days + "d " + hours + "h";
-            } else if (hours > 0) {
-                uptimeText = hours + "h " + minutes + "m";
-            } else {
-                uptimeText = minutes + "m";
-            }
-            
-            uptimeProcess.running = false;
+        id: uptimeProcess
+ 
+        command: ["sh", "-c", "uptime | awk -F 'up ' '{print $2}' | awk -F ',' '{print $1}' | xargs"]
+        running: false
+ 
+        stdout: StdioCollector {
+            onStreamFinished: {
+                uptimeText = this.text.trim();
+                uptimeProcess.running = false;
             }
         }
+ 
     }
  
     Process {

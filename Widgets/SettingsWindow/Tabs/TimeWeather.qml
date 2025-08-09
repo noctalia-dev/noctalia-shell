@@ -57,7 +57,7 @@ ColumnLayout {
                 Layout.fillWidth: true
                 Layout.topMargin: 26
                 Layout.bottomMargin: 18
-                height: Math.max(1, 1 * Theme.scale(screen))
+                height: 1
                 color: Theme.outline
                 opacity: 0.3
             }

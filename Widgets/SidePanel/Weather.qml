@@ -7,12 +7,11 @@ import "../../Helpers/Weather.js" as WeatherHelper
  
 Rectangle {
     id: weatherRoot
-    width: 440 * Theme.scale(screen)
-    height: 180 * Theme.scale(screen)
+    width: 440 * Theme.scale(Screen)
+    height: 180 * Theme.scale(Screen)
     color: "transparent"
     anchors.horizontalCenterOffset: -2
  
-    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
     property string city: Settings.settings.weatherCity !== undefined ? Settings.settings.weatherCity : ""
     property var weatherData: null
     property string errorString: ""
@@ -85,29 +84,29 @@ Rectangle {
         id: card
         anchors.fill: parent
         color: Theme.surface
-        radius: 18 * Theme.scale(screen)
+        radius: 18 * Theme.scale(Screen)
  
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 18 * Theme.scale(screen)
-            spacing: 12 * Theme.scale(screen)
+            anchors.margins: 18 * Theme.scale(Screen)
+            spacing: 12 * Theme.scale(Screen)
  
  
             RowLayout {
-                spacing: 12 * Theme.scale(screen)
+                spacing: 12 * Theme.scale(Screen)
                 Layout.fillWidth: true
  
  
                 RowLayout {
-                    spacing: 12 * Theme.scale(screen)
-                    Layout.preferredWidth: 140 * Theme.scale(screen)
+                    spacing: 12 * Theme.scale(Screen)
+                    Layout.preferredWidth: 140 * Theme.scale(Screen)
  
  
                     Spinner {
                         id: loadingSpinner
                         running: isLoading
                         color: Theme.accentPrimary
-                        size: 28 * Theme.scale(screen)
+                        size: 28 * Theme.scale(Screen)
                         Layout.alignment: Qt.AlignVCenter
                         visible: isLoading
                     }
@@ -117,35 +116,35 @@ Rectangle {
                         visible: !isLoading
                         text: weatherData && weatherData.current_weather ? materialSymbolForCode(weatherData.current_weather.weathercode) : "cloud"
                         font.family: "Material Symbols Outlined"
-                        font.pixelSize: 28 * Theme.scale(screen)
+                        font.pixelSize: 28 * Theme.scale(Screen)
                         verticalAlignment: Text.AlignVCenter
                         color: Theme.accentPrimary
                         Layout.alignment: Qt.AlignVCenter
                     }
  
                     ColumnLayout {
-                        spacing: 2 * Theme.scale(screen)
+                        spacing: 2 * Theme.scale(Screen)
                         RowLayout {
-                            spacing: 4 * Theme.scale(screen)
+                            spacing: 4 * Theme.scale(Screen)
                             Text {
                                 text: city
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 14 * Theme.scale(screen)
+                                font.pixelSize: 14 * Theme.scale(Screen)
                                 font.bold: true
                                 color: Theme.textPrimary
                             }
                             Text {
                                 text: weatherData && weatherData.timezone_abbreviation ? `(${weatherData.timezone_abbreviation})` : ""
                                 font.family: Theme.fontFamily
-                                font.pixelSize: 10 * Theme.scale(screen)
+                                font.pixelSize: 10 * Theme.scale(Screen)
                                 color: Theme.textSecondary
-                                leftPadding: 2 * Theme.scale(screen)
+                                leftPadding: 2 * Theme.scale(Screen)
                             }
                         }
                         Text {
                             text: weatherData && weatherData.current_weather ? ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? `${Math.round(weatherData.current_weather.temperature * 9/5 + 32)}°F` : `${Math.round(weatherData.current_weather.temperature)}°C`) : ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? "--°F" : "--°C")
                             font.family: Theme.fontFamily
-                            font.pixelSize: 24 * Theme.scale(screen)
+                            font.pixelSize: 24 * Theme.scale(Screen)
                             font.bold: true
                             color: Theme.textPrimary
                         }
@@ -160,16 +159,16 @@ Rectangle {
  
             Rectangle {
                 width: parent.width
-                height: 1 * Theme.scale(screen)
+                height: 1 * Theme.scale(Screen)
                 color: Qt.rgba(Theme.textSecondary.g, Theme.textSecondary.g, Theme.textSecondary.b, 0.12)
                 Layout.fillWidth: true
-                Layout.topMargin: 2 * Theme.scale(screen)
-                Layout.bottomMargin: 2 * Theme.scale(screen)
+                Layout.topMargin: 2 * Theme.scale(Screen)
+                Layout.bottomMargin: 2 * Theme.scale(Screen)
             }
  
  
             RowLayout {
-                spacing: 12 * Theme.scale(screen)
+                spacing: 12 * Theme.scale(Screen)
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignHCenter
                 visible: weatherData && weatherData.daily && weatherData.daily.time
@@ -177,13 +176,13 @@ Rectangle {
                 Repeater {
                     model: weatherData && weatherData.daily && weatherData.daily.time ? 5 : 0
                     delegate: ColumnLayout {
-                        spacing: 2 * Theme.scale(screen)
+                        spacing: 2 * Theme.scale(Screen)
                         Layout.alignment: Qt.AlignHCenter
                         Text {
  
                             text: Qt.formatDateTime(new Date(weatherData.daily.time[index]), "ddd")
                             font.family: Theme.fontFamily
-                            font.pixelSize: 12 * Theme.scale(screen)
+                            font.pixelSize: 12 * Theme.scale(Screen)
                             color: Theme.textSecondary
                             horizontalAlignment: Text.AlignHCenter
                             Layout.alignment: Qt.AlignHCenter
@@ -192,7 +191,7 @@ Rectangle {
  
                             text: materialSymbolForCode(weatherData.daily.weathercode[index])
                             font.family: "Material Symbols Outlined"
-                            font.pixelSize: 22 * Theme.scale(screen)
+                            font.pixelSize: 22 * Theme.scale(Screen)
                             color: Theme.accentPrimary
                             horizontalAlignment: Text.AlignHCenter
                             Layout.alignment: Qt.AlignHCenter
@@ -201,7 +200,7 @@ Rectangle {
  
                             text: weatherData && weatherData.daily ? ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? `${Math.round(weatherData.daily.temperature_2m_max[index] * 9/5 + 32)}° / ${Math.round(weatherData.daily.temperature_2m_min[index] * 9/5 + 32)}°` : `${Math.round(weatherData.daily.temperature_2m_max[index])}° / ${Math.round(weatherData.daily.temperature_2m_min[index])}°`) : ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? "--° / --°" : "--° / --°")
                             font.family: Theme.fontFamily
-                            font.pixelSize: 12 * Theme.scale(screen)
+                            font.pixelSize: 12 * Theme.scale(Screen)
                             color: Theme.textPrimary
                             horizontalAlignment: Text.AlignHCenter
                             Layout.alignment: Qt.AlignHCenter
@@ -216,7 +215,7 @@ Rectangle {
                 color: Theme.error
                 visible: errorString !== ""
                 font.family: Theme.fontFamily
-                font.pixelSize: 10 * Theme.scale(screen)
+                font.pixelSize: 10 * Theme.scale(Screen)
                 horizontalAlignment: Text.AlignHCenter
                 Layout.alignment: Qt.AlignHCenter
             }

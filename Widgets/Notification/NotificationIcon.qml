@@ -1,29 +1,23 @@
-import QtQuick
+import QtQuick 
 import Quickshell
 import Quickshell.Io
-import qs.Components
 import qs.Settings
+import qs.Components
 
 Item {
     id: root
-
-    property var screen: (typeof modelData !== 'undefined' ? modelData : null)
+    width: 22; height: 22
     property bool isSilence: false
     property var shell: null
 
-    width: 22
-    height: 22
-
     Process {
         id: rightClickProcess
-
-        command: ["qs", "ipc", "call", "globalIPC", "toggleNotificationPopup"]
+        command: ["qs","ipc", "call", "globalIPC", "toggleNotificationPopup"]
     }
 
     // Timer to check when NotificationHistory is loaded
     Timer {
         id: checkHistoryTimer
-
         interval: 50
         repeat: true
         onTriggered: {
@@ -36,34 +30,30 @@ Item {
 
     Item {
         id: bell
-
-        width: 22
-        height: 22
-
+        width: 22; height: 22
         Text {
             id: bellText
-
             anchors.centerIn: parent
             text: {
-                if (shell && shell.notificationHistoryWin && shell.notificationHistoryWin.hasUnread)
+                if (shell && shell.notificationHistoryWin && shell.notificationHistoryWin.hasUnread) {
                     return "notifications_unread";
-                else
+                } else {
                     return "notifications";
+                }
             }
             font.family: mouseAreaBell.containsMouse ? "Material Symbols Rounded" : "Material Symbols Outlined"
-            font.pixelSize: 16 * Theme.scale(screen)
+            font.pixelSize: 16 * Theme.scale(Screen)
             font.weight: {
-                if (shell && shell.notificationHistoryWin && shell.notificationHistoryWin.hasUnread)
+                if (shell && shell.notificationHistoryWin && shell.notificationHistoryWin.hasUnread) {
                     return Font.Bold;
-                else
+                } else {
                     return Font.Normal;
+                }
             }
             color: mouseAreaBell.containsMouse ? Theme.accentPrimary : (shell && shell.notificationHistoryWin && shell.notificationHistoryWin.hasUnread ? Theme.accentPrimary : Theme.textDisabled)
         }
-
         MouseArea {
             id: mouseAreaBell
-
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
@@ -72,9 +62,10 @@ Item {
                 if (mouse.button === Qt.RightButton) {
                     root.isSilence = !root.isSilence;
                     rightClickProcess.running = true;
-                    bellText.text = root.isSilence ? "notifications_off" : "notifications";
+                    bellText.text = root.isSilence ? "notifications_off" : "notifications"
                 }
-                if (mouse.button === Qt.LeftButton) {
+
+                if (mouse.button === Qt.LeftButton){
                     if (shell) {
                         if (!shell.notificationHistoryWin) {
                             // Use the shell function to load notification history
@@ -85,23 +76,20 @@ Item {
                             shell.notificationHistoryWin.visible = !shell.notificationHistoryWin.visible;
                         }
                     }
-                    return ;
+                    return;
                 }
             }
             onEntered: notificationTooltip.tooltipVisible = true
             onExited: notificationTooltip.tooltipVisible = false
         }
-
     }
 
     StyledTooltip {
         id: notificationTooltip
-
         text: "Notification History"
         positionAbove: false
         tooltipVisible: false
         targetItem: bell
         delay: 200
     }
-
 }

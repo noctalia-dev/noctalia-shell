@@ -68,9 +68,8 @@ Item {
                 property bool shouldShowOnThisMonitor: {
                     let notificationMonitors = Settings.settings.notificationMonitors || [];
                     let currentScreenName = modelData ? modelData.name : "";
-                    // Show notifications on all monitors if notificationMonitors is empty or contains "*"
-                    let shouldShow = notificationMonitors.length === 0 || 
-                           notificationMonitors.includes("*") || 
+                    // Show notifications on monitors listed or if list contains "*"
+                    let shouldShow = notificationMonitors.includes("*") || 
                            notificationMonitors.includes(currentScreenName);
                     // console.log("[NotificationPopup] Monitor", currentScreenName, "should show:", shouldShow, "monitors:", JSON.stringify(notificationMonitors));
                     return shouldShow;
