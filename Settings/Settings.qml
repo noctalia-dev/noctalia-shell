@@ -88,7 +88,7 @@ Singleton {
 
             property bool showDock: true
             property bool dockExclusive: false
-            property bool wifiEnabled: false
+            property bool wifiEnabled: true
             property bool bluetoothEnabled: false
             property int recordingFrameRate: 60
             property string recordingQuality: "very_high"
