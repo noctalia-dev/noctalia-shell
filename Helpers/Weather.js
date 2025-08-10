@@ -35,6 +35,44 @@ function fetchCoordinates(city) {
     xhr.send();
   });
 }
+
+/**
+ * Fetches geographic coordinates and city name based on IP address.
+ * @returns {Promise<{latitude: number, longitude: number, city: string}>} A promise that resolves to the coordinates and city.
+ */
+function fetchAutoLocation() {
+  return new Promise(function (resolve, reject) {
+    const url = "https://ipapi.co/json/";
+    const xhr = new XMLHttpRequest();
+
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
+          try {
+            const geoData = JSON.parse(xhr.responseText);
+            if (geoData.latitude && geoData.longitude && geoData.city) {
+              resolve({
+                latitude: geoData.latitude,
+                longitude: geoData.longitude,
+                city: geoData.city,
+              });
+            } else {
+              reject(new Error("Failed to get location data from ipapi.co."));
+            }
+          } catch (e) {
+            reject(new Error("Failed to parse ipapi.co data: " + e.message));
+          }
+        } else {
+          reject(new Error("ipapi.co error: " + xhr.status));
+        }
+      }
+    };
+    xhr.open("GET", url);
+    xhr.send();
+  });
+}
+
+
 /**
  * Fetches weather data for a given location
  * @param {number} latitude - The latitude coordinate
@@ -75,9 +113,25 @@ function fetchWeather(latitude, longitude) {
 /**
  * Fetches weather data for a specified city
  * @param {string} city - The name of the city to fetch weather data for
+ * @param {bool} autoDetect - Whether to use auto-detect location
  * @returns {Promise<Object>} A promise that resolves to an object containing city info and weather data
  */
-function fetchCityWeather(city) {
+function fetchCityWeather(city, autoDetect) {
+  if (autoDetect) {
+    return fetchAutoLocation().then(function (coords) {
+      return fetchWeather(coords.latitude, coords.longitude).then(function (
+        weatherData
+      ) {
+        return {
+          city: coords.city,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          weather: weatherData,
+        };
+      });
+    });
+  }
+  
   return fetchCoordinates(city).then(function (coords) {
     return fetchWeather(coords.latitude, coords.longitude).then(function (
       weatherData

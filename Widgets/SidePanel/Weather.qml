@@ -23,59 +23,64 @@ Rectangle {
     Connections {
         target: Settings.settings
         function onWeatherCityChanged() {
-            if (isVisible && city !== "") {
+            if (weatherRoot.isVisible && weatherRoot.city !== "") {
                 // Force refresh when city changes
-                lastFetchTime = 0;
-                fetchCityWeather();
+                weatherRoot.lastFetchTime = 0;
+                weatherRoot.fetchCityWeather();
             }
         }
     }
 
     Component.onCompleted: {
-        if (isVisible) {
-            fetchCityWeather();
+        if (weatherRoot.isVisible) {
+            weatherRoot.fetchCityWeather();
         }
     }
 
     function fetchCityWeather() {
         if (!city || city.trim() === "") {
-            errorString = "No city configured";
+            weatherRoot.errorString = "No city configured";
             return;
         }
 
         // Check if we should fetch new data (avoid fetching too frequently)
-        var currentTime = Date.now();
-        var timeSinceLastFetch = currentTime - lastFetchTime;
+        const currentTime = Date.now();
+        const timeSinceLastFetch = currentTime - weatherRoot.lastFetchTime;
 
         // Only skip if we have recent data AND lastFetchTime is not 0 (initial state)
-        if (lastFetchTime > 0 && timeSinceLastFetch < 60000) {
+        if (weatherRoot.lastFetchTime > 0 && timeSinceLastFetch < 60000) {
             // 1 minute
             return; // Skip if last fetch was less than 1 minute ago
         }
 
-        isLoading = true;
-        errorString = "";
+        weatherRoot.isLoading = true;
+        weatherRoot.errorString = "";
 
-        WeatherHelper.fetchCityWeather(city).then(function (result) {
+        if (Settings.settings.autoDetectWeather) {
+            weatherRoot.city = "Auto-Detect";   
+        }
+
+        WeatherHelper.fetchCityWeather(city, Settings.settings.autoDetectWeather).then(function (result) {
             weatherData = result.weather;
-            lastFetchTime = currentTime;
-            errorString = "";
-            isLoading = false;
+            weatherRoot.city = result.city;
+            weatherRoot.lastFetchTime = currentTime;
+            weatherRoot.errorString = "";
+            weatherRoot.isLoading = false;
         }).catch(function (err) {
-            errorString = err;
-            isLoading = false;
+            weatherRoot.errorString = err;
+            weatherRoot.isLoading = false;
         });
     }
 
     function startWeatherFetch() {
-        isVisible = true;
+        weatherRoot.isVisible = true;
         // Force refresh when panel opens, regardless of time check
-        lastFetchTime = 0;
-        fetchCityWeather();
+        weatherRoot.lastFetchTime = 0;
+        weatherRoot.fetchCityWeather();
     }
 
     function stopWeatherFetch() {
-        isVisible = false;
+        weatherRoot.isVisible = false;
     }
 
     Rectangle {
@@ -99,17 +104,17 @@ Rectangle {
 
                     Spinner {
                         id: loadingSpinner
-                        running: isLoading
+                        running: weatherRoot.isLoading
                         color: Theme.accentPrimary
                         size: 28 * Theme.scale(Screen)
                         Layout.alignment: Qt.AlignVCenter
-                        visible: isLoading
+                        visible: weatherRoot.isLoading
                     }
 
                     Text {
                         id: weatherIcon
-                        visible: !isLoading
-                        text: weatherData && weatherData.current_weather ? materialSymbolForCode(weatherData.current_weather.weathercode) : "cloud"
+                        visible: !weatherRoot.isLoading
+                        text: weatherRoot.weatherData && weatherRoot.weatherData.current_weather ? materialSymbolForCode(weatherRoot.weatherData.current_weather.weathercode) : "cloud"
                         font.family: "Material Symbols Outlined"
                         font.pixelSize: 28 * Theme.scale(Screen)
                         verticalAlignment: Text.AlignVCenter
@@ -122,14 +127,14 @@ Rectangle {
                         RowLayout {
                             spacing: 4 * Theme.scale(Screen)
                             Text {
-                                text: city
+                                text: weatherRoot.city
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 14 * Theme.scale(Screen)
                                 font.bold: true
                                 color: Theme.textPrimary
                             }
                             Text {
-                                text: weatherData && weatherData.timezone_abbreviation ? `(${weatherData.timezone_abbreviation})` : ""
+                                text: weatherRoot.weatherData && weatherRoot.weatherData.timezone_abbreviation ? `(${weatherRoot.weatherData.timezone_abbreviation})` : ""
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 10 * Theme.scale(Screen)
                                 color: Theme.textSecondary
@@ -137,7 +142,7 @@ Rectangle {
                             }
                         }
                         Text {
-                            text: weatherData && weatherData.current_weather ? ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? `${Math.round(weatherData.current_weather.temperature * 9 / 5 + 32)}°F` : `${Math.round(weatherData.current_weather.temperature)}°C`) : ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? "--°F" : "--°C")
+                            text: weatherRoot.weatherData && weatherRoot.weatherData.current_weather ? ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? `${Math.round(weatherRoot.weatherData.current_weather.temperature * 9 / 5 + 32)}°F` : `${Math.round(weatherRoot.weatherData.current_weather.temperature)}°C`) : ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? "--°F" : "--°C")
                             font.family: Theme.fontFamily
                             font.pixelSize: 24 * Theme.scale(Screen)
                             font.bold: true
@@ -164,16 +169,16 @@ Rectangle {
                 spacing: 12 * Theme.scale(Screen)
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignHCenter
-                visible: weatherData && weatherData.daily && weatherData.daily.time
+                visible: weatherRoot.weatherData && weatherRoot.weatherData.daily && weatherRoot.weatherData.daily.time
 
                 Repeater {
-                    model: weatherData && weatherData.daily && weatherData.daily.time ? 5 : 0
+                    model: weatherRoot.weatherData && weatherRoot.weatherData.daily && weatherRoot.weatherData.daily.time ? 5 : 0
                     delegate: ColumnLayout {
                         spacing: 2 * Theme.scale(Screen)
                         Layout.alignment: Qt.AlignHCenter
                         Text {
 
-                            text: Qt.formatDateTime(new Date(weatherData.daily.time[index]), "ddd")
+                            text: Qt.formatDateTime(new Date(weatherRoot.weatherData.daily.time[index]), "ddd")
                             font.family: Theme.fontFamily
                             font.pixelSize: 12 * Theme.scale(Screen)
                             color: Theme.textSecondary
@@ -182,7 +187,7 @@ Rectangle {
                         }
                         Text {
 
-                            text: materialSymbolForCode(weatherData.daily.weathercode[index])
+                            text: materialSymbolForCode(weatherRoot.weatherData.daily.weathercode[index])
                             font.family: "Material Symbols Outlined"
                             font.pixelSize: 22 * Theme.scale(Screen)
                             color: Theme.accentPrimary
@@ -191,7 +196,7 @@ Rectangle {
                         }
                         Text {
 
-                            text: weatherData && weatherData.daily ? ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? `${Math.round(weatherData.daily.temperature_2m_max[index] * 9 / 5 + 32)}° / ${Math.round(weatherData.daily.temperature_2m_min[index] * 9 / 5 + 32)}°` : `${Math.round(weatherData.daily.temperature_2m_max[index])}° / ${Math.round(weatherData.daily.temperature_2m_min[index])}°`) : ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? "--° / --°" : "--° / --°")
+                            text: weatherRoot.weatherData && weatherRoot.weatherData.daily ? ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? `${Math.round(weatherRoot.weatherData.daily.temperature_2m_max[index] * 9 / 5 + 32)}° / ${Math.round(weatherRoot.weatherData.daily.temperature_2m_min[index] * 9 / 5 + 32)}°` : `${Math.round(weatherRoot.weatherData.daily.temperature_2m_max[index])}° / ${Math.round(weatherRoot.weatherData.daily.temperature_2m_min[index])}°`) : ((Settings.settings.useFahrenheit !== undefined ? Settings.settings.useFahrenheit : false) ? "--° / --°" : "--° / --°")
                             font.family: Theme.fontFamily
                             font.pixelSize: 12 * Theme.scale(Screen)
                             color: Theme.textPrimary
@@ -203,9 +208,9 @@ Rectangle {
             }
 
             Text {
-                text: errorString
+                text: weatherRoot.errorString
                 color: Theme.error
-                visible: errorString !== ""
+                visible: weatherRoot.errorString !== ""
                 font.family: Theme.fontFamily
                 font.pixelSize: 10 * Theme.scale(Screen)
                 horizontalAlignment: Text.AlignHCenter

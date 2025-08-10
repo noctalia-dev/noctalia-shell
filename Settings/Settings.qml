@@ -61,6 +61,7 @@ Singleton {
             property string weatherCity: "Dinslaken"
             property string profileImage: Quickshell.env("HOME") + "/.face"
             property bool useFahrenheit: false
+            property bool autoDetectWeather: false
             property string wallpaperFolder: "/usr/share/wallpapers"
             property string currentWallpaper: ""
             property string videoPath: "~/Videos/"

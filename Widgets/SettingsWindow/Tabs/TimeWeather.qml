@@ -70,6 +70,12 @@ ColumnLayout {
                 Layout.bottomMargin: 16 * Theme.scale(screen)
             }
 
+            ToggleOption {
+                label: "Auto-detect location"
+                description: "Automatically detect your current location for weather information"
+                value: Settings.settings.autoDetectWeather
+            }
+
             ColumnLayout {
                 spacing: 8
                 Layout.fillWidth: true
@@ -83,7 +89,7 @@ ColumnLayout {
                 }
 
                 Text {
-                    text: "Your city name for weather information"
+                    text: Settings.settings.autoDetectWeather ? "Detected automatically" : "Your city name for weather information"
                     font.pixelSize: 12 * Theme.scale(screen)
                     color: Theme.textSecondary
                     Layout.fillWidth: true
@@ -100,6 +106,7 @@ ColumnLayout {
                     TextInput {
                         id: cityInput
 
+                        enabled: !Settings.settings.autoDetectWeather
                         anchors.fill: parent
                         anchors.leftMargin: 12
                         anchors.rightMargin: 12
