@@ -5,12 +5,13 @@ import Quickshell.Io
 import qs.Services
 
 Singleton {
+    id: settingParent
 
     property string shellName: "Noctalia"
     property string settingsDir: Quickshell.env("NOCTALIA_SETTINGS_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
     property string settingsFile: Quickshell.env("NOCTALIA_SETTINGS_FILE") || (settingsDir + "Settings.json")
     property string themeFile: Quickshell.env("NOCTALIA_THEME_FILE") || (settingsDir + "Theme.json")
-    property var settings: settingAdapter
+    property alias settings: settingAdapter
 
     Item {
         Component.onCompleted: {
@@ -21,7 +22,7 @@ Singleton {
 
     FileView {
         id: settingFileView
-        path: settingsFile
+        path: settingParent.settingsFile
         watchChanges: true
         onFileChanged: reload()
         onAdapterUpdated: writeAdapter()
@@ -51,7 +52,7 @@ Singleton {
             })
         }
         onLoadFailed: function(error) {
-            settingAdapter = {}
+            settingParent.settingsAdapter = {}
             writeAdapter()
         }
         JsonAdapter {
