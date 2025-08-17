@@ -53,7 +53,7 @@ ColumnLayout {
             text: Settings.data.location.name
             placeholderText: "Enter the location name"
             Layout.fillWidth: true
-            enabled: Settings.data
+            enabled: !Settings.data.location.autoDetect
             onEditingFinished: {
               Settings.data.location.name = text
               LocationService.resetWeather()
