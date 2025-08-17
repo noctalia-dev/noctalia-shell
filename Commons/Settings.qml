@@ -24,7 +24,7 @@ Singleton {
   property string defaultAvatar: Quickshell.env("HOME") + "/.face"
 
   // Used to access via Settings.data.xxx.yyy
-  property var data: adapter
+  property alias data: adapter
 
   // Flag to prevent unnecessary wallpaper calls during reloads
   property bool isInitialLoad: true
@@ -95,6 +95,7 @@ Singleton {
 
       location: JsonObject {
         property string name: "Tokyo"
+        property bool autoDetect: false
         property bool useFahrenheit: false
         property bool reverseDayMonth: false
         property bool use12HourClock: false
