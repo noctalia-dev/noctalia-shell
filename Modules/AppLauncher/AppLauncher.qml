@@ -304,7 +304,8 @@ NLoader {
 
                           TextField {
                             id: searchInput
-                            placeholderText: searchText === "" ? "Search applications... (use > to view commands)" : "Search applications..."
+                            placeholderText: searchText
+                                             === "" ? "Search applications... (use > to view commands)" : "Search applications..."
                             color: Color.mOnSurface
                             placeholderTextColor: Color.mOnSurfaceVariant
                             background: null

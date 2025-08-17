@@ -15,18 +15,11 @@ NIconButton {
   showBorder: false
   visible: bluetoothEnabled
 
-  Component.onCompleted: {
-    Logger.log("Bluetooth", "Component loaded, bluetoothEnabled:", bluetoothEnabled)
-    Logger.log("Bluetooth", "BluetoothService available:", typeof BluetoothService !== 'undefined')
-    if (typeof BluetoothService !== 'undefined') {
-      Logger.log("Bluetooth", "Connected devices:", BluetoothService.connectedDevices.length)
-    }
-  }
   icon: {
     // Show different icons based on connection status
-    if (BluetoothService.connectedDevices.length > 0) {
+    if (BluetoothService.pairedDevices.length > 0) {
       return "bluetooth_connected"
-    } else if (BluetoothService.isDiscovering) {
+    } else if (BluetoothService.discovering) {
       return "bluetooth_searching"
     } else {
       return "bluetooth"
