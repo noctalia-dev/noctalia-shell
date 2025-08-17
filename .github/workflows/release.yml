@@ -20,12 +20,37 @@ jobs:
       - name: Create release archive
         run: |
           mkdir -p ../noctalia-release
-          # Copy all files except .git and .github
           rsync -av --exclude='.git' --exclude='.github' ./ ../noctalia-release/
           cd ..
           tar -czf noctalia-${{ github.ref_name }}.tar.gz noctalia-release/
           cp noctalia-${{ github.ref_name }}.tar.gz noctalia-latest.tar.gz
           mv *.tar.gz ${{ github.workspace }}/
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 @^ 2>/dev/null || echo "")
+          RANGE="${PREV_TAG}..HEAD"
+          
+          PR_NOTES=""
+          COMMIT_NOTES=""
+          
+          git log $RANGE --pretty=format:"%H|%s|%an" | while IFS='|' read -r SHA MSG AUTHOR; do
+            SHORT_MSG=$(echo "$MSG" | cut -c1-80)
+            if [[ "$MSG" =~ Merge\ pull\ request\ \#([0-9]+) ]]; then
+              PR_NUM="${BASH_REMATCH[1]}"
+              PR_TITLE=$(echo "$SHORT_MSG" | sed -E "s/Merge pull request #$PR_NUM //")
+              PR_NOTES+="- [PR #$PR_NUM](https://github.com/${GITHUB_REPOSITORY}/pull/$PR_NUM): $PR_TITLE by $AUTHOR\n"
+            else
+              COMMIT_NOTES+="- [$SHA](https://github.com/${GITHUB_REPOSITORY}/commit/$SHA): $SHORT_MSG by $AUTHOR\n"
+            fi
+          done
+          
+          NOTES="### Merged PRs\n$PR_NOTES\n### Direct commits\n$COMMIT_NOTES"
+          
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          echo -e "$NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -33,6 +58,6 @@ jobs:
           files: |
             noctalia-${{ github.ref_name }}.tar.gz
             noctalia-latest.tar.gz
-          generate_release_notes: true
+          body: ${{ env.RELEASE_NOTES }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

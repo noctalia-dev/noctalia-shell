@@ -107,7 +107,7 @@ Singleton {
   Process {
     id: versionProcess
 
-    command: ["curl", "-s", "https://api.github.com/repos/Ly-sec/Noctalia/releases/latest"]
+    command: ["curl", "-s", "https://api.github.com/repos/noctalia-dev/noctalia-shell/releases/latest"]
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -139,7 +139,7 @@ Singleton {
   Process {
     id: contributorsProcess
 
-    command: ["curl", "-s", "https://api.github.com/repos/Ly-sec/Noctalia/contributors?per_page=100"]
+    command: ["curl", "-s", "https://api.github.com/repos/noctalia-dev/noctalia-shell/contributors?per_page=100"]
 
     stdout: StdioCollector {
       onStreamFinished: {

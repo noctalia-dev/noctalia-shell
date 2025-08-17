@@ -42,7 +42,7 @@ ColumnLayout {
 
         NToggle {
           label: "Show Active Window"
-          description: "Display the title of the currently focused window below the bar"
+          description: "Display the title of the currently focused window on the left side of the bar"
           checked: Settings.data.bar.showActiveWindow
           onToggled: checked => {
                        Settings.data.bar.showActiveWindow = checked
