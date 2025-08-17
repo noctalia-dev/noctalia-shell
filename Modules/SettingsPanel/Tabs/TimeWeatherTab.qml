@@ -53,6 +53,7 @@ ColumnLayout {
             text: Settings.data.location.name
             placeholderText: "Enter the location name"
             Layout.fillWidth: true
+            enabled: Settings.data
             onEditingFinished: {
               Settings.data.location.name = text
               LocationService.resetWeather()
@@ -124,6 +125,16 @@ ColumnLayout {
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
             Layout.bottomMargin: Style.marginSmall * scaling
+          }
+
+          NToggle {
+            label: "Auto detect"
+            description: "Detect your location automatically via IP"
+            checked: Settings.data.location.autoDetect
+            onToggled: checked => {
+                         Settings.data.location.autoDetect = checked
+                         LocationService.resetWeather()
+                       }
           }
 
           NToggle {
