@@ -51,6 +51,7 @@ ColumnLayout {
             label: "Location name"
             description: "Choose a known location near you"
             text: Settings.data.location.name
+            enabled: !Settings.data.location.autoLocation
             placeholderText: "Enter the location name"
             Layout.fillWidth: true
             onEditingFinished: {
@@ -133,6 +134,14 @@ ColumnLayout {
             onToggled: checked => {
                          Settings.data.location.useFahrenheit = checked
                        }
+          }
+          NToggle {
+            label: "Detect Auto Location"
+            description: "Detect Location based on IP"
+            checked: Settings.data.location.autoLocation
+            onToggled: checked => {
+              Settings.data.location.autoLocation = checked
+            }
           }
         }
       }
