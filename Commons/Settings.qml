@@ -98,6 +98,7 @@ Singleton {
 
       location: JsonObject {
         property string name: "Tokyo"
+        property bool autoLocation: false
         property bool useFahrenheit: false
         property bool reverseDayMonth: false
         property bool use12HourClock: false
