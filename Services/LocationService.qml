@@ -14,13 +14,13 @@ Singleton {
     property bool isFetchingWeather: false
 
     FileView {
-        path: locationFile
+        path: root.locationFile
         onAdapterUpdated: writeAdapter()
         onLoaded: {
-            updateWeather();
+            root.updateWeather();
         }
         onLoadFailed: function (error) {
-            updateWeather();
+            root.updateWeather();
         }
 
         JsonAdapter {
@@ -41,7 +41,7 @@ Singleton {
         running: true
         repeat: true
         onTriggered: {
-            updateWeather();
+            root.updateWeather();
         }
     }
 
