@@ -27,30 +27,19 @@ jobs:
           mv *.tar.gz ${{ github.workspace }}/
 
       - name: Generate release notes
-        id: release_notes
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 @^ 2>/dev/null || echo "")
-          RANGE="${PREV_TAG}..HEAD"
-          
-          PR_NOTES=""
-          COMMIT_NOTES=""
-          
-          git log $RANGE --pretty=format:"%H|%s|%an" | while IFS='|' read -r SHA MSG AUTHOR; do
-            SHORT_MSG=$(echo "$MSG" | cut -c1-80)
-            if [[ "$MSG" =~ Merge\ pull\ request\ \#([0-9]+) ]]; then
-              PR_NUM="${BASH_REMATCH[1]}"
-              PR_TITLE=$(echo "$SHORT_MSG" | sed -E "s/Merge pull request #$PR_NUM //")
-              PR_NOTES+="- [PR #$PR_NUM](https://github.com/${GITHUB_REPOSITORY}/pull/$PR_NUM): $PR_TITLE by $AUTHOR\n"
-            else
-              COMMIT_NOTES+="- [$SHA](https://github.com/${GITHUB_REPOSITORY}/commit/$SHA): $SHORT_MSG by $AUTHOR\n"
-            fi
-          done
-          
-          NOTES="### Merged PRs\n$PR_NOTES\n### Direct commits\n$COMMIT_NOTES"
-          
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
-          echo -e "$NOTES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          PREV_TAG=$(git describe --tags --abbrev=0 ${{ github.ref }}^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            RANGE=$(git rev-list --max-parents=0 HEAD)..HEAD
+          else
+            RANGE=$PREV_TAG..HEAD
+          fi
+          echo "# Release ${{ github.ref_name }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Changes since $PREV_TAG" >> release_notes.md
+          echo "" >> release_notes.md
+          git log $RANGE --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H)) by %an" >> release_notes.md
+          echo "" >> release_notes.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -58,6 +47,6 @@ jobs:
           files: |
             noctalia-${{ github.ref_name }}.tar.gz
             noctalia-latest.tar.gz
-          body: ${{ env.RELEASE_NOTES }}
+          body_path: release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

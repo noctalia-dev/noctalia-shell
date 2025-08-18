@@ -216,7 +216,7 @@ NLoader {
               NText {
                 anchors.centerIn: parent
                 text: model.day
-                color: model.today ? Color.onAccent : Color.mOnSurface
+                color: model.today ? Color.mOnPrimary : Color.mOnSurface
                 opacity: model.month === grid.month ? Style.opacityHeavy : Style.opacityLight
                 font.pointSize: (Style.fontSizeMedium * scaling)
                 font.weight: model.today ? Style.fontWeightBold : Style.fontWeightRegular

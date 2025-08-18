@@ -91,12 +91,11 @@ Item {
       }
     }
 
-    Text {
-      anchors.centerIn: parent
-      font.family: showPill ? "Material Symbols Rounded" : "Material Symbols Outlined"
-      font.pointSize: Style.fontSizeMedium * scaling
+    NIcon {
       text: root.icon
+      font.pointSize: Style.fontSizeMedium * scaling
       color: showPill ? iconTextColor : collapsedIconColor
+      anchors.centerIn: parent
     }
   }
 

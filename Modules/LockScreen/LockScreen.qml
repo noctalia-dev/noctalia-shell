@@ -401,9 +401,8 @@ WlSessionLock {
                     spacing: Style.marginSmall * scaling
                     visible: batteryIndicator.batteryVisible
 
-                    Text {
+                    NIcon {
                       text: batteryIndicator.getIcon()
-                      font.family: "Material Symbols Outlined"
                       font.pointSize: Style.fontSizeMedium
                       color: batteryIndicator.charging ? Color.mPrimary : Color.mOnSurface
                     }
@@ -551,9 +550,8 @@ WlSessionLock {
                     height: 20 * scaling
                     color: Color.mPrimary
                     visible: passwordInput.activeFocus
-                    anchors.left: asterisksText.right
-                    anchors.leftMargin: Style.marginTiniest * scaling
-                    anchors.verticalCenter: asterisksText.verticalCenter
+                    Layout.leftMargin: -Style.marginSmall * scaling
+                    Layout.alignment: Qt.AlignVCenter
 
                     SequentialAnimation on opacity {
                       loops: Animation.Infinite
@@ -606,7 +604,7 @@ WlSessionLock {
                   Text {
                     anchors.centerIn: parent
                     text: lock.authenticating ? "EXECUTING" : "EXECUTE"
-                    color: executeButtonArea.containsMouse ? Color.onAccent : Color.mPrimary
+                    color: executeButtonArea.containsMouse ? Color.mOnPrimary : Color.mPrimary
                     font.family: "DejaVu Sans Mono"
                     font.pointSize: Style.fontSizeMedium
                     font.weight: Font.Bold
@@ -619,7 +617,7 @@ WlSessionLock {
                     onClicked: lock.unlockAttempt()
 
                     SequentialAnimation on scale {
-                      running: containsMouse
+                      running: executeButtonArea.containsMouse
                       NumberAnimation {
                         to: 1.05
                         duration: Style.animationFast
@@ -628,7 +626,7 @@ WlSessionLock {
                     }
 
                     SequentialAnimation on scale {
-                      running: !containsMouse
+                      running: !executeButtonArea.containsMouse
                       NumberAnimation {
                         to: 1.0
                         duration: Style.animationFast
@@ -696,7 +694,8 @@ WlSessionLock {
         width: 64 * scaling
         height: 64 * scaling
         radius: Style.radiusLarge * scaling
-        color: Qt.rgba(Color.mError.r, Color.mError.g, Color.mError.b, shutdownArea.containsMouse ? 0.9 : 0.2)
+        color: shutdownArea.containsMouse ? Color.applyOpacity(Color.mError,
+                                                               "DD") : Color.applyOpacity(Color.mError, "22")
         border.color: Color.mError
         border.width: Math.max(1, Style.borderMedium * scaling)
 
@@ -707,8 +706,6 @@ WlSessionLock {
           height: parent.height + 10 * scaling
           radius: width * 0.5
           color: Color.transparent
-          border.color: Qt.rgba(Color.mError.r, Color.mError.g, Color.mError.b, 0.3)
-          border.width: Math.max(1, Style.borderMedium * scaling)
           opacity: shutdownArea.containsMouse ? 1 : 0
           z: -1
 
@@ -731,12 +728,11 @@ WlSessionLock {
           }
         }
 
-        Text {
-          anchors.centerIn: parent
+        NIcon {
           text: "power_settings_new"
-          font.family: "Material Symbols Outlined"
           font.pointSize: Style.fontSizeXXL * scaling
-          color: shutdownArea.containsMouse ? Color.onAccent : Color.mError
+          color: shutdownArea.containsMouse ? Color.mOnPrimary : Color.mError
+          anchors.centerIn: parent
         }
 
         Behavior on color {
@@ -753,7 +749,8 @@ WlSessionLock {
         width: 64 * scaling
         height: 64 * scaling
         radius: Style.radiusLarge * scaling
-        color: Qt.rgba(Color.mPrimary.r, Color.mPrimary.g, Color.mPrimary.b, rebootArea.containsMouse ? 0.9 : 0.2)
+        color: rebootArea.containsMouse ? Color.applyOpacity(Color.mPrimary,
+                                                             "DD") : Color.applyOpacity(Color.mPrimary, "22")
         border.color: Color.mPrimary
         border.width: Math.max(1, Style.borderMedium * scaling)
 
@@ -764,14 +761,12 @@ WlSessionLock {
           height: parent.height + 10 * scaling
           radius: width * 0.5
           color: Color.transparent
-          border.color: Qt.rgba(Color.mPrimary.r, Color.mPrimary.g, Color.mPrimary.b, 0.3)
-          border.width: Math.max(1, Style.borderMedium * scaling)
           opacity: rebootArea.containsMouse ? 1 : 0
           z: -1
 
           Behavior on opacity {
             NumberAnimation {
-              duration: Style.animationFast
+              duration: Style.animationMedium
               easing.type: Easing.OutCubic
             }
           }
@@ -787,17 +782,16 @@ WlSessionLock {
           }
         }
 
-        Text {
-          anchors.centerIn: parent
+        NIcon {
           text: "refresh"
-          font.family: "Material Symbols Outlined"
           font.pointSize: Style.fontSizeXXL * scaling
-          color: rebootArea.containsMouse ? Color.onAccent : Color.mPrimary
+          color: rebootArea.containsMouse ? Color.mOnPrimary : Color.mPrimary
+          anchors.centerIn: parent
         }
 
         Behavior on color {
           ColorAnimation {
-            duration: Style.animationFast
+            duration: Style.animationMedium
             easing.type: Easing.OutCubic
           }
         }
@@ -809,7 +803,8 @@ WlSessionLock {
         width: 64 * scaling
         height: 64 * scaling
         radius: Style.radiusLarge * scaling
-        color: Qt.rgba(Color.mSecondary.r, Color.mSecondary.g, Color.mSecondary.b, logoutArea.containsMouse ? 0.9 : 0.2)
+        color: logoutArea.containsMouse ? Color.applyOpacity(Color.mSecondary,
+                                                             "DD") : Color.applyOpacity(Color.mSecondary, "22")
         border.color: Color.mSecondary
         border.width: Math.max(1, Style.borderMedium * scaling)
 
@@ -820,14 +815,12 @@ WlSessionLock {
           height: parent.height + 10 * scaling
           radius: width * 0.5
           color: Color.transparent
-          border.color: Qt.rgba(Color.mSecondary.r, Color.mSecondary.g, Color.mSecondary.b, 0.3)
-          border.width: Math.max(1, Style.borderMedium * scaling)
           opacity: logoutArea.containsMouse ? 1 : 0
           z: -1
 
           Behavior on opacity {
             NumberAnimation {
-              duration: Style.animationFast
+              duration: Style.animationMedium
               easing.type: Easing.OutCubic
             }
           }
@@ -845,12 +838,11 @@ WlSessionLock {
           }
         }
 
-        Text {
-          anchors.centerIn: parent
+        NIcon {
           text: "exit_to_app"
-          font.family: "Material Symbols Outlined"
           font.pointSize: Style.fontSizeXXL * scaling
-          color: logoutArea.containsMouse ? Color.onAccent : Color.mSecondary
+          color: logoutArea.containsMouse ? Color.mOnPrimary : Color.mSecondary
+          anchors.centerIn: parent
         }
 
         Behavior on color {

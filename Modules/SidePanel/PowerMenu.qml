@@ -73,15 +73,9 @@ NPanel {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
 
-            Text {
+            NIcon {
               text: "lock_outline"
-              font.family: "Material Symbols Outlined"
-              font.pointSize: Style.fontSizeLarge * scaling
-              font.variableAxes: {
-                "wght": (Font.Normal + Font.Bold) / 2.0
-              }
               color: lockButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurface
-              verticalAlignment: Text.AlignVCenter
               anchors.verticalCenter: parent.verticalCenter
               anchors.verticalCenterOffset: 1 * scaling
             }
@@ -133,15 +127,9 @@ NPanel {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
 
-            Text {
+            NIcon {
               text: "bedtime"
-              font.family: "Material Symbols Outlined"
-              font.pointSize: Style.fontSizeLarge * scaling
-              font.variableAxes: {
-                "wght": (Font.Normal + Font.Bold) / 2.0
-              }
               color: suspendButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurface
-              verticalAlignment: Text.AlignVCenter
               anchors.verticalCenter: parent.verticalCenter
               anchors.verticalCenterOffset: 1 * scaling
             }
@@ -191,15 +179,9 @@ NPanel {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
 
-            Text {
+            NIcon {
               text: "refresh"
-              font.family: "Material Symbols Outlined"
-              font.pointSize: Style.fontSizeLarge * scaling
-              font.variableAxes: {
-                "wght": (Font.Normal + Font.Bold) / 2.0
-              }
               color: rebootButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurface
-              verticalAlignment: Text.AlignVCenter
               anchors.verticalCenter: parent.verticalCenter
               anchors.verticalCenterOffset: 1 * scaling
             }
@@ -249,15 +231,9 @@ NPanel {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
 
-            Text {
+            NIcon {
               text: "exit_to_app"
-              font.family: "Material Symbols Outlined"
-              font.pointSize: Style.fontSizeLarge * scaling
-              font.variableAxes: {
-                "wght": (Font.Normal + Font.Bold) / 2.0
-              }
               color: logoutButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurface
-              verticalAlignment: Text.AlignVCenter
               anchors.verticalCenter: parent.verticalCenter
               anchors.verticalCenterOffset: 1 * scaling
             }
@@ -307,15 +283,9 @@ NPanel {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
 
-            Text {
+            NIcon {
               text: "power_settings_new"
-              font.family: "Material Symbols Outlined"
-              font.pointSize: Style.fontSizeLarge * scaling
-              font.variableAxes: {
-                "wght": (Font.Normal + Font.Bold) / 2.0
-              }
               color: shutdownButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurface
-              verticalAlignment: Text.AlignVCenter
               anchors.verticalCenter: parent.verticalCenter
               anchors.verticalCenterOffset: 1 * scaling
             }

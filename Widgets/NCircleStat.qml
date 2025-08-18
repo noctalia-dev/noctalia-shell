@@ -97,10 +97,9 @@ Rectangle {
         anchors.rightMargin: -6 * scaling * contentScale
         anchors.topMargin: Style.marginTiniest * scaling * contentScale
 
-        Text {
+        NIcon {
           anchors.centerIn: parent
           text: root.icon
-          font.family: "Material Symbols Outlined"
           font.pointSize: Style.fontSizeLargeXL * scaling * contentScale
           color: Color.mOnSurface
           horizontalAlignment: Text.AlignHCenter

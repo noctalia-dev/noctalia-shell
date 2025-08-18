@@ -11,7 +11,6 @@ import qs.Services
 import qs.Widgets
 
 import "../../Helpers/FuzzySort.js" as Fuzzysort
-import "../../Helpers/MathHelper.js" as MathHelper
 
 NLoader {
   id: appLauncher
@@ -188,26 +187,56 @@ NLoader {
         // Handle calculator
         if (query.startsWith(">calc")) {
           var expr = searchText.slice(5).trim()
-          if (expr && isMathExpression(expr)) {
-            var value = safeEval(expr)
-            if (value !== null && value !== undefined && value !== "") {
-              var formattedResult = MathHelper.MathHelper.formatResult(value)
+          if (expr && expr !== "") {
+            try {
+              // Simple evaluation - only allow basic math operations
+              var sanitizedExpr = expr.replace(/[^0-9+\-*/().\s]/g, '')
+              var result = eval(sanitizedExpr)
+
+              if (isFinite(result) && !isNaN(result)) {
+                var displayResult = Number.isInteger(result) ? result.toString() : result.toFixed(6).replace(/\.?0+$/,
+                                                                                                             '')
+                results.push({
+                               "isCalculator": true,
+                               "name": `${expr} = ${displayResult}`,
+                               "result": result,
+                               "expr": expr,
+                               "icon": "calculate",
+                               "execute": function () {
+                                 Quickshell.clipboardText = displayResult
+                                 copyText(displayResult)
+                                 Quickshell.execDetached(
+                                       ["notify-send", "Calculator", `${expr} = ${displayResult} (copied to clipboard)`])
+                               }
+                             })
+              } else {
+                results.push({
+                               "isCalculator": true,
+                               "name": "Invalid expression",
+                               "content": "Please enter a valid mathematical expression",
+                               "icon": "calculate",
+                               "execute": function () {}
+                             })
+              }
+            } catch (error) {
               results.push({
                              "isCalculator": true,
-                             "name": `Calculator: ${expr} = ${formattedResult}`,
-                             "result": value,
-                             "expr": expr,
+                             "name": "Invalid expression",
+                             "content": "Please enter a valid mathematical expression",
                              "icon": "calculate",
-                             "execute": function () {
-                               Quickshell.clipboardText = String(formattedResult)
-                               clipboardTextCopyProcess.copyText(String(formattedResult))
-                               Quickshell.execDetached(
-                                     ["notify-send", "Calculator Result", `${expr} = ${formattedResult} (copied to clipboard)`])
-                             }
+                             "execute": function () {}
                            })
             }
+          } else {
+            // Show placeholder when just ">calc" is entered
+            results.push({
+                           "isCalculator": true,
+                           "name": "Calculator",
+                           "content": "Enter a mathematical expression (e.g., 5+5, 2*3, 10/2)",
+                           "icon": "calculate",
+                           "execute": function () {}
+                         })
           }
-
           return results
         }
 
@@ -240,301 +269,285 @@ NLoader {
         updateClipboardHistory()
       }
 
-      function isMathExpression(str) {
-        // Allow more characters for enhanced math functions
-        return /^[-+*/().0-9\s\w]+$/.test(str)
-      }
+      // Main content container
+      Rectangle {
+        anchors.centerIn: parent
+        width: Math.min(700 * scaling, parent.width * 0.75)
+        height: Math.min(550 * scaling, parent.height * 0.8)
+        radius: Style.radiusLarge * scaling
+        color: Color.mSurface
+        border.color: Color.mOutline
+        border.width: Style.borderThin * scaling
 
-                  function safeEval(expr) {
-                    return MathHelper.MathHelper.evaluate(expr)
+        // Subtle gradient background
+        gradient: Gradient {
+          GradientStop {
+            position: 0.0
+            color: Qt.lighter(Color.mSurface, 1.02)
+          }
+          GradientStop {
+            position: 1.0
+            color: Qt.darker(Color.mSurface, 1.1)
+          }
+        }
+
+        ColumnLayout {
+          anchors.fill: parent
+          anchors.margins: Style.marginLarge * scaling
+          spacing: Style.marginMedium * scaling
+
+          // Search bar
+          Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: Style.barHeight * scaling
+            Layout.bottomMargin: Style.marginMedium * scaling
+            radius: Style.radiusMedium * scaling
+            color: Color.mSurface
+            border.color: searchInput.activeFocus ? Color.mPrimary : Color.mOutline
+            border.width: Math.max(1,
+                                   searchInput.activeFocus ? Style.borderMedium * scaling : Style.borderThin * scaling)
+
+            Item {
+              anchors.fill: parent
+              anchors.margins: Style.marginMedium * scaling
+
+              NIcon {
+                id: searchIcon
+                text: "search"
+                font.pointSize: Style.fontSizeLarger * scaling
+                color: searchInput.activeFocus ? Color.mPrimary : Color.mOnSurface
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+              }
+
+              TextField {
+                id: searchInput
+                placeholderText: searchText === "" ? "Search applications... (use > to view commands)" : "Search applications..."
+                color: Color.mOnSurface
+                placeholderTextColor: Color.mOnSurfaceVariant
+                background: null
+                font.pointSize: Style.fontSizeLarge * scaling
+                anchors.left: searchIcon.right
+                anchors.leftMargin: Style.marginSmall * scaling
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                onTextChanged: {
+                  searchText = text
+                  selectedIndex = 0 // Reset selection when search changes
+                }
+                selectedTextColor: Color.mOnSurface
+                selectionColor: Color.mPrimary
+                padding: 0
+                verticalAlignment: TextInput.AlignVCenter
+                leftPadding: 0
+                rightPadding: 0
+                topPadding: 0
+                bottomPadding: 0
+                font.bold: true
+                Component.onCompleted: {
+                  contentItem.cursorColor = Color.mOnSurface
+                  contentItem.verticalAlignment = TextInput.AlignVCenter
+                  // Focus the search bar by default
+                  Qt.callLater(() => {
+                                 searchInput.forceActiveFocus()
+                               })
+                }
+                onActiveFocusChanged: contentItem.cursorColor = Color.mOnSurface
+
+                Keys.onDownPressed: selectNext()
+                Keys.onUpPressed: selectPrev()
+                Keys.onEnterPressed: activateSelected()
+                Keys.onReturnPressed: activateSelected()
+                Keys.onEscapePressed: appLauncherPanel.hide()
+              }
+            }
+
+            Behavior on border.color {
+              ColorAnimation {
+                duration: Style.animationFast
+              }
+            }
+
+            Behavior on border.width {
+              NumberAnimation {
+                duration: Style.animationFast
+              }
+            }
+          }
+
+          // Applications list
+          ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+            ListView {
+              id: appsList
+              anchors.fill: parent
+              spacing: Style.marginTiniest * scaling
+              model: filteredEntries
+              currentIndex: selectedIndex
+
+              delegate: Rectangle {
+                width: appsList.width - Style.marginSmall * scaling
+                height: 65 * scaling
+                radius: Style.radiusMedium * scaling
+                property bool isSelected: index === selectedIndex
+                color: (appCardArea.containsMouse || isSelected) ? Qt.darker(Color.mPrimary, 1.1) : Color.mSurface
+                border.color: (appCardArea.containsMouse || isSelected) ? Color.mPrimary : Color.transparent
+                border.width: Math.max(1, (appCardArea.containsMouse || isSelected) ? Style.borderMedium * scaling : 0)
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: Style.animationFast
                   }
+                }
 
-                  // Main content container
+                Behavior on border.color {
+                  ColorAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+
+                Behavior on border.width {
+                  NumberAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+
+                RowLayout {
+                  anchors.fill: parent
+                  anchors.margins: Style.marginMedium * scaling
+                  spacing: Style.marginMedium * scaling
+
+                  // App icon with background
                   Rectangle {
-                    anchors.centerIn: parent
-                    width: Math.min(700 * scaling, parent.width * 0.75)
-                    height: Math.min(550 * scaling, parent.height * 0.8)
-                    radius: Style.radiusLarge * scaling
-                    color: Color.mSurface
-                    border.color: Color.mOutline
-                    border.width: Style.borderThin * scaling
+                    Layout.preferredWidth: Style.baseWidgetSize * 1.25 * scaling
+                    Layout.preferredHeight: Style.baseWidgetSize * 1.25 * scaling
+                    radius: Style.radiusSmall * scaling
+                    color: appCardArea.containsMouse ? Qt.darker(Color.mPrimary, 1.1) : Color.mSurfaceVariant
+                    property bool iconLoaded: (modelData.isCalculator || modelData.isClipboard || modelData.isCommand)
+                                              || (iconImg.status === Image.Ready && iconImg.source !== ""
+                                                  && iconImg.status !== Image.Error && iconImg.source !== "")
+                    visible: !searchText.startsWith(">calc") // Hide icon when in calculator mode
 
-                    // Subtle gradient background
-                    gradient: Gradient {
-                      GradientStop {
-                        position: 0.0
-                        color: Qt.lighter(Color.mSurface, 1.02)
-                      }
-                      GradientStop {
-                        position: 1.0
-                        color: Qt.darker(Color.mSurface, 1.1)
-                      }
+                    // Clipboard image display
+                    Image {
+                      id: clipboardImage
+                      anchors.fill: parent
+                      anchors.margins: Style.marginTiny * scaling
+                      visible: modelData.type === 'image'
+                      source: modelData.data || ""
+                      fillMode: Image.PreserveAspectCrop
+                      asynchronous: true
+                      cache: true
                     }
 
-                    ColumnLayout {
+                    IconImage {
+                      id: iconImg
                       anchors.fill: parent
-                      anchors.margins: Style.marginLarge * scaling
-                      spacing: Style.marginMedium * scaling
+                      anchors.margins: Style.marginTiny * scaling
+                      asynchronous: true
+                      source: modelData.isCalculator ? "calculate" : modelData.isClipboard ? (modelData.type === 'image' ? "" : "content_paste") : modelData.isCommand ? modelData.icon : (modelData.icon ? Quickshell.iconPath(modelData.icon, "application-x-executable") : "")
+                      visible: (modelData.isCalculator || modelData.isClipboard || modelData.isCommand
+                                || parent.iconLoaded) && modelData.type !== 'image'
+                    }
 
-                      // Search bar
-                      Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: Style.barHeight * scaling
-                        Layout.bottomMargin: Style.marginMedium * scaling
-                        radius: Style.radiusMedium * scaling
-                        color: Color.mSurface
-                        border.color: searchInput.activeFocus ? Color.mPrimary : Color.mOutline
-                        border.width: Math.max(
-                                        1,
-                                        searchInput.activeFocus ? Style.borderMedium * scaling : Style.borderThin * scaling)
+                    // Fallback icon container
+                    Rectangle {
+                      anchors.fill: parent
+                      anchors.margins: Style.marginTiny * scaling
+                      radius: Style.radiusTiny * scaling
+                      color: Color.mPrimary
+                      opacity: Style.opacityMedium
+                      visible: !parent.iconLoaded
+                    }
 
-                        Item {
-                          anchors.fill: parent
-                          anchors.margins: Style.marginMedium * scaling
+                    Text {
+                      anchors.centerIn: parent
+                      visible: !parent.iconLoaded && !(modelData.isCalculator || modelData.isClipboard
+                                                       || modelData.isCommand)
+                      text: modelData.name ? modelData.name.charAt(0).toUpperCase() : "?"
+                      font.pointSize: Style.fontSizeXL * scaling
+                      font.weight: Font.Bold
+                      color: Color.mPrimary
+                    }
 
-                          Text {
-                            id: searchIcon
-                            text: "search"
-                            font.family: "Material Symbols Outlined"
-                            font.pointSize: Style.fontSizeLarger * scaling
-                            color: searchInput.activeFocus ? Color.mPrimary : Color.mOnSurface
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
-                          }
-
-                          TextField {
-                            id: searchInput
-                            placeholderText: searchText
-                                             === "" ? "Search applications... (use > to view commands)" : "Search applications..."
-                            color: Color.mOnSurface
-                            placeholderTextColor: Color.mOnSurfaceVariant
-                            background: null
-                            font.pointSize: Style.fontSizeLarge * scaling
-                            anchors.left: searchIcon.right
-                            anchors.leftMargin: Style.marginSmall * scaling
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            onTextChanged: {
-                              searchText = text
-                              selectedIndex = 0 // Reset selection when search changes
-                            }
-                            selectedTextColor: Color.mOnSurface
-                            selectionColor: Color.mPrimary
-                            padding: 0
-                            verticalAlignment: TextInput.AlignVCenter
-                            leftPadding: 0
-                            rightPadding: 0
-                            topPadding: 0
-                            bottomPadding: 0
-                            font.bold: true
-                            Component.onCompleted: {
-                              contentItem.cursorColor = Color.mOnSurface
-                              contentItem.verticalAlignment = TextInput.AlignVCenter
-                              // Focus the search bar by default
-                              Qt.callLater(() => {
-                                             searchInput.forceActiveFocus()
-                                           })
-                            }
-                            onActiveFocusChanged: contentItem.cursorColor = Color.mOnSurface
-
-                            Keys.onDownPressed: selectNext()
-                            Keys.onUpPressed: selectPrev()
-                            Keys.onEnterPressed: activateSelected()
-                            Keys.onReturnPressed: activateSelected()
-                            Keys.onEscapePressed: appLauncherPanel.hide()
-                          }
-                        }
-
-                        Behavior on border.color {
-                          ColorAnimation {
-                            duration: Style.animationFast
-                          }
-                        }
-
-                        Behavior on border.width {
-                          NumberAnimation {
-                            duration: Style.animationFast
-                          }
-                        }
-                      }
-
-                      // Applications list
-                      ScrollView {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        clip: true
-                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
-
-                        ListView {
-                          id: appsList
-                          anchors.fill: parent
-                          spacing: Style.marginTiniest * scaling
-                          model: filteredEntries
-                          currentIndex: selectedIndex
-
-                          delegate: Rectangle {
-                            width: appsList.width - Style.marginSmall * scaling
-                            height: 65 * scaling
-                            radius: Style.radiusMedium * scaling
-                            property bool isSelected: index === selectedIndex
-                            color: (appCardArea.containsMouse || isSelected) ? Qt.darker(Color.mPrimary,
-                                                                                         1.1) : Color.mSurface
-                            border.color: (appCardArea.containsMouse || isSelected) ? Color.mPrimary : Color.transparent
-                            border.width: Math.max(1, (appCardArea.containsMouse
-                                                       || isSelected) ? Style.borderMedium * scaling : 0)
-
-                            Behavior on color {
-                              ColorAnimation {
-                                duration: Style.animationFast
-                              }
-                            }
-
-                            Behavior on border.color {
-                              ColorAnimation {
-                                duration: Style.animationFast
-                              }
-                            }
-
-                            Behavior on border.width {
-                              NumberAnimation {
-                                duration: Style.animationFast
-                              }
-                            }
-
-                            RowLayout {
-                              anchors.fill: parent
-                              anchors.margins: Style.marginMedium * scaling
-                              spacing: Style.marginMedium * scaling
-
-                              // App icon with background
-                              Rectangle {
-                                Layout.preferredWidth: Style.baseWidgetSize * 1.25 * scaling
-                                Layout.preferredHeight: Style.baseWidgetSize * 1.25 * scaling
-                                radius: Style.radiusSmall * scaling
-                                color: appCardArea.containsMouse ? Qt.darker(Color.mPrimary,
-                                                                             1.1) : Color.mSurfaceVariant
-                                property bool iconLoaded: (modelData.isCalculator || modelData.isClipboard
-                                                           || modelData.isCommand) || (iconImg.status === Image.Ready
-                                                                                       && iconImg.source !== ""
-                                                                                       && iconImg.status !== Image.Error
-                                                                                       && iconImg.source !== "")
-                                visible: !searchText.startsWith(">calc") // Hide icon when in calculator mode
-
-                                // Clipboard image display
-                                Image {
-                                  id: clipboardImage
-                                  anchors.fill: parent
-                                  anchors.margins: Style.marginTiny * scaling
-                                  visible: modelData.type === 'image'
-                                  source: modelData.data || ""
-                                  fillMode: Image.PreserveAspectCrop
-                                  asynchronous: true
-                                  cache: true
-                                }
-
-                                IconImage {
-                                  id: iconImg
-                                  anchors.fill: parent
-                                  anchors.margins: Style.marginTiny * scaling
-                                  asynchronous: true
-                                  source: modelData.isCalculator ? "calculate" : modelData.isClipboard ? (modelData.type === 'image' ? "" : "content_paste") : modelData.isCommand ? modelData.icon : (modelData.icon ? Quickshell.iconPath(modelData.icon, "application-x-executable") : "")
-                                  visible: (modelData.isCalculator || modelData.isClipboard || modelData.isCommand
-                                            || parent.iconLoaded) && modelData.type !== 'image'
-                                }
-
-                                // Fallback icon container
-                                Rectangle {
-                                  anchors.fill: parent
-                                  anchors.margins: Style.marginTiny * scaling
-                                  radius: Style.radiusTiny * scaling
-                                  color: Color.mPrimary
-                                  opacity: Style.opacityMedium
-                                  visible: !parent.iconLoaded
-                                }
-
-                                Text {
-                                  anchors.centerIn: parent
-                                  visible: !parent.iconLoaded && !(modelData.isCalculator || modelData.isClipboard
-                                                                   || modelData.isCommand)
-                                  text: modelData.name ? modelData.name.charAt(0).toUpperCase() : "?"
-                                  font.pointSize: Style.fontSizeXL * scaling
-                                  font.weight: Font.Bold
-                                  color: Color.mPrimary
-                                }
-
-                                Behavior on color {
-                                  ColorAnimation {
-                                    duration: Style.animationFast
-                                  }
-                                }
-                              }
-
-                              // App info
-                              ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: Style.marginTiniest * scaling
-
-                                NText {
-                                  text: modelData.name || "Unknown"
-                                  font.pointSize: Style.fontSizeLarge * scaling
-                                  font.weight: Font.Bold
-                                  color: (appCardArea.containsMouse || isSelected) ? Color.mOnPrimary : Color.mOnSurface
-                                  elide: Text.ElideRight
-                                  Layout.fillWidth: true
-                                }
-
-                                NText {
-                                  text: modelData.isCalculator ? (modelData.expr + " = " + modelData.result) : modelData.isClipboard ? modelData.content : modelData.isCommand ? modelData.content : (modelData.genericName || modelData.comment || "")
-                                  font.pointSize: Style.fontSizeMedium * scaling
-                                  color: (appCardArea.containsMouse || isSelected) ? Color.mOnPrimary : Color.mOnSurface
-                                  elide: Text.ElideRight
-                                  Layout.fillWidth: true
-                                  visible: text !== ""
-                                }
-                              }
-                            }
-
-                            MouseArea {
-                              id: appCardArea
-                              anchors.fill: parent
-                              hoverEnabled: true
-                              cursorShape: Qt.PointingHandCursor
-
-                              onClicked: {
-                                selectedIndex = index
-                                activateSelected()
-                              }
-                            }
-                          }
-                        }
-                      }
-
-                      // No results message
-                      NText {
-                        text: searchText.trim() !== "" ? "No applications found" : "No applications available"
-                        font.pointSize: Style.fontSizeLarge * scaling
-                        color: Color.mOnSurface
-                        horizontalAlignment: Text.AlignHCenter
-                        Layout.fillWidth: true
-                        visible: filteredEntries.length === 0
-                      }
-
-                      // Results count
-                      NText {
-                        text: searchText.startsWith(
-                                ">clip") ? `${filteredEntries.length} clipboard item${filteredEntries.length
-                                           !== 1 ? 's' : ''}` : searchText.startsWith(
-                                                     ">calc") ? `${filteredEntries.length} result${filteredEntries.length
-                                                                !== 1 ? 's' : ''}` : `${filteredEntries.length} application${filteredEntries.length !== 1 ? 's' : ''}`
-                        font.pointSize: Style.fontSizeSmall * scaling
-                        color: Color.mOnSurface
-                        horizontalAlignment: Text.AlignHCenter
-                        Layout.fillWidth: true
-                        visible: searchText.trim() !== ""
+                    Behavior on color {
+                      ColorAnimation {
+                        duration: Style.animationFast
                       }
                     }
                   }
+
+                  // App info
+                  ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Style.marginTiniest * scaling
+
+                    NText {
+                      text: modelData.name || "Unknown"
+                      font.pointSize: Style.fontSizeLarge * scaling
+                      font.weight: Font.Bold
+                      color: (appCardArea.containsMouse || isSelected) ? Color.mOnPrimary : Color.mOnSurface
+                      elide: Text.ElideRight
+                      Layout.fillWidth: true
+                    }
+
+                    NText {
+                      text: modelData.isCalculator ? (modelData.expr + " = " + modelData.result) : modelData.isClipboard ? modelData.content : modelData.isCommand ? modelData.content : (modelData.genericName || modelData.comment || "")
+                      font.pointSize: Style.fontSizeMedium * scaling
+                      color: (appCardArea.containsMouse || isSelected) ? Color.mOnPrimary : Color.mOnSurface
+                      elide: Text.ElideRight
+                      Layout.fillWidth: true
+                      visible: text !== ""
+                    }
+                  }
+                }
+
+                MouseArea {
+                  id: appCardArea
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+
+                  onClicked: {
+                    selectedIndex = index
+                    activateSelected()
+                  }
+                }
+              }
+            }
+          }
+
+          // No results message
+          NText {
+            text: searchText.trim() !== "" ? "No applications found" : "No applications available"
+            font.pointSize: Style.fontSizeLarge * scaling
+            color: Color.mOnSurface
+            horizontalAlignment: Text.AlignHCenter
+            Layout.fillWidth: true
+            visible: filteredEntries.length === 0
+          }
+
+          // Results count
+          NText {
+            text: searchText.startsWith(
+                    ">clip") ? `${filteredEntries.length} clipboard item${filteredEntries.length
+                               !== 1 ? 's' : ''}` : searchText.startsWith(
+                                         ">calc") ? `${filteredEntries.length} result${filteredEntries.length
+                                                    !== 1 ? 's' : ''}` : `${filteredEntries.length} application${filteredEntries.length
+                                                            !== 1 ? 's' : ''}`
+            font.pointSize: Style.fontSizeSmall * scaling
+            color: Color.mOnSurface
+            horizontalAlignment: Text.AlignHCenter
+            Layout.fillWidth: true
+            visible: searchText.trim() !== ""
+          }
+        }
       }
-      }
-      }
+    }
+  }
+}

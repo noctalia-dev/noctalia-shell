@@ -1,6 +1,5 @@
 import QtQuick
 import qs.Commons
-import qs.Services
 
 Item {
   id: root
@@ -9,38 +8,30 @@ Item {
   property int strokeWidth: 0
   property var values: []
 
-  readonly property real xScale: width / (values.length * 2)
+  // Pre compute horizontal mirroring
+  readonly property int valuesCount: values.length
+  readonly property int totalBars: valuesCount * 2
+  readonly property real barSlotWidth: totalBars > 0 ? width / totalBars : 0
 
   Repeater {
-    model: values.length
-    Rectangle {
-      property real amp: values[values.length - 1 - index]
+    model: root.totalBars
 
-      color: fillColor
-      border.color: strokeColor
-      border.width: strokeWidth
+    Rectangle {
+      // The first half of bars are a mirror image (reversed values array).
+      // The second half of bars are in normal order.
+      property int valueIndex: index < root.valuesCount ? root.valuesCount - 1 - index // Mirrored half
+                                                        : index - root.valuesCount // Normal half
+
+      property real amp: root.values[valueIndex]
+
+      color: root.fillColor
+      border.color: root.strokeColor
+      border.width: root.strokeWidth
       antialiasing: true
 
-      width: xScale * 0.5
+      width: root.barSlotWidth * 0.5 // Creates a small gap between bars
       height: Math.max(1, root.height * amp)
-      x: index * xScale
-      y: root.height - height
-    }
-  }
-
-  Repeater {
-    model: values.length
-    Rectangle {
-      property real amp: values[index]
-
-      color: fillColor
-      border.color: strokeColor
-      border.width: strokeWidth
-      antialiasing: true
-
-      width: xScale * 0.5
-      height: Math.max(1, root.height * amp)
-      x: (values.length + index) * xScale
+      x: index * root.barSlotWidth
       y: root.height - height
     }
   }

@@ -33,6 +33,10 @@ Singleton {
 
   reloadableId: "brightness"
 
+  Component.onCompleted: {
+    Logger.log("Brightness", "Service started")
+  }
+
   onMonitorsChanged: {
     ddcMonitors = []
     ddcProc.running = true

@@ -37,9 +37,8 @@ NBox {
         Layout.fillHeight: true
       }
 
-      NText {
+      NIcon {
         text: "album"
-        font.family: "Material Symbols Outlined"
         font.pointSize: Style.fontSizeXXL * 2.5 * scaling
         color: Color.mPrimary
         Layout.alignment: Qt.AlignHCenter
@@ -93,11 +92,10 @@ NBox {
           elide: Text.ElideRight
         }
 
-        indicator: Text {
+        indicator: NIcon {
           x: playerSelector.width - width
           y: playerSelector.topPadding + (playerSelector.availableHeight - height) / 2
           text: "arrow_drop_down"
-          font.family: "Material Symbols Outlined"
           font.pointSize: Style.fontSizeXL * scaling
           color: Color.mOnSurface
           horizontalAlignment: Text.AlignRight
@@ -180,13 +178,12 @@ NBox {
           }
 
           // Fallback icon when no album art available
-          NText {
-            anchors.centerIn: parent
+          NIcon {
             text: "album"
             color: Color.mPrimary
-            font.family: "Material Symbols Outlined"
             font.pointSize: Style.fontSizeLarge * 12 * scaling
             visible: !trackArt.visible
+            anchors.centerIn: parent
           }
         }
 
@@ -343,7 +340,20 @@ NBox {
         width: 300 * scaling
         height: 80 * scaling
         values: CavaService.values
-        fillColor: Color.mOnSurface
+        fillColor: Color.mPrimary
+        Layout.alignment: Qt.AlignHCenter
+      }
+    }
+
+    Loader {
+      active: Settings.data.audio.visualizerType == "wave"
+      Layout.alignment: Qt.AlignHCenter
+
+      sourceComponent: WaveSpectrum {
+        width: 300 * scaling
+        height: 80 * scaling
+        values: CavaService.values
+        fillColor: Color.mPrimary
         Layout.alignment: Qt.AlignHCenter
       }
     }

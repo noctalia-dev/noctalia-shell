@@ -276,13 +276,9 @@ NLoader {
                     anchors.rightMargin: Style.marginSmall * scaling
                     spacing: Style.marginSmall * scaling
                     // Tab icon on the left side
-                    NText {
+                    NIcon {
                       text: modelData.icon
                       color: tabTextColor
-                      font.family: "Material Symbols Outlined"
-                      font.variableAxes: {
-                        "wght": (Font.Normal + Font.Bold) / 2.0
-                      }
                       font.pointSize: Style.fontSizeLarge * scaling
                     }
                     // Tab label on the left side

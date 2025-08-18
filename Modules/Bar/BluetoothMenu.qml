@@ -121,9 +121,8 @@ NLoader {
             Layout.fillWidth: true
             spacing: Style.marginMedium * scaling
 
-            NText {
+            NIcon {
               text: "bluetooth"
-              font.family: "Material Symbols Outlined"
               font.pointSize: Style.fontSizeXL * scaling
               color: Color.mPrimary
             }
@@ -230,9 +229,8 @@ NLoader {
                     spacing: Style.marginSmall * scaling
 
                     // One device BT icon
-                    NText {
+                    NIcon {
                       text: BluetoothService.getDeviceIcon(modelData)
-                      font.family: "Material Symbols Outlined"
                       font.pointSize: Style.fontSizeXL * scaling
                       color: {
                         if (availableDeviceArea.containsMouse)
@@ -305,9 +303,8 @@ NLoader {
                             }
                           }
 
-                          NText {
+                          NIcon {
                             text: BluetoothService.getSignalIcon(modelData)
-                            font.family: "Material Symbols Outlined"
                             font.pointSize: Style.fontSizeSmall * scaling
                             color: {
                               if (availableDeviceArea.containsMouse)
@@ -430,9 +427,8 @@ NLoader {
                   anchors.horizontalCenter: parent.horizontalCenter
                   spacing: Style.marginMedium * scaling
 
-                  NText {
+                  NIcon {
                     text: "sync"
-                    font.family: "Material Symbols Outlined"
                     font.pointSize: Style.fontSizeXLL * 1.5 * scaling
                     color: Color.mPrimary
                     anchors.verticalCenter: parent.verticalCenter

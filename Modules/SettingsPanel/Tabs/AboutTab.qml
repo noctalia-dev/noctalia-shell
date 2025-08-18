@@ -135,9 +135,8 @@ ColumnLayout {
           anchors.centerIn: parent
           spacing: Style.marginSmall * scaling
 
-          NText {
+          NIcon {
             text: "system_update"
-            font.family: "Material Symbols Outlined"
             font.pointSize: Style.fontSizeXL * scaling
             color: updateArea.containsMouse ? Color.mSurface : Color.mPrimary
           }

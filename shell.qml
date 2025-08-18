@@ -63,6 +63,9 @@ ShellRoot {
   IPCManager {}
 
   Component.onCompleted: {
+    // Save a ref. to our sidePanel so we can access it from services
+    PanelService.sidePanel = sidePanel
+
     // Ensure our singleton is created as soon as possible so we start fetching weather asap
     LocationService.init()
   }

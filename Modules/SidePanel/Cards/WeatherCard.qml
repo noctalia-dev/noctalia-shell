@@ -26,10 +26,9 @@ NBox {
 
     RowLayout {
       spacing: Style.marginSmall * scaling
-      NText {
+      NIcon {
         text: weatherReady ? LocationService.weatherSymbolFromCode(
                                LocationService.data.weather.current_weather.weathercode) : ""
-        font.family: "Material Symbols Outlined"
         font.pointSize: Style.fontSizeXXL * 1.5 * scaling
         color: Color.mPrimary
       }
@@ -94,9 +93,8 @@ NBox {
             text: Qt.formatDateTime(new Date(LocationService.data.weather.daily.time[index]), "ddd")
             color: Color.mOnSurface
           }
-          NText {
+          NIcon {
             text: LocationService.weatherSymbolFromCode(LocationService.data.weather.daily.weathercode[index])
-            font.family: "Material Symbols Outlined"
             font.pointSize: Style.fontSizeXL * scaling
             color: Color.mPrimary
           }

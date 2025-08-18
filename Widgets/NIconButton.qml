@@ -17,7 +17,6 @@ Rectangle {
   property bool enabled: true
   property bool hovering: false
   property real fontPointSize: Style.fontSizeMedium
-  property string fontFamily: "Material Symbols Outlined"
 
   signal entered
   signal exited
@@ -31,17 +30,13 @@ Rectangle {
   border.color: showBorder ? Color.mPrimary : Color.transparent
   border.width: Math.max(1, Style.borderThin * scaling)
 
-  NText {
+  NIcon {
     anchors.centerIn: parent
     // Little hack to keep things centered at high scaling
     anchors.horizontalCenterOffset: -1 * (scaling - 1.0)
     anchors.verticalCenterOffset: 0
     text: root.icon
-    font.family: fontFamily
     font.pointSize: root.fontPointSize * scaling
-    font.variableAxes: {
-      "wght": (Font.Normal + Font.Bold) / 2.0
-    }
     color: (root.hovering || showFilled) ? Color.mOnPrimary : showBorder ? Color.mPrimary : Color.mOnSurface
     horizontalAlignment: Text.AlignHCenter
     verticalAlignment: Text.AlignVCenter

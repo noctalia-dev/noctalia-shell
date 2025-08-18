@@ -5,82 +5,162 @@ import qs.Services
 import qs.Widgets
 
 Row {
-  id: layout
+  id: root
   anchors.verticalCenter: parent.verticalCenter
   spacing: Style.marginSmall * scaling
-  visible: Settings.data.bar.showSystemInfo
+  visible: (Settings.data.bar.showSystemInfo)
 
-  // Ensure our width is an integer
-  width: Math.floor(cpuUsageLayout.width + cpuTempLayout.width + memoryUsageLayout.width + (2 * 10))
+  Rectangle {
+    // Let the Rectangle size itself based on its content (the Row)
+    width: row.width + Style.marginMedium * scaling * 2
+    height: row.height
+    color: Color.mSurfaceVariant
 
-  Row {
-    id: cpuUsageLayout
-    spacing: Style.marginTiny * scaling
+    radius: Style.radiusSmall * scaling
+    anchors.verticalCenter: parent.verticalCenter
 
-    NText {
-      id: cpuUsageIcon
-      text: "speed"
-      font.family: "Material Symbols Outlined"
-      font.pointSize: Style.fontSizeLarge * scaling
-      verticalAlignment: Text.AlignVCenter
-      anchors.verticalCenter: parent.verticalCenter
-    }
+    Item {
+      id: mainContainer
+      anchors.fill: parent
+      anchors.leftMargin: Style.marginSmall * scaling
+      anchors.rightMargin: Style.marginSmall * scaling
 
-    NText {
-      id: cpuUsageText
-      text: `${SystemStatService.cpuUsage}%`
-      font.pointSize: Style.fontSizeReduced * scaling
-      font.weight: Style.fontWeightBold
-      anchors.verticalCenter: parent.verticalCenter
-      verticalAlignment: Text.AlignVCenter
-      color: Color.mPrimary
+      Row {
+        id: row
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Style.marginSmall * scaling
+        Row {
+          id: cpuUsageLayout
+          spacing: Style.marginTiny * scaling
+
+          NIcon {
+            id: cpuUsageIcon
+            text: "speed"
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          NText {
+            id: cpuUsageText
+            text: `${SystemStatService.cpuUsage}%`
+            font.pointSize: Style.fontSizeReduced * scaling
+            font.weight: Style.fontWeightMedium
+            anchors.verticalCenter: parent.verticalCenter
+            verticalAlignment: Text.AlignVCenter
+            color: Color.mPrimary
+          }
+        }
+
+        // CPU Temperature Component
+        Row {
+          id: cpuTempLayout
+          // spacing is thin here to compensate for the vertical thermometer icon
+          spacing: Style.marginTiniest * scaling
+
+          NIcon {
+            text: "thermometer"
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          NText {
+            text: `${SystemStatService.cpuTemp}°C`
+            font.pointSize: Style.fontSizeReduced * scaling
+            font.weight: Style.fontWeightMedium
+            anchors.verticalCenter: parent.verticalCenter
+            verticalAlignment: Text.AlignVCenter
+            color: Color.mPrimary
+          }
+        }
+
+        // Memory Usage Component
+        Row {
+          id: memoryUsageLayout
+          spacing: Style.marginTiny * scaling
+
+          NIcon {
+            text: "memory"
+            anchors.verticalCenter: parent.verticalCenter
+          }
+
+          NText {
+            text: `${SystemStatService.memoryUsageGb}G`
+            font.pointSize: Style.fontSizeReduced * scaling
+            font.weight: Style.fontWeightMedium
+            anchors.verticalCenter: parent.verticalCenter
+            verticalAlignment: Text.AlignVCenter
+            color: Color.mPrimary
+          }
+        }
+      }
     }
   }
+}// Row {
+//   id: layout
+//   anchors.verticalCenter: parent.verticalCenter
+//   spacing: Style.marginSmall * scaling
+//   visible: Settings.data.bar.showSystemInfo
 
-  // CPU Temperature Component
-  Row {
-    id: cpuTempLayout
-    spacing: Style.marginTiny * scaling
+//   // Ensure our width is an integer
+//   width: Math.floor(cpuUsageLayout.width + cpuTempLayout.width + memoryUsageLayout.width + (2 * 10))
 
-    NText {
-      text: "thermometer"
-      font.family: "Material Symbols Outlined"
-      font.pointSize: Style.fontSizeLarge * scaling
+//   Row {
+//     id: cpuUsageLayout
+//     spacing: Style.marginTiny * scaling
 
-      verticalAlignment: Text.AlignVCenter
-      anchors.verticalCenter: parent.verticalCenter
-    }
+//     NIcon {
+//       id: cpuUsageIcon
+//       text: "speed"
+//       anchors.verticalCenter: parent.verticalCenter
+//     }
 
-    NText {
-      text: `${SystemStatService.cpuTemp}°C`
-      font.pointSize: Style.fontSizeReduced * scaling
-      font.weight: Style.fontWeightBold
-      anchors.verticalCenter: parent.verticalCenter
-      verticalAlignment: Text.AlignVCenter
-      color: Color.mPrimary
-    }
-  }
+//     NText {
+//       id: cpuUsageText
+//       text: `${SystemStatService.cpuUsage}%`
+//       font.pointSize: Style.fontSizeReduced * scaling
+//       font.weight: Style.fontWeightBold
+//       anchors.verticalCenter: parent.verticalCenter
+//       verticalAlignment: Text.AlignVCenter
+//       color: Color.mPrimary
+//     }
+//   }
 
-  // Memory Usage Component
-  Row {
-    id: memoryUsageLayout
-    spacing: Style.marginTiny * scaling
+//   // CPU Temperature Component
+//   Row {
+//     id: cpuTempLayout
+//     spacing: Style.marginTiny * scaling
 
-    NText {
-      text: "memory"
-      font.family: "Material Symbols Outlined"
-      font.pointSize: Style.fontSizeLarge * scaling
-      verticalAlignment: Text.AlignVCenter
-      anchors.verticalCenter: parent.verticalCenter
-    }
+//     NIcon {
+//       text: "thermometer"
+//       anchors.verticalCenter: parent.verticalCenter
+//     }
 
-    NText {
-      text: `${SystemStatService.memoryUsageGb}G`
-      font.pointSize: Style.fontSizeReduced * scaling
-      font.weight: Style.fontWeightBold
-      anchors.verticalCenter: parent.verticalCenter
-      verticalAlignment: Text.AlignVCenter
-      color: Color.mPrimary
-    }
-  }
-}
+//     NText {
+//       text: `${SystemStatService.cpuTemp}°C`
+//       font.pointSize: Style.fontSizeReduced * scaling
+//       font.weight: Style.fontWeightBold
+//       anchors.verticalCenter: parent.verticalCenter
+//       verticalAlignment: Text.AlignVCenter
+//       color: Color.mPrimary
+//     }
+//   }
+
+//   // Memory Usage Component
+//   Row {
+//     id: memoryUsageLayout
+//     spacing: Style.marginTiny * scaling
+
+//     NIcon {
+//       text: "memory"
+//       anchors.verticalCenter: parent.verticalCenter
+//     }
+
+//     NText {
+//       text: `${SystemStatService.memoryUsageGb}G`
+//       font.pointSize: Style.fontSizeReduced * scaling
+//       font.weight: Style.fontWeightBold
+//       anchors.verticalCenter: parent.verticalCenter
+//       verticalAlignment: Text.AlignVCenter
+//       color: Color.mPrimary
+//     }
+//   }
+// }
+

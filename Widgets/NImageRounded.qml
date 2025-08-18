@@ -7,15 +7,17 @@ import qs.Services
 
 Rectangle {
   id: root
-  color: Color.transparent
-  property real imageRadius: width * 0.5
-  radius: imageRadius
 
   property string imagePath: ""
   property string fallbackIcon: ""
   property color borderColor: Color.transparent
   property real borderWidth: 0
+  property real imageRadius: width * 0.5
 
+  property real scaledRadius: imageRadius * Settings.data.general.radiusRatio
+
+  color: Color.transparent
+  radius: scaledRadius
   anchors.margins: Style.marginTiniest * scaling
 
   // Border
@@ -54,17 +56,16 @@ Rectangle {
     visible: false
     Rectangle {
       anchors.fill: parent
-      radius: root.imageRadius
+      radius: scaledRadius
     }
   }
 
   // Fallback icon
-  NText {
+  NIcon {
     anchors.centerIn: parent
     text: fallbackIcon
-    font.family: "Material Symbols Outlined"
     font.pointSize: Style.fontSizeXL * scaling
-    visible: fallbackIcon !== undefined && fallbackIcon !== "" && (source === undefined || source === "")
+    visible: fallbackIcon !== undefined && fallbackIcon !== "" && (imagePath === undefined || imagePath === "")
     z: 0
   }
 }

@@ -115,9 +115,8 @@ NLoader {
             Layout.fillWidth: true
             spacing: Style.marginMedium * scaling
 
-            NText {
+            NIcon {
               text: "notifications"
-              font.family: "Material Symbols Outlined"
               font.pointSize: Style.fontSizeXL * scaling
               color: Color.mPrimary
             }
@@ -159,9 +158,8 @@ NLoader {
               anchors.centerIn: parent
               spacing: Style.marginMedium * scaling
 
-              NText {
+              NIcon {
                 text: "notifications_off"
-                font.family: "Material Symbols Outlined"
                 font.pointSize: Style.fontSizeXXL * scaling
                 color: Color.mOnSurfaceVariant
                 Layout.alignment: Qt.AlignHCenter

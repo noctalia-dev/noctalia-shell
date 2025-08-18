@@ -23,16 +23,17 @@ Singleton {
   property real fontSizeXL: 18
   property real fontSizeXXL: 24
 
-  // Font weight / Unsure if we keep em?
+  // Font weight
   property int fontWeightRegular: 400
   property int fontWeightMedium: 500
+  property int fontWeightSemiBold: 600
   property int fontWeightBold: 700
 
   // Radii
-  property int radiusTiny: 8
-  property int radiusSmall: 12
-  property int radiusMedium: 16
-  property int radiusLarge: 20
+  property int radiusTiny: 8 * Settings.data.general.radiusRatio
+  property int radiusSmall: 12 * Settings.data.general.radiusRatio
+  property int radiusMedium: 16 * Settings.data.general.radiusRatio
+  property int radiusLarge: 20 * Settings.data.general.radiusRatio
 
   // Border
   property int borderThin: 1

@@ -77,11 +77,10 @@ ColumnLayout {
                                                                                    combo.currentIndex).name : ""
     }
 
-    indicator: NText {
+    indicator: NIcon {
       x: combo.width - width - Style.marginMedium * scaling
       y: combo.topPadding + (combo.availableHeight - height) / 2
       text: "arrow_drop_down"
-      font.family: "Material Symbols Outlined"
       font.pointSize: Style.fontSizeXL * scaling
     }
 

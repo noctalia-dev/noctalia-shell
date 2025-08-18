@@ -135,27 +135,32 @@ Item {
 
             delegate: Rectangle {
               id: wallpaperItem
+
               property string wallpaperPath: modelData
               property bool isSelected: wallpaperPath === WallpaperService.currentWallpaper
 
               width: wallpaperGridView.itemSize
               height: Math.floor(wallpaperGridView.itemSize * 0.67)
-              radius: Style.radiusMedium * scaling
-              color: isSelected ? Color.mPrimary : Color.mSurface
-              border.color: isSelected ? Color.mSecondary : Color.mOutline
-              border.width: Math.max(1, Style.borderThin * scaling)
-              clip: true
+              color: Color.transparent
 
-              NImageRounded {
-                anchors.fill: parent
-                anchors.margins: Style.marginTiny * scaling
+              // NImageCached relies on the image being visible to work properly.
+              // MultiEffect relies on the image being invisible to apply effects.
+              // That's why we don't have rounded corners here, as we don't want to bring back qt5compat.
+              NImageCached {
+                id: img
                 imagePath: wallpaperPath
-                fallbackIcon: "image"
-
-                imageRadius: Style.radiusMedium * scaling
+                anchors.fill: parent
               }
 
-              // Selection indicator
+              // Borders on top
+              Rectangle {
+                anchors.fill: parent
+                color: Color.transparent
+                border.color: isSelected ? Color.mPrimary : Color.mOutline
+                border.width: Math.max(1, Style.borderThick * scaling)
+              }
+
+              // Selection tick-mark
               Rectangle {
                 anchors.top: parent.top
                 anchors.right: parent.right
@@ -168,12 +173,11 @@ Item {
                 border.width: Math.max(1, Style.borderThin * scaling)
                 visible: isSelected
 
-                NText {
-                  anchors.centerIn: parent
+                NIcon {
                   text: "check"
-                  font.family: "Material Symbols Outlined"
                   font.pointSize: Style.fontSizeSmall * scaling
                   color: Color.mOnPrimary
+                  anchors.centerIn: parent
                 }
               }
 
@@ -216,9 +220,8 @@ Item {
               anchors.centerIn: parent
               spacing: Style.marginMedium * scaling
 
-              NText {
+              NIcon {
                 text: "folder_open"
-                font.family: "Material Symbols Outlined"
                 font.pointSize: Style.fontSizeLarge * scaling
                 color: Color.mOnSurface
                 Layout.alignment: Qt.AlignHCenter

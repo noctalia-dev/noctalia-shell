@@ -78,6 +78,8 @@ A sleek, minimal, and thoughtfully crafted desktop shell for Wayland using **Qui
 - `matugen` - Material You color scheme generation
 - `cava` - Audio visualizer component
 - `gpu-screen-recorder` - Screen recording functionality
+- `brightnessctl` - For internal/laptop monitor brightness
+- `ddcutil` - For desktop monitor brightness
 
 ---
 
@@ -119,7 +121,9 @@ qs ipc call lockScreen toggle
 
 ### Configuration
 
-Access settings through the side panel (top right button) to configure weather, wallpapers, screen recording, audio, network, and theme options.
+Access settings through the side panel (top right button) to configure weather, wallpapers, screen recording, audio, network, and theme options.  
+Configuration is usually stored in ~/.config/noctalia  
+If you upgrade from v1, you can delete the old configuration folder at ~/.config/Noctalia (with capital N)  
 
 ### Application Launcher
 
@@ -218,10 +222,11 @@ Noctalia/
 
 ### Contributing
 
-1. Follow the existing code style and patterns
-2. Use the modular architecture for new features
-3. Implement proper error handling and logging
-4. Test with both Hyprland and Niri compositors (if applicable)
+1. All Pull requests should be based on the "dev" branch
+2. Follow the existing code style and patterns
+3. Use the modular architecture for new features
+4. Implement proper error handling and logging
+5. Test with both Hyprland and Niri compositors (if applicable)
 
 Contributions are welcome! Don't worry about being perfect - every contribution helps! Whether it's fixing a small bug, adding a new feature, or improving documentation, we welcome all contributions. Feel free to open an issue to discuss ideas or ask questions before diving in. For feature requests and ideas, you can also use our discussions page.
 

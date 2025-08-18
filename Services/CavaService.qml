@@ -3,20 +3,20 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.Commons
 
 Singleton {
   id: root
 
   property var values: Array(barsCount).fill(0)
-  property int barsCount: 20
+  property int barsCount: 32
 
   property var config: ({
                           "general": {
                             "bars": barsCount,
                             "framerate": 60,
-                            "autosens": 0,
-                            "overshoot": 0,
-                            "sensitivity": 200,
+                            "autosens": 1,
+                            "sensitivity": 100,
                             "lower_cutoff_freq": 50,
                             "higher_cutoff_freq": 12000
                           },
@@ -37,7 +37,7 @@ Singleton {
   Process {
     id: process
     stdinEnabled: true
-    running: MediaService.isPlaying
+    running: (Settings.data.audio.visualizerType !== "none") && PanelService.sidePanel.isLoaded
     command: ["cava", "-p", "/dev/stdin"]
     onExited: {
       stdinEnabled = true

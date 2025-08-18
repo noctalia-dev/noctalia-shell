@@ -27,7 +27,7 @@ Row {
   Rectangle {
     // Let the Rectangle size itself based on its content (the Row)
     width: row.width + Style.marginMedium * scaling * 2
-    height: row.height + Style.marginSmall * scaling
+    height: row.height
     color: Color.mSurfaceVariant
     radius: Style.radiusSmall * scaling
     anchors.verticalCenter: parent.verticalCenter
@@ -44,10 +44,9 @@ Row {
         spacing: Style.marginTiny * scaling
 
         // Window icon
-        NText {
+        NIcon {
           id: windowIcon
           text: MediaService.isPlaying ? "pause" : "play_arrow"
-          font.family: "Material Symbols Outlined"
           font.pointSize: Style.fontSizeLarge * scaling
           verticalAlignment: Text.AlignVCenter
           anchors.verticalCenter: parent.verticalCenter
@@ -64,11 +63,11 @@ Row {
                                                                                 150 * scaling)
           text: getTitle()
           font.pointSize: Style.fontSizeReduced * scaling
-          font.weight: Style.fontWeightBold
+          font.weight: Style.fontWeightMedium
           elide: Text.ElideRight
           anchors.verticalCenter: parent.verticalCenter
           verticalAlignment: Text.AlignVCenter
-          color: Color.mSecondary
+          color: Color.mTertiary
 
           Behavior on width {
             NumberAnimation {

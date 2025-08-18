@@ -130,9 +130,8 @@ NLoader {
             Layout.fillWidth: true
             spacing: Style.marginMedium * scaling
 
-            NText {
+            NIcon {
               text: "wifi"
-              font.family: "Material Symbols Outlined"
               font.pointSize: Style.fontSizeXL * scaling
               color: Color.mPrimary
             }
@@ -198,9 +197,8 @@ NLoader {
               visible: !Settings.data.network.wifiEnabled
               spacing: Style.marginMedium * scaling
 
-              NText {
+              NIcon {
                 text: "wifi_off"
-                font.family: "Material Symbols Outlined"
                 font.pointSize: Style.fontSizeXXL * scaling
                 color: Color.mOnSurfaceVariant
                 Layout.alignment: Qt.AlignHCenter
@@ -250,9 +248,8 @@ NLoader {
                       anchors.margins: Style.marginSmall * scaling
                       spacing: Style.marginSmall * scaling
 
-                      NText {
+                      NIcon {
                         text: NetworkService.signalIcon(modelData.signal)
-                        font.family: "Material Symbols Outlined"
                         font.pointSize: Style.fontSizeXL * scaling
                         color: modelData.connected ? Color.mSurface : (networkMouseArea.containsMouse ? Color.mSurface : Color.mOnSurface)
                       }
