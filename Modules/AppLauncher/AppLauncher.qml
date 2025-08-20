@@ -378,6 +378,7 @@ NLoader {
                 rightPadding: 0
                 topPadding: 0
                 bottomPadding: 0
+                font.family: Settings.data.ui.fontFamily
                 font.bold: true
                 Component.onCompleted: {
                   contentItem.cursorColor = Color.mOnSurface

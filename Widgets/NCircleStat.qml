@@ -73,7 +73,7 @@ Rectangle {
       }
 
       // Percent centered in the circle
-      Text {
+      NText {
         id: valueLabel
         anchors.centerIn: parent
         text: `${root.value}${root.suffix}`
