@@ -17,6 +17,10 @@ Variants {
     readonly property real scaling: ScalingService.scale(screen)
     screen: modelData
 
+    // Only show on screens that have notifications enabled
+    visible: modelData ? (Settings.data.notifications.monitors.includes(modelData.name)
+                         || (Settings.data.notifications.monitors.length === 0)) : false
+
     // Position based on bar location, like Notification popup does
     anchors {
       top: Settings.data.bar.position === "top"
@@ -51,11 +55,15 @@ Variants {
       hiddenY: Settings.data.bar.position === "top" ? -toast.height - 20 : toast.height + 20
 
       Component.onCompleted: {
-        // Register this toast with the service
-        ToastService.currentToast = toast
+        // Only register toasts for screens that have notifications enabled
+        if (modelData ? (Settings.data.notifications.monitors.includes(modelData.name)
+                        || (Settings.data.notifications.monitors.length === 0)) : false) {
+          // Register this toast with the service
+          ToastService.allToasts.push(toast)
 
-        // Connect dismissal signal
-        toast.dismissed.connect(ToastService.onToastDismissed)
+          // Connect dismissal signal
+          toast.dismissed.connect(ToastService.onToastDismissed)
+        }
       }
     }
   }

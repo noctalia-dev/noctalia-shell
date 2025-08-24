@@ -1,18 +1,77 @@
 pragma Singleton
 
 import QtQuick
+import Quickshell
 import Quickshell.Io
 import qs.Commons
 
-QtObject {
+Singleton {
   id: root
 
   // Queue of pending toast messages
   property var messageQueue: []
   property bool isShowingToast: false
 
-  // Reference to the current toast instance (set by ToastManager)
-  property var currentToast: null
+  // Reference to all toast instances (set by ToastManager)
+  property var allToasts: []
+
+  // Properties for command checking
+  property var commandCheckCallback: null
+  property string commandCheckSuccessMessage: ""
+  property string commandCheckFailMessage: ""
+
+  // Properties for command running
+  property var commandRunCallback: null
+  property string commandRunSuccessMessage: ""
+  property string commandRunFailMessage: ""
+
+  // Properties for delayed toast
+  property string delayedToastMessage: ""
+  property string delayedToastType: "notice"
+
+  // Process for command checking
+  Process {
+    id: commandCheckProcess
+    command: ["which", "test"]
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        showNotice(commandCheckSuccessMessage)
+        if (commandCheckCallback)
+          commandCheckCallback()
+      } else {
+        showWarning(commandCheckFailMessage)
+      }
+    }
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
+  // Process for command running
+  Process {
+    id: commandRunProcess
+    command: ["echo", "test"]
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        showNotice(commandRunSuccessMessage)
+        if (commandRunCallback)
+          commandRunCallback()
+      } else {
+        showWarning(commandRunFailMessage)
+      }
+    }
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
+  // Timer for delayed toast
+  Timer {
+    id: delayedToastTimer
+    interval: 1000
+    repeat: false
+    onTriggered: {
+      showToast(delayedToastMessage, delayedToastType)
+    }
+  }
 
   // Methods to show different types of messages
   function showNotice(label, description = "", persistent = false, duration = 3000) {
@@ -25,37 +84,14 @@ QtObject {
 
   // Utility function to check if a command exists and show appropriate toast
   function checkCommandAndToast(command, successMessage, failMessage, onSuccess = null) {
-    var checkProcess = Qt.createQmlObject(`
-                                          import QtQuick
-                                          import Quickshell.Io
-                                          Process {
-                                          id: checkProc
-                                          command: ["which", "${command}"]
-                                          running: true
+    // Store callback for use in the process
+    commandCheckCallback = onSuccess
+    commandCheckSuccessMessage = successMessage
+    commandCheckFailMessage = failMessage
 
-                                          property var onSuccessCallback: null
-                                          property bool hasFinished: false
-
-                                          onExited: {
-                                          if (!hasFinished) {
-                                          hasFinished = true
-                                          if (exitCode === 0) {
-                                          ToastService.showNotice("${successMessage}")
-                                          if (onSuccessCallback) onSuccessCallback()
-                                          } else {
-                                          ToastService.showWarning("${failMessage}")
-                                          }
-                                          checkProc.destroy()
-                                          }
-                                          }
-
-                                          // Fallback collectors to prevent issues
-                                          stdout: StdioCollector {}
-                                          stderr: StdioCollector {}
-                                          }
-                                          `, root)
-
-    checkProcess.onSuccessCallback = onSuccess
+    // Start the command check process
+    commandCheckProcess.command = ["which", command]
+    commandCheckProcess.running = true
   }
 
   // Simple function to show a random toast (useful for testing or fun messages)
@@ -95,37 +131,14 @@ QtObject {
 
   // Generic command runner with toast feedback
   function runCommandWithToast(command, args, successMessage, failMessage, onSuccess = null) {
-    var fullCommand = [command].concat(args || [])
-    var runProcess = Qt.createQmlObject(`
-                                        import QtQuick
-                                        import Quickshell.Io
-                                        Process {
-                                        id: runProc
-                                        command: ${JSON.stringify(fullCommand)}
-                                        running: true
+    // Store callback for use in the process
+    commandRunCallback = onSuccess
+    commandRunSuccessMessage = successMessage
+    commandRunFailMessage = failMessage
 
-                                        property var onSuccessCallback: null
-                                        property bool hasFinished: false
-
-                                        onExited: {
-                                        if (!hasFinished) {
-                                        hasFinished = true
-                                        if (exitCode === 0) {
-                                        ToastService.showNotice("${successMessage}")
-                                        if (onSuccessCallback) onSuccessCallback()
-                                        } else {
-                                        ToastService.showWarning("${failMessage}")
-                                        }
-                                        runProc.destroy()
-                                        }
-                                        }
-
-                                        stdout: StdioCollector {}
-                                        stderr: StdioCollector {}
-                                        }
-                                        `, root)
-
-    runProcess.onSuccessCallback = onSuccess
+    // Start the command run process
+    commandRunProcess.command = [command].concat(args || [])
+    commandRunProcess.running = true
   }
 
   // Check if a file/directory exists
@@ -135,18 +148,10 @@ QtObject {
 
   // Show toast after a delay (useful for delayed feedback)
   function delayedToast(message, type = "notice", delayMs = 1000) {
-    var timer = Qt.createQmlObject(`
-                                   import QtQuick
-                                   Timer {
-                                   interval: ${delayMs}
-                                   repeat: false
-                                   running: true
-                                   onTriggered: {
-                                   ToastService.showToast("${message}", "${type}")
-                                   destroy()
-                                   }
-                                   }
-                                   `, root)
+    delayedToastMessage = message
+    delayedToastType = type
+    delayedToastTimer.interval = delayMs
+    delayedToastTimer.restart()
   }
 
   // Generic method to show a toast
@@ -171,7 +176,7 @@ QtObject {
 
   // Process the message queue
   function processQueue() {
-    if (messageQueue.length === 0 || !currentToast) {
+    if (messageQueue.length === 0 || allToasts.length === 0) {
       isShowingToast = false
       return
     }
@@ -184,24 +189,37 @@ QtObject {
     var toastData = messageQueue.shift()
     isShowingToast = true
 
-    // Configure and show toast
-    currentToast.label = toastData.label
-    currentToast.description = toastData.description
-    currentToast.type = toastData.type
-    currentToast.persistent = toastData.persistent
-    currentToast.duration = toastData.duration
-    currentToast.show()
+    // Configure and show toast on all screens
+    for (var i = 0; i < allToasts.length; i++) {
+      var toast = allToasts[i]
+      toast.label = toastData.label
+      toast.description = toastData.description
+      toast.type = toastData.type
+      toast.persistent = toastData.persistent
+      toast.duration = toastData.duration
+      toast.show()
+    }
   }
 
   // Called when a toast is dismissed
   function onToastDismissed() {
+    // Check if all toasts are dismissed
+    var allDismissed = true
+    for (var i = 0; i < allToasts.length; i++) {
+      if (allToasts[i].visible) {
+        allDismissed = false
+        break
+      }
+    }
+    
+    if (allDismissed) {
+      isShowingToast = false
 
-    isShowingToast = false
-
-    // Small delay before showing next toast
-    Qt.callLater(function () {
-      processQueue()
-    })
+      // Small delay before showing next toast
+      Qt.callLater(function () {
+        processQueue()
+      })
+    }
   }
 
   // Clear all pending messages
@@ -212,8 +230,10 @@ QtObject {
 
   // Hide current toast
   function hideCurrentToast() {
-    if (currentToast && isShowingToast) {
-      currentToast.hide()
+    if (isShowingToast) {
+      for (var i = 0; i < allToasts.length; i++) {
+        allToasts[i].hide()
+      }
     }
   }
 
