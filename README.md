@@ -79,6 +79,7 @@ Features a modern modular architecture with a status bar, notification system, c
 - `gpu-screen-recorder` - Screen recording functionality
 - `brightnessctl` - For internal/laptop monitor brightness
 - `ddcutil` - For desktop monitor brightness (might introduce some system instability with certain monitors)
+If you want to use the ArchUpdater Widget, make sure you have any polkit agent installed.
 
 ---
 

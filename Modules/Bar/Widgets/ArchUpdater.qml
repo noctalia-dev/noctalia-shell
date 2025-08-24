@@ -1,48 +1,71 @@
 import qs.Commons
 import qs.Services
 import qs.Widgets
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 NIconButton {
     id: root
     sizeMultiplier: 0.8
+
+    readonly property real scaling: ScalingService.scale(screen)
 
     colorBg: Color.mSurfaceVariant
     colorFg: Color.mOnSurface
     colorBorder: Color.transparent
     colorBorderHover: Color.transparent
 
-    icon: !ArchUpdaterService.ready ? "block" : (ArchUpdaterService.busy ? "sync" : (ArchUpdaterService.updatePackages.length > 0 ? "system_update" : "task_alt"))
+    // Enhanced icon states with better visual feedback
+    icon: {
+        if (ArchUpdaterService.busy) return "sync"
+        if (ArchUpdaterService.updatePackages.length > 0) {
+            // Show different icons based on update count
+            const count = ArchUpdaterService.updatePackages.length
+            if (count > 50) return "system_update_alt" // Many updates
+            if (count > 10) return "system_update" // Moderate updates
+            return "system_update" // Few updates
+        }
+        return "task_alt"
+    }
 
+    // Enhanced tooltip with more information
     tooltipText: {
-        if (!ArchUpdaterService.isArchBased)
-            return "Arch users already ran 'sudo pacman -Syu' for breakfast.";
-        if (!ArchUpdaterService.checkupdatesAvailable)
-            return "Please install pacman-contrib to use this feature.";
         if (ArchUpdaterService.busy)
             return "Checking for updates…";
 
         var count = ArchUpdaterService.updatePackages.length;
         if (count === 0)
-            return "No updates available";
+            return "System is up to date ✓";
 
         var header = count === 1 ? "One package can be upgraded:" : (count + " packages can be upgraded:");
 
         var list = ArchUpdaterService.updatePackages || [];
         var s = "";
-        var limit = Math.min(list.length, 10);
+        var limit = Math.min(list.length, 8); // Reduced to 8 for better readability
         for (var i = 0; i < limit; ++i) {
             var p = list[i];
             s += (i ? "\n" : "") + (p.name + ": " + p.oldVersion + " → " + p.newVersion);
         }
-        if (list.length > 10)
-            s += "\n… and " + (list.length - 10) + " more";
+        if (list.length > 8)
+            s += "\n… and " + (list.length - 8) + " more";
 
-        return header + "\n" + s;
+        return header + "\n\n" + s + "\n\nClick to update system";
     }
 
+    // Enhanced click behavior with confirmation
     onClicked: {
-        if (!ArchUpdaterService.ready || ArchUpdaterService.busy)
+        if (ArchUpdaterService.busy)
             return;
-        ArchUpdaterService.runUpdate();
+        
+        if (ArchUpdaterService.updatePackages.length > 0) {
+            // Show confirmation dialog for updates
+            PanelService.updatePanel.toggle(screen);
+        } else {
+            // Just refresh if no updates available
+            ArchUpdaterService.doPoll();
+        }
     }
+
+
 }

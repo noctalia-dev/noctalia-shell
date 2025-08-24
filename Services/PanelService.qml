@@ -11,6 +11,9 @@ Singleton {
   // A ref. to the lockScreen, so it's accessible from other services
   property var lockScreen: null
 
+  // A ref. to the updatePanel, so it's accessible from other services
+  property var updatePanel: null
+
   // Currently opened panel
   property var openedPanel: null
 

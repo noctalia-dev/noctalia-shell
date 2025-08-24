@@ -27,6 +27,7 @@ import qs.Modules.PowerPanel
 import qs.Modules.SidePanel
 import qs.Modules.Toast
 import qs.Modules.WiFiPanel
+import qs.Modules.ArchUpdaterPanel
 import qs.Services
 import qs.Widgets
 
@@ -79,6 +80,10 @@ ShellRoot {
     id: bluetoothPanel
   }
 
+  ArchUpdaterPanel {
+    id: updatePanel
+  }
+
   ToastManager {}
 
   IPCManager {}
@@ -89,6 +94,9 @@ ShellRoot {
 
     // Save a ref. to our lockScreen so we can access it from services
     PanelService.lockScreen = lockScreen
+
+    // Save a ref. to our updatePanel so we can access it from services
+    PanelService.updatePanel = updatePanel
 
     // Ensure our singleton is created as soon as possible so we start fetching weather asap
     LocationService.init()
