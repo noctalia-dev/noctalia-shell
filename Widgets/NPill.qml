@@ -32,6 +32,8 @@ Item {
   property bool showPill: false
   property bool shouldAnimateHide: false
 
+  property string iconSide: "right"
+  readonly property int seamOverlap: Math.ceil(1 * scaling)
   // Exposed width logic
   readonly property int pillHeight: Style.baseWidgetSize * sizeMultiplier * scaling
   readonly property int iconSize: Style.baseWidgetSize * sizeMultiplier * scaling
@@ -46,11 +48,15 @@ Item {
     id: pill
     width: effectiveShown ? maxPillWidth : 1
     height: pillHeight
-    x: (iconCircle.x + iconCircle.width / 2) - width
+  x: iconSide === "right"
+     ? (iconCircle.x + iconCircle.width / 2) - width - seamOverlap
+     : (iconCircle.x + iconCircle.width / 2) + seamOverlap
     opacity: effectiveShown ? Style.opacityFull : Style.opacityNone
     color: pillColor
-    topLeftRadius: pillHeight * 0.5
-    bottomLeftRadius: pillHeight * 0.5
+  topLeftRadius: iconSide === "right" ? pillHeight * 0.5 : 0
+  bottomLeftRadius: iconSide === "right" ? pillHeight * 0.5 : 0
+  topRightRadius: iconSide === "left" ? pillHeight * 0.5 : 0
+  bottomRightRadius: iconSide === "left" ? pillHeight * 0.5 : 0
     anchors.verticalCenter: parent.verticalCenter
 
     NText {
@@ -77,6 +83,13 @@ Item {
         easing.type: Easing.OutCubic
       }
     }
+    // Smooth color transition to match iconCircle and avoid right-edge seam when hovering
+    Behavior on color {
+      ColorAnimation {
+        duration: Style.animationNormal
+        easing.type: Easing.InOutQuad
+      }
+    }
   }
 
   Rectangle {
@@ -85,9 +98,10 @@ Item {
     height: iconSize
     radius: width * 0.5
     // When forced shown, match pill background; otherwise use accent when hovered
-    color: forceShown ? pillColor : (showPill ? iconCircleColor : Color.mSurfaceVariant)
-    anchors.verticalCenter: parent.verticalCenter
-    anchors.right: parent.right
+  color: forceShown ? pillColor : (showPill ? iconCircleColor : Color.mSurfaceVariant)
+  anchors.verticalCenter: parent.verticalCenter
+  anchors.right: iconSide === "right" ? parent.right : undefined
+  anchors.left: iconSide === "left" ? parent.left : undefined
 
     Behavior on color {
       ColorAnimation {

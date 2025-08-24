@@ -47,12 +47,6 @@ Singleton {
         }
     }
 
-    function notify(title, body) {
-        const app = "UpdateService";
-        const icon = "system-software-update";
-        Quickshell.execDetached(["notify-send", "-a", app, "-i", icon, String(title || ""), String(body || "")]);
-    }
-
     function doPoll(forceFull = false) {
         if (busy)
             return;
@@ -90,7 +84,7 @@ Singleton {
                 updateService.failureCount++;
                 console.warn("[UpdateService] checkupdates failed (code:", exitCode, ")");
                 if (updateService.failureCount >= updateService.failureThreshold) {
-                    updateService.notify(qsTr("Update check failed"), qsTr(`Exit code: ${exitCode} (failed ${updateService.failureCount} times)`));
+                    Quickshell.execDetached(["notify-send", "-a", "UpdateService", "-i", "system-software-update", String(qsTr("Update check failed")), String(qsTr(`Exit code: ${exitCode} (failed ${updateService.failureCount} times)`))]);
                     updateService.failureCount = 0;
                 }
                 updateService.updatePackages = [];
@@ -114,7 +108,6 @@ Singleton {
             id: out
         }
     }
-
 
     function _clonePackageList(list) {
         const src = Array.isArray(list) ? list : [];
@@ -154,7 +147,21 @@ Singleton {
             return;
         const added = updates - lastNotifiedUpdates;
         const msg = added === 1 ? qsTr("One new package can be upgraded (") + updates + qsTr(")") : `${added} ${qsTr("new packages can be upgraded (")} ${updates} ${qsTr(")")}`;
-        notify(qsTr("Updates Available"), msg);
+        if (!notifyProc.running) {
+            notifyProc.command = [
+                "notify-send",
+                "-a", "UpdateService",
+                "-i", "system-software-update",
+                "-u", "normal",
+                "-t", "10000",
+                "-e",
+                "-c", "system;updates",
+                "-A", "update=Update now",
+                String(qsTr("Updates Available")),
+                String(msg)
+            ];
+            notifyProc.running = true;
+        }
         lastNotifiedUpdates = updates;
     }
 
@@ -176,7 +183,20 @@ Singleton {
         onTriggered: {
             if (pkgProc.running) {
                 console.error("[UpdateService] Update check killed (timeout)");
-                updateService.notify(qsTr("Update check killed"), qsTr("Process took too long"));
+                Quickshell.execDetached(["notify-send", "-a", "UpdateService", "-i", "system-software-update", String(qsTr("Update check killed")), String(qsTr("Process took too long"))]);
+            }
+        }
+    }
+
+    // Handles actionable notifications for updates
+    Process {
+        id: notifyProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const action = (text || "").trim();
+                if (action === "update") {
+                    Quickshell.execDetached(updateService.updateCommand);
+                }
             }
         }
     }
