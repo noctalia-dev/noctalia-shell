@@ -96,8 +96,7 @@ Variants {
           border.width: Math.max(1, Style.borderS * scaling)
           color: Color.mSurface
 
-          // Capture raw notification once for nested bindings
-          property var raw: model.rawNotification
+          readonly property var actionsModel: model.rawNotification ? model.rawNotification.actions : null
 
           // Animation properties
           property real scaleValue: 0.8
@@ -206,67 +205,27 @@ Variants {
               elide: Text.ElideRight
             }
 
-            // Actions row (uses NPill for clean, clickable chips)
-            Flow {
-              id: actionsFlow
-              width: 300 * scaling
-              spacing: Style.marginXS * scaling
-              visible: actionsRepeater.count > 0
+            // Actions row (if any)
+            RowLayout {
+              id: actionsRow
+              spacing: Style.marginS * scaling
+              visible: !!actionsModel && ((actionsModel.count !== undefined ? actionsModel.count : (actionsModel.length !== undefined ? actionsModel.length : 0)) > 0)
 
               Repeater {
                 id: actionsRepeater
-                // The actions list comes from the raw notification (list<NotificationAction>)
-                model: (raw && raw.actions) ? raw.actions : []
+                model: actionsModel ? (actionsModel.count !== undefined ? actionsModel.count : (actionsModel.length !== undefined ? actionsModel.length : 0)) : 0
 
                 delegate: NPill {
-                  id: actionPill
-                  // Always shown as a solid pill; uses shell colors
-                  sizeMultiplier: 0.8
-                  forceShown: true
-                  text: (modelData && modelData.text) ? modelData.text : ((modelData && modelData.label) ? modelData.label : ((modelData && modelData.identifier) ? modelData.identifier : ""))
-                  // Hover state to swap colors
-                  property bool hovering: false
-                  pillColor: hovering ? Color.mPrimary : Color.mSurfaceVariant
-                  textColor: hovering ? Color.mOnPrimary : Color.mOnSurface
-                  // Place the action icon on the left for better readability here
-                  iconSide: "left"
-                  // Pick an icon for common action identifiers/labels
-                  icon: {
-                    function pickIcon(s) {
-                      if (!s) return ""
-                      s = ("" + s).toLowerCase()
-                      if (s.includes("open") || s === "default" || s.includes("view")) return "open_in_new"
-                      if (s.includes("dismiss") || s.includes("close") || s.includes("cancel")) return "close"
-                      if (s.includes("reply")) return "reply"
-                      if (s.includes("snooze")) return "snooze"
-                      if (s.includes("accept") || s.includes("ok") || s.includes("yes")) return "check"
-                      if (s.includes("deny") || s.includes("no")) return "close"
-                      return ""
-                    }
-                    const id = (modelData && (modelData.identifier || modelData.id)) ? (modelData.identifier || modelData.id) : ""
-                    const label = (modelData && (modelData.text || modelData.label)) ? (modelData.text || modelData.label) : ""
-                    return pickIcon(id) || pickIcon(label)
-                  }
+                  readonly property var actionObj: actionsModel && (actionsModel.get ? actionsModel.get(index) : actionsModel[index])
 
-                  // Pointer cursor + drive hover color without stealing clicks
-                  MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    acceptedButtons: Qt.NoButton
-                    cursorShape: Qt.PointingHandCursor
-                    onEntered: actionPill.hovering = true
-                    onExited: actionPill.hovering = false
-                  }
+                  text: (actionObj && (actionObj.text || actionObj.identifier)) || "Action"
+                  sizeMultiplier: 0.7
+                  forceOpen: true
+                  pillColor: Color.mPrimary
+                  textColor: Color.mOnPrimary
 
                   onClicked: {
-                    try {
-                      if (modelData && modelData.invoke) {
-                        modelData.invoke()
-                        // Let NotificationAction decide dismissal; service will animate closed via closed signal
-                      }
-                    } catch (e) {
-                      Logger.error("Notifications", "Action invoke failed:", e)
-                    }
+                    actionObj && actionObj.invoke && actionObj.invoke()
                   }
                 }
               }
