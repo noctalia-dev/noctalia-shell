@@ -65,8 +65,25 @@ QtObject {
   // This is where you should add your Modules/Bar/Widgets/
   // so it gets registered in the BarTab
   function discoverAvailableWidgets() {
-    const widgetFiles = ["ActiveWindow", "ArchUpdater", "Battery", "Bluetooth", "Brightness", "Clock", "KeyboardLayout", "MediaMini", "NotificationHistory", "PowerProfile", "ScreenRecorderIndicator", "SidePanelToggle", "SystemMonitor", "Tray", "Volume", "WiFi", "Workspace"]
-
+    const widgetFiles = [
+        "ActiveWindow",
+        "ArchUpdater",
+        "Battery",
+        "Bluetooth",
+        "Brightness",
+        "Clock",
+        "KeyboardLayout",
+        "MediaMini",
+        "NotificationHistory",
+        "PowerProfile",
+        "ScreenRecorderIndicator",
+        "SidePanelToggle",
+        "SystemMonitor",
+        "Tray",
+        "Volume",
+        "WiFi",
+        "Workspace"
+    ]
     const availableWidgets = []
 
     widgetFiles.forEach(widgetName => {
