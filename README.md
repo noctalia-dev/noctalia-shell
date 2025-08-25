@@ -104,6 +104,9 @@ qs
 # Launcher
 qs ipc call launcher toggle
 
+# SidePanel
+qs ipc call sidePanel toggle
+
 # Clipboard History
 qs ipc call launcher clipboard
 

@@ -8,12 +8,15 @@ import qs.Widgets
 Item {
   id: root
 
-  width: pill.width
-  height: pill.height
-  visible: getMonitor() !== null
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
 
   // Used to avoid opening the pill on Quickshell startup
   property bool firstBrightnessReceived: false
+
+  implicitWidth: pill.width
+  implicitHeight: pill.height
+  visible: getMonitor() !== null
 
   function getMonitor() {
     return BrightnessService.getMonitorForScreen(screen) || null

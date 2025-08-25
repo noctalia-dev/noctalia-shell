@@ -163,7 +163,7 @@ ColumnLayout {
             spacing: Style.marginM * scaling
 
             // Left Section
-            NWidgetCard {
+            NSectionEditor {
               sectionName: "Left"
               widgetModel: Settings.data.bar.widgets.left
               availableWidgets: availableWidgets
@@ -174,7 +174,7 @@ ColumnLayout {
             }
 
             // Center Section
-            NWidgetCard {
+            NSectionEditor {
               sectionName: "Center"
               widgetModel: Settings.data.bar.widgets.center
               availableWidgets: availableWidgets
@@ -185,7 +185,7 @@ ColumnLayout {
             }
 
             // Right Section
-            NWidgetCard {
+            NSectionEditor {
               sectionName: "Right"
               widgetModel: Settings.data.bar.widgets.right
               availableWidgets: availableWidgets
@@ -228,15 +228,6 @@ ColumnLayout {
 
       // Assign the new array
       Settings.data.bar.widgets[section] = newArray
-
-      // Force a settings save
-      //Logger.log("BarTab", "Settings updated, triggering save...")
-
-      // Verify the change was applied
-      Qt.setTimeout(function () {
-        var updatedArray = Settings.data.bar.widgets[section]
-        //Logger.log("BarTab", "Verification - updated section array:", JSON.stringify(updatedArray))
-      }, 100)
     } else {
 
       //Logger.log("BarTab", "Invalid section or index:", section, index, "array length:",
@@ -262,29 +253,19 @@ ColumnLayout {
     }
   }
 
-  // Widget loader for discovering available widgets
-  WidgetLoader {
-    id: widgetLoader
-  }
-
+  // Base list model for all combo boxes
   ListModel {
     id: availableWidgets
   }
 
   Component.onCompleted: {
-    discoverWidgets()
-  }
-
-  // Automatically discover available widgets using WidgetLoader
-  function discoverWidgets() {
+    // Fill out availableWidgets ListModel
     availableWidgets.clear()
-
-    // Use WidgetLoader to discover available widgets
-    const discoveredWidgets = widgetLoader.discoverAvailableWidgets()
-
-    // Add discovered widgets to the ListModel
-    discoveredWidgets.forEach(widget => {
-                                availableWidgets.append(widget)
-                              })
+    BarWidgetRegistry.getAvailableWidgets().forEach(entry => {
+                                                      availableWidgets.append({
+                                                                                "key": entry,
+                                                                                "name": entry
+                                                                              })
+                                                    })
   }
 }

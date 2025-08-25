@@ -19,7 +19,7 @@ Variants {
 
     // Only show on screens that have notifications enabled
     visible: modelData ? (Settings.data.notifications.monitors.includes(modelData.name)
-                         || (Settings.data.notifications.monitors.length === 0)) : false
+                          || (Settings.data.notifications.monitors.length === 0)) : false
 
     // Position based on bar location, like Notification popup does
     anchors {
@@ -57,7 +57,7 @@ Variants {
       Component.onCompleted: {
         // Only register toasts for screens that have notifications enabled
         if (modelData ? (Settings.data.notifications.monitors.includes(modelData.name)
-                        || (Settings.data.notifications.monitors.length === 0)) : false) {
+                         || (Settings.data.notifications.monitors.length === 0)) : false) {
           // Register this toast with the service
           ToastService.allToasts.push(toast)
 

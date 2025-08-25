@@ -24,3 +24,7 @@ output_path = "~/.config/qt6ct/colors/noctalia.conf"
 [templates.qt5]
 input_path = "templates/qtct.conf"
 output_path = "~/.config/qt5ct/colors/noctalia.conf"
+
+[templates.kitty]
+input_path = "templates/kitty.conf"
+output_path = "~/.config/kitty/noctalia.conf"

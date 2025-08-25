@@ -22,7 +22,14 @@ jobs:
       - name: Create release archive
         run: |
           mkdir -p ../noctalia-release
-          rsync -av --exclude='.git' --exclude='.github' ./ ../noctalia-release/
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='nix' \
+            --exclude='flake.nix' \
+            --exclude='flake.lock' \
+            --exclude='result*' \
+            ./ ../noctalia-release/
           cd ..
           tar -czf noctalia-${{ github.ref_name }}.tar.gz noctalia-release/
           cp noctalia-${{ github.ref_name }}.tar.gz noctalia-latest.tar.gz

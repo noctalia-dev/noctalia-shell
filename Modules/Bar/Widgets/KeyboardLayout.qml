@@ -6,14 +6,17 @@ import qs.Commons
 import qs.Services
 import qs.Widgets
 
-Item {
+Row {
   id: root
 
-  width: pill.width
-  height: pill.height
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
 
   // Use the shared service for keyboard layout
   property string currentLayout: KeyboardLayoutService.currentLayout
+
+  width: pill.width
+  height: pill.height
 
   NPill {
     id: pill

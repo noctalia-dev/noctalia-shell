@@ -104,17 +104,6 @@ NPanel {
       year: Time.date.getFullYear()
       locale: Qt.locale() // Use system locale
 
-      // Optionally, update when the panel becomes visible
-      Connections {
-        target: calendarPanel
-        function onVisibleChanged() {
-          if (calendarPanel.visible) {
-            grid.month = Time.date.getMonth()
-            grid.year = Time.date.getFullYear()
-          }
-        }
-      }
-
       delegate: Rectangle {
         width: (Style.baseWidgetSize * scaling)
         height: (Style.baseWidgetSize * scaling)

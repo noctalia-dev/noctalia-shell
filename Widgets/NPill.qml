@@ -16,10 +16,11 @@ Item {
   property color collapsedIconColor: Color.mOnSurface
   property real sizeMultiplier: 0.8
   property bool autoHide: false
-  // When true, keep the pill expanded regardless of hover state
-  property bool forceShown: false
+  property bool forceOpen: false
+  property bool disableOpen: false
+
   // Effective shown state (true if hovered/animated open or forced)
-  readonly property bool effectiveShown: forceShown || showPill
+  readonly property bool effectiveShown: forceOpen || showPill
 
   signal shown
   signal hidden
@@ -98,10 +99,9 @@ Item {
     height: iconSize
     radius: width * 0.5
     // When forced shown, match pill background; otherwise use accent when hovered
-  color: forceShown ? pillColor : (showPill ? iconCircleColor : Color.mSurfaceVariant)
-  anchors.verticalCenter: parent.verticalCenter
-  anchors.right: iconSide === "right" ? parent.right : undefined
-  anchors.left: iconSide === "left" ? parent.left : undefined
+    color: forceOpen ? pillColor : (showPill ? iconCircleColor : Color.mSurfaceVariant)
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.right: parent.right
 
     Behavior on color {
       ColorAnimation {
@@ -114,7 +114,7 @@ Item {
       text: root.icon
       font.pointSize: Style.fontSizeM * scaling
       // When forced shown, use pill text color; otherwise accent color when hovered
-      color: forceShown ? textColor : (showPill ? iconTextColor : Color.mOnSurface)
+      color: forceOpen ? textColor : (showPill ? iconTextColor : Color.mOnSurface)
       anchors.centerIn: parent
     }
   }
@@ -208,18 +208,21 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     onEntered: {
-      if (!forceShown) {
+      root.entered()
+      tooltip.show()
+      if (disableOpen) {
+        return
+      }
+      if (!forceOpen) {
         showDelayed()
       }
-      tooltip.show()
-      root.entered()
     }
     onExited: {
-      if (!forceShown) {
+      root.exited()
+      if (!forceOpen) {
         hide()
       }
       tooltip.hide()
-      root.exited()
     }
     onClicked: {
       root.clicked()
@@ -240,7 +243,7 @@ Item {
   }
 
   function hide() {
-    if (forceShown) {
+    if (forceOpen) {
       return
     }
     if (showPill) {
@@ -259,8 +262,8 @@ Item {
     }
   }
 
-  onForceShownChanged: {
-    if (forceShown) {
+  onForceOpenChanged: {
+    if (forceOpen) {
       // Immediately lock open without animations
       showAnim.stop()
       hideAnim.stop()

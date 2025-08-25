@@ -90,6 +90,7 @@ NBox {
         colorFgHover: Color.mOnSecondary
         enabled: comboBox.selectedKey !== ""
         Layout.alignment: Qt.AlignVCenter
+        Layout.leftMargin: Style.marginS * scaling
         onClicked: {
           if (comboBox.currentKey !== "") {
             addWidget(comboBox.currentKey, sectionName.toLowerCase())
@@ -174,27 +175,27 @@ NBox {
             anchors.fill: parent
             drag.target: parent
 
-            onPressed: {
-              // Check if the click is on the close button area
-              const closeButtonX = widgetContent.x + widgetContent.width - 20 * scaling
-              const closeButtonY = widgetContent.y
-              const closeButtonWidth = 20 * scaling
-              const closeButtonHeight = 20 * scaling
+            onPressed: mouse => {
+                         // Check if the click is on the close button area
+                         const closeButtonX = widgetContent.x + widgetContent.width - 20 * scaling
+                         const closeButtonY = widgetContent.y
+                         const closeButtonWidth = 20 * scaling
+                         const closeButtonHeight = 20 * scaling
 
-              if (mouseX >= closeButtonX && mouseX <= closeButtonX + closeButtonWidth && mouseY >= closeButtonY
-                  && mouseY <= closeButtonY + closeButtonHeight) {
-                // Click is on the close button, don't start drag
-                mouse.accepted = false
-                return
-              }
+                         if (mouseX >= closeButtonX && mouseX <= closeButtonX + closeButtonWidth
+                             && mouseY >= closeButtonY && mouseY <= closeButtonY + closeButtonHeight) {
+                           // Click is on the close button, don't start drag
+                           mouse.accepted = false
+                           return
+                         }
 
-              Logger.log("NWidgetCard", `Started dragging widget: ${modelData} at index ${index}`)
-              // Bring to front when starting drag
-              widgetItem.z = 1000
-            }
+                         Logger.log("NSectionEditor", `Started dragging widget: ${modelData} at index ${index}`)
+                         // Bring to front when starting drag
+                         widgetItem.z = 1000
+                       }
 
             onReleased: {
-              Logger.log("NWidgetCard", `Released widget: ${modelData} at index ${index}`)
+              Logger.log("NSectionEditor", `Released widget: ${modelData} at index ${index}`)
               // Reset z-index when drag ends
               widgetItem.z = 0
 
@@ -232,12 +233,12 @@ NBox {
                 const fromIndex = index
                 const toIndex = targetIndex
                 Logger.log(
-                      "NWidgetCard",
+                      "NSectionEditor",
                       `Dropped widget from index ${fromIndex} to position ${toIndex} (distance: ${minDistance.toFixed(
                         2)})`)
                 reorderWidget(sectionName.toLowerCase(), fromIndex, toIndex)
               } else {
-                Logger.log("NWidgetCard", `No valid drop target found for widget at index ${index}`)
+                Logger.log("NSectionEditor", `No valid drop target found for widget at index ${index}`)
               }
             }
           }
@@ -264,16 +265,16 @@ NBox {
       }
 
       onEntered: function (drag) {
-        Logger.log("NWidgetCard", "Entered start drop zone")
+        Logger.log("NSectionEditor", "Entered start drop zone")
       }
 
       onDropped: function (drop) {
-        Logger.log("NWidgetCard", "Dropped on start zone")
+        Logger.log("NSectionEditor", "Dropped on start zone")
         if (drop.source && drop.source.widgetIndex !== undefined) {
           const fromIndex = drop.source.widgetIndex
           const toIndex = 0 // Insert at the beginning
           if (fromIndex !== toIndex) {
-            Logger.log("NWidgetCard", `Dropped widget from index ${fromIndex} to beginning`)
+            Logger.log("NSectionEditor", `Dropped widget from index ${fromIndex} to beginning`)
             reorderWidget(sectionName.toLowerCase(), fromIndex, toIndex)
           }
         }
@@ -299,16 +300,16 @@ NBox {
       }
 
       onEntered: function (drag) {
-        Logger.log("NWidgetCard", "Entered end drop zone")
+        Logger.log("NSectionEditor", "Entered end drop zone")
       }
 
       onDropped: function (drop) {
-        Logger.log("NWidgetCard", "Dropped on end zone")
+        Logger.log("NSectionEditor", "Dropped on end zone")
         if (drop.source && drop.source.widgetIndex !== undefined) {
           const fromIndex = drop.source.widgetIndex
           const toIndex = widgetModel.length // Insert at the end
           if (fromIndex !== toIndex) {
-            Logger.log("NWidgetCard", `Dropped widget from index ${fromIndex} to end`)
+            Logger.log("NSectionEditor", `Dropped widget from index ${fromIndex} to end`)
             reorderWidget(sectionName.toLowerCase(), fromIndex, toIndex)
           }
         }

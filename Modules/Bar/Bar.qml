@@ -48,6 +48,7 @@ Variants {
         layer.enabled: true
       }
 
+      // ------------------------------
       // Left Section - Dynamic Widgets
       Row {
         id: leftSection
@@ -61,30 +62,19 @@ Variants {
         Repeater {
           model: Settings.data.bar.widgets.left
           delegate: Loader {
-            id: leftWidgetLoader
-            sourceComponent: widgetLoader.getWidgetComponent(modelData)
             active: true
-            visible: {
-              if (modelData === "WiFi" && !Settings.data.network.wifiEnabled)
-                return false
-              if (modelData === "Bluetooth" && !Settings.data.network.bluetoothEnabled)
-                return false
-              if (modelData === "Battery" && !shouldShowBattery())
-                return false
-              return true
-            }
-            anchors.verticalCenter: parent.verticalCenter
-            onStatusChanged: {
-              if (status === Loader.Error) {
-                widgetLoader.onWidgetFailed(modelData, "Loader error")
-              } else if (status === Loader.Ready) {
-                widgetLoader.onWidgetLoaded(modelData)
+            sourceComponent: NWidgetLoader {
+              widgetName: modelData
+              widgetProps: {
+                "screen": screen
               }
             }
+            anchors.verticalCenter: parent.verticalCenter
           }
         }
       }
 
+      // ------------------------------
       // Center Section - Dynamic Widgets
       Row {
         id: centerSection
@@ -97,30 +87,19 @@ Variants {
         Repeater {
           model: Settings.data.bar.widgets.center
           delegate: Loader {
-            id: centerWidgetLoader
-            sourceComponent: widgetLoader.getWidgetComponent(modelData)
             active: true
-            visible: {
-              if (modelData === "WiFi" && !Settings.data.network.wifiEnabled)
-                return false
-              if (modelData === "Bluetooth" && !Settings.data.network.bluetoothEnabled)
-                return false
-              if (modelData === "Battery" && !shouldShowBattery())
-                return false
-              return true
-            }
-            anchors.verticalCenter: parent.verticalCenter
-            onStatusChanged: {
-              if (status === Loader.Error) {
-                widgetLoader.onWidgetFailed(modelData, "Loader error")
-              } else if (status === Loader.Ready) {
-                widgetLoader.onWidgetLoaded(modelData)
+            sourceComponent: NWidgetLoader {
+              widgetName: modelData
+              widgetProps: {
+                "screen": screen
               }
             }
+            anchors.verticalCenter: parent.verticalCenter
           }
         }
       }
 
+      // ------------------------------
       // Right Section - Dynamic Widgets
       Row {
         id: rightSection
@@ -134,49 +113,17 @@ Variants {
         Repeater {
           model: Settings.data.bar.widgets.right
           delegate: Loader {
-            id: rightWidgetLoader
-            sourceComponent: widgetLoader.getWidgetComponent(modelData)
             active: true
-            visible: {
-              if (modelData === "WiFi" && !Settings.data.network.wifiEnabled)
-                return false
-              if (modelData === "Bluetooth" && !Settings.data.network.bluetoothEnabled)
-                return false
-              return true
-            }
-            anchors.verticalCenter: parent.verticalCenter
-            onStatusChanged: {
-              if (status === Loader.Error) {
-                widgetLoader.onWidgetFailed(modelData, "Loader error")
-              } else if (status === Loader.Ready) {
-                widgetLoader.onWidgetLoaded(modelData)
+            sourceComponent: NWidgetLoader {
+              widgetName: modelData
+              widgetProps: {
+                "screen": screen
               }
             }
+            anchors.verticalCenter: parent.verticalCenter
           }
         }
       }
-    }
-
-    // Helper function to check if battery widget should be visible (same logic as Battery.qml)
-    function shouldShowBattery() {
-      // For now, always show battery widget and let it handle its own visibility
-      // The Battery widget has its own testMode and visibility logic
-      return true
-    }
-
-    // Widget loader instance
-    WidgetLoader {
-      id: widgetLoader
-
-      onWidgetFailed: function (widgetName, error) {
-        Logger.error("Bar", `Widget failed: ${widgetName} - ${error}`)
-      }
-    }
-
-    // Initialize widget loading tracking
-    Component.onCompleted: {
-      const allWidgets = [...Settings.data.bar.widgets.left, ...Settings.data.bar.widgets.center, ...Settings.data.bar.widgets.right]
-      widgetLoader.initializeLoading(allWidgets)
     }
   }
 }

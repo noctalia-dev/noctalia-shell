@@ -6,15 +6,20 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import qs.Commons
+import qs.Modules.Bar.Extras
 import qs.Services
 import qs.Widgets
 
 Rectangle {
+  id: root
+
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
   readonly property real itemSize: 24 * scaling
 
   visible: SystemTray.items.values.length > 0
-  width: tray.width + Style.marginM * scaling * 2
-  height: Math.round(Style.capsuleHeight * scaling)
+  implicitWidth: tray.width + Style.marginM * scaling * 2
+  implicitHeight: Math.round(Style.capsuleHeight * scaling)
   radius: Math.round(Style.radiusM * scaling)
   color: Color.mSurfaceVariant
 
@@ -134,9 +139,7 @@ Rectangle {
     function open() {
       visible = true
 
-      // Register into the panel service
-      // so this will autoclose if we open another panel
-      PanelService.registerOpen(trayPanel)
+      PanelService.willOpenPanel(trayPanel)
     }
 
     function close() {
@@ -152,7 +155,7 @@ Rectangle {
 
     Loader {
       id: trayMenu
-      source: "TrayMenu.qml"
+      source: "../Extras/TrayMenu.qml"
     }
   }
 }

@@ -10,6 +10,11 @@ import qs.Widgets
 NIconButton {
   id: root
 
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
+
+  visible: Settings.data.network.wifiEnabled
+
   sizeMultiplier: 0.8
 
   Component.onCompleted: {
@@ -44,11 +49,11 @@ NIconButton {
       return "signal_wifi_bad"
     }
   }
-  tooltipText: "WiFi Networks"
+  tooltipText: "Network / WiFi"
   onClicked: {
     try {
       Logger.log("WiFi", "Button clicked, toggling panel")
-      wifiPanel.toggle(screen)
+      PanelService.getPanel("wifiPanel")?.toggle(screen)
     } catch (error) {
       Logger.error("WiFi", "Error toggling panel:", error)
     }

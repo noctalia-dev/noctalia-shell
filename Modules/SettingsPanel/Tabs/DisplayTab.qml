@@ -35,7 +35,9 @@ Item {
     contentWidth: parent.width
 
     ColumnLayout {
-      width: parent.width
+      id: contentColumn
+      width: Math.max(parent.width, 300) // Minimum reasonable width without scaling
+
       ColumnLayout {
         spacing: Style.marginL * scaling
         Layout.margins: Style.marginL * scaling
@@ -58,6 +60,8 @@ Item {
           model: Quickshell.screens || []
           delegate: Rectangle {
             Layout.fillWidth: true
+            // Remove the scaling-based minimum width that causes issues at low scaling
+            // Layout.minimumWidth: 400 * scaling
             radius: Style.radiusM * scaling
             color: Color.mSurface
             border.color: Color.mOutline
@@ -69,6 +73,7 @@ Item {
               anchors.fill: parent
               anchors.margins: Style.marginL * scaling
               spacing: Style.marginXXS * scaling
+              Layout.minimumWidth: 0
 
               NText {
                 text: (modelData.name || "Unknown")
@@ -85,8 +90,12 @@ Item {
 
               ColumnLayout {
                 spacing: Style.marginL * scaling
+                Layout.minimumWidth: 0
+                Layout.fillWidth: true
 
                 NToggle {
+                  Layout.fillWidth: true
+                  Layout.minimumWidth: 0
                   label: "Bar"
                   description: "Enable the bar on this monitor."
                   checked: (Settings.data.bar.monitors || []).indexOf(modelData.name) !== -1
@@ -100,6 +109,8 @@ Item {
                 }
 
                 NToggle {
+                  Layout.fillWidth: true
+                  Layout.minimumWidth: 0
                   label: "Notifications"
                   description: "Enable notifications on this monitor."
                   checked: (Settings.data.notifications.monitors || []).indexOf(modelData.name) !== -1
@@ -115,6 +126,8 @@ Item {
                 }
 
                 NToggle {
+                  Layout.fillWidth: true
+                  Layout.minimumWidth: 0
                   label: "Dock"
                   description: "Enable the dock on this monitor."
                   checked: (Settings.data.dock.monitors || []).indexOf(modelData.name) !== -1
@@ -130,11 +143,16 @@ Item {
 
                 ColumnLayout {
                   spacing: Style.marginL * scaling
+                  Layout.fillWidth: true
 
                   RowLayout {
+                    Layout.fillWidth: true
+
                     ColumnLayout {
                       spacing: Style.marginXXS * scaling
                       Layout.fillWidth: true
+                      Layout.minimumWidth: 0
+
                       NText {
                         text: "Scale"
                         font.pointSize: Style.fontSizeM * scaling
@@ -149,14 +167,19 @@ Item {
                         Layout.fillWidth: true
                       }
                     }
+
                     NText {
                       text: `${Math.round(ScalingService.scaleByName(modelData.name) * 100)}%`
                       Layout.alignment: Qt.AlignVCenter
+                      Layout.minimumWidth: implicitWidth
                     }
                   }
 
                   RowLayout {
                     spacing: Style.marginS * scaling
+                    Layout.fillWidth: true
+                    Layout.minimumWidth: 0
+
                     NSlider {
                       id: scaleSlider
                       from: 0.6
@@ -169,12 +192,15 @@ Item {
                         Settings.data.monitorsScaling = data
                       }
                       Layout.fillWidth: true
+                      Layout.minimumWidth: 50 // Ensure minimum slider width
                     }
 
                     NIconButton {
                       icon: "refresh"
                       tooltipText: "Reset Scaling"
                       fontPointSize: Style.fontSizeL * scaling
+                      Layout.preferredWidth: implicitWidth
+                      Layout.minimumWidth: implicitWidth
                       onClicked: {
                         var data = Settings.data.monitorsScaling || {}
                         data[modelData.name] = 1.0

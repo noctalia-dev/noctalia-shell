@@ -98,4 +98,11 @@ Item {
       powerPanel.toggle(Quickshell.screens[0])
     }
   }
+
+  IpcHandler {
+    target: "sidePanel"
+    function toggle() {
+      sidePanel.toggle(Quickshell.screens[0])
+    }
+  }
 }

@@ -9,12 +9,15 @@ import qs.Widgets
 
 Row {
   id: root
+
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
+  property bool showingFullTitle: false
+  property int lastWindowIndex: -1
+
   anchors.verticalCenter: parent.verticalCenter
   spacing: Style.marginS * scaling
   visible: getTitle() !== ""
-
-  property bool showingFullTitle: false
-  property int lastWindowIndex: -1
 
   // Timer to hide full title after window switch
   Timer {

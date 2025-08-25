@@ -26,15 +26,13 @@ NPanel {
 
   // Properties
   property string searchText: ""
+  property bool shouldResetCursor: false
 
   // Add function to set search text programmatically
   function setSearchText(text) {
     searchText = text
-    if (searchInput) {
-      searchInput.text = text
-      searchInput.cursorPosition = text.length
-      searchInput.forceActiveFocus()
-    }
+    // The searchInput will automatically update via the text binding
+    // Focus and cursor position will be handled by the TextField's Component.onCompleted
   }
 
   onOpened: {
@@ -43,19 +41,13 @@ NPanel {
       searchText = ""
       selectedIndex = 0
     }
-    if (searchInput) {
-      searchInput.forceActiveFocus()
-    }
   }
 
   onClosed: {
     // Reset search bar when launcher is closed
     searchText = ""
     selectedIndex = 0
-    if (searchInput) {
-      searchInput.text = ""
-      searchInput.cursorPosition = 0
-    }
+    shouldResetCursor = true
   }
 
   // Import modular components
@@ -283,6 +275,12 @@ NPanel {
               }
               // Defer selectedIndex reset to avoid binding loops
               Qt.callLater(() => selectedIndex = 0)
+
+              // Reset cursor position if needed
+              if (shouldResetCursor && text === "") {
+                cursorPosition = 0
+                shouldResetCursor = false
+              }
             }
             selectedTextColor: Color.mOnSurface
             selectionColor: Color.mPrimary
@@ -293,10 +291,14 @@ NPanel {
             topPadding: 0
             bottomPadding: 0
             Component.onCompleted: {
-              // Focus the search bar by default
+              // Focus the search bar by default and set cursor position
               Qt.callLater(() => {
                              selectedIndex = 0
                              searchInput.forceActiveFocus()
+                             // Set cursor to end if there's already text
+                             if (searchText && searchText.length > 0) {
+                               searchInput.cursorPosition = searchText.length
+                             }
                            })
             }
             Keys.onDownPressed: selectNext()

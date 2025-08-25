@@ -128,10 +128,10 @@ ColumnLayout {
                      }
         }
 
-        // GTK/QT theming
+        // App theming
         NToggle {
-          label: "Theme external apps (GTK & Qt)"
-          description: "Writes GTK (gtk.css) and Qt (qt6ct) themes based on your colors."
+          label: "Theme external apps (GTK, Qt & kitty)"
+          description: "Writes GTK (gtk.css), Qt5/6 (noctalia.conf) and Kitty (noctalia.conf) themes based on your colors."
           checked: Settings.data.colorSchemes.themeApps
           onToggled: checked => {
                        Settings.data.colorSchemes.themeApps = checked

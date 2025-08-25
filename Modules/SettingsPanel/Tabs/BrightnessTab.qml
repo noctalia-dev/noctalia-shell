@@ -7,7 +7,7 @@ import qs.Services
 import qs.Widgets
 
 Item {
-  property real scaling: 1
+  readonly property real scaling: ScalingService.scale(screen)
   readonly property string tabIcon: "brightness_6"
   readonly property string tabLabel: "Brightness"
   Layout.fillWidth: true

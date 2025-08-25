@@ -6,6 +6,10 @@ import qs.Widgets
 
 Row {
   id: root
+
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
+
   anchors.verticalCenter: parent.verticalCenter
   spacing: Style.marginS * scaling
 

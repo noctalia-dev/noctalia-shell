@@ -10,6 +10,9 @@ import qs.Widgets
 NIconButton {
   id: root
 
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
+
   sizeMultiplier: 0.8
   icon: "notifications"
   tooltipText: "Notification History"
@@ -17,8 +20,5 @@ NIconButton {
   colorFg: Color.mOnSurface
   colorBorder: Color.transparent
   colorBorderHover: Color.transparent
-
-  onClicked: {
-    notificationHistoryPanel.toggle(screen)
-  }
+  onClicked: PanelService.getPanel("notificationHistoryPanel")?.toggle(screen)
 }

@@ -10,8 +10,11 @@ import qs.Widgets
 NIconButton {
   id: root
 
-  sizeMultiplier: 0.8
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
 
+  visible: Settings.data.network.bluetoothEnabled
+  sizeMultiplier: 0.8
   colorBg: Color.mSurfaceVariant
   colorFg: Color.mOnSurface
   colorBorder: Color.transparent
@@ -28,7 +31,5 @@ NIconButton {
     }
   }
   tooltipText: "Bluetooth Devices"
-  onClicked: {
-    bluetoothPanel.toggle(screen)
-  }
+  onClicked: PanelService.getPanel("bluetoothPanel")?.toggle(screen)
 }

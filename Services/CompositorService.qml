@@ -19,7 +19,7 @@ Singleton {
   property ListModel workspaces: ListModel {}
   property var windows: []
   property int focusedWindowIndex: -1
-  property string focusedWindowTitle: "(No active window)"
+  property string focusedWindowTitle: "n/a"
   property bool inOverview: false
 
   // Generic events

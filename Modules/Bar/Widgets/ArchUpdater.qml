@@ -1,16 +1,18 @@
-import qs.Commons
-import qs.Services
-import qs.Widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
+import qs.Commons
+import qs.Services
+import qs.Widgets
 
 NIconButton {
   id: root
+
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
+
   sizeMultiplier: 0.8
-
-  readonly property real scaling: ScalingService.scale(screen)
-
   colorBg: Color.mSurfaceVariant
   colorFg: Color.mOnSurface
   colorBorder: Color.transparent
@@ -64,7 +66,7 @@ NIconButton {
 
     if (ArchUpdaterService.updatePackages.length > 0) {
       // Show confirmation dialog for updates
-      PanelService.updatePanel.toggle(screen)
+      PanelService.getPanel("archUpdaterPanel").toggle(screen)
     } else {
       // Just refresh if no updates available
       ArchUpdaterService.doPoll()

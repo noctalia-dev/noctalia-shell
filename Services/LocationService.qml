@@ -1,9 +1,10 @@
+pragma Singleton
+
 import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Services
-pragma Singleton
 
 // Weather logic and caching
 Singleton {

@@ -1,7 +1,7 @@
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.UPower
-import QtQuick.Layouts
 import qs.Commons
 import qs.Services
 import qs.Widgets
@@ -9,6 +9,8 @@ import qs.Widgets
 NIconButton {
   id: root
 
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
   property var powerProfiles: PowerProfiles
   readonly property bool hasPP: powerProfiles.hasPerformanceProfile
 

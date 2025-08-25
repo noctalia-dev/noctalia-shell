@@ -40,63 +40,68 @@ ShellRoot {
   Bar {}
   Dock {}
 
-  Launcher {
-    id: launcherPanel
-  }
-
-  SidePanel {
-    id: sidePanel
-  }
-
-  Calendar {
-    id: calendarPanel
-  }
-
-  SettingsPanel {
-    id: settingsPanel
-  }
-
   Notification {
     id: notification
-  }
-
-  NotificationHistoryPanel {
-    id: notificationHistoryPanel
   }
 
   LockScreen {
     id: lockScreen
   }
 
-  PowerPanel {
-    id: powerPanel
-  }
-
-  WiFiPanel {
-    id: wifiPanel
-  }
-
-  BluetoothPanel {
-    id: bluetoothPanel
-  }
-
-  ArchUpdaterPanel {
-    id: updatePanel
-  }
-
   ToastManager {}
 
   IPCManager {}
 
+  // ------------------------------
+  // All the panels
+  Launcher {
+    id: launcherPanel
+    objectName: "launcherPanel"
+  }
+
+  SidePanel {
+    id: sidePanel
+    objectName: "sidePanel"
+  }
+
+  Calendar {
+    id: calendarPanel
+    objectName: "calendarPanel"
+  }
+
+  SettingsPanel {
+    id: settingsPanel
+    objectName: "settingsPanel"
+  }
+
+  NotificationHistoryPanel {
+    id: notificationHistoryPanel
+    objectName: "notificationHistoryPanel"
+  }
+
+  PowerPanel {
+    id: powerPanel
+    objectName: "powerPanel"
+  }
+
+  WiFiPanel {
+    id: wifiPanel
+    objectName: "wifiPanel"
+  }
+
+  BluetoothPanel {
+    id: bluetoothPanel
+    objectName: "bluetoothPanel"
+  }
+
+  ArchUpdaterPanel {
+    id: archUpdaterPanel
+    objectName: "archUpdaterPanel"
+  }
+
   Component.onCompleted: {
-    // Save a ref. to our sidePanel so we can access it from services
-    PanelService.sidePanel = sidePanel
-
-    // Save a ref. to our lockScreen so we can access it from services
+    // Save a ref. to our lockScreen so we can access it  easily
     PanelService.lockScreen = lockScreen
-
-    // Save a ref. to our updatePanel so we can access it from services
-    PanelService.updatePanel = updatePanel
 
     // Ensure our singleton is created as soon as possible so we start fetching weather asap
     LocationService.init()

@@ -46,7 +46,6 @@ Singleton {
     //Logger.log("ScreenRecorder", command)
     Quickshell.execDetached(["sh", "-c", command])
     Logger.log("ScreenRecorder", "Started recording")
-    //Logger.log("ScreenRecorder", command)
   }
 
   // Stop recording using Quickshell.execDetached

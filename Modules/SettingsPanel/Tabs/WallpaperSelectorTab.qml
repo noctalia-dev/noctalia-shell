@@ -7,7 +7,7 @@ import qs.Services
 import qs.Widgets
 
 Item {
-  property real scaling: 1
+  readonly property real scaling: ScalingService.scale(screen)
   readonly property string tabIcon: "photo_library"
   readonly property string tabLabel: "Wallpaper Selector"
   readonly property int tabIndex: 7

@@ -211,7 +211,7 @@ Singleton {
         break
       }
     }
-    
+
     if (allDismissed) {
       isShowingToast = false
 

@@ -1,16 +1,21 @@
 import QtQuick
+import Quickshell
 import qs.Commons
 import qs.Services
 import qs.Widgets
 
-// Clock Icon with attached calendar
 Rectangle {
   id: root
-  width: clock.width + Style.marginM * 2 * scaling
-  height: Math.round(Style.capsuleHeight * scaling)
+
+  property ShellScreen screen
+  property real scaling: ScalingService.scale(screen)
+
+  implicitWidth: clock.width + Style.marginM * 2 * scaling
+  implicitHeight: Math.round(Style.capsuleHeight * scaling)
   radius: Math.round(Style.radiusM * scaling)
   color: Color.mSurfaceVariant
 
+  // Clock Icon with attached calendar
   NClock {
     id: clock
     anchors.verticalCenter: parent.verticalCenter
@@ -24,7 +29,7 @@ Rectangle {
     }
 
     onEntered: {
-      if (!calendarPanel.active) {
+      if (!PanelService.getPanel("calendarPanel")?.active) {
         tooltip.show()
       }
     }
@@ -33,7 +38,7 @@ Rectangle {
     }
     onClicked: {
       tooltip.hide()
-      calendarPanel.toggle(screen)
+      PanelService.getPanel("calendarPanel")?.toggle(screen)
     }
   }
 }

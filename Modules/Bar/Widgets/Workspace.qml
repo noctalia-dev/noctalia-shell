@@ -10,6 +10,10 @@ import qs.Services
 
 Item {
   id: root
+
+  property ShellScreen screen: null
+  property real scaling: ScalingService.scale(screen)
+
   property bool isDestroying: false
   property bool hovered: false
 
@@ -23,7 +27,8 @@ Item {
 
   signal workspaceChanged(int workspaceId, color accentColor)
 
-  width: {
+  implicitHeight: Math.round(36 * scaling)
+  implicitWidth: {
     let total = 0
     for (var i = 0; i < localWorkspaces.count; i++) {
       const ws = localWorkspaces.get(i)
@@ -39,39 +44,51 @@ Item {
     return total
   }
 
-  height: Math.round(36 * scaling)
-
   Component.onCompleted: {
-    localWorkspaces.clear()
-    for (var i = 0; i < WorkspaceService.workspaces.count; i++) {
-      const ws = WorkspaceService.workspaces.get(i)
-      if (ws.output.toLowerCase() === screen.name.toLowerCase()) {
-        localWorkspaces.append(ws)
-      }
-    }
-    workspaceRepeater.model = localWorkspaces
-    updateWorkspaceFocus()
+    refreshWorkspaces()
   }
+
+  Component.onDestruction: {
+    root.isDestroying = true
+  }
+
+  onScreenChanged: refreshWorkspaces()
 
   Connections {
     target: WorkspaceService
     function onWorkspacesChanged() {
-      localWorkspaces.clear()
+      refreshWorkspaces()
+    }
+  }
+
+  function refreshWorkspaces() {
+    localWorkspaces.clear()
+    if (screen !== null) {
       for (var i = 0; i < WorkspaceService.workspaces.count; i++) {
         const ws = WorkspaceService.workspaces.get(i)
         if (ws.output.toLowerCase() === screen.name.toLowerCase()) {
           localWorkspaces.append(ws)
         }
       }
-
-      workspaceRepeater.model = localWorkspaces
-      updateWorkspaceFocus()
     }
+    workspaceRepeater.model = localWorkspaces
+    updateWorkspaceFocus()
   }
 
   function triggerUnifiedWave() {
     effectColor = Color.mPrimary
     masterAnimation.restart()
+  }
+
+  function updateWorkspaceFocus() {
+    for (var i = 0; i < localWorkspaces.count; i++) {
+      const ws = localWorkspaces.get(i)
+      if (ws.isFocused === true) {
+        root.triggerUnifiedWave()
+        root.workspaceChanged(ws.id, Color.mPrimary)
+        break
+      }
+    }
   }
 
   SequentialAnimation {
@@ -98,17 +115,6 @@ Item {
       target: root
       property: "masterProgress"
       value: 0.0
-    }
-  }
-
-  function updateWorkspaceFocus() {
-    for (var i = 0; i < localWorkspaces.count; i++) {
-      const ws = localWorkspaces.get(i)
-      if (ws.isFocused === true) {
-        root.triggerUnifiedWave()
-        root.workspaceChanged(ws.id, Color.mPrimary)
-        break
-      }
     }
   }
 
@@ -253,9 +259,5 @@ Item {
         }
       }
     }
-  }
-
-  Component.onDestruction: {
-    root.isDestroying = true
   }
 }

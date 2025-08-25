@@ -31,6 +31,12 @@ Loader {
   signal opened
   signal closed
 
+  Component.onCompleted: {
+    // console.log("Oh Yeah")
+    // console.log(objectName)
+    PanelService.registerPanel(root)
+  }
+
   // -----------------------------------------
   function toggle(aScreen) {
     if (!active || isClosing) {
@@ -53,7 +59,7 @@ Loader {
       opacityValue = 1.0
     }
 
-    PanelService.registerOpen(root)
+    PanelService.willOpenPanel(root)
 
     active = true
     root.opened()
