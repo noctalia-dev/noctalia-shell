@@ -23,6 +23,7 @@ Singleton {
                            "ScreenRecorderIndicator": screenRecorderIndicatorComponent,
                            "SidePanelToggle": sidePanelToggleComponent,
                            "SystemMonitor": systemMonitorComponent,
+                           "Taskbar": taskbarComponent,
                            "Tray": trayComponent,
                            "Volume": volumeComponent,
                            "WiFi": wiFiComponent,
@@ -83,6 +84,9 @@ Singleton {
   }
   property Component workspaceComponent: Component {
     Workspace {}
+  }
+  property Component taskbarComponent: Component {
+    Taskbar {}
   }
 
   // ------------------------------
