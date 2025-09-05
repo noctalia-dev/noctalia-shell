@@ -99,8 +99,8 @@ Item {
     onRightClicked: {
       AudioService.setInputMuted(!AudioService.inputMuted)
     }
-    onMiddleClicked: {
-      Quickshell.execDetached(["pwvucontrol"]);
-    }
+    // onMiddleClicked: {
+    //   Quickshell.execDetached(["pwvucontrol"]);
+    // }
   }
 }
