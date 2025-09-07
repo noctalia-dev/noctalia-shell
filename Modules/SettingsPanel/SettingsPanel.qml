@@ -368,7 +368,7 @@ NPanel {
           ColumnLayout {
             anchors.fill: parent
             anchors.margins: Style.marginS * scaling
-            spacing: Style.marginXS * 1.5 * scaling
+            spacing: Style.marginXS * scaling
 
             Repeater {
               id: sections
@@ -398,7 +398,8 @@ NPanel {
                 RowLayout {
                   id: tabEntryRow
                   anchors.fill: parent
-                  anchors.margins: Style.marginS * scaling
+                  anchors.leftMargin: Style.marginS * scaling
+                  anchors.rightMargin: Style.marginS * scaling
                   spacing: Style.marginS * scaling
 
                   // Tab icon
