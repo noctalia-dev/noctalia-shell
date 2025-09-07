@@ -11,7 +11,7 @@ NPanel {
   id: root
 
   panelWidth: 460 * scaling
-  panelHeight: 708 * scaling
+  panelHeight: 712 * scaling
 
   panelContent: Item {
     id: content
