@@ -93,7 +93,7 @@ Singleton {
     "settings-launcher": "rocket",
     "settings-audio": "device-speaker",
     "settings-display": "device-desktop",
-    "settings-network": "antenna",
+    "settings-network": "sitemap-filled",
     "settings-brightness": "brightness-up-filled",
     "settings-weather": "cloud-rain",
     "settings-color-scheme": "palette",
