@@ -224,6 +224,7 @@ NPanel {
           root.close()
         }
       }
+      context: Qt.WidgetShortcut
       enabled: root.opened
     }
 
