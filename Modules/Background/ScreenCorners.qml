@@ -20,8 +20,8 @@ Loader {
       screen: modelData
 
       property color cornerColor: Qt.alpha(Color.mSurface, Settings.data.bar.backgroundOpacity)
-      property real cornerRadius: 20 * scaling
-      property real cornerSize: 20 * scaling
+      property real cornerRadius: Style.radiusL * scaling
+      property real cornerSize: Style.radiusL  * scaling
 
       Connections {
         target: ScalingService
