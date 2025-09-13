@@ -12,6 +12,7 @@ Scope {
   property bool unlockInProgress: false
   property bool showFailure: false
   property string errorMessage: ""
+  property string infoMessage: ""
   property bool pamAvailable: typeof PamContext !== "undefined"
 
   onCurrentTextChanged: {
@@ -24,12 +25,6 @@ Scope {
   function tryUnlock() {
     if (!pamAvailable) {
       errorMessage = "PAM not available"
-      showFailure = true
-      return
-    }
-
-    if (currentText === "") {
-      errorMessage = "Password required"
       showFailure = true
       return
     }
@@ -52,6 +47,8 @@ Scope {
 
       if (messageIsError) {
         errorMessage = message
+      } else {
+        infoMessage = message
       }
 
       if (responseRequired) {

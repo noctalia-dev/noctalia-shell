@@ -511,6 +511,7 @@ Loader {
                       width: 0
                       height: 0
                       visible: false
+                      enabled: !lockContext.unlockInProgress
                       font.family: Settings.data.ui.fontFixed
                       font.pointSize: Style.fontSizeL * scaling
                       color: Color.mOnSurface
@@ -540,7 +541,7 @@ Loader {
                       color: Color.mOnSurface
                       font.family: Settings.data.ui.fontFixed
                       font.pointSize: Style.fontSizeL * scaling
-                      visible: passwordInput.activeFocus
+                      visible: passwordInput.activeFocus && !lockContext.unlockInProgress
 
                       SequentialAnimation {
                         id: typingEffect
@@ -584,7 +585,7 @@ Loader {
                   NText {
                     text: {
                       if (lockContext.unlockInProgress)
-                        return "Authenticating..."
+                        return lockContext.infoMessage || "Authenticating..."
                       if (lockContext.showFailure && lockContext.errorMessage)
                         return lockContext.errorMessage
                       if (lockContext.showFailure)
