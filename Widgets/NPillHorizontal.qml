@@ -37,7 +37,7 @@ Item {
   // Exposed width logic
   readonly property int iconSize: Math.round(Style.baseWidgetSize * sizeRatio * scaling)
   readonly property int pillHeight: iconSize
-  readonly property int pillPaddingHorizontal: Style.marginS * scaling
+  readonly property int pillPaddingHorizontal: Style.marginXS * scaling
   readonly property int pillOverlap: iconSize * 0.5
   readonly property int maxPillWidth: Math.max(1, textItem.implicitWidth + pillPaddingHorizontal * 2 + pillOverlap)
 
@@ -70,7 +70,7 @@ Item {
         var offset = rightOpen ? Style.marginXS * scaling : -Style.marginXS * scaling
         if (forceOpen) {
           // If its force open, the icon disc background is the same color as the bg pill move text slightly
-          offset += rightOpen ? -Style.marginXXS * scaling : Style.marginXS * scaling
+          offset += rightOpen ? -Style.marginXXS * scaling : Style.marginXXS * scaling
         }
         return centerX + offset
       }
@@ -78,7 +78,7 @@ Item {
       font.family: Settings.data.ui.fontFixed
       font.pointSize: Style.fontSizeXS * scaling
       font.weight: Style.fontWeightBold
-      color: Color.mPrimary
+      color: Color.mOnSurface
       visible: revealed
     }
 
