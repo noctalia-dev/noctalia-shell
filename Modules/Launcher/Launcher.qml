@@ -16,7 +16,7 @@ NPanel {
   preferredHeight: 600
   preferredHeightRatio: 0.5
 
-  panelKeyboardFocus: true
+  panelKeyboardFocus: false
   panelBackgroundColor: Qt.alpha(Color.mSurface, Settings.data.appLauncher.backgroundOpacity)
 
   // Positioning
@@ -92,6 +92,7 @@ NPanel {
 
   // Lifecycle
   onOpened: {
+    root.panelKeyboardFocus = true
     // Notify plugins
     for (let plugin of plugins) {
       if (plugin.onOpened)
@@ -188,6 +189,7 @@ NPanel {
     }
 
     function activate() {
+      root.panelKeyboardFocus = false
       if (results.length > 0 && results[selectedIndex]) {
         const item = results[selectedIndex]
         if (item.onActivate) {
