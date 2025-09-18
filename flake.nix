@@ -79,6 +79,17 @@
         });
 
       defaultPackage = eachSystem (system: self.packages.${system}.default);
+
+      devShells = eachSystem (system: let
+        pkgs = nixpkgs.legacyPackages.${system};
+      in {
+        default = pkgs.mkShell {
+          packages = [ pkgs.qt6Packages.qtdeclarative ];  # for qmlls executable
+          shellHook = ''
+            export QML_IMPORT_PATH="$PWD:${pkgs.qt6Packages.qtdeclarative}/lib/qt-6/qml:$QML_IMPORT_PATH"
+          '';
+        };
+      });
     };
 }
 
