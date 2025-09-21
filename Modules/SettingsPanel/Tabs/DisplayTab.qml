@@ -156,7 +156,7 @@ ColumnLayout {
                 value: brightnessMonitor ? brightnessMonitor.brightness : 0.5
                 stepSize: 0.01
                 onPressedChanged: (pressed, value) => brightnessMonitor.setBrightness(value)
-                text: brightnessMonitor ? Math.round(brightnessMonitor.brightness * 100) + "%" : "N/A"
+                text: brightnessMonitor ? Math.round(brightnessMonitor.brightness * 100) + "% " : "N/A"
               }
 
               // Empty container to match scale row layout
