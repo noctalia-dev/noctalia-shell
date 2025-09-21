@@ -328,20 +328,12 @@ ColumnLayout {
     visible: Settings.data.nightLight.enabled && !Settings.data.nightLight.autoSchedule && !Settings.data.nightLight.forced
 
     RowLayout {
-      Layout.fillWidth: false
+      Layout.fillWidth: true
       spacing: Style.marginM * scaling
 
       NLabel {
         label: "Manual scheduling"
-      }
-
-      Item {// add a little more spacing
-      }
-
-      NText {
-        text: "Sunrise time"
-        font.pointSize: Style.fontSizeM * scaling
-        color: Color.mOnSurfaceVariant
+        description: "Edit sunrise and sunset manually."
       }
 
       NComboBox {
@@ -352,14 +344,6 @@ ColumnLayout {
         minimumWidth: 120 * scaling
       }
 
-      Item {// add a little more spacing
-      }
-
-      NText {
-        text: "Sunset time"
-        font.pointSize: Style.fontSizeM * scaling
-        color: Color.mOnSurfaceVariant
-      }
       NComboBox {
         model: timeOptions
         currentKey: Settings.data.nightLight.manualSunset
