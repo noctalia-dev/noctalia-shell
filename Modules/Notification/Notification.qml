@@ -16,7 +16,16 @@ Variants {
     id: root
 
     required property ShellScreen modelData
-    readonly property real scaling: ScalingService.getScreenScale(modelData)
+    property real scaling: ScalingService.getScreenScale(modelData)
+
+    Connections {
+      target: ScalingService
+      function onScaleChanged(screenName, newScale) {
+        if (modelData && screenName === modelData.name) {
+          scaling = newScale
+        }
+      }
+    }
 
     // Access the notification model from the service - UPDATED NAME
     property ListModel notificationModel: NotificationService.activeList
