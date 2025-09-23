@@ -169,7 +169,7 @@ ColumnLayout {
 
       Rectangle {
         Layout.preferredWidth: 420 * scaling
-        Layout.preferredHeight: 220 * scaling // Increased height for larger font sizes
+        Layout.preferredHeight: 220 * scaling // Fixed height instead of fillHeight
 
         color: Color.mSurfaceVariant
         radius: Style.radiusM * scaling
