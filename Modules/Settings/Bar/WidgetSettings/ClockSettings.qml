@@ -19,6 +19,7 @@ ColumnLayout {
   property bool valueUseMonospacedFont: widgetData.useMonospacedFont !== undefined ? widgetData.useMonospacedFont : widgetMetadata.useMonospacedFont
   property string valueFormatHorizontal: widgetData.formatHorizontal !== undefined ? widgetData.formatHorizontal : widgetMetadata.formatHorizontal
   property string valueFormatVertical: widgetData.formatVertical !== undefined ? widgetData.formatVertical : widgetMetadata.formatVertical
+  property int valueFontSize: widgetData.fontSize !== undefined ? widgetData.fontSize : widgetMetadata.fontSize
 
   // Track the currently focused input field
   property var focusedInput: null
@@ -32,6 +33,7 @@ ColumnLayout {
     settings.useMonospacedFont = valueUseMonospacedFont
     settings.formatHorizontal = valueFormatHorizontal.trim()
     settings.formatVertical = valueFormatVertical.trim()
+    settings.fontSize = valueFontSize
     return settings
   }
 
@@ -76,6 +78,16 @@ ColumnLayout {
     description: "When enabled, the clock will use the monospaced font."
     checked: valueUseMonospacedFont
     onToggled: checked => valueUseMonospacedFont = checked
+  }
+
+  NSpinBox {
+    label: "Font size"
+    description: "Set the base font size for the clock display in points."
+    value: valueFontSize
+    from: 6
+    to: 16
+    stepSize: 1
+    onValueChanged: valueFontSize = value
   }
 
   NDivider {
@@ -156,8 +168,8 @@ ColumnLayout {
       }
 
       Rectangle {
-        Layout.preferredWidth: 320 * scaling
-        Layout.preferredHeight: 160 * scaling // Fixed height instead of fillHeight
+        Layout.preferredWidth: 420 * scaling
+        Layout.preferredHeight: 220 * scaling // Increased height for larger font sizes
 
         color: Color.mSurfaceVariant
         radius: Style.radiusM * scaling
@@ -186,7 +198,7 @@ ColumnLayout {
                 visible: text !== ""
                 text: modelData
                 font.family: valueUseMonospacedFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
-                font.pointSize: Style.fontSizeM * scaling
+                font.pointSize: valueFontSize * scaling
                 font.weight: Style.fontWeightBold
                 color: valueUsePrimaryColor ? Color.mPrimary : Color.mOnSurface
                 wrapMode: Text.WordWrap
@@ -217,7 +229,7 @@ ColumnLayout {
                 visible: text !== ""
                 text: modelData
                 font.family: valueUseMonospacedFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
-                font.pointSize: Style.fontSizeM * scaling
+                font.pointSize: valueFontSize * scaling
                 font.weight: Style.fontWeightBold
                 color: valueUsePrimaryColor ? Color.mPrimary : Color.mOnSurface
                 wrapMode: Text.WordWrap
