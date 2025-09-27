@@ -99,6 +99,16 @@ ColumnLayout {
     onToggled: checked => Settings.data.appLauncher.useApp2Unit = checked
   }
 
+  NTextInput {
+    label: I18n.tr("settings.launcher.settings.terminal-command.label")
+    description: I18n.tr("settings.launcher.settings.terminal-command.description")
+    Layout.fillWidth: true
+    text: Settings.data.appLauncher.terminalCommand
+    onEditingFinished: {
+      Settings.data.appLauncher.terminalCommand = text
+    }
+  }
+
   NDivider {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginXL * scaling

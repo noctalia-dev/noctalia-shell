@@ -2,7 +2,7 @@
   "settings": {
     "general": {
       "title": "General",
-      
+
       "profile": {
         "section": {
           "label": "Profile",
@@ -307,6 +307,10 @@
         "use-app2unit": {
           "label": "Use App2Unit to launch applications",
           "description": "Uses an alternative launch method to better manage app processes and prevent issues."
+        },
+        "terminal-command": {
+          "label": "Terminal command",
+          "description": "Command to launch a terminal. E.g., 'kitty -e' or 'gnome-terminal --'."
         }
       }
     },
@@ -1077,7 +1081,7 @@
     "enter-width-pixels": "Enter width in pixels",
     "enter-command": "Enter command to execute (app or custom script)",
     "command-example": "echo \"Hello World\"",
-    
+
     "search-wallpapers": "Type to filter wallpapers...",
     "search-launcher": "Search entries... or use > for commands",
     "search": "Search...",
@@ -1178,7 +1182,7 @@
     "lock-subtitle": "Lock your session",
     "end-subtitle": "End your session",
     "lock": "Lock",
-    "suspend": "Suspend", 
+    "suspend": "Suspend",
     "reboot": "Reboot",
     "logout": "Logout",
     "shutdown": "Shutdown"
@@ -1295,7 +1299,7 @@
   },
   "weather": {
     "clear-sky": "Clear sky",
-    "mainly-clear": "Mainly clear", 
+    "mainly-clear": "Mainly clear",
     "partly-cloudy": "Partly cloudy",
     "overcast": "Overcast",
     "fog": "Fog",
@@ -1305,7 +1309,7 @@
     "thunderstorm": "Thunderstorm",
     "unknown": "Unknown"
   },
-  
+
   "authentication": {
     "failed": "Authentication failed",
     "error": "Authentication error"

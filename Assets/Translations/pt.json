@@ -305,6 +305,10 @@
         "use-app2unit": {
           "label": "Usar App2Unit para iniciar aplicativos",
           "description": "Usa um método de inicialização alternativo para gerenciar melhor os processos de aplicativos e evitar problemas."
+        },
+        "terminal-command": {
+          "label": "Comando do terminal",
+          "description": "Comando para iniciar um terminal. Ex: 'kitty -e' ou 'gnome-terminal --'."
         }
       }
     },

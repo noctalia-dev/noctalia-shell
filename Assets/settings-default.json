@@ -106,7 +106,8 @@
     "backgroundOpacity": 1,
     "pinnedExecs": [],
     "useApp2Unit": false,
-    "sortByMostUsed": true
+    "sortByMostUsed": true,
+    "terminalCommand": "xterm -e"
   },
   "dock": {
     "autoHide": false,
