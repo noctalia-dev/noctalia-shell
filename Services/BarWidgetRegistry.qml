@@ -58,7 +58,8 @@ Singleton {
                                     "usePrimaryColor": true,
                                     "useMonospacedFont": true,
                                     "formatHorizontal": "HH:mm ddd, MMM dd",
-                                    "formatVertical": "HH mm - dd MM"
+                                    "formatVertical": "HH mm - dd MM",
+                                    "fontSize": 12
                                   },
                                   "ControlCenter": {
                                     "allowUserSettings": true,

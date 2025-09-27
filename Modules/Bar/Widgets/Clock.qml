@@ -39,6 +39,7 @@ Rectangle {
   property bool useMonospacedFont: widgetSettings.useMonospacedFont !== undefined ? widgetSettings.useMonospacedFont : widgetMetadata.useMonospacedFont
   readonly property string formatHorizontal: widgetSettings.formatHorizontal !== undefined ? widgetSettings.formatHorizontal : widgetMetadata.formatHorizontal
   readonly property string formatVertical: widgetSettings.formatVertical !== undefined ? widgetSettings.formatVertical : widgetMetadata.formatVertical
+  readonly property int fontSize: widgetSettings.fontSize !== undefined ? widgetSettings.fontSize : widgetMetadata.fontSize
 
   implicitWidth: isBarVertical ? Math.round(Style.capsuleHeight * scaling) : Math.round((isBarVertical ? verticalLoader.implicitWidth : horizontalLoader.implicitWidth) + Style.marginM * 2 * scaling)
 
@@ -68,9 +69,10 @@ Rectangle {
             font.family: useMonospacedFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
             font.pointSize: {
               if (repeater.model.length == 1) {
-                return Style.fontSizeS * scaling
+                return fontSize * scaling
               } else {
-                return (index == 0) ? Style.fontSizeXS * scaling : Style.fontSizeXXS * scaling
+                // For multi-line, apply the same relative scaling as before
+                return (index == 0) ? (fontSize * 0.8) * scaling : (fontSize * 0.65) * scaling
               }
             }
             font.weight: Style.fontWeightBold
@@ -96,7 +98,7 @@ Rectangle {
             visible: text !== ""
             text: modelData
             font.family: useMonospacedFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
-            font.pointSize: Style.fontSizeS * scaling
+            font.pointSize: fontSize * scaling
             font.weight: Style.fontWeightBold
             color: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
             wrapMode: Text.WordWrap
