@@ -168,10 +168,25 @@
           "description": "调整亮度变化的步长（滚轮和键盘快捷键）。"
         }
       },
-      "night-light": {
-        "section": {
-          "label": "夜灯",
-          "description": "减少蓝光发射，帮助您更好地睡眠并减轻眼睛疲劳。"
+      "color-scheme": {
+        "title": "配色方案",
+        "color-source": {
+          "section": {
+            "label": "颜色来源",
+            "description": "Noctalia 颜色的主要设置。"
+          },
+          "dark-mode": {
+            "label": "深色模式",
+            "description": "切换到更暗的主题，便于夜间观看。"
+          },
+          "enable-matugen": {
+            "label": "启用 Matugen",
+            "description": "根据您的活动壁纸自动生成颜色。"
+          },
+          "matugen-scheme-type": {
+            "label": "Matugen 配色方案类型",
+            "description": "为 Matugen 选择配色方案生成算法。"
+          }
         },
         "enable": {
           "label": "启用夜灯",
