@@ -21,6 +21,7 @@ Singleton {
   signal workspaceChanged
   signal activeWindowChanged
   signal windowListChanged
+  signal hibernateRequested   // <-- added signal
 
   // Backend service loader
   property var backend: null
@@ -157,14 +158,19 @@ Singleton {
   }
 
   function shutdown() {
-    Quickshell.execDetached(["shutdown", "-h", "now"])
+    Quickshell.execDetached(["systemctl", "poweroff"])
   }
 
   function reboot() {
-    Quickshell.execDetached(["reboot"])
+    Quickshell.execDetached(["systemctl", "reboot"])
   }
 
   function suspend() {
     Quickshell.execDetached(["systemctl", "suspend"])
+  }
+
+  function hibernate() {
+    hibernateRequested() // <-- emit signal if someone wants to listen
+    Quickshell.execDetached(["systemctl", "hibernate"])
   }
 }
