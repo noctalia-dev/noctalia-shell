@@ -14,7 +14,7 @@ NPanel {
   id: root
 
   preferredWidth: 440
-  preferredHeight: 410
+  preferredHeight: 485
   panelAnchorHorizontalCenter: true
   panelAnchorVerticalCenter: true
   panelKeyboardFocus: true
@@ -27,6 +27,7 @@ NPanel {
 
   // Navigation properties
   property int selectedIndex: 0
+  property bool hibernationAvailable: false
   readonly property var powerOptions: [{
       "action": "lock",
       "icon": "lock",
@@ -37,6 +38,11 @@ NPanel {
       "icon": "suspend",
       "title": I18n.tr("session-menu.suspend"),
       "subtitle": "Put the system to sleep"
+    }, {
+      "action": "hibernate",
+      "icon": "moon",
+      "title": "Hibernate",
+      "subtitle": hibernationAvailable ? "Hibernate the system" : "Currently unavailable"
     }, {
       "action": "reboot",
       "icon": "reboot",
@@ -58,6 +64,7 @@ NPanel {
   // Lifecycle handlers
   onOpened: {
     selectedIndex = 0
+    checkHibernation()
   }
 
   onClosed: {
@@ -99,6 +106,11 @@ NPanel {
       break
     case "suspend":
       CompositorService.suspend()
+      break
+    case "hibernate":
+      if (hibernationAvailable) {
+        CompositorService.hibernate()
+      }
       break
     case "reboot":
       CompositorService.reboot()
@@ -159,6 +171,17 @@ NPanel {
         executeAction(pendingAction)
       }
     }
+  }
+
+  // Hibernation check logic
+  function checkHibernation() {
+    var proc = Process.create()
+    proc.command = "bash"
+    proc.arguments = ["-c", "grep -q 'resume=' /proc/cmdline && { swapon --show | grep -q '^'; }"]
+    proc.onFinished.connect(function() {
+      hibernationAvailable = (proc.exitCode === 0)
+    })
+    proc.start()
   }
 
   panelContent: Rectangle {
