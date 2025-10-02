@@ -14,12 +14,66 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
-  // Local state
-  property bool valueUsePrimaryColor: widgetData.usePrimaryColor !== undefined ? widgetData.usePrimaryColor : widgetMetadata.usePrimaryColor
-  property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
-  property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : widgetMetadata.customFont
-  property string valueFormatHorizontal: widgetData.formatHorizontal !== undefined ? widgetData.formatHorizontal : widgetMetadata.formatHorizontal
-  property string valueFormatVertical: widgetData.formatVertical !== undefined ? widgetData.formatVertical : widgetMetadata.formatVertical
+  // Local state with safe defaults
+  property bool valueUsePrimaryColor: (widgetData && widgetData.usePrimaryColor !== undefined) ? widgetData.usePrimaryColor : (widgetMetadata ? widgetMetadata.usePrimaryColor : true)
+  property bool valueUseMonospacedFont: (widgetData && widgetData.useMonospacedFont !== undefined) ? widgetData.useMonospacedFont : (widgetMetadata ? widgetMetadata.useMonospacedFont : false)
+  property bool valueUseCustomFont: (widgetData && widgetData.useCustomFont !== undefined) ? widgetData.useCustomFont : (widgetMetadata ? widgetMetadata.useCustomFont : false)
+  property string valueCustomFont: (widgetData && widgetData.customFont !== undefined) ? widgetData.customFont : (widgetMetadata ? widgetMetadata.customFont : "")
+  property string valueFormatHorizontal: (widgetData && widgetData.formatHorizontal !== undefined) ? widgetData.formatHorizontal : (widgetMetadata ? widgetMetadata.formatHorizontal : "HH:mm ddd, MMM dd")
+  property string valueFormatVertical: (widgetData && widgetData.formatVertical !== undefined) ? widgetData.formatVertical : (widgetMetadata ? widgetMetadata.formatVertical : "HH mm dd MM")
+
+  // Font list - will be populated dynamically
+  property var fontList: []
+
+  Component.onCompleted: {
+    loadFonts()
+  }
+  
+  function loadFonts() {
+    console.log("ClockSettings: Loading fonts...")
+    
+    // Try to access FontService directly
+    if (typeof FontService !== 'undefined') {
+      console.log("ClockSettings: FontService exists")
+      if (FontService.availableFonts) {
+        console.log("ClockSettings: FontService.availableFonts exists with", FontService.availableFonts.length, "fonts")
+        fontList = FontService.availableFonts
+        console.log("ClockSettings: Successfully loaded", fontList.length, "fonts from FontService")
+        return
+      } else {
+        console.log("ClockSettings: FontService.availableFonts is null/undefined")
+      }
+    } else {
+      console.log("ClockSettings: FontService is not defined")
+    }
+    
+    // Fallback font list
+    console.log("ClockSettings: Using fallback font list")
+    fontList = [
+      { key: "Cantarell", name: "Cantarell" },
+      { key: "DejaVu Sans", name: "DejaVu Sans" },
+      { key: "DejaVu Sans Mono", name: "DejaVu Sans Mono" },
+      { key: "DejaVu Serif", name: "DejaVu Serif" },
+      { key: "Fira Code", name: "Fira Code" },
+      { key: "Fira Sans", name: "Fira Sans" },
+      { key: "IBM Plex Sans", name: "IBM Plex Sans" },
+      { key: "IBM Plex Mono", name: "IBM Plex Mono" },
+      { key: "Inconsolata", name: "Inconsolata" },
+      { key: "Inter", name: "Inter" },
+      { key: "JetBrains Mono", name: "JetBrains Mono" },
+      { key: "Liberation Sans", name: "Liberation Sans" },
+      { key: "Liberation Mono", name: "Liberation Mono" },
+      { key: "Noto Sans", name: "Noto Sans" },
+      { key: "Noto Mono", name: "Noto Mono" },
+      { key: "Open Sans", name: "Open Sans" },
+      { key: "Roboto", name: "Roboto" },
+      { key: "Roboto Mono", name: "Roboto Mono" },
+      { key: "Source Code Pro", name: "Source Code Pro" },
+      { key: "Ubuntu", name: "Ubuntu" },
+      { key: "Ubuntu Mono", name: "Ubuntu Mono" }
+    ]
+    console.log("ClockSettings: Loaded", fontList.length, "fallback fonts")
+  }
 
   // Track the currently focused input field
   property var focusedInput: null
@@ -30,6 +84,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {})
     settings.usePrimaryColor = valueUsePrimaryColor
+    settings.useMonospacedFont = valueUseMonospacedFont
     settings.useCustomFont = valueUseCustomFont
     settings.customFont = valueCustomFont
     settings.formatHorizontal = valueFormatHorizontal.trim()
@@ -74,6 +129,14 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
+    label: I18n.tr("bar.widget-settings.clock.use-monospaced-font.label")
+    description: I18n.tr("bar.widget-settings.clock.use-monospaced-font.description")
+    checked: valueUseMonospacedFont
+    onToggled: checked => valueUseMonospacedFont = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
     label: I18n.tr("bar.widget-settings.clock.use-custom-font.label")
     description: I18n.tr("bar.widget-settings.clock.use-custom-font.description")
     checked: valueUseCustomFont
@@ -85,14 +148,26 @@ ColumnLayout {
     visible: valueUseCustomFont
     label: I18n.tr("bar.widget-settings.clock.custom-font.label")
     description: I18n.tr("bar.widget-settings.clock.custom-font.description")
-    model: FontService.availableFonts
+    // Use FontService.availableFonts directly - this works in GeneralTab
+    model: FontService ? FontService.availableFonts : []
     currentKey: valueCustomFont
     placeholder: I18n.tr("bar.widget-settings.clock.custom-font.placeholder")
     searchPlaceholder: I18n.tr("bar.widget-settings.clock.custom-font.search-placeholder")
     popupHeight: 420 * scaling
     minimumWidth: 300 * scaling
+    
+    Component.onCompleted: {
+      console.log("ClockSettings: NSearchableComboBox model has", model ? model.length : 0, "fonts")
+      console.log("ClockSettings: FontService type:", typeof FontService)
+      if (FontService) {
+        console.log("ClockSettings: FontService.availableFonts type:", typeof FontService.availableFonts)
+        console.log("ClockSettings: FontService.availableFonts length:", FontService.availableFonts ? FontService.availableFonts.length : "undefined")
+      }
+    }
+    
     onSelected: function (key) {
       valueCustomFont = key
+      console.log("ClockSettings: Selected font:", key)
     }
   }
 
