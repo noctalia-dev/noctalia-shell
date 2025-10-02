@@ -14,13 +14,42 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
-  // Local state with safe defaults
-  property bool valueUsePrimaryColor: (widgetData && widgetData.usePrimaryColor !== undefined) ? widgetData.usePrimaryColor : (widgetMetadata ? widgetMetadata.usePrimaryColor : true)
-  property bool valueUseMonospacedFont: (widgetData && widgetData.useMonospacedFont !== undefined) ? widgetData.useMonospacedFont : (widgetMetadata ? widgetMetadata.useMonospacedFont : false)
-  property bool valueUseCustomFont: (widgetData && widgetData.useCustomFont !== undefined) ? widgetData.useCustomFont : (widgetMetadata ? widgetMetadata.useCustomFont : false)
-  property string valueCustomFont: (widgetData && widgetData.customFont !== undefined) ? widgetData.customFont : (widgetMetadata ? widgetMetadata.customFont : "")
-  property string valueFormatHorizontal: (widgetData && widgetData.formatHorizontal !== undefined) ? widgetData.formatHorizontal : (widgetMetadata ? widgetMetadata.formatHorizontal : "HH:mm ddd, MMM dd")
-  property string valueFormatVertical: (widgetData && widgetData.formatVertical !== undefined) ? widgetData.formatVertical : (widgetMetadata ? widgetMetadata.formatVertical : "HH mm dd MM")
+  // Local state with safe defaults - use explicit default values to avoid undefined assignments
+  property bool valueUsePrimaryColor: {
+    if (widgetData && widgetData.usePrimaryColor !== undefined) return widgetData.usePrimaryColor
+    if (widgetMetadata && widgetMetadata.usePrimaryColor !== undefined) return widgetMetadata.usePrimaryColor
+    return true
+  }
+  
+  property bool valueUseMonospacedFont: {
+    if (widgetData && widgetData.useMonospacedFont !== undefined) return widgetData.useMonospacedFont
+    if (widgetMetadata && widgetMetadata.useMonospacedFont !== undefined) return widgetMetadata.useMonospacedFont
+    return false
+  }
+  
+  property bool valueUseCustomFont: {
+    if (widgetData && widgetData.useCustomFont !== undefined) return widgetData.useCustomFont
+    if (widgetMetadata && widgetMetadata.useCustomFont !== undefined) return widgetMetadata.useCustomFont
+    return false
+  }
+  
+  property string valueCustomFont: {
+    if (widgetData && widgetData.customFont !== undefined) return widgetData.customFont
+    if (widgetMetadata && widgetMetadata.customFont !== undefined) return widgetMetadata.customFont
+    return ""
+  }
+  
+  property string valueFormatHorizontal: {
+    if (widgetData && widgetData.formatHorizontal !== undefined) return widgetData.formatHorizontal
+    if (widgetMetadata && widgetMetadata.formatHorizontal !== undefined) return widgetMetadata.formatHorizontal
+    return "HH:mm ddd, MMM dd"
+  }
+  
+  property string valueFormatVertical: {
+    if (widgetData && widgetData.formatVertical !== undefined) return widgetData.formatVertical
+    if (widgetMetadata && widgetMetadata.formatVertical !== undefined) return widgetMetadata.formatVertical
+    return "HH mm dd MM"
+  }
 
   // Font list - will be populated dynamically
   property var fontList: []
