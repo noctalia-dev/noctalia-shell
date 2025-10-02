@@ -11,6 +11,7 @@ Singleton {
   // Compositor detection
   property bool isHyprland: false
   property bool isNiri: false
+  property bool isSway: false
 
   // Generic workspace and window data
   property ListModel workspaces: ListModel {}
@@ -31,14 +32,22 @@ Singleton {
 
   function detectCompositor() {
     const hyprlandSignature = Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
+    const swaySock = Quickshell.env("SWAYSOCK")
     if (hyprlandSignature && hyprlandSignature.length > 0) {
       isHyprland = true
       isNiri = false
+      isSway = false
       backendLoader.sourceComponent = hyprlandComponent
+    } else if (swaySock && swaySock.length > 0) {
+      isHyprland = false
+      isNiri = false
+      isSway = true
+      backendLoader.sourceComponent = swayComponent
     } else {
       // Default to Niri
       isHyprland = false
       isNiri = true
+      isSway = false
       backendLoader.sourceComponent = niriComponent
     }
   }
@@ -67,6 +76,14 @@ Singleton {
     id: niriComponent
     NiriService {
       id: niriBackend
+    }
+  }
+
+  // Sway backend component
+  Component {
+    id: swayComponent
+    SwayService {
+      id: swayBackend
     }
   }
 
