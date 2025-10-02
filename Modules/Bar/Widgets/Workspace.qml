@@ -119,7 +119,7 @@ Item {
       next = localWorkspaces.count - 1
     const ws = localWorkspaces.get(next)
     if (ws && ws.idx !== undefined)
-      CompositorService.switchToWorkspace(ws.idx)
+      CompositorService.switchToWorkspace(ws)
   }
 
   Component.onCompleted: {
@@ -323,7 +323,7 @@ Item {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-              CompositorService.switchToWorkspace(model.idx)
+              CompositorService.switchToWorkspace(model)
             }
             hoverEnabled: true
           }
@@ -467,7 +467,7 @@ Item {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-              CompositorService.switchToWorkspace(model.idx)
+              CompositorService.switchToWorkspace(model)
             }
             hoverEnabled: true
           }

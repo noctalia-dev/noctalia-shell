@@ -145,9 +145,9 @@ Singleton {
   }
 
   // Generic workspace switching
-  function switchToWorkspace(workspaceId) {
+  function switchToWorkspace(workspace) {
     if (backend && backend.switchToWorkspace) {
-      backend.switchToWorkspace(workspaceId)
+      backend.switchToWorkspace(workspace)
     } else {
       Logger.warn("Compositor", "No backend available for workspace switching")
     }
@@ -177,18 +177,18 @@ Singleton {
   }
 
   // Set focused window
-  function focusWindow(windowId) {
+  function focusWindow(window) {
     if (backend && backend.focusWindow) {
-      backend.focusWindow(windowId)
+      backend.focusWindow(window)
     } else {
       Logger.warn("Compositor", "No backend available for window focus")
     }
   }
 
   // Close window
-  function closeWindow(windowId) {
+  function closeWindow(window) {
     if (backend && backend.closeWindow) {
-      backend.closeWindow(windowId)
+      backend.closeWindow(window)
     } else {
       Logger.warn("Compositor", "No backend available for window closing")
     }
