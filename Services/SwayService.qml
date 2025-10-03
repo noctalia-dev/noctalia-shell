@@ -77,7 +77,8 @@ Item {
           "isActive": ws.active === true,
           "isFocused": ws.focused === true,
           "isUrgent": ws.urgent === true,
-          "isOccupied": true
+          "isOccupied": true,
+          "handle": ws
         }
 
         workspaces.append(wsData)
@@ -141,7 +142,8 @@ Item {
       return {
         "title": title,
         "appId": appId,
-        "isFocused": focused
+        "isFocused": focused,
+        "handle": toplevel
       }
     } catch (e) {
       return null
@@ -201,7 +203,7 @@ Item {
   // Public functions
   function switchToWorkspace(workspace) {
     try {
-      I3.dispatch(`workspace ${workspace.name}`)
+      workspace.handle.activate()
     } catch (e) {
       Logger.error("SwayService", "Failed to switch workspace:", e)
     }
@@ -209,7 +211,7 @@ Item {
 
   function focusWindow(window) {
     try {
-      I3.dispatch(`[app_id="${window.appId}"] focus`)
+      window.handle.activate()
     } catch (e) {
       Logger.error("SwayService", "Failed to switch window:", e)
     }
@@ -217,7 +219,7 @@ Item {
 
   function closeWindow(window) {
     try {
-      I3.dispatch(`[app_id="${window.appId}"] kill`)
+      window.handle.close()
     } catch (e) {
       Logger.error("SwayService", "Failed to close window:", e)
     }
