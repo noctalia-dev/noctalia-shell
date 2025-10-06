@@ -86,6 +86,9 @@ Item {
     function decrease() {
       BrightnessService.decreaseBrightness()
     }
+    function set(percentage: real) {
+      BrightnessService.setBrightness(percentage)
+    }
   }
 
   IpcHandler {

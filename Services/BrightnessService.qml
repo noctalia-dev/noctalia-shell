@@ -39,6 +39,11 @@ Singleton {
     monitors.forEach(m => m.decreaseBrightness())
   }
 
+  function setBrightness(percentage: real): void {
+    const value = Math.max(0, Math.min(100, percentage)) / 100.0
+    monitors.forEach(m => m.setBrightness(value))
+  }
+
   function getDetectedDisplays(): list<var> {
     return detectedDisplays
   }
