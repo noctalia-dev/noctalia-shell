@@ -45,9 +45,9 @@ Rectangle {
     return Math.max(1, compact ? base * 0.43 : base * 0.33)
   }
 
-  readonly property int percentTextWidth: Math.ceil(percentMetrics.tightBoundingRect.width + 2)
-  readonly property int tempTextWidth: Math.ceil(tempMetrics.tightBoundingRect.width + 2)
-  readonly property int memTextWidth: Math.ceil(memMetrics.tightBoundingRect.width + 2)
+  readonly property int percentTextWidth: Math.ceil(percentMetrics.boundingRect.width + 3 * scaling)
+  readonly property int tempTextWidth: Math.ceil(tempMetrics.boundingRect.width + 3 * scaling)
+  readonly property int memTextWidth: Math.ceil(memMetrics.boundingRect.width + 3 * scaling)
 
   TextMetrics {
     id: percentMetrics

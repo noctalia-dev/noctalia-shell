@@ -148,7 +148,8 @@ ColumnLayout {
 
               NText {
                 text: I18n.tr("settings.display.monitors.scale")
-                Layout.preferredWidth: 80 * scaling
+                Layout.preferredWidth: 90 * scaling
+                Layout.alignment: Qt.AlignVCenter
               }
 
               NValueSlider {
@@ -158,17 +159,21 @@ ColumnLayout {
                 stepSize: 0.05
                 value: localScaling
                 onPressedChanged: (pressed, value) => ScalingService.setScreenScale(modelData, value)
-                text: I18n.tr("system.scaling-percentage", {
-                                "percentage": Math.round(localScaling * 100)
-                              })
                 Layout.fillWidth: true
               }
 
-              // Reset button container
+              NText {
+                text: I18n.tr("system.scaling-percentage", {
+                                "percentage": Math.round(scaleSlider.value * 100)
+                              })
+                Layout.preferredWidth: 55 * scaling
+                horizontalAlignment: Text.AlignRight
+                Layout.alignment: Qt.AlignVCenter
+              }
+
               Item {
                 Layout.preferredWidth: 30 * scaling
-                Layout.preferredHeight: 30 * scaling
-
+                Layout.fillHeight: true
                 NIconButton {
                   icon: "refresh"
                   baseSize: Style.baseWidgetSize * 0.9
@@ -185,7 +190,7 @@ ColumnLayout {
 
           // Brightness
           ColumnLayout {
-            spacing: Style.marginL * scaling
+            spacing: Style.marginS * scaling
             Layout.fillWidth: true
             visible: brightnessMonitor !== undefined && brightnessMonitor !== null
 
@@ -195,32 +200,38 @@ ColumnLayout {
 
               NText {
                 text: I18n.tr("settings.display.monitors.brightness")
-                Layout.preferredWidth: 80 * scaling
+                Layout.preferredWidth: 90 * scaling
+                Layout.alignment: Qt.AlignVCenter
               }
 
               NValueSlider {
-                Layout.fillWidth: true
+                id: brightnessSlider
                 from: 0
                 to: 1
                 value: brightnessMonitor ? brightnessMonitor.brightness : 0.5
                 stepSize: 0.01
+                onMoved: value => {
+                           if (brightnessMonitor.method === "internal") {
+                             brightnessMonitor.setBrightness(value)
+                           }
+                         }
                 onPressedChanged: (pressed, value) => brightnessMonitor.setBrightness(value)
-                text: brightnessMonitor ? Math.round(brightnessMonitor.brightness * 100) + "%" : "N/A"
+                Layout.fillWidth: true
               }
 
-              // Empty container to match scale row layout
+              NText {
+                text: brightnessMonitor ? Math.round(brightnessSlider.value * 100) + "%" : "N/A"
+                Layout.preferredWidth: 55 * scaling
+                horizontalAlignment: Text.AlignRight
+                Layout.alignment: Qt.AlignVCenter
+              }
+
               Item {
                 Layout.preferredWidth: 30 * scaling
-                Layout.preferredHeight: 30 * scaling
-
-                // Method text positioned in the button area
-                NText {
-                  text: brightnessMonitor ? brightnessMonitor.method : ""
-                  pointSize: Style.fontSizeXS * scaling
-                  color: Color.mOnSurfaceVariant
-                  anchors.right: parent.right
-                  anchors.verticalCenter: parent.verticalCenter
-                  horizontalAlignment: Text.AlignRight
+                Layout.fillHeight: true
+                NIcon {
+                  icon: brightnessMonitor.method == "internal" ? "device-laptop" : "device-desktop"
+                  anchors.centerIn: parent
                 }
               }
             }

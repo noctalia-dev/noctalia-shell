@@ -16,6 +16,10 @@ NPanel {
   preferredHeight: 480
   panelKeyboardFocus: true
 
+  onOpened: function () {
+    Settings.data.notifications.lastSeenTs = Time.timestamp * 1000
+  }
+
   panelContent: Rectangle {
     id: notificationRect
     color: Color.transparent

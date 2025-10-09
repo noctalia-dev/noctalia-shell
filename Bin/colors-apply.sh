@@ -90,5 +90,3 @@ case "$APP_NAME" in
 esac
 
 echo "✅ Command sent for $APP_NAME."
-
-        # lines.push("post_hook = \"grep -q '^theme *= *' ~/.config/ghostty/config; and sed -i 's/^theme *= *.*/theme = noctalia/' ~/.config/ghostty/config; or echo 'theme = noctalia' >> ~/.config/ghostty/config; and pkill -SIGUSR2 ghostty\"")

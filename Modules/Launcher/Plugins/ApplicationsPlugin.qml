@@ -59,8 +59,41 @@ Item {
     }
 
     const allApps = DesktopEntries.applications.values || []
-    entries = allApps.filter(app => app && !app.noDisplay)
+    entries = allApps.filter(app => app && !app.noDisplay).map(app => {
+                                                                 // Add executable name property for search
+                                                                 app.executableName = getExecutableName(app)
+                                                                 return app
+                                                               })
     Logger.log("ApplicationsPlugin", `Loaded ${entries.length} applications`)
+  }
+
+  function getExecutableName(app) {
+    if (!app)
+      return ""
+
+    // Try to get executable name from command array
+    if (app.command && Array.isArray(app.command) && app.command.length > 0) {
+      const cmd = app.command[0]
+      // Extract just the executable name from the full path
+      const parts = cmd.split('/')
+      const executable = parts[parts.length - 1]
+      // Remove any arguments or parameters
+      return executable.split(' ')[0]
+    }
+
+    // Try to get from exec property if available
+    if (app.exec) {
+      const parts = app.exec.split('/')
+      const executable = parts[parts.length - 1]
+      return executable.split(' ')[0]
+    }
+
+    // Fallback to app id (desktop file name without .desktop)
+    if (app.id) {
+      return app.id.replace('.desktop', '')
+    }
+
+    return ""
   }
 
   function getResults(query) {
@@ -99,7 +132,7 @@ Item {
     // Use fuzzy search if available, fallback to simple search
     if (typeof Fuzzysort !== 'undefined') {
       const fuzzyResults = Fuzzysort.go(query, entries, {
-                                          "keys": ["name", "comment", "genericName"],
+                                          "keys": ["name", "comment", "genericName", "executableName"],
                                           "threshold": -1000,
                                           "limit": 20
                                         })
@@ -123,17 +156,31 @@ Item {
                               const name = (app.name || "").toLowerCase()
                               const comment = (app.comment || "").toLowerCase()
                               const generic = (app.genericName || "").toLowerCase()
-                              return name.includes(searchTerm) || comment.includes(searchTerm) || generic.includes(searchTerm)
+                              const executable = getExecutableName(app).toLowerCase()
+                              return name.includes(searchTerm) || comment.includes(searchTerm) || generic.includes(searchTerm) || executable.includes(searchTerm)
                             }).sort((a, b) => {
-                                      // Prioritize name matches
+                                      // Prioritize name matches, then executable matches
                                       const aName = a.name.toLowerCase()
                                       const bName = b.name.toLowerCase()
+                                      const aExecutable = getExecutableName(a).toLowerCase()
+                                      const bExecutable = getExecutableName(b).toLowerCase()
                                       const aStarts = aName.startsWith(searchTerm)
                                       const bStarts = bName.startsWith(searchTerm)
+                                      const aExecStarts = aExecutable.startsWith(searchTerm)
+                                      const bExecStarts = bExecutable.startsWith(searchTerm)
+
+                                      // Prioritize name matches first
                                       if (aStarts && !bStarts)
                                       return -1
                                       if (!aStarts && bStarts)
                                       return 1
+
+                                      // Then prioritize executable matches
+                                      if (aExecStarts && !bExecStarts)
+                                      return -1
+                                      if (!aExecStarts && bExecStarts)
+                                      return 1
+
                                       return aName.localeCompare(bName)
                                     }).slice(0, 20).map(app => createResultEntry(app))
     }

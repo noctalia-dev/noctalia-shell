@@ -131,7 +131,7 @@ Singleton {
 
   // Systemd inhibition using systemd-inhibit
   function startSystemdInhibition() {
-    inhibitorProcess.command = ["systemd-inhibit", "--what=idle:sleep", "--why=" + reason, "--mode=block", "sleep", "infinity"]
+    inhibitorProcess.command = ["systemd-inhibit", "--what=idle", "--why=" + reason, "--mode=block", "sleep", "infinity"]
     inhibitorProcess.running = true
   }
 

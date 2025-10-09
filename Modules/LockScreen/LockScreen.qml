@@ -24,14 +24,6 @@ Loader {
     onTriggered: lockScreen.active = false
   }
 
-  function formatTime() {
-    return Settings.data.location.use12hourFormat ? Qt.locale().toString(new Date(), "h:mm A") : Qt.locale().toString(new Date(), "HH:mm")
-  }
-
-  function formatDate() {
-    return Qt.locale().toString(new Date(), "dddd, MMMM d")
-  }
-
   function scheduleUnloadAfterUnlock() {
     unloadAfterUnlockTimer.start()
   }
@@ -88,157 +80,362 @@ Loader {
             gradient: Gradient {
               GradientStop {
                 position: 0.0
-                color: Qt.rgba(0, 0, 0, 0.6)
+                color: Qt.alpha(Color.mShadow, 0.8)
               }
               GradientStop {
                 position: 0.3
-                color: Qt.rgba(0, 0, 0, 0.3)
+                color: Qt.alpha(Color.mShadow, 0.4)
               }
               GradientStop {
                 position: 0.7
-                color: Qt.rgba(0, 0, 0, 0.4)
+                color: Qt.alpha(Color.mShadow, 0.5)
               }
               GradientStop {
                 position: 1.0
-                color: Qt.rgba(0, 0, 0, 0.7)
+                color: Qt.alpha(Color.mShadow, 0.9)
               }
+            }
+          }
+
+          // Screen corners for lock screen
+          Item {
+            anchors.fill: parent
+            visible: Settings.data.general.showScreenCorners
+
+            property color cornerColor: Settings.data.general.forceBlackScreenCorners ? Qt.rgba(0, 0, 0, 1) : Qt.alpha(Color.mSurface, Settings.data.bar.backgroundOpacity)
+            property real cornerRadius: Style.screenRadius * scaling
+            property real cornerSize: Style.screenRadius * scaling
+
+            // Top-left concave corner
+            Canvas {
+              anchors.top: parent.top
+              anchors.left: parent.left
+              width: parent.cornerSize
+              height: parent.cornerSize
+              antialiasing: true
+              renderTarget: Canvas.FramebufferObject
+              smooth: false
+
+              onPaint: {
+                const ctx = getContext("2d")
+                if (!ctx)
+                  return
+
+                ctx.reset()
+                ctx.clearRect(0, 0, width, height)
+
+                ctx.fillStyle = parent.cornerColor
+                ctx.fillRect(0, 0, width, height)
+
+                ctx.globalCompositeOperation = "destination-out"
+                ctx.fillStyle = "#ffffff"
+                ctx.beginPath()
+                ctx.arc(width, height, parent.cornerRadius, 0, 2 * Math.PI)
+                ctx.fill()
+              }
+
+              onWidthChanged: if (available)
+                                requestPaint()
+              onHeightChanged: if (available)
+                                 requestPaint()
+            }
+
+            // Top-right concave corner
+            Canvas {
+              anchors.top: parent.top
+              anchors.right: parent.right
+              width: parent.cornerSize
+              height: parent.cornerSize
+              antialiasing: true
+              renderTarget: Canvas.FramebufferObject
+              smooth: true
+
+              onPaint: {
+                const ctx = getContext("2d")
+                if (!ctx)
+                  return
+
+                ctx.reset()
+                ctx.clearRect(0, 0, width, height)
+
+                ctx.fillStyle = parent.cornerColor
+                ctx.fillRect(0, 0, width, height)
+
+                ctx.globalCompositeOperation = "destination-out"
+                ctx.fillStyle = "#ffffff"
+                ctx.beginPath()
+                ctx.arc(0, height, parent.cornerRadius, 0, 2 * Math.PI)
+                ctx.fill()
+              }
+
+              onWidthChanged: if (available)
+                                requestPaint()
+              onHeightChanged: if (available)
+                                 requestPaint()
+            }
+
+            // Bottom-left concave corner
+            Canvas {
+              anchors.bottom: parent.bottom
+              anchors.left: parent.left
+              width: parent.cornerSize
+              height: parent.cornerSize
+              antialiasing: true
+              renderTarget: Canvas.FramebufferObject
+              smooth: true
+
+              onPaint: {
+                const ctx = getContext("2d")
+                if (!ctx)
+                  return
+
+                ctx.reset()
+                ctx.clearRect(0, 0, width, height)
+
+                ctx.fillStyle = parent.cornerColor
+                ctx.fillRect(0, 0, width, height)
+
+                ctx.globalCompositeOperation = "destination-out"
+                ctx.fillStyle = "#ffffff"
+                ctx.beginPath()
+                ctx.arc(width, 0, parent.cornerRadius, 0, 2 * Math.PI)
+                ctx.fill()
+              }
+
+              onWidthChanged: if (available)
+                                requestPaint()
+              onHeightChanged: if (available)
+                                 requestPaint()
+            }
+
+            // Bottom-right concave corner
+            Canvas {
+              anchors.bottom: parent.bottom
+              anchors.right: parent.right
+              width: parent.cornerSize
+              height: parent.cornerSize
+              antialiasing: true
+              renderTarget: Canvas.FramebufferObject
+              smooth: true
+
+              onPaint: {
+                const ctx = getContext("2d")
+                if (!ctx)
+                  return
+
+                ctx.reset()
+                ctx.clearRect(0, 0, width, height)
+
+                ctx.fillStyle = parent.cornerColor
+                ctx.fillRect(0, 0, width, height)
+
+                ctx.globalCompositeOperation = "destination-out"
+                ctx.fillStyle = "#ffffff"
+                ctx.beginPath()
+                ctx.arc(0, 0, parent.cornerRadius, 0, 2 * Math.PI)
+                ctx.fill()
+              }
+
+              onWidthChanged: if (available)
+                                requestPaint()
+              onHeightChanged: if (available)
+                                 requestPaint()
             }
           }
 
           Item {
             anchors.fill: parent
 
-            // Time and Date
-            ColumnLayout {
+            // Time, Date, and User Profile Container
+            Rectangle {
+              width: Math.max(500 * scaling, contentRow.implicitWidth + 24 * scaling)
+              height: 120 * scaling
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.top: parent.top
-              anchors.topMargin: 80 * scaling
-              spacing: 8 * scaling
+              anchors.topMargin: 100 * scaling
+              radius: 32 * scaling
+              color: Color.mSurface
+              border.color: Qt.alpha(Color.mOutline, 0.2)
+              border.width: 1
 
-              NText {
-                id: timeText
-                text: lockScreen.formatTime()
-                Layout.alignment: Qt.AlignHCenter
-                pointSize: 64 * scaling
-                font.weight: Font.Medium
-                color: Color.mOnSurface
-                horizontalAlignment: Text.AlignHCenter
-                opacity: 0.95
+              RowLayout {
+                id: contentRow
+                anchors.fill: parent
+                anchors.margins: 12 * scaling
+                spacing: 8 * scaling
 
-                SequentialAnimation on opacity {
-                  loops: Animation.Infinite
-                  NumberAnimation {
-                    to: 0.7
-                    duration: 3000
-                    easing.type: Easing.InOutQuad
-                  }
-                  NumberAnimation {
-                    to: 0.95
-                    duration: 3000
-                    easing.type: Easing.InOutQuad
-                  }
-                }
-              }
-
-              NText {
-                id: dateText
-                text: lockScreen.formatDate()
-                Layout.alignment: Qt.AlignHCenter
-                pointSize: Style.fontSizeL * scaling
-                font.weight: Font.Medium
-                color: Color.mOnSurface
-                horizontalAlignment: Text.AlignHCenter
-                opacity: 0.9
-              }
-            }
-
-            // User Profile
-            ColumnLayout {
-              anchors.centerIn: parent
-              spacing: 6 * scaling
-              Layout.alignment: Qt.AlignHCenter
-
-              Rectangle {
-                Layout.preferredWidth: 130 * scaling
-                Layout.preferredHeight: 130 * scaling
-                Layout.alignment: Qt.AlignHCenter
-                radius: width * 0.5
-                color: Color.transparent
-
+                // Left side: Avatar
                 Rectangle {
-                  anchors.fill: parent
-                  radius: parent.radius
+                  Layout.preferredWidth: 70 * scaling
+                  Layout.preferredHeight: 70 * scaling
+                  Layout.alignment: Qt.AlignVCenter
+                  radius: width * 0.5
                   color: Color.transparent
-                  border.color: Qt.alpha(Color.mPrimary, 0.8)
-                  border.width: 3
 
-                  SequentialAnimation on border.color {
-                    loops: Animation.Infinite
-                    ColorAnimation {
-                      to: Qt.alpha(Color.mPrimary, 1.0)
-                      duration: 2000
-                      easing.type: Easing.InOutQuad
+                  Rectangle {
+                    anchors.fill: parent
+                    radius: parent.radius
+                    color: Color.transparent
+                    border.color: Qt.alpha(Color.mPrimary, 0.8)
+                    border.width: 2
+
+                    SequentialAnimation on border.color {
+                      loops: Animation.Infinite
+                      ColorAnimation {
+                        to: Qt.alpha(Color.mPrimary, 1.0)
+                        duration: 2000
+                        easing.type: Easing.InOutQuad
+                      }
+                      ColorAnimation {
+                        to: Qt.alpha(Color.mPrimary, 0.8)
+                        duration: 2000
+                        easing.type: Easing.InOutQuad
+                      }
                     }
-                    ColorAnimation {
-                      to: Qt.alpha(Color.mPrimary, 0.8)
-                      duration: 2000
-                      easing.type: Easing.InOutQuad
+                  }
+
+                  NImageCircled {
+                    anchors.centerIn: parent
+                    width: 66 * scaling
+                    height: 66 * scaling
+                    imagePath: Settings.data.general.avatarImage
+                    fallbackIcon: "person"
+
+                    SequentialAnimation on scale {
+                      loops: Animation.Infinite
+                      NumberAnimation {
+                        to: 1.02
+                        duration: 4000
+                        easing.type: Easing.InOutQuad
+                      }
+                      NumberAnimation {
+                        to: 1.0
+                        duration: 4000
+                        easing.type: Easing.InOutQuad
+                      }
                     }
                   }
                 }
 
-                NImageCircled {
-                  anchors.centerIn: parent
-                  width: 120 * scaling
-                  height: 120 * scaling
-                  imagePath: Settings.data.general.avatarImage
-                  fallbackIcon: "person"
+                // Spacer to center the text section
+                Item {
+                  Layout.fillWidth: true
+                }
 
-                  SequentialAnimation on scale {
-                    loops: Animation.Infinite
-                    NumberAnimation {
-                      to: 1.02
-                      duration: 4000
-                      easing.type: Easing.InOutQuad
+                // Center: User Info Column (left-aligned text)
+                ColumnLayout {
+                  Layout.alignment: Qt.AlignVCenter
+                  spacing: 2 * scaling
+
+                  // Welcome back + Username on one line
+                  NText {
+                    text: I18n.tr("lock-screen.welcome-back") + " " + Quickshell.env("USER") + "!"
+                    pointSize: Style.fontSizeXXXL * scaling
+                    font.weight: Font.Medium
+                    color: Color.mOnSurface
+                    horizontalAlignment: Text.AlignLeft
+                  }
+
+                  // Date below
+                  NText {
+                    text: Qt.locale().toString(Time.date, "dddd, MMMM d")
+                    pointSize: Style.fontSizeXXL * scaling
+                    font.weight: Font.Medium
+                    color: Color.mOnSurfaceVariant
+                    horizontalAlignment: Text.AlignLeft
+                  }
+                }
+
+                // Spacer to push cool time to the right
+                Item {
+                  Layout.fillWidth: true
+                }
+
+                // Right side: Cool Time (from Calendar)
+                Item {
+                  Layout.preferredWidth: 70 * scaling
+                  Layout.preferredHeight: 70 * scaling
+                  Layout.alignment: Qt.AlignVCenter
+
+                  // Seconds circular progress
+                  Canvas {
+                    id: secondsProgress
+                    anchors.fill: parent
+
+                    property real progress: Time.date.getSeconds() / 60
+                    onProgressChanged: requestPaint()
+
+                    Connections {
+                      target: Time
+                      function onDateChanged() {
+                        const total = Time.date.getSeconds() * 1000 + Time.date.getMilliseconds()
+                        secondsProgress.progress = total / 60000
+                      }
                     }
-                    NumberAnimation {
-                      to: 1.0
-                      duration: 4000
-                      easing.type: Easing.InOutQuad
+
+                    onPaint: {
+                      var ctx = getContext("2d")
+                      var centerX = width / 2
+                      var centerY = height / 2
+                      var radius = Math.min(width, height) / 2 - 3 * scaling
+
+                      ctx.reset()
+
+                      // Background circle
+                      ctx.beginPath()
+                      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+                      ctx.lineWidth = 2.5 * scaling
+                      ctx.strokeStyle = Qt.alpha(Color.mOnSurface, 0.15)
+                      ctx.stroke()
+
+                      // Progress arc
+                      ctx.beginPath()
+                      ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progress * 2 * Math.PI)
+                      ctx.lineWidth = 2.5 * scaling
+                      ctx.strokeStyle = Color.mPrimary
+                      ctx.lineCap = "round"
+                      ctx.stroke()
+                    }
+                  }
+
+                  // Digital clock
+                  ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 0
+
+                    NText {
+                      text: {
+                        var t = Settings.data.location.use12hourFormat ? Qt.locale().toString(new Date(), "hh AP") : Qt.locale().toString(new Date(), "HH")
+                        return t
+                      }
+                      pointSize: Style.fontSizeL * scaling
+                      font.weight: Style.fontWeightBold
+                      color: Color.mOnSurface
+                      horizontalAlignment: Text.AlignHCenter
+                      Layout.alignment: Qt.AlignHCenter
+                    }
+
+                    NText {
+                      text: Qt.formatTime(Time.date, "mm")
+                      pointSize: Style.fontSizeL * scaling
+                      font.weight: Style.fontWeightBold
+                      color: Color.mOnSurfaceVariant
+                      horizontalAlignment: Text.AlignHCenter
+                      Layout.alignment: Qt.AlignHCenter
                     }
                   }
                 }
-              }
-
-              NText {
-                text: I18n.tr("lock-screen.welcome-back")
-                Layout.alignment: Qt.AlignHCenter
-                pointSize: Style.fontSizeL * scaling
-                font.weight: Font.Medium
-                color: Color.mOnSurface
-                horizontalAlignment: Text.AlignHCenter
-                opacity: 0.9
-              }
-
-              NText {
-                text: Quickshell.env("USER")
-                Layout.alignment: Qt.AlignHCenter
-                pointSize: Style.fontSizeXXXL * scaling
-                font.weight: Font.Medium
-                color: Color.mOnSurface
-                horizontalAlignment: Text.AlignHCenter
-                opacity: 0.9
               }
             }
 
             // Error notification
             Rectangle {
-              width: 400 * scaling
-              height: 50 * scaling
+              width: 450 * scaling
+              height: 60 * scaling
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
               anchors.bottomMargin: 300 * scaling
-              radius: 25 * scaling
+              radius: 30 * scaling
               color: Color.mError
               border.color: Color.mError
               border.width: 1
@@ -247,18 +444,18 @@ Loader {
 
               RowLayout {
                 anchors.centerIn: parent
-                spacing: 8 * scaling
+                spacing: 10 * scaling
 
                 NIcon {
                   icon: "alert-circle"
-                  pointSize: Style.fontSizeM * scaling
+                  pointSize: Style.fontSizeL * scaling
                   color: Color.mOnError
                 }
 
                 NText {
                   text: lockContext.errorMessage || "Authentication failed"
                   color: Color.mOnError
-                  pointSize: Style.fontSizeM * scaling
+                  pointSize: Style.fontSizeL * scaling
                   font.weight: Font.Medium
                   horizontalAlignment: Text.AlignHCenter
                 }
@@ -274,26 +471,26 @@ Loader {
 
             // Bottom container with weather, password input and controls
             Rectangle {
-              width: 700 * scaling
-              height: 200 * scaling
+              width: 750 * scaling
+              height: 220 * scaling
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
-              anchors.bottomMargin: 80 * scaling
-              radius: 30 * scaling
-              color: Qt.alpha(Color.mSurfaceContainerHighest, 0.9)
+              anchors.bottomMargin: 100 * scaling
+              radius: 32 * scaling
+              color: Color.mSurface
               border.color: Qt.alpha(Color.mOutline, 0.2)
               border.width: 1
 
               ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 12 * scaling
-                spacing: 12 * scaling
+                anchors.margins: 14 * scaling
+                spacing: 14 * scaling
 
                 // Weather section
                 RowLayout {
                   Layout.fillWidth: true
-                  Layout.preferredHeight: 60 * scaling
-                  spacing: 16 * scaling
+                  Layout.preferredHeight: 65 * scaling
+                  spacing: 18 * scaling
                   visible: LocationService.coordinatesReady && LocationService.data.weather !== null
 
                   // Media widget with visualizer
@@ -374,7 +571,7 @@ Loader {
 
                         NText {
                           text: MediaService.trackTitle || "No media"
-                          pointSize: Style.fontSizeS * scaling
+                          pointSize: Style.fontSizeM * scaling
                           font.weight: Style.fontWeightMedium
                           color: Color.mOnSurface
                           Layout.fillWidth: true
@@ -383,7 +580,7 @@ Loader {
 
                         NText {
                           text: MediaService.trackArtist || ""
-                          pointSize: Style.fontSizeXS * scaling
+                          pointSize: Style.fontSizeM * scaling
                           color: Color.mOnSurfaceVariant
                           Layout.fillWidth: true
                           elide: Text.ElideRight
@@ -434,7 +631,7 @@ Loader {
 
                         NText {
                           text: LocationService.data.weather.current_weather.windspeed + " km/h"
-                          pointSize: Style.fontSizeXS * scaling
+                          pointSize: Style.fontSizeM * scaling
                           color: Color.mOnSurfaceVariant
                           font.weight: Font.Normal
                         }
@@ -446,13 +643,13 @@ Loader {
 
                         NText {
                           text: Settings.data.location.name.split(",")[0]
-                          pointSize: Style.fontSizeXS * scaling
+                          pointSize: Style.fontSizeM * scaling
                           color: Color.mOnSurfaceVariant
                         }
 
                         NText {
                           text: (LocationService.data.weather.current && LocationService.data.weather.current.relativehumidity_2m) ? LocationService.data.weather.current.relativehumidity_2m + "% humidity" : ""
-                          pointSize: Style.fontSizeXS * scaling
+                          pointSize: Style.fontSizeM * scaling
                           color: Color.mOnSurfaceVariant
                         }
                       }
@@ -473,7 +670,7 @@ Loader {
 
                         NText {
                           text: Qt.locale().toString(new Date(LocationService.data.weather.daily.time[index].replace(/-/g, "/")), "ddd")
-                          pointSize: Style.fontSizeXS * scaling
+                          pointSize: Style.fontSizeM * scaling
                           color: Color.mOnSurfaceVariant
                           horizontalAlignment: Text.AlignHCenter
                           Layout.fillWidth: true
@@ -488,9 +685,9 @@ Loader {
 
                         NText {
                           text: Math.round(LocationService.data.weather.daily.temperature_2m_max[index]) + "°/" + Math.round(LocationService.data.weather.daily.temperature_2m_min[index]) + "°"
-                          pointSize: Style.fontSizeXS * scaling
+                          pointSize: Style.fontSizeM * scaling
                           font.weight: Style.fontWeightMedium
-                          color: Color.mOnSurface
+                          color: Color.mOnSurfaceVariant
                           horizontalAlignment: Text.AlignHCenter
                           Layout.fillWidth: true
                         }
@@ -511,14 +708,14 @@ Loader {
 
                       NIcon {
                         icon: BatteryService.getIcon(Math.round(UPower.displayDevice.percentage * 100), UPower.displayDevice.state === UPowerDeviceState.Charging, true)
-                        pointSize: Style.fontSizeS * scaling
+                        pointSize: Style.fontSizeM * scaling
                         color: UPower.displayDevice.state === UPowerDeviceState.Charging ? Color.mPrimary : Color.mOnSurfaceVariant
                       }
 
                       NText {
                         text: Math.round(UPower.displayDevice.percentage * 100) + "%"
                         color: Color.mOnSurfaceVariant
-                        pointSize: Style.fontSizeXS * scaling
+                        pointSize: Style.fontSizeM * scaling
                         font.weight: Font.Medium
                       }
                     }
@@ -530,14 +727,14 @@ Loader {
 
                       NIcon {
                         icon: "keyboard"
-                        pointSize: Style.fontSizeS * scaling
+                        pointSize: Style.fontSizeM * scaling
                         color: Color.mOnSurfaceVariant
                       }
 
                       NText {
                         text: keyboardLayout.currentLayout
                         color: Color.mOnSurfaceVariant
-                        pointSize: Style.fontSizeXS * scaling
+                        pointSize: Style.fontSizeM * scaling
                         font.weight: Font.Medium
                       }
                     }
@@ -555,21 +752,21 @@ Loader {
 
                   Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 44 * scaling
-                    radius: 22 * scaling
-                    color: Qt.alpha(Color.mSurfaceContainerHighest, 0.6)
+                    Layout.preferredHeight: 48 * scaling
+                    radius: 24 * scaling
+                    color: Color.mSurface
                     border.color: passwordInput.activeFocus ? Color.mPrimary : Qt.alpha(Color.mOutline, 0.3)
                     border.width: passwordInput.activeFocus ? 2 : 1
 
                     Row {
                       anchors.left: parent.left
-                      anchors.leftMargin: 16 * scaling
+                      anchors.leftMargin: 18 * scaling
                       anchors.verticalCenter: parent.verticalCenter
-                      spacing: 12 * scaling
+                      spacing: 14 * scaling
 
                       NIcon {
                         icon: "lock"
-                        pointSize: Style.fontSizeM * scaling
+                        pointSize: Style.fontSizeL * scaling
                         color: passwordInput.activeFocus ? Color.mPrimary : Color.mOnSurfaceVariant
                         anchors.verticalCenter: parent.verticalCenter
                       }
@@ -582,7 +779,7 @@ Loader {
                         visible: false
                         enabled: !lockContext.unlockInProgress
                         font.pointSize: Style.fontSizeM * scaling
-                        color: Color.mOnSurface
+                        color: Color.mPrimary
                         echoMode: TextInput.Password
                         passwordCharacter: "•"
                         passwordMaskDelay: 0
@@ -622,11 +819,21 @@ Loader {
                           }
                         }
 
-                        NText {
-                          text: passwordInput.text.length > 0 ? "•".repeat(passwordInput.text.length) : ""
-                          color: passwordInput.text.length > 0 ? Color.mOnSurface : Color.mOnSurfaceVariant
-                          pointSize: Style.fontSizeL * scaling
-                          opacity: passwordInput.text.length > 0 ? 1.0 : 0.6
+                        Row {
+                          spacing: 6 * scaling
+                          visible: passwordInput.text.length > 0
+                          anchors.verticalCenter: parent.verticalCenter
+
+                          Repeater {
+                            model: passwordInput.text.length
+
+                            NIcon {
+                              icon: "circle-filled"
+                              pointSize: Style.fontSizeS * scaling
+                              color: Color.mPrimary
+                              opacity: 1.0
+                            }
+                          }
                         }
 
                         Rectangle {
@@ -656,8 +863,8 @@ Loader {
                       anchors.right: parent.right
                       anchors.rightMargin: 8 * scaling
                       anchors.verticalCenter: parent.verticalCenter
-                      width: 32 * scaling
-                      height: 32 * scaling
+                      width: 36 * scaling
+                      height: 36 * scaling
                       radius: width * 0.5
                       color: submitButtonArea.containsMouse ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.8)
                       border.color: Color.mPrimary
@@ -667,7 +874,7 @@ Loader {
                       NIcon {
                         anchors.centerIn: parent
                         icon: "arrow-forward"
-                        pointSize: Style.fontSizeS * scaling
+                        pointSize: Style.fontSizeM * scaling
                         color: Color.mOnPrimary
                       }
 
@@ -695,8 +902,8 @@ Loader {
                 // System control buttons
                 RowLayout {
                   Layout.fillWidth: true
-                  Layout.preferredHeight: 44 * scaling
-                  spacing: 8 * scaling
+                  Layout.preferredHeight: 48 * scaling
+                  spacing: 10 * scaling
 
                   Item {
                     Layout.preferredWidth: Style.marginM * scaling
@@ -704,8 +911,8 @@ Loader {
 
                   Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 44 * scaling
-                    radius: 22 * scaling
+                    Layout.preferredHeight: 48 * scaling
+                    radius: 24 * scaling
                     color: logoutButtonArea.containsMouse ? Color.mTertiary : "transparent"
 
                     RowLayout {
@@ -743,8 +950,8 @@ Loader {
 
                   Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 44 * scaling
-                    radius: 22 * scaling
+                    Layout.preferredHeight: 48 * scaling
+                    radius: 24 * scaling
                     color: rebootButtonArea.containsMouse ? Color.mTertiary : "transparent"
 
                     RowLayout {
@@ -782,8 +989,8 @@ Loader {
 
                   Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 44 * scaling
-                    radius: 22 * scaling
+                    Layout.preferredHeight: 48 * scaling
+                    radius: 24 * scaling
                     color: shutdownButtonArea.containsMouse ? Color.mError : "transparent"
                     border.color: shutdownButtonArea.containsMouse ? Color.mError : Color.transparent
                     border.width: 1

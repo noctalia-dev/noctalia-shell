@@ -49,12 +49,12 @@ Item {
 
       // Draw the top half of the waveform from left to right
       // Use the calculated offset for the first point
-      var yOffset = Math.max(1, mirroredValues[0] * amplitude)
+      var yOffset = mirroredValues[0] * amplitude
       ctx.moveTo(0, centerY - yOffset)
 
       for (var i = 1; i < count; i++) {
         const x = i * stepX
-        yOffset = Math.max(1, mirroredValues[i] * amplitude)
+        yOffset = mirroredValues[i] * amplitude
         const y = centerY - yOffset
         ctx.lineTo(x, y)
       }
@@ -62,7 +62,7 @@ Item {
       // Draw the bottom half of the waveform from right to left to create a closed shape
       for (var i = count - 1; i >= 0; i--) {
         const x = i * stepX
-        yOffset = Math.max(1, mirroredValues[i] * amplitude)
+        yOffset = mirroredValues[i] * amplitude
         const y = centerY + yOffset // Mirrored across the center
         ctx.lineTo(x, y)
       }

@@ -17,7 +17,7 @@ jobs:
         shell: bash
     env:
       AUR_REPO: ssh://aur@aur.archlinux.org/noctalia-shell.git
-      GIT_SSH_COMMAND: ssh -i /root/.ssh/id_aur -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes
+      GIT_SSH_COMMAND: ssh -i /root/.ssh/id_aur -o StrictHostKeyChecking=yes -o IdentitiesOnly=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=4
       PKGNAME: noctalia-shell
       AUR_LINK: https://aur.archlinux.org/packages/noctalia-shell
 

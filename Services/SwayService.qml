@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
-import Quickshell.Hyprland
+import Quickshell.I3
+import Quickshell.Wayland
 import qs.Commons
 
 Item {
@@ -16,10 +17,8 @@ Item {
   signal activeWindowChanged
   signal windowListChanged
 
-  // Hyprland-specific properties
+  // I3-specific properties
   property bool initialized: false
-  property var workspaceCache: ({})
-  property var windowCache: ({})
 
   // Debounce timer for updates
   Timer {
@@ -35,16 +34,15 @@ Item {
       return
 
     try {
-      Hyprland.refreshWorkspaces()
-      Hyprland.refreshToplevels()
+      I3.refreshWorkspaces()
       Qt.callLater(() => {
                      safeUpdateWorkspaces()
                      safeUpdateWindows()
                    })
       initialized = true
-      Logger.log("HyprlandService", "Initialized successfully")
+      Logger.log("SwayService", "Initialized successfully")
     } catch (e) {
-      Logger.error("HyprlandService", "Failed to initialize:", e)
+      Logger.error("SwayService", "Failed to initialize:", e)
     }
   }
 
@@ -59,14 +57,12 @@ Item {
   function safeUpdateWorkspaces() {
     try {
       workspaces.clear()
-      workspaceCache = {}
 
-      if (!Hyprland.workspaces || !Hyprland.workspaces.values) {
+      if (!I3.workspaces || !I3.workspaces.values) {
         return
       }
 
-      const hlWorkspaces = Hyprland.workspaces.values
-      const occupiedIds = getOccupiedWorkspaceIds()
+      const hlWorkspaces = I3.workspaces.values
 
       for (var i = 0; i < hlWorkspaces.length; i++) {
         const ws = hlWorkspaces[i]
@@ -74,70 +70,36 @@ Item {
           continue
 
         const wsData = {
-          "id": ws.id,
+          "id": i,
           "idx": ws.id,
           "name": ws.name || "",
           "output": (ws.monitor && ws.monitor.name) ? ws.monitor.name : "",
           "isActive": ws.active === true,
           "isFocused": ws.focused === true,
           "isUrgent": ws.urgent === true,
-          "isOccupied": occupiedIds[ws.id] === true
+          "isOccupied": true,
+          "handle": ws
         }
 
-        workspaceCache[ws.id] = wsData
         workspaces.append(wsData)
       }
     } catch (e) {
-      Logger.error("HyprlandService", "Error updating workspaces:", e)
+      Logger.error("SwayService", "Error updating workspaces:", e)
     }
-  }
-
-  // Get occupied workspace IDs safely
-  function getOccupiedWorkspaceIds() {
-    const occupiedIds = {}
-
-    try {
-      if (!Hyprland.toplevels || !Hyprland.toplevels.values) {
-        return occupiedIds
-      }
-
-      const hlToplevels = Hyprland.toplevels.values
-      for (var i = 0; i < hlToplevels.length; i++) {
-        const toplevel = hlToplevels[i]
-        if (!toplevel)
-          continue
-
-        try {
-          const wsId = toplevel.workspace ? toplevel.workspace.id : null
-          if (wsId !== null && wsId !== undefined) {
-            occupiedIds[wsId] = true
-          }
-        } catch (e) {
-
-          // Ignore individual toplevel errors
-        }
-      }
-    } catch (e) {
-
-      // Return empty if we can't determine occupancy
-    }
-
-    return occupiedIds
   }
 
   // Safe window update
   function safeUpdateWindows() {
     try {
       const windowsList = []
-      windowCache = {}
 
-      if (!Hyprland.toplevels || !Hyprland.toplevels.values) {
+      if (!ToplevelManager.toplevels || !ToplevelManager.toplevels.values) {
         windows = []
         focusedWindowIndex = -1
         return
       }
 
-      const hlToplevels = Hyprland.toplevels.values
+      const hlToplevels = ToplevelManager.toplevels.values
       let newFocusedIndex = -1
 
       for (var i = 0; i < hlToplevels.length; i++) {
@@ -148,7 +110,6 @@ Item {
         const windowData = extractWindowData(toplevel)
         if (windowData) {
           windowsList.push(windowData)
-          windowCache[windowData.id] = windowData
 
           if (windowData.isFocused) {
             newFocusedIndex = windowsList.length - 1
@@ -163,7 +124,7 @@ Item {
         activeWindowChanged()
       }
     } catch (e) {
-      Logger.error("HyprlandService", "Error updating windows:", e)
+      Logger.error("SwayService", "Error updating windows:", e)
     }
   }
 
@@ -174,23 +135,15 @@ Item {
 
     try {
       // Safely extract properties
-      const windowId = safeGetProperty(toplevel, "address", "")
-      if (!windowId)
-        return null
-
       const appId = extractAppId(toplevel)
       const title = safeGetProperty(toplevel, "title", "")
-      const wsId = toplevel.workspace ? toplevel.workspace.id : null
       const focused = toplevel.activated === true
-      const output = toplevel.monitor?.name || ""
 
       return {
-        "id": windowId,
         "title": title,
         "appId": appId,
-        "workspaceId": wsId,
         "isFocused": focused,
-        "output": output
+        "handle": toplevel
       }
     } catch (e) {
       return null
@@ -202,31 +155,7 @@ Item {
     if (!toplevel)
       return ""
 
-    // Try direct properties
-    var appId = safeGetProperty(toplevel, "class", "")
-    if (appId)
-      return appId
-
-    appId = safeGetProperty(toplevel, "initialClass", "")
-    if (appId)
-      return appId
-
-    appId = safeGetProperty(toplevel, "appId", "")
-    if (appId)
-      return appId
-
-    // Try lastIpcObject
-    try {
-      const ipcData = toplevel.lastIpcObject
-      if (ipcData) {
-        return String(ipcData.class || ipcData.initialClass || ipcData.appId || ipcData.wm_class || "")
-      }
-    } catch (e) {
-
-      // Ignore IPC errors
-    }
-
-    return ""
+    return toplevel.appId
   }
 
   // Safe property getter
@@ -243,9 +172,9 @@ Item {
     return defaultValue
   }
 
-  // Connections to Hyprland
+  // Connections to I3
   Connections {
-    target: Hyprland.workspaces
+    target: I3.workspaces
     enabled: initialized
     function onValuesChanged() {
       safeUpdateWorkspaces()
@@ -254,15 +183,15 @@ Item {
   }
 
   Connections {
-    target: Hyprland.toplevels
+    target: ToplevelManager
     enabled: initialized
-    function onValuesChanged() {
+    function onActiveToplevelChanged() {
       updateTimer.restart()
     }
   }
 
   Connections {
-    target: Hyprland
+    target: I3
     enabled: initialized
     function onRawEvent(event) {
       safeUpdateWorkspaces()
@@ -274,33 +203,33 @@ Item {
   // Public functions
   function switchToWorkspace(workspace) {
     try {
-      Hyprland.dispatch(`workspace ${workspace.idx}`)
+      workspace.handle.activate()
     } catch (e) {
-      Logger.error("HyprlandService", "Failed to switch workspace:", e)
+      Logger.error("SwayService", "Failed to switch workspace:", e)
     }
   }
 
   function focusWindow(window) {
     try {
-      Hyprland.dispatch(`focuswindow address:0x${window.id.toString()}`)
+      window.handle.activate()
     } catch (e) {
-      Logger.error("HyprlandService", "Failed to switch window:", e)
+      Logger.error("SwayService", "Failed to switch window:", e)
     }
   }
 
   function closeWindow(window) {
     try {
-      Hyprland.dispatch(`killwindow address:0x${window.id}`)
+      window.handle.close()
     } catch (e) {
-      Logger.error("HyprlandService", "Failed to close window:", e)
+      Logger.error("SwayService", "Failed to close window:", e)
     }
   }
 
   function logout() {
     try {
-      Quickshell.execDetached(["hyprctl", "dispatch", "exit"])
+      Quickshell.execDetached(["swaymsg", "exit"])
     } catch (e) {
-      Logger.error("HyprlandService", "Failed to logout:", e)
+      Logger.error("SwayService", "Failed to logout:", e)
     }
   }
 }

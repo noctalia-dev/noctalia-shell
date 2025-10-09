@@ -1161,6 +1161,7 @@
     "night-light-disabled": "Night light is disabled.\nLeft click to cycle mode.\nRight click to access settings.",
     "night-light-enabled": "Night light is enabled.\nLeft click to cycle mode.\nRight click to access settings.",
     "night-light-forced": "Night light is forced.\nLeft click to cycle mode.\nRight click to access settings.",
+    "night-light-not-installed": "Night light is not available.\nwlsunset is not installed.",
     "click-to-start-recording": "Click to start recording",
     "click-to-stop-recording": "Click to stop recording",
     "open-control-center": "Open control center",
@@ -1389,7 +1390,9 @@
       "failed-gpu": "gpu-screen-recorder exited unexpectedly.",
       "failed-general": "The recorder exited with an error.",
       "no-portals": "Desktop portals not running",
-      "no-portals-desc": "Start xdg-desktop-portal and a compositor portal (wlr/hyprland/gnome/kde)."
+      "no-portals-desc": "Start xdg-desktop-portal and a compositor portal (wlr/hyprland/gnome/kde).",
+      "not-installed": "gpu-screen-recorder not installed",
+      "not-installed-desc": "Please install gpu-screen-recorder to use screen recording features."
     },
     "clipboard": {
       "unavailable": "Clipboard history unavailable",
