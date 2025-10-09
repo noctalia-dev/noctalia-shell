@@ -135,10 +135,23 @@ Singleton {
   function generateFromPredefinedScheme(schemeData) {
     Logger.log("AppThemeService", "Generating templates from predefined color scheme")
 
+    // Early return if no scheme data provided
+    if (!schemeData) {
+      Logger.warn("AppThemeService", "No scheme data provided, skipping template generation")
+      return
+    }
+
     handleTerminalThemes()
 
     const isDarkMode = Settings.data.colorSchemes.darkMode
     const mode = isDarkMode ? "dark" : "light"
+
+    // Check if scheme data has dark/light modes
+    if (!schemeData[mode]) {
+      Logger.warn("AppThemeService", `No ${mode} mode found in scheme data, skipping template generation`)
+      return
+    }
+
     const colors = schemeData[mode]
 
     const matugenColors = generatePalette(colors.mPrimary, colors.mSecondary, colors.mTertiary, colors.mError, colors.mSurface, isDarkMode)
