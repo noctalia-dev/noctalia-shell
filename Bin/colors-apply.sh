@@ -5,7 +5,7 @@
 if [ "$#" -ne 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|fuzzell|pywalfox}" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|fuzzel|pywalfox}" >&2
     exit 1
 fi
 
@@ -50,20 +50,31 @@ case "$APP_NAME" in
         fi
         ;;
 
-    fuzzell)
-        echo "🎨 Applying 'noctalia' theme to fuzzell..."
-        CONFIG_FILE="$HOME/.config/fuzzel/fuzzel.ini"
-        
-        # Check if the config file exists.
-        if [ -f "$CONFIG_FILE" ]; then
-            # Remove any existing theme include line.
-            sed -i '/themes/d' "$CONFIG_FILE"
-            # Add the new theme include line.
-            echo "include=~/.config/fuzzel/themes/noctalia" >> "$CONFIG_FILE"
-        else
-            echo "Error: fuzzell config file not found at $CONFIG_FILE" >&2
-            exit 1
+    fuzzel)
+        echo "🎨 Applying 'noctalia' theme to fuzzel..."
+        CONFIG_DIR="$HOME/.config/fuzzel"
+        CONFIG_FILE="$CONFIG_DIR/fuzzel.ini"
+
+        # Check if fuzzel is even installed (don't error if not)
+        if ! command -v fuzzel &> /dev/null; then
+            echo "⚠️  fuzzel not installed, skipping theme application"
+            exit 0
         fi
+
+        # Create config directory if it doesn't exist
+        if [ ! -d "$CONFIG_DIR" ]; then
+            mkdir -p "$CONFIG_DIR"
+        fi
+
+        # Check if the config file exists, create if not.
+        if [ ! -f "$CONFIG_FILE" ]; then
+            echo "# Fuzzel config file" > "$CONFIG_FILE"
+        fi
+
+        # Remove any existing theme include line.
+        sed -i '/themes/d' "$CONFIG_FILE"
+        # Add the new theme include line.
+        echo "include=~/.config/fuzzel/themes/noctalia" >> "$CONFIG_FILE"
         ;;
 
     pywalfox)

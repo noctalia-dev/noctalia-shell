@@ -186,6 +186,9 @@
         "scale": "Scale",
         "brightness": "Brightness",
         "reset-scaling": "Reset scaling",
+        "reset-to-compositor": "Reset to compositor scale",
+        "compositor-scale": "Compositor scale",
+        "user-adjustment": "Adjustment",
         "brightness-step": {
           "label": "Brightness step size",
           "description": "Adjust the step size for brightness changes (scroll wheel and keyboard shortcuts)."

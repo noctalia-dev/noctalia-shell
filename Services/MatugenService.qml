@@ -55,283 +55,152 @@ Singleton {
       }
     }
 
+    // Helper function to strip # from hex colors
+    function stripHex(color) {
+      return color.toString().replace('#', '')
+    }
+
+    // Helper function to create color object with both color and hex_stripped properties
+    function createColorObj(colorValue) {
+      return {
+        "color": colorValue,
+        "hex": colorValue,
+        "hex_stripped": stripHex(colorValue)
+      }
+    }
+
     // Map predefined scheme colors to Matugen color structure - only core Material 3 colors
     var matugenColors = {
       "colors": {
+        "background": {
+          "light": createColorObj(variant.mSurface),
+          "default": createColorObj(variant.mSurface),
+          "dark": createColorObj(variant.mSurface)
+        },
         "primary": {
-          "light": {
-            "color": variant.mPrimary
-          },
-          "default": {
-            "color": variant.mPrimary
-          },
-          "dark": {
-            "color": variant.mPrimary
-          }
+          "light": createColorObj(variant.mPrimary),
+          "default": createColorObj(variant.mPrimary),
+          "dark": createColorObj(variant.mPrimary)
         },
         "on_primary": {
-          "light": {
-            "color": variant.mOnPrimary
-          },
-          "default": {
-            "color": variant.mOnPrimary
-          },
-          "dark": {
-            "color": variant.mOnPrimary
-          }
+          "light": createColorObj(variant.mOnPrimary),
+          "default": createColorObj(variant.mOnPrimary),
+          "dark": createColorObj(variant.mOnPrimary)
         },
         "secondary": {
-          "light": {
-            "color": variant.mSecondary
-          },
-          "default": {
-            "color": variant.mSecondary
-          },
-          "dark": {
-            "color": variant.mSecondary
-          }
+          "light": createColorObj(variant.mSecondary),
+          "default": createColorObj(variant.mSecondary),
+          "dark": createColorObj(variant.mSecondary)
         },
         "on_secondary": {
-          "light": {
-            "color": variant.mOnSecondary
-          },
-          "default": {
-            "color": variant.mOnSecondary
-          },
-          "dark": {
-            "color": variant.mOnSecondary
-          }
+          "light": createColorObj(variant.mOnSecondary),
+          "default": createColorObj(variant.mOnSecondary),
+          "dark": createColorObj(variant.mOnSecondary)
         },
         "tertiary": {
-          "light": {
-            "color": variant.mTertiary
-          },
-          "default": {
-            "color": variant.mTertiary
-          },
-          "dark": {
-            "color": variant.mTertiary
-          }
+          "light": createColorObj(variant.mTertiary),
+          "default": createColorObj(variant.mTertiary),
+          "dark": createColorObj(variant.mTertiary)
         },
         "on_tertiary": {
-          "light": {
-            "color": variant.mOnTertiary
-          },
-          "default": {
-            "color": variant.mOnTertiary
-          },
-          "dark": {
-            "color": variant.mOnTertiary
-          }
+          "light": createColorObj(variant.mOnTertiary),
+          "default": createColorObj(variant.mOnTertiary),
+          "dark": createColorObj(variant.mOnTertiary)
         },
         "error": {
-          "light": {
-            "color": variant.mError
-          },
-          "default": {
-            "color": variant.mError
-          },
-          "dark": {
-            "color": variant.mError
-          }
+          "light": createColorObj(variant.mError),
+          "default": createColorObj(variant.mError),
+          "dark": createColorObj(variant.mError)
         },
         "on_error": {
-          "light": {
-            "color": variant.mOnError
-          },
-          "default": {
-            "color": variant.mOnError
-          },
-          "dark": {
-            "color": variant.mOnError
-          }
+          "light": createColorObj(variant.mOnError),
+          "default": createColorObj(variant.mOnError),
+          "dark": createColorObj(variant.mOnError)
         },
         "surface": {
-          "light": {
-            "color": variant.mSurface
-          },
-          "default": {
-            "color": variant.mSurface
-          },
-          "dark": {
-            "color": variant.mSurface
-          }
+          "light": createColorObj(variant.mSurface),
+          "default": createColorObj(variant.mSurface),
+          "dark": createColorObj(variant.mSurface)
         },
         "on_surface": {
-          "light": {
-            "color": variant.mOnSurface
-          },
-          "default": {
-            "color": variant.mOnSurface
-          },
-          "dark": {
-            "color": variant.mOnSurface
-          }
+          "light": createColorObj(variant.mOnSurface),
+          "default": createColorObj(variant.mOnSurface),
+          "dark": createColorObj(variant.mOnSurface)
         },
         "surface_variant": {
-          "light": {
-            "color": variant.mSurfaceVariant
-          },
-          "default": {
-            "color": variant.mSurfaceVariant
-          },
-          "dark": {
-            "color": variant.mSurfaceVariant
-          }
+          "light": createColorObj(variant.mSurfaceVariant),
+          "default": createColorObj(variant.mSurfaceVariant),
+          "dark": createColorObj(variant.mSurfaceVariant)
         },
         "on_surface_variant": {
-          "light": {
-            "color": variant.mOnSurfaceVariant
-          },
-          "default": {
-            "color": variant.mOnSurfaceVariant
-          },
-          "dark": {
-            "color": variant.mOnSurfaceVariant
-          }
+          "light": createColorObj(variant.mOnSurfaceVariant),
+          "default": createColorObj(variant.mOnSurfaceVariant),
+          "dark": createColorObj(variant.mOnSurfaceVariant)
         },
         "outline": {
-          "light": {
-            "color": variant.mOutline
-          },
-          "default": {
-            "color": variant.mOutline
-          },
-          "dark": {
-            "color": variant.mOutline
-          }
+          "light": createColorObj(variant.mOutline),
+          "default": createColorObj(variant.mOutline),
+          "dark": createColorObj(variant.mOutline)
         },
         "primary_fixed_dim": {
-          "light": {
-            "color": ColorVariants.generateFixedDim(variant.mPrimary)
-          },
-          "default": {
-            "color": ColorVariants.generateFixedDim(variant.mPrimary)
-          },
-          "dark": {
-            "color": ColorVariants.generateFixedDim(variant.mPrimary)
-          }
+          "light": createColorObj(ColorVariants.generateFixedDim(variant.mPrimary)),
+          "default": createColorObj(ColorVariants.generateFixedDim(variant.mPrimary)),
+          "dark": createColorObj(ColorVariants.generateFixedDim(variant.mPrimary))
         },
         "secondary_fixed_dim": {
-          "light": {
-            "color": ColorVariants.generateFixedDim(variant.mSecondary)
-          },
-          "default": {
-            "color": ColorVariants.generateFixedDim(variant.mSecondary)
-          },
-          "dark": {
-            "color": ColorVariants.generateFixedDim(variant.mSecondary)
-          }
+          "light": createColorObj(ColorVariants.generateFixedDim(variant.mSecondary)),
+          "default": createColorObj(ColorVariants.generateFixedDim(variant.mSecondary)),
+          "dark": createColorObj(ColorVariants.generateFixedDim(variant.mSecondary))
         },
         "tertiary_fixed_dim": {
-          "light": {
-            "color": ColorVariants.generateFixedDim(variant.mTertiary)
-          },
-          "default": {
-            "color": ColorVariants.generateFixedDim(variant.mTertiary)
-          },
-          "dark": {
-            "color": ColorVariants.generateFixedDim(variant.mTertiary)
-          }
+          "light": createColorObj(ColorVariants.generateFixedDim(variant.mTertiary)),
+          "default": createColorObj(ColorVariants.generateFixedDim(variant.mTertiary)),
+          "dark": createColorObj(ColorVariants.generateFixedDim(variant.mTertiary))
         },
         "surface_bright": {
-          "light": {
-            "color": ColorVariants.generateBright(variant.mSurface)
-          },
-          "default": {
-            "color": ColorVariants.generateBright(variant.mSurface)
-          },
-          "dark": {
-            "color": ColorVariants.generateBright(variant.mSurface)
-          }
+          "light": createColorObj(ColorVariants.generateBright(variant.mSurface)),
+          "default": createColorObj(ColorVariants.generateBright(variant.mSurface)),
+          "dark": createColorObj(ColorVariants.generateBright(variant.mSurface))
         },
         "surface_variant_bright": {
-          "light": {
-            "color": ColorVariants.generateBright(variant.mSurfaceVariant)
-          },
-          "default": {
-            "color": ColorVariants.generateBright(variant.mSurfaceVariant)
-          },
-          "dark": {
-            "color": ColorVariants.generateBright(variant.mSurfaceVariant)
-          }
+          "light": createColorObj(ColorVariants.generateBright(variant.mSurfaceVariant)),
+          "default": createColorObj(ColorVariants.generateBright(variant.mSurfaceVariant)),
+          "dark": createColorObj(ColorVariants.generateBright(variant.mSurfaceVariant))
         },
         "primary_container": {
-          "light": {
-            "color": ColorVariants.generateContainer(variant.mPrimary, false)
-          },
-          "default": {
-            "color": ColorVariants.generateContainer(variant.mPrimary, true)
-          },
-          "dark": {
-            "color": ColorVariants.generateContainer(variant.mPrimary, true)
-          }
+          "light": createColorObj(ColorVariants.generateContainer(variant.mPrimary, false)),
+          "default": createColorObj(ColorVariants.generateContainer(variant.mPrimary, true)),
+          "dark": createColorObj(ColorVariants.generateContainer(variant.mPrimary, true))
         },
         "secondary_container": {
-          "light": {
-            "color": ColorVariants.generateContainer(variant.mSecondary, false)
-          },
-          "default": {
-            "color": ColorVariants.generateContainer(variant.mSecondary, true)
-          },
-          "dark": {
-            "color": ColorVariants.generateContainer(variant.mSecondary, true)
-          }
+          "light": createColorObj(ColorVariants.generateContainer(variant.mSecondary, false)),
+          "default": createColorObj(ColorVariants.generateContainer(variant.mSecondary, true)),
+          "dark": createColorObj(ColorVariants.generateContainer(variant.mSecondary, true))
         },
         "tertiary_container": {
-          "light": {
-            "color": ColorVariants.generateContainer(variant.mTertiary, false)
-          },
-          "default": {
-            "color": ColorVariants.generateContainer(variant.mTertiary, true)
-          },
-          "dark": {
-            "color": ColorVariants.generateContainer(variant.mTertiary, true)
-          }
+          "light": createColorObj(ColorVariants.generateContainer(variant.mTertiary, false)),
+          "default": createColorObj(ColorVariants.generateContainer(variant.mTertiary, true)),
+          "dark": createColorObj(ColorVariants.generateContainer(variant.mTertiary, true))
         },
         "on_primary_container": {
-          "light": {
-            "color": ColorVariants.generateContainer(variant.mOnPrimary, false)
-          },
-          "default": {
-            "color": ColorVariants.generateContainer(variant.mOnPrimary, true)
-          },
-          "dark": {
-            "color": ColorVariants.generateContainer(variant.mOnPrimary, true)
-          }
+          "light": createColorObj(ColorVariants.generateContainer(variant.mOnPrimary, false)),
+          "default": createColorObj(ColorVariants.generateContainer(variant.mOnPrimary, true)),
+          "dark": createColorObj(ColorVariants.generateContainer(variant.mOnPrimary, true))
         },
         "on_secondary_container": {
-          "light": {
-            "color": ColorVariants.generateContainer(variant.mOnSecondary, false)
-          },
-          "default": {
-            "color": ColorVariants.generateContainer(variant.mOnSecondary, true)
-          },
-          "dark": {
-            "color": ColorVariants.generateContainer(variant.mOnSecondary, true)
-          }
+          "light": createColorObj(ColorVariants.generateContainer(variant.mOnSecondary, false)),
+          "default": createColorObj(ColorVariants.generateContainer(variant.mOnSecondary, true)),
+          "dark": createColorObj(ColorVariants.generateContainer(variant.mOnSecondary, true))
         },
         "on_tertiary_container": {
-          "light": {
-            "color": ColorVariants.generateContainer(variant.mOnTertiary, false)
-          },
-          "default": {
-            "color": ColorVariants.generateContainer(variant.mOnTertiary, true)
-          },
-          "dark": {
-            "color": ColorVariants.generateContainer(variant.mOnTertiary, true)
-          }
+          "light": createColorObj(ColorVariants.generateContainer(variant.mOnTertiary, false)),
+          "default": createColorObj(ColorVariants.generateContainer(variant.mOnTertiary, true)),
+          "dark": createColorObj(ColorVariants.generateContainer(variant.mOnTertiary, true))
         },
         "surface_container": {
-          "light": {
-            "color": ColorVariants.generateContainer(variant.mSurface, false)
-          },
-          "default": {
-            "color": ColorVariants.generateContainer(variant.mSurface, true)
-          },
-          "dark": {
-            "color": ColorVariants.generateContainer(variant.mSurface, true)
-          }
+          "light": createColorObj(ColorVariants.generateContainer(variant.mSurface, false)),
+          "default": createColorObj(ColorVariants.generateContainer(variant.mSurface, true)),
+          "dark": createColorObj(ColorVariants.generateContainer(variant.mSurface, true))
         }
       }
     }

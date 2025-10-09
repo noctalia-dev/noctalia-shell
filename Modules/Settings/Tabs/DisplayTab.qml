@@ -71,6 +71,9 @@ ColumnLayout {
 
         property real localScaling: ScalingService.getScreenScale(modelData)
         property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)
+        property real compositorScale: ScalingService.getCompositorScale(modelData.name)
+        property real userAdjustment: ScalingService.getUserAdjustment(modelData.name)
+        property bool hasCompositorScale: compositorScale > 0 && ScalingService.autoDetectScale
 
         Connections {
           target: ScalingService
@@ -102,6 +105,43 @@ ColumnLayout {
             spacing: Style.marginS * scaling
             Layout.fillWidth: true
 
+            // Info row showing compositor scale
+            RowLayout {
+              spacing: Style.marginM * scaling
+              Layout.fillWidth: true
+              visible: hasCompositorScale
+
+              NText {
+                text: I18n.tr("settings.display.monitors.compositor-scale")
+                pointSize: Style.fontSizeS * scaling
+                color: Color.mOnSurfaceVariant
+              }
+
+              NText {
+                text: compositorScale.toFixed(2) + "×"
+                pointSize: Style.fontSizeS * scaling
+                color: Color.mPrimary
+                font.weight: Font.Medium
+              }
+
+              NText {
+                text: I18n.tr("settings.display.monitors.user-adjustment") + ":"
+                pointSize: Style.fontSizeS * scaling
+                color: Color.mOnSurfaceVariant
+                visible: Math.abs(userAdjustment - 1.0) > 0.01
+              }
+
+              NText {
+                text: (userAdjustment > 1 ? "+" : "") + Math.round((userAdjustment - 1.0) * 100) + "%"
+                pointSize: Style.fontSizeS * scaling
+                color: userAdjustment > 1 ? Color.mSuccess : Color.mWarning
+                font.weight: Font.Medium
+                visible: Math.abs(userAdjustment - 1.0) > 0.01
+              }
+
+              Item { Layout.fillWidth: true }
+            }
+
             RowLayout {
               spacing: Style.marginL * scaling
               Layout.fillWidth: true
@@ -113,9 +153,9 @@ ColumnLayout {
 
               NValueSlider {
                 id: scaleSlider
-                from: 0.7
-                to: 1.8
-                stepSize: 0.01
+                from: 0.5
+                to: 3.0
+                stepSize: 0.05
                 value: localScaling
                 onPressedChanged: (pressed, value) => ScalingService.setScreenScale(modelData, value)
                 text: I18n.tr("system.scaling-percentage", {
@@ -132,8 +172,10 @@ ColumnLayout {
                 NIconButton {
                   icon: "refresh"
                   baseSize: Style.baseWidgetSize * 0.9
-                  tooltipText: I18n.tr("settings.display.monitors.reset-scaling")
-                  onClicked: ScalingService.setScreenScale(modelData, 1.0)
+                  tooltipText: hasCompositorScale
+                    ? I18n.tr("settings.display.monitors.reset-to-compositor")
+                    : I18n.tr("settings.display.monitors.reset-scaling")
+                  onClicked: ScalingService.setScreenScale(modelData, compositorScale > 0 ? compositorScale : 1.0)
                   anchors.right: parent.right
                   anchors.verticalCenter: parent.verticalCenter
                 }

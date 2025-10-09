@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 
 Singleton {
@@ -10,24 +11,174 @@ Singleton {
   // Cache for current scales - updated via signals
   property var currentScales: ({})
 
+  // Compositor-reported scales (base scales)
+  property var compositorScales: ({})
+
+  // User scale adjustments (multipliers on top of compositor scales)
+  property var userScaleAdjustments: ({})
+
+  // Whether to auto-detect scales from compositor
+  property bool autoDetectScale: true
+
   // Signal emitted when scale changes
   signal scaleChanged(string screenName, real scale)
 
   Component.onCompleted: {
     Logger.log("Scaling", "Service started")
-    // Initialize cache from Settings once they are loaded on startup
+
+    // Initialize auto-detection
+    if (autoDetectScale) {
+      updateCompositorScales()
+    }
+
+    // Load user adjustments from settings
     var monitors = Settings.data.ui.monitorsScaling || []
     for (var i = 0; i < monitors.length; i++) {
-      if (monitors[i].name && monitors[i].scale !== undefined) {
-        currentScales[monitors[i].name] = monitors[i].scale
-        root.scaleChanged(monitors[i].name, monitors[i].scale)
-        Logger.log("Scaling", "Caching scaling for", monitors[i].name, ":", monitors[i].scale)
+      if (monitors[i].name) {
+        // Store as user adjustment factor (1.0 = no adjustment)
+        userScaleAdjustments[monitors[i].name] = monitors[i].scale || 1.0
+      }
+    }
+
+    // Update final scales
+    updateAllScales()
+
+    // Re-detect scales periodically (monitors can be plugged/unplugged)
+    scaleUpdateTimer.start()
+  }
+
+  Timer {
+    id: scaleUpdateTimer
+    interval: 5000 // Check every 5 seconds
+    repeat: true
+    onTriggered: {
+      if (autoDetectScale) {
+        updateCompositorScales()
       }
     }
   }
 
   // -------------------------------------------
-  // Manual scaling via Settings
+  // Detect compositor and update scales accordingly
+  function updateCompositorScales() {
+    if (CompositorService.isNiri) {
+      niriOutputsProcess.running = true
+    } else if (CompositorService.isHyprland) {
+      hyprlandMonitorsProcess.running = true
+    }
+  }
+
+  // Process for reading Niri outputs
+  Process {
+    id: niriOutputsProcess
+    running: false
+    command: ["niri", "msg", "outputs"]
+
+    onExited: function () {
+      updateAllScales()
+    }
+
+    stdout: SplitParser {
+      property string currentOutput: ""
+      property real currentScale: 1.0
+
+      onRead: function (line) {
+        try {
+          // Parse Niri output format
+          if (line.includes("Output \"")) {
+            // Extract output name from parentheses at the end
+            var match = line.match(/\(([^)]+)\)$/)
+            if (match) {
+              currentOutput = match[1]
+            }
+          } else if (line.includes("Scale:")) {
+            // Extract scale value
+            var scaleMatch = line.match(/Scale:\s*([0-9.]+)/)
+            if (scaleMatch) {
+              currentScale = parseFloat(scaleMatch[1])
+              if (currentOutput && !isNaN(currentScale)) {
+                compositorScales[currentOutput] = currentScale
+                // Logger.log("Scaling", "Niri output", currentOutput, "has scale", currentScale)
+              }
+            }
+          }
+        } catch (e) {
+          Logger.error("Scaling", "Failed to parse Niri outputs:", e)
+        }
+      }
+    }
+  }
+
+  // Process for reading Hyprland monitors
+  Process {
+    id: hyprlandMonitorsProcess
+    running: false
+    command: ["hyprctl", "monitors", "-j"]
+
+    onExited: function () {
+      try {
+        var monitors = JSON.parse(hyprlandMonitorsProcess.stdout.accumulated)
+        for (var i = 0; i < monitors.length; i++) {
+          var monitor = monitors[i]
+          if (monitor.name && monitor.scale !== undefined) {
+            compositorScales[monitor.name] = monitor.scale
+            // Logger.log("Scaling", "Hyprland monitor", monitor.name, "has scale", monitor.scale)
+          }
+        }
+        updateAllScales()
+      } catch (e) {
+        Logger.error("Scaling", "Failed to parse Hyprland monitors:", e)
+      }
+    }
+
+    stdout: SplitParser {
+      property string accumulated: ""
+
+      onRead: function (line) {
+        accumulated += line
+      }
+    }
+  }
+
+  // -------------------------------------------
+  // Update all scales based on compositor scales and user adjustments
+  function updateAllScales() {
+    var updatedScreens = []
+
+    // For each compositor-reported monitor
+    for (var screenName in compositorScales) {
+      var compositorScale = compositorScales[screenName] || 1.0
+      var userAdjustment = userScaleAdjustments[screenName] || 1.0
+
+      // Final scale is compositor scale * user adjustment
+      var finalScale = compositorScale * userAdjustment
+
+      // Only update if changed
+      if (currentScales[screenName] !== finalScale) {
+        currentScales[screenName] = finalScale
+        root.scaleChanged(screenName, finalScale)
+        updatedScreens.push(screenName)
+        Logger.log("Scaling", "Updated scale for", screenName, "to", finalScale,
+                   "(compositor:", compositorScale, "× adjustment:", userAdjustment, ")")
+      }
+    }
+
+    // Also check for monitors in user adjustments that aren't in compositor scales
+    // (for manual overrides or fallback)
+    for (var screenName in userScaleAdjustments) {
+      if (!(screenName in compositorScales)) {
+        var manualScale = userScaleAdjustments[screenName]
+        if (currentScales[screenName] !== manualScale) {
+          currentScales[screenName] = manualScale
+          root.scaleChanged(screenName, manualScale)
+          Logger.log("Scaling", "Using manual scale for", screenName, ":", manualScale)
+        }
+      }
+    }
+  }
+
+  // -------------------------------------------
+  // Get effective scale for a screen
   function getScreenScale(aScreen) {
     try {
       if (aScreen !== undefined && aScreen.name !== undefined) {
@@ -56,31 +207,31 @@ Singleton {
   }
 
   // -------------------------------------------
+  // Set user adjustment for a screen
   function setScreenScale(aScreen, scale) {
     try {
       if (aScreen !== undefined && aScreen.name !== undefined) {
         return setScreenScaleByName(aScreen.name, scale)
       }
     } catch (e) {
-
-      //Logger.warn(e)
+      Logger.warn("Scaling", "Error in setScreenScale:", e)
     }
   }
 
   // -------------------------------------------
+  // Set user adjustment factor for a screen
   function setScreenScaleByName(aScreenName, scale) {
     try {
-      // Check if scale actually changed
-      var oldScale = currentScales[aScreenName] || 1.0
-      if (oldScale === scale) {
-        return
-        // No change needed
+      // If auto-detection is enabled, this becomes an adjustment factor
+      var adjustment = scale
+      if (autoDetectScale && compositorScales[aScreenName]) {
+        adjustment = scale / compositorScales[aScreenName]
       }
 
-      // Update cache directly
-      currentScales[aScreenName] = scale
+      // Update user adjustment
+      userScaleAdjustments[aScreenName] = adjustment
 
-      // Update Settings with immutable update for proper persistence
+      // Update Settings with the adjustment
       var monitors = Settings.data.ui.monitorsScaling || []
       var found = false
 
@@ -89,7 +240,7 @@ Singleton {
           found = true
           return {
             "name": aScreenName,
-            "scale": scale
+            "scale": adjustment
           }
         }
         return monitor
@@ -98,20 +249,32 @@ Singleton {
       if (!found) {
         newMonitors.push({
                            "name": aScreenName,
-                           "scale": scale
+                           "scale": adjustment
                          })
       }
 
       // Use slice() to ensure Settings detects the change
       Settings.data.ui.monitorsScaling = newMonitors.slice()
 
-      // Emit signal for components to react
-      root.scaleChanged(aScreenName, scale)
+      // Update all scales to apply the new adjustment
+      updateAllScales()
 
-      Logger.log("Scaling", "Scale changed for", aScreenName, "to", scale)
+      Logger.log("Scaling", "User adjustment set for", aScreenName, "to", adjustment)
     } catch (e) {
       Logger.warn("Scaling", "Error setting scale:", e)
     }
+  }
+
+  // -------------------------------------------
+  // Get compositor-reported scale for a screen
+  function getCompositorScale(aScreenName) {
+    return compositorScales[aScreenName] || 1.0
+  }
+
+  // -------------------------------------------
+  // Get user adjustment factor for a screen
+  function getUserAdjustment(aScreenName) {
+    return userScaleAdjustments[aScreenName] || 1.0
   }
 
   // -------------------------------------------
