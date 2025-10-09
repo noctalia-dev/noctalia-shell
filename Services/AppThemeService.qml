@@ -164,7 +164,8 @@ Singleton {
   function generatePalette(primaryColor, secondaryColor, tertiaryColor, errorColor, backgroundColor, outlineColor, isDarkMode) {
     const c = hex => ({
                         "default": {
-                          "hex": hex
+                          "hex": hex,
+                          "hex_stripped": hex.replace("#", "")
                         }
                       })
 
@@ -281,8 +282,13 @@ Singleton {
     let script = ""
     Object.keys(colors).forEach(colorKey => {
                                   const colorValue = colors[colorKey].default.hex
+                                  const colorValueStripped = colors[colorKey].default.hex_stripped
                                   const escapedColor = colorValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                                  const escapedColorStripped = colorValueStripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+                                  // Replace both hex and hex_stripped patterns
                                   script += `sed -i 's/{{colors\\.${colorKey}\\.default\\.hex}}/${escapedColor}/g' '${filePath}'\n`
+                                  script += `sed -i 's/{{colors\\.${colorKey}\\.default\\.hex_stripped}}/${escapedColorStripped}/g' '${filePath}'\n`
                                 })
     return script
   }
