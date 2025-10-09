@@ -5,7 +5,7 @@
 if [ "$#" -ne 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|fuzzell|pywalfox}" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|fuzzel|pywalfox}" >&2
     exit 1
 fi
 
@@ -50,8 +50,8 @@ case "$APP_NAME" in
         fi
         ;;
 
-    fuzzell)
-        echo "🎨 Applying 'noctalia' theme to fuzzell..."
+    fuzzel)
+        echo "🎨 Applying 'noctalia' theme to fuzzel..."
         CONFIG_FILE="$HOME/.config/fuzzel/fuzzel.ini"
         
         # Check if the config file exists.
@@ -61,7 +61,7 @@ case "$APP_NAME" in
             # Add the new theme include line.
             echo "include=~/.config/fuzzel/themes/noctalia" >> "$CONFIG_FILE"
         else
-            echo "Error: fuzzell config file not found at $CONFIG_FILE" >&2
+            echo "Error: fuzzel config file not found at $CONFIG_FILE" >&2
             exit 1
         fi
         ;;
@@ -79,5 +79,3 @@ case "$APP_NAME" in
 esac
 
 echo "✅ Command sent for $APP_NAME."
-
-        # lines.push("post_hook = \"grep -q '^theme *= *' ~/.config/ghostty/config; and sed -i 's/^theme *= *.*/theme = noctalia/' ~/.config/ghostty/config; or echo 'theme = noctalia' >> ~/.config/ghostty/config; and pkill -SIGUSR2 ghostty\"")

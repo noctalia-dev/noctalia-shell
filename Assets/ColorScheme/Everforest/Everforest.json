@@ -24,10 +24,10 @@
         "mOnTertiary": "#9DA9A0",
         "mError": "#E66868",
         "mOnError": "#9DA9A0",
-        "mSurface": "#BEC5B2",
-        "mOnSurface": "#333C43",
-        "mSurfaceVariant": "#9DA9A0",
-        "mOnSurfaceVariant": "#232A2E",
+        "mSurface": "#9DA9A0",
+        "mOnSurface": "#232A2E",
+        "mSurfaceVariant": "#BEC5B2",
+        "mOnSurfaceVariant": "#333C43",
         "mOutline": "#232A2E",
         "mShadow": "#ECF5ED"
     }

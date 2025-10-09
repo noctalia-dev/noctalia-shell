@@ -138,9 +138,14 @@ Variants {
 
         function calculateSourceSize() {
           if (implicitWidth > 0 && implicitHeight > 0) {
-            const aspectRatio = implicitWidth / implicitHeight
-            const w = Math.min(modelData.width, implicitWidth)
-            sourceSize = Qt.size(w, w / aspectRatio)
+            const imageAspectRatio = implicitWidth / implicitHeight
+            if (modelData.width >= modelData.height) {
+              const w = Math.min(modelData.width, implicitWidth)
+              sourceSize = Qt.size(w, w / imageAspectRatio)
+            } else {
+              const h = Math.min(modelData.height, implicitHeight)
+              sourceSize = Qt.size(h * imageAspectRatio, h)
+            }
           }
         }
       }
@@ -173,9 +178,14 @@ Variants {
 
         function calculateSourceSize() {
           if (implicitWidth > 0 && implicitHeight > 0) {
-            const aspectRatio = implicitWidth / implicitHeight
-            const w = Math.min(modelData.width, implicitWidth)
-            sourceSize = Qt.size(w, w / aspectRatio)
+            const imageAspectRatio = implicitWidth / implicitHeight
+            if (modelData.width >= modelData.height) {
+              const w = Math.min(modelData.width, implicitWidth)
+              sourceSize = Qt.size(w, w / imageAspectRatio)
+            } else {
+              const h = Math.min(modelData.height, implicitHeight)
+              sourceSize = Qt.size(h * imageAspectRatio, h)
+            }
           }
         }
       }

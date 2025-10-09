@@ -87,6 +87,8 @@ Loader {
     root.buttonItem = buttonItem
     root.buttonName = buttonName || ""
 
+    setPosition()
+
     PanelService.willOpenPanel(root)
 
     backgroundClickEnabled = true
@@ -104,6 +106,27 @@ Loader {
     useButtonPosition = false
     backgroundClickEnabled = true
     PanelService.closedPanel(root)
+  }
+
+  // -----------------------------------------
+  function setPosition() {
+    // If we have a button name, we are landing here from an IPC call.
+    // IPC calls have no idead on which screen they panel will spawn.
+    // Resolve the button name to a proper button item now that we have a screen.
+    if (buttonName !== "" && root.screen !== null) {
+      buttonItem = BarService.lookupWidget(buttonName, root.screen.name)
+    }
+
+    // Get the button position if provided
+    if (buttonItem !== undefined && buttonItem !== null) {
+      useButtonPosition = true
+      var itemPos = buttonItem.mapToItem(null, 0, 0)
+      buttonPosition = Qt.point(itemPos.x, itemPos.y)
+      buttonWidth = buttonItem.width
+      buttonHeight = buttonItem.height
+    } else {
+      useButtonPosition = false
+    }
   }
 
   // -----------------------------------------
@@ -143,24 +166,11 @@ Loader {
           panelContentLoader.active = false
           panelContentLoader.active = true
 
-          // If we have a button name, we are landing here from an IPC call.
-          // IPC calls have no idead on which screen they panel will spawn.
-          // Resolve the button name to a proper button item now that we have a screen.
-          if (buttonName !== "") {
-            buttonItem = BarService.lookupWidget(buttonName, root.screen.name)
+          // If called from IPC always reposition if screen is updated
+          if (buttonName) {
+            setPosition()
           }
-
-          // Get the button position if provided
-          if (buttonItem !== undefined && buttonItem !== null) {
-            useButtonPosition = true
-            var itemPos = buttonItem.mapToItem(null, 0, 0)
-            buttonPosition = Qt.point(itemPos.x, itemPos.y)
-            buttonWidth = buttonItem.width
-            buttonHeight = buttonItem.height
-          } else {
-            useButtonPosition = false
-          }
-          //Logger.log("NPanel", "OnScreenChanged", root.screen.name)
+          // Logger.log("NPanel", "OnScreenChanged", root.screen.name)
         }
       }
 
@@ -249,7 +259,7 @@ Loader {
           if (!barIsVisible) {
             return 0
           }
-          switch (barPosition || panelAnchorVerticalCenter) {
+          switch (barPosition) {
           case "top":
             return (Style.barHeight + Style.marginS) * scaling + (Settings.data.bar.floating ? Settings.data.bar.marginVertical * Style.marginXL * scaling : 0)
           default:
@@ -258,7 +268,7 @@ Loader {
         }
 
         property real marginBottom: {
-          if (!barIsVisible || panelAnchorVerticalCenter) {
+          if (!barIsVisible) {
             return 0
           }
           switch (barPosition) {
@@ -270,7 +280,7 @@ Loader {
         }
 
         property real marginLeft: {
-          if (!barIsVisible || panelAnchorHorizontalCenter) {
+          if (!barIsVisible) {
             return 0
           }
           switch (barPosition) {
@@ -282,7 +292,7 @@ Loader {
         }
 
         property real marginRight: {
-          if (!barIsVisible || panelAnchorHorizontalCenter) {
+          if (!barIsVisible) {
             return 0
           }
           switch (barPosition) {
@@ -297,7 +307,11 @@ Loader {
         property int calculatedX: {
           // Priority to fixed anchoring
           if (panelAnchorHorizontalCenter) {
-            return Math.round((panelWindow.width - panelBackground.width) / 2)
+            // Center horizontally but respect bar margins
+            var centerX = Math.round((panelWindow.width - panelBackground.width) / 2)
+            var minX = marginLeft
+            var maxX = panelWindow.width - panelBackground.width - marginRight
+            return Math.round(Math.max(minX, Math.min(centerX, maxX)))
           } else if (panelAnchorLeft) {
             return marginLeft
           } else if (panelAnchorRight) {
@@ -334,7 +348,11 @@ Loader {
         property int calculatedY: {
           // Priority to fixed anchoring
           if (panelAnchorVerticalCenter) {
-            return Math.round((panelWindow.height - panelBackground.height) / 2)
+            // Center vertically but respect bar margins
+            var centerY = Math.round((panelWindow.height - panelBackground.height) / 2)
+            var minY = marginTop
+            var maxY = panelWindow.height - panelBackground.height - marginBottom
+            return Math.round(Math.max(minY, Math.min(centerY, maxY)))
           } else if (panelAnchorTop) {
             return marginTop
           } else if (panelAnchorBottom) {

@@ -151,7 +151,7 @@ Singleton {
 
         // Generate Matugen templates if any are enabled and setting allows it
         if (Settings.data.colorSchemes.generateTemplatesForPredefined && hasEnabledMatugenTemplates()) {
-          MatugenService.generateFromPredefinedScheme(data)
+          AppThemeService.generateFromPredefinedScheme(data)
         }
       } catch (e) {
         Logger.error("ColorScheme", "Failed to parse scheme JSON:", path, e)

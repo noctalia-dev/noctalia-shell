@@ -1177,6 +1177,7 @@
     "night-light-disabled": "Nachtlicht ist deaktiviert.\\nLinksklick zum Wechseln des Modus.\\nRechtsklick für Einstellungen.",
     "night-light-enabled": "Nachtlicht ist aktiviert.\\nLinksklick zum Wechseln des Modus.\\nRechtsklick für Einstellungen.",
     "night-light-forced": "Nachtlicht ist erzwungen.\\nLinksklick zum Wechseln des Modus.\\nRechtsklick für Einstellungen.",
+    "night-light-not-installed": "Nachtlicht ist nicht verfügbar.\\nwlsunset ist nicht installiert.",
     "click-to-start-recording": "Klicken zum Starten der Aufnahme",
     "click-to-stop-recording": "Klicken zum Stoppen der Aufnahme",
     "open-control-center": "Kontrollzentrum öffnen",
@@ -1415,7 +1416,9 @@
       "failed-gpu": "gpu-screen-recorder unerwartet beendet.",
       "failed-general": "Der Rekorder wurde mit einem Fehler beendet.",
       "no-portals": "Desktop-Portale laufen nicht",
-      "no-portals-desc": "Starten Sie xdg-desktop-portal und ein Compositor-Portal (wlr/hyprland/gnome/kde)."
+      "no-portals-desc": "Starten Sie xdg-desktop-portal und ein Compositor-Portal (wlr/hyprland/gnome/kde).",
+      "not-installed": "gpu-screen-recorder nicht installiert",
+      "not-installed-desc": "Bitte installieren Sie gpu-screen-recorder, um Bildschirmaufnahme-Funktionen zu nutzen."
     },
     "clipboard": {
       "unavailable": "Zwischenablage-Verlauf nicht verfügbar",

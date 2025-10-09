@@ -1156,6 +1156,7 @@
     "night-light-disabled": "L'éclairage nocturne est désactivé.\nClic gauche pour changer de mode.\nClic droit pour accéder aux paramètres.",
     "night-light-enabled": "L'éclairage nocturne est activé.\nClic gauche pour changer de mode.\nClic droit pour accéder aux paramètres.",
     "night-light-forced": "L'éclairage nocturne est forcé.\nClic gauche pour changer de mode.\nClic droit pour accéder aux paramètres.",
+    "night-light-not-installed": "L'éclairage nocturne n'est pas disponible.\nwlsunset n'est pas installé.",
     "click-to-start-recording": "Cliquez pour démarrer l'enregistrement",
     "click-to-stop-recording": "Cliquez pour arrêter l'enregistrement",
     "open-control-center": "Ouvrir le centre de contrôle",
@@ -1383,7 +1384,9 @@
       "failed-gpu": "gpu-screen-recorder s'est arrêté de manière inattendue.",
       "failed-general": "L'enregistreur s'est arrêté avec une erreur.",
       "no-portals": "Les portails de bureau ne sont pas en cours d'exécution",
-      "no-portals-desc": "Démarrez xdg-desktop-portal et un portail de compositeur (wlr/hyprland/gnome/kde)."
+      "no-portals-desc": "Démarrez xdg-desktop-portal et un portail de compositeur (wlr/hyprland/gnome/kde).",
+      "not-installed": "gpu-screen-recorder non installé",
+      "not-installed-desc": "Veuillez installer gpu-screen-recorder pour utiliser les fonctionnalités d'enregistrement d'écran."
     },
     "clipboard": {
       "unavailable": "Historique du presse-papiers indisponible",

@@ -30,8 +30,8 @@ Item {
       antialiasing: true
 
       width: root.barSlotWidth * 0.5 // Creates a small gap between bars
-      height: Math.max(1, root.height * amp)
-      x: index * root.barSlotWidth
+      height: root.height * amp
+      x: index * root.barSlotWidth + (root.barSlotWidth * 0.25)
       y: root.height - height
     }
   }

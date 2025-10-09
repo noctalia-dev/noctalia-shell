@@ -79,7 +79,7 @@ ColumnLayout {
       if (exitCode === 0) {
         // Matugen exists, enable it
         Settings.data.colorSchemes.useWallpaperColors = true
-        MatugenService.generateFromWallpaper()
+        AppThemeService.generate()
         ToastService.showNotice(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.enabled"))
       } else {
         // Matugen not found
@@ -195,9 +195,8 @@ ColumnLayout {
 
     onSelected: key => {
                   Settings.data.colorSchemes.matugenSchemeType = key
-                  if (Settings.data.colorSchemes.useWallpaperColors) {
-                    MatugenService.generateFromWallpaper()
-                  }
+
+                  AppThemeService.generate()
                 }
   }
 
@@ -234,15 +233,15 @@ ColumnLayout {
 
           property string schemePath: modelData
 
+          Layout.fillWidth: true
           Layout.alignment: Qt.AlignHCenter
-          width: 222 * scaling
           height: 50 * scaling
           radius: Style.radiusS * scaling
           color: getSchemeColor(modelData, "mSurface")
           border.width: Math.max(1, Style.borderL * scaling)
           border.color: {
-            if  (Settings.data.colorSchemes.predefinedScheme === extractSchemeName(modelData)) {
-              return Color.mSecondary;
+            if (Settings.data.colorSchemes.predefinedScheme === extractSchemeName(modelData)) {
+              return Color.mSecondary
             }
             if (itemMouseArea.containsMouse) {
               return Color.mTertiary
@@ -343,7 +342,7 @@ ColumnLayout {
       }
     }
 
-        // Generate templates for predefined schemes
+    // Generate templates for predefined schemes
     NCheckbox {
       Layout.fillWidth: true
       label: I18n.tr("settings.color-scheme.predefined.generate-templates.label")
@@ -391,8 +390,7 @@ ColumnLayout {
         checked: Settings.data.templates.gtk
         onToggled: checked => {
                      Settings.data.templates.gtk = checked
-                     if (Settings.data.colorSchemes.useWallpaperColors)
-                     MatugenService.generateFromWallpaper()
+                     AppThemeService.generate()
                    }
       }
 
@@ -404,8 +402,7 @@ ColumnLayout {
         checked: Settings.data.templates.qt
         onToggled: checked => {
                      Settings.data.templates.qt = checked
-                     if (Settings.data.colorSchemes.useWallpaperColors)
-                     MatugenService.generateFromWallpaper()
+                     AppThemeService.generate()
                    }
       }
     }
@@ -430,8 +427,7 @@ ColumnLayout {
         onToggled: checked => {
                      if (ProgramCheckerService.kittyAvailable) {
                        Settings.data.templates.kitty = checked
-                       if (Settings.data.colorSchemes.useWallpaperColors)
-                       MatugenService.generateFromWallpaper()
+                       AppThemeService.generate()
                      }
                    }
       }
@@ -449,8 +445,7 @@ ColumnLayout {
         onToggled: checked => {
                      if (ProgramCheckerService.ghosttyAvailable) {
                        Settings.data.templates.ghostty = checked
-                       if (Settings.data.colorSchemes.useWallpaperColors)
-                       MatugenService.generateFromWallpaper()
+                       AppThemeService.generate()
                      }
                    }
       }
@@ -468,8 +463,7 @@ ColumnLayout {
         onToggled: checked => {
                      if (ProgramCheckerService.footAvailable) {
                        Settings.data.templates.foot = checked
-                       if (Settings.data.colorSchemes.useWallpaperColors)
-                       MatugenService.generateFromWallpaper()
+                       AppThemeService.generate()
                      }
                    }
       }
@@ -495,8 +489,7 @@ ColumnLayout {
         onToggled: checked => {
                      if (ProgramCheckerService.fuzzelAvailable) {
                        Settings.data.templates.fuzzel = checked
-                       if (Settings.data.colorSchemes.useWallpaperColors)
-                       MatugenService.generateFromWallpaper()
+                       AppThemeService.generate()
                      }
                    }
       }
@@ -514,8 +507,7 @@ ColumnLayout {
         onToggled: checked => {
                      if (ProgramCheckerService.vesktopAvailable) {
                        Settings.data.templates.vesktop = checked
-                       if (Settings.data.colorSchemes.useWallpaperColors)
-                       MatugenService.generateFromWallpaper()
+                       AppThemeService.generate()
                      }
                    }
       }
@@ -533,8 +525,7 @@ ColumnLayout {
         onToggled: checked => {
                      if (ProgramCheckerService.pywalfoxAvailable) {
                        Settings.data.templates.pywalfox = checked
-                       if (Settings.data.colorSchemes.useWallpaperColors)
-                       MatugenService.generateFromWallpaper()
+                       AppThemeService.generate()
                      }
                    }
       }
@@ -553,8 +544,7 @@ ColumnLayout {
         checked: Settings.data.templates.enableUserTemplates
         onToggled: checked => {
                      Settings.data.templates.enableUserTemplates = checked
-                     if (Settings.data.colorSchemes.useWallpaperColors)
-                     MatugenService.generateFromWallpaper()
+                     AppThemeService.generate()
                    }
       }
     }

@@ -13,7 +13,16 @@ Singleton {
   property ListModel monospaceFonts: ListModel {}
   property ListModel displayFonts: ListModel {}
   property bool fontsLoaded: false
-  property var fontconfigMonospaceFonts: []
+  property bool isLoading: false
+
+  // Use objects for O(1) lookup instead of arrays
+  property var fontconfigMonospaceFonts: ({})
+
+  // Cache for font classification to avoid repeated checks
+  property var fontCache: ({})
+
+  // Chunk size for async processing
+  readonly property int chunkSize: 100
 
   // -------------------------------------------
   function init() {
@@ -27,42 +36,85 @@ Singleton {
   }
 
   function loadSystemFonts() {
+    if (isLoading)
+      return
+
     Logger.log("Font", "Loading system fonts...")
+    isLoading = true
 
     var fontFamilies = Qt.fontFamilies()
 
+    // Pre-sort fonts before processing to ensure consistent order
+    fontFamilies.sort(function (a, b) {
+      return a.localeCompare(b)
+    })
+
+    // Clear existing models
     availableFonts.clear()
     monospaceFonts.clear()
     displayFonts.clear()
+    fontCache = {}
 
-    for (var i = 0; i < fontFamilies.length; i++) {
+    // Process fonts in chunks to avoid blocking
+    processFontsAsync(fontFamilies, 0)
+  }
+
+  function processFontsAsync(fontFamilies, startIndex) {
+    var endIndex = Math.min(startIndex + chunkSize, fontFamilies.length)
+    var hasMore = endIndex < fontFamilies.length
+
+    // Batch arrays to append all at once (much faster than individual appends)
+    var availableBatch = []
+    var monospaceBatch = []
+    var displayBatch = []
+
+    for (var i = startIndex; i < endIndex; i++) {
       var fontName = fontFamilies[i]
-      if (fontName && fontName.trim() !== "") {
-        availableFonts.append({
-                                "key": fontName,
-                                "name": fontName
-                              })
+      if (!fontName || fontName.trim() === "")
+        continue
 
-        if (isMonospaceFont(fontName)) {
-          monospaceFonts.append({
-                                  "key": fontName,
-                                  "name": fontName
-                                })
-        }
+      // Add to available fonts
+      var fontObj = {
+        "key": fontName,
+        "name": fontName
+      }
+      availableBatch.push(fontObj)
 
-        if (isDisplayFont(fontName)) {
-          displayFonts.append({
-                                "key": fontName,
-                                "name": fontName
-                              })
-        }
+      // Check monospace (with caching)
+      if (isMonospaceFont(fontName)) {
+        monospaceBatch.push(fontObj)
+      }
+
+      // Check display font (with caching)
+      if (isDisplayFont(fontName)) {
+        displayBatch.push(fontObj)
       }
     }
 
-    sortModel(availableFonts)
-    sortModel(monospaceFonts)
-    sortModel(displayFonts)
+    // Batch append to models
+    batchAppendToModel(availableFonts, availableBatch)
+    batchAppendToModel(monospaceFonts, monospaceBatch)
+    batchAppendToModel(displayFonts, displayBatch)
 
+    if (hasMore) {
+      // Continue processing in next frame
+      Qt.callLater(function () {
+        processFontsAsync(fontFamilies, endIndex)
+      })
+    } else {
+      // Finished loading all fonts
+      finalizeFontLoading()
+    }
+  }
+
+  function batchAppendToModel(model, items) {
+    for (var i = 0; i < items.length; i++) {
+      model.append(items[i])
+    }
+  }
+
+  function finalizeFontLoading() {
+    // Add fallbacks if needed (models are already sorted)
     if (monospaceFonts.count === 0) {
       addFallbackFonts(monospaceFonts, ["DejaVu Sans Mono"])
     }
@@ -72,37 +124,68 @@ Singleton {
     }
 
     fontsLoaded = true
+    isLoading = false
     Logger.log("Font", "Loaded", availableFonts.count, "fonts:", monospaceFonts.count, "monospace,", displayFonts.count, "display")
   }
 
   function isMonospaceFont(fontName) {
-    // First, check if fontconfig detected this as monospace
-    if (fontconfigMonospaceFonts.indexOf(fontName) !== -1) {
-      return true
+    // Check cache first
+    if (fontCache.hasOwnProperty(fontName)) {
+      return fontCache[fontName].isMonospace
     }
 
-    // Minimal fallback: only check for basic monospace patterns
-    var lowerFontName = fontName.toLowerCase()
-    if (lowerFontName.includes("mono") || lowerFontName.includes("monospace")) {
-      return true
+    var result = false
+
+    // O(1) lookup using object instead of indexOf
+    if (fontconfigMonospaceFonts.hasOwnProperty(fontName)) {
+      result = true
+    } else {
+      // Fallback: check for basic monospace patterns
+      var lowerFontName = fontName.toLowerCase()
+      if (lowerFontName.includes("mono") || lowerFontName.includes("monospace")) {
+        result = true
+      }
     }
 
-    return false
+    // Cache the result
+    if (!fontCache[fontName]) {
+      fontCache[fontName] = {}
+    }
+    fontCache[fontName].isMonospace = result
+
+    return result
   }
 
   function isDisplayFont(fontName) {
-    // Minimal fallback: only check for basic display patterns
+    // Check cache first
+    if (fontCache.hasOwnProperty(fontName) && fontCache[fontName].hasOwnProperty('isDisplay')) {
+      return fontCache[fontName].isDisplay
+    }
+
+    var result = false
     var lowerFontName = fontName.toLowerCase()
+
     if (lowerFontName.includes("display") || lowerFontName.includes("headline") || lowerFontName.includes("title")) {
-      return true
+      result = true
     }
 
     // Essential fallback fonts only
     var essentialFonts = ["Inter", "Roboto", "DejaVu Sans"]
-    return essentialFonts.includes(fontName)
+    if (essentialFonts.indexOf(fontName) !== -1) {
+      result = true
+    }
+
+    // Cache the result
+    if (!fontCache[fontName]) {
+      fontCache[fontName] = {}
+    }
+    fontCache[fontName].isDisplay = result
+
+    return result
   }
 
   function sortModel(model) {
+    // Convert to array
     var fontsArray = []
     for (var i = 0; i < model.count; i++) {
       fontsArray.push({
@@ -111,36 +194,38 @@ Singleton {
                       })
     }
 
+    // Sort
     fontsArray.sort(function (a, b) {
       return a.name.localeCompare(b.name)
     })
 
+    // Clear and rebuild
     model.clear()
-    for (var j = 0; j < fontsArray.length; j++) {
-      model.append(fontsArray[j])
-    }
+    batchAppendToModel(model, fontsArray)
   }
 
   function addFallbackFonts(model, fallbackFonts) {
-    for (var i = 0; i < fallbackFonts.length; i++) {
-      var fontName = fallbackFonts[i]
-      var exists = false
-      for (var j = 0; j < model.count; j++) {
-        if (model.get(j).name === fontName) {
-          exists = true
-          break
-        }
-      }
+    // Build a set of existing fonts for O(1) lookup
+    var existingFonts = {}
+    for (var i = 0; i < model.count; i++) {
+      existingFonts[model.get(i).name] = true
+    }
 
-      if (!exists) {
-        model.append({
-                       "key": fontName,
-                       "name": fontName
-                     })
+    var toAdd = []
+    for (var j = 0; j < fallbackFonts.length; j++) {
+      var fontName = fallbackFonts[j]
+      if (!existingFonts[fontName]) {
+        toAdd.push({
+                     "key": fontName,
+                     "name": fontName
+                   })
       }
     }
 
-    sortModel(model)
+    if (toAdd.length > 0) {
+      batchAppendToModel(model, toAdd)
+      sortModel(model)
+    }
   }
 
   function searchFonts(query) {
@@ -169,16 +254,17 @@ Singleton {
       onStreamFinished: {
         if (this.text !== "") {
           var lines = this.text.split('\n')
-          fontconfigMonospaceFonts = []
+          // Use object for O(1) lookup instead of array
+          var monospaceLookup = {}
 
           for (var i = 0; i < lines.length; i++) {
             var line = lines[i].trim()
             if (line && line !== "") {
-              if (fontconfigMonospaceFonts.indexOf(line) === -1) {
-                fontconfigMonospaceFonts.push(line)
-              }
+              monospaceLookup[line] = true
             }
           }
+
+          fontconfigMonospaceFonts = monospaceLookup
         }
         loadSystemFonts()
       }
@@ -186,7 +272,7 @@ Singleton {
 
     onExited: function (exitCode, exitStatus) {
       if (exitCode !== 0) {
-        fontconfigMonospaceFonts = []
+        fontconfigMonospaceFonts = {}
       }
       loadSystemFonts()
     }

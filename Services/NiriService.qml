@@ -332,25 +332,25 @@ Item {
   }
 
   // Public functions
-  function switchToWorkspace(workspaceId) {
+  function switchToWorkspace(workspace) {
     try {
-      Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", workspaceId.toString()])
+      Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", workspace.idx.toString()])
     } catch (e) {
       Logger.error("NiriService", "Failed to switch workspace:", e)
     }
   }
 
-  function focusWindow(windowId) {
+  function focusWindow(window) {
     try {
-      Quickshell.execDetached(["niri", "msg", "action", "focus-window", "--id", windowId.toString()])
+      Quickshell.execDetached(["niri", "msg", "action", "focus-window", "--id", window.id.toString()])
     } catch (e) {
       Logger.error("NiriService", "Failed to switch window:", e)
     }
   }
 
-  function closeWindow(windowId) {
+  function closeWindow(window) {
     try {
-      Quickshell.execDetached(["niri", "msg", "action", "close-window", "--id", windowId.toString()])
+      Quickshell.execDetached(["niri", "msg", "action", "close-window", "--id", window.id.toString()])
     } catch (e) {
       Logger.error("NiriService", "Failed to close window:", e)
     }

@@ -9,9 +9,9 @@
         "mError": "#c34043",
         "mOnError": "#1f1f28",
         "mSurface": "#1f1f28",
-        "mOnSurface": "#717c7c",
+        "mOnSurface": "#c8c093",
         "mSurfaceVariant": "#2a2a37",
-        "mOnSurfaceVariant": "#c8c093",
+        "mOnSurfaceVariant": "#717c7c",
         "mOutline": "#363646",
         "mShadow": "#1f1f28"
     },
@@ -25,9 +25,9 @@
         "mError": "#c84053",
         "mOnError": "#f2ecbc",
         "mSurface": "#f2ecbc",
-        "mOnSurface": "#8a8980",
+        "mOnSurface": "#545464",
         "mSurfaceVariant": "#e5ddb0",
-        "mOnSurfaceVariant": "#545464",
+        "mOnSurfaceVariant": "#8a8980",
         "mOutline": "#cfc49c",
         "mShadow": "#f2ecbc"
     }

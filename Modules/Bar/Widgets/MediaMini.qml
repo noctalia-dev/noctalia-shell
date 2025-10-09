@@ -378,12 +378,10 @@ Item {
                        MediaService.playPause()
                      } else if (mouse.button == Qt.RightButton) {
                        MediaService.next()
-                       // Need to hide the tooltip instantly
-                       tooltip.visible = false
+                       TooltipService.hide()
                      } else if (mouse.button == Qt.MiddleButton) {
                        MediaService.previous()
-                       // Need to hide the tooltip instantly
-                       tooltip.visible = false
+                       TooltipService.hide()
                      }
                    }
 

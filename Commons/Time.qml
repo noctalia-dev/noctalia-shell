@@ -41,7 +41,7 @@ Singleton {
     return `${year}${month}${day}-${hours}${minutes}${seconds}`
   }
 
-  // Format an easy to read approximate duration ex: 4h32m
+  // Format an easy to read approximate duration ex: 4h 32m
   // Used to display the time remaining on the Battery widget, computer uptime, etc..
   function formatVagueHumanReadableDuration(totalSeconds) {
     if (typeof totalSeconds !== 'number' || totalSeconds < 0) {
@@ -69,7 +69,7 @@ Singleton {
       parts.push(`${seconds}s`)
     }
 
-    return parts.join('')
+    return parts.join(' ')
   }
 
   // Format a date into

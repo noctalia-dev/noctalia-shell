@@ -31,7 +31,7 @@
           pkgs = nixpkgs.legacyPackages.${system};
           qs = quickshell.packages.${system}.default.override {
             withX11 = false;
-            withI3 = false;
+            withI3 = true;
           };
 
           runtimeDeps =

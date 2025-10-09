@@ -25,9 +25,9 @@
     "mError": "#FD4663",
     "mOnError": "#0e0e43",
     "mSurface": "#e6e8fa",
-    "mOnSurface": "#4b55c8",
+    "mOnSurface": "#0e0e43",
     "mSurfaceVariant": "#eff0ff",
-    "mOnSurfaceVariant": "#0e0e43",
+    "mOnSurfaceVariant": "#4b55c8",
     "mOutline": "#8288fc",
     "mShadow": "#f3edf7"
   }

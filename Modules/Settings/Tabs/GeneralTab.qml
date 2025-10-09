@@ -321,7 +321,7 @@ ColumnLayout {
 
             NIconButton {
               icon: "refresh"
-              baseSize: Style.baseWidgetSize * 0.9
+              baseSize: Style.baseWidgetSize * 0.8
               tooltipText: I18n.tr("settings.general.fonts.reset-scaling")
               onClicked: Settings.data.ui.fontDefaultScale = 1.0
               anchors.right: parent.right
@@ -358,7 +358,7 @@ ColumnLayout {
 
             NIconButton {
               icon: "refresh"
-              baseSize: Style.baseWidgetSize * 0.9
+              baseSize: Style.baseWidgetSize * 0.8
               tooltipText: I18n.tr("settings.general.fonts.reset-scaling")
               onClicked: Settings.data.ui.fontFixedScale = 1.0
               anchors.right: parent.right

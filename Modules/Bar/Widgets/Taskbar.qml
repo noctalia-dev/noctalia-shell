@@ -105,13 +105,13 @@ Rectangle {
 
             if (mouse.button === Qt.LeftButton) {
               try {
-                CompositorService.focusWindow(taskbarItem.modelData.id)
+                CompositorService.focusWindow(taskbarItem.modelData)
               } catch (error) {
                 Logger.error("Taskbar", "Failed to activate toplevel: " + error)
               }
             } else if (mouse.button === Qt.RightButton) {
               try {
-                CompositorService.closeWindow(taskbarItem.modelData.id)
+                CompositorService.closeWindow(taskbarItem.modelData)
               } catch (error) {
                 Logger.error("Taskbar", "Failed to close toplevel: " + error)
               }

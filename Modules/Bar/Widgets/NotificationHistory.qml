@@ -61,7 +61,6 @@ NIconButton {
   onClicked: {
     var panel = PanelService.getPanel("notificationHistoryPanel")
     panel?.toggle(this)
-    Settings.data.notifications.lastSeenTs = Time.timestamp * 1000
   }
 
   onRightClicked: Settings.data.notifications.doNotDisturb = !Settings.data.notifications.doNotDisturb

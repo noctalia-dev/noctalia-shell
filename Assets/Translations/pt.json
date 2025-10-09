@@ -1156,6 +1156,7 @@
     "night-light-disabled": "Luz noturna desativada.\nClique esquerdo para alternar o modo.\nClique direito para acessar as configurações.",
     "night-light-enabled": "Luz noturna ativada.\nClique esquerdo para alternar o modo.\nClique direito para acessar as configurações.",
     "night-light-forced": "Luz noturna forçada.\nClique esquerdo para alternar o modo.\nClique direito para acessar as configurações.",
+    "night-light-not-installed": "Luz noturna não disponível.\nwlsunset não está instalado.",
     "click-to-start-recording": "Clique para iniciar a gravação",
     "click-to-stop-recording": "Clique para parar a gravação",
     "open-control-center": "Abrir central de controle",
@@ -1383,7 +1384,9 @@
       "failed-gpu": "gpu-screen-recorder encerrou inesperadamente.",
       "failed-general": "O gravador encerrou com um erro.",
       "no-portals": "Portais de desktop não estão em execução",
-      "no-portals-desc": "Inicie o xdg-desktop-portal e um portal de compositor (wlr/hyprland/gnome/kde)."
+      "no-portals-desc": "Inicie o xdg-desktop-portal e um portal de compositor (wlr/hyprland/gnome/kde).",
+      "not-installed": "gpu-screen-recorder não instalado",
+      "not-installed-desc": "Por favor instale o gpu-screen-recorder para usar as funcionalidades de gravação de tela."
     },
     "clipboard": {
       "unavailable": "Histórico da área de transferência indisponível",
