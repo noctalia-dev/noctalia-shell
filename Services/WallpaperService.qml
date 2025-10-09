@@ -319,11 +319,13 @@ Singleton {
     } else {
       // Pick a random wallpaper common to all screens
       // We can use any screenName here, so we just pick the primary one.
-      var wallpaperList = getWallpapersList(Screen.name)
-      if (wallpaperList.length > 0) {
-        var randomIndex = Math.floor(Math.random() * wallpaperList.length)
-        var randomPath = wallpaperList[randomIndex]
-        changeWallpaper(randomPath, undefined)
+      if (Quickshell.screens.length > 0) {
+        var wallpaperList = getWallpapersList(Quickshell.screens[0].name)
+        if (wallpaperList.length > 0) {
+          var randomIndex = Math.floor(Math.random() * wallpaperList.length)
+          var randomPath = wallpaperList[randomIndex]
+          changeWallpaper(randomPath, undefined)
+        }
       }
     }
   }

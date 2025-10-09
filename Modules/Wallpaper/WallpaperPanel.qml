@@ -26,16 +26,21 @@ NPanel {
     id: wallpaperPanel
 
     property int currentScreenIndex: {
-      if (screen !== null) {
-        for (var i = 0; i < Quickshell.screens.length; i++) {
-          if (Quickshell.screens[i].name == screen.name) {
-            return i
+      if (root.screen !== null && root.screen !== undefined) {
+        try {
+          var screenName = root.screen.name
+          for (var i = 0; i < Quickshell.screens.length; i++) {
+            if (Quickshell.screens[i].name === screenName) {
+              return i
+            }
           }
+        } catch (e) {
+          // Screen object is dangling, return 0
         }
       }
       return 0
     }
-    property var currentScreen: Quickshell.screens[currentScreenIndex]
+    property var currentScreen: currentScreenIndex >= 0 && currentScreenIndex < Quickshell.screens.length ? Quickshell.screens[currentScreenIndex] : null
     property string filterText: ""
 
     color: Color.transparent
@@ -270,27 +275,53 @@ NPanel {
     Connections {
       target: WallpaperService
       function onWallpaperChanged(screenName, path) {
-        if (targetScreen !== null && screenName === targetScreen.name) {
-          currentWallpaper = WallpaperService.getWallpaper(targetScreen.name)
+        if (targetScreen !== null && targetScreen !== undefined) {
+          try {
+            if (screenName === targetScreen.name) {
+              currentWallpaper = WallpaperService.getWallpaper(targetScreen.name)
+            }
+          } catch (e) {
+            // Screen object is dangling
+          }
         }
       }
       function onWallpaperDirectoryChanged(screenName, directory) {
-        if (targetScreen !== null && screenName === targetScreen.name) {
-          refreshWallpaperScreenData()
+        if (targetScreen !== null && targetScreen !== undefined) {
+          try {
+            if (screenName === targetScreen.name) {
+              refreshWallpaperScreenData()
+            }
+          } catch (e) {
+            // Screen object is dangling
+          }
         }
       }
       function onWallpaperListChanged(screenName, count) {
-        if (targetScreen !== null && screenName === targetScreen.name) {
-          refreshWallpaperScreenData()
+        if (targetScreen !== null && targetScreen !== undefined) {
+          try {
+            if (screenName === targetScreen.name) {
+              refreshWallpaperScreenData()
+            }
+          } catch (e) {
+            // Screen object is dangling
+          }
         }
       }
     }
 
     function refreshWallpaperScreenData() {
-      if (targetScreen === null) {
+      if (targetScreen === null || targetScreen === undefined) {
         return
       }
-      wallpapersList = WallpaperService.getWallpapersList(targetScreen.name)
+
+      // Try-catch to handle dangling screen objects
+      try {
+        var screenName = targetScreen.name
+        wallpapersList = WallpaperService.getWallpapersList(screenName)
+      } catch (e) {
+        Logger.warn("WallpaperPanel", "Dangling screen object in refreshWallpaperScreenData")
+        return
+      }
 
       // Pre-compute basenames once for better performance
       wallpapersWithNames = wallpapersList.map(function (p) {
@@ -300,7 +331,7 @@ NPanel {
         }
       })
 
-      currentWallpaper = WallpaperService.getWallpaper(targetScreen.name)
+      currentWallpaper = WallpaperService.getWallpaper(screenName)
       updateFiltered()
     }
 
@@ -358,7 +389,13 @@ NPanel {
                               if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
                                 WallpaperService.changeWallpaper(path, undefined)
                               } else {
-                                WallpaperService.changeWallpaper(path, targetScreen.name)
+                                try {
+                                  if (targetScreen !== null && targetScreen !== undefined) {
+                                    WallpaperService.changeWallpaper(path, targetScreen.name)
+                                  }
+                                } catch (e) {
+                                  Logger.warn("WallpaperPanel", "Cannot set wallpaper, screen object is dangling")
+                                }
                               }
                             }
                             event.accepted = true
@@ -452,7 +489,13 @@ NPanel {
                 if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
                   WallpaperService.changeWallpaper(wallpaperPath, undefined)
                 } else {
-                  WallpaperService.changeWallpaper(wallpaperPath, targetScreen.name)
+                  try {
+                    if (targetScreen !== null && targetScreen !== undefined) {
+                      WallpaperService.changeWallpaper(wallpaperPath, targetScreen.name)
+                    }
+                  } catch (e) {
+                    Logger.warn("WallpaperPanel", "Cannot set wallpaper, screen object is dangling")
+                  }
                 }
               }
             }
