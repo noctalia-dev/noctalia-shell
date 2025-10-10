@@ -142,6 +142,14 @@ ColumnLayout {
         }
       }
     }
+
+    NToggle {
+      label: "Debug Mode"
+      description: "Enable verbose debug logging in the console"
+      checked: Settings.data.general.debugMode
+      onToggled: checked => Settings.data.general.debugMode = checked
+      Layout.topMargin: Style.marginL * scaling
+    }
   }
 
   NDivider {

@@ -44,18 +44,23 @@ ColumnLayout {
       if (entry.dark || entry.light) {
         variant = Settings.data.colorSchemes.darkMode ? (entry.dark || entry.light) : (entry.light || entry.dark)
       }
-      if (variant && variant[colorKey])
+      if (variant && variant[colorKey]) {
         return variant[colorKey]
+      }
     }
 
-    // Return a default color if not cached yet
+    // Return a default color if not cached yet (files load asynchronously)
     return "#000000"
   }
 
   // This function is called by the FileView Repeater when a scheme file is loaded
   function schemeLoaded(schemeName, jsonData) {
     var value = jsonData || {}
-    var newCache = schemeColorsCache
+    // Create a new object to trigger QML property change detection
+    var newCache = {}
+    for (var key in schemeColorsCache) {
+      newCache[key] = schemeColorsCache[key]
+    }
     newCache[schemeName] = value
     schemeColorsCache = newCache
   }
@@ -102,8 +107,9 @@ ColumnLayout {
       // The delegate is a Component, which correctly wraps the non-visual FileView
       delegate: Item {
         FileView {
+          id: schemeFileView
           path: modelData
-          blockLoading: true
+
           onLoaded: {
             // Extract scheme name from path
             var schemeName = extractSchemeName(path)

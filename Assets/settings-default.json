@@ -68,7 +68,8 @@
     "radiusRatio": 1,
     "screenRadiusRatio": 1,
     "animationSpeed": 1,
-    "animationDisabled": false
+    "animationDisabled": false,
+    "debugMode": false
   },
   "location": {
     "name": "Tokyo",

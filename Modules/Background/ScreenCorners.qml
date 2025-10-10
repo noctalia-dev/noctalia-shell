@@ -54,38 +54,7 @@ Loader {
         right: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "right" && Settings.data.bar.backgroundOpacity > 0 ? Math.round(Style.barHeight * scaling) : 0
       }
 
-      mask: Region {
-        item: Item {
-          // Top-left corner
-          Rectangle {
-            x: 0
-            y: 0
-            width: root.cornerSize
-            height: root.cornerSize
-          }
-          // Top-right corner
-          Rectangle {
-            x: root.width - root.cornerSize
-            y: 0
-            width: root.cornerSize
-            height: root.cornerSize
-          }
-          // Bottom-left corner
-          Rectangle {
-            x: 0
-            y: root.height - root.cornerSize
-            width: root.cornerSize
-            height: root.cornerSize
-          }
-          // Bottom-right corner
-          Rectangle {
-            x: root.width - root.cornerSize
-            y: root.height - root.cornerSize
-            width: root.cornerSize
-            height: root.cornerSize
-          }
-        }
-      }
+      mask: Region {}
 
       // Top-left concave corner
       Canvas {
