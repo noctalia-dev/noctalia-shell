@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "appearance": "dark",
+  "icon": "./noctalia.png",
+  "name": "Noctalia",
+  "description": "Matugen generated theme",
+  "palette": {
+    "background": "{{colors.surface.dark.hex}}",
+    "foreground": "{{colors.on_surface.dark.hex}}",
+    "blue": "{{colors.primary.dark.hex}}",
+    "green": "{{colors.tertiary.dark.hex}}",
+    "magenta": "{{colors.secondary.dark.hex}}",
+    "orange": "{{colors.tertiary_container.dark.hex}}",
+    "purple": "{{colors.secondary_container.dark.hex}}",
+    "red": "{{colors.error.dark.hex}}",
+    "yellow": "{{colors.primary_container.dark.hex}}",
+    "cyan": "{{colors.on_secondary_container.dark.hex}}"
+  }
+}
