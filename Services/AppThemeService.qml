@@ -367,7 +367,7 @@ Singleton {
     const colorStripped = primaryColor.replace("#", "")
     let script = "\n# Execute user config for predefined scheme if it exists\n"
     script += `if [ -f '${userConfigPath}' ]; then\n`
-    script += `  matugen color '${colorStripped}' --config '${userConfigPath}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}\n`
+    script += `  matugen color hex '${colorStripped}' --config '${userConfigPath}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}\n`
     script += "fi"
 
     return script
