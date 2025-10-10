@@ -66,8 +66,11 @@ Singleton {
   Connections {
     target: WallpaperService
     function onWallpaperChanged(screenName, path) {
-      if (screenName === Screen.name && Settings.data.colorSchemes.useWallpaperColors) {
-        generateFromWallpaper()
+      // Regenerate theme when primary screen wallpaper changes
+      if (Settings.data.colorSchemes.useWallpaperColors && Quickshell.screens.length > 0) {
+        if (screenName === Quickshell.screens[0].name) {
+          generateFromWallpaper()
+        }
       }
     }
   }
@@ -97,9 +100,16 @@ Singleton {
   // Wallpaper Colors Generation
   // --------------------------------------------------------------------------------
   function generateFromWallpaper() {
-    Logger.log("AppThemeService", "Generating from wallpaper on screen:", Screen.name)
+    // Use primary screen for wallpaper-based theme generation
+    if (Quickshell.screens.length === 0) {
+      Logger.error("AppThemeService", "No screens available")
+      return
+    }
 
-    const wp = WallpaperService.getWallpaper(Screen.name).replace(/'/g, "'\\''")
+    const primaryScreen = Quickshell.screens[0].name
+    Logger.log("AppThemeService", "Generating from wallpaper on screen:", primaryScreen)
+
+    const wp = WallpaperService.getWallpaper(primaryScreen).replace(/'/g, "'\\''")
     if (!wp) {
       Logger.error("AppThemeService", "No wallpaper found")
       return
@@ -155,7 +165,10 @@ Singleton {
     const colors = schemeData[mode]
 
     const matugenColors = generatePalette(colors.mPrimary, colors.mSecondary, colors.mTertiary, colors.mError, colors.mSurface, isDarkMode)
-    const script = processAllTemplates(matugenColors, mode)
+    let script = processAllTemplates(matugenColors, mode)
+
+    // Add user template generation if enabled
+    script += buildUserTemplateCommandForPredefinedScheme(colors.mPrimary, mode)
 
     generateProcess.command = ["bash", "-lc", script]
     generateProcess.running = true
@@ -339,6 +352,22 @@ Singleton {
     let script = "\n# Execute user config if it exists\n"
     script += `if [ -f '${userConfigPath}' ]; then\n`
     script += `  matugen image '${input}' --config '${userConfigPath}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}\n`
+    script += "fi"
+
+    return script
+  }
+
+  function buildUserTemplateCommandForPredefinedScheme(primaryColor, mode) {
+    if (!Settings.data.templates.enableUserTemplates) {
+      return ""
+    }
+
+    const userConfigPath = getUserConfigPath()
+    // Strip the # from the color for matugen
+    const colorStripped = primaryColor.replace("#", "")
+    let script = "\n# Execute user config for predefined scheme if it exists\n"
+    script += `if [ -f '${userConfigPath}' ]; then\n`
+    script += `  matugen color '${colorStripped}' --config '${userConfigPath}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}\n`
     script += "fi"
 
     return script
