@@ -44,7 +44,6 @@ pkgs.stdenv.mkDerivation {
 
   nativeBuildInputs = [
     pkgs.gcc
-    pkgs.makeWrapper
     pkgs.qt6.wrapQtAppsHook
   ];
   buildInputs = [
@@ -55,13 +54,17 @@ pkgs.stdenv.mkDerivation {
   propagatedBuildInputs = runtimeDeps;
 
   installPhase = ''
-    mkdir -p $out/share/noctalia-shell
+    mkdir -p $out/share/noctalia-shell $out/bin
     cp -r ./* $out/share/noctalia-shell
+    cp ${qs}/bin/qs $out/bin/noctalia-shell
+  '';
 
-    makeWrapper ${qs}/bin/qs $out/bin/noctalia-shell \
-      --prefix PATH : "${pkgs.lib.makeBinPath runtimeDeps}" \
-      --set FONTCONFIG_FILE "${fontconfig}" \
+  preFixup = ''
+    qtWrapperArgs+=(
+      --prefix PATH : ${pkgs.lib.makeBinPath runtimeDeps}
+      --set FONTCONFIG_FILE ${fontconfig}
       --add-flags "-p $out/share/noctalia-shell"
+    )
   '';
 
   meta = {
