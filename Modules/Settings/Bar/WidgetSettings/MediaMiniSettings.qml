@@ -14,15 +14,21 @@ ColumnLayout {
   property var widgetMetadata: null
 
   // Local state
-  property bool valueAutoHide: widgetData.autoHide !== undefined ? widgetData.autoHide : widgetMetadata.autoHide
+  property string valueHideMode: "hidden" // Default to 'Hide When Empty'
   property bool valueShowAlbumArt: widgetData.showAlbumArt !== undefined ? widgetData.showAlbumArt : widgetMetadata.showAlbumArt
   property bool valueShowVisualizer: widgetData.showVisualizer !== undefined ? widgetData.showVisualizer : widgetMetadata.showVisualizer
   property string valueVisualizerType: widgetData.visualizerType || widgetMetadata.visualizerType
   property string valueScrollingMode: widgetData.scrollingMode || widgetMetadata.scrollingMode
 
+  Component.onCompleted: {
+    if (widgetData && widgetData.hideMode !== undefined) {
+      valueHideMode = widgetData.hideMode
+    }
+  }
+
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {})
-    settings.autoHide = valueAutoHide
+    settings.hideMode = valueHideMode
     settings.showAlbumArt = valueShowAlbumArt
     settings.showVisualizer = valueShowVisualizer
     settings.visualizerType = valueVisualizerType
@@ -30,12 +36,24 @@ ColumnLayout {
     return settings
   }
 
-  NToggle {
+  NComboBox {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.media-mini.auto-hide.label")
-    description: I18n.tr("bar.widget-settings.media-mini.auto-hide.description")
-    checked: root.valueAutoHide
-    onToggled: checked => root.valueAutoHide = checked
+    label: I18n.tr("bar.widget-settings.media-mini.hide-mode.label")
+    description: I18n.tr("bar.widget-settings.media-mini.hide-mode.description")
+    model: [
+      {
+        "key": "visible",
+        "name": I18n.tr("options.hide-modes.visible")
+      }, {
+        "key": "hidden",
+        "name": I18n.tr("options.hide-modes.hidden")
+      }, {
+        "key": "transparent",
+        "name": I18n.tr("options.hide-modes.transparent")
+      }
+    ]
+    currentKey: root.valueHideMode
+    onSelected: key => root.valueHideMode = key
   }
 
   NToggle {
