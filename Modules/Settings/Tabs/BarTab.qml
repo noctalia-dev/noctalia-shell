@@ -120,6 +120,14 @@ ColumnLayout {
     onToggled: checked => Settings.data.bar.floating = checked
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: "Auto Hide" 
+    description: "Automatically hide the bar when not in use." 
+    checked: Settings.data.bar.autoHide
+    onToggled: checked => Settings.data.bar.autoHide = checked
+  }
+
   // Floating bar options - only show when floating is enabled
   ColumnLayout {
     visible: Settings.data.bar.floating
