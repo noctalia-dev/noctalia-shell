@@ -198,8 +198,11 @@
               restart = ''
                 ${pkgs.systemd}/bin/systemctl --user try-restart noctalia-shell.service 2>/dev/null || true
               '';
+              useApp2Unit = mergedSettings.appLauncher.useApp2Unit or false;
             in
             lib.mkIf cfg.enable {
+              home.packages = lib.optional useApp2Unit pkgs.app2unit;
+
               xdg.configFile = {
                 "noctalia/settings.json" = {
                   onChange = restart;
