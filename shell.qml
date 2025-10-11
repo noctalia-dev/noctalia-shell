@@ -28,6 +28,7 @@ import qs.Modules.SessionMenu
 import qs.Modules.Bar
 import qs.Modules.Bar.Extras
 import qs.Modules.Bar.Bluetooth
+import qs.Modules.Bar.Battery
 import qs.Modules.Bar.Calendar
 import qs.Modules.Bar.WiFi
 
@@ -87,6 +88,7 @@ ShellRoot {
         FontService.init()
         HooksService.init()
         BluetoothService.init()
+        BatteryService.init()
       }
 
       Background {}
@@ -159,6 +161,10 @@ ShellRoot {
       WallpaperPanel {
         id: wallpaperPanel
         objectName: "wallpaperPanel"
+      }
+      BatteryPanel {
+        id: batteryPanel
+        objectName: "batteryPanel"
       }
     }
   }

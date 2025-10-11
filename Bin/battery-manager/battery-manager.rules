@@ -1,0 +1,14 @@
+polkit.addRule(function(action, subject) {
+    if (action.id == "com.local.battery-manager.ACTUAL_USER_PLACEHOLDER" &&
+        subject.user == "ACTUAL_USER_PLACEHOLDER") {
+
+        // Check if the parent process is quickshell or set-battery-threshold
+        var pid = subject.pid;
+        var ppid = polkit.spawn(["ps", "-o", "ppid=", "-p", pid.toString()]).trim();
+        var parentCmd = polkit.spawn(["ps", "-o", "comm=", "-p", ppid]).trim();
+
+        if (parentCmd.indexOf("quickshell") !== -1 || parentCmd.indexOf("set-battery-treshold") !== -1) {
+            return polkit.Result.YES;
+        }
+    }
+});

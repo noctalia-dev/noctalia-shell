@@ -96,6 +96,7 @@ Item {
     forceOpen: isReady && (testMode || battery.isLaptopBattery) && displayMode === "alwaysShow"
     forceClose: displayMode === "alwaysHide"
     disableOpen: (!isReady || (!testMode && !battery.isLaptopBattery))
+    onClicked: PanelService.getPanel("batteryPanel")?.toggle(this)
     tooltipText: {
       let lines = []
       if (testMode) {
