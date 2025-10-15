@@ -10,8 +10,8 @@ import qs.Widgets
 NPanel {
   id: root
 
-  preferredWidth: 350
-  preferredHeight: 210
+  preferredWidth: 350 * Style.uiScaleRatio
+  preferredHeight: 210 * Style.uiScaleRatio
   panelKeyboardFocus: true
 
   property var optionsModel: []
@@ -42,17 +42,17 @@ NPanel {
 
     ColumnLayout {
       anchors.fill: parent
-      anchors.margins: Style.marginL * scaling
-      spacing: Style.marginM * scaling
+      anchors.margins: Style.marginL
+      spacing: Style.marginL
 
       // HEADER
       RowLayout {
         Layout.fillWidth: true
-        spacing: Style.marginM * scaling
+        spacing: Style.marginM
 
         NText {
           text: I18n.tr("battery.panel.title")
-          pointSize: Style.fontSizeL * scaling
+          pointSize: Style.fontSizeL
           font.weight: Style.fontWeightBold
           color: Color.mOnSurface
           Layout.fillWidth: true
@@ -62,7 +62,7 @@ NPanel {
           id: batteryManagerSwitch
           checked: BatteryService.chargingMode !== BatteryService.ChargingMode.Disabled
           onToggled: checked => BatteryService.toggleEnabled(checked)
-          baseSize: Style.baseWidgetSize * 0.65 * scaling
+          baseSize: Style.baseWidgetSize * 0.65
         }
 
         NIconButton {
@@ -90,7 +90,7 @@ NPanel {
 
         ColumnLayout {
           anchors.fill: parent
-          spacing: Style.marginM * scaling
+          spacing: Style.marginM
 
           Repeater {
             model: optionsModel
@@ -114,7 +114,7 @@ NPanel {
         ColumnLayout {
           visible: BatteryService.chargingMode === BatteryService.ChargingMode.Disabled
           anchors.fill: parent
-          spacing: Style.marginM * scaling
+          spacing: Style.marginM
 
           Item {
             Layout.fillHeight: true
@@ -122,7 +122,7 @@ NPanel {
 
           NText {
             text: I18n.tr("battery.panel.disabled")
-            pointSize: Style.fontSizeL * scaling
+            pointSize: Style.fontSizeL
             color: Color.mOnSurfaceVariant
             Layout.alignment: Qt.AlignHCenter
           }
