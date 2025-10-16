@@ -36,8 +36,9 @@ Item {
   readonly property string hideMode: (widgetSettings.hideMode !== undefined) ? widgetSettings.hideMode : widgetMetadata.hideMode
   readonly property string scrollingMode: (widgetSettings.scrollingMode !== undefined) ? widgetSettings.scrollingMode : (widgetMetadata.scrollingMode !== undefined ? widgetMetadata.scrollingMode : "hover")
   readonly property int widgetWidth: (widgetSettings.width !== undefined) ? widgetSettings.width : Math.max(widgetMetadata.width, screen.width * 0.06)
-  readonly property bool adaptiveWidthEnabled: (widgetSettings.adaptiveWidth !== undefined) ? widgetSettings.adaptiveWidth : (widgetMetadata.adaptiveWidth !== undefined ? widgetMetadata.adaptiveWidth : false)
-  readonly property int maxAdaptiveWidth: (widgetSettings.maxAdaptiveWidth !== undefined) ? widgetSettings.maxAdaptiveWidth : (widgetMetadata.maxAdaptiveWidth !== undefined ? widgetMetadata.maxAdaptiveWidth : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
+  readonly property bool adaptiveWidthEnabled: (widgetSettings.autoWidthEnabled !== undefined) ? widgetSettings.autoWidthEnabled : (widgetMetadata.autoWidthEnabled !== undefined ? widgetMetadata.autoWidthEnabled : false)
+  readonly property bool contentAsMinWidth: ((widgetSettings.autoWidthMinByContent !== undefined) ? widgetSettings.autoWidthMinByContent :(widgetMetadata.autoWidthMinByContent !== undefined) ? widgetMetadata.autoWidthMinByContent : false)
+  readonly property int maxAdaptiveWidth: (widgetSettings.autoWidthMax !== undefined) ? widgetSettings.autoWidthMax : (widgetMetadata.autoWidthMax !== undefined ? widgetMetadata.autoWidthMax : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
   readonly property int widthAnimation: Style.animation
 
   readonly property bool isVerticalBar: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right")
@@ -58,7 +59,9 @@ Item {
         var iconW = (showIcon && windowIcon.visible ? 18 : 0)
         var spacingW = (showIcon && windowIcon.visible ? Style.marginS : 0) 
         var sideMargins = isVerticalBar ? 0 : (Style.marginS * 2) 
-        var comfortablePadding = Style.marginXS !== undefined ? Style.marginXS : Style.marginXXS
+
+        // Avoid rolling triggered by minor errors
+        var comfortablePadding = Style.marginS
 
         var contentW = textW + iconW + spacingW + sideMargins + comfortablePadding
         var minW = contentAsMinWidth ? contentW : widgetWidth
@@ -345,7 +348,7 @@ Item {
 
           Behavior on Layout.preferredWidth {
             NumberAnimation {
-              duration: widthAnimation 
+              duration: widthAnimation
               easing.type: Easing.InOutCubic
             }
           }

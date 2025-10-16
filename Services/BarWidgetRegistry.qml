@@ -46,8 +46,9 @@ Singleton {
                                     : "hover",
                                     "width": 145,
                                     "colorizeIcons": false,
-                                    "adaptiveWidth": false,
-                                    "maxAdaptiveWidth": 290
+                                    "autoWidthEnabled": false,
+                                    "autoWidthMax": 290,
+                                    "autoWidthMinByContent": false
                                   },
                                   "Battery": {
                                     "allowUserSettings": true,

@@ -13,14 +13,14 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
-  // Local state
   property bool valueShowIcon: widgetData.showIcon !== undefined ? widgetData.showIcon : widgetMetadata.showIcon
   property string valueHideMode: "hidden" // Default to 'Hide When Empty'
   property string valueScrollingMode: widgetData.scrollingMode || widgetMetadata.scrollingMode
   property int valueWidth: widgetData.width !== undefined ? widgetData.width : widgetMetadata.width
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
-  property bool valueAdaptiveWidth: widgetData.adaptiveWidth !== undefined ? widgetData.adaptiveWidth : (widgetMetadata.adaptiveWidth !== undefined ? widgetMetadata.adaptiveWidth : false)
-  property int valueMaxAdaptiveWidth: widgetData.maxAdaptiveWidth !== undefined ? widgetData.maxAdaptiveWidth : (widgetMetadata.maxAdaptiveWidth !== undefined ? widgetMetadata.maxAdaptiveWidth : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
+  property bool valueAutoWidthEnabled: (widgetData.autoWidthEnabled !== undefined) ? widgetData.autoWidthEnabled : (widgetMetadata.autoWidthEnabled !== undefined ? widgetMetadata.autoWidthEnabled : false)
+  property int valueAutoWidthMax: (widgetData.autoWidthMax !== undefined) ? widgetData.autoWidthMax : (widgetMetadata.autoWidthMax !== undefined ? widgetMetadata.autoWidthMax : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
+  property bool valueAutoWidthMinByContent: (widgetData.autoWidthMinByContent !== undefined) ? widgetData.autoWidthMinByContent : (widgetMetadata.autoWidthMinByContent !== undefined ? widgetMetadata.autoWidthMinByContent : false)
 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
@@ -33,10 +33,18 @@ ColumnLayout {
     settings.hideMode = valueHideMode
     settings.showIcon = valueShowIcon
     settings.scrollingMode = valueScrollingMode
-    settings.width = parseInt(widthInput.text) || widgetMetadata.width
     settings.colorizeIcons = valueColorizeIcons
-    settings.adaptiveWidth = valueAdaptiveWidth
-    settings.maxAdaptiveWidth = parseInt(maxWidthInput.text) || valueMaxAdaptiveWidth || widgetMetadata.maxAdaptiveWidth
+
+    settings.autoWidthEnabled = valueAutoWidthEnabled
+    settings.autoWidthMax = parseInt(maxWidthInput.text) || valueAutoWidthMax || widgetMetadata.maxAdaptiveWidth
+    settings.autoWidthMinByContent = valueAutoWidthMinByContent
+
+    if (valueAutoWidthEnabled) {
+      delete settings.width
+    } else {
+      settings.width = parseInt(widthInput.text) || widgetMetadata.width
+    }
+
     return settings
   }
 
@@ -74,31 +82,41 @@ ColumnLayout {
     onToggled: checked => root.valueColorizeIcons = checked
   }
 
-  NTextInput {
-    id: widthInput
-    Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.active-window.width.label")
-    description: I18n.tr("bar.widget-settings.active-window.width.description")
-    placeholderText: widgetMetadata.width
-    text: valueWidth
-  }
-
   NToggle {
     Layout.fillWidth: true
     label: I18n.tr("bar.widget-settings.active-window.adaptive-width.label")
     description: I18n.tr("bar.widget-settings.active-window.adaptive-width.description")
-    checked: root.valueAdaptiveWidth
-    onToggled: function(checked) { root.valueAdaptiveWidth = checked }
+    checked: root.valueAutoWidthEnabled
+    onToggled: function(checked) { root.valueAutoWidthEnabled = checked }
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    visible: root.valueAutoWidthEnabled
+    label: I18n.tr("bar.widget-settings.active-window.content-as-min-width.label")
+    description: I18n.tr("bar.widget-settings.active-window.content-as-min-width.description")
+    checked: root.valueAutoWidthMinByContent
+    onToggled: function(checked) { root.valueAutoWidthMinByContent = checked }
+  }
+
+  NTextInput {
+    id: widthInput
+    Layout.fillWidth: true
+    visible: !root.valueAutoWidthMinByContent
+    label: root.valueAutoWidthEnabled ? I18n.tr("bar.widget-settings.active-window.min-width.label") : I18n.tr("bar.widget-settings.active-window.width.label")
+    description: root.valueAutoWidthEnabled ? I18n.tr("bar.widget-settings.active-window.min-width.description") : I18n.tr("bar.widget-settings.active-window.width.description")
+    placeholderText: widgetMetadata.width
+    text: valueWidth
   }
 
   NTextInput {
     id: maxWidthInput
     Layout.fillWidth: true
-    visible: root.valueAdaptiveWidth
+    visible: root.valueAutoWidthEnabled
     label: I18n.tr("bar.widget-settings.active-window.max-adaptive-width.label")
     description: I18n.tr("bar.widget-settings.active-window.max-adaptive-width.description")
     placeholderText: I18n.tr("placeholders.enter-width-pixels")
-    text: valueMaxAdaptiveWidth > 0 ? valueMaxAdaptiveWidth : ""
+    text: valueAutoWidthMax > 0 ? valueAutoWidthMax : ""
   }
 
   NComboBox {
