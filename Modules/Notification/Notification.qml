@@ -252,6 +252,9 @@ Variants {
             MouseArea {
               anchors.fill: parent
               acceptedButtons: Qt.RightButton
+              hoverEnabled: true
+              onEntered: NotificationService.pauseNotification(notificationId)
+              onExited: NotificationService.resumeNotification(notificationId)
               onClicked: {
                 if (mouse.button === Qt.RightButton) {
                   animateOut()

@@ -111,7 +111,8 @@ Singleton {
     notificationMetadata[data.id] = {
       "timestamp": data.timestamp.getTime(),
       "duration": expire,
-      "urgency": data.urgency
+      "urgency": data.urgency,
+      "paused": false
     }
 
     activeList.insert(0, data)
@@ -219,7 +220,7 @@ Singleton {
       const notif = activeList.get(i)
       const meta = notificationMetadata[notif.id]
 
-      if (!meta || meta.duration === -1)
+      if (!meta || meta.duration === -1 || meta.paused)
         continue
 
       // Skip infinite notifications
@@ -466,6 +467,23 @@ Singleton {
 
     historyList.clear()
     saveHistory()
+  }
+
+  function pauseNotification(id) {
+    const meta = notificationMetadata[id]
+    if (meta && !meta.paused) {
+      meta.paused = true
+      meta.pauseTime = Date.now()
+    }
+  }
+
+  function resumeNotification(id) {
+    const meta = notificationMetadata[id]
+    if (meta && meta.paused) {
+      const pausedDuration = Date.now() - meta.pauseTime
+      meta.timestamp += pausedDuration
+      meta.paused = false
+    }
   }
 
   // Signals & connections
