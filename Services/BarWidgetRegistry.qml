@@ -48,7 +48,8 @@ Singleton {
                                     "colorizeIcons": false,
                                     "autoWidthEnabled": false,
                                     "autoWidthMax": 290,
-                                    "autoWidthMinByContent": false
+                                    "autoWidthMinByContent": false,
+                                    "scrollEvenIfFits": false
                                   },
                                   "Battery": {
                                     "allowUserSettings": true,

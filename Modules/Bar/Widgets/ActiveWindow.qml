@@ -38,6 +38,7 @@ Item {
   readonly property int widgetWidth: (widgetSettings.width !== undefined) ? widgetSettings.width : Math.max(widgetMetadata.width, screen.width * 0.06)
   readonly property bool adaptiveWidthEnabled: (widgetSettings.autoWidthEnabled !== undefined) ? widgetSettings.autoWidthEnabled : (widgetMetadata.autoWidthEnabled !== undefined ? widgetMetadata.autoWidthEnabled : false)
   readonly property bool contentAsMinWidth: ((widgetSettings.autoWidthMinByContent !== undefined) ? widgetSettings.autoWidthMinByContent :(widgetMetadata.autoWidthMinByContent !== undefined) ? widgetMetadata.autoWidthMinByContent : false)
+  readonly property bool scrollEvenIfFits: (widgetSettings.scrollEvenIfFits !== undefined) ? widgetSettings.scrollEvenIfFits : ((widgetMetadata.scrollEvenIfFits !== undefined) ? widgetMetadata.scrollEvenIfFits : false)
   readonly property int maxAdaptiveWidth: (widgetSettings.autoWidthMax !== undefined) ? widgetSettings.autoWidthMax : (widgetMetadata.autoWidthMax !== undefined ? widgetMetadata.autoWidthMax : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
   readonly property int widthAnimation: Style.animation
 
@@ -218,8 +219,7 @@ Item {
           property bool isScrolling: false
           property bool isResetting: false
           property real textWidth: fullTitleMetrics.contentWidth
-          property real containerWidth: width
-          property bool needsScrolling: textWidth > containerWidth
+          property bool needsScrolling: (textWidth > width) || scrollEvenIfFits
 
           Connections {
             target: root

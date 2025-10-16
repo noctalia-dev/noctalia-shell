@@ -21,6 +21,7 @@ ColumnLayout {
   property bool valueAutoWidthEnabled: (widgetData.autoWidthEnabled !== undefined) ? widgetData.autoWidthEnabled : (widgetMetadata.autoWidthEnabled !== undefined ? widgetMetadata.autoWidthEnabled : false)
   property int valueAutoWidthMax: (widgetData.autoWidthMax !== undefined) ? widgetData.autoWidthMax : (widgetMetadata.autoWidthMax !== undefined ? widgetMetadata.autoWidthMax : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
   property bool valueAutoWidthMinByContent: (widgetData.autoWidthMinByContent !== undefined) ? widgetData.autoWidthMinByContent : (widgetMetadata.autoWidthMinByContent !== undefined ? widgetMetadata.autoWidthMinByContent : false)
+  property bool valueScrollEvenIfFits: (widgetData.scrollEvenIfFits !== undefined) ? widgetData.scrollEvenIfFits : (widgetMetadata.scrollEvenIfFits !== undefined ? widgetMetadata.scrollEvenIfFits : false)
 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
@@ -38,6 +39,7 @@ ColumnLayout {
     settings.autoWidthEnabled = valueAutoWidthEnabled
     settings.autoWidthMax = parseInt(maxWidthInput.text) || valueAutoWidthMax || widgetMetadata.maxAdaptiveWidth
     settings.autoWidthMinByContent = valueAutoWidthMinByContent
+  settings.scrollEvenIfFits = valueScrollEvenIfFits
 
     if (valueAutoWidthEnabled) {
       delete settings.width
@@ -135,5 +137,13 @@ ColumnLayout {
     currentKey: valueScrollingMode
     onSelected: key => valueScrollingMode = key
     minimumWidth: 200
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.widget-settings.active-window.scroll-even-if-fits.label")
+    description: I18n.tr("bar.widget-settings.active-window.scroll-even-if-fits.description")
+    checked: root.valueScrollEvenIfFits
+    onToggled: function(checked) { root.valueScrollEvenIfFits = checked }
   }
 }
