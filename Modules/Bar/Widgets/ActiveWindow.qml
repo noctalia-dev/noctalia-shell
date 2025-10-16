@@ -211,6 +211,18 @@ Item {
           property real containerWidth: width
           property bool needsScrolling: textWidth > containerWidth
 
+          Connections {
+            target: root
+            function onVisibleChanged() {
+              if (root.visible && scrollingMode === "always" && titleContainer.needsScrolling) {
+                titleContainer.isScrolling = false
+                titleContainer.isResetting = false
+                scrollContainer.scrollX = 0
+                scrollStartTimer.restart()
+              }
+            }
+          }
+
           // Timer for "always" mode with delay
           Timer {
             id: scrollStartTimer
@@ -241,6 +253,7 @@ Item {
                 scrollStartTimer.stop()
                 isScrolling = false
                 isResetting = false
+                scrollContainer.scrollX = 0
               }
             } else if (scrollingMode === "hover") {
               if (mouseArea.containsMouse && needsScrolling) {
