@@ -53,8 +53,15 @@ Item {
       return calculatedVerticalDimension()
     if (adaptiveWidthEnabled) {
       try {
-        var contentW = fullTitleMetrics.contentWidth + Style.marginS
-        var minW = widgetWidth
+        // Calculate minimum width based on content
+        var textW = fullTitleMetrics.contentWidth
+        var iconW = (showIcon && windowIcon.visible ? 18 : 0)
+        var spacingW = (showIcon && windowIcon.visible ? Style.marginS : 0) 
+        var sideMargins = isVerticalBar ? 0 : (Style.marginS * 2) 
+        var comfortablePadding = Style.marginXS !== undefined ? Style.marginXS : Style.marginXXS
+
+        var contentW = textW + iconW + spacingW + sideMargins + comfortablePadding
+        var minW = contentAsMinWidth ? contentW : widgetWidth
         var maxW = maxAdaptiveWidth
         return Math.min(Math.max(minW, contentW), maxW)
       } catch (e) {
