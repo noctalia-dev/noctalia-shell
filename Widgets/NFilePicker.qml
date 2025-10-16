@@ -624,7 +624,6 @@ Popup {
                   NIcon {
                     icon: "filepicker-check"
                     pointSize: Style.fontSizeS
-                    font.weight: Style.fontWeightBold
                     color: Color.mOnSecondary
                     anchors.centerIn: parent
                   }

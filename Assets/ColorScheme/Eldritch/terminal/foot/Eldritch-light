@@ -1,0 +1,22 @@
+[colors]
+foreground=212337
+background=ebfafa
+regular0=ebfafa    # black → white
+regular1=ba1a1a    # red (darker)
+regular2=1a7f4c    # green (darker)
+regular3=9e8c13    # yellow (darker)
+regular4=3a3e8c    # blue (darker)
+regular5=8c2a6c    # magenta (darker)
+regular6=1a6c8c    # cyan (darker)
+regular7=212337    # white → black
+bright0=7081d0     # keep as accent
+bright1=d23b3b     # lighter red
+bright2=37f499     # original green
+bright3=e9f941     # original yellow
+bright4=9071f4     # original blue
+bright5=f265b5     # original magenta
+bright6=04d1f9     # original cyan
+bright7=212337     # black
+selection-foreground=212337
+selection-background=bf4f8e
+cursor=1a7f4c 212337

@@ -46,8 +46,8 @@ NPanel {
 
   // Positioning
   readonly property string controlCenterPosition: Settings.data.controlCenter.position
-  panelAnchorHorizontalCenter: controlCenterPosition !== "close_to_bar_button" && controlCenterPosition.endsWith("_center")
-  panelAnchorVerticalCenter: false
+  panelAnchorHorizontalCenter: controlCenterPosition !== "close_to_bar_button" && (controlCenterPosition.endsWith("_center") || controlCenterPosition === "center")
+  panelAnchorVerticalCenter: controlCenterPosition === "center"
   panelAnchorLeft: controlCenterPosition !== "close_to_bar_button" && controlCenterPosition.endsWith("_left")
   panelAnchorRight: controlCenterPosition !== "close_to_bar_button" && controlCenterPosition.endsWith("_right")
   panelAnchorBottom: controlCenterPosition !== "close_to_bar_button" && controlCenterPosition.startsWith("bottom_")

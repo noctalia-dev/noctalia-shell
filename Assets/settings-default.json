@@ -1,5 +1,6 @@
 {
-  "settingsVersion": 15,
+  "settingsVersion": 16,
+  "setupCompleted": false,
   "bar": {
     "position": "top",
     "backgroundOpacity": 1,

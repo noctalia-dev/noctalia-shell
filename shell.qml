@@ -40,6 +40,7 @@ import qs.Modules.OSD
 import qs.Modules.Settings
 import qs.Modules.Toast
 import qs.Modules.Wallpaper
+import qs.Modules.SetupWizard
 
 ShellRoot {
   id: shellRoot
@@ -165,6 +166,34 @@ ShellRoot {
       BatteryPanel {
         id: batteryPanel
         objectName: "batteryPanel"
+      }
+    }
+  }
+
+  // ------------------------------
+  // Setup Wizard
+  Loader {
+    id: setupWizardLoader
+    active: false
+    asynchronous: true
+    sourceComponent: SetupWizard {}
+    onLoaded: {
+      if (setupWizardLoader.item && setupWizardLoader.item.open) {
+        setupWizardLoader.item.open()
+      }
+    }
+  }
+
+  Connections {
+    target: Settings
+    function onSettingsLoaded() {
+      // Only open the setup wizard for new users
+      if (!Settings.data.setupCompleted) {
+        if (Settings.data.settingsVersion >= Settings.settingsVersion) {
+          setupWizardLoader.active = true
+        } else {
+          Settings.data.setupCompleted = true
+        }
       }
     }
   }

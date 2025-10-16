@@ -1090,6 +1090,10 @@
         }
       },
       "taskbar": {
+        "hide-mode": {
+          "label": "隐藏模式",
+          "description": "当没有匹配的窗口时控制小部件的行为。"
+        },
         "only-active-workspaces": {
           "label": "仅显示活动工作区",
           "description": "仅显示来自活动工作区的应用程序"
@@ -1301,7 +1305,8 @@
         "bottom_left": "左下角",
         "bottom_right": "右下角",
         "bottom_center": "底部居中",
-        "top_center": "顶部居中"
+        "top_center": "顶部居中",
+        "center": "居中"
       },
       "quickSettingsStyle": {
         "modern": "现代",
@@ -1375,20 +1380,13 @@
   },
   "session-menu": {
     "title": "会话菜单",
-    "click-again": "再次点击立即执行",
-    "action-in-seconds": "{seconds} 秒后{action}...",
+    "action-in-seconds": "{action} in {seconds} seconds...",
     "lock": "锁定",
-    "lock-subtitle": "锁定您的会话",
     "lock-and-suspend": "锁定并挂起",
-    "lock-and-suspend-subtitle": "锁定会话并使系统进入睡眠状态",
     "suspend": "挂起",
-    "suspend-subtitle": "使系统进入睡眠状态",
     "reboot": "重启",
-    "reboot-subtitle": "重新启动计算机",
     "logout": "注销",
-    "logout-subtitle": "结束您的会话",
-    "shutdown": "关机",
-    "shutdown-subtitle": "关闭计算机"
+    "shutdown": "关机"
   },
   "plugins": {
     "applications": "应用程序",
@@ -1624,6 +1622,35 @@
       "balanced": "平衡 ({percent}%)",
       "lifespan": "延长寿命 ({percent}%)",
       "disabled": "电池管理器已禁用"
+    }
+  },
+  "setup": {
+    "customize": {
+      "header": "自定义体验",
+      "subheader": "调整状态栏位置、密度、缩放等。"
+    },
+    "appearance": {
+      "header": "外观",
+      "subheader": "选择深色模式与配色来源（Matugen 或预设）。"
+    },
+    "wallpaper": {
+      "header": "选择你的壁纸",
+      "subheader": "用精美壁纸营造氛围。",
+      "select-prompt": "在下方选择一张壁纸",
+      "preview-error": "图片加载失败",
+      "none-in-dir": "目录中未找到壁纸",
+      "no-dir": "未选择壁纸目录",
+      "no-valid": "在 {dir} 中未找到有效图片文件",
+      "choose-dir": "选择包含壁纸图片的目录",
+      "dir": {
+        "label": "壁纸目录",
+        "description": "选择存放壁纸的文件夹",
+        "browse": "浏览文件夹",
+        "select-title": "选择壁纸文件夹"
+      }
+    },
+    "welcome": {
+      "note": "先进行一些基础设置——更多选项可在“设置”中找到"
     }
   }
 }

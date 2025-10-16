@@ -49,9 +49,13 @@
         nixpkgs.legacyPackages.${pkgs.system}.app2unit;
     };
 
-    nixosModules.default = {pkgs, ...}: {
+    nixosModules.default = {
+      pkgs,
+      lib,
+      ...
+    }: {
       imports = [./nix/nixos-module.nix];
-      services.noctalia-shell.package = self.packages.${pkgs.system}.default;
+      services.noctalia-shell.package = lib.mkDefault self.packages.${pkgs.system}.default;
     };
   };
 }

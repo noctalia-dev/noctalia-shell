@@ -143,6 +143,9 @@ ColumnLayout {
         }, {
           "key": "top_center",
           "name": I18n.tr("options.control-center.position.top_center")
+        }, {
+          "key": "center",
+          "name": I18n.tr("options.control-center.position.center")
         }]
       currentKey: Settings.data.controlCenter.position
       onSelected: function (key) {

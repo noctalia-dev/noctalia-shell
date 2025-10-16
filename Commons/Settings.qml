@@ -14,6 +14,7 @@ Singleton {
   readonly property alias data: adapter
   property bool isLoaded: false
   property bool directoriesCreated: false
+  property int settingsVersion: 16
 
   // Define our app directories
   // Default config directory: ~/.config/noctalia
@@ -100,6 +101,9 @@ Singleton {
 
         // Emit the signal
         root.settingsLoaded()
+
+        // Finally, update our local settings version
+        adapter.settingsVersion = settingsVersion
       }
     }
     onLoadFailed: function (error) {
@@ -125,7 +129,8 @@ Singleton {
   JsonAdapter {
     id: adapter
 
-    property int settingsVersion: 15
+    property int settingsVersion: root.settingsVersion
+    property bool setupCompleted: false
 
     // bar
     property JsonObject bar: JsonObject {

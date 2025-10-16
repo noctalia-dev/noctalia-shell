@@ -19,16 +19,13 @@ NPanel {
   function updateOptionsModel() {
     let newOptions = [{
                         "id": BatteryService.ChargingMode.Full,
-                        "label": "battery.panel.full",
-                        "icon": "battery-4"
+                        "label": "battery.panel.full"
                       }, {
                         "id": BatteryService.ChargingMode.Balanced,
-                        "label": "battery.panel.balanced",
-                        "icon": "battery-3"
+                        "label": "battery.panel.balanced"
                       }, {
                         "id": BatteryService.ChargingMode.Lifespan,
-                        "label": "battery.panel.lifespan",
-                        "icon": "battery-2"
+                        "label": "battery.panel.lifespan"
                       }]
     root.optionsModel = newOptions
   }
@@ -43,7 +40,7 @@ NPanel {
     ColumnLayout {
       anchors.fill: parent
       anchors.margins: Style.marginL
-      spacing: Style.marginL
+      spacing: Style.marginM
 
       // HEADER
       RowLayout {

@@ -60,7 +60,6 @@ Singleton {
     if (enabled) {
       setChargingMode(BatteryService.ChargingMode.Full)
     } else {
-      BatteryService.chargingMode = BatteryService.ChargingMode.Disabled
       BatteryService.initialSetter = true
       ToastService.showNotice(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.uninstall-setup"))
       PanelService.getPanel("batteryPanel")?.toggle(this)
@@ -194,6 +193,7 @@ Singleton {
         Logger.log("BatteryService", "Battery Manager uninstalled successfully")
         ToastService.showNotice(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.uninstall-success"))
         Settings.data.battery.chargingMode = BatteryService.chargingMode
+        BatteryService.chargingMode = BatteryService.ChargingMode.Disabled
         cleanupProcess.running = true
       } else {
         ToastService.showError(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.uninstall-failed"))

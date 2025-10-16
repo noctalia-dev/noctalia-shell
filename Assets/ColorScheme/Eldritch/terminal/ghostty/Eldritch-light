@@ -1,0 +1,22 @@
+palette = 0=#f8f8fa      # base background (was dark, now light)
+palette = 1=#d7263d      # red (less saturated)
+palette = 2=#1eb980      # green (cooler, lighter)
+palette = 3=#f7c948      # yellow (warmer)
+palette = 4=#5e60ce      # blue (lighter)
+palette = 5=#c77dff      # magenta (lighter)
+palette = 6=#38a1db      # cyan (lighter)
+palette = 7=#21222c      # base foreground (was background, now dark)
+palette = 8=#bfc9e3      # bright black (light gray)
+palette = 9=#f9515d      # bright red
+palette = 10=#37f499     # bright green
+palette = 11=#e9f941     # bright yellow
+palette = 12=#9071f4     # bright blue
+palette = 13=#f265b5     # bright magenta
+palette = 14=#04d1f9     # bright cyan
+palette = 15=#21222c     # bright white (dark for contrast)
+background = f8f8fa
+foreground = 21222c
+cursor-color = 5e60ce
+selection-background = d7e3fa
+selection-foreground = 21222c
+

@@ -423,7 +423,6 @@ NPanel {
               NIcon {
                 icon: "check"
                 pointSize: Style.fontSizeM
-                font.weight: Style.fontWeightBold
                 color: Color.mOnSecondary
                 anchors.centerIn: parent
               }

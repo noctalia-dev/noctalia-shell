@@ -38,12 +38,19 @@ Singleton {
     let allPlayers = Mpris.players.values
     let finalPlayers = []
     const genericBrowsers = ["firefox", "chromium", "chrome"]
+    const blacklist = (Settings.data.audio && Settings.data.audio.mprisBlacklist) ? Settings.data.audio.mprisBlacklist : []
 
     // Separate players into specific and generic lists
     let specificPlayers = []
     let genericPlayers = []
     for (var i = 0; i < allPlayers.length; i++) {
       const identity = String(allPlayers[i].identity || "").toLowerCase()
+      const match = blacklist.find(b => {
+                                     const s = String(b || "").toLowerCase()
+                                     return s && (identity.includes(s))
+                                   })
+      if (match)
+        continue
       if (genericBrowsers.some(b => identity.includes(b))) {
         genericPlayers.push(allPlayers[i])
       } else {

@@ -31,8 +31,9 @@ Image {
   }
   onCachePathChanged: {
     if (imageHash && cachePath) {
-      // Try to load the cached version, failure will be detected below in onStatusChanged
-      source = cachePath
+      // Check if cache file exists before trying to load it
+      cacheChecker.command = ["test", "-f", cachePath]
+      cacheChecker.running = true
     }
   }
   onStatusChanged: {
@@ -46,6 +47,21 @@ Image {
       grabToImage(res => {
                     return res.saveToFile(grabPath)
                   })
+    }
+  }
+
+  // Check if cache file exists to avoid warnings
+  Process {
+    id: cacheChecker
+    running: false
+    onExited: function (exitCode) {
+      if (exitCode === 0 && root.cachePath) {
+        // Cache file exists, load it
+        root.source = root.cachePath
+      } else if (root.imagePath) {
+        // Cache doesn't exist, load original directly
+        root.source = root.imagePath
+      }
     }
   }
 }

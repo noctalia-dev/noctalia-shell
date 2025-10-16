@@ -118,6 +118,7 @@ Singleton {
                                     "allowUserSettings": true,
                                     "onlySameOutput": true,
                                     "onlyActiveWorkspaces": true,
+                                    "hideMode": "hidden",
                                     "colorizeIcons": false
                                   },
                                   "Tray": {

@@ -105,8 +105,8 @@ Singleton {
   // Wallpaper Colors Generation
   // --------------------------------------------------------------------------------
   function generateFromWallpaper() {
-    Logger.log("AppThemeService", "Generating from wallpaper on screen:", Screen.name)
 
+    // Logger.log("AppThemeService", "Generating from wallpaper on screen:", Screen.name)
     const wp = WallpaperService.getWallpaper(Screen.name).replace(/'/g, "'\\''")
     if (!wp) {
       Logger.error("AppThemeService", "No wallpaper found")

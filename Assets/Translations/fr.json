@@ -1090,6 +1090,10 @@
         }
       },
       "taskbar": {
+        "hide-mode": {
+          "label": "Mode de masquage",
+          "description": "Contrôle le comportement du widget lorsqu'il n'y a pas de fenêtres correspondantes."
+        },
         "only-active-workspaces": {
           "description": "Afficher uniquement les applications des espaces de travail actifs.",
           "label": "Seulement depuis les espaces de travail actifs."
@@ -1301,7 +1305,8 @@
         "bottom_left": "En bas à gauche",
         "bottom_right": "En bas à droite",
         "bottom_center": "En bas au centre",
-        "top_center": "En haut au centre"
+        "top_center": "En haut au centre",
+        "center": "Centre"
       },
       "quickSettingsStyle": {
         "modern": "Moderne",
@@ -1375,20 +1380,13 @@
   },
   "session-menu": {
     "title": "Menu de session",
-    "click-again": "Cliquez à nouveau pour exécuter immédiatement",
     "action-in-seconds": "{action} dans {seconds} secondes...",
     "lock": "Verrouiller",
-    "lock-subtitle": "Verrouiller votre session",
     "lock-and-suspend": "Verrouiller et Mettre en veille",
-    "lock-and-suspend-subtitle": "Verrouiller la session et mettre le système en veille",
     "suspend": "Mettre en veille",
     "reboot": "Redémarrer",
     "logout": "Déconnexion",
-    "logout-subtitle": "Terminer votre session",
-    "shutdown": "Éteindre",
-    "reboot-subtitle": "Redémarrez votre ordinateur.",
-    "shutdown-subtitle": "Éteignez votre ordinateur.",
-    "suspend-subtitle": "Mettre le système en veille"
+    "shutdown": "Éteindre"
   },
   "plugins": {
     "applications": "Applications",
@@ -1624,6 +1622,35 @@
       "balanced": "Équilibré ({percent}%)",
       "lifespan": "Durée de vie prolongée ({percent}%)",
       "disabled": "Gestionnaire de batterie désactivé"
+    }
+  },
+  "setup": {
+    "customize": {
+      "header": "Personnaliser votre expérience",
+      "subheader": "Ajustez la position de la barre, la densité, l'échelle et plus encore."
+    },
+    "appearance": {
+      "header": "Apparence",
+      "subheader": "Choisissez le mode sombre et la source des couleurs (Matugen ou prédéfinie)."
+    },
+    "wallpaper": {
+      "header": "Choisissez votre fond d'écran",
+      "subheader": "Définissez l'ambiance avec un joli fond.",
+      "select-prompt": "Sélectionnez un fond ci-dessous",
+      "preview-error": "Échec du chargement de l'image",
+      "none-in-dir": "Aucun fond d'écran trouvé dans le répertoire",
+      "no-dir": "Aucun répertoire de fonds d'écran sélectionné",
+      "no-valid": "Aucun fichier image valide trouvé dans : {dir}",
+      "choose-dir": "Choisissez un répertoire contenant vos fonds d'écran",
+      "dir": {
+        "label": "Répertoire des fonds d'écran",
+        "description": "Choisissez le dossier contenant vos fonds d'écran",
+        "browse": "Parcourir le dossier",
+        "select-title": "Sélectionner le dossier des fonds d'écran"
+      }
+    },
+    "welcome": {
+      "note": "Quelques réglages de base pour démarrer — toutes les options sont dans Paramètres"
     }
   }
 }

@@ -1090,6 +1090,10 @@
         }
       },
       "taskbar": {
+        "hide-mode": {
+          "label": "Modo de ocultación",
+          "description": "Controla cómo se comporta el widget cuando no hay ventanas coincidentes."
+        },
         "only-active-workspaces": {
           "description": "Mostrar solo las aplicaciones de los espacios de trabajo activos.",
           "label": "Solo desde espacios de trabajo activos"
@@ -1301,7 +1305,8 @@
         "bottom_left": "Inferior izquierda",
         "bottom_right": "Inferior derecha",
         "bottom_center": "Inferior central",
-        "top_center": "Superior central"
+        "top_center": "Superior central",
+        "center": "Centro"
       },
       "quickSettingsStyle": {
         "modern": "Moderno",
@@ -1375,20 +1380,13 @@
   },
   "session-menu": {
     "title": "Menú de sesión",
-    "click-again": "Haz clic de nuevo para ejecutar inmediatamente",
     "action-in-seconds": "{action} en {seconds} segundos...",
     "lock": "Bloquear",
-    "lock-subtitle": "Bloquea tu sesión",
     "lock-and-suspend": "Bloquear y Suspender",
-    "lock-and-suspend-subtitle": "Bloquear sesión y poner el sistema en suspensión",
     "suspend": "Suspender",
     "reboot": "Reiniciar",
     "logout": "Cerrar sesión",
-    "logout-subtitle": "Finaliza tu sesión",
-    "shutdown": "Apagar",
-    "reboot-subtitle": "Reinicia tu computadora.",
-    "shutdown-subtitle": "Apaga tu computadora.",
-    "suspend-subtitle": "Poner el sistema en reposo"
+    "shutdown": "Apagar"
   },
   "plugins": {
     "applications": "Aplicaciones",
@@ -1624,6 +1622,35 @@
       "balanced": "Equilibrado ({percent}%)",
       "lifespan": "Vida útil prolongada ({percent}%)",
       "disabled": "Administrador de batería deshabilitado"
+    }
+  },
+  "setup": {
+    "customize": {
+      "header": "Personaliza tu experiencia",
+      "subheader": "Ajusta la posición de la barra, densidad, escala y más."
+    },
+    "appearance": {
+      "header": "Apariencia",
+      "subheader": "Elige modo oscuro y fuentes de color (Matugen o predefinido)."
+    },
+    "wallpaper": {
+      "header": "Elige tu fondo",
+      "subheader": "Define el ambiente con un bonito fondo.",
+      "select-prompt": "Selecciona un fondo abajo",
+      "preview-error": "No se pudo cargar la imagen",
+      "none-in-dir": "No se encontraron fondos en el directorio",
+      "no-dir": "No se seleccionó un directorio de fondos",
+      "no-valid": "No se encontraron imágenes válidas en: {dir}",
+      "choose-dir": "Elige un directorio que contenga tus fondos",
+      "dir": {
+        "label": "Directorio de fondos",
+        "description": "Elige la carpeta que contiene tus fondos",
+        "browse": "Seleccionar carpeta",
+        "select-title": "Seleccionar carpeta de fondos"
+      }
+    },
+    "welcome": {
+      "note": "Solo algunos conceptos básicos para empezar: todas las opciones están en Configuración."
     }
   }
 }

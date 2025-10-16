@@ -1107,6 +1107,10 @@
         }
       },
       "taskbar": {
+        "hide-mode": {
+          "label": "Ausblendmodus",
+          "description": "Steuert das Verhalten des Widgets, wenn keine übereinstimmenden Fenster vorhanden sind."
+        },
         "only-active-workspaces": {
           "label": "Nur von aktiven Arbeitsbereichen",
           "description": "Zeige nur Apps von aktiven Arbeitsbereichen an."
@@ -1318,7 +1322,8 @@
         "bottom_left": "Unten links",
         "bottom_right": "Unten rechts",
         "bottom_center": "Unten mittig",
-        "top_center": "Oben mittig"
+        "top_center": "Oben mittig",
+        "center": "Mitte"
       },
       "quickSettingsStyle": {
         "modern": "Modern",
@@ -1392,20 +1397,13 @@
   },
   "session-menu": {
     "title": "Sitzungsmenü",
-    "click-again": "Erneut klicken für sofortige Ausführung",
     "action-in-seconds": "{action} in {seconds} Sekunden...",
     "lock": "Sperren",
-    "lock-subtitle": "Sitzung sperren",
     "lock-and-suspend": "Sperren und Ruhezustand",
-    "lock-and-suspend-subtitle": "Sitzung sperren und System in den Ruhezustand versetzen",
     "suspend": "Ruhezustand",
     "reboot": "Neu starten",
     "logout": "Abmelden",
-    "logout-subtitle": "Sitzung beenden",
-    "shutdown": "Herunterfahren",
-    "reboot-subtitle": "Starten Sie Ihren Computer neu.",
-    "shutdown-subtitle": "Schalte deinen Computer aus.",
-    "suspend-subtitle": "System in den Ruhezustand versetzen"
+    "shutdown": "Herunterfahren"
   },
   "plugins": {
     "applications": "Anwendungen",
@@ -1624,6 +1622,35 @@
     "missing-control-center": {
       "label": "Letztes Control-Center-Widget entfernt",
       "description": "Das Control-Center-Widget wurde aus der Leiste entfernt. Um es erneut über die Leiste zu öffnen, fügen Sie das Widget wieder hinzu. Sie können es auch durch Rechtsklick auf die Leiste öffnen."
+    }
+  },
+  "setup": {
+    "customize": {
+      "header": "Erlebnis anpassen",
+      "subheader": "Leistenposition, Dichte, Skalierung und mehr einstellen."
+    },
+    "appearance": {
+      "header": "Erscheinungsbild",
+      "subheader": "Dunkelmodus und Farbquellen wählen (Matugen oder vordefiniert)."
+    },
+    "wallpaper": {
+      "header": "Wähle dein Hintergrundbild",
+      "subheader": "Bestimme die Stimmung mit einem schönen Hintergrund.",
+      "select-prompt": "Wähle unten ein Hintergrundbild",
+      "preview-error": "Bild konnte nicht geladen werden",
+      "none-in-dir": "Keine Hintergrundbilder im Verzeichnis gefunden",
+      "no-dir": "Kein Hintergrundbild-Verzeichnis ausgewählt",
+      "no-valid": "Keine gültigen Bilddateien gefunden in: {dir}",
+      "choose-dir": "Wähle ein Verzeichnis mit deinen Hintergrundbildern",
+      "dir": {
+        "label": "Hintergrundbild-Verzeichnis",
+        "description": "Wähle den Ordner mit deinen Hintergrundbildern",
+        "browse": "Ordner auswählen",
+        "select-title": "Hintergrundbild-Ordner wählen"
+      }
+    },
+    "welcome": {
+      "note": "Nur ein paar Grundeinstellungen – alle Optionen findest du in den Einstellungen"
     }
   }
 }

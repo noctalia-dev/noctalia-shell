@@ -171,22 +171,22 @@ Singleton {
 
   function getSignalIcon(device) {
     if (!device || device.signalStrength === undefined || device.signalStrength <= 0) {
-      return "signal_cellular_null"
+      return "antenna-bars-off"
     }
     var signal = device.signalStrength
     if (signal >= 80) {
-      return "signal_cellular_4_bar"
+      return "antenna-bars-5"
     }
     if (signal >= 60) {
-      return "signal_cellular_3_bar"
+      return "antenna-bars-4"
     }
     if (signal >= 40) {
-      return "signal_cellular_2_bar"
+      return "antenna-bars-3"
     }
     if (signal >= 20) {
-      return "signal_cellular_1_bar"
+      return "antenna-bars-2"
     }
-    return "signal_cellular_0_bar"
+    return "antenna-bars-1"
   }
 
   function isDeviceBusy(device) {

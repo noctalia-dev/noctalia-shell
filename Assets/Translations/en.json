@@ -59,7 +59,6 @@
           }
         }
       }
-      
     },
     "audio": {
       "title": "Audio",
@@ -722,29 +721,29 @@
       }
     },
     "control-center": {
-        "title": "Control Center",
+      "title": "Control Center",
+      "section": {
+        "label": "Appearance",
+        "description": "Configure the Control Center panel positioning and behavior."
+      },
+      "position": {
+        "label": "Position",
+        "description": "Choose where the Control Center panel appears when opened."
+      },
+      "cards": {
         "section": {
-          "label": "Appearance",
-          "description": "Configure the Control Center panel positioning and behavior."
-        },
-        "position": {
-          "label": "Position",
-          "description": "Choose where the Control Center panel appears when opened."
-        },
-        "cards": {
-          "section": {
-            "label": "Cards",
-            "description": "Customize which controls appear in the Control Center and in what order."
-          }
-        },
-        "shortcuts": {
-          "section": {
-            "label": "Shortcuts widgets",
-            "description": "Configure and manage the shortcuts widgets."
-          },
-          "sectionLeft": "Left",
-          "sectionRight": "Right"
+          "label": "Cards",
+          "description": "Customize which controls appear in the Control Center and in what order."
         }
+      },
+      "shortcuts": {
+        "section": {
+          "label": "Shortcuts widgets",
+          "description": "Configure and manage the shortcuts widgets."
+        },
+        "sectionLeft": "Left",
+        "sectionRight": "Right"
+      }
     },
     "user-interface": {
       "title": "User interface",
@@ -1091,6 +1090,10 @@
         "preview": "Preview"
       },
       "taskbar": {
+        "hide-mode": {
+          "label": "Hiding mode",
+          "description": "Controls how the widget behaves when there are no matching windows."
+        },
         "only-active-workspaces": {
           "label": "Only from active workspaces",
           "description": "Show only apps from active workspaces."
@@ -1302,7 +1305,8 @@
         "bottom_left": "Bottom left",
         "bottom_right": "Bottom right",
         "bottom_center": "Bottom center",
-        "top_center": "Top center"
+        "top_center": "Top center",
+        "center": "Center"
       },
       "quickSettingsStyle": {
         "modern": "Modern",
@@ -1376,20 +1380,13 @@
   },
   "session-menu": {
     "title": "Session Menu",
-    "click-again": "Click again to execute immediately",
     "action-in-seconds": "{action} in {seconds} seconds...",
     "lock": "Lock",
-    "lock-subtitle": "Lock your session",
     "lock-and-suspend": "Lock and Suspend",
-    "lock-and-suspend-subtitle": "Lock session and put system to sleep",
     "suspend": "Suspend",
-    "suspend-subtitle": "Put system to sleep",
     "reboot": "Reboot",
-    "reboot-subtitle": "Restart your computer",
     "logout": "Logout",
-    "logout-subtitle": "End your session",
-    "shutdown": "Shutdown",
-    "shutdown-subtitle": "Turn off your computer"
+    "shutdown": "Shutdown"
   },
   "plugins": {
     "applications": "Applications",
@@ -1625,6 +1622,35 @@
       "balanced": "Balanced ({percent}%)",
       "lifespan": "Extended lifespan ({percent}%)",
       "disabled": "Battery manager disabled"
+    }
+  },
+  "setup": {
+    "customize": {
+      "header": "Customize your experience",
+      "subheader": "Adjust bar position, density, scaling and more."
+    },
+    "appearance": {
+      "header": "Appearance",
+      "subheader": "Choose dark mode and color sources (Matugen or predefined)."
+    },
+    "wallpaper": {
+      "header": "Choose your wallpaper",
+      "subheader": "Set the mood with a beautiful background.",
+      "select-prompt": "Select a wallpaper below",
+      "preview-error": "Failed to load image",
+      "none-in-dir": "No wallpapers found in directory",
+      "no-dir": "No wallpaper directory selected",
+      "no-valid": "No valid image files found in: {dir}",
+      "choose-dir": "Choose a directory containing your wallpaper images",
+      "dir": {
+        "label": "Wallpaper directory",
+        "description": "Choose the folder containing your wallpapers",
+        "browse": "Browse for wallpaper folder",
+        "select-title": "Select wallpaper folder"
+      }
+    },
+    "welcome": {
+      "note": "Just a few basics to get you started - full options are in Settings"
     }
   }
 }

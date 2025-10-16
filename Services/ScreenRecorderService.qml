@@ -111,7 +111,7 @@ Singleton {
         pendingTimer.running = false
 
         // Check if gpu-screen-recorder is not installed
-        const stdout = String(stdout.text || "").trim()
+        const stdout = String(recorderProcess.stdout.text || "").trim()
         if (stdout === "GPU_SCREEN_RECORDER_NOT_INSTALLED") {
           ToastService.showError(I18n.tr("toast.recording.not-installed"), I18n.tr("toast.recording.not-installed-desc"), 7000)
           return
@@ -119,7 +119,7 @@ Singleton {
 
         // If it failed to start, show a clear error toast with stderr
         if (exitCode !== 0) {
-          const err = String(stderr.text || "").trim()
+          const err = String(recorderProcess.stderr.text || "").trim()
           if (err.length > 0)
             ToastService.showError(I18n.tr("toast.recording.failed-start"), err, 7000)
           else
@@ -133,7 +133,7 @@ Singleton {
         if (exitCode === 0) {
           ToastService.showNotice(I18n.tr("toast.recording.saved"), outputPath, 5000)
         } else {
-          const err2 = String(stderr.text || "").trim()
+          const err2 = String(recorderProcess.stderr.text || "").trim()
           if (err2.length > 0)
             ToastService.showError(I18n.tr("toast.recording.failed-start"), err2, 7000)
           else

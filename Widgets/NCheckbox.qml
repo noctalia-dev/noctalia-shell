@@ -61,7 +61,6 @@ RowLayout {
       icon: "check"
       color: root.activeOnColor
       pointSize: Math.max(Style.fontSizeXS, root.baseSize * 0.5)
-      font.weight: Style.fontWeightBold
     }
 
     MouseArea {

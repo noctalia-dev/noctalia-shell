@@ -109,7 +109,7 @@ ColumnLayout {
 
             NIcon {
               visible: modelData.signalStrength > 0 && !modelData.pairing && !modelData.blocked
-              text: BluetoothService.getSignalIcon(modelData)
+              icon: BluetoothService.getSignalIcon(modelData)
               pointSize: Style.fontSizeXS
               color: getContentColor(Color.mOnSurface)
             }
