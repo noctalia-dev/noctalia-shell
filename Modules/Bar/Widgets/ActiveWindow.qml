@@ -36,6 +36,9 @@ Item {
   readonly property string hideMode: (widgetSettings.hideMode !== undefined) ? widgetSettings.hideMode : widgetMetadata.hideMode
   readonly property string scrollingMode: (widgetSettings.scrollingMode !== undefined) ? widgetSettings.scrollingMode : (widgetMetadata.scrollingMode !== undefined ? widgetMetadata.scrollingMode : "hover")
   readonly property int widgetWidth: (widgetSettings.width !== undefined) ? widgetSettings.width : Math.max(widgetMetadata.width, screen.width * 0.06)
+  readonly property bool adaptiveWidthEnabled: (widgetSettings.adaptiveWidth !== undefined) ? widgetSettings.adaptiveWidth : (widgetMetadata.adaptiveWidth !== undefined ? widgetMetadata.adaptiveWidth : false)
+  readonly property int maxAdaptiveWidth: (widgetSettings.maxAdaptiveWidth !== undefined) ? widgetSettings.maxAdaptiveWidth : (widgetMetadata.maxAdaptiveWidth !== undefined ? widgetMetadata.maxAdaptiveWidth : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
+  readonly property int widthAnimation: Style.animation
 
   readonly property bool isVerticalBar: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right")
   readonly property bool hasFocusedWindow: CompositorService.getFocusedWindow() !== null
@@ -43,7 +46,31 @@ Item {
   readonly property string fallbackIcon: "user-desktop"
 
   implicitHeight: visible ? (isVerticalBar ? calculatedVerticalDimension() : Style.barHeight) : 0
-  implicitWidth: visible ? (isVerticalBar ? calculatedVerticalDimension() : widgetWidth) : 0
+  implicitWidth: {
+    if (!visible)
+      return 0
+    if (isVerticalBar)
+      return calculatedVerticalDimension()
+    if (adaptiveWidthEnabled) {
+      try {
+        var contentW = fullTitleMetrics.contentWidth + Style.marginS
+        var minW = widgetWidth
+        var maxW = maxAdaptiveWidth
+        return Math.min(Math.max(minW, contentW), maxW)
+      } catch (e) {
+        Logger.warn("ActiveWindow", "Error calculating adaptive width:", e)
+        return widgetWidth
+      }
+    }
+    return widgetWidth
+  }
+
+  Behavior on implicitWidth {
+    NumberAnimation {
+      duration: Style.animation
+      easing.type: Easing.InOutCubic
+    }
+  }
 
   // "visible": Always Visible, "hidden": Hide When Empty, "transparent": Transparent When Empty
   visible: hideMode !== "hidden" || hasFocusedWindow
@@ -117,7 +144,7 @@ Item {
     visible: root.visible
     anchors.left: parent.left
     anchors.verticalCenter: parent.verticalCenter
-    width: isVerticalBar ? root.width : widgetWidth
+    width: root.width
     height: isVerticalBar ? width : Style.capsuleHeight
     radius: isVerticalBar ? width / 2 : Style.radiusM
     color: Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent
@@ -298,7 +325,7 @@ Item {
 
           Behavior on Layout.preferredWidth {
             NumberAnimation {
-              duration: Style.animationSlow
+              duration: widthAnimation 
               easing.type: Easing.InOutCubic
             }
           }

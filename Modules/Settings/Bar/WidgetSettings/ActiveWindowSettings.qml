@@ -19,6 +19,8 @@ ColumnLayout {
   property string valueScrollingMode: widgetData.scrollingMode || widgetMetadata.scrollingMode
   property int valueWidth: widgetData.width !== undefined ? widgetData.width : widgetMetadata.width
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
+  property bool valueAdaptiveWidth: widgetData.adaptiveWidth !== undefined ? widgetData.adaptiveWidth : (widgetMetadata.adaptiveWidth !== undefined ? widgetMetadata.adaptiveWidth : false)
+  property int valueMaxAdaptiveWidth: widgetData.maxAdaptiveWidth !== undefined ? widgetData.maxAdaptiveWidth : (widgetMetadata.maxAdaptiveWidth !== undefined ? widgetMetadata.maxAdaptiveWidth : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
@@ -33,6 +35,8 @@ ColumnLayout {
     settings.scrollingMode = valueScrollingMode
     settings.width = parseInt(widthInput.text) || widgetMetadata.width
     settings.colorizeIcons = valueColorizeIcons
+    settings.adaptiveWidth = valueAdaptiveWidth
+    settings.maxAdaptiveWidth = parseInt(maxWidthInput.text) || valueMaxAdaptiveWidth || widgetMetadata.maxAdaptiveWidth
     return settings
   }
 
@@ -77,6 +81,24 @@ ColumnLayout {
     description: I18n.tr("bar.widget-settings.active-window.width.description")
     placeholderText: widgetMetadata.width
     text: valueWidth
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.widget-settings.active-window.adaptive-width.label")
+    description: I18n.tr("bar.widget-settings.active-window.adaptive-width.description")
+    checked: root.valueAdaptiveWidth
+    onToggled: function(checked) { root.valueAdaptiveWidth = checked }
+  }
+
+  NTextInput {
+    id: maxWidthInput
+    Layout.fillWidth: true
+    visible: root.valueAdaptiveWidth
+    label: I18n.tr("bar.widget-settings.active-window.max-adaptive-width.label")
+    description: I18n.tr("bar.widget-settings.active-window.max-adaptive-width.description")
+    placeholderText: I18n.tr("placeholders.enter-width-pixels")
+    text: valueMaxAdaptiveWidth > 0 ? valueMaxAdaptiveWidth : ""
   }
 
   NComboBox {
