@@ -229,18 +229,6 @@ Item {
           property real textWidth: fullTitleMetrics.contentWidth
           property bool needsScrolling: (textWidth > width) || scrollEvenIfFits
 
-          Connections {
-            target: root
-            function onVisibleChanged() {
-              if (root.visible && scrollingMode === "always" && titleContainer.needsScrolling) {
-                titleContainer.isScrolling = false
-                titleContainer.isResetting = false
-                scrollContainer.scrollX = 0
-                scrollStartTimer.restart()
-              }
-            }
-          }
-
           // Timer for "always" mode with delay
           Timer {
             id: scrollStartTimer
@@ -317,6 +305,14 @@ Item {
                 font.weight: Style.fontWeightMedium
                 verticalAlignment: Text.AlignVCenter
                 color: Color.mOnSurface
+                onTextChanged: {
+                  if (root.scrollingMode === "always") {
+                    titleContainer.isScrolling = false
+                    titleContainer.isResetting = false
+                    scrollContainer.scrollX = 0
+                    scrollStartTimer.restart()
+                  }
+                }
               }
 
               // Second copy for seamless scrolling
