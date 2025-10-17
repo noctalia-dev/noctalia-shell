@@ -45,10 +45,11 @@ Item {
   readonly property bool hasFocusedWindow: CompositorService.getFocusedWindow() !== null
   readonly property string windowTitle: CompositorService.getFocusedWindowTitle() || "No active window"
   readonly property string fallbackIcon: "user-desktop"
+  readonly property bool shouldBeVisible: hideMode !== "hidden" || hasFocusedWindow
 
-  implicitHeight: visible ? (isVerticalBar ? calculatedVerticalDimension() : Style.barHeight) : 0
+  implicitHeight: shouldBeVisible ? (isVerticalBar ? calculatedVerticalDimension() : Style.barHeight) : 0
   implicitWidth: {
-    if (!visible)
+    if (!shouldBeVisible)
       return 0
     if (isVerticalBar)
       return calculatedVerticalDimension()
@@ -77,15 +78,22 @@ Item {
 
   Behavior on implicitWidth {
     NumberAnimation {
-      id: widthAnimation
+      duration: Style.animationNormal
+      easing.type: Easing.InOutCubic
+    }
+  }
+
+  Behavior on implicitHeight {
+    NumberAnimation {
       duration: Style.animationNormal
       easing.type: Easing.InOutCubic
     }
   }
 
   // "visible": Always Visible, "hidden": Hide When Empty, "transparent": Transparent When Empty
-  visible: hideMode !== "hidden" || hasFocusedWindow
-  opacity: hideMode !== "transparent" || hasFocusedWindow ? 1.0 : 0
+  // Keep item visible while fading out to allow smooth hide
+  visible: shouldBeVisible || opacity > 0
+  opacity: ((hideMode !== "hidden" || hasFocusedWindow) && (hideMode !== "transparent" || hasFocusedWindow)) ? 1.0 : 0.0
   Behavior on opacity {
     NumberAnimation {
       duration: Style.animationNormal
