@@ -909,15 +909,15 @@
           "label": "最小自适应宽度",
           "description": "启用自适应宽度时，小部件的最小宽度。"
         },
-        "autoWidthEnabled": {
+        "adaptiveWidthEnabled": {
           "label": "启用自适应宽度",
           "description": "根据窗口标题长度自动调整小部件宽度。"
         },
-        "autoWidthMax": {
+        "adaptiveWidthMax": {
           "label": "最大自适应宽度",
           "description": "启用自适应宽度时，小部件可扩展到的最大宽度。"
         },
-        "autoWidthMinByContent": {
+        "adaptiveWidthMinByContent": {
           "label": "以文本宽度作为最小宽度",
           "description": "启用后，小部件的最小宽度将以窗口标题长度为准。"
         },

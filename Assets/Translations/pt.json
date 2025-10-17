@@ -909,15 +909,15 @@
           "label": "Largura mínima adaptativa",
           "description": "Largura mínima do widget usada quando a largura adaptativa está ativada."
         },
-        "autoWidthEnabled": {
+        "adaptiveWidthEnabled": {
           "label": "Ativar largura adaptativa",
           "description": "Ajustar automaticamente a largura do widget com base no comprimento do título da janela."
         },
-        "autoWidthMax": {
+        "adaptiveWidthMax": {
           "label": "Largura adaptativa máxima",
           "description": "Largura máxima que o widget pode expandir quando a largura adaptativa está ativada."
         },
-        "autoWidthMinByContent": {
+        "adaptiveWidthMinByContent": {
           "label": "Usar largura do texto como mínimo",
           "description": "Quando ativado, o widget usará a largura do título da janela como largura mínima em vez de um mínimo fixo."
         },

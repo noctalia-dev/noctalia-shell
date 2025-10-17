@@ -132,10 +132,6 @@
         "scrolling-title": {
           "label": "Titre défilant",
           "description": "Activer le défilement continu pour les titres multimédias longs"
-        },
-        "autoWidthMinByContent": {
-          "label": "Use title width as minimum width",
-          "description": "When enabled, the widget will use the window title text width as the minimum width."
         }
       }
     },
@@ -893,15 +889,15 @@
           "label": "Afficher l'icône de l'application",
           "description": "Afficher l'icône de l'application à côté du titre de la fenêtre."
         },
-        "autoWidthEnabled": {
+        "adaptiveWidthEnabled": {
           "label": "Activer la largeur adaptative",
           "description": "Ajuste automatiquement la largeur du widget en fonction de la longueur du titre de la fenêtre."
         },
-        "autoWidthMax": {
+        "adaptiveWidthMax": {
           "label": "Largeur adaptative maximale",
           "description": "Largeur maximale que le widget peut atteindre lorsque la largeur adaptative est activée."
         },
-        "autoWidthMinByContent": {
+        "adaptiveWidthMinByContent": {
           "label": "Utiliser la largeur du texte comme minimum",
           "description": "Lorsque activé, le widget utilisera la largeur du titre de la fenêtre comme largeur minimale."
         },

@@ -909,15 +909,15 @@
           "label": "Ancho mínimo adaptable",
           "description": "Ancho mínimo del widget usado cuando la anchura adaptable está activada."
         },
-        "autoWidthEnabled": {
+        "adaptiveWidthEnabled": {
           "label": "Activar anchura adaptativa",
           "description": "Ajustar automáticamente la anchura del widget según la longitud del título de la ventana."
         },
-        "autoWidthMax": {
+        "adaptiveWidthMax": {
           "label": "Anchura adaptativa máxima",
           "description": "Anchura máxima a la que el widget puede expandirse cuando la anchura adaptativa está activada."
         },
-        "autoWidthMinByContent": {
+        "adaptiveWidthMinByContent": {
           "label": "Usar ancho del texto como mínimo",
           "description": "Cuando está activado, el widget utilizará el ancho del título de la ventana como ancho mínimo en lugar de un mínimo fijo."
         },

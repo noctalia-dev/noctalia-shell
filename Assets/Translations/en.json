@@ -909,15 +909,15 @@
           "label": "Minimum adaptive width",
           "description": "Minimum widget width used when adaptive width is enabled."
         },
-        "autoWidthEnabled": {
+        "adaptiveWidthEnabled": {
           "label": "Enable adaptive width",
           "description": "Automatically adjust the widget width based on the window title length."
         },
-        "autoWidthMax": {
+        "adaptiveWidthMax": {
           "label": "Maximum adaptive width",
           "description": "Maximum width the widget can expand to when adaptive width is enabled."
         },
-        "autoWidthMinByContent": {
+        "adaptiveWidthMinByContent": {
           "label": "Use title width as minimum width",
           "description": "When enabled, the widget will use the window title text width as the minimum width."
         },

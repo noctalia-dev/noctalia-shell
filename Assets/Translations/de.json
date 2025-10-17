@@ -926,15 +926,15 @@
           "label": "Minimale adaptive Breite",
           "description": "Minimale Widget-Breite, die verwendet wird, wenn adaptive Breite aktiviert ist."
         },
-        "autoWidthEnabled": {
+        "adaptiveWidthEnabled": {
           "label": "Adaptive Breite aktivieren",
           "description": "Die Widget-Breite basierend auf der Länge des Fenstertitels automatisch anpassen."
         },
-        "autoWidthMax": {
+        "adaptiveWidthMax": {
           "label": "Maximale adaptive Breite",
           "description": "Maximale Breite, auf die das Widget erweitert werden kann, wenn adaptive Breite aktiviert ist."
         },
-        "autoWidthMinByContent": {
+        "adaptiveWidthMinByContent": {
           "label": "Textbreite als Minimum verwenden",
           "description": "Wenn aktiviert, verwendet das Widget die Textbreite des Fenstertitels als Mindestbreite anstelle eines festen Minimums."
         },
