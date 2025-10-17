@@ -133,9 +133,9 @@
           "label": "Titre défilant",
           "description": "Activer le défilement continu pour les titres multimédias longs"
         },
-        "scrolling-speed": {
-          "label": "Vitesse de défilement",
-          "description": "Temps en secondes pour que le titre défile du début à la fin"
+        "autoWidthMinByContent": {
+          "label": "Use title width as minimum width",
+          "description": "When enabled, the widget will use the window title text width as the minimum width."
         }
       }
     },
@@ -893,6 +893,22 @@
           "label": "Afficher l'icône de l'application",
           "description": "Afficher l'icône de l'application à côté du titre de la fenêtre."
         },
+        "autoWidthEnabled": {
+          "label": "Activer la largeur adaptative",
+          "description": "Ajuste automatiquement la largeur du widget en fonction de la longueur du titre de la fenêtre."
+        },
+        "autoWidthMax": {
+          "label": "Largeur adaptative maximale",
+          "description": "Largeur maximale que le widget peut atteindre lorsque la largeur adaptative est activée."
+        },
+        "autoWidthMinByContent": {
+          "label": "Utiliser la largeur du texte comme minimum",
+          "description": "Lorsque activé, le widget utilisera la largeur du titre de la fenêtre comme largeur minimale."
+        },
+        "scrollEvenIfFits": {
+          "label": "Forcer le défilement du titre",
+          "description": "Activer l'animation de défilement même lorsque le titre de la fenêtre tient entièrement dans le widget."
+        },
         "scrolling-mode": {
           "label": "Mode de défilement",
           "description": "Contrôler quand le défilement de texte est activé pour les titres de fenêtre longs."
@@ -904,6 +920,10 @@
         "width": {
           "description": "Contrôle la taille horizontale du widget.",
           "label": "Largeur du widget"
+        },
+        "minWidth": {
+          "label": "Largeur adaptative minimale",
+          "description": "Largeur minimale du widget utilisée lorsque la largeur adaptative est activée."
         },
         "colorize-icons": {
           "label": "Coloriser les icônes",

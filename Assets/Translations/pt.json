@@ -902,8 +902,28 @@
           "description": "Controlar quando a rolagem de texto está habilitada para títulos de janela longos."
         },
         "width": {
-          "description": "Controla o tamanho horizontal do widget.",
-          "label": "Largura do Widget"
+          "label": "Largura do Widget",
+          "description": "Controla o tamanho horizontal do widget."
+        },
+        "minWidth": {
+          "label": "Largura mínima adaptativa",
+          "description": "Largura mínima do widget usada quando a largura adaptativa está ativada."
+        },
+        "autoWidthEnabled": {
+          "label": "Ativar largura adaptativa",
+          "description": "Ajustar automaticamente a largura do widget com base no comprimento do título da janela."
+        },
+        "autoWidthMax": {
+          "label": "Largura adaptativa máxima",
+          "description": "Largura máxima que o widget pode expandir quando a largura adaptativa está ativada."
+        },
+        "autoWidthMinByContent": {
+          "label": "Usar largura do texto como mínimo",
+          "description": "Quando ativado, o widget usará a largura do título da janela como largura mínima em vez de um mínimo fixo."
+        },
+        "scrollEvenIfFits": {
+          "label": "Forçar rolagem do título",
+          "description": "Ativar a animação de rolagem mesmo quando o título da janela cabe completamente dentro do widget."
         },
         "colorize-icons": {
           "label": "Colorir ícones",

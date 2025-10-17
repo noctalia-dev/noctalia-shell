@@ -902,8 +902,28 @@
           "description": "Controlar cuándo está habilitado el desplazamiento de texto para títulos de ventana largos."
         },
         "width": {
-          "description": "Controla el tamaño horizontal del widget.",
-          "label": "Ancho del widget"
+          "label": "Ancho del widget",
+          "description": "Controla el tamaño horizontal del widget."
+        },
+        "minWidth": {
+          "label": "Ancho mínimo adaptable",
+          "description": "Ancho mínimo del widget usado cuando la anchura adaptable está activada."
+        },
+        "autoWidthEnabled": {
+          "label": "Activar anchura adaptativa",
+          "description": "Ajustar automáticamente la anchura del widget según la longitud del título de la ventana."
+        },
+        "autoWidthMax": {
+          "label": "Anchura adaptativa máxima",
+          "description": "Anchura máxima a la que el widget puede expandirse cuando la anchura adaptativa está activada."
+        },
+        "autoWidthMinByContent": {
+          "label": "Usar ancho del texto como mínimo",
+          "description": "Cuando está activado, el widget utilizará el ancho del título de la ventana como ancho mínimo en lugar de un mínimo fijo."
+        },
+        "scrollEvenIfFits": {
+          "label": "Forzar desplazamiento del título",
+          "description": "Habilitar la animación de desplazamiento incluso cuando el título de la ventana cabe completamente dentro del widget."
         },
         "colorize-icons": {
           "label": "Colorear iconos",

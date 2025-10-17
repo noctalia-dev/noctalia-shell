@@ -919,8 +919,28 @@
           "description": "Steuern, wann Textscrolling für lange Fenstertitel aktiviert ist."
         },
         "width": {
-          "description": "Steuert die horizontale Größe des Widgets.",
-          "label": "Widget-Breite"
+          "label": "Widget-Breite",
+          "description": "Steuert die horizontale Größe des Widgets."
+        },
+        "minWidth": {
+          "label": "Minimale adaptive Breite",
+          "description": "Minimale Widget-Breite, die verwendet wird, wenn adaptive Breite aktiviert ist."
+        },
+        "autoWidthEnabled": {
+          "label": "Adaptive Breite aktivieren",
+          "description": "Die Widget-Breite basierend auf der Länge des Fenstertitels automatisch anpassen."
+        },
+        "autoWidthMax": {
+          "label": "Maximale adaptive Breite",
+          "description": "Maximale Breite, auf die das Widget erweitert werden kann, wenn adaptive Breite aktiviert ist."
+        },
+        "autoWidthMinByContent": {
+          "label": "Textbreite als Minimum verwenden",
+          "description": "Wenn aktiviert, verwendet das Widget die Textbreite des Fenstertitels als Mindestbreite anstelle eines festen Minimums."
+        },
+        "scrollEvenIfFits": {
+          "label": "Titel erzwingen zu scrollen",
+          "description": "Aktiviert die Scroll-Animation, auch wenn der Fenstertitel vollständig in das Widget passt."
         },
         "colorize-icons": {
           "label": "Symbole einfärben",

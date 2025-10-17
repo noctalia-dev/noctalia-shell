@@ -902,8 +902,28 @@
           "description": "控制何时为长窗口标题启用文本滚动。"
         },
         "width": {
-          "description": "控制小部件的水平尺寸。",
-          "label": "小部件宽度"
+          "label": "小部件宽度",
+          "description": "控制小部件的水平尺寸。"
+        },
+        "minWidth": {
+          "label": "最小自适应宽度",
+          "description": "启用自适应宽度时，小部件的最小宽度。"
+        },
+        "autoWidthEnabled": {
+          "label": "启用自适应宽度",
+          "description": "根据窗口标题长度自动调整小部件宽度。"
+        },
+        "autoWidthMax": {
+          "label": "最大自适应宽度",
+          "description": "启用自适应宽度时，小部件可扩展到的最大宽度。"
+        },
+        "autoWidthMinByContent": {
+          "label": "以文本宽度作为最小宽度",
+          "description": "启用后，小部件的最小宽度将以窗口标题长度为准。"
+        },
+        "scrollEvenIfFits": {
+          "label": "强制标题滚动",
+          "description": "即使窗口标题可以完整显示，也启用滚动动画。"
         },
         "colorize-icons": {
           "label": "着色图标",

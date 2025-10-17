@@ -905,6 +905,26 @@
           "label": "Widget Width",
           "description": "Controls the horizontal size of the widget."
         },
+        "minWidth": {
+          "label": "Minimum adaptive width",
+          "description": "Minimum widget width used when adaptive width is enabled."
+        },
+        "autoWidthEnabled": {
+          "label": "Enable adaptive width",
+          "description": "Automatically adjust the widget width based on the window title length."
+        },
+        "autoWidthMax": {
+          "label": "Maximum adaptive width",
+          "description": "Maximum width the widget can expand to when adaptive width is enabled."
+        },
+        "autoWidthMinByContent": {
+          "label": "Use title width as minimum width",
+          "description": "When enabled, the widget will use the window title text width as the minimum width."
+        },
+        "scrollEvenIfFits": {
+          "label": "Force title scrolling",
+          "description": "Enable the scrolling animation even when the window title fits fully inside the widget."
+        },
         "colorize-icons": {
           "label": "Colorize Icons",
           "description": "Apply theme colors to active window icon."
@@ -1187,7 +1207,6 @@
       "scan-again": "Scan again"
     }
   },
-  
   "tooltips": {
     "refresh": "Refresh",
     "close": "Close",
