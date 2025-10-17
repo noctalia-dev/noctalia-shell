@@ -36,10 +36,10 @@ Item {
   readonly property string hideMode: (widgetSettings.hideMode !== undefined) ? widgetSettings.hideMode : widgetMetadata.hideMode
   readonly property string scrollingMode: (widgetSettings.scrollingMode !== undefined) ? widgetSettings.scrollingMode : (widgetMetadata.scrollingMode !== undefined ? widgetMetadata.scrollingMode : "hover")
   readonly property int widgetWidth: (widgetSettings.width !== undefined) ? widgetSettings.width : Math.max(widgetMetadata.width, screen.width * 0.06)
-  readonly property bool adaptiveWidthEnabled: (widgetSettings.autoWidthEnabled !== undefined) ? widgetSettings.autoWidthEnabled : (widgetMetadata.autoWidthEnabled !== undefined ? widgetMetadata.autoWidthEnabled : false)
-  readonly property bool contentAsMinWidth: ((widgetSettings.autoWidthMinByContent !== undefined) ? widgetSettings.autoWidthMinByContent :(widgetMetadata.autoWidthMinByContent !== undefined) ? widgetMetadata.autoWidthMinByContent : false)
+  readonly property bool adaptiveWidthEnabled: (widgetSettings.adaptiveWidthEnabled !== undefined) ? widgetSettings.adaptiveWidthEnabled : (widgetMetadata.adaptiveWidthEnabled !== undefined ? widgetMetadata.adaptiveWidthEnabled : false)
+  readonly property bool adaptiveWidthMinByContent: ((widgetSettings.adaptiveWidthMinByContent !== undefined) ? widgetSettings.adaptiveWidthMinByContent :(widgetMetadata.adaptiveWidthMinByContent !== undefined) ? widgetMetadata.adaptiveWidthMinByContent : false)
   readonly property bool scrollEvenIfFits: (widgetSettings.scrollEvenIfFits !== undefined) ? widgetSettings.scrollEvenIfFits : ((widgetMetadata.scrollEvenIfFits !== undefined) ? widgetMetadata.scrollEvenIfFits : false)
-  readonly property int maxAdaptiveWidth: (widgetSettings.autoWidthMax !== undefined) ? widgetSettings.autoWidthMax : (widgetMetadata.autoWidthMax !== undefined ? widgetMetadata.autoWidthMax : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
+  readonly property int adaptiveWidthMax: (widgetSettings.adaptiveWidthMax !== undefined) ? widgetSettings.adaptiveWidthMax : (widgetMetadata.adaptiveWidthMax !== undefined ? widgetMetadata.adaptiveWidthMax : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
 
   readonly property bool isVerticalBar: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right")
   readonly property bool hasFocusedWindow: CompositorService.getFocusedWindow() !== null
@@ -64,9 +64,9 @@ Item {
         // Avoid rolling triggered by minor errors
         var comfortablePadding = Style.marginS
 
-        var contentWidth = textWidth + iconWidth + spacingWidth + sideMargins + comfortablePadding
-        var minWidth = contentAsMinWidth ? contentWidth : widgetWidth
-        var maxWidth = maxAdaptiveWidth
+  var contentWidth = textWidth + iconWidth + spacingWidth + sideMargins + comfortablePadding
+  var minWidth = adaptiveWidthMinByContent ? contentWidth : widgetWidth
+  var maxWidth = adaptiveWidthMax
         return Math.min(Math.max(minWidth, contentWidth), maxWidth)
       } catch (e) {
         Logger.warn("ActiveWindow", "Error calculating adaptive width:", e)
