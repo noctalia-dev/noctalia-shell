@@ -86,8 +86,8 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.active-window.adaptive-width.label")
-    description: I18n.tr("bar.widget-settings.active-window.adaptive-width.description")
+    label: I18n.tr("bar.widget-settings.active-window.autoWidthEnabled.label")
+    description: I18n.tr("bar.widget-settings.active-window.autoWidthEnabled.description")
     checked: root.valueAutoWidthEnabled
     onToggled: function(checked) { root.valueAutoWidthEnabled = checked }
   }
@@ -95,8 +95,8 @@ ColumnLayout {
   NToggle {
     Layout.fillWidth: true
     visible: root.valueAutoWidthEnabled
-    label: I18n.tr("bar.widget-settings.active-window.content-as-min-width.label")
-    description: I18n.tr("bar.widget-settings.active-window.content-as-min-width.description")
+    label: I18n.tr("bar.widget-settings.active-window.autoWidthMinByContent.label")
+    description: I18n.tr("bar.widget-settings.active-window.autoWidthMinByContent.description")
     checked: root.valueAutoWidthMinByContent
     onToggled: function(checked) { root.valueAutoWidthMinByContent = checked }
   }
@@ -104,9 +104,9 @@ ColumnLayout {
   NTextInput {
     id: widthInput
     Layout.fillWidth: true
-    visible: !root.valueAutoWidthMinByContent
-    label: root.valueAutoWidthEnabled ? I18n.tr("bar.widget-settings.active-window.min-width.label") : I18n.tr("bar.widget-settings.active-window.width.label")
-    description: root.valueAutoWidthEnabled ? I18n.tr("bar.widget-settings.active-window.min-width.description") : I18n.tr("bar.widget-settings.active-window.width.description")
+    visible: !root.valueAutoWidthMinByContent || !root.valueAutoWidthEnabled
+    label: root.valueAutoWidthEnabled ? I18n.tr("bar.widget-settings.active-window.minWidth.label") : I18n.tr("bar.widget-settings.active-window.width.label")
+    description: root.valueAutoWidthEnabled ? I18n.tr("bar.widget-settings.active-window.minWidth.description") : I18n.tr("bar.widget-settings.active-window.width.description")
     placeholderText: widgetMetadata.width
     text: valueWidth
   }
@@ -115,8 +115,8 @@ ColumnLayout {
     id: maxWidthInput
     Layout.fillWidth: true
     visible: root.valueAutoWidthEnabled
-    label: I18n.tr("bar.widget-settings.active-window.max-adaptive-width.label")
-    description: I18n.tr("bar.widget-settings.active-window.max-adaptive-width.description")
+    label: I18n.tr("bar.widget-settings.active-window.autoWidthMax.label")
+    description: I18n.tr("bar.widget-settings.active-window.autoWidthMax.description")
     placeholderText: I18n.tr("placeholders.enter-width-pixels")
     text: valueAutoWidthMax > 0 ? valueAutoWidthMax : ""
   }
@@ -141,8 +141,8 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.active-window.scroll-even-if-fits.label")
-    description: I18n.tr("bar.widget-settings.active-window.scroll-even-if-fits.description")
+    label: I18n.tr("bar.widget-settings.active-window.scrollEvenIfFits.label")
+    description: I18n.tr("bar.widget-settings.active-window.scrollEvenIfFits.description")
     checked: root.valueScrollEvenIfFits
     onToggled: function(checked) { root.valueScrollEvenIfFits = checked }
   }
