@@ -40,7 +40,6 @@ Item {
   readonly property bool contentAsMinWidth: ((widgetSettings.autoWidthMinByContent !== undefined) ? widgetSettings.autoWidthMinByContent :(widgetMetadata.autoWidthMinByContent !== undefined) ? widgetMetadata.autoWidthMinByContent : false)
   readonly property bool scrollEvenIfFits: (widgetSettings.scrollEvenIfFits !== undefined) ? widgetSettings.scrollEvenIfFits : ((widgetMetadata.scrollEvenIfFits !== undefined) ? widgetMetadata.scrollEvenIfFits : false)
   readonly property int maxAdaptiveWidth: (widgetSettings.autoWidthMax !== undefined) ? widgetSettings.autoWidthMax : (widgetMetadata.autoWidthMax !== undefined ? widgetMetadata.autoWidthMax : (widgetMetadata !== undefined ? widgetMetadata.width * 2 : 0))
-  readonly property int widthAnimation: Style.animation
 
   readonly property bool isVerticalBar: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right")
   readonly property bool hasFocusedWindow: CompositorService.getFocusedWindow() !== null
@@ -56,18 +55,18 @@ Item {
     if (adaptiveWidthEnabled) {
       try {
         // Calculate minimum width based on content
-        var textW = fullTitleMetrics.contentWidth
-        var iconW = (showIcon && windowIcon.visible ? 18 : 0)
-        var spacingW = (showIcon && windowIcon.visible ? Style.marginS : 0) 
-        var sideMargins = isVerticalBar ? 0 : (Style.marginS * 2) 
+        var textWidth = fullTitleMetrics.contentWidth
+        var iconWidth = (showIcon && windowIcon.visible ? 18 : 0)
+        var spacingWidth = (showIcon && windowIcon.visible ? Style.marginS : 0)
+        var sideMargins = isVerticalBar ? 0 : (Style.marginS * 2)
 
         // Avoid rolling triggered by minor errors
         var comfortablePadding = Style.marginS
 
-        var contentW = textW + iconW + spacingW + sideMargins + comfortablePadding
-        var minW = contentAsMinWidth ? contentW : widgetWidth
-        var maxW = maxAdaptiveWidth
-        return Math.min(Math.max(minW, contentW), maxW)
+        var contentWidth = textWidth + iconWidth + spacingWidth + sideMargins + comfortablePadding
+        var minWidth = contentAsMinWidth ? contentWidth : widgetWidth
+        var maxWidth = maxAdaptiveWidth
+        return Math.min(Math.max(minWidth, contentWidth), maxWidth)
       } catch (e) {
         Logger.warn("ActiveWindow", "Error calculating adaptive width:", e)
         return widgetWidth
@@ -78,7 +77,8 @@ Item {
 
   Behavior on implicitWidth {
     NumberAnimation {
-      duration: Style.animation
+      id: widthAnimation
+      duration: Style.animationNormal
       easing.type: Easing.InOutCubic
     }
   }
@@ -343,13 +343,6 @@ Item {
               duration: Math.max(4000, windowTitle.length * 100)
               loops: Animation.Infinite
               easing.type: Easing.Linear
-            }
-          }
-
-          Behavior on Layout.preferredWidth {
-            NumberAnimation {
-              duration: widthAnimation
-              easing.type: Easing.InOutCubic
             }
           }
         }
