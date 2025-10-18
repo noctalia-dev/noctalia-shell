@@ -10,6 +10,7 @@ import qs.Widgets
 NPanel {
   id: root
 
+  property ShellScreen screen
   readonly property var now: Time.date
 
   preferredWidth: (Settings.data.location.showWeekNumberInCalendar ? 400 : 380) * Style.uiScaleRatio
@@ -347,6 +348,14 @@ NPanel {
           grid.year = newDate.getFullYear()
           grid.month = newDate.getMonth()
           content.isCurrentMonth = content.checkIsCurrentMonth()
+          const now = new Date()
+          const monthStart = new Date(grid.year, grid.month, 1)
+          const monthEnd = new Date(grid.year, grid.month + 1, 0)
+
+          const daysBehind = Math.max(0, Math.ceil((now - monthStart) / (24 * 60 * 60 * 1000)))
+          const daysAhead = Math.max(0, Math.ceil((monthEnd - now) / (24 * 60 * 60 * 1000)))
+
+          CalendarService.loadEvents(daysAhead + 30, daysBehind + 30)
         }
       }
       NIconButton {
@@ -355,6 +364,7 @@ NPanel {
           grid.month = Time.date.getMonth()
           grid.year = Time.date.getFullYear()
           content.isCurrentMonth = true
+          CalendarService.loadEvents()
         }
       }
       NIconButton {
@@ -364,6 +374,14 @@ NPanel {
           grid.year = newDate.getFullYear()
           grid.month = newDate.getMonth()
           content.isCurrentMonth = content.checkIsCurrentMonth()
+          const now = new Date()
+          const monthStart = new Date(grid.year, grid.month, 1)
+          const monthEnd = new Date(grid.year, grid.month + 1, 0)
+
+          const daysBehind = Math.max(0, Math.ceil((now - monthStart) / (24 * 60 * 60 * 1000)))
+          const daysAhead = Math.max(0, Math.ceil((monthEnd - now) / (24 * 60 * 60 * 1000)))
+
+          CalendarService.loadEvents(daysAhead + 30, daysBehind + 30)
         }
       }
     }
@@ -405,6 +423,71 @@ NPanel {
       Layout.fillWidth: true
       Layout.fillHeight: true
       spacing: 0
+
+      // Helper function to check if a date has events
+      function hasEventsOnDate(year, month, day) {
+        if (!CalendarService.available || CalendarService.events.length === 0)
+          return false
+
+        const targetDate = new Date(year, month, day)
+        const targetStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()).getTime() / 1000
+        const targetEnd = targetStart + 86400 // +24 hours
+
+        return CalendarService.events.some(event => {
+                                             // Check if event starts or overlaps with this day
+                                             return (event.start >= targetStart && event.start < targetEnd) || (event.end > targetStart && event.end <= targetEnd) || (event.start < targetStart && event.end > targetEnd)
+                                           })
+      }
+
+      // Helper function to get events for a specific date
+      function getEventsForDate(year, month, day) {
+        if (!CalendarService.available || CalendarService.events.length === 0)
+          return []
+
+        const targetDate = new Date(year, month, day)
+        const targetStart = Math.floor(new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()).getTime() / 1000)
+        const targetEnd = targetStart + 86400 // +24 hours
+
+        return CalendarService.events.filter(event => {
+                                               return (event.start >= targetStart && event.start < targetEnd) || (event.end > targetStart && event.end <= targetEnd) || (event.start < targetStart && event.end > targetEnd)
+                                             })
+      }
+
+      // Helper function to check if an event is all-day
+      function isAllDayEvent(event) {
+        const duration = event.end - event.start
+        const startDate = new Date(event.start * 1000)
+        const isAtMidnight = startDate.getHours() === 0 && startDate.getMinutes() === 0
+        return duration === 86400 && isAtMidnight
+      }
+
+      // Helper function to check if an event is multi-day
+      function isMultiDayEvent(event) {
+        if (isAllDayEvent(event)) {
+          return false
+        }
+
+        const startDate = new Date(event.start * 1000)
+        const endDate = new Date(event.end * 1000)
+
+        const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
+        const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+
+        return startDateOnly.getTime() !== endDateOnly.getTime()
+      }
+
+      // Helper function to get color for a specific event
+      function getEventColor(event, isToday) {
+        if (isMultiDayEvent(event)) {
+          return isToday ? Color.mOnSecondary : Color.mTertiary
+        } else if (isAllDayEvent(event)) {
+          return isToday ? Color.mOnSecondary : Color.mSecondary
+        } else {
+          return isToday ? Color.mOnSecondary : Color.mPrimary
+        }
+      }
+
+      // Column of week numbers
       ColumnLayout {
         visible: Settings.data.location.showWeekNumberInCalendar
         Layout.preferredWidth: visible ? Style.baseWidgetSize * 0.7 : 0
@@ -475,6 +558,55 @@ NPanel {
               pointSize: Style.fontSizeM
               font.weight: model.today ? Style.fontWeightBold : Style.fontWeightMedium
             }
+
+            // Event indicator dots
+            Row {
+              visible: parent.parent.parent.parent.parent.hasEventsOnDate(model.year, model.month, model.day)
+              spacing: 2 * scaling
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              anchors.bottomMargin: Style.marginXS * scaling
+
+              readonly property int currentYear: model.year
+              readonly property int currentMonth: model.month
+              readonly property int currentDay: model.day
+              readonly property bool isToday: model.today
+
+              Repeater {
+                model: parent.parent.parent.parent.parent.parent.getEventsForDate(parent.currentYear, parent.currentMonth, parent.currentDay)
+
+                Rectangle {
+                  width: 4 * scaling
+                  height: 4 * scaling
+                  radius: 2 * scaling
+                  color: parent.parent.parent.parent.parent.parent.getEventColor(modelData, model.today)
+                }
+              }
+            }
+
+            MouseArea {
+              anchors.fill: parent
+              hoverEnabled: true
+
+              onEntered: {
+                const events = parent.parent.parent.parent.parent.getEventsForDate(model.year, model.month, model.day)
+                if (events.length > 0) {
+                  const summaries = events.map(e => e.summary).join('\n')
+                  TooltipService.show(Screen, parent, summaries)
+                  TooltipService.updateText(summaries)
+                }
+              }
+
+              onClicked: {
+                const dateWithSlashes = `${model.month.toString().padStart(2, '0')}/${model.day.toString().padStart(2, '0')}/${model.year.toString().substring(2)}`
+                Quickshell.execDetached(["gnome-calendar", "--date", dateWithSlashes])
+              }
+
+              onExited: {
+                TooltipService.hide()
+              }
+            }
+
             Behavior on color {
               ColorAnimation {
                 duration: Style.animationFast
