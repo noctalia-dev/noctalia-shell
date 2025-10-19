@@ -30,7 +30,7 @@
 }: let
   src = lib.cleanSourceWith {
     src = ../.;
-    filter = path: type:
+    filter = path: _type:
       !(builtins.any (prefix: lib.path.hasPrefix (../. + prefix) (/. + path)) [
         /.github
         /Assets/Screenshots
@@ -61,7 +61,7 @@
       wlsunset
       wl-clipboard
     ]
-    ++ lib.optionals (stdenv.hostPlatform.isx86_64) [gpu-screen-recorder];
+    ++ lib.optionals stdenv.hostPlatform.isx86_64 [gpu-screen-recorder];
 
   fontconfig = makeFontsConf {
     fontDirectories = [
