@@ -12,6 +12,7 @@ Singleton {
   property bool isInhibited: false
   property string reason: I18n.tr("system.user-requested")
   property var activeInhibitors: []
+  property var timeout: null // in seconds
 
   // Different inhibitor strategies
   property string strategy: "systemd" // "systemd", "wayland", or "auto"
@@ -152,20 +153,110 @@ Singleton {
     }
   }
 
+  Timer {
+    id: inhibitorTimeout
+    repeat: true
+    interval: 1000 // 1 second
+    onTriggered: function () {
+      if (timeout == null) {
+        inhibitorTimeout.stop()
+        return
+      }
+
+      timeout -= 1
+      if (timeout <= 0) {
+        removeManualInhibitor()
+        return
+      }
+    }
+  }
+
   // Manual toggle for user control
   function manualToggle() {
+    // clear any existing timeout
+    timeout = null
     if (activeInhibitors.includes("manual")) {
-      removeInhibitor("manual")
-      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.keep-awake.disabled"))
-      Logger.i("IdleInhibitor", "Manual inhibition disabled")
+      removeManualInhibitor()
       return false
     } else {
-      addInhibitor("manual", "Manually activated by user")
-      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.keep-awake.enabled"))
-      Logger.i("IdleInhibitor", "Manual inhibition enabled (will reset on next session)")
+      addManualInhibitor(null)
       return true
     }
   }
+
+  function changeTimeout(delta) {
+    if (timeout == null && delta < 0) {
+      // no inhibitor, ignored
+      return;
+    }
+
+    if (timeout == null && delta > 0) {
+      // enable manual inhibitor and set timeout
+      addManualInhibitor(timeout + delta);
+      return;
+    }
+
+    if (timeout + delta <= 0) {
+      // disable manual inhibitor
+      removeManualInhibitor();
+      return;
+    }
+
+    if (timeout + delta > 0) {
+      // change timeout
+      addManualInhibitor(timeout + delta);
+      return;
+    }
+  }
+
+  function removeManualInhibitor() {
+    if (timeout !== null) {
+      timeout = null
+      if (inhibitorTimeout.running) {
+        inhibitorTimeout.stop()
+      }
+    }
+
+    if (activeInhibitors.includes("manual")) {
+      removeInhibitor("manual")
+      ToastService.showNotice(
+        I18n.tr("tooltips.keep-awake"),
+        I18n.tr("toast.keep-awake.disabled")
+      )
+      Logger.i("IdleInhibitor", "Manual inhibition disabled")
+    }
+  }
+
+  function addManualInhibitor(timeoutSec) {
+    if (!activeInhibitors.includes("manual")) {
+      addInhibitor("manual", "Manually activated by user")
+      ToastService.showNotice(
+        I18n.tr("tooltips.keep-awake"),
+        I18n.tr("toast.keep-awake.enabled")
+      )
+    }
+
+    if (timeoutSec === null && timeout === null) {
+      Logger.i("IdleInhibitor", "Manual inhibition enabled")
+      return
+    } else if (timeoutSec !== null && timeout === null) {
+      timeout = timeoutSec
+      inhibitorTimeout.start()
+      Logger.i("IdleInhibitor", "Manual inhibition enabled with timeout:", timeoutSec)
+      return
+    } else if (timeoutSec !== null && timeout !== null) {
+      timeout = timeoutSec
+      Logger.i("IdleInhibitor", "Manual inhibition timeout changed to:", timeoutSec)
+      return
+    } else if (timeoutSec === null && timeout !== null) {
+      timeout = null
+      inhibitorTimeout.stop()
+      Logger.i("IdleInhibitor", "Manual inhibition timeout cleared")
+      return
+    }
+  }
+
+
 
   // Clean up on shutdown
   Component.onDestruction: {
