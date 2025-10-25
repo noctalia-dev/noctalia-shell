@@ -220,10 +220,6 @@
           "label": "Afficher la capsule",
           "description": "Afficher les arrière-plans des widgets."
         },
-        "floating": {
-          "label": "Barre flottante",
-          "description": "Affiche la barre sous forme de 'pilule' flottante. Note : Ceci déplacera les coins de l'écran vers les bords."
-        },
         "margins": {
           "label": "Marges",
           "description": "Ajustez les marges autour de la barre flottante.",

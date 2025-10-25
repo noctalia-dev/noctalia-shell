@@ -220,10 +220,6 @@
           "label": "Mostrar cápsula",
           "description": "Mostrar fondos de los widgets."
         },
-        "floating": {
-          "label": "Barra flotante",
-          "description": "Muestra la barra como una 'píldora' flotante. Nota: Esto moverá las esquinas de la pantalla a los bordes."
-        },
         "margins": {
           "label": "Márgenes",
           "description": "Ajusta los márgenes alrededor de la barra flotante.",

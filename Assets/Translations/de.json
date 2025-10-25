@@ -220,10 +220,6 @@
           "label": "Kapsel anzeigen",
           "description": "Widget-Hintergründe anzeigen."
         },
-        "floating": {
-          "label": "Schwebende Statusleiste",
-          "description": "Statusleiste als schwebende 'Pille' anzeigen. Hinweis: Dies verschiebt die Bildschirmecken an die Ränder."
-        },
         "margins": {
           "label": "Ränder",
           "description": "Ränder um die schwebende Statusleiste anpassen.",
