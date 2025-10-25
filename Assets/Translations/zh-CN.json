@@ -220,9 +220,9 @@
           "label": "显示组件背景",
           "description": "为每个小部件添加背景。"
         },
-        "floating": {
-          "label": "浮动状态栏",
-          "description": "将状态栏显示为浮动样式（类似于一个药丸）。注意：这会将屏幕边角移动到边缘。"
+        "bar-style": {
+          "label": "状态栏样式",
+          "description": "选择状态栏的样式"
         },
         "margins": {
           "label": "边距",
@@ -1370,6 +1370,11 @@
         "bottom": "底部",
         "left": "左侧",
         "right": "右侧"
+      },
+      "barStyle": {
+        "Floating": "浮动",
+        "Rectangle": "矩形",
+        "RectangleHug": "矩形（贴合窗口）"
       },
       "density": {
         "compact": "紧凑",

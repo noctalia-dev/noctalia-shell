@@ -224,6 +224,10 @@
           "label": "Floating bar",
           "description": "Displays the bar as a floating 'pill'. Note: This will move the screen corners to the edges."
         },
+        "bar-style": {
+          "label": "Bar style",
+          "description": "Choose the bar's style"
+        },
         "margins": {
           "label": "Margins",
           "description": "Adjust the margins around the floating bar.",
@@ -1371,6 +1375,11 @@
         "left": "Left",
         "right": "Right"
       },
+        "barStyle": {
+          "Floating": "Floating",
+          "Rectangle": "Rectangle",
+          "RectangleHug": "Rectangle (hug to window)"
+        },
       "density": {
         "mini": "Mini",
         "compact": "Compact",

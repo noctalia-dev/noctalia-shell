@@ -229,6 +229,10 @@
           "description": "Ajuste as margens ao redor da barra flutuante.",
           "vertical": "Vertical",
           "horizontal": "Horizontal"
+        },
+        "bar-style": {
+          "label": "Estilo da barra",
+          "description": "Escolha o estilo da barra."
         }
       },
       "widgets": {
@@ -1418,6 +1422,11 @@
         "default": "Padrão",
         "comfortable": "Confortável",
         "mini": "Mini"
+      },
+      "barStyle": {
+        "Floating": "Flutuante",
+        "Rectangle": "Retângulo",
+        "RectangleHug": "Retângulo (encostado à janela)"
       }
     },
     "display-mode": {

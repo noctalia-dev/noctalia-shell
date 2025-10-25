@@ -229,6 +229,10 @@
           "description": "Ajustez les marges autour de la barre flottante.",
           "vertical": "Verticale",
           "horizontal": "Horizontale"
+        },
+        "bar-style": {
+          "label": "Style de la barre",
+          "description": "Choisissez le style de la barre."
         }
       },
       "widgets": {
@@ -1376,6 +1380,11 @@
         "default": "Défaut",
         "comfortable": "Confortable",
         "mini": "Mini"
+      },
+      "barStyle": {
+        "Floating": "Flottante",
+        "Rectangle": "Rectangle",
+        "RectangleHug": "Rectangle (collé à la fenêtre)"
       }
     },
     "launcher": {
