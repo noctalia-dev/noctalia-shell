@@ -25,6 +25,7 @@ case "$APP_NAME" in
         if [ -f "$CONFIG_FILE" ]; then
             # Check if theme is already set to noctalia
             if grep -q "^theme = noctalia" "$CONFIG_FILE"; then
+                pkill -SIGUSR2 ghostty
                 echo "Theme already set to noctalia, skipping modification."
             else
                 # Remove any existing theme include line to prevent duplicates.
