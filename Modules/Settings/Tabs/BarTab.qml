@@ -83,36 +83,6 @@ ColumnLayout {
     onSelected: key => Settings.data.bar.barStyle = key
   }
 
-
-  NComboBox {
-    Layout.fillWidth: true
-    label: I18n.tr("settings.bar.appearance.density.label")
-    description: I18n.tr("settings.bar.appearance.density.description")
-    model: [{
-        "key": "mini",
-        "name": I18n.tr("options.bar.density.mini")
-      }, {
-        "key": "compact",
-        "name": I18n.tr("options.bar.density.compact")
-      }, {
-        "key": "default",
-        "name": I18n.tr("options.bar.density.default")
-      }, {
-        "key": "comfortable",
-        "name": I18n.tr("options.bar.density.comfortable")
-      }]
-    currentKey: Settings.data.bar.density
-    onSelected: key => Settings.data.bar.density = key
-  }
-
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("settings.bar.appearance.show-capsule.label")
-    description: I18n.tr("settings.bar.appearance.show-capsule.description")
-    checked: Settings.data.bar.showCapsule
-    onToggled: checked => Settings.data.bar.showCapsule = checked
-  }
-
   // Floating bar options - only show when barStyle is "Floating"
   ColumnLayout {
     visible: Settings.data.bar.barStyle === "Floating"
@@ -168,6 +138,35 @@ ColumnLayout {
         }
       }
     }
+  }
+
+  NComboBox {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.bar.appearance.density.label")
+    description: I18n.tr("settings.bar.appearance.density.description")
+    model: [{
+        "key": "mini",
+        "name": I18n.tr("options.bar.density.mini")
+      }, {
+        "key": "compact",
+        "name": I18n.tr("options.bar.density.compact")
+      }, {
+        "key": "default",
+        "name": I18n.tr("options.bar.density.default")
+      }, {
+        "key": "comfortable",
+        "name": I18n.tr("options.bar.density.comfortable")
+      }]
+    currentKey: Settings.data.bar.density
+    onSelected: key => Settings.data.bar.density = key
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.bar.appearance.show-capsule.label")
+    description: I18n.tr("settings.bar.appearance.show-capsule.description")
+    checked: Settings.data.bar.showCapsule
+    onToggled: checked => Settings.data.bar.showCapsule = checked
   }
 
   ColumnLayout {
