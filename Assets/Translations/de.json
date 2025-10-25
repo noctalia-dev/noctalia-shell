@@ -1395,9 +1395,9 @@
         "mini": "Mini"
       },
       "barStyle": {
-        "Floating": "Schwebend",
-        "Rectangle": "Rechteck",
-        "RectangleHug": "Rechteck (ans Fenster anschmiegen)"
+        "floating": "Schwebend",
+        "rectangle": "Rechteck",
+        "rectangle-hug": "Rechteck (ans Fenster anschmiegen)"
       }
     },
     "launcher": {

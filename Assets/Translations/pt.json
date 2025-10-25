@@ -1420,9 +1420,9 @@
         "mini": "Mini"
       },
       "barStyle": {
-        "Floating": "Flutuante",
-        "Rectangle": "Retângulo",
-        "RectangleHug": "Retângulo (encostado à janela)"
+        "floating": "Flutuante",
+        "rectangle": "Retângulo",
+        "rectangle-hug": "Retângulo (encostado à janela)"
       }
     },
     "display-mode": {

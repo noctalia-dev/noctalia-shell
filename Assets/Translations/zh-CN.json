@@ -1372,9 +1372,9 @@
         "right": "右侧"
       },
       "barStyle": {
-        "Floating": "浮动",
-        "Rectangle": "矩形",
-        "RectangleHug": "矩形（贴合窗口）"
+        "floating": "浮动",
+        "rectangle": "矩形",
+        "rectangle-hug": "矩形（贴合窗口）"
       },
       "density": {
         "compact": "紧凑",

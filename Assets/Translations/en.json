@@ -1372,9 +1372,9 @@
         "right": "Right"
       },
       "barStyle": {
-        "Floating": "Floating",
-        "Rectangle": "Rectangle",
-        "RectangleHug": "Rectangle (hug to window)"
+        "floating": "Floating",
+        "rectangle": "Rectangle",
+        "rectangle-hug": "Rectangle (hug to window)"
       },
       "density": {
         "mini": "Mini",

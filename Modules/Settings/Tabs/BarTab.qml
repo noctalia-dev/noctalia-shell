@@ -74,7 +74,7 @@ ColumnLayout {
         "name": I18n.tr("options.bar.barStyle.rectangle")
       }, {
         "key": "RectangleHug",
-        "name": I18n.tr("options.bar.barStyle.rectangleHug")
+        "name": I18n.tr("options.bar.barStyle.rectangle-hug")
       }, {
         "key": "Floating",
         "name": I18n.tr("options.bar.barStyle.floating")

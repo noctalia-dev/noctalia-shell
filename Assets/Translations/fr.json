@@ -1378,9 +1378,9 @@
         "mini": "Mini"
       },
       "barStyle": {
-        "Floating": "Flottante",
-        "Rectangle": "Rectangle",
-        "RectangleHug": "Rectangle (collé à la fenêtre)"
+        "floating": "Flottante",
+        "rectangle": "Rectangle",
+        "rectangle-hug": "Rectangle (collé à la fenêtre)"
       }
     },
     "launcher": {
