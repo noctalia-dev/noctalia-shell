@@ -7,7 +7,7 @@ import qs.Services
 import qs.Widgets
 
 Loader {
-  active: Settings.data.general.showScreenCorners
+  active: Settings.data.general.showScreenCorners || Settings.data.bar.barStyle === "RectangleHug"
 
   sourceComponent: Variants {
     model: Quickshell.screens
@@ -49,10 +49,11 @@ Loader {
       // Margins for hugCorner items to follow bar position when present on this screen
       readonly property bool __barOnThisScreen: (modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)
       readonly property bool __barActive: BarService.isVisible && __barOnThisScreen && Settings.data.bar.backgroundOpacity > 0
-      readonly property int __hugTopMargin: (!Settings.data.bar.floating && __barActive && Settings.data.bar.position === "top") ? Style.barHeight : 0
-      readonly property int __hugBottomMargin: (!Settings.data.bar.floating && __barActive && Settings.data.bar.position === "bottom") ? Style.barHeight : 0
-      readonly property int __hugLeftMargin: (!Settings.data.bar.floating && __barActive && Settings.data.bar.position === "left") ? Style.barHeight : 0
-      readonly property int __hugRightMargin: (!Settings.data.bar.floating && __barActive && Settings.data.bar.position === "right") ? Style.barHeight : 0
+      readonly property bool __hugCornerEnabled: Settings.data.bar.barStyle === "RectangleHug"
+      readonly property int __hugTopMargin: (__hugCornerEnabled && __barActive && Settings.data.bar.position === "top") ? Style.barHeight : 0
+      readonly property int __hugBottomMargin: (__hugCornerEnabled && __barActive && Settings.data.bar.position === "bottom") ? Style.barHeight : 0
+      readonly property int __hugLeftMargin: (__hugCornerEnabled && __barActive && Settings.data.bar.position === "left") ? Style.barHeight : 0
+      readonly property int __hugRightMargin: (__hugCornerEnabled && __barActive && Settings.data.bar.position === "right") ? Style.barHeight : 0
 
       // Top-left hug concave corner
       Canvas {
@@ -65,7 +66,7 @@ Loader {
         anchors.bottomMargin: root.__hugBottomMargin
         width: cornerSize
         height: cornerSize
-        visible: root.__barActive && (Settings.data.bar.position === "top" || Settings.data.bar.position === "left")
+        visible: root.__hugCornerEnabled && root.__barActive && (Settings.data.bar.position === "top" || Settings.data.bar.position === "left")
         antialiasing: true
         renderTarget: Canvas.FramebufferObject
         smooth: false
@@ -119,7 +120,7 @@ Loader {
         anchors.bottomMargin: root.__hugBottomMargin
         width: cornerSize
         height: cornerSize
-        visible: root.__barActive && (Settings.data.bar.position === "top" || Settings.data.bar.position === "right")
+        visible: root.__hugCornerEnabled && root.__barActive && (Settings.data.bar.position === "top" || Settings.data.bar.position === "right")
         antialiasing: true
         renderTarget: Canvas.FramebufferObject
         smooth: true
@@ -171,7 +172,7 @@ Loader {
         anchors.bottomMargin: root.__hugBottomMargin
         width: cornerSize
         height: cornerSize
-        visible: root.__barActive && (Settings.data.bar.position === "bottom" || Settings.data.bar.position === "left")
+        visible: root.__hugCornerEnabled && root.__barActive && (Settings.data.bar.position === "bottom" || Settings.data.bar.position === "left")
         antialiasing: true
         renderTarget: Canvas.FramebufferObject
         smooth: true
@@ -223,7 +224,7 @@ Loader {
         anchors.bottomMargin: root.__hugBottomMargin
         width: cornerSize
         height: cornerSize
-        visible: root.__barActive && (Settings.data.bar.position === "bottom" || Settings.data.bar.position === "right")
+        visible: root.__hugCornerEnabled && root.__barActive && (Settings.data.bar.position === "bottom" || Settings.data.bar.position === "right")
         antialiasing: true
         renderTarget: Canvas.FramebufferObject
         smooth: true
@@ -269,6 +270,7 @@ Loader {
         id: topLeftCorner
         anchors.top: parent.top
         anchors.left: parent.left
+        visible: Settings.data.general.showScreenCorners
         width: cornerSize
         height: cornerSize
         antialiasing: true
@@ -318,6 +320,7 @@ Loader {
         id: topRightCorner
         anchors.top: parent.top
         anchors.right: parent.right
+        visible: Settings.data.general.showScreenCorners
         width: cornerSize
         height: cornerSize
         antialiasing: true
@@ -365,6 +368,7 @@ Loader {
         id: bottomLeftCorner
         anchors.bottom: parent.bottom
         anchors.left: parent.left
+        visible: Settings.data.general.showScreenCorners
         width: cornerSize
         height: cornerSize
         antialiasing: true
@@ -412,6 +416,7 @@ Loader {
         id: bottomRightCorner
         anchors.bottom: parent.bottom
         anchors.right: parent.right
+        visible: Settings.data.general.showScreenCorners
         width: cornerSize
         height: cornerSize
         antialiasing: true
