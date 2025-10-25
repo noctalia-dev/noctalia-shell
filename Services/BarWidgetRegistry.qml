@@ -14,6 +14,7 @@ Singleton {
                            "Battery": batteryComponent,
                            "Bluetooth": bluetoothComponent,
                            "Brightness": brightnessComponent,
+                           "CavaVisualizer": cavaVisualizerComponent,
                            "Clock": clockComponent,
                            "ControlCenter": controlCenterComponent,
                            "CustomButton": customButtonComponent,
@@ -61,6 +62,17 @@ Singleton {
                                   "Brightness": {
                                     "allowUserSettings": true,
                                     "displayMode": "onhover"
+                                  },
+                                  "CavaVisualizer": {
+                                    "allowUserSettings": true,
+                                    "width": 300,
+                                    "minHeight": 12,
+                                    "maxHeight": 64,
+                                    "bars": 48,
+                                    "barWidth": 3,
+                                    "barSpacing": 1,
+                                    "framerate": 60,
+                                    "mono": true
                                   },
                                   "Clock": {
                                     "allowUserSettings": true,
@@ -167,6 +179,9 @@ Singleton {
   }
   property Component brightnessComponent: Component {
     Brightness {}
+  }
+  property Component cavaVisualizerComponent: Component { 
+    CavaVisualizer {} 
   }
   property Component clockComponent: Component {
     Clock {}
