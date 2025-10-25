@@ -146,6 +146,18 @@ Singleton {
       property real marginVertical: 0.25
       property real marginHorizontal: 0.25
 
+      // Backward-compatible boolean for existing code that still uses `bar.floating`, intended for bar style choice feature.
+      property bool floating: false
+      onBarStyleChanged: floating = (barStyle === "Floating")
+      onFloatingChanged: {
+        // If floating is toggled, update barStyle accordingly.
+        if (floating && barStyle !== "Floating")
+          barStyle = "Floating"
+        else if (!floating && barStyle === "Floating")
+          barStyle = "Rectangle"
+      }
+      Component.onCompleted: floating = (barStyle === "Floating")
+
       // Widget configuration for modular bar system
       property JsonObject widgets
       widgets: JsonObject {
@@ -503,6 +515,18 @@ Singleton {
       Logger.w("Settings", "BarWidgetRegistry not ready, deferring upgrade")
       Qt.callLater(upgradeSettingsData)
       return
+    }
+
+    // -----------------
+    // migrate bar.floating to bar.barStyle
+    if (adapter.bar.hasOwnProperty("floating")) {
+      if (adapter.bar.floating === true) {
+        adapter.bar.barStyle = "Floating"
+      } else {
+        adapter.bar.barStyle = "Rectangle"
+      }
+      delete adapter.bar.floating
+      Logger.d("Settings", "Migrated bar.floating to bar.barStyle:", adapter.bar.barStyle)
     }
 
     const sections = ["left", "center", "right"]
