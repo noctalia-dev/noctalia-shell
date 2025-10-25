@@ -141,8 +141,8 @@ Singleton {
       property string density: "default" // "compact", "default", "comfortable"
       property bool showCapsule: true
 
-      // Floating bar settings
-      property bool floating: false
+      // Bar style: "Floating", "Rectangle", "RectangleHug"
+      property string barStyle: "RectangleHug"
       property real marginVertical: 0.25
       property real marginHorizontal: 0.25
 

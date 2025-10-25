@@ -67,6 +67,25 @@ ColumnLayout {
 
   NComboBox {
     Layout.fillWidth: true
+    label: I18n.tr("settings.bar.appearance.bar-style.label")
+    description: I18n.tr("settings.bar.appearance.bar-style.description")
+    model: [{
+        "key": "Rectangle",
+        "name": I18n.tr("options.bar.barStyle.rectangle")
+      }, {
+        "key": "RectangleHug",
+        "name": I18n.tr("options.bar.barStyle.rectangleHug")
+      }, {
+        "key": "Floating",
+        "name": I18n.tr("options.bar.barStyle.floating")
+      }]
+    currentKey: Settings.data.bar.barStyle
+    onSelected: key => Settings.data.bar.barStyle = key
+  }
+
+
+  NComboBox {
+    Layout.fillWidth: true
     label: I18n.tr("settings.bar.appearance.density.label")
     description: I18n.tr("settings.bar.appearance.density.description")
     model: [{
@@ -94,17 +113,9 @@ ColumnLayout {
     onToggled: checked => Settings.data.bar.showCapsule = checked
   }
 
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("settings.bar.appearance.floating.label")
-    description: I18n.tr("settings.bar.appearance.floating.description")
-    checked: Settings.data.bar.floating
-    onToggled: checked => Settings.data.bar.floating = checked
-  }
-
-  // Floating bar options - only show when floating is enabled
+  // Floating bar options - only show when barStyle is "Floating"
   ColumnLayout {
-    visible: Settings.data.bar.floating
+    visible: Settings.data.bar.barStyle === "Floating"
     spacing: Style.marginS
     Layout.fillWidth: true
 

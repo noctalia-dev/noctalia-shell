@@ -7,7 +7,7 @@
     "monitors": [],
     "density": "default",
     "showCapsule": true,
-    "floating": false,
+    "barStyle": "RectangleHug",
     "marginVertical": 0.25,
     "marginHorizontal": 0.25,
     "widgets": {
@@ -183,23 +183,23 @@
   "network": {
     "wifiEnabled": true
   },
-    "notifications": {
-      "doNotDisturb": false,
-      "monitors": [],
-      "location": "top_right",
-      "overlayLayer": true,
-      "respectExpireTimeout": false,
-      "lowUrgencyDuration": 3,
-      "normalUrgencyDuration": 8,
-      "criticalUrgencyDuration": 15
-    },
-    "osd": {
-      "enabled": true,
-      "location": "top_right",
-      "monitors": [],
-      "autoHideMs": 2000,
-      "overlayLayer": true
-    },
+  "notifications": {
+    "doNotDisturb": false,
+    "monitors": [],
+    "location": "top_right",
+    "overlayLayer": true,
+    "respectExpireTimeout": false,
+    "lowUrgencyDuration": 3,
+    "normalUrgencyDuration": 8,
+    "criticalUrgencyDuration": 15
+  },
+  "osd": {
+    "enabled": true,
+    "location": "top_right",
+    "monitors": [],
+    "autoHideMs": 2000,
+    "overlayLayer": true
+  },
   "audio": {
     "volumeStep": 5,
     "volumeOverdrive": false,
