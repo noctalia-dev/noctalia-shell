@@ -36,12 +36,11 @@ Loader {
       }
 
       margins {
-        // When bar is floating, corners should be at screen edges (no margins)
-        // When bar is not floating, respect bar margins as before
-        top: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "top" && Settings.data.bar.backgroundOpacity > 0 ? Style.barHeight : 0
-        bottom: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "bottom" && Settings.data.bar.backgroundOpacity > 0 ? Style.barHeight : 0
-        left: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "left" && Settings.data.bar.backgroundOpacity > 0 ? Style.barHeight : 0
-        right: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "right" && Settings.data.bar.backgroundOpacity > 0 ? Style.barHeight : 0
+        // Pin corners to four screen edges
+        top: 0
+        bottom: 0
+        left: 0
+        right: 0
       }
 
       mask: Region {}
