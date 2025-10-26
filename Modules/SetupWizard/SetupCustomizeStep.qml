@@ -197,47 +197,89 @@ ColumnLayout {
         Layout.bottomMargin: Style.marginS
       }
 
-      // Dim Desktop section
+      // Bar style selector
       RowLayout {
         Layout.fillWidth: true
         spacing: Style.marginM
-
         Rectangle {
           width: 32
           height: 32
           radius: Style.radiusM
           color: Color.mSurface
           NIcon {
-            icon: "moon"
+            icon: "layout-2"
             pointSize: Style.fontSizeL
             color: Color.mPrimary
             anchors.centerIn: parent
           }
         }
-
         ColumnLayout {
           Layout.fillWidth: true
           spacing: 2
           NText {
-            text: I18n.tr("settings.user-interface.dim-desktop.label")
+            text: I18n.tr("settings.bar.appearance.bar-style.label")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
           }
           NText {
-            text: I18n.tr("settings.user-interface.dim-desktop.description")
+            text: I18n.tr("settings.bar.appearance.bar-style.description")
             pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
           }
         }
+        RowLayout {
+          Layout.fillWidth: true
+          spacing: Style.marginS
 
-        NToggle {
-          checked: selectedDimDesktop
-          onToggled: function (checked) {
-            selectedDimDesktop = checked
-            dimDesktopChanged(checked)
+          Repeater {
+            model: [{
+                "key": "rectangle",
+                "name": I18n.tr("options.bar.barStyle.rectangle")
+              }, {
+                "key": "rectangle-hug",
+                "name": I18n.tr("options.bar.barStyle.rectangle-hug")
+              }, {
+                "key": "floating",
+                "name": I18n.tr("options.bar.barStyle.floating")
+              }]
+
+            delegate: Rectangle {
+              radius: Style.radiusM
+              border.width: 1
+              Layout.preferredHeight: 40
+              Layout.preferredWidth: Math.max(90, styleText.implicitWidth + Style.marginXL * 2)
+
+              property bool isActive: Settings.data.bar.barStyle === modelData.key
+
+              color: (hoverHandler.hovered || isActive) ? Color.mPrimary : Color.mSurfaceVariant
+              border.color: (hoverHandler.hovered || isActive) ? Color.mPrimary : Color.mOutline
+              opacity: (hoverHandler.hovered || isActive) ? 1.0 : 0.8
+
+              NText {
+                id: styleText
+                text: modelData.name
+                pointSize: Style.fontSizeM
+                font.weight: (hoverHandler.hovered || parent.isActive) ? Style.fontWeightBold : Style.fontWeightMedium
+                color: (hoverHandler.hovered || parent.isActive) ? Color.mOnPrimary : Color.mOnSurface
+                anchors.centerIn: parent
+              }
+
+              HoverHandler { id: hoverHandler }
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                  Settings.data.bar.barStyle = modelData.key
+                }
+              }
+
+              Behavior on color { ColorAnimation { duration: Style.animationFast } }
+              Behavior on border.color { ColorAnimation { duration: Style.animationFast } }
+              Behavior on opacity { NumberAnimation { duration: Style.animationFast } }
+            }
           }
         }
       }
@@ -366,6 +408,61 @@ ColumnLayout {
         Layout.bottomMargin: Style.marginS
       }
 
+      // Dim Desktop section
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        Rectangle {
+          width: 32
+          height: 32
+          radius: Style.radiusM
+          color: Color.mSurface
+          NIcon {
+            icon: "moon"
+            pointSize: Style.fontSizeL
+            color: Color.mPrimary
+            anchors.centerIn: parent
+          }
+        }
+
+        ColumnLayout {
+          Layout.fillWidth: true
+          spacing: 2
+          NText {
+            text: I18n.tr("settings.user-interface.dim-desktop.label")
+            pointSize: Style.fontSizeL
+            font.weight: Style.fontWeightBold
+            color: Color.mOnSurface
+          }
+          NText {
+            text: I18n.tr("settings.user-interface.dim-desktop.description")
+            pointSize: Style.fontSizeS
+            color: Color.mOnSurfaceVariant
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+          }
+        }
+
+        NToggle {
+          checked: selectedDimDesktop
+          onToggled: function (checked) {
+            selectedDimDesktop = checked
+            dimDesktopChanged(checked)
+          }
+        }
+      }
+
+      // Divider
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        color: Color.mOutline
+        opacity: 0.2
+        Layout.topMargin: Style.marginS
+        Layout.bottomMargin: Style.marginS
+      }
+
       // UI Scale section
       ColumnLayout {
         Layout.fillWidth: true
@@ -414,57 +511,6 @@ ColumnLayout {
             scaleRatioChanged(value)
           }
           text: Math.floor(selectedScaleRatio * 100) + "%"
-        }
-      }
-
-      // Divider
-      Rectangle {
-        Layout.fillWidth: true
-        Layout.preferredHeight: 1
-        color: Color.mOutline
-        opacity: 0.2
-        Layout.topMargin: Style.marginS
-        Layout.bottomMargin: Style.marginS
-      }
-
-      // Bar Floating toggle
-      RowLayout {
-        Layout.fillWidth: true
-        spacing: Style.marginM
-        Rectangle {
-          width: 32
-          height: 32
-          radius: Style.radiusM
-          color: Color.mSurface
-          NIcon {
-            icon: "layout-2"
-            pointSize: Style.fontSizeL
-            color: Color.mPrimary
-            anchors.centerIn: parent
-          }
-        }
-        ColumnLayout {
-          Layout.fillWidth: true
-          spacing: 2
-          NText {
-            text: I18n.tr("settings.bar.appearance.floating.label")
-            pointSize: Style.fontSizeL
-            font.weight: Style.fontWeightBold
-            color: Color.mOnSurface
-          }
-          NText {
-            text: I18n.tr("settings.bar.appearance.floating.description")
-            pointSize: Style.fontSizeS
-            color: Color.mOnSurfaceVariant
-            wrapMode: Text.WordWrap
-            Layout.fillWidth: true
-          }
-        }
-        NToggle {
-          checked: Settings.data.bar.floating
-          onToggled: function (checked) {
-            Settings.data.bar.floating = checked
-          }
         }
       }
 
