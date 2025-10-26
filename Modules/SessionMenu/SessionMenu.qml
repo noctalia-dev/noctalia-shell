@@ -28,23 +28,23 @@ NPanel {
   // Navigation properties
   property int selectedIndex: 0
   readonly property var powerOptions: [{
-      "action": "lock",
+      "action": I18n.tr("session-menu.lock"),
       "icon": "lock",
       "title": I18n.tr("session-menu.lock")
     }, {
-      "action": "suspend",
+      "action": I18n.tr("session-menu.suspend"),
       "icon": "suspend",
       "title": I18n.tr("session-menu.suspend")
     }, {
-      "action": "reboot",
+      "action": I18n.tr("session-menu.reboot"),
       "icon": "reboot",
       "title": I18n.tr("session-menu.reboot")
     }, {
-      "action": "logout",
+      "action": I18n.tr("session-menu.logout"),
       "icon": "logout",
       "title": I18n.tr("session-menu.logout")
     }, {
-      "action": "shutdown",
+      "action": I18n.tr("session-menu.shutdown"),
       "icon": "shutdown",
       "title": I18n.tr("session-menu.shutdown"),
       "isShutdown": true
@@ -281,7 +281,7 @@ NPanel {
                                           "seconds": Math.ceil(timeRemaining / 1000)
                                         }) : I18n.tr("session-menu.title")
             font.weight: Style.fontWeightBold
-            pointSize: Style.fontSizeM
+            pointSize: Style.fontSizeL
             color: timerActive ? Color.mPrimary : Color.mOnSurface
             Layout.alignment: Qt.AlignVCenter
             verticalAlignment: Text.AlignVCenter
@@ -414,7 +414,7 @@ NPanel {
         NText {
           text: buttonRoot.title
           font.weight: Style.fontWeightMedium
-          pointSize: Style.fontSizeS
+          pointSize: Style.fontSizeM
           color: {
             if (buttonRoot.pending)
               return Color.mPrimary
@@ -447,7 +447,7 @@ NPanel {
         NText {
           anchors.centerIn: parent
           text: Math.ceil(timeRemaining / 1000)
-          pointSize: Style.fontSizeXS
+          pointSize: Style.fontSizeS
           font.weight: Style.fontWeightBold
           color: Color.mOnPrimary
         }
