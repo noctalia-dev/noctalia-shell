@@ -7,7 +7,7 @@
     "monitors": [],
     "density": "default",
     "showCapsule": true,
-    "barStyle": "RectangleHug",
+    "barStyle": "rectangle-hug",
     "marginVertical": 0.25,
     "marginHorizontal": 0.25,
     "widgets": {

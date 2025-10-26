@@ -141,22 +141,23 @@ Singleton {
       property string density: "default" // "compact", "default", "comfortable"
       property bool showCapsule: true
 
-      // Bar style: "Floating", "Rectangle", "RectangleHug"
-      property string barStyle: "RectangleHug"
+      // Bar style: "floating", "rectangle", "rectangle-hug"
+      property string barStyle: "rectangle-hug"
       property real marginVertical: 0.25
       property real marginHorizontal: 0.25
 
       // Backward-compatible boolean for existing code that still uses `bar.floating`, intended for bar style choice feature.
+      // TODO: migration
       property bool floating: false
-      onBarStyleChanged: floating = (barStyle === "Floating")
+      onBarStyleChanged: floating = (barStyle === "floating")
       onFloatingChanged: {
         // If floating is toggled, update barStyle accordingly.
-        if (floating && barStyle !== "Floating")
-          barStyle = "Floating"
-        else if (!floating && barStyle === "Floating")
-          barStyle = "Rectangle"
+        if (floating && barStyle !== "floating")
+          barStyle = "floating"
+        else if (!floating && barStyle === "floating")
+          barStyle = "rectangle-hug"
       }
-      Component.onCompleted: floating = (barStyle === "Floating")
+      Component.onCompleted: floating = (barStyle === "floating")
 
       // Widget configuration for modular bar system
       property JsonObject widgets
@@ -521,9 +522,9 @@ Singleton {
     // migrate bar.floating to bar.barStyle
     if (adapter.bar.hasOwnProperty("floating")) {
       if (adapter.bar.floating === true) {
-        adapter.bar.barStyle = "Floating"
+        adapter.bar.barStyle = "floating"
       } else {
-        adapter.bar.barStyle = "Rectangle"
+        adapter.bar.barStyle = "rectangle-hug"
       }
       delete adapter.bar.floating
       Logger.d("Settings", "Migrated bar.floating to bar.barStyle:", adapter.bar.barStyle)

@@ -70,22 +70,22 @@ ColumnLayout {
     label: I18n.tr("settings.bar.appearance.bar-style.label")
     description: I18n.tr("settings.bar.appearance.bar-style.description")
     model: [{
-        "key": "Rectangle",
+        "key": "rectangle",
         "name": I18n.tr("options.bar.barStyle.rectangle")
       }, {
-        "key": "RectangleHug",
+        "key": "rectangle-hug",
         "name": I18n.tr("options.bar.barStyle.rectangle-hug")
       }, {
-        "key": "Floating",
+        "key": "floating",
         "name": I18n.tr("options.bar.barStyle.floating")
       }]
     currentKey: Settings.data.bar.barStyle
     onSelected: key => Settings.data.bar.barStyle = key
   }
 
-  // Floating bar options - only show when barStyle is "Floating"
+  // Floating bar options - only show when barStyle is "floating"
   ColumnLayout {
-    visible: Settings.data.bar.barStyle === "Floating"
+    visible: Settings.data.bar.barStyle === "floating"
     spacing: Style.marginS
     Layout.fillWidth: true
 

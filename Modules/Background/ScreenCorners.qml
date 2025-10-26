@@ -7,7 +7,7 @@ import qs.Services
 import qs.Widgets
 
 Loader {
-  active: Settings.data.general.showScreenCorners || Settings.data.bar.barStyle === "RectangleHug"
+  active: Settings.data.general.showScreenCorners || Settings.data.bar.barStyle === "rectangle-hug"
 
   sourceComponent: Variants {
     model: Quickshell.screens
@@ -49,7 +49,7 @@ Loader {
       // Margins for hugCorner items to follow bar position when present on this screen
       readonly property bool __barOnThisScreen: (modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)
       readonly property bool __barActive: BarService.isVisible && __barOnThisScreen && Settings.data.bar.backgroundOpacity > 0
-      readonly property bool __hugCornerEnabled: Settings.data.bar.barStyle === "RectangleHug"
+      readonly property bool __hugCornerEnabled: Settings.data.bar.barStyle === "rectangle-hug"
       readonly property int __hugTopMargin: (__hugCornerEnabled && __barActive && Settings.data.bar.position === "top") ? Style.barHeight : 0
       readonly property int __hugBottomMargin: (__hugCornerEnabled && __barActive && Settings.data.bar.position === "bottom") ? Style.barHeight : 0
       readonly property int __hugLeftMargin: (__hugCornerEnabled && __barActive && Settings.data.bar.position === "left") ? Style.barHeight : 0
