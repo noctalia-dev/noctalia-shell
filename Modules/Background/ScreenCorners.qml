@@ -102,6 +102,10 @@ Loader {
             if (topLeftHugCorner.available)
               topLeftHugCorner.requestPaint()
           }
+          function onHugCornerColorChanged() {
+            if (topLeftHugCorner.available)
+              topLeftHugCorner.requestPaint()
+          }
           function onCornerRadiusChanged() {
             if (topLeftHugCorner.available)
               topLeftHugCorner.requestPaint()
@@ -151,6 +155,10 @@ Loader {
         Connections {
           target: root
           function onCornerColorChanged() {
+            if (topRightHugCorner.available)
+              topRightHugCorner.requestPaint()
+          }
+          function onHugCornerColorChanged() {
             if (topRightHugCorner.available)
               topRightHugCorner.requestPaint()
           }
@@ -206,6 +214,10 @@ Loader {
             if (bottomLeftHugCorner.available)
               bottomLeftHugCorner.requestPaint()
           }
+          function onHugCornerColorChanged() {
+            if (bottomLeftHugCorner.available)
+              bottomLeftHugCorner.requestPaint()
+          }
           function onCornerRadiusChanged() {
             if (bottomLeftHugCorner.available)
               bottomLeftHugCorner.requestPaint()
@@ -255,6 +267,10 @@ Loader {
         Connections {
           target: root
           function onCornerColorChanged() {
+            if (bottomRightHugCorner.available)
+              bottomRightHugCorner.requestPaint()
+          }
+          function onHugCornerColorChanged() {
             if (bottomRightHugCorner.available)
               bottomRightHugCorner.requestPaint()
           }
