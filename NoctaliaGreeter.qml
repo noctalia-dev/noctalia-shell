@@ -179,31 +179,6 @@ Item {
             }
           }
         }
-
-        // Animated particles like your lockscreen
-        Repeater {
-          model: 20
-          Rectangle {
-            width: Math.random() * 4 + 2
-            height: width
-            radius: width * 0.5
-            color: Color.applyOpacity(Color.mPrimary, "4D")
-            x: Math.random() * parent.width
-            y: Math.random() * parent.height
-
-            SequentialAnimation on opacity {
-              loops: Animation.Infinite
-              NumberAnimation {
-                to: 0.8
-                duration: 2000 + Math.random() * 3000
-              }
-              NumberAnimation {
-                to: 0.1
-                duration: 2000 + Math.random() * 3000
-              }
-            }
-          }
-        }
       }
 
       Item {
