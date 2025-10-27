@@ -61,21 +61,6 @@ Item {
         }
       }
 
-      // Timer to update time
-      Timer {
-        interval: 1000
-        running: true
-        repeat: true
-        onTriggered: {
-          if (typeof timeText !== 'undefined' && timeText) {
-            timeText.text = Qt.formatDateTime(new Date(), "HH:mm")
-          }
-          if (typeof dateText !== 'undefined' && dateText) {
-            dateText.text = Qt.formatDateTime(new Date(), "dddd, MMMM d")
-          }
-        }
-      }
-
       // User management process
       Process {
         id: users
