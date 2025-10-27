@@ -315,7 +315,7 @@ Item {
               height: 40
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
-              anchors.bottomMargin: 96 + (Settings.data.general.compactLockScreen ? 116 : 220)
+              anchors.bottomMargin: 100 + 48 + 3 * 14 + (Settings.data.general.compactLockScreen ? 36 : 48)
               topLeftRadius: Style.radiusL
               topRightRadius: Style.radiusL
               color: Color.mSurface
@@ -368,7 +368,7 @@ Item {
             // Bottom container with password input and controls
             Rectangle {
               width: 750
-              height: Settings.data.general.compactLockScreen ? 120 : 220
+              height: 48 + 3 * 14 + (Settings.data.general.compactLockScreen ? 36 : 48)
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
               anchors.bottomMargin: 100
