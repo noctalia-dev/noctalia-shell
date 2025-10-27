@@ -8,6 +8,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Services.UPower
 
 import qs.Commons
 import qs.Services
