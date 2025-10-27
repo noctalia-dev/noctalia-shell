@@ -224,15 +224,15 @@
           "label": "Afficher la capsule",
           "description": "Afficher les arrière-plans des widgets."
         },
-        "floating": {
-          "label": "Barre flottante",
-          "description": "Affiche la barre sous forme de 'pilule' flottante. Note : Ceci déplacera les coins de l'écran vers les bords."
-        },
         "margins": {
           "label": "Marges",
           "description": "Ajustez les marges autour de la barre flottante.",
           "vertical": "Verticale",
           "horizontal": "Horizontale"
+        },
+        "bar-style": {
+          "label": "Style de la barre",
+          "description": "Choisissez le style de la barre."
         }
       },
       "widgets": {
@@ -1398,6 +1398,11 @@
         "default": "Défaut",
         "comfortable": "Confortable",
         "mini": "Mini"
+      },
+      "barStyle": {
+        "floating": "Flottante",
+        "rectangle": "Rectangle",
+        "rectangle-hug": "Rectangle (collé à la fenêtre)"
       }
     },
     "launcher": {

@@ -224,9 +224,9 @@
           "label": "Show capsule",
           "description": "Show widget backgrounds."
         },
-        "floating": {
-          "label": "Floating bar",
-          "description": "Displays the bar as a floating 'pill'. Note: This will move the screen corners to the edges."
+        "bar-style": {
+          "label": "Bar style",
+          "description": "Choose the bar's style"
         },
         "margins": {
           "label": "Margins",
@@ -1392,6 +1392,11 @@
         "bottom": "Bottom",
         "left": "Left",
         "right": "Right"
+      },
+      "barStyle": {
+        "floating": "Floating",
+        "rectangle": "Rectangle",
+        "rectangle-hug": "Rectangle (hug to window)"
       },
       "density": {
         "mini": "Mini",

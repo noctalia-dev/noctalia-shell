@@ -224,15 +224,15 @@
           "label": "Kapsel anzeigen",
           "description": "Widget-Hintergründe anzeigen."
         },
-        "floating": {
-          "label": "Schwebende Statusleiste",
-          "description": "Statusleiste als schwebende 'Pille' anzeigen. Hinweis: Dies verschiebt die Bildschirmecken an die Ränder."
-        },
         "margins": {
           "label": "Ränder",
           "description": "Ränder um die schwebende Statusleiste anpassen.",
           "vertical": "Vertikal",
           "horizontal": "Horizontal"
+        },
+        "bar-style": {
+          "label": "Leistenstil",
+          "description": "Wählen Sie den Stil der Statusleiste aus."
         }
       },
       "widgets": {
@@ -1415,6 +1415,11 @@
         "default": "Standard",
         "comfortable": "Bequem",
         "mini": "Mini"
+      },
+      "barStyle": {
+        "floating": "Schwebend",
+        "rectangle": "Rechteck",
+        "rectangle-hug": "Rechteck (ans Fenster anschmiegen)"
       }
     },
     "launcher": {

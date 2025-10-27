@@ -67,44 +67,25 @@ ColumnLayout {
 
   NComboBox {
     Layout.fillWidth: true
-    label: I18n.tr("settings.bar.appearance.density.label")
-    description: I18n.tr("settings.bar.appearance.density.description")
+    label: I18n.tr("settings.bar.appearance.bar-style.label")
+    description: I18n.tr("settings.bar.appearance.bar-style.description")
     model: [{
-        "key": "mini",
-        "name": I18n.tr("options.bar.density.mini")
+        "key": "rectangle",
+        "name": I18n.tr("options.bar.barStyle.rectangle")
       }, {
-        "key": "compact",
-        "name": I18n.tr("options.bar.density.compact")
+        "key": "rectangle-hug",
+        "name": I18n.tr("options.bar.barStyle.rectangle-hug")
       }, {
-        "key": "default",
-        "name": I18n.tr("options.bar.density.default")
-      }, {
-        "key": "comfortable",
-        "name": I18n.tr("options.bar.density.comfortable")
+        "key": "floating",
+        "name": I18n.tr("options.bar.barStyle.floating")
       }]
-    currentKey: Settings.data.bar.density
-    onSelected: key => Settings.data.bar.density = key
+    currentKey: Settings.data.bar.barStyle
+    onSelected: key => Settings.data.bar.barStyle = key
   }
 
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("settings.bar.appearance.show-capsule.label")
-    description: I18n.tr("settings.bar.appearance.show-capsule.description")
-    checked: Settings.data.bar.showCapsule
-    onToggled: checked => Settings.data.bar.showCapsule = checked
-  }
-
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("settings.bar.appearance.floating.label")
-    description: I18n.tr("settings.bar.appearance.floating.description")
-    checked: Settings.data.bar.floating
-    onToggled: checked => Settings.data.bar.floating = checked
-  }
-
-  // Floating bar options - only show when floating is enabled
+  // Floating bar options - only show when barStyle is "floating"
   ColumnLayout {
-    visible: Settings.data.bar.floating
+    visible: Settings.data.bar.barStyle === "floating"
     spacing: Style.marginS
     Layout.fillWidth: true
 
@@ -157,6 +138,35 @@ ColumnLayout {
         }
       }
     }
+  }
+
+  NComboBox {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.bar.appearance.density.label")
+    description: I18n.tr("settings.bar.appearance.density.description")
+    model: [{
+        "key": "mini",
+        "name": I18n.tr("options.bar.density.mini")
+      }, {
+        "key": "compact",
+        "name": I18n.tr("options.bar.density.compact")
+      }, {
+        "key": "default",
+        "name": I18n.tr("options.bar.density.default")
+      }, {
+        "key": "comfortable",
+        "name": I18n.tr("options.bar.density.comfortable")
+      }]
+    currentKey: Settings.data.bar.density
+    onSelected: key => Settings.data.bar.density = key
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.bar.appearance.show-capsule.label")
+    description: I18n.tr("settings.bar.appearance.show-capsule.description")
+    checked: Settings.data.bar.showCapsule
+    onToggled: checked => Settings.data.bar.showCapsule = checked
   }
 
   ColumnLayout {
