@@ -11,6 +11,9 @@ import Quickshell.Wayland
 import Quickshell.Services.Greetd
 
 import qs.Commons
+import qs.Services
+import qs.Widgets
+import qs.Modules.Audio
 
 Item {
   id: root
@@ -31,7 +34,25 @@ Item {
   property string noctaliaWallpaper: ""
   property string currentMonitorName: ""
 
+  property bool i18nLoaded: false
+  property bool settingsLoaded: false
+
+  Connections {
+    target: I18n ? I18n : null
+    function onTranslationsLoaded() {
+      i18nLoaded = true
+    }
+  }
+
+  Connections {
+    target: Settings ? Settings : null
+    function onSettingsLoaded() {
+      settingsLoaded = true
+    }
+  }
+
   function authenticate() {
+    sessionLock.showFailure = false
     Greetd.createSession(users.current_user)
   }
 
@@ -133,6 +154,9 @@ Item {
     property string passwdBuffer: ""
     readonly property bool unlocking: Greetd.state == GreetdState.Authenticating
 
+    property bool showFailure: false
+    property string errorMessage: ""
+
     locked: true
 
     WlSessionLockSurface {
@@ -184,532 +208,694 @@ Item {
       Item {
         anchors.fill: parent
 
-        ColumnLayout {
-          anchors.top: parent.top
-          anchors.left: parent.left
-          anchors.right: parent.right
-          anchors.topMargin: 80
-          spacing: 40
-
-          // Time and Date display
-          Column {
-            spacing: 10
-            Layout.alignment: Qt.AlignHCenter
-
-            Text {
-              id: timeText
-              text: Qt.formatDateTime(new Date(), "HH:mm")
-              font.family: "DejaVu Sans"
-              font.pointSize: 72
-              font.weight: Font.Bold
-              color: Color.mOnSurface
-              horizontalAlignment: Text.AlignHCenter
-
-              SequentialAnimation on scale {
-                loops: Animation.Infinite
-                NumberAnimation {
-                  to: 1.02
-                  duration: 2000
-                  easing.type: Easing.InOutQuad
-                }
-                NumberAnimation {
-                  to: 1.0
-                  duration: 2000
-                  easing.type: Easing.InOutQuad
-                }
-              }
-            }
-
-            Text {
-              id: dateText
-              text: Qt.formatDateTime(new Date(), "dddd, MMMM d")
-              font.family: "DejaVu Sans"
-              font.pointSize: 24
-              font.weight: Font.Light
-              color: Color.mOnSurface
-              horizontalAlignment: Text.AlignHCenter
-              width: timeText.width
-            }
-          }
-
-          // Centered circular avatar area
-          Rectangle {
-            width: 108
-            height: 108
-            radius: width * 0.5
-            color: "transparent"
-            border.color: Color.mPrimary
-            border.width: 2
-            anchors.horizontalCenter: parent.horizontalCenter
-            z: 10
-
-            Rectangle {
-              anchors.centerIn: parent
-              width: parent.width + 24
-              height: parent.height + 24
-              radius: width * 0.5
-              color: "transparent"
-              border.color: Color.applyOpacity(Color.mPrimary, "4D")
-              border.width: 1
-              z: -1
-              visible: !sessionLock.unlocking
-
-              SequentialAnimation on scale {
-                loops: Animation.Infinite
-                NumberAnimation {
-                  to: 1.1
-                  duration: 1500
-                  easing.type: Easing.InOutQuad
-                }
-                NumberAnimation {
-                  to: 1.0
-                  duration: 1500
-                  easing.type: Easing.InOutQuad
-                }
-              }
-            }
-
-            // User avatar - use noctalia avatar with circular shader, fallback to initial
-            Rectangle {
-              anchors.centerIn: parent
-              width: 100
-              height: 100
-              radius: width * 0.5
-              color: Color.mPrimary
-
-              // Raw image used as texture source for the shader
-              Image {
-                id: avatarImage
-                anchors.fill: parent
-                source: GreeterSettings.noctaliaAvatarImage
-                fillMode: Image.PreserveAspectCrop
-                smooth: true
-                visible: false
-
-                onStatusChanged: {
-                  if (status === Image.Error && GreeterSettings.noctaliaAvatarImage) {
-                    console.log("[WARN] Failed to load avatar image:", GreeterSettings.noctaliaAvatarImage)
-                  } else if (status === Image.Ready) {
-                    console.log("[INFO] Successfully loaded avatar image:", GreeterSettings.noctaliaAvatarImage)
-                  }
-                }
-              }
-
-              // Circular mask shader effect
-              ShaderEffect {
-                anchors.fill: parent
-                visible: avatarImage.status === Image.Ready
-                property var source: avatarImage
-                property real imageOpacity: 1.0
-                fragmentShader: Qt.resolvedUrl("./Shaders/qsb/circled_image.frag.qsb")
-              }
-
-              // Fallback to initial letter if no avatar image
-              Text {
-                anchors.centerIn: parent
-                text: users.current_user.charAt(0).toUpperCase()
-                font.pointSize: 36
-                font.bold: true
-                color: Color.mOnSurface
-                visible: avatarImage.status !== Image.Ready
-              }
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              hoverEnabled: true
-              onEntered: parent.scale = 1.05
-              onExited: parent.scale = 1.0
-              onClicked: users.next()
-            }
-
-            Behavior on scale {
-              NumberAnimation {
-                duration: 200
-                easing.type: Easing.OutBack
-              }
-            }
-          }
-
-          // Session selector below avatar
-          Rectangle {
-            height: 40
-            radius: 20
-            color: "transparent"
-            border.color: Color.mPrimary
-            border.width: 1
-            anchors.horizontalCenter: parent.horizontalCenter
-
-            // Make width depend on text length
-            width: Math.max(180, sessionNameText.paintedWidth + 40)
-
-            Text {
-              id: sessionNameText
-              anchors.centerIn: parent
-              text: sessions.current_session_name.replace(/\(|\)/g, "")
-              color: Color.mOnSurface
-              font.pointSize: 16
-              font.bold: true
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              onClicked: {
-                sessions.next()
-                // Persist selection (use identifier from exec or sanitized name)
-                const ident = sessions.current_session.split(" ")[0]
-                GreeterSettings.setLastSessionId(ident || sessions.current_session_name)
-              }
-            }
-          }
-        }
-
-        // Terminal-style input area
+        // Time, Date, and User Profile Container
         Rectangle {
-          id: terminalBackground
-          width: 720
-          height: 280
-          anchors.centerIn: parent
-          anchors.verticalCenterOffset: 50
-          radius: 20
-          color: Color.applyOpacity(Color.mSurface, "E6")
-          border.color: Color.mPrimary
-          border.width: 2
+          width: Math.max(500, contentRow.implicitWidth + 32)
+          height: Math.max(120, contentRow.implicitHeight + 32)
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.top: parent.top
+          anchors.topMargin: 100
+          radius: Style.radiusL
+          color: Color.mSurface
+          border.color: Qt.alpha(Color.mOutline, 0.2)
+          border.width: 1
 
-          // Terminal scanlines effect
-          Repeater {
-            model: 20
+          RowLayout {
+            id: contentRow
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 32
+
+            // Left side: Avatar
             Rectangle {
-              width: parent.width
-              height: 1
-              color: Color.applyOpacity(Color.mPrimary, "1A")
-              y: index * 10
-              opacity: 0.3
-              SequentialAnimation on opacity {
-                loops: Animation.Infinite
-                NumberAnimation {
-                  to: 0.6
-                  duration: 2000 + Math.random() * 1000
-                }
-                NumberAnimation {
-                  to: 0.1
-                  duration: 2000 + Math.random() * 1000
-                }
-              }
-            }
-          }
+              Layout.preferredWidth: 70
+              Layout.preferredHeight: 70
+              Layout.alignment: Qt.AlignVCenter
+              radius: width * 0.5
+              color: Color.transparent
 
-          // Terminal header
-          Rectangle {
-            width: parent.width
-            height: 40
-            color: Color.applyOpacity(Color.mPrimary, "33")
-            topLeftRadius: 18
-            topRightRadius: 18
-
-            RowLayout {
-              anchors.fill: parent
-              anchors.margins: 10
-              spacing: 10
-
-              Text {
-                text: "SECURE TERMINAL"
-                color: Color.mOnSurface
-                font.family: "DejaVu Sans Mono"
-                font.pointSize: 14
-                font.weight: Font.Bold
-                Layout.fillWidth: true
-              }
-
-              Text {
-                text: "USER: " + users.current_user
-                color: Color.mOnSurface
-                font.family: "DejaVu Sans Mono"
-                font.pointSize: 12
-              }
-            }
-          }
-
-          // Terminal content
-          ColumnLayout {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            anchors.margins: 20
-            anchors.topMargin: 55
-            spacing: 15
-
-            RowLayout {
-              Layout.fillWidth: true
-              spacing: 10
-
-              Text {
-                text: users.current_user + "@noctalia:~$"
-                color: Color.mPrimary
-                font.family: "DejaVu Sans Mono"
-                font.pointSize: 16
-                font.weight: Font.Bold
-              }
-
-              Text {
-                text: "sudo start-session"
-                color: Color.mOnSurface
-                font.family: "DejaVu Sans Mono"
-                font.pointSize: 16
-              }
-
-              // Visible password input (terminal style)
-              TextInput {
-                id: terminalPassword
-                color: Color.mOnSurface
-                font.family: "DejaVu Sans Mono"
-                font.pointSize: 16
-                echoMode: TextInput.Password
-                passwordCharacter: "*"
-                passwordMaskDelay: 0
-                focus: true
-                text: sessionLock.passwdBuffer
-                // Size to content for terminal look
-                width: Math.max(1, contentWidth)
-                selectByMouse: false
-
-                Component.onCompleted: terminalPassword.forceActiveFocus()
-
-                onTextChanged: sessionLock.passwdBuffer = text
-
-                Keys.onPressed: kevent => {
-                  if (kevent.key === Qt.Key_Enter || kevent.key === Qt.Key_Return) {
-                    if (Greetd.state == GreetdState.Inactive) {
-                      root.authenticate()
-                      kevent.accepted = true
-                    }
-                  } else if (kevent.key === Qt.Key_Escape) {
-                    sessionLock.passwdBuffer = ""
-                    terminalPassword.text = ""
-                    kevent.accepted = true
-                  }
-                }
-              }
-            }
-
-            Text {
-              text: sessionLock.unlocking ? "Authenticating..." : ""
-              color: sessionLock.unlocking ? Color.mPrimary : "transparent"
-              font.family: "DejaVu Sans Mono"
-              font.pointSize: 16
-              Layout.fillWidth: true
-
-              SequentialAnimation on opacity {
-                running: sessionLock.unlocking
-                loops: Animation.Infinite
-                NumberAnimation {
-                  to: 1.0
-                  duration: 800
-                }
-                NumberAnimation {
-                  to: 0.5
-                  duration: 800
-                }
-              }
-            }
-
-            // Execute button
-            Rectangle {
-              width: 120
-              height: 40
-              radius: 10
-              color: executeButtonArea.containsMouse ? Color.mPrimary : Color.applyOpacity(Color.mPrimary, "33")
-              border.color: Color.mPrimary
-              border.width: 1
-              enabled: !sessionLock.unlocking
-              Layout.alignment: Qt.AlignRight
-              Layout.bottomMargin: -10
-
-              Text {
-                anchors.centerIn: parent
-                text: sessionLock.unlocking ? "EXECUTING" : "EXECUTE"
-                color: executeButtonArea.containsMouse ? Color.mOnSurface : Color.mPrimary
-                font.family: "DejaVu Sans Mono"
-                font.pointSize: 14
-                font.weight: Font.Bold
-              }
-
-              MouseArea {
-                id: executeButtonArea
+              Rectangle {
                 anchors.fill: parent
-                hoverEnabled: true
-                onClicked: root.authenticate()
+                radius: parent.radius
+                color: Color.transparent
+                border.color: Qt.alpha(Color.mPrimary, 0.8)
+                border.width: 2
 
-                SequentialAnimation on scale {
-                  running: executeButtonArea.containsMouse
-                  NumberAnimation {
-                    to: 1.05
-                    duration: 200
-                    easing.type: Easing.OutCubic
+                SequentialAnimation on border.color {
+                  loops: Animation.Infinite
+                  ColorAnimation {
+                    to: Qt.alpha(Color.mPrimary, 1.0)
+                    duration: 2000
+                    easing.type: Easing.InOutQuad
+                  }
+                  ColorAnimation {
+                    to: Qt.alpha(Color.mPrimary, 0.8)
+                    duration: 2000
+                    easing.type: Easing.InOutQuad
                   }
                 }
+              }
+
+              NImageCircled {
+                anchors.centerIn: parent
+                width: 66
+                height: 66
+                imagePath: Settings.preprocessPath(Settings.data.general.avatarImage)
+                fallbackIcon: "person"
 
                 SequentialAnimation on scale {
-                  running: !executeButtonArea.containsMouse
+                  loops: Animation.Infinite
+                  NumberAnimation {
+                    to: 1.02
+                    duration: 4000
+                    easing.type: Easing.InOutQuad
+                  }
                   NumberAnimation {
                     to: 1.0
+                    duration: 4000
+                    easing.type: Easing.InOutQuad
+                  }
+                }
+              }
+            }
+
+            // Center: User Info Column (left-aligned text)
+            ColumnLayout {
+              Layout.alignment: Qt.AlignVCenter
+              spacing: 2
+
+              // Welcome back + Username on one line
+              NText {
+                text: I18n.tr("lock-screen.welcome-back") + "!"
+                pointSize: Style.fontSizeXXL
+                font.weight: Font.Medium
+                color: Color.mOnSurface
+                horizontalAlignment: Text.AlignLeft
+              }
+
+              // Date below
+              NText {
+                text: {
+                  var lang = Qt.locale().name.split("_")[0]
+                  var formats = {
+                    "de": "dddd, d. MMMM",
+                    "es": "dddd, d 'de' MMMM",
+                    "fr": "dddd d MMMM",
+                    "pt": "dddd, d 'de' MMMM",
+                    "zh": "yyyy年M月d日 dddd"
+                  }
+                  return Qt.locale().toString(Time.date, formats[lang] || "dddd, MMMM d")
+                }
+                pointSize: Style.fontSizeXL
+                font.weight: Font.Medium
+                color: Color.mOnSurfaceVariant
+                horizontalAlignment: Text.AlignLeft
+              }
+            }
+
+            // Spacer to push time to the right
+            Item {
+              Layout.fillWidth: true
+            }
+
+            Item {
+              Layout.preferredWidth: 70
+              Layout.preferredHeight: 70
+              Layout.alignment: Qt.AlignVCenter
+
+              // Seconds circular progress
+              Canvas {
+                id: secondsProgress
+                anchors.fill: parent
+
+                property real progress: Time.date.getSeconds() / 60
+                onProgressChanged: requestPaint()
+
+                Connections {
+                  target: Time
+                  function onDateChanged() {
+                    const total = Time.date.getSeconds() * 1000 + Time.date.getMilliseconds()
+                    secondsProgress.progress = total / 60000
+                  }
+                }
+
+                onPaint: {
+                  var ctx = getContext("2d")
+                  var centerX = width / 2
+                  var centerY = height / 2
+                  var radius = Math.min(width, height) / 2 - 3
+
+                  ctx.reset()
+
+                  // Background circle
+                  ctx.beginPath()
+                  ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
+                  ctx.lineWidth = 2.5
+                  ctx.strokeStyle = Qt.alpha(Color.mOnSurface, 0.15)
+                  ctx.stroke()
+
+                  // Progress arc
+                  ctx.beginPath()
+                  ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progress * 2 * Math.PI)
+                  ctx.lineWidth = 2.5
+                  ctx.strokeStyle = Color.mPrimary
+                  ctx.lineCap = "round"
+                  ctx.stroke()
+                }
+              }
+
+              // Digital clock
+              ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 0
+
+                NText {
+                  text: {
+                    var t = Settings.data.location.use12hourFormat ? Qt.locale().toString(Time.date, "hh AP") : Qt.locale().toString(Time.date, "HH")
+                    return t
+                  }
+                  pointSize: Style.fontSizeM
+                  font.weight: Style.fontWeightBold
+                  family: Settings.data.ui.fontFixed
+                  color: Color.mOnSurface
+                  horizontalAlignment: Text.AlignHCenter
+                  Layout.alignment: Qt.AlignHCenter
+                }
+
+                NText {
+                  text: Qt.formatTime(Time.date, "mm")
+                  pointSize: Style.fontSizeM
+                  font.weight: Style.fontWeightBold
+                  family: Settings.data.ui.fontFixed
+                  color: Color.mOnSurfaceVariant
+                  horizontalAlignment: Text.AlignHCenter
+                  Layout.alignment: Qt.AlignHCenter
+                }
+              }
+            }
+          }
+        }
+
+        // Error notification
+        Rectangle {
+          width: 450
+          height: 60
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.bottom: parent.bottom
+          anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 240 : 320) * Style.uiScaleRatio
+          radius: 30
+          color: Color.mError
+          border.color: Color.mError
+          border.width: 1
+          visible: sessionLock.showFailure && sessionLock.errorMessage
+          opacity: visible ? 1.0 : 0.0
+
+          RowLayout {
+            anchors.centerIn: parent
+            spacing: 10
+
+            NIcon {
+              icon: "alert-circle"
+              pointSize: Style.fontSizeL
+              color: Color.mOnError
+            }
+
+            NText {
+              text: sessionLock.errorMessage || "Authentication failed"
+              color: Color.mOnError
+              pointSize: Style.fontSizeL
+              font.weight: Font.Medium
+              horizontalAlignment: Text.AlignHCenter
+            }
+          }
+
+          Behavior on opacity {
+            NumberAnimation {
+              duration: 300
+              easing.type: Easing.OutCubic
+            }
+          }
+        }
+
+        // Compact status indicators container (compact mode only)
+        Rectangle {
+          width: {
+            var hasBattery = UPower.displayDevice && UPower.displayDevice.ready && UPower.displayDevice.isPresent
+            var hasKeyboard = keyboardLayout.currentLayout !== "Unknown"
+
+            if (hasBattery && hasKeyboard) {
+              return 200
+            } else if (hasBattery || hasKeyboard) {
+              return 120
+            } else {
+              return 0
+            }
+          }
+          height: 40
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.bottom: parent.bottom
+          anchors.bottomMargin: 96 + (Settings.data.general.compactLockScreen ? 116 : 220)
+          topLeftRadius: Style.radiusL
+          topRightRadius: Style.radiusL
+          color: Color.mSurface
+
+          RowLayout {
+            anchors.centerIn: parent
+            spacing: 16
+
+            // Battery indicator
+            RowLayout {
+              spacing: 6
+              visible: UPower.displayDevice && UPower.displayDevice.ready && UPower.displayDevice.isPresent
+
+              NIcon {
+                icon: BatteryService.getIcon(Math.round(UPower.displayDevice.percentage * 100), UPower.displayDevice.state === UPowerDeviceState.Charging, true)
+                pointSize: Style.fontSizeM
+                color: UPower.displayDevice.state === UPowerDeviceState.Charging ? Color.mPrimary : Color.mOnSurfaceVariant
+              }
+
+              NText {
+                text: Math.round(UPower.displayDevice.percentage * 100) + "%"
+                color: Color.mOnSurfaceVariant
+                pointSize: Style.fontSizeM
+                font.weight: Font.Medium
+              }
+            }
+
+            // Keyboard layout indicator
+            RowLayout {
+              spacing: 6
+              visible: keyboardLayout.currentLayout !== "Unknown"
+
+              NIcon {
+                icon: "keyboard"
+                pointSize: Style.fontSizeM
+                color: Color.mOnSurfaceVariant
+              }
+
+              NText {
+                text: keyboardLayout.currentLayout
+                color: Color.mOnSurfaceVariant
+                pointSize: Style.fontSizeM
+                font.weight: Font.Medium
+                elide: Text.ElideRight
+              }
+            }
+          }
+        }
+
+        // Bottom container with password input and controls
+        Rectangle {
+          width: 750
+          height: Settings.data.general.compactLockScreen ? 120 : 220
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.bottom: parent.bottom
+          anchors.bottomMargin: 100
+          radius: Style.radiusL
+          color: Color.mSurface
+
+          ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 14
+            spacing: 14
+
+            // Password input
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: 0
+
+              Item {
+                Layout.preferredWidth: Style.marginM
+              }
+
+              Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 48
+                radius: 24
+                color: Color.mSurface
+                border.color: passwordInput.activeFocus ? Color.mPrimary : Qt.alpha(Color.mOutline, 0.3)
+                border.width: passwordInput.activeFocus ? 2 : 1
+
+                property bool passwordVisible: false
+
+                Row {
+                  anchors.left: parent.left
+                  anchors.leftMargin: 18
+                  anchors.verticalCenter: parent.verticalCenter
+                  spacing: 14
+
+                  NIcon {
+                    icon: "lock"
+                    pointSize: Style.fontSizeL
+                    color: passwordInput.activeFocus ? Color.mPrimary : Color.mOnSurfaceVariant
+                    anchors.verticalCenter: parent.verticalCenter
+                  }
+
+                  // Hidden input that receives actual text
+                  TextInput {
+                    id: passwordInput
+                    width: 0
+                    height: 0
+                    visible: false
+                    // enabled: !lockContext.unlockInProgress // TODO: Implement unlock progress tracking
+                    font.pointSize: Style.fontSizeM
+                    color: Color.mPrimary
+                    echoMode: parent.parent.passwordVisible ? TextInput.Normal : TextInput.Password
+                    passwordCharacter: "•"
+                    passwordMaskDelay: 0
+                    text: sessionLock.passwdBuffer
+                    onTextChanged: sessionLock.passwdBuffer = text
+
+                    Keys.onPressed: kevent => {
+                      if (kevent.key === Qt.Key_Enter || kevent.key === Qt.Key_Return) {
+                        if (Greetd.state == GreetdState.Inactive) {
+                          root.authenticate()
+                        }
+                        kevent.accepted = true
+                      }
+                    }
+
+                    Component.onCompleted: forceActiveFocus()
+                  }
+
+                  Row {
+                    spacing: 0
+
+                    Rectangle {
+                      width: 2
+                      height: 20
+                      color: Color.mPrimary
+                      visible: passwordInput.activeFocus && passwordInput.text.length === 0
+                      anchors.verticalCenter: parent.verticalCenter
+
+                      SequentialAnimation on opacity {
+                        loops: Animation.Infinite
+                        running: passwordInput.activeFocus && passwordInput.text.length === 0
+                        NumberAnimation {
+                          to: 0
+                          duration: 530
+                        }
+                        NumberAnimation {
+                          to: 1
+                          duration: 530
+                        }
+                      }
+                    }
+
+                    // Password display - show dots or actual text based on passwordVisible
+                    Item {
+                      width: Math.min(passwordDisplayContent.width, 550)
+                      height: 20
+                      visible: passwordInput.text.length > 0 && !parent.parent.parent.passwordVisible
+                      anchors.verticalCenter: parent.verticalCenter
+                      clip: true
+
+                      Row {
+                        id: passwordDisplayContent
+                        spacing: 6
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Repeater {
+                          model: passwordInput.text.length
+
+                          NIcon {
+                            icon: "circle-filled"
+                            pointSize: Style.fontSizeS
+                            color: Color.mPrimary
+                            opacity: 1.0
+                          }
+                        }
+                      }
+                    }
+
+                    NText {
+                      text: passwordInput.text
+                      color: Color.mPrimary
+                      pointSize: Style.fontSizeM
+                      font.weight: Font.Medium
+                      visible: passwordInput.text.length > 0 && parent.parent.parent.passwordVisible
+                      anchors.verticalCenter: parent.verticalCenter
+                      elide: Text.ElideRight
+                      width: Math.min(implicitWidth, 550)
+                    }
+
+                    Rectangle {
+                      width: 2
+                      height: 20
+                      color: Color.mPrimary
+                      visible: passwordInput.activeFocus && passwordInput.text.length > 0
+                      anchors.verticalCenter: parent.verticalCenter
+
+                      SequentialAnimation on opacity {
+                        loops: Animation.Infinite
+                        running: passwordInput.activeFocus && passwordInput.text.length > 0
+                        NumberAnimation {
+                          to: 0
+                          duration: 530
+                        }
+                        NumberAnimation {
+                          to: 1
+                          duration: 530
+                        }
+                      }
+                    }
+                  }
+                }
+
+                // Eye button to toggle password visibility
+                Rectangle {
+                  anchors.right: submitButton.left
+                  anchors.rightMargin: 4
+                  anchors.verticalCenter: parent.verticalCenter
+                  width: 36
+                  height: 36
+                  radius: width * 0.5
+                  color: eyeButtonArea.containsMouse ? Qt.alpha(Color.mOnSurface, 0.1) : "transparent"
+                  visible: passwordInput.text.length > 0
+                  enabled: !lockContext.unlockInProgress
+
+                  NIcon {
+                    anchors.centerIn: parent
+                    icon: parent.parent.passwordVisible ? "eye-off" : "eye"
+                    pointSize: Style.fontSizeM
+                    color: Color.mOnSurfaceVariant
+                  }
+
+                  MouseArea {
+                    id: eyeButtonArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: parent.parent.passwordVisible = !parent.parent.passwordVisible
+                  }
+
+                  Behavior on color {
+                    ColorAnimation {
+                      duration: 200
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+
+                // Submit button
+                Rectangle {
+                  id: submitButton
+                  anchors.right: parent.right
+                  anchors.rightMargin: 8
+                  anchors.verticalCenter: parent.verticalCenter
+                  width: 36
+                  height: 36
+                  radius: width * 0.5
+                  color: submitButtonArea.containsMouse ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.8)
+                  border.color: Color.mPrimary
+                  border.width: 1
+                  enabled: !lockContext.unlockInProgress
+
+                  NIcon {
+                    anchors.centerIn: parent
+                    icon: "arrow-forward"
+                    pointSize: Style.fontSizeM
+                    color: Color.mOnPrimary
+                  }
+
+                  MouseArea {
+                    id: submitButtonArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: lockContext.tryUnlock()
+                  }
+                }
+
+                Behavior on border.color {
+                  ColorAnimation {
                     duration: 200
                     easing.type: Easing.OutCubic
                   }
                 }
               }
 
-              SequentialAnimation on scale {
-                loops: Animation.Infinite
-                running: sessionLock.unlocking
-                NumberAnimation {
-                  to: 1.02
-                  duration: 600
-                  easing.type: Easing.InOutQuad
+              Item {
+                Layout.preferredWidth: Style.marginM
+              }
+            }
+
+            // System control buttons
+            RowLayout {
+              Layout.fillWidth: true
+              Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
+              spacing: 10
+
+              Item {
+                Layout.preferredWidth: Style.marginM
+              }
+
+              Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
+                radius: Settings.data.general.compactLockScreen ? 18 : 24
+                color: suspendButtonArea.containsMouse ? Color.mTertiary : "transparent"
+                border.color: Color.mOutline
+                border.width: 1
+
+                RowLayout {
+                  anchors.centerIn: parent
+                  spacing: 6
+
+                  NIcon {
+                    icon: "suspend"
+                    pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+                    color: suspendButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+                  }
+
+                  NText {
+                    text: I18n.tr("session-menu.suspend")
+                    color: suspendButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+                    pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                    font.weight: Font.Medium
+                  }
                 }
-                NumberAnimation {
-                  to: 1.0
-                  duration: 600
-                  easing.type: Easing.InOutQuad
+
+                MouseArea {
+                  id: suspendButtonArea
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: CompositorService.suspend()
+                }
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                  }
+                }
+
+                Behavior on border.color {
+                  ColorAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                  }
                 }
               }
-            }
-          }
 
-          // Terminal border glow
-          Rectangle {
-            anchors.fill: parent
-            radius: parent.radius
-            color: "transparent"
-            border.color: Color.applyOpacity(Color.mPrimary, "4D")
-            border.width: 1
-            z: -1
+              Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
+                radius: Settings.data.general.compactLockScreen ? 18 : 24
+                color: rebootButtonArea.containsMouse ? Color.mTertiary : "transparent"
+                border.color: Color.mOutline
+                border.width: 1
 
-            SequentialAnimation on opacity {
-              loops: Animation.Infinite
-              NumberAnimation {
-                to: 0.6
-                duration: 2000
-                easing.type: Easing.InOutQuad
+                RowLayout {
+                  anchors.centerIn: parent
+                  spacing: 6
+
+                  NIcon {
+                    icon: "reboot"
+                    pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+                    color: rebootButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+                  }
+
+                  NText {
+                    text: I18n.tr("session-menu.reboot")
+                    color: rebootButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+                    pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                    font.weight: Font.Medium
+                  }
+                }
+
+                MouseArea {
+                  id: rebootButtonArea
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: CompositorService.reboot()
+                }
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                  }
+                }
+
+                Behavior on border.color {
+                  ColorAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                  }
+                }
               }
-              NumberAnimation {
-                to: 0.2
-                duration: 2000
-                easing.type: Easing.InOutQuad
+
+              Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
+                radius: Settings.data.general.compactLockScreen ? 18 : 24
+                color: shutdownButtonArea.containsMouse ? Color.mError : "transparent"
+                border.color: shutdownButtonArea.containsMouse ? Color.mError : Color.mOutline
+                border.width: 1
+
+                RowLayout {
+                  anchors.centerIn: parent
+                  spacing: 6
+
+                  NIcon {
+                    icon: "shutdown"
+                    pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+                    color: shutdownButtonArea.containsMouse ? Color.mOnError : Color.mOnSurfaceVariant
+                  }
+
+                  NText {
+                    text: I18n.tr("session-menu.shutdown")
+                    color: shutdownButtonArea.containsMouse ? Color.mOnError : Color.mOnSurfaceVariant
+                    pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                    font.weight: Font.Medium
+                  }
+                }
+
+                MouseArea {
+                  id: shutdownButtonArea
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: CompositorService.shutdown()
+                }
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                  }
+                }
+
+                Behavior on border.color {
+                  ColorAnimation {
+                    duration: 200
+                    easing.type: Easing.OutCubic
+                  }
+                }
               }
-            }
-          }
-        }
 
-        // Power buttons at bottom right
-        Row {
-          anchors.right: parent.right
-          anchors.bottom: parent.bottom
-          anchors.margins: 50
-          spacing: 20
-
-          Rectangle {
-            width: 60
-            height: 60
-            radius: width * 0.5
-            color: powerButtonArea.containsMouse ? Color.mError : Color.applyOpacity(Color.mError, "33")
-            border.color: Color.mError
-            border.width: 2
-
-            Text {
-              anchors.centerIn: parent
-              text: "⏻"
-              font.pointSize: 24
-              color: powerButtonArea.containsMouse ? Color.mOnSurface : Color.mError
-            }
-
-            MouseArea {
-              id: powerButtonArea
-              anchors.fill: parent
-              hoverEnabled: true
-              onClicked: {
-                console.log("Power off clicked")
-              }
-            }
-          }
-
-          Rectangle {
-            width: 60
-            height: 60
-            radius: width * 0.5
-            color: restartButtonArea.containsMouse ? Color.mPrimary : Color.applyOpacity(Color.mPrimary, "33")
-            border.color: Color.mPrimary
-            border.width: 2
-
-            Text {
-              anchors.centerIn: parent
-              text: "↻"
-              font.pointSize: 24
-              color: restartButtonArea.containsMouse ? Color.mOnSurface : Color.mPrimary
-            }
-
-            MouseArea {
-              id: restartButtonArea
-              anchors.fill: parent
-              hoverEnabled: true
-              onClicked: {
-                console.log("Reboot clicked")
-              }
-            }
-          }
-
-          Rectangle {
-            width: 60
-            height: 60
-            radius: width * 0.5
-            color: suspendButtonArea.containsMouse ? Color.mSecondary : Color.applyOpacity(Color.mSecondary, "33")
-            border.color: Color.mSecondary
-            border.width: 2
-
-            Text {
-              anchors.centerIn: parent
-              text: "💤"
-              font.pointSize: 20
-              color: suspendButtonArea.containsMouse ? Color.mOnSurface : Color.mSecondary
-            }
-
-            MouseArea {
-              id: suspendButtonArea
-              anchors.fill: parent
-              hoverEnabled: true
-              onClicked: {
-                console.log("Suspend clicked")
+              Item {
+                Layout.preferredWidth: Style.marginM
               }
             }
-          }
-        }
-      }
-
-      // Hidden password input (keeps key handling consistent)
-      TextInput {
-        id: passwordInput
-        width: 0
-        height: 0
-        visible: false
-        focus: true
-        echoMode: TextInput.Password
-        text: sessionLock.passwdBuffer
-
-        onTextChanged: {
-          sessionLock.passwdBuffer = text
-        }
-
-        Component.onCompleted: {
-          passwordInput.forceActiveFocus()
-        }
-
-        Keys.onPressed: kevent => {
-          if (kevent.key === Qt.Key_Enter || kevent.key === Qt.Key_Return) {
-            if (Greetd.state == GreetdState.Inactive) {
-              root.authenticate()
-            }
-            kevent.accepted = true
           }
         }
       }
@@ -739,6 +925,11 @@ Item {
       console.log("[GREETD EXEC] " + sessions.current_session)
       // Let greetd handle quitting to avoid compositor handoff glitches
       Greetd.launch(sessions.current_session.split(" "), [], true)
+    }
+
+    function onAuthFailure(message) {
+      sessionLock.showFailure = true
+      sessionLock.errorMessage = message
     }
   }
 
