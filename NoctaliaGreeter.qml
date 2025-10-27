@@ -20,20 +20,8 @@ Item {
   id: root
 
   // Config via environment variables
-  readonly property string instant_auth: Quickshell.env("NOCTALIA_DM_INSTANTAUTH")
-  readonly property string preferred_session: Quickshell.env("NOCTALIA_DM_PREF_SES")
-  readonly property string preferred_user: Quickshell.env("NOCTALIA_DM_PREF_USR")
-  // Fallback to empty string and log later to avoid assigning console.log result
-  readonly property string sessions: Quickshell.env("NOCTALIA_DM_SESSIONS") || ""
-  readonly property string wallpaper_path: Quickshell.env("NOCTALIA_DM_WALLPATH")
-
-  // Noctalia config paths
-  readonly property string noctaliaConfigDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/noctalia/"
-  readonly property string noctaliaSettingsFile: noctaliaConfigDir + "settings.json"
-
-  // Wallpaper state from noctalia config
-  property string noctaliaWallpaper: ""
-  property string currentMonitorName: ""
+  readonly property string instant_auth: Quickshell.env("NOCTALIA_GREETER_INSTANT_AUTH")
+  readonly property string preferred_user: Quickshell.env("NOCTALIA_GREETER_PREFERRED_USER")
 
   property bool i18nLoaded: false
   property bool settingsLoaded: false
