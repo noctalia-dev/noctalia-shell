@@ -162,20 +162,20 @@ Item {
           anchors.fill: parent
           gradient: Gradient {
             GradientStop {
-              color: Qt.rgba(0, 0, 0, 0.6)
               position: 0.0
+              color: Qt.alpha(Color.mShadow, 0.8)
             }
             GradientStop {
-              color: Qt.rgba(0, 0, 0, 0.3)
               position: 0.3
+              color: Qt.alpha(Color.mShadow, 0.4)
             }
             GradientStop {
-              color: Qt.rgba(0, 0, 0, 0.4)
               position: 0.7
+              color: Qt.alpha(Color.mShadow, 0.5)
             }
             GradientStop {
-              color: Qt.rgba(0, 0, 0, 0.7)
               position: 1.0
+              color: Qt.alpha(Color.mShadow, 0.9)
             }
           }
         }
