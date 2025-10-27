@@ -138,6 +138,8 @@ Item {
 
           BackgroundGradient {}
 
+          LockScreenCorners {}
+
           Item {
             anchors.fill: parent
 
