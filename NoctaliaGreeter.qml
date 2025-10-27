@@ -2,8 +2,6 @@ pragma ComponentBehavior
 
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
-import QtQuick.Effects
 
 import Quickshell
 import Quickshell.Io
@@ -13,8 +11,8 @@ import Quickshell.Services.UPower
 import qs.Commons
 import qs.Services
 import qs.Widgets
-import qs.Modules.Audio
 import qs.Modules.Background
+import qs.Modules.LockScreen
 
 Item {
   id: root
@@ -138,28 +136,7 @@ Item {
             mipmap: false
           }
 
-          // Gradient overlay similar to your lockscreen
-          Rectangle {
-            anchors.fill: parent
-            gradient: Gradient {
-              GradientStop {
-                position: 0.0
-                color: Qt.alpha(Color.mShadow, 0.8)
-              }
-              GradientStop {
-                position: 0.3
-                color: Qt.alpha(Color.mShadow, 0.4)
-              }
-              GradientStop {
-                position: 0.7
-                color: Qt.alpha(Color.mShadow, 0.5)
-              }
-              GradientStop {
-                position: 1.0
-                color: Qt.alpha(Color.mShadow, 0.9)
-              }
-            }
-          }
+          BackgroundGradient {}
 
           Item {
             anchors.fill: parent
