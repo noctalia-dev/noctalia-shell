@@ -8,7 +8,6 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Services.Greetd
 
 import qs.Commons
 import qs.Services
@@ -48,30 +47,6 @@ Item {
     target: Settings ? Settings : null
     function onSettingsLoaded() {
       settingsLoaded = true
-    }
-  }
-
-  function authenticate() {
-    sessionLock.showFailure = false
-    Greetd.createSession(users.current_user)
-  }
-
-  Component.onCompleted: {
-    if (sessions == "") {
-      console.log("[WARN] empty sessions list, defaulting to hyprland")
-      sessions.current_session = "hyprland"
-      sessions.current_session_name = "hyprland"
-    }
-
-    // Initialize session from saved settings after UI load (final check occurs after sessions load too)
-    const saved = GreeterSettings.lastSessionId
-    if (saved && sessions.session_execs.length > 0) {
-      for (var i = 0; i < sessions.session_names.length; i++) {
-        if (sessions.session_execs[i].toLowerCase().includes(saved.toLowerCase()) || sessions.session_names[i].toLowerCase().includes(saved.toLowerCase())) {
-          sessions.current_ses_index = i
-          break
-        }
-      }
     }
   }
 
@@ -152,12 +127,14 @@ Item {
 
     property string fakeBuffer: ""
     property string passwdBuffer: ""
-    readonly property bool unlocking: Greetd.state == GreetdState.Authenticating
-
-    property bool showFailure: false
-    property string errorMessage: ""
 
     locked: true
+
+    function tryUnlock() {
+      GreeterService.authenticate(users.current_user, passwdBuffer)
+      passwdBuffer = ""
+      fakeBuffer = ""
+    }
 
     WlSessionLockSurface {
       // Background with wallpaper and gradient overlay
@@ -407,7 +384,7 @@ Item {
           color: Color.mError
           border.color: Color.mError
           border.width: 1
-          visible: sessionLock.showFailure && sessionLock.errorMessage
+          visible: GreeterService.showFailure && GreeterService.errorMessage
           opacity: visible ? 1.0 : 0.0
 
           RowLayout {
@@ -421,7 +398,7 @@ Item {
             }
 
             NText {
-              text: sessionLock.errorMessage || "Authentication failed"
+              text: GreeterService.errorMessage || "Authentication failed"
               color: Color.mOnError
               pointSize: Style.fontSizeL
               font.weight: Font.Medium
@@ -557,7 +534,6 @@ Item {
                     width: 0
                     height: 0
                     visible: false
-                    // enabled: !lockContext.unlockInProgress // TODO: Implement unlock progress tracking
                     font.pointSize: Style.fontSizeM
                     color: Color.mPrimary
                     echoMode: parent.parent.passwordVisible ? TextInput.Normal : TextInput.Password
@@ -565,12 +541,11 @@ Item {
                     passwordMaskDelay: 0
                     text: sessionLock.passwdBuffer
                     onTextChanged: sessionLock.passwdBuffer = text
+                    enabled: GreeterService.idle
 
                     Keys.onPressed: kevent => {
                       if (kevent.key === Qt.Key_Enter || kevent.key === Qt.Key_Return) {
-                        if (Greetd.state == GreetdState.Inactive) {
-                          root.authenticate()
-                        }
+                        sessionLock.tryUnlock()
                         kevent.accepted = true
                       }
                     }
@@ -672,7 +647,7 @@ Item {
                   radius: width * 0.5
                   color: eyeButtonArea.containsMouse ? Qt.alpha(Color.mOnSurface, 0.1) : "transparent"
                   visible: passwordInput.text.length > 0
-                  enabled: !lockContext.unlockInProgress
+                  enabled: GreeterService.idle
 
                   NIcon {
                     anchors.centerIn: parent
@@ -708,7 +683,7 @@ Item {
                   color: submitButtonArea.containsMouse ? Color.mPrimary : Qt.alpha(Color.mPrimary, 0.8)
                   border.color: Color.mPrimary
                   border.width: 1
-                  enabled: !lockContext.unlockInProgress
+                  enabled: GreeterService.idle
 
                   NIcon {
                     anchors.centerIn: parent
@@ -721,7 +696,7 @@ Item {
                     id: submitButtonArea
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: lockContext.tryUnlock()
+                    onClicked: sessionLock.tryUnlock()
                   }
                 }
 
@@ -902,34 +877,11 @@ Item {
     }
   }
 
-  // Greetd connections
   Connections {
-    target: Greetd
+    target: GreeterService
 
-    function onAuthMessage(message, error, responseRequired, echoResponse) {
-      console.log("[GREETD] msg='" + message + "' err='" + error + "' resreq=" + responseRequired + " echo=" + echoResponse)
-
-      if (responseRequired) {
-        Greetd.respond(sessionLock.passwdBuffer)
-        sessionLock.passwdBuffer = ""
-        sessionLock.fakeBuffer = ""
-        return
-      }
-
-      // Finger print support
-      Greetd.respond("")
-    }
-
-    function onReadyToLaunch() {
+    function onUnlocked() {
       sessionLock.locked = false
-      console.log("[GREETD EXEC] " + sessions.current_session)
-      // Let greetd handle quitting to avoid compositor handoff glitches
-      Greetd.launch(sessions.current_session.split(" "), [], true)
-    }
-
-    function onAuthFailure(message) {
-      sessionLock.showFailure = true
-      sessionLock.errorMessage = message
     }
   }
 
@@ -964,77 +916,7 @@ Item {
 
     onExited: if (root.instant_auth && !users.running) {
       console.log("[USERS EXIT]")
-      root.authenticate()
-    }
-  }
-
-  // Session management process
-  Process {
-    id: sessions
-
-    property int current_ses_index: 0
-    property string current_session: session_execs[current_ses_index] ?? "hyprland"
-    property string current_session_name: session_names[current_ses_index] ?? "Hyprland"
-    property list<string> session_execs: []
-    property list<string> session_names: []
-    property bool restoredFromSettings: false
-
-    function next() {
-      current_ses_index = (current_ses_index + 1) % session_execs.length
-    }
-
-    function moveToFront(index) {
-      if (index <= 0 || index >= session_execs.length)
-        return
-      const exec = session_execs[index]
-      const name = session_names[index]
-      session_execs.splice(index, 1)
-      session_names.splice(index, 1)
-      session_execs.unshift(exec)
-      session_names.unshift(name)
-      current_ses_index = 0
-    }
-
-    command: [Qt.resolvedUrl("./scripts/session.sh"), root.sessions]
-    running: true
-
-    stderr: SplitParser {
-      onRead: data => console.log("[ERR] " + data)
-    }
-    stdout: SplitParser {
-      onRead: data => {
-        const parsedData = data.split(",")
-        console.log("[SESSIONS] " + parsedData[2])
-        if (parsedData[0] == root.preferred_session) {
-          console.log("[INFO] Found preferred session " + root.preferred_session)
-          sessions.current_ses_index = sessions.session_names.length
-        }
-        sessions.session_names.push(parsedData[1])
-        sessions.session_execs.push(parsedData[2])
-      }
-    }
-
-    onExited: {
-      // After sessions populated, prefer saved session as first entry
-      if (!restoredFromSettings && GreeterSettings.lastSessionId && session_execs.length > 0) {
-        const saved = GreeterSettings.lastSessionId.toLowerCase()
-        let idx = -1
-        for (var i = 0; i < session_execs.length; i++) {
-          if (session_execs[i].toLowerCase().includes(saved) || session_names[i].toLowerCase().includes(saved)) {
-            idx = i
-            break
-          }
-        }
-        if (idx >= 0) {
-          moveToFront(idx)
-          restoredFromSettings = true
-        }
-      }
-
-      if (root.instant_auth && !users.running) {
-        console.log("[SESSIONS EXIT]")
-        root.authenticate()
-      }
+      GreeterService.authenticate(users.current_user, "")
     }
   }
 
