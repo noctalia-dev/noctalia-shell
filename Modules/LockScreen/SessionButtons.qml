@@ -14,10 +14,6 @@ RowLayout {
   Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
   spacing: 10
 
-  Item {
-    Layout.preferredWidth: Style.marginM
-  }
-
   Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
@@ -209,9 +205,5 @@ RowLayout {
         easing.type: Easing.OutCubic
       }
     }
-  }
-
-  Item {
-    Layout.preferredWidth: Style.marginM
   }
 }
