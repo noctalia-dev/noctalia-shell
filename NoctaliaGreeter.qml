@@ -141,15 +141,15 @@ Item {
 
           LockScreenCorners {}
 
+          // Time, Date, and User Profile Container
+          Greeter.TopContainer {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 100
+          }
+
           Item {
             anchors.fill: parent
-
-            // Time, Date, and User Profile Container
-            Greeter.TopContainer {
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.top: parent.top
-              anchors.topMargin: 100
-            }
 
             // Error notification
             Rectangle {
@@ -192,7 +192,6 @@ Item {
               }
             }
 
-            // Compact status indicators container (compact mode only)
             Rectangle {
               width: {
                 var hasBattery = UPower.displayDevice && UPower.displayDevice.ready && UPower.displayDevice.isPresent
