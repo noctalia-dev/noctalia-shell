@@ -366,16 +366,21 @@ Item {
             }
 
             // Bottom container with password input and controls
-            Rectangle {
+            Item {
               width: 750
-              height: 48 + 3 * 14 + (Settings.data.general.compactLockScreen ? 36 : 48)
+              height: bottomContainer.implicitHeight + 2 * 14
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
               anchors.bottomMargin: 100
-              radius: Style.radiusL
-              color: Color.mSurface
+
+              Rectangle {
+                anchors.fill: parent
+                radius: Style.radiusL
+                color: Color.mSurface
+              }
 
               ColumnLayout {
+                id: bottomContainer
                 anchors.fill: parent
                 anchors.margins: 14
                 spacing: 14
@@ -394,6 +399,8 @@ Item {
 
                 SessionButtons {
                   showLogout: false
+
+                  Layout.fillWidth: true
                 }
               }
             }
