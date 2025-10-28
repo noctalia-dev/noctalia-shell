@@ -19,8 +19,8 @@ Singleton {
   readonly property string preferred_session: Quickshell.env("NOCTALIA_GREETER_PREFERRED_SESSION")
 
   property int current_ses_index: 0
-  readonly property string current_session: session_execs[current_ses_index] ?? "niri"
-  readonly property string current_session_name: session_names[current_ses_index] ?? "Niri"
+  property string current_session: session_execs[current_ses_index] ?? "niri-session"
+  property string current_session_name: session_names[current_ses_index] ?? "Niri"
   property list<string> session_execs: []
   property list<string> session_names: []
   property bool restoredFromSettings: false
@@ -44,8 +44,8 @@ Singleton {
   Component.onCompleted: {
     if (root.sessions == "") {
       console.log("[WARN] empty sessions list, defaulting to niri")
-      sessions.current_session = "niri"
-      sessions.current_session_name = "niri"
+      root.current_session = "niri-session"
+      root.current_session_name = "Niri"
     }
 
     // Initialize session from saved settings after UI load (final check occurs after sessions load too)
