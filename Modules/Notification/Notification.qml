@@ -197,7 +197,7 @@ Variants {
               anchors.right: parent.right
               height: 2
               color: Color.transparent
-              visible: !Settings.data.general.animationDisabled
+              visible: true
 
               // Pre-calculate available width for the progress bar
               readonly property real availableWidth: parent.width - (2 * parent.radius)
@@ -226,7 +226,7 @@ Variants {
 
                 // Smooth progress animation
                 Behavior on width {
-                  enabled: !card.isRemoving && !Settings.data.general.animationDisabled // Disable during removal animation or when animations disabled
+                  enabled: !card.isRemoving
                   NumberAnimation {
                     duration: 100 // Quick but smooth
                     easing.type: Easing.Linear
@@ -234,7 +234,7 @@ Variants {
                 }
 
                 Behavior on x {
-                  enabled: !card.isRemoving && !Settings.data.general.animationDisabled
+                  enabled: !card.isRemoving
                   NumberAnimation {
                     duration: 100
                     easing.type: Easing.Linear

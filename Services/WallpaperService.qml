@@ -93,6 +93,8 @@ Singleton {
     }
 
     isInitialized = true
+    Logger.d("Wallpaper", "Triggering initial wallpaper scan")
+    Qt.callLater(refreshWallpapersList)
   }
 
   // -------------------------------------------------
