@@ -180,11 +180,11 @@ Item {
                 id: statusIndicators
                 anchors.fill: parent
                 anchors.margins: Style.marginL
-                spacing: 16
+                spacing: Style.marginL
 
                 // Battery indicator
                 RowLayout {
-                  spacing: 6
+                  spacing: Style.marginS
                   visible: UPower.displayDevice && UPower.displayDevice.ready && UPower.displayDevice.isPresent
 
                   NIcon {
@@ -203,7 +203,7 @@ Item {
 
                 // Session indicator
                 RowLayout {
-                  spacing: 6
+                  spacing: Style.marginS
 
                   NIcon {
                     icon: "device-desktop-cog"
@@ -222,7 +222,7 @@ Item {
 
                 // Keyboard layout indicator
                 RowLayout {
-                  spacing: 6
+                  spacing: Style.marginS
                   visible: keyboardLayout.currentLayout !== "Unknown"
 
                   NIcon {
@@ -245,7 +245,7 @@ Item {
             // Bottom container with password input and controls
             Item {
               width: 750
-              height: bottomContainer.implicitHeight + 2 * 14
+              height: bottomContainer.implicitHeight + 2 * Style.marginL
 
               Rectangle {
                 anchors.fill: parent
@@ -256,8 +256,8 @@ Item {
               ColumnLayout {
                 id: bottomContainer
                 anchors.fill: parent
-                anchors.margins: 14
-                spacing: 14
+                anchors.margins: Style.marginL
+                spacing: Style.marginL
 
                 // Password input
                 PasswordInput {
