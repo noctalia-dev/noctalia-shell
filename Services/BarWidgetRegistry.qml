@@ -91,7 +91,8 @@ Singleton {
                                     "textCommand": "",
                                     "textStream": false,
                                     "textIntervalMs": 3000,
-                                    "textCollapse": ""
+                                    "textCollapse": "",
+                                    "parseJson": false
                                   },
                                   "KeyboardLayout": {
                                     "allowUserSettings": true,

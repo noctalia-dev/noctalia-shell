@@ -593,6 +593,10 @@
             "description": "写入 {filepath} 并重新加载",
             "description-missing": "需要安装 {app}"
           },
+          "walker": {
+            "description": "写入 {filepath} 并将主题设置为 noctalia",
+            "description-missing": "需要安装 {app}"
+          },
           "discord": {
             "description": "为 {client} 写入 {filepath}",
             "description-missing": "未检测到 Discord 客户端。请安装 vencord、vesktop、webcord、armcord、equibop、lightcord 或 dorion。"
@@ -1131,7 +1135,11 @@
         },
         "collapse-condition": {
           "label": "折叠条件",
-          "description": "如果输出文本与此值匹配，按钮的文本将会折叠不去显示。"
+          "description": "如果输出文本与此值匹配，按钮将折叠。"
+        },
+        "parse-json": {
+          "label": "将输出解析为 JSON",
+          "description": "将命令输出解析为 JSON 对象，以动态设置文本和图标。"
         }
       },
       "media-mini": {

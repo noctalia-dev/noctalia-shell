@@ -597,6 +597,10 @@
             "description": "Write {filepath} and reload",
             "description-missing": "Requires {app} to be installed"
           },
+          "walker": {
+            "description": "Write {filepath} and set theme to noctalia",
+            "description-missing": "Requires {app} to be installed"
+          },
           "discord": {
             "description": "Write {filepath} for {client}",
             "description-missing": "No Discord client detected. Install vencord, vesktop, webcord, armcord, equibop, lightcord, or dorion."
@@ -1132,6 +1136,10 @@
         "collapse-condition": {
           "label": "Collapse condition",
           "description": "If the output text matches this value, the button will collapse."
+        },
+        "parse-json": {
+          "label": "Parse output as JSON",
+          "description": "Parse the command output as a JSON object to dynamically set text and icon."
         }
       },
       "media-mini": {

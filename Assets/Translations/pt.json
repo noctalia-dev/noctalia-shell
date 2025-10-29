@@ -555,6 +555,10 @@
             "description": "Escrever {filepath} e recarregar",
             "description-missing": "Requer que o {app} esteja instalado"
           },
+          "walker": {
+            "description": "Escrever {filepath} e definir tema como noctalia",
+            "description-missing": "Requer que o {app} esteja instalado"
+          },
           "discord": {
             "description": "Escrever {filepath} para {client}",
             "description-missing": "Nenhum cliente Discord detectado. Instale vencord, vesktop, webcord, armcord, equibop, lightcord ou dorion."
@@ -1132,6 +1136,10 @@
         "collapse-condition": {
           "label": "Condição de recolhimento",
           "description": "Se o texto de saída corresponder a este valor, o botão será recolhido."
+        },
+        "parse-json": {
+          "label": "Analisar saída como JSON",
+          "description": "Analisa a saída do comando como um objeto JSON para definir dinamicamente o texto e o ícone."
         }
       },
       "media-mini": {

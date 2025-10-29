@@ -75,7 +75,7 @@ We welcome contributions of any size - bug fixes, new features, documentation im
 
 ### ✨ Nix DevShell (new)
 
-Nix users can use the flake's devShell to access a development environment. Run nix develop the repo root to enter the dev shell. In includes packages, utilities and environment variables needed to develop Noctalia.
+Nix users can use the flake's devShell to access a development environment. Run nix develop the repo root to enter the dev shell. It includes packages, utilities and environment variables needed to develop Noctalia.
 
 ---
 

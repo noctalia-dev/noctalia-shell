@@ -39,6 +39,7 @@ Item {
   readonly property bool textStream: widgetSettings.textStream !== undefined ? widgetSettings.textStream : (widgetMetadata.textStream || false)
   readonly property int textIntervalMs: widgetSettings.textIntervalMs !== undefined ? widgetSettings.textIntervalMs : (widgetMetadata.textIntervalMs || 3000)
   readonly property string textCollapse: widgetSettings.textCollapse !== undefined ? widgetSettings.textCollapse : (widgetMetadata.textCollapse || "")
+  readonly property bool parseJson: widgetSettings.parseJson !== undefined ? widgetSettings.parseJson : (widgetMetadata.parseJson || false)
   readonly property bool hasExec: (leftClickExec || rightClickExec || middleClickExec)
 
   implicitWidth: pill.width
@@ -48,7 +49,7 @@ Item {
     id: pill
 
     oppositeDirection: BarService.getPillDirection(root)
-    icon: customIcon
+    icon: _dynamicIcon !== "" ? _dynamicIcon : customIcon
     text: _dynamicText
     density: Settings.data.bar.density
     autoHide: false
@@ -78,6 +79,7 @@ Item {
 
   // Internal state for dynamic text
   property string _dynamicText: ""
+  property string _dynamicIcon: ""
 
   // Periodically run the text command (if set)
   Timer {
@@ -99,67 +101,12 @@ Item {
 
   SplitParser {
     id: textStdoutSplit
-    onRead: function (line) {
-      var lineStr = String(line || "").trim()
-      var shouldCollapse = false
-
-      if (textCollapse && textCollapse.length > 0) {
-        if (textCollapse.startsWith("/") && textCollapse.endsWith("/") && textCollapse.length > 1) {
-          // Treat as regex
-          var pattern = textCollapse.substring(1, textCollapse.length - 1)
-          try {
-            var regex = new RegExp(pattern)
-            shouldCollapse = regex.test(lineStr)
-          } catch (e) {
-            Logger.w("CustomButton", `Invalid regex for textCollapse: ${textCollapse} - ${e.message}`)
-            shouldCollapse = (textCollapse === lineStr) // Fallback to exact match on invalid regex
-          }
-        } else {
-          // Treat as plain string
-          shouldCollapse = (textCollapse === lineStr)
-        }
-      }
-
-      if (shouldCollapse) {
-        _dynamicText = ""
-      } else {
-        _dynamicText = lineStr
-      }
-    }
+    onRead: line => root.parseDynamicContent(line)
   }
 
   StdioCollector {
     id: textStdoutCollect
-    onStreamFinished: () => {
-                        var out = String(this.text || "").trim()
-                        if (out.indexOf("\n") !== -1) {
-                          out = out.split("\n")[0]
-                        }
-                        var shouldCollapse = false
-
-                        if (textCollapse && textCollapse.length > 0) {
-                          if (textCollapse.startsWith("/") && textCollapse.endsWith("/") && textCollapse.length > 1) {
-                            // Treat as regex
-                            var pattern = textCollapse.substring(1, textCollapse.length - 1)
-                            try {
-                              var regex = new RegExp(pattern)
-                              shouldCollapse = regex.test(out)
-                            } catch (e) {
-                              Logger.w("CustomButton", `Invalid regex for textCollapse: ${textCollapse} - ${e.message}`)
-                              shouldCollapse = (textCollapse === out) // Fallback to exact match on invalid regex
-                            }
-                          } else {
-                            // Treat as plain string
-                            shouldCollapse = (textCollapse === out)
-                          }
-                        }
-
-                        if (shouldCollapse) {
-                          _dynamicText = ""
-                        } else {
-                          _dynamicText = out
-                        }
-                      }
+    onStreamFinished: () => root.parseDynamicContent(this.text)
   }
 
   Process {
@@ -172,6 +119,63 @@ Item {
                   return
                 }
               }
+  }
+
+  function parseDynamicContent(content) {
+    var contentStr = String(content || "").trim()
+    if (contentStr.indexOf("\n") !== -1) {
+      contentStr = contentStr.split("\n")[0]
+    }
+
+    if (parseJson) {
+      try {
+        var parsed = JSON.parse(contentStr)
+        var text = parsed.text || ""
+
+        if (checkCollapse(text)) {
+          _dynamicText = ""
+          _dynamicIcon = ""
+          return
+        }
+
+        _dynamicText = text
+        _dynamicIcon = parsed.icon || ""
+        return
+      } catch (e) {
+
+        // Not a valid JSON, treat as plain text
+      }
+    }
+
+    if (checkCollapse(contentStr)) {
+      _dynamicText = ""
+      _dynamicIcon = ""
+      return
+    }
+
+    _dynamicText = contentStr
+    _dynamicIcon = ""
+  }
+
+  function checkCollapse(text) {
+    if (!textCollapse || textCollapse.length === 0) {
+      return false
+    }
+
+    if (textCollapse.startsWith("/") && textCollapse.endsWith("/") && textCollapse.length > 1) {
+      // Treat as regex
+      var pattern = textCollapse.substring(1, textCollapse.length - 1)
+      try {
+        var regex = new RegExp(pattern)
+        return regex.test(text)
+      } catch (e) {
+        Logger.w("CustomButton", `Invalid regex for textCollapse: ${textCollapse} - ${e.message}`)
+        return (textCollapse === text) // Fallback to exact match on invalid regex
+      }
+    } else {
+      // Treat as plain string
+      return (textCollapse === text)
+    }
   }
 
   function onClicked() {

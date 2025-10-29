@@ -593,6 +593,10 @@
             "description": "Schreibt {filepath} und lädt neu",
             "description-missing": "Erfordert die Installation von {app}"
           },
+          "walker": {
+            "description": "Schreibt {filepath} und setzt das Theme auf noctalia",
+            "description-missing": "Erfordert die Installation von {app}"
+          },
           "discord": {
             "description": "Schreibt {filepath} für {client}",
             "description-missing": "Kein Discord-Client erkannt. Installieren Sie vencord, vesktop, webcord, armcord, equibop, lightcord oder dorion"
@@ -1149,6 +1153,10 @@
         "collapse-condition": {
           "label": "Collapse condition",
           "description": "If the output text matches this value, the button will collapse."
+        },
+        "parse-json": {
+          "label": "Ausgabe als JSON parsen",
+          "description": "Die Befehlsausgabe als JSON-Objekt parsen, um Text und Symbol dynamisch festzulegen."
         }
       },
       "media-mini": {

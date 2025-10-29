@@ -593,6 +593,10 @@
             "description": "Écrire {filepath} et recharger",
             "description-missing": "Nécessite que le lanceur {app} soit installé"
           },
+          "walker": {
+            "description": "Écrire {filepath} et définir le thème sur noctalia",
+            "description-missing": "Nécessite que le lanceur {app} soit installé"
+          },
           "discord": {
             "description": "Écrire {filepath} pour {client}",
             "description-missing": "Aucun client Discord détecté. Installez vencord, vesktop, webcord, armcord, equibop, lightcord ou dorion."
@@ -1132,6 +1136,10 @@
         "collapse-condition": {
           "label": "Condition d’effondrement",
           "description": "Si le texte de sortie correspond à cette valeur, le bouton se repliera."
+        },
+        "parse-json": {
+          "label": "Analyser la sortie en JSON",
+          "description": "Analyser la sortie de la commande en tant qu'objet JSON pour définir dynamiquement le texte et l'icône."
         }
       },
       "media-mini": {
