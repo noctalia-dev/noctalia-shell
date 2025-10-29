@@ -148,26 +148,25 @@ Item {
             anchors.topMargin: 100
           }
 
-          Item {
-            anchors.fill: parent
+          ColumnLayout {
+            spacing: 0
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 100
 
-            // Error notification
             ErrorNotification {
               message: GreeterService.errorMessage
               visible: GreeterService.showFailure && GreeterService.errorMessage
 
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 240 : 320) * Style.uiScaleRatio
+              Layout.alignment: Qt.AlignHCenter
+              Layout.bottomMargin: Style.marginL
             }
 
             // Compact status indicators container
             Item {
-              width: statusIndicators.implicitWidth + 2 * Style.marginL
-              height: statusIndicators.implicitHeight + 2 * Style.marginL
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: 100 + 48 + 3 * 14 + (Settings.data.general.compactLockScreen ? 36 : 48)
+              Layout.alignment: Qt.AlignHCenter
+              Layout.preferredWidth: statusIndicators.implicitWidth + 2 * Style.marginL
+              Layout.preferredHeight: statusIndicators.implicitHeight + 2 * Style.marginL
 
               // Background
               Rectangle {
@@ -202,6 +201,25 @@ Item {
                   }
                 }
 
+                // Session indicator
+                RowLayout {
+                  spacing: 6
+
+                  NIcon {
+                    icon: "device-desktop-cog"
+                    pointSize: Style.fontSizeM
+                    color: Color.mOnSurfaceVariant
+                  }
+
+                  NText {
+                    text: SessionService.current_session_name
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeM
+                    font.weight: Font.Medium
+                    elide: Text.ElideRight
+                  }
+                }
+
                 // Keyboard layout indicator
                 RowLayout {
                   spacing: 6
@@ -228,10 +246,6 @@ Item {
             Item {
               width: 750
               height: bottomContainer.implicitHeight + 2 * 14
-
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: 100
 
               Rectangle {
                 anchors.fill: parent
