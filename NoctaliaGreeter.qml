@@ -213,6 +213,17 @@ Item {
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                   }
+
+                  // TODO: Make session selctable
+                  // NComboBox {
+                  //   model: SessionService.session_names.map((name, index) => ({
+                  //                                                               "key": index,
+                  //                                                               "name": name
+                  //                                                             }))
+                  //   currentKey: SessionService.current_ses_index
+                  //   placeholder: SessionService.current_session_name
+                  //   onSelected: key => SessionService.current_ses_index = key
+                  // }
                 }
 
                 // Keyboard layout indicator
