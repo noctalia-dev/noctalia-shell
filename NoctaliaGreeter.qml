@@ -161,29 +161,26 @@ Item {
               anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 240 : 320) * Style.uiScaleRatio
             }
 
-            Rectangle {
-              width: {
-                var hasBattery = UPower.displayDevice && UPower.displayDevice.ready && UPower.displayDevice.isPresent
-                var hasKeyboard = keyboardLayout.currentLayout !== "Unknown"
-
-                if (hasBattery && hasKeyboard) {
-                  return 200
-                } else if (hasBattery || hasKeyboard) {
-                  return 120
-                } else {
-                  return 0
-                }
-              }
-              height: 40
+            // Compact status indicators container
+            Item {
+              width: statusIndicators.implicitWidth + 2 * Style.marginL
+              height: statusIndicators.implicitHeight + 2 * Style.marginL
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
               anchors.bottomMargin: 100 + 48 + 3 * 14 + (Settings.data.general.compactLockScreen ? 36 : 48)
-              topLeftRadius: Style.radiusL
-              topRightRadius: Style.radiusL
-              color: Color.mSurface
+
+              // Background
+              Rectangle {
+                anchors.fill: parent
+                topLeftRadius: Style.radiusL
+                topRightRadius: Style.radiusL
+                color: Color.mSurface
+              }
 
               RowLayout {
-                anchors.centerIn: parent
+                id: statusIndicators
+                anchors.fill: parent
+                anchors.margins: Style.marginL
                 spacing: 16
 
                 // Battery indicator
