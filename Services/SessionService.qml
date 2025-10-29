@@ -63,7 +63,7 @@ Singleton {
   Process {
     id: sessions
 
-    command: [Qt.resolvedUrl("./scripts/session.sh"), root.sessions]
+    command: [Qt.resolvedUrl("../scripts/session.sh"), root.sessions]
     running: true
 
     stderr: SplitParser {
