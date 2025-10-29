@@ -152,44 +152,13 @@ Item {
             anchors.fill: parent
 
             // Error notification
-            Rectangle {
-              width: 450
-              height: 60
+            ErrorNotification {
+              message: GreeterService.errorMessage
+              visible: GreeterService.showFailure && GreeterService.errorMessage
+
               anchors.horizontalCenter: parent.horizontalCenter
               anchors.bottom: parent.bottom
               anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 240 : 320) * Style.uiScaleRatio
-              radius: 30
-              color: Color.mError
-              border.color: Color.mError
-              border.width: 1
-              visible: GreeterService.showFailure && GreeterService.errorMessage
-              opacity: visible ? 1.0 : 0.0
-
-              RowLayout {
-                anchors.centerIn: parent
-                spacing: 10
-
-                NIcon {
-                  icon: "alert-circle"
-                  pointSize: Style.fontSizeL
-                  color: Color.mOnError
-                }
-
-                NText {
-                  text: GreeterService.errorMessage || "Authentication failed"
-                  color: Color.mOnError
-                  pointSize: Style.fontSizeL
-                  font.weight: Font.Medium
-                  horizontalAlignment: Text.AlignHCenter
-                }
-              }
-
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: 300
-                  easing.type: Easing.OutCubic
-                }
-              }
             }
 
             Rectangle {
