@@ -111,20 +111,6 @@ Item {
         }
 
         WlSessionLockSurface {
-          Item {
-            id: batteryIndicator
-            property var battery: UPower.displayDevice
-            property bool isReady: battery && battery.ready && battery.isLaptopBattery && battery.isPresent
-            property real percent: isReady ? (battery.percentage * 100) : 0
-            property bool charging: isReady ? battery.state === UPowerDeviceState.Charging : false
-            property bool batteryVisible: isReady && percent > 0
-          }
-
-          Item {
-            id: keyboardLayout
-            property string currentLayout: (typeof KeyboardLayoutService !== 'undefined' && KeyboardLayoutService.currentLayout) ? KeyboardLayoutService.currentLayout : "Unknown"
-          }
-
           Background {}
 
           Image {
@@ -187,6 +173,15 @@ Item {
                   spacing: Style.marginS
                   visible: UPower.displayDevice && UPower.displayDevice.ready && UPower.displayDevice.isPresent
 
+                  Item {
+                    id: batteryIndicator
+                    property var battery: UPower.displayDevice
+                    property bool isReady: battery && battery.ready && battery.isLaptopBattery && battery.isPresent
+                    property real percent: isReady ? (battery.percentage * 100) : 0
+                    property bool charging: isReady ? battery.state === UPowerDeviceState.Charging : false
+                    property bool batteryVisible: isReady && percent > 0
+                  }
+
                   NIcon {
                     icon: BatteryService.getIcon(Math.round(UPower.displayDevice.percentage * 100), UPower.displayDevice.state === UPowerDeviceState.Charging, true)
                     pointSize: Style.fontSizeM
@@ -224,6 +219,11 @@ Item {
                 RowLayout {
                   spacing: Style.marginS
                   visible: keyboardLayout.currentLayout !== "Unknown"
+
+                  Item {
+                    id: keyboardLayout
+                    property string currentLayout: (typeof KeyboardLayoutService !== 'undefined' && KeyboardLayoutService.currentLayout) ? KeyboardLayoutService.currentLayout : "Unknown"
+                  }
 
                   NIcon {
                     icon: "keyboard"
