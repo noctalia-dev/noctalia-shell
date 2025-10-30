@@ -277,6 +277,11 @@ Item {
 
                   Layout.fillWidth: true
 
+                  onPasswordChanged: {
+                    GreeterService.showFailure = false
+                    GreeterService.errorMessage = ""
+                  }
+
                   onActivated: {
                     GreeterService.authenticate(users.current_user, passwordInput.password)
                   }
