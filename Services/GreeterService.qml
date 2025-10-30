@@ -1,23 +1,20 @@
 pragma Singleton
 
 import QtQuick
-import QtQuick.Controls
 
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Greetd
 
-import qs.Commons
 import qs.Services
 
 Singleton {
   id: root
 
   readonly property bool debug: Quickshell.env("NOCTALIA_GREETER_DEBUG") === "1" || Quickshell.env("NOCTALIA_GREETER_DEBUG") === "true"
-  readonly property string debug_password: "debug"
-  property bool debug_idle: true
+  readonly property string debugPassword: "debug"
+  property bool debugIdle: true
 
-  readonly property bool idle: debug ? debug_idle : Greetd.state == GreetdState.Inactive
+  readonly property bool idle: debug ? debugIdle : Greetd.state == GreetdState.Inactive
 
   property string password: ""
 
@@ -30,7 +27,7 @@ Singleton {
     root.password = password
 
     if (debug) {
-      debug_idle = false
+      debugIdle = false
       debugUnlock.restart()
       return
     }
@@ -73,14 +70,14 @@ Singleton {
 
     onTriggered: {
       if (root.debug) {
-        if (root.password === debug_password) {
+        if (root.password === root.debugPassword) {
           root.unlocked()
           Qt.quit()
         } else {
           root.showFailure = true
           root.errorMessage = "Invalid password"
         }
-        debug_idle = true
+        root.debugIdle = true
       }
     }
   }
