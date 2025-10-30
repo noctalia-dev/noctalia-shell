@@ -654,7 +654,7 @@
         },
         "12hour-format": {
           "label": "Use 12-hour time format",
-          "description": "On for AM/PM format (e.g., 8:00 PM), off for 24-hour format (e.g., 20:00)."
+          "description": "Displays time in 12-hour format on the lock screen and calendar. The bar clock has its own settings."
         },
         "week-numbers": {
           "label": "Show week numbers",
@@ -1234,6 +1234,10 @@
         "width": {
           "label": "Width",
           "description": "Custom component width."
+        },
+        "hide-when-idle": {
+          "label": "Hide when no media is playing",
+          "description": "When enabled, the visualizer is hidden unless a player is actively playing."
         }
       }
     }

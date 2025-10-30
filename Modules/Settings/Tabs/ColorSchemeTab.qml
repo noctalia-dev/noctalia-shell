@@ -697,51 +697,6 @@ ColumnLayout {
         onToggled: checked => {
                      if (ProgramCheckerService.walkerAvailable) {
                        Settings.data.templates.walker = checked
-                       if (checked) {
-                         // Update walker config.toml to use noctalia theme
-                         var configFile = Quickshell.env("HOME") + "/.config/walker/config.toml"
-                         var configDir = Quickshell.env("HOME") + "/.config/walker"
-                         var configFileEsc = configFile.replace(/'/g, "'\\''")
-                         var configDirEsc = configDir.replace(/'/g, "'\\''")
-
-                         Logger.i("ColorSchemeTab", "Updating walker config:", configFile)
-                         Logger.d("ColorSchemeTab", "Config file path:", configFileEsc)
-                         Logger.d("ColorSchemeTab", "Config dir path:", configDirEsc)
-
-                         // Remove existing theme line and insert new one at the top
-                         var script = "echo '[Walker Config] Starting update...' && "
-                         script += "mkdir -p '" + configDirEsc + "' && "
-                         script += "echo '[Walker Config] Directory created/verified' && "
-                         script += "if [ -f '" + configFileEsc + "' ]; then "
-                         script += "echo '[Walker Config] File exists, removing old theme line' && "
-                         script += "(grep -v '^theme[[:space:]]*=' '" + configFileEsc + "' > '" + configFileEsc + ".tmp' 2>/dev/null || cat '" + configFileEsc + "' > '" + configFileEsc + ".tmp') && "
-                         script += "mv '" + configFileEsc + ".tmp' '" + configFileEsc + "' && "
-                         script += "echo '[Walker Config] Removed old theme line'; "
-                         script += "else echo '[Walker Config] File does not exist, will create'; "
-                         script += "fi && "
-                         script += "echo 'theme = \"noctalia\"' | cat - '" + configFileEsc + "' > '" + configFileEsc + ".tmp' && "
-                         script += "mv '" + configFileEsc + ".tmp' '" + configFileEsc + "' && "
-                         script += "echo '[Walker Config] Inserted theme at top' && "
-                         script += "FINAL_THEME=$(grep '^theme' '" + configFileEsc + "' | head -1 2>/dev/null) && "
-                         script += "echo '[Walker Config] Final theme line: '$FINAL_THEME || echo '[Walker Config] ERROR: Theme line not found after update'"
-
-                         Logger.d("ColorSchemeTab", "Executing script:", script)
-
-                         // Execute script using execDetached
-                         Quickshell.execDetached(["sh", "-c", script])
-
-                         // Verify the update after a short delay
-                         Qt.callLater(function () {
-                           var verifyScript = "grep '^theme' '" + configFileEsc + "' | head -1 2>/dev/null || echo 'NOT_FOUND'"
-                           var verifyProcessStr = "import QtQuick; import Quickshell.Io; Process { command: [\"sh\", \"-c\", \"" + verifyScript.replace(/"/g, '\\"') + "\"]; stdout: StdioCollector {} }"
-                           var verifyProcess = Qt.createQmlObject(verifyProcessStr, root, "walkerVerify")
-                           verifyProcess.exited.connect(function (exitCode) {
-                             Logger.i("ColorSchemeTab", "Walker theme verification:", verifyProcess.stdout.text || "NOT FOUND")
-                             verifyProcess.destroy()
-                           })
-                           verifyProcess.running = true
-                         })
-                       }
                        AppThemeService.generate()
                      }
                    }

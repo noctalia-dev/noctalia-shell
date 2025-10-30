@@ -653,8 +653,8 @@
           "description": "Anpassen, wie Datum und Zeit erscheinen."
         },
         "12hour-format": {
-          "description": "An für AM/PM-Format (z.B. 8:00 PM), aus für 24-Stunden-Format (z.B. 20:00).",
-          "label": "12-Stunden-Zeitformat benutzen"
+          "label": "12-Stunden-Zeitformat benutzen",
+          "description": "Zeigt die Uhrzeit im 12-Stunden-Format auf dem Sperrbildschirm und im Kalender an. Die Uhr in der Statusleiste hat eigene Einstellungen."
         },
         "week-numbers": {
           "label": "Wochennummern anzeigen",
@@ -1251,6 +1251,10 @@
         "width": {
           "label": "Breite",
           "description": "Benutzerdefinierte Komponentenbreite."
+        },
+        "hide-when-idle": {
+          "label": "Ausblenden, wenn keine Medien wiedergegeben werden",
+          "description": "Wenn aktiviert, wird der Visualizer ausgeblendet, sofern keine Wiedergabe läuft."
         }
       }
     }

@@ -29,9 +29,25 @@ Item {
 
   // Resolve settings: try user settings or defaults from BarWidgetRegistry
   readonly property int visualizerWidth: widgetSettings.width !== undefined ? widgetSettings.width : widgetMetadata.width
+  readonly property bool hideWhenIdle: widgetSettings.hideWhenIdle !== undefined ? widgetSettings.hideWhenIdle : (widgetMetadata.hideWhenIdle !== undefined ? widgetMetadata.hideWhenIdle : false)
+  readonly property bool shouldShow: (currentVisualizerType !== "" && currentVisualizerType !== "none") && (!hideWhenIdle || MediaService.isPlaying)
 
-  implicitWidth: visualizerWidth
-  implicitHeight: Style.capsuleHeight
+  implicitWidth: shouldShow ? visualizerWidth : 0
+  implicitHeight: shouldShow ? Style.capsuleHeight : 0
+  visible: shouldShow
+
+  Behavior on implicitWidth {
+    NumberAnimation {
+      duration: Style.animationNormal
+      easing.type: Easing.InOutCubic
+    }
+  }
+  Behavior on implicitHeight {
+    NumberAnimation {
+      duration: Style.animationNormal
+      easing.type: Easing.InOutCubic
+    }
+  }
 
   Rectangle {
     id: background
@@ -43,27 +59,14 @@ Item {
   // Store visualizer type to force re-evaluation
   readonly property string currentVisualizerType: Settings.data.audio.visualizerType
 
-  // Timer to delay reload
-  Timer {
-    id: reloadTimer
-    interval: 50
-    onTriggered: {
-      visualizerLoader.active = true
-    }
-  }
-
-  // Force reload when visualizer type changes
-  onCurrentVisualizerTypeChanged: {
-    visualizerLoader.active = false
-    reloadTimer.restart()
-  }
+  // When visualizer type or playback changes, shouldShow updates automatically
 
   // The Loader dynamically loads the appropriate visualizer based on settings
   Loader {
     id: visualizerLoader
     anchors.fill: parent
     anchors.margins: Style.marginS
-    active: false
+    active: shouldShow
     asynchronous: false
 
     sourceComponent: {
@@ -99,13 +102,7 @@ Item {
                }
   }
 
-  // Initial activation on component complete
-  Component.onCompleted: {
-    if (currentVisualizerType !== "" && currentVisualizerType !== "none") {
-      visualizerLoader.active = true
-    }
-  }
-
+  // No imperative activation needed; bound to shouldShow
   Component {
     id: linearComponent
     LinearSpectrum {

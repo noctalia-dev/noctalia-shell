@@ -653,8 +653,8 @@
           "description": "Personaliza cómo aparecen la fecha y la hora."
         },
         "12hour-format": {
-          "description": "Activado para formato AM/PM (ej., 8:00 PM), desactivado para formato de 24 horas (ej., 20:00).",
-          "label": "Utilice el formato de hora de 12 horas"
+          "label": "Utilice el formato de hora de 12 horas",
+          "description": "Muestra la hora en formato de 12 horas en la pantalla de bloqueo y el calendario. El reloj de la barra tiene su propia configuración."
         },
         "week-numbers": {
           "label": "Mostrar números de semana",
@@ -1234,6 +1234,10 @@
         "width": {
           "label": "Ancho",
           "description": "Ancho del componente personalizado."
+        },
+        "hide-when-idle": {
+          "label": "Ocultar cuando no se reproduce",
+          "description": "Si está activado, el visualizador se oculta salvo que haya reproducción activa."
         }
       }
     }

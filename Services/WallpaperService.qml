@@ -372,12 +372,20 @@ Singleton {
       }
     } else {
       // Use FolderListModel (non-recursive)
+      // Force refresh by toggling each scanner's currentDirectory
       for (var i = 0; i < wallpaperScanners.count; i++) {
         var scanner = wallpaperScanners.objectAt(i)
         if (scanner) {
-          var currentFolder = scanner.folder
-          scanner.folder = ""
-          scanner.folder = currentFolder
+          // Capture scanner in closure
+          (function(s) {
+            var directory = root.getMonitorDirectory(s.screenName)
+            // Trigger a change by setting to /tmp (always exists) then back to the actual directory
+            // Note: This causes harmless Qt warnings (QTBUG-52262) but is necessary to force FolderListModel to re-scan
+            s.currentDirectory = "/tmp"
+            Qt.callLater(function() {
+              s.currentDirectory = directory
+            })
+          })(scanner)
         }
       }
     }
@@ -393,6 +401,15 @@ Singleton {
       wallpaperLists[screenName] = []
       wallpaperListChanged(screenName, 0)
       return
+    }
+
+    // Cancel any existing scan for this screen
+    if (recursiveProcesses[screenName]) {
+      Logger.d("Wallpaper", "Cancelling existing scan for", screenName)
+      recursiveProcesses[screenName].running = false
+      recursiveProcesses[screenName].destroy()
+      delete recursiveProcesses[screenName]
+      scanningCount--
     }
 
     scanningCount++
@@ -434,7 +451,7 @@ Singleton {
         Logger.i("Wallpaper", "Recursive scan completed for", screenName, "found", files.length, "files")
         wallpaperListChanged(screenName, files.length)
       } else {
-        Logger.e("Wallpaper", "Recursive scan failed for", screenName, "exit code:", exitCode, "stderr:", processObject.stderr.text)
+        Logger.w("Wallpaper", "Recursive scan failed for", screenName, "exit code:", exitCode, "(directory might not exist)")
         wallpaperLists[screenName] = []
         wallpaperListChanged(screenName, 0)
       }

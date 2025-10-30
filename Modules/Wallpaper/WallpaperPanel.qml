@@ -292,9 +292,6 @@ NPanel {
       }
       wallpapersList = WallpaperService.getWallpapersList(targetScreen.name)
       Logger.i("WallpaperPanel", "Got", wallpapersList.length, "wallpapers for screen", targetScreen.name)
-      if (wallpapersList.length > 0) {
-        Logger.d("WallpaperPanel", "First 5 wallpapers:", wallpapersList.slice(0, 5))
-      }
 
       // Pre-compute basenames once for better performance
       wallpapersWithNames = wallpapersList.map(function (p) {

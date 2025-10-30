@@ -115,6 +115,7 @@ Singleton {
                                                         "outputs": [{
                                                             "path": "~/.config/walker/themes/noctalia/style.css"
                                                           }],
+                                                        "postProcess": () => `${colorsApplyScript} walker\n`,
                                                         "strict": true
                                                       }
                                                     })

@@ -653,8 +653,8 @@
           "description": "自定义日期和时间的显示方式。"
         },
         "12hour-format": {
-          "description": "开启为 AM/PM 格式（例如：8:00 PM），关闭为 24 小时制（例如：20:00）。",
-          "label": "使用12小时制时间格式"
+          "label": "使用12小时制时间格式",
+          "description": "在锁屏和日历上以 12 小时制格式显示时间。状态栏时钟有其自己的设置。"
         },
         "week-numbers": {
           "label": "显示周数",
@@ -1234,6 +1234,10 @@
         "width": {
           "label": "宽度",
           "description": "自定义组件的宽度。"
+        },
+        "hide-when-idle": {
+          "label": "无媒体播放时隐藏",
+          "description": "启用后，除非正在播放媒体，否则隐藏可视化显示。"
         }
       }
     }

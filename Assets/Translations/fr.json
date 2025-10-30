@@ -654,7 +654,6 @@
         },
         "12hour-format": {
           "label": "Utiliser le format horaire de 12 heures",
-          "description": "Activé pour le format AM/PM (ex: 8:00 PM), désactivé pour le format 24 heures (ex: 20:00)."
         },
         "week-numbers": {
           "label": "Afficher les numéros de semaine",
@@ -1234,6 +1233,10 @@
         "width": {
           "label": "Largeur",
           "description": "Largeur personnalisée du composant."
+        },
+        "hide-when-idle": {
+          "label": "Masquer lorsqu'aucun média n'est en lecture",
+          "description": "Si activé, le visualiseur est masqué sauf lorsqu'un lecteur est en lecture."
         }
       }
     }

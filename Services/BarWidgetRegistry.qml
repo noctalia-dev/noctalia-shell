@@ -53,7 +53,8 @@ Singleton {
                                   },
                                   "AudioVisualizer": {
                                     "allowUserSettings": true,
-                                    "width": 200
+                                    "width": 200,
+                                    "hideWhenIdle": false
                                   },
                                   "Battery": {
                                     "allowUserSettings": true,
