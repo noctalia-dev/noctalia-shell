@@ -276,6 +276,7 @@ Item {
 
                   onActivated: {
                     GreeterService.authenticate(users.current_user, passwordInput.password)
+                    passwordInput.password = ""
                   }
                 }
 
