@@ -64,12 +64,12 @@ Item {
       Process {
         id: users
 
-        property string current_user: users_list[current_user_index] ?? ""
-        property int current_user_index: 0
-        property list<string> users_list: []
+        property int currentUserIndex: 0
+        property list<string> availableUsers: []
+        property string currentUser: availableUsers[currentUserIndex] ?? ""
 
         function next() {
-          current_user_index = (current_user_index + 1) % users_list.length
+          currentUserIndex = (currentUserIndex + 1) % availableUsers.length
         }
 
         command: ["awk", `BEGIN { FS = ":"} /\\/home/ { print $1 }`, "/etc/passwd"]
@@ -83,15 +83,15 @@ Item {
             console.log("[USERS] " + data)
             if (data == root.preferred_user) {
               console.log("[INFO] Found preferred user " + root.preferred_user)
-              users.current_user_index = users.users_list.length
+              users.currentUserIndex = users.availableUsers.length
             }
-            users.users_list.push(data)
+            users.availableUsers.push(data)
           }
         }
 
         onExited: if (root.instant_auth && !users.running) {
           console.log("[USERS EXIT]")
-          GreeterService.authenticate(users.current_user, "")
+          GreeterService.authenticate(users.currentUser, "")
         }
       }
 
@@ -123,7 +123,7 @@ Item {
             anchors.top: parent.top
             anchors.topMargin: 100
 
-            userName: users.current_user
+            userName: users.currentUser
           }
 
           ColumnLayout {
@@ -276,7 +276,7 @@ Item {
                   }
 
                   onActivated: {
-                    GreeterService.authenticate(users.current_user, passwordInput.password)
+                    GreeterService.authenticate(users.currentUser, passwordInput.password)
                     passwordInput.password = ""
                   }
                 }
