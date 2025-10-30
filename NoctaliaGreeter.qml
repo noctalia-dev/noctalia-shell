@@ -132,6 +132,8 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             anchors.topMargin: 100
+
+            userName: users.current_user
           }
 
           ColumnLayout {

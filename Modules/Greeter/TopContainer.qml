@@ -6,6 +6,10 @@ import qs.Widgets
 import qs.Modules.LockScreen
 
 Rectangle {
+  id: root
+
+  required property string userName
+
   width: Math.max(500, contentRow.implicitWidth + 32)
   height: Math.max(120, contentRow.implicitHeight + 32)
 
@@ -80,7 +84,7 @@ Rectangle {
 
       // Welcome back + Username on one line
       NText {
-        text: I18n.tr("lock-screen.welcome-back") + "!"
+        text: I18n.tr("lock-screen.welcome-back") + " " + root.userName + "!"
         pointSize: Style.fontSizeXXL
         font.weight: Font.Medium
         color: Color.mOnSurface
