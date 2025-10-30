@@ -28,19 +28,19 @@ Item {
   Connections {
     target: I18n
     function onTranslationsLoaded() {
-      i18nLoaded = true
+      root.i18nLoaded = true
     }
   }
 
   Connections {
     target: Settings
     function onSettingsLoaded() {
-      settingsLoaded = true
+      root.settingsLoaded = true
     }
   }
 
   Loader {
-    active: i18nLoaded && settingsLoaded
+    active: root.i18nLoaded && root.settingsLoaded
 
     sourceComponent: Item {
       Component.onCompleted: {
