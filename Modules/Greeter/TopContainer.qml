@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
 import qs.Modules.LockScreen
+import qs.Modules.Bar.Calendar
 
 Rectangle {
   id: root
@@ -116,6 +117,14 @@ Rectangle {
       Layout.fillWidth: true
     }
 
-    CircularClock {}
+    ClockLoader {
+      now: Time.date
+      Layout.preferredWidth: 70
+      Layout.preferredHeight: 70
+      Layout.alignment: Qt.AlignVCenter
+      backgroundColor: Color.mSurface
+      clockColor: Color.mOnSurface
+      secondHandColor: Color.mPrimary
+    }
   }
 }
