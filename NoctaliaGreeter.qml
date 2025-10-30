@@ -98,17 +98,7 @@ Item {
       // Main greeter interface
       WlSessionLock {
         id: sessionLock
-
-        property string fakeBuffer: ""
-        property string passwdBuffer: ""
-
         locked: true
-
-        function tryUnlock() {
-          GreeterService.authenticate(users.current_user, passwdBuffer)
-          passwdBuffer = ""
-          fakeBuffer = ""
-        }
 
         WlSessionLockSurface {
           Background {}
