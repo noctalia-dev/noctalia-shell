@@ -19,8 +19,8 @@ Item {
   id: root
 
   // Config via environment variables
-  readonly property string instant_auth: Quickshell.env("NOCTALIA_GREETER_INSTANT_AUTH")
-  readonly property string preferred_user: Quickshell.env("NOCTALIA_GREETER_PREFERRED_USER")
+  readonly property string instantAuth: Quickshell.env("NOCTALIA_GREETER_INSTANT_AUTH")
+  readonly property string preferredUser: Quickshell.env("NOCTALIA_GREETER_PREFERRED_USER")
 
   property bool i18nLoaded: false
   property bool settingsLoaded: false
@@ -76,21 +76,22 @@ Item {
         running: true
 
         stderr: SplitParser {
-          onRead: data => console.log("[ERR] " + data)
+          onRead: data => Logger.e("Greeter", "Failed to read user: " + data)
         }
+
         stdout: SplitParser {
           onRead: data => {
-            console.log("[USERS] " + data)
-            if (data == root.preferred_user) {
-              console.log("[INFO] Found preferred user " + root.preferred_user)
+            Logger.i("Greeter", "Found user: " + data)
+            if (data == root.preferredUser) {
+              Logger.i("Greeter", "'" + data + "' is now the preferred user")
               users.currentUserIndex = users.availableUsers.length
             }
             users.availableUsers.push(data)
           }
         }
 
-        onExited: if (root.instant_auth && !users.running) {
-          console.log("[USERS EXIT]")
+        onExited: if (root.instantAuth && !users.running) {
+          Logger.i("Performing instant authentication for user " + users.currentUser)
           GreeterService.authenticate(users.currentUser, "")
         }
       }

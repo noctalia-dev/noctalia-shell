@@ -61,7 +61,7 @@ Singleton {
         const sessionName = parsedData[1]
         const sessionCommand = parsedData[2]
 
-        Logger.i("Sessions", "Found new session: " + sessionName)
+        Logger.i("Sessions", "Found session: " + sessionName)
         root.availableSessions.push({
                                       "identifier": sessionIdentifier,
                                       "name": sessionName,
@@ -69,7 +69,7 @@ Singleton {
                                     })
 
         if (sessionIdentifier == root.defaultSessionIdentifier) {
-          Logger.i("Sessions", "Set preferred session: " + sessionIdentifier)
+          Logger.i("Sessions", "'" + sessionName + "' is now the preferred session")
           const sessionIndex = root.availableSessions.length - 1
           root.currentSessionIndex = sessionIndex
         }
