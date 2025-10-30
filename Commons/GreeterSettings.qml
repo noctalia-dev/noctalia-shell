@@ -42,9 +42,6 @@ Singleton {
 
       // niri, gnome
       property string lastSessionIdentifier: ""
-
-      // [{identifier: string, name: string, command: string}]
-      property list<var> sessions: []
     }
   }
 }

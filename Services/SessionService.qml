@@ -16,7 +16,7 @@ Singleton {
 
   property int currentSessionIndex: 0
   // [{identifier: string, name: string, command: string}]
-  readonly property list<var> availableSessions: GreeterSettings.data.sessions
+  property list<var> availableSessions: []
 
   readonly property string currentSessionName: availableSessions[currentSessionIndex]?.name ?? "Niri"
   readonly property string currentSessionCommand: availableSessions[currentSessionIndex]?.command ?? "niri-session"
@@ -60,21 +60,18 @@ Singleton {
         const sessionIdentifier = parsedData[0]
         const sessionName = parsedData[1]
         const sessionCommand = parsedData[2]
-        let sessionIndex = root.availableSessions.findIndex(session => session.identifier === sessionIdentifier)
 
-        if (sessionIndex === -1) {
-          Logger.i("Sessions", "Found new session: " + sessionName)
-          GreeterSettings.data.sessions.push({
-                                               "identifier": sessionIdentifier,
-                                               "name": sessionName,
-                                               "command": sessionCommand
-                                             })
-          sessionIndex = root.availableSessions.length - 1
+        Logger.i("Sessions", "Found new session: " + sessionName)
+        root.availableSessions.push({
+                                      "identifier": sessionIdentifier,
+                                      "name": sessionName,
+                                      "command": sessionCommand
+                                    })
 
-          if (sessionIdentifier == root.defaultSessionIdentifier) {
-            Logger.i("Sessions", "Set preferred session: " + sessionIdentifier)
-            root.currentSessionIndex = sessionIndex
-          }
+        if (sessionIdentifier == root.defaultSessionIdentifier) {
+          Logger.i("Sessions", "Set preferred session: " + sessionIdentifier)
+          const sessionIndex = root.availableSessions.length - 1
+          root.currentSessionIndex = sessionIndex
         }
       }
     }
