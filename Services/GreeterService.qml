@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Greetd
 
+import qs.Commons
 import qs.Services
 
 Singleton {
@@ -22,6 +23,10 @@ Singleton {
   property string errorMessage: ""
 
   signal unlocked
+
+  Component.onCompleted: {
+    Logger.d("GreeterService", "Initialized with debug=" + debug)
+  }
 
   function authenticate(username, password) {
     root.password = password
@@ -41,7 +46,7 @@ Singleton {
     target: Greetd
 
     function onAuthMessage(message, error, responseRequired, echoResponse) {
-      console.log("[GREETD] msg='" + message + "' err='" + error + "' resreq=" + responseRequired + " echo=" + echoResponse)
+      Logger.i("GreeterService", "[GREETD] msg='" + message + "' err='" + error + "' resreq=" + responseRequired + " echo=" + echoResponse)
 
       if (responseRequired) {
         Greetd.respond(root.password)
@@ -54,7 +59,7 @@ Singleton {
 
     function onReadyToLaunch() {
       root.unlocked()
-      console.log("[GREETD EXEC] " + SessionService.currentSessionCommand)
+      Logger.i("GreeterService", "[GREETD EXEC] " + SessionService.currentSessionCommand)
       Greetd.launch(SessionService.currentSessionCommand.split(" "), [], true)
     }
 
