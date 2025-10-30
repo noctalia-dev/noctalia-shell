@@ -257,6 +257,10 @@
     },
     "dock": {
       "title": "Dock",
+      "enabled": {
+        "label": "Enable dock",
+        "description": "Show or hide the dock entirely"
+      },
       "appearance": {
         "section": {
           "label": "Appearance",
@@ -289,7 +293,7 @@
       "monitors": {
         "section": {
           "label": "Monitor display",
-          "description": "Choose which monitor to display the dock on."
+          "description": "Show dock on specific monitors. Defaults to all if none are chosen."
         },
         "only-same-output": {
           "label": "Only apps from same output",
@@ -360,6 +364,10 @@
         "always-on-top": {
           "label": "Always on top",
           "description": "Display notifications above fullscreen windows and other layers."
+        },
+        "background-opacity": {
+          "label": "Background opacity",
+          "description": "Adjust the opacity of notification backgrounds."
         }
       },
       "duration": {
@@ -593,6 +601,10 @@
             "description": "Write {filepath} and reload",
             "description-missing": "Requires {app} to be installed"
           },
+          "walker": {
+            "description": "Write {filepath} and set theme to noctalia",
+            "description-missing": "Requires {app} to be installed"
+          },
           "discord": {
             "description": "Write {filepath} for {client}",
             "description-missing": "No Discord client detected. Install vencord, vesktop, webcord, armcord, equibop, lightcord, or dorion."
@@ -637,6 +649,10 @@
         "fahrenheit": {
           "label": "Display temperature in Fahrenheit (°F)",
           "description": "Display temperature in Fahrenheit instead of Celsius."
+        },
+        "show-in-calendar": {
+          "label": "Display weather in calendar",
+          "description": "Show the daily weather forecast directly in your calendar view."
         }
       },
       "date-time": {
@@ -646,11 +662,16 @@
         },
         "12hour-format": {
           "label": "Use 12-hour time format",
-          "description": "On for AM/PM format (e.g., 8:00 PM), off for 24-hour format (e.g., 20:00)."
+          "description": "Displays time in 12-hour format on the lock screen and calendar. The bar clock has its own settings."
         },
         "week-numbers": {
           "label": "Show week numbers",
           "description": "Displays the week of the year (e.g., Week 38) in the calendar."
+        },
+        "first-day-of-week": {
+          "label": "First day of week",
+          "description": "Choose which day starts the week in the calendar.",
+          "automatic": "Automatic (use system locale)"
         },
         "show-events": {
           "label": "Show calendar events",
@@ -1128,6 +1149,10 @@
         "collapse-condition": {
           "label": "Collapse condition",
           "description": "If the output text matches this value, the button will collapse."
+        },
+        "parse-json": {
+          "label": "Parse output as JSON",
+          "description": "Parse the command output as a JSON object to dynamically set text and icon."
         }
       },
       "media-mini": {
@@ -1222,6 +1247,10 @@
         "width": {
           "label": "Width",
           "description": "Custom component width."
+        },
+        "hide-when-idle": {
+          "label": "Hide when no media is playing",
+          "description": "When enabled, the visualizer is hidden unless a player is actively playing."
         }
       }
     }

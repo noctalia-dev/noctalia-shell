@@ -52,7 +52,8 @@ Singleton {
                                   },
                                   "AudioVisualizer": {
                                     "allowUserSettings": true,
-                                    "width": 200
+                                    "width": 200,
+                                    "hideWhenIdle": false
                                   },
                                   "Battery": {
                                     "allowUserSettings": true,
@@ -90,7 +91,8 @@ Singleton {
                                     "textCommand": "",
                                     "textStream": false,
                                     "textIntervalMs": 3000,
-                                    "textCollapse": ""
+                                    "textCollapse": "",
+                                    "parseJson": false
                                   },
                                   "KeyboardLayout": {
                                     "allowUserSettings": true,

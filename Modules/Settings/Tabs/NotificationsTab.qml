@@ -72,6 +72,27 @@ ColumnLayout {
       onToggled: checked => Settings.data.notifications.overlayLayer = checked
     }
 
+    // Background Opacity
+    ColumnLayout {
+      spacing: Style.marginXXS
+      Layout.fillWidth: true
+
+      NLabel {
+        label: I18n.tr("settings.notifications.settings.background-opacity.label")
+        description: I18n.tr("settings.notifications.settings.background-opacity.description")
+      }
+
+      NValueSlider {
+        Layout.fillWidth: true
+        from: 0
+        to: 100
+        stepSize: 1
+        value: Settings.data.notifications.backgroundOpacity * 100
+        onMoved: value => Settings.data.notifications.backgroundOpacity = value / 100
+        text: Math.round(Settings.data.notifications.backgroundOpacity * 100) + "%"
+      }
+    }
+
     // OSD settings moved to the dedicated OSD tab
   }
 

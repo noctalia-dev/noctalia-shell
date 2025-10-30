@@ -69,6 +69,7 @@ RowLayout {
     }
 
     MouseArea {
+      enabled: root.enabled
       anchors.fill: parent
       cursorShape: Qt.PointingHandCursor
       hoverEnabled: true

@@ -9,7 +9,11 @@ import qs.Widgets
 NBox {
   id: root
 
+  property int forecastDays: 7
   readonly property bool weatherReady: Settings.data.location.weatherEnabled && (LocationService.data.weather !== null)
+
+  visible: Settings.data.location.weatherEnabled
+  implicitHeight: Math.max(100 * Style.uiScaleRatio, content.implicitHeight + (Style.marginXL * 2))
 
   ColumnLayout {
     id: content
@@ -87,7 +91,7 @@ NBox {
       spacing: Style.marginM
 
       Repeater {
-        model: weatherReady ? LocationService.data.weather.daily.time : []
+        model: weatherReady ? Math.min(root.forecastDays, LocationService.data.weather.daily.time.length) : 0
         delegate: ColumnLayout {
           Layout.fillWidth: true
           spacing: Style.marginXS

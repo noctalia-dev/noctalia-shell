@@ -257,6 +257,10 @@
     },
     "dock": {
       "title": "Dock",
+      "enabled": {
+        "label": "Activer le dock",
+        "description": "Afficher ou masquer complètement le dock"
+      },
       "appearance": {
         "section": {
           "label": "Apparence",
@@ -289,7 +293,7 @@
       "monitors": {
         "section": {
           "label": "Affichage sur les moniteur",
-          "description": "Choisissez sur quels moniteurs afficher le dock."
+          "description": "Afficher le dock sur des écrans spécifiques. Par défaut, il s'affiche sur tous les écrans si aucun n'est sélectionné."
         },
         "only-same-output": {
           "description": "Afficher uniquement les applications de la sortie où le dock est situé.",
@@ -360,6 +364,10 @@
         "always-on-top": {
           "label": "Toujours au premier plan",
           "description": "Afficher les notifications au-dessus des fenêtres en plein écran et des autres applications."
+        },
+        "background-opacity": {
+          "label": "Opacité du fond",
+          "description": "Ajuster l'opacité des arrière-plans de notifications."
         }
       },
       "duration": {
@@ -589,6 +597,10 @@
             "description": "Écrire {filepath} et recharger",
             "description-missing": "Nécessite que le lanceur {app} soit installé"
           },
+          "walker": {
+            "description": "Écrire {filepath} et définir le thème sur noctalia",
+            "description-missing": "Nécessite que le lanceur {app} soit installé"
+          },
           "discord": {
             "description": "Écrire {filepath} pour {client}",
             "description-missing": "Aucun client Discord détecté. Installez vencord, vesktop, webcord, armcord, equibop, lightcord ou dorion."
@@ -637,6 +649,10 @@
         "fahrenheit": {
           "label": "Afficher la température en Fahrenheit (°F)",
           "description": "Afficher la température en Fahrenheit au lieu de Celsius."
+        },
+        "show-in-calendar": {
+          "description": "Afficher les prévisions météo quotidiennes directement dans votre vue calendrier.",
+          "label": "Afficher la météo dans le calendrier"
         }
       },
       "date-time": {
@@ -646,7 +662,7 @@
         },
         "12hour-format": {
           "label": "Utiliser le format horaire de 12 heures",
-          "description": "Activé pour le format AM/PM (ex: 8:00 PM), désactivé pour le format 24 heures (ex: 20:00)."
+          "description": "Affiche l'heure au format 12 heures sur l'écran de verrouillage et dans le calendrier. L'horloge de la barre possède ses propres paramètres."
         },
         "week-numbers": {
           "label": "Afficher les numéros de semaine",
@@ -659,6 +675,11 @@
         "use-analog": {
           "description": "Afficher une horloge de style analogique sur l'écran du calendrier.",
           "label": "Utiliser une horloge de style analogique."
+        },
+        "first-day-of-week": {
+          "automatic": "Automatique (utiliser les paramètres régionaux du système)",
+          "description": "Choisissez quel jour commence la semaine dans le calendrier.",
+          "label": "Premier jour de la semaine"
         }
       }
     },
@@ -1128,6 +1149,10 @@
         "collapse-condition": {
           "label": "Condition d’effondrement",
           "description": "Si le texte de sortie correspond à cette valeur, le bouton se repliera."
+        },
+        "parse-json": {
+          "label": "Analyser la sortie en JSON",
+          "description": "Analyser la sortie de la commande en tant qu'objet JSON pour définir dynamiquement le texte et l'icône."
         }
       },
       "media-mini": {
@@ -1222,6 +1247,10 @@
         "width": {
           "label": "Largeur",
           "description": "Largeur personnalisée du composant."
+        },
+        "hide-when-idle": {
+          "label": "Masquer lorsqu'aucun média n'est en lecture",
+          "description": "Si activé, le visualiseur est masqué sauf lorsqu'un lecteur est en lecture."
         }
       }
     }

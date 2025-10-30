@@ -23,7 +23,7 @@ NPanel {
   draggable: false
 
   property int currentStep: 0
-  property int totalSteps: 4
+  property int totalSteps: 5
 
   // Setup wizard data
   property string selectedWallpaperDirectory: Settings.defaultWallpapersDirectory
@@ -214,7 +214,12 @@ NPanel {
               }
             }
 
-            // Step 3: Appearance - Dark mode and color source
+            // Step 3: Dock Setup
+            SetupDockStep {
+              id: stepDock
+            }
+
+            // Step 4: Appearance - Dark mode and color source
             SetupAppearanceStep {
               id: step3
             }
@@ -248,6 +253,9 @@ NPanel {
                 }, {
                   "icon": "settings",
                   "label": "Customize"
+                }, {
+                  "icon": "device-desktop",
+                  "label": "Dock"
                 }, {
                   "icon": "palette",
                   "label": "Appearance"

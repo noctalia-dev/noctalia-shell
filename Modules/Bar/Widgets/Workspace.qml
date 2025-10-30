@@ -44,7 +44,7 @@ Item {
 
   readonly property string labelMode: (widgetSettings.labelMode !== undefined) ? widgetSettings.labelMode : widgetMetadata.labelMode
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
-  readonly property int characterCount: (widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount
+  readonly property int characterCount: isVertical ? 2 : ((widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount)
 
   property bool isDestroying: false
   property bool hovered: false

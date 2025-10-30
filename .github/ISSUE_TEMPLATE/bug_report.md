@@ -1,9 +1,10 @@
 ---
 name: Bug Report
 about: Report a bug from noctalia-shell
-title: "[Bug] "
+title: ''
 labels: bug
 assignees: ''
+
 ---
 
 ### Description

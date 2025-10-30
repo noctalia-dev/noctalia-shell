@@ -16,6 +16,11 @@ in {
   options.programs.noctalia-shell = {
     enable = lib.mkEnableOption "Noctalia shell configuration";
 
+    package = lib.mkOption {
+      type = lib.types.nullOr lib.types.package;
+      description = "The noctalia-shell package to use";
+    };
+
     settings = lib.mkOption {
       type = with lib.types;
         nullOr (oneOf [
@@ -98,7 +103,8 @@ in {
     useApp2Unit = cfg.settings.appLauncher.useApp2Unit or false;
   in
     lib.mkIf cfg.enable {
-      home.packages = lib.optional useApp2Unit cfg.app2unit.package;
+      home.packages = lib.optional useApp2Unit cfg.app2unit.package
+        ++ lib.optional (cfg.package != null) cfg.package;
 
       xdg.configFile = {
         "noctalia/settings.json" = {

@@ -12,6 +12,7 @@ import qs.Commons
 import qs.Services
 import qs.Widgets
 import qs.Modules.Audio
+import qs.Modules.Bar.Calendar
 
 Loader {
   id: lockScreen
@@ -199,7 +200,16 @@ Loader {
                   Layout.fillWidth: true
                 }
 
-                CircularClock {}
+                // Clock
+                ClockLoader {
+                  now: Time.date
+                  Layout.preferredWidth: 70
+                  Layout.preferredHeight: 70
+                  Layout.alignment: Qt.AlignVCenter
+                  backgroundColor: Color.mSurface
+                  clockColor: Color.mOnSurface
+                  secondHandColor: Color.mPrimary
+                }
               }
             }
 

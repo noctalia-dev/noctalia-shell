@@ -8,7 +8,7 @@ Singleton {
   id: root
 
   // Public properties
-  property string baseVersion: "2.19.0"
+  property string baseVersion: "2.20.0"
   property bool isDevelopment: true
 
   property string currentVersion: `v${!isDevelopment ? baseVersion : baseVersion + "-dev"}`

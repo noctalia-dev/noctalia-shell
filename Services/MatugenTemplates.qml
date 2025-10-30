@@ -161,6 +161,13 @@ Singleton {
       "input": "vicinae.toml",
       "postHook": "cp -n " + Quickshell.shellDir + "/Assets/noctalia.svg ~/.local/share/vicinae/themes/noctalia.svg && " + AppThemeService.colorsApplyScript + " vicinae"
     }, {
+      "name": "walker",
+      "templates": [{
+          "version": "walker",
+          "output": "~/.config/walker/themes/noctalia/style.css"
+        }],
+      "input": "walker.css"
+    }, {
       "name": "pywalfox",
       "templates": [{
           "version": "pywalfox",

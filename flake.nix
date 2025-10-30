@@ -52,6 +52,7 @@
       ...
     }: {
       imports = [./nix/home-module.nix];
+      programs.noctalia-shell.package = lib.mkDefault self.packages.${pkgs.system}.default;
       programs.noctalia-shell.app2unit.package =
         lib.mkDefault
         nixpkgs.legacyPackages.${pkgs.system}.app2unit;

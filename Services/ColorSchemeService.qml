@@ -91,6 +91,31 @@ Singleton {
     schemeReader.path = filePath
   }
 
+  function setPredefinedScheme(schemeName) {
+    Logger.i("ColorScheme", "Attempting to set predefined scheme to:", schemeName)
+
+    var resolvedPath = resolveSchemePath(schemeName)
+    var basename = getBasename(schemeName)
+
+    // Check if the scheme actually exists in the loaded schemes list
+    var schemeExists = false
+    for (var i = 0; i < schemes.length; i++) {
+      if (getBasename(schemes[i]) === basename) {
+        schemeExists = true
+        break
+      }
+    }
+
+    if (schemeExists) {
+      Settings.data.colorSchemes.predefinedScheme = basename
+      applyScheme(schemeName)
+      ToastService.showNotice("Color Scheme", `Set to ${basename}`)
+    } else {
+      Logger.e("ColorScheme", "Scheme not found:", schemeName)
+      ToastService.showError("Color Scheme", `Scheme '${basename}' not found!`)
+    }
+  }
+
   Process {
     id: findProcess
     running: false
@@ -162,7 +187,7 @@ Singleton {
   // Check if any templates are enabled
   function hasEnabledTemplates() {
     return Settings.data.templates.gtk || Settings.data.templates.qt || Settings.data.templates.kitty || Settings.data.templates.ghostty || Settings.data.templates.foot || Settings.data.templates.fuzzel || Settings.data.templates.discord || Settings.data.templates.discord_vesktop || Settings.data.templates.discord_webcord
-        || Settings.data.templates.discord_armcord || Settings.data.templates.discord_equibop || Settings.data.templates.discord_lightcord || Settings.data.templates.discord_dorion || Settings.data.templates.pywalfox
+        || Settings.data.templates.discord_armcord || Settings.data.templates.discord_equibop || Settings.data.templates.discord_lightcord || Settings.data.templates.discord_dorion || Settings.data.templates.pywalfox || Settings.data.templates.vicinae || Settings.data.templates.walker
   }
 
   // Writer to colors.json using a JsonAdapter for safety

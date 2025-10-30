@@ -277,7 +277,7 @@ NPanel {
 
           NText {
             text: timerActive ? I18n.tr("session-menu.action-in-seconds", {
-                                          "action": I18n.tr("session-menu." + pendingAction).charAt(0).toUpperCase() + I18n.tr("session-menu." + pendingAction).slice(1),
+                                          "action": I18n.tr("session-menu." + pendingAction),
                                           "seconds": Math.ceil(timeRemaining / 1000)
                                         }) : I18n.tr("session-menu.title")
             font.weight: Style.fontWeightBold
@@ -368,6 +368,7 @@ NPanel {
     Behavior on color {
       ColorAnimation {
         duration: Style.animationFast
+        easing.type: Easing.OutCirc
       }
     }
 
@@ -398,6 +399,7 @@ NPanel {
         Behavior on color {
           ColorAnimation {
             duration: Style.animationFast
+            easing.type: Easing.OutCirc
           }
         }
       }
@@ -428,6 +430,7 @@ NPanel {
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
+              easing.type: Easing.OutCirc
             }
           }
         }

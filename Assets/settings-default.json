@@ -172,6 +172,7 @@
     ]
   },
   "dock": {
+    "enabled": true,
     "displayMode": "always_visible",
     "backgroundOpacity": 1,
     "floatingRatio": 1,
@@ -189,6 +190,7 @@
     "monitors": [],
     "location": "top_right",
     "overlayLayer": true,
+    "backgroundOpacity": 1,
     "respectExpireTimeout": false,
     "lowUrgencyDuration": 3,
     "normalUrgencyDuration": 8,
@@ -248,6 +250,7 @@
     "discord_dorion": false,
     "pywalfox": false,
     "vicinae": false,
+    "walker": false,
     "enableUserTemplates": false
   },
   "nightLight": {

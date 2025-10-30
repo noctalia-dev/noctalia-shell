@@ -257,6 +257,10 @@
     },
     "dock": {
       "title": "Dock",
+      "enabled": {
+        "label": "Dock aktivieren",
+        "description": "Dock vollständig anzeigen oder ausblenden"
+      },
       "appearance": {
         "section": {
           "label": "Erscheinungsbild",
@@ -289,7 +293,7 @@
       "monitors": {
         "section": {
           "label": "Monitor-Anzeige",
-          "description": "Monitor auswählen, auf dem das Dock angezeigt werden soll."
+          "description": "Dock auf bestimmten Monitoren anzeigen. Standardmäßig werden alle angezeigt, wenn keine ausgewählt wurden."
         },
         "only-same-output": {
           "description": "Zeige nur Apps von dem Bildschirm, auf dem sich das Dock befindet.",
@@ -360,6 +364,10 @@
         "always-on-top": {
           "label": "Immer im Vordergrund",
           "description": "Benachrichtigungen über Vollbildfenstern und anderen Ebenen anzeigen."
+        },
+        "background-opacity": {
+          "label": "Hintergrund-Transparenz",
+          "description": "Transparenz der Benachrichtigungshintergründe anpassen."
         }
       },
       "duration": {
@@ -589,6 +597,10 @@
             "description": "Schreibt {filepath} und lädt neu",
             "description-missing": "Erfordert die Installation von {app}"
           },
+          "walker": {
+            "description": "Schreibt {filepath} und setzt das Theme auf noctalia",
+            "description-missing": "Erfordert die Installation von {app}"
+          },
           "discord": {
             "description": "Schreibt {filepath} für {client}",
             "description-missing": "Kein Discord-Client erkannt. Installieren Sie vencord, vesktop, webcord, armcord, equibop, lightcord oder dorion"
@@ -637,6 +649,10 @@
         "fahrenheit": {
           "label": "Temperatur in Fahrenheit (°F) anzeigen",
           "description": "Temperatur in Fahrenheit statt Celsius anzeigen."
+        },
+        "show-in-calendar": {
+          "description": "Zeige die tägliche Wettervorhersage direkt in deiner Kalenderansicht an.",
+          "label": "Wetter im Kalender anzeigen"
         }
       },
       "date-time": {
@@ -645,8 +661,8 @@
           "description": "Anpassen, wie Datum und Zeit erscheinen."
         },
         "12hour-format": {
-          "description": "An für AM/PM-Format (z.B. 8:00 PM), aus für 24-Stunden-Format (z.B. 20:00).",
-          "label": "12-Stunden-Zeitformat benutzen"
+          "label": "12-Stunden-Zeitformat benutzen",
+          "description": "Zeigt die Uhrzeit im 12-Stunden-Format auf dem Sperrbildschirm und im Kalender an. Die Uhr in der Statusleiste hat eigene Einstellungen."
         },
         "week-numbers": {
           "label": "Wochennummern anzeigen",
@@ -659,6 +675,11 @@
         "use-analog": {
           "description": "Eine Analoguhr auf dem Kalenderbildschirm anzeigen.",
           "label": "Analoge Uhr verwenden"
+        },
+        "first-day-of-week": {
+          "automatic": "Automatisch (Systemgebietsschema verwenden)",
+          "description": "Wähle, welcher Tag die Woche im Kalender beginnen soll.",
+          "label": "Erster Tag der Woche"
         }
       }
     },
@@ -1145,6 +1166,10 @@
         "collapse-condition": {
           "label": "Collapse condition",
           "description": "If the output text matches this value, the button will collapse."
+        },
+        "parse-json": {
+          "label": "Ausgabe als JSON parsen",
+          "description": "Die Befehlsausgabe als JSON-Objekt parsen, um Text und Symbol dynamisch festzulegen."
         }
       },
       "media-mini": {
@@ -1239,6 +1264,10 @@
         "width": {
           "label": "Breite",
           "description": "Benutzerdefinierte Komponentenbreite."
+        },
+        "hide-when-idle": {
+          "label": "Ausblenden, wenn keine Medien wiedergegeben werden",
+          "description": "Wenn aktiviert, wird der Visualizer ausgeblendet, sofern keine Wiedergabe läuft."
         }
       }
     }

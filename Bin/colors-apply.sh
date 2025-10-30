@@ -5,7 +5,7 @@
 if [ "$#" -ne 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|fuzzel|pywalfox}" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|fuzzel|walker|pywalfox}" >&2
     exit 1
 fi
 
@@ -43,8 +43,18 @@ case "$APP_NAME" in
         echo "🎨 Applying 'noctalia' theme to foot..."
         CONFIG_FILE="$HOME/.config/foot/foot.ini"
         
-        # Check if the config file exists before trying to modify it.
-        if [ -f "$CONFIG_FILE" ]; then
+        # Check if the config file exists, create it if it doesn't.
+        if [ ! -f "$CONFIG_FILE" ]; then
+            echo "Config file not found, creating $CONFIG_FILE..."
+            # Create the config directory if it doesn't exist
+            mkdir -p "$(dirname "$CONFIG_FILE")"
+            # Create the config file with the noctalia theme
+            cat > "$CONFIG_FILE" << 'EOF'
+[main]
+include=~/.config/foot/themes/noctalia
+EOF
+            echo "Created new config file with noctalia theme."
+        else
             # Check if theme is already set to noctalia
             if grep -q "include=~/.config/foot/themes/noctalia" "$CONFIG_FILE"; then
                 echo "Theme already set to noctalia, skipping modification."
@@ -59,9 +69,6 @@ case "$APP_NAME" in
                     sed -i '1i [main]\ninclude=~/.config/foot/themes/noctalia\n' "$CONFIG_FILE"
                 fi
             fi
-        else
-            echo "Error: foot config file not found at $CONFIG_FILE" >&2
-            exit 1
         fi
         ;;
 
@@ -82,6 +89,29 @@ case "$APP_NAME" in
             fi
         else
             echo "Error: fuzzel config file not found at $CONFIG_FILE" >&2
+            exit 1
+        fi
+        ;;
+
+    walker)
+        echo "🎨 Applying 'noctalia' theme to walker..."
+        CONFIG_FILE="$HOME/.config/walker/config.toml"
+
+        # Check if the config file exists.
+        if [ -f "$CONFIG_FILE" ]; then
+            # Check if theme is already set to noctalia
+            if grep -q '^theme = "noctalia"' "$CONFIG_FILE"; then
+                echo "Theme already set to noctalia, skipping modification."
+            else
+                # Check if a theme line exists and replace it, otherwise append
+                if grep -q '^theme = ' "$CONFIG_FILE"; then
+                    sed -i 's/^theme = .*/theme = "noctalia"/' "$CONFIG_FILE"
+                else
+                    echo 'theme = "noctalia"' >> "$CONFIG_FILE"
+                fi
+            fi
+        else
+            echo "Error: walker config file not found at $CONFIG_FILE" >&2
             exit 1
         fi
         ;;

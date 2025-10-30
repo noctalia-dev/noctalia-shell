@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import qs.Modules.ControlCenter.Cards
 import qs.Services
 import qs.Widgets
 
@@ -14,7 +15,7 @@ NPanel {
   readonly property var now: Time.date
 
   preferredWidth: (Settings.data.location.showWeekNumberInCalendar ? 400 : 380) * Style.uiScaleRatio
-  preferredHeight: 520 * Style.uiScaleRatio
+  preferredHeight: (Settings.data.location.weatherEnabled && Settings.data.location.showCalendarWeather ? 590 : 380) * Style.uiScaleRatio
   panelKeyboardFocus: true
 
   // Helper function to calculate ISO week number
@@ -29,18 +30,26 @@ NPanel {
     return weekNumber
   }
 
-  panelContent: ColumnLayout {
-    id: content
+  panelContent: Item {
     anchors.fill: parent
-    anchors.margins: Style.marginL
-    spacing: Style.marginM
 
-    readonly property int firstDayOfWeek: Qt.locale().firstDayOfWeek
-    property bool isCurrentMonth: checkIsCurrentMonth()
+    ColumnLayout {
+      id: content
+      anchors.fill: parent
+      anchors.margins: Style.marginL
+      width: root.preferredWidth - Style.marginL * 2
+      spacing: Style.marginM
+
+      readonly property int firstDayOfWeek: Settings.data.location.firstDayOfWeek === -1 ? Qt.locale().firstDayOfWeek : Settings.data.location.firstDayOfWeek
+    property bool isCurrentMonth: true
     readonly property bool weatherReady: Settings.data.location.weatherEnabled && (LocationService.data.weather !== null)
 
     function checkIsCurrentMonth() {
       return (Time.date.getMonth() === grid.month) && (Time.date.getFullYear() === grid.year)
+    }
+
+    Component.onCompleted: {
+      isCurrentMonth = checkIsCurrentMonth()
     }
 
     Shortcut {
@@ -60,26 +69,37 @@ NPanel {
     Connections {
       target: Time
       function onDateChanged() {
-        isCurrentMonth = checkIsCurrentMonth()
+        content.isCurrentMonth = content.checkIsCurrentMonth()
       }
     }
 
-    // Combined blue banner with date/time and weather summary
+    Connections {
+      target: I18n
+      function onLanguageChanged() {
+        // Force update of day names when language changes
+        grid.month = grid.month
+      }
+    }
+
+    // Banner with date/time/clock
     Rectangle {
       Layout.fillWidth: true
-      Layout.preferredHeight: blueColumn.implicitHeight + Style.marginM * 2
+      Layout.preferredHeight: capsuleColumn.implicitHeight + Style.marginS * 2
+      Layout.bottomMargin: Style.marginM
       radius: Style.radiusL
       color: Color.mPrimary
 
       ColumnLayout {
-        id: blueColumn
+        id: capsuleColumn
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.bottom: parent.bottom
-        anchors.topMargin: Style.marginM
-        anchors.leftMargin: Style.marginM
-        anchors.bottomMargin: Style.marginM
-        anchors.rightMargin: clockItem.width + (Style.marginM * 2)
+
+        anchors.topMargin: Style.marginS
+        anchors.bottomMargin: Style.marginS
+        anchors.rightMargin: clockLoader.width + (Style.marginL * 2)
+        anchors.leftMargin: Style.marginL
+
         spacing: 0
 
         // Combined layout for weather icon, date, and weather text
@@ -88,41 +108,6 @@ NPanel {
           height: 60 * Style.uiScaleRatio
           clip: true
           spacing: Style.marginS
-
-          // Weather icon and temperature
-          ColumnLayout {
-            visible: Settings.data.location.weatherEnabled && weatherReady
-            Layout.alignment: Qt.AlignVCenter
-            spacing: Style.marginXXS
-
-            NIcon {
-              Layout.alignment: Qt.AlignHCenter
-              icon: Settings.data.location.weatherEnabled && weatherReady ? LocationService.weatherSymbolFromCode(LocationService.data.weather.current_weather.weathercode) : ""
-              pointSize: Style.fontSizeXXL
-              color: Color.mOnPrimary
-            }
-
-            NText {
-              Layout.alignment: Qt.AlignHCenter
-              text: {
-                if (!Settings.data.location.weatherEnabled)
-                  return ""
-                if (!weatherReady)
-                  return ""
-                var temp = LocationService.data.weather.current_weather.temperature
-                var suffix = "C"
-                if (Settings.data.location.useFahrenheit) {
-                  temp = LocationService.celsiusToFahrenheit(temp)
-                  suffix = "F"
-                }
-                temp = Math.round(temp)
-                return `${temp}°${suffix}`
-              }
-              pointSize: Style.fontSizeM
-              font.weight: Style.fontWeightBold
-              color: Color.mOnPrimary
-            }
-          }
 
           // Today day number - with simple, stable animation
           NText {
@@ -152,7 +137,7 @@ NPanel {
 
           // Month, year, location
           ColumnLayout {
-            Layout.preferredWidth: 170 * Style.uiScaleRatio
+            Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
             Layout.bottomMargin: Style.marginXXS
             Layout.topMargin: -Style.marginXXS
@@ -186,7 +171,7 @@ NPanel {
                 text: {
                   if (!Settings.data.location.weatherEnabled)
                     return ""
-                  if (!weatherReady)
+                  if (!content.weatherReady)
                     return I18n.tr("calendar.weather.loading")
                   const chunks = Settings.data.location.name.split(",")
                   return chunks[0]
@@ -199,7 +184,7 @@ NPanel {
               }
 
               NText {
-                text: weatherReady ? ` (${LocationService.data.weather.timezone_abbreviation})` : ""
+                text: content.weatherReady ? ` (${LocationService.data.weather.timezone_abbreviation})` : ""
                 pointSize: Style.fontSizeXS
                 font.weight: Style.fontWeightMedium
                 color: Qt.alpha(Color.mOnPrimary, 0.7)
@@ -215,268 +200,25 @@ NPanel {
       }
 
       // Analog clock
-      Item {
-        id: clockItem
+      ClockLoader {
+        id: clockLoader
         anchors.right: parent.right
         anchors.rightMargin: Style.marginM
         anchors.verticalCenter: parent.verticalCenter
+        progressColor: Color.mOnPrimary
         Layout.alignment: Qt.AlignVCenter
-        height: Math.round((Style.fontSizeXXXL * 1.9) / 2 * Style.uiScaleRatio) * 2
-        width: clockItem.height
-
-        Canvas {
-          id: clockCanvas
-          visible: Settings.data.location.analogClockInCalendar
-          anchors.fill: parent
-
-          property int hours: now.getHours()
-          property int minutes: now.getMinutes()
-          property int seconds: now.getSeconds()
-          property real markAlpha: 0.7
-          property color secondHandColor: {
-            var defaultColor = Color.mError
-            var backgroundL = Color.mPrimary.hslLightness
-            var hourMarkL = (Color.mOnPrimary.hslLightness * markAlpha) + (backgroundL * (1.0 - markAlpha))
-
-            var bestWorstContrast = -1
-            var bestColor = defaultColor
-
-            var candidates = [Color.mSecondary, Color.mTertiary, Color.mError]
-
-            for (var i = 0; i < candidates.length; i++) {
-              var candidateColor = candidates[i]
-              var candidateL = candidateColor.hslLightness
-
-              var diffBackground = Math.abs(backgroundL - candidateL)
-              var diffHourMark = Math.abs(hourMarkL - candidateL)
-
-              var currentWorstContrast = Math.min(diffBackground, diffHourMark)
-
-              if (currentWorstContrast > bestWorstContrast) {
-                bestWorstContrast = currentWorstContrast
-                bestColor = candidateColor
-              }
-            }
-
-            return bestColor
-          }
-
-          onPaint: {
-            var ctx = getContext("2d")
-            ctx.reset()
-            ctx.translate(width / 2, height / 2)
-            var radius = Math.min(width, height) / 2
-
-            // Hour marks
-            ctx.strokeStyle = Qt.alpha(Color.mOnPrimary, markAlpha)
-            ctx.lineWidth = 2 * Style.uiScaleRatio
-            var scaleFactor = 0.7
-
-            for (var i = 0; i < 12; i++) {
-              var scaleFactor = 0.8
-              if (i % 3 === 0) {
-                scaleFactor = 0.65
-              }
-              ctx.save()
-              ctx.rotate(i * Math.PI / 6)
-              ctx.beginPath()
-              ctx.moveTo(0, -radius * scaleFactor)
-              ctx.lineTo(0, -radius)
-              ctx.stroke()
-              ctx.restore()
-            }
-
-            // Hour hand
-            ctx.save()
-            var hourAngle = (hours % 12 + minutes / 60) * Math.PI / 6
-            ctx.rotate(hourAngle)
-            ctx.strokeStyle = Color.mOnPrimary
-            ctx.lineWidth = 3 * Style.uiScaleRatio
-            ctx.lineCap = "round"
-            ctx.beginPath()
-            ctx.moveTo(0, 0)
-            ctx.lineTo(0, -radius * 0.6)
-            ctx.stroke()
-            ctx.restore()
-
-            // Minute hand
-            ctx.save()
-            var minuteAngle = (minutes + seconds / 60) * Math.PI / 30
-            ctx.rotate(minuteAngle)
-            ctx.strokeStyle = Color.mOnPrimary
-            ctx.lineWidth = 2 * Style.uiScaleRatio
-            ctx.lineCap = "round"
-            ctx.beginPath()
-            ctx.moveTo(0, 0)
-            ctx.lineTo(0, -radius * 0.9)
-            ctx.stroke()
-            ctx.restore()
-
-            // Second hand
-            ctx.save()
-            var secondAngle = seconds * Math.PI / 30
-            ctx.rotate(secondAngle)
-            ctx.strokeStyle = secondHandColor
-            ctx.lineWidth = 1.6 * Style.uiScaleRatio
-            ctx.lineCap = "round"
-            ctx.beginPath()
-            ctx.moveTo(0, 0)
-            ctx.lineTo(0, -radius)
-            ctx.stroke()
-            ctx.restore()
-
-            // Center dot
-            ctx.beginPath()
-            ctx.arc(0, 0, 3 * Style.uiScaleRatio, 0, 2 * Math.PI)
-            ctx.fillStyle = Color.mOnPrimary
-            ctx.fill()
-          }
-
-          Timer {
-            interval: 1000
-            running: true
-            repeat: true
-            onTriggered: {
-              clockCanvas.hours = now.getHours()
-              clockCanvas.minutes = now.getMinutes()
-              clockCanvas.seconds = now.getSeconds()
-              clockCanvas.requestPaint()
-            }
-          }
-
-          Component.onCompleted: requestPaint()
-        }
-
-        // Digital clock's seconds circular progress
-        Canvas {
-          id: secondsProgress
-          visible: !Settings.data.location.analogClockInCalendar
-          anchors.fill: parent
-          property real progress: now.getSeconds() / 60
-          onProgressChanged: requestPaint()
-          Connections {
-            target: Time
-            function onDateChanged() {
-              const total = now.getSeconds() * 1000 + now.getMilliseconds()
-              secondsProgress.progress = total / 60000
-            }
-          }
-          onPaint: {
-            var ctx = getContext("2d")
-            var centerX = width / 2
-            var centerY = height / 2
-            var radius = Math.min(width, height) / 2 - 3
-            ctx.reset()
-
-            // Background circle
-            ctx.beginPath()
-            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-            ctx.lineWidth = 2.5
-            ctx.strokeStyle = Qt.alpha(Color.mOnPrimary, 0.15)
-            ctx.stroke()
-
-            // Progress arc
-            ctx.beginPath()
-            ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progress * 2 * Math.PI)
-            ctx.lineWidth = 2.5
-            ctx.strokeStyle = Color.mOnPrimary
-            ctx.lineCap = "round"
-            ctx.stroke()
-          }
-        }
-
-        // Digital clock
-        ColumnLayout {
-          visible: !Settings.data.location.analogClockInCalendar
-          anchors.centerIn: parent
-          spacing: -Style.marginXXS
-
-          NText {
-            text: {
-              var t = Settings.data.location.use12hourFormat ? Qt.locale().toString(now, "hh AP") : Qt.locale().toString(now, "HH")
-              return t.split(" ")[0]
-            }
-
-            pointSize: Style.fontSizeXS
-            font.weight: Style.fontWeightBold
-            color: Color.mOnPrimary
-            family: Settings.data.ui.fontFixed
-            Layout.alignment: Qt.AlignHCenter
-          }
-
-          NText {
-            text: Qt.formatTime(now, "mm")
-            pointSize: Style.fontSizeXXS
-            font.weight: Style.fontWeightBold
-            color: Color.mOnPrimary
-            family: Settings.data.ui.fontFixed
-            Layout.alignment: Qt.AlignHCenter
-          }
-        }
+        now: root.now
       }
     }
 
-    RowLayout {
-      visible: weatherReady
-      Layout.fillWidth: true
-      Layout.alignment: Qt.AlignHCenter
-      spacing: Style.marginL
-      Repeater {
-        model: weatherReady ? Math.min(6, LocationService.data.weather.daily.time.length) : 0
-        delegate: ColumnLayout {
-          Layout.preferredWidth: 0
-          Layout.fillWidth: true
-          Layout.alignment: Qt.AlignHCenter
-          spacing: Style.marginS
-          NText {
-            text: {
-              var weatherDate = new Date(LocationService.data.weather.daily.time[index].replace(/-/g, "/"))
-              return Qt.locale().toString(weatherDate, "ddd")
-            }
-            color: Color.mOnSurfaceVariant
-            pointSize: Style.fontSizeM
-            font.weight: Style.fontWeightMedium
-            Layout.alignment: Qt.AlignHCenter
-          }
-          NIcon {
-            Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
-            icon: LocationService.weatherSymbolFromCode(LocationService.data.weather.daily.weathercode[index])
-            pointSize: Style.fontSizeXXL * 1.5
-            color: Color.mPrimary
-          }
-          NText {
-            Layout.alignment: Qt.AlignHCenter
-            text: {
-              var max = LocationService.data.weather.daily.temperature_2m_max[index]
-              var min = LocationService.data.weather.daily.temperature_2m_min[index]
-              if (Settings.data.location.useFahrenheit) {
-                max = LocationService.celsiusToFahrenheit(max)
-                min = LocationService.celsiusToFahrenheit(min)
-              }
-              max = Math.round(max)
-              min = Math.round(min)
-              return `${max}°/${min}°`
-            }
-            pointSize: Style.fontSizeXS
-            color: Color.mOnSurfaceVariant
-            font.weight: Style.fontWeightMedium
-          }
-        }
-      }
-    }
-    RowLayout {
-      visible: Settings.data.location.weatherEnabled && !weatherReady
-      Layout.fillWidth: true
-      Layout.alignment: Qt.AlignHCenter
-      NBusyIndicator {}
-    }
-    Item {}
     RowLayout {
       Layout.fillWidth: true
       spacing: Style.marginS
+
       NDivider {
         Layout.fillWidth: true
       }
+
       NIconButton {
         icon: "chevron-left"
         onClicked: {
@@ -494,6 +236,7 @@ NPanel {
           CalendarService.loadEvents(daysAhead + 30, daysBehind + 30)
         }
       }
+
       NIconButton {
         icon: "calendar"
         onClicked: {
@@ -503,6 +246,7 @@ NPanel {
           CalendarService.loadEvents()
         }
       }
+
       NIconButton {
         icon: "chevron-right"
         onClicked: {
@@ -521,13 +265,16 @@ NPanel {
         }
       }
     }
+
     RowLayout {
       Layout.fillWidth: true
       spacing: 0
+
       Item {
         visible: Settings.data.location.showWeekNumberInCalendar
         Layout.preferredWidth: visible ? Style.baseWidgetSize * 0.7 : 0
       }
+
       GridLayout {
         Layout.fillWidth: true
         columns: 7
@@ -543,8 +290,11 @@ NPanel {
               anchors.centerIn: parent
               text: {
                 let dayIndex = (content.firstDayOfWeek + index) % 7
-                const dayNames = ["S", "M", "T", "W", "T", "F", "S"]
-                return dayNames[dayIndex]
+                // Use localized day name based on I18n.langCode
+                const locale = I18n.langCode ? Qt.locale(I18n.langCode) : Qt.locale()
+                const dayName = locale.dayName(dayIndex, Locale.ShortFormat)
+                // Return first character (or two for some locales)
+                return dayName.substring(0, 1).toUpperCase()
               }
               color: Color.mPrimary
               pointSize: Style.fontSizeS
@@ -555,9 +305,9 @@ NPanel {
         }
       }
     }
+
     RowLayout {
       Layout.fillWidth: true
-      Layout.fillHeight: true
       spacing: 0
 
       // Helper function to check if a date has events
@@ -627,131 +377,230 @@ NPanel {
       ColumnLayout {
         visible: Settings.data.location.showWeekNumberInCalendar
         Layout.preferredWidth: visible ? Style.baseWidgetSize * 0.7 : 0
-        Layout.fillHeight: true
-        spacing: 0
+        spacing: Style.marginXXS
+
+        property var weekNumbers: {
+          if (!grid.daysModel || grid.daysModel.length === 0)
+            return []
+
+          const weeks = []
+          const numWeeks = Math.ceil(grid.daysModel.length / 7)
+
+          for (var i = 0; i < numWeeks; i++) {
+            const dayIndex = i * 7
+            if (dayIndex < grid.daysModel.length) {
+              const weekDay = grid.daysModel[dayIndex]
+              const date = new Date(weekDay.year, weekDay.month, weekDay.day)
+
+              // Get Thursday of this week for ISO week calculation
+              const firstDayOfWeek = content.firstDayOfWeek
+              let thursday = new Date(date)
+              if (firstDayOfWeek === 0) {
+                thursday.setDate(date.getDate() + 4)
+              } else if (firstDayOfWeek === 1) {
+                thursday.setDate(date.getDate() + 3)
+              } else {
+                let daysToThursday = (4 - firstDayOfWeek + 7) % 7
+                thursday.setDate(date.getDate() + daysToThursday)
+              }
+
+              weeks.push(root.getISOWeekNumber(thursday))
+            }
+          }
+          return weeks
+        }
+
         Repeater {
-          model: 6
+          model: parent.weekNumbers
           Item {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.preferredWidth: Style.baseWidgetSize * 0.7
+            Layout.preferredHeight: Style.baseWidgetSize * 0.9
             NText {
               anchors.centerIn: parent
               color: Color.mOutline
               pointSize: Style.fontSizeXXS
               font.weight: Style.fontWeightMedium
-              text: {
-                let firstOfMonth = new Date(grid.year, grid.month, 1)
-                let firstDayOfWeek = content.firstDayOfWeek
-                let firstOfMonthDayOfWeek = firstOfMonth.getDay()
-                let daysBeforeFirst = (firstOfMonthDayOfWeek - firstDayOfWeek + 7) % 7
-                if (daysBeforeFirst === 0) {
-                  daysBeforeFirst = 7
-                }
-                let gridStartDate = new Date(grid.year, grid.month, 1 - daysBeforeFirst)
-                let rowStartDate = new Date(gridStartDate)
-                rowStartDate.setDate(gridStartDate.getDate() + (index * 7))
-                let thursday = new Date(rowStartDate)
-                if (firstDayOfWeek === 0) {
-                  thursday.setDate(rowStartDate.getDate() + 4)
-                } else if (firstDayOfWeek === 1) {
-                  thursday.setDate(rowStartDate.getDate() + 3)
-                } else {
-                  let daysToThursday = (4 - firstDayOfWeek + 7) % 7
-                  thursday.setDate(rowStartDate.getDate() + daysToThursday)
-                }
-                return `${root.getISOWeekNumber(thursday)}`
-              }
+              text: modelData
             }
           }
         }
       }
-      MonthGrid {
+
+      GridLayout {
         id: grid
         Layout.fillWidth: true
-        Layout.fillHeight: true
-        spacing: Style.marginXXS
-        month: Time.date.getMonth()
-        year: Time.date.getFullYear()
-        locale: Qt.locale()
-        delegate: Item {
-          Rectangle {
-            width: Style.baseWidgetSize * 0.9
-            height: Style.baseWidgetSize * 0.9
-            anchors.centerIn: parent
-            radius: Style.radiusM
-            color: model.today ? Color.mSecondary : Color.transparent
-            NText {
+        columns: 7
+        columnSpacing: Style.marginXXS
+        rowSpacing: Style.marginXXS
+
+        property int month: Time.date.getMonth()
+        property int year: Time.date.getFullYear()
+
+        // Calculate days to display
+        property var daysModel: {
+          const firstOfMonth = new Date(year, month, 1)
+          const lastOfMonth = new Date(year, month + 1, 0)
+          const daysInMonth = lastOfMonth.getDate()
+
+          // Get first day of week (0 = Sunday, 1 = Monday, etc.)
+          const firstDayOfWeek = content.firstDayOfWeek
+          const firstOfMonthDayOfWeek = firstOfMonth.getDay()
+
+          // Calculate days before first of month
+          let daysBefore = (firstOfMonthDayOfWeek - firstDayOfWeek + 7) % 7
+
+          // Calculate days after last of month to complete the week
+          const lastOfMonthDayOfWeek = lastOfMonth.getDay()
+          const daysAfter = (firstDayOfWeek - lastOfMonthDayOfWeek - 1 + 7) % 7
+
+          // Build array of day objects
+          const days = []
+          const today = new Date()
+
+          // Previous month days
+          const prevMonth = new Date(year, month, 0)
+          const prevMonthDays = prevMonth.getDate()
+          for (var i = daysBefore - 1; i >= 0; i--) {
+            const day = prevMonthDays - i
+            const date = new Date(year, month - 1, day)
+            days.push({
+                        "day": day,
+                        "month": month - 1,
+                        "year": month === 0 ? year - 1 : year,
+                        "today": false,
+                        "currentMonth": false
+                      })
+          }
+
+          // Current month days
+          for (var day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day)
+            const isToday = date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate()
+            days.push({
+                        "day": day,
+                        "month": month,
+                        "year": year,
+                        "today": isToday,
+                        "currentMonth": true
+                      })
+          }
+
+          // Next month days (only if needed to complete the week)
+          for (var i = 1; i <= daysAfter; i++) {
+            days.push({
+                        "day": i,
+                        "month": month + 1,
+                        "year": month === 11 ? year + 1 : year,
+                        "today": false,
+                        "currentMonth": false
+                      })
+          }
+
+          return days
+        }
+
+        Repeater {
+          model: grid.daysModel
+
+          Item {
+            Layout.fillWidth: true
+            Layout.preferredHeight: Style.baseWidgetSize * 0.9
+
+            Rectangle {
+              width: Style.baseWidgetSize * 0.9
+              height: Style.baseWidgetSize * 0.9
               anchors.centerIn: parent
-              text: model.day
-              color: {
-                if (model.today)
-                  return Color.mOnSecondary
-                if (model.month === grid.month)
-                  return Color.mOnSurface
-                return Color.mOnSurfaceVariant
-              }
-              opacity: model.month === grid.month ? 1.0 : 0.4
-              pointSize: Style.fontSizeM
-              font.weight: model.today ? Style.fontWeightBold : Style.fontWeightMedium
-            }
+              radius: Style.radiusM
+              color: modelData.today ? Color.mSecondary : Color.transparent
 
-            // Event indicator dots
-            Row {
-              visible: Settings.data.location.showCalendarEvents && parent.parent.parent.parent.parent.hasEventsOnDate(model.year, model.month, model.day)
-              spacing: 2
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: Style.marginXS
-
-              readonly property int currentYear: model.year
-              readonly property int currentMonth: model.month
-              readonly property int currentDay: model.day
-              readonly property bool isToday: model.today
-
-              Repeater {
-                model: parent.parent.parent.parent.parent.parent.getEventsForDate(parent.currentYear, parent.currentMonth, parent.currentDay)
-
-                Rectangle {
-                  width: 4
-                  height: width
-                  radius: width / 2
-                  color: parent.parent.parent.parent.parent.parent.getEventColor(modelData, model.today)
+              NText {
+                anchors.centerIn: parent
+                text: modelData.day
+                color: {
+                  if (modelData.today)
+                    return Color.mOnSecondary
+                  if (modelData.currentMonth)
+                    return Color.mOnSurface
+                  return Color.mOnSurfaceVariant
                 }
+                opacity: modelData.currentMonth ? 1.0 : 0.4
+                pointSize: Style.fontSizeM
+                font.weight: modelData.today ? Style.fontWeightBold : Style.fontWeightMedium
               }
-            }
 
-            MouseArea {
-              anchors.fill: parent
-              hoverEnabled: true
-              enabled: Settings.data.location.showCalendarEvents
+              // Event indicator dots
+              Row {
+                visible: Settings.data.location.showCalendarEvents && parent.parent.parent.parent.hasEventsOnDate(modelData.year, modelData.month, modelData.day)
+                spacing: 2
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: Style.marginXS
 
-              onEntered: {
-                const events = parent.parent.parent.parent.parent.getEventsForDate(model.year, model.month, model.day)
-                if (events.length > 0) {
-                  const summaries = events.map(e => e.summary).join('\n')
-                  TooltipService.show(Screen, parent, summaries)
-                  TooltipService.updateText(summaries)
+                Repeater {
+                  model: parent.parent.parent.parent.parent.getEventsForDate(modelData.year, modelData.month, modelData.day)
+
+                  Rectangle {
+                    width: 4
+                    height: width
+                    radius: width / 2
+                    color: parent.parent.parent.parent.parent.getEventColor(modelData, modelData.today)
+                  }
                 }
               }
 
-              onClicked: {
-                const dateWithSlashes = `${model.month.toString().padStart(2, '0')}/${model.day.toString().padStart(2, '0')}/${model.year.toString().substring(2)}`
-                Quickshell.execDetached(["gnome-calendar", "--date", dateWithSlashes])
+              MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                enabled: Settings.data.location.showCalendarEvents
+
+                onEntered: {
+                  const events = parent.parent.parent.parent.getEventsForDate(modelData.year, modelData.month, modelData.day)
+                  if (events.length > 0) {
+                    const summaries = events.map(e => e.summary).join('\n')
+                    TooltipService.show(Screen, parent, summaries)
+                    TooltipService.updateText(summaries)
+                  }
+                }
+
+                onClicked: {
+                  const dateWithSlashes = `${(modelData.month + 1).toString().padStart(2, '0')}/${modelData.day.toString().padStart(2, '0')}/${modelData.year.toString().substring(2)}`
+                  Quickshell.execDetached(["gnome-calendar", "--date", dateWithSlashes])
+                  PanelService.getPanel("calendarPanel").toggle(null)
+                }
+
+                onExited: {
+                  TooltipService.hide()
+                }
               }
 
-              onExited: {
-                TooltipService.hide()
-              }
-            }
-
-            Behavior on color {
-              ColorAnimation {
-                duration: Style.animationFast
+              Behavior on color {
+                ColorAnimation {
+                  duration: Style.animationFast
+                }
               }
             }
           }
         }
       }
+    }
+
+    // Spacer to push weather card to bottom when calendar has fewer weeks
+    Item {
+      Layout.fillHeight: true
+      Layout.minimumHeight: 0
+    }
+
+    Loader {
+      id: weatherLoader
+      active: Settings.data.location.weatherEnabled && Settings.data.location.showCalendarWeather
+      Layout.fillWidth: true
+
+      sourceComponent: WeatherCard {
+        Layout.fillWidth: true
+        Layout.preferredHeight: implicitHeight
+        forecastDays: 6
+      }
+    }
     }
   }
 }

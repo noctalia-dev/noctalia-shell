@@ -257,6 +257,10 @@
     },
     "dock": {
       "title": "Dock",
+      "enabled": {
+        "label": "Ativar dock",
+        "description": "Mostrar ou ocultar o dock completamente"
+      },
       "appearance": {
         "section": {
           "label": "Aparência",
@@ -289,7 +293,7 @@
       "monitors": {
         "section": {
           "label": "Exibição no monitor",
-          "description": "Escolha em qual monitor exibir a dock."
+          "description": "Mostrar dock em monitores específicos. O padrão é todos se nenhum for escolhido."
         },
         "only-same-output": {
           "description": "Mostrar apenas aplicativos da saída onde o dock está localizado.",
@@ -360,6 +364,10 @@
         "always-on-top": {
           "label": "Sempre no topo",
           "description": "Exibe notificações acima de janelas em tela cheia e outras camadas."
+        },
+        "background-opacity": {
+          "label": "Opacidade do fundo",
+          "description": "Ajustar a opacidade dos fundos das notificações."
         }
       },
       "duration": {
@@ -551,6 +559,10 @@
             "description": "Escrever {filepath} e recarregar",
             "description-missing": "Requer que o {app} esteja instalado"
           },
+          "walker": {
+            "description": "Escrever {filepath} e definir tema como noctalia",
+            "description-missing": "Requer que o {app} esteja instalado"
+          },
           "discord": {
             "description": "Escrever {filepath} para {client}",
             "description-missing": "Nenhum cliente Discord detectado. Instale vencord, vesktop, webcord, armcord, equibop, lightcord ou dorion."
@@ -599,6 +611,10 @@
         "fahrenheit": {
           "label": "Exibir temperatura em Fahrenheit (°F)",
           "description": "Exibe a temperatura em Fahrenheit em vez de Celsius."
+        },
+        "show-in-calendar": {
+          "description": "Mostre a previsão do tempo diária diretamente na sua visualização de calendário.",
+          "label": "Exibir clima no calendário"
         }
       },
       "date-time": {
@@ -607,8 +623,8 @@
           "description": "Personalize como a data e a hora aparecem."
         },
         "12hour-format": {
-          "description": "Ativado para formato AM/PM (ex., 8:00 PM), desativado para formato de 24 horas (ex., 20:00).",
-          "label": "Use o formato de hora de 12 horas"
+          "label": "Use o formato de hora de 12 horas",
+          "description": "Exibe a hora no formato de 12 horas na tela de bloqueio e no calendário. O relógio da barra tem suas próprias configurações."
         },
         "week-numbers": {
           "label": "Mostrar números da semana",
@@ -621,6 +637,11 @@
         "use-analog": {
           "description": "Mostrar um relógio estilo analógico na tela do calendário.",
           "label": "Use um relógio de estilo analógico."
+        },
+        "first-day-of-week": {
+          "automatic": "Automático (usar localização do sistema)",
+          "description": "Escolha qual dia começa a semana no calendário.",
+          "label": "Primeiro dia da semana"
         }
       }
     },
@@ -1128,6 +1149,10 @@
         "collapse-condition": {
           "label": "Condição de recolhimento",
           "description": "Se o texto de saída corresponder a este valor, o botão será recolhido."
+        },
+        "parse-json": {
+          "label": "Analisar saída como JSON",
+          "description": "Analisa a saída do comando como um objeto JSON para definir dinamicamente o texto e o ícone."
         }
       },
       "media-mini": {
@@ -1222,6 +1247,10 @@
         "width": {
           "label": "Largura",
           "description": "Largura do componente personalizado."
+        },
+        "hide-when-idle": {
+          "label": "Ocultar quando não houver reprodução",
+          "description": "Quando ativado, o visualizador fica oculto a menos que haja reprodução ativa."
         }
       }
     }

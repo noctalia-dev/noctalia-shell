@@ -257,6 +257,10 @@
     },
     "dock": {
       "title": "Dock",
+      "enabled": {
+        "label": "启用 Dock",
+        "description": "完全显示或隐藏 Dock"
+      },
       "appearance": {
         "section": {
           "label": "外观",
@@ -289,7 +293,7 @@
       "monitors": {
         "section": {
           "label": "显示器显示",
-          "description": "选择在哪个显示器上显示 Dock。"
+          "description": "在特定显示器上显示 Dock。如果未选择任何显示器，则默认为全部。"
         },
         "only-same-output": {
           "description": "仅显示输出结果中dock所在位置的应用。",
@@ -360,6 +364,10 @@
         "always-on-top": {
           "label": "始终置顶",
           "description": "在全屏窗口和其他图层上方显示通知。"
+        },
+        "background-opacity": {
+          "label": "背景透明度",
+          "description": "调整通知背景的透明度。"
         }
       },
       "duration": {
@@ -589,6 +597,10 @@
             "description": "写入 {filepath} 并重新加载",
             "description-missing": "需要安装 {app}"
           },
+          "walker": {
+            "description": "写入 {filepath} 并将主题设置为 noctalia",
+            "description-missing": "需要安装 {app}"
+          },
           "discord": {
             "description": "为 {client} 写入 {filepath}",
             "description-missing": "未检测到 Discord 客户端。请安装 vencord、vesktop、webcord、armcord、equibop、lightcord 或 dorion。"
@@ -637,6 +649,10 @@
         "fahrenheit": {
           "label": "以华氏度显示温度 (°F)",
           "description": "以华氏度而非摄氏度显示温度。"
+        },
+        "show-in-calendar": {
+          "description": "直接在您的日历视图中显示每日天气预报。",
+          "label": "在日历中显示天气"
         }
       },
       "date-time": {
@@ -645,8 +661,8 @@
           "description": "自定义日期和时间的显示方式。"
         },
         "12hour-format": {
-          "description": "开启为 AM/PM 格式（例如：8:00 PM），关闭为 24 小时制（例如：20:00）。",
-          "label": "使用12小时制时间格式"
+          "label": "使用12小时制时间格式",
+          "description": "在锁屏和日历上以 12 小时制格式显示时间。状态栏时钟有其自己的设置。"
         },
         "week-numbers": {
           "label": "显示周数",
@@ -659,6 +675,11 @@
         "use-analog": {
           "description": "在日历屏幕上显示一个模拟时钟。",
           "label": "使用模拟时钟样式"
+        },
+        "first-day-of-week": {
+          "automatic": "自动（使用系统区域设置）",
+          "description": "选择日历中一周的起始日。",
+          "label": "一周的第一天"
         }
       }
     },
@@ -1127,7 +1148,11 @@
         },
         "collapse-condition": {
           "label": "折叠条件",
-          "description": "如果输出文本与此值匹配，按钮的文本将会折叠不去显示。"
+          "description": "如果输出文本与此值匹配，按钮将折叠。"
+        },
+        "parse-json": {
+          "label": "将输出解析为 JSON",
+          "description": "将命令输出解析为 JSON 对象，以动态设置文本和图标。"
         }
       },
       "media-mini": {
@@ -1222,6 +1247,10 @@
         "width": {
           "label": "宽度",
           "description": "自定义组件的宽度。"
+        },
+        "hide-when-idle": {
+          "label": "无媒体播放时隐藏",
+          "description": "启用后，除非正在播放媒体，否则隐藏可视化显示。"
         }
       }
     }
