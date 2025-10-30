@@ -667,6 +667,7 @@ Loader {
                   onActivated: {
                     lockContext.password = passwordInput.password
                     lockContext.tryUnlock()
+                    passwordInput.password = ""
                   }
                 }
 
