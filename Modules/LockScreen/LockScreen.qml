@@ -659,7 +659,13 @@ Loader {
 
                   Layout.fillWidth: true
 
+                  onPasswordChanged: {
+                    lockContext.showFailure = false
+                    lockContext.errorMessage = ""
+                  }
+
                   onActivated: {
+                    lockContext.password = passwordInput.password
                     lockContext.tryUnlock()
                   }
                 }
