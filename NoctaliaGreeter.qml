@@ -135,7 +135,7 @@ Item {
           }
 
           ColumnLayout {
-            spacing: 0
+            spacing: -1 // prevents a small line from appearing
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 100
