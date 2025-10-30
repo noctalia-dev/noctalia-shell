@@ -199,7 +199,7 @@ Item {
                   }
 
                   NText {
-                    text: SessionService.current_session_name
+                    text: SessionService.currentSessionName
                     color: Color.mOnSurfaceVariant
                     pointSize: Style.fontSizeM
                     font.weight: Font.Medium
@@ -207,14 +207,15 @@ Item {
                   }
 
                   // TODO: Make session selctable
+                  // This currently breaks the focus of the password input and looks bad
                   // NComboBox {
-                  //   model: SessionService.session_names.map((name, index) => ({
-                  //                                                               "key": index,
-                  //                                                               "name": name
-                  //                                                             }))
-                  //   currentKey: SessionService.current_ses_index
-                  //   placeholder: SessionService.current_session_name
-                  //   onSelected: key => SessionService.current_ses_index = key
+                  //   model: SessionService.availableSessions.map((session, index) => ({
+                  //                                                                      "key": index,
+                  //                                                                      "name": session.name
+                  //                                                                    }))
+                  //   currentKey: SessionService.currentSessionIndex
+                  //   placeholder: SessionService.currentSessionName
+                  //   onSelected: key => SessionService.selectSession(key)
                   // }
                 }
 

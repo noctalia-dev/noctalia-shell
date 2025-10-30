@@ -57,8 +57,8 @@ Singleton {
 
     function onReadyToLaunch() {
       root.unlocked()
-      console.log("[GREETD EXEC] " + SessionService.current_session)
-      Greetd.launch(SessionService.current_session.split(" "), [], true)
+      console.log("[GREETD EXEC] " + SessionService.currentSessionCommand)
+      Greetd.launch(SessionService.currentSessionCommand.split(" "), [], true)
     }
 
     function onAuthFailure(message) {
