@@ -255,8 +255,8 @@ Item {
 
             // Bottom container with password input and controls
             Item {
-              width: 750
-              height: bottomContainer.implicitHeight + 2 * Style.marginL
+              Layout.preferredWidth: 750
+              Layout.preferredHeight: bottomContainer.implicitHeight + 2 * Style.marginL
 
               Rectangle {
                 anchors.fill: parent
