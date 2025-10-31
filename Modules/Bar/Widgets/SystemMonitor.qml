@@ -347,12 +347,12 @@ Rectangle {
     }
   }
 
-  MouseArea {
-    anchors.fill: parent
-    acceptedButtons: Qt.RightButton
-    onClicked: {
-      var directPanel = PanelService.getPanel("directWidgetSettingsPanel")
-      directPanel.openWidgetSettings(root.section, root.sectionWidgetIndex, root.widgetId, root.widgetSettings)
-    }
-  }
+  // MouseArea {
+  //   anchors.fill: parent
+  //   acceptedButtons: Qt.RightButton
+  //   onClicked: {
+  //     var directPanel = PanelService.getPanel("directWidgetSettingsPanel")
+  //     directPanel.openWidgetSettings(root.section, root.sectionWidgetIndex, root.widgetId, root.widgetSettings)
+  //   }
+  // }
 }

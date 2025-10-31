@@ -257,6 +257,10 @@
     },
     "dock": {
       "title": "Dock",
+      "enabled": {
+        "label": "Activer le dock",
+        "description": "Afficher ou masquer complètement le dock"
+      },
       "appearance": {
         "section": {
           "label": "Apparence",
@@ -289,7 +293,7 @@
       "monitors": {
         "section": {
           "label": "Affichage sur les moniteur",
-          "description": "Choisissez sur quels moniteurs afficher le dock."
+          "description": "Afficher le dock sur des écrans spécifiques. Par défaut, il s'affiche sur tous les écrans si aucun n'est sélectionné."
         },
         "only-same-output": {
           "description": "Afficher uniquement les applications de la sortie où le dock est situé.",
@@ -604,6 +608,10 @@
           "pywalfox": {
             "description": "Écrire ~/.cache/wal/colors.json et exécuter pywalfox update",
             "description-missing": "Nécessite que le paquet pywalfox soit installé"
+          },
+          "code": {
+            "description": "Écrire {filepath}. Le thème Hyprluna doit être installé et activé manuellement.",
+            "description-missing": "Nécessite l'installation de {app}"
           }
         },
         "misc": {
@@ -645,6 +653,10 @@
         "fahrenheit": {
           "label": "Afficher la température en Fahrenheit (°F)",
           "description": "Afficher la température en Fahrenheit au lieu de Celsius."
+        },
+        "show-in-calendar": {
+          "description": "Afficher les prévisions météo quotidiennes directement dans votre vue calendrier.",
+          "label": "Afficher la météo dans le calendrier"
         }
       },
       "date-time": {
@@ -654,6 +666,7 @@
         },
         "12hour-format": {
           "label": "Utiliser le format horaire de 12 heures",
+          "description": "Affiche l'heure au format 12 heures sur l'écran de verrouillage et dans le calendrier. L'horloge de la barre possède ses propres paramètres."
         },
         "week-numbers": {
           "label": "Afficher les numéros de semaine",
@@ -666,6 +679,11 @@
         "use-analog": {
           "description": "Afficher une horloge de style analogique sur l'écran du calendrier.",
           "label": "Utiliser une horloge de style analogique."
+        },
+        "first-day-of-week": {
+          "automatic": "Automatique (utiliser les paramètres régionaux du système)",
+          "description": "Choisissez quel jour commence la semaine dans le calendrier.",
+          "label": "Premier jour de la semaine"
         }
       }
     },
@@ -837,10 +855,6 @@
         "label": "Rayon de bordure",
         "reset": "Réinitialiser le rayon de la bordure"
       },
-      "dim-desktop": {
-        "description": "Atténuer le bureau lorsque des panneaux ou des menus sont ouverts.",
-        "label": "Dim bureau"
-      },
       "scaling": {
         "description": "Modifie la taille de l'interface utilisateur générale, à l'exception de la barre.",
         "label": "Mise à l'échelle de l'interface",
@@ -854,6 +868,10 @@
       "tooltips": {
         "description": "Activer ou désactiver les info-bulles dans toute l'interface.",
         "label": "Afficher les infobulles"
+      },
+      "panels-attached-to-bar": {
+        "description": "Lorsque cette option est activée, les panneaux seront attachés à la barre avec un design élégant de coin inversé.",
+        "label": "Fixer les panneaux à la barre."
       }
     },
     "lock-screen": {
@@ -1238,6 +1256,32 @@
           "label": "Masquer lorsqu'aucun média n'est en lecture",
           "description": "Si activé, le visualiseur est masqué sauf lorsqu'un lecteur est en lecture."
         }
+      },
+      "lock-keys": {
+        "show-caps-lock": {
+          "description": "Afficher l'état du verrouillage majuscule.",
+          "label": "Verr Maj"
+        },
+        "show-num-lock": {
+          "description": "Afficher l'état du verrouillage numérique.",
+          "label": "Verr Num"
+        },
+        "show-scroll-lock": {
+          "description": "Afficher l'état du verrouillage du défilement.",
+          "label": "Verr Maj"
+        },
+        "indicator-style": {
+          "circle": "Lettres circulaires",
+          "circle-dash": "Lettres en cercle pointillé",
+          "circle-dot": "Lettres en pointillés dans un cercle",
+          "description": "Style d'icône pour les indicateurs de la touche de verrouillage",
+          "hex": "Lettres hexagonales",
+          "label": "Style d'indicateur",
+          "large": "Grandes lettres",
+          "small": "Petites lettres",
+          "square": "Lettres carrées",
+          "square-round": "Lettres carrées arrondies"
+        }
       }
     }
   },
@@ -1358,8 +1402,6 @@
     "click-to-start-recording": "Cliquez pour démarrer l'enregistrement",
     "click-to-stop-recording": "Cliquez pour arrêter l'enregistrement",
     "open-control-center": "Ouvrir le centre de contrôle",
-    "volume-at": "Volume à {volume}%\nClic gauche pour couper/rétablir le son. Clic droit pour les paramètres.\nFaites défiler pour modifier le volume.",
-    "microphone-volume-at": "Volume du microphone à {volume}%\nClic gauche pour couper/rétablir le son. Clic droit pour les paramètres.\nFaites défiler pour modifier le volume.",
     "brightness-at": "Luminosité : {brightness}%\nClic droit pour les paramètres.\nFaites défiler pour modifier la luminosité.",
     "manage-wifi": "Gérer le Wi-Fi",
     "bluetooth-devices": "Appareils Bluetooth",
@@ -1373,7 +1415,9 @@
     "power-profile": "Profil d'alimentation '{profile}'",
     "keyboard-layout": "Disposition du clavier {layout}",
     "output-muted": "Couper la sortie audio",
-    "input-muted": "Couper l'entrée audio"
+    "input-muted": "Couper l'entrée audio",
+    "microphone-volume-at": "Volume du microphone à {volume}%.\nClic gauche pour les paramètres. Clic droit pour activer/désactiver le mode muet.\nFaites défiler pour modifier le volume.",
+    "volume-at": "Volume de sortie à {volume}%.\nClic gauche pour les paramètres. Clic droit pour activer/désactiver le mode muet.\nFaites défiler pour modifier le volume."
   },
   "clock": {
     "tooltip": "Ouvrir le calendrier"

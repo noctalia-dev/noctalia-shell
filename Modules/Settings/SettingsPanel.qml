@@ -223,6 +223,8 @@ NPanel {
 
   // When the panel opens, choose the appropriate tab
   onOpened: {
+    // Run program availability checks every time settings opens
+    ProgramCheckerService.checkAllPrograms()
     updateTabsModel()
 
     var initialIndex = SettingsPanel.Tab.General

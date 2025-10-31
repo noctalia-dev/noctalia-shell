@@ -127,6 +127,13 @@ Item {
   }
 
   IpcHandler {
+    target: "colorScheme"
+    function set(schemeName: string) {
+      ColorSchemeService.setPredefinedScheme(schemeName)
+    }
+  }
+
+  IpcHandler {
     target: "volume"
     function increase() {
       AudioService.increaseVolume()

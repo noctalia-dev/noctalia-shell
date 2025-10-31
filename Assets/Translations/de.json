@@ -257,6 +257,10 @@
     },
     "dock": {
       "title": "Dock",
+      "enabled": {
+        "label": "Dock aktivieren",
+        "description": "Dock vollständig anzeigen oder ausblenden"
+      },
       "appearance": {
         "section": {
           "label": "Erscheinungsbild",
@@ -289,7 +293,7 @@
       "monitors": {
         "section": {
           "label": "Monitor-Anzeige",
-          "description": "Monitor auswählen, auf dem das Dock angezeigt werden soll."
+          "description": "Dock auf bestimmten Monitoren anzeigen. Standardmäßig werden alle angezeigt, wenn keine ausgewählt wurden."
         },
         "only-same-output": {
           "description": "Zeige nur Apps von dem Bildschirm, auf dem sich das Dock befindet.",
@@ -604,6 +608,10 @@
           "pywalfox": {
             "description": "Schreibt {filepath} und führt pywalfox update aus",
             "description-missing": "Erfordert die Installation von {app}"
+          },
+          "code": {
+            "description": "Schreibe {Dateipfad}. Das Hyprluna-Theme muss manuell installiert und aktiviert werden.",
+            "description-missing": "Benötigt die Installation von {app}"
           }
         },
         "misc": {
@@ -645,6 +653,10 @@
         "fahrenheit": {
           "label": "Temperatur in Fahrenheit (°F) anzeigen",
           "description": "Temperatur in Fahrenheit statt Celsius anzeigen."
+        },
+        "show-in-calendar": {
+          "description": "Zeige die tägliche Wettervorhersage direkt in deiner Kalenderansicht an.",
+          "label": "Wetter im Kalender anzeigen"
         }
       },
       "date-time": {
@@ -667,6 +679,11 @@
         "use-analog": {
           "description": "Eine Analoguhr auf dem Kalenderbildschirm anzeigen.",
           "label": "Analoge Uhr verwenden"
+        },
+        "first-day-of-week": {
+          "automatic": "Automatisch (Systemgebietsschema verwenden)",
+          "description": "Wähle, welcher Tag die Woche im Kalender beginnen soll.",
+          "label": "Erster Tag der Woche"
         }
       }
     },
@@ -838,10 +855,6 @@
         "label": "Eckenradius",
         "reset": "Rahmenradius zurücksetzen"
       },
-      "dim-desktop": {
-        "description": "Den Desktop abdunkeln, wenn Bedienfelder oder Menüs geöffnet sind.",
-        "label": "Desktop abdunkeln"
-      },
       "scaling": {
         "description": "Ändert die Größe der allgemeinen Benutzeroberfläche, mit Ausnahme der Leiste.",
         "label": "Oberflächenskalierung",
@@ -855,6 +868,10 @@
       "tooltips": {
         "description": "Tooltips in der gesamten Benutzeroberfläche aktivieren oder deaktivieren.",
         "label": "Tooltips anzeigen"
+      },
+      "panels-attached-to-bar": {
+        "description": "Wenn aktiviert, werden die Panels mit einem schönen, umgekehrten Eckdesign an der Leiste befestigt.",
+        "label": "Paneele an Stange befestigen"
       }
     },
     "lock-screen": {
@@ -1256,6 +1273,32 @@
           "label": "Ausblenden, wenn keine Medien wiedergegeben werden",
           "description": "Wenn aktiviert, wird der Visualizer ausgeblendet, sofern keine Wiedergabe läuft."
         }
+      },
+      "lock-keys": {
+        "show-caps-lock": {
+          "description": "Caps Lock Status anzeigen.",
+          "label": "Feststelltaste"
+        },
+        "show-num-lock": {
+          "description": "Num-Lock-Status anzeigen.",
+          "label": "Num-Taste"
+        },
+        "show-scroll-lock": {
+          "description": "Scroll-Lock-Status anzeigen.",
+          "label": "Rollenfeststelltaste"
+        },
+        "indicator-style": {
+          "circle": "Kreisbuchstaben",
+          "circle-dash": "Gestrichelte Kreisbuchstaben",
+          "circle-dot": "Punktierte Kreisbuchstaben",
+          "description": "Symbolstil für die Feststelltastenanzeigen",
+          "hex": "Sechseck-Buchstaben",
+          "label": "Indikatorstil",
+          "large": "Große Buchstaben",
+          "small": "Kleinbuchstaben",
+          "square": "Quadratische Buchstaben",
+          "square-round": "Abgerundete quadratische Buchstaben"
+        }
       }
     }
   },
@@ -1376,8 +1419,6 @@
     "click-to-start-recording": "Klicken zum Starten einer Bildschirmaufnahme",
     "click-to-stop-recording": "Klicken zum Stoppen einer Bildschirmaufnahme",
     "open-control-center": "Kontrollzentrum öffnen",
-    "volume-at": "Lautstärke bei {volume}%\nLinksklick zum Stumm-/Lautschalten. Rechtsklick für Einstellungen.\nScrollen zum Ändern der Lautstärke.",
-    "microphone-volume-at": "Mikrofon-Lautstärke bei {volume}%\nLinksklick zum Stumm-/Lautschalten. Rechtsklick für Einstellungen.\nScrollen zum Ändern der Lautstärke.",
     "brightness-at": "Helligkeit: {brightness}%\nRechtsklick für Einstellungen.\nScrollen zum Ändern der Helligkeit.",
     "manage-wifi": "WLAN verwalten",
     "bluetooth-devices": "Bluetooth-Geräte",
@@ -1391,7 +1432,9 @@
     "power-profile": "'{profile}' Energieprofil",
     "keyboard-layout": "{layout} Tastaturlayout",
     "output-muted": "Audio-Ausgabe stummschalten",
-    "input-muted": "Audio-Eingabe stummschalten"
+    "input-muted": "Audio-Eingabe stummschalten",
+    "microphone-volume-at": "Mikrofonlautstärke bei {volume}%.\nLinksklick für Einstellungen. Rechtsklick zum Stummschalten.\nScrollen zum Ändern der Lautstärke.",
+    "volume-at": "Lautstärke bei {volume}%.\nLinksklick für Einstellungen. Rechtsklick zum Stummschalten.\nScrollen zum Ändern der Lautstärke."
   },
   "clock": {
     "tooltip": "Kalender öffnen"

@@ -178,6 +178,7 @@ ShellRoot {
         id: wallpaperPanel
         objectName: "wallpaperPanel"
       }
+
       BatteryPanel {
         id: batteryPanel
         objectName: "batteryPanel"

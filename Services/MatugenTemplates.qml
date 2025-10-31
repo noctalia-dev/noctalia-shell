@@ -225,6 +225,13 @@ Singleton {
         }],
       "input": "vesktop.css",
       "requiresThemesFolder": true
+    }, {
+      "name": "code",
+      "templates": [{
+          "version": "code",
+          "output": "~/.vscode/extensions/hyprluna.hyprluna-theme-1.0.2/themes/hyprluna.json"
+        }],
+      "input": "code.json"
     }]
 
   // --------------------------------

@@ -13,17 +13,20 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  property string valueLabelMode: widgetData.labelMode !== undefined ? widgetData.labelMode : widgetMetadata.labelMode
+  property bool valueHideUnoccupied: widgetData.hideUnoccupied !== undefined ? widgetData.hideUnoccupied : widgetMetadata.hideUnoccupied
+  property int valueCharacterCount: widgetData.characterCount !== undefined ? widgetData.characterCount : widgetMetadata.characterCount
+
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {})
-    settings.labelMode = labelModeCombo.currentKey
-    settings.hideUnoccupied = hideUnoccupiedToggle.checked
-    settings.characterCount = characterCountSpinBox.value
+    settings.labelMode = valueLabelMode
+    settings.hideUnoccupied = valueHideUnoccupied
+    settings.characterCount = valueCharacterCount
     return settings
   }
 
   NComboBox {
     id: labelModeCombo
-
     label: I18n.tr("bar.widget-settings.workspace.label-mode.label")
     description: I18n.tr("bar.widget-settings.workspace.label-mode.description")
     model: [{
@@ -37,33 +40,24 @@ ColumnLayout {
         "name": I18n.tr("options.workspace-labels.name")
       }]
     currentKey: widgetData.labelMode || widgetMetadata.labelMode
-    onSelected: key => labelModeCombo.currentKey = key
+    onSelected: key => valueLabelMode = key
     minimumWidth: 200
   }
 
   NToggle {
-    id: hideUnoccupiedToggle
     label: I18n.tr("bar.widget-settings.workspace.hide-unoccupied.label")
     description: I18n.tr("bar.widget-settings.workspace.hide-unoccupied.description")
-    checked: widgetData.hideUnoccupied
-    onToggled: checked => hideUnoccupiedToggle.checked = checked
+    checked: valueHideUnoccupied
+    onToggled: checked => valueHideUnoccupied = checked
   }
 
   NSpinBox {
-    id: characterCountSpinBox
     label: I18n.tr("bar.widget-settings.workspace.character-count.label")
     description: I18n.tr("bar.widget-settings.workspace.character-count.description")
     from: 1
     to: 10
-    value: {
-      if (widgetData && widgetData.characterCount !== undefined) {
-        return widgetData.characterCount
-      }
-      if (widgetMetadata && widgetMetadata.characterCount !== undefined) {
-        return widgetMetadata.characterCount
-      }
-      return 2
-    }
-    visible: labelModeCombo.currentKey === "name"
+    value: valueCharacterCount
+    onValueChanged: valueCharacterCount = value
+    visible: valueLabelMode === "name"
   }
 }

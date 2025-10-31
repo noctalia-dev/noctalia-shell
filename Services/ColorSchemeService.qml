@@ -91,6 +91,31 @@ Singleton {
     schemeReader.path = filePath
   }
 
+  function setPredefinedScheme(schemeName) {
+    Logger.i("ColorScheme", "Attempting to set predefined scheme to:", schemeName)
+
+    var resolvedPath = resolveSchemePath(schemeName)
+    var basename = getBasename(schemeName)
+
+    // Check if the scheme actually exists in the loaded schemes list
+    var schemeExists = false
+    for (var i = 0; i < schemes.length; i++) {
+      if (getBasename(schemes[i]) === basename) {
+        schemeExists = true
+        break
+      }
+    }
+
+    if (schemeExists) {
+      Settings.data.colorSchemes.predefinedScheme = basename
+      applyScheme(schemeName)
+      ToastService.showNotice("Color Scheme", `Set to ${basename}`)
+    } else {
+      Logger.e("ColorScheme", "Scheme not found:", schemeName)
+      ToastService.showError("Color Scheme", `Scheme '${basename}' not found!`)
+    }
+  }
+
   Process {
     id: findProcess
     running: false

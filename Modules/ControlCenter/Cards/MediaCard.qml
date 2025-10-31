@@ -179,8 +179,7 @@ NBox {
       onTriggered: function (action) {
         var index = parseInt(action)
         if (!isNaN(index)) {
-          MediaService.selectedPlayerIndex = index
-          MediaService.updateCurrentPlayer()
+          MediaService.switchToPlayer(index)
         }
       }
     }

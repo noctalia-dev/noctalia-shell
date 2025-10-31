@@ -171,6 +171,21 @@ Singleton {
     }
   }
 
+  property bool autoSwitchingPaused: false
+
+  function switchToPlayer(index) {
+    let availablePlayers = getAvailablePlayers()
+    if (index >= 0 && index < availablePlayers.length) {
+      let newPlayer = availablePlayers[index]
+      if (newPlayer !== currentPlayer) {
+        currentPlayer = newPlayer
+        selectedPlayerIndex = index
+        currentPosition = currentPlayer ? currentPlayer.position : 0
+        Logger.d("Media", "Manually switched to player " + currentPlayer.identity)
+      }
+    }
+  }
+
   // Switch to the most recently active player
   function updateCurrentPlayer() {
     let newPlayer = findActivePlayer()
@@ -289,6 +304,9 @@ Singleton {
     repeat: true
     running: true
     onTriggered: {
+      Logger.d("MediaService", "playerStateMonitor triggered. autoSwitchingPaused: " + root.autoSwitchingPaused)
+      if (autoSwitchingPaused)
+      return
       // Only update if we don't have a playing player or if current player is paused
       if (!currentPlayer || !currentPlayer.isPlaying || currentPlayer.playbackState !== MprisPlaybackState.Playing) {
         updateCurrentPlayer()

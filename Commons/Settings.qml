@@ -55,7 +55,7 @@ Singleton {
     // Then it should be commented out again, regular users don't need to generate
     // default settings on every start
     // TODO: automate this someday!
-    // generateDefaultSettings()
+    //generateDefaultSettings()
 
     // Patch-in the local default, resolved to user's home
     adapter.general.avatarImage = defaultAvatar
@@ -182,7 +182,6 @@ Singleton {
     // general
     property JsonObject general: JsonObject {
       property string avatarImage: ""
-      property bool dimDesktop: true
       property bool showScreenCorners: false
       property bool forceBlackScreenCorners: false
       property real scaleRatio: 1.0
@@ -203,7 +202,9 @@ Singleton {
       property bool use12hourFormat: false
       property bool showWeekNumberInCalendar: false
       property bool showCalendarEvents: true
+      property bool showCalendarWeather: true
       property bool analogClockInCalendar: false
+      property int firstDayOfWeek: -1 // -1 = auto (use locale), 0 = Sunday, 1 = Monday, 6 = Saturday
     }
 
     // screen recorder
@@ -296,6 +297,7 @@ Singleton {
 
     // dock
     property JsonObject dock: JsonObject {
+      property bool enabled: true
       property string displayMode: "always_visible" // "always_visible", "auto_hide", "exclusive"
       property real backgroundOpacity: 1.0
       property real floatingRatio: 1.0
@@ -351,6 +353,7 @@ Singleton {
       property real fontDefaultScale: 1.0
       property real fontFixedScale: 1.0
       property bool tooltipsEnabled: true
+      property bool panelsAttachedToBar: true
       property bool panelsOverlayLayer: true
     }
 
@@ -390,6 +393,7 @@ Singleton {
       property bool pywalfox: false
       property bool vicinae: false
       property bool walker: false
+      property bool code: false
       property bool enableUserTemplates: false
     }
 

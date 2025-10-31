@@ -34,59 +34,62 @@ NPanel {
     updateOptionsModel()
   }
 
-  panelContent: Rectangle {
-    color: Color.transparent
+  panelContent: Item {
+    anchors.fill: parent
 
     ColumnLayout {
       anchors.fill: parent
-      anchors.margins: Style.marginL
+      anchors.margins: Style.marginM
       spacing: Style.marginM
 
       // HEADER
-      RowLayout {
+      NBox {
         Layout.fillWidth: true
-        spacing: Style.marginM
+        Layout.preferredHeight: header.implicitHeight + Style.marginM * 2
 
-        NText {
-          text: I18n.tr("battery.panel.title")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
-          color: Color.mOnSurface
-          Layout.fillWidth: true
-        }
+        RowLayout {
+          id: header
+          anchors.fill: parent
+          anchors.margins: Style.marginM
+          spacing: Style.marginM
 
-        NToggle {
-          id: batteryManagerSwitch
-          checked: BatteryService.chargingMode !== BatteryService.ChargingMode.Disabled
-          onToggled: checked => BatteryService.toggleEnabled(checked)
-          baseSize: Style.baseWidgetSize * 0.65
-        }
+          NText {
+            text: I18n.tr("battery.panel.title")
+            pointSize: Style.fontSizeL
+            font.weight: Style.fontWeightBold
+            color: Color.mOnSurface
+            Layout.fillWidth: true
+          }
 
-        NIconButton {
-          icon: "close"
-          tooltipText: I18n.tr("tooltips.close")
-          baseSize: Style.baseWidgetSize * 0.8
-          onClicked: {
-            root.close()
+          NToggle {
+            id: batteryManagerSwitch
+            checked: BatteryService.chargingMode !== BatteryService.ChargingMode.Disabled
+            onToggled: checked => BatteryService.toggleEnabled(checked)
+            baseSize: Style.baseWidgetSize * 0.65
+          }
+
+          NIconButton {
+            icon: "close"
+            tooltipText: I18n.tr("tooltips.close")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: {
+              root.close()
+            }
           }
         }
-      }
-
-      NDivider {
-        Layout.fillWidth: true
       }
 
       ButtonGroup {
         id: batteryGroup
       }
 
-      Rectangle {
+      NBox {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        color: Color.transparent
 
         ColumnLayout {
           anchors.fill: parent
+          anchors.margins: Style.marginM
           spacing: Style.marginM
 
           Repeater {

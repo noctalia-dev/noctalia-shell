@@ -236,12 +236,9 @@ RowLayout {
                   Repeater {
                     model: typeof badgeLocations !== 'undefined' ? badgeLocations : []
 
-                    delegate: NBox {
+                    delegate: Item {
                       width: Style.baseWidgetSize * 0.7
                       height: Style.baseWidgetSize * 0.7
-                      color: "transparent"
-                      radius: Style.radiusS
-                      border.width: 0
 
                       NText {
                         anchors.centerIn: parent

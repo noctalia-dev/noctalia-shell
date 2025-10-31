@@ -29,7 +29,16 @@ ColumnLayout {
     description: I18n.tr("settings.dock.appearance.section.description")
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.dock.enabled.label")
+    description: I18n.tr("settings.dock.enabled.description")
+    checked: Settings.data.dock.enabled
+    onToggled: checked => Settings.data.dock.enabled = checked
+  }
+
   NComboBox {
+    visible: Settings.data.dock.enabled
     Layout.fillWidth: true
     label: I18n.tr("settings.dock.appearance.display.label")
     description: I18n.tr("settings.dock.appearance.display.description")
@@ -50,6 +59,7 @@ ColumnLayout {
   }
 
   ColumnLayout {
+    visible: Settings.data.dock.enabled
     spacing: Style.marginXXS
     Layout.fillWidth: true
     NLabel {
@@ -68,6 +78,7 @@ ColumnLayout {
   }
 
   ColumnLayout {
+    visible: Settings.data.dock.enabled
     spacing: Style.marginXXS
     Layout.fillWidth: true
 
@@ -88,6 +99,7 @@ ColumnLayout {
   }
 
   ColumnLayout {
+    visible: Settings.data.dock.enabled
     spacing: Style.marginXXS
     Layout.fillWidth: true
     NLabel {
@@ -106,6 +118,7 @@ ColumnLayout {
   }
 
   NToggle {
+    visible: Settings.data.dock.enabled
     label: I18n.tr("settings.dock.monitors.only-same-output.label")
     description: I18n.tr("settings.dock.monitors.only-same-output.description")
     checked: Settings.data.dock.onlySameOutput
@@ -113,6 +126,7 @@ ColumnLayout {
   }
 
   NToggle {
+    visible: Settings.data.dock.enabled
     Layout.fillWidth: true
     label: I18n.tr("settings.dock.appearance.colorize-icons.label")
     description: I18n.tr("settings.dock.appearance.colorize-icons.description")
@@ -121,6 +135,7 @@ ColumnLayout {
   }
 
   NDivider {
+    visible: Settings.data.dock.enabled
     Layout.fillWidth: true
     Layout.topMargin: Style.marginXL
     Layout.bottomMargin: Style.marginXL
@@ -128,6 +143,7 @@ ColumnLayout {
 
   // Monitor Configuration
   ColumnLayout {
+    visible: Settings.data.dock.enabled
     spacing: Style.marginM
     Layout.fillWidth: true
 
@@ -163,6 +179,7 @@ ColumnLayout {
   }
 
   NDivider {
+    visible: Settings.data.dock.enabled
     Layout.fillWidth: true
     Layout.topMargin: Style.marginXL
     Layout.bottomMargin: Style.marginXL

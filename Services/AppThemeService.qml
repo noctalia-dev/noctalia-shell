@@ -117,6 +117,12 @@ Singleton {
                                                           }],
                                                         "postProcess": () => `${colorsApplyScript} walker\n`,
                                                         "strict": true
+                                                      },
+                                                      "code": {
+                                                        "input": "code.json",
+                                                        "outputs": [{
+                                                            "path": "~/.vscode/extensions/hyprluna.hyprluna-theme-1.0.2/themes/hyprluna.json"
+                                                          }]
                                                       }
                                                     })
 

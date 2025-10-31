@@ -701,6 +701,24 @@ ColumnLayout {
                      }
                    }
       }
+
+      NCheckbox {
+        label: "Code"
+        description: ProgramCheckerService.codeAvailable ? I18n.tr("settings.color-scheme.templates.programs.code.description", {
+                                                                     "filepath": "~/.vscode/extensions/hyprluna.hyprluna-theme-1.0.2/themes/hyprluna.json"
+                                                                   }) : I18n.tr("settings.color-scheme.templates.programs.code.description-missing", {
+                                                                                  "app": "code"
+                                                                                })
+        checked: Settings.data.templates.code
+        enabled: ProgramCheckerService.codeAvailable
+        opacity: ProgramCheckerService.codeAvailable ? 1.0 : 0.6
+        onToggled: checked => {
+                     if (ProgramCheckerService.codeAvailable) {
+                       Settings.data.templates.code = checked
+                       AppThemeService.generate()
+                     }
+                   }
+      }
     }
 
     // Miscellaneous

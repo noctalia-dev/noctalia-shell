@@ -84,7 +84,14 @@ ColumnLayout {
       checked: Settings.data.location.useFahrenheit
       onToggled: checked => Settings.data.location.useFahrenheit = checked
       enabled: Settings.data.location.weatherEnabled
-      opacity: Settings.data.location.weatherEnabled ? 1.0 : 0.5
+    }
+
+    NToggle {
+      label: I18n.tr("settings.location.weather.show-in-calendar.label")
+      description: I18n.tr("settings.location.weather.show-in-calendar.description")
+      checked: Settings.data.location.showCalendarWeather
+      onToggled: checked => Settings.data.location.showCalendarWeather = checked
+      enabled: Settings.data.location.weatherEnabled
     }
   }
 
@@ -116,6 +123,30 @@ ColumnLayout {
       description: I18n.tr("settings.location.date-time.week-numbers.description")
       checked: Settings.data.location.showWeekNumberInCalendar
       onToggled: checked => Settings.data.location.showWeekNumberInCalendar = checked
+    }
+
+    NComboBox {
+      label: I18n.tr("settings.location.date-time.first-day-of-week.label")
+      description: I18n.tr("settings.location.date-time.first-day-of-week.description")
+      currentKey: Settings.data.location.firstDayOfWeek.toString()
+      minimumWidth: 260 * Style.uiScaleRatio
+      model: [{
+          "key": "-1",
+          "name": I18n.tr("settings.location.date-time.first-day-of-week.automatic")
+        }, {
+          "key": "6",
+          "name": I18n.locale.dayName(6, Locale.LongFormat)
+        }, // Saturday
+        {
+          "key": "0",
+          "name": I18n.locale.dayName(0, Locale.LongFormat)
+        }, // Sunday
+        {
+          "key": "1",
+          "name": I18n.locale.dayName(1, Locale.LongFormat)
+        } // Monday
+      ]
+      onSelected: key => Settings.data.location.firstDayOfWeek = parseInt(key)
     }
 
     NToggle {

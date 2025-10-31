@@ -377,12 +377,12 @@ Singleton {
         var scanner = wallpaperScanners.objectAt(i)
         if (scanner) {
           // Capture scanner in closure
-          (function(s) {
+          (function (s) {
             var directory = root.getMonitorDirectory(s.screenName)
             // Trigger a change by setting to /tmp (always exists) then back to the actual directory
             // Note: This causes harmless Qt warnings (QTBUG-52262) but is necessary to force FolderListModel to re-scan
             s.currentDirectory = "/tmp"
-            Qt.callLater(function() {
+            Qt.callLater(function () {
               s.currentDirectory = directory
             })
           })(scanner)

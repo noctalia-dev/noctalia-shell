@@ -63,54 +63,57 @@ NPanel {
       spacing: Style.marginM
 
       // HEADER
-      RowLayout {
+      NBox {
         Layout.fillWidth: true
-        spacing: Style.marginM
+        implicitHeight: headerRow.implicitHeight + (Style.marginM * 2)
 
-        NIcon {
-          icon: "settings-audio"
-          pointSize: Style.fontSizeXXL
-          color: Color.mPrimary
-        }
+        RowLayout {
+          id: headerRow
+          anchors.fill: parent
+          anchors.margins: Style.marginM
+          spacing: Style.marginM
 
-        NText {
-          text: I18n.tr("settings.audio.title")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
-          color: Color.mOnSurface
-          Layout.fillWidth: true
-        }
+          NIcon {
+            icon: "settings-audio"
+            pointSize: Style.fontSizeXXL
+            color: Color.mPrimary
+          }
 
-        NIconButton {
-          icon: AudioService.getOutputIcon()
-          tooltipText: I18n.tr("tooltips.output-muted")
-          baseSize: Style.baseWidgetSize * 0.8
-          onClicked: {
-            AudioService.setOutputMuted(!AudioService.muted)
+          NText {
+            text: I18n.tr("settings.audio.title")
+            pointSize: Style.fontSizeL
+            font.weight: Style.fontWeightBold
+            color: Color.mOnSurface
+            Layout.fillWidth: true
+          }
+
+          NIconButton {
+            icon: AudioService.getOutputIcon()
+            tooltipText: I18n.tr("tooltips.output-muted")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: {
+              AudioService.setOutputMuted(!AudioService.muted)
+            }
+          }
+
+          NIconButton {
+            icon: AudioService.getInputIcon()
+            tooltipText: I18n.tr("tooltips.input-muted")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: {
+              AudioService.setInputMuted(!AudioService.inputMuted)
+            }
+          }
+
+          NIconButton {
+            icon: "close"
+            tooltipText: I18n.tr("tooltips.close")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: {
+              root.close()
+            }
           }
         }
-
-        NIconButton {
-          icon: AudioService.getInputIcon()
-          tooltipText: I18n.tr("tooltips.input-muted")
-          baseSize: Style.baseWidgetSize * 0.8
-          onClicked: {
-            AudioService.setInputMuted(!AudioService.inputMuted)
-          }
-        }
-
-        NIconButton {
-          icon: "close"
-          tooltipText: I18n.tr("tooltips.close")
-          baseSize: Style.baseWidgetSize * 0.8
-          onClicked: {
-            root.close()
-          }
-        }
-      }
-
-      NDivider {
-        Layout.fillWidth: true
       }
 
       NScrollView {
@@ -123,8 +126,8 @@ NPanel {
 
         // AudioService Devices
         ColumnLayout {
-          spacing: Style.marginS
-          Layout.fillWidth: true
+          spacing: Style.marginM
+          width: parent.width
 
           // -------------------------------
           // Output Devices
@@ -132,26 +135,27 @@ NPanel {
             id: sinks
           }
 
-          ColumnLayout {
-            spacing: 0
+          NBox {
             Layout.fillWidth: true
-            Layout.bottomMargin: Style.marginL
+            Layout.preferredHeight: outputColumn.implicitHeight + (Style.marginM * 2)
 
-            RowLayout {
-              spacing: Style.spacingM * Style.uiScaling
-              Layout.bottomMargin: Style.marginL
+            ColumnLayout {
+              id: outputColumn
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.top: parent.top
+              anchors.margins: Style.marginM
+              spacing: Style.marginS
 
               NText {
                 text: I18n.tr("settings.audio.devices.output-device.label")
                 pointSize: Style.fontSizeL
                 color: Color.mPrimary
-                Layout.preferredWidth: root.preferredWidth * 0.3
               }
 
               // Output Volume Slider
               NValueSlider {
                 Layout.fillWidth: true
-                Layout.maximumWidth: root.preferredWidth * 0.6
                 from: 0
                 to: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
                 value: localOutputVolume
@@ -160,28 +164,25 @@ NPanel {
                 onMoved: value => localOutputVolume = value
                 onPressedChanged: (pressed, value) => localOutputVolumeChanging = pressed
                 text: Math.round(localOutputVolume * 100) + "%"
+                Layout.bottomMargin: Style.marginM
               }
-            }
 
-            Repeater {
-              model: AudioService.sinks
-              NRadioButton {
-                ButtonGroup.group: sinks
-                required property PwNode modelData
-                pointSize: Style.fontSizeS
-                text: modelData.description
-                checked: AudioService.sink?.id === modelData.id
-                onClicked: {
-                  AudioService.setAudioSink(modelData)
-                  localOutputVolume = AudioService.volume
+              Repeater {
+                model: AudioService.sinks
+                NRadioButton {
+                  ButtonGroup.group: sinks
+                  required property PwNode modelData
+                  pointSize: Style.fontSizeS
+                  text: modelData.description
+                  checked: AudioService.sink?.id === modelData.id
+                  onClicked: {
+                    AudioService.setAudioSink(modelData)
+                    localOutputVolume = AudioService.volume
+                  }
+                  Layout.fillWidth: true
                 }
-                Layout.fillWidth: true
               }
             }
-          }
-
-          NDivider {
-            Layout.fillWidth: true
           }
 
           // -------------------------------
@@ -190,25 +191,28 @@ NPanel {
             id: sources
           }
 
-          ColumnLayout {
-            spacing: 0
+          NBox {
             Layout.fillWidth: true
+            Layout.preferredHeight: inputColumn.implicitHeight + (Style.marginM * 2)
 
-            RowLayout {
-              spacing: Style.spacingM * Style.uiScaling
-              Layout.bottomMargin: Style.marginL
+            ColumnLayout {
+              id: inputColumn
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.top: parent.top
+              anchors.bottom: parent.bottom
+              anchors.margins: Style.marginM
+              spacing: Style.marginS
 
               NText {
                 text: I18n.tr("settings.audio.devices.input-device.label")
                 pointSize: Style.fontSizeL
                 color: Color.mPrimary
-                Layout.preferredWidth: root.preferredWidth * 0.3
               }
 
               // Input Volume Slider
               NValueSlider {
                 Layout.fillWidth: true
-                Layout.maximumWidth: root.preferredWidth * 0.6
                 from: 0
                 to: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
                 value: localInputVolume
@@ -217,23 +221,24 @@ NPanel {
                 onMoved: value => localInputVolume = value
                 onPressedChanged: (pressed, value) => localInputVolumeChanging = pressed
                 text: Math.round(localInputVolume * 100) + "%"
+                Layout.bottomMargin: Style.marginM
               }
-            }
 
-            Repeater {
-              model: AudioService.sources
-              //Layout.fillWidth: true
-              NRadioButton {
-                ButtonGroup.group: sources
-                required property PwNode modelData
-                pointSize: Style.fontSizeS
-                text: modelData.description
-                checked: AudioService.source?.id === modelData.id
-                onClicked: AudioService.setAudioSource(modelData)
-                Layout.fillWidth: true
+              Repeater {
+                model: AudioService.sources
+                NRadioButton {
+                  ButtonGroup.group: sources
+                  required property PwNode modelData
+                  pointSize: Style.fontSizeS
+                  text: modelData.description
+                  checked: AudioService.source?.id === modelData.id
+                  onClicked: AudioService.setAudioSource(modelData)
+                  Layout.fillWidth: true
+                }
               }
             }
           }
+
           Item {
             Layout.fillHeight: true
           }

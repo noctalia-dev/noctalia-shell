@@ -199,10 +199,33 @@ ColumnLayout {
     visible: filteredWallpapers.length > 0
 
     ScrollView {
+      id: galleryScroll
       anchors.fill: parent
       clip: true
       ScrollBar.horizontal.policy: ScrollBar.AsNeeded
       ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
+      // Enable vertical mouse wheel to scroll the horizontal strip by moving contentX
+      WheelHandler {
+        target: galleryScroll.contentItem
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: event => {
+                   const flick = galleryScroll.contentItem
+                   if (!flick)
+                   return
+                   const delta = event.pixelDelta.x !== 0 || event.pixelDelta.y !== 0 ? (event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.pixelDelta.x) : (event.angleDelta.y !== 0 ? event.angleDelta.y : event.angleDelta.x)
+                   // Move opposite of wheel to scroll content to the right for wheel down
+                   const step = -delta
+                   const maxX = Math.max(0, flick.contentWidth - flick.width)
+                   let newX = flick.contentX + step
+                   if (newX < 0)
+                   newX = 0
+                   if (newX > maxX)
+                   newX = maxX
+                   flick.contentX = newX
+                   event.accepted = true
+                 }
+      }
 
       RowLayout {
         spacing: Style.marginM

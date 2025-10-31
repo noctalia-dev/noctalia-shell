@@ -200,7 +200,7 @@ ColumnLayout {
             // Horizontal
             Repeater {
               Layout.topMargin: Style.marginM
-              model: Qt.locale().toString(now, valueFormatHorizontal.trim()).split("\\n")
+              model: I18n.locale.toString(now, valueFormatHorizontal.trim()).split("\\n")
               delegate: NText {
                 visible: text !== ""
                 text: modelData
@@ -231,7 +231,7 @@ ColumnLayout {
 
             Repeater {
               Layout.topMargin: Style.marginM
-              model: Qt.locale().toString(now, valueFormatVertical.trim()).split(" ")
+              model: I18n.locale.toString(now, valueFormatVertical.trim()).split(" ")
               delegate: NText {
                 visible: text !== ""
                 text: modelData
