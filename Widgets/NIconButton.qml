@@ -30,6 +30,7 @@ Rectangle {
   signal clicked
   signal rightClicked
   signal middleClicked
+  signal wheel
 
   implicitWidth: applyUiScale ? Math.round(baseSize * Style.uiScaleRatio) : Math.round(baseSize)
   implicitHeight: applyUiScale ? Math.round(baseSize * Style.uiScaleRatio) : Math.round(baseSize)
@@ -108,5 +109,6 @@ Rectangle {
         root.middleClicked()
       }
     }
+    onWheel: wheel => root.wheel(wheel.angleDelta.y)
   }
 }
