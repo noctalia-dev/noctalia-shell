@@ -1,0 +1,19 @@
+input {
+    keyboard {
+        xkb {
+            layout "us" // TODO: How to configure this?
+        }
+        numlock
+    }
+}
+
+environment {
+    QT_QPA_PLATFORM "wayland"
+    QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
+    EGL_PLATFORM "gbm"
+
+    NOCTALIA_RUN_GREETER "1"
+    NOCTALIA_GREETER_PREFERRED_SESSION "niri"
+}
+
+spawn-sh-at-startup "qs -c noctalia-shell > ~/noctalia-greet.log 2>&1; niri msg action quit --skip-confirmation"
