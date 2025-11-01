@@ -16,6 +16,7 @@ Singleton {
   property bool kittyAvailable: false
   property bool ghosttyAvailable: false
   property bool footAvailable: false
+  property bool weztermAvailable: false
   property bool fuzzelAvailable: false
   property bool vicinaeAvailable: false
   property bool walkerAvailable: false
@@ -101,6 +102,7 @@ Singleton {
                                             "kittyAvailable": ["which", "kitty"],
                                             "ghosttyAvailable": ["which", "ghostty"],
                                             "footAvailable": ["which", "foot"],
+                                            "weztermAvailable": ["which", "wezterm"],
                                             "fuzzelAvailable": ["which", "fuzzel"],
                                             "vicinaeAvailable": ["sh", "-c", "command -v vicinae >/dev/null 2>&1 || (IFS=:; find $PATH -maxdepth 1 -iname 'vicinae*.appimage' -type f -executable 2>/dev/null | grep -q .)"],
                                             "walkerAvailable": ["which", "walker"],

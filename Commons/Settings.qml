@@ -383,6 +383,7 @@ Singleton {
       property bool kitty: false
       property bool ghostty: false
       property bool foot: false
+      property bool wezterm: false
       property bool fuzzel: false
       property bool discord: false
       property bool discord_vesktop: false
