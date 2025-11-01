@@ -3,8 +3,7 @@
   lib,
   pkgs,
   ...
-}:
-let
+}: let
   cfg = config.services.noctalia-shell;
   batteryCfg = cfg.batteryManager;
 
@@ -38,7 +37,7 @@ let
   # Frontend script that the user runs
   battery-manager-frontend = pkgs.writeShellApplication {
     name = "set-battery-threshold";
-    runtimeInputs = [ pkgs.libnotify ];
+    runtimeInputs = [pkgs.libnotify];
     text = ''
       SUPPRESS_NOTIFICATIONS=false
       BATTERY_LEVEL=""
@@ -95,8 +94,7 @@ let
       fi
     '';
   };
-in
-{
+in {
   options.services.noctalia-shell = {
     enable = lib.mkEnableOption "Noctalia shell systemd service";
 
@@ -133,7 +131,7 @@ in
 
   config = lib.mkIf (cfg.enable || batteryCfg.enable) {
     environment.systemPackages =
-      [ ]
+      []
       ++ lib.optional cfg.enable cfg.package
       ++ lib.optional batteryCfg.enable battery-manager-frontend;
 
@@ -163,20 +161,20 @@ in
 
     systemd.services.reload-polkit-noctalia = lib.mkIf batteryCfg.enable {
       description = "Reload polkit rules when noctalia battery manager changes";
-      after = [ "polkit.service" ];
-      wants = [ "polkit.service" ];
+      after = ["polkit.service"];
+      wants = ["polkit.service"];
       serviceConfig.Type = "oneshot";
       serviceConfig.ExecStart = "${pkgs.systemd}/bin/systemctl reload polkit.service";
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = ["multi-user.target"];
     };
 
     systemd.user.services.noctalia-shell = lib.mkIf cfg.enable {
       description = "Noctalia Shell - Wayland desktop shell";
-      documentation = [ "https://github.com/noctalia-dev/noctalia-shell" ];
-      after = [ cfg.target ];
-      partOf = [ cfg.target ];
-      wantedBy = [ cfg.target ];
-      restartTriggers = [ cfg.package ];
+      documentation = ["https://github.com/noctalia-dev/noctalia-shell"];
+      after = [cfg.target];
+      partOf = [cfg.target];
+      wantedBy = [cfg.target];
+      restartTriggers = [cfg.package];
       environment = {
         PATH = lib.mkForce null;
       };

@@ -103,7 +103,8 @@ in {
     useApp2Unit = cfg.settings.appLauncher.useApp2Unit or false;
   in
     lib.mkIf cfg.enable {
-      home.packages = lib.optional useApp2Unit cfg.app2unit.package
+      home.packages =
+        lib.optional useApp2Unit cfg.app2unit.package
         ++ lib.optional (cfg.package != null) cfg.package;
 
       xdg.configFile = {
