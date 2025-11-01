@@ -255,7 +255,7 @@ PopupWindow {
         Rectangle {
           Layout.fillWidth: true
           height: 32
-          color: root.hoveredItem === index ? Color.mTertiary : Color.transparent
+          color: root.hoveredItem === index ? Color.mHover : Color.transparent
           radius: Style.radiusXS
 
           RowLayout {
@@ -267,14 +267,14 @@ PopupWindow {
             NIcon {
               icon: modelData.icon
               pointSize: Style.fontSizeL
-              color: root.hoveredItem === index ? Color.mOnTertiary : Color.mOnSurfaceVariant
+              color: root.hoveredItem === index ? Color.mOnHover : Color.mOnSurfaceVariant
               Layout.alignment: Qt.AlignVCenter
             }
 
             NText {
               text: modelData.text
               pointSize: Style.fontSizeS
-              color: root.hoveredItem === index ? Color.mOnTertiary : Color.mOnSurfaceVariant
+              color: root.hoveredItem === index ? Color.mOnHover : Color.mOnSurfaceVariant
               Layout.alignment: Qt.AlignVCenter
               elide: Text.ElideRight
             }

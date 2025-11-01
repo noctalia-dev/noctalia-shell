@@ -1,0 +1,33 @@
+# Colors (Noctalia Legacy)
+
+[colors.bright]
+black = '#3e364e'
+blue = '#a984c4'
+cyan = '#e0b7c9'
+green = '#e0b7c9'
+magenta = '#e9899d'
+red = '#e9899d'
+white = '#ffffff'
+yellow = '#c7a1d8'
+
+[colors.cursor]
+cursor = '#c7a1d8'
+text = '#1c1822'
+
+[colors.normal]
+black = '#262130'
+blue = '#a984c4'
+cyan = '#e0b7c9'
+green = '#e0b7c9'
+magenta = '#e9899d'
+red = '#e9899d'
+white = '#e9e4f0'
+yellow = '#c7a1d8'
+
+[colors.primary]
+background = '#1c1822'
+foreground = '#e9e4f0'
+
+[colors.selection]
+background = '#e9e4f0'
+text = '#1c1822'

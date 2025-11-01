@@ -117,7 +117,7 @@ Slider {
       implicitWidth: knobDiameter
       implicitHeight: knobDiameter
       radius: width / 2
-      color: root.pressed ? Color.mTertiary : Color.mSurface
+      color: root.pressed ? Color.mHover : Color.mSurface
       border.color: Color.mPrimary
       border.width: Style.borderL
       anchors.centerIn: parent

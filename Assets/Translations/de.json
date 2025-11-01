@@ -1272,6 +1272,10 @@
         "hide-when-idle": {
           "label": "Ausblenden, wenn keine Medien wiedergegeben werden",
           "description": "Wenn aktiviert, wird der Visualizer ausgeblendet, sofern keine Wiedergabe läuft."
+        },
+        "color-name": {
+          "description": "Wähle die Farbe für den Visualisierer aus.",
+          "label": "Füllfarbe"
         }
       },
       "lock-keys": {
@@ -1572,6 +1576,13 @@
       "hidden": "Ausblenden, wenn leer",
       "transparent": "Transparent, wenn leer",
       "visible": "Immer sichtbar"
+    },
+    "colors": {
+      "error": "Fehler",
+      "primary": "Primär",
+      "secondary": "Sekundär",
+      "tertiary": "Tertiär",
+      "onSurface": "An der Oberfläche"
     }
   },
   "session-menu": {
@@ -1768,6 +1779,14 @@
     "bluetooth": {
       "enabled": "Aktiviert",
       "disabled": "Deaktiviert"
+    },
+    "airplane-mode": {
+      "title": "Flugmodus",
+      "enabled": "Aktiviert",
+      "disabled": "Deaktiviert"
+    },
+    "internet": {
+      "limited": "Verbunden ohne Internet"
     },
     "kofi": {
       "opened": "Ko-fi-Seite in Ihrem Browser geöffnet"

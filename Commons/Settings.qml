@@ -379,6 +379,7 @@ Singleton {
       property bool gtk: false
       property bool qt: false
       property bool kcolorscheme: false
+      property bool alacritty: false
       property bool kitty: false
       property bool ghostty: false
       property bool foot: false

@@ -119,7 +119,7 @@ Singleton {
         }
         ToastService.showNotice(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.set-success-desc", {
                                                                                   "percent": BatteryService.getThresholdValue(BatteryService.chargingMode)
-                                                                                }))
+                                                                                }), "battery")
         Settings.data.battery.chargingMode = BatteryService.chargingMode
       } else if (exitCode === 2) {
         ToastService.showWarning(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.initial-setup"))

@@ -1,0 +1,33 @@
+# Colors (Eldritch Light)
+
+[colors.bright]
+black = '#7081d0'
+blue = '#9071f4'
+cyan = '#04d1f9'
+green = '#37f499'
+magenta = '#f265b5'
+red = '#d23b3b'
+white = '#212337'
+yellow = '#e9f941'
+
+[colors.cursor]
+cursor = '#1a7f4c'
+text = '#212337'
+
+[colors.normal]
+black = '#ebfafa'
+blue = '#3a3e8c'
+cyan = '#1a6c8c'
+green = '#1a7f4c'
+magenta = '#8c2a6c'
+red = '#ba1a1a'
+white = '#212337'
+yellow = '#9e8c13'
+
+[colors.primary]
+background = '#ebfafa'
+foreground = '#212337'
+
+[colors.selection]
+background = '#bf4f8e'
+text = '#212337'

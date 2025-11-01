@@ -134,7 +134,7 @@ PopupWindow {
 
           Rectangle {
             anchors.fill: parent
-            color: mouseArea.containsMouse ? Color.mTertiary : Color.transparent
+            color: mouseArea.containsMouse ? Color.mHover : Color.transparent
             radius: Style.radiusS
             visible: !(modelData?.isSeparator ?? false)
 
@@ -147,7 +147,7 @@ PopupWindow {
               NText {
                 id: text
                 Layout.fillWidth: true
-                color: (modelData?.enabled ?? true) ? (mouseArea.containsMouse ? Color.mOnTertiary : Color.mOnSurface) : Color.mOnSurfaceVariant
+                color: (modelData?.enabled ?? true) ? (mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface) : Color.mOnSurfaceVariant
                 text: modelData?.text !== "" ? modelData?.text.replace(/[\n\r]+/g, ' ') : "..."
                 pointSize: Style.fontSizeS
                 verticalAlignment: Text.AlignVCenter
@@ -168,7 +168,7 @@ PopupWindow {
                 applyUiScale: false
                 verticalAlignment: Text.AlignVCenter
                 visible: modelData?.hasChildren ?? false
-                color: (mouseArea.containsMouse ? Color.mOnTertiary : Color.mOnSurface)
+                color: (mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface)
               }
             }
 

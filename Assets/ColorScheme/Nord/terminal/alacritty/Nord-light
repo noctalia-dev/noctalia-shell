@@ -1,0 +1,33 @@
+# Colors (Nord Light)
+
+[colors.bright]
+black = '#4c566a'
+blue = '#81a1c1'
+cyan = '#82afae'
+green = '#96b17f'
+magenta = '#b48ead'
+red = '#bf616a'
+white = '#eceff4'
+yellow = '#c5a565'
+
+[colors.cursor]
+cursor = '#7bb3c3'
+text = '#3b4252'
+
+[colors.normal]
+black = '#3b4252'
+blue = '#81a1c1'
+cyan = '#7bb3c3'
+green = '#96b17f'
+magenta = '#b48ead'
+red = '#bf616a'
+white = '#a5abb6'
+yellow = '#c5a565'
+
+[colors.primary]
+background = '#e5e9f0'
+foreground = '#414858'
+
+[colors.selection]
+background = '#d8dee9'
+text = '#4c556a'

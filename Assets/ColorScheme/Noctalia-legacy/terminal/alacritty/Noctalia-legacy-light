@@ -1,0 +1,33 @@
+# Colors (Noctalia Legacy Light)
+
+[colors.bright]
+black = '#cebedc'
+blue = '#784999'
+cyan = '#c17093'
+green = '#c17093'
+magenta = '#e9899d'
+red = '#e9899d'
+white = '#1c1822'
+yellow = '#9b59ba'
+
+[colors.cursor]
+cursor = '#9b59ba'
+text = '#f5f1fa'
+
+[colors.normal]
+black = '#e7dfee'
+blue = '#784999'
+cyan = '#c17093'
+green = '#c17093'
+magenta = '#e9899d'
+red = '#e9899d'
+white = '#1c1822'
+yellow = '#9b59ba'
+
+[colors.primary]
+background = '#f5f1fa'
+foreground = '#1c1822'
+
+[colors.selection]
+background = '#1c1822'
+text = '#f5f1fa'

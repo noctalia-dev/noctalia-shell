@@ -543,7 +543,7 @@ Singleton {
     target: Settings.data.notifications
     function onDoNotDisturbChanged() {
       const enabled = Settings.data.notifications.doNotDisturb
-      ToastService.showNotice(enabled ? I18n.tr("toast.do-not-disturb.enabled") : I18n.tr("toast.do-not-disturb.disabled"), enabled ? I18n.tr("toast.do-not-disturb.enabled-desc") : I18n.tr("toast.do-not-disturb.disabled-desc"))
+      ToastService.showNotice(enabled ? I18n.tr("toast.do-not-disturb.enabled") : I18n.tr("toast.do-not-disturb.disabled"), enabled ? I18n.tr("toast.do-not-disturb.enabled-desc") : I18n.tr("toast.do-not-disturb.disabled-desc"), enabled ? "bell-off" : "bell")
     }
   }
 }

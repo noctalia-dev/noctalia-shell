@@ -12,6 +12,7 @@ Singleton {
   // Program availability properties
   property bool matugenAvailable: false
   property bool pywalfoxAvailable: false
+  property bool alacrittyAvailable: false
   property bool kittyAvailable: false
   property bool ghosttyAvailable: false
   property bool footAvailable: false
@@ -96,6 +97,7 @@ Singleton {
   readonly property var programsToCheck: ({
                                             "matugenAvailable": ["which", "matugen"],
                                             "pywalfoxAvailable": ["which", "pywalfox"],
+                                            "alacrittyAvailable": ["which", "alacritty"],
                                             "kittyAvailable": ["which", "kitty"],
                                             "ghosttyAvailable": ["which", "ghostty"],
                                             "footAvailable": ["which", "foot"],

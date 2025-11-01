@@ -27,7 +27,7 @@ Singleton {
       const enabled = !!Settings.data.colorSchemes.darkMode
       const label = enabled ? "Dark mode" : "Light mode"
       const description = enabled ? "Enabled" : "Enabled"
-      ToastService.showNotice(label, description)
+      ToastService.showNotice(label, description, "dark-mode")
     }
   }
 
@@ -109,7 +109,7 @@ Singleton {
     if (schemeExists) {
       Settings.data.colorSchemes.predefinedScheme = basename
       applyScheme(schemeName)
-      ToastService.showNotice("Color Scheme", `Set to ${basename}`)
+      ToastService.showNotice("Color Scheme", `Set to ${basename}`, "settings-color-scheme")
     } else {
       Logger.e("ColorScheme", "Scheme not found:", schemeName)
       ToastService.showError("Color Scheme", `Scheme '${basename}' not found!`)
@@ -186,8 +186,13 @@ Singleton {
 
   // Check if any templates are enabled
   function hasEnabledTemplates() {
-    return Settings.data.templates.gtk || Settings.data.templates.qt || Settings.data.templates.kitty || Settings.data.templates.ghostty || Settings.data.templates.foot || Settings.data.templates.fuzzel || Settings.data.templates.discord || Settings.data.templates.discord_vesktop || Settings.data.templates.discord_webcord
-        || Settings.data.templates.discord_armcord || Settings.data.templates.discord_equibop || Settings.data.templates.discord_lightcord || Settings.data.templates.discord_dorion || Settings.data.templates.pywalfox || Settings.data.templates.vicinae || Settings.data.templates.walker
+    const templates = Settings.data.templates
+    for (const key in templates) {
+      if (templates[key]) {
+        return true
+      }
+    }
+    return false
   }
 
   // Writer to colors.json using a JsonAdapter for safety

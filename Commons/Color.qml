@@ -44,6 +44,10 @@ Singleton {
 
   property color transparent: "transparent"
 
+  // Extra colors that are auto generated
+  readonly property color mHover: Settings.data.colorSchemes.darkMode ? Qt.darker(mOnSurface, 1.25) : Qt.lighter(mOnSurface, 1.25)
+  readonly property color mOnHover: Settings.data.colorSchemes.darkMode ? Qt.darker(mSurface, 1.25) : Qt.lighter(mSurface, 1.25)
+
   // --------------------------------
   // Default colors: RosePine
   QtObject {

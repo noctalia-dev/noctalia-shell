@@ -1255,6 +1255,10 @@
         "hide-when-idle": {
           "label": "Ocultar cuando no se reproduce",
           "description": "Si está activado, el visualizador se oculta salvo que haya reproducción activa."
+        },
+        "color-name": {
+          "description": "Selecciona el color para el visualizador.",
+          "label": "Color de relleno"
         }
       },
       "lock-keys": {
@@ -1555,6 +1559,13 @@
       "hidden": "Ocultar cuando esté vacío",
       "transparent": "Transparente cuando está vacío",
       "visible": "Siempre visible"
+    },
+    "colors": {
+      "error": "Error",
+      "primary": "Primario",
+      "secondary": "Secundario",
+      "tertiary": "Terciario",
+      "onSurface": "En la superficie"
     }
   },
   "session-menu": {
@@ -1728,6 +1739,14 @@
     "bluetooth": {
       "enabled": "Activado",
       "disabled": "Desactivado"
+    },
+    "airplane-mode": {
+      "title": "Modo avión",
+      "enabled": "Activado",
+      "disabled": "Desactivado"
+    },
+    "internet": {
+      "limited": "Conectado sin Internet"
     },
     "kofi": {
       "opened": "Página de Ko-fi abierta en tu navegador"

@@ -156,7 +156,7 @@ Item {
     width: buttonSize
     height: buttonSize
     radius: width * 0.5
-    color: hovered ? Color.mTertiary : Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent
+    color: hovered ? Color.mHover : Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent
 
     // Icon positioning based on direction
     x: 0
@@ -174,7 +174,7 @@ Item {
       icon: root.icon
       pointSize: iconSize
       applyUiScale: false
-      color: hovered ? Color.mOnTertiary : Color.mOnSurface
+      color: hovered ? Color.mOnHover : Color.mOnSurface
       // Center horizontally
       x: (iconCircle.width - width) / 2
       // Center vertically accounting for font metrics

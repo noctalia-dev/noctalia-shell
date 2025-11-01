@@ -9,6 +9,7 @@ Rectangle {
 
   property string message: ""
   property string description: ""
+  property string icon: ""
   property string type: "notice"
   property int duration: 3000
   readonly property real initialScale: 0.7
@@ -79,17 +80,15 @@ Rectangle {
 
     // Icon
     NIcon {
-      id: icon
-      icon: {
-        switch (type) {
-        case "warning":
-          return "toast-warning"
-        case "error":
-          return "toast-error"
-        default:
-          return "toast-notice"
-        }
-      }
+      icon: if (root.icon !== "") {
+              return root.icon
+            } else if (type === "warning") {
+              return "toast-warning"
+            } else if (type === "error") {
+              return "toast-error"
+            } else {
+              return "toast-notice"
+            }
       color: {
         switch (type) {
         case "warning":
@@ -139,13 +138,14 @@ Rectangle {
     cursorShape: Qt.PointingHandCursor
   }
 
-  function show(msg, desc, msgType, msgDuration) {
+  function show(msg, desc, msgIcon, msgType, msgDuration) {
     // Stop all timers first
     hideTimer.stop()
     hideAnimation.stop()
 
     message = msg
     description = desc || ""
+    icon = msgIcon || ""
     type = msgType || "notice"
     duration = msgDuration || 3000
 

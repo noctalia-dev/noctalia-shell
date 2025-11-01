@@ -1255,6 +1255,10 @@
         "hide-when-idle": {
           "label": "无媒体播放时隐藏",
           "description": "启用后，除非正在播放媒体，否则隐藏可视化显示。"
+        },
+        "color-name": {
+          "description": "选择可视化工具的颜色。",
+          "label": "填充颜色"
         }
       },
       "lock-keys": {
@@ -1555,6 +1559,13 @@
       "hidden": "当为空时隐藏",
       "transparent": "空时透明",
       "visible": "始终可见"
+    },
+    "colors": {
+      "error": "错误",
+      "primary": "主要的",
+      "secondary": "次要的",
+      "tertiary": "第三纪",
+      "onSurface": "表面之上"
     }
   },
   "session-menu": {
@@ -1728,6 +1739,14 @@
     "bluetooth": {
       "enabled": "已启用",
       "disabled": "已禁用"
+    },
+    "airplane-mode": {
+      "title": "飞行模式",
+      "enabled": "已启用",
+      "disabled": "已禁用"
+    },
+    "internet": {
+      "limited": "已连接但无互联网"
     },
     "kofi": {
       "opened": "Ko-fi页面已在您的浏览器中打开"

@@ -1089,7 +1089,7 @@ Loader {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
                     radius: Settings.data.general.compactLockScreen ? 18 : 24
-                    color: logoutButtonArea.containsMouse ? Color.mTertiary : "transparent"
+                    color: logoutButtonArea.containsMouse ? Color.mHover : "transparent"
                     border.color: Color.mOutline
                     border.width: 1
 
@@ -1100,13 +1100,13 @@ Loader {
                       NIcon {
                         icon: "logout"
                         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                        color: logoutButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+                        color: logoutButtonArea.containsMouse ? Color.mOnHover : Color.mOnSurfaceVariant
                       }
 
                       NText {
                         text: I18n.tr("session-menu.logout")
-                        color: logoutButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
                         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                        color: logoutButtonArea.containsMouse ? Color.mOnHover : Color.mOnSurfaceVariant
                         font.weight: Font.Medium
                       }
                     }
@@ -1137,7 +1137,7 @@ Loader {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
                     radius: Settings.data.general.compactLockScreen ? 18 : 24
-                    color: suspendButtonArea.containsMouse ? Color.mTertiary : "transparent"
+                    color: suspendButtonArea.containsMouse ? Color.mHover : "transparent"
                     border.color: Color.mOutline
                     border.width: 1
 
@@ -1148,13 +1148,13 @@ Loader {
                       NIcon {
                         icon: "suspend"
                         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                        color: suspendButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+                        color: suspendButtonArea.containsMouse ? Color.mOnHover : Color.mOnSurfaceVariant
                       }
 
                       NText {
                         text: I18n.tr("session-menu.suspend")
-                        color: suspendButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
                         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                        color: suspendButtonArea.containsMouse ? Color.mOnHover : Color.mOnSurfaceVariant
                         font.weight: Font.Medium
                       }
                     }
@@ -1185,7 +1185,7 @@ Loader {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
                     radius: Settings.data.general.compactLockScreen ? 18 : 24
-                    color: rebootButtonArea.containsMouse ? Color.mTertiary : "transparent"
+                    color: rebootButtonArea.containsMouse ? Color.mHover : "transparent"
                     border.color: Color.mOutline
                     border.width: 1
 
@@ -1196,13 +1196,13 @@ Loader {
                       NIcon {
                         icon: "reboot"
                         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                        color: rebootButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+                        color: rebootButtonArea.containsMouse ? Color.mOnHover : Color.mOnSurfaceVariant
                       }
 
                       NText {
                         text: I18n.tr("session-menu.reboot")
-                        color: rebootButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
                         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                        color: rebootButtonArea.containsMouse ? Color.mOnHover : Color.mOnSurfaceVariant
                         font.weight: Font.Medium
                       }
                     }

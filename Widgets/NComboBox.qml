@@ -147,7 +147,7 @@ RowLayout {
 
           background: Rectangle {
             width: parentComboBox ? parentComboBox.width - Style.marginM * 3 : 0
-            color: highlighted ? Color.mTertiary : Color.transparent
+            color: highlighted ? Color.mHover : Color.transparent
             radius: Style.radiusS
             Behavior on color {
               ColorAnimation {
@@ -162,7 +162,7 @@ RowLayout {
               return item && item.name ? item.name : ""
             }
             pointSize: Style.fontSizeM
-            color: highlighted ? Color.mOnTertiary : Color.mOnSurface
+            color: highlighted ? Color.mOnHover : Color.mOnSurface
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
             Behavior on color {

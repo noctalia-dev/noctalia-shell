@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
@@ -218,6 +219,17 @@ Loader {
         topRightRadius: Style.radiusL
         bottomLeftRadius: Style.radiusL
         bottomRightRadius: Style.radiusL
+
+        // Drop shadow effect
+        layer.enabled: true
+        layer.effect: MultiEffect {
+          shadowEnabled: true
+          shadowBlur: 0.85
+          shadowOpacity: 0.45
+          shadowColor: Color.mShadow
+          shadowHorizontalOffset: (barPosition === "left" || barPosition === "top") ? 6 : - 6
+          shadowVerticalOffset: (barPosition === "left" || barPosition === "top") ? 6 : - 6
+        }
 
         // Set inverted corners based on panel anchors and bar position
 
@@ -608,7 +620,7 @@ Loader {
           anchors.fill: parent
           anchors.margins: 0
           color: Color.transparent
-          border.color: Color.mTertiary
+          border.color: Color.mPrimary
           border.width: Style.borderM
           radius: Style.radiusL
           visible: panelBackground.isDragged && dragHandler.active
@@ -620,7 +632,7 @@ Loader {
             anchors.fill: parent
             anchors.margins: 0
             color: Color.transparent
-            border.color: Color.mTertiary
+            border.color: Color.mPrimary
             border.width: Style.borderS
             radius: Style.radiusL
             opacity: 0.3

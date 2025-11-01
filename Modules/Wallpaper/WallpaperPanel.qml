@@ -402,7 +402,7 @@ NPanel {
                   return Color.mSecondary
                 }
                 if (wallpaperGridView.currentIndex === index) {
-                  return Color.mTertiary
+                  return Color.mHover
                 }
                 return Color.mSurface
               }

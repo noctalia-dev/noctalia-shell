@@ -218,7 +218,7 @@ RowLayout {
                 NText {
                   text: name
                   pointSize: Style.fontSizeM
-                  color: highlighted ? Color.mOnTertiary : Color.mOnSurface
+                  color: highlighted ? Color.mOnHover : Color.mOnSurface
                   verticalAlignment: Text.AlignVCenter
                   elide: Text.ElideRight
                   Layout.fillWidth: true
@@ -245,7 +245,7 @@ RowLayout {
                         text: modelData
                         pointSize: Style.fontSizeXXS
                         font.weight: Style.fontWeightBold
-                        color: highlighted ? Color.mOnTertiary : Color.mOnSurface
+                        color: highlighted ? Color.mOnHover : Color.mOnSurface
                       }
                     }
                   }
@@ -253,7 +253,7 @@ RowLayout {
               }
               background: Rectangle {
                 width: listView.width
-                color: highlighted ? Color.mTertiary : Color.transparent
+                color: highlighted ? Color.mHover : Color.transparent
                 radius: Style.radiusS
                 Behavior on color {
                   ColorAnimation {

@@ -44,7 +44,7 @@ Popup {
       property var popup: root
 
       background: Rectangle {
-        color: menuItem.hovered && menuItem.enabled ? Color.mTertiary : Color.transparent
+        color: menuItem.hovered && menuItem.enabled ? Color.mHover : Color.transparent
         radius: Style.radiusS
 
         Behavior on color {
@@ -62,7 +62,7 @@ Popup {
           visible: modelData.icon !== undefined
           icon: modelData.icon || ""
           pointSize: Style.fontSizeM
-          color: menuItem.hovered && menuItem.enabled ? Color.mOnTertiary : Color.mOnSurface
+          color: menuItem.hovered && menuItem.enabled ? Color.mOnHover : Color.mOnSurface
           Layout.leftMargin: root.itemPadding
 
           Behavior on color {
@@ -75,7 +75,7 @@ Popup {
         NText {
           text: modelData.label || modelData.text || ""
           pointSize: Style.fontSizeM
-          color: menuItem.hovered && menuItem.enabled ? Color.mOnTertiary : Color.mOnSurface
+          color: menuItem.hovered && menuItem.enabled ? Color.mOnHover : Color.mOnSurface
           verticalAlignment: Text.AlignVCenter
           Layout.fillWidth: true
           Layout.leftMargin: modelData.icon === undefined ? root.itemPadding : 0

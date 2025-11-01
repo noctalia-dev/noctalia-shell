@@ -15,7 +15,8 @@ Singleton {
   readonly property var terminalPaths: ({
                                           "foot": "~/.config/foot/themes/noctalia",
                                           "ghostty": "~/.config/ghostty/themes/noctalia",
-                                          "kitty": "~/.config/kitty/themes/noctalia.conf"
+                                          "kitty": "~/.config/kitty/themes/noctalia.conf",
+                                          "alacritty": "~/.config/alacritty/themes/noctalia.toml"
                                         })
 
   readonly property var schemeNameMap: ({
@@ -256,10 +257,10 @@ Singleton {
     const surfaceContainerHighest = ColorsConvert.generateSurfaceVariant(surface, 4, isDarkMode)
 
     // Generate outline colors (for borders/dividers)
-    const outline = isStrict ? colors.mOutline : (isDarkMode ? "#938f99" : "#79747e")
-    const outlineVariant = ColorsConvert.adjustLightness(outline, isDarkMode ? -10 : 10)
+    const outline = isStrict ? colors.mOutline : ColorsConvert.adjustLightnessAndSaturation(colors.mOnSurface, isDarkMode ? -30 : 30, isDarkMode ? -30 : 30)
+    const outlineVariant = ColorsConvert.adjustLightness(outline, isDarkMode ? -20 : 20)
 
-    // Shadow is always very dark
+    // Shadow is always pitch black
     const shadow = "#000000"
 
     return {
@@ -295,6 +296,7 @@ Singleton {
       "shadow": c(shadow)
     }
   }
+
   function processAllTemplates(colors, mode) {
     let script = ""
     const homeDir = Quickshell.env("HOME")

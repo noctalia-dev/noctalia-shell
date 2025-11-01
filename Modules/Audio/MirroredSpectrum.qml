@@ -7,6 +7,7 @@ Item {
   property color strokeColor: Color.mOnSurface
   property int strokeWidth: 0
   property var values: []
+  property bool vertical: false
 
   // Minimum signal properties
   property bool showMinimumSignal: false
@@ -15,9 +16,10 @@ Item {
   // Pre-compute mirroring
   readonly property int valuesCount: values.length
   readonly property int totalBars: valuesCount * 2
-  readonly property real barSlotWidth: totalBars > 0 ? width / totalBars : 0
+  readonly property real barSlotSize: totalBars > 0 ? (vertical ? height : width) / totalBars : 0
 
   readonly property real centerY: height / 2
+  readonly property real centerX: width / 2
 
   Repeater {
     model: root.totalBars
@@ -31,17 +33,17 @@ Item {
       property real rawAmp: root.values[valueIndex]
       property real amp: (root.showMinimumSignal && rawAmp === 0) ? root.minimumSignalValue : rawAmp
 
-      property real barHeight: root.height * amp
+      property real barSize: (vertical ? root.width : root.height) * amp
 
       color: root.fillColor
       border.color: root.strokeColor
       border.width: root.strokeWidth
       antialiasing: true
 
-      width: root.barSlotWidth * 0.8 // Creates a small gap between bars
-      height: barHeight
-      x: index * root.barSlotWidth + (root.barSlotWidth * 0.25)
-      y: root.centerY - (barHeight / 2)
+      width: vertical ? barSize : root.barSlotSize * 0.8
+      height: vertical ? root.barSlotSize * 0.8 : barSize
+      x: vertical ? root.centerX - (barSize / 2) : index * root.barSlotSize + (root.barSlotSize * 0.25)
+      y: vertical ? index * root.barSlotSize + (root.barSlotSize * 0.25) : root.centerY - (barSize / 2)
     }
   }
 }
