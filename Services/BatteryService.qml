@@ -1,5 +1,6 @@
 pragma Singleton
 
+import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
@@ -17,12 +18,13 @@ Singleton {
   }
 
   property int chargingMode: Settings.data.battery.chargingMode
-  readonly property string batterySetterScript: Quickshell.shellDir + '/Bin/battery-manager/set-battery-treshold.sh'
+  readonly property string localSetterScript: Quickshell.shellDir + '/Bin/battery-manager/set-battery-treshold.sh'
   readonly property string batteryInstallerScript: Quickshell.shellDir + '/Bin/battery-manager/install-battery-manager.sh'
   readonly property string batteryUninstallerScript: Quickshell.shellDir + '/Bin/battery-manager/uninstall-battery-manager.sh'
 
   // This is used to omit toast message and writing mode to settings on startup
   property bool initialSetter: true
+  property bool isInitializing: true
 
   // Choose icon based on charge and charging state
   function getIcon(percent, charging, isReady) {
@@ -56,14 +58,37 @@ Singleton {
     }
   }
 
+  function getScriptToUse() {
+    if (ProgramCheckerService.nixosBatterySetterAvailable) {
+        return "set-battery-threshold";
+    }
+    if (ProgramCheckerService.runningOnNixOS) {
+        return "";
+    }
+    return localSetterScript; // Not on NixOS, use legacy script
+  }
+
   function toggleEnabled(enabled) {
+    if (root.isInitializing) return;
+
     if (enabled) {
+      const script = getScriptToUse();
+      if (script === "") {
+        ToastService.showWarning(I18n.tr("toast.battery-manager.title"), "To enable this feature on NixOS, please use the 'services.noctalia-shell.batteryManager.enable' option.")
+        return;
+      }
       setChargingMode(BatteryService.ChargingMode.Full)
     } else {
-      BatteryService.initialSetter = true
-      ToastService.showNotice(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.uninstall-setup"))
-      PanelService.getPanel("batteryPanel")?.toggle(this)
-      uninstallerProcess.running = true
+      if (ProgramCheckerService.runningOnNixOS) {
+        BatteryService.chargingMode = BatteryService.ChargingMode.Disabled;
+        ToastService.showNotice(I18n.tr("toast.battery-manager.title"), "To fully disable the battery manager, remove it from your NixOS configuration and rebuild.");
+        Logger.i("BatteryService", "Battery manager disabled in UI. User needs to rebuild NixOS to fully remove.");
+      } else {
+        BatteryService.initialSetter = true
+        ToastService.showNotice(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.uninstall-setup"))
+        PanelService.getPanel("batteryPanel")?.toggle(null)
+        uninstallerProcess.running = true
+      }
     }
   }
 
@@ -83,12 +108,15 @@ Singleton {
   }
 
   function applyChargingMode() {
-    let command = [batterySetterScript]
+    const scriptToUse = getScriptToUse();
 
-    // Currently the script sends notifications by default but quickshell
-    // uses toast messages so the flag is passed to supress notifs
+    if (scriptToUse === "") {
+        Logger.i("BatteryService", "applyChargingMode called, but feature is disabled.")
+        return
+    }
+
+    let command = [scriptToUse]
     command.push("-q")
-
     command.push(BatteryService.getThresholdValue(BatteryService.chargingMode))
 
     setterProcess.command = command
@@ -101,8 +129,18 @@ Singleton {
   }
 
   function init() {
+    initTimer.start()
     if (BatteryService.chargingMode !== BatteryService.ChargingMode.Disabled && BatteryService.chargingMode !== BatteryService.ChargingMode.Full) {
       BatteryService.applyChargingMode()
+    }
+  }
+
+  Timer {
+    id: initTimer
+    interval: 500 // ms
+    onTriggered: {
+      root.isInitializing = false
+      Logger.d("BatteryService", "Initialization complete.")
     }
   }
 
@@ -121,10 +159,13 @@ Singleton {
                                                                                   "percent": BatteryService.getThresholdValue(BatteryService.chargingMode)
                                                                                 }), "battery")
         Settings.data.battery.chargingMode = BatteryService.chargingMode
-      } else if (exitCode === 2) {
+      } else if (exitCode === 2 && !ProgramCheckerService.runningOnNixOS) {
         ToastService.showWarning(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.initial-setup"))
-        PanelService.getPanel("batteryPanel")?.toggle(this)
+        PanelService.getPanel("batteryPanel")?.toggle(null)
         BatteryService.runInstaller()
+      } else if (exitCode === 3) {
+        ToastService.showError(I18n.tr("toast.battery-manager.title"), "Hardware not supported or no permission to access battery control files.")
+        Logger.e("BatteryService", `Setter process failed with exit code 3: Unsupported hardware.`)
       } else {
         ToastService.showError(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.set-failed"))
         Logger.e("BatteryService", `Setter process failed with exit code: ${exitCode}`)
