@@ -8,19 +8,12 @@ Scope {
   signal unlocked
   signal failed
 
-  property string currentText: ""
+  property string password: ""
   property bool unlockInProgress: false
   property bool showFailure: false
   property string errorMessage: ""
   property string infoMessage: ""
   property bool pamAvailable: typeof PamContext !== "undefined"
-
-  onCurrentTextChanged: {
-    if (currentText !== "") {
-      showFailure = false
-      errorMessage = ""
-    }
-  }
 
   function tryUnlock() {
     if (!pamAvailable) {
@@ -53,7 +46,7 @@ Scope {
 
       if (responseRequired) {
         Logger.i("LockContext", "Responding to PAM with password")
-        respond(root.currentText)
+        respond(root.password)
       }
     }
 
@@ -61,7 +54,7 @@ Scope {
       Logger.i("LockContext", "Response required changed:", responseRequired)
       if (responseRequired && root.unlockInProgress) {
         Logger.i("LockContext", "Automatically responding to PAM")
-        respond(root.currentText)
+        respond(root.password)
       }
     }
 
