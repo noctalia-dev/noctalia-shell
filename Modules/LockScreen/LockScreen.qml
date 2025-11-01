@@ -178,7 +178,7 @@ Loader {
                   // Date below
                   NText {
                     text: {
-                      var lang = Qt.locale().name.split("_")[0]
+                      var lang = I18n.locale.name.split("_")[0]
                       var formats = {
                         "de": "dddd, d. MMMM",
                         "es": "dddd, d 'de' MMMM",
@@ -186,7 +186,7 @@ Loader {
                         "pt": "dddd, d 'de' MMMM",
                         "zh": "yyyy年M月d日 dddd"
                       }
-                      return Qt.locale().toString(Time.date, formats[lang] || "dddd, MMMM d")
+                      return I18n.locale.toString(Time.date, formats[lang] || "dddd, MMMM d")
                     }
                     pointSize: Style.fontSizeXL
                     font.weight: Font.Medium
@@ -570,7 +570,7 @@ Loader {
                         NText {
                           text: {
                             var weatherDate = new Date(LocationService.data.weather.daily.time[index].replace(/-/g, "/"))
-                            return Qt.locale().toString(weatherDate, "ddd")
+                            return I18n.locale.toString(weatherDate, "ddd")
                           }
                           pointSize: Style.fontSizeM
                           color: Color.mOnSurfaceVariant

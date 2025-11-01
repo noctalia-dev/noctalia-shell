@@ -135,7 +135,7 @@ Item {
     width: pillHeight
     height: pillHeight
     radius: width * 0.5
-    color: hovered ? Color.mTertiary : Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent
+    color: hovered ? Color.mHover : Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent
     anchors.verticalCenter: parent.verticalCenter
 
     x: oppositeDirection ? 0 : (parent.width - width)
@@ -151,7 +151,7 @@ Item {
       icon: root.icon
       pointSize: iconSize
       applyUiScale: false
-      color: hovered ? Color.mOnTertiary : Color.mOnSurface
+      color: hovered ? Color.mOnHover : Color.mOnSurface
       // Center horizontally
       x: (iconCircle.width - width) / 2
       // Center vertically accounting for font metrics

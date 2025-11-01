@@ -41,9 +41,9 @@ NIconButton {
   density: Settings.data.bar.density
   colorBg: (Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent)
   colorFg: Color.mOnSurface
-  colorBgHover: useDistroLogo ? Color.mSurfaceVariant : Color.mTertiary
+  colorBgHover: useDistroLogo ? Color.mSurfaceVariant : Color.mHover
   colorBorder: Color.transparent
-  colorBorderHover: useDistroLogo ? Color.mTertiary : Color.transparent
+  colorBorderHover: useDistroLogo ? Color.mHover : Color.transparent
   onClicked: PanelService.getPanel("controlCenterPanel")?.toggle(this)
   onRightClicked: PanelService.getPanel("settingsPanel")?.toggle()
 

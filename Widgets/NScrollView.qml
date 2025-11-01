@@ -6,7 +6,7 @@ import qs.Commons
 T.ScrollView {
   id: root
 
-  property color handleColor: Qt.alpha(Color.mTertiary, 0.8)
+  property color handleColor: Qt.alpha(Color.mHover, 0.8)
   property color handleHoverColor: handleColor
   property color handlePressedColor: handleColor
   property color trackColor: Color.transparent

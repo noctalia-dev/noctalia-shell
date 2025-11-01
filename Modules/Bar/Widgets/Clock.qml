@@ -62,7 +62,7 @@ Rectangle {
         spacing: Settings.data.bar.showCapsule ? -4 : -2
         Repeater {
           id: repeater
-          model: Qt.locale().toString(now, formatHorizontal.trim()).split("\\n")
+          model: I18n.locale.toString(now, formatHorizontal.trim()).split("\\n")
           NText {
             visible: text !== ""
             text: modelData
@@ -95,7 +95,7 @@ Rectangle {
         anchors.centerIn: parent
         spacing: -2
         Repeater {
-          model: Qt.locale().toString(now, formatVertical.trim()).split(" ")
+          model: I18n.locale.toString(now, formatVertical.trim()).split(" ")
           delegate: NText {
             visible: text !== ""
             text: modelData

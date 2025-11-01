@@ -357,7 +357,7 @@ NPanel {
         return Qt.alpha(Color.mPrimary, 0.08)
       }
       if (isSelected || mouseArea.containsMouse) {
-        return Color.mTertiary
+        return Color.mHover
       }
       return Color.transparent
     }
@@ -388,7 +388,7 @@ NPanel {
           if (buttonRoot.isShutdown && !buttonRoot.isSelected && !mouseArea.containsMouse)
             return Color.mError
           if (buttonRoot.isSelected || mouseArea.containsMouse)
-            return Color.mOnTertiary
+            return Color.mOnHover
           return Color.mOnSurface
         }
         pointSize: Style.fontSizeXXL
@@ -423,7 +423,7 @@ NPanel {
             if (buttonRoot.isShutdown && !buttonRoot.isSelected && !mouseArea.containsMouse)
               return Color.mError
             if (buttonRoot.isSelected || mouseArea.containsMouse)
-              return Color.mOnTertiary
+              return Color.mOnHover
             return Color.mOnSurface
           }
 

@@ -85,7 +85,7 @@ Singleton {
       return
     }
 
-    ToastService.showNotice(I18n.tr("toast.recording.stopping"), outputPath, 2000)
+    ToastService.showNotice(I18n.tr("toast.recording.stopping"), outputPath, 2000, "settings-screen-recorder")
 
     Quickshell.execDetached(["sh", "-c", "pkill -SIGINT -f 'gpu-screen-recorder' || pkill -SIGINT -f 'com.dec05eba.gpu_screen_recorder'"])
 
@@ -131,7 +131,7 @@ Singleton {
         monitorTimer.running = false
         // Consider successful save if exitCode == 0
         if (exitCode === 0) {
-          ToastService.showNotice(I18n.tr("toast.recording.saved"), outputPath, 5000)
+          ToastService.showNotice(I18n.tr("toast.recording.saved"), outputPath, 5000, "settings-screen-recorder")
         } else {
           const err2 = String(recorderProcess.stderr.text || "").trim()
           if (err2.length > 0)

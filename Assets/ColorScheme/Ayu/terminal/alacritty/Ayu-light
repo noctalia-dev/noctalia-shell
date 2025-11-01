@@ -1,0 +1,33 @@
+# Colors (Ayu Light)
+
+[colors.bright]
+black = '#686868'
+blue = '#399ee6'
+cyan = '#4cbf99'
+green = '#86b300'
+magenta = '#a37acc'
+red = '#f07171'
+white = '#d1d1d1'
+yellow = '#f2ae49'
+
+[colors.cursor]
+cursor = '#ffaa33'
+text = '#f8f9fa'
+
+[colors.normal]
+black = '#000000'
+blue = '#3199e1'
+cyan = '#46ba94'
+green = '#6cbf43'
+magenta = '#9e75c7'
+red = '#ea6c6d'
+white = '#bababa'
+yellow = '#eca944'
+
+[colors.primary]
+background = '#f8f9fa'
+foreground = '#5c6166'
+
+[colors.selection]
+background = '#035bd6'
+text = '#f8f9fa'

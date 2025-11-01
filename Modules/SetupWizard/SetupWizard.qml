@@ -30,7 +30,6 @@ NPanel {
   property string selectedWallpaper: ""
   property real selectedScaleRatio: 1.0
   property string selectedBarPosition: "top"
-  property bool selectedDimDesktop: true
 
   panelContent: Component {
     Item {
@@ -199,17 +198,12 @@ NPanel {
               id: step2
               selectedScaleRatio: root.selectedScaleRatio
               selectedBarPosition: root.selectedBarPosition
-              selectedDimDesktop: root.selectedDimDesktop
               onScaleRatioChanged: function (ratio) {
                 root.selectedScaleRatio = ratio
                 root.applyUISettings()
               }
               onBarPositionChanged: function (position) {
                 root.selectedBarPosition = position
-                root.applyUISettings()
-              }
-              onDimDesktopChanged: function (dim) {
-                root.selectedDimDesktop = dim
                 root.applyUISettings()
               }
             }
@@ -384,7 +378,6 @@ NPanel {
 
     Settings.data.general.scaleRatio = selectedScaleRatio
     Settings.data.bar.position = selectedBarPosition
-    Settings.data.general.dimDesktop = selectedDimDesktop
     Settings.data.setupCompleted = true
 
     Settings.saveImmediate()
@@ -406,7 +399,6 @@ NPanel {
   function applyUISettings() {
     Settings.data.general.scaleRatio = selectedScaleRatio
     Settings.data.bar.position = selectedBarPosition
-    Settings.data.general.dimDesktop = selectedDimDesktop
   }
 
   Component.onCompleted: {
@@ -415,7 +407,6 @@ NPanel {
     if (Settings && Settings.data) {
       selectedScaleRatio = Settings.data.general.scaleRatio
       selectedBarPosition = Settings.data.bar.position
-      selectedDimDesktop = Settings.data.general.dimDesktop
       selectedWallpaperDirectory = Settings.data.wallpaper.directory || Settings.defaultWallpapersDirectory
     }
   }

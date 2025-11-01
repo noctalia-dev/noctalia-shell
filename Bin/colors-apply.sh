@@ -5,7 +5,7 @@
 if [ "$#" -ne 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|fuzzel|walker|pywalfox}" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|alacritty|fuzzel|walker|pywalfox}" >&2
     exit 1
 fi
 
@@ -42,7 +42,7 @@ case "$APP_NAME" in
     foot)
         echo "🎨 Applying 'noctalia' theme to foot..."
         CONFIG_FILE="$HOME/.config/foot/foot.ini"
-        
+
         # Check if the config file exists, create it if it doesn't.
         if [ ! -f "$CONFIG_FILE" ]; then
             echo "Config file not found, creating $CONFIG_FILE..."
@@ -69,6 +69,37 @@ EOF
                     sed -i '1i [main]\ninclude=~/.config/foot/themes/noctalia\n' "$CONFIG_FILE"
                 fi
             fi
+        fi
+        ;;
+
+    alacritty)
+        echo "🎨 Applying 'noctalia' theme to alacritty..."
+        CONFIG_FILE="$HOME/.config/alacritty/alacritty.toml"
+
+        # Check if the config file exists.
+        if [ -f "$CONFIG_FILE" ]; then
+            # Check if theme is already imported
+            if grep -q 'import = \[.*"themes/noctalia.toml".*\]' "$CONFIG_FILE"; then
+                echo "Theme already set to noctalia, skipping modification."
+            else
+                # Check if [general] section exists
+                if grep -q '^\[general\]' "$CONFIG_FILE"; then
+                    # Check if import line exists under [general]
+                    if sed -n '/^\[general\]/,/^\[/p' "$CONFIG_FILE" | grep -q '^import = \['; then
+                        # Replace existing import line with noctalia theme
+                        sed -i '/^\[general\]/,/^\[/{s|^import = \[.*\]|import = ["themes/noctalia.toml"]|}' "$CONFIG_FILE"
+                    else
+                        # Add import line after [general] section
+                        sed -i '/^\[general\]/a import = ["themes/noctalia.toml"]' "$CONFIG_FILE"
+                    fi
+                else
+                    # Create [general] section with import at the beginning of the file
+                    sed -i '1i [general]\nimport = ["themes/noctalia.toml"]\n' "$CONFIG_FILE"
+                fi
+            fi
+        else
+            echo "Error: alacritty config file not found at $CONFIG_FILE" >&2
+            exit 1
         fi
         ;;
 

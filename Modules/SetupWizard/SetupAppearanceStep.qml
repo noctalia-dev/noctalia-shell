@@ -418,7 +418,7 @@ ColumnLayout {
               radius: Style.radiusS
               color: root.cacheVersion >= 0 ? root.getSchemeColor(schemeName, "mSurface") : root.getSchemeColor(schemeName, "mSurface")
               border.width: Style.borderL
-              border.color: itemMouseArea.containsMouse ? Color.mTertiary : (Settings.data.colorSchemes.predefinedScheme === schemeName ? Color.mSecondary : Color.mOutline)
+              border.color: itemMouseArea.containsMouse ? Color.mHover : (Settings.data.colorSchemes.predefinedScheme === schemeName ? Color.mSecondary : Color.mOutline)
 
               RowLayout {
                 anchors.fill: parent

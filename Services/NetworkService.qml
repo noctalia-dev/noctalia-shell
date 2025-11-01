@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services
 
 Singleton {
   id: root
@@ -17,6 +18,7 @@ Singleton {
   property bool ethernetConnected: false
   property string disconnectingFrom: ""
   property string forgettingNetwork: ""
+  property string internetConnectivity: "unknown"
 
   property bool ignoreScanResults: false
   property bool scanPending: false
@@ -48,9 +50,18 @@ Singleton {
     target: Settings.data.network
     function onWifiEnabledChanged() {
       if (Settings.data.network.wifiEnabled) {
-        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.enabled"))
+        if (!BluetoothService.airplaneModeToggled) {
+          ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.enabled"), "wifi")
+        }
+        // Perform a scan to update the UI
+        delayedScanTimer.interval = 3000
+        delayedScanTimer.restart()
       } else {
-        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.disabled"))
+        if (!BluetoothService.airplaneModeToggled) {
+          ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.disabled"), "wifi-off")
+        }
+        // Clear networks so the widget icon changes
+        root.networks = ({})
       }
     }
   }
@@ -87,6 +98,16 @@ Singleton {
     running: true
     repeat: true
     onTriggered: ethernetStateProcess.running = true
+  }
+
+  // Internet connectivity check timer
+  // Always running every 10s
+  Timer {
+    id: connectivityCheckTimer
+    interval: 10000
+    running: true
+    repeat: true
+    onTriggered: connectivityCheckProcess.running = true
   }
 
   // Core functions
@@ -202,6 +223,8 @@ Singleton {
 
   // Helper functions
   function signalIcon(signal) {
+    if (root.internetConnectivity === "limited" || root.internetConnectivity === "portal")
+      return "world-off"
     if (signal >= 80)
       return "wifi"
     if (signal >= 50)
@@ -271,6 +294,37 @@ Singleton {
       onStreamFinished: {
         if (text.trim()) {
           Logger.w("Network", "Error changing Wi-Fi state: " + text)
+        }
+      }
+    }
+  }
+
+  // Process to check the internet connectivity
+  Process {
+    id: connectivityCheckProcess
+    running: false
+    command: ["nmcli", "networking", "connectivity"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const result = text.trim()
+        if (result && result !== root.internetConnectivity) {
+          root.internetConnectivity = result
+          Logger.i("Network", "Internet connectivity:", result)
+
+          if (result === "limited" || result === "portal") {
+            ToastService.showWarning(cachedLastConnected, "toast.internet.limited")
+          } else {
+            scan()
+          }
+        }
+      }
+    }
+
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text.trim()) {
+          Logger.w("Network", "Connectivity check error: " + text)
         }
       }
     }
@@ -462,6 +516,9 @@ Singleton {
         return cmd
       }
     }
+    environment: {
+      "LC_ALL": "C"
+    }
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -494,7 +551,7 @@ Singleton {
         Logger.i("Network", `Connected to network: '${connectProcess.ssid}'`)
         ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.connected", {
                                                                        "ssid": connectProcess.ssid
-                                                                     }))
+                                                                     }), "wifi")
 
         // Still do a scan to get accurate signal and security info
         delayedScanTimer.interval = 5000
@@ -537,7 +594,7 @@ Singleton {
         Logger.i("Network", `Disconnected from network: '${disconnectProcess.ssid}'`)
         ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.disconnected", {
                                                                        "ssid": disconnectProcess.ssid
-                                                                     }))
+                                                                     }), "wifi-off")
 
         // Immediately update UI on successful disconnect
         root.updateNetworkStatus(disconnectProcess.ssid, false)

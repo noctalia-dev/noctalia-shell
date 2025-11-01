@@ -38,7 +38,7 @@ ColumnLayout {
       if (exitCode === 0) {
         Settings.data.nightLight.enabled = true
         NightLightService.apply()
-        ToastService.showNotice(I18n.tr("settings.display.night-light.section.label"), I18n.tr("toast.night-light.enabled"))
+        ToastService.showNotice(I18n.tr("settings.display.night-light.section.label"), I18n.tr("toast.night-light.enabled"), "nightlight-on")
       } else {
         Settings.data.nightLight.enabled = false
         ToastService.showWarning(I18n.tr("settings.display.night-light.section.label"), I18n.tr("toast.night-light.not-installed"))
@@ -194,7 +194,7 @@ ColumnLayout {
                    Settings.data.nightLight.enabled = false
                    Settings.data.nightLight.forced = false
                    NightLightService.apply()
-                   ToastService.showNotice(I18n.tr("settings.display.night-light.section.label"), I18n.tr("toast.night-light.disabled"))
+                   ToastService.showNotice(I18n.tr("settings.display.night-light.section.label"), I18n.tr("toast.night-light.disabled"), "nightlight-off")
                  }
                }
   }

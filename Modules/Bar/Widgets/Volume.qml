@@ -90,10 +90,10 @@ Item {
       }
     }
     onClicked: {
-      AudioService.setOutputMuted(!AudioService.muted)
+      PanelService.getPanel("audioPanel")?.toggle(this)
     }
     onRightClicked: {
-      PanelService.getPanel("audioPanel")?.toggle(this)
+      AudioService.setOutputMuted(!AudioService.muted)
     }
     onMiddleClicked: {
       Quickshell.execDetached(["sh", "-c", "pwvucontrol || pavucontrol"])

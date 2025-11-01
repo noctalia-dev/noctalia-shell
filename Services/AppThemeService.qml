@@ -15,7 +15,8 @@ Singleton {
   readonly property var terminalPaths: ({
                                           "foot": "~/.config/foot/themes/noctalia",
                                           "ghostty": "~/.config/ghostty/themes/noctalia",
-                                          "kitty": "~/.config/kitty/themes/noctalia.conf"
+                                          "kitty": "~/.config/kitty/themes/noctalia.conf",
+                                          "alacritty": "~/.config/alacritty/themes/noctalia.toml"
                                         })
 
   readonly property var schemeNameMap: ({
@@ -117,6 +118,12 @@ Singleton {
                                                           }],
                                                         "postProcess": () => `${colorsApplyScript} walker\n`,
                                                         "strict": true
+                                                      },
+                                                      "code": {
+                                                        "input": "code.json",
+                                                        "outputs": [{
+                                                            "path": "~/.vscode/extensions/hyprluna.hyprluna-theme-1.0.2/themes/hyprluna.json"
+                                                          }]
                                                       }
                                                     })
 
@@ -250,10 +257,10 @@ Singleton {
     const surfaceContainerHighest = ColorsConvert.generateSurfaceVariant(surface, 4, isDarkMode)
 
     // Generate outline colors (for borders/dividers)
-    const outline = isStrict ? colors.mOutline : (isDarkMode ? "#938f99" : "#79747e")
-    const outlineVariant = ColorsConvert.adjustLightness(outline, isDarkMode ? -10 : 10)
+    const outline = isStrict ? colors.mOutline : ColorsConvert.adjustLightnessAndSaturation(colors.mOnSurface, isDarkMode ? -30 : 30, isDarkMode ? -30 : 30)
+    const outlineVariant = ColorsConvert.adjustLightness(outline, isDarkMode ? -20 : 20)
 
-    // Shadow is always very dark
+    // Shadow is always pitch black
     const shadow = "#000000"
 
     return {
@@ -289,6 +296,7 @@ Singleton {
       "shadow": c(shadow)
     }
   }
+
   function processAllTemplates(colors, mode) {
     let script = ""
     const homeDir = Quickshell.env("HOME")
@@ -446,6 +454,30 @@ Singleton {
     id: generateProcess
     workingDirectory: Quickshell.shellDir
     running: false
+    
+    onExited: function (exitCode) {
+      if (exitCode !== 0) {
+        // Capture error output from stderr first, then stdout, or use fallback message
+        const errorMsg = (stderr.text && stderr.text.trim() !== "") 
+          ? stderr.text.trim() 
+          : ((stdout.text && stdout.text.trim() !== "") 
+              ? stdout.text.trim() 
+              : I18n.tr("toast.matugen.failed-general"))
+        Logger.e("AppThemeService", "Matugen process failed with exit code:", exitCode)
+        if (stderr.text && stderr.text.trim() !== "") {
+          Logger.e("AppThemeService", "Matugen stderr:", stderr.text)
+        }
+        if (stdout.text && stdout.text.trim() !== "") {
+          Logger.e("AppThemeService", "Matugen stdout:", stdout.text)
+        }
+        ToastService.showError(
+          I18n.tr("toast.matugen.failed"),
+          errorMsg,
+          6000
+        )
+      }
+    }
+    
     stdout: StdioCollector {
       onStreamFinished: {
         if (this.text) {

@@ -127,7 +127,7 @@ ColumnLayout {
       cursorShape: Qt.PointingHandCursor
       onClicked: {
         Quickshell.execDetached(["xdg-open", "https://ko-fi.com/lysec"])
-        ToastService.showNotice(I18n.tr("settings.about.support"), I18n.tr("toast.kofi.opened"), 3000)
+        ToastService.showNotice(I18n.tr("settings.about.support"), I18n.tr("toast.kofi.opened"))
       }
     }
   }
@@ -170,7 +170,7 @@ ColumnLayout {
       width: contributorsGrid.cellWidth - Style.marginM
       height: contributorsGrid.cellHeight - Style.marginM
       radius: Style.radiusL
-      color: contributorArea.containsMouse ? Color.mTertiary : Color.transparent
+      color: contributorArea.containsMouse ? Color.mHover : Color.transparent
 
       Behavior on color {
         ColorAnimation {
@@ -193,7 +193,7 @@ ColumnLayout {
             anchors.fill: parent
             anchors.margins: Style.marginXS
             fallbackIcon: "person"
-            borderColor: contributorArea.containsMouse ? Color.mOnTertiary : Color.mPrimary
+            borderColor: contributorArea.containsMouse ? Color.mOnHover : Color.mPrimary
             borderWidth: Style.borderM
 
             Behavior on borderColor {
@@ -212,7 +212,7 @@ ColumnLayout {
           NText {
             text: modelData.login || "Unknown"
             font.weight: Style.fontWeightBold
-            color: contributorArea.containsMouse ? Color.mOnTertiary : Color.mOnSurface
+            color: contributorArea.containsMouse ? Color.mOnHover : Color.mOnSurface
             elide: Text.ElideRight
             Layout.fillWidth: true
           }
@@ -220,7 +220,7 @@ ColumnLayout {
           NText {
             text: (modelData.contributions || 0) + " " + ((modelData.contributions || 0) === 1 ? "commit" : "commits")
             pointSize: Style.fontSizeXS
-            color: contributorArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+            color: contributorArea.containsMouse ? Color.mOnHover : Color.mOnSurfaceVariant
           }
         }
       }

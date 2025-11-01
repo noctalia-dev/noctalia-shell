@@ -5,15 +5,15 @@ import qs.Commons
 
 Rectangle {
   id: root
+
+  property date sampleDate: new Date() // Dec 25, 2023, 2:30:45.123 PM
+
+  signal tokenClicked(string token)
+
   color: Color.mSurface
   border.color: Color.mOutline
   border.width: Style.borderS
   radius: Style.radiusM
-
-  property date sampleDate: new Date() // Dec 25, 2023, 2:30:45.123 PM
-
-  // Signal emitted when a token is clicked
-  signal tokenClicked(string token)
 
   ColumnLayout {
     id: column
@@ -312,7 +312,7 @@ Rectangle {
 
             NText {
               anchors.centerIn: parent
-              text: Qt.locale().toString(root.sampleDate, modelData.token)
+              text: I18n.locale.toString(root.sampleDate, modelData.token)
               color: tokenMouseArea.containsMouse ? Color.mOnPrimary : Color.mSurfaceVariant
               pointSize: Style.fontSizeS
 

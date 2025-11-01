@@ -2,6 +2,7 @@ import QtQuick
 import qs.Commons
 import qs.Services
 import Quickshell
+import "../../../Helpers/ColorsConvert.js" as ColorsConvert
 
 Item {
   id: clockRoot
@@ -10,20 +11,6 @@ Item {
   // Default colors
   property color backgroundColor: Color.mPrimary
   property color clockColor: Color.mOnPrimary
-
-  function getRelativeLuminance(color) {
-    return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b
-  }
-
-  function getContrastRatio(color1, color2) {
-    var L1 = getRelativeLuminance(color1)
-    var L2 = getRelativeLuminance(color2)
-    if (L1 > L2) {
-      return (L1 + 0.05) / (L2 + 0.05)
-    } else {
-      return (L2 + 0.05) / (L1 + 0.05)
-    }
-  }
 
   property color secondHandColor: {
     var defaultColor = Color.mError
@@ -35,11 +22,11 @@ Item {
 
     for (var i = 0; i < candidates.length; i++) {
       var candidate = candidates[i]
-      var contrastClock = getContrastRatio(candidate, clockColor)
+      var contrastClock = ColorsConvert.getContrastRatio(candidate.toString(), clockColor.toString())
       if (contrastClock < minContrast) {
         continue
       }
-      var contrastBg = getContrastRatio(candidate, backgroundColor)
+      var contrastBg = ColorsConvert.getContrastRatio(candidate.toString(), backgroundColor.toString())
       if (contrastBg < minContrast) {
         continue
       }

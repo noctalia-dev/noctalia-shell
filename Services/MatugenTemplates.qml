@@ -103,6 +103,10 @@ Singleton {
                        "name": "kitty",
                        "path": "Terminal/kitty.conf",
                        "output": "~/.config/kitty/themes/noctalia.conf"
+                     }, {
+                       "name": "alacritty",
+                       "path": "Terminal/alacritty.toml",
+                       "output": "~/.config/alacritty/themes/noctalia.toml"
                      }]
 
     terminals.forEach(function (terminal) {
@@ -225,6 +229,13 @@ Singleton {
         }],
       "input": "vesktop.css",
       "requiresThemesFolder": true
+    }, {
+      "name": "code",
+      "templates": [{
+          "version": "code",
+          "output": "~/.vscode/extensions/hyprluna.hyprluna-theme-1.0.2/themes/hyprluna.json"
+        }],
+      "input": "code.json"
     }]
 
   // --------------------------------

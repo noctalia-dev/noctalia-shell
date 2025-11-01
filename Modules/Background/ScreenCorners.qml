@@ -7,7 +7,7 @@ import qs.Services
 import qs.Widgets
 
 Loader {
-  active: Settings.data.general.showScreenCorners
+  active: Settings.data.general.showScreenCorners && (!Settings.data.ui.panelsAttachedToBar || Settings.data.bar.backgroundOpacity >= 1 || Settings.data.bar.floating)
 
   sourceComponent: Variants {
     model: Quickshell.screens

@@ -63,6 +63,14 @@ NPanel {
   readonly property int weatherHeight: Math.round(190 * Style.uiScaleRatio)
   readonly property int mediaSysMonHeight: Math.round(260 * Style.uiScaleRatio)
 
+  onOpened: {
+    MediaService.autoSwitchingPaused = true
+  }
+
+  onClosed: {
+    MediaService.autoSwitchingPaused = false
+  }
+
   panelContent: Item {
     id: content
 

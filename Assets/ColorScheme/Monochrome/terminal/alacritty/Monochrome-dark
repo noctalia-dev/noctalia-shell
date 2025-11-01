@@ -1,0 +1,33 @@
+# Colors (Monochrome)
+
+[colors.bright]
+black = '#3c3c3c'
+blue = '#a7a7a7'
+cyan = '#cccccc'
+green = '#cccccc'
+magenta = '#dddddd'
+red = '#dddddd'
+white = '#ffffff'
+yellow = '#aaaaaa'
+
+[colors.cursor]
+cursor = '#aaaaaa'
+text = '#111111'
+
+[colors.normal]
+black = '#191919'
+blue = '#a7a7a7'
+cyan = '#cccccc'
+green = '#cccccc'
+magenta = '#dddddd'
+red = '#dddddd'
+white = '#828282'
+yellow = '#aaaaaa'
+
+[colors.primary]
+background = '#111111'
+foreground = '#828282'
+
+[colors.selection]
+background = '#828282'
+text = '#111111'

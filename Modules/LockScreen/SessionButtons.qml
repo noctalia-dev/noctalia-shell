@@ -30,12 +30,12 @@ RowLayout {
       NIcon {
         icon: "logout"
         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-        color: logoutButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+        color: logoutButtonArea.containsMouse ? Color.mHover : Color.mOnSurfaceVariant
       }
 
       NText {
         text: I18n.tr("session-menu.logout")
-        color: logoutButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+        color: logoutButtonArea.containsMouse ? Color.mHover : Color.mOnSurfaceVariant
         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
         font.weight: Font.Medium
       }
@@ -78,12 +78,12 @@ RowLayout {
       NIcon {
         icon: "suspend"
         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-        color: suspendButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+        color: suspendButtonArea.containsMouse ? Color.mHover : Color.mOnSurfaceVariant
       }
 
       NText {
         text: I18n.tr("session-menu.suspend")
-        color: suspendButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+        color: suspendButtonArea.containsMouse ? Color.mHover : Color.mOnSurfaceVariant
         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
         font.weight: Font.Medium
       }
@@ -126,12 +126,12 @@ RowLayout {
       NIcon {
         icon: "reboot"
         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-        color: rebootButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+        color: rebootButtonArea.containsMouse ? Color.mHover : Color.mOnSurfaceVariant
       }
 
       NText {
         text: I18n.tr("session-menu.reboot")
-        color: rebootButtonArea.containsMouse ? Color.mOnTertiary : Color.mOnSurfaceVariant
+        color: rebootButtonArea.containsMouse ? Color.mHover : Color.mOnSurfaceVariant
         pointSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
         font.weight: Font.Medium
       }

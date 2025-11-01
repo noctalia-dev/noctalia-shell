@@ -3,14 +3,20 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
+import Quickshell.Io
 import qs.Commons
+import qs.Services
 
 Singleton {
   id: root
 
+  property bool airplaneModeToggled: false
+  property bool lastBluetoothBlocked: false
   readonly property BluetoothAdapter adapter: Bluetooth.defaultAdapter
+  readonly property int state: adapter?.state ?? 0
   readonly property bool available: (adapter !== null)
   readonly property bool enabled: adapter?.enabled ?? false
+  readonly property bool blocked: (adapter?.state === BluetoothAdapterState.Blocked)
   readonly property bool discovering: (adapter && adapter.discovering) ?? false
   readonly property var devices: adapter ? adapter.devices : null
   readonly property var pairedDevices: {
@@ -50,18 +56,25 @@ Singleton {
 
   Connections {
     target: adapter
-    function onEnabledChanged() {
+    function onStateChanged() {
       if (!adapter) {
-        Logger.w("Bluetooth", "onEnabledChanged", "No adapter available")
+        Logger.w("Bluetooth", "onStateChanged", "No adapter available")
+        return
+      }
+      if (adapter.state === BluetoothAdapterState.Enabling || adapter.state === BluetoothAdapterState.Disabling) {
         return
       }
 
-      Logger.d("Bluetooth", "onEnableChanged", adapter.enabled)
-      if (adapter.enabled) {
-        ToastService.showNotice(I18n.tr("bluetooth.panel.title"), I18n.tr("toast.bluetooth.enabled"))
+      Logger.d("Bluetooth", "onStateChanged", adapter.state)
+      const bluetoothBlockedToggled = (root.blocked !== lastBluetoothBlocked)
+      root.lastBluetoothBlocked = root.blocked
+      if (bluetoothBlockedToggled) {
+        checkWifiBlocked.running = true
+      } else if (adapter.enabled) {
+        ToastService.showNotice(I18n.tr("bluetooth.panel.title"), I18n.tr("toast.bluetooth.enabled"), "bluetooth")
         discoveryTimer.running = true
       } else {
-        ToastService.showNotice(I18n.tr("bluetooth.panel.title"), I18n.tr("toast.bluetooth.disabled"))
+        ToastService.showNotice(I18n.tr("bluetooth.panel.title"), I18n.tr("toast.bluetooth.disabled"), "bluetooth-off")
       }
     }
   }
@@ -237,5 +250,35 @@ Singleton {
 
     Logger.i("Bluetooth", "SetBluetoothEnabled", state)
     adapter.enabled = state
+  }
+
+  Process {
+    id: checkWifiBlocked
+    running: false
+    command: ["rfkill", "list", "wifi"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const wifiBlocked = text && text.trim().includes("Soft blocked: yes")
+        Logger.d("Network", "Wi-Fi adapter was detected as blocked:", blocked)
+
+        // Check if airplane mode has been toggled
+        if (wifiBlocked && wifiBlocked === root.blocked) {
+          root.airplaneModeToggled = true
+          NetworkService.setWifiEnabled(false)
+          ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("toast.airplane-mode.enabled"), "plane")
+        } else if (!wifiBlocked && wifiBlocked === root.blocked) {
+          root.airplaneModeToggled = true
+          NetworkService.setWifiEnabled(true)
+          ToastService.showNotice(I18n.tr("toast.airplane-mode.title"), I18n.tr("toast.airplane-mode.disabled"), "plane-off")
+        } else if (adapter.enabled) {
+          ToastService.showNotice(I18n.tr("bluetooth.panel.title"), I18n.tr("toast.bluetooth.enabled"), "bluetooth")
+          discoveryTimer.running = true
+        } else {
+          ToastService.showNotice(I18n.tr("bluetooth.panel.title"), I18n.tr("toast.bluetooth.disabled"), "bluetooth-off")
+        }
+        root.airplaneModeToggled = false
+      }
+    }
   }
 }

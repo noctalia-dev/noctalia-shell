@@ -608,6 +608,10 @@
           "pywalfox": {
             "description": "写入 {filepath} 并运行 pywalfox update",
             "description-missing": "需要安装 {app}"
+          },
+          "code": {
+            "description": "写入 {filepath}。Hyprluna 主题需要手动安装和激活。",
+            "description-missing": "需要安装 {app}"
           }
         },
         "misc": {
@@ -851,10 +855,6 @@
         "label": "边框半径",
         "reset": "重置边框半径"
       },
-      "dim-desktop": {
-        "description": "当面板或菜单打开时，桌面变暗。",
-        "label": "昏暗的桌面"
-      },
       "scaling": {
         "description": "更改通用用户界面大小，不包括栏。",
         "label": "界面缩放",
@@ -868,6 +868,10 @@
       "tooltips": {
         "description": "启用或禁用整个界面的工具提示。",
         "label": "显示工具提示"
+      },
+      "panels-attached-to-bar": {
+        "description": "启用后，面板将以美观的倒角设计附加到栏上。",
+        "label": "将面板连接到杆上"
       }
     },
     "lock-screen": {
@@ -1251,6 +1255,36 @@
         "hide-when-idle": {
           "label": "无媒体播放时隐藏",
           "description": "启用后，除非正在播放媒体，否则隐藏可视化显示。"
+        },
+        "color-name": {
+          "description": "选择可视化工具的颜色。",
+          "label": "填充颜色"
+        }
+      },
+      "lock-keys": {
+        "show-caps-lock": {
+          "description": "显示大写锁定状态。",
+          "label": "大写锁定"
+        },
+        "show-num-lock": {
+          "description": "显示数字锁定键状态。",
+          "label": "数字锁定"
+        },
+        "show-scroll-lock": {
+          "description": "显示滚动锁定状态。",
+          "label": "滚动锁定"
+        },
+        "indicator-style": {
+          "hex": "六边形字母",
+          "large": "大写字母",
+          "small": "小写字母",
+          "square": "方块字",
+          "square-round": "圆角方形字母",
+          "circle": "圆圈字母",
+          "circle-dash": "虚线圆圈字母",
+          "circle-dot": "虚线圆圈字母",
+          "description": "锁键指示器的图标样式",
+          "label": "指标样式"
         }
       }
     }
@@ -1372,8 +1406,6 @@
     "click-to-start-recording": "点击开始录制",
     "click-to-stop-recording": "点击停止录制",
     "open-control-center": "打开控制中心",
-    "volume-at": "音量 {volume}%\n左键点击切换静音。右键点击进入设置。\n滚动调整音量。",
-    "microphone-volume-at": "麦克风音量 {volume}%\n左键点击切换静音。右键点击进入设置。\n滚动调整音量。",
     "brightness-at": "亮度：{brightness}%\n右键点击进入设置。\n滚动调整亮度。",
     "manage-wifi": "管理 Wi-Fi",
     "bluetooth-devices": "蓝牙设备",
@@ -1387,7 +1419,9 @@
     "power-profile": "'{profile}' 电源模式",
     "keyboard-layout": "{layout} 键盘布局",
     "output-muted": "静音输出设备",
-    "input-muted": "静音输入设备"
+    "input-muted": "静音输入设备",
+    "microphone-volume-at": "麦克风音量 {volume}%\n左键点击进入设置。右键点击切换静音。\n滚动滚轮调节音量。",
+    "volume-at": "音量设为 {volume}%\n\n左键点击进入设置。右键点击切换静音。\n\n滚动滚轮调节音量。"
   },
   "clock": {
     "tooltip": "打开日历"
@@ -1525,6 +1559,13 @@
       "hidden": "当为空时隐藏",
       "transparent": "空时透明",
       "visible": "始终可见"
+    },
+    "colors": {
+      "error": "错误",
+      "primary": "主要的",
+      "secondary": "次要的",
+      "tertiary": "第三纪",
+      "onSurface": "表面之上"
     }
   },
   "session-menu": {
@@ -1669,6 +1710,10 @@
       "disabled": "壁纸颜色已禁用",
       "not-installed": "Matugen 未安装 - 壁纸颜色提取所需"
     },
+    "matugen": {
+      "failed": "Matugen 处理失败",
+      "failed-general": "Matugen 在处理模板时遇到错误"
+    },
     "recording": {
       "stopping": "正在停止录制…",
       "started": "录制已开始",
@@ -1698,6 +1743,14 @@
     "bluetooth": {
       "enabled": "已启用",
       "disabled": "已禁用"
+    },
+    "airplane-mode": {
+      "title": "飞行模式",
+      "enabled": "已启用",
+      "disabled": "已禁用"
+    },
+    "internet": {
+      "limited": "已连接但无互联网"
     },
     "kofi": {
       "opened": "Ko-fi页面已在您的浏览器中打开"

@@ -17,14 +17,11 @@ Popup {
 
   signal updateWidgetSettings(string section, int index, var settings)
 
-  // Center popup in parent
-  x: (parent.width - width) * 0.5
-  y: (parent.height - height) * 0.5
-
   width: Math.max(content.implicitWidth + padding * 2, 500)
   height: content.implicitHeight + padding * 2
   padding: Style.marginXL
   modal: true
+  anchors.centerIn: parent
 
   onOpened: {
     // Mark this popup has opened in the PanelService
@@ -131,6 +128,7 @@ Popup {
       "ControlCenter": "WidgetSettings/ControlCenterSettings.qml",
       "CustomButton": "WidgetSettings/CustomButtonSettings.qml",
       "KeyboardLayout": "WidgetSettings/KeyboardLayoutSettings.qml",
+      "LockKeys": "WidgetSettings/LockKeysSettings.qml",
       "MediaMini": "WidgetSettings/MediaMiniSettings.qml",
       "Microphone": "WidgetSettings/MicrophoneSettings.qml",
       "NotificationHistory": "WidgetSettings/NotificationHistorySettings.qml",

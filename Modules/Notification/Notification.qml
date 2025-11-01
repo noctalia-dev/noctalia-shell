@@ -538,8 +538,8 @@ Variants {
                         }
                         fontSize: Style.fontSizeS
                         backgroundColor: Color.mPrimary
-                        textColor: hovered ? Color.mOnTertiary : Color.mOnPrimary
-                        hoverColor: Color.mTertiary
+                        textColor: hovered ? Color.mOnHover : Color.mOnPrimary
+                        hoverColor: Color.mHover
                         outlined: false
                         implicitHeight: 24
                         onClicked: {

@@ -1,0 +1,33 @@
+# Colors (Noctalia Default Light)
+
+[colors.bright]
+black = '#8288fc'
+blue = '#8E93D8'
+cyan = '#0e0e43'
+green = '#0e0e43'
+magenta = '#FD4663'
+red = '#FD4663'
+white = '#0e0e43'
+yellow = '#5d65f5'
+
+[colors.cursor]
+cursor = '#5d65f5'
+text = '#e6e8fa'
+
+[colors.normal]
+black = '#eff0ff'
+blue = '#8E93D8'
+cyan = '#0e0e43'
+green = '#0e0e43'
+magenta = '#FD4663'
+red = '#FD4663'
+white = '#4b55c8'
+yellow = '#5d65f5'
+
+[colors.primary]
+background = '#e6e8fa'
+foreground = '#4b55c8'
+
+[colors.selection]
+background = '#4b55c8'
+text = '#e6e8fa'

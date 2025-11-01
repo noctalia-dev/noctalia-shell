@@ -90,7 +90,7 @@ Singleton {
       if (profileName !== "Unknown") {
         ToastService.showNotice(I18n.tr("toast.power-profile.changed"), I18n.tr("toast.power-profile.profile-name", {
                                                                                   "profile": profileName
-                                                                                }))
+                                                                                }), profileName.toLowerCase().replace(" ", ""))
       }
     }
   }

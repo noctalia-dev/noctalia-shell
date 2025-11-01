@@ -30,52 +30,55 @@ NPanel {
       spacing: Style.marginM
 
       // Header section
-      RowLayout {
+      NBox {
         Layout.fillWidth: true
-        spacing: Style.marginM
+        implicitHeight: headerRow.implicitHeight + (Style.marginM * 2)
 
-        NIcon {
-          icon: "bell"
-          pointSize: Style.fontSizeXXL
-          color: Color.mPrimary
-        }
+        RowLayout {
+          id: headerRow
+          anchors.fill: parent
+          anchors.margins: Style.marginM
+          spacing: Style.marginM
 
-        NText {
-          text: I18n.tr("notifications.panel.title")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
-          color: Color.mOnSurface
-          Layout.fillWidth: true
-        }
+          NIcon {
+            icon: "bell"
+            pointSize: Style.fontSizeXXL
+            color: Color.mPrimary
+          }
 
-        NIconButton {
-          icon: Settings.data.notifications.doNotDisturb ? "bell-off" : "bell"
-          tooltipText: Settings.data.notifications.doNotDisturb ? I18n.tr("tooltips.do-not-disturb-enabled") : I18n.tr("tooltips.do-not-disturb-disabled")
-          baseSize: Style.baseWidgetSize * 0.8
-          onClicked: Settings.data.notifications.doNotDisturb = !Settings.data.notifications.doNotDisturb
-        }
+          NText {
+            text: I18n.tr("notifications.panel.title")
+            pointSize: Style.fontSizeL
+            font.weight: Style.fontWeightBold
+            color: Color.mOnSurface
+            Layout.fillWidth: true
+          }
 
-        NIconButton {
-          icon: "trash"
-          tooltipText: I18n.tr("tooltips.clear-history")
-          baseSize: Style.baseWidgetSize * 0.8
-          onClicked: {
-            NotificationService.clearHistory()
-            // Close panel as there is nothing more to see.
-            root.close()
+          NIconButton {
+            icon: Settings.data.notifications.doNotDisturb ? "bell-off" : "bell"
+            tooltipText: Settings.data.notifications.doNotDisturb ? I18n.tr("tooltips.do-not-disturb-enabled") : I18n.tr("tooltips.do-not-disturb-disabled")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: Settings.data.notifications.doNotDisturb = !Settings.data.notifications.doNotDisturb
+          }
+
+          NIconButton {
+            icon: "trash"
+            tooltipText: I18n.tr("tooltips.clear-history")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: {
+              NotificationService.clearHistory()
+              // Close panel as there is nothing more to see.
+              root.close()
+            }
+          }
+
+          NIconButton {
+            icon: "close"
+            tooltipText: I18n.tr("tooltips.close")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: root.close()
           }
         }
-
-        NIconButton {
-          icon: "close"
-          tooltipText: I18n.tr("tooltips.close")
-          baseSize: Style.baseWidgetSize * 0.8
-          onClicked: root.close()
-        }
-      }
-
-      NDivider {
-        Layout.fillWidth: true
       }
 
       // Empty state when no notifications

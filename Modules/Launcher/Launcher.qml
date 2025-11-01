@@ -416,7 +416,7 @@ NPanel {
           width: resultsList.width - Style.marginS
           implicitHeight: entryHeight
           radius: Style.radiusM
-          color: entry.isSelected ? Color.mTertiary : Color.mSurface
+          color: entry.isSelected ? Color.mHover : Color.mSurface
 
           Behavior on color {
             ColorAnimation {
@@ -548,7 +548,7 @@ NPanel {
                   text: modelData.name || "Unknown"
                   pointSize: Style.fontSizeL
                   font.weight: Style.fontWeightBold
-                  color: entry.isSelected ? Color.mOnTertiary : Color.mOnSurface
+                  color: entry.isSelected ? Color.mOnHover : Color.mOnSurface
                   elide: Text.ElideRight
                   Layout.fillWidth: true
                 }
@@ -556,7 +556,7 @@ NPanel {
                 NText {
                   text: modelData.description || ""
                   pointSize: Style.fontSizeS
-                  color: entry.isSelected ? Color.mOnTertiary : Color.mOnSurfaceVariant
+                  color: entry.isSelected ? Color.mOnHover : Color.mOnSurfaceVariant
                   elide: Text.ElideRight
                   Layout.fillWidth: true
                   visible: text !== ""

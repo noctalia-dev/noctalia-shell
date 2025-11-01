@@ -16,6 +16,8 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
+  readonly property bool isVerticalBar: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right")
+
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
   property var widgetSettings: {
     if (section && sectionWidgetIndex >= 0) {
@@ -29,11 +31,29 @@ Item {
 
   // Resolve settings: try user settings or defaults from BarWidgetRegistry
   readonly property int visualizerWidth: widgetSettings.width !== undefined ? widgetSettings.width : widgetMetadata.width
-  readonly property bool hideWhenIdle: widgetSettings.hideWhenIdle !== undefined ? widgetSettings.hideWhenIdle : (widgetMetadata.hideWhenIdle !== undefined ? widgetMetadata.hideWhenIdle : false)
+  readonly property bool hideWhenIdle: widgetSettings.hideWhenIdle !== undefined ? widgetSettings.hideWhenIdle : widgetMetadata.hideWhenIdle
+  readonly property string colorName: widgetSettings.colorName !== undefined ? widgetSettings.colorName : widgetMetadata.colorName
+
+  readonly property color fillColor: {
+    switch (colorName) {
+    case "primary":
+      return Color.mPrimary
+    case "secondary":
+      return Color.mSecondary
+    case "tertiary":
+      return Color.mTertiary
+    case "error":
+      return Color.mError
+    case "onSurface":
+    default:
+      return Color.mOnSurface
+    }
+  }
+
   readonly property bool shouldShow: (currentVisualizerType !== "" && currentVisualizerType !== "none") && (!hideWhenIdle || MediaService.isPlaying)
 
-  implicitWidth: shouldShow ? visualizerWidth : 0
-  implicitHeight: shouldShow ? Style.capsuleHeight : 0
+  implicitWidth: !shouldShow ? 0 : isVerticalBar ? Style.capsuleHeight : visualizerWidth
+  implicitHeight: !shouldShow ? 0 : isVerticalBar ? visualizerWidth : Style.capsuleHeight
   visible: shouldShow
 
   Behavior on implicitWidth {
@@ -60,14 +80,13 @@ Item {
   readonly property string currentVisualizerType: Settings.data.audio.visualizerType
 
   // When visualizer type or playback changes, shouldShow updates automatically
-
   // The Loader dynamically loads the appropriate visualizer based on settings
   Loader {
     id: visualizerLoader
     anchors.fill: parent
     anchors.margins: Style.marginS
     active: shouldShow
-    asynchronous: false
+    asynchronous: true
 
     sourceComponent: {
       switch (currentVisualizerType) {
@@ -97,19 +116,19 @@ Item {
                  const nextIndex = (currentIndex + 1) % types.length
                  const newType = types[nextIndex]
 
-                 // Update settings directly
+                 // Update settings directly, maybe this should be a widget setting...
                  Settings.data.audio.visualizerType = newType
                }
   }
 
-  // No imperative activation needed; bound to shouldShow
   Component {
     id: linearComponent
     LinearSpectrum {
       anchors.fill: parent
       values: CavaService.values
+      fillColor: root.fillColor
       showMinimumSignal: true
-      fillColor: Color.mPrimary
+      vertical: root.isVerticalBar
     }
   }
 
@@ -118,8 +137,9 @@ Item {
     MirroredSpectrum {
       anchors.fill: parent
       values: CavaService.values
+      fillColor: root.fillColor
       showMinimumSignal: true
-      fillColor: Color.mPrimary
+      vertical: root.isVerticalBar
     }
   }
 
@@ -128,8 +148,9 @@ Item {
     WaveSpectrum {
       anchors.fill: parent
       values: CavaService.values
+      fillColor: root.fillColor
       showMinimumSignal: true
-      fillColor: Color.mPrimary
+      vertical: root.isVerticalBar
     }
   }
 }

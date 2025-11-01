@@ -135,15 +135,15 @@ ColumnLayout {
           "name": I18n.tr("settings.location.date-time.first-day-of-week.automatic")
         }, {
           "key": "6",
-          "name": Qt.locale().dayName(6, Locale.LongFormat)
+          "name": I18n.locale.dayName(6, Locale.LongFormat)
         }, // Saturday
         {
           "key": "0",
-          "name": Qt.locale().dayName(0, Locale.LongFormat)
+          "name": I18n.locale.dayName(0, Locale.LongFormat)
         }, // Sunday
         {
           "key": "1",
-          "name": Qt.locale().dayName(1, Locale.LongFormat)
+          "name": I18n.locale.dayName(1, Locale.LongFormat)
         } // Monday
       ]
       onSelected: key => Settings.data.location.firstDayOfWeek = parseInt(key)

@@ -156,12 +156,12 @@ Singleton {
   function manualToggle() {
     if (activeInhibitors.includes("manual")) {
       removeInhibitor("manual")
-      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.keep-awake.disabled"))
+      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.keep-awake.disabled"), "keep-awake-off")
       Logger.i("IdleInhibitor", "Manual inhibition disabled")
       return false
     } else {
       addInhibitor("manual", "Manually activated by user")
-      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.keep-awake.enabled"))
+      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.keep-awake.enabled"), "keep-awake-on")
       Logger.i("IdleInhibitor", "Manual inhibition enabled (will reset on next session)")
       return true
     }

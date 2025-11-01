@@ -42,7 +42,7 @@ RowLayout {
     implicitHeight: (root.baseSize - 4)
     radius: height * 0.5
     color: Color.mSurfaceVariant
-    border.color: (root.hovering || decreaseArea.containsMouse || increaseArea.containsMouse) ? Color.mTertiary : Color.mOutline
+    border.color: (root.hovering || decreaseArea.containsMouse || increaseArea.containsMouse) ? Color.mHover : Color.mOutline
     border.width: 1
 
     Behavior on border.color {
@@ -96,7 +96,7 @@ RowLayout {
           height: parent.height
           radius: width / 2
           anchors.left: parent.left
-          color: decreaseArea.containsMouse ? Color.mTertiary : Color.transparent
+          color: decreaseArea.containsMouse ? Color.mHover : Color.transparent
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
@@ -119,7 +119,7 @@ RowLayout {
           height: 100
           radius: width / 4
 
-          color: decreaseArea.containsMouse ? Color.mTertiary : Color.transparent
+          color: decreaseArea.containsMouse ? Color.mHover : Color.transparent
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
@@ -154,7 +154,7 @@ RowLayout {
         anchors.verticalCenter: parent.verticalCenter
         icon: "chevron-left"
         pointSize: Style.fontSizeS
-        color: decreaseArea.containsMouse ? Color.mOnTertiary : Color.mPrimary
+        color: decreaseArea.containsMouse ? Color.mOnHover : Color.mPrimary
       }
 
       MouseArea {
@@ -191,7 +191,7 @@ RowLayout {
           height: parent.height
           radius: width / 2
           anchors.right: parent.right
-          color: increaseArea.containsMouse ? Color.mTertiary : Color.transparent
+          color: increaseArea.containsMouse ? Color.mHover : Color.transparent
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
@@ -214,7 +214,7 @@ RowLayout {
           height: 100
           radius: width / 4
 
-          color: increaseArea.containsMouse ? Color.mTertiary : Color.transparent
+          color: increaseArea.containsMouse ? Color.mHover : Color.transparent
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
@@ -249,7 +249,7 @@ RowLayout {
         anchors.verticalCenter: parent.verticalCenter
         icon: "chevron-right"
         pointSize: Style.fontSizeS
-        color: increaseArea.containsMouse ? Color.mOnTertiary : Color.mPrimary
+        color: increaseArea.containsMouse ? Color.mOnHover : Color.mPrimary
       }
 
       MouseArea {

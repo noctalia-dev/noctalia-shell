@@ -111,7 +111,7 @@ ColumnLayout {
       if (exitCode === 0) {
         Settings.data.colorSchemes.useWallpaperColors = true
         AppThemeService.generate()
-        ToastService.showNotice(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.enabled"))
+        ToastService.showNotice(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.enabled"), "settings-color-scheme")
       } else {
         ToastService.showWarning(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.not-installed"))
       }
@@ -248,7 +248,7 @@ ColumnLayout {
                    matugenCheck.running = true
                  } else {
                    Settings.data.colorSchemes.useWallpaperColors = false
-                   ToastService.showNotice(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.disabled"))
+                   ToastService.showNotice(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.disabled"), "settings-color-scheme")
 
                    if (Settings.data.colorSchemes.predefinedScheme) {
                      ColorSchemeService.applyScheme(Settings.data.colorSchemes.predefinedScheme)
@@ -344,7 +344,7 @@ ColumnLayout {
               return Color.mSecondary
             }
             if (itemMouseArea.containsMouse) {
-              return Color.mTertiary
+              return Color.mHover
             }
             return Color.mOutline
           }
@@ -526,6 +526,24 @@ ColumnLayout {
       defaultExpanded: false
 
       NCheckbox {
+        label: "Alacritty"
+        description: ProgramCheckerService.footAvailable ? I18n.tr("settings.color-scheme.templates.terminal.alacritty.description", {
+                                                                     "filepath": "~/.config/alacritty/themes/noctalia"
+                                                                   }) : I18n.tr("settings.color-scheme.templates.terminal.alacritty.description-missing", {
+                                                                                  "app": "alacritty"
+                                                                                })
+        checked: Settings.data.templates.alacritty
+        enabled: ProgramCheckerService.alacrittyAvailable
+        opacity: ProgramCheckerService.alacrittyAvailable ? 1.0 : 0.6
+        onToggled: checked => {
+                     if (ProgramCheckerService.alacrittyAvailable) {
+                       Settings.data.templates.alacritty = checked
+                       AppThemeService.generate()
+                     }
+                   }
+      }
+
+      NCheckbox {
         label: "Kitty"
         description: ProgramCheckerService.kittyAvailable ? I18n.tr("settings.color-scheme.templates.terminal.kitty.description", {
                                                                       "filepath": "~/.config/kitty/themes/noctalia.conf"
@@ -697,6 +715,24 @@ ColumnLayout {
         onToggled: checked => {
                      if (ProgramCheckerService.walkerAvailable) {
                        Settings.data.templates.walker = checked
+                       AppThemeService.generate()
+                     }
+                   }
+      }
+
+      NCheckbox {
+        label: "Code"
+        description: ProgramCheckerService.codeAvailable ? I18n.tr("settings.color-scheme.templates.programs.code.description", {
+                                                                     "filepath": "~/.vscode/extensions/hyprluna.hyprluna-theme-1.0.2/themes/hyprluna.json"
+                                                                   }) : I18n.tr("settings.color-scheme.templates.programs.code.description-missing", {
+                                                                                  "app": "code"
+                                                                                })
+        checked: Settings.data.templates.code
+        enabled: ProgramCheckerService.codeAvailable
+        opacity: ProgramCheckerService.codeAvailable ? 1.0 : 0.6
+        onToggled: checked => {
+                     if (ProgramCheckerService.codeAvailable) {
+                       Settings.data.templates.code = checked
                        AppThemeService.generate()
                      }
                    }

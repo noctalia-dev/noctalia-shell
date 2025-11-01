@@ -399,10 +399,10 @@ NPanel {
                 Layout.fillWidth: true
                 Layout.preferredHeight: tabEntryRow.implicitHeight + Style.marginM * 2
                 radius: Style.radiusS
-                color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mTertiary : Color.transparent)
+                color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mHover : Color.transparent)
                 readonly property bool selected: index === currentTabIndex
                 property bool hovering: false
-                property color tabTextColor: selected ? Color.mOnPrimary : (tabItem.hovering ? Color.mOnTertiary : Color.mOnSurface)
+                property color tabTextColor: selected ? Color.mOnPrimary : (tabItem.hovering ? Color.mOnHover : Color.mOnSurface)
 
                 Behavior on color {
                   ColorAnimation {

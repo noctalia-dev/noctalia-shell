@@ -233,7 +233,7 @@ NBox {
               acceptedButtons: Qt.RightButton
               z: -1 // Below the buttons but above background
 
-              onClicked: mouse => {
+              onPressed: mouse => {
                            if (mouse.button === Qt.RightButton) {
                              // Check if click is not on the buttons area
                              const localX = mouse.x
