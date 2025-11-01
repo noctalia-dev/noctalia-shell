@@ -588,6 +588,10 @@
           "foot": {
             "description": "Write {filepath} and reload",
             "description-missing": "Requires {app} to be installed"
+          },
+          "wezterm": {
+            "description": "Write {filepath} and reload",
+            "description-missing": "Requires {app} to be installed"
           }
         },
         "programs": {
@@ -1456,9 +1460,9 @@
     "colors": {
       "primary": "Primary",
       "secondary": "Secondary",
-      "tertiary":  "Tertiary",
-      "error":  "Error",
-      "onSurface":  "On Surface"
+      "tertiary": "Tertiary",
+      "error": "Error",
+      "onSurface": "On Surface"
     },
     "bar": {
       "position": {

@@ -596,6 +596,24 @@ ColumnLayout {
                      }
                    }
       }
+
+      NCheckbox {
+        label: "Wezterm"
+        description: ProgramCheckerService.weztermAvailable ? I18n.tr("settings.color-scheme.templates.terminal.wezterm.description", {
+          "filepath": "~/.config/wezterm/colors/Noctalia.toml"
+        }) : I18n.tr("settings.color-scheme.templates.terminal.wezterm.description-missing", {
+          "app": "wezterm"
+        })
+        checked: Settings.data.templates.wezterm
+        enabled: ProgramCheckerService.weztermAvailable
+        opacity: ProgramCheckerService.weztermAvailable ? 1.0 : 0.6
+        onToggled: checked => {
+          if (ProgramCheckerService.weztermAvailable) {
+            Settings.data.templates.wezterm = checked
+            AppThemeService.generate()
+          }
+        }
+      }
     }
 
     // Applications
