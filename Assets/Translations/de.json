@@ -1750,6 +1750,10 @@
       "disabled": "Hintergrundbild-Farben deaktiviert",
       "not-installed": "Matugen nicht installiert - erforderlich für Hintergrundbild-Farbextraktion"
     },
+    "matugen": {
+      "failed": "Matugen-Verarbeitung fehlgeschlagen",
+      "failed-general": "Matugen ist beim Verarbeiten der Vorlagen auf einen Fehler gestoßen"
+    },
     "recording": {
       "stopping": "Aufnahme wird gestoppt…",
       "started": "Aufnahme gestartet",

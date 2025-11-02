@@ -11,7 +11,7 @@ NPanel {
   id: root
 
   preferredWidth: 350 * Style.uiScaleRatio
-  preferredHeight: 210 * Style.uiScaleRatio
+  preferredHeight: 250 * Style.uiScaleRatio
   panelKeyboardFocus: true
 
   property var optionsModel: []

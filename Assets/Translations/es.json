@@ -1710,6 +1710,10 @@
       "disabled": "Colores del fondo de pantalla desactivados",
       "not-installed": "Matugen no instalado - requerido para extraer colores del fondo de pantalla"
     },
+    "matugen": {
+      "failed": "Error en el procesamiento de Matugen",
+      "failed-general": "Matugen encontró un error al procesar las plantillas"
+    },
     "recording": {
       "stopping": "Deteniendo grabación...",
       "started": "Grabación iniciada",

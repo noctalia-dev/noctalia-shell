@@ -1710,6 +1710,10 @@
       "disabled": "Cores do papel de parede desativadas",
       "not-installed": "Matugen não instalado - necessário para extração de cores do papel de parede"
     },
+    "matugen": {
+      "failed": "Falha no processamento do Matugen",
+      "failed-general": "Matugen encontrou um erro ao processar os modelos"
+    },
     "recording": {
       "stopping": "Parando gravação…",
       "started": "Gravação iniciada",

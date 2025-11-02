@@ -22,6 +22,10 @@ Loader {
       property real cornerRadius: Style.screenRadius
       property real cornerSize: Style.screenRadius
 
+      // Helper properties for margin calculations
+      readonly property bool barOnThisMonitor: BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.backgroundOpacity > 0
+      readonly property real barMargin: !Settings.data.bar.floating && barOnThisMonitor ? Style.barHeight : 0
+
       color: Color.transparent
 
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
@@ -38,24 +42,26 @@ Loader {
       margins {
         // When bar is floating, corners should be at screen edges (no margins)
         // When bar is not floating, respect bar margins as before
-        top: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "top" && Settings.data.bar.backgroundOpacity > 0 ? Style.barHeight : 0
-        bottom: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "bottom" && Settings.data.bar.backgroundOpacity > 0 ? Style.barHeight : 0
-        left: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "left" && Settings.data.bar.backgroundOpacity > 0 ? Style.barHeight : 0
-        right: !Settings.data.bar.floating && BarService.isVisible && ((modelData && Settings.data.bar.monitors.includes(modelData.name)) || (Settings.data.bar.monitors.length === 0)) && Settings.data.bar.position === "right" && Settings.data.bar.backgroundOpacity > 0 ? Style.barHeight : 0
+        top: Settings.data.bar.position === "top" ? barMargin : 0
+        bottom: Settings.data.bar.position === "bottom" ? barMargin : 0
+        left: Settings.data.bar.position === "left" ? barMargin : 0
+        right: Settings.data.bar.position === "right" ? barMargin : 0
       }
 
       mask: Region {}
 
-      // Top-left concave corner
-      Canvas {
-        id: topLeftCorner
-        anchors.top: parent.top
-        anchors.left: parent.left
-        width: cornerSize
-        height: cornerSize
+      // Reusable corner canvas component
+      component CornerCanvas: Canvas {
+        id: corner
+
+        required property real arcCenterX
+        required property real arcCenterY
+
+        width: root.cornerSize
+        height: root.cornerSize
         antialiasing: true
         renderTarget: Canvas.FramebufferObject
-        smooth: false
+        smooth: true
 
         onPaint: {
           const ctx = getContext("2d")
@@ -73,7 +79,7 @@ Loader {
           ctx.globalCompositeOperation = "destination-out"
           ctx.fillStyle = "#ffffff"
           ctx.beginPath()
-          ctx.arc(width, height, root.cornerRadius, 0, 2 * Math.PI)
+          ctx.arc(arcCenterX, arcCenterY, root.cornerRadius, 0, 2 * Math.PI)
           ctx.fill()
         }
 
@@ -81,159 +87,59 @@ Loader {
                           requestPaint()
         onHeightChanged: if (available)
                            requestPaint()
+      }
 
-        Connections {
-          target: root
-          function onCornerColorChanged() {
-            if (topLeftCorner.available)
-              topLeftCorner.requestPaint()
-          }
-          function onCornerRadiusChanged() {
-            if (topLeftCorner.available)
-              topLeftCorner.requestPaint()
-          }
-        }
+      // Consolidated repaint handler for all corners
+      property var corners: [topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner]
+
+      onCornerColorChanged: {
+        corners.forEach(corner => {
+                          if (corner.available)
+                          corner.requestPaint()
+                        })
+      }
+
+      onCornerRadiusChanged: {
+        corners.forEach(corner => {
+                          if (corner.available)
+                          corner.requestPaint()
+                        })
+      }
+
+      // Top-left concave corner
+      CornerCanvas {
+        id: topLeftCorner
+        anchors.top: parent.top
+        anchors.left: parent.left
+        arcCenterX: width
+        arcCenterY: height
       }
 
       // Top-right concave corner
-      Canvas {
+      CornerCanvas {
         id: topRightCorner
         anchors.top: parent.top
         anchors.right: parent.right
-        width: cornerSize
-        height: cornerSize
-        antialiasing: true
-        renderTarget: Canvas.FramebufferObject
-        smooth: true
-
-        onPaint: {
-          const ctx = getContext("2d")
-          if (!ctx)
-            return
-
-          ctx.reset()
-          ctx.clearRect(0, 0, width, height)
-
-          ctx.fillStyle = root.cornerColor
-          ctx.fillRect(0, 0, width, height)
-
-          ctx.globalCompositeOperation = "destination-out"
-          ctx.fillStyle = "#ffffff"
-          ctx.beginPath()
-          ctx.arc(0, height, root.cornerRadius, 0, 2 * Math.PI)
-          ctx.fill()
-        }
-
-        onWidthChanged: if (available)
-                          requestPaint()
-        onHeightChanged: if (available)
-                           requestPaint()
-
-        Connections {
-          target: root
-          function onCornerColorChanged() {
-            if (topRightCorner.available)
-              topRightCorner.requestPaint()
-          }
-          function onCornerRadiusChanged() {
-            if (topRightCorner.available)
-              topRightCorner.requestPaint()
-          }
-        }
+        arcCenterX: 0
+        arcCenterY: height
       }
 
       // Bottom-left concave corner
-      Canvas {
+      CornerCanvas {
         id: bottomLeftCorner
         anchors.bottom: parent.bottom
         anchors.left: parent.left
-        width: cornerSize
-        height: cornerSize
-        antialiasing: true
-        renderTarget: Canvas.FramebufferObject
-        smooth: true
-
-        onPaint: {
-          const ctx = getContext("2d")
-          if (!ctx)
-            return
-
-          ctx.reset()
-          ctx.clearRect(0, 0, width, height)
-
-          ctx.fillStyle = root.cornerColor
-          ctx.fillRect(0, 0, width, height)
-
-          ctx.globalCompositeOperation = "destination-out"
-          ctx.fillStyle = "#ffffff"
-          ctx.beginPath()
-          ctx.arc(width, 0, root.cornerRadius, 0, 2 * Math.PI)
-          ctx.fill()
-        }
-
-        onWidthChanged: if (available)
-                          requestPaint()
-        onHeightChanged: if (available)
-                           requestPaint()
-
-        Connections {
-          target: root
-          function onCornerColorChanged() {
-            if (bottomLeftCorner.available)
-              bottomLeftCorner.requestPaint()
-          }
-          function onCornerRadiusChanged() {
-            if (bottomLeftCorner.available)
-              bottomLeftCorner.requestPaint()
-          }
-        }
+        arcCenterX: width
+        arcCenterY: 0
       }
 
       // Bottom-right concave corner
-      Canvas {
+      CornerCanvas {
         id: bottomRightCorner
         anchors.bottom: parent.bottom
         anchors.right: parent.right
-        width: cornerSize
-        height: cornerSize
-        antialiasing: true
-        renderTarget: Canvas.FramebufferObject
-        smooth: true
-
-        onPaint: {
-          const ctx = getContext("2d")
-          if (!ctx)
-            return
-
-          ctx.reset()
-          ctx.clearRect(0, 0, width, height)
-
-          ctx.fillStyle = root.cornerColor
-          ctx.fillRect(0, 0, width, height)
-
-          ctx.globalCompositeOperation = "destination-out"
-          ctx.fillStyle = "#ffffff"
-          ctx.beginPath()
-          ctx.arc(0, 0, root.cornerRadius, 0, 2 * Math.PI)
-          ctx.fill()
-        }
-
-        onWidthChanged: if (available)
-                          requestPaint()
-        onHeightChanged: if (available)
-                           requestPaint()
-
-        Connections {
-          target: root
-          function onCornerColorChanged() {
-            if (bottomRightCorner.available)
-              bottomRightCorner.requestPaint()
-          }
-          function onCornerRadiusChanged() {
-            if (bottomRightCorner.available)
-              bottomRightCorner.requestPaint()
-          }
-        }
+        arcCenterX: 0
+        arcCenterY: 0
       }
     }
   }

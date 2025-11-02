@@ -1412,8 +1412,8 @@
     "next-media": "Next media",
     "power-profile": "'{profile}' power profile",
     "keyboard-layout": "{layout} keyboard layout",
-    "output-muted": "Muted audio output",
-    "input-muted": "Muted audio input"
+    "output-muted": "Toggle output mute",
+    "input-muted": "Toggle input mute"
   },
   "clock": {
     "tooltip": "Open calendar"
@@ -1709,6 +1709,10 @@
       "enabled": "Wallpaper colors enabled",
       "disabled": "Wallpaper colors disabled",
       "not-installed": "Matugen not installed - required for wallpaper color extraction"
+    },
+    "matugen": {
+      "failed": "Matugen processing failed",
+      "failed-general": "Matugen encountered an error while processing templates"
     },
     "recording": {
       "stopping": "Stopping recording…",

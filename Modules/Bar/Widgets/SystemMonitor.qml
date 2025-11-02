@@ -114,7 +114,14 @@ Rectangle {
         }
 
         NText {
-          text: `${Math.round(SystemStatService.cpuUsage)}%`
+          text: {
+            let usage = Math.round(SystemStatService.cpuUsage)
+            if (usage < 100) {
+              return `${usage}%`
+            } else {
+              return usage
+            }
+          }
           family: Settings.data.ui.fontFixed
           pointSize: textSize
           applyUiScale: false

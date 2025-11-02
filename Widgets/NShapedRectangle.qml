@@ -62,6 +62,10 @@ Item {
     anchors.rightMargin: -root.rightPadding
     visible: root.hasInvertedCorners
 
+    antialiasing: true
+    renderTarget: Canvas.FramebufferObject
+    smooth: true
+
     onPaint: {
       var ctx = getContext("2d")
       ctx.reset()

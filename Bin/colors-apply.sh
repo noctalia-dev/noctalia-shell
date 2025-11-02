@@ -106,9 +106,18 @@ EOF
     fuzzel)
         echo "🎨 Applying 'noctalia' theme to fuzzel..."
         CONFIG_FILE="$HOME/.config/fuzzel/fuzzel.ini"
-        
-        # Check if the config file exists.
-        if [ -f "$CONFIG_FILE" ]; then
+
+        # Check if the config file exists, create it if it doesn't.
+        if [ ! -f "$CONFIG_FILE" ]; then
+            echo "Config file not found, creating $CONFIG_FILE..."
+            # Create the config directory if it doesn't exist
+            mkdir -p "$(dirname "$CONFIG_FILE")"
+            # Create the config file with the noctalia theme
+            cat > "$CONFIG_FILE" << 'EOF'
+include=~/.config/fuzzel/themes/noctalia
+EOF
+            echo "Created new config file with noctalia theme."
+        else
             # Check if theme is already set to noctalia
             if grep -q "include=~/.config/fuzzel/themes/noctalia" "$CONFIG_FILE"; then
                 echo "Theme already set to noctalia, skipping modification."
@@ -118,9 +127,6 @@ EOF
                 # Add the new theme include line.
                 echo "include=~/.config/fuzzel/themes/noctalia" >> "$CONFIG_FILE"
             fi
-        else
-            echo "Error: fuzzel config file not found at $CONFIG_FILE" >&2
-            exit 1
         fi
         ;;
 

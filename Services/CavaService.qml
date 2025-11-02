@@ -43,10 +43,12 @@ Singleton {
       Logger.d("Cava", "Process running:", running)
     }
     onExited: {
+      Logger.i("Cava", "Process exited")
       stdinEnabled = true
       values = Array(barsCount).fill(0)
     }
     onStarted: {
+      Logger.i("Cava", "Process started")
       for (const k in config) {
         if (typeof config[k] !== "object") {
           write(k + "=" + config[k] + "\n")
@@ -64,6 +66,13 @@ Singleton {
     stdout: SplitParser {
       onRead: data => {
         root.values = data.slice(0, -1).split(";").map(v => parseInt(v, 10) / 100)
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text.trim()) {
+          Logger.w("Cava", "Error", text)
+        }
       }
     }
   }

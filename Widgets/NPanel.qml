@@ -220,7 +220,8 @@ Loader {
         bottomLeftRadius: Style.radiusL
         bottomRightRadius: Style.radiusL
 
-        // Drop shadow effect
+
+        /*// Drop shadow effect
         layer.enabled: true
         layer.effect: MultiEffect {
           shadowEnabled: true
@@ -229,7 +230,7 @@ Loader {
           shadowColor: Color.mShadow
           shadowHorizontalOffset: (barPosition === "left" || barPosition === "top") ? 6 : - 6
           shadowVerticalOffset: (barPosition === "left" || barPosition === "top") ? 6 : - 6
-        }
+        }*/
 
         // Set inverted corners based on panel anchors and bar position
 

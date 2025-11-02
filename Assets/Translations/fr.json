@@ -1710,6 +1710,10 @@
       "disabled": "Couleurs du fond d'écran désactivées",
       "not-installed": "Matugen non installé - requis pour l'extraction des couleurs du fond d'écran"
     },
+    "matugen": {
+      "failed": "Échec du traitement Matugen",
+      "failed-general": "Matugen a rencontré une erreur lors du traitement des modèles"
+    },
     "recording": {
       "stopping": "Arrêt de l'enregistrement...",
       "started": "Enregistrement démarré",
