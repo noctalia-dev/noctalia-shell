@@ -285,4 +285,11 @@ Item {
       MediaService.seekByRatio(positionVal)
     }
   }
+
+  IpcHandler {
+    target: "weather"
+    function toggle() {
+        PanelService.getPanel("weatherPanel")?.toggle();
+    }
+  }
 }
