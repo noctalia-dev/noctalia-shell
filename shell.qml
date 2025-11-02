@@ -32,6 +32,7 @@ import qs.Modules.Bar.Bluetooth
 import qs.Modules.Bar.Battery
 import qs.Modules.Bar.Calendar
 import qs.Modules.Bar.WiFi
+import qs.Modules.Bar.Panels
 
 // Panels & UI Components
 import qs.Modules.ControlCenter
@@ -178,6 +179,13 @@ ShellRoot {
         id: wallpaperPanel
         objectName: "wallpaperPanel"
       }
+      
+      WeatherPanel {
+        objectName: "weatherPanel"
+        id: weatherPanel
+        screen: screens[0]
+      }
+
       BatteryPanel {
         id: batteryPanel
         objectName: "batteryPanel"
