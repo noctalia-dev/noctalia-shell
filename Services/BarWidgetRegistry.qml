@@ -34,6 +34,7 @@ Singleton {
                            "TaskbarGrouped": taskbarGroupedComponent,
                            "Tray": trayComponent,
                            "Volume": volumeComponent,
+                           "Weather": weatherComponent,
                            "WiFi": wiFiComponent,
                            "WallpaperSelector": wallpaperSelectorComponent,
                            "Workspace": workspaceComponent
@@ -144,6 +145,9 @@ Singleton {
                                     "blacklist": [],
                                     "colorizeIcons": false
                                   },
+                                  "Weather": {
+                                    "allowUserSettings": true
+                                  },
                                   "WiFi": {
                                     "allowUserSettings": true,
                                     "displayMode": "onhover"
@@ -226,6 +230,9 @@ Singleton {
   }
   property Component volumeComponent: Component {
     Volume {}
+  }
+  property Component weatherComponent: Component {
+    Weather {}
   }
   property Component wiFiComponent: Component {
     WiFi {}
