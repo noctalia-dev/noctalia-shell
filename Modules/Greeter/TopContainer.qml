@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 
+import Quickshell
+
 import qs.Commons
 import qs.Widgets
 import qs.Modules.Bar.Calendar
@@ -58,7 +60,7 @@ Rectangle {
         anchors.centerIn: parent
         width: 66
         height: 66
-        imagePath: Settings.preprocessPath(Settings.data.general.avatarImage)
+        imagePath: Settings.data.general.avatarImage != "/var/lib/greetd/.face" ? Settings.preprocessPath(Settings.data.general.avatarImage) : Qt.resolvedUrl(Quickshell.shellDir + "/Assets/noctalia.svg")
         fallbackIcon: "person"
 
         SequentialAnimation on scale {
