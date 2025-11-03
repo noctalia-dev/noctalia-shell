@@ -3,7 +3,6 @@ import QtQuick.Layouts
 
 import qs.Commons
 import qs.Widgets
-import qs.Modules.LockScreen
 import qs.Modules.Bar.Calendar
 
 Rectangle {
