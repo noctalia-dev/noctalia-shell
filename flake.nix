@@ -9,6 +9,11 @@
       url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    matugen = {
+      url = "github:/InioX/Matugen";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -16,6 +21,7 @@
     nixpkgs,
     systems,
     quickshell,
+    matugen,
     ...
   }: let
     eachSystem = nixpkgs.lib.genAttrs (import systems);
@@ -32,6 +38,7 @@
             withX11 = false;
             withI3 = true;
           };
+          matugen = matugen.packages.${system}.default;
         };
       }
     );
