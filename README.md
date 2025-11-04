@@ -100,6 +100,7 @@ While all donations are greatly appreciated, they are completely voluntary.
 * LionHeartP
 * Nyxion ツ
 * MrDowntempo
+* Tempus Thales
 
 ---
 

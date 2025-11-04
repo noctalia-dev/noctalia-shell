@@ -159,6 +159,7 @@
         }
       },
       "lock-keys": {
+        "browse": "Göz at",
         "show-caps-lock": {
           "description": "Caps Lock durumunu göster.",
           "label": "Caps Lock"
@@ -170,8 +171,7 @@
         "show-scroll-lock": {
           "description": "Scroll Lock durumunu göster.",
           "label": "Scroll Lock"
-        },
-        "browse": "Göz at"
+        }
       },
       "media-mini": {
         "hide-mode": {
@@ -428,6 +428,7 @@
     },
     "hide-modes": {
       "hidden": "Boşken Gizle",
+      "idle": "Boştayken gizle",
       "transparent": "Boşken Şeffaf",
       "visible": "Her zaman Görünür"
     },
@@ -439,10 +440,10 @@
         "center": "Merkez (varsayılan)",
         "center_left": "Sol merkez",
         "center_right": "Sağ merkez",
+        "follow_bar": "Çubuğu takip et (varsayılan)",
         "top_center": "Üst merkez",
         "top_left": "Sol üst",
-        "top_right": "Sağ üst",
-        "follow_bar": "Çubuğu takip et (varsayılan)"
+        "top_right": "Sağ üst"
       }
     },
     "osd": {
@@ -489,6 +490,17 @@
       "none": "Hiçbiri",
       "wave": "Dalga"
     },
+    "shadow-direction": {
+      "bottom": "Alt",
+      "bottom_left": "Sol alt",
+      "bottom_right": "Sağ alt",
+      "center": "Merkez",
+      "left": "Sol",
+      "right": "Sağ",
+      "top": "Üst",
+      "top_left": "Sol üst",
+      "top_right": "Sağ üst"
+    },
     "workspace-labels": {
       "index": "İndeks",
       "name": "İsim",
@@ -500,6 +512,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "Çalıştırılacak komutu girin (uygulama veya özel komut)",
     "enter-text-to-collapse": "örn., 'nothing is playing'. Desenler için /regex/ kullanın.",
+    "enter-tooltip": "Araç ipucunu girin",
     "enter-width-pixels": "Genişliği piksel olarak girin",
     "profile-picture-path": "/home/user/.face",
     "search": "Ara...",
@@ -507,8 +520,7 @@
     "search-launcher": "Girişleri arayın... veya > komutları için kullanın",
     "search-wallpapers": "Duvar kağıtlarını filtrelemek için yazın...",
     "select": "Seç",
-    "test": "Test",
-    "enter-tooltip": "Araç ipucunu girin"
+    "test": "Test"
   },
   "plugins": {
     "applications": "Uygulamalar",
@@ -730,6 +742,10 @@
           "label": "Kenar boşlukları",
           "vertical": "Dikey"
         },
+        "outer-corners": {
+          "description": "Çubuğun dışa doğru kavisli köşelerini görüntüler.",
+          "label": "Dış köşeler"
+        },
         "position": {
           "description": "Barı ekranda nereye yerleştireceğinizi seçin.",
           "label": "Bar konumu"
@@ -741,10 +757,6 @@
         "show-capsule": {
           "description": "Widget arka planlarını göster.",
           "label": "Kapsülü göster"
-        },
-        "outer-corners": {
-          "description": "Çubuğun dışa doğru kavisli köşelerini görüntüler.",
-          "label": "Dış köşeler"
         }
       },
       "monitors": {
@@ -857,6 +869,10 @@
           "label": "Şablonlar"
         },
         "terminal": {
+          "alacritty": {
+            "description": "{filepath} yaz ve yeniden yükle",
+            "description-missing": "{app} uygulamasının yüklü olmasını gerektirir"
+          },
           "description": "Terminal emülatörü temalandırma.",
           "foot": {
             "description": "{filepath} dosyasına yaz ve yeniden yükle",
@@ -871,10 +887,6 @@
             "description-missing": "Kurulum için {app} gereklidir"
           },
           "label": "Terminal",
-          "alacritty": {
-            "description": "{filepath} yaz ve yeniden yükle",
-            "description-missing": "{app} uygulamasının yüklü olmasını gerektirir"
-          },
           "wezterm": {
             "description": "{filepath} yaz ve yeniden yükle",
             "description-missing": "{app} uygulamasının yüklü olmasını gerektirir"
@@ -912,12 +924,6 @@
         "label": "Görünüm"
       },
       "shortcuts": {
-        "section": {
-          "description": "Kısayut widget'larını yapılandırın ve yönetin.",
-          "label": "Kısayut widget'ları"
-        },
-        "sectionLeft": "Sol",
-        "sectionRight": "Sağ",
         "custom-button": {
           "browse": "Göz at",
           "command": {
@@ -971,7 +977,13 @@
         "dialog": {
           "apply": "Uygula",
           "cancel": "İptal"
-        }
+        },
+        "section": {
+          "description": "Kısayut widget'larını yapılandırın ve yönetin.",
+          "label": "Kısayut widget'ları"
+        },
+        "sectionLeft": "Sol",
+        "sectionRight": "Sağ"
       },
       "title": "Kontrol Merkezi"
     },
@@ -982,21 +994,21 @@
           "description": "Parlaklık değişimleri için adım boyutunu ayarlayın (tekerlek ve klavye kısayolları).",
           "label": "Parlaklık adım boyutu"
         },
-        "enforce-minimum": {
-          "description": "Bazı ekranlarda %0 parlaklıkta arka ışığın tamamen kapanması sorununu çözer.",
-          "label": "Minimum parlaklığı zorla (%1)"
-        },
-        "section": {
-          "description": "Her ekran için parlaklık ayarlarını yapın.",
-          "label": "Ekran başına ayarlar"
-        },
         "brightness-unavailable": {
           "ddc-disabled": "Parlaklık kontrolü kullanılamıyor. Bu ekranın parlaklığını kontrol etmek için \"Harici parlaklık desteği\"ni etkinleştirin.",
           "generic": "Bu ekran için parlaklık kontrolü mevcut değil."
         },
+        "enforce-minimum": {
+          "description": "Bazı ekranlarda %0 parlaklıkta arka ışığın tamamen kapanması sorununu çözer.",
+          "label": "Minimum parlaklığı zorla (%1)"
+        },
         "external-brightness": {
           "description": "Harici ekranlarda parlaklığı DDC/CI protokolü üzerinden kontrol etmek için DDCUtil desteğini etkinleştir.",
           "label": "Harici parlaklık desteği"
+        },
+        "section": {
+          "description": "Her ekran için parlaklık ayarlarını yapın.",
+          "label": "Ekran başına ayarlar"
         }
       },
       "night-light": {
@@ -1476,13 +1488,17 @@
         "label": "Kenar yarıçapı",
         "reset": "Kenar yarıçapını sıfırla"
       },
+      "dim-desktop": {
+        "description": "Paneller veya menüler açıkken masaüstünü karart.",
+        "label": "Masaüstünü karart"
+      },
       "panels-attached-to-bar": {
-        "description": "Etkinleştirildiğinde, paneller harika ters köşe tasarımıyla çubuğa eklenecektir",
-        "label": "Panelleri çubuğa bağla"
+        "description": "Paneller çubuğa ve ekran kenarlarına kilitlenerek şık ters köşelerle kusursuz bir görünüm oluşturur.",
+        "label": "Kenarları Yakala"
       },
       "panels-overlay": {
-        "description": "Paneller tam ekran pencerelerin üzerinde görünecektir",
-        "label": "Panelleri katman olarak aç"
+        "description": "Panellerin ve çubuğun, tam ekran uygulamalarda bile görünür kalmasını sağlar.",
+        "label": "Panelleri ve Çubuğu Üstte Tut"
       },
       "scaling": {
         "description": "Çubuğu hariç tutarak genel kullanıcı arayüzünün boyutunu değiştirir.",
@@ -1493,18 +1509,18 @@
         "description": "Arayüzün görünümünü, hissini ve davranışını özelleştirin.",
         "label": "Görünüm"
       },
+      "shadows": {
+        "description": "Çubukların ve panellerin altında gölgelerin etkinleştirilmesini sağlar.",
+        "label": "Gölge efektleri",
+        "direction": {
+          "description": "Gölgenin hangi yönden verileceğini seçin.",
+          "label": "Gölge yönü"
+        }
+      },
       "title": "Kullanıcı arayüzü",
       "tooltips": {
         "description": "Arayüz genelindeki ipuçlarını etkinleştirin veya devre dışı bırakın.",
         "label": "İpuçlarını göster"
-      },
-      "dim-desktop": {
-        "description": "Paneller veya menüler açıkken masaüstünü karart.",
-        "label": "Masaüstünü karart"
-      },
-      "shadows": {
-        "description": "Çubukların ve panellerin altında gölgelerin etkinleştirilmesini sağlar.",
-        "label": "Gölge efektleri"
       }
     },
     "wallpaper": {

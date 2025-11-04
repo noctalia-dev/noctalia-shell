@@ -47,6 +47,71 @@ ColumnLayout {
       onToggled: checked => Settings.data.general.enableShadows = checked
     }
 
+    // Shadow direction
+    NComboBox {
+      visible: Settings.data.general.enableShadows
+      label: I18n.tr("settings.user-interface.shadows.direction.label")
+      description: I18n.tr("settings.user-interface.shadows.direction.description")
+      Layout.fillWidth: true
+
+      readonly property var shadowOptionsMap: ({
+                                                 "top_left": {
+                                                   "name": I18n.tr("options.shadow-direction.top_left"),
+                                                   "p": Qt.point(-2, -2)
+                                                 },
+                                                 "top": {
+                                                   "name": I18n.tr("options.shadow-direction.top"),
+                                                   "p": Qt.point(0, -3)
+                                                 },
+                                                 "top_right": {
+                                                   "name": I18n.tr("options.shadow-direction.top_right"),
+                                                   "p": Qt.point(2, -2)
+                                                 },
+                                                 "left": {
+                                                   "name": I18n.tr("options.shadow-direction.left"),
+                                                   "p": Qt.point(-3, 0)
+                                                 },
+                                                 "center": {
+                                                   "name": I18n.tr("options.shadow-direction.center"),
+                                                   "p": Qt.point(0, 0)
+                                                 },
+                                                 "right": {
+                                                   "name": I18n.tr("options.shadow-direction.right"),
+                                                   "p": Qt.point(3, 0)
+                                                 },
+                                                 "bottom_left": {
+                                                   "name": I18n.tr("options.shadow-direction.bottom_left"),
+                                                   "p": Qt.point(-2, 2)
+                                                 },
+                                                 "bottom": {
+                                                   "name": I18n.tr("options.shadow-direction.bottom"),
+                                                   "p": Qt.point(0, 3)
+                                                 },
+                                                 "bottom_right": {
+                                                   "name": I18n.tr("options.shadow-direction.bottom_right"),
+                                                   "p": Qt.point(2, 3)
+                                                 }
+                                               })
+
+      model: Object.keys(shadowOptionsMap).map(function (k) {
+        return {
+          "key": k,
+          "name": shadowOptionsMap[k].name
+        }
+      })
+
+      currentKey: Settings.data.general.shadowDirection
+
+      onSelected: function (key) {
+        var opt = shadowOptionsMap[key]
+        if (opt) {
+          Settings.data.general.shadowDirection = key
+          Settings.data.general.shadowOffsetX = opt.p.x
+          Settings.data.general.shadowOffsetY = opt.p.y
+        }
+      }
+    }
+
     NToggle {
       label: I18n.tr("settings.user-interface.panels-overlay.label")
       description: I18n.tr("settings.user-interface.panels-overlay.description")
@@ -116,7 +181,7 @@ ColumnLayout {
         NValueSlider {
           Layout.fillWidth: true
           from: 0
-          to: 1
+          to: 2
           stepSize: 0.01
           value: Settings.data.general.radiusRatio
           onMoved: value => Settings.data.general.radiusRatio = value

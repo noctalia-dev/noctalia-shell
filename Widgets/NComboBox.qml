@@ -8,7 +8,7 @@ import qs.Widgets
 RowLayout {
   id: root
 
-  property real minimumWidth: 280 * Style.uiScaleRatio
+  property real minimumWidth: 200 * Style.uiScaleRatio
   property real popupHeight: 180 * Style.uiScaleRatio
 
   property string label: ""

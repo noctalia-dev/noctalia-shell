@@ -10,6 +10,8 @@ Popup {
   property alias model: listView.model
   property real itemHeight: 36
   property real itemPadding: Style.marginM
+  property int verticalPolicy: ScrollBar.AsNeeded
+  property int horizontalPolicy: ScrollBar.AsNeeded
 
   signal triggered(string action)
 
@@ -31,6 +33,8 @@ Popup {
     implicitHeight: contentHeight
     spacing: Style.marginXXS
     interactive: contentHeight > root.height
+    verticalPolicy: root.verticalPolicy
+    horizontalPolicy: root.horizontalPolicy
 
     delegate: ItemDelegate {
       id: menuItem

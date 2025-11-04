@@ -2,12 +2,14 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
+import qs.Services
 
 Item {
   id: root
 
   // Public API
   property var model: []
+  property var disabledIds: []
   property color activeColor: Color.mPrimary
   property color activeOnColor: Color.mOnPrimary
   property color dragHandleColor: Color.mOutline
@@ -77,6 +79,7 @@ Item {
       property string text: modelData.text || ""
       property bool enabled: modelData.enabled || false
       property bool required: modelData.required || false
+      readonly property bool isDisabled: (root.disabledIds || []).indexOf(modelData.id) !== -1
       property bool dragging: false
       property int dragStartY: 0
       property int dragStartIndex: -1
@@ -88,6 +91,7 @@ Item {
 
         width: parent.width
         spacing: Style.marginS
+        opacity: isDisabled ? 0.5 : 1.0
 
         // Drag handle
         Rectangle {
@@ -123,12 +127,16 @@ Item {
             id: dragHandleMouseArea
 
             anchors.fill: parent
-            cursorShape: Qt.SizeVerCursor
+            cursorShape: (!delegateItem.required && !delegateItem.isDisabled) ? Qt.SizeVerCursor : Qt.ArrowCursor
             hoverEnabled: true
             preventStealing: false
+            enabled: !delegateItem.required && !delegateItem.isDisabled
             z: 1000
 
             onPressed: mouse => {
+                         if (delegateItem.required || delegateItem.isDisabled) {
+                           return
+                         }
                          delegateItem.dragStartIndex = delegateItem.index
                          delegateItem.dragTargetIndex = delegateItem.index
                          delegateItem.dragStartY = delegateItem.y
@@ -221,11 +229,13 @@ Item {
 
           MouseArea {
             anchors.fill: parent
-            cursorShape: delegateItem.required ? Qt.ForbiddenCursor : Qt.PointingHandCursor
-            enabled: !delegateItem.required
+            cursorShape: (!delegateItem.required && !delegateItem.isDisabled) ? Qt.PointingHandCursor : Qt.ArrowCursor
+            enabled: !delegateItem.required && !delegateItem.isDisabled
 
             onClicked: {
-              root.toggleItem(delegateItem.index)
+              if (!delegateItem.required && !delegateItem.isDisabled) {
+                root.toggleItem(delegateItem.index)
+              }
             }
           }
         }

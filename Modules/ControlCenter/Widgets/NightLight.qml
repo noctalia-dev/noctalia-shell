@@ -1,6 +1,7 @@
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
+import qs.Modules.Settings
 import qs.Services
 import qs.Widgets
 

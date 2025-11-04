@@ -19,7 +19,9 @@ RowLayout {
   signal exited
 
   Layout.fillWidth: true
+
   opacity: enabled ? 1.0 : 0.6
+  spacing: Style.marginM
 
   NLabel {
     label: root.label
@@ -28,6 +30,8 @@ RowLayout {
 
   Rectangle {
     id: switcher
+
+    Layout.alignment: Qt.AlignVCenter
 
     implicitWidth: Math.round(root.baseSize * .85) * 2
     implicitHeight: Math.round(root.baseSize * .5) * 2

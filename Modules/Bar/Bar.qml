@@ -27,6 +27,9 @@ Item {
   readonly property real barMarginH: barFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
   readonly property real barMarginV: barFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
 
+  // Attachment overlap to fix hairline gap with fractional scaling
+  readonly property real attachmentOverlap: 1
+
   // Fill the parent (the Loader)
   anchors.fill: parent
 
@@ -44,7 +47,16 @@ Item {
   Loader {
     id: barContentLoader
     anchors.fill: parent
-    active: root.screen !== null && root.screen !== undefined
+    active: {
+      if (root.screen === null || root.screen === undefined) {
+        return false
+      }
+
+      var monitors = Settings.data.bar.monitors || []
+      var result = monitors.length === 0 || monitors.includes(root.screen.name)
+
+      return result
+    }
 
     sourceComponent: Item {
       anchors.fill: parent
@@ -54,10 +66,31 @@ Item {
         id: bar
 
         // Position and size the bar based on orientation and floating margins
-        x: (root.barPosition === "right") ? (parent.width - Style.barHeight - root.barMarginH) : root.barMarginH
-        y: (root.barPosition === "bottom") ? (parent.height - Style.barHeight - root.barMarginV) : root.barMarginV
-        width: root.barIsVertical ? Style.barHeight : (parent.width - root.barMarginH * 2)
-        height: root.barIsVertical ? (parent.height - root.barMarginV * 2) : Style.barHeight
+        // Extend the bar by attachmentOverlap to eliminate hairline gap
+        x: {
+          var baseX = (root.barPosition === "right") ? (parent.width - Style.barHeight - root.barMarginH) : root.barMarginH
+          if (root.barPosition === "right")
+            return baseX - root.attachmentOverlap // Extend left towards panels
+          return baseX
+        }
+        y: {
+          var baseY = (root.barPosition === "bottom") ? (parent.height - Style.barHeight - root.barMarginV) : root.barMarginV
+          if (root.barPosition === "bottom")
+            return baseY - root.attachmentOverlap // Extend up towards panels
+          return baseY
+        }
+        width: {
+          var baseWidth = root.barIsVertical ? Style.barHeight : (parent.width - root.barMarginH * 2)
+          if (!root.barIsVertical)
+            return baseWidth // Horizontal bars extend via height, not width
+          return baseWidth + root.attachmentOverlap + 1
+        }
+        height: {
+          var baseHeight = root.barIsVertical ? (parent.height - root.barMarginV * 2) : Style.barHeight
+          if (!root.barIsVertical)
+            return baseHeight + root.attachmentOverlap
+          return baseHeight // Vertical bars extend via width, not height
+        }
 
         backgroundColor: Qt.alpha(Color.mSurface, Settings.data.bar.backgroundOpacity)
 

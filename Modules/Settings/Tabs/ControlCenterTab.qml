@@ -86,6 +86,10 @@ ColumnLayout {
         if (settingCard.id === cardsDefault[j].id) {
           var card = cardsDefault[j]
           card.enabled = settingCard.enabled
+          // Auto-disable weather card if weather is disabled
+          if (card.id === "weather-card" && !Settings.data.location.weatherEnabled) {
+            card.enabled = false
+          }
           cardsModel.push(card)
         }
       }
@@ -102,7 +106,12 @@ ColumnLayout {
       }
 
       if (!found) {
-        cardsModel.push(cardsDefault[i])
+        var card = cardsDefault[i]
+        // Auto-disable weather card if weather is disabled
+        if (card.id === "weather-card" && !Settings.data.location.weatherEnabled) {
+          card.enabled = false
+        }
+        cardsModel.push(card)
       }
     }
 
@@ -171,9 +180,28 @@ ColumnLayout {
       description: I18n.tr("settings.control-center.cards.section.description")
     }
 
+    Connections {
+      target: Settings.data.location
+      function onWeatherEnabledChanged() {
+        // Auto-disable weather card when weather is disabled
+        var newModel = cardsModel.slice()
+        for (var i = 0; i < newModel.length; i++) {
+          if (newModel[i].id === "weather-card") {
+            newModel[i] = Object.assign({}, newModel[i], {
+                                          "enabled": Settings.data.location.weatherEnabled
+                                        })
+            cardsModel = newModel
+            saveCards()
+            break
+          }
+        }
+      }
+    }
+
     NReorderCheckboxes {
       Layout.fillWidth: true
       model: cardsModel
+      disabledIds: Settings.data.location.weatherEnabled ? [] : ["weather-card"]
       onDragPotentialStarted: {
         root.handleDragStart()
       }

@@ -12,7 +12,7 @@ NPanel {
   id: root
 
   preferredWidth: 820 * Style.uiScaleRatio
-  preferredHeight: 940 * Style.uiScaleRatio
+  preferredHeight: 900 * Style.uiScaleRatio
 
   panelAnchorHorizontalCenter: true
   panelAnchorVerticalCenter: true
@@ -335,6 +335,8 @@ NPanel {
         // Sidebar
         Rectangle {
           id: sidebar
+
+          clip: true
           Layout.preferredWidth: 220 * Style.uiScaleRatio
           Layout.fillHeight: true
           Layout.alignment: Qt.AlignTop

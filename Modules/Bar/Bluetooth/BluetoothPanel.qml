@@ -219,7 +219,9 @@ NPanel {
                 text: I18n.tr("bluetooth.panel.pairing-mode")
                 pointSize: Style.fontSizeM
                 color: Color.mOnSurfaceVariant
-                Layout.alignment: Qt.AlignHCenter
+                horizontalAlignment: Text.AlignHCenter
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
               }
             }
           }

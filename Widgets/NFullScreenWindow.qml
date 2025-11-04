@@ -18,8 +18,8 @@ PanelWindow {
   // Shadow properties
   property real shadowOpacity: 1.0
   property real shadowBlur: 1.0
-  property real shadowHorizontalOffset: 2
-  property real shadowVerticalOffset: 3
+  property real shadowHorizontalOffset: Settings.data.general.shadowOffsetX
+  property real shadowVerticalOffset: Settings.data.general.shadowOffsetY
 
   property color black: "#000000"
   property color white: "#ffffff"
@@ -451,6 +451,9 @@ PanelWindow {
       id: barLoader
       asynchronous: false
       sourceComponent: root.barComponent
+      // Keep bar loaded but hide it when BarService.isVisible is false
+      // This allows panels to remain accessible via IPC
+      visible: BarService.isVisible
 
       // Fill parent to provide dimensions for Bar to reference
       anchors.fill: parent

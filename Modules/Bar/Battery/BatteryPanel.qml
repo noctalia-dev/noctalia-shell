@@ -10,10 +10,6 @@ import qs.Widgets
 NPanel {
   id: root
 
-  preferredWidth: 350 * Style.uiScaleRatio
-  preferredHeight: (!BatteryService.conservationModeEnabled ? 250 : 190) * Style.uiScaleRatio
-  panelKeyboardFocus: true
-
   property var optionsModel: []
 
   function updateOptionsModel() {
@@ -45,11 +41,52 @@ NPanel {
     !BatteryService.conservationModeEnabled ? updateOptionsModel() : updateOptionsModel2()
   }
 
+  ButtonGroup {
+    id: batteryGroup
+  }
+
+  Component {
+    id: optionsComponent
+    ColumnLayout {
+      spacing: Style.marginM
+      Repeater {
+        model: root.optionsModel
+        delegate: NRadioButton {
+          ButtonGroup.group: batteryGroup
+          required property var modelData
+          text: I18n.tr(modelData.label, {
+                          "percent": BatteryService.getThresholdValue(modelData.id)
+                        })
+          checked: BatteryService.chargingMode === modelData.id
+          onClicked: {
+            BatteryService.setChargingMode(modelData.id)
+          }
+          Layout.fillWidth: true
+        }
+      }
+    }
+  }
+
+  Component {
+    id: disabledComponent
+    NText {
+      text: I18n.tr("battery.panel.disabled")
+      pointSize: Style.fontSizeL
+      color: Color.mOnSurfaceVariant
+      wrapMode: Text.WordWrap
+      horizontalAlignment: Text.AlignHCenter
+    }
+  }
+
   panelContent: Item {
     anchors.fill: parent
+    property real contentPreferredHeight: mainLayout.implicitHeight + Style.marginM * 2
+    property real contentPreferredWidth: 350 * Style.uiScaleRatio
 
     ColumnLayout {
-      anchors.fill: parent
+      id: mainLayout
+      anchors.centerIn: parent
+      width: parent.contentPreferredWidth - Style.marginM * 2
       anchors.margins: Style.marginM
       spacing: Style.marginM
 
@@ -90,57 +127,15 @@ NPanel {
         }
       }
 
-      ButtonGroup {
-        id: batteryGroup
-      }
-
       NBox {
         Layout.fillWidth: true
-        Layout.fillHeight: true
+        Layout.preferredHeight: loader.implicitHeight + Style.marginM * 2
 
-        ColumnLayout {
-          anchors.fill: parent
-          anchors.margins: Style.marginM
-          spacing: Style.marginM
-
-          Repeater {
-            model: optionsModel
-
-            NRadioButton {
-              visible: BatteryService.chargingMode !== BatteryService.ChargingMode.Disabled
-              ButtonGroup.group: batteryGroup
-              required property var modelData
-              text: I18n.tr(modelData.label, {
-                              "percent": BatteryService.getThresholdValue(modelData.id)
-                            })
-              checked: BatteryService.chargingMode === modelData.id
-              onClicked: {
-                BatteryService.setChargingMode(modelData.id)
-              }
-              Layout.fillWidth: true
-            }
-          }
-        }
-
-        ColumnLayout {
-          visible: BatteryService.chargingMode === BatteryService.ChargingMode.Disabled
-          anchors.fill: parent
-          spacing: Style.marginM
-
-          Item {
-            Layout.fillHeight: true
-          }
-
-          NText {
-            text: I18n.tr("battery.panel.disabled")
-            pointSize: Style.fontSizeL
-            color: Color.mOnSurfaceVariant
-            Layout.alignment: Qt.AlignHCenter
-          }
-
-          Item {
-            Layout.fillHeight: true
-          }
+        Loader {
+          id: loader
+          anchors.centerIn: parent
+          width: parent.width - Style.marginM * 2
+          sourceComponent: BatteryService.chargingMode === BatteryService.ChargingMode.Disabled ? disabledComponent : optionsComponent
         }
       }
     }

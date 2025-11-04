@@ -355,21 +355,6 @@ Item {
 
       // Execute pending callback if any
       if (pendingCallback) {
-        // Verify we have a NFullScreenWindow for this screen
-        var monitors = Settings.data.bar.monitors || []
-        if (!(monitors.length === 0 || monitors.includes(detectedScreen.name))) {
-          // Fall back to first enabled screen as we can NOT show a panel on a screen without a Bar/NFullScreenWindow
-          if (monitors.length === 0 && Quickshell.screens.length > 0) {
-            detectedScreen = Quickshell.screens[0]
-          } else {
-            for (var i = 0; i < Quickshell.screens.length; i++) {
-              if (monitors.includes(Quickshell.screens[i].name)) {
-                detectedScreen = Quickshell.screens[i]
-                break
-              }
-            }
-          }
-        }
         Logger.d("IPC", "Executing pending IPC callback on screen:", detectedScreen.name)
         pendingCallback(detectedScreen)
         pendingCallback = null

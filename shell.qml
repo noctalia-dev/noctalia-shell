@@ -206,16 +206,11 @@ ShellRoot {
       property bool shouldBeActive: {
         if (!i18nLoaded || !settingsLoaded)
           return false
-        if (!BarService.isVisible)
-          return false
         if (!modelData || !modelData.name)
           return false
 
-        var monitors = Settings.data.bar.monitors || []
-        var result = monitors.length === 0 || monitors.includes(modelData.name)
-
-        Logger.d("Shell", "NFullScreenWindow Loader for", modelData?.name, "- shouldBeActive:", result, "- monitors:", JSON.stringify(monitors))
-        return result
+        Logger.d("Shell", "NFullScreenWindow activated for", modelData?.name)
+        return true
       }
 
       property bool windowLoaded: false
@@ -283,9 +278,16 @@ ShellRoot {
       }
 
       // BarExclusionZone - created after NFullScreenWindow has fully loaded
-      // Must also be disabled when bar is disabled (follows shouldBeActive)
+      // Disabled when bar is hidden or not configured for this screen
       Loader {
-        active: parent.windowLoaded && parent.shouldBeActive
+        active: {
+          if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.isVisible)
+            return false
+
+          // Check if bar is configured for this screen
+          var monitors = Settings.data.bar.monitors || []
+          return monitors.length === 0 || monitors.includes(modelData?.name)
+        }
         asynchronous: false
 
         sourceComponent: BarExclusionZone {

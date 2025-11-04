@@ -611,8 +611,10 @@ NPanel {
 
                       onClicked: {
                         const dateWithSlashes = `${(modelData.month + 1).toString().padStart(2, '0')}/${modelData.day.toString().padStart(2, '0')}/${modelData.year.toString().substring(2)}`
-                        Quickshell.execDetached(["gnome-calendar", "--date", dateWithSlashes])
-                        root.close()
+                        if (ProgramCheckerService.gnomeCalendarAvailable) {
+                          Quickshell.execDetached(["gnome-calendar", "--date", dateWithSlashes])
+                          root.close()
+                        }
                       }
 
                       onExited: {

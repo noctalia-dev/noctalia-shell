@@ -272,10 +272,10 @@ extract_empty_keys() {
 # Function to remove empty objects recursively from JSON file
 remove_empty_objects() {
     local json_file=$1
-    
+
     # Create a temporary file
     local temp_file=$(mktemp)
-    
+
     # Use jq to recursively remove empty objects
     # This function walks the entire JSON tree and removes any object that contains no leaf values
     jq '
@@ -303,7 +303,26 @@ remove_empty_objects() {
             end;
         remove_empty
     ' "$json_file" > "$temp_file" 2>/dev/null
-    
+
+    if [[ $? -eq 0 ]]; then
+        mv "$temp_file" "$json_file"
+        return 0
+    else
+        rm -f "$temp_file"
+        return 1
+    fi
+}
+
+# Function to sort JSON keys alphabetically (recursively)
+sort_json_keys() {
+    local json_file=$1
+
+    # Create a temporary file
+    local temp_file=$(mktemp)
+
+    # Use jq to recursively sort all object keys
+    jq --sort-keys '.' "$json_file" > "$temp_file" 2>/dev/null
+
     if [[ $? -eq 0 ]]; then
         mv "$temp_file" "$json_file"
         return 0
@@ -329,7 +348,7 @@ generate_header() {
     echo "Reference file: $REFERENCE_FILE"
     echo "Folder: $(realpath "$FOLDER_PATH")"
     if $TRANSLATE_MODE; then
-        echo "Mode: TRANSLATION ENABLED (translates missing keys, removes extra/empty keys and empty objects)"
+        echo "Mode: TRANSLATION ENABLED (translates missing keys, removes extra/empty keys and empty objects, sorts all keys alphabetically)"
     fi
     echo ""
     echo "Notes:"
@@ -342,6 +361,7 @@ generate_header() {
     echo "- Results are sorted by descending line numbers for easier editing"
     if $TRANSLATE_MODE; then
         echo "- In translation mode, extra keys, empty keys, and empty objects are automatically removed"
+        echo "- In translation mode, all keys are sorted alphabetically to ensure consistency across languages"
     fi
     echo ""
     echo "This report compares all language JSON files against the English reference file"
@@ -622,8 +642,18 @@ compare_language() {
             print_color $RED "✗ Failed to clean up empty objects" >&2
             echo ""
         fi
+
+        # Sort all keys alphabetically to maintain consistency across language files
+        print_color $BLUE "Sorting keys alphabetically in $lang_name..." >&2
+        if sort_json_keys "$lang_file"; then
+            print_color $GREEN "✓ Keys sorted alphabetically" >&2
+            echo ""
+        else
+            print_color $RED "✗ Failed to sort keys" >&2
+            echo ""
+        fi
     fi
-    
+
     # Clean up
     rm -f "$lang_keys_file"
 }
@@ -699,12 +729,24 @@ main() {
     
     # Generate report header
     generate_header
-    
+
+    # Sort the English reference file if in translate mode
+    if $TRANSLATE_MODE; then
+        print_color $BLUE "Sorting keys alphabetically in English reference file..." >&2
+        if sort_json_keys "$ref_file_path"; then
+            print_color $GREEN "✓ English reference file keys sorted alphabetically" >&2
+            echo "" >&2
+        else
+            print_color $RED "✗ Failed to sort English reference file keys" >&2
+            echo "" >&2
+        fi
+    fi
+
     local processed=0
     for lang_file in "${language_files[@]}"; do
         local filename=$(basename "$lang_file")
         local lang_name="${filename%.json}"
-        
+
         # Skip the reference file in all-languages mode
         if [[ -z "$target_language" && "$filename" == "$REFERENCE_FILE" ]]; then
             continue
@@ -737,7 +779,7 @@ main() {
         echo "Target language: $target_language"
     fi
     if $TRANSLATE_MODE; then
-        echo "Translation mode: ENABLED (translated missing keys, removed extra keys, removed empty keys and objects)"
+        echo "Translation mode: ENABLED (translated missing keys, removed extra keys, removed empty keys and objects, sorted keys alphabetically)"
     fi
     echo "Report generated: $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
@@ -761,8 +803,9 @@ show_usage() {
     echo "" >&2
     echo "Arguments:" >&2
     echo "  --translate    Enable automatic translation of missing keys, removal of extra keys," >&2
-    echo "                 removal of empty keys (empty strings or null values), and removal of" >&2
-    echo "                 empty objects (nested objects containing no actual values)" >&2
+    echo "                 removal of empty keys (empty strings or null values), removal of" >&2
+    echo "                 empty objects (nested objects containing no actual values), and" >&2
+    echo "                 alphabetical sorting of all keys for consistency" >&2
     echo "  --list-models  List all available Gemini models and exit" >&2
     echo "  language_code  Optional. Compare only the specified language (e.g., 'fr', 'es', 'de')" >&2
     echo "                 If not provided, all language files will be compared" >&2
@@ -775,8 +818,8 @@ show_usage() {
     echo "  $0                    # Compare all languages" >&2
     echo "  $0 fr                 # Compare only French (fr.json)" >&2
     echo "  $0 --list-models      # List available Gemini models" >&2
-    echo "  $0 --translate        # Compare all, translate missing, remove extra/empty keys and objects" >&2
-    echo "  $0 --translate fr     # Translate and clean French only" >&2
+    echo "  $0 --translate        # Compare all, translate missing, remove extra/empty keys and objects, sort keys" >&2
+    echo "  $0 --translate fr     # Translate, clean, and sort French only" >&2
     echo "" >&2
     echo "Requirements:" >&2
     echo "  - jq must be installed" >&2
@@ -790,6 +833,7 @@ show_usage() {
     echo "  - Progress messages are printed to stderr" >&2
     echo "  - Results are sorted by descending line numbers for easier editing" >&2
     echo "  - In translate mode, extra keys, empty keys, and empty objects are removed" >&2
+    echo "  - In translate mode, all keys are sorted alphabetically for consistency" >&2
 }
 
 # Handle command line arguments

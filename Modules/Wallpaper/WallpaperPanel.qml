@@ -424,7 +424,7 @@ NPanel {
 
         model: filteredWallpapers
 
-        property int columns: 5
+        property int columns: (screen.width > 1920) ? 5 : 4
         property int itemSize: cellWidth
 
         cellWidth: Math.floor((width - leftMargin - rightMargin) / columns)
