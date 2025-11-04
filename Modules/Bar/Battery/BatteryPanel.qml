@@ -11,7 +11,8 @@ NPanel {
   id: root
 
   preferredWidth: 350 * Style.uiScaleRatio
-  preferredHeight: 210 * Style.uiScaleRatio
+  preferredHeight: (!BatteryService.conservationModeEnabled ? 250 : 190) * Style.uiScaleRatio
+  panelKeyboardFocus: true
 
   property var optionsModel: []
 
@@ -28,9 +29,20 @@ NPanel {
                       }]
     root.optionsModel = newOptions
   }
+  
+  function updateOptionsModel2() {
+    let newOptions = [{
+                        "id": BatteryService.ChargingMode.Full,
+                        "label": "battery.panel.full"
+                      }, {
+                        "id": BatteryService.ChargingMode.Balanced,
+                        "label": "battery.panel.balanced"
+                      }]
+    root.optionsModel = newOptions
+  }
 
   onOpened: {
-    updateOptionsModel()
+    !BatteryService.conservationModeEnabled ? updateOptionsModel() : updateOptionsModel2()
   }
 
   panelContent: Item {

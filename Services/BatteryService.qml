@@ -17,7 +17,9 @@ Singleton {
   }
 
   property int chargingMode: Settings.data.battery.chargingMode
+  property bool conservationModeEnabled: false
   readonly property string batterySetterScript: Quickshell.shellDir + '/Bin/battery-manager/set-battery-treshold.sh'
+  readonly property string conservationModeScript: Quickshell.shellDir + '/Bin/battery-manager/set-conservation-mode.sh'
   readonly property string batteryInstallerScript: Quickshell.shellDir + '/Bin/battery-manager/install-battery-manager.sh'
   readonly property string batteryUninstallerScript: Quickshell.shellDir + '/Bin/battery-manager/uninstall-battery-manager.sh'
 
@@ -83,13 +85,16 @@ Singleton {
   }
 
   function applyChargingMode() {
-    let command = [batterySetterScript]
+    let command = !BatteryService.conservationModeEnabled ? [batterySetterScript] : [conservationModeScript]
 
     // Currently the script sends notifications by default but quickshell
     // uses toast messages so the flag is passed to supress notifs
     command.push("-q")
-
-    command.push(BatteryService.getThresholdValue(BatteryService.chargingMode))
+    if (!BatteryService.conservationModeEnabled) {
+      command.push(BatteryService.getThresholdValue(BatteryService.chargingMode))
+    } else {
+      command.push((BatteryService.chargingMode === BatteryService.ChargingMode.Balanced) ? 1 : 0)
+    }
 
     setterProcess.command = command
     setterProcess.running = true
@@ -101,8 +106,28 @@ Singleton {
   }
 
   function init() {
-    if (BatteryService.chargingMode !== BatteryService.ChargingMode.Disabled && BatteryService.chargingMode !== BatteryService.ChargingMode.Full) {
-      BatteryService.applyChargingMode()
+    checkConservationMode()
+  }
+  
+  // Check if the system uses the Lenovo battery conservation mode 
+  function checkConservationMode() {
+    fileChecker.running = true
+  }
+  
+  Process {
+    id: fileChecker
+    command: ["sh", "-c", "[ -f /sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode ]"]
+    running: false
+    onExited: (exitCode, exitStatus) => {
+      if (exitCode === 0) {
+        BatteryService.conservationModeEnabled = true
+        BatteryService.initialSetter = false
+        if (BatteryService.chargingMode !== BatteryService.ChargingMode.Disabled) {
+          Logger.i("BatteryService", "Lenovo conservation mode is used for battery threshold")
+        }
+      } else if (BatteryService.chargingMode !== BatteryService.ChargingMode.Disabled && BatteryService.chargingMode !== BatteryService.ChargingMode.Full) {
+        BatteryService.applyChargingMode()
+      }
     }
   }
 
@@ -119,7 +144,7 @@ Singleton {
         }
         ToastService.showNotice(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.set-success-desc", {
                                                                                   "percent": BatteryService.getThresholdValue(BatteryService.chargingMode)
-                                                                                }), "battery")
+                                                                                }))
         Settings.data.battery.chargingMode = BatteryService.chargingMode
       } else if (exitCode === 2) {
         ToastService.showWarning(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.initial-setup"))
@@ -154,7 +179,8 @@ Singleton {
     onExited: (exitCode, exitStatus) => {
       if (exitCode === 0) {
         ToastService.showNotice(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.install-success"))
-        BatteryService.applyChargingMode()
+        setChargingMode(BatteryService.ChargingMode.Full)
+        Settings.data.battery.chargingMode = BatteryService.ChargingMode.Full
       } else if (exitCode === 2) {
         ToastService.showError(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.install-missing"))
       } else if (exitCode === 3) {
@@ -192,7 +218,7 @@ Singleton {
       if (exitCode === 0) {
         Logger.i("BatteryService", "Battery Manager uninstalled successfully")
         ToastService.showNotice(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.uninstall-success"))
-        Settings.data.battery.chargingMode = BatteryService.chargingMode
+        Settings.data.battery.chargingMode = BatteryService.ChargingMode.Disabled
         BatteryService.chargingMode = BatteryService.ChargingMode.Disabled
         cleanupProcess.running = true
       } else {
@@ -216,7 +242,7 @@ Singleton {
     }
   }
 
-  // Cleanup process - deletes uninstaller after it sucessfull ;
+  // Cleanup process - deletes uninstaller after it's successful
   Process {
     id: cleanupProcess
     workingDirectory: Quickshell.shellDir
