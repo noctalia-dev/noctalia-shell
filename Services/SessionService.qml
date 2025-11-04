@@ -47,7 +47,7 @@ Singleton {
   Process {
     id: sessions
 
-    command: [Qt.resolvedUrl("../scripts/session.sh"), root.sessionsDir || ""]
+    command: [Quickshell.shellDir + "/Assets/Greeter/scripts/session.sh", root.sessionsDir || ""]
     running: true
 
     stderr: SplitParser {
