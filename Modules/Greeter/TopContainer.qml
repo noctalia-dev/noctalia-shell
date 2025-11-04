@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 
 import Quickshell
+import Quickshell.Io
 
 import qs.Commons
 import qs.Widgets
@@ -12,6 +13,8 @@ Rectangle {
 
   required property string userName
 
+  property string avatar
+
   width: Math.max(500, contentRow.implicitWidth + 32)
   height: Math.max(120, contentRow.implicitHeight + 32)
 
@@ -19,6 +22,27 @@ Rectangle {
   color: Color.mSurface
   border.color: Qt.alpha(Color.mOutline, 0.2)
   border.width: 1
+
+  Process {
+    id: avatarProcess
+
+    command: [Quickshell.shellDir + "/Assets/Greeter/scripts/avatar.sh", root.userName]
+    running: root.userName !== ""
+
+    stdout: SplitParser {
+      onRead: data => {
+                root.avatar = data.trim()
+                Logger.d("Avatar fetched for user " + root.userName + ": " + root.avatar)
+              }
+    }
+
+    onExited: (code, status) => {
+                if (code !== 0) {
+                  Logger.e("Failed to fetch avatar for user " + root.userName)
+                  root.avatar = Quickshell.shellDir + "/Assets/noctalia.svg"
+                }
+              }
+  }
 
   RowLayout {
     id: contentRow
@@ -60,7 +84,7 @@ Rectangle {
         anchors.centerIn: parent
         width: 66
         height: 66
-        imagePath: Settings.data.general.avatarImage != "/var/lib/greetd/.face" ? Settings.preprocessPath(Settings.data.general.avatarImage) : Qt.resolvedUrl(Quickshell.shellDir + "/Assets/noctalia.svg")
+        imagePath: root.avatar
         fallbackIcon: "person"
 
         SequentialAnimation on scale {
