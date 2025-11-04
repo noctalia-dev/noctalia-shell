@@ -106,16 +106,12 @@ Singleton {
   }
 
   function init() {
-    checkConservationMode()
+    batteryModeProbe.running = true
   }
   
-  // Check if the system uses the Lenovo battery conservation mode 
-  function checkConservationMode() {
-    fileChecker.running = true
-  }
-  
+  // Check if the system uses the Lenovo battery conservation mode  
   Process {
-    id: fileChecker
+    id: batteryModeProbe
     command: ["sh", "-c", "[ -f /sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode ]"]
     running: false
     onExited: (exitCode, exitStatus) => {
