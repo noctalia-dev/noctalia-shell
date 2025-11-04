@@ -25,13 +25,13 @@ in {
 
     settings = lib.mkOption {
       type = with lib.types;
-        nullOr (oneOf [
+        oneOf [
           attrs
           str
           path
-        ]);
+        ];
       default = {};
-      apply = x: lib.recursiveUpdate defaultSettings (extractAttrs x);
+      apply = x: if x == {} then x else lib.recursiveUpdate defaultSettings (extractAttrs x);
       example = lib.literalExpression ''
         {
           bar = {
@@ -111,8 +111,9 @@ in {
           Documentation = "https://docs.noctalia.dev/docs";
           PartOf = [ config.wayland.systemd.target ];
           After = [ config.wayland.systemd.target ];
-          X-Restart-Triggers = [ "${config.xdg.configFile."noctalia/settings.json".source}" ]
-            ++ lib.optional (cfg.colors != { }) "${config.xdg.configFile."noctalia/colors.json".source}";
+          X-Restart-Triggers =
+            lib.optional (cfg.settings != {}) "${config.xdg.configFile."noctalia/settings.json".source}"
+            ++ lib.optional (cfg.colors != {}) "${config.xdg.configFile."noctalia/colors.json".source}";
         };
 
         Service = {
@@ -126,11 +127,12 @@ in {
         Install.WantedBy = [ config.wayland.systemd.target ];
       };
 
-      home.packages = lib.optional useApp2Unit cfg.app2unit.package
+      home.packages =
+        lib.optional useApp2Unit cfg.app2unit.package
         ++ lib.optional (cfg.package != null) cfg.package;
 
       xdg.configFile = {
-        "noctalia/settings.json" = {
+        "noctalia/settings.json" = lib.mkIf (cfg.settings != {}) {
           onChange = lib.mkIf (!cfg.systemd.enable) restart;
           text = builtins.toJSON cfg.settings;
         };
