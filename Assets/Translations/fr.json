@@ -776,6 +776,10 @@
           "label": "Liste noire",
           "placeholder": "ex: nm-applet, Fcitx*"
         },
+        "use-dropdown-mode": {
+          "label": "Utiliser le mode menu déroulant",
+          "description": "Lorsqu'il est activé, les éléments de la barre d'état sont masqués dans un menu déroulant. Les favoris peuvent être épinglés à la barre."
+        },
         "pin-application": "Épingler l'Application",
         "unpin-application": "Désépingler l'Application",
         "back": "Retour"
