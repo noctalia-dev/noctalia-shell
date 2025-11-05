@@ -776,6 +776,10 @@
           "label": "Lista negra",
           "placeholder": "ej., nm-applet, Fcitx*"
         },
+        "use-dropdown-mode": {
+          "label": "Usar modo desplegable",
+          "description": "Cuando está activado, los elementos de la bandeja se ocultan en un menú desplegable. Los favoritos se pueden anclar a la barra."
+        },
         "pin-application": "Fijar Aplicación",
         "unpin-application": "Desfijar Aplicación",
         "back": "Atrás"
