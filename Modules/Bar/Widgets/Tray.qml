@@ -161,8 +161,24 @@ Rectangle {
   }
 
   visible: filteredItems.length > 0 || (root.mode === "dropdown" && dropdownItems.length > 0)
-  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(horizontalTrayLayout.implicitWidth + Style.marginM * 2)
-  implicitHeight: isVertical ? Math.round(verticalTrayLayout.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
+  implicitWidth: {
+    if (isVertical) {
+      return Style.capsuleHeight
+    }
+    if (root.mode === "dropdown" && filteredItems.length === 0) {
+      return horizontalTrayLayout.implicitWidth;
+    }
+    return Math.round(horizontalTrayLayout.implicitWidth + Style.marginM * 2)
+  }
+  implicitHeight: {
+    if (!isVertical) {
+      return Style.capsuleHeight
+    }
+    if (root.mode === "dropdown" && filteredItems.length === 0) {
+      return verticalTrayLayout.implicitHeight;
+    }
+    return Math.round(verticalTrayLayout.implicitHeight + Style.marginM * 2)
+  }
   radius: Style.radiusM
   color: {
     if (root.mode === "dropdown" && filteredItems.length === 0) {
@@ -246,30 +262,21 @@ Rectangle {
                            return
                          }
 
-                                                    if (modelData.hasMenu && modelData.menu && trayMenu.item) {
-                                                      // Position menu based on bar position
-                                                      let menuX, menuY
-                                                      if (barPosition === "left") {
-                                                        // For left bar: position menu to the right of the bar
-                                                        menuX = width + Style.marginM
-                                                        menuY = 0
-                                                      } else if (barPosition === "right") {
-                                                        // For right bar: position menu to the left of the bar
-                                                        menuX = -trayMenu.item.width - Style.marginM
-                                                        menuY = 0
-                                                      } else {
-                                                        // For horizontal bars: center horizontally and position below
-                                                        menuX = (width / 2) - (trayMenu.item.width / 2)
-                                                        menuY = Style.barHeight
-                                                      }
-                                                      trayMenu.item.menu = modelData.menu
-                                                      trayMenu.item.trayItem = modelData
-                                                      trayMenu.item.widgetSection = root.section
-                                                      trayMenu.item.widgetIndex = root.sectionWidgetIndex
-                                                      trayMenu.item.showAt(parent, menuX, menuY)
-                                                    } else {
-                                                      Logger.i("Tray", "No menu available for", modelData.id, "or trayMenu not set")
-                                                    }                       }
+                         if (modelData.hasMenu && modelData.menu) {
+                           const panel = PanelService.getPanel("trayMenu", root.screen)
+                           if (panel) {
+                             panel.menu = modelData.menu
+                             panel.trayItem = modelData
+                             panel.widgetSection = root.section
+                             panel.widgetIndex = root.sectionWidgetIndex
+                             panel.openAt(parent)
+                           } else {
+                             Logger.i("Tray", "TrayMenu not available")
+                           }
+                         } else {
+                           Logger.i("Tray", "No menu available for", modelData.id, "or trayMenu not set")
+                         }
+                       }
                      }
           onEntered: {
             trayPanel.close()
@@ -348,7 +355,7 @@ Rectangle {
   RowLayout {
     id: horizontalTrayLayout
     anchors.centerIn: parent
-    spacing: Style.marginM
+    spacing: Style.marginS
     visible: !isVertical
 
     Repeater {
@@ -365,7 +372,7 @@ Rectangle {
   ColumnLayout {
     id: verticalTrayLayout
     anchors.centerIn: parent
-    spacing: Style.marginM
+    spacing: Style.marginS
     visible: isVertical
 
     Repeater {
