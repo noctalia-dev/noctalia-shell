@@ -40,7 +40,7 @@ Rectangle {
   property list<string> favorites: widgetSettings.favorites || widgetMetadata.favorites || []
   property var filteredItems: [] // Items to show inline (favorites)
   property var dropdownItems: [] // Items to show in dropdown (non-favorites)
-  property string mode: widgetSettings.mode || widgetMetadata.mode || "inline" // New property for display mode
+  property string mode: widgetSettings.mode || widgetMetadata.mode || "inline"
 
   function wildCardMatch(str, rule) {
     if (!str || !rule) {
@@ -80,14 +80,9 @@ Rectangle {
 
   function _performFilteredItemsUpdate() {
     const allItems = (SystemTray.items && SystemTray.items.values) ? SystemTray.items.values : [];
-    const currentMode = root.mode; // Use the new mode property
+    const currentMode = root.mode;
 
     if (currentMode === "dropdown") {
-        // --- Dropdown Mode ---
-        // Favorites are shown inline.
-        // All other items go into the dropdown.
-        // Blacklist is ignored in this mode.
-
         let fav = [];
         let nonFav = [];
 
@@ -109,18 +104,13 @@ Rectangle {
                 }
             }
         } else {
-            // No favorites, so everything goes in the dropdown
             nonFav = allItems;
         }
 
-        root.filteredItems = fav; // Items to show on the bar (the "pinned" favorites)
-        root.dropdownItems = nonFav; // Items for the dropdown menu
+        root.filteredItems = fav;
+        root.dropdownItems = nonFav;
 
-    } else { // currentMode === "inline"
-        // --- Inline Mode (Default) ---
-        // All non-blacklisted items are shown inline.
-        // Favorites list is ignored in this mode.
-
+    } else { 
         let newItems = [];
         if (root.blacklist && root.blacklist.length > 0) {
             for (const item of allItems) {
@@ -137,12 +127,11 @@ Rectangle {
                 }
             }
         } else {
-            // No blacklist, so show everything
             newItems = allItems;
         }
 
-        root.filteredItems = newItems; // All non-blacklisted items shown on the bar
-        root.dropdownItems = []; // No dropdown in this mode
+        root.filteredItems = newItems;
+        root.dropdownItems = [];
     }
   }
 
@@ -172,125 +161,134 @@ Rectangle {
   }
 
   visible: filteredItems.length > 0 || (root.mode === "dropdown" && dropdownItems.length > 0)
-  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(trayFlow.implicitWidth + Style.marginM * 2)
-  implicitHeight: isVertical ? Math.round(trayFlow.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
+  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(horizontalTrayLayout.implicitWidth + Style.marginM * 2)
+  implicitHeight: isVertical ? Math.round(verticalTrayLayout.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
   radius: Style.radiusM
-  color: Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent
+  color: {
+    if (root.mode === "dropdown" && filteredItems.length === 0) {
+        return Color.transparent;
+    }
+    return Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent;
+  }
 
   Layout.alignment: Qt.AlignVCenter
 
-  Flow {
-    id: trayFlow
-    anchors.centerIn: parent
-    spacing: Style.marginM
-    flow: isVertical ? Flow.TopToBottom : Flow.LeftToRight
+  Component {
+    id: trayIconDelegate
+    Item {
+      width: itemSize
+      height: itemSize
+      visible: modelData
 
-    Repeater {
-      id: repeater
-      model: root.filteredItems
+      IconImage {
+        id: trayIcon
 
-      delegate: Item {
-        width: itemSize
-        height: itemSize
-        visible: modelData
+        property ShellScreen screen: root.screen
 
-        IconImage {
-          id: trayIcon
+        anchors.fill: parent
+        asynchronous: true
+        backer.fillMode: Image.PreserveAspectFit
+        source: {
+          let icon = modelData?.icon || ""
+          if (!icon) {
+            return ""
+          }
 
-          property ShellScreen screen: root.screen
+          // Process icon path
+          if (icon.includes("?path=")) {
+            const chunks = icon.split("?path=")
+            const name = chunks[0]
+            const path = chunks[1]
+            const fileName = name.substring(name.lastIndexOf("/") + 1)
+            return `file://${path}/${fileName}`
+          }
+          return icon
+        }
+        opacity: status === Image.Ready ? 1 : 0
 
+        layer.enabled: widgetSettings.colorizeIcons !== false
+        layer.effect: ShaderEffect {
+          property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
+          property real colorizeMode: 1.0
+
+          fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
+        }
+
+        MouseArea {
           anchors.fill: parent
-          asynchronous: true
-          backer.fillMode: Image.PreserveAspectFit
-          source: {
-            let icon = modelData?.icon || ""
-            if (!icon) {
-              return ""
-            }
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+          onClicked: mouse => {
+                       if (!modelData) {
+                         return
+                       }
 
-            // Process icon path
-            if (icon.includes("?path=")) {
-              const chunks = icon.split("?path=")
-              const name = chunks[0]
-              const path = chunks[1]
-              const fileName = name.substring(name.lastIndexOf("/") + 1)
-              return `file://${path}/${fileName}`
-            }
-            return icon
-          }
-          opacity: status === Image.Ready ? 1 : 0
+                       if (mouse.button === Qt.LeftButton) {
+                         // Close any open menu first
+                         trayPanel.close()
 
-          layer.enabled: widgetSettings.colorizeIcons !== false
-          layer.effect: ShaderEffect {
-            property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
-            property real colorizeMode: 1.0
+                         if (!modelData.onlyMenu) {
+                           modelData.activate()
+                         }
+                       } else if (mouse.button === Qt.MiddleButton) {
+                         // Close any open menu first
+                         trayPanel.close()
 
-            fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
-          }
+                         modelData.secondaryActivate && modelData.secondaryActivate()
+                       } else if (mouse.button === Qt.RightButton) {
+                         TooltipService.hideImmediately()
 
-          MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-            onClicked: mouse => {
-                         if (!modelData) {
+                         // Close the menu if it was visible
+                         if (trayPanel && trayPanel.visible) {
+                           trayPanel.close()
                            return
                          }
 
-                         if (mouse.button === Qt.LeftButton) {
-                           // Close any open menu first
-                           trayPanel.close()
-
-                           if (!modelData.onlyMenu) {
-                             modelData.activate()
-                           }
-                         } else if (mouse.button === Qt.MiddleButton) {
-                           // Close any open menu first
-                           trayPanel.close()
-
-                           modelData.secondaryActivate && modelData.secondaryActivate()
-                         } else if (mouse.button === Qt.RightButton) {
-                           TooltipService.hideImmediately()
-
-                           // Close the menu if it was visible
-                           if (trayPanel && trayPanel.visible) {
-                             trayPanel.close()
-                             return
-                           }
-
-                           if (modelData.hasMenu && modelData.menu) {
-                             const panel = PanelService.getPanel("trayMenu", root.screen)
-                             if (panel) {
-                               panel.menu = modelData.menu
-                               panel.trayItem = modelData
-                               panel.widgetSection = root.section
-                               panel.widgetIndex = root.sectionWidgetIndex
-                               panel.openAt(parent)
-                             } else {
-                               Logger.i("Tray", "TrayMenu not available")
-                             }
-                           } else {
-                             Logger.i("Tray", "No menu available for", modelData.id, "or trayMenu not set")
-                           }
-                         }
-                       }
-            onEntered: {
-              trayPanel.close()
-              TooltipService.show(Screen, trayIcon, modelData.tooltipTitle || modelData.name || modelData.id || "Tray Item", BarService.getTooltipDirection())
-            }
-            onExited: TooltipService.hide()
+                                                    if (modelData.hasMenu && modelData.menu && trayMenu.item) {
+                                                      // Position menu based on bar position
+                                                      let menuX, menuY
+                                                      if (barPosition === "left") {
+                                                        // For left bar: position menu to the right of the bar
+                                                        menuX = width + Style.marginM
+                                                        menuY = 0
+                                                      } else if (barPosition === "right") {
+                                                        // For right bar: position menu to the left of the bar
+                                                        menuX = -trayMenu.item.width - Style.marginM
+                                                        menuY = 0
+                                                      } else {
+                                                        // For horizontal bars: center horizontally and position below
+                                                        menuX = (width / 2) - (trayMenu.item.width / 2)
+                                                        menuY = Style.barHeight
+                                                      }
+                                                      trayMenu.item.menu = modelData.menu
+                                                      trayMenu.item.trayItem = modelData
+                                                      trayMenu.item.widgetSection = root.section
+                                                      trayMenu.item.widgetIndex = root.sectionWidgetIndex
+                                                      trayMenu.item.showAt(parent, menuX, menuY)
+                                                    } else {
+                                                      Logger.i("Tray", "No menu available for", modelData.id, "or trayMenu not set")
+                                                    }                       }
+                     }
+          onEntered: {
+            trayPanel.close()
+            TooltipService.show(Screen, trayIcon, modelData.tooltipTitle || modelData.name || modelData.id || "Tray Item", BarService.getTooltipDirection())
           }
+          onExited: TooltipService.hide()
         }
       }
     }
+  }
 
-    // Dropdown opener - simple icon with hover effect
-    Item {
+  Component {
+    id: dropdownButtonComponent
+    Rectangle {
       id: dropdownButton
       visible: root.mode === "dropdown" && dropdownItems.length > 0
-      width: itemSize
-      height: itemSize
+      width: Style.capsuleHeight
+      height: Style.capsuleHeight
+      radius: width / 2
+      color: hovered ? Color.mHover : Color.mSurfaceVariant
 
       property bool hovered: false
 
@@ -309,7 +307,7 @@ Rectangle {
           else
             return "caret-down" // default fallback
         }
-        pointSize: Math.round(itemSize * 0.65)
+        pointSize: Math.round(Style.capsuleHeight * 0.5)
         color: dropdownButton.hovered ? Color.mPrimary : Color.mOnSurface
 
         Behavior on color {
@@ -342,6 +340,40 @@ Rectangle {
           }
         }
       }
+    }
+  }
+
+  RowLayout {
+    id: horizontalTrayLayout
+    anchors.centerIn: parent
+    spacing: Style.marginM
+    visible: !isVertical
+
+    Repeater {
+      model: root.filteredItems
+      delegate: trayIconDelegate
+    }
+
+    Loader {
+      active: root.mode === "dropdown"
+      sourceComponent: dropdownButtonComponent
+    }
+  }
+
+  ColumnLayout {
+    id: verticalTrayLayout
+    anchors.centerIn: parent
+    spacing: Style.marginM
+    visible: isVertical
+
+    Repeater {
+      model: root.filteredItems
+      delegate: trayIconDelegate
+    }
+
+    Loader {
+      active: root.mode === "dropdown"
+      sourceComponent: dropdownButtonComponent
     }
   }
 
