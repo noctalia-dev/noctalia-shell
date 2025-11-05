@@ -776,6 +776,10 @@
           "label": "Ausschlussliste",
           "placeholder": "z.B., nm-applet, Fcitx*"
         },
+        "use-dropdown-mode": {
+          "label": "Dropdown-Modus verwenden",
+          "description": "Wenn aktiviert, werden Tray-Elemente in einem Dropdown-Menü ausgeblendet. Favoriten können an die Leiste angeheftet werden."
+        },
         "pin-application": "Anwendung anheften",
         "unpin-application": "Anheftung aufheben",
         "back": "Zurück"
