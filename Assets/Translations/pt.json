@@ -776,6 +776,10 @@
           "label": "Lista Negra",
           "placeholder": "ex: nm-applet, Fcitx*"
         },
+        "use-dropdown-mode": {
+          "label": "Usar modo de menu suspenso",
+          "description": "Quando ativado, os itens da bandeja ficam ocultos em um menu suspenso. Os favoritos podem ser fixados na barra."
+        },
         "pin-application": "Fixar Aplicativo",
         "unpin-application": "Desfixar Aplicativo",
         "back": "Voltar"
