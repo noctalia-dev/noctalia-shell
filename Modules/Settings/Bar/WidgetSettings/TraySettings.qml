@@ -12,6 +12,7 @@ ColumnLayout {
 
   // Local state
   property var localBlacklist: widgetData.blacklist || []
+  property string localMode: widgetData.mode || widgetMetadata.mode || "inline"
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
 
   ListModel {
@@ -37,7 +38,17 @@ ColumnLayout {
     onToggled: checked => root.valueColorizeIcons = checked
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.bar.tray.use-dropdown-mode.label")
+    description: I18n.tr("settings.bar.tray.use-dropdown-mode.description")
+    checked: root.localMode === "dropdown"
+    onToggled: checked => root.localMode = checked ? "dropdown" : "inline"
+  }
+
   ColumnLayout {
+    id: blacklistControls
+    visible: root.localMode === "inline"
     Layout.fillWidth: true
     spacing: Style.marginS
 
@@ -79,6 +90,8 @@ ColumnLayout {
 
   // List of current blacklist items
   ListView {
+    id: blacklistListView
+    visible: root.localMode === "inline"
     Layout.fillWidth: true
     Layout.preferredHeight: 150
     Layout.topMargin: Style.marginL // Increased top margin
@@ -140,6 +153,7 @@ ColumnLayout {
     var settings = Object.assign({}, widgetData || {})
     settings.blacklist = newBlacklist
     settings.colorizeIcons = root.valueColorizeIcons
+    settings.mode = root.localMode
     return settings
   }
 }

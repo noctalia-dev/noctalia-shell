@@ -40,6 +40,7 @@ Rectangle {
   property list<string> favorites: widgetSettings.favorites || widgetMetadata.favorites || []
   property var filteredItems: [] // Items to show inline (favorites)
   property var dropdownItems: [] // Items to show in dropdown (non-favorites)
+  property string mode: widgetSettings.mode || widgetMetadata.mode || "inline" // New property for display mode
 
   function wildCardMatch(str, rule) {
     if (!str || !rule) {
@@ -78,72 +79,70 @@ Rectangle {
   }
 
   function _performFilteredItemsUpdate() {
-    let newItems = []
-    if (SystemTray.items && SystemTray.items.values) {
-      const trayItems = SystemTray.items.values
-      for (var i = 0; i < trayItems.length; i++) {
-        const item = trayItems[i]
-        if (!item) {
-          continue
-        }
+    const allItems = (SystemTray.items && SystemTray.items.values) ? SystemTray.items.values : [];
+    const currentMode = root.mode; // Use the new mode property
 
-        const title = item.tooltipTitle || item.name || item.id || ""
+    if (currentMode === "dropdown") {
+        // --- Dropdown Mode ---
+        // Favorites are shown inline.
+        // All other items go into the dropdown.
+        // Blacklist is ignored in this mode.
 
-        // Check if blacklisted
-        let isBlacklisted = false
-        if (root.blacklist && root.blacklist.length > 0) {
-          for (var j = 0; j < root.blacklist.length; j++) {
-            const rule = root.blacklist[j]
-            if (wildCardMatch(title, rule)) {
-              isBlacklisted = true
-              break
+        let fav = [];
+        let nonFav = [];
+
+        if (root.favorites && root.favorites.length > 0) {
+            for (const item of allItems) {
+                const title = item.tooltipTitle || item.name || item.id || "";
+                let isFavorite = false;
+                for (const rule of root.favorites) {
+                    if (wildCardMatch(title, rule)) {
+                        isFavorite = true;
+                        break;
+                    }
+                }
+
+                if (isFavorite) {
+                    fav.push(item);
+                } else {
+                    nonFav.push(item);
+                }
             }
-          }
+        } else {
+            // No favorites, so everything goes in the dropdown
+            nonFav = allItems;
         }
 
-        if (!isBlacklisted) {
-          newItems.push(item)
-        }
-      }
-    }
+        root.filteredItems = fav; // Items to show on the bar (the "pinned" favorites)
+        root.dropdownItems = nonFav; // Items for the dropdown menu
 
-    // Build inline (favorites) and dropdown (non-favorites) lists
-    // If favorites list is empty, all items go to dropdown (none inline)
-    // If favorites list has items, favorites are inline, rest go to dropdown
-    if (favorites && favorites.length > 0) {
-      let fav = []
-      for (var k = 0; k < newItems.length; k++) {
-        const item2 = newItems[k]
-        const title2 = item2.tooltipTitle || item2.name || item2.id || ""
-        for (var m = 0; m < favorites.length; m++) {
-          const rule2 = favorites[m]
-          if (wildCardMatch(title2, rule2)) {
-            fav.push(item2)
-            break
-          }
-        }
-      }
-      filteredItems = fav
+    } else { // currentMode === "inline"
+        // --- Inline Mode (Default) ---
+        // All non-blacklisted items are shown inline.
+        // Favorites list is ignored in this mode.
 
-      // Non-favorites go to dropdown
-      let nonFav = []
-      for (var v = 0; v < newItems.length; v++) {
-        const cand = newItems[v]
-        let isFavorite = false
-        for (var f = 0; f < filteredItems.length; f++) {
-          if (filteredItems[f] === cand) {
-            isFavorite = true
-            break
-          }
+        let newItems = [];
+        if (root.blacklist && root.blacklist.length > 0) {
+            for (const item of allItems) {
+                const title = item.tooltipTitle || item.name || item.id || "";
+                let isBlacklisted = false;
+                for (const rule of root.blacklist) {
+                    if (wildCardMatch(title, rule)) {
+                        isBlacklisted = true;
+                        break;
+                    }
+                }
+                if (!isBlacklisted) {
+                    newItems.push(item);
+                }
+            }
+        } else {
+            // No blacklist, so show everything
+            newItems = allItems;
         }
-        if (!isFavorite)
-          nonFav.push(cand)
-      }
-      dropdownItems = nonFav
-    } else {
-      // No favorites: all items go to inline (none in dropdown)
-      filteredItems = newItems
-      dropdownItems = []
+
+        root.filteredItems = newItems; // All non-blacklisted items shown on the bar
+        root.dropdownItems = []; // No dropdown in this mode
     }
   }
 
@@ -172,7 +171,7 @@ Rectangle {
     root.updateFilteredItems() // Initial update
   }
 
-  visible: filteredItems.length > 0 || dropdownItems.length > 0
+  visible: filteredItems.length > 0 || (root.mode === "dropdown" && dropdownItems.length > 0)
   implicitWidth: isVertical ? Style.capsuleHeight : Math.round(trayFlow.implicitWidth + Style.marginM * 2)
   implicitHeight: isVertical ? Math.round(trayFlow.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
   radius: Style.radiusM
@@ -289,7 +288,7 @@ Rectangle {
     // Dropdown opener - simple icon with hover effect
     Item {
       id: dropdownButton
-      visible: dropdownItems.length > 0
+      visible: root.mode === "dropdown" && dropdownItems.length > 0
       width: itemSize
       height: itemSize
 

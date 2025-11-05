@@ -776,6 +776,10 @@
           "label": "Blacklist",
           "placeholder": "e.g., nm-applet, Fcitx*"
         },
+        "use-dropdown-mode": {
+          "label": "Use Dropdown Mode",
+          "description": "When enabled, tray items are hidden in a dropdown. Favorites can be pinned to the bar."
+        },
         "pin-application": "Pin Application",
         "unpin-application": "Unpin Application",
         "back": "Back"

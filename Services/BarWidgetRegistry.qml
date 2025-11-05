@@ -155,7 +155,8 @@ Singleton {
                                     "allowUserSettings": true,
                                     "blacklist": [],
                                     "colorizeIcons": false,
-                                    "favorites": []
+                                    "favorites": [],
+                                    "mode": "inline"
                                   },
                                   "WiFi": {
                                     "allowUserSettings": true,
