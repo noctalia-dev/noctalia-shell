@@ -141,9 +141,9 @@ Rectangle {
       }
       dropdownItems = nonFav
     } else {
-      // No favorites: all items go to dropdown (none inline)
-      filteredItems = []
-      dropdownItems = newItems
+      // No favorites: all items go to inline (none in dropdown)
+      filteredItems = newItems
+      dropdownItems = []
     }
   }
 
@@ -188,7 +188,7 @@ Rectangle {
 
     Repeater {
       id: repeater
-      model: SystemTray.items
+      model: root.filteredItems
 
       delegate: Item {
         width: itemSize
