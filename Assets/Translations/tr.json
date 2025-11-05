@@ -776,6 +776,10 @@
           "label": "Kara liste",
           "placeholder": "örn., nm-applet, Fcitx*"
         },
+        "use-dropdown-mode": {
+          "label": "Açılır menü modunu kullan",
+          "description": "Etkinleştirildiğinde, tepsi öğeleri bir açılır menüde gizlenir. Favoriler çubuğa sabitlenebilir."
+        },
         "pin-application": "Uygulamayı Sabitle",
         "unpin-application": "Sabitlemeyi Kaldır",
         "back": "Geri"
