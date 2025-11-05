@@ -776,6 +776,10 @@
           "label": "黑名单",
           "placeholder": "例如：nm-applet, Fcitx*"
         },
+        "use-dropdown-mode": {
+          "label": "使用下拉菜单模式",
+          "description": "启用后，托盘项目将隐藏在下拉菜单中。收藏夹可以固定到栏上。"
+        },
         "pin-application": "固定应用程序",
         "unpin-application": "取消固定应用程序",
         "back": "返回"
