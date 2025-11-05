@@ -179,6 +179,7 @@ Rectangle {
       width: itemSize
       height: itemSize
       visible: modelData
+      Layout.alignment: Qt.AlignHCenter
 
       IconImage {
         id: trayIcon
@@ -289,6 +290,7 @@ Rectangle {
       height: Style.capsuleHeight
       radius: width / 2
       color: hovered ? Color.mHover : Color.mSurfaceVariant
+      Layout.alignment: Qt.AlignHCenter
 
       property bool hovered: false
 
