@@ -422,6 +422,7 @@ Singleton {
 
     const userConfigPath = getUserConfigPath()
     const isDarkMode = Settings.data.colorSchemes.darkMode
+    const modeCapitalized = mode.charAt(0).toUpperCase() + mode.slice(1)
     const colors = schemeData[mode]
 
     // Generate the matugen palette JSON
@@ -439,6 +440,7 @@ Singleton {
     script += `  cat > '${tempJsonPathEsc}' << 'EOF'\n`
     script += JSON.stringify({
                                "is_dark_mode": isDarkMode,
+                               "mode": modeCapitalized,
                                "colors": palette
                              }, null, 2) + "\n"
     script += "EOF\n"
