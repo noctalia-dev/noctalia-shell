@@ -41,8 +41,7 @@ NPanel {
     // Only show submenu in place (replace main menu)
     property bool inPlaceSubmenu: true
 
-    // Let NPanel size to our content
-    readonly property real contentPreferredWidth: root.menuWidth
+    readonly property real contentPreferredWidth: (root.menuWidth + ((activeSubMenu && !inPlaceSubmenu) ? root.menuWidth : 0)) + (Style.marginS * 2)
     readonly property real contentPreferredHeight: {
       // If showing submenu in-place, size to the submenu's flickable content height
       if (activeSubMenu && inPlaceSubmenu) {
