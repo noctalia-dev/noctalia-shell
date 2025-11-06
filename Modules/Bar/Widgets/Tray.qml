@@ -34,8 +34,8 @@ Rectangle {
 
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
-  readonly property bool density: Settings.data.bar.density
-  property real itemSize: Math.round(Style.capsuleHeight * 0.65)
+  property real scaling: 1.0
+  property real itemSize: Math.round(Style.capsuleHeight * 0.65 * scaling)
   property list<string> blacklist: widgetSettings.blacklist || widgetMetadata.blacklist || [] // Read from settings
   property list<string> favorites: widgetSettings.favorites || widgetMetadata.favorites || []
   property var filteredItems: [] // Items to show inline (favorites)
@@ -110,7 +110,7 @@ Rectangle {
         root.filteredItems = fav;
         root.dropdownItems = nonFav;
 
-    } else { 
+    } else {
         let newItems = [];
         if (root.blacklist && root.blacklist.length > 0) {
             for (const item of allItems) {
@@ -168,7 +168,7 @@ Rectangle {
     if (root.mode === "dropdown" && filteredItems.length === 0) {
       return horizontalTrayLayout.implicitWidth;
     }
-    return Math.round(horizontalTrayLayout.implicitWidth + Style.marginM * 2)
+    return Math.round(horizontalTrayLayout.implicitWidth + Style.marginM * 2.5 * scaling)
   }
   implicitHeight: {
     if (!isVertical) {
@@ -177,7 +177,7 @@ Rectangle {
     if (root.mode === "dropdown" && filteredItems.length === 0) {
       return verticalTrayLayout.implicitHeight;
     }
-    return Math.round(verticalTrayLayout.implicitHeight + Style.marginM * 2)
+    return Math.round(verticalTrayLayout.implicitHeight + Style.marginM * 2.5 * scaling)
   }
   radius: Style.radiusM
   color: {
@@ -293,8 +293,8 @@ Rectangle {
     Rectangle {
       id: dropdownButton
       visible: root.mode === "dropdown" && dropdownItems.length > 0
-      width: Style.capsuleHeight
-      height: Style.capsuleHeight
+      width:  Math.round(Style.capsuleHeight * 1.0)
+      height: Math.round(Style.capsuleHeight * 1.0)
       radius: width / 2
       color: hovered ? Color.mHover : Color.mSurfaceVariant
       Layout.alignment: Qt.AlignHCenter
@@ -316,7 +316,7 @@ Rectangle {
           else
             return "caret-down" // default fallback
         }
-        pointSize: Math.round(Style.capsuleHeight * 0.5)
+        pointSize: Math.round(Style.capsuleHeight * 0.625)
         color: dropdownButton.hovered ? Color.mPrimary : Color.mOnSurface
 
         Behavior on color {
@@ -355,7 +355,7 @@ Rectangle {
   RowLayout {
     id: horizontalTrayLayout
     anchors.centerIn: parent
-    spacing: Style.marginS
+    spacing: Style.marginM * scaling
     visible: !isVertical
 
     Repeater {
@@ -372,7 +372,7 @@ Rectangle {
   ColumnLayout {
     id: verticalTrayLayout
     anchors.centerIn: parent
-    spacing: Style.marginS
+    spacing: Style.marginM * scaling
     visible: isVertical
 
     Repeater {
