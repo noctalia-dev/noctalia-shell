@@ -438,6 +438,7 @@ Singleton {
     // Write the color palette to a temp JSON file
     script += `  cat > '${tempJsonPathEsc}' << 'EOF'\n`
     script += JSON.stringify({
+                               "is_dark_mode": isDarkMode,
                                "colors": palette
                              }, null, 2) + "\n"
     script += "EOF\n"
