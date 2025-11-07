@@ -8,7 +8,7 @@ import qs.Widgets
 Rectangle {
   id: root
 
-  property color selectedColor: "#000000"
+  property color selectedColor: Color.black
 
   signal colorSelected(color color)
 

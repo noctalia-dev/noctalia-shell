@@ -307,8 +307,10 @@ Variants {
           transitionProgress = 0.0
 
           // Now clear nextWallpaper after currentWallpaper has the new source
+          // Force complete cleanup to free texture memory (~18-25MB per monitor)
           Qt.callLater(() => {
                          nextWallpaper.source = ""
+                         nextWallpaper.sourceSize = undefined
                          Qt.callLater(() => {
                                         currentWallpaper.asynchronous = true
                                       })
@@ -366,8 +368,10 @@ Variants {
         transitionAnimation.stop()
         transitionProgress = 0.0
 
-        // Clear with proper delay to allow GC
+        // Clear nextWallpaper completely to free texture memory
         nextWallpaper.source = ""
+        nextWallpaper.sourceSize = undefined
+
         currentWallpaper.source = ""
 
         Qt.callLater(() => {

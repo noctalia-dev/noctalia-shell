@@ -51,7 +51,7 @@ Item {
             break
           }
         }
-        return connected ? NetworkService.signalIcon(signalStrength) : "wifi-off"
+        return connected ? NetworkService.signalIcon(signalStrength, true) : "wifi-off"
       } catch (error) {
         Logger.e("Wi-Fi", "Error getting icon:", error)
         return "signal_wifi_bad"

@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import qs.Commons
 import qs.Modules.Bar.Extras
-import qs.Modules.Settings
+import qs.Modules.Panels.Settings
 import qs.Services
 import qs.Widgets
 

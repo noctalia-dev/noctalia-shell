@@ -22,15 +22,6 @@ Singleton {
   property bool hasOpenedPopup: false
   signal popupChanged
 
-  // Registered panel loaders (before they're loaded)
-  property var registeredPanelLoaders: ({})
-
-  // Register a panel loader (called before panel is loaded)
-  function registerPanelLoader(panelLoader, objectName) {
-    registeredPanelLoaders[objectName] = panelLoader
-    Logger.d("PanelService", "Registered panel loader:", objectName)
-  }
-
   // Register this panel (called after panel is loaded)
   function registerPanel(panel) {
     registeredPanels[panel.objectName] = panel

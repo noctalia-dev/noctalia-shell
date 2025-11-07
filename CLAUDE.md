@@ -29,31 +29,38 @@ Noctalia is a desktop shell built on Quickshell (Qt/QML framework) with a warm l
   - Initializes services in a specific order
   - Manages screen-specific instances of bars and panels
   - Uses lazy loading with QML Loaders for memory optimization
-  - Implements NFullScreenWindow for each screen to manage bar + panels
+  - Implements MainScreen for each screen to manage bar + panels
 
 ### Directory Structure
 
 #### `/Modules/` - UI Components
 Core visual modules and panels:
 - **Bar/** - Top/bottom bar with multiple widgets
-  - Audio, Bluetooth, Battery, Calendar, WiFi submodules
-  - Extras for additional bar functionality
-- **ControlCenter/** - Quick settings panel
-  - Cards/ - MediaCard, ShortcutsCard, etc.
-  - Widgets/ - WiFi, Bluetooth, NightLight, PowerProfile, KeepAwake, ScreenRecorder, Notifications, WallpaperSelector
+  - Bar.qml - Main bar component
+  - Widgets/ - Bar widget components
+  - Extras/ - Additional bar functionality
+- **Panels/** - Overlay panels (13 panel types)
+  - Audio/ - Audio device panel
+  - Battery/ - Battery status panel
+  - Bluetooth/ - Bluetooth device panel
+  - Calendar/ - Calendar panel
+  - ControlCenter/ - Quick settings panel
+  - Launcher/ - Application launcher/search
+  - NotificationHistory/ - Notification history panel
+  - SessionMenu/ - Power menu (logout, shutdown, etc.)
+  - Settings/ - Shell configuration UI
+  - SetupWizard/ - First-run setup experience
+  - Tray/ - System tray panel
+  - Wallpaper/ - Wallpaper management panel
+  - WiFi/ - WiFi network panel
+- **Background/** - Background/wallpaper rendering
 - **Dock/** - Application dock/launcher
-- **Launcher/** - Application launcher/search
 - **LockScreen/** - Screen locking functionality
-- **Notification/** - Notification system and history
+- **MainScreen/** - Main screen window management
+- **Notification/** - Notification system
 - **OSD/** - On-screen display for volume, brightness, etc.
-- **Settings/** - Shell configuration UI
-- **SetupWizard/** - First-run setup experience
-- **SessionMenu/** - Power menu (logout, shutdown, etc.)
 - **Toast/** - Toast notifications
 - **Tooltip/** - Tooltip system
-- **Wallpaper/** - Wallpaper management
-- **Background/** - Background/wallpaper rendering
-- **Audio/** - Audio visualizations (MirroredSpectrum, WaveSpectrum, LinearSpectrum)
 
 #### `/Services/` - Business Logic
 Core services that power the shell (40+ services):
@@ -171,19 +178,20 @@ Helper scripts and utilities
 - Window control
 
 ### 4. Panel System
-Advanced panel management via NFullScreenWindow:
-- Launcher panel
-- Control Center panel
+Advanced panel management via MainScreen (13 panel types):
+- Audio panel
+- Battery panel
+- Bluetooth panel
 - Calendar panel
-- Settings panel
-- Widget settings panel
+- Control Center panel
+- Launcher panel
 - Notification history panel
 - Session menu panel
-- WiFi panel
-- Bluetooth panel
-- Audio panel
+- Settings panel
+- Setup wizard panel
+- Tray panel
 - Wallpaper panel
-- Battery panel
+- WiFi panel
 
 All panels use z-index layering and component-based loading.
 
@@ -210,13 +218,10 @@ All panels use z-index layering and component-based loading.
 
 ```bash
 # Run the shell (requires Quickshell to be installed)
-quickshell -p shell.qml
-
-# Or use the shorthand
 qs -p .
 
 # Run with verbose output for debugging
-qs -v -p shell.qml
+env NOCTALIA_DEBUG=1 qs -v -p .
 
 # Code formatting and linting
 qmlfmt -e -b 360 -t 2 -i 2 -w /path/to/file.qml    # Format a QML file (requires qmlfmt, do not use qmlformat)
@@ -281,7 +286,7 @@ This order is critical - services depend on previously initialized services.
    - Each service may depend on Settings, I18n, or other services
 
 3. **Screen Components**
-   - NFullScreenWindow created per screen
+   - MainScreen created per screen
    - Bar and panel components loaded lazily
    - Exclusion zones created after window loads
 
@@ -304,7 +309,7 @@ Components use QML Loaders extensively:
 - Memory optimization for unused screens/panels
 
 ### Panel Management
-NFullScreenWindow pattern:
+MainScreen pattern:
 - Single fullscreen window per screen
 - Manages bar + all overlay panels
 - Z-index based layering (panels at z-index 50)
@@ -327,11 +332,6 @@ Uses `lefthook` for git hooks (see lefthook.yml)
 ## Contributing
 See [development guidelines](https://docs.noctalia.dev/development/guideline)
 
-## Current Work (Git Status)
-- Modified: ControlCenter widgets (ShortcutsCard, WiFi)
-- Recent commits focus on shadow effects and panel animations
-- Working on bar shadow behavior when panels open
-
 ## Notes for AI Assistants
 
 ### Code Style
@@ -345,7 +345,7 @@ See [development guidelines](https://docs.noctalia.dev/development/guideline)
 2. **Adding a control center widget**: Register in ControlCenterWidgetRegistry
 3. **Creating a service**: Follow the Service pattern, add to init order if needed
 4. **Modifying theming**: Check AppThemeService and ColorSchemeService
-5. **Panel work**: Edit in Modules/, ensure proper z-index in shell.qml
+5. **Panel work**: Edit in Modules/Panels/, ensure proper z-index in shell.qml
 
 ### Important Files to Check
 - Settings schema: `Commons/Settings.qml`

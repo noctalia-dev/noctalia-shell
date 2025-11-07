@@ -18,5 +18,8 @@
   "mOnSurfaceVariant": "{{colors.on_surface_variant.default.hex}}",
   
   "mOutline": "{{colors.outline_variant.default.hex}}",
-  "mShadow": "{{colors.shadow.default.hex}}"
+  "mShadow": "{{colors.shadow.default.hex}}",
+
+  "mHover": "{{colors.tertiary.default.hex}}",
+  "mOnHover": "{{colors.on_tertiary.default.hex}}"
 } 

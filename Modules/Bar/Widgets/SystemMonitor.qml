@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
-import qs.Modules.Settings
+import qs.Modules.Panels.Settings
 import qs.Services
 import qs.Widgets
 
@@ -32,6 +32,7 @@ Rectangle {
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
   readonly property bool density: Settings.data.bar.density
 
+  readonly property bool usePrimaryColor: widgetSettings.usePrimaryColor !== undefined ? widgetSettings.usePrimaryColor : widgetMetadata.usePrimaryColor
   readonly property bool showCpuUsage: (widgetSettings.showCpuUsage !== undefined) ? widgetSettings.showCpuUsage : widgetMetadata.showCpuUsage
   readonly property bool showCpuTemp: (widgetSettings.showCpuTemp !== undefined) ? widgetSettings.showCpuTemp : widgetMetadata.showCpuTemp
   readonly property bool showMemoryUsage: (widgetSettings.showMemoryUsage !== undefined) ? widgetSettings.showMemoryUsage : widgetMetadata.showMemoryUsage
@@ -48,6 +49,7 @@ Rectangle {
   readonly property int percentTextWidth: Math.ceil(percentMetrics.boundingRect.width + 3)
   readonly property int tempTextWidth: Math.ceil(tempMetrics.boundingRect.width + 3)
   readonly property int memTextWidth: Math.ceil(memMetrics.boundingRect.width + 3)
+  readonly property color textColor: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
 
   TextMetrics {
     id: percentMetrics
@@ -130,7 +132,7 @@ Rectangle {
           Layout.preferredWidth: isVertical ? -1 : percentTextWidth
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
-          color: Color.mPrimary
+          color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
           scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
@@ -173,7 +175,7 @@ Rectangle {
           Layout.preferredWidth: isVertical ? -1 : tempTextWidth
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
-          color: Color.mPrimary
+          color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
           scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
@@ -216,7 +218,7 @@ Rectangle {
           Layout.preferredWidth: isVertical ? -1 : (showMemoryAsPercent ? percentTextWidth : memTextWidth)
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
-          color: Color.mPrimary
+          color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
           scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
@@ -259,7 +261,7 @@ Rectangle {
           Layout.preferredWidth: isVertical ? -1 : memTextWidth
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
-          color: Color.mPrimary
+          color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
           scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
@@ -302,7 +304,7 @@ Rectangle {
           Layout.preferredWidth: isVertical ? -1 : memTextWidth
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
-          color: Color.mPrimary
+          color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
           scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
@@ -345,7 +347,7 @@ Rectangle {
           Layout.preferredWidth: isVertical ? -1 : percentTextWidth
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
-          color: Color.mPrimary
+          color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
           scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
@@ -353,13 +355,4 @@ Rectangle {
       }
     }
   }
-
-  // MouseArea {
-  //   anchors.fill: parent
-  //   acceptedButtons: Qt.RightButton
-  //   onClicked: {
-  //     var directPanel = PanelService.getPanel("directWidgetSettingsPanel")
-  //     directPanel.openWidgetSettings(root.section, root.sectionWidgetIndex, root.widgetId, root.widgetSettings)
-  //   }
-  // }
 }

@@ -278,6 +278,10 @@
         "colorize-icons": {
           "description": "Tepsi ikonlarına tema renklerini uygula.",
           "label": "İkonları Renklendir"
+        },
+        "drawer-enabled": {
+          "description": "Etkinleştirildiğinde, sabitlenmemiş tepsi öğeleri bir çekmece panelinde gösterilir. Devre dışı bırakıldığında, tüm tepsi öğeleri satır içi gösterilir.",
+          "label": "Çekmeceyi Etkinleştir"
         }
       },
       "volume": {
@@ -324,17 +328,17 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Mevcut cihazlar",
+      "blocked": "Engellendi",
+      "connect": "Bağlan",
       "connected-devices": "Bağlı cihazlar",
       "disabled": "Bluetooth devre dışı",
+      "disconnect": "Bağlantıyı Kes",
       "enable-message": "Mevcut cihazları görmek için Bluetooth'u etkinleştirin.",
       "known-devices": "Bilinen cihazlar",
+      "pairing": "Eşleştiriliyor...",
       "pairing-mode": "Cihazınızın eşleştirme modunda olduğundan emin olun.",
       "scanning": "Cihazlar tarınıyor...",
-      "title": "Bluetooth",
-      "pairing": "Eşleştiriliyor...",
-      "blocked": "Engellendi",
-      "disconnect": "Bağlantıyı Kes",
-      "connect": "Bağlan"
+      "title": "Bluetooth"
     }
   },
   "calendar": {
@@ -771,14 +775,14 @@
       },
       "title": "Bar",
       "tray": {
+        "back": "Geri",
         "blacklist": {
           "description": "Tepsi hariç tutma kuralları ekleyin, joker karakterleri destekler (*).",
           "label": "Kara liste",
           "placeholder": "örn., nm-applet, Fcitx*"
         },
         "pin-application": "Uygulamayı Sabitle",
-        "unpin-application": "Sabitlemeyi Kaldır",
-        "back": "Geri"
+        "unpin-application": "Sabitlemeyi Kaldır"
       },
       "widgets": {
         "section": {
@@ -1372,6 +1376,10 @@
           "description": "Ses ve parlaklık değişikliklerini gerçek zamanlı olarak gösterin.",
           "label": "Ekran görüntüsünü etkinleştir"
         },
+        "enabled": {
+          "description": "Bildirim arka plan programını etkinleştir veya devre dışı bırak, noctalia-shell'in yeniden başlatılmasını gerektirir.",
+          "label": "Bildirimleri etkinleştir"
+        },
         "location": {
           "description": "Bildirimlerin ekranda nerede görüneceği.",
           "label": "Konum"
@@ -1515,6 +1523,10 @@
       "section": {
         "description": "Arayüzün görünümünü, hissini ve davranışını özelleştirin.",
         "label": "Görünüm"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Ayarlar penceresini çubukla hizalayarak tutarlı bir görünüm sağlayın.",
+        "label": "Ayarlar penceresini çubuğa hizala"
       },
       "shadows": {
         "description": "Çubukların ve panellerin altında gölgelerin etkinleştirilmesini sağlar.",
@@ -1721,6 +1733,11 @@
       "forced": "Zorla etkinleştirme",
       "normal": "Normal mod",
       "not-installed": "wlsunset kurulu değil"
+    },
+    "noctalia-performance": {
+      "disabled": "Performans modu devre dışı bırakıldı",
+      "enabled": "Performans modu etkinleştirildi",
+      "label": "Noctalia performansı"
     },
     "power-profile": {
       "changed": "Güç profili değişti",

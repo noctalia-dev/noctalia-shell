@@ -222,8 +222,8 @@ Singleton {
   }
 
   // Helper functions
-  function signalIcon(signal) {
-    if (root.internetConnectivity === "limited" || root.internetConnectivity === "portal")
+  function signalIcon(signal, isConnected = false) {
+    if (isConnected && (root.internetConnectivity === "limited" || root.internetConnectivity === "portal"))
       return "world-off"
     if (signal >= 80)
       return "wifi"
@@ -313,7 +313,7 @@ Singleton {
           Logger.i("Network", "Internet connectivity:", result)
 
           if (result === "limited" || result === "portal") {
-            ToastService.showWarning(cachedLastConnected, "toast.internet.limited")
+            ToastService.showWarning(cachedLastConnected, I18n.tr("toast.internet.limited"))
           } else {
             scan()
           }

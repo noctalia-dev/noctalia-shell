@@ -30,7 +30,17 @@ Item {
     function toggle() {
       root.withTargetScreen(screen => {
                               var settingsPanel = PanelService.getPanel("settingsPanel", screen)
-                              settingsPanel.toggle()
+                              settingsPanel?.toggle()
+                            })
+    }
+  }
+
+  IpcHandler {
+    target: "calendar"
+    function toggle() {
+      root.withTargetScreen(screen => {
+                              var calendarPanel = PanelService.getPanel("calendarPanel", screen)
+                              calendarPanel?.toggle(null, "Clock")
                             })
     }
   }
@@ -72,21 +82,21 @@ Item {
     function toggle() {
       root.withTargetScreen(screen => {
                               var launcherPanel = PanelService.getPanel("launcherPanel", screen)
-                              launcherPanel.toggle()
+                              launcherPanel?.toggle()
                             })
     }
     function clipboard() {
       root.withTargetScreen(screen => {
                               var launcherPanel = PanelService.getPanel("launcherPanel", screen)
-                              launcherPanel.setSearchText(">clip ")
-                              launcherPanel.toggle()
+                              launcherPanel?.setSearchText(">clip ")
+                              launcherPanel?.toggle()
                             })
     }
     function calculator() {
       root.withTargetScreen(screen => {
                               var launcherPanel = PanelService.getPanel("launcherPanel", screen)
-                              launcherPanel.setSearchText(">calc ")
-                              launcherPanel.toggle()
+                              launcherPanel?.setSearchText(">calc ")
+                              launcherPanel?.toggle()
                             })
     }
   }
@@ -176,7 +186,7 @@ Item {
     function toggle() {
       root.withTargetScreen(screen => {
                               var sessionMenuPanel = PanelService.getPanel("sessionMenuPanel", screen)
-                              sessionMenuPanel.toggle()
+                              sessionMenuPanel?.toggle()
                             })
     }
 
@@ -192,9 +202,9 @@ Item {
                               var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen)
                               if (Settings.data.controlCenter.position === "close_to_bar_button") {
                                 // Will attempt to open the panel next to the bar button if any.
-                                controlCenterPanel.toggle(null, "ControlCenter")
+                                controlCenterPanel?.toggle(null, "ControlCenter")
                               } else {
-                                controlCenterPanel.toggle()
+                                controlCenterPanel?.toggle()
                               }
                             })
     }
@@ -207,7 +217,7 @@ Item {
       if (Settings.data.wallpaper.enabled) {
         root.withTargetScreen(screen => {
                                 var wallpaperPanel = PanelService.getPanel("wallpaperPanel", screen)
-                                wallpaperPanel.toggle()
+                                wallpaperPanel?.toggle()
                               })
       }
     }
@@ -276,6 +286,18 @@ Item {
         PowerProfileService.setProfile(0)
         break
       }
+    }
+
+    function toggleNoctaliaPerformance() {
+      PowerProfileService.toggleNoctaliaPerformance()
+    }
+
+    function enableNoctaliaPerformance() {
+      PowerProfileService.setNoctaliaPerformance(true)
+    }
+
+    function disableNoctaliaPerformance() {
+      PowerProfileService.setNoctaliaPerformance(false)
     }
   }
 

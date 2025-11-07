@@ -278,6 +278,10 @@
         "colorize-icons": {
           "description": "Appliquer les couleurs du thème aux icônes de la barre système.",
           "label": "Coloriser les icônes"
+        },
+        "drawer-enabled": {
+          "description": "Lorsqu'elle est activée, les éléments de la barre système non épinglés sont affichés dans un panneau tiroir. Lorsqu'elle est désactivée, tous les éléments de la barre système sont affichés en ligne.",
+          "label": "Activer le tiroir"
         }
       },
       "volume": {
@@ -324,17 +328,17 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Appareils disponibles",
+      "blocked": "Bloqué",
+      "connect": "Connecter",
       "connected-devices": "Appareils connectés",
       "disabled": "Le Bluetooth est désactivé",
+      "disconnect": "Déconnecter",
       "enable-message": "Activez le Bluetooth pour voir les appareils disponibles.",
       "known-devices": "Appareils connus",
+      "pairing": "Appairage...",
       "pairing-mode": "Assurez-vous que votre appareil est en mode d'appairage.",
       "scanning": "Recherche d'appareils en cours...",
-      "title": "Bluetooth",
-      "pairing": "Appairage...",
-      "blocked": "Bloqué",
-      "disconnect": "Déconnecter",
-      "connect": "Connecter"
+      "title": "Bluetooth"
     }
   },
   "calendar": {
@@ -771,14 +775,14 @@
       },
       "title": "Barre",
       "tray": {
+        "back": "Retour",
         "blacklist": {
           "description": "Ajouter des règles d'exclusion pour la boîte à miniatures, prend en charge les caractères génériques (*).",
           "label": "Liste noire",
           "placeholder": "ex: nm-applet, Fcitx*"
         },
         "pin-application": "Épingler l'Application",
-        "unpin-application": "Désépingler l'Application",
-        "back": "Retour"
+        "unpin-application": "Désépingler l'Application"
       },
       "widgets": {
         "section": {
@@ -1372,6 +1376,10 @@
           "description": "Afficher les changements de volume et de luminosité en temps réel.",
           "label": "Activer l'affichage à l'écran (OSD)"
         },
+        "enabled": {
+          "description": "Activer ou désactiver le démon de notifications, nécessite un redémarrage de noctalia-shell.",
+          "label": "Activer les notifications"
+        },
         "location": {
           "description": "Où les notifications apparaissent à l'écran.",
           "label": "Emplacement"
@@ -1515,6 +1523,10 @@
       "section": {
         "description": "Personnaliser l'apparence, l'ergonomie et le comportement de l'interface.",
         "label": "Apparence"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Alignez la fenêtre des paramètres sur la barre pour un rendu cohérent.",
+        "label": "Aligner la fenêtre des paramètres sur la barre"
       },
       "shadows": {
         "description": "Active les ombres portées sous les barres et les panneaux.",
@@ -1721,6 +1733,11 @@
       "forced": "Activation forcée",
       "normal": "Mode normal",
       "not-installed": "wlsunset non installé"
+    },
+    "noctalia-performance": {
+      "disabled": "Mode performance désactivé",
+      "enabled": "Mode performance activé",
+      "label": "Performance de Noctalia"
     },
     "power-profile": {
       "changed": "Profil d'alimentation changé",

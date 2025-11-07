@@ -4,13 +4,15 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
+import qs.Services
+
 Singleton {
   id: root
 
 
   /*
     Preset sizes for font, radii, ?
-    */
+  */
 
   // Font size
   property real fontSizeXXS: 8
@@ -60,15 +62,16 @@ Singleton {
   // Shadows
   property real shadowOpacity: 0.85
   property real shadowBlur: 1.0
-  property int shadowBlurMax: 23
+  property int shadowBlurMax: 22
   property real shadowHorizontalOffset: Settings.data.general.shadowOffsetX
   property real shadowVerticalOffset: Settings.data.general.shadowOffsetY
 
   // Animation duration (ms)
-  property int animationFast: Settings.data.general.animationDisabled ? 0 : Math.round(150 / Settings.data.general.animationSpeed)
-  property int animationNormal: Settings.data.general.animationDisabled ? 0 : Math.round(300 / Settings.data.general.animationSpeed)
-  property int animationSlow: Settings.data.general.animationDisabled ? 0 : Math.round(450 / Settings.data.general.animationSpeed)
-  property int animationSlowest: Settings.data.general.animationDisabled ? 0 : Math.round(750 / Settings.data.general.animationSpeed)
+  property int animationFaster: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(75 / Settings.data.general.animationSpeed)
+  property int animationFast: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(150 / Settings.data.general.animationSpeed)
+  property int animationNormal: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(300 / Settings.data.general.animationSpeed)
+  property int animationSlow: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(450 / Settings.data.general.animationSpeed)
+  property int animationSlowest: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(750 / Settings.data.general.animationSpeed)
 
   // Delays
   property int tooltipDelay: 300
@@ -99,15 +102,15 @@ Singleton {
   property real capsuleHeight: {
     switch (Settings.data.bar.density) {
       case "mini":
-      return barHeight * 1.0
+      return Math.round(barHeight * 1.0)
       case "compact":
-      return barHeight * 0.85
+      return Math.round(barHeight * 0.85)
       case "comfortable":
-      return barHeight * 0.73
+      return Math.round(barHeight * 0.73)
       default:
 
       case "default":
-      return barHeight * 0.82
+      return Math.round(barHeight * 0.82)
     }
   }
 }

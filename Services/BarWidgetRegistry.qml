@@ -134,6 +134,7 @@ Singleton {
                                   },
                                   "SystemMonitor": {
                                     "allowUserSettings": true,
+                                    "usePrimaryColor": true,
                                     "showCpuUsage": true,
                                     "showCpuTemp": true,
                                     "showMemoryUsage": true,
@@ -155,7 +156,8 @@ Singleton {
                                     "allowUserSettings": true,
                                     "blacklist": [],
                                     "colorizeIcons": false,
-                                    "favorites": []
+                                    "favorites": [],
+                                    "drawerEnabled": true
                                   },
                                   "WiFi": {
                                     "allowUserSettings": true,

@@ -5,7 +5,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Services
 import qs.Widgets
-import qs.Modules.Settings
+import qs.Modules.Panels.Settings
 import qs.Modules.Bar.Extras
 
 Item {

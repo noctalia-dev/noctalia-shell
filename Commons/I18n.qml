@@ -279,7 +279,7 @@ Singleton {
       interpolations = {}
 
     if (!isLoaded) {
-      Logger.d("I18n", "Translations not loaded yet")
+      //Logger.d("I18n", "Translations not loaded yet")
       return key
     }
 

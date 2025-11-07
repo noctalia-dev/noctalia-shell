@@ -278,6 +278,10 @@
         "colorize-icons": {
           "description": "Aplicar colores del tema a los iconos de la bandeja del sistema.",
           "label": "Colorear iconos"
+        },
+        "drawer-enabled": {
+          "description": "Cuando está habilitado, los elementos de la bandeja no anclados se muestran en un panel cajón. Cuando está deshabilitado, todos los elementos de la bandeja se muestran en línea.",
+          "label": "Habilitar cajón"
         }
       },
       "volume": {
@@ -324,17 +328,17 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Dispositivos disponibles",
+      "blocked": "Bloqueado",
+      "connect": "Conectar",
       "connected-devices": "Dispositivos conectados",
       "disabled": "Bluetooth está desactivado",
+      "disconnect": "Desconectar",
       "enable-message": "Activa Bluetooth para ver los dispositivos disponibles.",
       "known-devices": "Dispositivos conocidos",
+      "pairing": "Emparejamiento...",
       "pairing-mode": "Asegúrate de que tu dispositivo esté en modo de emparejamiento.",
       "scanning": "Buscando dispositivos...",
-      "title": "Bluetooth",
-      "pairing": "Emparejamiento...",
-      "blocked": "Bloqueado",
-      "disconnect": "Desconectar",
-      "connect": "Conectar"
+      "title": "Bluetooth"
     }
   },
   "calendar": {
@@ -771,14 +775,14 @@
       },
       "title": "Barra",
       "tray": {
+        "back": "Atrás",
         "blacklist": {
           "description": "Agregar reglas de exclusión de la bandeja, admite comodines (*).",
           "label": "Lista negra",
           "placeholder": "ej., nm-applet, Fcitx*"
         },
         "pin-application": "Fijar Aplicación",
-        "unpin-application": "Desfijar Aplicación",
-        "back": "Atrás"
+        "unpin-application": "Desfijar Aplicación"
       },
       "widgets": {
         "section": {
@@ -1372,6 +1376,10 @@
           "description": "Muestra los cambios de volumen y brillo en tiempo real.",
           "label": "Activar visualización en pantalla"
         },
+        "enabled": {
+          "description": "Activar o desactivar el demonio de notificaciones, requiere reiniciar noctalia-shell.",
+          "label": "Activar notificaciones"
+        },
         "location": {
           "description": "Dónde aparecen las notificaciones en la pantalla.",
           "label": "Ubicación"
@@ -1515,6 +1523,10 @@
       "section": {
         "description": "Personaliza la apariencia, el ambiente y el comportamiento de la interfaz.",
         "label": "Apariencia"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Mantén la ventana de Configuración alineada con la barra para un aspecto unificado.",
+        "label": "Ajustar Configuración a la barra"
       },
       "shadows": {
         "description": "Habilita sombras paralelas debajo de las barras y los paneles.",
@@ -1721,6 +1733,11 @@
       "forced": "Activación forzada",
       "normal": "Modo normal",
       "not-installed": "wlsunset no está instalado"
+    },
+    "noctalia-performance": {
+      "disabled": "Modo de rendimiento desactivado",
+      "enabled": "Modo de rendimiento activado",
+      "label": "Actuación de Noctalia"
     },
     "power-profile": {
       "changed": "Perfil de energía cambiado",

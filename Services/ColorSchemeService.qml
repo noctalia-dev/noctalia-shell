@@ -211,14 +211,16 @@ Singleton {
       property color mOnSecondary: "#000000"
       property color mTertiary: "#000000"
       property color mOnTertiary: "#000000"
-      property color mError: "#ff0000"
+      property color mError: "#000000"
       property color mOnError: "#000000"
-      property color mSurface: "#ffffff"
+      property color mSurface: "#000000"
       property color mOnSurface: "#000000"
-      property color mSurfaceVariant: "#cccccc"
-      property color mOnSurfaceVariant: "#333333"
-      property color mOutline: "#444444"
+      property color mSurfaceVariant: "#000000"
+      property color mOnSurfaceVariant: "#000000"
+      property color mOutline: "#000000"
       property color mShadow: "#000000"
+      property color mHover: "#000000"
+      property color mOnHover: "#000000"
     }
   }
 
@@ -240,6 +242,8 @@ Singleton {
     out.mOnSurfaceVariant = pick(obj, "mOnSurfaceVariant", "onSurfaceVariant", out.mOnSurfaceVariant)
     out.mOutline = pick(obj, "mOutline", "outline", out.mOutline)
     out.mShadow = pick(obj, "mShadow", "shadow", out.mShadow)
+    out.mHover = pick(obj, "mHover", "hover", out.mHover)
+    out.mOnHover = pick(obj, "mOnHover", "onHover", out.mOnHover)
 
     // Force a rewrite by updating the path
     colorsWriter.path = ""

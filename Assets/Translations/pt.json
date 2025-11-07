@@ -278,6 +278,10 @@
         "colorize-icons": {
           "description": "Aplicar cores do tema aos ícones da bandeja do sistema.",
           "label": "Colorir ícones"
+        },
+        "drawer-enabled": {
+          "description": "Quando habilitado, os itens da bandeja não fixados são exibidos em um painel gaveta. Quando desabilitado, todos os itens da bandeja são exibidos inline.",
+          "label": "Habilitar gaveta"
         }
       },
       "volume": {
@@ -324,17 +328,17 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Dispositivos disponíveis",
+      "blocked": "Bloqueado",
+      "connect": "Conectar",
       "connected-devices": "Dispositivos conectados",
       "disabled": "O Bluetooth está desativado",
+      "disconnect": "Desconectar",
       "enable-message": "Ative o Bluetooth para ver os dispositivos disponíveis.",
       "known-devices": "Dispositivos conhecidos",
+      "pairing": "Emparelhamento...",
       "pairing-mode": "Certifique-se de que seu dispositivo está em modo de pareamento.",
       "scanning": "Procurando por dispositivos...",
-      "title": "Bluetooth",
-      "pairing": "Emparelhamento...",
-      "blocked": "Bloqueado",
-      "disconnect": "Desconectar",
-      "connect": "Conectar"
+      "title": "Bluetooth"
     }
   },
   "calendar": {
@@ -771,14 +775,14 @@
       },
       "title": "Barra",
       "tray": {
+        "back": "Voltar",
         "blacklist": {
           "description": "Adicione regras de exclusão para a bandeja do sistema, suporta curingas (*).",
           "label": "Lista Negra",
           "placeholder": "ex: nm-applet, Fcitx*"
         },
         "pin-application": "Fixar Aplicativo",
-        "unpin-application": "Desfixar Aplicativo",
-        "back": "Voltar"
+        "unpin-application": "Desfixar Aplicativo"
       },
       "widgets": {
         "section": {
@@ -1372,6 +1376,10 @@
           "description": "Mostra alterações de volume e brilho em tempo real.",
           "label": "Ativar exibição na tela"
         },
+        "enabled": {
+          "description": "Ativar ou desativar o daemon de notificações, requer reiniciar o noctalia-shell.",
+          "label": "Ativar notificações"
+        },
         "location": {
           "description": "Onde as notificações aparecem na tela.",
           "label": "Localização"
@@ -1515,6 +1523,10 @@
       "section": {
         "description": "Personalize a aparência, a sensação e o comportamento da interface.",
         "label": "Aparência"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Mantenha a janela de Configurações alinhada com a barra para um visual uniforme.",
+        "label": "Ajustar Configurações à barra"
       },
       "shadows": {
         "description": "Ativa sombras projetadas sob barras e painéis.",
@@ -1721,6 +1733,11 @@
       "forced": "Ativação forçada",
       "normal": "Modo normal",
       "not-installed": "wlsunset não está instalado"
+    },
+    "noctalia-performance": {
+      "disabled": "Modo de desempenho desativado",
+      "enabled": "Modo de desempenho ativado",
+      "label": "Apresentação de Noctalia"
     },
     "power-profile": {
       "changed": "Perfil de energia alterado",

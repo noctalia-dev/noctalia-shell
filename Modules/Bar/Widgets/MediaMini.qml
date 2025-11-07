@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import qs.Modules.AudioSpectrum
+import qs.Widgets.AudioSpectrum
 import qs.Commons
 import qs.Services
 import qs.Widgets
@@ -195,7 +195,7 @@ Item {
         active: showVisualizer && visualizerType == "linear"
         z: 0
 
-        sourceComponent: LinearSpectrum {
+        sourceComponent: NLinearSpectrum {
           width: mainContainer.width - Style.marginS
           height: 20
           values: CavaService.values
@@ -210,7 +210,7 @@ Item {
         active: showVisualizer && visualizerType == "mirrored"
         z: 0
 
-        sourceComponent: MirroredSpectrum {
+        sourceComponent: NMirroredSpectrum {
           width: mainContainer.width - Style.marginS
           height: mainContainer.height - Style.marginS
           values: CavaService.values
@@ -225,7 +225,7 @@ Item {
         active: showVisualizer && visualizerType == "wave"
         z: 0
 
-        sourceComponent: WaveSpectrum {
+        sourceComponent: NWaveSpectrum {
           width: mainContainer.width - Style.marginS
           height: mainContainer.height - Style.marginS
           values: CavaService.values

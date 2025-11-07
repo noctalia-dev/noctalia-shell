@@ -13,7 +13,9 @@
     "mSurfaceVariant": "#262130",
     "mOnSurfaceVariant": "#a79ab0",
     "mOutline": "#3e364e",
-    "mShadow": "#120f18"
+    "mShadow": "#120f18",
+    "mHover": "#e0b7c9",
+    "mOnHover": "#20161f"
   },
   "light": {
     "mPrimary": "#9b59ba",
@@ -29,6 +31,8 @@
     "mSurfaceVariant": "#e7dfee",
     "mOnSurfaceVariant": "#4a3d59",
     "mOutline": "#cebedc",
-    "mShadow": "#ffffff"
+    "mShadow": "#ffffff",
+    "mHover": "#c17093",
+    "mOnHover": "#ffffff"
   }
 }

@@ -278,6 +278,10 @@
         "colorize-icons": {
           "description": "Apply theme colors to tray icons.",
           "label": "Colorize Icons"
+        },
+        "drawer-enabled": {
+          "description": "When enabled, unpinned tray items are shown in a drawer panel. When disabled, all tray items are shown inline.",
+          "label": "Enable Drawer"
         }
       },
       "volume": {
@@ -324,17 +328,17 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Available devices",
+      "blocked": "Blocked",
+      "connect": "Connect",
       "connected-devices": "Connected devices",
       "disabled": "Bluetooth is disabled",
+      "disconnect": "Disconnect",
       "enable-message": "Enable Bluetooth to see available devices.",
       "known-devices": "Known devices",
+      "pairing": "Pairing...",
       "pairing-mode": "Make sure your device is in pairing mode.",
       "scanning": "Scanning for devices...",
-      "title": "Bluetooth",
-      "pairing": "Pairing...",
-      "blocked": "Blocked",
-      "disconnect": "Disconnect",
-      "connect": "Connect"
+      "title": "Bluetooth"
     }
   },
   "calendar": {
@@ -771,14 +775,14 @@
       },
       "title": "Bar",
       "tray": {
+        "back": "Back",
         "blacklist": {
           "description": "Add tray exclusion rules, supports wildcards (*).",
           "label": "Blacklist",
           "placeholder": "e.g., nm-applet, Fcitx*"
         },
         "pin-application": "Pin Application",
-        "unpin-application": "Unpin Application",
-        "back": "Back"
+        "unpin-application": "Unpin Application"
       },
       "widgets": {
         "section": {
@@ -1372,6 +1376,10 @@
           "description": "Show volume and brightness changes in real-time.",
           "label": "Enable on screen display"
         },
+        "enabled": {
+          "description": "Enable or disable the notification daemon, requires a restart of noctalia-shell.",
+          "label": "Enable notifications"
+        },
         "location": {
           "description": "Where notifications appear on screen.",
           "label": "Location"
@@ -1515,6 +1523,10 @@
       "section": {
         "description": "Customize the look, feel, and behavior of the interface.",
         "label": "Appearance"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Keep the Settings window aligned with the bar for a unified look.",
+        "label": "Snap Settings window to bar"
       },
       "shadows": {
         "description": "Enables drop shadows under bars and panels.",
@@ -1721,6 +1733,11 @@
       "forced": "Forced activation",
       "normal": "Normal mode",
       "not-installed": "wlsunset not installed"
+    },
+    "noctalia-performance": {
+      "disabled": "Performance mode disabled",
+      "enabled": "Performance mode enabled",
+      "label": "Noctalia performance"
     },
     "power-profile": {
       "changed": "Power profile changed",

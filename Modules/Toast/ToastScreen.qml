@@ -193,8 +193,8 @@ Item {
         return base
       }
 
-      implicitWidth: 420
-      implicitHeight: toastItem.height
+      implicitWidth: Math.round(toastItem.width + Style.marginL * 2)
+      implicitHeight: Math.round(toastItem.height + Style.marginL * 2)
 
       color: Color.transparent
 

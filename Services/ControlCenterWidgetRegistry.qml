@@ -3,7 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.Commons
-import qs.Modules.ControlCenter.Widgets
+import qs.Modules.Panels.ControlCenter.Widgets
 
 Singleton {
   id: root

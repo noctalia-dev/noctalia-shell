@@ -14,11 +14,14 @@ import qs.Modules.Bar.Extras
 Item {
   id: root
 
-  // This property will be set by NFullScreenWindow
+  // This property will be set by MainScreen
   property ShellScreen screen: null
 
   // Expose bar region for click-through mask
   readonly property var barRegion: barContentLoader.item?.children[0] || null
+
+  // Expose the actual bar Item for unified background system
+  readonly property var barItem: barRegion
 
   // Bar positioning properties
   readonly property string barPosition: Settings.data.bar.position || "top"
@@ -54,15 +57,14 @@ Item {
 
       var monitors = Settings.data.bar.monitors || []
       var result = monitors.length === 0 || monitors.includes(root.screen.name)
-
       return result
     }
 
     sourceComponent: Item {
       anchors.fill: parent
 
-      // Background fill
-      NShapedRectangle {
+      // Bar container (background rendered by AllBackgrounds)
+      Item {
         id: bar
 
         // Position and size the bar based on orientation and floating margins
@@ -92,26 +94,82 @@ Item {
           return baseHeight // Vertical bars extend via width, not height
         }
 
-        backgroundColor: Qt.alpha(Color.mSurface, Settings.data.bar.backgroundOpacity)
+        // Corner states for new unified background system
+        // State -1: No radius (flat/square corner)
+        // State 0: Normal (inner curve)
+        // State 1: Horizontal inversion (outer curve on X-axis)
+        // State 2: Vertical inversion (outer curve on Y-axis)
+        readonly property int topLeftCornerState: {
+          // Floating bar: always simple rounded corners
+          if (barFloating)
+            return 0
+          // Top bar: top corners against screen edge = no radius
+          if (barPosition === "top")
+            return -1
+          // Left bar: top-left against screen edge = no radius
+          if (barPosition === "left")
+            return -1
+          // Bottom/Right bar with outerCorners: inverted corner
+          if (Settings.data.bar.outerCorners && (barPosition === "bottom" || barPosition === "right")) {
+            return barIsVertical ? 1 : 2 // horizontal invert for vertical bars, vertical invert for horizontal
+          }
+          // No outerCorners = square
+          return -1
+        }
 
-        // Floating bar rounded corners
-        topLeftRadius: Settings.data.bar.floating || topLeftInverted ? Style.radiusL : 0
-        topRightRadius: Settings.data.bar.floating || topRightInverted ? Style.radiusL : 0
-        bottomLeftRadius: Settings.data.bar.floating || bottomLeftInverted ? Style.radiusL : 0
-        bottomRightRadius: Settings.data.bar.floating || bottomRightInverted ? Style.radiusL : 0
+        readonly property int topRightCornerState: {
+          // Floating bar: always simple rounded corners
+          if (barFloating)
+            return 0
+          // Top bar: top corners against screen edge = no radius
+          if (barPosition === "top")
+            return -1
+          // Right bar: top-right against screen edge = no radius
+          if (barPosition === "right")
+            return -1
+          // Bottom/Left bar with outerCorners: inverted corner
+          if (Settings.data.bar.outerCorners && (barPosition === "bottom" || barPosition === "left")) {
+            return barIsVertical ? 1 : 2
+          }
+          // No outerCorners = square
+          return -1
+        }
 
-        topLeftInverted: Settings.data.bar.outerCorners && (barPosition === "bottom" || barPosition === "right")
-        topLeftInvertedDirection: barIsVertical ? "horizontal" : "vertical"
-        topRightInverted: Settings.data.bar.outerCorners && (barPosition === "bottom" || barPosition === "left")
-        topRightInvertedDirection: barIsVertical ? "horizontal" : "vertical"
+        readonly property int bottomLeftCornerState: {
+          // Floating bar: always simple rounded corners
+          if (barFloating)
+            return 0
+          // Bottom bar: bottom corners against screen edge = no radius
+          if (barPosition === "bottom")
+            return -1
+          // Left bar: bottom-left against screen edge = no radius
+          if (barPosition === "left")
+            return -1
+          // Top/Right bar with outerCorners: inverted corner
+          if (Settings.data.bar.outerCorners && (barPosition === "top" || barPosition === "right")) {
+            return barIsVertical ? 1 : 2
+          }
+          // No outerCorners = square
+          return -1
+        }
 
-        bottomLeftInverted: Settings.data.bar.outerCorners && (barPosition === "top" || barPosition === "right")
-        bottomLeftInvertedDirection: barIsVertical ? "horizontal" : "vertical"
-        bottomRightInverted: Settings.data.bar.outerCorners && (barPosition === "top" || barPosition === "left")
-        bottomRightInvertedDirection: barIsVertical ? "horizontal" : "vertical"
-
-        // No border on the bar
-        borderWidth: 0
+        readonly property int bottomRightCornerState: {
+          // Floating bar: always simple rounded corners
+          if (barFloating)
+            return 0
+          // Bottom bar: bottom corners against screen edge = no radius
+          if (barPosition === "bottom")
+            return -1
+          // Right bar: bottom-right against screen edge = no radius
+          if (barPosition === "right")
+            return -1
+          // Top/Left bar with outerCorners: inverted corner
+          if (Settings.data.bar.outerCorners && (barPosition === "top" || barPosition === "left")) {
+            return barIsVertical ? 1 : 2
+          }
+          // No outerCorners = square
+          return -1
+        }
 
         MouseArea {
           anchors.fill: parent
@@ -120,11 +178,13 @@ Item {
           preventStealing: true
           onClicked: function (mouse) {
             if (mouse.button === Qt.RightButton) {
-              // Look up for any ControlCenter button on this bar
-              var widget = BarService.lookupWidget("ControlCenter", root.screen.name)
-
-              // Open the panel near the button if any
-              PanelService.getPanel("controlCenterPanel", root.screen)?.toggle(widget)
+              var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen)
+              if (Settings.data.controlCenter.position === "close_to_bar_button") {
+                // Will attempt to open the panel next to the bar button if any.
+                controlCenterPanel?.toggle(null, "ControlCenter")
+              } else {
+                controlCenterPanel?.toggle()
+              }
               mouse.accepted = true
             }
           }

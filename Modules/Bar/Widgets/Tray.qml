@@ -35,36 +35,13 @@ Rectangle {
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
   readonly property bool density: Settings.data.bar.density
-  property real itemSize: Math.round(Style.capsuleHeight * 0.65)
+  readonly property real iconSize: Math.round(Style.capsuleHeight * 0.65)
+
   property list<string> blacklist: widgetSettings.blacklist || widgetMetadata.blacklist || [] // Read from settings
-  property list<string> favorites: widgetSettings.favorites || widgetMetadata.favorites || []
-  property var filteredItems: [] // Items to show inline (favorites)
-  property var dropdownItems: [] // Items to show in dropdown (non-favorites)
-
-  function wildCardMatch(str, rule) {
-    if (!str || !rule) {
-      return false
-    }
-    //Logger.d("Tray", "wildCardMatch - Input str:", str, "rule:", rule)
-
-    // Escape all special regex characters in the rule
-    let escapedRule = rule.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    // Convert '*' to '.*' for wildcard matching
-    let pattern = escapedRule.replace(/\\\*/g, '.*')
-    // Add ^ and $ to match the entire string
-    pattern = '^' + pattern + '$'
-
-    //Logger.d("Tray", "wildCardMatch - Generated pattern:", pattern)
-    try {
-      const regex = new RegExp(pattern, 'i')
-      // 'i' for case-insensitive
-      //Logger.d("Tray", "wildCardMatch - Regex test result:", regex.test(str))
-      return regex.test(str)
-    } catch (e) {
-      Logger.w("Tray", "Invalid regex pattern for wildcard match:", rule, e.message)
-      return false // If regex is invalid, it won't match
-    }
-  }
+  property list<string> favorites: widgetSettings.favorites || widgetMetadata.favorites || [] // Pinned items (shown inline)
+  property bool drawerEnabled: widgetSettings.drawerEnabled !== undefined ? widgetSettings.drawerEnabled : (widgetMetadata.drawerEnabled !== undefined ? widgetMetadata.drawerEnabled : true) // Enable drawer panel
+  property var filteredItems: [] // Items to show inline (pinned/favorites)
+  property var dropdownItems: [] // Items to show in drawer (unpinned/non-favorites)
 
   // Debounce timer for updateFilteredItems to prevent excessive calls
   // when multiple events (e.g., SystemTray changes, settings saves)
@@ -107,43 +84,49 @@ Rectangle {
       }
     }
 
-    // Build inline (favorites) and dropdown (non-favorites) lists
-    // If favorites list is empty, all items go to dropdown (none inline)
-    // If favorites list has items, favorites are inline, rest go to dropdown
-    if (favorites && favorites.length > 0) {
-      let fav = []
-      for (var k = 0; k < newItems.length; k++) {
-        const item2 = newItems[k]
-        const title2 = item2.tooltipTitle || item2.name || item2.id || ""
-        for (var m = 0; m < favorites.length; m++) {
-          const rule2 = favorites[m]
-          if (wildCardMatch(title2, rule2)) {
-            fav.push(item2)
-            break
-          }
-        }
-      }
-      filteredItems = fav
-
-      // Non-favorites go to dropdown
-      let nonFav = []
-      for (var v = 0; v < newItems.length; v++) {
-        const cand = newItems[v]
-        let isFavorite = false
-        for (var f = 0; f < filteredItems.length; f++) {
-          if (filteredItems[f] === cand) {
-            isFavorite = true
-            break
-          }
-        }
-        if (!isFavorite)
-          nonFav.push(cand)
-      }
-      dropdownItems = nonFav
+    // If drawer is disabled, show all items inline
+    if (!root.drawerEnabled) {
+      filteredItems = newItems
+      dropdownItems = []
     } else {
-      // No favorites: all items go to dropdown (none inline)
-      filteredItems = []
-      dropdownItems = newItems
+      // Build inline (pinned/favorites) and drawer (unpinned/non-favorites) lists
+      // If favorites list is empty, all items go to drawer (none inline)
+      // If favorites list has items, favorites are inline, rest go to drawer
+      if (favorites && favorites.length > 0) {
+        let fav = []
+        for (var k = 0; k < newItems.length; k++) {
+          const item2 = newItems[k]
+          const title2 = item2.tooltipTitle || item2.name || item2.id || ""
+          for (var m = 0; m < favorites.length; m++) {
+            const rule2 = favorites[m]
+            if (wildCardMatch(title2, rule2)) {
+              fav.push(item2)
+              break
+            }
+          }
+        }
+        filteredItems = fav
+
+        // Non-favorites (unpinned) go to drawer
+        let nonFav = []
+        for (var v = 0; v < newItems.length; v++) {
+          const cand = newItems[v]
+          let isFavorite = false
+          for (var f = 0; f < filteredItems.length; f++) {
+            if (filteredItems[f] === cand) {
+              isFavorite = true
+              break
+            }
+          }
+          if (!isFavorite)
+            nonFav.push(cand)
+        }
+        dropdownItems = nonFav
+      } else {
+        // No favorites (pinned): all items go to drawer (none inline)
+        filteredItems = []
+        dropdownItems = newItems
+      }
     }
   }
 
@@ -151,7 +134,39 @@ Rectangle {
     updateDebounceTimer.restart()
   }
 
-  function onLoaded() {// Widget initialization
+  function wildCardMatch(str, rule) {
+    if (!str || !rule) {
+      return false
+    }
+    //Logger.d("Tray", "wildCardMatch - Input str:", str, "rule:", rule)
+
+    // Escape all special regex characters in the rule
+    let escapedRule = rule.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    // Convert '*' to '.*' for wildcard matching
+    let pattern = escapedRule.replace(/\\\*/g, '.*')
+    // Add ^ and $ to match the entire string
+    pattern = '^' + pattern + '$'
+
+    //Logger.d("Tray", "wildCardMatch - Generated pattern:", pattern)
+    try {
+      const regex = new RegExp(pattern, 'i')
+      // 'i' for case-insensitive
+      //Logger.d("Tray", "wildCardMatch - Regex test result:", regex.test(str))
+      return regex.test(str)
+    } catch (e) {
+      Logger.w("Tray", "Invalid regex pattern for wildcard match:", rule, e.message)
+      return false // If regex is invalid, it won't match
+    }
+  }
+
+  function toggleDrawer(button) {
+    TooltipService.hideImmediately()
+    const panel = PanelService.getPanel("trayDrawerPanel", root.screen)
+    if (panel) {
+      panel.widgetSection = root.section
+      panel.widgetIndex = root.sectionWidgetIndex
+      panel.toggle(this)
+    }
   }
 
   Connections {
@@ -173,36 +188,35 @@ Rectangle {
   }
 
   visible: filteredItems.length > 0 || dropdownItems.length > 0
-  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(trayFlow.implicitWidth + Style.marginM * 2)
-  implicitHeight: isVertical ? Math.round(trayFlow.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
+  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(trayFlow.implicitWidth)
+  implicitHeight: isVertical ? Math.round(trayFlow.implicitHeight) : Style.capsuleHeight
   radius: Style.radiusM
   color: Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent
 
-  Layout.alignment: Qt.AlignVCenter
-
   Flow {
     id: trayFlow
-    anchors.centerIn: parent
-    spacing: Style.marginM
+    spacing: Style.marginXS
     flow: isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
     Repeater {
       id: repeater
-      model: SystemTray.items
+      model: root.filteredItems
 
       delegate: Item {
-        width: itemSize
-        height: itemSize
+        width: Style.capsuleHeight
+        height: Style.capsuleHeight
         visible: modelData
 
         IconImage {
           id: trayIcon
-
-          property ShellScreen screen: root.screen
-
-          anchors.fill: parent
+          width: iconSize
+          height: iconSize
+          anchors.centerIn: parent
           asynchronous: true
           backer.fillMode: Image.PreserveAspectFit
+
+          property bool menuJustOpened: false
+
           source: {
             let icon = modelData?.icon || ""
             if (!icon) {
@@ -241,33 +255,36 @@ Rectangle {
 
                          if (mouse.button === Qt.LeftButton) {
                            // Close any open menu first
-                           trayPanel.close()
+                           PanelService.getPanel("trayMenuPanel", root.screen)?.close()
 
                            if (!modelData.onlyMenu) {
                              modelData.activate()
                            }
                          } else if (mouse.button === Qt.MiddleButton) {
                            // Close any open menu first
-                           trayPanel.close()
+                           PanelService.getPanel("trayMenuPanel", root.screen)?.close()
 
                            modelData.secondaryActivate && modelData.secondaryActivate()
                          } else if (mouse.button === Qt.RightButton) {
                            TooltipService.hideImmediately()
 
                            // Close the menu if it was visible
-                           if (trayPanel && trayPanel.visible) {
-                             trayPanel.close()
+                           const menuPanel = PanelService.getPanel("trayMenuPanel", root.screen)
+                           if (menuPanel && menuPanel.visible) {
+                             menuPanel.close()
                              return
                            }
 
                            if (modelData.hasMenu && modelData.menu) {
-                             const panel = PanelService.getPanel("trayMenu", root.screen)
+                             const panel = PanelService.getPanel("trayMenuPanel", root.screen)
                              if (panel) {
                                panel.menu = modelData.menu
                                panel.trayItem = modelData
                                panel.widgetSection = root.section
                                panel.widgetIndex = root.sectionWidgetIndex
                                panel.openAt(parent)
+                               // Prevent onEntered from immediately closing the panel
+                               trayIcon.menuJustOpened = true
                              } else {
                                Logger.i("Tray", "TrayMenu not available")
                              }
@@ -277,7 +294,15 @@ Rectangle {
                          }
                        }
             onEntered: {
-              trayPanel.close()
+              // Don't close menu immediately after opening it
+              if (!trayIcon.menuJustOpened) {
+                // Only close the menu if we're hovering over a DIFFERENT tray icon
+                const menuPanel = PanelService.getPanel("trayMenuPanel", root.screen)
+                if (menuPanel && menuPanel.trayItem !== modelData) {
+                  menuPanel.close()
+                }
+              }
+              trayIcon.menuJustOpened = false
               TooltipService.show(Screen, trayIcon, modelData.tooltipTitle || modelData.name || modelData.id || "Tray Item", BarService.getTooltipDirection())
             }
             onExited: TooltipService.hide()
@@ -286,88 +311,38 @@ Rectangle {
       }
     }
 
-    // Dropdown opener - simple icon with hover effect
-    Item {
-      id: dropdownButton
-      visible: dropdownItems.length > 0
-      width: itemSize
-      height: itemSize
-
-      property bool hovered: false
-
-      NIcon {
-        id: chevronIcon
-        anchors.centerIn: parent
-        icon: {
-          if (barPosition === "top")
-            return "caret-down"
-          else if (barPosition === "bottom")
-            return "caret-up"
-          else if (barPosition === "left")
-            return "caret-right"
-          else if (barPosition === "right")
-            return "caret-left"
-          else
-            return "caret-down" // default fallback
-        }
-        pointSize: Math.round(itemSize * 0.65)
-        color: dropdownButton.hovered ? Color.mPrimary : Color.mOnSurface
-
-        Behavior on color {
-          ColorAnimation {
-            duration: Style.animationFast
-            easing.type: Easing.InOutQuad
-          }
+    // Drawer opener
+    NIconButton {
+      id: chevronIcon
+      visible: root.drawerEnabled && dropdownItems.length > 0
+      tooltipText: I18n.tr("tooltips.open-tray-dropdown")
+      tooltipDirection: BarService.getTooltipDirection()
+      density: Settings.data.bar.density
+      baseSize: Style.capsuleHeight
+      applyUiScale: false
+      colorBg: Settings.data.colorSchemes.darkMode ? (Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent) : Color.mPrimary
+      colorFg: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mOnPrimary
+      colorBorder: Color.transparent
+      colorBorderHover: Color.transparent
+      icon: {
+        switch (barPosition) {
+        case "bottom":
+          return "caret-up"
+        case "left":
+          return "caret-right"
+        case "right":
+          return "caret-left"
+        case "top":
+        default:
+          return "caret-down"
         }
       }
-
-      MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onEntered: {
-          dropdownButton.hovered = true
-          TooltipService.show(Screen, dropdownButton, I18n.tr("tooltips.open-tray-dropdown"), BarService.getTooltipDirection())
-        }
-        onExited: {
-          dropdownButton.hovered = false
-          TooltipService.hide()
-        }
-        onClicked: {
-          TooltipService.hideImmediately()
-          const panel = PanelService.getPanel("trayDropdownPanel", root.screen)
-          if (panel) {
-            panel.widgetSection = root.section
-            panel.widgetIndex = root.sectionWidgetIndex
-            panel.toggle(dropdownButton)
-          }
-        }
+      onClicked: {
+        toggleDrawer(this)
       }
-    }
-  }
-
-  PanelWindow {
-    id: trayPanel
-    anchors.top: true
-    anchors.left: true
-    anchors.right: true
-    anchors.bottom: true
-    visible: false
-    color: Color.transparent
-    screen: screen
-
-    function open() {
-      visible = true
-    }
-
-    function close() {
-      visible = false
-    }
-
-    // Clicking outside of the rectangle to close
-    MouseArea {
-      anchors.fill: parent
-      onClicked: trayPanel.close()
+      onRightClicked: {
+        toggleDrawer(this)
+      }
     }
   }
 }

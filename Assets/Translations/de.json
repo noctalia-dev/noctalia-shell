@@ -278,6 +278,10 @@
         "colorize-icons": {
           "description": "Theme-Farben auf Tray-Symbole anwenden.",
           "label": "Symbole einfärben"
+        },
+        "drawer-enabled": {
+          "description": "Wenn aktiviert, werden nicht angeheftete Tray-Elemente in einem Schubladen-Panel angezeigt. Wenn deaktiviert, werden alle Tray-Elemente inline angezeigt.",
+          "label": "Schublade aktivieren"
         }
       },
       "volume": {
@@ -324,17 +328,17 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Verfügbare Geräte",
+      "blocked": "Blockiert",
+      "connect": "Verbinden",
       "connected-devices": "Verbundene Geräte",
       "disabled": "Bluetooth ist deaktiviert",
+      "disconnect": "Trennen",
       "enable-message": "Aktivieren Sie Bluetooth, um verfügbare Geräte zu sehen.",
       "known-devices": "Bekannte Geräte",
+      "pairing": "Koppeln...",
       "pairing-mode": "Stellen Sie sicher, dass sich Ihr Gerät im Kopplungsmodus befindet.",
       "scanning": "Scannen nach Geräten...",
-      "title": "Bluetooth",
-      "pairing": "Koppeln...",
-      "blocked": "Blockiert",
-      "disconnect": "Trennen",
-      "connect": "Verbinden"
+      "title": "Bluetooth"
     }
   },
   "calendar": {
@@ -771,14 +775,14 @@
       },
       "title": "Statusleiste",
       "tray": {
+        "back": "Zurück",
         "blacklist": {
           "description": "Ausschlussregeln für die Tray-Symbolleiste hinzufügen, unterstützt Platzhalter (*).",
           "label": "Ausschlussliste",
           "placeholder": "z.B., nm-applet, Fcitx*"
         },
         "pin-application": "Anwendung anheften",
-        "unpin-application": "Anheftung aufheben",
-        "back": "Zurück"
+        "unpin-application": "Anheftung aufheben"
       },
       "widgets": {
         "section": {
@@ -1372,6 +1376,10 @@
           "description": "Lautstärke- und Helligkeitsänderungen in Echtzeit anzeigen.",
           "label": "Bildschirmanzeige aktivieren"
         },
+        "enabled": {
+          "description": "Benachrichtigungs-Daemon aktivieren oder deaktivieren, erfordert einen Neustart von noctalia-shell.",
+          "label": "Benachrichtigungen aktivieren"
+        },
         "location": {
           "description": "Wo Benachrichtigungen auf dem Bildschirm erscheinen.",
           "label": "Position"
@@ -1515,6 +1523,10 @@
       "section": {
         "description": "Passen Sie das Aussehen, die Haptik und das Verhalten der Benutzeroberfläche an.",
         "label": "Aussehen"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Richten Sie das Einstellungsfenster an der Leiste aus, um ein einheitliches Erscheinungsbild zu erhalten.",
+        "label": "Einstellungsfenster an Leiste ausrichten"
       },
       "shadows": {
         "description": "Aktiviert Schlagschatten unter Balken und Panels.",
@@ -1721,6 +1733,11 @@
       "forced": "Aktivierung erzwungen",
       "normal": "Normaler Modus",
       "not-installed": "wlsunset nicht installiert"
+    },
+    "noctalia-performance": {
+      "disabled": "Leistungsmodus deaktiviert",
+      "enabled": "Leistungsmodus aktiviert",
+      "label": "Noctalia-Aufführung"
     },
     "power-profile": {
       "changed": "Energieprofil geändert",

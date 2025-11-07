@@ -8,7 +8,7 @@ import qs.Widgets
 Popup {
   id: root
 
-  property color selectedColor: "#000000"
+  property color selectedColor: Color.black
   property real currentHue: 0
   property real currentSaturation: 0
 
@@ -181,7 +181,7 @@ Popup {
             family: Settings.data.ui.fontFixed
             pointSize: Style.fontSizeL
             font.weight: Font.Bold
-            color: root.selectedColor.r + root.selectedColor.g + root.selectedColor.b > 1.5 ? "#000000" : "#FFFFFF"
+            color: root.selectedColor.r + root.selectedColor.g + root.selectedColor.b > 1.5 ? Color.black : Color.white
             Layout.alignment: Qt.AlignHCenter
           }
 
@@ -189,7 +189,7 @@ Popup {
             text: "RGB(" + Math.round(root.selectedColor.r * 255) + ", " + Math.round(root.selectedColor.g * 255) + ", " + Math.round(root.selectedColor.b * 255) + ")"
             family: Settings.data.ui.fontFixed
             pointSize: Style.fontSizeM
-            color: root.selectedColor.r + root.selectedColor.g + root.selectedColor.b > 1.5 ? "#000000" : "#FFFFFF"
+            color: root.selectedColor.r + root.selectedColor.g + root.selectedColor.b > 1.5 ? Color.black : Color.white
             Layout.alignment: Qt.AlignHCenter
           }
 
@@ -381,7 +381,7 @@ Popup {
             flow: Flow.LeftToRight
 
             Repeater {
-              model: [Color.mPrimary, Color.mSecondary, Color.mTertiary, Color.mError, Color.mSurface, Color.mSurfaceVariant, Color.mOutline, "#FFFFFF", "#000000"]
+              model: [Color.mPrimary, Color.mSecondary, Color.mTertiary, Color.mError, Color.mSurface, Color.mSurfaceVariant, Color.mOutline, Color.white, Color.black]
 
               Rectangle {
                 width: 24
@@ -430,7 +430,7 @@ Popup {
             flow: Flow.LeftToRight
 
             Repeater {
-              model: ["#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722", "#795548", "#9E9E9E", "#E74C3C", "#E67E22", "#F1C40F", "#2ECC71", "#1ABC9C", "#3498DB", "#2980B9", "#9B59B6", "#34495E", "#2C3E50", "#95A5A6", "#7F8C8D", "#FFFFFF", "#000000"]
+              model: ["#F44336", "#E91E63", "#9C27B0", "#673AB7", "#3F51B5", "#2196F3", "#03A9F4", "#00BCD4", "#009688", "#4CAF50", "#8BC34A", "#CDDC39", "#FFEB3B", "#FFC107", "#FF9800", "#FF5722", "#795548", "#9E9E9E", "#E74C3C", "#E67E22", "#F1C40F", "#2ECC71", "#1ABC9C", "#3498DB", "#2980B9", "#9B59B6", "#34495E", "#2C3E50", "#95A5A6", "#7F8C8D", Color.white, Color.black]
 
               Rectangle {
                 width: 24
