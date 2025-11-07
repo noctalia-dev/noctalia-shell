@@ -27,8 +27,19 @@ SmartPanel {
     root.optionsModel = newOptions
   }
 
+  function updateOptionsModel2() {
+    let newOptions = [{
+                        "id": BatteryService.ChargingMode.Full,
+                        "label": "battery.panel.full"
+                      }, {
+                        "id": BatteryService.ChargingMode.Balanced,
+                        "label": "battery.panel.balanced"
+                      }]
+    root.optionsModel = newOptions
+  }
+
   onOpened: {
-    updateOptionsModel()
+    !BatteryService.conservationModeEnabled ? updateOptionsModel() : updateOptionsModel2()
   }
 
   ButtonGroup {
