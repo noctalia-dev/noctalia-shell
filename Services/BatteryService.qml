@@ -240,7 +240,7 @@ Singleton {
     }
   }
 
-  // Cleanup process - deletes uninstaller after it succesful
+  // Cleanup process - deletes uninstaller after it successful
   Process {
     id: cleanupProcess
     workingDirectory: Quickshell.shellDir
