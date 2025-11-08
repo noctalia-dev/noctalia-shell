@@ -57,6 +57,8 @@ Item {
     tooltipText: {
       if (!hasExec) {
         return "Custom button, configure in settings."
+      } else if (_dynamicTooltip !== "") {
+        return _dynamicTooltip
       } else {
         var lines = []
         if (leftClickExec !== "") {
@@ -80,6 +82,7 @@ Item {
   // Internal state for dynamic text
   property string _dynamicText: ""
   property string _dynamicIcon: ""
+  property string _dynamicTooltip: ""
 
   // Periodically run the text command (if set)
   Timer {
@@ -135,11 +138,13 @@ Item {
         if (checkCollapse(text)) {
           _dynamicText = ""
           _dynamicIcon = ""
+          _dynamicTooltip = ""
           return
         }
 
         _dynamicText = text
         _dynamicIcon = parsed.icon || ""
+        _dynamicTooltip = parsed.tooltip || ""
         return
       } catch (e) {
 
@@ -150,11 +155,13 @@ Item {
     if (checkCollapse(contentStr)) {
       _dynamicText = ""
       _dynamicIcon = ""
+      _dynamicTooltip = ""
       return
     }
 
     _dynamicText = contentStr
     _dynamicIcon = ""
+    _dynamicTooltip = ""
   }
 
   function checkCollapse(text) {
