@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
-import qs.Services
 import qs.Widgets
 
 ColumnLayout {
@@ -13,7 +12,7 @@ ColumnLayout {
     label: I18n.tr("settings.lock-screen.lock-on-suspend.label")
     description: I18n.tr("settings.lock-screen.lock-on-suspend.description")
     checked: Settings.data.general.lockOnSuspend
-    onToggled: Settings.data.general.lockOnSuspend = checked
+    onToggled: checked => Settings.data.general.lockOnSuspend = checked
   }
 
   NToggle {

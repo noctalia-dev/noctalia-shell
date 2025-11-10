@@ -3,7 +3,8 @@ import Quickshell
 import Quickshell.Services.UPower
 import QtQuick.Layouts
 import qs.Commons
-import qs.Services
+import qs.Services.UI
+import qs.Services.Hardware
 import qs.Widgets
 import qs.Modules.Bar.Extras
 

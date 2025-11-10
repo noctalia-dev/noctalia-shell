@@ -5,7 +5,8 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
-import qs.Services
+import qs.Services.Compositor
+import qs.Services.UI
 import qs.Widgets
 
 Item {

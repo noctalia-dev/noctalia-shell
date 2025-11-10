@@ -82,12 +82,14 @@ Core services that power the shell (40+ services):
 - `SystemStatService.qml` - System resource monitoring
 
 **UI & Theming:**
-- `AppThemeService.qml` - Application theming engine
+- `AppThemeService.qml` - Main theming facade/orchestrator
+- `ColorPaletteGenerator.qml` - Material Design 3 palette generation
+- `TemplateRegistry.qml` - Template configurations (apps, terminals, Discord)
+- `TemplateProcessor.qml` - Matugen CLI + sed script execution
 - `ColorSchemeService.qml` - Color scheme management
 - `DarkModeService.qml` - Dark/light mode switching
 - `FontService.qml` - Font management
 - `WallpaperService.qml` - Wallpaper handling (with Matugen integration)
-- `MatugenTemplates.qml` - Material You color generation templates
 - `NightLightService.qml` - Blue light filter
 
 **Features:**
@@ -121,12 +123,11 @@ Common components used throughout the shell:
 - `I18n.qml` - Internationalization/translations
 - `Color.qml` - Color utilities and helpers
 - `Icons.qml` - Icon management
-- `TablerIcons.qml` - Tabler icon set (207KB icon definitions)
+- `IconsTabler.qml` - Tabler icon set (207KB icon definitions)
 - `ThemeIcons.qml` - Theme-specific icons
 - `Logger.qml` - Logging utility
 - `Style.qml` - Shared styling definitions
 - `Time.qml` - Time utilities
-- `KeyboardLayout.qml` - Keyboard layout definitions
 
 #### `/Widgets/` - Reusable UI Components
 40+ custom QML widgets with the "N" prefix (Noctalia):
@@ -134,8 +135,8 @@ Common components used throughout the shell:
 - **Input**: NButton, NIconButton, NIconButtonHot, NTextInput, NSlider, NSpinBox, NToggle, NCheckbox, NRadioButton, NComboBox, NSearchableComboBox
 - **Display**: NLabel, NText, NIcon, NHeader, NImageCached, NImageCircled, NImageRounded
 - **Dialogs**: NColorPickerDialog, NFilePicker
-- **Special**: NContextMenu, NColorPicker, NIconPicker, NCircleStat, NCollapsible, NSectionEditor, NReorderCheckboxes, NDateTimeTokens, NBusyIndicator, NShapedRectangle
-- **System**: NFullScreenWindow, BarExclusionZone
+- **Special**: NContextMenu, NColorPicker, NIconPicker, NCircleStat, NCollapsible, NSectionEditor, NReorderCheckboxes, NDateTimeTokens, NBusyIndicator
+- **System**: MainScreen, BarExclusionZone
 
 #### `/Helpers/` - JavaScript Utilities
 Helper JavaScript modules:
@@ -321,6 +322,66 @@ BarWidgetRegistry and ControlCenterWidgetRegistry:
 - Dynamic widget loading
 - Easy extension point for custom widgets
 
+### Singleton Pattern (Quickshell)
+Services in Quickshell use the `pragma Singleton` directive:
+- Add `pragma Singleton` at the top of the QML file (before imports)
+- No qmldir needed - Quickshell handles singleton resolution automatically
+- Import with standard path: `import qs.Services` or `import qs.Services.Theming`
+- Access via singleton name: `AppThemeService.generate()`
+
+Example:
+```qml
+pragma Singleton
+
+import QtQuick
+import qs.Commons
+
+Singleton {
+  id: root
+
+  function doSomething() {
+    // singleton logic
+  }
+}
+```
+
+### Theming Architecture
+The theming system was refactored (Jan 2025) into 4 focused services in `Services/`:
+
+**AppThemeService.qml** (~60 lines) - Main facade
+- Public API: `init()`, `generate()`, `generateFromWallpaper()`, `generateFromPredefinedScheme()`
+- Orchestrates theme generation based on wallpaper vs predefined schemes
+- Maintains backward compatibility with existing code
+
+**ColorPaletteGenerator.qml** (~100 lines) - Pure color logic
+- Single function: `generatePalette(colors, isDarkMode, isStrict)`
+- Generates complete Material Design 3 palette from base colors
+- No dependencies on other services (pure computation)
+
+**TemplateRegistry.qml** (~230 lines) - Configuration source of truth
+- Defines all application templates (`applications` array)
+- Defines terminal templates (`terminals` array)
+- Consolidated Discord clients (7 variants in single config)
+- Provides `discordClients` array for ProgramCheckerService
+- User template TOML generation
+
+**TemplateProcessor.qml** (~370 lines) - Template execution
+- Dual-path architecture:
+  - Wallpaper colors: Uses matugen CLI for color extraction + template processing
+  - Predefined schemes: Uses sed scripts to apply colors to templates
+- Handles terminal themes (copies pre-rendered files for predefined schemes)
+- User template support (matugen json/image subcommands)
+
+**Adding new application templates:**
+1. Add entry to `TemplateRegistry.applications` array in `Services/TemplateRegistry.qml`
+2. Create template file in `/Assets/MatugenTemplates/`
+3. Add Settings toggle in `Commons/Settings.qml` (templates.yourapp)
+4. Template will automatically work for both wallpaper and predefined paths
+
+**Discord client handling:**
+All Discord clients use the same template (`vesktop.css`) but different output paths.
+Auto-detected by ProgramCheckerService, enabled via single `Settings.data.templates.discord` toggle.
+
 ## Git Hooks
 Uses `lefthook` for git hooks (see lefthook.yml)
 
@@ -352,7 +413,9 @@ See [development guidelines](https://docs.noctalia.dev/development/guideline)
 - Service initialization: `shell.qml` (Component.onCompleted)
 - Panel registration: `shell.qml` (panelComponents array)
 - Theme system: `Services/AppThemeService.qml`
-- Color generation: `Services/MatugenTemplates.qml`
+- Template configurations: `Services/TemplateRegistry.qml`
+- Palette generation: `Services/ColorPaletteGenerator.qml`
+- Template processing: `Services/TemplateProcessor.qml`
 
 ### Testing
 - Test on target compositors: Niri, Hyprland, Sway

@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import Quickshell
 import qs.Commons
 import qs.Modules.Panels.Settings
-import qs.Services
+import qs.Services.UI
+import qs.Services.System
 import qs.Widgets
 
 Rectangle {

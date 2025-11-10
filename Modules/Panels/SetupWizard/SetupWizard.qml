@@ -4,15 +4,14 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
-import qs.Services
 import qs.Widgets
 import qs.Modules.MainScreen
 
 SmartPanel {
   id: root
 
-  preferredWidth: Math.round(520 * Style.uiScaleRatio)
-  preferredHeight: Math.round(600 * Style.uiScaleRatio)
+  preferredWidth: Math.round(preferredWidthRatio * 2560 * Style.uiScaleRatio)
+  preferredHeight: Math.round(preferredHeightRatio * 1440 * Style.uiScaleRatio)
   preferredWidthRatio: 0.4
   preferredHeightRatio: 0.6
 
@@ -183,7 +182,12 @@ SmartPanel {
               }
             }
 
-            // Step 2: UI Configuration
+            // Step 2: Appearance - Dark mode and color source
+            SetupAppearanceStep {
+              id: step3
+            }
+
+            // Step 3: UI Configuration
             SetupCustomizeStep {
               id: step2
               selectedScaleRatio: root.selectedScaleRatio
@@ -198,14 +202,9 @@ SmartPanel {
               }
             }
 
-            // Step 3: Dock Setup
+            // Step 4: Dock Setup
             SetupDockStep {
               id: stepDock
-            }
-
-            // Step 4: Appearance - Dark mode and color source
-            SetupAppearanceStep {
-              id: step3
             }
           }
         }
@@ -235,14 +234,14 @@ SmartPanel {
                   "icon": "image",
                   "label": "Wallpaper"
                 }, {
+                  "icon": "palette",
+                  "label": "Appearance"
+                }, {
                   "icon": "settings",
                   "label": "Customize"
                 }, {
                   "icon": "device-desktop",
                   "label": "Dock"
-                }, {
-                  "icon": "palette",
-                  "label": "Appearance"
                 }]
               delegate: RowLayout {
                 spacing: Style.marginS

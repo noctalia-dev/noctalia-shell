@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
-import qs.Services
+import qs.Services.Keyboard
 
 Item {
   id: root

@@ -3,18 +3,23 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
 import Quickshell
-import qs.Widgets.AudioSpectrum
 import qs.Commons
-import qs.Services
+import qs.Services.Media
+import qs.Services.UI
 import qs.Widgets
+import qs.Widgets.AudioSpectrum
 
 NBox {
   id: root
+
+  // Track whether we have an active media player
+  readonly property bool hasActivePlayer: MediaService.currentPlayer && MediaService.canPlay
 
   // Wrapper - rounded rect clipper
   Item {
     anchors.fill: parent
     layer.enabled: true
+    layer.smooth: true
     layer.effect: MultiEffect {
       maskEnabled: true
       maskThresholdMin: 0.5
@@ -34,16 +39,9 @@ NBox {
       readonly property int dim: Math.round(256 * Style.uiScaleRatio)
       id: bgImage
       anchors.fill: parent
-      source: MediaService.trackArtUrl || WallpaperService.getWallpaper(Screen.name)
+      source: MediaService.trackArtUrl || WallpaperService.getWallpaper(screen.name)
       sourceSize: Qt.size(dim, dim)
       fillMode: Image.PreserveAspectCrop
-
-      layer.enabled: true
-      layer.effect: MultiEffect {
-        blurEnabled: true
-        blur: 0.25
-        blurMax: 16
-      }
     }
 
     // Dark overlay for readability
@@ -185,249 +183,176 @@ NBox {
     }
   }
 
-  ColumnLayout {
+  // Content container that adjusts for player selector
+  Item {
     anchors.fill: parent
-    anchors.margins: Style.marginM
+    anchors.topMargin: playerSelectorButton.visible ? (playerSelectorButton.height + Style.marginXS + Style.marginM) : Style.marginM
+    anchors.leftMargin: Style.marginM
+    anchors.rightMargin: Style.marginM
+    anchors.bottomMargin: Style.marginM
 
-    // No media player detected
-    ColumnLayout {
-      id: fallback
-
-      visible: !main.visible
-      spacing: Style.marginS
-
-      Item {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-      }
-
-      Item {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-
-        ColumnLayout {
-          anchors.centerIn: parent
-          spacing: Style.marginL
-
-          Item {
-            Layout.alignment: Qt.AlignHCenter
-            Layout.preferredWidth: Style.fontSizeXXXL * 4
-            Layout.preferredHeight: Style.fontSizeXXXL * 4
-
-            // Pulsating audio circles (background)
-            Repeater {
-              model: 3
-              Rectangle {
-                anchors.centerIn: parent
-                width: parent.width * (1.0 + index * 0.2)
-                height: width
-                radius: width / 2
-                color: "transparent"
-                border.color: Color.mOnSurfaceVariant
-                border.width: 2
-                opacity: 0
-
-                SequentialAnimation on opacity {
-                  running: true
-                  loops: Animation.Infinite
-                  PauseAnimation {
-                    duration: index * 600
-                  }
-                  NumberAnimation {
-                    from: 1.0
-                    to: 0
-                    duration: 2000
-                    easing.type: Easing.OutQuad
-                  }
-                }
-
-                SequentialAnimation on scale {
-                  running: true
-                  loops: Animation.Infinite
-                  PauseAnimation {
-                    duration: index * 600
-                  }
-                  NumberAnimation {
-                    from: 0.6
-                    to: 1.2
-                    duration: 2000
-                    easing.type: Easing.OutQuad
-                  }
-                }
-              }
-            }
-
-            // Spinning disc
-            NIcon {
-              anchors.centerIn: parent
-              icon: "disc"
-              pointSize: Style.fontSizeXXXL * 3
-              color: Color.mOnSurfaceVariant
-            }
-          }
-
-          // Descriptive text
-          ColumnLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: Style.marginXS
-          }
-        }
-      }
-
-      Item {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-      }
+    // No media player detected - centered disc icon
+    NIcon {
+      anchors.centerIn: parent
+      visible: !root.hasActivePlayer
+      icon: "disc"
+      pointSize: Style.fontSizeXXXL * 3
+      color: Color.mOnSurfaceVariant
+      opacity: 1.0
     }
 
-    // MediaPlayer Main Content
-    ColumnLayout {
-      id: main
+    // MediaPlayer Main Content - use Loader for performance
+    Loader {
+      id: mainLoader
+      anchors.fill: parent
+      active: root.hasActivePlayer
 
-      visible: MediaService.currentPlayer && MediaService.canPlay
-      spacing: Style.marginS
+      sourceComponent: ColumnLayout {
+        id: main
+        spacing: Style.marginS
 
-      // Spacer to push content down
-      Item {
-        Layout.preferredHeight: Style.marginM
-      }
+        // Spacer to push content down
+        Item {
+          Layout.preferredHeight: Style.marginM
+        }
 
-      // Metadata at the bottom left
-      ColumnLayout {
-        Layout.fillWidth: true
-        Layout.alignment: Qt.AlignLeft
-        spacing: Style.marginXS
-
-        NText {
-          visible: MediaService.trackTitle !== ""
-          text: MediaService.trackTitle
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
-          elide: Text.ElideRight
-          wrapMode: Text.Wrap
-          maximumLineCount: 2
+        // Metadata at the bottom left
+        ColumnLayout {
           Layout.fillWidth: true
+          Layout.alignment: Qt.AlignLeft
+          spacing: Style.marginXS
+
+          NText {
+            visible: MediaService.trackTitle !== ""
+            text: MediaService.trackTitle
+            pointSize: Style.fontSizeL
+            font.weight: Style.fontWeightBold
+            elide: Text.ElideRight
+            wrapMode: Text.Wrap
+            maximumLineCount: 2
+            Layout.fillWidth: true
+          }
+
+          NText {
+            visible: MediaService.trackArtist !== ""
+            text: MediaService.trackArtist
+            color: Color.mPrimary
+            pointSize: Style.fontSizeS
+            elide: Text.ElideRight
+            Layout.fillWidth: true
+          }
+
+          NText {
+            visible: MediaService.trackAlbum !== ""
+            text: MediaService.trackAlbum
+            color: Color.mOnSurfaceVariant
+            pointSize: Style.fontSizeM
+            elide: Text.ElideRight
+            Layout.fillWidth: true
+          }
         }
 
-        NText {
-          visible: MediaService.trackArtist !== ""
-          text: MediaService.trackArtist
-          color: Color.mPrimary
-          pointSize: Style.fontSizeS
-          elide: Text.ElideRight
+        // Progress slider
+        Item {
+          id: progressWrapper
+          visible: (MediaService.currentPlayer && MediaService.trackLength > 0)
           Layout.fillWidth: true
-        }
+          height: Style.baseWidgetSize * 0.5
 
-        NText {
-          visible: MediaService.trackAlbum !== ""
-          text: MediaService.trackAlbum
-          color: Color.mOnSurfaceVariant
-          pointSize: Style.fontSizeM
-          elide: Text.ElideRight
-          Layout.fillWidth: true
-        }
-      }
+          property real localSeekRatio: -1
+          property real lastSentSeekRatio: -1
+          property real seekEpsilon: 0.01
+          property real progressRatio: {
+            if (!MediaService.currentPlayer || MediaService.trackLength <= 0)
+              return 0
+            const r = MediaService.currentPosition / MediaService.trackLength
+            if (isNaN(r) || !isFinite(r))
+              return 0
+            return Math.max(0, Math.min(1, r))
+          }
+          property real effectiveRatio: (MediaService.isSeeking && localSeekRatio >= 0) ? Math.max(0, Math.min(1, localSeekRatio)) : progressRatio
 
-      // Progress slider
-      Item {
-        id: progressWrapper
-        visible: (MediaService.currentPlayer && MediaService.trackLength > 0)
-        Layout.fillWidth: true
-        height: Style.baseWidgetSize * 0.5
-
-        property real localSeekRatio: -1
-        property real lastSentSeekRatio: -1
-        property real seekEpsilon: 0.01
-        property real progressRatio: {
-          if (!MediaService.currentPlayer || MediaService.trackLength <= 0)
-            return 0
-          const r = MediaService.currentPosition / MediaService.trackLength
-          if (isNaN(r) || !isFinite(r))
-            return 0
-          return Math.max(0, Math.min(1, r))
-        }
-        property real effectiveRatio: (MediaService.isSeeking && localSeekRatio >= 0) ? Math.max(0, Math.min(1, localSeekRatio)) : progressRatio
-
-        Timer {
-          id: seekDebounce
-          interval: 75
-          repeat: false
-          onTriggered: {
-            if (MediaService.isSeeking && progressWrapper.localSeekRatio >= 0) {
-              const next = Math.max(0, Math.min(1, progressWrapper.localSeekRatio))
-              if (progressWrapper.lastSentSeekRatio < 0 || Math.abs(next - progressWrapper.lastSentSeekRatio) >= progressWrapper.seekEpsilon) {
-                MediaService.seekByRatio(next)
-                progressWrapper.lastSentSeekRatio = next
+          Timer {
+            id: seekDebounce
+            interval: 75
+            repeat: false
+            onTriggered: {
+              if (MediaService.isSeeking && progressWrapper.localSeekRatio >= 0) {
+                const next = Math.max(0, Math.min(1, progressWrapper.localSeekRatio))
+                if (progressWrapper.lastSentSeekRatio < 0 || Math.abs(next - progressWrapper.lastSentSeekRatio) >= progressWrapper.seekEpsilon) {
+                  MediaService.seekByRatio(next)
+                  progressWrapper.lastSentSeekRatio = next
+                }
               }
             }
           }
-        }
 
-        NSlider {
-          id: progressSlider
-          anchors.fill: parent
-          from: 0
-          to: 1
-          stepSize: 0
-          snapAlways: false
-          enabled: MediaService.trackLength > 0 && MediaService.canSeek
-          heightRatio: 0.6
+          NSlider {
+            id: progressSlider
+            anchors.fill: parent
+            from: 0
+            to: 1
+            stepSize: 0
+            snapAlways: false
+            enabled: MediaService.trackLength > 0 && MediaService.canSeek
+            heightRatio: 0.6
 
-          onMoved: {
-            progressWrapper.localSeekRatio = value
-            seekDebounce.restart()
-          }
-          onPressedChanged: {
-            if (pressed) {
-              MediaService.isSeeking = true
+            onMoved: {
               progressWrapper.localSeekRatio = value
-              MediaService.seekByRatio(value)
-              progressWrapper.lastSentSeekRatio = value
-            } else {
-              seekDebounce.stop()
-              MediaService.seekByRatio(value)
-              MediaService.isSeeking = false
-              progressWrapper.localSeekRatio = -1
-              progressWrapper.lastSentSeekRatio = -1
+              seekDebounce.restart()
+            }
+            onPressedChanged: {
+              if (pressed) {
+                MediaService.isSeeking = true
+                progressWrapper.localSeekRatio = value
+                MediaService.seekByRatio(value)
+                progressWrapper.lastSentSeekRatio = value
+              } else {
+                seekDebounce.stop()
+                MediaService.seekByRatio(value)
+                MediaService.isSeeking = false
+                progressWrapper.localSeekRatio = -1
+                progressWrapper.lastSentSeekRatio = -1
+              }
             }
           }
+
+          Binding {
+            target: progressSlider
+            property: "value"
+            value: progressWrapper.progressRatio
+            when: !MediaService.isSeeking
+          }
         }
 
-        Binding {
-          target: progressSlider
-          property: "value"
-          value: progressWrapper.progressRatio
-          when: !MediaService.isSeeking
-        }
-      }
-
-      // Spacer to push media controls down
-      Item {
-        Layout.preferredHeight: Style.marginL
-      }
-
-      // Media controls
-      RowLayout {
-        spacing: Style.marginS
-        Layout.fillWidth: true
-        Layout.alignment: Qt.AlignHCenter
-
-        NIconButton {
-          icon: "media-prev"
-          visible: MediaService.canGoPrevious
-          onClicked: MediaService.canGoPrevious ? MediaService.previous() : {}
+        // Spacer to push media controls down
+        Item {
+          Layout.preferredHeight: Style.marginL
         }
 
-        NIconButton {
-          icon: MediaService.isPlaying ? "media-pause" : "media-play"
-          visible: (MediaService.canPlay || MediaService.canPause)
-          onClicked: (MediaService.canPlay || MediaService.canPause) ? MediaService.playPause() : {}
-        }
+        // Media controls
+        RowLayout {
+          spacing: Style.marginS
+          Layout.fillWidth: true
+          Layout.alignment: Qt.AlignHCenter
 
-        NIconButton {
-          icon: "media-next"
-          visible: MediaService.canGoNext
-          onClicked: MediaService.canGoNext ? MediaService.next() : {}
+          NIconButton {
+            icon: "media-prev"
+            visible: MediaService.canGoPrevious
+            onClicked: MediaService.canGoPrevious ? MediaService.previous() : {}
+          }
+
+          NIconButton {
+            icon: MediaService.isPlaying ? "media-pause" : "media-play"
+            visible: (MediaService.canPlay || MediaService.canPause)
+            onClicked: (MediaService.canPlay || MediaService.canPause) ? MediaService.playPause() : {}
+          }
+
+          NIconButton {
+            icon: "media-next"
+            visible: MediaService.canGoNext
+            onClicked: MediaService.canGoNext ? MediaService.next() : {}
+          }
         }
       }
     }

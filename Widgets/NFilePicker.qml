@@ -5,7 +5,6 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 import qs.Commons
-import qs.Services
 import qs.Widgets
 import "../Helpers/FuzzySort.js" as FuzzySort
 
@@ -27,14 +26,6 @@ Popup {
   // Signals
   signal accepted(var paths)
   signal cancelled
-
-  onOpened: {
-    PanelService.willOpenPopup(root)
-  }
-
-  onClosed: {
-    PanelService.willClosePopup(root)
-  }
 
   function openFilePicker() {
     if (!root.currentPath)

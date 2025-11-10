@@ -2,23 +2,25 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
 import qs.Modules.Panels.Settings.Tabs
 import qs.Commons
-import qs.Services
-import qs.Widgets
 import qs.Modules.MainScreen
+import qs.Services.System
+import qs.Widgets
 
 SmartPanel {
   id: root
 
-  preferredWidth: 820 * Style.uiScaleRatio
-  preferredHeight: 900 * Style.uiScaleRatio
+  preferredWidth: Math.round(820 * Style.uiScaleRatio)
+  preferredHeight: Math.round(910 * Style.uiScaleRatio)
+
   readonly property bool attachToBar: Settings.data.ui.settingsPanelAttachToBar
   readonly property string barPosition: Settings.data.bar.position
+  readonly property bool barFloating: Settings.data.bar.floating
+  readonly property real barMarginH: barFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
+  readonly property real barMarginV: barFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
 
   forceAttachToBar: attachToBar
-
   panelAnchorHorizontalCenter: attachToBar ? (barPosition === "top" || barPosition === "bottom") : true
   panelAnchorVerticalCenter: attachToBar ? (barPosition === "left" || barPosition === "right") : true
   panelAnchorTop: attachToBar && barPosition === "top"
@@ -27,6 +29,30 @@ SmartPanel {
   panelAnchorRight: attachToBar && barPosition === "right"
 
   onAttachToBarChanged: {
+    if (isPanelOpen) {
+      Qt.callLater(root.setPosition)
+    }
+  }
+
+  onBarPositionChanged: {
+    if (isPanelOpen) {
+      Qt.callLater(root.setPosition)
+    }
+  }
+
+  onBarFloatingChanged: {
+    if (isPanelOpen) {
+      Qt.callLater(root.setPosition)
+    }
+  }
+
+  onBarMarginHChanged: {
+    if (isPanelOpen) {
+      Qt.callLater(root.setPosition)
+    }
+  }
+
+  onBarMarginVChanged: {
     if (isPanelOpen) {
       Qt.callLater(root.setPosition)
     }
@@ -360,92 +386,93 @@ SmartPanel {
           border.width: Style.borderS
           radius: Style.radiusM
 
-          MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.NoButton // Don't interfere with clicks
-            property int wheelAccumulator: 0
-            onWheel: wheel => {
-                       wheelAccumulator += wheel.angleDelta.y
-                       if (wheelAccumulator >= 120) {
-                         root.selectPreviousTab()
-                         wheelAccumulator = 0
-                       } else if (wheelAccumulator <= -120) {
-                         root.selectNextTab()
-                         wheelAccumulator = 0
-                       }
-                       wheel.accepted = true
-                     }
-          }
-
-          ColumnLayout {
+          NListView {
+            id: sidebarList
             anchors.fill: parent
             anchors.margins: Style.marginS
+            model: root.tabsModel
             spacing: Style.marginXS
+            currentIndex: root.currentTabIndex
+            verticalPolicy: ScrollBar.AsNeeded
 
-            Repeater {
-              id: sections
-              model: root.tabsModel
-              delegate: Rectangle {
-                id: tabItem
-                Layout.fillWidth: true
-                Layout.preferredHeight: tabEntryRow.implicitHeight + Style.marginM * 2
-                radius: Style.radiusS
-                color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mHover : Color.transparent)
-                readonly property bool selected: index === currentTabIndex
-                property bool hovering: false
-                property color tabTextColor: selected ? Color.mOnPrimary : (tabItem.hovering ? Color.mOnHover : Color.mOnSurface)
+            delegate: Rectangle {
+              id: tabItem
+              width: sidebarList.verticalScrollBarActive ? sidebarList.width - sidebarList.scrollBarWidth - Style.marginXS : sidebarList.width
+              height: tabEntryRow.implicitHeight + Style.marginM * 2
+              radius: Style.radiusS
+              color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mHover : Color.transparent)
+              readonly property bool selected: index === root.currentTabIndex
+              property bool hovering: false
+              property color tabTextColor: selected ? Color.mOnPrimary : (tabItem.hovering ? Color.mOnHover : Color.mOnSurface)
 
-                Behavior on color {
-                  ColorAnimation {
-                    duration: Style.animationFast
-                  }
+              Behavior on width {
+                NumberAnimation {
+                  duration: Style.animationFast
+                }
+              }
+
+              Behavior on color {
+                ColorAnimation {
+                  duration: Style.animationFast
+                }
+              }
+
+              Behavior on tabTextColor {
+                ColorAnimation {
+                  duration: Style.animationFast
+                }
+              }
+
+              RowLayout {
+                id: tabEntryRow
+                anchors.fill: parent
+                anchors.leftMargin: Style.marginS
+                anchors.rightMargin: Style.marginS
+                spacing: Style.marginM
+
+                // Tab icon
+                NIcon {
+                  icon: modelData.icon
+                  color: tabTextColor
+                  pointSize: Style.fontSizeXL
                 }
 
-                Behavior on tabTextColor {
-                  ColorAnimation {
-                    duration: Style.animationFast
-                  }
+                // Tab label
+                NText {
+                  text: I18n.tr(modelData.label)
+                  color: tabTextColor
+                  pointSize: Style.fontSizeM
+                  font.weight: Style.fontWeightBold
+                  Layout.fillWidth: true
+                  Layout.alignment: Qt.AlignVCenter
                 }
+              }
 
-                RowLayout {
-                  id: tabEntryRow
-                  anchors.fill: parent
-                  anchors.leftMargin: Style.marginS
-                  anchors.rightMargin: Style.marginS
-                  spacing: Style.marginM
-
-                  // Tab icon
-                  NIcon {
-                    icon: modelData.icon
-                    color: tabTextColor
-                    pointSize: Style.fontSizeXL
-                  }
-
-                  // Tab label
-                  NText {
-                    text: I18n.tr(modelData.label)
-                    color: tabTextColor
-                    pointSize: Style.fontSizeM
-                    font.weight: Style.fontWeightBold
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignVCenter
-                  }
-                }
-
-                MouseArea {
-                  anchors.fill: parent
-                  hoverEnabled: true
-                  acceptedButtons: Qt.LeftButton
-                  onEntered: tabItem.hovering = true
-                  onExited: tabItem.hovering = false
-                  onCanceled: tabItem.hovering = false
-                  onClicked: currentTabIndex = index
-                }
+              MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.LeftButton
+                onEntered: tabItem.hovering = true
+                onExited: tabItem.hovering = false
+                onCanceled: tabItem.hovering = false
+                onClicked: root.currentTabIndex = index
               }
             }
 
-            Item {
-              Layout.fillHeight: true
+            onCurrentIndexChanged: {
+              if (currentIndex !== root.currentTabIndex) {
+                root.currentTabIndex = currentIndex
+              }
+            }
+
+            Connections {
+              target: root
+              function onCurrentTabIndexChanged() {
+                if (sidebarList.currentIndex !== root.currentTabIndex) {
+                  sidebarList.currentIndex = root.currentTabIndex
+                  sidebarList.positionViewAtIndex(root.currentTabIndex, ListView.Contain)
+                }
+              }
             }
           }
         }

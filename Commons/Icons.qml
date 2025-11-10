@@ -10,9 +10,9 @@ Singleton {
 
   // Expose the font family name for easy access
   readonly property string fontFamily: currentFontLoader ? currentFontLoader.name : ""
-  readonly property string defaultIcon: TablerIcons.defaultIcon
-  readonly property var icons: TablerIcons.icons
-  readonly property var aliases: TablerIcons.aliases
+  readonly property string defaultIcon: IconsTabler.defaultIcon
+  readonly property var icons: IconsTabler.icons
+  readonly property var aliases: IconsTabler.aliases
   readonly property string fontPath: "/Assets/Fonts/tabler/tabler-icons.ttf"
 
   // Current active font loader

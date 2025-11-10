@@ -2,12 +2,11 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
-import Quickshell.Wayland
 import qs.Commons
-import qs.Modules.Panels.Settings
-import qs.Services
-import qs.Widgets
 import qs.Modules.MainScreen
+import qs.Modules.Panels.Settings
+import qs.Services.UI
+import qs.Widgets
 import "../../../Helpers/FuzzySort.js" as FuzzySort
 
 SmartPanel {
@@ -349,7 +348,7 @@ SmartPanel {
         return
       }
       wallpapersList = WallpaperService.getWallpapersList(targetScreen.name)
-      Logger.i("WallpaperPanel", "Got", wallpapersList.length, "wallpapers for screen", targetScreen.name)
+      Logger.d("WallpaperPanel", "Got", wallpapersList.length, "wallpapers for screen", targetScreen.name)
 
       // Pre-compute basenames once for better performance
       wallpapersWithNames = wallpapersList.map(function (p) {
@@ -430,7 +429,6 @@ SmartPanel {
           x: wallpaperGridView.mirrored ? 0 : wallpaperGridView.width - width
           y: 0
           height: wallpaperGridView.height
-          active: wallpaperGridView.ScrollBar.horizontal.active
 
           property color handleColor: Qt.alpha(Color.mHover, 0.8)
           property color handleHoverColor: handleColor

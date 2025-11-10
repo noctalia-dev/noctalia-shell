@@ -9,7 +9,10 @@ import Quickshell.Services.UPower
 import Quickshell.Io
 import Quickshell.Widgets
 import qs.Commons
-import qs.Services
+import qs.Services.Hardware
+import qs.Services.Location
+import qs.Services.Media
+import qs.Services.UI
 import qs.Widgets
 import qs.Widgets.AudioSpectrum
 

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
-import qs.Services
 import qs.Widgets
 import "../Helpers/FuzzySort.js" as Fuzzysort
 
@@ -158,14 +157,6 @@ RowLayout {
       width: combo.width
       height: root.popupHeight + 60
       padding: Style.marginM
-
-      onOpened: {
-        PanelService.willOpenPopup(root)
-      }
-
-      onClosed: {
-        PanelService.willClosePopup(root)
-      }
 
       contentItem: ColumnLayout {
         spacing: Style.marginS

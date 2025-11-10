@@ -1,8 +1,9 @@
 import QtQuick
 import Quickshell
 import qs.Commons
-import qs.Services
 import qs.Modules.Bar.Extras
+import qs.Services.Networking
+import qs.Services.UI
 
 Item {
   id: root

@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
-import qs.Services
+import qs.Services.Location
 import qs.Widgets
 
 // Weather overview card (placeholder data)
@@ -134,11 +134,10 @@ NBox {
       }
     }
 
-    RowLayout {
-      visible: !weatherReady
-      Layout.fillWidth: true
-      Layout.alignment: Qt.AlignHCenter
-      NBusyIndicator {}
+    Loader {
+      active: !weatherReady
+      Layout.alignment: Qt.AlignCenter
+      sourceComponent: NBusyIndicator {}
     }
   }
 }

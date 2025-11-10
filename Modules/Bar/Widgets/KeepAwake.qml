@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
-import qs.Services
+import qs.Services.Power
+import qs.Services.UI
 import qs.Widgets
 
 NIconButton {

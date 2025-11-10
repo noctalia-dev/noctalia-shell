@@ -2,16 +2,15 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
-import Quickshell.Wayland
 import qs.Commons
-import qs.Services
-import qs.Widgets
 import qs.Modules.MainScreen
+import qs.Services.Networking
+import qs.Widgets
 
 SmartPanel {
   id: root
 
-  preferredWidth: Math.round(340 * Style.uiScaleRatio)
+  preferredWidth: Math.round(400 * Style.uiScaleRatio)
   preferredHeight: Math.round(500 * Style.uiScaleRatio)
 
   property string passwordSsid: ""
@@ -150,7 +149,9 @@ SmartPanel {
             text: I18n.tr("wifi.panel.enable-message")
             pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
-            Layout.alignment: Qt.AlignHCenter
+            horizontalAlignment: Text.AlignHCenter
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
           }
 
           Item {

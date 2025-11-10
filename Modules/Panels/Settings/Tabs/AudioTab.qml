@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Services.Pipewire
 import qs.Commons
-import qs.Services
+import qs.Services.Media
 import qs.Widgets
 
 ColumnLayout {
@@ -331,7 +331,6 @@ ColumnLayout {
     }
     // AudioService Visualizer section
     NComboBox {
-      id: audioVisualizerCombo
       label: I18n.tr("settings.audio.media.visualizer-type.label")
       description: I18n.tr("settings.audio.media.visualizer-type.description")
       model: [{
@@ -349,6 +348,20 @@ ColumnLayout {
         }]
       currentKey: Settings.data.audio.visualizerType
       onSelected: key => Settings.data.audio.visualizerType = key
+    }
+
+    NComboBox {
+      label: I18n.tr("settings.audio.media.visualizer-quality.label")
+      description: I18n.tr("settings.audio.media.visualizer-quality.description")
+      model: [{
+          "key": "low",
+          "name": I18n.tr("options.visualizer-quality.low")
+        }, {
+          "key": "high",
+          "name": I18n.tr("options.visualizer-quality.high")
+        }]
+      currentKey: Settings.data.audio.visualizerQuality
+      onSelected: key => Settings.data.audio.visualizerQuality = key
     }
 
     NComboBox {

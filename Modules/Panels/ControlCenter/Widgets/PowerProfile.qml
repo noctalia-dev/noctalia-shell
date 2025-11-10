@@ -2,7 +2,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.UPower
 import qs.Commons
-import qs.Services
+import qs.Services.Power
 import qs.Widgets
 
 // Performance
@@ -15,7 +15,5 @@ NIconButtonHot {
   icon: PowerProfileService.getIcon()
   hot: !PowerProfileService.isDefault()
   tooltipText: I18n.tr("quickSettings.powerProfile.tooltip.action")
-  onClicked: {
-    PowerProfileService.cycleProfile()
-  }
+  onClicked: PowerProfileService.cycleProfile()
 }

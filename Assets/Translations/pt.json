@@ -503,6 +503,10 @@
       "top_left": "Superior esquerda",
       "top_right": "Superior direita"
     },
+    "visualizer-quality": {
+      "high": "Alto(a)",
+      "low": "Baixo(a)"
+    },
     "visualizer-types": {
       "linear": "Linear",
       "mirrored": "Espelhado",
@@ -692,6 +696,10 @@
         "section": {
           "description": "Defina seus aplicativos de mídia preferidos e ignorados.",
           "label": "Reprodutores de mídia"
+        },
+        "visualizer-quality": {
+          "description": "Alta qualidade usa mais recursos da GPU.",
+          "label": "Qualidade da visualização"
         },
         "visualizer-type": {
           "description": "Escolha um tipo de visualização para a reprodução de mídia",
@@ -1511,10 +1519,6 @@
         "description": "Os painéis travam na barra e nas bordas da tela, criando uma aparência perfeita com cantos invertidos elegantes.",
         "label": "Ajustar Painéis às Bordas"
       },
-      "settings-panel-attached-to-bar": {
-        "description": "Mantenha a janela de Configurações alinhada com a barra para um visual uniforme.",
-        "label": "Ajustar Configurações à barra"
-      },
       "panels-overlay": {
         "description": "Garante que os painéis e a barra permaneçam visíveis, mesmo sobre aplicativos em tela cheia.",
         "label": "Manter Painéis e Barra no Topo"
@@ -1527,6 +1531,10 @@
       "section": {
         "description": "Personalize a aparência, a sensação e o comportamento da interface.",
         "label": "Aparência"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Mantenha a janela de Configurações alinhada com a barra para um visual uniforme.",
+        "label": "Ajustar Configurações à barra"
       },
       "shadows": {
         "description": "Ativa sombras projetadas sob barras e painéis.",
@@ -1719,10 +1727,6 @@
     "kofi": {
       "opened": "Página do Ko-fi aberta no seu navegador"
     },
-    "matugen": {
-      "failed": "Falha no processamento do Matugen",
-      "failed-general": "Matugen encontrou um erro ao processar os modelos"
-    },
     "missing-control-center": {
       "description": "O widget da Central de Controle foi removido da barra. Para acessá-lo novamente pela barra, adicione o widget novamente. Você também pode abri-lo clicando com o botão direito na barra.",
       "label": "Último widget da Central de Controle removido"
@@ -1733,6 +1737,11 @@
       "forced": "Ativação forçada",
       "normal": "Modo normal",
       "not-installed": "wlsunset não está instalado"
+    },
+    "noctalia-performance": {
+      "disabled": "Modo de desempenho desativado",
+      "enabled": "Modo de desempenho ativado",
+      "label": "Apresentação de Noctalia"
     },
     "power-profile": {
       "changed": "Perfil de energia alterado",
@@ -1750,9 +1759,15 @@
       "started": "Gravação iniciada",
       "stopping": "Parando gravação…"
     },
+    "theming-processor-failed": {
+      "desc-generic": "Ocorreu um erro ao processar os templates.",
+      "title-matugen": "Falha no processamento do template Matugen",
+      "title-predefined": "O processamento do esquema de cores predefinido falhou."
+    },
     "wallpaper-colors": {
       "disabled": "Cores do papel de parede desativadas",
       "enabled": "Cores do papel de parede ativadas",
+      "label": "Geração de cores para papel de parede",
       "not-installed": "Matugen não instalado - necessário para extração de cores do papel de parede"
     },
     "wifi": {
@@ -1793,6 +1808,8 @@
     "night-light-enabled": "Luz noturna ativada.\nClique esquerdo para alternar o modo.\nClique direito para acessar as configurações.",
     "night-light-forced": "Luz noturna forçada.\nClique esquerdo para alternar o modo.\nClique direito para acessar as configurações.",
     "night-light-not-installed": "Luz noturna não disponível.\nwlsunset não está instalado.",
+    "noctalia-performance-disabled": "O modo de desempenho Noctalia está desativado.\nClique esquerdo para ativar.",
+    "noctalia-performance-enabled": "O modo de desempenho Noctalia está ativado.\nClique esquerdo para desativar.",
     "open-control-center": "Abrir central de controle",
     "open-notification-history-disable-dnd": "Abrir histórico de notificações\nClique direito para desativar \"Não perturbe\".",
     "open-notification-history-enable-dnd": "Abrir histórico de notificações\nClique direito para ativar \"Não perturbe\".",

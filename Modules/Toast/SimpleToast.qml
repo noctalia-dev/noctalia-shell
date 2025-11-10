@@ -16,8 +16,8 @@ Item {
 
   signal hidden
 
-  width: 480
-  height: Math.round(contentLayout.implicitHeight + Style.marginL * 4)
+  width: Math.round(420 * Style.uiScaleRatio + Style.marginM * 1.5 * 2)
+  height: Math.round(contentLayout.implicitHeight + Style.marginM * 3 * 2)
   visible: true
   opacity: 0
   scale: initialScale
@@ -26,7 +26,7 @@ Item {
   Rectangle {
     id: background
     anchors.fill: parent
-    anchors.margins: Style.marginL
+    anchors.margins: Style.marginM * 1.5
     radius: Style.radiusL
     color: Color.mSurface
 
@@ -47,6 +47,7 @@ Item {
   NDropShadows {
     anchors.fill: background
     source: background
+    autoPaddingEnabled: true
   }
 
   Behavior on opacity {

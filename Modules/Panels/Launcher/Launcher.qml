@@ -4,17 +4,18 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
 import qs.Commons
-import qs.Services
-import qs.Widgets
 import qs.Modules.MainScreen
+import qs.Services.Keyboard
+import qs.Widgets
+
 import "Plugins"
 
 SmartPanel {
   id: root
 
   // Panel configuration
-  preferredWidth: 500 * Style.uiScaleRatio
-  preferredHeight: 600 * Style.uiScaleRatio
+  preferredWidth: Math.round(500 * Style.uiScaleRatio)
+  preferredHeight: Math.round(600 * Style.uiScaleRatio)
   preferredWidthRatio: 0.3
   preferredHeightRatio: 0.5
 

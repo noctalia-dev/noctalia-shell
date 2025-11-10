@@ -503,6 +503,10 @@
       "top_left": "Top left",
       "top_right": "Top right"
     },
+    "visualizer-quality": {
+      "high": "High",
+      "low": "Low"
+    },
     "visualizer-types": {
       "linear": "Linear",
       "mirrored": "Mirrored",
@@ -682,19 +686,23 @@
           "placeholder": "e.g. spotify, vlc, mpv"
         },
         "scrolling-speed": {
-          "description": "Time in seconds for the title to scroll from start to end",
+          "description": "Time in seconds for the title to scroll from start to end.",
           "label": "Scrolling speed"
         },
         "scrolling-title": {
-          "description": "Enable continuous scrolling for long media titles",
+          "description": "Enable continuous scrolling for long media titles.",
           "label": "Scrolling title"
         },
         "section": {
           "description": "Set your preferred and ignored media applications.",
           "label": "Media players"
         },
+        "visualizer-quality": {
+          "description": "High quality use more GPU ressources.",
+          "label": "Visualization quality"
+        },
         "visualizer-type": {
-          "description": "Choose a visualization type for media playback",
+          "description": "Choose a visualization type for media playback.",
           "label": "Visualization type"
         }
       },
@@ -1511,10 +1519,6 @@
         "description": "Panels lock to the bar and screen edges, creating a seamless look with stylish inverted corners.",
         "label": "Snap panels to edges"
       },
-      "settings-panel-attached-to-bar": {
-        "description": "Keep the Settings window aligned with the bar for a unified look.",
-        "label": "Snap Settings window to bar"
-      },
       "panels-overlay": {
         "description": "Ensures panels and the bar remain visible, even over fullscreen applications.",
         "label": "Keep panels & bar on top"
@@ -1527,6 +1531,10 @@
       "section": {
         "description": "Customize the look, feel, and behavior of the interface.",
         "label": "Appearance"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Keep the Settings window aligned with the bar for a unified look.",
+        "label": "Snap Settings window to bar"
       },
       "shadows": {
         "description": "Enables drop shadows under bars and panels.",
@@ -1719,10 +1727,6 @@
     "kofi": {
       "opened": "Ko-fi page opened in your browser"
     },
-    "matugen": {
-      "failed": "Matugen processing failed",
-      "failed-general": "Matugen encountered an error while processing templates"
-    },
     "missing-control-center": {
       "description": "The Control Center widget has been removed from the bar. To access it from the bar again, you will need to re-add the widget. You can open it with right clicking on the bar too.",
       "label": "Last Control Center widget removed"
@@ -1733,6 +1737,11 @@
       "forced": "Forced activation",
       "normal": "Normal mode",
       "not-installed": "wlsunset not installed"
+    },
+    "noctalia-performance": {
+      "disabled": "Performance mode disabled",
+      "enabled": "Performance mode enabled",
+      "label": "Noctalia performance"
     },
     "power-profile": {
       "changed": "Power profile changed",
@@ -1750,9 +1759,15 @@
       "started": "Recording started",
       "stopping": "Stopping recording…"
     },
+    "theming-processor-failed": {
+      "desc-generic": "Encountered an error while processing templates",
+      "title-matugen": "Matugen templating processing failed",
+      "title-predefined": "Predefined color cheme processing failed"
+    },
     "wallpaper-colors": {
       "disabled": "Wallpaper colors disabled",
       "enabled": "Wallpaper colors enabled",
+      "label": "Wallpaper colors generation",
       "not-installed": "Matugen not installed - required for wallpaper color extraction"
     },
     "wifi": {
@@ -1793,6 +1808,8 @@
     "night-light-enabled": "Night light is enabled.\nLeft click to cycle mode.\nRight click to access settings.",
     "night-light-forced": "Night light is forced.\nLeft click to cycle mode.\nRight click to access settings.",
     "night-light-not-installed": "Night light is not available.\nwlsunset is not installed.",
+    "noctalia-performance-disabled": "Noctalia performance mode is disabled.\nLeft click to enable.",
+    "noctalia-performance-enabled": "Noctalia performance mode is enabled.\nLeft click to disable.",
     "open-control-center": "Open control center",
     "open-notification-history-disable-dnd": "Open notification history\nRight-click to disable \"Do not disturb\".",
     "open-notification-history-enable-dnd": "Open notification history\nRight-click to enable \"Do not disturb\".",

@@ -4,7 +4,9 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Commons
-import qs.Services
+import qs.Services.Theming
+import qs.Services.System
+import qs.Services.UI
 import qs.Widgets
 
 ColumnLayout {
@@ -111,9 +113,9 @@ ColumnLayout {
       if (exitCode === 0) {
         Settings.data.colorSchemes.useWallpaperColors = true
         AppThemeService.generate()
-        ToastService.showNotice(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.enabled"), "settings-color-scheme")
+        ToastService.showNotice(I18n.tr("toast.wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.enabled"), "settings-color-scheme")
       } else {
-        ToastService.showWarning(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.not-installed"))
+        ToastService.showWarning(I18n.tr("oast.wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.not-installed"))
       }
     }
 
@@ -128,7 +130,6 @@ ColumnLayout {
 
     Repeater {
       model: ColorSchemeService.schemes
-
       delegate: Item {
         FileView {
           path: modelData
@@ -248,7 +249,7 @@ ColumnLayout {
                    matugenCheck.running = true
                  } else {
                    Settings.data.colorSchemes.useWallpaperColors = false
-                   ToastService.showNotice(I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.disabled"), "settings-color-scheme")
+                   ToastService.showNotice(I18n.tr("toast.wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.disabled"), "settings-color-scheme")
 
                    if (Settings.data.colorSchemes.predefinedScheme) {
                      ColorSchemeService.applyScheme(Settings.data.colorSchemes.predefinedScheme)
@@ -468,6 +469,7 @@ ColumnLayout {
   ColumnLayout {
     Layout.fillWidth: true
     spacing: Style.marginL
+    visible: Settings.data.colorSchemes.useWallpaperColors || Settings.data.colorSchemes.generateTemplatesForPredefined
 
     NHeader {
       label: I18n.tr("settings.color-scheme.templates.section.label")
@@ -771,7 +773,7 @@ ColumnLayout {
         onToggled: checked => {
                      Settings.data.templates.enableUserTemplates = checked
                      if (checked) {
-                       MatugenTemplates.writeUserTemplatesToml()
+                       TemplateRegistry.writeUserTemplatesToml()
                      }
                      AppThemeService.generate()
                    }

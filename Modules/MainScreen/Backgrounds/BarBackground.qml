@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import qs.Commons
+import qs.Services.UI
 import qs.Modules.MainScreen.Backgrounds
 
 
@@ -25,6 +26,26 @@ ShapePath {
   // Required reference to AllBackgrounds shapeContainer
   required property var shapeContainer
 
+  // Required reference to windowRoot for screen access
+  required property var windowRoot
+
+  required property color backgroundColor
+
+  // Check if bar should be visible on this screen
+  readonly property bool shouldShow: {
+    // Check global bar visibility
+    if (!BarService.isVisible)
+      return false
+
+    // Check screen-specific configuration
+    var monitors = Settings.data.bar.monitors || []
+    var screenName = windowRoot?.screen?.name || ""
+
+    // If no monitors specified, show on all screens
+    // If monitors specified, only show if this screen is in the list
+    return monitors.length === 0 || monitors.includes(screenName)
+  }
+
   // Corner radius (from Style)
   readonly property real radius: Style.radiusL
 
@@ -32,9 +53,13 @@ ShapePath {
   // we can use bar.x and bar.y directly (they're already in screen coordinates)
   readonly property point barMappedPos: bar ? Qt.point(bar.x, bar.y) : Qt.point(0, 0)
 
+  // Effective dimensions - 0 when bar shouldn't show (similar to panel behavior)
+  readonly property real barWidth: (bar && shouldShow) ? bar.width : 0
+  readonly property real barHeight: (bar && shouldShow) ? bar.height : 0
+
   // Flatten corners if bar is too small (handle null bar)
-  readonly property bool shouldFlatten: bar ? ShapeCornerHelper.shouldFlatten(bar.width, bar.height, radius) : false
-  readonly property real effectiveRadius: shouldFlatten ? (bar ? ShapeCornerHelper.getFlattenedRadius(Math.min(bar.width, bar.height), radius) : 0) : radius
+  readonly property bool shouldFlatten: bar ? ShapeCornerHelper.shouldFlatten(barWidth, barHeight, radius) : false
+  readonly property real effectiveRadius: shouldFlatten ? (bar ? ShapeCornerHelper.getFlattenedRadius(Math.min(barWidth, barHeight), radius) : 0) : radius
 
   // Helper function for getting corner radius based on state
   function getCornerRadius(cornerState) {
@@ -64,7 +89,7 @@ ShapePath {
 
   // ShapePath configuration
   strokeWidth: -1 // No stroke, fill only
-  fillColor: Qt.alpha(Color.mSurface, Settings.data.bar.backgroundOpacity)
+  fillColor: backgroundColor
 
   // Starting position (top-left corner, after the arc)
   // Use mapped coordinates relative to the Shape container
@@ -84,7 +109,7 @@ ShapePath {
 
   // Top edge (moving right)
   PathLine {
-    relativeX: (bar ? bar.width : 0) - root.tlRadius * root.tlMultX - root.trRadius * root.trMultX
+    relativeX: root.barWidth - root.tlRadius * root.tlMultX - root.trRadius * root.trMultX
     relativeY: 0
   }
 
@@ -100,7 +125,7 @@ ShapePath {
   // Right edge (moving down)
   PathLine {
     relativeX: 0
-    relativeY: (bar ? bar.height : 0) - root.trRadius * root.trMultY - root.brRadius * root.brMultY
+    relativeY: root.barHeight - root.trRadius * root.trMultY - root.brRadius * root.brMultY
   }
 
   // Bottom-right corner arc
@@ -114,7 +139,7 @@ ShapePath {
 
   // Bottom edge (moving left)
   PathLine {
-    relativeX: -((bar ? bar.width : 0) - root.brRadius * root.brMultX - root.blRadius * root.blMultX)
+    relativeX: -(root.barWidth - root.brRadius * root.brMultX - root.blRadius * root.blMultX)
     relativeY: 0
   }
 
@@ -130,7 +155,7 @@ ShapePath {
   // Left edge (moving up) - closes the path back to start
   PathLine {
     relativeX: 0
-    relativeY: -((bar ? bar.height : 0) - root.blRadius * root.blMultY - root.tlRadius * root.tlMultY)
+    relativeY: -(root.barHeight - root.blRadius * root.blMultY - root.tlRadius * root.tlMultY)
   }
 
   // Top-left corner arc (back to start)

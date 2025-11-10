@@ -5,7 +5,6 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
-import qs.Services
 import qs.Widgets
 
 PopupWindow {

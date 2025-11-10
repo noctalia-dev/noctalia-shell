@@ -1,6 +1,5 @@
 import QtQuick
 import qs.Commons
-import qs.Services
 
 Item {
   id: root
@@ -14,40 +13,50 @@ Item {
   implicitWidth: size
   implicitHeight: size
 
-  Canvas {
-    id: canvas
+  // GPU-optimized spinner - draw once, rotate with GPU transform
+  Item {
+    id: spinner
     anchors.fill: parent
 
-    onPaint: {
-      var ctx = getContext("2d")
-      ctx.reset()
+    // Static canvas - drawn ONCE, then cached
+    Canvas {
+      id: canvas
+      anchors.fill: parent
+      renderStrategy: Canvas.Cooperative // Better performance than Threaded for simple shapes
+      renderTarget: Canvas.FramebufferObject // GPU texture
 
-      var centerX = width / 2
-      var centerY = height / 2
-      var radius = Math.min(width, height) / 2 - strokeWidth / 2
+      // Enable layer caching - critical for performance!
+      layer.enabled: true
+      layer.smooth: true
 
-      ctx.strokeStyle = root.color
-      ctx.lineWidth = Math.max(1, root.strokeWidth)
-      ctx.lineCap = "round"
+      Component.onCompleted: {
+        requestPaint()
+      }
 
-      // Draw arc with gap (270 degrees with 90 degree gap)
-      ctx.beginPath()
-      ctx.arc(centerX, centerY, radius, -Math.PI / 2 + rotationAngle, -Math.PI / 2 + rotationAngle + Math.PI * 1.5)
-      ctx.stroke()
+      onPaint: {
+        var ctx = getContext("2d")
+        ctx.reset()
+
+        var centerX = width / 2
+        var centerY = height / 2
+        var radius = Math.min(width, height) / 2 - strokeWidth / 2
+
+        ctx.strokeStyle = root.color
+        ctx.lineWidth = Math.max(1, root.strokeWidth)
+        ctx.lineCap = "round"
+
+        // Draw arc with gap (270 degrees = 3/4 of circle)
+        ctx.beginPath()
+        ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 1.5)
+        ctx.stroke()
+      }
     }
 
-    property real rotationAngle: 0
-
-    onRotationAngleChanged: {
-      requestPaint()
-    }
-
-    NumberAnimation {
-      target: canvas
-      property: "rotationAngle"
+    // Smooth rotation animation - uses GPU transform, NO canvas repaints!
+    RotationAnimation on rotation {
       running: root.running
       from: 0
-      to: 2 * Math.PI
+      to: 360
       duration: root.duration
       loops: Animation.Infinite
     }

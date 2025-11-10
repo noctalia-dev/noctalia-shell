@@ -4,7 +4,8 @@ import QtQuick.Layouts
 import Quickshell
 import qs.Widgets.AudioSpectrum
 import qs.Commons
-import qs.Services
+import qs.Services.Media
+import qs.Services.UI
 import qs.Widgets
 
 Item {

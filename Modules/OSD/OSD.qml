@@ -5,8 +5,10 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
-import qs.Services
 import qs.Widgets
+import qs.Services.Hardware
+import qs.Services.Media
+import qs.Services.System
 
 // Unified OSD component
 // Loader activates only when showing OSD, deactivates when hidden to save resources
@@ -138,8 +140,8 @@ Variants {
       readonly property bool isCentered: (location === "top" || location === "bottom")
       readonly property bool verticalMode: (location === "left" || location === "right")
       readonly property int hWidth: Math.round(420 * Style.uiScaleRatio)
-      readonly property int hHeight: Math.round(84 * Style.uiScaleRatio)
-      readonly property int vWidth: Math.round(92 * Style.uiScaleRatio)
+      readonly property int hHeight: Math.round(72 * Style.uiScaleRatio)
+      readonly property int vWidth: Math.round(84 * Style.uiScaleRatio)
       readonly property int vHeight: Math.round(380 * Style.uiScaleRatio)
 
       // Ensure an even width to keep the vertical bar perfectly centered
@@ -208,6 +210,10 @@ Variants {
       WlrLayershell.layer: (Settings.data.osd && Settings.data.osd.overlayLayer) ? WlrLayer.Overlay : WlrLayer.Top
       exclusionMode: PanelWindow.ExclusionMode.Ignore
 
+      // Rectangle {
+      //   anchors.fill: parent
+      //   color: "#4400FF00"
+      // }
       Item {
         id: osdItem
         anchors.fill: parent
@@ -253,7 +259,7 @@ Variants {
         Rectangle {
           id: background
           anchors.fill: parent
-          anchors.margins: Style.marginM * 2
+          anchors.margins: Style.marginM * 1.5
           radius: Style.radiusL
           color: Color.mSurface
           border.color: Color.mOutline
@@ -263,17 +269,17 @@ Variants {
           }
         }
 
-        // MultiEffect applied to background only
         NDropShadows {
           anchors.fill: background
           source: background
+          autoPaddingEnabled: true
         }
 
         // Content loader on top of the background (not affected by MultiEffect)
         Loader {
           id: contentLoader
-          anchors.fill: parent
-          anchors.margins: Style.marginL * 2
+          anchors.fill: background
+          anchors.margins: Style.marginM
           active: true
           sourceComponent: panel.verticalMode ? verticalContent : horizontalContent
         }
@@ -345,8 +351,6 @@ Variants {
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
                 Layout.preferredWidth: Math.round(50 * Style.uiScaleRatio)
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.verticalCenterOffset: 0
               }
             }
           }

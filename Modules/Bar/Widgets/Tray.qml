@@ -7,7 +7,7 @@ import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import qs.Commons
 import qs.Modules.Bar.Extras
-import qs.Services
+import qs.Services.UI
 import qs.Widgets
 
 Rectangle {
@@ -198,6 +198,36 @@ Rectangle {
     spacing: Style.marginXS
     flow: isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
+    // Drawer opener (before items if opposite direction)
+    NIconButton {
+      id: chevronIconBefore
+      visible: root.drawerEnabled && dropdownItems.length > 0 && BarService.getPillDirection(root)
+      tooltipText: I18n.tr("tooltips.open-tray-dropdown")
+      tooltipDirection: BarService.getTooltipDirection()
+      density: Settings.data.bar.density
+      baseSize: Style.capsuleHeight
+      applyUiScale: false
+      colorBg: Settings.data.colorSchemes.darkMode ? (Settings.data.bar.showCapsule ? Color.mSurfaceVariant : Color.transparent) : Color.mPrimary
+      colorFg: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mOnPrimary
+      colorBorder: Color.transparent
+      colorBorderHover: Color.transparent
+      icon: {
+        switch (barPosition) {
+        case "bottom":
+          return "caret-up"
+        case "left":
+          return "caret-right"
+        case "right":
+          return "caret-left"
+        case "top":
+        default:
+          return "caret-down"
+        }
+      }
+      onClicked: toggleDrawer(this)
+      onRightClicked: toggleDrawer(this)
+    }
+
     Repeater {
       id: repeater
       model: root.filteredItems
@@ -311,10 +341,10 @@ Rectangle {
       }
     }
 
-    // Drawer opener
+    // Drawer opener (after items if normal direction)
     NIconButton {
-      id: chevronIcon
-      visible: root.drawerEnabled && dropdownItems.length > 0
+      id: chevronIconAfter
+      visible: root.drawerEnabled && dropdownItems.length > 0 && !BarService.getPillDirection(root)
       tooltipText: I18n.tr("tooltips.open-tray-dropdown")
       tooltipDirection: BarService.getTooltipDirection()
       density: Settings.data.bar.density
@@ -337,12 +367,8 @@ Rectangle {
           return "caret-down"
         }
       }
-      onClicked: {
-        toggleDrawer(this)
-      }
-      onRightClicked: {
-        toggleDrawer(this)
-      }
+      onClicked: toggleDrawer(this)
+      onRightClicked: toggleDrawer(this)
     }
   }
 }

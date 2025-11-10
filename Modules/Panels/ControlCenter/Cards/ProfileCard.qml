@@ -5,10 +5,10 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
 import qs.Commons
-import qs.Services
-import qs.Widgets
 import qs.Modules.Panels.ControlCenter.Cards
 import qs.Modules.Panels.Settings
+import qs.Services.UI
+import qs.Widgets
 
 // Header card with avatar, user and quick actions
 NBox {

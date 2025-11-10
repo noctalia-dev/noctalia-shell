@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.UPower
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 import qs.Widgets
 import qs.Modules.Notification
 import qs.Modules.Bar.Extras
@@ -27,11 +27,8 @@ Item {
   readonly property string barPosition: Settings.data.bar.position || "top"
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool barFloating: Settings.data.bar.floating || false
-  readonly property real barMarginH: barFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
-  readonly property real barMarginV: barFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
-
-  // Attachment overlap to fix hairline gap with fractional scaling
-  readonly property real attachmentOverlap: 1
+  readonly property real barMarginH: 0 //barFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
+  readonly property real barMarginV: 0 //barFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
 
   // Fill the parent (the Loader)
   anchors.fill: parent
@@ -68,29 +65,28 @@ Item {
         id: bar
 
         // Position and size the bar based on orientation and floating margins
-        // Extend the bar by attachmentOverlap to eliminate hairline gap
         x: {
           var baseX = (root.barPosition === "right") ? (parent.width - Style.barHeight - root.barMarginH) : root.barMarginH
           if (root.barPosition === "right")
-            return baseX - root.attachmentOverlap // Extend left towards panels
+            return baseX // Extend left towards panels
           return baseX
         }
         y: {
           var baseY = (root.barPosition === "bottom") ? (parent.height - Style.barHeight - root.barMarginV) : root.barMarginV
           if (root.barPosition === "bottom")
-            return baseY - root.attachmentOverlap // Extend up towards panels
+            return baseY // Extend up towards panels
           return baseY
         }
         width: {
           var baseWidth = root.barIsVertical ? Style.barHeight : (parent.width - root.barMarginH * 2)
           if (!root.barIsVertical)
             return baseWidth // Horizontal bars extend via height, not width
-          return baseWidth + root.attachmentOverlap + 1
+          return baseWidth + 1
         }
         height: {
           var baseHeight = root.barIsVertical ? (parent.height - root.barMarginV * 2) : Style.barHeight
           if (!root.barIsVertical)
-            return baseHeight + root.attachmentOverlap
+            return baseHeight
           return baseHeight // Vertical bars extend via width, not height
         }
 

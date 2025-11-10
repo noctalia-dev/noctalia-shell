@@ -4,7 +4,6 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
-import qs.Services
 
 NBox {
   id: root

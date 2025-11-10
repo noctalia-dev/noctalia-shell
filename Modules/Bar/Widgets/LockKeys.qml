@@ -4,7 +4,8 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 import qs.Modules.Panels.Settings
-import qs.Services
+import qs.Services.Keyboard
+import qs.Services.UI
 import qs.Widgets
 
 //import qs.Modules.Bar.Extras

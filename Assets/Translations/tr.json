@@ -503,6 +503,10 @@
       "top_left": "Sol üst",
       "top_right": "Sağ üst"
     },
+    "visualizer-quality": {
+      "high": "Yüksek",
+      "low": "Düşük"
+    },
     "visualizer-types": {
       "linear": "Doğrusal",
       "mirrored": "Yansıtılmış",
@@ -692,6 +696,10 @@
         "section": {
           "description": "Tercih ettiğiniz ve yoksayacağınız medya uygulamalarını ayarlayın.",
           "label": "Medya oynatıcılar"
+        },
+        "visualizer-quality": {
+          "description": "Yüksek kalite daha fazla GPU kaynağı kullanır.",
+          "label": "Görselleştirme kalitesi"
         },
         "visualizer-type": {
           "description": "Medya oynatımı için bir görselleştirme türü seçin",
@@ -1511,10 +1519,6 @@
         "description": "Paneller çubuğa ve ekran kenarlarına kilitlenerek şık ters köşelerle kusursuz bir görünüm oluşturur.",
         "label": "Kenarları Yakala"
       },
-      "settings-panel-attached-to-bar": {
-        "description": "Ayarlar penceresini çubukla hizalayarak tutarlı bir görünüm sağlayın.",
-        "label": "Ayarlar penceresini çubuğa hizala"
-      },
       "panels-overlay": {
         "description": "Panellerin ve çubuğun, tam ekran uygulamalarda bile görünür kalmasını sağlar.",
         "label": "Panelleri ve Çubuğu Üstte Tut"
@@ -1527,6 +1531,10 @@
       "section": {
         "description": "Arayüzün görünümünü, hissini ve davranışını özelleştirin.",
         "label": "Görünüm"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Ayarlar penceresini çubukla hizalayarak tutarlı bir görünüm sağlayın.",
+        "label": "Ayarlar penceresini çubuğa hizala"
       },
       "shadows": {
         "description": "Çubukların ve panellerin altında gölgelerin etkinleştirilmesini sağlar.",
@@ -1719,10 +1727,6 @@
     "kofi": {
       "opened": "Ko-fi sayfası tarayıcınızda açıldı"
     },
-    "matugen": {
-      "failed": "Matugen işlemi başarısız oldu",
-      "failed-general": "Matugen şablonları işlerken bir hata ile karşılaştı"
-    },
     "missing-control-center": {
       "description": "Kontrol Merkezi widget'ı çubuktan kaldırıldı. Çubuktan tekrar erişmek için widget'ı yeniden eklemeniz gerekecek. Çubuğa sağ tıklayarak da açabilirsiniz.",
       "label": "Son Kontrol Merkezi widget'ı kaldırıldı"
@@ -1733,6 +1737,11 @@
       "forced": "Zorla etkinleştirme",
       "normal": "Normal mod",
       "not-installed": "wlsunset kurulu değil"
+    },
+    "noctalia-performance": {
+      "disabled": "Performans modu devre dışı bırakıldı",
+      "enabled": "Performans modu etkinleştirildi",
+      "label": "Noctalia performansı"
     },
     "power-profile": {
       "changed": "Güç profili değişti",
@@ -1750,9 +1759,15 @@
       "started": "Kayıt başladı",
       "stopping": "Kayıt durduruluyor..."
     },
+    "theming-processor-failed": {
+      "desc-generic": "Şablonlar işlenirken bir hatayla karşılaşıldı.",
+      "title-matugen": "Matugen şablon işleme başarısız oldu.",
+      "title-predefined": "Önceden tanımlanmış renk şeması işleme başarısız oldu."
+    },
     "wallpaper-colors": {
       "disabled": "Duvar kağıdı renkleri devre dışı",
       "enabled": "Duvar kağıdı renkleri etkin",
+      "label": "Duvar kağıdı renkleri oluşturma",
       "not-installed": "Matugen kurulu değil - duvar kağıdı renk çıkarmak için gerekli"
     },
     "wifi": {
@@ -1793,6 +1808,8 @@
     "night-light-enabled": "Gece ışığı etkin.\nMod arasında geçiş yapmak için sol tık.\nAyarlara erişmek için sağ tık.",
     "night-light-forced": "Gece ışığı zorla.\nMod arasında geçiş yapmak için sol tık.\nAyarlara erişmek için sağ tık.",
     "night-light-not-installed": "Gece ışığı mevcut değil.\nwlsunset yüklü değil.",
+    "noctalia-performance-disabled": "Noctalia performans modu devre dışı.\nEtkinleştirmek için sol tıklayın.",
+    "noctalia-performance-enabled": "Noctalia performans modu etkin.\nDevre dışı bırakmak için sol tıklayın.",
     "open-control-center": "Kontrol merkezini aç",
     "open-notification-history-disable-dnd": "Bildirim geçmişini aç\n\"Rahatsız etmeyi\" devre dışı bırakmak için sağ tık.",
     "open-notification-history-enable-dnd": "Bildirim geçmişini aç\n\"Rahatsız etmeyi\" etkinleştirmek için sağ tık.",

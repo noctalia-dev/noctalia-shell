@@ -1,6 +1,6 @@
 import QtQuick
 import Quickshell
-import qs.Services
+import qs.Services.UI
 import qs.Commons
 
 Item {

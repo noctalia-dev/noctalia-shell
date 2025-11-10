@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
-import qs.Services
 import qs.Widgets
 import qs.Modules.MainScreen
 
@@ -17,7 +16,9 @@ SmartPanel {
   property int widgetIndex: -1
 
   // Internal
-  readonly property int menuWidth: 280
+  property int menuWidth: 280
+  readonly property int minMenuWidth: 280
+  readonly property int maxMenuWidth: 600
   preferredWidth: menuWidth
   // Height is content-driven via panelContent
 
@@ -52,7 +53,110 @@ SmartPanel {
     QsMenuOpener {
       id: opener
       menu: root.menu
+      onChildrenChanged: Qt.callLater(() => calculateMenuWidth(opener))
     }
+
+    // Text metrics for measuring text widths
+    TextMetrics {
+      id: textMetrics
+      font.pointSize: Style.fontSizeS
+    }
+
+    // Watch for submenu changes
+    onActiveSubMenuChanged: {
+      if (activeSubMenu && inPlaceSubmenu) {
+        Qt.callLater(() => {
+                       // Find the subMenuOpener in the loaded component
+                       if (inPlaceSubMenuLoader.item) {
+                         const flickable = inPlaceSubMenuLoader.item.children[1] // Flickable
+                         if (flickable && flickable.children.length > 0) {
+                           const columnLayout = flickable.children[0]
+                           if (columnLayout && columnLayout.children.length > 0) {
+                             const subOpener = columnLayout.children[0]
+                             if (subOpener) {
+                               calculateMenuWidth(subOpener)
+                             }
+                           }
+                         }
+                       }
+                     })
+      } else if (!activeSubMenu) {
+        // Reset to main menu width when submenu closes
+        Qt.callLater(() => calculateMenuWidth(opener))
+      }
+    }
+
+    // Calculate required menu width based on menu entries
+    function calculateMenuWidth(menuOpener) {
+      let maxWidth = root.minMenuWidth
+
+      // For submenus, also measure the "Back" button
+      if (menuOpener !== opener && content.inPlaceSubmenu) {
+        textMetrics.text = I18n.tr("settings.bar.tray.back")
+        const backWidth = (Style.marginM * 4) + Style.fontSizeS + Style.marginS + textMetrics.width
+        maxWidth = Math.max(maxWidth, backWidth)
+      }
+
+      // Check all menu entries
+      if (menuOpener && menuOpener.children) {
+        try {
+          const entries = menuOpener.children.values ? [...menuOpener.children.values] : []
+
+          for (var i = 0; i < entries.length; i++) {
+            const entry = entries[i]
+            if (!entry || entry.isSeparator)
+              continue
+
+            const text = entry.text || ""
+            if (text === "")
+              continue
+
+            // Measure the text
+            textMetrics.text = text.replace(/[\n\r]+/g, ' ')
+            const textWidth = textMetrics.width
+
+            // Calculate total width:
+            // - Outer inset: Style.marginM * 2 (parent width reduction)
+            // - RowLayout margins: Style.marginM * 2 (left + right)
+            // - Text width
+            // - Spacing: Style.marginS
+            // - Icon: Style.marginL (if present)
+            // - Submenu arrow: ~20px (if present)
+            let requiredWidth = (Style.marginM * 4) + textWidth
+
+            if (entry.icon && entry.icon !== "") {
+              requiredWidth += Style.marginS + Style.marginL
+            }
+
+            if (entry.hasChildren) {
+              requiredWidth += Style.marginS + 20
+            }
+
+            maxWidth = Math.max(maxWidth, requiredWidth)
+          }
+        } catch (e) {
+
+          // Silently ignore errors during width calculation
+        }
+      }
+
+      // Check pin/unpin button (only for main menu)
+      if (menuOpener === opener && root.trayItem !== null && root.widgetSection !== "" && root.widgetIndex >= 0) {
+        textMetrics.text = I18n.tr("settings.bar.tray.pin-application")
+        let pinWidth = (Style.marginM * 4) + textMetrics.width + Style.marginS + 20
+        maxWidth = Math.max(maxWidth, pinWidth)
+
+        textMetrics.text = I18n.tr("settings.bar.tray.unpin-application")
+        let unpinWidth = (Style.marginM * 4) + textMetrics.width + Style.marginS + 20
+        maxWidth = Math.max(maxWidth, unpinWidth)
+      }
+
+      // Clamp to min/max and apply
+      const finalWidth = Math.min(root.maxMenuWidth, Math.max(root.minMenuWidth, Math.ceil(maxWidth)))
+      root.menuWidth = finalWidth
+    }
+
+    Component.onCompleted: Qt.callLater(() => calculateMenuWidth(opener))
 
     Component {
       id: subMenuComponent
@@ -103,7 +207,7 @@ SmartPanel {
           id: subMenuFlickable
           anchors.fill: parent
           contentHeight: subMenuColumnLayout.implicitHeight
-          interactive: true
+          interactive: false
           z: 0
 
           ColumnLayout {
@@ -114,6 +218,7 @@ SmartPanel {
             QsMenuOpener {
               id: subMenuOpener
               menu: content.activeSubMenu
+              onChildrenChanged: Qt.callLater(() => content.calculateMenuWidth(subMenuOpener))
             }
 
             // Back button (only shown when submenu is in-place)
@@ -312,7 +417,7 @@ SmartPanel {
         Layout.preferredWidth: root.menuWidth
         Layout.fillHeight: true
         contentHeight: mainColumnLayout.implicitHeight
-        interactive: true
+        interactive: false
         visible: !(content.activeSubMenu !== null && content.inPlaceSubmenu)
 
         ColumnLayout {

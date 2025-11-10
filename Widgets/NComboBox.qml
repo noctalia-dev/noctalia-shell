@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
-import qs.Services
 import qs.Widgets
 
 RowLayout {
@@ -108,14 +107,6 @@ RowLayout {
       implicitWidth: combo.width - Style.marginM
       implicitHeight: Math.min(root.popupHeight, contentItem.implicitHeight + Style.marginM * 2)
       padding: Style.marginM
-
-      onOpened: {
-        PanelService.willOpenPopup(root)
-      }
-
-      onClosed: {
-        PanelService.willClosePopup(root)
-      }
 
       contentItem: NListView {
         model: combo.popup.visible ? root.model : null

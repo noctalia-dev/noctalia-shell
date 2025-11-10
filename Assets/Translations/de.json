@@ -110,8 +110,8 @@
       "custom-button": {
         "browse": "Durchsuchen",
         "collapse-condition": {
-          "description": "If the output text matches this value, the button will collapse.",
-          "label": "Collapse condition"
+          "description": "Wenn der Ausgabetext diesem Wert entspricht, wird die Schaltfläche eingeklappt.",
+          "label": "Einklappbedingung"
         },
         "display-command-output": {
           "description": "Befehl eingeben, der in regelmäßigen Abständen ausgeführt wird. Die erste Zeile seiner Ausgabe wird als Text angezeigt.",
@@ -145,7 +145,7 @@
         },
         "text-stream": {
           "description": "Gestreamte Zeilen aus dem Befehl werden als Text auf der Schaltfläche angezeigt.",
-          "label": "Strom"
+          "label": "Stream"
         }
       },
       "dialog": {
@@ -161,7 +161,7 @@
       "lock-keys": {
         "browse": "Durchsuchen",
         "show-caps-lock": {
-          "description": "Caps Lock Status anzeigen.",
+          "description": "Caps-Lock-Status anzeigen.",
           "label": "Feststelltaste"
         },
         "show-num-lock": {
@@ -503,6 +503,10 @@
       "top_left": "Oben links",
       "top_right": "Oben rechts"
     },
+    "visualizer-quality": {
+      "high": "Hoch",
+      "low": "Niedrig"
+    },
     "visualizer-types": {
       "linear": "Linear",
       "mirrored": "Gespiegelt",
@@ -693,6 +697,10 @@
           "description": "Bevorzugte und ignorierte Medienanwendungen festlegen.",
           "label": "Medienplayer"
         },
+        "visualizer-quality": {
+          "description": "Hohe Qualität verbraucht mehr GPU-Ressourcen.",
+          "label": "Visualisierungsqualität"
+        },
         "visualizer-type": {
           "description": "Visualisierungstyp für Medienwiedergabe wählen.",
           "label": "Visualisierungstyp"
@@ -796,13 +804,13 @@
         "matugen-scheme-type": {
           "description": {
             "scheme-content": "Leitet Farben ab, die eng mit dem zugrunde liegenden Bild übereinstimmen.",
-            "scheme-expressive": "Lebendige Farbpalette mit verspielter Sättigung",
-            "scheme-fidelity": "Farbtreue Palette, die die Originalfarbtöne beibehält",
-            "scheme-fruit-salad": "Farbenfroher Mix aus leuchtenden, kontrastreichen Akzenten",
+            "scheme-expressive": "Lebendige Farbpalette mit verspielter Sättigung.",
+            "scheme-fidelity": "Farbtreue Palette, die die Originalfarbtöne beibehält.",
+            "scheme-fruit-salad": "Farbenfroher Mix aus leuchtenden, kontrastreichen Akzenten.",
             "scheme-monochrome": "Minimale Farbpalette, die auf einem einzigen Farbton basiert.",
             "scheme-neutral": "Gedämpfte Farbpalette mit dezenten und beruhigenden Tönen.",
-            "scheme-rainbow": "Vielfältige Palette, die das gesamte Spektrum abdeckt",
-            "scheme-tonal-spot": "Ausgewogene Farbpalette mit gezielten Akzenten"
+            "scheme-rainbow": "Vielfältige Palette, die das gesamte Spektrum abdeckt.",
+            "scheme-tonal-spot": "Ausgewogene Farbpalette mit gezielten Akzenten."
           },
           "label": "Matugen-Schema-Typ"
         },
@@ -849,7 +857,7 @@
         },
         "programs": {
           "code": {
-            "description": "Schreibe {Dateipfad}. Das Hyprluna-Theme muss manuell installiert und aktiviert werden.",
+            "description": "Schreibe {Dateipfad}. Das Hyprluna-Theme muss manuell installiert und aktiviert werden",
             "description-missing": "Benötigt die Installation von {app}"
           },
           "description": "Anwendungsspezifisches Theming.",
@@ -871,7 +879,7 @@
             "description-missing": "Erfordert die Installation von {app}"
           },
           "walker": {
-            "description": "Schreibt {filepath} und setzt das Theme auf noctalia",
+            "description": "Schreibt {filepath} und setzt das Theme auf Noctalia",
             "description-missing": "Erfordert die Installation von {app}"
           }
         },
@@ -899,7 +907,7 @@
           },
           "label": "Terminal",
           "wezterm": {
-            "description": "Schreibe {Dateipfad} und lade neu.",
+            "description": "Schreibe {Dateipfad} und lade neu",
             "description-missing": "Erfordert die Installation von {app}"
           }
         },
@@ -942,7 +950,7 @@
             "label": "Befehl"
           },
           "enable-on-state-logic": {
-            "description": "Aktiviert ein zweites Symbol und 'aktiv' Zustand basierend auf einem Prüfbefehl.",
+            "description": "Aktiviert ein zweites Symbol und 'Aktiv'-Zustand basierend auf einem Prüfbefehl.",
             "label": "Aktiv-Zustand-Logik aktivieren"
           },
           "general-tooltip-text": {
@@ -966,11 +974,11 @@
             "label": "Rechtsklick-Befehl"
           },
           "on-state-command": {
-            "description": "Befehl, der ausgeführt wird, um zu prüfen, ob sich die Schaltfläche im 'aktiv' Zustand befinden soll. Gibt 0 für aktiv, ungleich 0 für inaktiv zurück.",
+            "description": "Befehl, der ausgeführt wird, um zu prüfen, ob sich die Schaltfläche im 'Aktiv'-Zustand befinden soll. Gibt 0 für aktiv, ungleich 0 für inaktiv zurück.",
             "label": "Befehl für Aktiv-Zustand-Prüfung"
           },
           "on-state-icon": {
-            "description": "Das Symbol für die Schaltfläche, wenn sie sich im 'aktiv' Zustand befindet.",
+            "description": "Das Symbol für die Schaltfläche, wenn sie sich im 'Aktiv'-Zustand befindet.",
             "label": "Symbol im Aktiv-Zustand"
           },
           "state-checks": {
@@ -1087,7 +1095,7 @@
         }
       },
       "enabled": {
-        "description": "Dock vollständig anzeigen oder ausblenden",
+        "description": "Dock vollständig anzeigen oder ausblenden.",
         "label": "Dock aktivieren"
       },
       "monitors": {
@@ -1377,7 +1385,7 @@
           "label": "Bildschirmanzeige aktivieren"
         },
         "enabled": {
-          "description": "Benachrichtigungs-Daemon aktivieren oder deaktivieren, erfordert einen Neustart von noctalia-shell.",
+          "description": "Benachrichtigungs-Daemon aktivieren oder deaktivieren, erfordert einen Neustart von Noctalia Shell.",
           "label": "Benachrichtigungen aktivieren"
         },
         "location": {
@@ -1505,15 +1513,11 @@
       },
       "dim-desktop": {
         "description": "Den Desktop abdunkeln, wenn Fenster oder Menüs geöffnet sind.",
-        "label": "Dimmer Schreibtisch"
+        "label": "Desktop abdunkeln"
       },
       "panels-attached-to-bar": {
         "description": "Die Paneele rasten an der Stange und den Bildschirmrändern ein und sorgen so für ein nahtloses Erscheinungsbild mit stilvollen, umgekehrten Ecken.",
         "label": "Paneele an Kanten ausrichten"
-      },
-      "settings-panel-attached-to-bar": {
-        "description": "Richten Sie das Einstellungsfenster an der Leiste aus, um ein einheitliches Erscheinungsbild zu erhalten.",
-        "label": "Einstellungsfenster an Leiste ausrichten"
       },
       "panels-overlay": {
         "description": "Stellt sicher, dass Panels und die Leiste sichtbar bleiben, auch über Vollbildanwendungen.",
@@ -1527,6 +1531,10 @@
       "section": {
         "description": "Passen Sie das Aussehen, die Haptik und das Verhalten der Benutzeroberfläche an.",
         "label": "Aussehen"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Richten Sie das Einstellungsfenster an der Leiste aus, um ein einheitliches Erscheinungsbild zu erhalten.",
+        "label": "Einstellungsfenster an Leiste ausrichten"
       },
       "shadows": {
         "description": "Aktiviert Schlagschatten unter Balken und Panels.",
@@ -1719,10 +1727,6 @@
     "kofi": {
       "opened": "Ko-fi-Seite in Ihrem Browser geöffnet"
     },
-    "matugen": {
-      "failed": "Matugen-Verarbeitung fehlgeschlagen",
-      "failed-general": "Matugen ist beim Verarbeiten der Vorlagen auf einen Fehler gestoßen"
-    },
     "missing-control-center": {
       "description": "Das Kontrollzentrum-Widget wurde aus der Leiste entfernt. Um es erneut über die Leiste zu öffnen, fügen Sie das Widget wieder hinzu. Sie können es auch durch Rechtsklick auf die Leiste öffnen.",
       "label": "Letztes Kontrollzentrum-Widget entfernt"
@@ -1733,6 +1737,11 @@
       "forced": "Aktivierung erzwungen",
       "normal": "Normaler Modus",
       "not-installed": "wlsunset nicht installiert"
+    },
+    "noctalia-performance": {
+      "disabled": "Leistungsmodus deaktiviert",
+      "enabled": "Leistungsmodus aktiviert",
+      "label": "Noctalia-Aufführung"
     },
     "power-profile": {
       "changed": "Energieprofil geändert",
@@ -1750,9 +1759,15 @@
       "started": "Aufnahme gestartet",
       "stopping": "Aufnahme wird gestoppt…"
     },
+    "theming-processor-failed": {
+      "desc-generic": "Beim Verarbeiten von Vorlagen ist ein Fehler aufgetreten.",
+      "title-matugen": "Matugen-Templating-Verarbeitung fehlgeschlagen",
+      "title-predefined": "Die Verarbeitung des vordefinierten Farbschemas ist fehlgeschlagen."
+    },
     "wallpaper-colors": {
       "disabled": "Hintergrundbild-Farben deaktiviert",
       "enabled": "Hintergrundbild-Farben aktiviert",
+      "label": "Hintergrundfarbengenerierung",
       "not-installed": "Matugen nicht installiert - erforderlich für Hintergrundbild-Farbextraktion"
     },
     "wifi": {
@@ -1793,6 +1808,8 @@
     "night-light-enabled": "Nachtlicht ist aktiviert.\nLinksklick zum Wechseln des Modus.\nRechtsklick für Einstellungen.",
     "night-light-forced": "Nachtlicht ist erzwungen.\nLinksklick zum Wechseln des Modus.\nRechtsklick für Einstellungen.",
     "night-light-not-installed": "Nachtlicht ist nicht verfügbar.\nwlsunset ist nicht installiert.",
+    "noctalia-performance-disabled": "Noctalia-Leistungsmodus ist deaktiviert.\nLinksklick zum Aktivieren.",
+    "noctalia-performance-enabled": "Noctalia-Leistungsmodus ist aktiviert.\nLinksklick zum Deaktivieren.",
     "open-control-center": "Kontrollzentrum öffnen",
     "open-notification-history-disable-dnd": "Benachrichtigungsverlauf öffnen\nRechtsklick um 'Nicht stören' zu deaktivieren.",
     "open-notification-history-enable-dnd": "Benachrichtigungsverlauf öffnen\nRechtsklick um 'Nicht stören' zu aktivieren.",

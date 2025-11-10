@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
-import qs.Services
+import qs.Services.Media
 import qs.Widgets
 
 // Audio controls card: output and input volume controls

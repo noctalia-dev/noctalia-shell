@@ -28,6 +28,8 @@ ShapePath {
   // Corner radius (from Style)
   readonly property real radius: Style.radiusL
 
+  required property color backgroundColor
+
   // Get the actual panelBackground Item from SmartPanel
   // Only access panelRegion if panel exists and is visible
   readonly property var panelBg: (panel && panel.visible) ? panel.panelRegion : null
@@ -68,21 +70,6 @@ ShapePath {
   readonly property real blMultY: panelBg ? ShapeCornerHelper.getMultY(panelBg.bottomLeftCornerState) : 1
   readonly property real blRadius: panelBg ? getCornerRadius(panelBg.bottomLeftCornerState) : 0
 
-  // DEBUG: Log panel state changes
-  onPanelChanged: {
-    Logger.d("PanelBackground", "=== panel changed:", panel)
-    Logger.d("PanelBackground", "  panel.visible:", panel ? panel.visible : "null")
-    Logger.d("PanelBackground", "  panel.panelRegion:", panel ? panel.panelRegion : "null")
-  }
-
-  onPanelBgChanged: {
-    Logger.d("PanelBackground", "=== panelBg changed:", panelBg)
-    if (panelBg) {
-      Logger.d("PanelBackground", "  Geometry:", panelX, panelY, panelWidth, panelHeight)
-      Logger.d("PanelBackground", "  startX:", startX, "startY:", startY)
-    }
-  }
-
   // ShapePath configuration
   strokeWidth: -1 // No stroke, fill only
 
@@ -90,14 +77,7 @@ ShapePath {
   startX: panelX + tlRadius * tlMultX
   startY: panelY
 
-  fillColor: Color.mSurface
-
-  // Smooth color animation
-  Behavior on fillColor {
-    ColorAnimation {
-      duration: Style.animationFast
-    }
-  }
+  fillColor: backgroundColor
 
   // ========== PATH DEFINITION ==========
   // Draws a rectangle with potentially inverted corners

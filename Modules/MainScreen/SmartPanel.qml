@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 
 
 /**
@@ -105,6 +105,16 @@ Item {
 
   signal opened
   signal closed
+
+  Connections {
+    target: Style
+
+    function onUiScaleRatioChanged() {
+      if (root.isPanelOpen && root.isPanelVisible) {
+        root.setPosition()
+      }
+    }
+  }
 
   // Panel visibility and sizing
   visible: isPanelVisible
@@ -518,6 +528,7 @@ Item {
 
     Logger.d("SmartPanel", "Position calculated:", calculatedX, calculatedY)
     Logger.d("SmartPanel", "  Panel size:", panelWidth, "x", panelHeight)
+    Logger.d("SmartPanel", "  Parent size:", root.width, "x", root.height)
   }
 
   // Watch for changes in content-driven sizes and update position
@@ -734,12 +745,14 @@ Item {
         if (!isPanelVisible) {
           return true
         }
+        // PRIORITY 1: Bar attachment (always takes precedence)
         // Attached to bar at top
         if (willTouchTopBar) {
           return true
         }
+        // PRIORITY 2: Screen edge attachment (only if not touching bar)
         // Attached to screen top edge (not bar)
-        if (willTouchTopEdge && !willTouchTopBar) {
+        if (willTouchTopEdge && !willTouchTopBar && !willTouchBottomBar && !willTouchLeftBar && !willTouchRightBar) {
           return true
         }
         // If panel is not attached to any edge, animate from top by default
@@ -752,12 +765,14 @@ Item {
         if (!isPanelVisible) {
           return false
         }
+        // PRIORITY 1: Bar attachment (always takes precedence)
         // Attached to bar at bottom
         if (willTouchBottomBar) {
           return true
         }
+        // PRIORITY 2: Screen edge attachment (only if not touching bar)
         // Attached to screen bottom edge (not bar)
-        if (willTouchBottomEdge && !willTouchBottomBar) {
+        if (willTouchBottomEdge && !willTouchTopBar && !willTouchBottomBar && !willTouchLeftBar && !willTouchRightBar) {
           return true
         }
         return false
@@ -766,22 +781,25 @@ Item {
         if (!isPanelVisible) {
           return false
         }
-        // Don't animate from left if also touching top/bottom edge (priority: vertical over horizontal)
-        // Check directly instead of relying on other computed properties to avoid race conditions
-        var touchingTopBar = isPanelVisible && panelContent.allowAttachToBar && root.barPosition === "top" && !root.barIsVertical && Math.abs(panelBackground.targetY - (root.barMarginV + Style.barHeight)) <= 1
-        var touchingBottomBar = isPanelVisible && panelContent.allowAttachToBar && root.barPosition === "bottom" && !root.barIsVertical && Math.abs(panelBackground.targetY - (root.height - root.barMarginV - Style.barHeight - panelBackground.targetHeight)) <= 1
-        var touchingTopEdge = isPanelVisible && panelContent.allowAttach && panelBackground.targetY <= 1
-        var touchingBottomEdge = isPanelVisible && panelContent.allowAttach && (panelBackground.targetY + panelBackground.targetHeight) >= (root.height - 1)
-
-        if (touchingTopEdge || touchingBottomEdge || touchingTopBar || touchingBottomBar) {
+        // PRIORITY 1: Bar attachment (always takes precedence)
+        // If touching any horizontal bar, don't animate from left
+        if (willTouchTopBar || willTouchBottomBar) {
           return false
         }
         // Attached to bar at left
         if (willTouchLeftBar) {
           return true
         }
+        // PRIORITY 2: Screen edge attachment (only if not touching any bar)
+        // Don't animate from left if also touching top/bottom edge (priority: vertical over horizontal)
+        var touchingTopEdge = isPanelVisible && panelContent.allowAttach && panelBackground.targetY <= 1
+        var touchingBottomEdge = isPanelVisible && panelContent.allowAttach && (panelBackground.targetY + panelBackground.targetHeight) >= (root.height - 1)
+
+        if (touchingTopEdge || touchingBottomEdge) {
+          return false
+        }
         // Attached to screen left edge (not bar)
-        if (willTouchLeftEdge && !willTouchLeftBar) {
+        if (willTouchLeftEdge && !willTouchLeftBar && !willTouchTopBar && !willTouchBottomBar && !willTouchRightBar) {
           return true
         }
         return false
@@ -790,22 +808,25 @@ Item {
         if (!isPanelVisible) {
           return false
         }
-        // Don't animate from right if also touching top/bottom edge (priority: vertical over horizontal)
-        // Check directly instead of relying on other computed properties to avoid race conditions
-        var touchingTopBar = isPanelVisible && panelContent.allowAttachToBar && root.barPosition === "top" && !root.barIsVertical && Math.abs(panelBackground.targetY - (root.barMarginV + Style.barHeight)) <= 1
-        var touchingBottomBar = isPanelVisible && panelContent.allowAttachToBar && root.barPosition === "bottom" && !root.barIsVertical && Math.abs(panelBackground.targetY - (root.height - root.barMarginV - Style.barHeight - panelBackground.targetHeight)) <= 1
-        var touchingTopEdge = isPanelVisible && panelContent.allowAttach && panelBackground.targetY <= 1
-        var touchingBottomEdge = isPanelVisible && panelContent.allowAttach && (panelBackground.targetY + panelBackground.targetHeight) >= (root.height - 1)
-
-        if (touchingTopEdge || touchingBottomEdge || touchingTopBar || touchingBottomBar) {
+        // PRIORITY 1: Bar attachment (always takes precedence)
+        // If touching any horizontal bar, don't animate from right
+        if (willTouchTopBar || willTouchBottomBar) {
           return false
         }
         // Attached to bar at right
         if (willTouchRightBar) {
           return true
         }
+        // PRIORITY 2: Screen edge attachment (only if not touching any bar)
+        // Don't animate from right if also touching top/bottom edge (priority: vertical over horizontal)
+        var touchingTopEdge = isPanelVisible && panelContent.allowAttach && panelBackground.targetY <= 1
+        var touchingBottomEdge = isPanelVisible && panelContent.allowAttach && (panelBackground.targetY + panelBackground.targetHeight) >= (root.height - 1)
+
+        if (touchingTopEdge || touchingBottomEdge) {
+          return false
+        }
         // Attached to screen right edge (not bar)
-        if (willTouchRightEdge && !willTouchRightBar) {
+        if (willTouchRightEdge && !willTouchLeftBar && !willTouchTopBar && !willTouchBottomBar && !willTouchRightBar) {
           return true
         }
         return false

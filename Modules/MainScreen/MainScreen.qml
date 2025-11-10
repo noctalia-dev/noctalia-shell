@@ -3,7 +3,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 import "Backgrounds" as Backgrounds
 
 // All panels
@@ -49,17 +49,6 @@ PanelWindow {
     Logger.d("MainScreen", "Initialized for screen:", screen?.name, "- Dimensions:", screen?.width, "x", screen?.height, "- Position:", screen?.x, ",", screen?.y)
   }
 
-  // Debug: Log mask region changes
-  onMaskChanged: {
-    Logger.d("MainScreen", "Mask changed!")
-    Logger.d("MainScreen", "  Bar region:", barLoader.item?.barRegion)
-    Logger.d("MainScreen", "  Panel count:", panelsRepeater.count)
-    for (var i = 0; i < panelsRepeater.count; i++) {
-      var panelItem = panelsRepeater.itemAt(i)?.item
-      Logger.d("MainScreen", "  Panel", i, "- open:", panelItem?.isPanelOpen, "- region:", panelItem?.panelRegion)
-    }
-  }
-
   // Wayland
   // Always use Exclusive keyboard focus when a panel is open
   // This ensures all keyboard shortcuts work reliably (Escape, etc.)
@@ -78,7 +67,9 @@ PanelWindow {
 
   // Desktop dimming when panels are open
   property bool dimDesktop: Settings.data.general.dimDesktop
-  property bool isPanelOpen: PanelService.openedPanel !== null
+  property bool isPanelOpen: (PanelService.openedPanel !== null) && (PanelService.openedPanel.screen === screen)
+  property bool isPanelClosing: (PanelService.openedPanel !== null) && PanelService.openedPanel.isClosing
+
   color: {
     if (dimDesktop && isPanelOpen) {
       return Qt.alpha(Color.mShadow, 0.8)
@@ -110,12 +101,11 @@ PanelWindow {
     // Bar region - subtract bar area from mask
     Region {
       id: barMaskRegion
-      property var barRegion: barLoader.item?.barRegion
 
-      x: barRegion?.x ?? 0
-      y: barRegion?.y ?? 0
-      width: barRegion?.width ?? 0
-      height: barRegion?.height ?? 0
+      x: barPlaceholder.x
+      y: barPlaceholder.y
+      width: barPlaceholder.width
+      height: barPlaceholder.height
       intersection: Intersection.Subtract
     }
 
@@ -124,30 +114,8 @@ PanelWindow {
       id: backgroundMaskRegion
       x: 0
       y: 0
-      width: root.isPanelOpen ? root.width : 0
-      height: root.isPanelOpen ? root.height : 0
-      intersection: Intersection.Subtract
-    }
-  }
-
-  // Variants for panel regions
-  Variants {
-    id: panelRegions
-
-    // Model is the list of open panels (filters out closed ones)
-    model: [audioPanel, controlCenterPanel, calendarPanel].filter(function (p) {
-      return p && p.isPanelOpen
-    })
-
-    Region {
-      required property var modelData
-      property var panelBg: modelData.panelRegion
-
-      // Direct bindings
-      x: panelBg?.x ?? 0
-      y: panelBg?.y ?? 0
-      width: panelBg?.width ?? 0
-      height: panelBg?.height ?? 0
+      width: root.isPanelOpen && !isPanelClosing ? root.width : 0
+      height: root.isPanelOpen && !isPanelClosing ? root.height : 0
       intersection: Intersection.Subtract
     }
   }
@@ -164,7 +132,7 @@ PanelWindow {
     Backgrounds.AllBackgrounds {
       id: unifiedBackgrounds
       anchors.fill: parent
-      bar: barLoader.item?.barItem || null
+      bar: barPlaceholder.barItem || null
       windowRoot: root
       z: 0 // Behind all content
     }
@@ -174,11 +142,12 @@ PanelWindow {
     MouseArea {
       anchors.fill: parent
       enabled: root.isPanelOpen
-      onClicked: {
-        if (PanelService.openedPanel) {
-          PanelService.openedPanel.close()
-        }
-      }
+      acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+      onClicked: mouse => {
+                   if (PanelService.openedPanel) {
+                     PanelService.openedPanel.close()
+                   }
+                 }
       z: 0 // Behind panels and bar
     }
 
@@ -193,7 +162,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "audioPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(audioPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -205,7 +173,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "batteryPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(batteryPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -217,7 +184,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "bluetoothPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(bluetoothPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -229,7 +195,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "controlCenterPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(controlCenterPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -241,7 +206,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "calendarPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(calendarPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -253,7 +217,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "launcherPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(launcherPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -265,7 +228,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "notificationHistoryPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(notificationHistoryPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -277,7 +239,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "sessionMenuPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(sessionMenuPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -289,7 +250,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "settingsPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(settingsPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -301,7 +261,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "setupWizardPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(setupWizardPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -313,7 +272,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "trayDrawerPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(trayDrawerPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -325,7 +283,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "trayMenuPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(trayMenuPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -337,7 +294,6 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "wallpaperPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(wallpaperPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
@@ -349,33 +305,111 @@ PanelWindow {
       Component.onCompleted: {
         objectName = "wifiPanel-" + (screen?.name || "unknown")
         PanelService.registerPanel(wifiPanel)
-        Logger.d("MainScreen", "Panel registered:", objectName, "on screen:", screen?.name)
       }
     }
 
-    // Bar (always on top - rendered last in tree, so naturally on top)
-    Loader {
-      id: barLoader
-      asynchronous: false
-      sourceComponent: Bar {}
-      // Keep bar loaded but hide it when BarService.isVisible is false
-      // This allows panels to remain accessible via IPC
-      visible: BarService.isVisible
+    // Bar placeholder - just for background positioning (actual bar content is in BarContentWindow)
+    Item {
+      id: barPlaceholder
 
-      // Fill parent to provide dimensions for Bar to reference
-      anchors.fill: parent
+      // Expose self as barItem for AllBackgrounds compatibility
+      readonly property var barItem: barPlaceholder
 
+      // Screen reference
       property ShellScreen screen: root.screen
 
-      onLoaded: {
-        Logger.d("MainScreen", "Bar loaded:", item !== null)
-        if (item) {
-          Logger.d("MainScreen", "Bar screen", item.screen?.name, "size:", item.width, "x", item.height)
-          // Bind screen to bar component (use binding for reactivity)
-          item.screen = Qt.binding(function () {
-            return barLoader.screen
-          })
+      // Bar positioning properties (match Bar.qml logic)
+      readonly property string barPosition: Settings.data.bar.position || "top"
+      readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
+      readonly property bool barFloating: Settings.data.bar.floating || false
+      readonly property real barMarginH: barFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
+      readonly property real barMarginV: barFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
+
+      // Expose bar dimensions directly on this Item for BarBackground
+      // Use screen dimensions directly
+      x: {
+        if (barPosition === "right")
+          return screen.width - Style.barHeight - barMarginH
+        return barMarginH
+      }
+      y: {
+        if (barPosition === "bottom")
+          return screen.height - Style.barHeight - barMarginV
+        return barMarginV
+      }
+      width: {
+        if (barIsVertical) {
+          return Style.barHeight + 1
         }
+        return screen.width - barMarginH * 2
+      }
+      height: {
+        if (barIsVertical) {
+          return screen.height - barMarginV * 2
+        }
+        return Style.barHeight
+      }
+
+      // Corner states (same as Bar.qml)
+      readonly property int topLeftCornerState: {
+        if (barFloating)
+          return 0
+        if (barPosition === "top")
+          return -1
+        if (barPosition === "left")
+          return -1
+        if (Settings.data.bar.outerCorners && (barPosition === "bottom" || barPosition === "right")) {
+          return barIsVertical ? 1 : 2
+        }
+        return -1
+      }
+
+      readonly property int topRightCornerState: {
+        if (barFloating)
+          return 0
+        if (barPosition === "top")
+          return -1
+        if (barPosition === "right")
+          return -1
+        if (Settings.data.bar.outerCorners && (barPosition === "bottom" || barPosition === "left")) {
+          return barIsVertical ? 1 : 2
+        }
+        return -1
+      }
+
+      readonly property int bottomLeftCornerState: {
+        if (barFloating)
+          return 0
+        if (barPosition === "bottom")
+          return -1
+        if (barPosition === "left")
+          return -1
+        if (Settings.data.bar.outerCorners && (barPosition === "top" || barPosition === "right")) {
+          return barIsVertical ? 1 : 2
+        }
+        return -1
+      }
+
+      readonly property int bottomRightCornerState: {
+        if (barFloating)
+          return 0
+        if (barPosition === "bottom")
+          return -1
+        if (barPosition === "right")
+          return -1
+        if (Settings.data.bar.outerCorners && (barPosition === "top" || barPosition === "left")) {
+          return barIsVertical ? 1 : 2
+        }
+        return -1
+      }
+
+      Component.onCompleted: {
+        Logger.d("MainScreen", "===== Bar placeholder loaded =====")
+        Logger.d("MainScreen", "  Screen:", screen?.name, "Size:", screen?.width, "x", screen?.height)
+        Logger.d("MainScreen", "  Bar position:", barPosition, "| isVertical:", barIsVertical)
+        Logger.d("MainScreen", "  Bar dimensions: x=" + x, "y=" + y, "width=" + width, "height=" + height)
+        Logger.d("MainScreen", "  Style.barHeight =", Style.barHeight)
+        Logger.d("MainScreen", "  Margins: H=" + barMarginH, "V=" + barMarginV, "| Floating:", barFloating)
       }
     }
 

@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Wayland
 import qs.Commons
-import qs.Services
+import qs.Services.Networking
 import qs.Widgets
 
 NBox {

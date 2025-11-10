@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 import qs.Widgets
 import qs.Modules.Panels.Settings
 import qs.Modules.Bar.Extras

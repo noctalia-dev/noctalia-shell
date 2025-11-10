@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
-import qs.Services
 
 Popup {
   id: root
@@ -17,9 +16,6 @@ Popup {
 
   width: 180
   padding: Style.marginS
-
-  onOpened: PanelService.willOpenPopup(root)
-  onClosed: PanelService.willClosePopup(root)
 
   background: Rectangle {
     color: Color.mSurfaceVariant

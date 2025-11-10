@@ -1,9 +1,10 @@
 import QtQuick
 import Quickshell
 import qs.Commons
-import qs.Widgets.AudioSpectrum
-import qs.Services
+import qs.Services.UI
+import qs.Services.Media
 import qs.Widgets
+import qs.Widgets.AudioSpectrum
 
 Item {
   id: root

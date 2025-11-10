@@ -13,7 +13,13 @@ Item {
   property real handleWidth: 6
   property real handleRadius: Style.radiusM
   property int verticalPolicy: ScrollBar.AsNeeded
-  property int horizontalPolicy: ScrollBar.AsNeeded
+  property int horizontalPolicy: ScrollBar.AlwaysOff
+  readonly property bool verticalScrollBarActive: {
+    if (listView.ScrollBar.vertical.policy === ScrollBar.AlwaysOff)
+      return false
+    return listView.contentHeight > listView.height
+  }
+  readonly property real scrollBarWidth: verticalScrollBarActive ? handleWidth : 0
 
   // Forward ListView properties
   property alias model: listView.model
@@ -118,7 +124,6 @@ Item {
       x: listView.mirrored ? 0 : listView.width - width
       y: 0
       height: listView.height
-      active: listView.ScrollBar.horizontal.active
       policy: root.verticalPolicy
 
       contentItem: Rectangle {
@@ -144,50 +149,6 @@ Item {
       background: Rectangle {
         implicitWidth: root.handleWidth
         implicitHeight: 100
-        color: root.trackColor
-        opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
-        radius: root.handleRadius / 2
-
-        Behavior on opacity {
-          NumberAnimation {
-            duration: Style.animationFast
-          }
-        }
-      }
-    }
-
-    ScrollBar.horizontal: ScrollBar {
-      id: horizontalScrollBar
-      parent: listView
-      x: 0
-      y: listView.height - height
-      width: listView.width
-      active: listView.ScrollBar.vertical.active
-      policy: root.horizontalPolicy
-
-      contentItem: Rectangle {
-        implicitWidth: 100
-        implicitHeight: root.handleWidth
-        radius: root.handleRadius
-        color: parent.pressed ? root.handlePressedColor : parent.hovered ? root.handleHoverColor : root.handleColor
-        opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 1.0 : 0.0
-
-        Behavior on opacity {
-          NumberAnimation {
-            duration: Style.animationFast
-          }
-        }
-
-        Behavior on color {
-          ColorAnimation {
-            duration: Style.animationFast
-          }
-        }
-      }
-
-      background: Rectangle {
-        implicitWidth: 100
-        implicitHeight: root.handleWidth
         color: root.trackColor
         opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
         radius: root.handleRadius / 2

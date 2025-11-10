@@ -1,10 +1,8 @@
 import QtQuick
-import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
-import qs.Services
-import qs.Widgets
+import qs.Services.UI
 
 Item {
   id: root
@@ -135,73 +133,68 @@ Item {
 
       screen: root.screen
 
-      readonly property string location: (Settings.data.notifications && Settings.data.notifications.location) ? Settings.data.notifications.location : "top_right"
-      readonly property bool isTop: (location === "top") || (location.length >= 3 && location.substring(0, 3) === "top")
-      readonly property bool isBottom: (location === "bottom") || (location.length >= 6 && location.substring(0, 6) === "bottom")
-      readonly property bool isLeft: location.indexOf("_left") >= 0
-      readonly property bool isRight: location.indexOf("_right") >= 0
-      readonly property bool isCentered: (location === "top" || location === "bottom")
+      // Parse location setting
+      readonly property string location: Settings.data.notifications?.location || "top_right"
+      readonly property bool isTop: location.startsWith("top")
+      readonly property bool isBottom: location.startsWith("bottom")
+      readonly property bool isLeft: location.endsWith("_left")
+      readonly property bool isRight: location.endsWith("_right")
+      readonly property bool isCentered: location === "top" || location === "bottom"
 
-      // Anchor selection based on location (window edges)
+      readonly property string barPos: Settings.data.bar.position
+      readonly property bool isFloating: Settings.data.bar.floating
+
+      // Calculate bar offsets for each edge separately
+      readonly property int barOffsetTop: {
+        if (barPos !== "top")
+          return 0
+        const floatMarginV = isFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
+        return Style.barHeight + floatMarginV
+      }
+
+      readonly property int barOffsetBottom: {
+        if (barPos !== "bottom")
+          return 0
+        const floatMarginV = isFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
+        return Style.barHeight + floatMarginV
+      }
+
+      readonly property int barOffsetLeft: {
+        if (barPos !== "left")
+          return 0
+        const floatMarginH = isFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
+        return floatMarginH
+      }
+
+      readonly property int barOffsetRight: {
+        if (barPos !== "right")
+          return 0
+        const floatMarginH = isFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
+        return floatMarginH
+      }
+
+      // Anchoring
       anchors.top: isTop
       anchors.bottom: isBottom
       anchors.left: isLeft
       anchors.right: isRight
 
-      // Margins depending on bar position and chosen location
-      margins.top: {
-        if (!(anchors.top))
-          return 0
-        var base = Style.marginM
-        if (Settings.data.bar.position === "top") {
-          var floatExtraV = Settings.data.bar.floating ? Settings.data.bar.marginVertical * Style.marginXL : 0
-          return (Style.barHeight) + base + floatExtraV
-        }
-        return base
-      }
+      // Margins for PanelWindow - only apply bar offset for the specific edge where the bar is
+      margins.top: isTop ? barOffsetTop : 0
+      margins.bottom: isBottom ? barOffsetBottom : 0
+      margins.left: isLeft ? barOffsetLeft : 0
+      margins.right: isRight ? barOffsetRight : 0
 
-      margins.bottom: {
-        if (!(anchors.bottom))
-          return 0
-        var base = Style.marginM
-        if (Settings.data.bar.position === "bottom") {
-          var floatExtraV = Settings.data.bar.floating ? Settings.data.bar.marginVertical * Style.marginXL : 0
-          return (Style.barHeight) + base + floatExtraV
-        }
-        return base
-      }
-
-      margins.left: {
-        if (!(anchors.left))
-          return 0
-        var base = Style.marginM
-        if (Settings.data.bar.position === "left") {
-          var floatExtraH = Settings.data.bar.floating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
-          return (Style.barHeight) + base + floatExtraH
-        }
-        return base
-      }
-
-      margins.right: {
-        if (!(anchors.right))
-          return 0
-        var base = Style.marginM
-        if (Settings.data.bar.position === "right") {
-          var floatExtraH = Settings.data.bar.floating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
-          return (Style.barHeight) + base + floatExtraH
-        }
-        return base
-      }
-
-      implicitWidth: Math.round(toastItem.width + Style.marginL * 2)
-      implicitHeight: Math.round(toastItem.height + Style.marginL * 2)
+      implicitWidth: Math.round(toastItem.width)
+      implicitHeight: Math.round(toastItem.height)
 
       color: Color.transparent
 
       WlrLayershell.layer: (Settings.data.notifications && Settings.data.notifications.overlayLayer) ? WlrLayer.Overlay : WlrLayer.Top
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-      exclusionMode: PanelWindow.ExclusionMode.Ignore
+      WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
+      //mask: Region {}
       function showToast(message, description, icon, type, duration) {
         toastItem.show(message, description, icon, type, duration)
       }
@@ -212,8 +205,6 @@ Item {
 
       SimpleToast {
         id: toastItem
-
-        anchors.horizontalCenter: parent.horizontalCenter
         onHidden: root.onToastHidden()
       }
     }

@@ -6,7 +6,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 import qs.Widgets
 
 Loader {
@@ -303,6 +303,10 @@ Loader {
               border.width: Style.borderS
               border.color: Qt.alpha(Color.mOutline, Settings.data.dock.backgroundOpacity)
 
+              // Enable layer caching to reduce GPU usage from continuous animations
+              // (pulse animations on active indicators run infinitely)
+              layer.enabled: true
+
               MouseArea {
                 id: dockMouseArea
                 anchors.fill: parent
@@ -562,22 +566,6 @@ Loader {
                         radius: Style.radiusXS
                         anchors.top: parent.bottom
                         anchors.horizontalCenter: parent.horizontalCenter
-
-                        // Pulse animation for active indicator
-                        SequentialAnimation on opacity {
-                          running: isActive
-                          loops: Animation.Infinite
-                          NumberAnimation {
-                            to: 0.6
-                            duration: Style.animationSlowest
-                            easing.type: Easing.InOutQuad
-                          }
-                          NumberAnimation {
-                            to: 1.0
-                            duration: Style.animationSlowest
-                            easing.type: Easing.InOutQuad
-                          }
-                        }
                       }
                     }
                   }

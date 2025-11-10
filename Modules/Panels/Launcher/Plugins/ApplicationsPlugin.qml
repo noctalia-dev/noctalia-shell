@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
-import qs.Services
 import "../../../../Helpers/FuzzySort.js" as Fuzzysort
 
 Item {

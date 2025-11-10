@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Services.SystemTray
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 import qs.Widgets
 import qs.Modules.MainScreen
 

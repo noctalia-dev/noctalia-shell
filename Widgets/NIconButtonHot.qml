@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 
 Rectangle {
   id: root

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
-import qs.Services
 import Quickshell
 import "../Helpers/ColorsConvert.js" as ColorsConvert
 

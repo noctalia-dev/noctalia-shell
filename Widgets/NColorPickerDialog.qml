@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
-import qs.Services
 import qs.Widgets
 
 Popup {
@@ -26,14 +25,6 @@ Popup {
   y: (parent.height - height) * 0.5
 
   modal: true
-
-  onOpened: {
-    PanelService.willOpenPopup(root)
-  }
-
-  onClosed: {
-    PanelService.willClosePopup(root)
-  }
 
   function rgbToHsv(r, g, b) {
     r /= 255

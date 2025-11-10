@@ -1,5 +1,5 @@
 {
-  "settingsVersion": 20,
+  "settingsVersion": 21,
   "setupCompleted": false,
   "bar": {
     "position": "top",
@@ -226,8 +226,9 @@
   "audio": {
     "volumeStep": 5,
     "volumeOverdrive": false,
-    "cavaFrameRate": 60,
+    "cavaFrameRate": 30,
     "visualizerType": "linear",
+    "visualizerQuality": "high",
     "mprisBlacklist": [],
     "preferredPlayer": ""
   },
@@ -257,17 +258,17 @@
     "wezterm": false,
     "fuzzel": false,
     "discord": false,
+    "pywalfox": false,
+    "vicinae": false,
+    "walker": false,
+    "code": false,
+    "enableUserTemplates": false,
     "discord_vesktop": false,
     "discord_webcord": false,
     "discord_armcord": false,
     "discord_equibop": false,
     "discord_lightcord": false,
-    "discord_dorion": false,
-    "pywalfox": false,
-    "vicinae": false,
-    "walker": false,
-    "code": false,
-    "enableUserTemplates": false
+    "discord_dorion": false
   },
   "nightLight": {
     "enabled": false,

@@ -4,7 +4,9 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Commons
-import qs.Services
+import qs.Services.Compositor
+import qs.Services.Location
+import qs.Services.Hardware
 import qs.Widgets
 
 ColumnLayout {

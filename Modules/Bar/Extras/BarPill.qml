@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import qs.Commons
-import qs.Services
 import qs.Widgets
 
 Item {

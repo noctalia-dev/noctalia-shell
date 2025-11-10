@@ -3,10 +3,11 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import qs.Commons
-import qs.Modules.Panels.Settings
-import qs.Services
-import qs.Widgets
 import qs.Modules.Bar.Extras
+import qs.Modules.Panels.Settings
+import qs.Services.Media
+import qs.Services.UI
+import qs.Widgets
 
 Item {
   id: root

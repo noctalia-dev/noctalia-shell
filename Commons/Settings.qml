@@ -4,7 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 import "../Helpers/QtObj2JS.js" as QtObj2JS
 
 Singleton {
@@ -14,7 +14,7 @@ Singleton {
   readonly property alias data: adapter
   property bool isLoaded: false
   property bool directoriesCreated: false
-  property int settingsVersion: 20
+  property int settingsVersion: 21
   property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
 
   // Define our app directories
@@ -366,8 +366,9 @@ Singleton {
     property JsonObject audio: JsonObject {
       property int volumeStep: 5
       property bool volumeOverdrive: false
-      property int cavaFrameRate: 60
+      property int cavaFrameRate: 30
       property string visualizerType: "linear"
+      property string visualizerQuality: "high"
       property list<string> mprisBlacklist: []
       property string preferredPlayer: ""
     }
@@ -402,17 +403,18 @@ Singleton {
       property bool wezterm: false
       property bool fuzzel: false
       property bool discord: false
-      property bool discord_vesktop: false
-      property bool discord_webcord: false
-      property bool discord_armcord: false
-      property bool discord_equibop: false
-      property bool discord_lightcord: false
-      property bool discord_dorion: false
       property bool pywalfox: false
       property bool vicinae: false
       property bool walker: false
       property bool code: false
       property bool enableUserTemplates: false
+
+      property bool discord_vesktop: false // To be deleted soon
+      property bool discord_webcord: false // To be deleted soon
+      property bool discord_armcord: false // To be deleted soon
+      property bool discord_equibop: false // To be deleted soon
+      property bool discord_lightcord: false // To be deleted soon
+      property bool discord_dorion: false // To be deleted soon
     }
 
     // night light
@@ -616,6 +618,28 @@ Singleton {
                                            }))
         Logger.w("Settings", "Added a ControlCenter widget to the right section")
       }
+    }
+
+    // -----------------
+    // 5th. Migrate Discord templates (version 20 → 21)
+    // Consolidate individual discord_* properties into unified discord property
+    if (adapter.settingsVersion < 21) {
+      var anyDiscordEnabled = false
+
+      // Check if any Discord client was enabled
+      const discordClients = ["discord_vesktop", "discord_webcord", "discord_armcord", "discord_equibop", "discord_lightcord", "discord_dorion"]
+
+      for (var i = 0; i < discordClients.length; i++) {
+        if (adapter.templates[discordClients[i]]) {
+          anyDiscordEnabled = true
+          break
+        }
+      }
+
+      // Set unified discord property
+      adapter.templates.discord = anyDiscordEnabled
+
+      Logger.i("Settings", "Migrated Discord templates to unified 'discord' property (enabled:", anyDiscordEnabled + ")")
     }
   }
 

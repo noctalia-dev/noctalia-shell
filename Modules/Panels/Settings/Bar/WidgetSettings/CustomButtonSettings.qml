@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import QtQuick.Window
 import qs.Commons
 import qs.Widgets
-import qs.Services
 
 ColumnLayout {
   id: root

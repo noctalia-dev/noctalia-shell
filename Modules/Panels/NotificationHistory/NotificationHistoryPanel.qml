@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.Notifications
 import qs.Commons
-import qs.Services
+import qs.Services.System
 import qs.Widgets
 import qs.Modules.MainScreen
 
@@ -124,215 +124,197 @@ SmartPanel {
       }
 
       // Notification list
-      NListView {
-        id: notificationList
+      NScrollView {
+        id: scrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
-        horizontalPolicy: ScrollBar.AlwaysOff
-        verticalPolicy: ScrollBar.AsNeeded
-
-        model: NotificationService.historyList
-        spacing: Style.marginM
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        ScrollBar.vertical.policy: ScrollBar.AsNeeded
         clip: true
-        boundsBehavior: Flickable.StopAtBounds
         visible: NotificationService.historyList.count > 0
 
         // Track which notification is expanded
         property string expandedId: ""
 
-        delegate: Item {
-          property string notificationId: model.id
-          property bool isExpanded: notificationList.expandedId === notificationId
+        contentWidth: availableWidth
 
-          width: notificationList.width
-          height: notificationLayoutWrapper.height + (Style.marginM * 2)
+        Column {
+          width: scrollView.width
+          spacing: Style.marginM
 
-          Behavior on height {
-            enabled: !Settings.data.general.animationDisabled
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.InOutQuad
-            }
-          }
+          Repeater {
+            model: NotificationService.historyList
 
-          Rectangle {
-            anchors.fill: parent
-            radius: Style.radiusM
-            color: Color.mSurfaceVariant
-            border.color: Qt.alpha(Color.mOutline, Style.opacityMedium)
-            border.width: Style.borderS
-
-            // Smooth color transition on hover
-            Behavior on color {
-              enabled: !Settings.data.general.animationDisabled
-              ColorAnimation {
-                duration: Style.animationFast
-              }
-            }
-          }
-
-          // Click to expand/collapse
-          MouseArea {
-            anchors.fill: parent
-            // Don't capture clicks on the delete button
-            anchors.rightMargin: 48
-            enabled: (summaryText.truncated || bodyText.truncated)
-            onClicked: {
-              if (notificationList.expandedId === notificationId) {
-                notificationList.expandedId = ""
-              } else {
-                notificationList.expandedId = notificationId
-              }
-            }
-            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-          }
-
-          Item {
-            id: notificationLayoutWrapper
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: Style.marginM
-            height: notificationLayout.implicitHeight
-
-            RowLayout {
-              id: notificationLayout
+            delegate: Item {
+              id: notificationDelegate
               width: parent.width
-              spacing: Style.marginM
+              height: contentColumn.height + (Style.marginM * 2)
 
-              // Icon column - use simple Item instead of ColumnLayout to avoid polish loop
-              Item {
-                Layout.preferredWidth: Math.round(40 * Style.uiScaleRatio)
-                Layout.alignment: Qt.AlignTop
+              property string notificationId: model.id
+              property bool isExpanded: scrollView.expandedId === notificationId
+              property bool canExpand: summaryText.truncated || bodyText.truncated
 
-                NImageCircled {
-                  anchors.top: parent.top
-                  anchors.topMargin: 20
-                  width: Math.round(40 * Style.uiScaleRatio)
-                  height: Math.round(40 * Style.uiScaleRatio)
-                  imagePath: model.cachedImage || model.originalImage || ""
-                  borderColor: Color.transparent
-                  borderWidth: 0
-                  fallbackIcon: "bell"
-                  fallbackIconSize: 24
+              Rectangle {
+                anchors.fill: parent
+                radius: Style.radiusM
+                color: Color.mSurfaceVariant
+                border.color: Qt.alpha(Color.mOutline, Style.opacityMedium)
+                border.width: Style.borderS
+
+                Behavior on color {
+                  enabled: !Settings.data.general.animationDisabled
+                  ColorAnimation {
+                    duration: Style.animationFast
+                  }
                 }
               }
 
-              // Notification content column
-              ColumnLayout {
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignTop
-                spacing: Style.marginXS
-                Layout.rightMargin: -(Style.marginM + Style.baseWidgetSize * 0.6)
+              // Click to expand/collapse
+              MouseArea {
+                anchors.fill: parent
+                anchors.rightMargin: Style.baseWidgetSize
+                enabled: notificationDelegate.canExpand
+                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: {
+                  if (scrollView.expandedId === notificationId) {
+                    scrollView.expandedId = ""
+                  } else {
+                    scrollView.expandedId = notificationId
+                  }
+                }
+              }
 
-                // Header row with app name and timestamp
-                RowLayout {
-                  Layout.fillWidth: true
-                  spacing: Style.marginS
+              Column {
+                id: contentColumn
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: Style.marginM
+                spacing: Style.marginM
 
-                  // Urgency indicator
-                  Rectangle {
-                    Layout.preferredWidth: 6
-                    Layout.preferredHeight: 6
-                    Layout.alignment: Qt.AlignVCenter
-                    radius: 3
-                    visible: model.urgency !== 1
-                    color: {
-                      if (model.urgency === 2)
-                        return Color.mError
-                      else if (model.urgency === 0)
-                        return Color.mOnSurfaceVariant
-                      else
-                        return Color.transparent
+                Row {
+                  width: parent.width
+                  spacing: Style.marginM
+
+                  // Icon
+                  NImageCircled {
+                    width: Math.round(40 * Style.uiScaleRatio)
+                    height: Math.round(40 * Style.uiScaleRatio)
+                    anchors.verticalCenter: parent.verticalCenter
+                    imagePath: model.cachedImage || model.originalImage || ""
+                    borderColor: Color.transparent
+                    borderWidth: 0
+                    fallbackIcon: "bell"
+                    fallbackIconSize: 24
+                  }
+
+                  // Content
+                  Column {
+                    width: parent.width - Math.round(40 * Style.uiScaleRatio) - Style.marginM - Style.baseWidgetSize
+                    spacing: Style.marginXS
+
+                    // Header row with app name and timestamp
+                    Row {
+                      width: parent.width
+                      spacing: Style.marginS
+
+                      // Urgency indicator
+                      Rectangle {
+                        width: 6
+                        height: 6
+                        anchors.verticalCenter: parent.verticalCenter
+                        radius: 3
+                        visible: model.urgency !== 1
+                        color: {
+                          if (model.urgency === 2)
+                            return Color.mError
+                          else if (model.urgency === 0)
+                            return Color.mOnSurfaceVariant
+                          else
+                            return Color.transparent
+                        }
+                      }
+
+                      NText {
+                        text: model.appName || "Unknown App"
+                        pointSize: Style.fontSizeXS
+                        color: Color.mSecondary
+                      }
+
+                      NText {
+                        text: Time.formatRelativeTime(model.timestamp)
+                        pointSize: Style.fontSizeXS
+                        color: Color.mSecondary
+                      }
+                    }
+
+                    // Summary
+                    NText {
+                      id: summaryText
+                      width: parent.width
+                      text: model.summary || I18n.tr("general.no-summary")
+                      pointSize: Style.fontSizeM
+                      font.weight: Font.Medium
+                      color: Color.mOnSurface
+                      textFormat: Text.PlainText
+                      wrapMode: Text.Wrap
+                      maximumLineCount: notificationDelegate.isExpanded ? 999 : 2
+                      elide: Text.ElideRight
+                    }
+
+                    // Body
+                    NText {
+                      id: bodyText
+                      width: parent.width
+                      text: model.body || ""
+                      pointSize: Style.fontSizeS
+                      color: Color.mOnSurfaceVariant
+                      textFormat: Text.PlainText
+                      wrapMode: Text.Wrap
+                      maximumLineCount: notificationDelegate.isExpanded ? 999 : 3
+                      elide: Text.ElideRight
+                      visible: text.length > 0
+                    }
+
+                    // Expand indicator
+                    Row {
+                      width: parent.width
+                      visible: !notificationDelegate.isExpanded && notificationDelegate.canExpand
+                      spacing: Style.marginXS
+
+                      Item {
+                        width: parent.width - expandText.width - expandIcon.width - Style.marginXS
+                        height: 1
+                      }
+
+                      NText {
+                        id: expandText
+                        text: I18n.tr("notifications.panel.click-to-expand") || "Click to expand"
+                        pointSize: Style.fontSizeXS
+                        color: Color.mPrimary
+                        font.weight: Font.Medium
+                      }
+
+                      NIcon {
+                        id: expandIcon
+                        icon: "chevron-down"
+                        pointSize: Style.fontSizeS
+                        color: Color.mPrimary
+                      }
                     }
                   }
 
-                  NText {
-                    text: model.appName || "Unknown App"
-                    pointSize: Style.fontSizeXS
-                    color: Color.mSecondary
+                  // Delete button
+                  NIconButton {
+                    icon: "trash"
+                    tooltipText: I18n.tr("tooltips.delete-notification")
+                    baseSize: Style.baseWidgetSize * 0.7
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    onClicked: {
+                      NotificationService.removeFromHistory(notificationId)
+                    }
                   }
-
-                  NText {
-                    text: Time.formatRelativeTime(model.timestamp)
-                    pointSize: Style.fontSizeXS
-                    color: Color.mSecondary
-                  }
-
-                  Item {
-                    Layout.fillWidth: true
-                  }
-                }
-
-                // Summary
-                NText {
-                  id: summaryText
-                  text: model.summary || I18n.tr("general.no-summary")
-                  pointSize: Style.fontSizeM
-                  font.weight: Font.Medium
-                  color: Color.mOnSurface
-                  textFormat: Text.PlainText
-                  wrapMode: Text.Wrap
-                  Layout.fillWidth: true
-                  maximumLineCount: isExpanded ? 999 : 2
-                  elide: Text.ElideRight
-                }
-
-                // Body
-                NText {
-                  id: bodyText
-                  text: model.body || ""
-                  pointSize: Style.fontSizeS
-                  color: Color.mOnSurfaceVariant
-                  textFormat: Text.PlainText
-                  wrapMode: Text.Wrap
-                  Layout.fillWidth: true
-                  maximumLineCount: isExpanded ? 999 : 3
-                  elide: Text.ElideRight
-                  visible: text.length > 0
-                }
-
-                // Spacer for expand indicator
-                Item {
-                  Layout.fillWidth: true
-                  Layout.preferredHeight: (!isExpanded && (summaryText.truncated || bodyText.truncated)) ? (Style.marginS) : 0
-                }
-
-                // Expand indicator
-                RowLayout {
-                  Layout.fillWidth: true
-                  visible: !isExpanded && (summaryText.truncated || bodyText.truncated)
-                  spacing: Style.marginXS
-
-                  Item {
-                    Layout.fillWidth: true
-                  }
-
-                  NText {
-                    text: I18n.tr("notifications.panel.click-to-expand") || "Click to expand"
-                    pointSize: Style.fontSizeXS
-                    color: Color.mPrimary
-                    font.weight: Font.Medium
-                  }
-
-                  NIcon {
-                    icon: "chevron-down"
-                    pointSize: Style.fontSizeS
-                    color: Color.mPrimary
-                  }
-                }
-              }
-
-              // Delete button
-              NIconButton {
-                icon: "trash"
-                tooltipText: I18n.tr("tooltips.delete-notification")
-                baseSize: Style.baseWidgetSize * 0.7
-                Layout.alignment: Qt.AlignTop
-
-                onClicked: {
-                  // Remove from history using the service API
-                  NotificationService.removeFromHistory(notificationId)
                 }
               }
             }

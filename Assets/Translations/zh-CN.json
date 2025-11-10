@@ -402,11 +402,11 @@
       }
     },
     "colors": {
-      "error": "错误",
-      "onSurface": "表面之上",
-      "primary": "主要的",
-      "secondary": "次要的",
-      "tertiary": "第三纪"
+      "error": "错误色",
+      "onSurface": "表层对应色",
+      "primary": "主要色",
+      "secondary": "次要色",
+      "tertiary": "第三色"
     },
     "control-center": {
       "position": {
@@ -502,6 +502,10 @@
       "top": "上方",
       "top_left": "左上",
       "top_right": "右上"
+    },
+    "visualizer-quality": {
+      "high": "高",
+      "low": "低"
     },
     "visualizer-types": {
       "linear": "线性",
@@ -693,6 +697,10 @@
           "description": "设置您首选和要忽略的媒体应用程序。",
           "label": "媒体播放器"
         },
+        "visualizer-quality": {
+          "description": "高质量使用更多 GPU 资源。",
+          "label": "可视化质量"
+        },
         "visualizer-type": {
           "description": "选择媒体播放的可视化类型",
           "label": "可视化类型"
@@ -820,7 +828,7 @@
           "description": "启用自动切换浅色和深色模式。",
           "label": "深色模式计划",
           "location": "位置",
-          "manual": "手册",
+          "manual": "手动",
           "off": "关"
         },
         "switch": {
@@ -1511,10 +1519,6 @@
         "description": "面板锁定到边栏和屏幕边缘，形成无缝外观，并具有时尚的倒角。",
         "label": "将面板对齐到边缘"
       },
-      "settings-panel-attached-to-bar": {
-        "description": "使设置窗口与边栏保持对齐，实现统一的外观。",
-        "label": "将设置窗口贴合边栏"
-      },
       "panels-overlay": {
         "description": "确保面板和栏保持可见，即使在全屏应用程序上也是如此。",
         "label": "将面板和栏保持在顶部"
@@ -1527,6 +1531,10 @@
       "section": {
         "description": "自定义界面的外观、感觉和行为。",
         "label": "外观"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "使设置窗口与边栏保持对齐，实现统一的外观。",
+        "label": "将设置窗口贴合边栏"
       },
       "shadows": {
         "description": "启用条形图和面板下的阴影。",
@@ -1574,7 +1582,7 @@
           "label": "填充模式"
         },
         "section": {
-          "label": "外观和感觉"
+          "label": "外观与体验"
         },
         "transition-duration": {
           "description": "过渡动画的持续时间（秒）。",
@@ -1717,11 +1725,7 @@
       "enabled": "已启用"
     },
     "kofi": {
-      "opened": "Ko-fi页面已在您的浏览器中打开"
-    },
-    "matugen": {
-      "failed": "Matugen 处理失败",
-      "failed-general": "Matugen 在处理模板时遇到错误"
+      "opened": "Ko-fi 页面已在您的浏览器中打开"
     },
     "missing-control-center": {
       "description": "控制中心小部件已从状态栏中移除。要再次从状态栏访问它，您需要重新添加小部件。您也可以通过右键点击状态栏来打开它。",
@@ -1733,6 +1737,11 @@
       "forced": "强制激活",
       "normal": "正常模式",
       "not-installed": "未安装 wlsunset"
+    },
+    "noctalia-performance": {
+      "disabled": "性能模式已禁用",
+      "enabled": "已启用性能模式",
+      "label": "夜之颂演出"
     },
     "power-profile": {
       "changed": "电源模式已更改",
@@ -1750,9 +1759,15 @@
       "started": "录制已开始",
       "stopping": "正在停止录制…"
     },
+    "theming-processor-failed": {
+      "desc-generic": "处理模板时遇到错误",
+      "title-matugen": "Matugen模板处理失败",
+      "title-predefined": "预定义的颜色方案处理失败"
+    },
     "wallpaper-colors": {
       "disabled": "壁纸颜色已禁用",
       "enabled": "壁纸颜色已启用",
+      "label": "壁纸颜色生成",
       "not-installed": "Matugen 未安装 - 壁纸颜色提取所需"
     },
     "wifi": {
@@ -1793,6 +1808,8 @@
     "night-light-enabled": "夜间模式已启用。\n左键点击循环模式。\n右键点击访问设置。",
     "night-light-forced": "夜间模式已强制启用。\n左键点击循环模式。\n右键点击访问设置。",
     "night-light-not-installed": "夜间模式不可用。\nwlsunset 未安装。",
+    "noctalia-performance-disabled": "Noctalia 性能模式已禁用。\n左键点击以启用。",
+    "noctalia-performance-enabled": "Noctalia 性能模式已启用。\n左键点击以禁用。",
     "open-control-center": "打开控制中心",
     "open-notification-history-disable-dnd": "打开通知历史记录\n右键点击禁用\"勿扰模式\"。",
     "open-notification-history-enable-dnd": "打开通知历史记录\n右键点击启用\"勿扰模式\"。",

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
-import qs.Services
 
 // Input and button row
 RowLayout {

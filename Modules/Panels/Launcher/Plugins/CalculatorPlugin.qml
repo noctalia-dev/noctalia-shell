@@ -1,5 +1,4 @@
 import QtQuick
-import qs.Services
 import qs.Commons
 import "../../../../Helpers/AdvancedMath.js" as AdvancedMath
 

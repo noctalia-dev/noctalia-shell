@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
-import qs.Services
+import qs.Services.UI
 
 // Widget Settings Dialog Component
 Popup {
@@ -23,14 +23,9 @@ Popup {
   anchors.centerIn: parent
 
   onOpened: {
-    PanelService.willOpenPopup(root)
     if (widgetData && widgetId) {
       loadWidgetSettings()
     }
-  }
-
-  onClosed: {
-    PanelService.willClosePopup(root)
   }
 
   background: Rectangle {

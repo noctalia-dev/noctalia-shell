@@ -4,7 +4,7 @@ import QtQuick.Effects
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
-import qs.Services
+import qs.Services.UI
 
 // Widget Settings Dialog Component
 Popup {
@@ -25,17 +25,10 @@ Popup {
   anchors.centerIn: parent
 
   onOpened: {
-    // Mark this popup has opened in the PanelService
-    PanelService.willOpenPopup(root)
-
     // Load settings when popup opens with data
     if (widgetData && widgetId) {
       loadWidgetSettings()
     }
-  }
-
-  onClosed: {
-    PanelService.willClosePopup(root)
   }
 
   background: Rectangle {

@@ -4,10 +4,11 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
-import qs.Services
-import qs.Widgets
 import qs.Modules.MainScreen
 import qs.Modules.Panels.ControlCenter.Cards
+import qs.Services.Location
+import qs.Services.UI
+import qs.Widgets
 
 SmartPanel {
   id: root

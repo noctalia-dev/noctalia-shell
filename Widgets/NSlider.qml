@@ -2,11 +2,12 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 
 Slider {
   id: root
 
+  property color fillColor: Color.mPrimary
   property var cutoutColor: Color.mSurface
   property bool snapAlways: true
   property real heightRatio: 0.7
@@ -46,7 +47,7 @@ Slider {
         width: parent.height
         height: parent.height
         radius: width / 2
-        color: Qt.darker(Color.mPrimary, 1.2) //starting color of gradient
+        color: Qt.darker(fillColor, 1.2) //starting color of gradient
       }
 
       // The main rectangle
@@ -60,35 +61,11 @@ Slider {
           orientation: Gradient.Horizontal
           GradientStop {
             position: 0.0
-            color: Qt.darker(Color.mPrimary, 1.2)
-            Behavior on color {
-              ColorAnimation {
-                duration: 300
-              }
-            }
-          }
-          GradientStop {
-            position: 0.5
-            color: Color.mPrimary
-            SequentialAnimation on position {
-              loops: Animation.Infinite
-              NumberAnimation {
-                from: 0.3
-                to: 0.7
-                duration: 2000
-                easing.type: Easing.InOutSine
-              }
-              NumberAnimation {
-                from: 0.7
-                to: 0.3
-                duration: 2000
-                easing.type: Easing.InOutSine
-              }
-            }
+            color: Qt.darker(fillColor, 1.2)
           }
           GradientStop {
             position: 1.0
-            color: Qt.lighter(Color.mPrimary, 1.2)
+            color: fillColor
           }
         }
       }
@@ -118,7 +95,7 @@ Slider {
       implicitHeight: knobDiameter
       radius: width / 2
       color: root.pressed ? Color.mHover : Color.mSurface
-      border.color: Color.mPrimary
+      border.color: fillColor
       border.width: Style.borderL
       anchors.centerIn: parent
 

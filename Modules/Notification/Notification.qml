@@ -6,7 +6,7 @@ import Quickshell.Widgets
 import Quickshell.Wayland
 import Quickshell.Services.Notifications
 import qs.Commons
-import qs.Services
+import qs.Services.System
 import qs.Widgets
 
 // Simple notification popup - displays multiple notifications
@@ -58,23 +58,38 @@ Variants {
       readonly property bool isRight: location.endsWith("_right")
       readonly property bool isCentered: location === "top" || location === "bottom"
 
-      readonly property int notifWidth: Math.round(420 * Style.uiScaleRatio)
+      readonly property string barPos: Settings.data.bar.position
+      readonly property bool isFloating: Settings.data.bar.floating
 
-      // Calculate bar offset once
-      readonly property int barOffset: {
-        const barPos = Settings.data.bar.position
-        const isFloating = Settings.data.bar.floating
+      readonly property int notifWidth: Math.round(400 * Style.uiScaleRatio)
+
+      // Calculate bar offsets for each edge separately
+      readonly property int barOffsetTop: {
+        if (barPos !== "top")
+          return 0
         const floatMarginV = isFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
-        const floatMarginH = isFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
+        return Style.barHeight + floatMarginV
+      }
 
-        // Check if bar is on same edge as notifications
-        if ((isTop && barPos === "top") || (isBottom && barPos === "bottom")) {
-          return Style.barHeight + floatMarginV
-        }
-        if ((isLeft && barPos === "left") || (isRight && barPos === "right")) {
-          return Style.barHeight + floatMarginH
-        }
-        return 0
+      readonly property int barOffsetBottom: {
+        if (barPos !== "bottom")
+          return 0
+        const floatMarginV = isFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
+        return Style.barHeight + floatMarginV
+      }
+
+      readonly property int barOffsetLeft: {
+        if (barPos !== "left")
+          return 0
+        const floatMarginH = isFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
+        return floatMarginH
+      }
+
+      readonly property int barOffsetRight: {
+        if (barPos !== "right")
+          return 0
+        const floatMarginH = isFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
+        return floatMarginH
       }
 
       // Anchoring
@@ -83,11 +98,11 @@ Variants {
       anchors.left: isLeft
       anchors.right: isRight
 
-      // Margins for PanelWindow (not anchors.topMargin!)
-      margins.top: isTop ? Style.marginM + barOffset : 0
-      margins.bottom: isBottom ? Style.marginM + barOffset : 0
-      margins.left: isLeft ? Style.marginM + barOffset : 0
-      margins.right: isRight ? Style.marginM + barOffset : 0
+      // Margins for PanelWindow - only apply bar offset for the specific edge where the bar is
+      margins.top: isTop ? barOffsetTop : 0
+      margins.bottom: isBottom ? barOffsetBottom : 0
+      margins.left: isLeft ? barOffsetLeft : 0
+      margins.right: isRight ? barOffsetRight : 0
 
       implicitWidth: notifWidth
       implicitHeight: notificationStack.implicitHeight + Style.marginL
@@ -186,7 +201,6 @@ Variants {
               id: cardBackground
               anchors.fill: parent
               anchors.margins: Style.marginM
-              anchors.rightMargin: Style.marginXL
               radius: Style.radiusL
               border.color: Qt.alpha(Color.mOutline, Settings.data.notifications.backgroundOpacity || 1.0)
               border.width: Style.borderS
@@ -237,6 +251,7 @@ Variants {
             NDropShadows {
               anchors.fill: cardBackground
               source: cardBackground
+              autoPaddingEnabled: true
             }
 
             // Hover handling
@@ -373,7 +388,6 @@ Variants {
               id: notificationContent
               anchors.fill: parent
               anchors.margins: Style.marginM
-              anchors.rightMargin: Style.marginXL
               spacing: Style.marginM
 
               RowLayout {
@@ -433,10 +447,11 @@ Variants {
                     color: Color.mOnSurface
                     textFormat: Text.PlainText
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-                    Layout.fillWidth: true
                     maximumLineCount: 3
                     elide: Text.ElideRight
                     visible: text.length > 0
+                    Layout.fillWidth: true
+                    Layout.rightMargin: Style.marginM
                   }
 
                   NText {
@@ -445,10 +460,12 @@ Variants {
                     color: Color.mOnSurface
                     textFormat: Text.PlainText
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-                    Layout.fillWidth: true
+
                     maximumLineCount: 5
                     elide: Text.ElideRight
                     visible: text.length > 0
+                    Layout.fillWidth: true
+                    Layout.rightMargin: Style.marginXL
                   }
 
                   // Actions
@@ -508,7 +525,7 @@ Variants {
               anchors.top: parent.top
               anchors.topMargin: Style.marginXL
               anchors.right: parent.right
-              anchors.rightMargin: Style.marginXL * 1.5
+              anchors.rightMargin: Style.marginXL
 
               onClicked: {
                 NotificationService.removeFromHistory(model.id)

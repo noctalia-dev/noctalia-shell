@@ -4,7 +4,7 @@ import Quickshell.Widgets
 import QtQuick.Effects
 import qs.Commons
 import qs.Widgets
-import qs.Services
+import qs.Services.UI
 
 NIconButton {
   id: root
@@ -48,12 +48,13 @@ NIconButton {
     var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen)
     if (Settings.data.controlCenter.position === "close_to_bar_button") {
       // Willopen the panel next to the bar button.
-      controlCenterPanel.toggle(this)
+      controlCenterPanel?.toggle(this)
     } else {
-      controlCenterPanel.toggle()
+      controlCenterPanel?.toggle()
     }
   }
   onRightClicked: PanelService.getPanel("settingsPanel", screen)?.toggle()
+  onMiddleClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
 
   IconImage {
     id: customOrDistroLogo

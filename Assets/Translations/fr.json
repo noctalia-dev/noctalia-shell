@@ -503,6 +503,10 @@
       "top_left": "En haut à gauche",
       "top_right": "En haut à droite"
     },
+    "visualizer-quality": {
+      "high": "Haut/Haute",
+      "low": "Bas"
+    },
     "visualizer-types": {
       "linear": "Linéaire",
       "mirrored": "Miroir",
@@ -692,6 +696,10 @@
         "section": {
           "description": "Définissez vos applications multimédias préférées et ignorées.",
           "label": "Lecteurs multimédias"
+        },
+        "visualizer-quality": {
+          "description": "L'utilisation de haute qualité nécessite plus de ressources GPU.",
+          "label": "Qualité de la visualisation"
         },
         "visualizer-type": {
           "description": "Choisissez un type de visualisation pour la lecture multimédia.",
@@ -1511,10 +1519,6 @@
         "description": "Les panneaux se verrouillent sur la barre et les bords de l'écran, créant un aspect homogène avec d'élégants coins inversés.",
         "label": "Aligner les panneaux aux bords"
       },
-      "settings-panel-attached-to-bar": {
-        "description": "Alignez la fenêtre des paramètres sur la barre pour un rendu cohérent.",
-        "label": "Aligner la fenêtre des paramètres sur la barre"
-      },
       "panels-overlay": {
         "description": "Garantit que les panneaux et la barre restent visibles, même au-dessus des applications en plein écran.",
         "label": "Garder les panneaux et la barre en haut."
@@ -1527,6 +1531,10 @@
       "section": {
         "description": "Personnaliser l'apparence, l'ergonomie et le comportement de l'interface.",
         "label": "Apparence"
+      },
+      "settings-panel-attached-to-bar": {
+        "description": "Alignez la fenêtre des paramètres sur la barre pour un rendu cohérent.",
+        "label": "Aligner la fenêtre des paramètres sur la barre"
       },
       "shadows": {
         "description": "Active les ombres portées sous les barres et les panneaux.",
@@ -1719,10 +1727,6 @@
     "kofi": {
       "opened": "Page Ko-fi ouverte dans votre navigateur"
     },
-    "matugen": {
-      "failed": "Échec du traitement Matugen",
-      "failed-general": "Matugen a rencontré une erreur lors du traitement des modèles"
-    },
     "missing-control-center": {
       "description": "Le widget du Centre de contrôle a été retiré de la barre. Pour y accéder à nouveau depuis la barre, veuillez ré‑ajouter le widget. Vous pouvez aussi l'ouvrir en cliquant avec le bouton droit sur la barre.",
       "label": "Dernier widget du Centre de contrôle supprimé"
@@ -1733,6 +1737,11 @@
       "forced": "Activation forcée",
       "normal": "Mode normal",
       "not-installed": "wlsunset non installé"
+    },
+    "noctalia-performance": {
+      "disabled": "Mode performance désactivé",
+      "enabled": "Mode performance activé",
+      "label": "Performance de Noctalia"
     },
     "power-profile": {
       "changed": "Profil d'alimentation changé",
@@ -1750,9 +1759,15 @@
       "started": "Enregistrement démarré",
       "stopping": "Arrêt de l'enregistrement..."
     },
+    "theming-processor-failed": {
+      "desc-generic": "Une erreur s'est produite lors du traitement des modèles.",
+      "title-matugen": "Le traitement du modèle Matugen a échoué.",
+      "title-predefined": "Le traitement du schéma de couleurs prédéfini a échoué."
+    },
     "wallpaper-colors": {
       "disabled": "Couleurs du fond d'écran désactivées",
       "enabled": "Couleurs du fond d'écran activées",
+      "label": "Génération de couleurs pour fonds d'écran",
       "not-installed": "Matugen non installé - requis pour l'extraction des couleurs du fond d'écran"
     },
     "wifi": {
@@ -1793,6 +1808,8 @@
     "night-light-enabled": "L'éclairage nocturne est activé.\nClic gauche pour changer de mode.\nClic droit pour accéder aux paramètres.",
     "night-light-forced": "L'éclairage nocturne est forcé.\nClic gauche pour changer de mode.\nClic droit pour accéder aux paramètres.",
     "night-light-not-installed": "L'éclairage nocturne n'est pas disponible.\nwlsunset n'est pas installé.",
+    "noctalia-performance-disabled": "Le mode performance Noctalia est désactivé.\nClic gauche pour activer.",
+    "noctalia-performance-enabled": "Le mode performance Noctalia est activé.\nClic gauche pour désactiver.",
     "open-control-center": "Ouvrir le centre de contrôle",
     "open-notification-history-disable-dnd": "Ouvrir l'historique des notifications\nClic droit pour désactiver \"Ne pas déranger\".",
     "open-notification-history-enable-dnd": "Ouvrir l'historique des notifications\nClic droit pour activer \"Ne pas déranger\".",

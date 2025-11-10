@@ -25,125 +25,149 @@ Item {
 
   anchors.fill: parent
 
-  // The unified Shape container
-  Shape {
-    id: backgroundsShape
+  // Wrapper with layer caching for better shadow performance
+  Item {
     anchors.fill: parent
 
-    // Use curve renderer for smooth corners
-    preferredRendererType: Shape.CurveRenderer
+    // Enable layer caching to prevent continuous re-rendering
+    // This caches the Shape to a GPU texture, reducing GPU tessellation overhead
+    layer.enabled: true
 
-    // CRITICAL: Shape must not block mouse input!
-    // ShapePaths inside will render, but the Shape container itself should be transparent to input
-    enabled: false // Disable mouse input on the Shape itself
+    // The unified Shape container
+    Shape {
+      id: backgroundsShape
+      anchors.fill: parent
 
-    Component.onCompleted: {
-      Logger.d("AllBackgrounds", "AllBackgrounds initialized")
-      Logger.d("AllBackgrounds", "  bar:", root.bar)
-      Logger.d("AllBackgrounds", "  windowRoot:", root.windowRoot)
-    }
+      // Use curve renderer for smooth corners (GPU-accelerated)
+      preferredRendererType: Shape.CurveRenderer
+
+      enabled: false // Disable mouse input on the Shape itself
+
+      Component.onCompleted: {
+        Logger.d("AllBackgrounds", "AllBackgrounds initialized")
+        Logger.d("AllBackgrounds", "  bar:", root.bar)
+        Logger.d("AllBackgrounds", "  windowRoot:", root.windowRoot)
+      }
 
 
-    /**
+      /**
      *  Bar
      */
-    BarBackground {
-      bar: root.bar
-      shapeContainer: backgroundsShape
-    }
+      BarBackground {
+        bar: root.bar
+        shapeContainer: backgroundsShape
+        windowRoot: root.windowRoot
+        backgroundColor: Qt.alpha(Color.mSurface, Settings.data.bar.backgroundOpacity)
+      }
 
 
-    /**
+      /**
      *  Panels
      */
 
-    // Audio
-    PanelBackground {
-      panel: root.windowRoot.audioPanel
-      shapeContainer: backgroundsShape
+      // Audio
+      PanelBackground {
+        panel: root.windowRoot.audioPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Battery
+      PanelBackground {
+        panel: root.windowRoot.batteryPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Bluetooth
+      PanelBackground {
+        panel: root.windowRoot.bluetoothPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Calendar
+      PanelBackground {
+        panel: root.windowRoot.calendarPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Control Center
+      PanelBackground {
+        panel: root.windowRoot.controlCenterPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Launcher
+      PanelBackground {
+        panel: root.windowRoot.launcherPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Qt.alpha(Color.mSurface, Settings.data.appLauncher.backgroundOpacity)
+      }
+
+      // Notification History
+      PanelBackground {
+        panel: root.windowRoot.notificationHistoryPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Session Menu
+      PanelBackground {
+        panel: root.windowRoot.sessionMenuPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Settings
+      PanelBackground {
+        panel: root.windowRoot.settingsPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Setup Wizard
+      PanelBackground {
+        panel: root.windowRoot.setupWizardPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // TrayDrawer
+      PanelBackground {
+        panel: root.windowRoot.trayDrawerPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // TrayMenu
+      PanelBackground {
+        panel: root.windowRoot.trayMenuPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // Wallpaper
+      PanelBackground {
+        panel: root.windowRoot.wallpaperPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
+
+      // WiFi
+      PanelBackground {
+        panel: root.windowRoot.wifiPanel
+        shapeContainer: backgroundsShape
+        backgroundColor: Color.mSurface
+      }
     }
 
-    // Battery
-    PanelBackground {
-      panel: root.windowRoot.batteryPanel
-      shapeContainer: backgroundsShape
+    // Apply shadow to the cached layer
+    NDropShadows {
+      anchors.fill: parent
+      source: backgroundsShape
     }
-
-    // Bluetooth
-    PanelBackground {
-      panel: root.windowRoot.bluetoothPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // Calendar
-    PanelBackground {
-      panel: root.windowRoot.calendarPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // Control Center
-    PanelBackground {
-      panel: root.windowRoot.controlCenterPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // Launcher
-    PanelBackground {
-      panel: root.windowRoot.launcherPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // Notification History
-    PanelBackground {
-      panel: root.windowRoot.notificationHistoryPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // Session Menu
-    PanelBackground {
-      panel: root.windowRoot.sessionMenuPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // Settings
-    PanelBackground {
-      panel: root.windowRoot.settingsPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // Setup Wizard
-    PanelBackground {
-      panel: root.windowRoot.setupWizardPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // TrayDrawer
-    PanelBackground {
-      panel: root.windowRoot.trayDrawerPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // TrayMenu
-    PanelBackground {
-      panel: root.windowRoot.trayMenuPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // Wallpaper
-    PanelBackground {
-      panel: root.windowRoot.wallpaperPanel
-      shapeContainer: backgroundsShape
-    }
-
-    // WiFi
-    PanelBackground {
-      panel: root.windowRoot.wifiPanel
-      shapeContainer: backgroundsShape
-    }
-  }
-
-  NDropShadows {
-    anchors.fill: parent
-    source: backgroundsShape
   }
 }
