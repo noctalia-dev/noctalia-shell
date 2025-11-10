@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
 import qs.Commons
-import qs.Services
+import qs.Services.UI
 
 Singleton {
   id: root
@@ -16,8 +16,6 @@ Singleton {
     Lifespan
   }
 
-  property ShellScreen screen
-  
   property int chargingMode: Settings.data.battery.chargingMode
   property bool conservationModeEnabled: false
   readonly property string batterySetterScript: Quickshell.shellDir + '/Bin/battery-manager/set-battery-treshold.sh'
@@ -92,6 +90,7 @@ Singleton {
     // Currently the script sends notifications by default but quickshell
     // uses toast messages so the flag is passed to supress notifs
     command.push("-q")
+
     if (!BatteryService.conservationModeEnabled) {
       command.push(BatteryService.getThresholdValue(BatteryService.chargingMode))
     } else {
@@ -110,7 +109,7 @@ Singleton {
   function init() {
     batteryModeProbe.running = true
   }
-  
+
   // Check if the system uses the Lenovo battery conservation mode  
   Process {
     id: batteryModeProbe
@@ -146,7 +145,7 @@ Singleton {
         Settings.data.battery.chargingMode = BatteryService.chargingMode
       } else if (exitCode === 2) {
         ToastService.showWarning(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.initial-setup"))
-        PanelService.getPanel("batteryPanel", screen)?.toggle(this)
+        PanelService.getPanel("batteryPanel", null)?.toggle(this)
         BatteryService.runInstaller()
       } else {
         ToastService.showError(I18n.tr("toast.battery-manager.title"), I18n.tr("toast.battery-manager.set-failed"))
@@ -240,7 +239,7 @@ Singleton {
     }
   }
 
-  // Cleanup process - deletes uninstaller after it successful
+  // Cleanup process - deletes uninstaller after it's successful
   Process {
     id: cleanupProcess
     workingDirectory: Quickshell.shellDir
