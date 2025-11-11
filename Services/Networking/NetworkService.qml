@@ -18,6 +18,7 @@ Singleton {
   property bool ethernetConnected: false
   property string disconnectingFrom: ""
   property string forgettingNetwork: ""
+  property bool internetConnectivity: true
   property bool ignoreScanResults: false
   property bool scanPending: false
 
@@ -96,6 +97,16 @@ Singleton {
     running: true
     repeat: true
     onTriggered: ethernetStateProcess.running = true
+  }
+  
+  // Internet connectivity check timer
+  // Always running every 15s
+  Timer {
+    id: connectivityCheckTimer
+    interval: 15000
+    running: true
+    repeat: true
+    onTriggered: connectivityCheckProcess.running = true
   }
 
   // Core functions
@@ -211,6 +222,8 @@ Singleton {
 
   // Helper functions
   function signalIcon(signal, isConnected = false) {
+    if (isConnected && !root.internetConnectivity)
+      return "world-off"
     if (signal >= 80)
       return "wifi"
     if (signal >= 50)
@@ -280,6 +293,33 @@ Singleton {
       onStreamFinished: {
         if (text.trim()) {
           Logger.w("Network", "Error changing Wi-Fi state: " + text)
+        }
+      }
+    }
+  }
+  
+  // Process to check the internet connectivity
+  Process {
+    id: connectivityCheckProcess
+    running: false
+    command: ["sh", "-c", "ping -c1 -W1 1.1.1.1 >/dev/null 2>&1 || curl -fs --max-time 3 https://example.com >/dev/null 2>&1"]
+    
+    property int failedChecks: 0
+    
+    onExited: (exitCode, exitStatus) => {
+      if (exitCode === 0) {
+        if (!root.internetConnectivity) {
+          root.internetConnectivity = true
+          failedChecks = 0
+          root.scan()
+        }
+      } else if (root.internetConnectivity) {
+        failedChecks++
+        if (failedChecks >= 2) {
+          root.internetConnectivity = false
+          Logger.i("Network", "No internet connectivity")
+          ToastService.showWarning(cachedLastConnected, I18n.tr("toast.internet.limited"))
+          failedChecks = 0
         }
       }
     }
