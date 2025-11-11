@@ -310,9 +310,9 @@ Singleton {
       if (exitCode === 0) {
         if (!root.internetConnectivity) {
           root.internetConnectivity = true
-          failedChecks = 0
           root.scan()
         }
+        failedChecks = 0
       } else if (root.internetConnectivity) {
         failedChecks++
         if (failedChecks >= 2) {
