@@ -302,7 +302,7 @@ Singleton {
   Process {
     id: connectivityCheckProcess
     running: false
-    command: ["sh", "-c", "ping -c1 -W1 ping.archlinux.org >/dev/null 2>&1 || ping -c1 -W1 1.1.1.1 >/dev/null 2>&1 || curl -fsI --max-time 3 https://cloudflare.com/cdn-cgi/trace 2>&1"]
+    command: ["sh", "-c", "ping -c1 -W1 ping.archlinux.org >/dev/null 2>&1 || ping -c1 -W1 1.1.1.1 >/dev/null 2>&1 || curl -fsI --max-time 3 https://cloudflare.com/cdn-cgi/trace >/dev/null 2>&1"]
     
     property int failedChecks: 0
     
