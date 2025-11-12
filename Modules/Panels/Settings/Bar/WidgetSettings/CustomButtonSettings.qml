@@ -27,6 +27,8 @@ ColumnLayout {
     settings.rightClickUpdateText = rightClickUpdateText.checked
     settings.middleClickExec = middleClickExecInput.text
     settings.middleClickUpdateText = middleClickUpdateText.checked
+    settings.wheelExec = wheelExecInput.text
+    settings.wheelUpdateText = wheelUpdateText.checked
     settings.textCommand = textCommandInput.text
     settings.textCollapse = textCollapseInput.text
     settings.textStream = valueTextStream
@@ -133,6 +135,30 @@ ColumnLayout {
       onEntered: TooltipService.show(Screen, middleClickUpdateText, I18n.tr("bar.widget-settings.custom-button.middle-click.update-text"), "auto")
       onExited: TooltipService.hide()
       checked: widgetData?.middleClickUpdateText ?? widgetMetadata.middleClickUpdateText
+      onToggled: isChecked => checked = isChecked
+    }
+  }
+
+  RowLayout {
+    spacing: Style.marginM
+
+    NTextInput {
+      id: wheelExecInput
+      Layout.fillWidth: true
+      label: I18n.tr("bar.widget-settings.custom-button.wheel.label")
+      description: I18n.tr("bar.widget-settings.custom-button.wheel.description")
+      placeholderText: I18n.tr("placeholders.enter-command")
+      text: widgetData.wheelExec || widgetMetadata.wheelExec
+    }
+
+    NToggle {
+      id: wheelUpdateText
+      enabled: !valueTextStream
+      Layout.alignment: Qt.AlignRight | Qt.AlignBottom
+      Layout.bottomMargin: Style.marginS
+      onEntered: TooltipService.show(Screen, wheelUpdateText, I18n.tr("bar.widget-settings.custom-button.wheel.update-text"), "auto")
+      onExited: TooltipService.hide()
+      checked: widgetData?.wheelUpdateText ?? widgetMetadata.wheelUpdateText
       onToggled: isChecked => checked = isChecked
     }
   }

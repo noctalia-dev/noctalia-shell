@@ -141,6 +141,11 @@
           "label": "Middle click",
           "update-text": "Update displayed text on middle-click"
         },
+        "wheel": {
+          "description": "Command to execute when the scroll wheel is used.\nUse $delta for the scroll wheel delta in the command",
+          "label": "Scroll wheel",
+          "update-text": "Update displayed text on scroll"
+        },
         "parse-json": {
           "description": "Parse the command output as a JSON object to dynamically set text and icon.",
           "label": "Parse output as JSON"
