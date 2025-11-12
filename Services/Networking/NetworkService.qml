@@ -302,7 +302,7 @@ Singleton {
   Process {
     id: connectivityCheckProcess
     running: false
-    command: ["sh", "-c", "ping -c1 -W1 1.1.1.1 >/dev/null 2>&1 || curl -fs --max-time 3 https://example.com >/dev/null 2>&1"]
+    command: ["sh", "-c", "ping -c1 -W1 ping.archlinux.org >/dev/null 2>&1 || ping -c1 -W1 1.1.1.1 >/dev/null 2>&1 || curl -fsI --max-time 3 https://cloudflare.com/cdn-cgi/trace 2>&1"]
     
     property int failedChecks: 0
     
@@ -310,6 +310,7 @@ Singleton {
       if (exitCode === 0) {
         if (!root.internetConnectivity) {
           root.internetConnectivity = true
+          Logger.i("Network", "Internet connectivity restored")
           root.scan()
         }
         failedChecks = 0
