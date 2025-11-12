@@ -502,9 +502,6 @@ SmartPanel {
                 if (isSelected) {
                   return Color.mSecondary
                 }
-                if (wallpaperGridView.currentIndex === index) {
-                  return Color.mHover
-                }
                 return Color.mSurface
               }
               border.width: Math.max(1, Style.borderL * 1.5)
@@ -533,7 +530,7 @@ SmartPanel {
             Rectangle {
               anchors.fill: parent
               color: Color.mSurface
-              opacity: (hoverHandler.hovered || isSelected || wallpaperGridView.currentIndex === index) ? 0 : 0.3
+              opacity: (hoverHandler.hovered || isSelected) ? 0 : 0.3
               radius: parent.radius
               Behavior on opacity {
                 NumberAnimation {
