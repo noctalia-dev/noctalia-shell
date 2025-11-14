@@ -259,11 +259,6 @@ SmartPanel {
                      "label": "settings.screen-recorder.title",
                      "icon": "settings-screen-recorder",
                      "source": screenRecorderTab
-                   }, {
-                     "id": SettingsPanel.Tab.SessionMenu,
-                     "label": "settings.session-menu.title",
-                     "icon": "settings-session-menu",
-                     "source": sessionMenuTab
                    }, //  {
                    //    "id": SettingsPanel.Tab.SystemMonitor,
                    //    "label": "settings.system-monitor.title",
