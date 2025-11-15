@@ -202,6 +202,10 @@
           "description": "Display the album artwork for the currently playing track.",
           "label": "Show album art"
         },
+        "show-artist-first": {
+          "description": "Display artist - title instead of title - artist",
+          "label": "Show artist first"
+        }
         "show-visualizer": {
           "description": "Display an audio visualizer when music is playing.",
           "label": "Show visualizer"

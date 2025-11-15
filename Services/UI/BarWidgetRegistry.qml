@@ -147,6 +147,7 @@ Singleton {
                                     "useFixedWidth": false,
                                     "hideWhenIdle": false,
                                     "showAlbumArt": false,
+                                    "showArtistFirst": false,
                                     "showVisualizer": false,
                                     "visualizerType": "linear"
                                   },
