@@ -565,7 +565,8 @@
     "workspace-labels": {
       "index": "Índice",
       "name": "Nome",
-      "none": "Nenhum"
+      "none": "Nenhum",
+      "index-name": "Índice + Nome"
     }
   },
   "placeholders": {

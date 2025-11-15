@@ -565,7 +565,8 @@
     "workspace-labels": {
       "index": "Индекс",
       "name": "Имя",
-      "none": "Нет"
+      "none": "Нет",
+      "index-name": "Индекс + Имя"
     }
   },
   "placeholders": {

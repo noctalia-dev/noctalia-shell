@@ -565,7 +565,8 @@
     "workspace-labels": {
       "index": "İndeks",
       "name": "İsim",
-      "none": "Hiçbiri"
+      "none": "Hiçbiri",
+      "index-name": "İndeks + İsim"
     }
   },
   "placeholders": {
