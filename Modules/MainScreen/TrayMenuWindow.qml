@@ -53,7 +53,7 @@ PanelWindow {
 
   Loader {
     id: trayMenu
-    source: "../Bar/Extras/TrayMenu.qml"
+    source: Quickshell.shellDir + "/Modules/Bar/Extras/TrayMenu.qml"
     onLoaded: {
       if (item) {
         item.screen = root.screen

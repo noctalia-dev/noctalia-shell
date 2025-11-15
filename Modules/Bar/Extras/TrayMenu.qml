@@ -20,8 +20,12 @@ PopupWindow {
   property string widgetSection: ""
   property int widgetIndex: -1
 
-  // Derive menu from trayItem (only used for non-submenus)
-  readonly property QsMenuHandle menu: isSubMenu ? null : (trayItem ? trayItem.menu : null)
+  // Track if we should try to load menu items
+  property int menuLoadTrigger: 0
+  property var menuItems: []
+
+  // Menu can be set directly (for submenus) or derived from trayItem
+  property var menu: null
 
   // Compute if current tray item is pinned
   readonly property bool isPinned: {
@@ -60,21 +64,58 @@ PopupWindow {
     return anchorY + Settings.data.bar.position === "bottom" ? -implicitHeight : Style.barHeight
   }
 
+  // Only try to load menu items when explicitly requested
+  onMenuLoadTriggerChanged: {
+    loadMenuItemsSafely()
+  }
+
+  function loadMenuItemsSafely() {
+    // Use a timer to defer the access
+    loadTimer.start()
+  }
+
+  Timer {
+    id: loadTimer
+    interval: 50
+    repeat: false
+    onTriggered: {
+      try {
+        if (opener && opener.children && opener.children.values) {
+          const values = opener.children.values
+          if (values && values.length > 0) {
+            root.menuItems = [...values]
+            Logger.i("TrayMenu", "Loaded " + root.menuItems.length + " menu items")
+          } else {
+            Logger.warn("TrayMenu", "opener.children.values is empty")
+          }
+        } else {
+          Logger.warn("TrayMenu", "opener.children not available")
+        }
+      } catch (e) {
+        Logger.w("TrayMenu", "Failed to load menu items: " + e)
+      }
+    }
+  }
+
   function showAt(item, x, y) {
     if (!item) {
       Logger.warn("TrayMenu", "anchorItem is undefined, won't show menu.")
       return
     }
 
-    if (!opener.children || opener.children.values.length === 0) {
-      //Logger.warn("TrayMenu", "Menu not ready, delaying show")
-      Qt.callLater(() => showAt(item, x, y))
-      return
+    if (!isSubMenu && trayItem && trayItem.menu) {
+      menu = trayItem.menu
     }
 
     anchorItem = item
     anchorX = x
     anchorY = y
+
+    // Reset menu items to force reload with new menu
+    menuItems = []
+
+    // Increment trigger to reload menu (always triggers even if already loaded)
+    menuLoadTrigger++
 
     visible = true
     forceActiveFocus()
@@ -104,11 +145,6 @@ PopupWindow {
     id: rootMouseArea
     anchors.fill: parent
     hoverEnabled: true
-  }
-
-  Item {
-    anchors.fill: parent
-    Keys.onEscapePressed: root.hideMenu()
   }
 
   QsMenuOpener {
@@ -158,7 +194,7 @@ PopupWindow {
       spacing: 0
 
       Repeater {
-        model: opener.children ? [...opener.children.values] : []
+        model: root.menuItems
 
         delegate: Rectangle {
           id: entry
@@ -277,6 +313,7 @@ PopupWindow {
                                    entry.subMenu.anchorItem = entry
                                    entry.subMenu.anchorX = openLeft ? -overlap : overlap
                                    entry.subMenu.anchorY = 0
+                                   entry.subMenu.menuLoadTrigger++
                                    entry.subMenu.visible = true
                                    // Force anchor update with new position
                                    Qt.callLater(() => {

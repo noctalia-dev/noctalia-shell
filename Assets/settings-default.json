@@ -124,7 +124,16 @@
     "transitionEdgeSmoothness": 0.05,
     "monitors": [],
     "panelPosition": "follow_bar",
-    "hideWallpaperFilenames": false
+    "hideWallpaperFilenames": false,
+    "useWallhaven": false,
+    "wallhavenQuery": "",
+    "wallhavenSorting": "date_added",
+    "wallhavenOrder": "desc",
+    "wallhavenCategories": "111",
+    "wallhavenPurity": "100",
+    "wallhavenResolutionMode": "atleast",
+    "wallhavenResolutionWidth": "",
+    "wallhavenResolutionHeight": ""
   },
   "appLauncher": {
     "enableClipboardHistory": false,
