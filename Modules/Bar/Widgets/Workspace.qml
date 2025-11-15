@@ -72,8 +72,10 @@ Item {
     const factor = ws.isActive ? 2.2 : 1
 
     // For name mode, calculate width based on actual text content
-    if (labelMode === "name" && ws.name && ws.name.length > 0) {
-      const displayText = ws.name.substring(0, characterCount)
+    if (["name", "index-name"].includes(labelMode) && ws.name && ws.name.length > 0) {
+      const wsName = ws.name.substring(0, characterCount)
+      // build displayText based on labelMode. if index-name, include index
+      const displayText = labelMode === "index-name" ? ws.idx.toString() + " " + wsName : wsName
       const textWidth = displayText.length * (d * 0.4) // Approximate width per character
       const padding = d * 0.6 // Padding on both sides
       return Math.max(d * factor, textWidth + padding)
@@ -291,6 +293,8 @@ Item {
                 text: {
                   if (labelMode === "name" && model.name && model.name.length > 0) {
                     return model.name.substring(0, characterCount)
+                  } else if (labelMode === "index-name" && model.name && model.name.length > 0) {
+                    return model.idx.toString() + " " + model.name.substring(0, characterCount)
                   } else {
                     return model.idx.toString()
                   }
@@ -436,6 +440,8 @@ Item {
                 text: {
                   if (labelMode === "name" && model.name && model.name.length > 0) {
                     return model.name.substring(0, characterCount)
+                  } else if (labelMode === "index-name" && model.name && model.name.length > 0) {
+                    return model.idx.toString() + " " + model.name.substring(0, characterCount)
                   } else {
                     return model.idx.toString()
                   }

@@ -565,7 +565,8 @@
     "workspace-labels": {
       "index": "Index",
       "name": "Naam",
-      "none": "Geen"
+      "none": "Geen",
+      "index-name": "Index + Naam"
     }
   },
   "placeholders": {
