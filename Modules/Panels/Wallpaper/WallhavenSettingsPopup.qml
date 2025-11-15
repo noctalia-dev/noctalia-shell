@@ -27,7 +27,7 @@ Popup {
     }
     return 0
   }
-  
+
   y: {
     if (anchorItem) {
       var itemPos = anchorItem.mapToItem(parent, 0, 0)
@@ -43,19 +43,19 @@ Popup {
     anchorItem = item
     open()
     Qt.callLater(() => {
-      // Try to focus the first input if available
-      if (resolutionWidthInput.inputItem) {
-        resolutionWidthInput.inputItem.forceActiveFocus()
-      }
-    })
+                   // Try to focus the first input if available
+                   if (resolutionWidthInput.inputItem) {
+                     resolutionWidthInput.inputItem.forceActiveFocus()
+                   }
+                 })
   }
-  
+
   onOpened: {
     Qt.callLater(() => {
-      if (resolutionWidthInput.inputItem) {
-        resolutionWidthInput.inputItem.forceActiveFocus()
-      }
-    })
+                   if (resolutionWidthInput.inputItem) {
+                     resolutionWidthInput.inputItem.forceActiveFocus()
+                   }
+                 })
   }
 
   function hide() {
@@ -153,22 +153,33 @@ Popup {
       NComboBox {
         id: sortingComboBox
         Layout.fillWidth: true
-        model: [
-          { "key": "date_added", "name": I18n.tr("wallpaper.panel.sorting.date_added") },
-          { "key": "relevance", "name": I18n.tr("wallpaper.panel.sorting.relevance") },
-          { "key": "random", "name": I18n.tr("wallpaper.panel.sorting.random") },
-          { "key": "views", "name": I18n.tr("wallpaper.panel.sorting.views") },
-          { "key": "favorites", "name": I18n.tr("wallpaper.panel.sorting.favorites") },
-          { "key": "toplist", "name": I18n.tr("wallpaper.panel.sorting.toplist") }
-        ]
+        model: [{
+            "key": "date_added",
+            "name": I18n.tr("wallpaper.panel.sorting.date_added")
+          }, {
+            "key": "relevance",
+            "name": I18n.tr("wallpaper.panel.sorting.relevance")
+          }, {
+            "key": "random",
+            "name": I18n.tr("wallpaper.panel.sorting.random")
+          }, {
+            "key": "views",
+            "name": I18n.tr("wallpaper.panel.sorting.views")
+          }, {
+            "key": "favorites",
+            "name": I18n.tr("wallpaper.panel.sorting.favorites")
+          }, {
+            "key": "toplist",
+            "name": I18n.tr("wallpaper.panel.sorting.toplist")
+          }]
         currentKey: Settings.data.wallpaper.wallhavenSorting || "date_added"
         onSelected: key => {
-          Settings.data.wallpaper.wallhavenSorting = key
-          if (typeof WallhavenService !== "undefined") {
-            WallhavenService.sorting = key
-            WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
-          }
-        }
+                      Settings.data.wallpaper.wallhavenSorting = key
+                      if (typeof WallhavenService !== "undefined") {
+                        WallhavenService.sorting = key
+                        WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
+                      }
+                    }
       }
     }
 
@@ -188,18 +199,21 @@ Popup {
       NComboBox {
         id: orderComboBox
         Layout.fillWidth: true
-        model: [
-          { "key": "desc", "name": I18n.tr("wallpaper.panel.order.desc") },
-          { "key": "asc", "name": I18n.tr("wallpaper.panel.order.asc") }
-        ]
+        model: [{
+            "key": "desc",
+            "name": I18n.tr("wallpaper.panel.order.desc")
+          }, {
+            "key": "asc",
+            "name": I18n.tr("wallpaper.panel.order.asc")
+          }]
         currentKey: Settings.data.wallpaper.wallhavenOrder || "desc"
         onSelected: key => {
-          Settings.data.wallpaper.wallhavenOrder = key
-          if (typeof WallhavenService !== "undefined") {
-            WallhavenService.order = key
-            WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
-          }
-        }
+                      Settings.data.wallpaper.wallhavenOrder = key
+                      if (typeof WallhavenService !== "undefined") {
+                        WallhavenService.order = key
+                        WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
+                      }
+                    }
       }
     }
 
@@ -218,19 +232,24 @@ Popup {
       NComboBox {
         id: purityComboBox
         Layout.fillWidth: true
-        model: [
-          { "key": "111", "name": I18n.tr("wallpaper.panel.purity.all") },
-          { "key": "100", "name": I18n.tr("wallpaper.panel.purity.sfw") },
-          { "key": "010", "name": I18n.tr("wallpaper.panel.purity.sketchy") }
-        ]
+        model: [{
+            "key": "111",
+            "name": I18n.tr("wallpaper.panel.purity.all")
+          }, {
+            "key": "100",
+            "name": I18n.tr("wallpaper.panel.purity.sfw")
+          }, {
+            "key": "010",
+            "name": I18n.tr("wallpaper.panel.purity.sketchy")
+          }]
         currentKey: Settings.data.wallpaper.wallhavenPurity
         onSelected: key => {
-          Settings.data.wallpaper.wallhavenPurity = key
-          if (typeof WallhavenService !== "undefined") {
-            WallhavenService.purity = key
-            WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
-          }
-        }
+                      Settings.data.wallpaper.wallhavenPurity = key
+                      if (typeof WallhavenService !== "undefined") {
+                        WallhavenService.purity = key
+                        WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
+                      }
+                    }
       }
     }
 
@@ -440,8 +459,8 @@ Popup {
           property bool checked: false
           signal toggled(bool checked)
           onToggled: checked => {
-            categoriesRow.updateCategories(checked, categoriesRow.getCategoryValue(1), categoriesRow.getCategoryValue(2))
-          }
+                       categoriesRow.updateCategories(checked, categoriesRow.getCategoryValue(1), categoriesRow.getCategoryValue(2))
+                     }
         }
 
         QtObject {
@@ -449,8 +468,8 @@ Popup {
           property bool checked: false
           signal toggled(bool checked)
           onToggled: checked => {
-            categoriesRow.updateCategories(categoriesRow.getCategoryValue(0), checked, categoriesRow.getCategoryValue(2))
-          }
+                       categoriesRow.updateCategories(categoriesRow.getCategoryValue(0), checked, categoriesRow.getCategoryValue(2))
+                     }
         }
 
         QtObject {
@@ -458,8 +477,8 @@ Popup {
           property bool checked: false
           signal toggled(bool checked)
           onToggled: checked => {
-            categoriesRow.updateCategories(categoriesRow.getCategoryValue(0), categoriesRow.getCategoryValue(1), checked)
-          }
+                       categoriesRow.updateCategories(categoriesRow.getCategoryValue(0), categoriesRow.getCategoryValue(1), checked)
+                     }
         }
       }
     }
@@ -489,12 +508,15 @@ Popup {
         NComboBox {
           id: resolutionModeComboBox
           Layout.fillWidth: true
-          model: [
-            { "key": "atleast", "name": I18n.tr("wallpaper.panel.resolution.atleast") },
-            { "key": "exact", "name": I18n.tr("wallpaper.panel.resolution.exact") }
-          ]
+          model: [{
+              "key": "atleast",
+              "name": I18n.tr("wallpaper.panel.resolution.atleast")
+            }, {
+              "key": "exact",
+              "name": I18n.tr("wallpaper.panel.resolution.exact")
+            }]
           currentKey: Settings.data.wallpaper.wallhavenResolutionMode || "atleast"
-          
+
           Connections {
             target: Settings.data.wallpaper
             function onWallhavenResolutionModeChanged() {
@@ -503,11 +525,11 @@ Popup {
               }
             }
           }
-          
+
           onSelected: key => {
-            Settings.data.wallpaper.wallhavenResolutionMode = key
-            updateResolution(false)
-          }
+                        Settings.data.wallpaper.wallhavenResolutionMode = key
+                        updateResolution(false)
+                      }
         }
       }
 
@@ -521,7 +543,7 @@ Popup {
           placeholderText: "Width"
           inputMethodHints: Qt.ImhDigitsOnly
           text: Settings.data.wallpaper.wallhavenResolutionWidth || ""
-          
+
           Component.onCompleted: {
             if (resolutionWidthInput.inputItem) {
               resolutionWidthInput.inputItem.focusPolicy = Qt.StrongFocus
@@ -529,14 +551,14 @@ Popup {
               resolutionWidthInput.inputItem.activeFocusOnPress = true
             }
           }
-          
+
           // Ensure focus when clicked
           onActiveFocusChanged: {
             if (activeFocus && resolutionWidthInput.inputItem) {
               resolutionWidthInput.inputItem.forceActiveFocus()
             }
           }
-          
+
           Connections {
             target: Settings.data.wallpaper
             function onWallhavenResolutionWidthChanged() {
@@ -545,7 +567,7 @@ Popup {
               }
             }
           }
-          
+
           onEditingFinished: {
             Settings.data.wallpaper.wallhavenResolutionWidth = text
             updateResolution(false)
@@ -565,21 +587,21 @@ Popup {
           placeholderText: "Height"
           inputMethodHints: Qt.ImhDigitsOnly
           text: Settings.data.wallpaper.wallhavenResolutionHeight || ""
-          
+
           Component.onCompleted: {
             if (resolutionHeightInput.inputItem) {
               resolutionHeightInput.inputItem.focusPolicy = Qt.StrongFocus
               resolutionHeightInput.inputItem.activeFocusOnPress = true
             }
           }
-          
+
           // Ensure focus when clicked
           onActiveFocusChanged: {
             if (activeFocus && resolutionHeightInput.inputItem) {
               resolutionHeightInput.inputItem.forceActiveFocus()
             }
           }
-          
+
           Connections {
             target: Settings.data.wallpaper
             function onWallhavenResolutionHeightChanged() {
@@ -588,7 +610,7 @@ Popup {
               }
             }
           }
-          
+
           onEditingFinished: {
             Settings.data.wallpaper.wallhavenResolutionHeight = text
             updateResolution(false)
@@ -614,20 +636,19 @@ Popup {
           WallhavenService.purity = Settings.data.wallpaper.wallhavenPurity
           WallhavenService.sorting = Settings.data.wallpaper.wallhavenSorting
           WallhavenService.order = Settings.data.wallpaper.wallhavenOrder
-          
+
           // Update resolution settings (without triggering search)
           updateResolution(false)
-          
+
           // Refresh the wallpaper search with current settings
           WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
-          
+
           // Close the popup after applying (delay to prevent click propagation)
           Qt.callLater(() => {
-            root.hide()
-          })
+                         root.hide()
+                       })
         }
       }
     }
   }
 }
-

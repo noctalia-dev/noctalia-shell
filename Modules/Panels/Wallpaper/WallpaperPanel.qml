@@ -278,7 +278,7 @@ SmartPanel {
           id: searchInput
           placeholderText: Settings.data.wallpaper.useWallhaven ? I18n.tr("placeholders.search-wallhaven") : I18n.tr("placeholders.search-wallpapers")
           Layout.fillWidth: true
-          
+
           property bool initializing: true
           Component.onCompleted: {
             // Initialize text based on current mode
@@ -292,11 +292,11 @@ SmartPanel {
               searchInput.inputItem.forceActiveFocus()
             }
             // Mark initialization as complete after a short delay
-            Qt.callLater(function() {
+            Qt.callLater(function () {
               searchInput.initializing = false
             })
           }
-          
+
           Connections {
             target: Settings.data.wallpaper
             function onUseWallhavenChanged() {
@@ -375,50 +375,53 @@ SmartPanel {
         NComboBox {
           id: sourceComboBox
           Layout.fillWidth: true
-          model: [
-            { "key": "local", "name": I18n.tr("wallpaper.panel.source.local") },
-            { "key": "wallhaven", "name": I18n.tr("wallpaper.panel.source.wallhaven") }
-          ]
+          model: [{
+              "key": "local",
+              "name": I18n.tr("wallpaper.panel.source.local")
+            }, {
+              "key": "wallhaven",
+              "name": I18n.tr("wallpaper.panel.source.wallhaven")
+            }]
           currentKey: Settings.data.wallpaper.useWallhaven ? "wallhaven" : "local"
           property bool skipNextSelected: false
           Component.onCompleted: {
             // Skip the first onSelected if it fires during initialization
             skipNextSelected = true
-            Qt.callLater(function() {
+            Qt.callLater(function () {
               skipNextSelected = false
             })
           }
           onSelected: key => {
-            if (skipNextSelected) {
-              return
-            }
-            var useWallhaven = (key === "wallhaven")
-            Settings.data.wallpaper.useWallhaven = useWallhaven
-            // Update search input text based on mode
-            if (useWallhaven) {
-              searchInput.text = Settings.data.wallpaper.wallhavenQuery || ""
-            } else {
-              searchInput.text = wallpaperPanel.filterText || ""
-            }
-            if (useWallhaven && typeof WallhavenService !== "undefined") {
-              // Update service properties when switching to Wallhaven
-              // Don't search here - Component.onCompleted will handle it when the component is created
-              // This prevents duplicate searches
-              WallhavenService.categories = Settings.data.wallpaper.wallhavenCategories
-              WallhavenService.purity = Settings.data.wallpaper.wallhavenPurity
-              WallhavenService.sorting = Settings.data.wallpaper.wallhavenSorting
-              WallhavenService.order = Settings.data.wallpaper.wallhavenOrder
-              
-              // Update resolution settings
-              wallpaperPanel.updateWallhavenResolution()
-              
-              // If the view is already initialized, trigger a new search when switching to it
-              if (wallhavenView && wallhavenView.initialized && !WallhavenService.fetching) {
-                wallhavenView.loading = true
-                WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
-              }
-            }
-          }
+                        if (skipNextSelected) {
+                          return
+                        }
+                        var useWallhaven = (key === "wallhaven")
+                        Settings.data.wallpaper.useWallhaven = useWallhaven
+                        // Update search input text based on mode
+                        if (useWallhaven) {
+                          searchInput.text = Settings.data.wallpaper.wallhavenQuery || ""
+                        } else {
+                          searchInput.text = wallpaperPanel.filterText || ""
+                        }
+                        if (useWallhaven && typeof WallhavenService !== "undefined") {
+                          // Update service properties when switching to Wallhaven
+                          // Don't search here - Component.onCompleted will handle it when the component is created
+                          // This prevents duplicate searches
+                          WallhavenService.categories = Settings.data.wallpaper.wallhavenCategories
+                          WallhavenService.purity = Settings.data.wallpaper.wallhavenPurity
+                          WallhavenService.sorting = Settings.data.wallpaper.wallhavenSorting
+                          WallhavenService.order = Settings.data.wallpaper.wallhavenOrder
+
+                          // Update resolution settings
+                          wallpaperPanel.updateWallhavenResolution()
+
+                          // If the view is already initialized, trigger a new search when switching to it
+                          if (wallhavenView && wallhavenView.initialized && !WallhavenService.fetching) {
+                            wallhavenView.loading = true
+                            WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
+                          }
+                        }
+                      }
         }
 
         // Settings button (only visible for Wallhaven)
@@ -862,7 +865,7 @@ SmartPanel {
           initialized = true
           return
         }
-        
+
         // We're the first one - claim the search
         initialized = true
         WallhavenService.initialSearchScheduled = true
@@ -870,7 +873,7 @@ SmartPanel {
         WallhavenService.purity = Settings.data.wallpaper.wallhavenPurity
         WallhavenService.sorting = Settings.data.wallpaper.wallhavenSorting
         WallhavenService.order = Settings.data.wallpaper.wallhavenOrder
-        
+
         // Initialize resolution settings
         var width = Settings.data.wallpaper.wallhavenResolutionWidth || ""
         var height = Settings.data.wallpaper.wallhavenResolutionHeight || ""
@@ -888,13 +891,12 @@ SmartPanel {
           WallhavenService.minResolution = ""
           WallhavenService.resolutions = ""
         }
-        
+
         // Now check if we can actually search (fetching check is in WallhavenService.search)
         loading = true
         WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1)
       }
     }
-
 
     ColumnLayout {
       anchors.fill: parent
@@ -918,182 +920,182 @@ SmartPanel {
 
           model: wallpapers || []
 
-        property int columns: (screen.width > 1920) ? 5 : 4
-        property int itemSize: cellWidth
+          property int columns: (screen.width > 1920) ? 5 : 4
+          property int itemSize: cellWidth
 
-        cellWidth: Math.floor((width - leftMargin - rightMargin) / columns)
-        cellHeight: Math.floor(itemSize * 0.7) + Style.marginXS + Style.fontSizeXS + Style.marginM
+          cellWidth: Math.floor((width - leftMargin - rightMargin) / columns)
+          cellHeight: Math.floor(itemSize * 0.7) + Style.marginXS + Style.fontSizeXS + Style.marginM
 
-        leftMargin: Style.marginS
-        rightMargin: Style.marginS
-        topMargin: Style.marginS
-        bottomMargin: Style.marginS
+          leftMargin: Style.marginS
+          rightMargin: Style.marginS
+          topMargin: Style.marginS
+          bottomMargin: Style.marginS
 
-        onCurrentIndexChanged: {
-          if (currentIndex >= 0) {
-            let row = Math.floor(currentIndex / columns)
-            let itemY = row * cellHeight
-            let viewportTop = contentY
-            let viewportBottom = viewportTop + height
+          onCurrentIndexChanged: {
+            if (currentIndex >= 0) {
+              let row = Math.floor(currentIndex / columns)
+              let itemY = row * cellHeight
+              let viewportTop = contentY
+              let viewportBottom = viewportTop + height
 
-            if (itemY < viewportTop) {
-              contentY = Math.max(0, itemY - cellHeight)
-            } else if (itemY + cellHeight > viewportBottom) {
-              contentY = itemY + cellHeight - height + cellHeight
+              if (itemY < viewportTop) {
+                contentY = Math.max(0, itemY - cellHeight)
+              } else if (itemY + cellHeight > viewportBottom) {
+                contentY = itemY + cellHeight - height + cellHeight
+              }
             }
           }
-        }
 
-        Keys.onPressed: event => {
-                          if (event.key === Qt.Key_Return || event.key === Qt.Key_Space) {
-                            if (currentIndex >= 0 && currentIndex < wallpapers.length) {
-                              let wallpaper = wallpapers[currentIndex]
-                              if (typeof WallhavenService !== "undefined") {
-                                WallhavenService.downloadWallpaper(wallpaper, function (success, localPath) {
-                                  if (success) {
-                                    if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
-                                      WallpaperService.changeWallpaper(localPath, undefined)
-                                    } else {
-                                      WallpaperService.changeWallpaper(localPath, screen.name)
+          Keys.onPressed: event => {
+                            if (event.key === Qt.Key_Return || event.key === Qt.Key_Space) {
+                              if (currentIndex >= 0 && currentIndex < wallpapers.length) {
+                                let wallpaper = wallpapers[currentIndex]
+                                if (typeof WallhavenService !== "undefined") {
+                                  WallhavenService.downloadWallpaper(wallpaper, function (success, localPath) {
+                                    if (success) {
+                                      if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
+                                        WallpaperService.changeWallpaper(localPath, undefined)
+                                      } else {
+                                        WallpaperService.changeWallpaper(localPath, screen.name)
+                                      }
                                     }
-                                  }
-                                })
+                                  })
+                                }
                               }
+                              event.accepted = true
                             }
-                            event.accepted = true
                           }
-                        }
 
-        ScrollBar.vertical: ScrollBar {
-          policy: ScrollBar.AsNeeded
-          parent: wallhavenGridView
-          x: wallhavenGridView.mirrored ? 0 : wallhavenGridView.width - width
-          y: 0
-          height: wallhavenGridView.height
+          ScrollBar.vertical: ScrollBar {
+            policy: ScrollBar.AsNeeded
+            parent: wallhavenGridView
+            x: wallhavenGridView.mirrored ? 0 : wallhavenGridView.width - width
+            y: 0
+            height: wallhavenGridView.height
 
-          property color handleColor: Qt.alpha(Color.mHover, 0.8)
-          property color handleHoverColor: handleColor
-          property color handlePressedColor: handleColor
-          property real handleWidth: 6
-          property real handleRadius: Style.radiusM
+            property color handleColor: Qt.alpha(Color.mHover, 0.8)
+            property color handleHoverColor: handleColor
+            property color handlePressedColor: handleColor
+            property real handleWidth: 6
+            property real handleRadius: Style.radiusM
 
-          contentItem: Rectangle {
-            implicitWidth: parent.handleWidth
-            implicitHeight: 100
-            radius: parent.handleRadius
-            color: parent.pressed ? parent.handlePressedColor : parent.hovered ? parent.handleHoverColor : parent.handleColor
-            opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 1.0 : 0.0
+            contentItem: Rectangle {
+              implicitWidth: parent.handleWidth
+              implicitHeight: 100
+              radius: parent.handleRadius
+              color: parent.pressed ? parent.handlePressedColor : parent.hovered ? parent.handleHoverColor : parent.handleColor
+              opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 1.0 : 0.0
 
-            Behavior on opacity {
-              NumberAnimation {
-                duration: Style.animationFast
+              Behavior on opacity {
+                NumberAnimation {
+                  duration: Style.animationFast
+                }
+              }
+
+              Behavior on color {
+                ColorAnimation {
+                  duration: Style.animationFast
+                }
               }
             }
 
-            Behavior on color {
-              ColorAnimation {
-                duration: Style.animationFast
-              }
-            }
-          }
-
-          background: Rectangle {
-            implicitWidth: parent.handleWidth
-            implicitHeight: 100
-            color: Color.transparent
-            opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
-            radius: parent.handleRadius / 2
-
-            Behavior on opacity {
-              NumberAnimation {
-                duration: Style.animationFast
-              }
-            }
-          }
-        }
-
-        delegate: ColumnLayout {
-          id: wallhavenItem
-
-          required property var modelData
-          required property int index
-          property string thumbnailUrl: (modelData && typeof WallhavenService !== "undefined") ? WallhavenService.getThumbnailUrl(modelData, "large") : ""
-          property string wallpaperId: (modelData && modelData.id) ? modelData.id : ""
-
-          width: wallhavenGridView.itemSize
-          spacing: Style.marginXS
-
-          Rectangle {
-            id: imageContainer
-            Layout.fillWidth: true
-            Layout.preferredHeight: Math.round(wallhavenGridView.itemSize * 0.67)
-            color: Color.transparent
-
-            Image {
-              id: img
-              source: thumbnailUrl
-              anchors.fill: parent
-              fillMode: Image.PreserveAspectCrop
-              asynchronous: true
-              cache: true
-              smooth: true
-              sourceSize.width: Math.round(wallhavenGridView.itemSize * 0.67)
-              sourceSize.height: Math.round(wallhavenGridView.itemSize * 0.67)
-            }
-
-            Rectangle {
-              anchors.fill: parent
+            background: Rectangle {
+              implicitWidth: parent.handleWidth
+              implicitHeight: 100
               color: Color.transparent
-              border.color: wallhavenGridView.currentIndex === index ? Color.mHover : Color.mSurface
-              border.width: Math.max(1, Style.borderL * 1.5)
-            }
+              opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
+              radius: parent.handleRadius / 2
 
-            Rectangle {
-              anchors.fill: parent
-              color: Color.mSurface
-              opacity: hoverHandler.hovered || wallhavenGridView.currentIndex === index ? 0 : 0.3
               Behavior on opacity {
                 NumberAnimation {
                   duration: Style.animationFast
                 }
               }
             }
+          }
 
-            HoverHandler {
-              id: hoverHandler
-            }
+          delegate: ColumnLayout {
+            id: wallhavenItem
 
-            TapHandler {
-              onTapped: {
-                wallhavenGridView.currentIndex = index
-                if (typeof WallhavenService !== "undefined") {
-                  WallhavenService.downloadWallpaper(modelData, function (success, localPath) {
-                    if (success) {
-                      if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
-                        WallpaperService.changeWallpaper(localPath, undefined)
-                      } else {
-                        WallpaperService.changeWallpaper(localPath, screen.name)
+            required property var modelData
+            required property int index
+            property string thumbnailUrl: (modelData && typeof WallhavenService !== "undefined") ? WallhavenService.getThumbnailUrl(modelData, "large") : ""
+            property string wallpaperId: (modelData && modelData.id) ? modelData.id : ""
+
+            width: wallhavenGridView.itemSize
+            spacing: Style.marginXS
+
+            Rectangle {
+              id: imageContainer
+              Layout.fillWidth: true
+              Layout.preferredHeight: Math.round(wallhavenGridView.itemSize * 0.67)
+              color: Color.transparent
+
+              Image {
+                id: img
+                source: thumbnailUrl
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+                smooth: true
+                sourceSize.width: Math.round(wallhavenGridView.itemSize * 0.67)
+                sourceSize.height: Math.round(wallhavenGridView.itemSize * 0.67)
+              }
+
+              Rectangle {
+                anchors.fill: parent
+                color: Color.transparent
+                border.color: wallhavenGridView.currentIndex === index ? Color.mHover : Color.mSurface
+                border.width: Math.max(1, Style.borderL * 1.5)
+              }
+
+              Rectangle {
+                anchors.fill: parent
+                color: Color.mSurface
+                opacity: hoverHandler.hovered || wallhavenGridView.currentIndex === index ? 0 : 0.3
+                Behavior on opacity {
+                  NumberAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+              }
+
+              HoverHandler {
+                id: hoverHandler
+              }
+
+              TapHandler {
+                onTapped: {
+                  wallhavenGridView.currentIndex = index
+                  if (typeof WallhavenService !== "undefined") {
+                    WallhavenService.downloadWallpaper(modelData, function (success, localPath) {
+                      if (success) {
+                        if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
+                          WallpaperService.changeWallpaper(localPath, undefined)
+                        } else {
+                          WallpaperService.changeWallpaper(localPath, screen.name)
+                        }
                       }
-                    }
-                  })
+                    })
+                  }
                 }
               }
             }
-          }
 
-          NText {
-            text: wallpaperId || I18n.tr("wallpaper.unknown")
-            color: hoverHandler.hovered || wallhavenGridView.currentIndex === index ? Color.mOnSurface : Color.mOnSurfaceVariant
-            pointSize: Style.fontSizeXS
-            Layout.fillWidth: true
-            Layout.leftMargin: Style.marginS
-            Layout.rightMargin: Style.marginS
-            Layout.alignment: Qt.AlignHCenter
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
+            NText {
+              text: wallpaperId || I18n.tr("wallpaper.unknown")
+              color: hoverHandler.hovered || wallhavenGridView.currentIndex === index ? Color.mOnSurface : Color.mOnSurfaceVariant
+              pointSize: Style.fontSizeXS
+              Layout.fillWidth: true
+              Layout.leftMargin: Style.marginS
+              Layout.rightMargin: Style.marginS
+              Layout.alignment: Qt.AlignHCenter
+              horizontalAlignment: Text.AlignHCenter
+              elide: Text.ElideRight
+            }
           }
         }
-      }
 
         // Loading overlay - fills same space as GridView to prevent jumping
         Rectangle {

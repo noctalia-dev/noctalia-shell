@@ -106,7 +106,7 @@ Singleton {
               currentResults = response.data
               currentMeta = response.meta || {}
               lastPage = currentMeta.last_page || 1
-              
+
               // Store seed for random sorting
               if (currentMeta.seed) {
                 seed = currentMeta.seed
@@ -183,45 +183,48 @@ Singleton {
     var url = getWallpaperUrl(wallpaper)
     if (!url) {
       Logger.e("Wallhaven", "No URL available for wallpaper", wallpaper.id)
-      if (callback) callback(false, "")
+      if (callback)
+        callback(false, "")
       return
     }
 
     var wallpaperId = wallpaper.id
-    
+
     // Get the user's wallpaper directory
     var wallpaperDir = Settings.preprocessPath(Settings.data.wallpaper.directory)
     if (!wallpaperDir || wallpaperDir === "") {
       wallpaperDir = Settings.defaultWallpapersDirectory
     }
-    
+
     // Ensure directory ends with /
     if (!wallpaperDir.endsWith("/")) {
       wallpaperDir += "/"
     }
-    
+
     var localPath = wallpaperDir + "wallhaven_" + wallpaperId + ".jpg"
 
     Logger.d("Wallhaven", "Downloading wallpaper", wallpaperId, "to", localPath)
 
     // Use curl or wget to download the file, ensuring directory exists first
     var downloadProcess = Qt.createQmlObject(`
-      import QtQuick
-      import Quickshell.Io
-      Process {
-        id: downloadProcess
-        command: ["sh", "-c", "mkdir -p '` + wallpaperDir + `' && (curl -L -s -o '` + localPath + `' '` + url + `' || wget -q -O '` + localPath + `' '` + url + `')"]
-      }
-    `, root, "DownloadProcess_" + wallpaperId)
+                                             import QtQuick
+                                             import Quickshell.Io
+                                             Process {
+                                             id: downloadProcess
+                                             command: ["sh", "-c", "mkdir -p '` + wallpaperDir + `' && (curl -L -s -o '` + localPath + `' '` + url + `' || wget -q -O '` + localPath + `' '` + url + `')"]
+                                             }
+                                             `, root, "DownloadProcess_" + wallpaperId)
 
     downloadProcess.exited.connect(function (exitCode) {
       if (exitCode === 0) {
         Logger.i("Wallhaven", "Wallpaper downloaded:", localPath)
         wallpaperDownloaded(wallpaperId, localPath)
-        if (callback) callback(true, localPath)
+        if (callback)
+          callback(true, localPath)
       } else {
         Logger.e("Wallhaven", "Failed to download wallpaper, exit code:", exitCode)
-        if (callback) callback(false, "")
+        if (callback)
+          callback(false, "")
       }
       downloadProcess.destroy()
     })
@@ -254,4 +257,3 @@ Singleton {
     }
   }
 }
-

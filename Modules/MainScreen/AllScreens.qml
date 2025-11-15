@@ -84,19 +84,19 @@ Variants {
       }
     }
 
-    // TrayMenuWindow - separate window for tray context menus
-    // This must be a top-level PanelWindow.
-    Loader {
-      active: parent.windowLoaded && parent.shouldBeActive
-      asynchronous: false
+    // // TrayMenuWindow - separate window for tray context menus
+    // // This must be a top-level PanelWindow.
+    // Loader {
+    //   active: parent.windowLoaded && parent.shouldBeActive
+    //   asynchronous: false
 
-      sourceComponent: TrayMenuWindow {
-        screen: modelData
-      }
+    //   sourceComponent: TrayMenuWindow {
+    //     screen: modelData
+    //   }
 
-      onLoaded: {
-        Logger.d("Shell", "TrayMenuWindow created for", modelData?.name)
-      }
-    }
+    //   onLoaded: {
+    //     Logger.d("Shell", "TrayMenuWindow created for", modelData?.name)
+    //   }
+    // }
   }
 }
