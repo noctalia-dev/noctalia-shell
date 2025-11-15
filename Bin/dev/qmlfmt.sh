@@ -11,7 +11,7 @@ if command -v qmlfmt &>/dev/null; then
     format_file() { qmlfmt -e -b 360 -t 2 -i 2 -w "$1" || { echo "Failed: $1" >&2; return 1; }; }
 elif command -v qmlformat &>/dev/null; then
     echo "Using 'qmlformat' for formatting."
-    format_file() { qmlformat -i --indent-width 2 --semicolon-rule essential "$1" || { echo "Failed: $1" >&2; return 1; }; }
+    format_file() { qmlformat -i -t --indent-width 2 -W 360 "$1" && sed -i 's/;[[:space:]]*$//' "$1" || { echo "Failed: $1" >&2; return 1; }; }
 else
     echo "Neither 'qmlfmt' nor 'qmlformat' found in PATH." >&2
     exit 1
