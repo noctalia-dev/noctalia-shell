@@ -73,9 +73,7 @@ Item {
 
     // For name mode, calculate width based on actual text content
     if (["name", "index-name"].includes(labelMode) && ws.name && ws.name.length > 0) {
-      const wsName = ws.name.substring(0, characterCount)
-      // build displayText based on labelMode. if index-name, include index
-      const displayText = labelMode === "index-name" ? ws.idx.toString() + " " + wsName : wsName
+      const displayText = root.getWorkspaceLabel(ws)
       const textWidth = displayText.length * (d * 0.4) // Approximate width per character
       const padding = d * 0.6 // Padding on both sides
       return Math.max(d * factor, textWidth + padding)
@@ -88,6 +86,16 @@ Item {
     const d = Style.capsuleHeight * root.baseDimensionRatio
     const factor = ws.isActive ? 2.2 : 1
     return d * factor
+  }
+
+  function getWorkspaceLabel(ws) {
+    if (labelMode === "name" && ws.name && ws.name.length > 0) {
+      return ws.name.substring(0, characterCount)
+    }
+    if (labelMode === "index-name" && ws.name && ws.name.length > 0) {
+      return ws.idx.toString() + " " + ws.name.substring(0, characterCount)
+    }
+    return ws.idx !== undefined ? ws.idx.toString() : ""
   }
 
   function computeWidth() {
@@ -291,13 +299,7 @@ Item {
                 x: (pill.width - width) / 2
                 y: (pill.height - height) / 2 + (height - contentHeight) / 2
                 text: {
-                  if (labelMode === "name" && model.name && model.name.length > 0) {
-                    return model.name.substring(0, characterCount)
-                  } else if (labelMode === "index-name" && model.name && model.name.length > 0) {
-                    return model.idx.toString() + " " + model.name.substring(0, characterCount)
-                  } else {
-                    return model.idx.toString()
-                  }
+                  return root.getWorkspaceLabel(model)
                 }
                 family: Settings.data.ui.fontFixed
                 pointSize: model.isActive ? workspacePillContainer.height * 0.45 : workspacePillContainer.height * 0.42
@@ -438,13 +440,7 @@ Item {
                 x: (pillVertical.width - width) / 2
                 y: (pillVertical.height - height) / 2 + (height - contentHeight) / 2
                 text: {
-                  if (labelMode === "name" && model.name && model.name.length > 0) {
-                    return model.name.substring(0, characterCount)
-                  } else if (labelMode === "index-name" && model.name && model.name.length > 0) {
-                    return model.idx.toString() + " " + model.name.substring(0, characterCount)
-                  } else {
-                    return model.idx.toString()
-                  }
+                  return root.getWorkspaceLabel(model)
                 }
                 family: Settings.data.ui.fontFixed
                 pointSize: model.isActive ? workspacePillContainerVertical.width * 0.45 : workspacePillContainerVertical.width * 0.42
