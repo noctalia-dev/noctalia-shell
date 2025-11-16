@@ -39,13 +39,15 @@ Item {
   readonly property bool rightClickUpdateText: widgetSettings.rightClickUpdateText ?? widgetMetadata.rightClickUpdateText
   readonly property string middleClickExec: widgetSettings.middleClickExec || widgetMetadata.middleClickExec
   readonly property bool middleClickUpdateText: widgetSettings.middleClickUpdateText ?? widgetMetadata.middleClickUpdateText
+  readonly property string wheelExec: widgetSettings.wheelExec || widgetMetadata.wheelExec
+  readonly property bool wheelUpdateText: widgetSettings.wheelUpdateText ?? widgetMetadata.wheelUpdateText
   readonly property string textCommand: widgetSettings.textCommand !== undefined ? widgetSettings.textCommand : (widgetMetadata.textCommand || "")
   readonly property bool textStream: widgetSettings.textStream !== undefined ? widgetSettings.textStream : (widgetMetadata.textStream || false)
   readonly property int textIntervalMs: widgetSettings.textIntervalMs !== undefined ? widgetSettings.textIntervalMs : (widgetMetadata.textIntervalMs || 3000)
   readonly property string textCollapse: widgetSettings.textCollapse !== undefined ? widgetSettings.textCollapse : (widgetMetadata.textCollapse || "")
   readonly property bool parseJson: widgetSettings.parseJson !== undefined ? widgetSettings.parseJson : (widgetMetadata.parseJson || false)
   readonly property bool hideTextInVerticalBar: widgetSettings.hideTextInVerticalBar !== undefined ? widgetSettings.hideTextInVerticalBar : (widgetMetadata.hideTextInVerticalBar || false)
-  readonly property bool hasExec: (leftClickExec || rightClickExec || middleClickExec)
+  readonly property bool hasExec: (leftClickExec || rightClickExec || middleClickExec || wheelExec)
 
   readonly property bool shouldShowText: !isVerticalBar || !hideTextInVerticalBar
 
@@ -75,6 +77,9 @@ Item {
         if (middleClickExec !== "") {
           tooltipLines.push(`Middle click: ${middleClickExec}.`)
         }
+        if (wheelExec !== "") {
+          tooltipLines.push(`Wheel: ${wheelExec}.`)
+        }
       }
 
       if (_dynamicTooltip !== "") {
@@ -94,6 +99,7 @@ Item {
     onClicked: root.onClicked()
     onRightClicked: root.onRightClicked()
     onMiddleClicked: root.onMiddleClicked()
+    onWheel: delta => root.onWheel(delta)
   }
 
   // Internal state for dynamic text
@@ -240,6 +246,17 @@ Item {
       Logger.i("CustomButton", `Executing command: ${middleClickExec}`)
     }
     if (!textStream && middleClickUpdateText) {
+      runTextCommand()
+    }
+  }
+
+  function onWheel(delta) {
+    if (wheelExec) {
+      let command = wheelExec.replace(/\$delta/g, delta)
+      Quickshell.execDetached(["sh", "-c", command])
+      Logger.i("CustomButton", `Executing command: ${command}`)
+    }
+    if (!textStream && wheelUpdateText) {
       runTextCommand()
     }
   }

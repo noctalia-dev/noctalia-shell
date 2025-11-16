@@ -119,6 +119,8 @@ Singleton {
                                     "rightClickUpdateText": false,
                                     "middleClickExec": "",
                                     "middleClickUpdateText": false,
+                                    "wheelExec": "",
+                                    "wheelUpdateText": false,
                                     "textCommand": "",
                                     "textStream": false,
                                     "textIntervalMs": 3000,
