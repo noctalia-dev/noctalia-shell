@@ -21,6 +21,9 @@ Item {
   implicitWidth: getImplicitSize(loader.item, "implicitWidth")
   implicitHeight: getImplicitSize(loader.item, "implicitHeight")
 
+  // Remove layout space left by hidden widgets
+  visible: loader.item ? ((loader.item.opacity > 0.0) || (loader.item.hasOwnProperty("hideMode") && loader.item.hideMode === "transparent")) : false
+
   function getImplicitSize(item, prop) {
     return (item && item.visible) ? Math.round(item[prop]) : 0
   }
