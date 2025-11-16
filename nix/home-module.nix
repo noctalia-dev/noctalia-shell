@@ -5,13 +5,14 @@
   ...
 }: let
   cfg = config.programs.noctalia-shell;
-  defaultSettings = builtins.fromJSON (builtins.readFile ../Assets/settings-default.json);
-  extractAttrs = x:
-    if builtins.isAttrs x
-    then x
-    else if builtins.isString x
-    then builtins.fromJson x
-    else builtins.fromJson (builtins.readFile x);
+  jsonFormat = pkgs.formats.json {};
+  generateJson = name: value:
+    if lib.isString value then
+      pkgs.writeText "noctalia-${name}.json" value
+    else if builtins.isPath value || lib.isStorePath value then
+      value
+    else
+      jsonFormat.generate "noctalia-${name}.json" value;
 in {
   options.programs.noctalia-shell = {
     enable = lib.mkEnableOption "Noctalia shell configuration";
@@ -26,12 +27,11 @@ in {
     settings = lib.mkOption {
       type = with lib.types;
         oneOf [
-          attrs
+          jsonFormat.type
           str
           path
         ];
       default = {};
-      apply = x: if x == {} then x else lib.recursiveUpdate defaultSettings (extractAttrs x);
       example = lib.literalExpression ''
         {
           bar = {
@@ -52,20 +52,17 @@ in {
       description = ''
         Noctalia shell configuration settings as an attribute set, string
         or filepath, to be written to ~/.config/noctalia/settings.json.
-        When provided as an attribute set, it will be deep-merged with
-        the default settings.
       '';
     };
 
     colors = lib.mkOption {
       type = with lib.types;
-        nullOr (oneOf [
-          attrs
+        oneOf [
+          jsonFormat.type
           str
           path
-        ]);
+        ];
       default = {};
-      apply = extractAttrs;
       example = lib.literalExpression ''
          {
            mError = "#dddddd";
@@ -112,8 +109,8 @@ in {
           PartOf = [ config.wayland.systemd.target ];
           After = [ config.wayland.systemd.target ];
           X-Restart-Triggers =
-            lib.optional (cfg.settings != {}) "${config.xdg.configFile."noctalia/settings.json".source}"
-            ++ lib.optional (cfg.colors != {}) "${config.xdg.configFile."noctalia/colors.json".source}";
+            lib.optional (cfg.settings != {}) config.xdg.configFile."noctalia/settings.json".source
+            ++ lib.optional (cfg.colors != {}) config.xdg.configFile."noctalia/colors.json".source;
         };
 
         Service = {
@@ -134,11 +131,11 @@ in {
       xdg.configFile = {
         "noctalia/settings.json" = lib.mkIf (cfg.settings != {}) {
           onChange = lib.mkIf (!cfg.systemd.enable) restart;
-          text = builtins.toJSON cfg.settings;
+          source = generateJson "settings" cfg.settings;
         };
         "noctalia/colors.json" = lib.mkIf (cfg.colors != {}) {
           onChange = lib.mkIf (!cfg.systemd.enable) restart;
-          text = builtins.toJSON cfg.colors;
+          source = generateJson "colors" cfg.colors;
         };
       };
 
