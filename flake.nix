@@ -26,12 +26,14 @@
       system: let
         pkgs = nixpkgs.legacyPackages.${system};
       in {
-        default = pkgs.callPackage ./nix/package.nix {
-          version = self.rev or self.dirtyRev or "dirty";
+        default = self.packages.${system}.noctalia-shell.override {
           quickshell = quickshell.packages.${system}.default.override {
             withX11 = false;
             withI3 = true;
           };
+        };
+        noctalia-shell = pkgs.callPackage ./nix/package.nix {
+          version = self.rev or self.dirtyRev or "dirty";
         };
       }
     );
@@ -45,6 +47,14 @@
         default = pkgs.callPackage ./nix/shell.nix {};
       }
     );
+
+    overlays = {
+      noctalia-shell = final: prev: {
+        noctalia-shell = final.callPackage ./nix/package.nix {
+          version = self.rev or self.dirtyRev or "dirty";
+        };
+      };
+    };
 
     homeModules.default = {
       pkgs,
