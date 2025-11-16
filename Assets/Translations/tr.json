@@ -2099,7 +2099,7 @@
     "wallhaven": {
       "loading": "Duvar kağıtları yükleniyor...",
       "no-results": "Duvar kağıdı bulunamadı. Farklı bir arama sorgusu deneyin.",
-      "page": "Sayfa {current} / {total}"
+      "page": "{current} / {total}"
     }
   },
   "weather": {

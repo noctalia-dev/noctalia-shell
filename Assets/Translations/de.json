@@ -2099,7 +2099,7 @@
     "wallhaven": {
       "loading": "Hintergrundbilder werden geladen...",
       "no-results": "Keine Hintergrundbilder gefunden. Versuchen Sie eine andere Suchanfrage.",
-      "page": "Seite {current} von {total}"
+      "page": "{current} von {total}"
     }
   },
   "weather": {

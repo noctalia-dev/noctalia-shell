@@ -12,7 +12,7 @@ Popup {
   property ShellScreen screen
   property Item anchorItem: null
 
-  width: 400
+  width: Math.max(440, contentColumn.implicitWidth + (Style.marginL * 2))
   height: contentColumn.implicitHeight + (Style.marginL * 2)
   padding: Style.marginL
   modal: true
@@ -153,6 +153,7 @@ Popup {
       NComboBox {
         id: sortingComboBox
         Layout.fillWidth: true
+        Layout.minimumWidth: 200
         model: [{
             "key": "date_added",
             "name": I18n.tr("wallpaper.panel.sorting.date_added")
@@ -199,6 +200,7 @@ Popup {
       NComboBox {
         id: orderComboBox
         Layout.fillWidth: true
+        Layout.minimumWidth: 200
         model: [{
             "key": "desc",
             "name": I18n.tr("wallpaper.panel.order.desc")
@@ -232,6 +234,7 @@ Popup {
       NComboBox {
         id: purityComboBox
         Layout.fillWidth: true
+        Layout.minimumWidth: 200
         model: [{
             "key": "111",
             "name": I18n.tr("wallpaper.panel.purity.all")
@@ -508,6 +511,7 @@ Popup {
         NComboBox {
           id: resolutionModeComboBox
           Layout.fillWidth: true
+          Layout.minimumWidth: 200
           model: [{
               "key": "atleast",
               "name": I18n.tr("wallpaper.panel.resolution.atleast")

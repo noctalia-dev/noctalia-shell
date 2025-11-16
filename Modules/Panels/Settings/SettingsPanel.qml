@@ -411,7 +411,7 @@ SmartPanel {
             anchors.fill: parent
             anchors.margins: Style.marginS
             model: root.tabsModel
-            spacing: Style.marginXXS
+            spacing: Style.marginXS
             currentIndex: root.currentTabIndex
             verticalPolicy: ScrollBar.AsNeeded
 

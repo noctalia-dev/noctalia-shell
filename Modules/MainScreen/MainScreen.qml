@@ -84,7 +84,7 @@ PanelWindow {
   property bool isPanelClosing: (PanelService.openedPanel !== null) && PanelService.openedPanel.isClosing
 
   color: {
-    if (dimmerOpacity > 0 && isPanelOpen) {
+    if (dimmerOpacity > 0 && isPanelOpen && !isPanelClosing) {
       return Qt.alpha(Color.mShadow, dimmerOpacity)
     }
     return Color.transparent
@@ -92,7 +92,7 @@ PanelWindow {
 
   Behavior on color {
     ColorAnimation {
-      duration: Style.animationNormal
+      duration: isPanelClosing ? Style.animationFaster : Style.animationNormal
       easing.type: Easing.OutQuad
     }
   }

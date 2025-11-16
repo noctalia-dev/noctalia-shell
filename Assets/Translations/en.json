@@ -2100,7 +2100,7 @@
     "wallhaven": {
       "loading": "Loading wallpapers...",
       "no-results": "No wallpapers found. Try a different search query.",
-      "page": "Page {current} of {total}"
+      "page": "{current} of {total}"
     }
   },
   "weather": {

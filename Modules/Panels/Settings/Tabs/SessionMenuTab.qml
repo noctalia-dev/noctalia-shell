@@ -351,7 +351,7 @@ ColumnLayout {
                                                     "enabled": !modelData.enabled
                                                   })
                   entriesModel = newModel
-                  root.saveEntries()
+                  delegateItem.saveEntriesFunc()
                 }
               }
             }

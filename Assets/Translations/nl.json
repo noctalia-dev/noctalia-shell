@@ -2099,7 +2099,7 @@
     "wallhaven": {
       "loading": "Achtergronden laden...",
       "no-results": "Geen achtergronden gevonden. Probeer een andere zoekopdracht.",
-      "page": "Pagina {current} van {total}"
+      "page": "{current} van {total}"
     }
   },
   "weather": {

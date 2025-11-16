@@ -2099,7 +2099,7 @@
     "wallhaven": {
       "loading": "Загрузка обоев...",
       "no-results": "Обои не найдены. Попробуйте другой поисковый запрос.",
-      "page": "Страница {current} из {total}"
+      "page": "{current} из {total}"
     }
   },
   "weather": {

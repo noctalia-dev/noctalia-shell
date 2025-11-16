@@ -131,7 +131,7 @@ Item {
         implicitHeight: 100
         radius: root.handleRadius
         color: parent.pressed ? root.handlePressedColor : parent.hovered ? root.handleHoverColor : root.handleColor
-        opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 1.0 : 0.0
+        opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollBarActive ? (parent.active ? 1.0 : 0.0) : 0.0
 
         Behavior on opacity {
           NumberAnimation {
@@ -150,7 +150,7 @@ Item {
         implicitWidth: root.handleWidth
         implicitHeight: 100
         color: root.trackColor
-        opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
+        opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollBarActive ? (parent.active ? 0.3 : 0.0) : 0.0
         radius: root.handleRadius / 2
 
         Behavior on opacity {

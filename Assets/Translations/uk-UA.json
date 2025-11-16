@@ -2099,7 +2099,7 @@
     "wallhaven": {
       "loading": "Завантаження шпалер...",
       "no-results": "Шпалери не знайдено. Спробуйте інший пошуковий запит.",
-      "page": "Сторінка {current} з {total}"
+      "page": "{current} з {total}"
     }
   },
   "weather": {

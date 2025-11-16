@@ -2099,7 +2099,7 @@
     "wallhaven": {
       "loading": "Cargando fondos de pantalla...",
       "no-results": "No se encontraron fondos de pantalla. Intenta con una búsqueda diferente.",
-      "page": "Página {current} de {total}"
+      "page": "{current} de {total}"
     }
   },
   "weather": {

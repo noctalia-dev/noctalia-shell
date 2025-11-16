@@ -921,7 +921,7 @@ SmartPanel {
           property int itemSize: cellWidth
 
           cellWidth: Math.floor((width - leftMargin - rightMargin) / columns)
-          cellHeight: Math.floor(itemSize * 0.7) + Style.marginXS + Style.fontSizeXS + Style.marginM
+          cellHeight: Math.floor(itemSize * 0.7) + Style.marginXS + (Settings.data.wallpaper.hideWallpaperFilenames ? 0 : Style.fontSizeXS + Style.marginM)
 
           leftMargin: Style.marginS
           rightMargin: Style.marginS
@@ -1062,6 +1062,7 @@ SmartPanel {
 
             NText {
               text: wallpaperId || I18n.tr("wallpaper.unknown")
+              visible: !Settings.data.wallpaper.hideWallpaperFilenames
               color: hoverHandler.hovered || wallhavenGridView.currentIndex === index ? Color.mOnSurface : Color.mOnSurfaceVariant
               pointSize: Style.fontSizeXS
               Layout.fillWidth: true
@@ -1199,7 +1200,11 @@ SmartPanel {
       RowLayout {
         Layout.fillWidth: true
         visible: !loading && errorMessage === "" && typeof WallhavenService !== "undefined"
-        spacing: Style.marginM
+        spacing: Style.marginS
+
+        Item {
+          Layout.fillWidth: true
+        }
 
         NIconButton {
           icon: "chevron-left"
@@ -1210,7 +1215,6 @@ SmartPanel {
         NText {
           text: I18n.tr("wallpaper.wallhaven.page").replace("{current}", WallhavenService.currentPage).replace("{total}", WallhavenService.lastPage)
           color: Color.mOnSurface
-          Layout.fillWidth: true
           horizontalAlignment: Text.AlignHCenter
         }
 
@@ -1218,6 +1222,10 @@ SmartPanel {
           icon: "chevron-right"
           enabled: WallhavenService.currentPage < WallhavenService.lastPage && !WallhavenService.fetching
           onClicked: WallhavenService.nextPage()
+        }
+
+        Item {
+          Layout.fillWidth: true
         }
       }
     }

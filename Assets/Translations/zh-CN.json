@@ -2099,7 +2099,7 @@
     "wallhaven": {
       "loading": "正在加载壁纸...",
       "no-results": "未找到壁纸。请尝试不同的搜索查询。",
-      "page": "第 {current} 页，共 {total} 页"
+      "page": "{current} / {total}"
     }
   },
   "weather": {
