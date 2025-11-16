@@ -4,18 +4,12 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     systems.url = "github:nix-systems/default";
-
-    quickshell = {
-      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs = {
     self,
     nixpkgs,
     systems,
-    quickshell,
     ...
   }: let
     eachSystem = nixpkgs.lib.genAttrs (import systems);
@@ -28,10 +22,6 @@
       in {
         default = pkgs.callPackage ./nix/package.nix {
           version = self.rev or self.dirtyRev or "dirty";
-          quickshell = quickshell.packages.${system}.default.override {
-            withX11 = false;
-            withI3 = true;
-          };
         };
       }
     );
