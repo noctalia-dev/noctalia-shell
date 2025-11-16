@@ -1,0 +1,24 @@
+[colors]
+background=000000
+foreground=ffffff
+cursor=ffffff ffffff
+
+# Normal colors
+regular0=000000
+regular1=f5abb9
+regular2=2de36e
+regular3=ffb042
+regular4=5bcffb
+regular5=ae81ff
+regular6=b6fff5
+regular7=ffffca
+
+# Bright colors
+bright0=909090
+bright1=f5abb9
+bright2=2de36e
+bright3=ffb042
+bright4=5bcffb
+bright5=ae81ff
+bright6=b6fff5
+bright7=ffffca
