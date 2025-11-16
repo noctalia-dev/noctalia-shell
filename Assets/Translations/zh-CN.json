@@ -565,7 +565,8 @@
     "workspace-labels": {
       "index": "索引",
       "name": "名称",
-      "none": "无"
+      "none": "无",
+      "index-name": "索引 + 名称"
     }
   },
   "placeholders": {
