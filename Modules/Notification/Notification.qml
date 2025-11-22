@@ -22,7 +22,7 @@ Variants {
     property ListModel notificationModel: NotificationService.activeList
 
     // Always create window (but with 0x0 dimensions when no notifications)
-    active: true
+    active: Settings.data.notifications?.location != "bar"
 
     // Keep loader active briefly after last notification to allow animations to complete
     Timer {

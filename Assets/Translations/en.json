@@ -570,7 +570,8 @@
         "follow_bar": "Follow bar (default)",
         "top_center": "Top center",
         "top_left": "Top left",
-        "top_right": "Top right"
+        "top_right": "Top right",
+        "bar": "Bar (inline)"
       }
     },
     "osd": {

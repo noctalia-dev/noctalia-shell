@@ -74,6 +74,10 @@ ColumnLayout {
         {
           "key": "bottom_right",
           "name": I18n.tr("options.launcher.position.bottom_right")
+        },
+        {
+          "key": "bar",
+          "name": I18n.tr("options.launcher.position.bar")
         }
       ]
       currentKey: Settings.data.notifications.location || "top_right"

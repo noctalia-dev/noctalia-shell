@@ -89,11 +89,40 @@ Item {
   BarPill {
     id: pill
 
+    property string currentNotif
+    Connections {
+      target: NotificationService.activeList
+      function onCountChanged() {
+        // keep current text a bit longer for the animation
+        if (NotificationService.activeList.count > 0) {
+          var notif = NotificationService.activeList.get(0)
+          var summary = notif.summary.trim()
+          var body = notif.body.trim()
+          pill.currentNotif =  `${summary}: ${body}`.replace(/\n/g, " ")
+        }
+      }
+    }
+
+    Component.onCompleted: {
+      function dismiss(notificationId) {
+        if (Settings.data.notifications?.location == "bar") {
+          NotificationService.dismissActiveNotification(notificationId)
+        }
+      }
+      NotificationService.animateAndRemove.connect(dismiss);
+    }
+
+
     screen: root.screen
     density: Settings.data.bar.density
     oppositeDirection: BarService.getPillDirection(root)
     icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
     tooltipText: NotificationService.doNotDisturb ? I18n.tr("tooltips.open-notification-history-disable-dnd") : I18n.tr("tooltips.open-notification-history-enable-dnd")
+
+    text: currentNotif
+    forceOpen: Settings.data.notifications?.location == "bar" && NotificationService.activeList.count > 0
+    // prevent open via mouse over
+    forceClose: NotificationService.activeList.count == 0
 
     onClicked: {
       var panel = PanelService.getPanel("notificationHistoryPanel", screen);
