@@ -9,7 +9,7 @@ import qs.Services.System
 import qs.Services.UI
 import qs.Widgets
 
-NIconButton {
+Item {
   id: root
 
   property ShellScreen screen
@@ -33,6 +33,9 @@ NIconButton {
   readonly property bool showUnreadBadge: (widgetSettings.showUnreadBadge !== undefined) ? widgetSettings.showUnreadBadge : widgetMetadata.showUnreadBadge
   readonly property bool hideWhenZero: (widgetSettings.hideWhenZero !== undefined) ? widgetSettings.hideWhenZero : widgetMetadata.hideWhenZero
 
+  implicitWidth: pill.width
+  implicitHeight: pill.height
+
   function computeUnreadCount() {
     var since = NotificationService.lastSeenTs;
     var count = 0;
@@ -45,17 +48,6 @@ NIconButton {
     }
     return count;
   }
-
-  baseSize: Style.capsuleHeight
-  applyUiScale: false
-  density: Settings.data.bar.density
-  icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
-  tooltipText: NotificationService.doNotDisturb ? I18n.tr("tooltips.open-notification-history-disable-dnd") : I18n.tr("tooltips.open-notification-history-enable-dnd")
-  tooltipDirection: BarService.getTooltipDirection()
-  colorBg: Style.capsuleColor
-  colorFg: Color.mOnSurface
-  colorBorder: Color.transparent
-  colorBorderHover: Color.transparent
 
   NPopupContextMenu {
     id: contextMenu
@@ -94,37 +86,48 @@ NIconButton {
                  }
   }
 
-  onClicked: {
-    var panel = PanelService.getPanel("notificationHistoryPanel", screen);
-    panel?.toggle(this);
-  }
+  BarPill {
+    id: pill
 
-  onRightClicked: {
-    var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-    if (popupMenuWindow) {
-      const pos = BarService.getContextMenuPosition(root, contextMenu.implicitWidth, contextMenu.implicitHeight);
-      contextMenu.openAtItem(root, pos.x, pos.y);
-      popupMenuWindow.showContextMenu(contextMenu);
+    screen: root.screen
+    density: Settings.data.bar.density
+    oppositeDirection: BarService.getPillDirection(root)
+    icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
+    tooltipText: NotificationService.doNotDisturb ? I18n.tr("tooltips.open-notification-history-disable-dnd") : I18n.tr("tooltips.open-notification-history-enable-dnd")
+
+    onClicked: {
+      var panel = PanelService.getPanel("notificationHistoryPanel", screen);
+      panel?.toggle(this);
     }
-  }
 
-  Loader {
-    anchors.right: parent.right
-    anchors.top: parent.top
-    anchors.rightMargin: 2
-    anchors.topMargin: 1
-    z: 2
-    active: showUnreadBadge && (!hideWhenZero || computeUnreadCount() > 0)
-    sourceComponent: Rectangle {
-      id: badge
-      readonly property int count: computeUnreadCount()
-      height: 8
-      width: height
-      radius: height / 2
-      color: Color.mError
-      border.color: Color.mSurface
-      border.width: Style.borderS
-      visible: count > 0 || !hideWhenZero
+    onRightClicked: {
+      var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
+      if (popupMenuWindow) {
+        const pos = BarService.getContextMenuPosition(root, contextMenu.implicitWidth, contextMenu.implicitHeight);
+        contextMenu.openAtItem(root, pos.x, pos.y);
+        popupMenuWindow.showContextMenu(contextMenu);
+      }
+    }
+
+
+    Loader {
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.rightMargin: 2
+      anchors.topMargin: 1
+      z: 2
+      active: showUnreadBadge && (!hideWhenZero || computeUnreadCount() > 0)
+      sourceComponent: Rectangle {
+        id: badge
+        readonly property int count: computeUnreadCount()
+        height: 8
+        width: height
+        radius: height / 2
+        color: Color.mError
+        border.color: Color.mSurface
+        border.width: Style.borderS
+        visible: count > 0 || !hideWhenZero
+      }
     }
   }
 }
