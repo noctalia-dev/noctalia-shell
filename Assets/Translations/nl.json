@@ -513,6 +513,15 @@
       "description": "Je meldingen verschijnen hier zodra ze binnenkomen.",
       "no-notifications": "Geen meldingen",
       "title": "Meldingen"
+    },
+    "time": {
+      "now": "nu",
+      "diffM": "1 minuut geleden",
+      "diffMM": "{diff} minuten geleden",
+      "diffH": "1 uur geleden",
+      "diffHH": "{diff} uur geleden",
+      "diffD": "1 dag geleden",
+      "diffDD": "{diff} dagen geleden"
     }
   },
   "options": {

@@ -513,6 +513,15 @@
       "description": "Bildirimler geldikçe burada görünecek.",
       "no-notifications": "Bildirim yok",
       "title": "Bildirimler"
+    },
+    "time": {
+      "now": "şimdi",
+      "diffM": "1 dakika önce",
+      "diffMM": "{diff} dakika önce",
+      "diffH": "1 saat önce",
+      "diffHH": "{diff} saat önce",
+      "diffD": "1 gün önce",
+      "diffDD": "{diff} gün önce"
     }
   },
   "options": {

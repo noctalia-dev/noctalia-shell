@@ -100,9 +100,9 @@ Item {
     anchors.bottom: parent.bottom
     anchors.bottomMargin: Style.marginM
     anchors.left: parent.left
-    anchors.leftMargin: Style.marginM * 2
+    anchors.leftMargin: Style.marginM * 3
     anchors.right: parent.right
-    anchors.rightMargin: Style.marginM * 2
+    anchors.rightMargin: Style.marginM * 3
     spacing: Style.marginL
 
     // Icon

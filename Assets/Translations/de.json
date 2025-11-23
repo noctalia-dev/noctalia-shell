@@ -504,7 +504,7 @@
     "password": "Passwort eingeben...",
     "restart": "Neu starten",
     "shut-down": "Herunterfahren",
-    "suspend": "Ruhezustand",
+    "suspend": "Energie sparen",
     "welcome-back": "Willkommen zurück,"
   },
   "notifications": {
@@ -513,6 +513,15 @@
       "description": "Ihre Benachrichtigungen werden hier angezeigt, sobald sie eintreffen.",
       "no-notifications": "Keine Benachrichtigungen",
       "title": "Benachrichtigungen"
+    },
+    "time": {
+      "now": "jetzt",
+      "diffM": "vor 1 Minute",
+      "diffMM": "vor {diff} Minuten",
+      "diffH": "vor 1 Stunde",
+      "diffHH": "vor {diff} Stunden",
+      "diffD": "vor 1 Tag",
+      "diffDD": "vor {diff} Tagen"
     }
   },
   "options": {
@@ -763,11 +772,11 @@
     "action-in-seconds": "{action} in {seconds} Sekunden...",
     "hibernate": "Ruhezustand",
     "lock": "Sperren",
-    "lock-and-suspend": "Sperren und Ruhezustand",
+    "lock-and-suspend": "Sperren und Energie sparen",
     "logout": "Abmelden",
     "reboot": "Neu starten",
     "shutdown": "Herunterfahren",
-    "suspend": "Energiesparmodus",
+    "suspend": "Energie sparen",
     "title": "Sitzungsmenü"
   },
   "settings": {
@@ -1521,8 +1530,8 @@
         "label": "Kompakter Sperrbildschirm"
       },
       "lock-on-suspend": {
-        "description": "Den Bildschirm beim Suspendieren des Systems automatisch sperren.",
-        "label": "Sperren beim Ruhezustand"
+        "description": "Den Bildschirm beim Energiesparen automatisch sperren.",
+        "label": "Sperren beim Energiesparen"
       },
       "show-hibernate": {
         "description": "Die Option 'Ruhezustand' in den Energieaktionen anzeigen.",

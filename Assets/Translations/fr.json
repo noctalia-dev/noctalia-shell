@@ -513,6 +513,15 @@
       "description": "Vos notifications apparaîtront ici à mesure qu'elles arriveront.",
       "no-notifications": "Aucune notification",
       "title": "Notifications"
+    },
+    "time": {
+      "now": "maintenant",
+      "diffM": "il y a 1 minute",
+      "diffMM": "il y a {diff} minutes",
+      "diffH": "il y a 1 heure",
+      "diffHH": "il y a {diff} heures",
+      "diffD": "il y a 1 jour",
+      "diffDD": "il y a {diff} jours"
     }
   },
   "options": {

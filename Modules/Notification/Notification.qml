@@ -393,22 +393,21 @@ Variants {
               RowLayout {
                 Layout.fillWidth: true
                 spacing: Style.marginL
-                Layout.margins: Style.marginM
+                Layout.leftMargin: Style.marginM * 2
+                Layout.rightMargin: Style.marginM * 2
+                Layout.topMargin: Style.marginM
+                Layout.bottomMargin: Style.marginM
 
                 ColumnLayout {
                   NImageCircled {
                     Layout.preferredWidth: Math.round(40 * Style.uiScaleRatio)
                     Layout.preferredHeight: Math.round(40 * Style.uiScaleRatio)
-                    Layout.alignment: Qt.AlignTop
-                    Layout.topMargin: 30
+                    Layout.alignment: Qt.AlignVCenter
                     imagePath: model.originalImage || ""
                     borderColor: Color.transparent
                     borderWidth: 0
                     fallbackIcon: "bell"
                     fallbackIconSize: 24
-                  }
-                  Item {
-                    Layout.fillHeight: true
                   }
                 }
 
@@ -430,9 +429,18 @@ Variants {
                     }
 
                     NText {
-                      text: `${model.appName || I18n.tr("system.unknown-app")} · ${Time.formatRelativeTime(model.timestamp)}`
-                      color: Color.mSecondary
+                      text: model.appName || "Unknown App"
                       pointSize: Style.fontSizeXS
+                      font.weight: Style.fontWeightBold
+                      color: Color.mSecondary
+                    }
+
+                    NText {
+                      textFormat: Text.PlainText
+                      text: " " + Time.formatRelativeTime(model.timestamp)
+                      pointSize: Style.fontSizeXXS
+                      color: Color.mOnSurfaceVariant
+                      anchors.bottom: parent.bottom
                     }
 
                     Item {

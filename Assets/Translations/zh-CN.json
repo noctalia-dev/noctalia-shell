@@ -513,6 +513,15 @@
       "description": "您的通知将在到达时显示在此处。",
       "no-notifications": "无通知",
       "title": "通知"
+    },
+    "time": {
+      "now": "现在",
+      "diffM": "1 分钟前",
+      "diffMM": "{diff} 分钟前",
+      "diffH": "1 小时前",
+      "diffHH": "{diff} 小时前",
+      "diffD": "1 天前",
+      "diffDD": "{diff} 天前"
     }
   },
   "options": {

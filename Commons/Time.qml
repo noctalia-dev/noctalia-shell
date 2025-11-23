@@ -100,11 +100,23 @@ Singleton {
       return "";
     const diff = Date.now() - date.getTime();
     if (diff < 60000)
-      return "now";
+      return I18n.tr("notifications.time.now");
+    if (diff < 120000)
+      return I18n.tr("notifications.time.diffM");
     if (diff < 3600000)
-      return `${Math.floor(diff / 60000)}m ago`;
+      return I18n.tr("notifications.time.diffMM", {
+                      "diff": Math.floor(diff / 60000)
+                    });
+    if (diff < 7200000)
+      return I18n.tr("notifications.time.diffH");
     if (diff < 86400000)
-      return `${Math.floor(diff / 3600000)}h ago`;
-    return `${Math.floor(diff / 86400000)}d ago`;
+      return I18n.tr("notifications.time.diffHH", {
+                      "diff": Math.floor(diff / 3600000)
+                    });
+    if (diff < 172800000)        
+      return I18n.tr("notifications.time.diffD");
+    return I18n.tr("notifications.time.diffDD", {
+                      "diff": Math.floor(diff / 86400000)
+                  });
   }
 }
