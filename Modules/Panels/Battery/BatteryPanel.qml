@@ -166,6 +166,105 @@ SmartPanel {
         }
       }
 
+      // Brightness controls
+      NBox {
+        Layout.fillWidth: true
+        height: brightnessLayout.implicitHeight + Style.marginM * 2
+        visible: (Quickshell.screens && Quickshell.screens.length > 0)
+
+        ColumnLayout {
+          id: brightnessLayout
+          anchors.fill: parent
+          anchors.margins: Style.marginM
+          spacing: Style.marginS
+
+          RowLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginS
+
+            NIcon {
+              icon: "sun"
+              pointSize: Style.fontSizeL
+              color: Color.mOnSurface
+              Layout.alignment: Qt.AlignVCenter
+            }
+
+            NText {
+              text: I18n.tr("settings.display.monitors.brightness")
+              font.weight: Style.fontWeightBold
+              color: Color.mOnSurface
+              Layout.fillWidth: true
+            }
+          }
+
+          Repeater {
+            id: brightnessRepeater
+            model: Quickshell.screens || []
+            delegate: RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
+              property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)
+              visible: brightnessMonitor !== undefined && brightnessMonitor !== null
+
+              NIcon {
+                icon: brightnessIconForMonitor(brightnessMonitor)
+                pointSize: Style.fontSizeM
+                color: Color.mOnSurface
+                Layout.alignment: Qt.AlignVCenter
+              }
+
+              ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Style.marginXXS
+
+                NText {
+                  text: modelData.name || I18n.tr("system.unknown")
+                  pointSize: Style.fontSizeS
+                  color: Color.mOnSurfaceVariant
+                  Layout.fillWidth: true
+                  wrapMode: Text.Wrap
+                }
+
+                RowLayout {
+                  Layout.fillWidth: true
+                  spacing: Style.marginS
+
+                  NValueSlider {
+                    id: brightnessSlider
+                    from: 0
+                    to: 1
+                    value: brightnessMonitor ? brightnessMonitor.brightness : 0.5
+                    stepSize: 0.01
+                    enabled: brightnessMonitor ? brightnessMonitor.brightnessControlAvailable : false
+                    onMoved: value => {
+                               if (brightnessMonitor && brightnessMonitor.brightnessControlAvailable) {
+                                 brightnessMonitor.setBrightness(value);
+                               }
+                             }
+                    onPressedChanged: (pressed, value) => {
+                                        if (brightnessMonitor && brightnessMonitor.brightnessControlAvailable) {
+                                          brightnessMonitor.setBrightness(value);
+                                        }
+                                      }
+                    Layout.fillWidth: true
+                    text: brightnessMonitor ? Math.round(brightnessSlider.value * 100) + "%" : "N/A"
+                  }
+                }
+              }
+            }
+          }
+
+          NText {
+            visible: brightnessRepeater.count === 0
+            text: I18n.tr("settings.display.monitors.brightness-unavailable.generic")
+            pointSize: Style.fontSizeS
+            color: Color.mOnSurfaceVariant
+            wrapMode: Text.Wrap
+            Layout.fillWidth: true
+          }
+        }
+      }
+
       // Power profile and idle inhibit controls
       NBox {
         Layout.fillWidth: true
@@ -225,6 +324,28 @@ SmartPanel {
             spacing: Style.marginS
 
             NIcon {
+              icon: PowerProfileService.noctaliaPerformanceMode ? "rocket" : "rocket-off"
+              pointSize: Style.fontSizeL
+              color: PowerProfileService.noctaliaPerformanceMode ? Color.mPrimary : Color.mOnSurfaceVariant
+              Layout.alignment: Qt.AlignVCenter
+            }
+
+            NToggle {
+              Layout.fillWidth: true
+              checked: PowerProfileService.noctaliaPerformanceMode
+              label: I18n.tr("toast.noctalia-performance.label")
+              description: PowerProfileService.noctaliaPerformanceMode ? I18n.tr("toast.noctalia-performance.enabled") : I18n.tr("toast.noctalia-performance.disabled")
+              onToggled: function (checked) {
+                PowerProfileService.setNoctaliaPerformance(checked);
+              }
+            }
+          }
+
+          RowLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginS
+
+            NIcon {
               icon: manualInhibitActive ? "keep-awake-on" : "keep-awake-off"
               pointSize: Style.fontSizeL
               color: manualInhibitActive ? Color.mPrimary : Color.mOnSurfaceVariant
@@ -253,6 +374,13 @@ SmartPanel {
 
   function profileToIndex(p) {
     return powerProfiles.indexOf(p) ?? 1;
+  }
+
+  function brightnessIconForMonitor(monitor) {
+    const brightness = monitor ? monitor.brightness : 0;
+    if (brightness <= 0.001)
+      return "sun-off";
+    return brightness <= 0.5 ? "brightness-low" : "brightness-high";
   }
 
   function indexToProfile(idx) {
