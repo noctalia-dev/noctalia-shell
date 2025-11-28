@@ -53,6 +53,22 @@
         "low-battery-threshold": {
           "description": "Afficher un avertissement lorsque la batterie tombe en dessous de ce pourcentage.",
           "label": "Seuil d'avertissement de batterie faible"
+        },
+        "show-power-profile": {
+          "description": "Afficher la sélection du profil d'alimentation dans le panneau batterie.",
+          "label": "Afficher les contrôles de profil d'alimentation"
+        },
+        "show-keep-awake": {
+          "description": "Afficher l'interrupteur d'inhibition manuelle dans le panneau batterie.",
+          "label": "Afficher le basculement de veille empêchée"
+        },
+        "show-noctalia-performance": {
+          "description": "Afficher le basculement du mode performance Noctalia dans le panneau batterie.",
+          "label": "Afficher le basculement performance Noctalia"
+        },
+        "show-brightness-controls": {
+          "description": "Afficher les curseurs de luminosité par écran dans le panneau batterie.",
+          "label": "Afficher les contrôles de luminosité"
         }
       },
       "brightness": {

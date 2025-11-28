@@ -53,6 +53,22 @@
         "low-battery-threshold": {
           "description": "Batarya bu yüzdeye düştüğünde uyarı göster.",
           "label": "Düşük batarya eşiği"
+        },
+        "show-power-profile": {
+          "description": "Pil panelinde güç profili seçimini göster.",
+          "label": "Güç profili kontrollerini göster"
+        },
+        "show-keep-awake": {
+          "description": "Pil panelinde manuel engelleme anahtarını göster.",
+          "label": "Uyanık kalma anahtarını göster"
+        },
+        "show-noctalia-performance": {
+          "description": "Pil panelinde Noctalia performans anahtarını göster.",
+          "label": "Noctalia performans anahtarını göster"
+        },
+        "show-brightness-controls": {
+          "description": "Pil panelinde her monitör için parlaklık kaydırıcılarını göster.",
+          "label": "Parlaklık kontrollerini göster"
         }
       },
       "brightness": {

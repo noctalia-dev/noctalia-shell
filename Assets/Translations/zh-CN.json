@@ -53,6 +53,22 @@
         "low-battery-threshold": {
           "description": "当电量低于此百分比时显示警告。",
           "label": "低电量警告阈值"
+        },
+        "show-power-profile": {
+          "description": "在电池面板中显示电源配置选择。",
+          "label": "显示电源配置控制"
+        },
+        "show-keep-awake": {
+          "description": "在电池面板中显示手动防休眠开关。",
+          "label": "显示保持唤醒开关"
+        },
+        "show-noctalia-performance": {
+          "description": "在电池面板中显示 Noctalia 性能模式开关。",
+          "label": "显示 Noctalia 性能模式开关"
+        },
+        "show-brightness-controls": {
+          "description": "在电池面板中显示每个显示器的亮度滑块。",
+          "label": "显示亮度控制"
         }
       },
       "brightness": {

@@ -53,6 +53,22 @@
         "low-battery-threshold": {
           "description": "Toon een waarschuwing wanneer de batterij onder dit percentage komt.",
           "label": "Waarschuwingsdrempel voor lage batterij"
+        },
+        "show-power-profile": {
+          "description": "Toon de keuze van het stroomprofiel in het batterijpaneel.",
+          "label": "Stroomprofielbediening tonen"
+        },
+        "show-keep-awake": {
+          "description": "Toon de handmatige uitschakeling in het batterijpaneel.",
+          "label": "‘Wakker houden’-schakelaar tonen"
+        },
+        "show-noctalia-performance": {
+          "description": "Toon de Noctalia-prestatiemodus-schakelaar in het batterijpaneel.",
+          "label": "Noctalia-prestatiemodus-schakelaar tonen"
+        },
+        "show-brightness-controls": {
+          "description": "Toon helderheidschuiven per monitor in het batterijpaneel.",
+          "label": "Helderheidsregelaars tonen"
         }
       },
       "brightness": {

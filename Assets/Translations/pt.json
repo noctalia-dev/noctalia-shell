@@ -53,6 +53,22 @@
         "low-battery-threshold": {
           "description": "Mostrar um aviso quando a bateria cair abaixo desta porcentagem.",
           "label": "Limite de aviso de bateria fraca"
+        },
+        "show-power-profile": {
+          "description": "Exibir a seleção de perfil de energia no painel da bateria.",
+          "label": "Mostrar controles de perfil de energia"
+        },
+        "show-keep-awake": {
+          "description": "Exibir o interruptor de inibição manual no painel da bateria.",
+          "label": "Mostrar alternância manter acordado"
+        },
+        "show-noctalia-performance": {
+          "description": "Exibir o interruptor de desempenho Noctalia no painel da bateria.",
+          "label": "Mostrar alternância de desempenho Noctalia"
+        },
+        "show-brightness-controls": {
+          "description": "Exibir controles deslizantes de brilho para cada monitor no painel da bateria.",
+          "label": "Mostrar controles de brilho"
         }
       },
       "brightness": {

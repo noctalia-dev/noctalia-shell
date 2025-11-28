@@ -7,6 +7,7 @@ import qs.Commons
 import qs.Modules.MainScreen
 import qs.Services.Hardware
 import qs.Services.Power
+import qs.Services.UI
 import qs.Widgets
 
 SmartPanel {
@@ -42,6 +43,13 @@ SmartPanel {
   readonly property bool profilesAvailable: PowerProfileService.available
   property int profileIndex: profileToIndex(PowerProfileService.profile)
   property bool manualInhibitActive: manualInhibitorEnabled()
+  property var batteryWidgetInstance: BarService.lookupWidget("Battery", screen ? screen.name : null)
+  readonly property var batteryWidgetSettings: batteryWidgetInstance ? batteryWidgetInstance.widgetSettings : null
+  readonly property var batteryWidgetMetadata: BarWidgetRegistry.widgetMetadata["Battery"]
+  readonly property bool showPowerProfileControls: resolveWidgetSetting("showPowerProfiles", true)
+  readonly property bool showManualInhibitControl: resolveWidgetSetting("showKeepAwake", true)
+  readonly property bool showPerformanceModeControl: resolveWidgetSetting("showNoctaliaPerformance", true)
+  readonly property bool showBrightnessControls: resolveWidgetSetting("showBrightnessControls", true)
 
   panelContent: Item {
     property real contentPreferredHeight: mainLayout.implicitHeight + Style.marginL * 2
@@ -166,11 +174,119 @@ SmartPanel {
         }
       }
 
+      // Power profile and idle inhibit controls
+      NBox {
+        Layout.fillWidth: true
+        height: controlsLayout.implicitHeight + Style.marginM * 2
+        visible: (root.showPowerProfileControls && root.powerProfileAvailable) || root.showPerformanceModeControl || root.showManualInhibitControl
+
+        ColumnLayout {
+          id: controlsLayout
+          anchors.fill: parent
+          anchors.margins: Style.marginM
+          spacing: Style.marginM
+
+          ColumnLayout {
+            id: ppd
+            visible: root.powerProfileAvailable && root.showPowerProfileControls
+
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
+              NIcon {
+                icon: PowerProfileService.getIcon()
+                pointSize: Style.fontSizeM
+                color: Color.mPrimary
+              }
+              NText {
+                text: I18n.tr("battery.power-profile")
+                font.weight: Style.fontWeightBold
+                color: Color.mOnSurface
+                Layout.fillWidth: true
+              }
+              NText {
+                text: PowerProfileService.getName(profileIndex)
+                color: Color.mOnSurfaceVariant
+              }
+            }
+
+            NValueSlider {
+              Layout.fillWidth: true
+              from: 0
+              to: 2
+              stepSize: 1
+              snapAlways: true
+              value: profileIndex
+              enabled: profilesAvailable
+              onPressedChanged: (pressed, v) => {
+                                  if (!pressed) {
+                                    setProfileByIndex(v);
+                                  }
+                                }
+              onMoved: v => {
+                         profileIndex = v;
+                       }
+            }
+          }
+
+          RowLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginS
+            visible: root.showPerformanceModeControl
+
+            NIcon {
+              icon: PowerProfileService.noctaliaPerformanceMode ? "rocket" : "rocket-off"
+              pointSize: Style.fontSizeL
+              color: PowerProfileService.noctaliaPerformanceMode ? Color.mPrimary : Color.mOnSurfaceVariant
+              Layout.alignment: Qt.AlignVCenter
+            }
+
+            NToggle {
+              Layout.fillWidth: true
+              checked: PowerProfileService.noctaliaPerformanceMode
+              label: I18n.tr("toast.noctalia-performance.label")
+              description: PowerProfileService.noctaliaPerformanceMode ? I18n.tr("toast.noctalia-performance.enabled") : I18n.tr("toast.noctalia-performance.disabled")
+              onToggled: function (checked) {
+                PowerProfileService.setNoctaliaPerformance(checked);
+              }
+            }
+          }
+
+          RowLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginS
+            visible: root.showManualInhibitControl
+
+            NIcon {
+              icon: manualInhibitActive ? "keep-awake-on" : "keep-awake-off"
+              pointSize: Style.fontSizeL
+              color: manualInhibitActive ? Color.mPrimary : Color.mOnSurfaceVariant
+              Layout.alignment: Qt.AlignVCenter
+            }
+
+            NToggle {
+              Layout.fillWidth: true
+              checked: manualInhibitActive
+              label: I18n.tr("battery.inhibit-idle-label")
+              description: I18n.tr("battery.inhibit-idle-description")
+              onToggled: function (checked) {
+                if (checked) {
+                  IdleInhibitorService.addManualInhibitor(null);
+                } else {
+                  IdleInhibitorService.removeManualInhibitor();
+                }
+                manualInhibitActive = checked;
+              }
+            }
+          }
+        }
+      }
+
       // Brightness controls
       NBox {
         Layout.fillWidth: true
         height: brightnessLayout.implicitHeight + Style.marginM * 2
-        visible: (Quickshell.screens && Quickshell.screens.length > 0)
+        visible: root.showBrightnessControls && (Quickshell.screens && Quickshell.screens.length > 0)
 
         ColumnLayout {
           id: brightnessLayout
@@ -264,112 +380,15 @@ SmartPanel {
           }
         }
       }
-
-      // Power profile and idle inhibit controls
-      NBox {
-        Layout.fillWidth: true
-        height: controlsLayout.implicitHeight + Style.marginM * 2
-
-        ColumnLayout {
-          id: controlsLayout
-          anchors.fill: parent
-          anchors.margins: Style.marginM
-          spacing: Style.marginM
-
-          ColumnLayout {
-            id: ppd
-            visible: root.powerProfileAvailable
-
-            RowLayout {
-              Layout.fillWidth: true
-              spacing: Style.marginS
-              NIcon {
-                icon: PowerProfileService.getIcon()
-                pointSize: Style.fontSizeM
-                color: Color.mPrimary
-              }
-              NText {
-                text: I18n.tr("battery.power-profile")
-                font.weight: Style.fontWeightBold
-                color: Color.mOnSurface
-                Layout.fillWidth: true
-              }
-              NText {
-                text: PowerProfileService.getName(profileIndex)
-                color: Color.mOnSurfaceVariant
-              }
-            }
-
-            NValueSlider {
-              Layout.fillWidth: true
-              from: 0
-              to: 2
-              stepSize: 1
-              snapAlways: true
-              value: profileIndex
-              enabled: profilesAvailable
-              onPressedChanged: (pressed, v) => {
-                                  if (!pressed) {
-                                    setProfileByIndex(v);
-                                  }
-                                }
-              onMoved: v => {
-                         profileIndex = v;
-                       }
-            }
-          }
-
-          RowLayout {
-            Layout.fillWidth: true
-            spacing: Style.marginS
-
-            NIcon {
-              icon: PowerProfileService.noctaliaPerformanceMode ? "rocket" : "rocket-off"
-              pointSize: Style.fontSizeL
-              color: PowerProfileService.noctaliaPerformanceMode ? Color.mPrimary : Color.mOnSurfaceVariant
-              Layout.alignment: Qt.AlignVCenter
-            }
-
-            NToggle {
-              Layout.fillWidth: true
-              checked: PowerProfileService.noctaliaPerformanceMode
-              label: I18n.tr("toast.noctalia-performance.label")
-              description: PowerProfileService.noctaliaPerformanceMode ? I18n.tr("toast.noctalia-performance.enabled") : I18n.tr("toast.noctalia-performance.disabled")
-              onToggled: function (checked) {
-                PowerProfileService.setNoctaliaPerformance(checked);
-              }
-            }
-          }
-
-          RowLayout {
-            Layout.fillWidth: true
-            spacing: Style.marginS
-
-            NIcon {
-              icon: manualInhibitActive ? "keep-awake-on" : "keep-awake-off"
-              pointSize: Style.fontSizeL
-              color: manualInhibitActive ? Color.mPrimary : Color.mOnSurfaceVariant
-              Layout.alignment: Qt.AlignVCenter
-            }
-
-            NToggle {
-              Layout.fillWidth: true
-              checked: manualInhibitActive
-              label: I18n.tr("battery.inhibit-idle-label")
-              description: I18n.tr("battery.inhibit-idle-description")
-              onToggled: function (checked) {
-                if (checked) {
-                  IdleInhibitorService.addManualInhibitor(null);
-                } else {
-                  IdleInhibitorService.removeManualInhibitor();
-                }
-                manualInhibitActive = checked;
-              }
-            }
-          }
-        }
-      }
     }
+  }
+
+  function resolveWidgetSetting(key, defaultValue) {
+    if (batteryWidgetSettings && batteryWidgetSettings[key] !== undefined)
+      return batteryWidgetSettings[key];
+    if (batteryWidgetMetadata && batteryWidgetMetadata[key] !== undefined)
+      return batteryWidgetMetadata[key];
+    return defaultValue;
   }
 
   function profileToIndex(p) {
@@ -395,6 +414,14 @@ SmartPanel {
 
   function manualInhibitorEnabled() {
     return IdleInhibitorService.activeInhibitors && IdleInhibitorService.activeInhibitors.indexOf("manual") >= 0;
+  }
+
+  Connections {
+    target: BarService
+
+    function onActiveWidgetsChanged() {
+      batteryWidgetInstance = BarService.lookupWidget("Battery", screen ? screen.name : null);
+    }
   }
 
   Connections {

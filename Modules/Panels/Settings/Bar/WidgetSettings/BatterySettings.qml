@@ -15,11 +15,19 @@ ColumnLayout {
   // Local state
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
   property int valueWarningThreshold: widgetData.warningThreshold !== undefined ? widgetData.warningThreshold : widgetMetadata.warningThreshold
+  property bool valueShowPowerProfiles: widgetData.showPowerProfiles !== undefined ? widgetData.showPowerProfiles : widgetMetadata.showPowerProfiles
+  property bool valueShowKeepAwake: widgetData.showKeepAwake !== undefined ? widgetData.showKeepAwake : widgetMetadata.showKeepAwake
+  property bool valueShowNoctaliaPerformance: widgetData.showNoctaliaPerformance !== undefined ? widgetData.showNoctaliaPerformance : widgetMetadata.showNoctaliaPerformance
+  property bool valueShowBrightnessControls: widgetData.showBrightnessControls !== undefined ? widgetData.showBrightnessControls : widgetMetadata.showBrightnessControls
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.displayMode = valueDisplayMode;
     settings.warningThreshold = valueWarningThreshold;
+    settings.showPowerProfiles = valueShowPowerProfiles;
+    settings.showKeepAwake = valueShowKeepAwake;
+    settings.showNoctaliaPerformance = valueShowNoctaliaPerformance;
+    settings.showBrightnessControls = valueShowBrightnessControls;
     return settings;
   }
 
@@ -53,5 +61,33 @@ ColumnLayout {
     minimum: 5
     maximum: 50
     onValueChanged: valueWarningThreshold = value
+  }
+
+  NToggle {
+    label: I18n.tr("bar.widget-settings.battery.show-power-profile.label")
+    description: I18n.tr("bar.widget-settings.battery.show-power-profile.description")
+    checked: valueShowPowerProfiles
+    onToggled: valueShowPowerProfiles = checked
+  }
+
+  NToggle {
+    label: I18n.tr("bar.widget-settings.battery.show-keep-awake.label")
+    description: I18n.tr("bar.widget-settings.battery.show-keep-awake.description")
+    checked: valueShowKeepAwake
+    onToggled: valueShowKeepAwake = checked
+  }
+
+  NToggle {
+    label: I18n.tr("bar.widget-settings.battery.show-noctalia-performance.label")
+    description: I18n.tr("bar.widget-settings.battery.show-noctalia-performance.description")
+    checked: valueShowNoctaliaPerformance
+    onToggled: valueShowNoctaliaPerformance = checked
+  }
+
+  NToggle {
+    label: I18n.tr("bar.widget-settings.battery.show-brightness-controls.label")
+    description: I18n.tr("bar.widget-settings.battery.show-brightness-controls.description")
+    checked: valueShowBrightnessControls
+    onToggled: valueShowBrightnessControls = checked
   }
 }

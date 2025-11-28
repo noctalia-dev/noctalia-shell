@@ -53,6 +53,22 @@
         "low-battery-threshold": {
           "description": "Show a warning when battery falls below this percentage.",
           "label": "Low battery warning threshold"
+        },
+        "show-power-profile": {
+          "description": "Display power profile selection inside the battery panel.",
+          "label": "Show power profile controls"
+        },
+        "show-keep-awake": {
+          "description": "Display the manual keep-awake toggle inside the battery panel.",
+          "label": "Show keep-awake toggle"
+        },
+        "show-noctalia-performance": {
+          "description": "Display the Noctalia performance mode toggle inside the battery panel.",
+          "label": "Show Noctalia performance toggle"
+        },
+        "show-brightness-controls": {
+          "description": "Display brightness sliders for each monitor inside the battery panel.",
+          "label": "Show brightness controls"
         }
       },
       "brightness": {

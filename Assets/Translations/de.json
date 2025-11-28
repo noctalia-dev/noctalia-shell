@@ -53,6 +53,22 @@
         "low-battery-threshold": {
           "description": "Warnung anzeigen, wenn Batterie unter diesen Prozentsatz fällt.",
           "label": "Schwellenwert für niedrigen Batteriestand"
+        },
+        "show-power-profile": {
+          "description": "Zeigt die Auswahl des Energieprofils im Batterie-Panel an.",
+          "label": "Energieprofil-Steuerung anzeigen"
+        },
+        "show-keep-awake": {
+          "description": "Zeigt den manuellen Wachhalten-Schalter im Batterie-Panel an.",
+          "label": "Wachhalten-Schalter anzeigen"
+        },
+        "show-noctalia-performance": {
+          "description": "Zeigt den Noctalia-Performance-Schalter im Batterie-Panel an.",
+          "label": "Noctalia-Performance-Schalter anzeigen"
+        },
+        "show-brightness-controls": {
+          "description": "Zeigt Helligkeitsschieberegler für jeden Monitor im Batterie-Panel an.",
+          "label": "Helligkeitsregler anzeigen"
         }
       },
       "brightness": {
