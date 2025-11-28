@@ -316,6 +316,16 @@
         "only-same-output": {
           "description": "Muestra solo las aplicaciones del resultado donde se encuentra la barra.",
           "label": "Solo de la misma salida"
+        },
+        "show-title": {
+          "description": "Mostrar títulos de ventanas en la barra de tareas.",
+          "description-disabled": "La barra de tareas vertical no admite mostrar títulos.",
+          "label": "Mostrar título"
+        },
+        "title-width": {
+          "description": "Establecer el ancho de los títulos de ventanas en la barra de tareas (en píxeles).",
+          "label": "Ancho del título",
+          "reset-tooltip": "Restablecer ancho del título"
         }
       },
       "taskbar-grouped": {
