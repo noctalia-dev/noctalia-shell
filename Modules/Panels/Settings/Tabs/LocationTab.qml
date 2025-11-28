@@ -41,9 +41,9 @@ ColumnLayout {
     var toSave = [];
     for (var i = 0; i < cardsModel.length; i++) {
       toSave.push({
-                    "id": cardsModel[i].id,
-                    "enabled": cardsModel[i].enabled
-                  });
+        "id": cardsModel[i].id,
+        "enabled": cardsModel[i].enabled
+      });
     }
     Settings.data.calendar.cards = toSave;
   }
@@ -125,9 +125,9 @@ ColumnLayout {
     NText {
       visible: LocationService.coordinatesReady
       text: I18n.tr("system.location-display", {
-                      "name": LocationService.stableName,
-                      "coordinates": LocationService.displayCoordinates
-                    })
+        "name": LocationService.stableName,
+        "coordinates": LocationService.displayCoordinates
+      })
       pointSize: Style.fontSizeS
       color: Color.mOnSurfaceVariant
       verticalAlignment: Text.AlignVCenter
@@ -201,8 +201,8 @@ ColumnLayout {
         for (var i = 0; i < newModel.length; i++) {
           if (newModel[i].id === "weather-card") {
             newModel[i] = Object.assign({}, newModel[i], {
-                                          "enabled": Settings.data.location.weatherEnabled
-                                        });
+              "enabled": Settings.data.location.weatherEnabled
+            });
             cardsModel = newModel;
             saveCards();
             break;
@@ -218,8 +218,8 @@ ColumnLayout {
       onItemToggled: function (index, enabled) {
         var newModel = cardsModel.slice();
         newModel[index] = Object.assign({}, newModel[index], {
-                                          "enabled": enabled
-                                        });
+          "enabled": enabled
+        });
         cardsModel = newModel;
         saveCards();
       }
@@ -230,6 +230,67 @@ ColumnLayout {
         cardsModel = newModel;
         saveCards();
       }
+    }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginL
+    Layout.bottomMargin: Style.marginL
+  }
+
+  ColumnLayout {
+    spacing: Style.marginM
+    Layout.fillWidth: true
+
+    NHeader {
+      label: I18n.tr("settings.location.timer.section.label")
+      description: I18n.tr("settings.location.timer.section.description")
+    }
+
+    NSpinBox {
+      Layout.fillWidth: true
+      label: I18n.tr("settings.location.timer.skip-value.label")
+      description: I18n.tr("settings.location.timer.skip-value.description")
+      minimum: 1
+      maximum: 86400
+      value: Settings.data.timer.skipValue
+      stepSize: 1
+      suffix: I18n.tr("calendar.timer.seconds")
+      onValueChanged: Settings.data.audio.volumeStep = value
+    }
+    NSpinBox {
+      Layout.fillWidth: true
+      label: I18n.tr("settings.location.timer.pomodoro.label")
+      description: I18n.tr("settings.location.timer.pomodoro.description")
+      minimum: 1
+      maximum: 86400
+      value: Settings.data.timer.pomodoro
+      stepSize: 1
+      suffix: I18n.tr("calendar.timer.minutes")
+      onValueChanged: Settings.data.timer.pomodoro = value
+    }
+    NSpinBox {
+      Layout.fillWidth: true
+      label: I18n.tr("settings.location.timer.short-break.label")
+      description: I18n.tr("settings.location.timer.short-break.description")
+      minimum: 1
+      maximum: 86400
+      value: Settings.data.timer.shortBreak
+      stepSize: 1
+      suffix: I18n.tr("calendar.timer.minutes")
+      onValueChanged: Settings.data.timer.shortBreak = value
+    }
+    NSpinBox {
+      Layout.fillWidth: true
+      label: I18n.tr("settings.location.timer.long-break.label")
+      description: I18n.tr("settings.location.timer.long-break.description")
+      minimum: 1
+      maximum: 86400
+      value: Settings.data.timer.longBreak
+      stepSize: 1
+      suffix: I18n.tr("calendar.timer.minutes")
+      onValueChanged: Settings.data.timer.longBreak = value
     }
   }
 
