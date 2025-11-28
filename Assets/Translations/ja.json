@@ -403,13 +403,15 @@
       "countdown": "カウントダウン",
       "duration": "時間",
       "hours": "時間",
+      "longBreak": "長い休憩",
       "minutes": "分",
       "pause": "一時停止",
+      "pomodoro": "ポモドーロ",
       "reset": "リセット",
       "seconds": "秒",
+      "shortBreak": "短い休憩",
       "start": "開始",
       "stopwatch": "ストップウォッチ",
-      "timer": "タイマー",
       "title": "タイマー"
     },
     "weather": {
@@ -1510,6 +1512,28 @@
         "section": {
           "description": "場所を設定して、正確な天気情報や夜間モードのスケジュールを取得します。",
           "label": "場所の設定"
+        }
+      },
+      "timer": {
+        "long-break": {
+          "description": "ポモドーロの長い休憩の長さ（分）。",
+          "label": "長い休憩"
+        },
+        "pomodoro": {
+          "description": "ポモドーロ作業セッションの長さ（分）",
+          "label": "ポモドーロ"
+        },
+        "section": {
+          "description": "さまざまなタイマー機能の期間を調整します。",
+          "label": "タイマー"
+        },
+        "short-break": {
+          "description": "ポモドーロの休憩時間（分）",
+          "label": "短い休憩"
+        },
+        "skip-value": {
+          "description": "スキップする秒数。",
+          "label": "スキップ"
         }
       },
       "title": "地域",

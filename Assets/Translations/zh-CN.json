@@ -403,13 +403,15 @@
       "countdown": "倒计时",
       "duration": "时长",
       "hours": "h",
+      "longBreak": "长休息",
       "minutes": "米",
       "pause": "暂停",
+      "pomodoro": "番茄工作法",
       "reset": "重置",
       "seconds": "s",
+      "shortBreak": "短暂休息",
       "start": "开始",
       "stopwatch": "秒表",
-      "timer": "计时器",
       "title": "计时器"
     },
     "weather": {
@@ -1512,6 +1514,28 @@
           "label": "您的位置"
         }
       },
+      "timer": {
+        "long-break": {
+          "description": "番茄工作法长休息的时长（分钟）。",
+          "label": "长休息"
+        },
+        "pomodoro": {
+          "description": "番茄工作法的时长（分钟）。",
+          "label": "番茄工作法"
+        },
+        "section": {
+          "description": "调整各种定时器功能的持续时间。",
+          "label": "计时器"
+        },
+        "short-break": {
+          "description": "番茄工作法短休息时长（分钟）。",
+          "label": "小憩"
+        },
+        "skip-value": {
+          "description": "跳过的秒数",
+          "label": "跳过"
+        }
+      },
       "title": "位置",
       "weather": {
         "enabled": {
@@ -1832,6 +1856,9 @@
       "memory-section": {
         "label": "内存使用率"
       },
+      "network-section": {
+        "label": "网络"
+      },
       "polling-interval": {
         "label": "轮询间隔"
       },
@@ -1847,9 +1874,6 @@
       "thresholds-section": {
         "description": "为每个系统指标调整警告/严重阈值和轮询间隔。",
         "label": "阈值"
-      },
-      "network-section": {
-        "label": "网络"
       },
       "title": "系统监视器",
       "use-custom-highlight-colors": {

@@ -1514,6 +1514,28 @@
           "label": "Your location"
         }
       },
+      "timer": {
+        "long-break": {
+          "description": "Length of a pomodoro long break in minutes.",
+          "label": "Long Break"
+        },
+        "pomodoro": {
+          "description": "Length of a pomodoro work session in minutes.",
+          "label": "Pomodoro"
+        },
+        "section": {
+          "description": "Adjust durations of various timer features.",
+          "label": "Timer"
+        },
+        "short-break": {
+          "description": "Length of a pomodoro short break in minutes.",
+          "label": "Short Break"
+        },
+        "skip-value": {
+          "description": "Time in seconds to skip.",
+          "label": "Skip"
+        }
+      },
       "title": "Location",
       "weather": {
         "enabled": {

@@ -403,13 +403,15 @@
       "countdown": "Countdown",
       "duration": "Dauer",
       "hours": "h",
+      "longBreak": "Lange Pause",
       "minutes": "m",
       "pause": "Pause",
+      "pomodoro": "Pomodoro",
       "reset": "Zurücksetzen",
       "seconds": "s",
+      "shortBreak": "Kurze Pause",
       "start": "Start",
       "stopwatch": "Stoppuhr",
-      "timer": "Timer",
       "title": "Zeitmesser"
     },
     "weather": {
@@ -1512,6 +1514,28 @@
           "label": "Ihr Standort"
         }
       },
+      "timer": {
+        "long-break": {
+          "description": "Länge einer langen Pomodoro-Pause in Minuten.",
+          "label": "Lange Pause"
+        },
+        "pomodoro": {
+          "description": "Länge einer Pomodoro-Arbeitssitzung in Minuten.",
+          "label": "Pomodoro"
+        },
+        "section": {
+          "description": "Dauer verschiedener Timerfunktionen anpassen.",
+          "label": "Timer"
+        },
+        "short-break": {
+          "description": "Länge einer Pomodoro-Kurzpause in Minuten.",
+          "label": "Kurze Pause"
+        },
+        "skip-value": {
+          "description": "Zu überspringende Zeit in Sekunden.",
+          "label": "Überspringen"
+        }
+      },
       "title": "Standort",
       "weather": {
         "enabled": {
@@ -1832,6 +1856,9 @@
       "memory-section": {
         "label": "Speicherverbrauch"
       },
+      "network-section": {
+        "label": "Netzwerk"
+      },
       "polling-interval": {
         "label": "Abfrageintervall"
       },
@@ -1847,9 +1874,6 @@
       "thresholds-section": {
         "description": "Passe die Warn-/Kritisch-Schwellen und die Abfrageintervalle für jede Systemmetrik an.",
         "label": "Schwellenwerte"
-      },
-      "network-section": {
-        "label": "Netzwerk"
       },
       "title": "Systemmonitor",
       "use-custom-highlight-colors": {

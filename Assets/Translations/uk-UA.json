@@ -403,13 +403,15 @@
       "countdown": "Зворотний відлік",
       "duration": "Тривалість",
       "hours": "г",
+      "longBreak": "Тривала перерва",
       "minutes": "м",
       "pause": "Пауза",
+      "pomodoro": "Помідор",
       "reset": "Скинути",
       "seconds": "с",
+      "shortBreak": "Коротка перерва",
       "start": "Почати",
       "stopwatch": "Секундомір",
-      "timer": "Таймер",
       "title": "Таймер"
     },
     "weather": {
@@ -1512,6 +1514,28 @@
           "label": "Ваше розташування"
         }
       },
+      "timer": {
+        "long-break": {
+          "description": "Тривалість великої перерви в техніці Pomodoro в хвилинах.",
+          "label": "Тривала перерва"
+        },
+        "pomodoro": {
+          "description": "Тривалість робочої сесії Pomodoro в хвилинах.",
+          "label": "Помідор"
+        },
+        "section": {
+          "description": "Налаштуйте тривалість різних функцій таймера.",
+          "label": "Таймер"
+        },
+        "short-break": {
+          "description": "Тривалість короткої перерви в техніці помодоро в хвилинах.",
+          "label": "Коротка перерва"
+        },
+        "skip-value": {
+          "description": "Час у секундах для пропуску.",
+          "label": "Пропустити"
+        }
+      },
       "title": "Розташування",
       "weather": {
         "enabled": {
@@ -1832,6 +1856,9 @@
       "memory-section": {
         "label": "Використання пам'яті"
       },
+      "network-section": {
+        "label": "Мережа"
+      },
       "polling-interval": {
         "label": "Інтервал опитування"
       },
@@ -1847,9 +1874,6 @@
       "thresholds-section": {
         "description": "Налаштуйте пороги попередження/критичні пороги та інтервали опитування для кожного системного показника.",
         "label": "Пороги"
-      },
-      "network-section": {
-        "label": "Мережа"
       },
       "title": "Системний монітор",
       "use-custom-highlight-colors": {

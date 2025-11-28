@@ -403,13 +403,15 @@
       "countdown": "Compte à rebours",
       "duration": "Durée",
       "hours": "h",
+      "longBreak": "Longue pause",
       "minutes": "m",
       "pause": "Pause",
+      "pomodoro": "Pomodoro",
       "reset": "Réinitialiser",
       "seconds": "s",
+      "shortBreak": "Courte pause",
       "start": "Commencer",
       "stopwatch": "Chronomètre",
-      "timer": "Minuteur",
       "title": "Minuteur"
     },
     "weather": {
@@ -1512,6 +1514,28 @@
           "label": "Votre emplacement"
         }
       },
+      "timer": {
+        "long-break": {
+          "description": "Durée d'une longue pause pomodoro en minutes.",
+          "label": "Longue pause"
+        },
+        "pomodoro": {
+          "description": "Durée d'une session de travail Pomodoro en minutes.",
+          "label": "Pomodoro"
+        },
+        "section": {
+          "description": "Ajuster les durées des différentes fonctions de minuterie.",
+          "label": "Minuteur"
+        },
+        "short-break": {
+          "description": "Durée d'une courte pause pomodoro en minutes.",
+          "label": "Courte pause"
+        },
+        "skip-value": {
+          "description": "Temps en secondes à ignorer.",
+          "label": "Sauter"
+        }
+      },
       "title": "Emplacement",
       "weather": {
         "enabled": {
@@ -1832,6 +1856,9 @@
       "memory-section": {
         "label": "Utilisation mémoire"
       },
+      "network-section": {
+        "label": "Réseau"
+      },
       "polling-interval": {
         "label": "Intervalle d'interrogation"
       },
@@ -1847,9 +1874,6 @@
       "thresholds-section": {
         "description": "Ajustez les seuils d’avertissement/critiques et les intervalles d’interrogation pour chaque métrique système.",
         "label": "Seuils"
-      },
-      "network-section": {
-        "label": "Réseau"
       },
       "title": "Moniteur système",
       "use-custom-highlight-colors": {
