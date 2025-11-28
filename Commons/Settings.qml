@@ -282,7 +282,11 @@ Singleton {
 
     // timer
     property JsonObject timer: JsonObject {
-      property int skipValue: 30
+      property int skipValue: 10
+      property int pomodoro: 25
+      property int shortRest: 10
+      property int longRest: 30
+      property string alarmSound: "alarm-beep.wav"
     }
 
     // screen recorder

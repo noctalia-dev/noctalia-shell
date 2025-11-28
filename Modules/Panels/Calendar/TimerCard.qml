@@ -13,6 +13,35 @@ NBox {
   Layout.fillWidth: true
   clip: true
 
+  enum TabMode {
+    Countdown,
+    Pomodoro,
+    Stopwatch
+  }
+
+  // Detect pomodoro phase changes
+  Connections {
+    target: Time
+
+    function onTimerRunningChanged() {
+      if (!Time.timerRunning && Time.timerRemainingSeconds === 0 && modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
+        root.advancePomodoroPhase();
+        Time.timerStart();
+        SoundService.playSound(Settings.data.timer.alarmSound);
+      }
+    }
+
+    // Fixes "First Time" loop / Race Condition
+    function onTimerSoundPlayingChanged() {
+      if (Time.timerSoundPlaying && modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
+
+        // Stop only looping sounds (leaving our one-shot from above playing)
+        SoundService.stopSound();
+        Time.timerSoundPlaying = false;
+      }
+    }
+  }
+
   ColumnLayout {
     id: content
     anchors.fill: parent
@@ -26,7 +55,13 @@ NBox {
       spacing: Style.marginS
 
       NIcon {
-        icon: isStopwatchMode ? "clock" : "hourglass"
+        icon: {
+          if (modeTabs.currentIndex === TimerCard.TabMode.Pomodoro)
+            return "brain";
+          if (modeTabs.currentIndex === TimerCard.TabMode.Stopwatch)
+            return "stopwatch";
+          return "hourglass";
+        }
         pointSize: Style.fontSizeL
         color: Color.mPrimary
       }
@@ -38,14 +73,36 @@ NBox {
         color: Color.mOnSurface
         Layout.fillWidth: true
       }
+
+      // Pomodoro Status Badge
+      NBox {
+        visible: modeTabs.currentIndex === TimerCard.TabMode.Pomodoro
+        color: Qt.lighter(Color.mSurfaceVariant, 1.1)
+        border.width: 0
+
+        implicitWidth: pomoLabel.implicitWidth + Style.marginL
+        implicitHeight: pomoLabel.implicitHeight + Style.marginXS
+
+        NText {
+          id: pomoLabel
+          anchors.centerIn: parent
+          text: root.isWorkPhase ? I18n.tr("calendar.timer.pomodoro") + " #" + root.pomodoroCycle : (root.pomodoroCycle % 4 === 0 ? I18n.tr("calendar.timer.longBreak") : I18n.tr("calendar.timer.shortBreak"))
+          font.pointSize: Style.fontSizeS
+          font.weight: Style.fontWeightBold
+          color: root.isWorkPhase ? Color.mPrimary : Color.mTertiary
+        }
+      }
     }
 
     // Timer display (editable when not running)
-    Item {
+    NBox {
       id: timerDisplayItem
       Layout.fillWidth: true
-      Layout.preferredHeight: isRunning ? 160 * Style.uiScaleRatio : timerInput.implicitHeight
+      Layout.preferredHeight: isRunning ? Math.max(160 * Style.uiScaleRatio, timerInput.contentWidth + 60) : timerInput.implicitHeight
       Layout.alignment: Qt.AlignHCenter
+      readonly property bool showHighlight: (displayMouseArea.containsMouse || isEditing) && !isRunning && modeTabs.currentIndex === TimerCard.TabMode.Countdown
+      color: showHighlight ? Color.mSurfaceVariant : "transparent"
+      border.width: showHighlight ? Style.borderS : 0
 
       property string inputBuffer: ""
       property bool isEditing: false
@@ -55,7 +112,7 @@ NBox {
         id: progressRing
         anchors.fill: parent
         anchors.margins: 12
-        visible: !isStopwatchMode && isRunning && totalSeconds > 0
+        visible: modeTabs.currentIndex !== TimerCard.TabMode.Stopwatch && isRunning
         z: -1
 
         property real progressRatio: {
@@ -92,7 +149,7 @@ NBox {
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progressRatio * 2 * Math.PI);
             ctx.lineWidth = 4;
-            ctx.strokeStyle = Color.mPrimary;
+            ctx.strokeStyle = (modeTabs.currentIndex === TimerCard.TabMode.Pomodoro && !root.isWorkPhase) ? Color.mTertiary : Color.mPrimary;
             ctx.lineCap = "round";
             ctx.stroke();
           }
@@ -106,15 +163,14 @@ NBox {
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         selectByMouse: false
-        cursorVisible: false
-        cursorDelegate: Item {} // Empty cursor delegate to hide cursor
-        readOnly: isStopwatchMode || isRunning
+        cursorVisible: timerDisplayItem.isEditing || displayMouseArea.containsMouse
+        readOnly: modeTabs.currentIndex !== TimerCard.TabMode.Countdown || isRunning
         enabled: !isRunning
         font.family: Settings.data.ui.fontFixed
 
         // Calculate if hours are being shown
         readonly property bool showingHours: {
-          if (isStopwatchMode) {
+          if (modeTabs.currentIndex === TimerCard.TabMode.Stopwatch) {
             return elapsedSeconds >= 3600;
           }
           // In edit mode, always show hours (HH:MM:SS format)
@@ -146,22 +202,18 @@ NBox {
 
         // Display formatted time, but show input buffer when editing
         text: {
-          if (isStopwatchMode) {
+          if (modeTabs.currentIndex === TimerCard.TabMode.Stopwatch) {
             return formatTime(elapsedSeconds, false);
           }
-
-          // FIX: If not editing OR if editing but haven't typed anything yet, show the current time
           if (!timerDisplayItem.isEditing || timerDisplayItem.inputBuffer === "") {
             return formatTime(remainingSeconds, isRunning);
           }
-
-          // Only show the buffer processing if we actually have input
-          return formatTimeFromDigits(timerDisplayItem.inputBuffer);
+          return formatHMS(parseDigits(timerDisplayItem.inputBuffer), ":");
         }
 
         // Only accept digit keys
         Keys.onPressed: event => {
-          if (isRunning || isStopwatchMode) {
+          if (isRunning || modeTabs.currentIndex !== TimerCard.TabMode.Countdown) {
             event.accepted = true;
             return;
           }
@@ -192,7 +244,7 @@ NBox {
 
           // Allow navigation keys (but don't let them modify text)
           if (event.key === Qt.Key_Left || event.key === Qt.Key_Right || event.key === Qt.Key_Home || event.key === Qt.Key_End || (event.modifiers & Qt.ControlModifier) || (event.modifiers & Qt.ShiftModifier)) {
-            event.accepted = false; // Let default handling work for selection
+            event.accepted = false;
             return;
           }
 
@@ -217,18 +269,15 @@ NBox {
 
           // Only allow digits 0-9
           if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
-            // Limit to 6 digits max
             if (timerDisplayItem.inputBuffer.length >= 6) {
-              event.accepted = true; // Block if already at max
+              event.accepted = true;
               return;
             }
-            // Add the digit to the buffer
             timerDisplayItem.inputBuffer += String.fromCharCode(event.key);
-            // Update the display and parse
             parseDigitsToTime(timerDisplayItem.inputBuffer);
-            event.accepted = true; // We handled it
+            event.accepted = true;
           } else {
-            event.accepted = true; // Block all other keys
+            event.accepted = true;
           }
         }
 
@@ -258,11 +307,13 @@ NBox {
         }
 
         MouseArea {
+          id: displayMouseArea
+          hoverEnabled: true
           anchors.fill: parent
-          enabled: !isRunning && !isStopwatchMode
+          enabled: !isRunning && modeTabs.currentIndex === TimerCard.TabMode.Countdown
           cursorShape: enabled ? Qt.IBeamCursor : Qt.ArrowCursor
           onClicked: {
-            if (!isRunning && !isStopwatchMode) {
+            if (!isRunning && modeTabs.currentIndex === TimerCard.TabMode.Countdown) {
               timerInput.forceActiveFocus();
             }
           }
@@ -286,12 +337,12 @@ NBox {
           anchors.fill: parent
           text: isRunning ? I18n.tr("calendar.timer.pause") : I18n.tr("calendar.timer.start")
           icon: isRunning ? "player-pause" : "player-play"
-          enabled: isStopwatchMode || remainingSeconds > 0
+          enabled: modeTabs.currentIndex === TimerCard.TabMode.Stopwatch || remainingSeconds > 0
           onClicked: {
             if (isRunning) {
-              pauseTimer();
+              Time.timerPause();
             } else {
-              startTimer();
+              Time.timerStart();
             }
           }
         }
@@ -302,14 +353,12 @@ NBox {
         Layout.preferredWidth: 0
         implicitHeight: startButton.implicitHeight
         color: Color.transparent
-        visible: !isStopwatchMode
+        visible: modeTabs.currentIndex == TimerCard.TabMode.Countdown
 
         NButton {
           id: addButton
           anchors.fill: parent
-          // property var skipValue: 99
-          text: "+ " + formatDuration(Settings.data.timer.skipValue) //formatTime(skipValue, true)
-
+          text: "+ " + formatDuration(Settings.data.timer.skipValue)
           icon: {
             // Change icon for specific value that Tabler.io supports
             if ([5, 10, 15, 20, 30, 40, 50, 60].includes(Settings.data.timer.skipValue)) {
@@ -317,14 +366,57 @@ NBox {
             }
             return "arrow-forward-up";
           }
-          enabled: !isStopwatchMode
+          enabled: modeTabs.currentIndex == TimerCard.TabMode.Countdown
           onClicked: {
-            Time.timerTotalSeconds += Settings.data.timer.skipValue;
-            Time.timerRemainingSeconds += Settings.data.timer.skipValue;
+            if (timerDisplayItem.isEditing) {
+              var baseSeconds = 0;
+              if (timerDisplayItem.inputBuffer !== "") {
+                var t = parseDigits(timerDisplayItem.inputBuffer);
+                baseSeconds = (t.h * 3600) + (t.m * 60) + t.s;
+              } else {
+                baseSeconds = remainingSeconds;
+              }
+
+              var newSeconds = baseSeconds + Settings.data.timer.skipValue;
+              var tNew = getHMS(newSeconds);
+              var str = formatHMS(tNew, "");
+              timerDisplayItem.inputBuffer = parseInt(str).toString();
+              parseDigitsToTime(timerDisplayItem.inputBuffer);
+            } else {
+              Time.timerTotalSeconds += Settings.data.timer.skipValue;
+              Time.timerRemainingSeconds += Settings.data.timer.skipValue;
+            }
+          }
+        }
+      }
+      // Restart Phase Button (Pomodoro Only)
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        implicitHeight: restartButton.implicitHeight
+        color: Color.transparent
+        visible: modeTabs.currentIndex === TimerCard.TabMode.Pomodoro
+
+        NButton {
+          id: restartButton
+          anchors.fill: parent
+          text: "Restart"
+          icon: "rotate-clockwise"
+
+          onClicked: {
+            var wasRunning = isRunning;
+            if (isRunning)
+              Time.timerPause();
+            resetTimer();
+            var duration = root.isWorkPhase ? Settings.data.timer.pomodoro : (root.pomodoroCycle % 4 === 0 ? Settings.data.timer.longRest : Settings.data.timer.shortRest);
+            setTimerPreset(duration);
+            if (wasRunning)
+              Time.timerStart();
           }
         }
       }
 
+      // Reset Button
       Rectangle {
         Layout.fillWidth: true
         Layout.preferredWidth: 0
@@ -336,12 +428,15 @@ NBox {
           anchors.fill: parent
           text: I18n.tr("calendar.timer.reset")
           icon: "refresh"
-          enabled: (isStopwatchMode && (elapsedSeconds > 0 || isRunning)) || (!isStopwatchMode && (remainingSeconds > 0 || isRunning || soundPlaying))
+          enabled: (modeTabs.currentIndex === TimerCard.TabMode.Stopwatch && (elapsedSeconds > 0 || isRunning)) || (modeTabs.currentIndex !== TimerCard.TabMode.Stopwatch && (remainingSeconds > 0 || isRunning || soundPlaying))
+
           onClicked: {
-            timerDisplayItem.inputBuffer = "";
-            timerDisplayItem.isEditing = false;
-            timerInput.focus = false;
             resetTimer();
+            if (modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
+              root.isWorkPhase = true;
+              root.pomodoroCycle = 1;
+              setTimerPreset(Settings.data.timer.pomodoro);
+            }
           }
         }
       }
@@ -349,40 +444,47 @@ NBox {
 
     // Mode tabs (Android-style) - below buttons
     NTabBar {
+      id: modeTabs
       Layout.fillWidth: true
       Layout.alignment: Qt.AlignHCenter
       visible: !isRunning
-      currentIndex: isStopwatchMode ? 1 : 0
+      spacing: Style.marginXS
+
+      currentIndex: Time.timerStopwatchMode ? TimerCard.TabMode.Stopwatch : TimerCard.TabMode.Countdown
+
       onCurrentIndexChanged: {
-        const newMode = currentIndex === 1;
-        if (newMode !== isStopwatchMode) {
-          if (isRunning) {
-            pauseTimer();
-          }
-          // Stop any repeating notification sound when switching modes
-          SoundService.stopSound("alarm-beep.wav");
-          Time.timerSoundPlaying = false;
-          Time.timerStopwatchMode = newMode;
-          if (newMode) {
-            // Reset to 0 for stopwatch
-            Time.timerElapsedSeconds = 0;
-          } else {
-            Time.timerRemainingSeconds = 0;
-          }
+        if (isRunning)
+          Time.timerPause();
+        SoundService.stopSound(Settings.data.timer.alarmSound);
+        Time.timerSoundPlaying = false;
+        const isStopwatch = (currentIndex === TimerCard.TabMode.Stopwatch);
+        Time.timerStopwatchMode = isStopwatch;
+
+        // Reset Counters
+        if (isStopwatch) {
+          Time.timerElapsedSeconds = 0;
+        } else if (currentIndex === TimerCard.TabMode.Pomodoro) {
+          root.isWorkPhase = true;
+          root.pomodoroCycle = 1;
+          setTimerPreset(Settings.data.timer.pomodoro);
+        } else {
+          Time.timerRemainingSeconds = 0;
         }
       }
-      spacing: Style.marginXS
 
       NTabButton {
         text: I18n.tr("calendar.timer.countdown")
-        tabIndex: 0
-        checked: !isStopwatchMode
+        tabIndex: TimerCard.TabMode.Countdown
+      }
+
+      NTabButton {
+        text: I18n.tr("calendar.timer.pomodoro")
+        tabIndex: TimerCard.TabMode.Pomodoro
       }
 
       NTabButton {
         text: I18n.tr("calendar.timer.stopwatch")
-        tabIndex: 1
-        checked: isStopwatchMode
+        tabIndex: TimerCard.TabMode.Stopwatch
       }
     }
   }
@@ -395,6 +497,10 @@ NBox {
   readonly property int elapsedSeconds: Time.timerElapsedSeconds
   readonly property bool soundPlaying: Time.timerSoundPlaying
 
+  // Pomodoro State
+  property bool isWorkPhase: true
+  property int pomodoroCycle: 1
+
   function formatTime(seconds, hideHoursWhenZero) {
     const t = getHMS(seconds);
     if (hideHoursWhenZero && t.h === 0) {
@@ -403,17 +509,12 @@ NBox {
     return formatHMS(t, ":");
   }
 
-  // Standardizes 0-padding (e.g. 5 -> "05")
+  // Standardizes 0-padding
   function pad(val) {
     return val.toString().padStart(2, '0');
   }
 
-  // Combines H/M/S with a separator
-  function formatTimeFromDigits(digits) {
-    return formatHMS(parseDigits(digits), ":");
-  }
-
-  // NEW: Standardizes combining H/M/S with a separator (or empty string)
+  // Standardizes combining H/M/S with a separator (or empty string)
   function formatHMS(t, separator) {
     return `${pad(t.h)}${separator}${pad(t.m)}${separator}${pad(t.s)}`;
   }
@@ -475,15 +576,38 @@ NBox {
     }
   }
 
-  function startTimer() {
-    Time.timerStart();
+  function setTimerPreset(seconds) {
+    Time.timerRemainingSeconds = seconds;
+    Time.timerTotalSeconds = seconds;
   }
 
-  function pauseTimer() {
-    Time.timerPause();
+  function advancePomodoroPhase() {
+    if (isWorkPhase) {
+      // Switch to Break
+      if (pomodoroCycle % 4 === 0) {
+        setTimerPreset(Settings.data.timer.longRest);
+      } else {
+        setTimerPreset(Settings.data.timer.shortRest);
+      }
+      isWorkPhase = false;
+    } else {
+      // Switch to Work
+      if (pomodoroCycle % 4 === 0)
+        pomodoroCycle = 0;
+      pomodoroCycle++;
+      setTimerPreset(Settings.data.timer.pomodoro);
+      isWorkPhase = true;
+    }
   }
 
   function resetTimer() {
+    timerDisplayItem.inputBuffer = "";
+    timerDisplayItem.isEditing = false;
+    timerInput.focus = false;
+    if (Time.timerSoundPlaying) {
+      SoundService.stopSound();
+      Time.timerSoundPlaying = false;
+    }
     Time.timerReset();
   }
 }

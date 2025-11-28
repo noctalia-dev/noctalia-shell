@@ -403,13 +403,15 @@
       "countdown": "Countdown",
       "duration": "Duration",
       "hours": "h",
+      "longBreak": "Long Break",
       "minutes": "m",
       "pause": "Pause",
+      "pomodoro": "Pomodoro",
       "reset": "Reset",
       "seconds": "s",
+      "shortBreak": "Short Break",
       "start": "Start",
       "stopwatch": "Stopwatch",
-      "timer": "Timer",
       "title": "Timer"
     },
     "weather": {
