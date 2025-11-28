@@ -280,6 +280,11 @@ Singleton {
       ]
     }
 
+    // timer
+    property JsonObject timer: JsonObject {
+      property int skipValue: 30
+    }
+
     // screen recorder
     property JsonObject screenRecorder: JsonObject {
       property string directory: ""
@@ -750,8 +755,8 @@ Singleton {
       if (!gotControlCenter) {
         //const obj = JSON.parse('{"id": "ControlCenter"}');
         adapter.bar.widgets["right"].push(({
-                                             "id": "ControlCenter"
-                                           }));
+            "id": "ControlCenter"
+          }));
         Logger.w("Settings", "Added a ControlCenter widget to the right section");
       }
     }
@@ -770,23 +775,23 @@ Singleton {
             // Convert them into the new enabledTypes array as soon as we detect the legacy shape.
             var legacyOsd = osdParsed.osd;
             var typeMappings = [
-                  {
-                    key: "showVolume",
-                    type: 0
-                  },
-                  {
-                    key: "showInputVolume",
-                    type: 1
-                  },
-                  {
-                    key: "showBrightness",
-                    type: 2
-                  },
-                  {
-                    key: "showLockKey",
-                    type: 3
-                  }
-                ];
+              {
+                key: "showVolume",
+                type: 0
+              },
+              {
+                key: "showInputVolume",
+                type: 1
+              },
+              {
+                key: "showBrightness",
+                type: 2
+              },
+              {
+                key: "showLockKey",
+                type: 3
+              }
+            ];
 
             var migratedTypes = [];
             var sawLegacyKey = false;
@@ -859,10 +864,10 @@ Singleton {
       } else {
         // Wait for ShellState to be ready
         Qt.callLater(() => {
-                       if (ShellState?.isLoaded) {
-                         migrateShellStateFiles();
-                       }
-                     });
+          if (ShellState?.isLoaded) {
+            migrateShellStateFiles();
+          }
+        });
       }
     }
   }
@@ -958,8 +963,8 @@ Singleton {
     // Also check Settings for lastSeenTs
     if (adapter.notifications && adapter.notifications.lastSeenTs) {
       ShellState.setNotificationsState({
-                                         lastSeenTs: adapter.notifications.lastSeenTs
-                                       });
+        lastSeenTs: adapter.notifications.lastSeenTs
+      });
       Logger.i("Settings", "Migrated notifications lastSeenTs from Settings to ShellState");
       return;
     }
@@ -1002,8 +1007,8 @@ Singleton {
     // Also check Settings for lastSeenVersion
     if (adapter.changelog && adapter.changelog.lastSeenVersion) {
       ShellState.setChangelogState({
-                                     lastSeenVersion: adapter.changelog.lastSeenVersion
-                                   });
+        lastSeenVersion: adapter.changelog.lastSeenVersion
+      });
       Logger.i("Settings", "Migrated changelog lastSeenVersion from Settings to ShellState");
       return;
     }

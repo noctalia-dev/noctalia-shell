@@ -147,91 +147,90 @@ NBox {
         // Display formatted time, but show input buffer when editing
         text: {
           if (isStopwatchMode) {
-            return formatTime(elapsedSeconds, false); // Stopwatch: only show hours if >= 1 hour
+            return formatTime(elapsedSeconds, false);
           }
-          if (!timerDisplayItem.isEditing) {
-            // When not editing and not running, always show hours
-            // When running, only show hours if >= 1 hour
+
+          // FIX: If not editing OR if editing but haven't typed anything yet, show the current time
+          if (!timerDisplayItem.isEditing || timerDisplayItem.inputBuffer === "") {
             return formatTime(remainingSeconds, isRunning);
           }
-          if (timerDisplayItem.inputBuffer !== "") {
-            return formatTimeFromDigits(timerDisplayItem.inputBuffer);
-          }
-          return formatTime(0, false);
+
+          // Only show the buffer processing if we actually have input
+          return formatTimeFromDigits(timerDisplayItem.inputBuffer);
         }
 
         // Only accept digit keys
         Keys.onPressed: event => {
-                          if (isRunning || isStopwatchMode) {
-                            event.accepted = true;
-                            return;
-                          }
+          if (isRunning || isStopwatchMode) {
+            event.accepted = true;
+            return;
+          }
 
-                          // Handle backspace
-                          if (event.key === Qt.Key_Backspace) {
-                            if (timerDisplayItem.isEditing && timerDisplayItem.inputBuffer.length > 0) {
-                              timerDisplayItem.inputBuffer = timerDisplayItem.inputBuffer.slice(0, -1);
-                              if (timerDisplayItem.inputBuffer !== "") {
-                                parseDigitsToTime(timerDisplayItem.inputBuffer);
-                              } else {
-                                Time.timerRemainingSeconds = 0;
-                              }
-                            }
-                            event.accepted = true;
-                            return;
-                          }
+          // Handle backspace
+          if (event.key === Qt.Key_Backspace) {
+            if (timerDisplayItem.isEditing && timerDisplayItem.inputBuffer.length > 0) {
+              timerDisplayItem.inputBuffer = timerDisplayItem.inputBuffer.slice(0, -1);
+              if (timerDisplayItem.inputBuffer !== "") {
+                parseDigitsToTime(timerDisplayItem.inputBuffer);
+              } else {
+                Time.timerRemainingSeconds = 0;
+              }
+            }
+            event.accepted = true;
+            return;
+          }
 
-                          // Handle delete
-                          if (event.key === Qt.Key_Delete) {
-                            if (timerDisplayItem.isEditing) {
-                              timerDisplayItem.inputBuffer = "";
-                              Time.timerRemainingSeconds = 0;
-                            }
-                            event.accepted = true;
-                            return;
-                          }
+          // Handle delete
+          if (event.key === Qt.Key_Delete) {
+            if (timerDisplayItem.isEditing) {
+              timerDisplayItem.inputBuffer = "";
+              Time.timerRemainingSeconds = 0;
+            }
+            event.accepted = true;
+            return;
+          }
 
-                          // Allow navigation keys (but don't let them modify text)
-                          if (event.key === Qt.Key_Left || event.key === Qt.Key_Right || event.key === Qt.Key_Home || event.key === Qt.Key_End || (event.modifiers & Qt.ControlModifier) || (event.modifiers & Qt.ShiftModifier)) {
-                            event.accepted = false; // Let default handling work for selection
-                            return;
-                          }
+          // Allow navigation keys (but don't let them modify text)
+          if (event.key === Qt.Key_Left || event.key === Qt.Key_Right || event.key === Qt.Key_Home || event.key === Qt.Key_End || (event.modifiers & Qt.ControlModifier) || (event.modifiers & Qt.ShiftModifier)) {
+            event.accepted = false; // Let default handling work for selection
+            return;
+          }
 
-                          // Handle enter/return
-                          if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                            applyTimeFromBuffer();
-                            timerDisplayItem.isEditing = false;
-                            focus = false;
-                            event.accepted = true;
-                            return;
-                          }
+          // Handle enter/return
+          if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            applyTimeFromBuffer();
+            timerDisplayItem.isEditing = false;
+            focus = false;
+            event.accepted = true;
+            return;
+          }
 
-                          // Handle escape
-                          if (event.key === Qt.Key_Escape) {
-                            timerDisplayItem.inputBuffer = "";
-                            Time.timerRemainingSeconds = 0;
-                            timerDisplayItem.isEditing = false;
-                            focus = false;
-                            event.accepted = true;
-                            return;
-                          }
+          // Handle escape
+          if (event.key === Qt.Key_Escape) {
+            timerDisplayItem.inputBuffer = "";
+            Time.timerRemainingSeconds = 0;
+            timerDisplayItem.isEditing = false;
+            focus = false;
+            event.accepted = true;
+            return;
+          }
 
-                          // Only allow digits 0-9
-                          if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
-                            // Limit to 6 digits max
-                            if (timerDisplayItem.inputBuffer.length >= 6) {
-                              event.accepted = true; // Block if already at max
-                              return;
-                            }
-                            // Add the digit to the buffer
-                            timerDisplayItem.inputBuffer += String.fromCharCode(event.key);
-                            // Update the display and parse
-                            parseDigitsToTime(timerDisplayItem.inputBuffer);
-                            event.accepted = true; // We handled it
-                          } else {
-                            event.accepted = true; // Block all other keys
-                          }
-                        }
+          // Only allow digits 0-9
+          if (event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
+            // Limit to 6 digits max
+            if (timerDisplayItem.inputBuffer.length >= 6) {
+              event.accepted = true; // Block if already at max
+              return;
+            }
+            // Add the digit to the buffer
+            timerDisplayItem.inputBuffer += String.fromCharCode(event.key);
+            // Update the display and parse
+            parseDigitsToTime(timerDisplayItem.inputBuffer);
+            event.accepted = true; // We handled it
+          } else {
+            event.accepted = true; // Block all other keys
+          }
+        }
 
         Keys.onReturnPressed: {
           applyTimeFromBuffer();
@@ -249,7 +248,8 @@ NBox {
         onActiveFocusChanged: {
           if (activeFocus) {
             timerDisplayItem.isEditing = true;
-            timerDisplayItem.inputBuffer = "";
+            const val = parseInt(formatHMS(getHMS(remainingSeconds), ""));
+            timerDisplayItem.inputBuffer = val > 0 ? val.toString() : "";
           } else {
             applyTimeFromBuffer();
             timerDisplayItem.isEditing = false;
@@ -300,6 +300,34 @@ NBox {
       Rectangle {
         Layout.fillWidth: true
         Layout.preferredWidth: 0
+        implicitHeight: startButton.implicitHeight
+        color: Color.transparent
+        visible: !isStopwatchMode
+
+        NButton {
+          id: addButton
+          anchors.fill: parent
+          // property var skipValue: 99
+          text: "+ " + formatDuration(Settings.data.timer.skipValue) //formatTime(skipValue, true)
+
+          icon: {
+            // Change icon for specific value that Tabler.io supports
+            if ([5, 10, 15, 20, 30, 40, 50, 60].includes(Settings.data.timer.skipValue)) {
+              return "rewind-forward-" + Settings.data.timer.skipValue;
+            }
+            return "arrow-forward-up";
+          }
+          enabled: !isStopwatchMode
+          onClicked: {
+            Time.timerTotalSeconds += Settings.data.timer.skipValue;
+            Time.timerRemainingSeconds += Settings.data.timer.skipValue;
+          }
+        }
+      }
+
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
         implicitHeight: resetButton.implicitHeight
         color: Color.transparent
 
@@ -310,6 +338,9 @@ NBox {
           icon: "refresh"
           enabled: (isStopwatchMode && (elapsedSeconds > 0 || isRunning)) || (!isStopwatchMode && (remainingSeconds > 0 || isRunning || soundPlaying))
           onClicked: {
+            timerDisplayItem.inputBuffer = "";
+            timerDisplayItem.isEditing = false;
+            timerInput.focus = false;
             resetTimer();
           }
         }
@@ -365,67 +396,76 @@ NBox {
   readonly property bool soundPlaying: Time.timerSoundPlaying
 
   function formatTime(seconds, hideHoursWhenZero) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    // If hideHoursWhenZero is true (when running), only show hours if > 0
-    // Otherwise (when not running or editing), always show hours
-    if (hideHoursWhenZero && hours === 0) {
-      return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const t = getHMS(seconds);
+    if (hideHoursWhenZero && t.h === 0) {
+      return `${pad(t.m)}:${pad(t.s)}`;
     }
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return formatHMS(t, ":");
   }
 
+  // Standardizes 0-padding (e.g. 5 -> "05")
+  function pad(val) {
+    return val.toString().padStart(2, '0');
+  }
+
+  // Combines H/M/S with a separator
   function formatTimeFromDigits(digits) {
-    // Parse digits right-to-left: last 2 = seconds, next 2 = minutes, rest = hours
-    const len = digits.length;
-    let seconds = 0;
-    let minutes = 0;
-    let hours = 0;
-
-    if (len > 0) {
-      seconds = parseInt(digits.substring(Math.max(0, len - 2))) || 0;
-    }
-    if (len > 2) {
-      minutes = parseInt(digits.substring(Math.max(0, len - 4), len - 2)) || 0;
-    }
-    if (len > 4) {
-      hours = parseInt(digits.substring(0, len - 4)) || 0;
-    }
-
-    // Clamp values
-    seconds = Math.min(59, seconds);
-    minutes = Math.min(59, minutes);
-    hours = Math.min(99, hours);
-
-    // Always show HH:MM:SS format in edit mode
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return formatHMS(parseDigits(digits), ":");
   }
 
-  function parseDigitsToTime(digits) {
-    // Parse digits right-to-left: last 2 = seconds, next 2 = minutes, rest = hours
+  // NEW: Standardizes combining H/M/S with a separator (or empty string)
+  function formatHMS(t, separator) {
+    return `${pad(t.h)}${separator}${pad(t.m)}${separator}${pad(t.s)}`;
+  }
+
+  // Decomposes total seconds into {h, m, s}
+  function getHMS(totalSeconds) {
+    return {
+      h: Math.floor(totalSeconds / 3600),
+      m: Math.floor((totalSeconds % 3600) / 60),
+      s: Math.floor(totalSeconds % 60)
+    };
+  }
+
+  // Parses raw digit string (e.g. "123") into {h, m, s} for input editing
+  function parseDigits(digits) {
     const len = digits.length;
-    let seconds = 0;
-    let minutes = 0;
-    let hours = 0;
+    let s = 0, m = 0, h = 0;
 
-    if (len > 0) {
-      seconds = parseInt(digits.substring(Math.max(0, len - 2))) || 0;
-    }
-    if (len > 2) {
-      minutes = parseInt(digits.substring(Math.max(0, len - 4), len - 2)) || 0;
-    }
-    if (len > 4) {
-      hours = parseInt(digits.substring(0, len - 4)) || 0;
-    }
+    if (len > 0)
+      s = parseInt(digits.substring(Math.max(0, len - 2))) || 0;
+    if (len > 2)
+      m = parseInt(digits.substring(Math.max(0, len - 4), len - 2)) || 0;
+    if (len > 4)
+      h = parseInt(digits.substring(0, len - 4)) || 0;
 
-    // Clamp values
-    seconds = Math.min(59, seconds);
-    minutes = Math.min(59, minutes);
-    hours = Math.min(99, hours);
+    return {
+      h: Math.min(99, h) // Clamp hours
+      ,
+      m: Math.min(59, m) // Clamp minutes
+      ,
+      s: Math.min(59, s)  // Clamp seconds
+    };
+  }
 
-    Time.timerRemainingSeconds = (hours * 3600) + (minutes * 60) + seconds;
+  // Helper to extract H/M/S from raw digits string
+  function parseDigitsToTime(digits) {
+    const t = parseDigits(digits);
+    Time.timerRemainingSeconds = (t.h * 3600) + (t.m * 60) + t.s;
+  }
+
+  function formatDuration(totalSeconds) {
+    const t = getHMS(totalSeconds);
+    const parts = [];
+
+    if (t.h > 0)
+      parts.push(t.h + "h");
+    if (t.m > 0)
+      parts.push(t.m + "m");
+    if (t.s > 0 || parts.length === 0)
+      parts.push(t.s + "s");
+
+    return parts.join(" ");
   }
 
   function applyTimeFromBuffer() {
