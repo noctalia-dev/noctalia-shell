@@ -141,7 +141,7 @@ Rectangle {
     }
   }
 
-  implicitWidth: visible ? (isVerticalBar ? Style.capsuleHeight : showTitle ? taskbarLayout.implicitWidth : Math.round(taskbarLayout.implicitWidth + Style.marginM * 2)) : 0
+  implicitWidth: visible ? (isVerticalBar ? Style.capsuleHeight : showTitle ? Math.round(taskbarLayout.implicitWidth) : Math.round(taskbarLayout.implicitWidth + Style.marginM * 2)) : 0
   implicitHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginM * 2) : Style.capsuleHeight) : 0
   radius: Style.radiusM
   color: Style.capsuleColor
