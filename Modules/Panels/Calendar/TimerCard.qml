@@ -25,16 +25,15 @@ NBox {
 
     function onTimerRunningChanged() {
       if (!Time.timerRunning && Time.timerRemainingSeconds === 0 && modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
+        Time.timerReset();
         root.advancePomodoroPhase();
         Time.timerStart();
         SoundService.playSound(Settings.data.timer.alarmSound);
       }
     }
-
     // Fixes "First Time" loop / Race Condition
     function onTimerSoundPlayingChanged() {
       if (Time.timerSoundPlaying && modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
-
         // Stop only looping sounds (leaving our one-shot from above playing)
         SoundService.stopSound();
         Time.timerSoundPlaying = false;
@@ -326,6 +325,7 @@ NBox {
       Layout.fillWidth: true
       spacing: Style.marginS
 
+      // Start Button
       Rectangle {
         Layout.fillWidth: true
         Layout.preferredWidth: 0
@@ -348,6 +348,7 @@ NBox {
         }
       }
 
+      // Add Button
       Rectangle {
         Layout.fillWidth: true
         Layout.preferredWidth: 0
@@ -389,7 +390,8 @@ NBox {
           }
         }
       }
-      // Restart Phase Button (Pomodoro Only)
+
+      // Restart Phase Button
       Rectangle {
         Layout.fillWidth: true
         Layout.preferredWidth: 0
@@ -401,15 +403,48 @@ NBox {
           id: restartButton
           anchors.fill: parent
           text: "Restart"
-          icon: "rotate-clockwise"
+          icon: "player-skip-back"
 
           onClicked: {
             var wasRunning = isRunning;
             if (isRunning)
               Time.timerPause();
             resetTimer();
-            var duration = root.isWorkPhase ? Settings.data.timer.pomodoro : (root.pomodoroCycle % 4 === 0 ? Settings.data.timer.longRest : Settings.data.timer.shortRest);
-            setTimerPreset(duration);
+            var durationMinutes = root.isWorkPhase ? Settings.data.timer.pomodoro : (root.pomodoroCycle % 4 === 0 ? Settings.data.timer.longBreak : Settings.data.timer.shortBreak);
+            setTimerPreset(durationMinutes * 60);
+            if (wasRunning)
+              Time.timerStart();
+          }
+        }
+      }
+
+      // Skip Button
+      Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredWidth: 0
+        implicitHeight: skipButton.implicitHeight
+        color: Color.transparent
+        visible: modeTabs.currentIndex === TimerCard.TabMode.Pomodoro
+
+        NButton {
+          id: skipButton
+          anchors.fill: parent
+          text: "Skip"
+          icon: "player-skip-forward"
+
+          onClicked: {
+            var wasRunning = isRunning;
+            timerDisplayItem.inputBuffer = "";
+            timerDisplayItem.isEditing = false;
+            timerInput.focus = false;
+            if (Time.timerSoundPlaying) {
+              SoundService.stopSound();
+              Time.timerSoundPlaying = false;
+            }
+            if (isRunning)
+              Time.timerPause();
+            Time.timerReset();
+            root.advancePomodoroPhase();
             if (wasRunning)
               Time.timerStart();
           }
@@ -435,7 +470,7 @@ NBox {
             if (modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
               root.isWorkPhase = true;
               root.pomodoroCycle = 1;
-              setTimerPreset(Settings.data.timer.pomodoro);
+              setTimerPreset(Settings.data.timer.pomodoro * 60);
             }
           }
         }
@@ -466,7 +501,7 @@ NBox {
         } else if (currentIndex === TimerCard.TabMode.Pomodoro) {
           root.isWorkPhase = true;
           root.pomodoroCycle = 1;
-          setTimerPreset(Settings.data.timer.pomodoro);
+          setTimerPreset(Settings.data.timer.pomodoro * 60);
         } else {
           Time.timerRemainingSeconds = 0;
         }
@@ -585,9 +620,9 @@ NBox {
     if (isWorkPhase) {
       // Switch to Break
       if (pomodoroCycle % 4 === 0) {
-        setTimerPreset(Settings.data.timer.longRest);
+        setTimerPreset(Settings.data.timer.longBreak * 60);
       } else {
-        setTimerPreset(Settings.data.timer.shortRest);
+        setTimerPreset(Settings.data.timer.shortBreak * 60);
       }
       isWorkPhase = false;
     } else {
@@ -595,7 +630,7 @@ NBox {
       if (pomodoroCycle % 4 === 0)
         pomodoroCycle = 0;
       pomodoroCycle++;
-      setTimerPreset(Settings.data.timer.pomodoro);
+      setTimerPreset(Settings.data.timer.pomodoro * 60);
       isWorkPhase = true;
     }
   }

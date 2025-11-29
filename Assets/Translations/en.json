@@ -1527,6 +1527,7 @@
           "description": "Adjust durations of various timer features.",
           "label": "Timer"
         },
+        "select-alarm": "Alarm Sound:",
         "short-break": {
           "description": "Length of a pomodoro short break in minutes.",
           "label": "Short Break"

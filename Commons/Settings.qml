@@ -284,8 +284,8 @@ Singleton {
     property JsonObject timer: JsonObject {
       property int skipValue: 10
       property int pomodoro: 25
-      property int shortRest: 10
-      property int longRest: 30
+      property int shortBreak: 5
+      property int longBreak: 30
       property string alarmSound: "alarm-beep.wav"
     }
 

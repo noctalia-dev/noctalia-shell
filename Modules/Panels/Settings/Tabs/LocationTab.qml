@@ -248,6 +248,20 @@ ColumnLayout {
       description: I18n.tr("settings.location.timer.section.description")
     }
 
+    // Not sure why this isn't working'
+    NFilePicker {
+      title: I18n.tr("settings.location.timer.select-alarm")
+      selectionMode: "files"
+      initialPath: Quickshell.env("HOME")
+      //initialPath: Settings.preprocessPath(Settings.location.timer.alarmSound).substr(0, Settings.preprocessPath(Settings.location.timer.alarmSound).lastIndexOf("/")) || Quickshell.env("HOME")
+      nameFilters: ["*.wav", "*.mp3", "*.opus", "*.ogg", "*.flac", "*.m4a", "*.aac", "*.wma", "*.aiff", "*.webm"]
+      onAccepted: paths => {
+        if (paths.length > 0) {
+          Settings.location.timer.alarmSound = paths[0];
+        }
+      }
+    }
+
     NSpinBox {
       Layout.fillWidth: true
       label: I18n.tr("settings.location.timer.skip-value.label")
