@@ -1519,6 +1519,7 @@
           "description": "Length of a pomodoro long break in minutes.",
           "label": "Long Break"
         },
+        "picker": "Select an alarm sound",
         "pomodoro": {
           "description": "Length of a pomodoro work session in minutes.",
           "label": "Pomodoro"
@@ -1535,7 +1536,8 @@
         "skip-value": {
           "description": "Time in seconds to skip.",
           "label": "Skip"
-        }
+        },
+        "tooltip": "Browse for alarm sound"
       },
       "title": "Location",
       "weather": {

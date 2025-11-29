@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import qs.Commons
 import qs.Services.Location
 import qs.Widgets
@@ -248,16 +249,26 @@ ColumnLayout {
       description: I18n.tr("settings.location.timer.section.description")
     }
 
-    // Not sure why this isn't working'
+    NTextInputButton {
+      label: I18n.tr("settings.location.timer.select-alarm")
+      text: Settings.data.timer.alarmSound
+      buttonIcon: "folder-open"
+      buttonTooltip: I18n.tr("settings.location.timer.tooltip")
+      Layout.fillWidth: true
+      onInputEditingFinished: Settings.data.timer.alarmSound = text
+      onButtonClicked: alarmPicker.open()
+    }
+
+    // Not sure why this isn't working
     NFilePicker {
-      title: I18n.tr("settings.location.timer.select-alarm")
+      id: alarmPicker
+      title: I18n.tr("settings.location.timer.picker")
       selectionMode: "files"
-      initialPath: Quickshell.env("HOME")
-      //initialPath: Settings.preprocessPath(Settings.location.timer.alarmSound).substr(0, Settings.preprocessPath(Settings.location.timer.alarmSound).lastIndexOf("/")) || Quickshell.env("HOME")
+      initialPath: Settings.preprocessPath(Settings.data.timer.alarmSound).substr(0, Settings.preprocessPath(Settings.data.timer.alarmSound).lastIndexOf("/")) || Quickshell.env("HOME")
       nameFilters: ["*.wav", "*.mp3", "*.opus", "*.ogg", "*.flac", "*.m4a", "*.aac", "*.wma", "*.aiff", "*.webm"]
       onAccepted: paths => {
         if (paths.length > 0) {
-          Settings.location.timer.alarmSound = paths[0];
+          Settings.data.timer.alarmSound = paths[0];
         }
       }
     }
