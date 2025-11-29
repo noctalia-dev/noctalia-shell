@@ -408,13 +408,15 @@
       "countdown": "Cuenta regresiva",
       "duration": "Duración",
       "hours": "h",
+      "longBreak": "Pausa larga",
       "minutes": "m",
       "pause": "Pausa",
+      "pomodoro": "Pomodoro",
       "reset": "Restablecer",
       "seconds": "s",
+      "shortBreak": "Breve descanso",
       "start": "Comenzar",
       "stopwatch": "Cronómetro",
-      "timer": "Temporizador",
       "title": "Temporizador"
     },
     "weather": {
@@ -1531,6 +1533,28 @@
         "section": {
           "description": "Obtén el clima y la programación de la luz nocturna precisos estableciendo tu ubicación.",
           "label": "Tu ubicación"
+        }
+      },
+      "timer": {
+        "long-break": {
+          "description": "Duración de un descanso largo de pomodoro en minutos.",
+          "label": "Pausa larga"
+        },
+        "pomodoro": {
+          "description": "Duración de una sesión de trabajo Pomodoro en minutos.",
+          "label": "Pomodoro"
+        },
+        "section": {
+          "description": "Ajustar las duraciones de varias funciones del temporizador.",
+          "label": "Temporizador"
+        },
+        "short-break": {
+          "description": "Duración de un descanso corto pomodoro en minutos.",
+          "label": "Breve descanso"
+        },
+        "skip-value": {
+          "description": "Tiempo en segundos para omitir.",
+          "label": "Omitir"
         }
       },
       "title": "Ubicación",

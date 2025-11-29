@@ -408,13 +408,15 @@
       "countdown": "Countdown",
       "duration": "Duration",
       "hours": "h",
+      "longBreak": "Long Break",
       "minutes": "m",
       "pause": "Pause",
+      "pomodoro": "Pomodoro",
       "reset": "Reset",
       "seconds": "s",
+      "shortBreak": "Short Break",
       "start": "Start",
       "stopwatch": "Stopwatch",
-      "timer": "Timer",
       "title": "Timer"
     },
     "weather": {
@@ -1531,6 +1533,29 @@
         "section": {
           "description": "Get accurate weather and Night Light scheduling by setting your location.",
           "label": "Your location"
+        }
+      },
+      "timer": {
+        "long-break": {
+          "description": "Length of a pomodoro long break in minutes.",
+          "label": "Long Break"
+        },
+        "pomodoro": {
+          "description": "Length of a pomodoro work session in minutes.",
+          "label": "Pomodoro"
+        },
+        "section": {
+          "description": "Adjust durations of various timer features.",
+          "label": "Timer"
+        },
+        "select-alarm": "Alarm Sound:",
+        "short-break": {
+          "description": "Length of a pomodoro short break in minutes.",
+          "label": "Short Break"
+        },
+        "skip-value": {
+          "description": "Time in seconds to skip.",
+          "label": "Skip"
         }
       },
       "title": "Location",

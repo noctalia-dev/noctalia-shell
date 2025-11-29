@@ -408,13 +408,15 @@
       "countdown": "Aftellen",
       "duration": "Duur",
       "hours": "h",
+      "longBreak": "Lange pauze",
       "minutes": "m",
       "pause": "Pauze",
+      "pomodoro": "Pomodoro",
       "reset": "Resetten",
       "seconds": "s",
+      "shortBreak": "Korte pauze",
       "start": "Begin",
       "stopwatch": "Stopwatch",
-      "timer": "Timer",
       "title": "Timer"
     },
     "weather": {
@@ -1531,6 +1533,28 @@
         "section": {
           "description": "Krijg nauwkeurige weersinformatie en nachtlichtplanning door je locatie in te stellen.",
           "label": "Je locatie"
+        }
+      },
+      "timer": {
+        "long-break": {
+          "description": "Lengte van een lange pomodoro-pauze in minuten.",
+          "label": "Lange pauze"
+        },
+        "pomodoro": {
+          "description": "Lengte van een pomodoro-werksessie in minuten.",
+          "label": "Pomodoro"
+        },
+        "section": {
+          "description": "Duur van verschillende timerfuncties aanpassen.",
+          "label": "Timer"
+        },
+        "short-break": {
+          "description": "Lengte van een korte pomodoro-pauze in minuten.",
+          "label": "Korte pauze"
+        },
+        "skip-value": {
+          "description": "Tijd in seconden om over te slaan.",
+          "label": "Overslaan"
         }
       },
       "title": "Locatie",

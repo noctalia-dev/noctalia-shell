@@ -408,13 +408,15 @@
       "countdown": "Geri sayım",
       "duration": "Süre",
       "hours": "h",
+      "longBreak": "Uzun Ara",
       "minutes": "m",
       "pause": "Duraklat",
+      "pomodoro": "Pomodoro",
       "reset": "Sıfırla",
       "seconds": "s",
+      "shortBreak": "Kısa Mola",
       "start": "Başla",
       "stopwatch": "Kronometre",
-      "timer": "Zamanlayıcı",
       "title": "Zamanlayıcı"
     },
     "weather": {
@@ -1531,6 +1533,28 @@
         "section": {
           "description": "Konumunuzu ayarlayarak hassas hava durumu ve gece ışığı zamanlaması alın.",
           "label": "Konumunuz"
+        }
+      },
+      "timer": {
+        "long-break": {
+          "description": "Pomodoro uzun mola süresi (dakika).",
+          "label": "Uzun Ara"
+        },
+        "pomodoro": {
+          "description": "Bir pomodoro çalışma seansının dakika cinsinden uzunluğu.",
+          "label": "Pomodoro"
+        },
+        "section": {
+          "description": "Çeşitli zamanlayıcı özelliklerinin sürelerini ayarlayın.",
+          "label": "Zamanlayıcı"
+        },
+        "short-break": {
+          "description": "Pomodoro kısa molasının dakika cinsinden uzunluğu.",
+          "label": "Kısa Mola"
+        },
+        "skip-value": {
+          "description": "Atlanılacak saniye sayısı.",
+          "label": "Atla"
         }
       },
       "title": "Konum",
