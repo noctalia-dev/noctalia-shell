@@ -107,7 +107,11 @@ SmartPanel {
 
     property var layout: KeyboardLayoutService.currentLayout === "fr" ? azerty : qwerty
 
-    property var activeModifiers: {"shift": false, "alt": false, "super": false, "ctrl": false, "caps": false}
+    property var activeModifiers: {"shift": false, "alt": false, "super": false, "ctrl": false}
+
+    property bool capsON: false
+
+    property var keyArray: []
 
     panelContent: Item {
 
@@ -130,14 +134,14 @@ SmartPanel {
                         NBox {
                             width: modelData.width
                             height: 60
-                            color: (runScript.running || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mPrimary : Color.mSurfaceVariant
+                            color: (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mPrimary : Color.mSurfaceVariant
 
                             // refresh color ever 0.2 seconds for modifier keys only
                             Timer {
                                 interval: 200; running: true; repeat: true
                                 onTriggered: {
                                     if (modelData.key in root.activeModifiers) {
-                                        color = (runScript.running || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mPrimary : Color.mSurfaceVariant
+                                        color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mPrimary : Color.mSurfaceVariant
                                     }
                                 }
                             }
@@ -151,40 +155,51 @@ SmartPanel {
                                 if (mod in root.activeModifiers) {
                                     root.activeModifiers[mod] = !root.activeModifiers[mod]
                                 }
-                                else {
-                                    // pressed a non-modifier key, reset modifiers (exept caps-lock)
-                                    root.activeModifiers["shift"] = false
-                                    root.activeModifiers["ctrl"] = false
-                                    root.activeModifiers["alt"] = false
-                                    root.activeModifiers["super"] = false
-                                }
                             }
                             
                             Process {
                                 id: runScript
-                                command: ["python", root.typeKeyScript, modelData.key.toString()]
-                                stdout: StdioCollector {
-                                    onStreamFinished: {
-                                        toggleModifier(modelData.key.toString())
-                                    }
+                                command: ["python", root.typeKeyScript] // placeholder
+
+                                function startWithKeys(keys) {
+                                    var ks = keys.map(function(x){ return x.toString(); });
+                                    runScript.command = ["python", root.typeKeyScript].concat(ks);
+                                    runScript.running = true;
                                 }
                                 stderr: StdioCollector {
                                     onStreamFinished: {
-                                        if(text) {
-                                            Logger.w("Keyboard", text.trim());
-                                        }
+                                        if (text) Logger.w(text.trim());
                                     }
                                 }
                             }
 
+
                             MouseArea {
                                 anchors.fill: parent
                                 onPressed: {
-                                    runScript.running = true
+                                    if (modelData.key in root.activeModifiers) {
+                                        toggleModifier(modelData.key)
+                                    }
+                                    else{
+                                        if (modelData.key === "caps") {
+                                            root.capsON = !root.capsON
+                                        }
+                                        root.keyArray = [modelData.key]
+                                        for (var k in root.activeModifiers) {
+                                            var v = root.activeModifiers[k];
+                                            if (v) {
+                                                root.keyArray.push(k);
+                                            }
+                                        }
+                                        runScript.startWithKeys(keyArray)
+                                    }
                                     Logger.d(modelData.key.toString())
                                 }
                                 onReleased: {
-                                    runScript.running = false
+                                    if (!(modelData.key in root.activeModifiers)) {
+                                        root.keyArray = []
+                                        root.activeModifiers = {"shift": false, "alt": false, "super": false, "ctrl": false}
+                                    }
                                 }
                             }
                         }

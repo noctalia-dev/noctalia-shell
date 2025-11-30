@@ -154,10 +154,4 @@ if __name__ == "__main__":
         sys.exit(0)
 
     check_ydotool_service()
-
-    # Toggle mode
-    if key.lower() in MODIFIER_KEYS and not mods:
-        toggle_special_key(key.lower())
-        sys.exit(0)
-
     send_key(key.lower(), mods)
