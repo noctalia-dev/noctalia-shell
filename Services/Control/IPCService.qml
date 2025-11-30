@@ -53,6 +53,16 @@ Item {
   }
 
   IpcHandler {
+    target: "keyboard"
+    function toggle() {
+      root.withTargetScreen(screen => {
+                              var keyboardPanel = PanelService.getPanel("keyboardPanel", screen);
+                              keyboardPanel?.toggle();
+                            });
+    }
+  }
+
+  IpcHandler {
     target: "notifications"
     function toggleHistory() {
       // Will attempt to open the panel next to the bar button if any.

@@ -35,6 +35,7 @@ Singleton {
                            "Taskbar": taskbarComponent,
                            "TaskbarGrouped": taskbarGroupedComponent,
                            "Tray": trayComponent,
+                           "VirtualKeyboard": virtualKeyboardComponent,
                            "Volume": volumeComponent,
                            "VPN": vpnComponent,
                            "WiFi": wiFiComponent,
@@ -230,6 +231,9 @@ Singleton {
                                     "hideUnoccupied": false,
                                     "characterCount": 2
                                   },
+                                  "VirtualKeyboard": {
+                                      "allowUserSettings": false
+                                  },
                                   "Volume": {
                                     "allowUserSettings": true,
                                     "displayMode": "onhover"
@@ -305,6 +309,9 @@ Singleton {
   }
   property Component trayComponent: Component {
     Tray {}
+  }
+  property Component virtualKeyboardComponent: Component {
+    VirtualKeyboard {}
   }
   property Component volumeComponent: Component {
     Volume {}

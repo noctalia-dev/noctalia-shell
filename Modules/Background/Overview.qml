@@ -58,6 +58,7 @@ Loader {
       WlrLayershell.layer: WlrLayer.Background
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
       WlrLayershell.namespace: "noctalia-overview-" + (screen?.name || "unknown")
+      WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
       anchors {
         top: true
