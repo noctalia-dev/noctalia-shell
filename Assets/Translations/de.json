@@ -102,9 +102,13 @@
       "control-center": {
         "browse-file": "Datei durchsuchen",
         "browse-library": "Bibliothek durchsuchen",
-        "colorize-distro-logo": {
-          "description": "Wende die Designfarben auf das Logo deiner Distribution an.",
-          "label": "Distro-Logo einfärben"
+        "enable-colorization": {
+          "description": "Aktiviert die Färbung für das Kontrollzentrum-Symbol und wendet Themenfarben an.",
+          "label": "Färbung aktivieren"
+        },
+        "color-selection": {
+          "description": "Wendet Themenfarben auf Symbole an.",
+          "label": "Farbauswahl"
         },
         "icon": {
           "description": "Symbol aus der Bibliothek oder eine benutzerdefinierte Datei auswählen.",

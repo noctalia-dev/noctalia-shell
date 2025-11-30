@@ -102,9 +102,13 @@
       "control-center": {
         "browse-file": "Explorar archivo",
         "browse-library": "Explorar biblioteca",
-        "colorize-distro-logo": {
-          "description": "Aplica los colores del tema a tu logotipo de distribución.",
-          "label": "Colorear logotipo de la distribución"
+        "enable-colorization": {
+          "description": "Habilita la coloración para el ícono del centro de control, aplicando colores del tema.",
+          "label": "Habilitar Coloración"
+        },
+        "color-selection": {
+          "description": "Aplica colores del tema a los íconos.",
+          "label": "Seleccionar Color"
         },
         "icon": {
           "description": "Selecciona un icono de la biblioteca o un archivo personalizado.",

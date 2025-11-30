@@ -102,13 +102,17 @@
       "control-center": {
         "browse-file": "Browse File",
         "browse-library": "Browse Library",
-        "colorize-distro-logo": {
-          "description": "Apply theme colors to your distribution logo.",
-          "label": "Colorize distro logo"
-        },
         "icon": {
           "description": "Select an icon from the library or a custom file.",
           "label": "Icon"
+        },
+        "enable-colorization": {
+          "description": "Enable colorization for the control center icon, applying theme colors.",
+          "label": "Enable Colorization"
+        },
+        "color-selection": {
+          "description": "Apply theme colors to icons.",
+          "label": "Select Color"
         },
         "select-custom-icon": "Select a custom icon",
         "use-distro-logo": {
@@ -542,6 +546,7 @@
     },
     "colors": {
       "error": "Error",
+      "none": "None",
       "onSurface": "On Surface",
       "primary": "Primary",
       "secondary": "Secondary",

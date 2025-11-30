@@ -102,9 +102,13 @@
       "control-center": {
         "browse-file": "ファイルを参照",
         "browse-library": "ライブラリを参照",
-        "colorize-distro-logo": {
-          "description": "ディストリビューションのロゴにテーマカラーを適用します。",
-          "label": "テーマカラーの適用"
+        "enable-colorization": {
+          "description": "コントロールセンターのアイコンの色付けを有効にし、テーマの色を適用します。",
+          "label": "色の有効化"
+        },
+        "color-selection": {
+          "description": "アイコンにテーマの色を適用します。",
+          "label": "色の選択"
         },
         "icon": {
           "description": "ライブラリまたはカスタムファイルからアイコンを選択します。",

@@ -34,13 +34,40 @@ NIconButton {
   readonly property string customIcon: widgetSettings.icon || widgetMetadata.icon
   readonly property bool useDistroLogo: (widgetSettings.useDistroLogo !== undefined) ? widgetSettings.useDistroLogo : widgetMetadata.useDistroLogo
   readonly property string customIconPath: widgetSettings.customIconPath || ""
-  readonly property bool colorizeDistroLogo: {
-    if (widgetSettings.colorizeDistroLogo !== undefined)
-      return widgetSettings.colorizeDistroLogo;
-    return widgetMetadata.colorizeDistroLogo !== undefined ? widgetMetadata.colorizeDistroLogo : false;
+  readonly property bool enableColorization: widgetSettings.enableColorization || false
+
+  readonly property string colorizeSystemIcon: {
+    if (widgetSettings.colorizeSystemIcon !== undefined)
+      return widgetSettings.colorizeSystemIcon;
+    return widgetMetadata.colorizeSystemIcon !== undefined ? widgetMetadata.colorizeSystemIcon : "none";
   }
 
-  // If we have a custom path or distro logo, don't use the theme icon.
+
+  readonly property bool isColorizing: enableColorization && colorizeSystemIcon !== "none"
+
+  readonly property color iconColor: {
+    if (!isColorizing) return Color.mOnSurface;
+    switch (colorizeSystemIcon) {
+      case "primary": return Color.mPrimary;
+      case "secondary": return Color.mSecondary;
+      case "tertiary": return Color.mTertiary;
+      case "error": return Color.mError;
+      default: return Color.mOnSurface;
+    }
+  }
+  readonly property color iconHoverColor: {
+    if (!isColorizing) return Color.mOnHover;
+    switch (colorizeSystemIcon) {
+      case "primary": return Qt.darker(Color.mPrimary, 1.2);
+      case "secondary": return Qt.darker(Color.mSecondary, 1.2);
+      case "tertiary": return Qt.darker(Color.mTertiary, 1.2);
+      case "error": return Qt.darker(Color.mError, 1.2);
+      default: return Color.mOnHover;
+    }
+  }
+
+  // If we have a custom path and not using distro logo, use the theme icon.
+  // If using distro logo, don't use theme icon.
   icon: (customIconPath === "" && !useDistroLogo) ? customIcon : ""
   tooltipText: I18n.tr("tooltips.open-control-center")
   tooltipDirection: BarService.getTooltipDirection()
@@ -48,8 +75,9 @@ NIconButton {
   applyUiScale: false
   density: Settings.data.bar.density
   colorBg: Style.capsuleColor
-  colorFg: Color.mOnSurface
+  colorFg: iconColor
   colorBgHover: useDistroLogo ? Color.mSurfaceVariant : Color.mHover
+  colorFgHover: iconHoverColor
   colorBorder: Color.transparent
   colorBorderHover: useDistroLogo ? Color.mHover : Color.transparent
 
@@ -115,18 +143,19 @@ NIconButton {
     width: root.width * 0.8
     height: width
     source: {
-      if (customIconPath !== "")
-        return customIconPath.startsWith("file://") ? customIconPath : "file://" + customIconPath;
       if (useDistroLogo)
         return HostService.osLogo;
+      if (customIconPath !== "")
+        return customIconPath.startsWith("file://") ? customIconPath : "file://" + customIconPath;
       return "";
     }
     visible: source !== ""
     smooth: true
     asynchronous: true
-    layer.enabled: useDistroLogo && colorizeDistroLogo
+    layer.enabled: isColorizing && (useDistroLogo || customIconPath !== "")
     layer.effect: ShaderEffect {
-      property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
+      property color targetColor: isColorizing ? iconColor :
+                    (Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant)
       property real colorizeMode: 2.0
 
       fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")

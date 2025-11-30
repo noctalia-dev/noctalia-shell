@@ -102,9 +102,13 @@
       "control-center": {
         "browse-file": "Bestand kiezen",
         "browse-library": "Bibliotheek doorbladeren",
-        "colorize-distro-logo": {
-          "description": "Pas themakleuren toe op je distributielogo.",
-          "label": "Distributielogo inkleuren"
+        "enable-colorization": {
+          "description": "Schakel kleuring in voor het pictogram van het controlecentrum, waarbij themakleuren worden toegepast.",
+          "label": "Kleuren inschakelen"
+        },
+        "color-selection": {
+          "description": "Themakleuren toepassen op pictogrammen.",
+          "label": "Kleur selecteren"
         },
         "icon": {
           "description": "Selecteer een pictogram uit de bibliotheek of een aangepast bestand.",

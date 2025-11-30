@@ -102,9 +102,13 @@
       "control-center": {
         "browse-file": "Dosyaya Göz At",
         "browse-library": "Kütüphaneye Göz At",
-        "colorize-distro-logo": {
-          "description": "Dağıtım logonuza tema renklerini uygula.",
-          "label": "Dağıtım logosunu renklendir"
+        "enable-colorization": {
+          "description": "Kontrol merkezi simgesi için renklendirmeyi etkinleştirir, tema renklerini uygular.",
+          "label": "Renklendirmeyi Etkinleştir"
+        },
+        "color-selection": {
+          "description": "Simgeye tema renklerini uygular.",
+          "label": "Renk Seç"
         },
         "icon": {
           "description": "Kütüphaneden veya özel bir dosyadan bir ikon seçin.",

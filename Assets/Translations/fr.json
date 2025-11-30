@@ -102,9 +102,13 @@
       "control-center": {
         "browse-file": "Parcourir les fichiers",
         "browse-library": "Parcourir la bibliothèque",
-        "colorize-distro-logo": {
-          "description": "Appliquez les couleurs du thème au logo de votre distribution.",
-          "label": "Coloriser le logo de la distribution"
+        "enable-colorization": {
+          "description": "Active la coloration pour l'icône du centre de contrôle, en appliquant les couleurs du thème.",
+          "label": "Activer la Coloration"
+        },
+        "color-selection": {
+          "description": "Applique les couleurs du thème aux icônes.",
+          "label": "Sélectionner la Couleur"
         },
         "icon": {
           "description": "Sélectionnez une icône de la bibliothèque ou un fichier personnalisé.",
