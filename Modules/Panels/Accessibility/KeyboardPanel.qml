@@ -11,7 +11,7 @@ SmartPanel {
     id: root
     panelAnchorBottom: true
     panelAnchorHorizontalCenter: true
-    preferredWidth: Math.round(1200 * Style.uiScaleRatio)
+    preferredWidth: Math.round(1100 * Style.uiScaleRatio)
     preferredHeight: Math.round(800 * Style.uiScaleRatio)
     readonly property string typeKeyScript: Quickshell.shellDir + '/Bin/type-key.py'
     exclusiveKeyboard: false
@@ -32,6 +32,7 @@ SmartPanel {
     }
     onClosed: {
         resetScript.running = true
+        capsON = false
         activeModifiers = {"shift": false, "alt": false, "super": false, "ctrl": false, "caps": false}
     }
 
