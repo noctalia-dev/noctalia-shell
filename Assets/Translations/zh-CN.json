@@ -2200,7 +2200,7 @@
     "click-to-start-recording": "点击开始录制",
     "click-to-stop-recording": "点击停止录制",
     "close": "关闭",
-    "connect-disconnect-devices": "左键点击连接右键点击忘记",
+    "connect-disconnect-devices": "左键点击连接\n右键点击忘记",
     "delete-notification": "删除通知",
     "disable-keep-awake": "单击以禁用保持唤醒\n滚动以调整超时",
     "do-not-disturb-disabled": "'勿扰模式'已禁用",
