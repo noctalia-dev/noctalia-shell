@@ -22,9 +22,8 @@ NBox {
   // Detect pomodoro phase changes
   Connections {
     target: Time
-
-    function onTimerRunningChanged() {
-      if (!Time.timerRunning && Time.timerRemainingSeconds === 0 && modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
+    function onTimerRemainingSecondsChanged() {
+      if (Time.timerRemainingSeconds === 0 && Time.timerRunning && modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
         Time.timerReset();
         root.advancePomodoroPhase();
         Time.timerStart();
@@ -34,7 +33,6 @@ NBox {
     // Fixes "First Time" loop / Race Condition
     function onTimerSoundPlayingChanged() {
       if (Time.timerSoundPlaying && modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
-        // Stop only looping sounds (leaving our one-shot from above playing)
         SoundService.stopSound();
         Time.timerSoundPlaying = false;
       }
