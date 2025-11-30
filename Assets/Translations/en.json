@@ -1657,6 +1657,52 @@
           "description": "Configure toast appearance and behavior.",
           "label": "Toast"
         }
+      },
+      "sounds": {
+        "enabled": {
+          "description": "Enable sound effects for incoming notifications.",
+          "label": "Enable notification sounds"
+        },
+        "files": {
+          "critical": {
+            "description": "Path to the sound file played for critical priority notifications.",
+            "label": "Critical urgency sound",
+            "select-title": "Select Critical Urgency Sound File"
+          },
+          "low": {
+            "description": "Path to the sound file played for low priority notifications.",
+            "label": "Low urgency sound",
+            "select-title": "Select Low Urgency Sound File"
+          },
+          "normal": {
+            "description": "Path to the sound file played for normal priority notifications.",
+            "label": "Normal urgency sound",
+            "select-title": "Select Normal Urgency Sound File"
+          },
+          "unified": {
+            "description": "Path to the sound file played for notifications.",
+            "label": "Notification sound",
+            "select-title": "Select Notification Sound File"
+          },
+          "placeholder": "Enter path to sound file",
+          "section": {
+            "description": "Configure custom sound files for different notification urgency levels.",
+            "label": "Sound files"
+          },
+          "select-file": "Select Sound File"
+        },
+        "section": {
+          "description": "Configure notification sound effects and volume.",
+          "label": "Sound settings"
+        },
+        "separate": {
+          "description": "Use different sound files for low, normal, and critical priority notifications.",
+          "label": "Use different sounds per priority"
+        },
+        "volume": {
+          "description": "Adjust the volume level for notification sounds.",
+          "label": "Sound volume"
+        }
       }
     },
     "osd": {

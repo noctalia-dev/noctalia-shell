@@ -1648,6 +1648,52 @@
         }
       },
       "title": "Bildirimler",
+      "sounds": {
+        "enabled": {
+          "description": "Gelen bildirimler için ses efektlerini etkinleştir.",
+          "label": "Bildirim seslerini etkinleştir"
+        },
+        "files": {
+          "critical": {
+            "description": "Kritik öncelikli bildirimler için çalınan ses dosyasının yolu.",
+            "label": "Kritik aciliyet sesi",
+            "select-title": "Kritik Aciliyet Ses Dosyası Seç"
+          },
+          "low": {
+            "description": "Düşük öncelikli bildirimler için çalınan ses dosyasının yolu.",
+            "label": "Düşük aciliyet sesi",
+            "select-title": "Düşük Aciliyet Ses Dosyası Seç"
+          },
+          "normal": {
+            "description": "Normal öncelikli bildirimler için çalınan ses dosyasının yolu.",
+            "label": "Normal aciliyet sesi",
+            "select-title": "Normal Aciliyet Ses Dosyası Seç"
+          },
+          "unified": {
+            "description": "Bildirimler için çalınan ses dosyasının yolu.",
+            "label": "Bildirim sesi",
+            "select-title": "Bildirim Ses Dosyası Seç"
+          },
+          "placeholder": "Ses dosyası yolunu girin",
+          "section": {
+            "description": "Farklı bildirim aciliyet seviyeleri için özel ses dosyaları yapılandırın.",
+            "label": "Ses dosyaları"
+          },
+          "select-file": "Ses Dosyası Seç"
+        },
+        "section": {
+          "description": "Bildirim ses efektlerini ve ses seviyesini yapılandırın.",
+          "label": "Ses ayarları"
+        },
+        "separate": {
+          "description": "Düşük, normal ve kritik öncelikli bildirimler için farklı ses dosyaları kullanın.",
+          "label": "Öncelik başına farklı sesler kullan"
+        },
+        "volume": {
+          "description": "Bildirim sesleri için ses seviyesini ayarlayın.",
+          "label": "Ses seviyesi"
+        }
+      },
       "toast": {
         "keyboard": {
           "description": "Klavye düzeni değiştiğinde bir bildirim göster.",

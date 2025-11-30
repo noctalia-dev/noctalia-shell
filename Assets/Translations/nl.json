@@ -1648,6 +1648,52 @@
         }
       },
       "title": "Meldingen",
+      "sounds": {
+        "enabled": {
+          "description": "Schakel geluidseffecten in voor inkomende meldingen.",
+          "label": "Meldingsgeluiden inschakelen"
+        },
+        "files": {
+          "critical": {
+            "description": "Pad naar het geluidsbestand dat wordt afgespeeld voor meldingen met kritieke prioriteit.",
+            "label": "Kritieke urgentie geluid",
+            "select-title": "Selecteer Kritieke Urgentie Geluidsbestand"
+          },
+          "low": {
+            "description": "Pad naar het geluidsbestand dat wordt afgespeeld voor meldingen met lage prioriteit.",
+            "label": "Lage urgentie geluid",
+            "select-title": "Selecteer Lage Urgentie Geluidsbestand"
+          },
+          "normal": {
+            "description": "Pad naar het geluidsbestand dat wordt afgespeeld voor meldingen met normale prioriteit.",
+            "label": "Normale urgentie geluid",
+            "select-title": "Selecteer Normale Urgentie Geluidsbestand"
+          },
+          "unified": {
+            "description": "Pad naar het geluidsbestand dat wordt afgespeeld voor meldingen.",
+            "label": "Meldingsgeluid",
+            "select-title": "Selecteer Meldingsgeluidsbestand"
+          },
+          "placeholder": "Voer pad naar geluidsbestand in",
+          "section": {
+            "description": "Configureer aangepaste geluidsbestanden voor verschillende meldingsurgentieniveaus.",
+            "label": "Geluidsbestanden"
+          },
+          "select-file": "Selecteer Geluidsbestand"
+        },
+        "section": {
+          "description": "Configureer meldingsgeluidseffecten en volume.",
+          "label": "Geluidsinstellingen"
+        },
+        "separate": {
+          "description": "Gebruik verschillende geluidsbestanden voor lage, normale en kritieke prioriteitsmeldingen.",
+          "label": "Gebruik verschillende geluiden per prioriteit"
+        },
+        "volume": {
+          "description": "Pas het volumeniveau aan voor meldingsgeluiden.",
+          "label": "Geluidsvolume"
+        }
+      },
       "toast": {
         "keyboard": {
           "description": "Toon een toastmelding wanneer de toetsenbordindeling verandert.",

@@ -1648,6 +1648,52 @@
         }
       },
       "title": "Notifications",
+      "sounds": {
+        "enabled": {
+          "description": "Activer les effets sonores pour les notifications entrantes.",
+          "label": "Activer les sons de notification"
+        },
+        "files": {
+          "critical": {
+            "description": "Chemin vers le fichier sonore joué pour les notifications de priorité critique.",
+            "label": "Son d'urgence critique",
+            "select-title": "Sélectionner le Fichier Son d'Urgence Critique"
+          },
+          "low": {
+            "description": "Chemin vers le fichier sonore joué pour les notifications de priorité basse.",
+            "label": "Son d'urgence basse",
+            "select-title": "Sélectionner le Fichier Son d'Urgence Basse"
+          },
+          "normal": {
+            "description": "Chemin vers le fichier sonore joué pour les notifications de priorité normale.",
+            "label": "Son d'urgence normale",
+            "select-title": "Sélectionner le Fichier Son d'Urgence Normale"
+          },
+          "unified": {
+            "description": "Chemin vers le fichier sonore joué pour les notifications.",
+            "label": "Son de notification",
+            "select-title": "Sélectionner le Fichier Son de Notification"
+          },
+          "placeholder": "Entrer le chemin vers le fichier sonore",
+          "section": {
+            "description": "Configurer des fichiers sonores personnalisés pour différents niveaux d'urgence de notification.",
+            "label": "Fichiers sonores"
+          },
+          "select-file": "Sélectionner un Fichier Son"
+        },
+        "section": {
+          "description": "Configurer les effets sonores et le volume des notifications.",
+          "label": "Paramètres sonores"
+        },
+        "separate": {
+          "description": "Utiliser différents fichiers sonores pour les notifications de priorité basse, normale et critique.",
+          "label": "Utiliser des sons différents par priorité"
+        },
+        "volume": {
+          "description": "Ajuster le niveau de volume pour les sons de notification.",
+          "label": "Volume sonore"
+        }
+      },
       "toast": {
         "keyboard": {
           "description": "Afficher une notification lorsque la disposition du clavier change.",

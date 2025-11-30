@@ -1648,6 +1648,52 @@
         }
       },
       "title": "通知",
+      "sounds": {
+        "enabled": {
+          "description": "为传入通知启用音效。",
+          "label": "启用通知声音"
+        },
+        "files": {
+          "critical": {
+            "description": "为关键优先级通知播放的声音文件路径。",
+            "label": "关键紧急声音",
+            "select-title": "选择关键紧急声音文件"
+          },
+          "low": {
+            "description": "为低优先级通知播放的声音文件路径。",
+            "label": "低紧急声音",
+            "select-title": "选择低紧急声音文件"
+          },
+          "normal": {
+            "description": "为普通优先级通知播放的声音文件路径。",
+            "label": "普通紧急声音",
+            "select-title": "选择普通紧急声音文件"
+          },
+          "unified": {
+            "description": "为通知播放的声音文件路径。",
+            "label": "通知声音",
+            "select-title": "选择通知声音文件"
+          },
+          "placeholder": "输入声音文件路径",
+          "section": {
+            "description": "为不同的通知紧急级别配置自定义声音文件。",
+            "label": "声音文件"
+          },
+          "select-file": "选择声音文件"
+        },
+        "section": {
+          "description": "配置通知音效和音量。",
+          "label": "声音设置"
+        },
+        "separate": {
+          "description": "为低、普通和关键优先级通知使用不同的声音文件。",
+          "label": "按优先级使用不同声音"
+        },
+        "volume": {
+          "description": "调整通知声音的音量级别。",
+          "label": "声音音量"
+        }
+      },
       "toast": {
         "keyboard": {
           "description": "当键盘布局改变时显示一个Toast提示。",

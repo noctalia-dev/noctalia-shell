@@ -1648,6 +1648,52 @@
         }
       },
       "title": "Notificaciones",
+      "sounds": {
+        "enabled": {
+          "description": "Activar efectos de sonido para notificaciones entrantes.",
+          "label": "Activar sonidos de notificación"
+        },
+        "files": {
+          "critical": {
+            "description": "Ruta al archivo de sonido reproducido para notificaciones de prioridad crítica.",
+            "label": "Sonido de urgencia crítica",
+            "select-title": "Seleccionar Archivo de Sonido de Urgencia Crítica"
+          },
+          "low": {
+            "description": "Ruta al archivo de sonido reproducido para notificaciones de prioridad baja.",
+            "label": "Sonido de urgencia baja",
+            "select-title": "Seleccionar Archivo de Sonido de Urgencia Baja"
+          },
+          "normal": {
+            "description": "Ruta al archivo de sonido reproducido para notificaciones de prioridad normal.",
+            "label": "Sonido de urgencia normal",
+            "select-title": "Seleccionar Archivo de Sonido de Urgencia Normal"
+          },
+          "unified": {
+            "description": "Ruta al archivo de sonido reproducido para notificaciones.",
+            "label": "Sonido de notificación",
+            "select-title": "Seleccionar Archivo de Sonido de Notificación"
+          },
+          "placeholder": "Introducir ruta al archivo de sonido",
+          "section": {
+            "description": "Configurar archivos de sonido personalizados para diferentes niveles de urgencia de notificación.",
+            "label": "Archivos de sonido"
+          },
+          "select-file": "Seleccionar Archivo de Sonido"
+        },
+        "section": {
+          "description": "Configurar efectos de sonido y volumen de notificaciones.",
+          "label": "Configuración de sonido"
+        },
+        "separate": {
+          "description": "Usar diferentes archivos de sonido para notificaciones de prioridad baja, normal y crítica.",
+          "label": "Usar sonidos diferentes por prioridad"
+        },
+        "volume": {
+          "description": "Ajustar el nivel de volumen para los sonidos de notificación.",
+          "label": "Volumen del sonido"
+        }
+      },
       "toast": {
         "keyboard": {
           "description": "Mostrar una notificación cuando cambie la distribución del teclado.",

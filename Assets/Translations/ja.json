@@ -1648,6 +1648,52 @@
         }
       },
       "title": "通知",
+      "sounds": {
+        "enabled": {
+          "description": "着信通知の音声効果を有効にします。",
+          "label": "通知音を有効にする"
+        },
+        "files": {
+          "critical": {
+            "description": "緊急度の高い通知で再生される音声ファイルへのパス。",
+            "label": "緊急通知音",
+            "select-title": "緊急通知音ファイルを選択"
+          },
+          "low": {
+            "description": "緊急度の低い通知で再生される音声ファイルへのパス。",
+            "label": "低優先度通知音",
+            "select-title": "低優先度通知音ファイルを選択"
+          },
+          "normal": {
+            "description": "通常優先度の通知で再生される音声ファイルへのパス。",
+            "label": "通常優先度通知音",
+            "select-title": "通常優先度通知音ファイルを選択"
+          },
+          "unified": {
+            "description": "通知で再生される音声ファイルへのパス。",
+            "label": "通知音",
+            "select-title": "通知音ファイルを選択"
+          },
+          "placeholder": "音声ファイルへのパスを入力",
+          "section": {
+            "description": "通知の緊急度レベルに応じてカスタム音声ファイルを設定します。",
+            "label": "音声ファイル"
+          },
+          "select-file": "音声ファイルを選択"
+        },
+        "section": {
+          "description": "通知の音声効果と音量を設定します。",
+          "label": "サウンド設定"
+        },
+        "separate": {
+          "description": "低、通常、緊急優先度の通知に異なる音声ファイルを使用します。",
+          "label": "優先度ごとに異なる音を使用する"
+        },
+        "volume": {
+          "description": "通知音の音量レベルを調整します。",
+          "label": "サウンド音量"
+        }
+      },
       "toast": {
         "keyboard": {
           "description": "キーボードレイアウトの変更時にトーストを表示します。",

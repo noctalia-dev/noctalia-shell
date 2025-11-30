@@ -1648,6 +1648,52 @@
         }
       },
       "title": "Notificações",
+      "sounds": {
+        "enabled": {
+          "description": "Ativar efeitos sonoros para notificações recebidas.",
+          "label": "Ativar sons de notificação"
+        },
+        "files": {
+          "critical": {
+            "description": "Caminho para o arquivo de som tocado para notificações de prioridade crítica.",
+            "label": "Som de urgência crítica",
+            "select-title": "Selecionar Arquivo de Som de Urgência Crítica"
+          },
+          "low": {
+            "description": "Caminho para o arquivo de som tocado para notificações de prioridade baixa.",
+            "label": "Som de urgência baixa",
+            "select-title": "Selecionar Arquivo de Som de Urgência Baixa"
+          },
+          "normal": {
+            "description": "Caminho para o arquivo de som tocado para notificações de prioridade normal.",
+            "label": "Som de urgência normal",
+            "select-title": "Selecionar Arquivo de Som de Urgência Normal"
+          },
+          "unified": {
+            "description": "Caminho para o arquivo de som tocado para notificações.",
+            "label": "Som de notificação",
+            "select-title": "Selecionar Arquivo de Som de Notificação"
+          },
+          "placeholder": "Digitar o caminho para o arquivo de som",
+          "section": {
+            "description": "Configurar arquivos de som personalizados para diferentes níveis de urgência de notificação.",
+            "label": "Arquivos de som"
+          },
+          "select-file": "Selecionar Arquivo de Som"
+        },
+        "section": {
+          "description": "Configurar efeitos sonoros e volume de notificações.",
+          "label": "Configurações de som"
+        },
+        "separate": {
+          "description": "Usar arquivos de som diferentes para notificações de prioridade baixa, normal e crítica.",
+          "label": "Usar sons diferentes por prioridade"
+        },
+        "volume": {
+          "description": "Ajustar o nível de volume para sons de notificação.",
+          "label": "Volume do som"
+        }
+      },
       "toast": {
         "keyboard": {
           "description": "Mostrar uma notificação quando o layout do teclado mudar.",

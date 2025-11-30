@@ -117,6 +117,159 @@ ColumnLayout {
     Layout.bottomMargin: Style.marginL
   }
 
+  // Sound Settings
+  ColumnLayout {
+    spacing: Style.marginL
+    Layout.fillWidth: true
+
+    NHeader {
+      label: I18n.tr("settings.notifications.sounds.section.label")
+      description: I18n.tr("settings.notifications.sounds.section.description")
+    }
+
+    NToggle {
+      label: I18n.tr("settings.notifications.sounds.enabled.label")
+      description: I18n.tr("settings.notifications.sounds.enabled.description")
+      checked: Settings.data.notifications?.sounds?.enabled ?? false
+      onToggled: checked => Settings.data.notifications.sounds.enabled = checked
+    }
+
+    // Sound Volume
+    ColumnLayout {
+      spacing: Style.marginXXS
+      Layout.fillWidth: true
+      visible: Settings.data.notifications?.sounds?.enabled ?? false
+
+      NLabel {
+        label: I18n.tr("settings.notifications.sounds.volume.label")
+        description: I18n.tr("settings.notifications.sounds.volume.description")
+      }
+
+      NValueSlider {
+        Layout.fillWidth: true
+        from: 0
+        to: 100
+        stepSize: 1
+        value: (Settings.data.notifications?.sounds?.volume ?? 0.5) * 100
+        onMoved: value => Settings.data.notifications.sounds.volume = value / 100
+        text: Math.round((Settings.data.notifications?.sounds?.volume ?? 0.5) * 100) + "%"
+      }
+    }
+
+    // Separate Sounds Toggle
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.notifications?.sounds?.enabled ?? false
+      label: I18n.tr("settings.notifications.sounds.separate.label")
+      description: I18n.tr("settings.notifications.sounds.separate.description")
+      checked: Settings.data.notifications?.sounds?.separateSounds ?? false
+      onToggled: checked => Settings.data.notifications.sounds.separateSounds = checked
+    }
+
+    // Unified Sound File (shown when separateSounds is false)
+    ColumnLayout {
+      spacing: Style.marginXXS
+      Layout.fillWidth: true
+      visible: (Settings.data.notifications?.sounds?.enabled ?? false) && !(Settings.data.notifications?.sounds?.separateSounds ?? false)
+
+      NLabel {
+        label: I18n.tr("settings.notifications.sounds.files.unified.label")
+        description: I18n.tr("settings.notifications.sounds.files.unified.description")
+      }
+
+      NTextInputButton {
+        Layout.fillWidth: true
+        placeholderText: I18n.tr("settings.notifications.sounds.files.placeholder")
+        text: Settings.data.notifications?.sounds?.normalSoundFile ?? ""
+        buttonIcon: "folder-open"
+        buttonTooltip: I18n.tr("settings.notifications.sounds.files.select-file")
+        onInputEditingFinished: {
+          const soundPath = text;
+          Settings.data.notifications.sounds.normalSoundFile = soundPath;
+          Settings.data.notifications.sounds.lowSoundFile = soundPath;
+          Settings.data.notifications.sounds.criticalSoundFile = soundPath;
+        }
+        onButtonClicked: unifiedSoundFilePicker.open()
+      }
+    }
+
+    // Separate Sound Files (shown when separateSounds is true)
+    ColumnLayout {
+      spacing: Style.marginXXS
+      Layout.fillWidth: true
+      visible: (Settings.data.notifications?.sounds?.enabled ?? false) && (Settings.data.notifications?.sounds?.separateSounds ?? false)
+
+      // Low Urgency Sound File
+      ColumnLayout {
+        spacing: Style.marginXXS
+        Layout.fillWidth: true
+
+        NLabel {
+          label: I18n.tr("settings.notifications.sounds.files.low.label")
+          description: I18n.tr("settings.notifications.sounds.files.low.description")
+        }
+
+        NTextInputButton {
+          Layout.fillWidth: true
+          placeholderText: I18n.tr("settings.notifications.sounds.files.placeholder")
+          text: Settings.data.notifications?.sounds?.lowSoundFile ?? ""
+          buttonIcon: "folder-open"
+          buttonTooltip: I18n.tr("settings.notifications.sounds.files.select-file")
+          onInputEditingFinished: Settings.data.notifications.sounds.lowSoundFile = text
+          onButtonClicked: lowSoundFilePicker.open()
+        }
+      }
+
+      // Normal Urgency Sound File
+      ColumnLayout {
+        spacing: Style.marginXXS
+        Layout.fillWidth: true
+
+        NLabel {
+          label: I18n.tr("settings.notifications.sounds.files.normal.label")
+          description: I18n.tr("settings.notifications.sounds.files.normal.description")
+        }
+
+        NTextInputButton {
+          Layout.fillWidth: true
+          placeholderText: I18n.tr("settings.notifications.sounds.files.placeholder")
+          text: Settings.data.notifications?.sounds?.normalSoundFile ?? ""
+          buttonIcon: "folder-open"
+          buttonTooltip: I18n.tr("settings.notifications.sounds.files.select-file")
+          onInputEditingFinished: Settings.data.notifications.sounds.normalSoundFile = text
+          onButtonClicked: normalSoundFilePicker.open()
+        }
+      }
+
+      // Critical Urgency Sound File
+      ColumnLayout {
+        spacing: Style.marginXXS
+        Layout.fillWidth: true
+
+        NLabel {
+          label: I18n.tr("settings.notifications.sounds.files.critical.label")
+          description: I18n.tr("settings.notifications.sounds.files.critical.description")
+        }
+
+        NTextInputButton {
+          Layout.fillWidth: true
+          placeholderText: I18n.tr("settings.notifications.sounds.files.placeholder")
+          text: Settings.data.notifications?.sounds?.criticalSoundFile ?? ""
+          buttonIcon: "folder-open"
+          buttonTooltip: I18n.tr("settings.notifications.sounds.files.select-file")
+          onInputEditingFinished: Settings.data.notifications.sounds.criticalSoundFile = text
+          onButtonClicked: criticalSoundFilePicker.open()
+        }
+      }
+    }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginL
+    Layout.bottomMargin: Style.marginL
+  }
+
   // Duration
   ColumnLayout {
     spacing: Style.marginL
@@ -317,5 +470,61 @@ ColumnLayout {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginL
     Layout.bottomMargin: Style.marginL
+  }
+
+  // File Pickers for Sound Files
+  NFilePicker {
+    id: unifiedSoundFilePicker
+    title: I18n.tr("settings.notifications.sounds.files.unified.select-title")
+    selectionMode: "files"
+    initialPath: Quickshell.env("HOME")
+    nameFilters: ["*.wav", "*.mp3", "*.ogg", "*.flac", "*.m4a", "*.aac"]
+    onAccepted: paths => {
+                  if (paths.length > 0) {
+                    const soundPath = paths[0];
+                    Settings.data.notifications.sounds.normalSoundFile = soundPath;
+                    Settings.data.notifications.sounds.lowSoundFile = soundPath;
+                    Settings.data.notifications.sounds.criticalSoundFile = soundPath;
+                  }
+                }
+  }
+
+  NFilePicker {
+    id: lowSoundFilePicker
+    title: I18n.tr("settings.notifications.sounds.files.low.select-title")
+    selectionMode: "files"
+    initialPath: Quickshell.env("HOME")
+    nameFilters: ["*.wav", "*.mp3", "*.ogg", "*.flac", "*.m4a", "*.aac"]
+    onAccepted: paths => {
+                  if (paths.length > 0) {
+                    Settings.data.notifications.sounds.lowSoundFile = paths[0];
+                  }
+                }
+  }
+
+  NFilePicker {
+    id: normalSoundFilePicker
+    title: I18n.tr("settings.notifications.sounds.files.normal.select-title")
+    selectionMode: "files"
+    initialPath: Quickshell.env("HOME")
+    nameFilters: ["*.wav", "*.mp3", "*.ogg", "*.flac", "*.m4a", "*.aac"]
+    onAccepted: paths => {
+                  if (paths.length > 0) {
+                    Settings.data.notifications.sounds.normalSoundFile = paths[0];
+                  }
+                }
+  }
+
+  NFilePicker {
+    id: criticalSoundFilePicker
+    title: I18n.tr("settings.notifications.sounds.files.critical.select-title")
+    selectionMode: "files"
+    initialPath: Quickshell.env("HOME")
+    nameFilters: ["*.wav", "*.mp3", "*.ogg", "*.flac", "*.m4a", "*.aac"]
+    onAccepted: paths => {
+                  if (paths.length > 0) {
+                    Settings.data.notifications.sounds.criticalSoundFile = paths[0];
+                  }
+                }
   }
 }
