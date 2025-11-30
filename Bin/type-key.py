@@ -81,7 +81,6 @@ def toggle_special_key(name):
     save_state(state)
 
     print(f"[INFO] {name} {'DOWN' if state[name] else 'UP'}")
-    press_key(code, down=state[name])
 
 def apply_layout(key, layout):
     return AZERTY_TO_QWERTY.get(key.lower(), key) if layout == "fr" else key
