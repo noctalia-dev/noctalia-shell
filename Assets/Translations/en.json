@@ -321,6 +321,16 @@
         "only-same-output": {
           "description": "Show only apps from the output where the bar is located.",
           "label": "Only from same output"
+        },
+        "show-title": {
+          "description": "Display window titles in the taskbar.",
+          "description-disabled": "Vertical taskbar does not support showing titles.",
+          "label": "Show title"
+        },
+        "title-width": {
+          "description": "Set the width of window titles in the taskbar (in pixels).",
+          "label": "Title width",
+          "reset-tooltip": "Reset title width"
         }
       },
       "taskbar-grouped": {

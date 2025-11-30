@@ -321,6 +321,16 @@
         "only-same-output": {
           "description": "Mostrar apenas os aplicativos da saída onde a barra está localizada.",
           "label": "Apenas da mesma saída"
+        },
+        "show-title": {
+          "description": "Exibir títulos de janelas na barra de tarefas.",
+          "description-disabled": "A barra de tarefas vertical não suporta exibir títulos.",
+          "label": "Mostrar título"
+        },
+        "title-width": {
+          "description": "Definir a largura dos títulos de janelas na barra de tarefas (em pixels).",
+          "label": "Largura do título",
+          "reset-tooltip": "Redefinir largura do título"
         }
       },
       "taskbar-grouped": {

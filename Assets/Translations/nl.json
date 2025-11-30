@@ -321,6 +321,16 @@
         "only-same-output": {
           "description": "Toon alleen apps van de output waarop de balk zich bevindt.",
           "label": "Alleen van dezelfde output"
+        },
+        "show-title": {
+          "description": "Venster titels weergeven in de taakbalk.",
+          "description-disabled": "Verticale taakbalk ondersteunt geen titelopties.",
+          "label": "Titel weergeven"
+        },
+        "title-width": {
+          "description": "Stel de breedte van venstertitels in de taakbalk in (in pixels).",
+          "label": "Titelbreedte",
+          "reset-tooltip": "Titelbreedte resetten"
         }
       },
       "taskbar-grouped": {

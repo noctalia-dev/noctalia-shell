@@ -321,6 +321,16 @@
         "only-same-output": {
           "description": "Zeige nur Apps von dem Bildschirm, auf dem sich die Taskbar befindet.",
           "label": "Nur vom gleichen Bildschirm"
+        },
+        "show-title": {
+          "description": "Fenstertitel in der Taskleiste anzeigen.",
+          "description-disabled": "Vertikale Taskleiste unterstützt keine Titelanzeige.",
+          "label": "Titel anzeigen"
+        },
+        "title-width": {
+          "description": "Breite der Fenstertitel in der Taskleiste festlegen (in Pixel).",
+          "label": "Titelbreite",
+          "reset-tooltip": "Titelbreite zurücksetzen"
         }
       },
       "taskbar-grouped": {

@@ -321,6 +321,16 @@
         "only-same-output": {
           "description": "仅显示任务栏所在屏幕上的应用程序",
           "label": "仅显示同屏幕"
+        },
+        "show-title": {
+          "description": "在任务栏中显示窗口标题。",
+          "description-disabled": "垂直任务栏不支持显示标题。",
+          "label": "显示标题"
+        },
+        "title-width": {
+          "description": "设置任务栏中窗口标题的宽度（以像素为单位）。",
+          "label": "标题宽度",
+          "reset-tooltip": "重置标题宽度"
         }
       },
       "taskbar-grouped": {

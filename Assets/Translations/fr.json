@@ -321,6 +321,16 @@
         "only-same-output": {
           "description": "Afficher uniquement les applications de la sortie où la barre est située.",
           "label": "Seulement à partir de la même sortie"
+        },
+        "show-title": {
+          "description": "Afficher les titres des fenêtres dans la barre des tâches.",
+          "description-disabled": "La barre des tâches verticale ne prend pas en charge l'affichage des titres.",
+          "label": "Afficher le titre"
+        },
+        "title-width": {
+          "description": "Définir la largeur des titres de fenêtres dans la barre des tâches (en pixels).",
+          "label": "Largeur du titre",
+          "reset-tooltip": "Réinitialiser la largeur du titre"
         }
       },
       "taskbar-grouped": {
