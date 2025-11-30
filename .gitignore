@@ -1,4 +1,16 @@
+# Qt/QML linting
 .qmlls.ini
+
+# IDE configurations
 .zed
-Bin/battery-manager/uninstall-battery-manager.sh
 .idea
+
+# External scripts and tools
+Bin/battery-manager/uninstall-battery-manager.sh
+
+# Generated and cache files
+*.qsb
+*.cache
+*.tmp
+CLAUDE.md
+.serena/
