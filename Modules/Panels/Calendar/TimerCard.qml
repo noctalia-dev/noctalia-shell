@@ -34,6 +34,7 @@ NBox {
     // Fixes "First Time" loop / Race Condition
     function onTimerSoundPlayingChanged() {
       if (Time.timerSoundPlaying && modeTabs.currentIndex === TimerCard.TabMode.Pomodoro) {
+        // Stop only looping sounds (leaving our one-shot from above playing)
         SoundService.stopSound();
         Time.timerSoundPlaying = false;
       }
@@ -538,14 +539,19 @@ NBox {
   function formatTime(seconds, hideHoursWhenZero) {
     const t = getHMS(seconds);
     if (hideHoursWhenZero && t.h === 0) {
-      return `${t.m.toString().padStart(2, '0')}:${t.s.toString().padStart(2, '0')}`;
+      return `${pad(t.m)}:${pad(t.s)}`;
     }
     return formatHMS(t, ":");
   }
 
+  // Standardizes 0-padding
+  function pad(val) {
+    return val.toString().padStart(2, '0');
+  }
+
   // Standardizes combining H/M/S with a separator (or empty string)
   function formatHMS(t, separator) {
-    return `${t.h.toString().padStart(2, '0')}${separator}${t.m.toString().padStart(2, '0')}${separator}${t.s.toString().padStart(2, '0')}`;
+    return `${pad(t.h)}${separator}${pad(t.m)}${separator}${pad(t.s)}`;
   }
 
   // Decomposes total seconds into {h, m, s}
@@ -612,6 +618,7 @@ NBox {
 
   function advancePomodoroPhase() {
     if (isWorkPhase) {
+      // Switch to Break
       if (pomodoroCycle % 4 === 0) {
         setTimerPreset(Settings.data.timer.longBreak * 60);
       } else {
@@ -619,6 +626,7 @@ NBox {
       }
       isWorkPhase = false;
     } else {
+      // Switch to Work
       if (pomodoroCycle % 4 === 0)
         pomodoroCycle = 0;
       pomodoroCycle++;
