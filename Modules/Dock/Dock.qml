@@ -104,35 +104,49 @@ Loader {
         const combined = [];
         const processedAppIds = new Set();
 
-        // Strategy: Maintain app positions as much as possible
-        // 1. First pass: Add all running apps (both pinned and non-pinned) in their current order
-        runningApps.forEach(toplevel => {
-                              if (toplevel && toplevel.appId && !(Settings.data.dock.onlySameOutput && toplevel.screens && !toplevel.screens.includes(modelData))) {
-                                const isPinned = pinnedApps.includes(toplevel.appId);
-                                const appType = isPinned ? "pinned-running" : "running";
+        //push an app onto combined with the given appType
+        function pushApp(appType, toplevel, appId, title) {
+            if (!processedAppIds.has(appId) && !(toplevel && Settings.data.dock.onlySameOutput && toplevel.screens && !toplevel.screens.includes(modelData))) {
+                combined.push({
+                    "type": appType,
+                    "toplevel": toplevel,
+                    "appId": appId,
+                    "title": title
+                });
+                processedAppIds.add(appId);
+            }
+        }
 
-                                combined.push({
-                                                "type": appType,
-                                                "toplevel": toplevel,
-                                                "appId": toplevel.appId,
-                                                "title": toplevel.title
-                                              });
-                                processedAppIds.add(toplevel.appId);
-                              }
-                            });
+        function pushRunning(first) {
+            runningApps.forEach(toplevel => {
+                if (toplevel) {
+                    pushApp((first && pinnedApps.includes(toplevel.appId)) ? "pinned-running" : "running", toplevel, toplevel.appId, toplevel.title);
+                }
+            });
+        }
 
-        // 2. Second pass: Add non-running pinned apps at the end
-        pinnedApps.forEach(pinnedAppId => {
-                             if (!processedAppIds.has(pinnedAppId)) {
-                               // Pinned app that is not running
-                               combined.push({
-                                               "type": "pinned",
-                                               "toplevel": null,
-                                               "appId": pinnedAppId,
-                                               "title": pinnedAppId
-                                             });
-                             }
-                           });
+        function pushPinned() {
+            pinnedApps.forEach(pinnedAppId => {
+                var toplevel = null;
+                for (var app of runningApps) {
+                    if (app.appId === pinnedAppId) {
+                        toplevel = app;
+                    }
+                }
+                pushApp(toplevel ? "pinned-running" : "pinned", toplevel, pinnedAppId, toplevel ? toplevel.title : pinnedAppId);
+            });
+        }
+
+        //if pinnedStatic then push all pinned and then all remaining running apps
+        if (Settings.data.dock.pinnedStatic) {
+            pushPinned();
+            pushRunning(false);
+
+            //else add all running apps and then remaining pinned apps
+        } else {
+            pushRunning(true);
+            pushPinned();
+        }
 
         dockApps = combined;
       }
@@ -391,7 +405,7 @@ Loader {
                         cache: true
 
                         // Dim pinned apps that aren't running
-                        opacity: appButton.isRunning ? 1.0 : 0.6
+                        opacity: appButton.isRunning ? 1.0 : Settings.data.dock.deadOpacity
 
                         scale: appButton.hovered ? 1.15 : 1.0
 
@@ -559,7 +573,7 @@ Loader {
 
                       // Active indicator
                       Rectangle {
-                        visible: isActive
+                        visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive;
                         width: iconSize * 0.2
                         height: iconSize * 0.1
                         color: Color.mPrimary
