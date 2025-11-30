@@ -6,20 +6,20 @@ import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
 import qs.Widgets
+import qs.Services.Compositor
 
 PopupWindow {
   id: root
 
-  property var toplevel: null
+  property var menuData: null 
+  property string menuType: "workspace" 
   property Item anchorItem: null
 
   property bool hovered: menuMouseArea.containsMouse
-  property var onAppClosed: null // Callback function for when an app is closed
+  property var onAppClosed: null
   property bool canAutoClose: false
 
-  // Track which menu item is hovered
-  property int hoveredItem: -1 // -1: none, otherwise the index of the item in `items`
-
+  property int hoveredItem: -1
   property var items: []
 
   signal requestClose
@@ -30,56 +30,69 @@ PopupWindow {
   visible: false
 
   function initItems() {
-    // Is this a running app?
-    const isRunning = root.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(root.toplevel);
-
-    // Is this a pinned app?
-    const isPinned = root.toplevel && root.isAppPinned(root.toplevel.appId);
-
     var next = [];
-    if (isRunning) {
-      // Focus item
-      next.push({
-                  "icon": "eye",
-                  "text": I18n.tr("dock.menu.focus"),
-                  "action": function () {
-                    handleFocus();
-                  }
-                });
+    
+    if (menuType === "pinned") {
+        next.push({
+            "icon": "plus",
+            "text": "New Instance",
+            "action": function () {
+                Quickshell.execDetached(["gtk-launch", menuData]); 
+                root.requestClose();
+            }
+        });
+        
+        next.push({
+            "icon": "unpin",
+            "text": I18n.tr("dock.menu.unpin"),
+            "action": function () {
+                handlePin(menuData);
+            }
+        });
+    } 
+    else if (menuType === "workspace") {
+        const appId = menuData.appId;
+        const isPinned = root.isAppPinned(appId);
+        
+        next.push({
+            "icon": "eye",
+            "text": I18n.tr("dock.menu.focus"),
+            "action": function () {
+                handleFocus();
+            }
+        });
+
+        next.push({
+            "icon": !isPinned ? "pin" : "unpin",
+            "text": !isPinned ? I18n.tr("dock.menu.pin") : I18n.tr("dock.menu.unpin"),
+            "action": function () {
+                handlePin(appId);
+            }
+        });
+
+        next.push({
+            "icon": "close",
+            "text": I18n.tr("dock.menu.close"),
+            "action": function () {
+                handleClose();
+            }
+        });
     }
 
-    // Pin/Unpin item
-    next.push({
-                "icon": !isPinned ? "pin" : "unpin",
-                "text": !isPinned ? I18n.tr("dock.menu.pin") : I18n.tr("dock.menu.unpin"),
-                "action": function () {
-                  handlePin();
-                }
-              });
-
-    if (isRunning) {
-      // Close item
-      next.push({
-                  "icon": "close",
-                  "text": I18n.tr("dock.menu.close"),
-                  "action": function () {
-                    handleClose();
-                  }
-                });
-    }
-
-    // Create a menu entry for each app-specific action definied in its .desktop file
-    if (typeof DesktopEntries !== 'undefined' && DesktopEntries.byId) {
-      const entry = (DesktopEntries.heuristicLookup) ? DesktopEntries.heuristicLookup(appId) : DesktopEntries.byId(appId);
+    const targetAppId = (menuType === "pinned") ? menuData : menuData?.appId;
+    
+    if (targetAppId && typeof DesktopEntries !== 'undefined' && DesktopEntries.byId) {
+      const entry = (DesktopEntries.heuristicLookup) ? DesktopEntries.heuristicLookup(targetAppId) : DesktopEntries.byId(targetAppId);
       if (entry != null) {
         entry.actions.forEach(function (action) {
           next.push({
-                      "icon": "",
-                      "text": action.name,
-                      "action": function () {
-                        action.execute();
-                      }
-                    });
+            "icon": "",
+            "text": action.name,
+            "action": function () {
+              action.execute();
+              root.requestClose();
+            }
+          });
         });
       }
     }
@@ -87,29 +100,22 @@ PopupWindow {
     root.items = next;
   }
 
-  // Helper functions for pin/unpin functionality
   function isAppPinned(appId) {
-    if (!appId)
-      return false;
+    if (!appId) return false;
     const pinnedApps = Settings.data.dock.pinnedApps || [];
     return pinnedApps.includes(appId);
   }
 
   function toggleAppPin(appId) {
-    if (!appId)
-      return;
-    let pinnedApps = (Settings.data.dock.pinnedApps || []).slice(); // Create a copy
+    if (!appId) return;
+    let pinnedApps = (Settings.data.dock.pinnedApps || []).slice();
     const isPinned = pinnedApps.includes(appId);
 
     if (isPinned) {
-      // Unpin: remove from array
       pinnedApps = pinnedApps.filter(id => id !== appId);
     } else {
-      // Pin: add to array
       pinnedApps.push(appId);
     }
-
-    // Update the settings
     Settings.data.dock.pinnedApps = pinnedApps;
   }
 
@@ -117,13 +123,12 @@ PopupWindow {
   anchor.rect.x: anchorItem ? (anchorItem.width - implicitWidth) / 2 : 0
   anchor.rect.y: anchorItem ? -implicitHeight - (Style.marginM) : 0
 
-  function show(item, toplevelData) {
-    if (!item) {
-      return;
-    }
+  function show(item, data, type) {
+    if (!item) return;
 
     anchorItem = item;
-    toplevel = toplevelData;
+    menuData = data;
+    menuType = type || "workspace";
     initItems();
     visible = true;
     canAutoClose = false;
@@ -135,40 +140,33 @@ PopupWindow {
     root.items.length = 0;
   }
 
-  // Helper function to determine which menu item is under the mouse
   function getHoveredItem(mouseY) {
     const itemHeight = 32;
     const startY = Style.marginM;
     const relativeY = mouseY - startY;
-
-    if (relativeY < 0)
-      return -1;
-
+    if (relativeY < 0) return -1;
     const itemIndex = Math.floor(relativeY / itemHeight);
     return itemIndex >= 0 && itemIndex < root.items.length ? itemIndex : -1;
   }
 
   function handleFocus() {
-    if (root.toplevel?.activate) {
-      root.toplevel.activate();
+    if (root.menuData) {
+      CompositorService.focusWindow(root.menuData);
     }
     root.requestClose();
   }
 
-  function handlePin() {
-    if (root.toplevel?.appId) {
-      root.toggleAppPin(root.toplevel.appId);
+  function handlePin(targetId) {
+    if (targetId) {
+      root.toggleAppPin(targetId);
     }
     root.requestClose();
   }
 
   function handleClose() {
-    // Check if toplevel is still valid before trying to close it
-    const isValidToplevel = root.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(root.toplevel);
-
-    if (isValidToplevel && root.toplevel.close) {
-      root.toplevel.close();
-      // Trigger immediate dock update callback if provided
+    if (root.menuData) {
+      CompositorService.closeWindow(root.menuData);
+      
       if (root.onAppClosed && typeof root.onAppClosed === "function") {
         Qt.callLater(root.onAppClosed);
       }
@@ -177,7 +175,6 @@ PopupWindow {
     root.requestClose();
   }
 
-  // Short delay to ignore spurious events
   Timer {
     id: gracePeriodTimer
     interval: 1500
@@ -207,7 +204,6 @@ PopupWindow {
     border.color: Color.mOutline
     border.width: Style.borderS
 
-    // Single MouseArea to handle both auto-close and menu interactions
     MouseArea {
       id: menuMouseArea
       anchors.fill: parent
@@ -221,21 +217,20 @@ PopupWindow {
       onExited: {
         root.hoveredItem = -1;
         if (root.canAutoClose) {
-          // Only close if grace period has passed
           closeTimer.start();
         }
       }
 
       onPositionChanged: mouse => {
-                           root.hoveredItem = root.getHoveredItem(mouse.y);
-                         }
+        root.hoveredItem = root.getHoveredItem(mouse.y);
+      }
 
       onClicked: mouse => {
-                   const clickedItem = root.getHoveredItem(mouse.y);
-                   if (clickedItem >= 0) {
-                     root.items[clickedItem].action.call();
-                   }
-                 }
+        const clickedItem = root.getHoveredItem(mouse.y);
+        if (clickedItem >= 0) {
+          root.items[clickedItem].action.call();
+        }
+      }
     }
 
     ColumnLayout {
