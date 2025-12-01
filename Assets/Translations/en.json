@@ -1695,6 +1695,11 @@
           "description": "Configure notification sound effects and volume.",
           "label": "Sound settings"
         },
+        "excluded-apps": {
+          "description": "Skip playing the configured notification sound for specific applications that have their own built-in sounds.",
+          "label": "Excluded applications",
+          "placeholder": "discord,firefox,chrome,chromium,edge"
+        },
         "separate": {
           "description": "Use different sound files for low, normal, and critical priority notifications.",
           "label": "Use different sounds per priority"

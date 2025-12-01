@@ -1692,6 +1692,11 @@
         "volume": {
           "description": "Ajuster le niveau de volume pour les sons de notification.",
           "label": "Volume sonore"
+        },
+        "excluded-apps": {
+          "description": "Ne pas jouer le son de notification configuré pour les applications spécifiques qui ont leurs propres sons intégrés.",
+          "label": "Applications exclues",
+          "placeholder": "discord,firefox,chrome,chromium,edge"
         }
       },
       "toast": {

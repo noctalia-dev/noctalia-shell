@@ -1692,6 +1692,11 @@
         "volume": {
           "description": "Ajustar el nivel de volumen para los sonidos de notificación.",
           "label": "Volumen del sonido"
+        },
+        "excluded-apps": {
+          "description": "Omitir la reproducción del sonido de notificación configurado para aplicaciones específicas que tienen sus propios sonidos integrados.",
+          "label": "Aplicaciones excluidas",
+          "placeholder": "discord,firefox,chrome,chromium,edge"
         }
       },
       "toast": {

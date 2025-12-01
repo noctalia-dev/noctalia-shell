@@ -182,7 +182,7 @@ Singleton {
     addToHistory(data);
 
     // Play notification sound if enabled (before checking for existing notifications)
-    playNotificationSound(data.urgency);
+    playNotificationSound(data.urgency, notification.appName);
 
     if (root.doNotDisturb || PowerProfileService.noctaliaPerformanceMode)
       return;
@@ -205,7 +205,7 @@ Singleton {
   }
 
   // Function to play notification sound using existing SoundService
-  function playNotificationSound(urgency) {
+  function playNotificationSound(urgency, appName) {
     // Check if notification sounds are enabled
     if (!Settings.data.notifications?.sounds?.enabled) {
       return;
@@ -214,6 +214,20 @@ Singleton {
     // Always respect do not disturb mode
     if (root.doNotDisturb) {
       return;
+    }
+
+    // Check if this app should be excluded
+    if (appName) {
+      const excludedApps = Settings.data.notifications.sounds.excludedApps || "";
+      if (excludedApps.trim() !== "") {
+        const excludedList = excludedApps.toLowerCase().split(',').map(app => app.trim());
+        const normalizedName = appName.toLowerCase();
+
+        if (excludedList.includes(normalizedName)) {
+          Logger.i("NotificationService", `Skipping sound for excluded app: ${appName}`);
+          return;
+        }
+      }
     }
 
     // Check if system is muted

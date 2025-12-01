@@ -490,6 +490,7 @@ Singleton {
         property string criticalSoundFile: ""
         property string normalSoundFile: ""
         property string lowSoundFile: ""
+        property string excludedApps: "discord,firefox,chrome,chromium,edge"
       }
     }
 

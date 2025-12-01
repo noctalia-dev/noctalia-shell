@@ -306,7 +306,8 @@
       "separateSounds": false,
       "criticalSoundFile": "",
       "normalSoundFile": "",
-      "lowSoundFile": ""
+      "lowSoundFile": "",
+      "excludedApps": "discord,firefox,chrome,chromium,edge"
     }
   },
   "osd": {

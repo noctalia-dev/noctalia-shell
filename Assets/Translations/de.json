@@ -1692,6 +1692,11 @@
         "volume": {
           "description": "Lautstärke für Benachrichtigungstöne anpassen.",
           "label": "Sound-Lautstärke"
+        },
+        "excluded-apps": {
+          "description": "Überspringen Sie das Abspielen der konfigurierten Benachrichtigungstöne für bestimmte Anwendungen, die ihre eigenen integrierten Töne haben.",
+          "label": "Ausgeschlossene Anwendungen",
+          "placeholder": "discord,firefox,chrome,chromium,edge"
         }
       },
       "toast": {

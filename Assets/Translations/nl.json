@@ -1692,6 +1692,11 @@
         "volume": {
           "description": "Pas het volumeniveau aan voor meldingsgeluiden.",
           "label": "Geluidsvolume"
+        },
+        "excluded-apps": {
+          "description": "Sla het afspelen van het geconfigureerde notificatiegeluid over voor specifieke applicaties die hun eigen ingebouwde geluiden hebben.",
+          "label": "Uitgesloten applicaties",
+          "placeholder": "discord,firefox,chrome,chromium,edge"
         }
       },
       "toast": {

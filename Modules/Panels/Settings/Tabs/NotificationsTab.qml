@@ -264,6 +264,25 @@ ColumnLayout {
     }
   }
 
+  // Excluded Apps List
+  ColumnLayout {
+    spacing: Style.marginXXS
+    Layout.fillWidth: true
+    visible: Settings.data.notifications?.sounds?.enabled ?? false
+
+    NLabel {
+      label: I18n.tr("settings.notifications.sounds.excluded-apps.label")
+      description: I18n.tr("settings.notifications.sounds.excluded-apps.description")
+    }
+
+    NTextInput {
+      Layout.fillWidth: true
+      placeholderText: I18n.tr("settings.notifications.sounds.excluded-apps.placeholder")
+      text: Settings.data.notifications?.sounds?.excludedApps ?? ""
+      onEditingFinished: Settings.data.notifications.sounds.excludedApps = text
+    }
+  }
+
   NDivider {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginL

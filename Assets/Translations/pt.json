@@ -1692,6 +1692,11 @@
         "volume": {
           "description": "Ajustar o nível de volume para sons de notificação.",
           "label": "Volume do som"
+        },
+        "excluded-apps": {
+          "description": "Pular a reprodução do som de notificação configurado para aplicativos específicos que têm seus próprios sons integrados.",
+          "label": "Aplicativos excluídos",
+          "placeholder": "discord,firefox,chrome,chromium,edge"
         }
       },
       "toast": {

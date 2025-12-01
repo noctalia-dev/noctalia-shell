@@ -1692,6 +1692,11 @@
         "volume": {
           "description": "Bildirim sesleri için ses seviyesini ayarlayın.",
           "label": "Ses seviyesi"
+        },
+        "excluded-apps": {
+          "description": "Kendi dahili seslerine sahip belirli uygulamalar için ayarlanan bildirim sesini çalmayı es geçin.",
+          "label": "Hariç tutulan uygulamalar",
+          "placeholder": "discord,firefox,chrome,chromium,edge"
         }
       },
       "toast": {

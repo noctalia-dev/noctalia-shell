@@ -1692,6 +1692,11 @@
         "volume": {
           "description": "调整通知声音的音量级别。",
           "label": "声音音量"
+        },
+        "excluded-apps": {
+          "description": "跳过播放具有自己内置声音的特定应用程序的配置通知声音。",
+          "label": "排除的应用程序",
+          "placeholder": "discord,firefox,chrome,chromium,edge"
         }
       },
       "toast": {
