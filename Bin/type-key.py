@@ -9,7 +9,8 @@ import glob
 # ---------- CONSTANTS ----------
 SPECIAL_KEYS = {
     "return": 28, "space": 57, "tab": 15, "backspace": 14, "esc": 1,
-    "left": 105, "up": 103, "right": 106, "down": 108, "caps": 58, "*": 55
+    "left": 105, "up": 103, "right": 106, "down": 108, "caps": 58, "*": 55,
+    "backslash": 43, "grave": 41
 }
 
 MODIFIER_KEYS = {
@@ -56,14 +57,6 @@ def check_ydotool_service():
     except:
         sys.exit("[ERROR] Could not manage ydotool service")
 
-def get_keyboard_layout():
-    try:
-        out = subprocess.check_output(["localectl", "status"], text=True)
-        match = re.search(r"Layout:\s+(\w+)", out)
-        return match.group(1).lower() if match else "unknown"
-    except:
-        return "unknown"
-
 # ---------- KEY ACTIONS ----------
 def press_key(code, down=True):
     run(["ydotool", "key", f"{code}:{1 if down else 0}"])
@@ -86,8 +79,7 @@ def apply_layout(key, layout):
     return AZERTY_TO_QWERTY.get(key.lower(), key) if layout == "fr" else key
 
 # ---------- SEND KEY ----------
-def send_key(key, modifiers):
-    layout = get_keyboard_layout()
+def send_key(layout, key, modifiers):
     _key = apply_layout(key, layout)
 
     # Auto-apply toggled modifiers
@@ -146,12 +138,13 @@ if __name__ == "__main__":
         print("Usage: python type-key.py <key_or_text> [modifiers...]")
         sys.exit(1)
 
-    key = sys.argv[1]
-    mods = [m.lower() for m in sys.argv[2:]]
+    layout = sys.argv[1]
+    key = sys.argv[2]
+    mods = [m.lower() for m in sys.argv[3:]]
 
     if key == "reset":
         reset()
         sys.exit(0)
 
     check_ydotool_service()
-    send_key(key.lower(), mods)
+    send_key(layout, key.lower(), mods)
