@@ -804,7 +804,7 @@
       "virtual-keyboard": {
         "section": {
           "label": "Clavier Virtuel",
-          "description": "Paramètres du clavier virtuel."
+          "description": "Paramètres du clavier virtuel. Requiers le paquet : ydotool"
         },
         "position": {
           "label": "Position du Clavier Virtuel",
