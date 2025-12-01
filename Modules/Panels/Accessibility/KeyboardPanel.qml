@@ -90,7 +90,7 @@ SmartPanel {
             { key: "caps", width: 90, txt: "", shift: "" }, { key: "Q", width: 60, txt: "Q", shift: "Q" }, { key: "S", width: 60, txt: "S", shift: "S" }, { key: "D", width: 60, txt: "D", shift: "D" },
             { key: "F", width: 60, txt: "F", shift: "F" }, { key: "G", width: 60, txt: "G", shift: "G" }, { key: "H", width: 60, txt: "H", shift: "H" }, { key: "J", width: 60, txt: "J", shift: "J" },
             { key: "K", width: 60, txt: "K", shift: "K" }, { key: "L", width: 60, txt: "L", shift: "L" }, { key: "M", width: 60, txt: "M", shift: "M" }, { key: "ù", width: 60, txt: "ù", shift: "%" },
-            { key: "*", width: 60, txt: "*", shift: "*" }, { key: "return", width: 100, txt: "", shift: "" }
+            { key: "*", width: 60, txt: "*", shift: "µ" }, { key: "return", width: 100, txt: "", shift: "" }
         ],
         // line 4
         [
