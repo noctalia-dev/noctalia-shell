@@ -146,7 +146,7 @@ SmartPanel {
                                         color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mOnSurface : Color.mSurfaceVariant
                                     }
                                     keyText.color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mSurfaceVariant : Color.mOnSurface
-                                    keyText.text = (root.activeModifiers["shift"] || root.capsON) ? modelData.shift : modelData.txt
+                                    keyText.text = (root.activeModifiers["shift"] || root.capsON === true) ? modelData.shift : modelData.txt
                                 }
                             }
 
