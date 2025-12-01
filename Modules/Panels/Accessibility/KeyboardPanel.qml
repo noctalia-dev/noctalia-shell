@@ -141,7 +141,7 @@ SmartPanel {
                             Timer {
                                 interval: 200; running: true; repeat: true
                                 onTriggered: {
-                                    if (modelData.key in root.activeModifiers) {
+                                    if (modelData.key in root.activeModifiers || modelData.key ===  "caps") {
                                         color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mOnSurface : Color.mSurfaceVariant
                                     }
                                     keyText.color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mSurfaceVariant : Color.mOnSurface
