@@ -8,8 +8,9 @@ import qs.Widgets
 import qs.Services.Keyboard
 
 SmartPanel {
-    id: root
-    panelAnchorBottom: true
+    id: root    
+    panelAnchorBottom: Settings.data.virtualKeyboard.keyboardLocation === "bottom" ? true : false
+    panelAnchorTop: Settings.data.virtualKeyboard.keyboardLocation === "top" ? true : false
     panelAnchorHorizontalCenter: true
     preferredWidth: Math.round(1100 * Style.uiScaleRatio)
     preferredHeight: Math.round(800 * Style.uiScaleRatio)

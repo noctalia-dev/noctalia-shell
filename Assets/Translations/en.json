@@ -530,6 +530,14 @@
     }
   },
   "options": {
+    "accessibility": {
+      "virtual-keyboard": {
+        "position": {
+          "top": "Top",
+          "bottom": "Bottom"
+        }
+      }
+    },
     "bar": {
       "density": {
         "comfortable": "Comfortable",
@@ -786,6 +794,30 @@
     "title": "Session Menu"
   },
   "settings": {
+    "accessibility": {
+      "general": {
+        "section": {
+          "label": "Accessibility",
+          "description": "Various accessibility settings."
+        }
+      },
+      "virtual-keyboard": {
+        "section": {
+          "label": "Virtual Keyboard",
+          "description": "Settings for the Virtual Keyboard."
+        },
+        "position": {
+          "label": "Virtual Keyboard position",
+          "description": "Where the Virtual Keyboard should be on screen."
+        },
+        "selector": {
+          "label": "Toggle Virtual Keyboard",
+          "description": "This button is availiable as a Bar Widget.",
+          "tooltip": "Open Virtual Keyboard"
+        }
+      },
+      "title": "Accessibility"
+    },
     "about": {
       "contributors": {
         "section": {

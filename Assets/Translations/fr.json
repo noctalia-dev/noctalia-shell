@@ -530,6 +530,14 @@
     }
   },
   "options": {
+    "accessibility": {
+      "virtual-keyboard": {
+        "position": {
+          "top": "En haut",
+          "bottom": "En bas"
+        }
+      }
+    },
     "bar": {
       "density": {
         "comfortable": "Confortable",
@@ -786,6 +794,30 @@
     "title": "Menu de session"
   },
   "settings": {
+    "accessibility": {
+      "general": {
+        "section": {
+          "label": "Accessibilité",
+          "description": "Divers options d'accessibilité."
+        }
+      },
+      "virtual-keyboard": {
+        "section": {
+          "label": "Clavier Virtuel",
+          "description": "Paramètres du clavier virtuel."
+        },
+        "position": {
+          "label": "Position du Clavier Virtuel",
+          "description": "Où le Clavier Virtuel devrait se trouver sur l'écran."
+        },
+        "selector": {
+          "label": "Activer le Clavier Virtuel",
+          "description": "Ce bouton est disponible comme Widget dans la Bar.",
+          "tooltip": "Ouvrir le Clavier Virtuel"
+        }
+      },
+      "title": "Accessibilité"
+    },
     "about": {
       "contributors": {
         "section": {

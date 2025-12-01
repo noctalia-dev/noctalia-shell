@@ -80,6 +80,7 @@ SmartPanel {
     SessionMenu,
     SystemMonitor,
     UserInterface,
+    Accessiblity,
     Wallpaper
   }
 
@@ -171,6 +172,11 @@ SmartPanel {
   Component {
     id: systemMonitorTab
     SystemMonitorTab {}
+  }
+
+  Component {
+    id: accessibilityTab
+    AccessibilityTab {}
   }
 
   // Order *DOES* matter
@@ -283,6 +289,12 @@ SmartPanel {
             "label": "settings.system-monitor.title",
             "icon": "settings-system-monitor",
             "source": systemMonitorTab
+          },
+          {
+            "id": SettingsPanel.Tab.AccessibilityTab,
+            "label": "settings.accessibility.title",
+            "icon": "settings-heart",
+            "source": accessibilityTab
           },
           {
             "id": SettingsPanel.Tab.Hooks,

@@ -298,6 +298,11 @@ Singleton {
       property string videoSource: "portal"
     }
 
+    // virtual keyboard
+    property JsonObject virtualKeyboard: JsonObject {
+      property string keyboardLocation: "bottom"
+    } 
+
     // wallpaper
     property JsonObject wallpaper: JsonObject {
       property bool enabled: true
