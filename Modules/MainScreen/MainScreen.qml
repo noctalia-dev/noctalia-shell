@@ -10,7 +10,6 @@ import qs.Commons
 // All panels
 import qs.Modules.Bar
 import qs.Modules.Bar.Extras
-import qs.Modules.Panels.Accessibility
 import qs.Modules.Panels.Audio
 import qs.Modules.Panels.Battery
 import qs.Modules.Panels.Bluetooth
@@ -51,7 +50,6 @@ PanelWindow {
   readonly property alias trayDrawerPanel: trayDrawerPanel
   readonly property alias wallpaperPanel: wallpaperPanel
   readonly property alias wifiPanel: wifiPanel
-  readonly property alias keyboardPanel: keyboardPanel
 
   // Expose panel backgrounds for AllBackgrounds
   readonly property var audioPanelPlaceholder: audioPanel.panelRegion
@@ -69,7 +67,6 @@ PanelWindow {
   readonly property var trayDrawerPanelPlaceholder: trayDrawerPanel.panelRegion
   readonly property var wallpaperPanelPlaceholder: wallpaperPanel.panelRegion
   readonly property var wifiPanelPlaceholder: wifiPanel.panelRegion
-  readonly property var keyboardPanelPlaceholder: keyboardPanel.panelRegion
 
   Component.onCompleted: {
     Logger.d("MainScreen", "Initialized for screen:", screen?.name, "- Dimensions:", screen?.width, "x", screen?.height, "- Position:", screen?.x, ",", screen?.y);
@@ -80,11 +77,17 @@ PanelWindow {
   WlrLayershell.namespace: "noctalia-background-" + (screen?.name || "unknown")
   WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone handles that
   WlrLayershell.keyboardFocus: {
-    if (!root.isPanelOpen) {
-      return WlrKeyboardFocus.None;
-    }
-    return PanelService.openedPanel.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : PanelService.openedPanel.hasFocus ? WlrKeyboardFocus.onDemand : WlrKeyboardFocus.None;
+    const p = PanelService.openedPanel;
+
+    if (!root.isPanelOpen || !p)
+        return WlrKeyboardFocus.None;
+
+    if (Settings.data.virtualKeyboard.enabled)
+        return Settings.data.virtualKeyboard.clicking ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None;
+
+    return p.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.onDemand;
   }
+
 
   anchors {
     top: true
@@ -188,7 +191,7 @@ PanelWindow {
     // Active whenever a panel is open - the mask ensures it only receives clicks when panel is open
     MouseArea {
       anchors.fill: parent
-      enabled: root.isPanelOpen
+      enabled: root.isPanelOpen && PanelService.openedPanel && !PanelService.openedPanel.mouseOnVirtualKeyboard
       acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
       onClicked: mouse => {
                    if (PanelService.openedPanel) {
@@ -246,13 +249,6 @@ PanelWindow {
     CalendarPanel {
       id: calendarPanel
       objectName: "calendarPanel-" + (root.screen?.name || "unknown")
-      screen: root.screen
-      z: 50
-    }
-    
-    KeyboardPanel {
-      id: keyboardPanel
-      objectName: "keyboardPanel-" + (root.screen?.name || "unknown")
       screen: root.screen
       z: 50
     }

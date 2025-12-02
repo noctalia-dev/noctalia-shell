@@ -812,7 +812,7 @@
         },
         "selector": {
           "label": "Activer le Clavier Virtuel",
-          "description": "Ce bouton est disponible comme Widget dans la Bar.",
+          "description": "Ce bouton est aussi disponible comme Widget dans la Barre.",
           "tooltip": "Ouvrir le Clavier Virtuel"
         }
       },

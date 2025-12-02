@@ -55,10 +55,7 @@ Item {
   IpcHandler {
     target: "keyboard"
     function toggle() {
-      root.withTargetScreen(screen => {
-                              var keyboardPanel = PanelService.getPanel("keyboardPanel", screen);
-                              keyboardPanel?.toggle();
-                            });
+      Settings.data.virtualKeyboard.enabled = !Settings.data.virtualKeyboard.enabled
     }
   }
 

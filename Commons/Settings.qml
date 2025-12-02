@@ -300,7 +300,8 @@ Singleton {
 
     // virtual keyboard
     property JsonObject virtualKeyboard: JsonObject {
-      property string keyboardLocation: "bottom"
+      property bool enabled: true
+      property bool clicking: true
     } 
 
     // wallpaper

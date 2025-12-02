@@ -17,6 +17,7 @@ import qs.Commons
 import qs.Modules.Background
 import qs.Modules.Bar
 import qs.Modules.Dock
+import qs.Modules.Accessibility
 import qs.Modules.LockScreen
 import qs.Modules.MainScreen
 import qs.Modules.Notification
@@ -108,6 +109,7 @@ ShellRoot {
       Background {}
       AllScreens {}
       Dock {}
+      VirtualKeyboard {}
       Notification {}
       ToastOverlay {}
       OSD {}

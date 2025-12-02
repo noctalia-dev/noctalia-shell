@@ -13,8 +13,7 @@ NIconButton {
     MouseArea {
         anchors.fill: parent
         onPressed: {
-            var panel = PanelService.getPanel("keyboardPanel", screen);
-            panel?.toggle();
+            Settings.data.virtualKeyboard.enabled = !Settings.data.virtualKeyboard.enabled
             Logger.i("Keyboard", "Virtual Keyboard Toggled")
         }
     }

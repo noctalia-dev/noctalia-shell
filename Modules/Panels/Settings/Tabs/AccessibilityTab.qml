@@ -28,25 +28,7 @@ ColumnLayout {
         label: I18n.tr("settings.accessibility.virtual-keyboard.section.label")
         description: I18n.tr("settings.accessibility.virtual-keyboard.section.description")
         }
-
-        // Source
-        NComboBox {
-        label: I18n.tr("settings.accessibility.virtual-keyboard.position.label")
-        description: I18n.tr("settings.accessibility.virtual-keyboard.position.description")
-        model: [
-            {
-            "key": "top",
-            "name": I18n.tr("options.accessibility.virtual-keyboard.position.top")
-            },
-            {
-            "key": "bottom",
-            "name": I18n.tr("options.accessibility.virtual-keyboard.position.bottom")
-            }
-        ]
-        currentKey: Settings.data.virtualKeyboard.keyboardLocation
-        onSelected: key => Settings.data.virtualKeyboard.keyboardLocation = key
-        }
-        
+           
         RowLayout {
             NLabel {
                 label: I18n.tr("settings.accessibility.virtual-keyboard.selector.label")
@@ -57,7 +39,7 @@ ColumnLayout {
             NIconButton {
                 icon: "keyboard"
                 tooltipText: I18n.tr("settings.accessibility.virtual-keyboard.selector.tooltip")
-                onClicked: PanelService.getPanel("keyboardPanel", screen)?.toggle()
+                onClicked: Settings.data.virtualKeyboard.enabled = !Settings.data.virtualKeyboard.enabled
             }
             }
     }

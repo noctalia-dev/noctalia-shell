@@ -812,7 +812,7 @@
         },
         "selector": {
           "label": "Toggle Virtual Keyboard",
-          "description": "This button is availiable as a Bar Widget.",
+          "description": "This button is also availiable as a Bar Widget.",
           "tooltip": "Open Virtual Keyboard"
         }
       },
