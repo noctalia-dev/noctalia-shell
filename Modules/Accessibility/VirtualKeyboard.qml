@@ -112,42 +112,10 @@ Loader {
                         right: true
                     }
                     margins {
-                        left: {
-                            for (var displayName in CompositorService.displayScales) {
-                                for (var value in CompositorService.displayScales[displayName]) {
-                                    if (value == "width") {
-                                        return (CompositorService.displayScales[displayName][value] * 20/100 - screen.x)
-                                    }
-                                }
-                            }
-                        } 
-                        right: {
-                            for (var displayName in CompositorService.displayScales) {
-                                for (var value in CompositorService.displayScales[displayName]) {
-                                    if (value == "width") {
-                                        return (CompositorService.displayScales[displayName][value] * 20/100 + screen.x)
-                                    }
-                                }
-                            }
-                        } 
-                        top: {
-                            for (var displayName in CompositorService.displayScales) {
-                                for (var value in CompositorService.displayScales[displayName]) {
-                                    if (value == "height") {
-                                        return (CompositorService.displayScales[displayName][value] * 30/100 + screen.y)
-                                    }
-                                }
-                            }
-                        } 
-                        bottom: {
-                            for (var displayName in CompositorService.displayScales) {
-                                for (var value in CompositorService.displayScales[displayName]) {
-                                    if (value == "height") {
-                                        return (CompositorService.displayScales[displayName][value] * 30/100 - screen.y)
-                                    }
-                                }
-                            }
-                        }
+                        left: screen.width * 20/100 - screen.x
+                        right: screen.width * 20/100 + screen.x
+                        top: screen.height * 30/100 + screen.y
+                        bottom: screen.height * 30/100 - screen.y
                     }
                     color: Color.transparent
 
