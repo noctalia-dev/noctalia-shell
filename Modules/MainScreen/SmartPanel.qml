@@ -66,7 +66,7 @@ Item {
   // Close with escape key
   property bool closeWithEscape: true
 
-  property bool exclusiveKeyboard: true 
+  property bool exclusiveKeyboard: true
   
   // Keyboard event handlers - override these in specific panels to handle shortcuts
   // These are called from MainScreen's centralized shortcuts

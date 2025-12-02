@@ -191,7 +191,7 @@ PanelWindow {
     // Active whenever a panel is open - the mask ensures it only receives clicks when panel is open
     MouseArea {
       anchors.fill: parent
-      enabled: root.isPanelOpen && PanelService.openedPanel && !PanelService.openedPanel.mouseOnVirtualKeyboard
+      enabled: root.isPanelOpen
       acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
       onClicked: mouse => {
                    if (PanelService.openedPanel) {
