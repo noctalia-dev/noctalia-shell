@@ -6,200 +6,230 @@ import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
 import qs.Widgets
+import qs.Services.Compositor
 
 PopupWindow {
   id: root
 
-  property var toplevel: null
+  property var menuData: null 
+  property string menuType: "workspace" 
   property Item anchorItem: null
 
+  // --- New Properties for Move Logic ---
+  property int pinnedIndex: -1
+  property int totalPinnedCount: 0
+  property string menuView: "main" 
+  signal requestMove(int offset)
+  // -------------------------------------
+
   property bool hovered: menuMouseArea.containsMouse
-  property var onAppClosed: null // Callback function for when an app is closed
+  property var onAppClosed: null
   property bool canAutoClose: false
 
-  // Track which menu item is hovered
-  property int hoveredItem: -1 // -1: none, otherwise the index of the item in `items`
-
+  property int hoveredItem: -1
   property var items: []
 
   signal requestClose
 
-  property real menuContentWidth: 160
-
-  implicitWidth: Math.max(160, menuContentWidth + (Style.marginM * 2))
+  implicitWidth: Math.max(160, contextMenuColumn.implicitWidth)
   implicitHeight: contextMenuColumn.implicitHeight + (Style.marginM * 2)
   color: Color.transparent
   visible: false
 
-  // Hidden text element for measuring text width
-  NText {
-    id: textMeasure
-    visible: false
-    pointSize: Style.fontSizeS
-    wrapMode: Text.NoWrap
-    elide: Text.ElideNone
-  }
-
-  // Calculate the maximum width needed for all menu items
-  function calculateMenuWidth() {
-    let maxWidth = 0;
-    if (root.items && root.items.length > 0) {
-      for (let i = 0; i < root.items.length; i++) {
-        const item = root.items[i];
-        if (item) {
-          // Calculate width: margins + icon (if present) + spacing + text width
-          let itemWidth = Style.marginS * 2; // left and right margins
-          if (item.icon && item.icon !== "") {
-            itemWidth += Style.fontSizeL + Style.marginS; // icon + spacing
-          }
-          // Measure actual text width
-          textMeasure.text = item.text || "";
-          textMeasure.forceLayout();
-          itemWidth += textMeasure.contentWidth;
-          if (itemWidth > maxWidth) {
-            maxWidth = itemWidth;
-          }
-        }
-      }
-    }
-    menuContentWidth = Math.max(160, maxWidth);
-  }
-
   function initItems() {
-    // Is this a running app?
-    const isRunning = root.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(root.toplevel);
-
-    // Is this a pinned app?
-    const isPinned = root.toplevel && root.isAppPinned(root.toplevel.appId);
-
     var next = [];
-    if (isRunning) {
-      // Focus item
-      next.push({
-                  "icon": "eye",
-                  "text": I18n.tr("dock.menu.focus"),
-                  "action": function () {
-                    handleFocus();
-                  }
+    
+    // ============================================
+    // VIEW: MAIN (Root Menu)
+    // ============================================
+    if (root.menuView === "main") {
+        if (menuType === "pinned") {
+            next.push({
+                "icon": "plus",
+                "text": "New Instance",
+                "action": function () {
+                    Quickshell.execDetached(["gtk-launch", menuData]); 
+                    root.requestClose();
+                }
+            });
+            
+            // --- Move Button ---
+            // Only show if there are at least 2 apps
+            if (root.totalPinnedCount > 1) {
+                next.push({
+                    "icon": "arrow-right", 
+                    "text": "Move App", // Renamed here
+                    "action": function() {
+                        root.menuView = "move_options";
+                        root.initItems();
+                    }
                 });
-    }
+            }
 
-    // Pin/Unpin item
-    next.push({
+            next.push({
+                "icon": "unpin",
+                "text": I18n.tr("dock.menu.unpin"),
+                "action": function () {
+                    handlePin(menuData);
+                }
+            });
+        } 
+        else if (menuType === "workspace") {
+            const appId = menuData.appId;
+            const isPinned = root.isAppPinned(appId);
+            
+            next.push({
+                "icon": "eye",
+                "text": I18n.tr("dock.menu.focus"),
+                "action": function () {
+                    handleFocus();
+                }
+            });
+
+            next.push({
                 "icon": !isPinned ? "pin" : "unpin",
                 "text": !isPinned ? I18n.tr("dock.menu.pin") : I18n.tr("dock.menu.unpin"),
                 "action": function () {
-                  handlePin();
+                    handlePin(appId);
+                }
+            });
+
+            next.push({
+                "icon": "close",
+                "text": I18n.tr("dock.menu.close"),
+                "action": function () {
+                    handleClose();
+                }
+            });
+        }
+
+        // Desktop actions (Main view only)
+        const targetAppId = (menuType === "pinned") ? menuData : menuData?.appId;
+        if (targetAppId && typeof DesktopEntries !== 'undefined' && DesktopEntries.byId) {
+          const entry = (DesktopEntries.heuristicLookup) ? DesktopEntries.heuristicLookup(targetAppId) : DesktopEntries.byId(targetAppId);
+          if (entry != null) {
+            entry.actions.forEach(function (action) {
+              next.push({
+                "icon": "",
+                "text": action.name,
+                "action": function () {
+                  action.execute();
+                  root.requestClose();
                 }
               });
-
-    if (isRunning) {
-      // Close item
-      next.push({
-                  "icon": "close",
-                  "text": I18n.tr("dock.menu.close"),
-                  "action": function () {
-                    handleClose();
-                  }
-                });
+            });
+          }
+        }
     }
-
-    // Create a menu entry for each app-specific action definied in its .desktop file
-    if (typeof DesktopEntries !== 'undefined' && DesktopEntries.byId && root.toplevel?.appId) {
-      const appId = root.toplevel.appId;
-      const entry = (DesktopEntries.heuristicLookup) ? DesktopEntries.heuristicLookup(appId) : DesktopEntries.byId(appId);
-      if (entry != null) {
-        entry.actions.forEach(function (action) {
-          next.push({
-                      "icon": "",
-                      "text": action.name,
-                      "action": function () {
-                        action.execute();
-                      }
-                    });
+    // ============================================
+    // VIEW: MOVE OPTIONS (Left / Right)
+    // ============================================
+    else if (root.menuView === "move_options") {
+        next.push({
+            "icon": "arrow-left",
+            "text": "Back",
+            "action": function() {
+                root.menuView = "main";
+                root.initItems();
+            }
         });
-      }
+
+        // Move Left (Only if not first)
+        if (root.pinnedIndex > 0) {
+            next.push({
+                "icon": "arrow-left",
+                "text": "Move Left",
+                "action": function() {
+                    root.menuView = "move_left";
+                    root.initItems();
+                }
+            });
+        }
+
+        // Move Right (Only if not last)
+        if (root.pinnedIndex < root.totalPinnedCount - 1) {
+            next.push({
+                "icon": "arrow-right",
+                "text": "Move Right",
+                "action": function() {
+                    root.menuView = "move_right";
+                    root.initItems();
+                }
+            });
+        }
+    }
+    // ============================================
+    // VIEW: MOVE LEFT STEPS
+    // ============================================
+    else if (root.menuView === "move_left") {
+        next.push({
+            "icon": "arrow-left",
+            "text": "Back",
+            "action": function() {
+                root.menuView = "move_options";
+                root.initItems();
+            }
+        });
+
+        // 1 Step
+        if (root.pinnedIndex >= 1) {
+            next.push({ "icon": "", "text": "1 Position", "action": function() { root.requestMove(-1); } });
+        }
+        // 2 Steps
+        if (root.pinnedIndex >= 2) {
+            next.push({ "icon": "", "text": "2 Positions", "action": function() { root.requestMove(-2); } });
+        }
+        // 3 Steps
+        if (root.pinnedIndex >= 3) {
+            next.push({ "icon": "", "text": "3 Positions", "action": function() { root.requestMove(-3); } });
+        }
+    }
+    // ============================================
+    // VIEW: MOVE RIGHT STEPS
+    // ============================================
+    else if (root.menuView === "move_right") {
+        next.push({
+            "icon": "arrow-left",
+            "text": "Back",
+            "action": function() {
+                root.menuView = "move_options";
+                root.initItems();
+            }
+        });
+
+        // 1 Step
+        if (root.pinnedIndex + 1 < root.totalPinnedCount) {
+            next.push({ "icon": "", "text": "1 Position", "action": function() { root.requestMove(1); } });
+        }
+        // 2 Steps
+        if (root.pinnedIndex + 2 < root.totalPinnedCount) {
+            next.push({ "icon": "", "text": "2 Positions", "action": function() { root.requestMove(2); } });
+        }
+        // 3 Steps
+        if (root.pinnedIndex + 3 < root.totalPinnedCount) {
+            next.push({ "icon": "", "text": "3 Positions", "action": function() { root.requestMove(3); } });
+        }
     }
 
     root.items = next;
-    // Force width recalculation when items change
-    Qt.callLater(() => {
-                   calculateMenuWidth();
-                 });
   }
 
-  // Helper function to normalize app IDs for case-insensitive matching
-  function normalizeAppId(appId) {
-    if (!appId || typeof appId !== 'string')
-      return "";
-    return appId.toLowerCase().trim();
-  }
-
-  // Helper function to get desktop entry ID from an app ID
-  function getDesktopEntryId(appId) {
-    if (!appId)
-      return appId;
-
-    // Try to find the desktop entry using heuristic lookup
-    if (typeof DesktopEntries !== 'undefined' && DesktopEntries.heuristicLookup) {
-      try {
-        const entry = DesktopEntries.heuristicLookup(appId);
-        if (entry && entry.id) {
-          return entry.id;
-        }
-      } catch (e)
-        // Fall through to return original appId
-      {}
-    }
-
-    // Try direct lookup
-    if (typeof DesktopEntries !== 'undefined' && DesktopEntries.byId) {
-      try {
-        const entry = DesktopEntries.byId(appId);
-        if (entry && entry.id) {
-          return entry.id;
-        }
-      } catch (e)
-        // Fall through to return original appId
-      {}
-    }
-
-    // Return original appId if we can't find a desktop entry
-    return appId;
-  }
-
-  // Helper functions for pin/unpin functionality
   function isAppPinned(appId) {
-    if (!appId)
-      return false;
+    if (!appId) return false;
     const pinnedApps = Settings.data.dock.pinnedApps || [];
-    const normalizedId = normalizeAppId(appId);
-    return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+    return pinnedApps.includes(appId);
   }
 
   function toggleAppPin(appId) {
-    if (!appId)
-      return;
-
-    // Get the desktop entry ID for consistent pinning
-    const desktopEntryId = getDesktopEntryId(appId);
-    const normalizedId = normalizeAppId(desktopEntryId);
-
-    let pinnedApps = (Settings.data.dock.pinnedApps || []).slice(); // Create a copy
-
-    // Find existing pinned app with case-insensitive matching
-    const existingIndex = pinnedApps.findIndex(pinnedId => normalizeAppId(pinnedId) === normalizedId);
-    const isPinned = existingIndex >= 0;
+    if (!appId) return;
+    let pinnedApps = (Settings.data.dock.pinnedApps || []).slice();
+    const isPinned = pinnedApps.includes(appId);
 
     if (isPinned) {
-      // Unpin: remove from array
-      pinnedApps.splice(existingIndex, 1);
+      pinnedApps = pinnedApps.filter(id => id !== appId);
     } else {
-      // Pin: add desktop entry ID to array
-      pinnedApps.push(desktopEntryId);
+      pinnedApps.push(appId);
     }
-
-    // Update the settings
     Settings.data.dock.pinnedApps = pinnedApps;
   }
 
@@ -207,18 +237,30 @@ PopupWindow {
   anchor.rect.x: anchorItem ? (anchorItem.width - implicitWidth) / 2 : 0
   anchor.rect.y: anchorItem ? -implicitHeight - (Style.marginM) : 0
 
-  function show(item, toplevelData) {
-    if (!item) {
-      return;
-    }
-
+  // Modified show function to accept index info
+  function showPinned(item, data, index, total) {
+    if (!item) return;
     anchorItem = item;
-    toplevel = toplevelData;
+    menuData = data;
+    menuType = "pinned";
+    pinnedIndex = index;
+    totalPinnedCount = total;
+    menuView = "main"; // Reset to main view
+    
     initItems();
-    // Calculate width after items are initialized
-    Qt.callLater(() => {
-                   calculateMenuWidth();
-                 });
+    visible = true;
+    canAutoClose = false;
+    gracePeriodTimer.restart();
+  }
+
+  function show(item, data, type) {
+    if (!item) return;
+    anchorItem = item;
+    menuData = data;
+    menuType = type || "workspace";
+    menuView = "main"; // Reset to main view
+    
+    initItems();
     visible = true;
     canAutoClose = false;
     gracePeriodTimer.restart();
@@ -229,40 +271,33 @@ PopupWindow {
     root.items.length = 0;
   }
 
-  // Helper function to determine which menu item is under the mouse
   function getHoveredItem(mouseY) {
     const itemHeight = 32;
     const startY = Style.marginM;
     const relativeY = mouseY - startY;
-
-    if (relativeY < 0)
-      return -1;
-
+    if (relativeY < 0) return -1;
     const itemIndex = Math.floor(relativeY / itemHeight);
     return itemIndex >= 0 && itemIndex < root.items.length ? itemIndex : -1;
   }
 
   function handleFocus() {
-    if (root.toplevel?.activate) {
-      root.toplevel.activate();
+    if (root.menuData) {
+      CompositorService.focusWindow(root.menuData);
     }
     root.requestClose();
   }
 
-  function handlePin() {
-    if (root.toplevel?.appId) {
-      root.toggleAppPin(root.toplevel.appId);
+  function handlePin(targetId) {
+    if (targetId) {
+      root.toggleAppPin(targetId);
     }
     root.requestClose();
   }
 
   function handleClose() {
-    // Check if toplevel is still valid before trying to close it
-    const isValidToplevel = root.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(root.toplevel);
-
-    if (isValidToplevel && root.toplevel.close) {
-      root.toplevel.close();
-      // Trigger immediate dock update callback if provided
+    if (root.menuData) {
+      CompositorService.closeWindow(root.menuData);
+      
       if (root.onAppClosed && typeof root.onAppClosed === "function") {
         Qt.callLater(root.onAppClosed);
       }
@@ -271,7 +306,6 @@ PopupWindow {
     root.requestClose();
   }
 
-  // Short delay to ignore spurious events
   Timer {
     id: gracePeriodTimer
     interval: 1500
@@ -301,7 +335,6 @@ PopupWindow {
     border.color: Color.mOutline
     border.width: Style.borderS
 
-    // Single MouseArea to handle both auto-close and menu interactions
     MouseArea {
       id: menuMouseArea
       anchors.fill: parent
@@ -315,28 +348,25 @@ PopupWindow {
       onExited: {
         root.hoveredItem = -1;
         if (root.canAutoClose) {
-          // Only close if grace period has passed
           closeTimer.start();
         }
       }
 
       onPositionChanged: mouse => {
-                           root.hoveredItem = root.getHoveredItem(mouse.y);
-                         }
+        root.hoveredItem = root.getHoveredItem(mouse.y);
+      }
 
       onClicked: mouse => {
-                   const clickedItem = root.getHoveredItem(mouse.y);
-                   if (clickedItem >= 0) {
-                     root.items[clickedItem].action.call();
-                   }
-                 }
+        const clickedItem = root.getHoveredItem(mouse.y);
+        if (clickedItem >= 0) {
+          root.items[clickedItem].action.call();
+        }
+      }
     }
 
     ColumnLayout {
       id: contextMenuColumn
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.top: parent.top
+      anchors.fill: parent
       anchors.margins: Style.marginM
       spacing: 0
 
@@ -349,28 +379,25 @@ PopupWindow {
           color: root.hoveredItem === index ? Color.mHover : Color.transparent
           radius: Style.radiusXS
 
-          Row {
-            id: rowLayout
+          RowLayout {
             anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: Style.marginS
-            anchors.rightMargin: Style.marginS
+            anchors.verticalCenter: parent.verticalCenter
             spacing: Style.marginS
 
             NIcon {
               icon: modelData.icon
               pointSize: Style.fontSizeL
               color: root.hoveredItem === index ? Color.mOnHover : Color.mOnSurfaceVariant
-              visible: icon !== ""
-              anchors.verticalCenter: parent.verticalCenter
+              Layout.alignment: Qt.AlignVCenter
             }
 
             NText {
               text: modelData.text
               pointSize: Style.fontSizeS
               color: root.hoveredItem === index ? Color.mOnHover : Color.mOnSurfaceVariant
-              anchors.verticalCenter: parent.verticalCenter
+              Layout.alignment: Qt.AlignVCenter
+              elide: Text.ElideRight
             }
           }
         }
