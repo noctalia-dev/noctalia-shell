@@ -5,7 +5,6 @@ import Quickshell.Io
 import qs.Commons
 import qs.Widgets
 import qs.Services.Keyboard
-import qs.Services.Compositor
 
 Loader {
     id: root
