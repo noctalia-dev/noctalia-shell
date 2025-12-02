@@ -18,6 +18,8 @@
     packages = eachSystem (
       system: {
         default = pkgsFor.${system}.noctalia-shell;
+        noctalia-live-devel = pkgsFor.${system}.callPackage ./nix/noctalia-live-devel.nix {pkgs = pkgsFor.${system};};
+        qs-noctalia = pkgsFor.${system}.callPackage ./nix/qs-noctalia.nix {pkgs = pkgsFor.${system};};
       }
     );
 

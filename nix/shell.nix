@@ -1,4 +1,5 @@
 {
+  pkgs,
   quickshell,
   alejandra,
   statix,
@@ -30,5 +31,8 @@ mkShellNoCC {
     # CoC
     lefthook # githooks
     kdePackages.qtdeclarative # qmlfmt, qmllint, qmlls and etc; Qt6
+
+    (pkgs.callPackage ./noctalia-live-devel.nix {inherit pkgs;})
+    (pkgs.callPackage ./qs-noctalia.nix {inherit pkgs;})
   ];
 }
