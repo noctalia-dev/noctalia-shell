@@ -291,7 +291,7 @@ SmartPanel {
             "source": systemMonitorTab
           },
           {
-            "id": SettingsPanel.Tab.AccessibilityTab,
+            "id": SettingsPanel.Tab.Accessibility,
             "label": "settings.accessibility.title",
             "icon": "settings-heart",
             "source": accessibilityTab

@@ -41,6 +41,27 @@ ColumnLayout {
                 tooltipText: I18n.tr("settings.accessibility.virtual-keyboard.selector.tooltip")
                 onClicked: Settings.data.virtualKeyboard.enabled = !Settings.data.virtualKeyboard.enabled
             }
-            }
+        }
+
+        NComboBox {
+            label: I18n.tr("settings.accessibility.virtual-keyboard.layout.label")
+            description: I18n.tr("settings.accessibility.virtual-keyboard.layout.description")
+            model: [
+                {
+                "key": "auto",
+                "name": I18n.tr("options.accessibility.virtual-keyboard.layout.auto")
+                },
+                {
+                "key": "qwerty",
+                "name": I18n.tr("options.accessibility.virtual-keyboard.layout.qwerty")
+                },
+                {
+                "key": "azerty",
+                "name": I18n.tr("options.accessibility.virtual-keyboard.layout.azerty")
+                }
+            ]
+            currentKey: Settings.data.virtualKeyboard.layout
+            onSelected: key => Settings.data.virtualKeyboard.layout = key
+        }
     }
 }

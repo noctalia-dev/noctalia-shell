@@ -535,6 +535,11 @@
         "position": {
           "top": "Top",
           "bottom": "Bottom"
+        },
+        "layout": {
+          "auto": "auto (QWERTY)",
+          "qwerty": "QWERTY",
+          "azerty": "AZERTY"
         }
       }
     },
@@ -814,6 +819,10 @@
           "label": "Toggle Virtual Keyboard",
           "description": "This button is also availiable as a Bar Widget.",
           "tooltip": "Open Virtual Keyboard"
+        },
+        "layout": {
+          "label": "Virtual Keyboard layout",
+          "description": "Change the keyboard layout"
         }
       },
       "title": "Accessibility"

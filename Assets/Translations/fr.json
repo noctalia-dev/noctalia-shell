@@ -535,6 +535,11 @@
         "position": {
           "top": "En haut",
           "bottom": "En bas"
+        },
+        "layout": {
+          "auto": "auto (AZERTY)",
+          "qwerty": "QWERTY",
+          "azerty": "AZERTY"
         }
       }
     },
@@ -814,6 +819,10 @@
           "label": "Activer le Clavier Virtuel",
           "description": "Ce bouton est aussi disponible comme Widget dans la Barre.",
           "tooltip": "Ouvrir le Clavier Virtuel"
+        },
+        "layout": {
+          "label": "Disposition du Clavier Virtuel",
+          "description": "Changer la disposition du Clavier Virtuel"
         }
       },
       "title": "Accessibilité"

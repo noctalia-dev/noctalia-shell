@@ -302,6 +302,7 @@ Singleton {
     property JsonObject virtualKeyboard: JsonObject {
       property bool enabled: true
       property bool clicking: true
+      property string layout: "auto"
     } 
 
     // wallpaper

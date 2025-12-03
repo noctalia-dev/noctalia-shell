@@ -5,10 +5,11 @@ import Quickshell.Io
 import qs.Commons
 import qs.Widgets
 import qs.Services.Keyboard
+import qs.Services.UI
 
 Loader {
     id: root
-    active: true
+    active: Settings.data.virtualKeyboard.enabled
     readonly property string typeKeyScript: Quickshell.shellDir + '/Bin/type-key.py'
     
     property var qwerty: [
@@ -81,14 +82,23 @@ Loader {
     ]
     ]
 
-    property var layout: KeyboardLayoutService.currentLayout === "fr" ? azerty : qwerty
+    property var layout: {
+        if (Settings.data.virtualKeyboard.layout === "auto") {
+            return KeyboardLayoutService.currentLayout === "fr" ? azerty : qwerty
+        }
+        if (Settings.data.virtualKeyboard.layout === "azerty") {
+            return azerty
+        }
+        if (Settings.data.virtualKeyboard.layout === "qwerty") {
+            return qwerty
+        }
+    }
 
     property var activeModifiers: {"shift": false, "alt": false, "super": false, "ctrl": false}
 
     property bool capsON: false
 
     property var keyArray: []
-
 
     sourceComponent: Variants {
         id: allKeyboards
@@ -97,10 +107,10 @@ Loader {
             required property ShellScreen modelData
             Loader {
                 id: mainLoader
+                objectName: "loader"
                 asynchronous: false
                 active: Settings.data.virtualKeyboard.enabled
                 property ShellScreen loaderScreen: modelData
-
                 sourceComponent: PanelWindow {
                     id: virtualKeyboard
                     screen: mainLoader.loaderScreen
@@ -111,33 +121,150 @@ Loader {
                         right: true
                     }
                     margins {
-                        left: screen.width * 20/100 - screen.x
-                        right: screen.width * 20/100 + screen.x
-                        top: screen.height * 30/100 + screen.y
-                        bottom: screen.height * 30/100 - screen.y
+                        left: background.width * 29.9/100 - screen.x
+                        right: background.width * 29.9/100 + screen.x
+                        top: background.height * 54/100 - screen.y
+                        bottom: background.height * 54/100 + screen.y
                     }
                     color: Color.transparent
-
+                    property alias backgroundBox: background
+                    
                     NBox {
                         id: background
-                        anchors.fill: parent
+                        width: 1200
+                        height: 500
+                        x: 0
+                        y: 0
                         color: Qt.rgba(Color.mSurfaceVariant.r, Color.mSurfaceVariant.g, Color.mSurfaceVariant.b, 0.75)
-                        
+
+                        // adapt margins
+                        onXChanged: {
+                            for (let instance of allKeyboards.instances) {
+                                for (let child of instance.children) {
+                                    if (child.objectName === "loader" && child.item && child.item.margins) {
+                                        let m = child.item.margins
+                                        m.left += x
+                                        m.right -= x
+                                    }
+                                }
+                            }
+                            x = 0
+                        }
+                        onYChanged: {
+                            for (let instance of allKeyboards.instances) {
+                                for (let child of instance.children) {
+                                    if (child.objectName === "loader" && child.item && child.item.margins) {
+                                        let m = child.item.margins
+                                        m.top += y
+                                        m.bottom -= y
+                                    }
+                                }
+                            }
+                            y = 0
+                        }
                         NBox {
-                            id: dragButton
-                            width: 60
-                            height: 60
+                            id: closeButton
+                            width: 50
+                            height: 50
                             anchors.top: parent.top
                             anchors.right: parent.right
-                            anchors.topMargin: 15
-                            anchors.rightMargin: 15
-
+                            anchors.topMargin: 10
+                            anchors.rightMargin: 10
                             property bool pressed: false
-                            property real startMouseX: 0
-                            property real startMouseY: 0
-
                             color: pressed ? Color.mOnSurface : Color.mSurfaceVariant
-                            radius: 100
+                            radius: 20
+                            NText {
+                                anchors.centerIn: parent
+                                text: ""
+                                font.weight: Style.fontWeightBold
+                                font.pointSize: Style.fontSizeL * fontScale
+                                color: closeButton.pressed ? Color.mSurfaceVariant : Color.mOnSurface
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onPressed: function(mouse) {
+                                    closeButton.pressed = true
+                                    Settings.data.virtualKeyboard.enabled = false
+                                }
+                                onReleased: {
+                                    closeButton.pressed = false
+                                }
+                            }
+                        }
+
+                        NBox {
+                            id: settingsButton
+                            width: 50
+                            height: 50
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.topMargin: 10
+                            anchors.rightMargin: 70
+                            property bool pressed: false
+                            color: pressed ? Color.mOnSurface : Color.mSurfaceVariant
+                            radius: 20
+                            NText {
+                                anchors.centerIn: parent
+                                text: ""
+                                font.weight: Style.fontWeightBold
+                                font.pointSize: Style.fontSizeL * fontScale
+                                color: settingsButton.pressed ? Color.mSurfaceVariant : Color.mOnSurface
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onPressed: function(mouse) {
+                                    settingsButton.pressed = true
+                                    Settings.data.virtualKeyboard.enabled = false
+                                    var settingsPanel = PanelService.getPanel("settingsPanel", screen)
+                                    if (!settingsPanel.isPanelOpen){
+                                        settingsPanel.toggle()
+                                    }
+                                    Qt.callLater(function() {
+                                        settingsPanel.currentTabIndex = 18
+                                    })
+                                }
+                                onReleased: {
+                                    settingsButton.pressed = false
+                                }
+                            }
+                        }
+
+                        NBox {
+                            id: dragButton
+                            objectName: "dragButton"
+                            width: 50
+                            height: 50
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.topMargin: 10
+                            anchors.leftMargin: 10
+                            
+                            property bool pressed: false
+                            property real localX: 0
+                            property real localY: 0
+                            property real startX: 0
+                            property real startY: 0
+                            
+                            color: pressed ? Color.mOnSurface : Color.mSurfaceVariant
+                            radius: 20
+
+                            function getBackground(_screen) {
+                                for (let i = 0; i < allKeyboards.instances.length; i++) {
+                                    let instance = allKeyboards.instances[i];
+                                    for (let child of instance.children) {
+                                        if (child.objectName == "loader") {
+                                            let loader = child
+                                            if (loader.loaderScreen === _screen){
+                                                return loader.item.backgroundBox
+                                            }
+                                        }
+                                    }
+                                }
+                                return null;
+                            }
+
                             NText {
                                 anchors.centerIn: parent
                                 text: ""
@@ -145,166 +272,144 @@ Loader {
                                 font.pointSize: Style.fontSizeL * fontScale
                                 color: dragButton.pressed ? Color.mSurfaceVariant : Color.mOnSurface
                             }
-
+                            
                             MouseArea {
                                 anchors.fill: parent
-                                onPressed: function(mouse) {
+                                onPressed: {
                                     dragButton.pressed = true
-                                    dragButton.startMouseX = mouse.x
-                                    dragButton.startMouseY = mouse.y
                                 }
 
-                                onPositionChanged: function(mouse) {
-                                    if (Math.abs(mouse.x - dragButton.startMouseX) > 25) {
-                                        if (mouse.x > dragButton.startMouseX) {
-                                            for (let instance of allKeyboards.instances){
-                                                for (let child of instance.children) {
-                                                    let loader = instance.children
-                                                    if (loader[0] && loader[0].item) {
-                                                        loader[0].item.margins.left  += dragButton.startMouseX
-                                                        loader[0].item.margins.right -= dragButton.startMouseX
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        else if (mouse.x < dragButton.startMouseX) {
-                                            for (let instance of allKeyboards.instances){
-                                                for (let child of instance.children) {
-                                                    let loader = instance.children
-                                                    if (loader[0] && loader[0].item) {
-                                                        loader[0].item.margins.left  -= dragButton.startMouseX
-                                                        loader[0].item.margins.right += dragButton.startMouseX
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (Math.abs(mouse.y - dragButton.startMouseY) > 25) {
-                                        if (mouse.y > dragButton.startMouseY) {
-                                            for (let instance of allKeyboards.instances){
-                                                for (let child of instance.children) {
-                                                    let loader = instance.children
-                                                    if (loader[0] && loader[0].item) {
-                                                        loader[0].item.margins.top  += dragButton.startMouseY
-                                                        loader[0].item.margins.bottom -= dragButton.startMouseY
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        else if (mouse.y < dragButton.startMouseY) {
-                                            for (let instance of allKeyboards.instances){
-                                                for (let child of instance.children) {
-                                                    let loader = instance.children
-                                                    if (loader[0] && loader[0].item) {
-                                                        loader[0].item.margins.top  -= dragButton.startMouseY
-                                                        loader[0].item.margins.bottom += dragButton.startMouseY
-                                                    }
+                                drag.target: background
+                                drag.axis: Drag.XAndYAxis
+
+                                onPositionChanged: {
+                                    // sync every instance
+                                    for (var i=0; i<allKeyboards.model.length; i++ ){
+                                        let _screen = allKeyboards.model[i]
+                                        if (_screen != screen) {
+                                            let bg = dragButton.getBackground(_screen)
+                                            let globalX = background.x + screen.x
+                                            let globalY = background.y + screen.y
+                                            bg.x = background.x
+                                            bg.y = background.y
+                                            for (let child of bg.children) {
+                                                if (child.objectName == "dragButton") {
+                                                    child.pressed = true
                                                 }
                                             }
                                         }
                                     }
                                 }
-
+                                
                                 onReleased: {
-                                    dragButton.pressed = false
+                                    for (var i=0; i<allKeyboards.model.length; i++ ){
+                                        let _screen = allKeyboards.model[i]
+                                        let bg = dragButton.getBackground(_screen)
+                                        for (let child of bg.children) {
+                                            if (child.objectName == "dragButton") {
+                                                child.pressed = false
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                    ColumnLayout {
-                        id: mainColumn
-                        anchors.fill: parent
-                        anchors.margins: Style.marginL
-                        spacing: Style.marginM
+                        ColumnLayout {
+                            id: mainColumn
+                            anchors.fill: parent
+                            anchors.margins: Style.marginL
+                            anchors.topMargin: 75
+                            spacing: Style.marginM
 
-                        Repeater {
-                            model: root.layout
+                            Repeater {
+                                model: root.layout
 
-                            RowLayout {
-                                spacing: Style.marginL
+                                RowLayout {
+                                    spacing: Style.marginL
 
-                                Repeater {
-                                    model: modelData
+                                    Repeater {
+                                        model: modelData
 
-                                    NBox {
-                                        width: modelData.width
-                                        height: 60
-                                        color: (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mOnSurface : Color.mSurfaceVariant
+                                        NBox {
+                                            width: modelData.width
+                                            height: 60
+                                            color: (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mOnSurface : Color.mSurfaceVariant
 
-                                        // refresh colors and text every 0.2 seconds
-                                        Timer {
-                                            interval: 200; running: true; repeat: true
-                                            onTriggered: {
-                                                if (modelData.key in root.activeModifiers || modelData.key ===  "caps") {
-                                                    color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mOnSurface : Color.mSurfaceVariant
-                                                }
-                                                keyText.color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mSurfaceVariant : Color.mOnSurface
-                                                keyText.text = (root.activeModifiers["shift"] || root.capsON === true) ? modelData.shift : modelData.txt
-                                            }
-                                        }
-
-                                        NText {
-                                            id: keyText
-                                            anchors.centerIn: parent
-                                            text: (root.activeModifiers["shift"] || root.capsON) ? modelData.shift : modelData.txt
-                                            font.weight: Style.fontWeightBold
-                                            font.pointSize:Style.fontSizeL * fontScale
-                                            color: (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mSurfaceVariant : Color.mOnSurface
-                                        }
-
-                                        function toggleModifier(mod) {
-                                            if (mod in root.activeModifiers) {
-                                                root.activeModifiers[mod] = !root.activeModifiers[mod]
-                                            }
-                                        }
-
-                                        Process {
-                                            id: runScript
-                                            command: ["python", root.typeKeyScript] // placeholder
-
-                                            function startWithKeys(keys) {
-                                                var ks = keys.map(function(x){ return x.toString(); });
-                                                runScript.command = ["python", root.typeKeyScript].concat(ks);
-                                                runScript.running = true;
-                                            }
-                                            stdout: StdioCollector {
-                                                onStreamFinished: Settings.data.virtualKeyboard.clicking = false
-                                            }
-                                            stderr: StdioCollector {
-                                                onStreamFinished: {
-                                                    if (text) Logger.w(text.trim());
-                                                }
-                                            }
-                                        }
-
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            onPressed: {
-                                                if (modelData.key in root.activeModifiers) {
-                                                    toggleModifier(modelData.key)
-                                                }
-                                                else{
-                                                    Settings.data.virtualKeyboard.clicking = true
-                                                    if (modelData.key === "caps") {
-                                                        root.capsON = !root.capsON
+                                            // refresh colors and text every 0.2 seconds
+                                            Timer {
+                                                interval: 200; running: true; repeat: true
+                                                onTriggered: {
+                                                    if (modelData.key in root.activeModifiers || modelData.key ===  "caps") {
+                                                        color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mOnSurface : Color.mSurfaceVariant
                                                     }
-                                                    root.keyArray = [modelData.key]
-                                                    for (var k in root.activeModifiers) {
-                                                        var v = root.activeModifiers[k];
-                                                        if (v) {
-                                                            root.keyArray.push(k);
+                                                    keyText.color = (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mSurfaceVariant : Color.mOnSurface
+                                                    keyText.text = (root.activeModifiers["shift"] || root.capsON === true) ? modelData.shift : modelData.txt
+                                                }
+                                            }
+
+                                            NText {
+                                                id: keyText
+                                                anchors.centerIn: parent
+                                                text: (root.activeModifiers["shift"] || root.capsON) ? modelData.shift : modelData.txt
+                                                font.weight: Style.fontWeightBold
+                                                font.pointSize:Style.fontSizeL * fontScale
+                                                color: (runScript.running || (modelData.key ===  "caps" & root.capsON) || (modelData.key in root.activeModifiers & root.activeModifiers[modelData.key])) ? Color.mSurfaceVariant : Color.mOnSurface
+                                            }
+
+                                            function toggleModifier(mod) {
+                                                if (mod in root.activeModifiers) {
+                                                    root.activeModifiers[mod] = !root.activeModifiers[mod]
+                                                }
+                                            }
+
+                                            Process {
+                                                id: runScript
+                                                command: ["python", root.typeKeyScript] // placeholder
+
+                                                function startWithKeys(keys) {
+                                                    var ks = keys.map(function(x){ return x.toString(); });
+                                                    runScript.command = ["python", root.typeKeyScript].concat(ks);
+                                                    runScript.running = true;
+                                                }
+                                                stdout: StdioCollector {
+                                                    onStreamFinished: Settings.data.virtualKeyboard.clicking = false
+                                                }
+                                                stderr: StdioCollector {
+                                                    onStreamFinished: {
+                                                        if (text) Logger.w(text.trim());
+                                                    }
+                                                }
+                                            }
+
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                onPressed: {
+                                                    if (modelData.key in root.activeModifiers) {
+                                                        toggleModifier(modelData.key)
+                                                    }
+                                                    else{
+                                                        Settings.data.virtualKeyboard.clicking = true
+                                                        if (modelData.key === "caps") {
+                                                            root.capsON = !root.capsON
                                                         }
+                                                        root.keyArray = [modelData.key]
+                                                        for (var k in root.activeModifiers) {
+                                                            var v = root.activeModifiers[k];
+                                                            if (v) {
+                                                                root.keyArray.push(k);
+                                                            }
+                                                        }
+                                                        root.keyArray.unshift(root.layout === root.azerty ? "fr" : "en")
+                                                        runScript.startWithKeys(keyArray)
                                                     }
-                                                    root.keyArray.unshift(root.layout === root.azerty ? "fr" : "en")
-                                                    runScript.startWithKeys(keyArray)
+                                                    Logger.d(modelData.key.toString())
                                                 }
-                                                Logger.d(modelData.key.toString())
-                                            }
-                                            onReleased: {
-                                                if (!(modelData.key in root.activeModifiers)) {
-                                                    root.keyArray = []
-                                                    root.activeModifiers = {"shift": false, "alt": false, "super": false, "ctrl": false}
+                                                onReleased: {
+                                                    if (!(modelData.key in root.activeModifiers)) {
+                                                        root.keyArray = []
+                                                        root.activeModifiers = {"shift": false, "alt": false, "super": false, "ctrl": false}
+                                                    }
                                                 }
                                             }
                                         }
