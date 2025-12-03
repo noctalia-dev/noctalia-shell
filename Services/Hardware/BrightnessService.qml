@@ -269,7 +269,7 @@ Singleton {
               Logger.d("Brightness", "Internal brightness:", devices[0].current + "/" + devices[0].max + " =", monitor.brightness);
               Logger.d("Brightness", "Primary backlight device:", monitor.backlightDevice);
               if (devices.length > 1) {
-                Logger.i("Brightness", "Found", devices.length, "backlight devices, will control all of them");
+                Logger.d("Brightness", "Found", devices.length, "backlight devices, will control all of them");
               }
             }
           }
