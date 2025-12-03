@@ -138,8 +138,9 @@ Singleton {
     property real lastBrightness: 0
     property real queuedBrightness: NaN
 
-    // For internal displays - store the backlight device path
-    property string backlightDevice: ""
+    // For internal displays - store the backlight device paths (supports multiple devices)
+    property list<var> backlightDevices: []
+    property string backlightDevice: ""  // Primary device for compatibility
     property string brightnessPath: ""
     property string maxBrightnessPath: ""
     property int maxBrightness: 100
@@ -181,7 +182,7 @@ Singleton {
     function refreshBrightnessFromSystem() {
       if (!monitor.isDdc && !monitor.isAppleDisplay) {
         // For internal displays, query the system directly
-        refreshProc.command = ["sh", "-c", "cat " + monitor.brightnessPath + " && " + "cat " + monitor.maxBrightnessPath];
+        refreshProc.command = ["sh", "-c", `cat ${monitor.brightnessPath} && cat ${monitor.maxBrightnessPath}`];
         refreshProc.running = true;
       } else if (monitor.isDdc) {
         // For DDC displays, get the current value
@@ -236,20 +237,39 @@ Singleton {
               }
             }
           } else {
-            // Internal backlight - parse the response which includes device path
-            var lines = dataText.split("\n");
-            if (lines.length >= 3) {
-              monitor.backlightDevice = lines[0];
-              monitor.brightnessPath = monitor.backlightDevice + "/brightness";
-              monitor.maxBrightnessPath = monitor.backlightDevice + "/max_brightness";
-
-              var current = parseInt(lines[1]);
-              var max = parseInt(lines[2]);
+            // Internal backlight - parse all detected devices
+            var lines = dataText.split("\n").filter(l => l.trim() !== "");
+            var devices = [];
+            
+            // Parse device info in groups of 3 lines: device_path, current, max
+            for (var i = 0; i + 2 < lines.length; i += 3) {
+              var devicePath = lines[i].trim();
+              var current = parseInt(lines[i + 1]);
+              var max = parseInt(lines[i + 2]);
+              
               if (!isNaN(current) && !isNaN(max) && max > 0) {
-                monitor.maxBrightness = max;
-                monitor.brightness = current / max;
-                Logger.d("Brightness", "Internal brightness:", current + "/" + max + " =", monitor.brightness);
-                Logger.d("Brightness", "Using backlight device:", monitor.backlightDevice);
+                devices.push({
+                  path: devicePath,
+                  current: current,
+                  max: max
+                });
+                Logger.d("Brightness", "Detected backlight device:", devicePath, current + "/" + max);
+              }
+            }
+            
+            if (devices.length > 0) {
+              monitor.backlightDevices = devices;
+              // Use the first device as primary for compatibility and brightness reading
+              monitor.backlightDevice = devices[0].path;
+              monitor.brightnessPath = `${monitor.backlightDevice}/brightness`;
+              monitor.maxBrightnessPath = `${monitor.backlightDevice}/max_brightness`;
+              monitor.maxBrightness = devices[0].max;
+              monitor.brightness = devices[0].current / devices[0].max;
+              
+              Logger.d("Brightness", "Internal brightness:", devices[0].current + "/" + devices[0].max + " =", monitor.brightness);
+              Logger.d("Brightness", "Primary backlight device:", monitor.backlightDevice);
+              if (devices.length > 1) {
+                Logger.i("Brightness", "Found", devices.length, "backlight devices, will control all of them");
               }
             }
           }
@@ -318,7 +338,19 @@ Singleton {
         Quickshell.execDetached(["ddcutil", "-b", busNum, "setvcp", "10", rounded]);
       } else {
         monitor.ignoreNextChange = true;
-        Quickshell.execDetached(["brightnessctl", "s", rounded + "%"]);
+        // Set brightness for all detected backlight devices
+        if (monitor.backlightDevices.length > 0) {
+          monitor.backlightDevices.forEach(device => {
+            // Extract device name from path (e.g., /sys/class/backlight/intel_backlight -> intel_backlight)
+            var deviceName = device.path.split("/").pop();
+            if (deviceName && deviceName.length > 0) {
+              Quickshell.execDetached(["brightnessctl", "-d", deviceName, "s", `${rounded}%`]);
+            }
+          });
+        } else {
+          // Fallback to brightnessctl without device specification if no devices detected
+          Quickshell.execDetached(["brightnessctl", "s", `${rounded}%`]);
+        }
       }
 
       if (isDdc) {
@@ -332,9 +364,15 @@ Singleton {
       } else if (isDdc) {
         initProc.command = ["ddcutil", "-b", busNum, "getvcp", "10", "--brief"];
       } else {
-        // Internal backlight - find the first available backlight device and get its info
-        // This now returns: device_path, current_brightness, max_brightness (on separate lines)
-        initProc.command = ["sh", "-c", "for dev in /sys/class/backlight/*; do " + "  if [ -f \"$dev/brightness\" ] && [ -f \"$dev/max_brightness\" ]; then " + "    echo \"$dev\"; " + "    cat \"$dev/brightness\"; " + "    cat \"$dev/max_brightness\"; " + "    break; " + "  fi; " + "done"];
+        // Internal backlight - find ALL available backlight devices and get their info
+        // This returns for each device: device_path, current_brightness, max_brightness (on separate lines)
+        initProc.command = ["sh", "-c", `for dev in /sys/class/backlight/*; do
+          if [ -f "$dev/brightness" ] && [ -f "$dev/max_brightness" ]; then
+            echo "$dev";
+            cat "$dev/brightness";
+            cat "$dev/max_brightness";
+          fi;
+        done`];
       }
       initProc.running = true;
     }
