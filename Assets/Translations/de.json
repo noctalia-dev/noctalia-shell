@@ -251,6 +251,10 @@
         "visualizer-type": {
           "description": "Stil des Audio-Visualizers auswählen.",
           "label": "Visualizer-Typ"
+        },
+        "progress-ring-width": {
+          "description": "Linienbreite des Fortschrittsrings, falls angezeigt.",
+          "label": "Fortschrittsring-Breite"
         }
       },
       "microphone": {

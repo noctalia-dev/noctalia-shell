@@ -251,6 +251,10 @@
         "visualizer-type": {
           "description": "Choisir le style de visualiseur audio à afficher.",
           "label": "Type de visualiseur"
+        },
+        "progress-ring-width": {
+          "description": "Largeur de ligne de l'anneau de progression, s'il est affiché.",
+          "label": "Largeur de l'anneau de progression"
         }
       },
       "microphone": {

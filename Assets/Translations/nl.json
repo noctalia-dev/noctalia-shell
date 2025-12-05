@@ -251,6 +251,10 @@
         "visualizer-type": {
           "description": "Kies de stijl van de audiovisualizer.",
           "label": "Type visualizer"
+        },
+        "progress-ring-width": {
+          "description": "Lijnbreedte van de voortgangsring, indien weergegeven.",
+          "label": "Voortgangsring breedte"
         }
       },
       "microphone": {

@@ -251,6 +251,10 @@
         "visualizer-type": {
           "description": "表示するオーディオビジュアライザーのスタイルを選択します。",
           "label": "ビジュアライザーの種類"
+        },
+        "progress-ring-width": {
+          "description": "表示される場合のプログレスリングの線幅。",
+          "label": "プログレスリングの幅"
         }
       },
       "microphone": {

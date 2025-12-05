@@ -251,6 +251,10 @@
         "visualizer-type": {
           "description": "选择要显示的音频可视化器样式。",
           "label": "可视化器类型"
+        },
+        "progress-ring-width": {
+          "description": "进度环的线宽（如果显示）。",
+          "label": "进度环宽度"
         }
       },
       "microphone": {
