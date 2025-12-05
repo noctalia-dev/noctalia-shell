@@ -251,6 +251,10 @@
         "visualizer-type": {
           "description": "Choose the style of audio visualizer to display.",
           "label": "Visualizer type"
+        },
+        "progress-ring-width": {
+          "description": "Line width of the progress ring, if displayed.",
+          "label": "Progress ring width"
         }
       },
       "microphone": {

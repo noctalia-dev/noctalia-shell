@@ -165,6 +165,7 @@ Singleton {
                                     "showArtistFirst": true,
                                     "showVisualizer": false,
                                     "showProgressRing": true,
+                                    "progressRingWidth": 2.5,
                                     "visualizerType": "linear"
                                   },
                                   "Microphone": {
