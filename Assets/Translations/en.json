@@ -1522,6 +1522,13 @@
           "description": "When enabled, frequently launched apps appear first in the list.",
           "label": "Sort by most used"
         },
+        "dimensions": {
+          "description": "Adjust the size of the launcher panel",
+          "label": "Dimensions"
+        },
+        "width-ratio": "Width Ratio",
+        "height-ratio": "Height Ratio",
+        
         "terminal-command": {
           "description": "Command to launch a terminal. E.g., 'kitty -e' or 'gnome-terminal --'.",
           "label": "Terminal command"
