@@ -85,6 +85,9 @@ PanelWindow {
     if (!root.isPanelOpen) {
       return WlrKeyboardFocus.None;
     }
+    if (Settings.data.floatingPanel.enabled) {
+      return Settings.data.floatingPanel.giveFocus ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None;
+    }
     return PanelService.openedPanel.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand;
   }
 

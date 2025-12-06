@@ -581,6 +581,12 @@ Singleton {
       property string wallpaperChange: ""
       property string darkModeChange: ""
     }
+
+    // floating panels
+    property JsonObject floatingPanel: JsonObject {
+      property bool enabled: false                // if this is true, normal panels will have keyboard focus based on the value of giveFocus
+      property bool giveFocus: false              // Only if this is true, normal panels will have keyboard focus
+    }
   }
 
   // -----------------------------------------------------
