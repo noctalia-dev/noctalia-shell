@@ -58,6 +58,14 @@
         "low-battery-threshold": {
           "description": "Toon een waarschuwing wanneer de batterij onder dit percentage komt.",
           "label": "Waarschuwingsdrempel voor lage batterij"
+        },
+        "show-noctalia-performance": {
+          "description": "Toon de Noctalia-prestatiemodus-schakelaar in het batterijpaneel.",
+          "label": "Noctalia-Performance-schakelaar tonen"
+        },
+        "show-power-profile": {
+          "description": "Toon de keuze van het stroomprofiel in het batterijpaneel.",
+          "label": "Stroomprofielbediening tonen"
         }
       },
       "brightness": {
@@ -131,10 +139,21 @@
           "label": "Commando-uitvoer weergeven",
           "stream-description": "Voer een commando in dat continu wordt uitgevoerd."
         },
+        "hide-mode": {
+          "description": "Bepaalt de zichtbaarheid van de widget wanneer het commando geen uitvoer heeft.",
+          "label": "Verbergmodus",
+          "expandWithOutput": "Uitklappen wanneer er uitvoer is",
+          "alwaysExpanded": "Altijd uitgeklapt",
+          "maxTransparent": "Maximaal uitgeklapt maar transparant"
+        },
         "dynamic-text": "Dynamische tekst",
         "icon": {
           "description": "Selecteer een pictogram uit de bibliotheek.",
           "label": "Pictogram"
+        },
+        "show-icon": {
+          "description": "Schakelt de zichtbaarheid van het widgetpictogram.",
+          "label": "Pictogram weergeven"
         },
         "left-click": {
           "description": "Commando dat wordt uitgevoerd wanneer met de linkermuisknop op de knop wordt geklikt.",
@@ -372,20 +391,20 @@
   "battery": {
     "battery-level": "Batterijniveau",
     "brightness": "Helderheid",
-    "charging": "Opladen.",
-    "charging-rate": "Laadsnelheid: {rate} W.",
-    "discharging": "Ontladen.",
-    "discharging-rate": "Ontlaadsnelheid: {rate} W.",
+    "charging": "Opladen",
+    "charging-rate": "Laadsnelheid: {rate} W",
+    "discharging": "Ontladen",
+    "discharging-rate": "Ontlaadsnelheid: {rate} W",
     "health": "Gezondheid: {percent}%",
-    "idle": "In rust.",
+    "idle": "In rust",
     "inhibit-idle-description": "Houdt het systeem wakker.",
     "inhibit-idle-label": "Wakker houden",
-    "no-battery-detected": "Geen batterij gedetecteerd.",
+    "no-battery-detected": "Geen batterij gedetecteerd",
     "panel-title": "Batterij",
-    "plugged-in": "Op netstroom.",
+    "plugged-in": "Op netstroom",
     "power-profile": "Energieprofiel",
-    "time-left": "Resterende tijd: {time}.",
-    "time-until-full": "Tijd tot vol: {time}."
+    "time-left": "Resterende tijd: {time}",
+    "time-until-full": "Tijd tot vol: {time}"
   },
   "bluetooth": {
     "panel": {
@@ -454,6 +473,14 @@
   "clock": {
     "tooltip": "Kalender openen"
   },
+  "common": {
+    "add": "Toevoegen",
+    "apply": "Toepassen",
+    "cancel": "Annuleren",
+    "check-settings": "Controleer Instellingen voor details.",
+    "close": "Sluiten",
+    "save": "Opslaan"
+  },
   "context-menu": {
     "activate-app": "Activeer {app}",
     "clear-history": "Geschiedenis wissen",
@@ -494,6 +521,20 @@
     "unknown": "Onbekend"
   },
   "launcher": {
+    "categories": {
+      "all": "Alle",
+      "audiovideo": "Audio & Video",
+      "chat": "Chat",
+      "development": "Ontwikkeling",
+      "education": "Onderwijs",
+      "game": "Spellen",
+      "graphics": "Grafische weergave",
+      "misc": "Diversen",
+      "network": "Netwerk",
+      "office": "Kantoor",
+      "system": "Systeem",
+      "webbrowser": "Webbrowser"
+    },
     "pin": "Aan dock vastmaken",
     "unpin": "Van dock losmaken"
   },
@@ -708,7 +749,7 @@
         "enabled": "Bluetooth"
       },
       "tooltip": {
-        "action": "Klik om Bluetooth-apparaten te beheren"
+        "action": "Bluetooth"
       }
     },
     "keepAwake": {
@@ -717,7 +758,7 @@
         "enabled": "Wakker houden"
       },
       "tooltip": {
-        "action": "Klik om de 'wakker houden'-modus te schakelen"
+        "action": "Wakker houden"
       }
     },
     "nightLight": {
@@ -727,7 +768,7 @@
         "forced": "Nachtlicht"
       },
       "tooltip": {
-        "action": "Linker muisknop: door Nachtlicht-modi bladeren\nRechter muisknop: Instellingen openen"
+        "action": "Nachtlicht"
       }
     },
     "notifications": {
@@ -736,7 +777,7 @@
         "enabled": "Meldingen"
       },
       "tooltip": {
-        "action": "Linker muisknop: meldingsgeschiedenis openen\nRechter muisknop: contextmenu openen"
+        "action": "Meldingen"
       }
     },
     "powerProfile": {
@@ -744,7 +785,7 @@
         "unavailable": "Energieprofiel"
       },
       "tooltip": {
-        "action": "Klik om door energieprofielen te bladeren",
+        "action": "Energieprofiel",
         "disabled": "Installeer power-profiles-daemon om energieprofielen te gebruiken"
       }
     },
@@ -754,13 +795,13 @@
         "stopped": "Opnemen"
       },
       "tooltip": {
-        "action": "Klik om schermopname te starten/stoppen"
+        "action": "Schermrecorder"
       }
     },
     "wallpaperSelector": {
       "label": "Achtergrond",
       "tooltip": {
-        "action": "Linker muisknop: achtergrondkiezer openen\nRechter muisknop: willekeurige achtergrond instellen"
+        "action": "Achtergrondkiezer"
       }
     },
     "wifi": {
@@ -770,7 +811,7 @@
         "wifi": "Wi-Fi"
       },
       "tooltip": {
-        "action": "Klik om Wi-Fi-verbindingen te beheren"
+        "action": "Wi-Fi"
       }
     }
   },
@@ -911,7 +952,7 @@
           "label": "Balkdichtheid"
         },
         "floating": {
-          "description": "Geeft de balk weer als een zwevende 'pil'.",
+          "description": "Toon de balk weer als een zwevende 'pil'.",
           "label": "Zwevende balk"
         },
         "margins": {
@@ -921,7 +962,7 @@
           "vertical": "Verticaal"
         },
         "outer-corners": {
-          "description": "Geeft naar buiten afgeronde hoeken op de balk weer.",
+          "description": "Toon naar buiten afgeronde hoeken op de balk weer.",
           "label": "Buitenhoeken"
         },
         "position": {
@@ -956,7 +997,7 @@
       },
       "widgets": {
         "section": {
-          "description": "Sleep widgets om ze te herschikken. Badges geven gebruik aan: [L]inks, [C]entrum, [R]echts.",
+          "description": "Sleep widgets om hun volgorde te wijzigen. Gebruik het rechtermuisknopmenu om widgets tussen secties te verplaatsen of te verwijderen.",
           "label": "Widgetpositionering"
         }
       }
@@ -1215,7 +1256,7 @@
           "cancel": "Annuleren"
         },
         "section": {
-          "description": "Configureer en beheer de snelkoppeling-widgets.",
+          "description": "Sleep widgets om hun volgorde te wijzigen. Gebruik het rechtermuisknopmenu om widgets tussen secties te verplaatsen of te verwijderen.",
           "label": "Snelkoppeling-widgets"
         },
         "sectionLeft": "Links",
@@ -1465,6 +1506,10 @@
           "description": "Items in een raster weergeven in plaats van een lijst.",
           "label": "Rasterweergave"
         },
+        "show-categories": {
+          "description": "Categorieën-tabbladen weergeven voor het filteren van applicaties.",
+          "label": "Categorieën weergeven"
+        },
         "position": {
           "description": "Kies waar het launcher-paneel verschijnt.",
           "label": "Positie"
@@ -1490,22 +1535,22 @@
     },
     "location": {
       "calendar": {
-        "banner": {
-          "label": "Koptekst"
-        },
-        "calendar": {
-          "label": "Kalender"
-        },
         "cards": {
           "section": {
             "description": "Kaarten organiseren en in-/uitschakelen in het kalenderpaneel.",
             "label": "Kalenderkaarten"
           }
+        },
+        "header": {
+          "label": "Kalenderkop"
+        },
+        "month": {
+          "label": "Kalendermaand"
         }
       },
       "date-time": {
         "12hour-format": {
-          "description": "Toont tijd in 12-uurs formaat op het vergrendelscherm en in de kalender. De klok op de balk heeft zijn eigen instellingen.",
+          "description": "Toon tijd in 12-uurs formaat op het vergrendelscherm en in de kalender. De klok op de balk heeft zijn eigen instellingen.",
           "label": "12-uurs tijdnotatie gebruiken"
         },
         "first-day-of-week": {
@@ -1526,7 +1571,7 @@
           "label": "Analoge klok gebruiken"
         },
         "week-numbers": {
-          "description": "Toont het weeknummer van het jaar (bijv. week 38) in de kalender.",
+          "description": "Toon het weeknummer van het jaar (bijv. week 38) in de kalender.",
           "label": "Weeknummers tonen"
         }
       },
@@ -1556,7 +1601,7 @@
           "label": "Weer"
         },
         "show-effects": {
-          "description": "Toont extra visuele effecten (zoals regen, sneeuw of bliksem) op de weerkaart.",
+          "description": "Toon extra visuele effecten (zoals regen, sneeuw of bliksem) op de weerkaart.",
           "label": "Weerseffecten weergeven"
         },
         "show-in-calendar": {
@@ -1719,7 +1764,7 @@
           "label": "Vergrendeltoetsen"
         },
         "section": {
-          "description": "Selecteer de gebeurtenissen die de OSD activeren. Als er geen gebeurtenissen zijn geselecteerd, activeren alle beschikbare gebeurtenissen de OSD.",
+          "description": "Selecteer de gebeurtenissen die de OSD activeren.",
           "label": "OSD triggergebeurtenissen"
         },
         "volume": {
@@ -1727,6 +1772,75 @@
           "label": "Uitvoervolume"
         }
       }
+    },
+    "plugins": {
+      "available": {
+        "description": "Blader door en installeer plugins vanuit geconfigureerde bronnen.",
+        "label": "Beschikbare plug-ins",
+        "no-plugins-description": "Controleer je plugin-bronnen of vernieuw de lijst.",
+        "no-plugins-label": "Geen plug-ins beschikbaar"
+      },
+      "filter": {
+        "all": "Alles",
+        "downloaded": "Gedownload",
+        "not-downloaded": "Niet gedownload"
+      },
+      "install": "Installeren",
+      "install-error": "Installatie mislukt: {error}",
+      "install-success": "{plugin} succesvol geïnstalleerd",
+      "installed": {
+        "description": "Beheer en configureer alle lokaal geïnstalleerde plugins.",
+        "label": "Geïnstalleerde plug-ins",
+        "no-plugins-description": "Installeer plugins uit de sectie Beschikbare plugins hieronder.",
+        "no-plugins-label": "Geen plugins geïnstalleerd"
+      },
+      "installing": "{plugin} installeren...",
+      "plugin-settings-title": "{plugin} Instellingen",
+      "refresh": {
+        "refreshing": "Pluginlijst vernieuwen...",
+        "tooltip": "Beschikbare plugins vernieuwen"
+      },
+      "settings": {
+        "tooltip": "Plugin instellingen"
+      },
+      "settings-error-not-loaded": "Plugin niet geladen",
+      "settings-saved": "Plugininstellingen opgeslagen",
+      "sources": {
+        "add-custom": "Aangepaste repository toevoegen",
+        "add-dialog": {
+          "description": "Voeg een GitHub repository toe als een pluginbron.",
+          "error": "Pluginbron toevoegen mislukt",
+          "name": "Repositorynaam",
+          "name-placeholder": "Mijn Aangepaste Plugins",
+          "success": "Pluginbron succesvol toegevoegd",
+          "title": "Pluginbron toevoegen",
+          "url": "Repository URL"
+        },
+        "description": "Beheer plugin-repositories vanwaar plugins worden gedownload.",
+        "label": "Pluginbronnen",
+        "placeholder": "Mijn coole repository",
+        "remove": {
+          "tooltip": "Pluginbron verwijderen"
+        }
+      },
+      "title": "Plugins",
+      "uninstall": "Verwijderen",
+      "uninstall-dialog": {
+        "description": "Weet je zeker dat je {plugin} wilt verwijderen? Hiermee worden alle plugin-gegevens verwijderd.",
+        "title": "Plugin verwijderen"
+      },
+      "uninstall-error": "Verwijderen mislukt: {error}",
+      "uninstall-success": "{plugin} is succesvol verwijderd.",
+      "uninstalling": "{plugin} verwijderen...",
+      "update": "Update",
+      "update-all": "Alles bijwerken ({count})",
+      "update-all-success": "Alle plugins succesvol bijgewerkt",
+      "update-available": "{count} plugin(s) update(s) beschikbaar",
+      "update-error": "Plugin bijwerken mislukt: {plugin}: {error}",
+      "update-incompatible": "Vereist Noctalia v{version} of hoger",
+      "update-success": "{plugin} is bijgewerkt naar v{version}",
+      "update-version": "v{huidig} → v{nieuw}",
+      "updating": "{plugin} bijwerken..."
     },
     "screen-recorder": {
       "audio": {
@@ -1801,6 +1915,23 @@
           "description": "Aanpassen welke energieacties in het Sessiemenu verschijnen en in welke volgorde.",
           "label": "Energieacties"
         }
+      },
+      "entry-settings": {
+        "command": {
+          "description": "Aangepast commando om uit te voeren voor deze actie. Laat leeg om het standaard systeemcommando te gebruiken.",
+          "label": "Commando",
+          "placeholder": "systemctl poweroff"
+        },
+        "default-command": {
+          "lock": "Intern vergrendelscherm (geen commando)",
+          "logout": "Interne afmelding (geen commando)"
+        },
+        "default-info": {
+          "description": "Als er geen aangepast commando is opgegeven, wordt het standaard systeemcommando gebruikt.",
+          "label": "Standaardopdracht"
+        },
+        "title": "Configureer {entry}",
+        "tooltip": "Configureer opdracht"
       },
       "general": {
         "section": {
@@ -1903,10 +2034,15 @@
         "label": "Animatiesnelheid",
         "reset": "Animatiesnelheid resetten"
       },
-      "border-radius": {
-        "description": "Bepaalt de hoekafronding van vensters, knoppen en andere elementen.",
-        "label": "Hoekafronding",
-        "reset": "Hoekafronding resetten"
+      "box-border-radius": {
+        "description": "Past de hoekronding aan van belangrijke lay-outsecties, zoals zijbalken, kaarten en inhoudspanelen.",
+        "label": "Container Radius",
+        "reset": "Containerstraal resetten"
+      },
+      "control-border-radius": {
+        "description": "Regelt de kromming van interactieve elementen, waaronder knoppen, schakelaars en tekstvelden.",
+        "label": "Voer straal in",
+        "reset": "Reset invoerradius"
       },
       "dim-desktop": {
         "description": "Dim de desktop wanneer panelen of menu's geopend zijn.",
@@ -2151,7 +2287,7 @@
     "noctalia-performance": {
       "disabled": "Prestatiemodus uitgeschakeld",
       "enabled": "Prestatiemodus ingeschakeld",
-      "label": "Noctalia-prestatiemodus"
+      "label": "Noctalia Performance"
     },
     "power-profile": {
       "changed": "Energieprofiel gewijzigd",
@@ -2194,70 +2330,70 @@
   "tooltips": {
     "add-widget": "Widget toevoegen",
     "bluetooth-devices": "Bluetooth-apparaten",
-    "brightness-at": "Helderheid: {brightness}%\nKlik met rechts voor instellingen.\nScroll om de helderheid aan te passen.",
-    "cancel-timer": "Timer annuleren",
+    "brightness-at": "Helderheid: {brightness}%",
+    "cancel-timer": "Timer",
     "clear-history": "Geschiedenis wissen",
-    "click-to-start-recording": "Klik om met opnemen te beginnen",
-    "click-to-stop-recording": "Klik om te stoppen met opnemen",
-    "close": "Sluiten",
-    "connect-disconnect-devices": "Links klikken om te verbinden. Rechts klikken om te vergeten.",
+    "click-to-start-recording": "Schermrecorder (opname starten)",
+    "click-to-stop-recording": "Schermrecorder (opname stoppen)",
+    "close": "Sluiten-knop",
+    "connect-disconnect-devices": "Bluetooth-apparaat",
     "delete-notification": "Melding verwijderen",
-    "disable-keep-awake": "\"Wakker houden\" uitschakelen",
-    "do-not-disturb-disabled": "\"Niet storen\" uitgeschakeld",
-    "do-not-disturb-enabled": "\"Niet storen\" ingeschakeld",
-    "enable-keep-awake": "\"Wakker houden\" inschakelen",
+    "disable-keep-awake": "Wakker houden",
+    "do-not-disturb-disabled": "Niet storen",
+    "do-not-disturb-enabled": "Niet storen",
+    "enable-keep-awake": "Wakker houden",
     "forget-network": "Netwerk vergeten",
     "grid-view": "Rasterweergave",
-    "hidden-files-hide": "Verborgen bestanden verbergen",
-    "hidden-files-show": "Verborgen bestanden tonen",
-    "home": "Home",
-    "input-muted": "Invoermicrofoon dempen in-/uitschakelen",
+    "hidden-files-hide": "Verborgen bestanden",
+    "hidden-files-show": "Verborgen bestanden",
+    "home": "Home-map",
+    "input-muted": "Microfoon",
     "keep-awake": "Wakker houden",
     "keyboard-layout": "{layout}-toetsenbordindeling",
     "list-view": "Lijstweergave",
-    "manage-vpn": "VPN-verbindingen beheren",
-    "manage-wifi": "Wi-Fi beheren",
-    "microphone-volume-at": "Microfoonvolume {volume}%\nLinks klikken voor instellingen. Rechts klikken om te dempen.\nScroll om het volume aan te passen.",
-    "move-to-center-section": "Verplaatsen naar middelste sectie",
-    "move-to-left-section": "Verplaatsen naar linker sectie",
-    "move-to-right-section": "Verplaatsen naar rechter sectie",
-    "next-media": "Volgend media-item",
+    "manage-vpn": "VPN-verbindingen",
+    "manage-wifi": "Wi-Fi",
+    "microphone-volume-at": "Microfoonvolume: {volume}%",
+    "move-to-center-section": "Middelste sectie",
+    "move-to-left-section": "Linker sectie",
+    "move-to-right-section": "Rechter sectie",
+    "next-media": "Volgende track",
     "next-month": "Volgende maand",
-    "night-light-disabled": "Nachtlicht is uitgeschakeld.\nLinks klikken om de modus te doorlopen.\nRechts klikken voor instellingen.",
-    "night-light-enabled": "Nachtlicht is ingeschakeld.\nLinks klikken om de modus te doorlopen.\nRechts klikken voor instellingen.",
-    "night-light-forced": "Nachtlicht is geforceerd.\nLinks klikken om de modus te doorlopen.\nRechts klikken voor instellingen.",
-    "night-light-not-installed": "Nachtlicht is niet beschikbaar.\nwlsunset is niet geïnstalleerd.",
-    "noctalia-performance-disabled": "Noctalia-prestatiemodus is uitgeschakeld.\nLinks klikken om in te schakelen.",
-    "noctalia-performance-enabled": "Noctalia-prestatiemodus is ingeschakeld.\nLinks klikken om uit te schakelen.",
-    "open-control-center": "Bedieningscentrum openen",
-    "open-notification-history-disable-dnd": "Meldingsgeschiedenis openen\nRechter muisknop: contextmenu openen",
-    "open-notification-history-enable-dnd": "Meldingsgeschiedenis openen\nRechter muisknop: contextmenu openen",
-    "open-settings": "Instellingen openen",
-    "open-tray-dropdown": "Systeemvakmenu openen",
-    "open-wallpaper-selector": "Achtergrondkiezer openen",
-    "output-muted": "Uitvoervolume dempen in-/uitschakelen",
-    "pause": "Pauzeren",
-    "play": "Afspelen",
-    "power-profile": "'{profile}'-energieprofiel",
-    "previous-media": "Vorig media-item",
+    "night-light-disabled": "Nachtlicht",
+    "night-light-enabled": "Nachtlicht",
+    "night-light-forced": "Nachtlicht",
+    "night-light-not-installed": "Nachtlicht (niet beschikbaar)",
+    "noctalia-performance-disabled": "Noctalia-prestatiemodus",
+    "noctalia-performance-enabled": "Noctalia-prestatiemodus",
+    "open-control-center": "Bedieningscentrum",
+    "open-notification-history-disable-dnd": "Meldingsgeschiedenis",
+    "open-notification-history-enable-dnd": "Meldingsgeschiedenis",
+    "open-settings": "Instellingen",
+    "open-tray-dropdown": "Systeemvak",
+    "open-wallpaper-selector": "Achtergrondkiezer",
+    "output-muted": "Audio-uitvoer",
+    "pause": "Pauze-knop",
+    "play": "Afspelen-knop",
+    "power-profile": "{profile} energieprofiel",
+    "previous-media": "Vorige track",
     "previous-month": "Vorige maand",
     "refresh": "Verversen",
     "refresh-devices": "Apparaten verversen",
     "refresh-wallhaven": "Wallhaven-resultaten verversen",
     "refresh-wallpaper-list": "Achtergrondlijst verversen",
     "remove-widget": "Widget verwijderen",
-    "screen-recorder-not-installed": "Schermrecorder is niet geïnstalleerd",
+    "screen-recorder-not-installed": "Schermrecorder (niet geïnstalleerd)",
     "search": "Zoeken",
     "search-close": "Zoeken sluiten",
     "session-menu": "Sessiemenu",
-    "set-power-profile": "\"{profile}\"-energieprofiel instellen",
-    "start-screen-recording": "Schermopname starten",
-    "stop-screen-recording": "Schermopname stoppen",
-    "switch-to-dark-mode": "Overschakelen naar donkere modus",
-    "switch-to-light-mode": "Overschakelen naar lichte modus",
-    "up": "Omhoog",
-    "volume-at": "Uitvoervolume {volume}%\nLinks klikken voor instellingen. Rechts klikken om te dempen.\nScroll om het volume aan te passen.",
-    "wallpaper-selector": "Linker muisknop: achtergrondkiezer openen.\nRechter muisknop: willekeurige achtergrond instellen.",
+    "set-power-profile": "{profile} energieprofiel",
+    "start-screen-recording": "Schermrecorder",
+    "stop-screen-recording": "Schermrecorder",
+    "switch-to-dark-mode": "Donkere modus",
+    "switch-to-light-mode": "Lichte modus",
+    "up": "Bovenliggende map",
+    "volume-at": "Uitvoervolume: {volume}%",
+    "wallpaper-selector": "Achtergrondkiezer",
     "widget-settings": "Widget-instellingen"
   },
   "wallpaper": {

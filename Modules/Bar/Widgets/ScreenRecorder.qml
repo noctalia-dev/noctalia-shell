@@ -18,6 +18,7 @@ NIconButton {
   density: Settings.data.bar.density
   baseSize: Style.capsuleHeight
   applyUiScale: false
+  customRadius: Style.radiusL
   colorBg: ScreenRecorderService.isRecording ? Color.mPrimary : Style.capsuleColor
   colorFg: ScreenRecorderService.isRecording ? Color.mOnPrimary : Color.mOnSurface
   colorBorder: Color.transparent

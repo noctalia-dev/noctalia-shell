@@ -257,7 +257,7 @@ ColumnLayout {
               }
             ]
             delegate: Rectangle {
-              radius: 16
+              radius: Style.radiusM
               border.width: Style.borderS
               Layout.preferredHeight: 32
               Layout.preferredWidth: Math.max(90, densityText.implicitWidth + Style.marginXL * 2)

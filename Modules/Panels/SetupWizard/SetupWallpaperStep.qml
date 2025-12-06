@@ -120,7 +120,7 @@ ColumnLayout {
   // Wallpaper gallery strip
   Item {
     Layout.fillWidth: true
-    Layout.preferredHeight: 90
+    Layout.preferredHeight: 88
     visible: filteredWallpapers.length > 0
 
     ScrollView {
@@ -159,22 +159,29 @@ ColumnLayout {
         Repeater {
           model: filteredWallpapers
           delegate: Item {
-            Layout.preferredWidth: 120
-            Layout.preferredHeight: 80
+            readonly property int borderWidth: Style.borderM
+            readonly property int imageMargin: 1
+            readonly property int baseWidth: 120
+            readonly property int baseHeight: 80
 
+            Layout.preferredWidth: baseWidth + (borderWidth + imageMargin) * 2
+            Layout.preferredHeight: baseHeight + (borderWidth + imageMargin) * 2
+
+            // Border container with proper spacing to prevent clipping
             Rectangle {
               anchors.fill: parent
+              anchors.margins: imageMargin
               color: Color.transparent
               border.color: selectedWallpaper === modelData ? Color.mPrimary : Color.mOutline
-              border.width: selectedWallpaper === modelData ? 2 : 1
-            }
+              border.width: borderWidth
 
-            // Cached thumbnail
-            NImageCached {
-              id: thumbCached
-              anchors.fill: parent
-              anchors.margins: selectedWallpaper === modelData ? 2 : 1
-              source: "file://" + modelData
+              // Cached thumbnail
+              NImageCached {
+                id: thumbCached
+                anchors.fill: parent
+                anchors.margins: borderWidth
+                source: "file://" + modelData
+              }
             }
 
             // Loading state

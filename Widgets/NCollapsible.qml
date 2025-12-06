@@ -4,11 +4,13 @@ import qs.Commons
 
 ColumnLayout {
   id: root
+
   property string label: ""
   property string description: ""
   property bool expanded: false
   property bool defaultExpanded: false
   property real contentSpacing: Style.marginM
+
   signal toggled(bool expanded)
 
   Layout.fillWidth: true
@@ -22,12 +24,8 @@ ColumnLayout {
     id: headerContainer
     Layout.fillWidth: true
     Layout.preferredHeight: headerContent.implicitHeight + (Style.marginM * 2)
-
-    // Material 3 style background
-    color: root.expanded ? Color.mSecondary : Color.mSurfaceVariant
-    radius: Style.radiusL
-
-    // Subtle border
+    color: root.expanded ? Color.mSecondary : Color.mPrimary
+    radius: Style.iRadiusM
     border.color: root.expanded ? Color.mOnSecondary : Color.mOutline
     border.width: Style.borderS
 
@@ -83,7 +81,7 @@ ColumnLayout {
         id: chevronIcon
         icon: "chevron-right"
         pointSize: Style.fontSizeL
-        color: root.expanded ? Color.mOnSecondary : Color.mOnSurfaceVariant
+        color: root.expanded ? Color.mOnSecondary : Color.mOnPrimary
         Layout.alignment: Qt.AlignVCenter
 
         rotation: root.expanded ? 90 : 0
@@ -111,7 +109,7 @@ ColumnLayout {
           text: root.label
           pointSize: Style.fontSizeL
           font.weight: Style.fontWeightSemiBold
-          color: root.expanded ? Color.mOnSecondary : Color.mOnSurface
+          color: root.expanded ? Color.mOnSecondary : Color.mOnPrimary
           wrapMode: Text.WordWrap
 
           Behavior on color {
@@ -125,7 +123,7 @@ ColumnLayout {
           text: root.description
           pointSize: Style.fontSizeS
           font.weight: Style.fontWeightRegular
-          color: root.expanded ? Color.mOnSecondary : Color.mOnSurfaceVariant
+          color: root.expanded ? Color.mOnSecondary : Color.mOnPrimary
           Layout.fillWidth: true
           wrapMode: Text.WordWrap
           visible: root.description !== ""
@@ -149,7 +147,7 @@ ColumnLayout {
 
     visible: root.expanded
     color: Color.mSurface
-    radius: Style.radiusL
+    radius: Style.iRadiusL
     border.color: Color.mOutline
     border.width: Style.borderS
 

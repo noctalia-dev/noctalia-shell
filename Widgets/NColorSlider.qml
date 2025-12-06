@@ -39,7 +39,7 @@ Slider {
     height: root.availableHeight - root.knobDiameter
     width: root.trackWidth
 
-    radius: width / 2
+    radius: Math.min(Style.iRadiusL, width / 2)
     color: Qt.alpha(Color.mSurface, 0.5)
     border.color: Qt.alpha(Color.mOutline, 0.5)
     border.width: Style.borderS
@@ -96,7 +96,7 @@ Slider {
       id: knobCutout
       implicitWidth: root.knobDiameter + root.cutoutExtra
       implicitHeight: root.knobDiameter + root.cutoutExtra
-      radius: width / 2
+      radius: Math.min(Style.iRadiusL, width / 2)
       color: root.cutoutColor !== undefined ? root.cutoutColor : Color.mSurface
 
       y: root.visualPosition * (root.availableHeight - root.knobDiameter) - ((root.knobDiameter + root.cutoutExtra) / 2)
@@ -114,7 +114,7 @@ Slider {
       id: knob
       implicitWidth: root.knobDiameter
       implicitHeight: root.knobDiameter
-      radius: width / 2
+      radius: Math.min(Style.iRadiusL, width / 2)
       color: {
         if (root.rainbowMode) {
           // Hue Logic: Map position (0.0 to 1.0) directly to Hue

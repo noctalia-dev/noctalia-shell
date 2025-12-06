@@ -1,5 +1,5 @@
 {
-  "settingsVersion": 25,
+  "settingsVersion": 26,
   "bar": {
     "position": "top",
     "backgroundOpacity": 1,
@@ -15,7 +15,13 @@
     "widgets": {
       "left": [
         {
-          "id": "ControlCenter"
+          "icon": "rocket",
+          "id": "CustomButton",
+          "leftClickExec": "qs -c noctalia-shell ipc call launcher toggle"
+        },
+        {
+          "id": "Clock",
+          "usePrimaryColor": false
         },
         {
           "id": "SystemMonitor"
@@ -52,7 +58,7 @@
           "id": "Brightness"
         },
         {
-          "id": "Clock"
+          "id": "ControlCenter"
         }
       ]
     }
@@ -64,6 +70,8 @@
     "forceBlackScreenCorners": false,
     "scaleRatio": 1,
     "radiusRatio": 1,
+    "iRadiusRatio": 1,
+    "boxRadiusRatio": 1,
     "screenRadiusRatio": 1,
     "animationSpeed": 1,
     "animationDisabled": false,
@@ -103,11 +111,11 @@
     "cards": [
       {
         "enabled": true,
-        "id": "banner-card"
+        "id": "calendar-header-card"
       },
       {
         "enabled": true,
-        "id": "calendar-card"
+        "id": "calendar-month-card"
       },
       {
         "enabled": true,
@@ -167,7 +175,8 @@
     "terminalCommand": "xterm -e",
     "customLaunchPrefixEnabled": false,
     "customLaunchPrefix": "",
-    "viewMode": "list"
+    "viewMode": "list",
+    "showCategories": true
   },
   "controlCenter": {
     "position": "close_to_bar_button",
@@ -246,7 +255,6 @@
     "enabled": true,
     "displayMode": "auto_hide",
     "backgroundOpacity": 1,
-    "radiusRatio": 0.1,
     "floatingRatio": 1,
     "size": 1,
     "onlySameOutput": true,

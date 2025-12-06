@@ -11,7 +11,7 @@ T.ScrollView {
   property color handlePressedColor: handleColor
   property color trackColor: Color.transparent
   property real handleWidth: 6
-  property real handleRadius: Style.radiusM
+  property real handleRadius: Style.iRadiusM
   property int verticalPolicy: ScrollBar.AsNeeded
   property int horizontalPolicy: ScrollBar.AsNeeded
   property bool preventHorizontalScroll: horizontalPolicy === ScrollBar.AlwaysOff

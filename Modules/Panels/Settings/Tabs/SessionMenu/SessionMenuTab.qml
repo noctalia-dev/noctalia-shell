@@ -57,7 +57,8 @@ ColumnLayout {
       toSave.push({
                     "action": entriesModel[i].id,
                     "enabled": entriesModel[i].enabled,
-                    "countdownEnabled": entriesModel[i].countdownEnabled !== undefined ? entriesModel[i].countdownEnabled : true
+                    "countdownEnabled": entriesModel[i].countdownEnabled !== undefined ? entriesModel[i].countdownEnabled : true,
+                    "command": entriesModel[i].command || ""
                   });
     }
     Settings.data.sessionMenu.powerOptions = toSave;
@@ -78,6 +79,49 @@ ColumnLayout {
     saveEntries();
   }
 
+  function openEntrySettingsDialog(index) {
+    if (index < 0 || index >= entriesModel.length) {
+      return;
+    }
+
+    var entry = entriesModel[index];
+    var component = Qt.createComponent(Quickshell.shellDir + "/Modules/Panels/Settings/Tabs/SessionMenu/SessionMenuEntrySettingsDialog.qml");
+
+    function instantiateAndOpen() {
+      var dialog = component.createObject(Overlay.overlay, {
+                                            "entryIndex": index,
+                                            "entryData": entry,
+                                            "entryId": entry.id,
+                                            "entryText": entry.text
+                                          });
+
+      if (dialog) {
+        dialog.updateEntryCommand.connect((idx, command) => {
+                                            root.updateEntry(idx, {
+                                                               "command": command
+                                                             });
+                                          });
+        dialog.open();
+      } else {
+        Logger.e("SessionMenuTab", "Failed to create entry settings dialog");
+      }
+    }
+
+    if (component.status === Component.Ready) {
+      instantiateAndOpen();
+    } else if (component.status === Component.Error) {
+      Logger.e("SessionMenuTab", "Error loading entry settings dialog:", component.errorString());
+    } else {
+      component.statusChanged.connect(function () {
+        if (component.status === Component.Ready) {
+          instantiateAndOpen();
+        } else if (component.status === Component.Error) {
+          Logger.e("SessionMenuTab", "Error loading entry settings dialog:", component.errorString());
+        }
+      });
+    }
+  }
+
   Component.onCompleted: {
     entriesModel = [];
 
@@ -91,6 +135,8 @@ ColumnLayout {
           entry.enabled = settingEntry.enabled;
           // Default countdownEnabled to true for backward compatibility
           entry.countdownEnabled = settingEntry.countdownEnabled !== undefined ? settingEntry.countdownEnabled : true;
+          // Load custom command if defined
+          entry.command = settingEntry.command || "";
           entriesModel.push(entry);
         }
       }
@@ -110,6 +156,8 @@ ColumnLayout {
         var entry = entriesDefault[i];
         // Default countdownEnabled to true for new entries
         entry.countdownEnabled = true;
+        // Default command to empty string for new entries
+        entry.command = "";
         entriesModel.push(entry);
       }
     }
@@ -405,6 +453,17 @@ ColumnLayout {
                 }
               }
             }
+
+            // Settings button (cogwheel)
+            NIconButton {
+              icon: "settings"
+              tooltipText: I18n.tr("settings.session-menu.entry-settings.tooltip")
+              baseSize: Style.baseWidgetSize * 0.7
+              Layout.alignment: Qt.AlignVCenter
+              onClicked: {
+                openEntrySettingsDialog(delegateItem.index);
+              }
+            }
           }
 
           // Position binding for non-dragging state
@@ -450,5 +509,11 @@ ColumnLayout {
         }
       }
     }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginL
+    Layout.bottomMargin: Style.marginL
   }
 }

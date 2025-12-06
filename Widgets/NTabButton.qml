@@ -20,9 +20,10 @@ Rectangle {
   // Sizing
   Layout.fillWidth: true
   Layout.fillHeight: true
+  Layout.minimumWidth: 140
 
   // Styling
-  radius: Style.radiusXS
+  radius: Style.iRadiusM
   color: root.checked ? Color.mPrimary : (root.isHovered ? Color.mHover : Color.mSurface)
 
   Behavior on color {
@@ -34,7 +35,13 @@ Rectangle {
 
   NText {
     id: tabText
-    anchors.centerIn: parent
+    anchors {
+      left: parent.left
+      right: parent.right
+      verticalCenter: parent.verticalCenter
+      leftMargin: Style.marginS
+      rightMargin: Style.marginS
+    }
     text: root.text
     pointSize: Style.fontSizeM
     font.weight: root.checked ? Style.fontWeightSemiBold : Style.fontWeightRegular

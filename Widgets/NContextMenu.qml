@@ -21,7 +21,7 @@ Popup {
     color: Color.mSurfaceVariant
     border.color: Color.mOutline
     border.width: Style.borderS
-    radius: Style.radiusM
+    radius: Style.iRadiusM
   }
 
   contentItem: NListView {
@@ -45,7 +45,7 @@ Popup {
 
       background: Rectangle {
         color: menuItem.hovered && menuItem.enabled ? Color.mHover : Color.transparent
-        radius: Style.radiusS
+        radius: Style.iRadiusS
 
         Behavior on color {
           ColorAnimation {

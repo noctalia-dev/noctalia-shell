@@ -436,7 +436,14 @@ Item {
 
   function focusWindow(window) {
     try {
-      Hyprland.dispatch(`focuswindow address:0x${window.id.toString()}`);
+      if (!window || !window.id) {
+        Logger.w("HyprlandService", "Invalid window object for focus");
+        return;
+      }
+
+      const windowId = window.id.toString();
+      Hyprland.dispatch(`focuswindow address:0x${windowId}`);
+      Hyprland.dispatch(`alterzorder top,address:0x${windowId}`); // Bring the focused window to the top (essential for Float Mode)
     } catch (e) {
       Logger.e("HyprlandService", "Failed to switch window:", e);
     }

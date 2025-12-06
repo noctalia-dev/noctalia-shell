@@ -5,10 +5,53 @@ import "../../../../Helpers/FuzzySort.js" as Fuzzysort
 import qs.Commons
 
 Item {
+  id: root
+
   property var launcher: null
   property string name: I18n.tr("plugins.applications")
   property bool handleSearch: true
   property var entries: []
+
+  // Category support
+  property string selectedCategory: "all"
+  property bool isBrowsingMode: false
+  property var categories: ["all", "AudioVideo", "Chat", "Development", "Education", "Game", "Graphics", "Network", "Office", "System", "Misc", "WebBrowser"]
+  property var availableCategories: ["all"] // Reactive property for available categories
+
+  property var categoryIcons: ({
+                                 "all": "apps",
+                                 "AudioVideo": "music",
+                                 "Chat": "message-circle",
+                                 "Development": "code",
+                                 "Education": "school" // Includes Science
+                                              ,
+                                 "Game": "device-gamepad",
+                                 "Graphics": "brush",
+                                 "Network": "wifi",
+                                 "Office": "file-text",
+                                 "System": "device-desktop" // Includes Settings and Utility
+                                           ,
+                                 "Misc": "dots",
+                                 "WebBrowser": "world"
+                               })
+
+  function getCategoryName(category) {
+    const names = {
+      "all": I18n.tr("launcher.categories.all"),
+      "AudioVideo": I18n.tr("launcher.categories.audiovideo"),
+      "Chat": I18n.tr("launcher.categories.chat"),
+      "Development": I18n.tr("launcher.categories.development"),
+      "Education": I18n.tr("launcher.categories.education"),
+      "Game": I18n.tr("launcher.categories.game"),
+      "Graphics": I18n.tr("launcher.categories.graphics"),
+      "Network": I18n.tr("launcher.categories.network"),
+      "Office": I18n.tr("launcher.categories.office"),
+      "System": I18n.tr("launcher.categories.system"),
+      "Misc": I18n.tr("launcher.categories.misc"),
+      "WebBrowser": I18n.tr("launcher.categories.webbrowser")
+    };
+    return names[category] || category;
+  }
 
   // Persistent usage tracking stored in cacheDir
   property string usageFilePath: Settings.cacheDir + "launcher_app_usage.json"
@@ -49,6 +92,199 @@ Item {
   function onOpened() {
     // Refresh apps when launcher opens
     loadApplications();
+    // Reset to "all" category when opening
+    selectedCategory = "all";
+    // Set browsing mode initially (will be updated when getResults is called)
+    isBrowsingMode = true;
+  }
+
+  function selectCategory(category) {
+    selectedCategory = category;
+    if (launcher) {
+      launcher.updateResults();
+    }
+  }
+
+  function getAppCategories(app) {
+    if (!app)
+      return [];
+
+    const result = [];
+
+    if (app.categories) {
+      if (Array.isArray(app.categories)) {
+        for (let cat of app.categories) {
+          if (cat && cat.trim && cat.trim() !== '') {
+            result.push(cat.trim());
+          } else if (cat && typeof cat === 'string' && cat.trim() !== '') {
+            result.push(cat.trim());
+          }
+        }
+      } else if (typeof app.categories === 'string') {
+        const cats = app.categories.split(';').filter(c => c && c.trim() !== '');
+        for (let cat of cats) {
+          const trimmed = cat.trim();
+          if (trimmed && !result.includes(trimmed)) {
+            result.push(trimmed);
+          }
+        }
+      } else if (app.categories.length !== undefined) {
+        try {
+          for (let i = 0; i < app.categories.length; i++) {
+            const cat = app.categories[i];
+            if (cat && cat.trim && typeof cat.trim === 'function' && cat.trim() !== '') {
+              result.push(cat.trim());
+            } else if (cat && typeof cat === 'string' && cat.trim() !== '') {
+              result.push(cat.trim());
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (app.Categories) {
+      const cats = app.Categories.split(';').filter(c => c && c.trim() !== '');
+      for (let cat of cats) {
+        const trimmed = cat.trim();
+        if (trimmed && !result.includes(trimmed)) {
+          result.push(trimmed);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  function getAppCategory(app) {
+    const appCategories = getAppCategories(app);
+    if (appCategories.length === 0)
+      return null;
+
+    const priorityCategories = ["AudioVideo", "Chat", "WebBrowser", "Game", "Development", "Graphics", "Office", "Education", "System", "Network", "Misc"];
+
+    for (let cat of appCategories) {
+      if (cat === "AudioVideo" || cat === "Audio" || cat === "Video") {
+        return "AudioVideo";
+      }
+    }
+
+    if (appCategories.includes("Chat") || appCategories.includes("InstantMessaging")) {
+      return "Chat";
+    }
+
+    if (appCategories.includes("WebBrowser")) {
+      return "WebBrowser";
+    }
+
+    // Map Science to Education
+    if (appCategories.includes("Science")) {
+      return "Education";
+    }
+
+    // Map Settings to System
+    if (appCategories.includes("Settings")) {
+      return "System";
+    }
+
+    // Map Utility to System
+    if (appCategories.includes("Utility")) {
+      return "System";
+    }
+
+    for (let priorityCat of priorityCategories) {
+      if (appCategories.includes(priorityCat) && root.categories.includes(priorityCat)) {
+        return priorityCat;
+      }
+    }
+
+    return "Misc";
+  }
+
+  function appMatchesCategory(app, category) {
+    // Check if app matches the selected category
+    if (category === "all")
+      return true;
+
+    // Get the primary category for this app (first matching standard category)
+    const primaryCategory = getAppCategory(app);
+
+    // If app has no matching standard category, don't show it in any category (only in "all")
+    if (!primaryCategory)
+      return false;
+
+    // Map Audio/Video to AudioVideo
+    if (category === "AudioVideo") {
+      const appCategories = getAppCategories(app);
+      // Show if app has AudioVideo, Audio, or Video
+      return appCategories.includes("AudioVideo") || appCategories.includes("Audio") || appCategories.includes("Video");
+    }
+
+    // Map Science to Education
+    if (category === "Education") {
+      const appCategories = getAppCategories(app);
+      return appCategories.includes("Education") || appCategories.includes("Science");
+    }
+
+    // Map Settings and Utility to System
+    if (category === "System") {
+      const appCategories = getAppCategories(app);
+      return appCategories.includes("System") || appCategories.includes("Settings") || appCategories.includes("Utility");
+    }
+
+    // Only show app in its primary category to avoid overlap
+    // This ensures each app appears in exactly one category tab
+    return category === primaryCategory;
+  }
+
+  function getAvailableCategories() {
+    const categorySet = new Set();
+    let hasAudioVideo = false;
+    let hasEducation = false;
+    let hasSystem = false;
+
+    for (let app of entries) {
+      const appCategories = getAppCategories(app);
+      const primaryCategory = getAppCategory(app);
+
+      if (appCategories.includes("AudioVideo") || appCategories.includes("Audio") || appCategories.includes("Video")) {
+        hasAudioVideo = true;
+      } else if (appCategories.includes("Education") || appCategories.includes("Science")) {
+        hasEducation = true;
+      } else if (appCategories.includes("System") || appCategories.includes("Settings") || appCategories.includes("Utility")) {
+        hasSystem = true;
+      } else if (primaryCategory && root.categories.includes(primaryCategory)) {
+        categorySet.add(primaryCategory);
+      }
+    }
+
+    if (hasAudioVideo) {
+      categorySet.add("AudioVideo");
+    }
+    if (hasEducation) {
+      categorySet.add("Education");
+    }
+    if (hasSystem) {
+      categorySet.add("System");
+    }
+
+    const result = ["all"];
+    for (let cat of root.categories) {
+      if (cat !== "all" && cat !== "Misc" && categorySet.has(cat)) {
+        result.push(cat);
+      }
+    }
+
+    if (categorySet.has("Misc")) {
+      result.push("Misc");
+    }
+
+    if (result.length === 1) {
+      const fallback = root.categories.filter(c => c !== "Misc");
+      fallback.push("Misc");
+      return fallback;
+    }
+
+    return result;
   }
 
   function loadApplications() {
@@ -64,6 +300,12 @@ Item {
                                                                  return app;
                                                                });
     Logger.d("ApplicationsPlugin", `Loaded ${entries.length} applications`);
+    // Update available categories when apps are loaded
+    updateAvailableCategories();
+  }
+
+  function updateAvailableCategories() {
+    availableCategories = getAvailableCategories();
   }
 
   function getExecutableName(app) {
@@ -99,38 +341,47 @@ Item {
     if (!entries || entries.length === 0)
       return [];
 
+    // Set browsing mode based on whether there's a query
+    isBrowsingMode = !query || query.trim() === "";
+
+    // Filter by category first
+    let filteredEntries = entries;
+    if (selectedCategory && selectedCategory !== "all") {
+      filteredEntries = entries.filter(app => appMatchesCategory(app, selectedCategory));
+    }
+
     if (!query || query.trim() === "") {
-      // Return all apps, optionally sorted by usage
+      // Return filtered apps, optionally sorted by usage
       const favoriteApps = Settings.data.appLauncher.favoriteApps || [];
       let sorted;
       if (Settings.data.appLauncher.sortByMostUsed) {
-        sorted = entries.slice().sort((a, b) => {
-                                        // Favorites first
-                                        const aFav = favoriteApps.includes(getAppKey(a));
-                                        const bFav = favoriteApps.includes(getAppKey(b));
-                                        if (aFav !== bFav)
-                                        return aFav ? -1 : 1;
-                                        const ua = getUsageCount(a);
-                                        const ub = getUsageCount(b);
-                                        if (ub !== ua)
-                                        return ub - ua;
-                                        return (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
-                                      });
+        sorted = filteredEntries.slice().sort((a, b) => {
+                                                // Favorites first
+                                                const aFav = favoriteApps.includes(getAppKey(a));
+                                                const bFav = favoriteApps.includes(getAppKey(b));
+                                                if (aFav !== bFav)
+                                                return aFav ? -1 : 1;
+                                                const ua = getUsageCount(a);
+                                                const ub = getUsageCount(b);
+                                                if (ub !== ua)
+                                                return ub - ua;
+                                                return (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
+                                              });
       } else {
-        sorted = entries.slice().sort((a, b) => {
-                                        const aFav = favoriteApps.includes(getAppKey(a));
-                                        const bFav = favoriteApps.includes(getAppKey(b));
-                                        if (aFav !== bFav)
-                                        return aFav ? -1 : 1;
-                                        return (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
-                                      });
+        sorted = filteredEntries.slice().sort((a, b) => {
+                                                const aFav = favoriteApps.includes(getAppKey(a));
+                                                const bFav = favoriteApps.includes(getAppKey(b));
+                                                if (aFav !== bFav)
+                                                return aFav ? -1 : 1;
+                                                return (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
+                                              });
       }
       return sorted.map(app => createResultEntry(app));
     }
 
     // Use fuzzy search if available, fallback to simple search
     if (typeof Fuzzysort !== 'undefined') {
-      const fuzzyResults = Fuzzysort.go(query, entries, {
+      const fuzzyResults = Fuzzysort.go(query, filteredEntries, {
                                           "keys": ["name", "comment", "genericName", "executableName"],
                                           "threshold": -1000,
                                           "limit": 20
@@ -151,37 +402,37 @@ Item {
     } else {
       // Fallback to simple search
       const searchTerm = query.toLowerCase();
-      return entries.filter(app => {
-                              const name = (app.name || "").toLowerCase();
-                              const comment = (app.comment || "").toLowerCase();
-                              const generic = (app.genericName || "").toLowerCase();
-                              const executable = getExecutableName(app).toLowerCase();
-                              return name.includes(searchTerm) || comment.includes(searchTerm) || generic.includes(searchTerm) || executable.includes(searchTerm);
-                            }).sort((a, b) => {
-                                      // Prioritize name matches, then executable matches
-                                      const aName = a.name.toLowerCase();
-                                      const bName = b.name.toLowerCase();
-                                      const aExecutable = getExecutableName(a).toLowerCase();
-                                      const bExecutable = getExecutableName(b).toLowerCase();
-                                      const aStarts = aName.startsWith(searchTerm);
-                                      const bStarts = bName.startsWith(searchTerm);
-                                      const aExecStarts = aExecutable.startsWith(searchTerm);
-                                      const bExecStarts = bExecutable.startsWith(searchTerm);
+      return filteredEntries.filter(app => {
+                                      const name = (app.name || "").toLowerCase();
+                                      const comment = (app.comment || "").toLowerCase();
+                                      const generic = (app.genericName || "").toLowerCase();
+                                      const executable = getExecutableName(app).toLowerCase();
+                                      return name.includes(searchTerm) || comment.includes(searchTerm) || generic.includes(searchTerm) || executable.includes(searchTerm);
+                                    }).sort((a, b) => {
+                                              // Prioritize name matches, then executable matches
+                                              const aName = a.name.toLowerCase();
+                                              const bName = b.name.toLowerCase();
+                                              const aExecutable = getExecutableName(a).toLowerCase();
+                                              const bExecutable = getExecutableName(b).toLowerCase();
+                                              const aStarts = aName.startsWith(searchTerm);
+                                              const bStarts = bName.startsWith(searchTerm);
+                                              const aExecStarts = aExecutable.startsWith(searchTerm);
+                                              const bExecStarts = bExecutable.startsWith(searchTerm);
 
-                                      // Prioritize name matches first
-                                      if (aStarts && !bStarts)
-                                      return -1;
-                                      if (!aStarts && bStarts)
-                                      return 1;
+                                              // Prioritize name matches first
+                                              if (aStarts && !bStarts)
+                                              return -1;
+                                              if (!aStarts && bStarts)
+                                              return 1;
 
-                                      // Then prioritize executable matches
-                                      if (aExecStarts && !bExecStarts)
-                                      return -1;
-                                      if (!aExecStarts && bExecStarts)
-                                      return 1;
+                                              // Then prioritize executable matches
+                                              if (aExecStarts && !bExecStarts)
+                                              return -1;
+                                              if (!aExecStarts && bExecStarts)
+                                              return 1;
 
-                                      return aName.localeCompare(bName);
-                                    }).slice(0, 20).map(app => createResultEntry(app));
+                                              return aName.localeCompare(bName);
+                                            }).slice(0, 20).map(app => createResultEntry(app));
     }
   }
 

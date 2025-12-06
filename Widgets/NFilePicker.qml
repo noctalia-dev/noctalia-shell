@@ -134,7 +134,7 @@ Popup {
 
   background: Rectangle {
     color: Color.mSurfaceVariant
-    radius: Style.radiusL
+    radius: Style.iRadiusL
     border.color: Color.mOutline
     border.width: Style.borderS
   }
@@ -231,7 +231,7 @@ Popup {
         Layout.fillWidth: true
         Layout.preferredHeight: 45
         color: Color.mSurfaceVariant
-        radius: Style.radiusS
+        radius: Style.iRadiusS
         border.color: Color.mOutline
         border.width: Style.borderS
 
@@ -358,7 +358,7 @@ Popup {
         Layout.fillWidth: true
         Layout.fillHeight: true
         color: Color.mSurface
-        radius: Style.radiusM
+        radius: Style.iRadiusM
         border.color: Color.mOutline
         border.width: Style.borderS
 
@@ -411,7 +411,7 @@ Popup {
             contentItem: Rectangle {
               implicitWidth: 6
               implicitHeight: 100
-              radius: Style.radiusM
+              radius: Style.iRadiusM
               color: Qt.alpha(Color.mHover, 0.8)
               opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 1.0 : 0.0
               Behavior on opacity {
@@ -430,7 +430,7 @@ Popup {
               implicitHeight: 100
               color: Color.transparent
               opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
-              radius: (Style.radiusM) / 2
+              radius: (Style.iRadiusM) / 2
               Behavior on opacity {
                 NumberAnimation {
                   duration: Style.animationFast
@@ -473,7 +473,7 @@ Popup {
             width: gridView.itemSize
             height: gridView.cellHeight
             color: Color.transparent
-            radius: Style.radiusM
+            radius: Style.iRadiusM
 
             property bool isSelected: filePickerPanel.currentSelection.includes(model.filePath)
 
@@ -546,7 +546,7 @@ Popup {
                   Rectangle {
                     anchors.fill: parent
                     color: Color.mSurfaceVariant
-                    radius: Style.radiusS
+                    radius: Style.iRadiusS
                     visible: thumbnail.status === Image.Loading
                     NIcon {
                       icon: "filepicker-photo"
@@ -578,7 +578,7 @@ Popup {
                   anchors.margins: Style.marginS
                   width: 24
                   height: 24
-                  radius: width / 2
+                  radius: Math.min(Style.iRadiusL, width / 2)
                   color: Color.mSecondary
                   border.color: Color.mOutline
                   border.width: Style.borderS
@@ -673,7 +673,7 @@ Popup {
                 return Color.mHover;
               return Color.transparent;
             }
-            radius: Style.radiusS
+            radius: Style.iRadiusS
             Behavior on color {
               ColorAnimation {
                 duration: Style.animationFast

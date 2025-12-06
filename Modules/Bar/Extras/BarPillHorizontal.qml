@@ -27,6 +27,7 @@ Item {
 
   // Effective shown state (true if hovered/animated open or forced)
   readonly property bool revealed: !forceClose && (forceOpen || showPill)
+  readonly property bool hasIcon: root.icon !== ""
 
   signal shown
   signal hidden
@@ -68,7 +69,14 @@ Item {
     }
   }
 
-  width: collapseToIcon ? pillHeight : pillHeight + Math.max(0, pill.width - pillOverlap)
+  width: {
+    if (collapseToIcon) {
+      return hasIcon ? pillHeight : 0;
+    }
+    var overlap = hasIcon ? pillOverlap : 0;
+    var baseWidth = hasIcon ? pillHeight : 0;
+    return baseWidth + Math.max(0, pill.width - overlap);
+  }
   height: pillHeight
 
   Connections {
@@ -85,11 +93,9 @@ Item {
     id: pillBackground
     width: collapseToIcon ? pillHeight : root.width
     height: pillHeight
-    radius: halfPillHeight
+    radius: Style.radiusM
     color: root.bgColor
     anchors.verticalCenter: parent.verticalCenter
-
-    readonly property int halfPillHeight: Math.round(pillHeight * 0.5)
 
     Behavior on color {
       ColorAnimation {
@@ -105,24 +111,28 @@ Item {
     width: revealed ? pillMaxWidth : 1
     height: pillHeight
 
-    x: oppositeDirection ? (iconCircle.x + iconCircle.width / 2) : // Opens right
-                           (iconCircle.x + iconCircle.width / 2) - width // Opens left
+    x: {
+      if (!hasIcon)
+        return 0;
+      return oppositeDirection ? (iconCircle.x + iconCircle.width / 2) : (iconCircle.x + iconCircle.width / 2) - width;
+    }
 
     opacity: revealed ? Style.opacityFull : Style.opacityNone
     color: Color.transparent // Make pill background transparent to avoid double opacity
 
-    readonly property int halfPillHeight: Math.round(pillHeight * 0.5)
-
-    topLeftRadius: oppositeDirection ? 0 : halfPillHeight
-    bottomLeftRadius: oppositeDirection ? 0 : halfPillHeight
-    topRightRadius: oppositeDirection ? halfPillHeight : 0
-    bottomRightRadius: oppositeDirection ? halfPillHeight : 0
+    topLeftRadius: oppositeDirection ? 0 : Style.radiusM
+    bottomLeftRadius: oppositeDirection ? 0 : Style.radiusM
+    topRightRadius: oppositeDirection ? Style.radiusM : 0
+    bottomRightRadius: oppositeDirection ? Style.radiusM : 0
     anchors.verticalCenter: parent.verticalCenter
 
     NText {
       id: textItem
       anchors.verticalCenter: parent.verticalCenter
       x: {
+        if (!hasIcon)
+          return (parent.width - width) / 2;
+
         // Better text horizontal centering
         var centerX = (parent.width - width) / 2;
         var offset = oppositeDirection ? Style.marginXS : -Style.marginXS;
@@ -159,9 +169,9 @@ Item {
 
   Rectangle {
     id: iconCircle
-    width: pillHeight
+    width: hasIcon ? pillHeight : 0
     height: pillHeight
-    radius: width * 0.5
+    radius: Math.min(Style.radiusL, width / 2)
     color: Color.transparent // Make icon background transparent to avoid double opacity
     anchors.verticalCenter: parent.verticalCenter
 
@@ -292,7 +302,7 @@ Item {
   }
 
   function show() {
-    if (collapseToIcon)
+    if (collapseToIcon || root.text.trim().length === 0)
       return;
     if (!showPill) {
       shouldAnimateHide = autoHide;
@@ -316,7 +326,7 @@ Item {
   }
 
   function showDelayed() {
-    if (collapseToIcon)
+    if (collapseToIcon || root.text.trim().length === 0)
       return;
     if (!showPill) {
       shouldAnimateHide = autoHide;

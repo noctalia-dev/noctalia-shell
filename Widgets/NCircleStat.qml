@@ -22,7 +22,7 @@ Rectangle {
   width: 68
   height: 92
   color: flat ? Color.transparent : Color.mSurface
-  radius: Style.radiusS
+  radius: Style.iRadiusS
   border.color: flat ? Color.transparent : Color.mSurfaceVariant
   border.width: flat ? 0 : Style.borderS
 

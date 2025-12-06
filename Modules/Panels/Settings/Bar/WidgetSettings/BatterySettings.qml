@@ -17,6 +17,8 @@ ColumnLayout {
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
   property int valueWarningThreshold: widgetData.warningThreshold !== undefined ? widgetData.warningThreshold : widgetMetadata.warningThreshold
   property string valueDeviceNativePath: widgetData.deviceNativePath !== undefined ? widgetData.deviceNativePath : ""
+  property bool valueShowPowerProfiles: widgetData.showPowerProfiles !== undefined ? widgetData.showPowerProfiles : widgetMetadata.showPowerProfiles
+  property bool valueShowNoctaliaPerformance: widgetData.showNoctaliaPerformance !== undefined ? widgetData.showNoctaliaPerformance : widgetMetadata.showNoctaliaPerformance
 
   // Build model of available battery devices
   function buildDeviceModel() {
@@ -80,6 +82,8 @@ ColumnLayout {
     }
     settings.displayMode = valueDisplayMode;
     settings.warningThreshold = valueWarningThreshold;
+    settings.showPowerProfiles = valueShowPowerProfiles;
+    settings.showNoctaliaPerformance = valueShowNoctaliaPerformance;
     if (valueDeviceNativePath && valueDeviceNativePath !== "") {
       settings.deviceNativePath = valueDeviceNativePath;
     } else {
@@ -149,5 +153,19 @@ ColumnLayout {
     minimum: 5
     maximum: 50
     onValueChanged: valueWarningThreshold = value
+  }
+
+  NToggle {
+    label: I18n.tr("bar.widget-settings.battery.show-power-profile.label")
+    description: I18n.tr("bar.widget-settings.battery.show-power-profile.description")
+    checked: valueShowPowerProfiles
+    onToggled: checked => valueShowPowerProfiles = checked
+  }
+
+  NToggle {
+    label: I18n.tr("bar.widget-settings.battery.show-noctalia-performance.label")
+    description: I18n.tr("bar.widget-settings.battery.show-noctalia-performance.description")
+    checked: valueShowNoctaliaPerformance
+    onToggled: checked => valueShowNoctaliaPerformance = checked
   }
 }

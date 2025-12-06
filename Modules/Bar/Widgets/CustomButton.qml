@@ -52,6 +52,83 @@ Item {
   readonly property string textCollapse: widgetSettings.textCollapse !== undefined ? widgetSettings.textCollapse : (widgetMetadata.textCollapse || "")
   readonly property bool parseJson: widgetSettings.parseJson !== undefined ? widgetSettings.parseJson : (widgetMetadata.parseJson || false)
   readonly property bool hasExec: (leftClickExec || rightClickExec || middleClickExec || (wheelMode === "unified" && wheelExec) || (wheelMode === "separate" && (wheelUpExec || wheelDownExec)))
+  readonly property bool showIcon: (widgetSettings.showIcon !== undefined) ? widgetSettings.showIcon : true
+  readonly property string hideMode: widgetSettings.hideMode || "alwaysExpanded"
+  readonly property bool hasOutput: _dynamicText !== ""
+  readonly property bool shouldForceOpen: textStream && (hideMode === "alwaysExpanded" || hideMode === "maxTransparent")
+
+  readonly property bool _useNewHideLogic: textCommand && textCommand.length > 0 && textStream
+  readonly property bool _useTextCommandLogic: textCommand && textCommand.length > 0 && textStream
+
+  readonly property bool _pillVisible: {
+    if (!_useTextCommandLogic) {
+      return true;
+    }
+    if (hideMode === "alwaysExpanded" || hideMode === "maxTransparent") {
+      return true;
+    }
+    var hasActualIcon = (_dynamicIcon !== "" || customIcon !== "");
+    return hasOutput || (showIcon && hasActualIcon);
+  }
+
+  readonly property real _pillOpacity: {
+    if (!_useTextCommandLogic) {
+      return 1.0;
+    }
+    if (hideMode === "maxTransparent" && !hasOutput) {
+      return 0.0;
+    }
+    return 1.0;
+  }
+
+  readonly property bool _pillForceOpen: {
+    if (!_useTextCommandLogic) {
+      return _dynamicText !== "" || (textStream && currentMaxTextLength > 0);
+    }
+    if (currentMaxTextLength <= 0) {
+      return false;
+    }
+
+    if (hideMode === "alwaysExpanded" || hideMode === "maxTransparent") {
+      return true;
+    }
+    return hasOutput;
+  }
+
+  readonly property string _pillIcon: {
+    if (!_useTextCommandLogic) {
+      if (textCommand && textCommand.length > 0 && showIcon) {
+        return _dynamicIcon !== "" ? _dynamicIcon : customIcon;
+      } else if (!(textCommand && textCommand.length > 0)) {
+        return _dynamicIcon !== "" ? _dynamicIcon : customIcon;
+      } else {
+        return "";
+      }
+    }
+    if (!showIcon)
+      return "";
+    var actualIcon = _dynamicIcon !== "" ? _dynamicIcon : customIcon;
+    if (hideMode === "expandWithOutput" && actualIcon === "") {
+      return "question-mark";
+    }
+    return actualIcon;
+  }
+
+  readonly property string _pillText: {
+    if (!_useTextCommandLogic) {
+      return (!isVerticalBar || currentMaxTextLength > 0) ? _dynamicText : "";
+    }
+    if (currentMaxTextLength <= 0) {
+      return "";
+    }
+    if (hasOutput) {
+      return _dynamicText;
+    }
+    if (hideMode === "expandWithOutput") {
+      return "";
+    }
+    return " ".repeat(currentMaxTextLength);
+  }
 
   implicitWidth: pill.width
   implicitHeight: pill.height
@@ -59,14 +136,17 @@ Item {
   BarPill {
     id: pill
 
+    visible: _pillVisible
+    opacity: _pillOpacity
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
-    icon: _dynamicIcon !== "" ? _dynamicIcon : customIcon
-    text: (!isVerticalBar || currentMaxTextLength > 0) ? _dynamicText : ""
+    icon: _pillIcon
+    text: _pillText
     density: Settings.data.bar.density
     rotateText: isVerticalBar && currentMaxTextLength > 0
     autoHide: false
-    forceOpen: _dynamicText !== ""
+    forceOpen: _pillForceOpen
+
     tooltipText: {
       var tooltipLines = [];
 

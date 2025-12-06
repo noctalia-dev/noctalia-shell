@@ -8,6 +8,7 @@ Item {
   property int strokeWidth: 0
   property var values: []
   property bool vertical: false
+  property string barPosition: "top" // "top", "bottom", "left", "right"
 
   // Minimum signal properties
   property bool showMinimumSignal: false
@@ -40,7 +41,7 @@ Item {
       // Only update when value actually changes - reduces GPU load
       width: vertical ? root.width * amp : root.barSlotSize * 0.5
       height: vertical ? root.barSlotSize * 0.5 : root.height * amp
-      x: vertical ? root.width - width : index * root.barSlotSize + (root.barSlotSize * 0.25)
+      x: vertical ? (root.barPosition === "left" ? 0 : root.width - width) : index * root.barSlotSize + (root.barSlotSize * 0.25)
       y: vertical ? index * root.barSlotSize + (root.barSlotSize * 0.25) : root.height - height
 
       // Disable updates when invisible to save GPU

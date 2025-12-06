@@ -20,6 +20,7 @@ Rectangle {
   property real iconSize: Style.fontSizeL
   property bool outlined: false
   property int horizontalAlignment: Qt.AlignHCenter
+  property real buttonRadius: Style.iRadiusS
 
   // Signals
   signal clicked
@@ -36,7 +37,7 @@ Rectangle {
   implicitHeight: Math.max(Style.baseWidgetSize, contentRow.implicitHeight + (Style.marginM))
 
   // Appearance
-  radius: Style.radiusS
+  radius: root.buttonRadius
   color: {
     if (!enabled)
       return outlined ? Color.transparent : Qt.lighter(Color.mSurfaceVariant, 1.2);

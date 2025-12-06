@@ -305,6 +305,7 @@ PopupWindow {
 
       // PIN / UNPIN
       Rectangle {
+        visible: Settings.data.bar.widgets[widgetSection][widgetIndex].drawerEnabled
         Layout.preferredWidth: parent.width
         Layout.preferredHeight: 28
         color: pinUnpinMouseArea.containsMouse ? Qt.alpha(Color.mPrimary, 0.2) : Qt.alpha(Color.mPrimary, 0.08)

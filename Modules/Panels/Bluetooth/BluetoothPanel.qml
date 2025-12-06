@@ -12,7 +12,7 @@ import qs.Widgets
 SmartPanel {
   id: root
 
-  preferredWidth: Math.round(400 * Style.uiScaleRatio)
+  preferredWidth: Math.round(420 * Style.uiScaleRatio)
   preferredHeight: Math.round(500 * Style.uiScaleRatio)
 
   panelContent: Rectangle {

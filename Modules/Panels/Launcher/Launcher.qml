@@ -17,7 +17,7 @@ SmartPanel {
   readonly property bool previewActive: !!(searchText && searchText.startsWith(">clip") && Settings.data.appLauncher.enableClipPreview && ClipboardService.items && ClipboardService.items.length > 0 && selectedIndex >= 0 && results && results[selectedIndex] && results[selectedIndex].clipboardId)
 
   // Panel configuration
-  readonly property int listPanelWidth: Math.round(600 * Style.uiScaleRatio)
+  readonly property int listPanelWidth: Math.round(500 * Style.uiScaleRatio)
   readonly property int previewPanelWidth: Math.round(400 * Style.uiScaleRatio)
   readonly property int totalBaseWidth: listPanelWidth + (Style.marginL * 2)
 
@@ -54,7 +54,7 @@ SmartPanel {
   property bool resultsReady: false
   property bool ignoreMouseHover: false
 
-  readonly property int badgeSize: Math.round(Style.baseWidgetSize * 1.6)
+  readonly property int badgeSize: Math.round(Style.baseWidgetSize * 1.6 * Style.uiScaleRatio)
   readonly property int entryHeight: Math.round(badgeSize + Style.marginM * 2)
   readonly property bool isGridView: {
     // Always use list view for clipboard and calculator to better display content
@@ -68,8 +68,10 @@ SmartPanel {
   }
 
   // Target columns, but actual columns may vary based on available width
+  // Account for NTabBar margins to match category tabs width
   readonly property int targetGridColumns: 5
-  readonly property int gridCellSize: Math.floor((listPanelWidth - Style.marginS - (targetGridColumns * Style.marginXXS)) / targetGridColumns)
+  readonly property int gridContentWidth: listPanelWidth - (2 * Style.marginXS)
+  readonly property int gridCellSize: Math.floor((gridContentWidth - ((targetGridColumns - 1) * Style.marginS)) / targetGridColumns)
 
   // Actual columns that fit in the GridView
   // This gets updated dynamically by the GridView when its actual width is known
@@ -85,21 +87,35 @@ SmartPanel {
       var currentIndex = emojiPlugin.categories.indexOf(emojiPlugin.selectedCategory);
       var nextIndex = (currentIndex + 1) % emojiPlugin.categories.length;
       emojiPlugin.selectCategory(emojiPlugin.categories[nextIndex]);
+    } else if ((activePlugin === null || activePlugin === appsPlugin) && appsPlugin.isBrowsingMode && !root.searchText.startsWith(">") && Settings.data.appLauncher.showCategories) {
+      // In apps browsing mode (no search), Tab navigates between categories
+      var availableCategories = appsPlugin.availableCategories || ["all"];
+      var currentIndex = availableCategories.indexOf(appsPlugin.selectedCategory);
+      var nextIndex = (currentIndex + 1) % availableCategories.length;
+      appsPlugin.selectCategory(availableCategories[nextIndex]);
     } else {
       selectNextWrapped();
     }
   }
 
   function onBackTabPressed() {
-    selectPreviousWrapped();
+    if (activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) {
+      var currentIndex = emojiPlugin.categories.indexOf(emojiPlugin.selectedCategory);
+      var previousIndex = ((currentIndex - 1) % emojiPlugin.categories.length + emojiPlugin.categories.length) % emojiPlugin.categories.length;
+      emojiPlugin.selectCategory(emojiPlugin.categories[previousIndex]);
+    } else if ((activePlugin === null || activePlugin === appsPlugin) && appsPlugin.isBrowsingMode && !root.searchText.startsWith(">") && Settings.data.appLauncher.showCategories) {
+      var availableCategories = appsPlugin.availableCategories || ["all"];
+      var currentIndex = availableCategories.indexOf(appsPlugin.selectedCategory);
+      var previousIndex = ((currentIndex - 1) % availableCategories.length + availableCategories.length) % availableCategories.length;
+      appsPlugin.selectCategory(availableCategories[previousIndex]);
+    } else {
+      selectPreviousWrapped();
+    }
   }
 
   function onUpPressed() {
     if (isGridView) {
-      // Force update to prevent GridView interference
-      Qt.callLater(() => {
-                     selectPreviousRow();
-                   });
+      selectPreviousRow();
     } else {
       selectPreviousWrapped();
     }
@@ -107,10 +123,7 @@ SmartPanel {
 
   function onDownPressed() {
     if (isGridView) {
-      // Force update to prevent GridView interference
-      Qt.callLater(() => {
-                     selectNextRow();
-                   });
+      selectNextRow();
     } else {
       selectNextWrapped();
     }
@@ -356,7 +369,7 @@ SmartPanel {
 
   // Grid view navigation functions
   function selectPreviousRow() {
-    if (results.length > 0 && isGridView) {
+    if (results.length > 0 && isGridView && gridColumns > 0) {
       const currentRow = Math.floor(selectedIndex / gridColumns);
       const currentCol = selectedIndex % gridColumns;
 
@@ -387,7 +400,7 @@ SmartPanel {
   }
 
   function selectNextRow() {
-    if (results.length > 0 && isGridView) {
+    if (results.length > 0 && isGridView && gridColumns > 0) {
       const currentRow = Math.floor(selectedIndex / gridColumns);
       const currentCol = selectedIndex % gridColumns;
       const totalRows = Math.ceil(results.length / gridColumns);
@@ -612,13 +625,17 @@ SmartPanel {
                 } else if (event.key === Qt.Key_Backtab) {
                   root.onBackTabPressed();
                   event.accepted = true;
-                } else if (event.key === Qt.Key_Left && root.isGridView) {
-                  // In grid view, left arrow navigates the grid
+                } else if (event.key === Qt.Key_Left) {
                   root.onLeftPressed();
                   event.accepted = true;
-                } else if (event.key === Qt.Key_Right && root.isGridView) {
-                  // In grid view, right arrow navigates the grid
+                } else if (event.key === Qt.Key_Right) {
                   root.onRightPressed();
+                  event.accepted = true;
+                } else if (event.key === Qt.Key_Up) {
+                  root.onUpPressed();
+                  event.accepted = true;
+                } else if (event.key === Qt.Key_Down) {
+                  root.onDownPressed();
                   event.accepted = true;
                 }
               });
@@ -631,12 +648,14 @@ SmartPanel {
           id: emojiCategoryTabs
           visible: root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode
           Layout.fillWidth: true
-          currentIndex: {
+          margins: Style.marginM
+          property int computedCurrentIndex: {
             if (visible && emojiPlugin.categories) {
               return emojiPlugin.categories.indexOf(emojiPlugin.selectedCategory);
             }
             return 0;
           }
+          currentIndex: computedCurrentIndex
 
           Repeater {
             model: emojiPlugin.categories
@@ -650,6 +669,68 @@ SmartPanel {
                 emojiPlugin.selectCategory(modelData);
               }
             }
+          }
+        }
+
+        Connections {
+          target: emojiPlugin
+          enabled: emojiCategoryTabs.visible
+          function onSelectedCategoryChanged() {
+            // Force update of currentIndex when selectedCategory changes
+            Qt.callLater(() => {
+                           if (emojiCategoryTabs.visible && emojiPlugin.categories) {
+                             const newIndex = emojiPlugin.categories.indexOf(emojiPlugin.selectedCategory);
+                             if (newIndex >= 0 && emojiCategoryTabs.currentIndex !== newIndex) {
+                               emojiCategoryTabs.currentIndex = newIndex;
+                             }
+                           }
+                         });
+          }
+        }
+
+        // App category tabs (shown when browsing apps without search)
+        NTabBar {
+          id: appCategoryTabs
+          visible: (root.activePlugin === null || root.activePlugin === appsPlugin) && appsPlugin.isBrowsingMode && !root.searchText.startsWith(">") && Settings.data.appLauncher.showCategories
+          Layout.fillWidth: true
+          margins: Style.marginM
+          property int computedCurrentIndex: {
+            if (visible && appsPlugin.availableCategories) {
+              return appsPlugin.availableCategories.indexOf(appsPlugin.selectedCategory);
+            }
+            return 0;
+          }
+          currentIndex: computedCurrentIndex
+
+          Repeater {
+            model: appsPlugin.availableCategories || []
+            NIconTabButton {
+              required property string modelData
+              required property int index
+              icon: appsPlugin.categoryIcons[modelData] || "apps"
+              tooltipText: appsPlugin.getCategoryName ? appsPlugin.getCategoryName(modelData) : modelData
+              tabIndex: index
+              checked: appCategoryTabs.currentIndex === index
+              onClicked: {
+                appsPlugin.selectCategory(modelData);
+              }
+            }
+          }
+        }
+
+        Connections {
+          target: appsPlugin
+          enabled: appCategoryTabs.visible
+          function onSelectedCategoryChanged() {
+            // Force update of currentIndex when selectedCategory changes
+            Qt.callLater(() => {
+                           if (appCategoryTabs.visible && appsPlugin.availableCategories) {
+                             const newIndex = appsPlugin.availableCategories.indexOf(appsPlugin.selectedCategory);
+                             if (newIndex >= 0 && appCategoryTabs.currentIndex !== newIndex) {
+                               appCategoryTabs.currentIndex = newIndex;
+                             }
+                           }
+                         });
           }
         }
 
@@ -691,12 +772,20 @@ SmartPanel {
               property bool isSelected: (!root.ignoreMouseHover && mouseArea.containsMouse) || (index === selectedIndex)
               property string appId: (modelData && modelData.appId) ? String(modelData.appId) : ""
 
+              // Helper function to normalize app IDs for case-insensitive matching
+              function normalizeAppId(appId) {
+                if (!appId || typeof appId !== 'string')
+                  return "";
+                return appId.toLowerCase().trim();
+              }
+
               // Pin helpers
               function togglePin(appId) {
                 if (!appId)
                   return;
+                const normalizedId = normalizeAppId(appId);
                 let arr = (Settings.data.dock.pinnedApps || []).slice();
-                const idx = arr.indexOf(appId);
+                const idx = arr.findIndex(pinnedId => normalizeAppId(pinnedId) === normalizedId);
                 if (idx >= 0)
                   arr.splice(idx, 1);
                 else
@@ -705,8 +794,11 @@ SmartPanel {
               }
 
               function isPinned(appId) {
+                if (!appId)
+                  return false;
                 const arr = Settings.data.dock.pinnedApps || [];
-                return appId && arr.indexOf(appId) >= 0;
+                const normalizedId = normalizeAppId(appId);
+                return arr.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
               }
 
               // Property to reliably track the current item's ID.
@@ -721,7 +813,7 @@ SmartPanel {
                 }
               }
 
-              width: resultsList.width - Style.marginS
+              width: resultsList.width - Style.marginS - resultsList.scrollBarTotalWidth
               implicitHeight: entryHeight
               radius: Style.radiusM
               color: entry.isSelected ? Color.mHover : Color.mSurface
@@ -916,34 +1008,50 @@ SmartPanel {
             height: parent.height
             cellWidth: {
               if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) {
-                return parent.width / 5;
+                return parent.width / root.targetGridColumns;
               }
-              return gridCellSize + Style.marginXXS;
+              // Make cells fit exactly like the tab bar
+              // Cell width scales automatically as parent.width scales with uiScaleRatio
+              return parent.width / root.targetGridColumns;
             }
             cellHeight: {
               if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) {
-                return (parent.width / 5) * 1.2;
+                return (parent.width / root.targetGridColumns) * 1.2;
               }
-              return gridCellSize + Style.marginXXS;
+              // Cell height scales automatically as parent.width scales with uiScaleRatio
+              // Content (badge, text) scales via badgeSize which now uses uiScaleRatio
+              return parent.width / root.targetGridColumns;
             }
+            leftMargin: 0
+            rightMargin: 0
+            topMargin: 0
+            bottomMargin: 0
             model: results
             cacheBuffer: resultsGrid.height * 2
             keyNavigationEnabled: false
             focus: false
             interactive: true
 
-            onWidthChanged: {
+            Component.onCompleted: {
+              // Initialize gridColumns when grid view is created
+              updateGridColumns();
+            }
+
+            function updateGridColumns() {
               // Update gridColumns based on actual GridView width
               // This ensures navigation works correctly regardless of panel size
               if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) {
                 // Always 5 columns for emoji browsing mode
                 root.gridColumns = 5;
               } else {
-                const actualCols = Math.floor(width / cellWidth);
-                if (actualCols > 0 && actualCols !== root.gridColumns) {
-                  root.gridColumns = actualCols;
-                }
+                // Since cellWidth = width / targetGridColumns, the number of columns is always targetGridColumns
+                // Just use targetGridColumns directly
+                root.gridColumns = root.targetGridColumns;
               }
+            }
+
+            onWidthChanged: {
+              updateGridColumns();
             }
 
             // Completely disable GridView key handling
@@ -996,12 +1104,20 @@ SmartPanel {
               property bool isSelected: (!root.ignoreMouseHover && mouseArea.containsMouse) || (index === selectedIndex)
               property string appId: (modelData && modelData.appId) ? String(modelData.appId) : ""
 
+              // Helper function to normalize app IDs for case-insensitive matching
+              function normalizeAppId(appId) {
+                if (!appId || typeof appId !== 'string')
+                  return "";
+                return appId.toLowerCase().trim();
+              }
+
               // Pin helpers
               function togglePin(appId) {
                 if (!appId)
                   return;
+                const normalizedId = normalizeAppId(appId);
                 let arr = (Settings.data.dock.pinnedApps || []).slice();
-                const idx = arr.indexOf(appId);
+                const idx = arr.findIndex(pinnedId => normalizeAppId(pinnedId) === normalizedId);
                 if (idx >= 0)
                   arr.splice(idx, 1);
                 else
@@ -1010,22 +1126,15 @@ SmartPanel {
               }
 
               function isPinned(appId) {
+                if (!appId)
+                  return false;
                 const arr = Settings.data.dock.pinnedApps || [];
-                return appId && arr.indexOf(appId) >= 0;
+                const normalizedId = normalizeAppId(appId);
+                return arr.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
               }
 
-              width: {
-                if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) {
-                  return resultsGrid.width / 5;
-                }
-                return gridCellSize;
-              }
-              height: {
-                if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) {
-                  return (resultsGrid.width / 5) * 1.2;
-                }
-                return gridCellSize;
-              }
+              width: resultsGrid.cellWidth
+              height: resultsGrid.cellHeight
               radius: Style.radiusM
               color: gridEntry.isSelected ? Color.mHover : Color.mSurface
 
@@ -1038,12 +1147,8 @@ SmartPanel {
 
               ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: {
-                  if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) {
-                    return 4;
-                  }
-                  return Style.marginM;
-                }
+                anchors.margins: (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) ? 4 : Style.marginM
+                anchors.bottomMargin: (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) ? Style.marginL : Style.marginM
                 spacing: Style.marginS
 
                 // Icon badge or Image preview or Emoji
@@ -1052,13 +1157,17 @@ SmartPanel {
                     if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode && modelData.emojiChar) {
                       return gridEntry.width - 8;
                     }
-                    return badgeSize * 1.5;
+                    // Scale badge relative to cell size for proper scaling on all resolutions
+                    // Use 60% of cell width, ensuring it scales down on low res and up on high res
+                    return Math.round(gridEntry.width * 0.6);
                   }
                   Layout.preferredHeight: {
                     if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode && modelData.emojiChar) {
                       return gridEntry.width - 8;
                     }
-                    return badgeSize * 1.5;
+                    // Scale badge relative to cell size for proper scaling on all resolutions
+                    // Use 60% of cell width, ensuring it scales down on low res and up on high res
+                    return Math.round(gridEntry.width * 0.6);
                   }
                   Layout.alignment: Qt.AlignHCenter
                   radius: Style.radiusM
@@ -1126,11 +1235,18 @@ SmartPanel {
                     pointSize: {
                       if (modelData.emojiChar) {
                         if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode) {
-                          return Math.max(Style.fontSizeL, gridEntry.width * 0.4);
+                          // Scale with cell width but cap at reasonable maximum
+                          const cellBasedSize = gridEntry.width * 0.4;
+                          const maxSize = Style.fontSizeXXXL * Style.uiScaleRatio;
+                          return Math.min(cellBasedSize, maxSize);
                         }
-                        return Style.fontSizeXXL * 2;
+                        return Style.fontSizeXXL * 2 * Style.uiScaleRatio;
                       }
-                      return Style.fontSizeXL;
+                      // Scale font size relative to cell width for low res, but cap at maximum
+                      const cellBasedSize = gridEntry.width * 0.25;
+                      const baseSize = Style.fontSizeXL * Style.uiScaleRatio;
+                      const maxSize = Style.fontSizeXXL * Style.uiScaleRatio;
+                      return Math.min(Math.max(cellBasedSize, baseSize), maxSize);
                     }
                     font.weight: Style.fontWeightBold
                     color: modelData.emojiChar ? Color.mOnSurface : Color.mOnPrimary
@@ -1142,15 +1258,21 @@ SmartPanel {
                   text: modelData.name || "Unknown"
                   pointSize: {
                     if (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode && modelData.emojiChar) {
-                      return Style.fontSizeS;
+                      return Style.fontSizeS * Style.uiScaleRatio;
                     }
-                    return Style.fontSizeS;
+                    // Scale font size relative to cell width for low res, but cap at maximum
+                    const cellBasedSize = gridEntry.width * 0.12;
+                    const baseSize = Style.fontSizeS * Style.uiScaleRatio;
+                    const maxSize = Style.fontSizeM * Style.uiScaleRatio;
+                    return Math.min(Math.max(cellBasedSize, baseSize), maxSize);
                   }
                   font.weight: Style.fontWeightSemiBold
                   color: gridEntry.isSelected ? Color.mOnHover : Color.mOnSurface
                   elide: Text.ElideRight
                   Layout.fillWidth: true
                   Layout.maximumWidth: gridEntry.width - 8
+                  Layout.leftMargin: (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode && modelData.emojiChar) ? Style.marginS : 0
+                  Layout.rightMargin: (root.activePlugin === emojiPlugin && emojiPlugin.isBrowsingMode && modelData.emojiChar) ? Style.marginS : 0
                   horizontalAlignment: Text.AlignHCenter
                   wrapMode: Text.NoWrap
                   maximumLineCount: 1
@@ -1176,9 +1298,8 @@ SmartPanel {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onEntered: {
-                  if (!root.ignoreMouseHover) {
-                    selectedIndex = index;
-                  }
+                  root.ignoreMouseHover = false;
+                  selectedIndex = index;
                 }
                 onClicked: mouse => {
                              if (mouse.button === Qt.LeftButton) {

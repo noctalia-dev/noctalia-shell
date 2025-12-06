@@ -66,6 +66,13 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("settings.launcher.settings.show-categories.label")
+    description: I18n.tr("settings.launcher.settings.show-categories.description")
+    checked: Settings.data.appLauncher.showCategories
+    onToggled: checked => Settings.data.appLauncher.showCategories = checked
+  }
+
+  NToggle {
     label: I18n.tr("settings.launcher.settings.clipboard-history.label")
     description: I18n.tr("settings.launcher.settings.clipboard-history.description")
     checked: Settings.data.appLauncher.enableClipboardHistory

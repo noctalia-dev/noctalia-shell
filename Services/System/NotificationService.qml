@@ -5,6 +5,7 @@ import QtQuick.Window
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Notifications
+import Quickshell.Wayland
 import "../../Helpers/sha256.js" as Checksum
 import qs.Commons
 import qs.Services.Power
@@ -33,8 +34,10 @@ Singleton {
   property var imageQueue: []
 
   PanelWindow {
-    implicitHeight: 1
-    implicitWidth: 1
+    implicitHeight: 0
+    implicitWidth: 0
+    WlrLayershell.exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.namespace: "noctalia-notification-image-renderer"
     color: Color.transparent
     mask: Region {}
 

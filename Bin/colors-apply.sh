@@ -234,11 +234,17 @@ cava)
             THEME_MODIFIED=true
         fi
 
-        # Reload cava if it's running
+        # Reload cava if it's running, but only if it's not using stdin config
         if pgrep -f cava >/dev/null; then
-            echo "Reloading cava configuration..."
-            pkill -USR1 cava
-            echo "✅ Cava reloaded successfully"
+            # Check if Cava is running with -p /dev/stdin (managed by CavaService)
+            if pgrep -af cava | grep -q -- "-p.*stdin"; then
+                echo "Cava is managed by CavaService (stdin config), skipping reload signal."
+                echo "✅ Theme file updated. CavaService will use the theme on next restart."
+            else
+                echo "Reloading cava configuration..."
+                pkill -USR1 cava
+                echo "✅ Cava reloaded successfully"
+            fi
         else
             if [ "$THEME_MODIFIED" = true ]; then
                 echo "✅ Configuration updated. Start cava to see the changes."

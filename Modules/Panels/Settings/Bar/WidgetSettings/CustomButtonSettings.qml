@@ -18,6 +18,8 @@ ColumnLayout {
   property bool valueParseJson: widgetData.parseJson !== undefined ? widgetData.parseJson : widgetMetadata.parseJson
   property int valueMaxTextLengthHorizontal: widgetData?.maxTextLength?.horizontal ?? widgetMetadata?.maxTextLength?.horizontal
   property int valueMaxTextLengthVertical: widgetData?.maxTextLength?.vertical ?? widgetMetadata?.maxTextLength?.vertical
+  property string valueHideMode: (widgetData.hideMode !== undefined) ? widgetData.hideMode : widgetMetadata.hideMode
+  property bool valueShowIcon: (widgetData.showIcon !== undefined) ? widgetData.showIcon : widgetMetadata.showIcon
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -39,6 +41,8 @@ ColumnLayout {
     settings.textCollapse = textCollapseInput.text;
     settings.textStream = valueTextStream;
     settings.parseJson = valueParseJson;
+    settings.showIcon = valueShowIcon;
+    settings.hideMode = valueHideMode;
     settings.maxTextLength = {
       "horizontal": valueMaxTextLengthHorizontal,
       "vertical": valueMaxTextLengthVertical
@@ -86,6 +90,15 @@ ColumnLayout {
         onIconSelected: function (iconName) {
           valueIcon = iconName;
         }
+      }
+
+      NToggle {
+        id: showIconToggle
+        label: I18n.tr("bar.widget-settings.custom-button.show-icon.label", "Show icon")
+        description: I18n.tr("bar.widget-settings.custom-button.show-icon.description", "Toggles the visibility of the widget's icon.")
+        checked: valueShowIcon
+        onToggled: checked => valueShowIcon = checked
+        visible: textCommandInput.text !== ""
       }
 
       RowLayout {
@@ -327,6 +340,29 @@ ColumnLayout {
         description: I18n.tr("bar.widget-settings.custom-button.refresh-interval.description")
         placeholderText: String(widgetMetadata.textIntervalMs || 3000)
         text: widgetData && widgetData.textIntervalMs !== undefined ? String(widgetData.textIntervalMs) : ""
+      }
+
+      NComboBox {
+        id: hideModeComboBox
+        label: I18n.tr("bar.widget-settings.custom-button.hide-mode.label", "Hide mode")
+        description: I18n.tr("bar.widget-settings.custom-button.hide-mode.description", "Controls widget visibility when the command has no output.")
+        model: [
+          {
+            name: I18n.tr("bar.widget-settings.custom-button.hide-mode.alwaysExpanded", "Always expanded"),
+            key: "alwaysExpanded"
+          },
+          {
+            name: I18n.tr("bar.widget-settings.custom-button.hide-mode.expandWithOutput", "Expand when has output"),
+            key: "expandWithOutput"
+          },
+          {
+            name: I18n.tr("bar.widget-settings.custom-button.hide-mode.maxTransparent", "Max expanded but transparent"),
+            key: "maxTransparent"
+          }
+        ]
+        currentKey: valueHideMode
+        onSelected: key => valueHideMode = key
+        visible: textCommandInput.text !== "" && valueTextStream == true
       }
     }
   }

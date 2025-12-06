@@ -58,6 +58,14 @@
         "low-battery-threshold": {
           "description": "Muestra una advertencia cuando la batería cae por debajo de este porcentaje.",
           "label": "Umbral de advertencia de batería baja"
+        },
+        "show-noctalia-performance": {
+          "description": "Muestra el interruptor del modo de rendimiento Noctalia en el panel de batería.",
+          "label": "Mostrar interruptor de Noctalia Rendimiento"
+        },
+        "show-power-profile": {
+          "description": "Muestra la selección de perfil de energía en el panel de batería.",
+          "label": "Mostrar controles de perfil de energía"
         }
       },
       "brightness": {
@@ -131,10 +139,21 @@
           "label": "Mostrar salida de comando",
           "stream-description": "Introduce un comando para ejecutar continuamente."
         },
+        "hide-mode": {
+          "description": "Controla la visibilidad del widget cuando el comando no tiene salida.",
+          "label": "Modo de ocultar",
+          "expandWithOutput": "Expandir cuando tiene salida",
+          "alwaysExpanded": "Siempre expandido",
+          "maxTransparent": "Máximo expandido pero transparente"
+        },
         "dynamic-text": "Texto dinámico",
         "icon": {
           "description": "Selecciona un icono de la biblioteca.",
           "label": "Icono"
+        },
+        "show-icon": {
+          "description": "Alterna la visibilidad del icono del widget.",
+          "label": "Mostrar icono"
         },
         "left-click": {
           "description": "Comando a ejecutar cuando se hace clic izquierdo en el botón.",
@@ -372,20 +391,20 @@
   "battery": {
     "battery-level": "Nivel de batería",
     "brightness": "Brillo",
-    "charging": "Cargando.",
-    "charging-rate": "Tasa de carga: {rate} W.",
-    "discharging": "Descargando.",
-    "discharging-rate": "Tasa de descarga: {rate} W.",
+    "charging": "Cargando",
+    "charging-rate": "Tasa de carga: {rate} W",
+    "discharging": "Descargando",
+    "discharging-rate": "Tasa de descarga: {rate} W",
     "health": "Salud: {percent}%",
-    "idle": "Inactivo.",
+    "idle": "Inactivo",
     "inhibit-idle-description": "Mantiene el sistema despierto.",
     "inhibit-idle-label": "Mantener despierto",
-    "no-battery-detected": "No se detectó ninguna batería.",
+    "no-battery-detected": "No se detectó ninguna batería",
     "panel-title": "Batería",
-    "plugged-in": "Conectado.",
+    "plugged-in": "Conectado",
     "power-profile": "Perfil de energía",
-    "time-left": "Tiempo restante: {time}.",
-    "time-until-full": "Tiempo hasta carga completa: {time}."
+    "time-left": "Tiempo restante: {time}",
+    "time-until-full": "Tiempo hasta carga completa: {time}"
   },
   "bluetooth": {
     "panel": {
@@ -454,6 +473,14 @@
   "clock": {
     "tooltip": "Abrir calendario"
   },
+  "common": {
+    "add": "Añadir",
+    "apply": "Aplicar",
+    "cancel": "Cancelar",
+    "check-settings": "Consultar la configuración para más detalles.",
+    "close": "Cerrar",
+    "save": "Guardar"
+  },
   "context-menu": {
     "activate-app": "Activar {app}",
     "clear-history": "Borrar historial",
@@ -494,6 +521,20 @@
     "unknown": "Desconocido"
   },
   "launcher": {
+    "categories": {
+      "all": "Todo",
+      "audiovideo": "Audio y video",
+      "chat": "Chat",
+      "development": "Desarrollo",
+      "education": "Educación",
+      "game": "Juegos",
+      "graphics": "Gráficos",
+      "misc": "Varios",
+      "network": "Red",
+      "office": "Oficina",
+      "system": "Sistema",
+      "webbrowser": "Navegador web"
+    },
     "pin": "Anclar al dock",
     "unpin": "Desanclar del dock"
   },
@@ -708,7 +749,7 @@
         "enabled": "Bluetooth"
       },
       "tooltip": {
-        "action": "Hacer clic para gestionar los dispositivos Bluetooth"
+        "action": "Bluetooth"
       }
     },
     "keepAwake": {
@@ -717,7 +758,7 @@
         "enabled": "Mantener despierto"
       },
       "tooltip": {
-        "action": "Hacer clic para alternar el modo Mantener despierto"
+        "action": "Mantener despierto"
       }
     },
     "nightLight": {
@@ -727,7 +768,7 @@
         "forced": "Luz nocturna"
       },
       "tooltip": {
-        "action": "Hacer clic para alternar el modo Luz nocturna\nClic derecho: Abrir configuración"
+        "action": "Luz nocturna"
       }
     },
     "notifications": {
@@ -736,7 +777,7 @@
         "enabled": "Notificaciones"
       },
       "tooltip": {
-        "action": "Clic izquierdo: Abrir historial de notificaciones\nClic derecho: Abrir menú contextual"
+        "action": "Notificaciones"
       }
     },
     "powerProfile": {
@@ -744,7 +785,7 @@
         "unavailable": "Perfil de energía"
       },
       "tooltip": {
-        "action": "Hacer clic para cambiar el perfil de energía",
+        "action": "Perfil de energía",
         "disabled": "Instala power-profiles-daemon para usar perfiles de energía"
       }
     },
@@ -754,13 +795,13 @@
         "stopped": "Grabar"
       },
       "tooltip": {
-        "action": "Hacer clic para iniciar/detener la grabación de pantalla"
+        "action": "Grabadora de pantalla"
       }
     },
     "wallpaperSelector": {
       "label": "Fondo de pantalla",
       "tooltip": {
-        "action": "Clic izquierdo: Abrir selector de fondo de pantalla\nClic derecho: Establecer fondo de pantalla aleatorio"
+        "action": "Selector de fondos de pantalla"
       }
     },
     "wifi": {
@@ -770,7 +811,7 @@
         "wifi": "Wi-Fi"
       },
       "tooltip": {
-        "action": "Hacer clic para gestionar las conexiones Wi-Fi"
+        "action": "Wi-Fi"
       }
     }
   },
@@ -956,7 +997,7 @@
       },
       "widgets": {
         "section": {
-          "description": "Arrastra y suelta widgets para reordenarlos. Las insignias indican el uso: [I]zquierda, [C]entro, [D]erecha.",
+          "description": "Arrastra los widgets para cambiar su orden. Usa el menú contextual (clic derecho) para transferir widgets entre secciones o eliminarlos.",
           "label": "Posicionamiento de widgets"
         }
       }
@@ -1215,7 +1256,7 @@
           "cancel": "Cancelar"
         },
         "section": {
-          "description": "Configurar y administrar los widgets de accesos directos.",
+          "description": "Arrastra los widgets para cambiar su orden. Usa el menú contextual (clic derecho) para transferir widgets entre secciones o eliminarlos.",
           "label": "Widgets de accesos directos"
         },
         "sectionLeft": "Izquierda",
@@ -1465,6 +1506,10 @@
           "description": "Mostrar elementos en una cuadrícula en lugar de una lista.",
           "label": "Vista de cuadrícula"
         },
+        "show-categories": {
+          "description": "Mostrar pestañas de categorías para filtrar aplicaciones.",
+          "label": "Mostrar categorías"
+        },
         "position": {
           "description": "Elige dónde aparece el panel del lanzador.",
           "label": "Posición"
@@ -1490,17 +1535,17 @@
     },
     "location": {
       "calendar": {
-        "banner": {
-          "label": "Encabezado"
-        },
-        "calendar": {
-          "label": "Calendario"
-        },
         "cards": {
           "section": {
             "description": "Organizar y activar/desactivar tarjetas en el panel del calendario.",
             "label": "Tarjetas de calendario"
           }
+        },
+        "header": {
+          "label": "Encabezado del calendario"
+        },
+        "month": {
+          "label": "Mes del calendario"
         }
       },
       "date-time": {
@@ -1719,7 +1764,7 @@
           "label": "Teclas de bloqueo"
         },
         "section": {
-          "description": "Seleccione los eventos que activan el OSD. Si no se selecciona ningún evento, todos los eventos disponibles activarán el OSD.",
+          "description": "Seleccione los eventos que activan el OSD.",
           "label": "Eventos de activación OSD"
         },
         "volume": {
@@ -1727,6 +1772,75 @@
           "label": "Volumen de salida"
         }
       }
+    },
+    "plugins": {
+      "available": {
+        "description": "Navegar e instalar plugins desde fuentes configuradas.",
+        "label": "Plugins disponibles",
+        "no-plugins-description": "Comprueba las fuentes de tu plugin o actualiza la lista.",
+        "no-plugins-label": "No hay plugins disponibles."
+      },
+      "filter": {
+        "all": "Todo",
+        "downloaded": "Descargado",
+        "not-downloaded": "No descargado"
+      },
+      "install": "Instalar",
+      "install-error": "Error al instalar: {error}",
+      "install-success": "Se instaló {plugin} correctamente.",
+      "installed": {
+        "description": "Gestiona y configura todos los plugins instalados localmente.",
+        "label": "Plugins instalados",
+        "no-plugins-description": "Instale los plugins de la sección Plugins disponibles que se muestra a continuación.",
+        "no-plugins-label": "No hay plugins instalados."
+      },
+      "installing": "Instalando {plugin}...",
+      "plugin-settings-title": "Ajustes de {plugin}",
+      "refresh": {
+        "refreshing": "Actualizando la lista de plugins...",
+        "tooltip": "Actualizar plugins disponibles"
+      },
+      "settings": {
+        "tooltip": "Ajustes del plugin"
+      },
+      "settings-error-not-loaded": "Plugin no cargado",
+      "settings-saved": "Ajustes del plugin guardados",
+      "sources": {
+        "add-custom": "Añadir repositorio personalizado",
+        "add-dialog": {
+          "description": "Añadir un repositorio de GitHub como fuente de plugin.",
+          "error": "Error al agregar la fuente del plugin",
+          "name": "Nombre del repositorio",
+          "name-placeholder": "Mis plugins personalizados",
+          "success": "Fuente del plugin añadida con éxito",
+          "title": "Añadir fuente del plugin",
+          "url": "URL del repositorio"
+        },
+        "description": "Gestionar los repositorios de plugins desde donde se descargan los plugins.",
+        "label": "Fuentes del plugin",
+        "placeholder": "Mi repositorio genial",
+        "remove": {
+          "tooltip": "Eliminar fuente del plugin"
+        }
+      },
+      "title": "Plugins",
+      "uninstall": "Desinstalar",
+      "uninstall-dialog": {
+        "description": "¿Está seguro de que quiere desinstalar {plugin}? Esto eliminará todos los datos del plugin.",
+        "title": "Desinstalar plugin"
+      },
+      "uninstall-error": "Error al desinstalar: {error}",
+      "uninstall-success": "{plugin} desinstalado correctamente",
+      "uninstalling": "Desinstalando {plugin}...",
+      "update": "Actualizar",
+      "update-all": "Actualizar todo ({count})",
+      "update-all-success": "Todos los plugins se actualizaron correctamente.",
+      "update-available": "{count} actualización(es) de plugin(s) disponible(s)",
+      "update-error": "Error al actualizar el plugin: {plugin}: {error}",
+      "update-incompatible": "Requiere Noctalia v{version} o superior",
+      "update-success": "{plugin} actualizado a la versión {version}",
+      "update-version": "v{actual} → v{nuevo}",
+      "updating": "Actualizando {plugin}..."
     },
     "screen-recorder": {
       "audio": {
@@ -1801,6 +1915,23 @@
           "description": "Personalizar qué acciones de energía aparecen en el Menú de sesión y en qué orden.",
           "label": "Acciones de energía"
         }
+      },
+      "entry-settings": {
+        "command": {
+          "description": "Comando personalizado para ejecutar para esta acción. Dejar vacío para usar el comando del sistema predeterminado.",
+          "label": "Comando",
+          "placeholder": "systemctl poweroff"
+        },
+        "default-command": {
+          "lock": "Pantalla de bloqueo interna (sin comando)",
+          "logout": "Cierre de sesión interno (sin comando)"
+        },
+        "default-info": {
+          "description": "Si no se especifica un comando personalizado, se utilizará el comando predeterminado del sistema.",
+          "label": "Comando predeterminado"
+        },
+        "title": "Configurar {entry}",
+        "tooltip": "Configurar comando"
       },
       "general": {
         "section": {
@@ -1903,10 +2034,15 @@
         "label": "Velocidad de animación",
         "reset": "Restablecer la velocidad de la animación"
       },
-      "border-radius": {
-        "description": "Controla la redondez de las esquinas de las ventanas, los botones y otros elementos.",
-        "label": "Radio de borde",
-        "reset": "Restablecer el radio del borde"
+      "box-border-radius": {
+        "description": "Ajusta la redondez de las esquinas de las secciones principales del diseño, como barras laterales, tarjetas y paneles de contenido.",
+        "label": "Radio del contenedor",
+        "reset": "Restablecer el radio del contenedor"
+      },
+      "control-border-radius": {
+        "description": "Controla la curvatura de los elementos interactivos, incluyendo botones, interruptores y campos de texto.",
+        "label": "Radio de entrada",
+        "reset": "Restablecer el radio de entrada"
       },
       "dim-desktop": {
         "description": "Atenuar el escritorio cuando los paneles o menús estén abiertos.",
@@ -2151,7 +2287,7 @@
     "noctalia-performance": {
       "disabled": "Modo de rendimiento desactivado",
       "enabled": "Modo de rendimiento activado",
-      "label": "Actuación de Noctalia"
+      "label": "Noctalia Rendimiento"
     },
     "power-profile": {
       "changed": "Perfil de energía cambiado",
@@ -2194,70 +2330,70 @@
   "tooltips": {
     "add-widget": "Añadir widget",
     "bluetooth-devices": "Dispositivos Bluetooth",
-    "brightness-at": "Brillo: {brightness}%\nClic derecho para configuración.\nDesplaza para modificar el brillo.",
-    "cancel-timer": "Cancelar temporizador",
+    "brightness-at": "Brillo: {brightness}%",
+    "cancel-timer": "Timer",
     "clear-history": "Limpiar historial",
-    "click-to-start-recording": "Haz clic para iniciar la grabación",
-    "click-to-stop-recording": "Haz clic para detener la grabación",
-    "close": "Cerrar",
-    "connect-disconnect-devices": "Clic izquierdo para conectar. Clic derecho para olvidar.",
+    "click-to-start-recording": "Grabadora de pantalla (iniciar grabación)",
+    "click-to-stop-recording": "Grabadora de pantalla (detener grabación)",
+    "close": "Botón cerrar",
+    "connect-disconnect-devices": "Dispositivo Bluetooth",
     "delete-notification": "Eliminar notificación",
-    "disable-keep-awake": "Haz clic para desactivar mantener despierto.\nDesplázate para ajustar el tiempo de espera.",
-    "do-not-disturb-disabled": "'No molestar' desactivado",
-    "do-not-disturb-enabled": "'No molestar' activado",
-    "enable-keep-awake": "Haz clic para activar mantener despierto.\nDesplázate para ajustar el tiempo de espera.",
+    "disable-keep-awake": "Mantener despierto",
+    "do-not-disturb-disabled": "No molestar",
+    "do-not-disturb-enabled": "No molestar",
+    "enable-keep-awake": "Mantener despierto",
     "forget-network": "Olvidar red",
     "grid-view": "Vista de cuadrícula",
-    "hidden-files-hide": "Ocultar archivos ocultos",
-    "hidden-files-show": "Mostrar archivos ocultos",
-    "home": "Inicio",
-    "input-muted": "Silenciar entrada de audio",
+    "hidden-files-hide": "Archivos ocultos",
+    "hidden-files-show": "Archivos ocultos",
+    "home": "Directorio home",
+    "input-muted": "Micrófono",
     "keep-awake": "Mantener despierto",
     "keyboard-layout": "Distribución de teclado {layout}",
     "list-view": "Vista de lista",
-    "manage-vpn": "Administrar conexiones VPN",
-    "manage-wifi": "Gestionar Wi-Fi",
-    "microphone-volume-at": "Volumen del micrófono al {volume}%.\nClic izquierdo para ajustes. Clic derecho para activar/desactivar el silencio.\nDesplázate para modificar el volumen.",
-    "move-to-center-section": "Mover a la sección central",
-    "move-to-left-section": "Mover a la sección izquierda",
-    "move-to-right-section": "Mover a la sección derecha",
-    "next-media": "Siguiente medio",
+    "manage-vpn": "Conexiones VPN",
+    "manage-wifi": "Wi-Fi",
+    "microphone-volume-at": "Volumen del micrófono: {volume}%",
+    "move-to-center-section": "Sección central",
+    "move-to-left-section": "Sección izquierda",
+    "move-to-right-section": "Sección derecha",
+    "next-media": "Siguiente pista",
     "next-month": "Mes siguiente",
-    "night-light-disabled": "Luz nocturna desactivada.\nClic izquierdo para cambiar de modo.\nClic derecho para acceder a la configuración.",
-    "night-light-enabled": "Luz nocturna activada.\nClic izquierdo para cambiar de modo.\nClic derecho para acceder a la configuración.",
-    "night-light-forced": "Luz nocturna forzada.\nClic izquierdo para cambiar de modo.\nClic derecho para acceder a la configuración.",
-    "night-light-not-installed": "Luz nocturna no disponible.\nwlsunset no está instalado.",
-    "noctalia-performance-disabled": "El modo de rendimiento de Noctalia está desactivado.\nClic izquierdo para activar.",
-    "noctalia-performance-enabled": "El modo de rendimiento de Noctalia está activado.\nClic izquierdo para desactivar.",
-    "open-control-center": "Abrir el centro de control",
-    "open-notification-history-disable-dnd": "Abrir historial de notificaciones\nClic derecho: Abrir menú contextual",
-    "open-notification-history-enable-dnd": "Abrir historial de notificaciones\nClic derecho: Abrir menú contextual",
-    "open-settings": "Abrir configuración",
-    "open-tray-dropdown": "Abrir menú desplegable de bandeja",
-    "open-wallpaper-selector": "Abrir selector de fondos de pantalla",
-    "output-muted": "Silenciar salida de audio",
-    "pause": "Pausa",
-    "play": "Reproducir",
-    "power-profile": "Perfil de energía '{profile}'",
-    "previous-media": "Medio anterior",
+    "night-light-disabled": "Luz nocturna",
+    "night-light-enabled": "Luz nocturna",
+    "night-light-forced": "Luz nocturna",
+    "night-light-not-installed": "Luz nocturna (no disponible)",
+    "noctalia-performance-disabled": "Modo de rendimiento Noctalia",
+    "noctalia-performance-enabled": "Modo de rendimiento Noctalia",
+    "open-control-center": "Centro de control",
+    "open-notification-history-disable-dnd": "Historial de notificaciones",
+    "open-notification-history-enable-dnd": "Historial de notificaciones",
+    "open-settings": "Configuración",
+    "open-tray-dropdown": "Bandeja del sistema",
+    "open-wallpaper-selector": "Selector de fondos de pantalla",
+    "output-muted": "Salida de audio",
+    "pause": "Botón pausa",
+    "play": "Botón reproducir",
+    "power-profile": "{profile} perfil de energía",
+    "previous-media": "Pista anterior",
     "previous-month": "Mes anterior",
     "refresh": "Actualizar",
     "refresh-devices": "Actualizar dispositivos",
     "refresh-wallhaven": "Actualizar resultados de Wallhaven",
     "refresh-wallpaper-list": "Actualizar lista de fondos de pantalla",
     "remove-widget": "Eliminar widget",
-    "screen-recorder-not-installed": "La grabadora de pantalla no está instalada",
+    "screen-recorder-not-installed": "Grabadora de pantalla (no instalada)",
     "search": "Buscar",
     "search-close": "Cerrar búsqueda",
     "session-menu": "Menú de sesión",
-    "set-power-profile": "Establecer perfil de energía \"{profile}\"",
-    "start-screen-recording": "Iniciar grabación de pantalla",
-    "stop-screen-recording": "Detener grabación de pantalla",
-    "switch-to-dark-mode": "Cambiar a modo oscuro",
-    "switch-to-light-mode": "Cambiar a modo claro",
-    "up": "Arriba",
-    "volume-at": "Volumen de salida al {volume}%.\nClic izquierdo para ajustes. Clic derecho para activar/desactivar el silencio.\nDesplázate para modificar el volumen.",
-    "wallpaper-selector": "Clic izquierdo: Abrir selector de fondos de pantalla.\nClic derecho: Establecer fondo de pantalla aleatorio.",
+    "set-power-profile": "{profile} perfil de energía",
+    "start-screen-recording": "Grabadora de pantalla",
+    "stop-screen-recording": "Grabadora de pantalla",
+    "switch-to-dark-mode": "Modo oscuro",
+    "switch-to-light-mode": "Modo claro",
+    "up": "Directorio superior",
+    "volume-at": "Volumen de salida: {volume}%",
+    "wallpaper-selector": "Selector de fondos de pantalla",
     "widget-settings": "Configuración del widget"
   },
   "wallpaper": {

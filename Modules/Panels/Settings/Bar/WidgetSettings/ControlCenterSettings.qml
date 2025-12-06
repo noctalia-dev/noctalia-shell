@@ -92,7 +92,7 @@ ColumnLayout {
       Layout.preferredWidth: Style.fontSizeXL * 2
       Layout.preferredHeight: Style.fontSizeXL * 2
       Layout.alignment: Qt.AlignVCenter
-      radius: width * 0.5
+      radius: Math.min(Style.radiusL, Layout.preferredWidth / 2)
       imagePath: valueCustomIconPath
       visible: valueCustomIconPath !== "" && !valueUseDistroLogo
     }

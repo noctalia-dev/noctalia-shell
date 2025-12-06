@@ -165,7 +165,7 @@ Rectangle {
 
       width: isVertical ? Math.max(0, indicatorWidth - Style.marginS * 2) : Math.max(0, indicatorWidth + Style.marginXS * 2)
       height: isVertical ? Math.max(0, Style.capsuleHeight + Style.marginXS * 2) : pillHeight
-      radius: Math.min(width, height) / 2
+      radius: Style.radiusM
       // Hide the rectangular indicator when the bar is vertical; keep it available for horizontal layout
       visible: !root.isVertical
       color: critical ? criticalColor : warningColor

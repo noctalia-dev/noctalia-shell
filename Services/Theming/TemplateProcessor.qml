@@ -124,6 +124,14 @@ Singleton {
                                                                         lines.push(`\n[templates.code_${client.name}]`);
                                                                         lines.push(`input_path = "${Quickshell.shellDir}/Assets/MatugenTemplates/${app.input}"`);
                                                                         lines.push(`output_path = "${client.path}"`);
+                                                                        var configDir = client.name === "code" ? "Code" : "VSCodium";
+                                                                        var settingsPath = `~/.config/${configDir}/User/settings.json`;
+                                                                        // install the vsix theme file only if grep returns null
+                                                                        var installVsix = `${client.name} --list-extensions | grep -q noctaliatheme || ${client.name} --install-extension '${Quickshell.shellDir}/Assets/MatugenTemplates/noctaliatheme-0.0.1.vsix'`;
+                                                                        // update the settings.json file to use the Noctalia theme
+                                                                        var updateSettingsJson = `if [ -f ${settingsPath} ]; then sed -i '/\\\"workbench.colorTheme\\\":/d' ${settingsPath} && sed -i '1,/{/s/{/{\\\\n    \\\"workbench.colorTheme\\\": \\\"NoctaliaTheme\\\",/' ${settingsPath}; fi`;
+                                                                        // do things :3
+                                                                        lines.push(`post_hook = "sh -c \\"${installVsix}; ${updateSettingsJson}\\""`);
                                                                       }
                                                                     });
                                               }
@@ -353,10 +361,13 @@ Singleton {
                                          if (Settings.data.templates[terminal]) {
                                            const outputPath = terminalPaths[terminal].replace("~", homeDir);
                                            const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
-                                           const templatePath = getTerminalColorsTemplate(terminal, mode);
+                                           const templatePaths = getTerminalColorsTemplate(terminal, mode);
 
                                            commands.push(`mkdir -p ${escapeShellPath(outputDir)}`);
-                                           commands.push(`cp -f ${escapeShellPath(templatePath)} ${escapeShellPath(outputPath)}`);
+                                           // Try hyphen first (most common), then space (for schemes like "Rosey AMOLED")
+                                           const hyphenPath = escapeShellPath(templatePaths.hyphen);
+                                           const spacePath = escapeShellPath(templatePaths.space);
+                                           commands.push(`if [ -f ${hyphenPath} ]; then cp -f ${hyphenPath} ${escapeShellPath(outputPath)}; elif [ -f ${spacePath} ]; then cp -f ${spacePath} ${escapeShellPath(outputPath)}; else echo "ERROR: Template file not found for ${terminal} (tried both hyphen and space patterns)"; fi`);
                                            commands.push(`${TemplateRegistry.colorsApplyScript} ${terminal}`);
                                          }
                                        });
@@ -378,8 +389,11 @@ Singleton {
       extension = ".toml";
     }
 
-    const fileName = `${colorScheme}-${mode}${extension}`;
-    const relativePath = `terminal/${terminal}/${fileName}`;
+    // Support both naming conventions: "SchemeName-dark" (hyphen) and "SchemeName dark" (space)
+    const fileNameHyphen = `${colorScheme}-${mode}${extension}`;
+    const fileNameSpace = `${colorScheme} ${mode}${extension}`;
+    const relativePathHyphen = `terminal/${terminal}/${fileNameHyphen}`;
+    const relativePathSpace = `terminal/${terminal}/${fileNameSpace}`;
 
     // Try to find the scheme in the loaded schemes list to determine which directory it's in
     for (let i = 0; i < ColorSchemeService.schemes.length; i++) {
@@ -390,14 +404,23 @@ Singleton {
         // JSON path is like: /path/to/scheme/SchemeName/SchemeName.json
         // We need: /path/to/scheme/SchemeName/terminal/...
         const schemeDir = schemeJsonPath.substring(0, schemeJsonPath.lastIndexOf('/'));
-        return `${schemeDir}/${relativePath}`;
+        return {
+          hyphen: `${schemeDir}/${relativePathHyphen}`,
+          space: `${schemeDir}/${relativePathSpace}`
+        };
       }
     }
 
     // Fallback: try downloaded first, then preinstalled
-    const downloadedPath = `${ColorSchemeService.downloadedSchemesDirectory}/${colorScheme}/${relativePath}`;
-    const preinstalledPath = `${ColorSchemeService.schemesDirectory}/${colorScheme}/${relativePath}`;
-    return preinstalledPath;
+    const downloadedPathHyphen = `${ColorSchemeService.downloadedSchemesDirectory}/${colorScheme}/${relativePathHyphen}`;
+    const downloadedPathSpace = `${ColorSchemeService.downloadedSchemesDirectory}/${colorScheme}/${relativePathSpace}`;
+    const preinstalledPathHyphen = `${ColorSchemeService.schemesDirectory}/${colorScheme}/${relativePathHyphen}`;
+    const preinstalledPathSpace = `${ColorSchemeService.schemesDirectory}/${colorScheme}/${relativePathSpace}`;
+
+    return {
+      hyphen: preinstalledPathHyphen,
+      space: preinstalledPathSpace
+    };
   }
 
   // ================================================================================

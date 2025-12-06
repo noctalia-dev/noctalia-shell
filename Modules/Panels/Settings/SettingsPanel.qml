@@ -6,6 +6,7 @@ import qs.Commons
 import qs.Modules.MainScreen
 import qs.Modules.Panels.Settings.Tabs
 import qs.Modules.Panels.Settings.Tabs.ColorScheme
+import qs.Modules.Panels.Settings.Tabs.SessionMenu
 import qs.Services.System
 import qs.Widgets
 
@@ -76,6 +77,7 @@ SmartPanel {
     Location,
     Network,
     Notifications,
+    Plugins,
     ScreenRecorder,
     SessionMenu,
     SystemMonitor,
@@ -172,6 +174,10 @@ SmartPanel {
   Component {
     id: systemMonitorTab
     SystemMonitorTab {}
+  }
+  Component {
+    id: pluginsTab
+    PluginsTab {}
   }
 
   Component {
@@ -295,6 +301,12 @@ SmartPanel {
             "label": "settings.accessibility.title",
             "icon": "settings-heart",
             "source": accessibilityTab
+          },
+          {
+            "id": SettingsPanel.Tab.Plugins,
+            "label": "settings.plugins.title",
+            "icon": "plugin",
+            "source": pluginsTab
           },
           {
             "id": SettingsPanel.Tab.Hooks,
@@ -440,91 +452,118 @@ SmartPanel {
           border.width: Style.borderS
           radius: Style.radiusM
 
-          NListView {
-            id: sidebarList
+          Item {
             anchors.fill: parent
-            anchors.margins: Style.marginS
-            model: root.tabsModel
-            spacing: Style.marginXS
-            currentIndex: root.currentTabIndex
-            verticalPolicy: ScrollBar.AsNeeded
 
-            delegate: Rectangle {
-              id: tabItem
-              width: sidebarList.verticalScrollBarActive ? sidebarList.width - sidebarList.scrollBarWidth - Style.marginXS : sidebarList.width
-              height: tabEntryRow.implicitHeight + Style.marginS * 2
-              radius: Style.radiusS
-              color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mHover : Color.transparent)
-              readonly property bool selected: index === root.currentTabIndex
-              property bool hovering: false
-              property color tabTextColor: selected ? Color.mOnPrimary : (tabItem.hovering ? Color.mOnHover : Color.mOnSurface)
+            NListView {
+              id: sidebarList
+              anchors.fill: parent
+              anchors.margins: Style.marginS
+              model: root.tabsModel
+              spacing: Style.marginXS
+              currentIndex: root.currentTabIndex
+              verticalPolicy: ScrollBar.AsNeeded
 
-              Behavior on width {
-                NumberAnimation {
-                  duration: Style.animationFast
+              delegate: Rectangle {
+                id: tabItem
+                width: sidebarList.verticalScrollBarActive ? sidebarList.width - sidebarList.scrollBarWidth - Style.marginXS : sidebarList.width
+                height: tabEntryRow.implicitHeight + Style.marginS * 2
+                radius: Style.radiusS
+                color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mHover : Color.transparent)
+                readonly property bool selected: index === root.currentTabIndex
+                property bool hovering: false
+                property color tabTextColor: selected ? Color.mOnPrimary : (tabItem.hovering ? Color.mOnHover : Color.mOnSurface)
+
+                Behavior on width {
+                  NumberAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+
+                Behavior on tabTextColor {
+                  ColorAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+
+                RowLayout {
+                  id: tabEntryRow
+                  anchors.fill: parent
+                  anchors.leftMargin: Style.marginS
+                  anchors.rightMargin: Style.marginS
+                  spacing: Style.marginM
+
+                  // Tab icon
+                  NIcon {
+                    icon: modelData.icon
+                    color: tabTextColor
+                    pointSize: Style.fontSizeXL
+                  }
+
+                  // Tab label
+                  NText {
+                    text: I18n.tr(modelData.label)
+                    color: tabTextColor
+                    pointSize: Style.fontSizeM
+                    font.weight: Style.fontWeightBold
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignVCenter
+                  }
+                }
+
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  acceptedButtons: Qt.LeftButton
+                  onEntered: tabItem.hovering = true
+                  onExited: tabItem.hovering = false
+                  onCanceled: tabItem.hovering = false
+                  onClicked: root.currentTabIndex = index
                 }
               }
 
-              Behavior on color {
-                ColorAnimation {
-                  duration: Style.animationFast
+              onCurrentIndexChanged: {
+                if (currentIndex !== root.currentTabIndex) {
+                  root.currentTabIndex = currentIndex;
                 }
               }
 
-              Behavior on tabTextColor {
-                ColorAnimation {
-                  duration: Style.animationFast
+              Connections {
+                target: root
+                function onCurrentTabIndexChanged() {
+                  if (sidebarList.currentIndex !== root.currentTabIndex) {
+                    sidebarList.currentIndex = root.currentTabIndex;
+                    sidebarList.positionViewAtIndex(root.currentTabIndex, ListView.Contain);
+                  }
                 }
-              }
-
-              RowLayout {
-                id: tabEntryRow
-                anchors.fill: parent
-                anchors.leftMargin: Style.marginS
-                anchors.rightMargin: Style.marginS
-                spacing: Style.marginM
-
-                // Tab icon
-                NIcon {
-                  icon: modelData.icon
-                  color: tabTextColor
-                  pointSize: Style.fontSizeXL
-                }
-
-                // Tab label
-                NText {
-                  text: I18n.tr(modelData.label)
-                  color: tabTextColor
-                  pointSize: Style.fontSizeM
-                  font.weight: Style.fontWeightBold
-                  Layout.fillWidth: true
-                  Layout.alignment: Qt.AlignVCenter
-                }
-              }
-
-              MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                acceptedButtons: Qt.LeftButton
-                onEntered: tabItem.hovering = true
-                onExited: tabItem.hovering = false
-                onCanceled: tabItem.hovering = false
-                onClicked: root.currentTabIndex = index
               }
             }
 
-            onCurrentIndexChanged: {
-              if (currentIndex !== root.currentTabIndex) {
-                root.currentTabIndex = currentIndex;
-              }
-            }
-
-            Connections {
-              target: root
-              function onCurrentTabIndexChanged() {
-                if (sidebarList.currentIndex !== root.currentTabIndex) {
-                  sidebarList.currentIndex = root.currentTabIndex;
-                  sidebarList.positionViewAtIndex(root.currentTabIndex, ListView.Contain);
+            // Overlay gradient for sidebar scrolling (only visible when scrollable)
+            Rectangle {
+              anchors.fill: parent
+              anchors.margins: Style.borderS
+              radius: Style.radiusM
+              color: Color.transparent
+              visible: sidebarList.verticalScrollBarActive
+              gradient: Gradient {
+                GradientStop {
+                  position: 0.0
+                  color: Color.transparent
+                }
+                GradientStop {
+                  position: 0.95
+                  color: Color.transparent
+                }
+                GradientStop {
+                  position: 1.0
+                  color: Color.mSurfaceVariant
                 }
               }
             }
@@ -630,6 +669,27 @@ SmartPanel {
                         width: scrollView.availableWidth
                       }
                     }
+                  }
+                }
+              }
+
+              // Overlay gradient for content scrolling (only visible when scrollable)
+              Rectangle {
+                anchors.fill: parent
+                color: Color.transparent
+                visible: root.activeScrollView && root.activeScrollView.ScrollBar.vertical && root.activeScrollView.ScrollBar.vertical.size < 1.0
+                gradient: Gradient {
+                  GradientStop {
+                    position: 0.0
+                    color: Color.transparent
+                  }
+                  GradientStop {
+                    position: 0.95
+                    color: Color.transparent
+                  }
+                  GradientStop {
+                    position: 1.0
+                    color: Qt.alpha(Color.mSurfaceVariant, 0.95)
                   }
                 }
               }

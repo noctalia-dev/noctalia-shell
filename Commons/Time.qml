@@ -164,11 +164,21 @@ Singleton {
 
   function timerPause() {
     if (root.timerRunning) {
-      // Save current state
+      // Calculate and set remainingSeconds BEFORE changing timerRunning
+      // This ensures the UI sees the correct value when it reacts to timerRunning changing
       if (root.timerStopwatchMode) {
         root.timerPausedAt = root.timerElapsedSeconds;
       } else {
-        root.timerPausedAt = root.timerRemainingSeconds;
+        // Calculate remaining seconds at the exact moment of pause
+        // Use current time directly to avoid stale timestamp issues
+        const currentTimestamp = Math.floor(Date.now() / 1000);
+        const elapsedSinceStart = currentTimestamp - root.timerStartTimestamp;
+        const currentRemaining = root.timerTotalSeconds - elapsedSinceStart;
+        root.timerPausedAt = Math.max(0, currentRemaining);
+
+        // CRITICAL: Update timerRemainingSeconds to the paused value BEFORE changing timerRunning
+        // This ensures UI sees correct value when it reacts to timerRunning change
+        root.timerRemainingSeconds = root.timerPausedAt;
       }
     }
     root.timerRunning = false;

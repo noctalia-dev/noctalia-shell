@@ -54,41 +54,33 @@ void main() {
     // Image.TileHorizontally = 5
     // Image.Pad = 6
 
-    if (fillMode == 2) { // PreserveAspectCrop
-        // Calculate aspect ratios
+    if (fillMode == 1) { // PreserveAspectFit
         float itemAspect = itemSize.x / itemSize.y;
         float sourceAspect = sourceSize.x / sourceSize.y;
 
-        // Calculate the scale needed to cover the item area
-        vec2 scale;
         if (sourceAspect > itemAspect) {
-            // Image is wider - fit height, crop sides
-            scale.y = 1.0;
-            scale.x = sourceAspect / itemAspect;
+            // Image is wider than item, letterbox top/bottom
+            imageUV.y = (qt_TexCoord0.y - 0.5) * (sourceAspect / itemAspect) + 0.5;
         } else {
-            // Image is taller - fit width, crop top/bottom
-            scale.x = 1.0;
-            scale.y = itemAspect / sourceAspect;
+            // Image is taller than item, letterbox left/right
+            imageUV.x = (qt_TexCoord0.x - 0.5) * (itemAspect / sourceAspect) + 0.5;
         }
 
-        // Apply scale and center
-        imageUV = (qt_TexCoord0 - 0.5) / scale + 0.5;
-    } else if (fillMode == 1) { // PreserveAspectFit
+        // Make letterbox area transparent
+        if (imageUV.x < 0.0 || imageUV.x > 1.0 || imageUV.y < 0.0 || imageUV.y > 1.0) {
+            alpha = 0.0;
+        }
+    } else if (fillMode == 2) { // PreserveAspectCrop
         float itemAspect = itemSize.x / itemSize.y;
         float sourceAspect = sourceSize.x / sourceSize.y;
 
-        vec2 scale;
         if (sourceAspect > itemAspect) {
-            // Image is wider - fit width, letterbox top/bottom
-            scale.x = 1.0;
-            scale.y = itemAspect / sourceAspect;
+            // Image is wider than item, crop left/right.
+            imageUV.x = (qt_TexCoord0.x - 0.5) * (itemAspect / sourceAspect) + 0.5;
         } else {
-            // Image is taller - fit height, letterbox sides
-            scale.y = 1.0;
-            scale.x = sourceAspect / itemAspect;
+            // Image is taller than item, crop top/bottom.
+            imageUV.y = (qt_TexCoord0.y - 0.5) * (sourceAspect / itemAspect) + 0.5;
         }
-
-        imageUV = (qt_TexCoord0 - 0.5) * scale + 0.5;
     }
     // For Stretch (0) or other modes, use qt_TexCoord0 as-is
 

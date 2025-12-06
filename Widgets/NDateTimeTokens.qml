@@ -13,7 +13,7 @@ Rectangle {
   color: Color.mSurface
   border.color: Color.mOutline
   border.width: Style.borderS
-  radius: Style.radiusM
+  radius: Style.iRadiusM
 
   ColumnLayout {
     id: column
@@ -203,7 +203,7 @@ Rectangle {
         id: tokenDelegate
         width: tokensList.width
         height: layout.implicitHeight + Style.marginS
-        radius: Style.radiusS
+        radius: Style.iRadiusS
         color: {
           if (tokenMouseArea.containsMouse) {
             return Qt.alpha(Color.mPrimary, 0.1);
@@ -253,7 +253,7 @@ Rectangle {
             width: 70
             height: 22
             color: getCategoryColor(modelData.category)[0]
-            radius: Style.radiusS
+            radius: Style.iRadiusS
             opacity: tokenMouseArea.containsMouse ? 0.9 : 1.0
 
             Behavior on opacity {
@@ -277,7 +277,7 @@ Rectangle {
             width: 100
             height: 22
             color: tokenMouseArea.containsMouse ? Color.mPrimary : Color.mOnSurface
-            radius: Style.radiusS
+            radius: Style.iRadiusS
 
             Behavior on color {
               ColorAnimation {
@@ -322,7 +322,7 @@ Rectangle {
             width: 90
             height: 22
             color: tokenMouseArea.containsMouse ? Color.mPrimary : Color.mOnSurfaceVariant
-            radius: Style.radiusS
+            radius: Style.iRadiusS
             border.color: tokenMouseArea.containsMouse ? Color.mPrimary : Color.mOutline
             border.width: Style.borderS
 

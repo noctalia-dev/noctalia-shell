@@ -477,7 +477,7 @@ ColumnLayout {
             anchors.topMargin: -3
             width: 20
             height: 20
-            radius: width * 0.5
+            radius: Math.min(Style.radiusL, width / 2)
             color: Color.mSecondary
             border.width: Style.borderS
             border.color: Color.mOnSecondary
@@ -897,9 +897,9 @@ ColumnLayout {
 
       NCheckbox {
         label: "Emacs"
-        description: ProgramCheckerService.emacsAvailable ? "Doom: ~/.config/doom/themes/noctalia.el\nStandard: ~/.emacs.d/themes/noctalia.el\n\nApply manually: (load-theme 'noctalia)" : I18n.tr("settings.color-scheme.templates.programs.emacs.description-missing", {
-                                                                                                                                                                                                     "app": "emacs"
-                                                                                                                                                                                                   })
+        description: ProgramCheckerService.emacsAvailable ? "Doom: ~/.config/doom/themes/noctalia.el\nStandard: ~/.emacs.d/themes/noctalia.el\n\nApply manually: (load-theme 'noctalia t)" : I18n.tr("settings.color-scheme.templates.programs.emacs.description-missing", {
+                                                                                                                                                                                                       "app": "emacs"
+                                                                                                                                                                                                     })
         checked: Settings.data.templates.emacs
         enabled: ProgramCheckerService.emacsAvailable
         opacity: ProgramCheckerService.emacsAvailable ? 1.0 : 0.6
@@ -932,5 +932,11 @@ ColumnLayout {
                    }
       }
     }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginL
+    Layout.bottomMargin: Style.marginL
   }
 }

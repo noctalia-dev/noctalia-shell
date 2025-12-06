@@ -50,6 +50,7 @@ NIconButton {
   density: Settings.data.bar.density
   baseSize: Style.capsuleHeight
   applyUiScale: false
+  customRadius: Style.radiusL
   icon: "power"
   tooltipText: I18n.tr("tooltips.session-menu")
   tooltipDirection: BarService.getTooltipDirection()

@@ -23,12 +23,20 @@ Singleton {
   readonly property int fontWeightSemiBold: 600
   readonly property int fontWeightBold: 700
 
-  // Radii
+  // Container Radii: major layout sections (sidebars, cards, content panels)
   readonly property int radiusXXS: Math.round(4 * Settings.data.general.radiusRatio)
   readonly property int radiusXS: Math.round(8 * Settings.data.general.radiusRatio)
   readonly property int radiusS: Math.round(12 * Settings.data.general.radiusRatio)
   readonly property int radiusM: Math.round(16 * Settings.data.general.radiusRatio)
   readonly property int radiusL: Math.round(20 * Settings.data.general.radiusRatio)
+
+  // Input radii: interactive elements (buttons, toggles, text fields)
+  readonly property int iRadiusXXS: Math.round(4 * Settings.data.general.iRadiusRatio)
+  readonly property int iRadiusXS: Math.round(8 * Settings.data.general.iRadiusRatio)
+  readonly property int iRadiusS: Math.round(12 * Settings.data.general.iRadiusRatio)
+  readonly property int iRadiusM: Math.round(16 * Settings.data.general.iRadiusRatio)
+  readonly property int iRadiusL: Math.round(20 * Settings.data.general.iRadiusRatio)
+
   readonly property int screenRadius: Math.round(20 * Settings.data.general.screenRadiusRatio)
 
   // Border

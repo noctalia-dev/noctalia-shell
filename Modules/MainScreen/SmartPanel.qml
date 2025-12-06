@@ -76,7 +76,7 @@ Item {
   }
   function onTabPressed() {
   }
-  function onShiftTabPressed() {
+  function onBackTabPressed() {
   }
   function onUpPressed() {
   }
@@ -101,14 +101,23 @@ Item {
   function onCtrlKPressed() {
   }
 
-  // Expose panel region for click-through mask
-  readonly property var panelRegion: panelContent.maskRegion
+  // Expose panel region for background rendering
+  readonly property var panelRegion: panelContent.geometryPlaceholder
 
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool barFloating: Settings.data.bar.floating
   readonly property real barMarginH: barFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0
   readonly property real barMarginV: barFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0
+
+  // Check if bar should be visible on this screen
+  readonly property bool barShouldShow: {
+    if (!BarService.isVisible)
+      return false;
+    var monitors = Settings.data.bar.monitors || [];
+    var screenName = screen?.name || "";
+    return monitors.length === 0 || monitors.includes(screenName);
+  }
 
   // Helper to detect if any anchor is explicitly set
   readonly property bool hasExplicitHorizontalAnchor: panelAnchorHorizontalCenter || panelAnchorLeft || panelAnchorRight
@@ -606,7 +615,7 @@ Item {
         if (!running && duration === 0) {
           if (root.isClosing && root.opacity === 0.0) {
             root.opacityFadeComplete = true;
-            var shouldFinalizeNow = panelContent.maskRegion && !panelContent.maskRegion.shouldAnimateWidth && !panelContent.maskRegion.shouldAnimateHeight;
+            var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
             if (shouldFinalizeNow) {
               Logger.d("SmartPanel", "Zero-duration opacity + no size animation - finalizing", root.objectName);
               Qt.callLater(root.finalizeClose);
@@ -624,12 +633,12 @@ Item {
           root.opacityFadeComplete = true;
           // If no size animation will run (centered attached panels only), finalize immediately
           // Detached panels (allowAttach === false) should always animate from top
-          var shouldFinalizeNow = panelContent.maskRegion && !panelContent.maskRegion.shouldAnimateWidth && !panelContent.maskRegion.shouldAnimateHeight;
+          var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
           if (shouldFinalizeNow) {
             Logger.d("SmartPanel", "No animation - finalizing immediately", root.objectName);
             Qt.callLater(root.finalizeClose);
           } else {
-            Logger.d("SmartPanel", "Animation will run - waiting for size animation", root.objectName, "shouldAnimateHeight:", panelContent.maskRegion.shouldAnimateHeight, "shouldAnimateWidth:", panelContent.maskRegion.shouldAnimateWidth);
+            Logger.d("SmartPanel", "Animation will run - waiting for size animation", root.objectName, "shouldAnimateHeight:", panelContent.geometryPlaceholder.shouldAnimateHeight, "shouldAnimateWidth:", panelContent.geometryPlaceholder.shouldAnimateWidth);
           }
         } // When opacity fade completes during open, stop watchdog
         else if (!running && root.isPanelVisible && root.opacity === 1.0) {
@@ -691,7 +700,13 @@ Item {
     anchors.fill: parent
 
     // Screen-dependent attachment properties
-    readonly property bool allowAttach: Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar
+    // Allow panel content to override allowAttach (e.g., plugin panels)
+    readonly property bool allowAttach: {
+      if (contentLoader.item && contentLoader.item.allowAttach !== undefined) {
+        return contentLoader.item.allowAttach;
+      }
+      return Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar;
+    }
     readonly property bool allowAttachToBar: {
       if (!(Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar) || Settings.data.bar.backgroundOpacity < 1.0) {
         return false;
@@ -715,8 +730,8 @@ Item {
     readonly property bool touchingLeftBar: allowAttachToBar && root.barPosition === "left" && root.barIsVertical && Math.abs(panelBackground.x - (root.barMarginH + Style.barHeight)) <= 1
     readonly property bool touchingRightBar: allowAttachToBar && root.barPosition === "right" && root.barIsVertical && Math.abs((panelBackground.x + panelBackground.width) - (root.width - root.barMarginH - Style.barHeight)) <= 1
 
-    // Expose panelBackground for mask region
-    property alias maskRegion: panelBackground
+    // Expose panelBackground for geometry placeholder
+    property alias geometryPlaceholder: panelBackground
 
     // The actual panel background - provides geometry for PanelBackground rendering
     Item {
@@ -973,6 +988,21 @@ Item {
 
       // Smart corner state calculation based on bar attachment and edge touching
       property int topLeftCornerState: {
+        // If bar is not visible, don't show outer corners based on bar attachment
+        if (!root.barShouldShow) {
+          // Only check edge touching, not bar touching
+          var edgeInverted = panelContent.allowAttach && (panelContent.touchingLeftEdge || panelContent.touchingTopEdge);
+          if (edgeInverted) {
+            if (panelContent.touchingLeftEdge && panelContent.touchingTopEdge)
+              return 0; // Both edges: no inversion (normal rounded corner)
+            if (panelContent.touchingLeftEdge)
+              return 2; // Left edge: vertical inversion
+            if (panelContent.touchingTopEdge)
+              return 1; // Top edge: horizontal inversion
+          }
+          return 0;
+        }
+
         var barInverted = panelContent.allowAttachToBar && ((root.barPosition === "top" && !root.barIsVertical && root.effectivePanelAnchorTop) || (root.barPosition === "left" && root.barIsVertical && root.effectivePanelAnchorLeft));
         var barTouchInverted = panelContent.touchingTopBar || panelContent.touchingLeftBar;
         // Invert if touching either edge that forms this corner (left OR top), regardless of bar position
@@ -993,6 +1023,21 @@ Item {
       }
 
       property int topRightCornerState: {
+        // If bar is not visible, don't show outer corners based on bar attachment
+        if (!root.barShouldShow) {
+          // Only check edge touching, not bar touching
+          var edgeInverted = panelContent.allowAttach && (panelContent.touchingRightEdge || panelContent.touchingTopEdge);
+          if (edgeInverted) {
+            if (panelContent.touchingRightEdge && panelContent.touchingTopEdge)
+              return 0; // Both edges: no inversion (normal rounded corner)
+            if (panelContent.touchingRightEdge)
+              return 2; // Right edge: vertical inversion
+            if (panelContent.touchingTopEdge)
+              return 1; // Top edge: horizontal inversion
+          }
+          return 0;
+        }
+
         var barInverted = panelContent.allowAttachToBar && ((root.barPosition === "top" && !root.barIsVertical && root.effectivePanelAnchorTop) || (root.barPosition === "right" && root.barIsVertical && root.effectivePanelAnchorRight));
         var barTouchInverted = panelContent.touchingTopBar || panelContent.touchingRightBar;
         // Invert if touching either edge that forms this corner (right OR top), regardless of bar position
@@ -1013,6 +1058,21 @@ Item {
       }
 
       property int bottomLeftCornerState: {
+        // If bar is not visible, don't show outer corners based on bar attachment
+        if (!root.barShouldShow) {
+          // Only check edge touching, not bar touching
+          var edgeInverted = panelContent.allowAttach && (panelContent.touchingLeftEdge || panelContent.touchingBottomEdge);
+          if (edgeInverted) {
+            if (panelContent.touchingLeftEdge && panelContent.touchingBottomEdge)
+              return 0; // Both edges: no inversion (normal rounded corner)
+            if (panelContent.touchingLeftEdge)
+              return 2; // Left edge: vertical inversion
+            if (panelContent.touchingBottomEdge)
+              return 1; // Bottom edge: horizontal inversion
+          }
+          return 0;
+        }
+
         var barInverted = panelContent.allowAttachToBar && ((root.barPosition === "bottom" && !root.barIsVertical && root.effectivePanelAnchorBottom) || (root.barPosition === "left" && root.barIsVertical && root.effectivePanelAnchorLeft));
         var barTouchInverted = panelContent.touchingBottomBar || panelContent.touchingLeftBar;
         // Invert if touching either edge that forms this corner (left OR bottom), regardless of bar position
@@ -1033,6 +1093,21 @@ Item {
       }
 
       property int bottomRightCornerState: {
+        // If bar is not visible, don't show outer corners based on bar attachment
+        if (!root.barShouldShow) {
+          // Only check edge touching, not bar touching
+          var edgeInverted = panelContent.allowAttach && (panelContent.touchingRightEdge || panelContent.touchingBottomEdge);
+          if (edgeInverted) {
+            if (panelContent.touchingRightEdge && panelContent.touchingBottomEdge)
+              return 0; // Both edges: no inversion (normal rounded corner)
+            if (panelContent.touchingRightEdge)
+              return 2; // Right edge: vertical inversion
+            if (panelContent.touchingBottomEdge)
+              return 1; // Bottom edge: horizontal inversion
+          }
+          return 0;
+        }
+
         var barInverted = panelContent.allowAttachToBar && ((root.barPosition === "bottom" && !root.barIsVertical && root.effectivePanelAnchorBottom) || (root.barPosition === "right" && root.barIsVertical && root.effectivePanelAnchorRight));
         var barTouchInverted = panelContent.touchingBottomBar || panelContent.touchingRightBar;
         // Invert if touching either edge that forms this corner (right OR bottom), regardless of bar position

@@ -259,6 +259,7 @@ ColumnLayout {
         onReorderWidget: (section, fromIndex, toIndex) => _reorderWidgetInSection(section, fromIndex, toIndex)
         onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsInSection(section, index, settings)
         onMoveWidget: (fromSection, index, toSection) => _moveWidgetBetweenSections(fromSection, index, toSection)
+        onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
       }
 
       // Right
@@ -276,6 +277,7 @@ ColumnLayout {
         onReorderWidget: (section, fromIndex, toIndex) => _reorderWidgetInSection(section, fromIndex, toIndex)
         onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsInSection(section, index, settings)
         onMoveWidget: (fromSection, index, toSection) => _moveWidgetBetweenSections(fromSection, index, toSection)
+        onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
       }
     }
   }
@@ -358,5 +360,12 @@ ColumnLayout {
   // Base list model for all combo boxes
   ListModel {
     id: availableWidgets
+  }
+
+  // Shared Plugin Settings Popup
+  NPluginSettingsPopup {
+    id: pluginSettingsDialog
+    parent: Overlay.overlay
+    showToastOnSave: false
   }
 }

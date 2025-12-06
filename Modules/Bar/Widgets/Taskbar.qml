@@ -199,7 +199,7 @@ Rectangle {
             width: 4
             height: 4
             color: modelData.isFocused ? Color.mPrimary : Color.transparent
-            radius: width * 0.5
+            radius: Math.min(Style.radiusXXS, width / 2)
           }
         }
 

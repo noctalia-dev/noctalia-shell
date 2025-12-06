@@ -39,7 +39,7 @@ Popup {
 
   background: Rectangle {
     color: Color.mSurface
-    radius: Style.radiusL
+    radius: Style.iRadiusL
     border.color: Color.mPrimary
     border.width: Style.borderM
   }
@@ -94,7 +94,7 @@ Popup {
       delegate: Rectangle {
         width: grid.cellWidth
         height: grid.cellHeight
-        radius: Style.radiusS
+        radius: Style.iRadiusS
 
         color: (root.selectedIcon === modelData) ? Qt.alpha(Color.mPrimary, 0.15) : Color.transparent
         border.color: (root.selectedIcon === modelData) ? Color.mPrimary : Color.transparent

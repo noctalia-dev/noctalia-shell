@@ -48,7 +48,7 @@ Popup {
 
   background: Rectangle {
     color: Color.mSurface
-    radius: Style.radiusS
+    radius: Style.iRadiusS
     border.color: Color.mPrimary
     border.width: Style.borderM
   }
@@ -99,7 +99,7 @@ Popup {
       Rectangle {
         Layout.fillWidth: true
         Layout.preferredHeight: 80
-        radius: Style.radiusS
+        radius: Style.iRadiusS
         color: root.selectedColor
         border.color: Color.mOutline
         border.width: Style.borderS
@@ -564,7 +564,7 @@ Popup {
                 Rectangle {
                   width: 10
                   height: 10
-                  radius: 5
+                  radius: Math.min(Style.iRadiusXS, width / 2)
                   color: "transparent"
                   border.color: root.selectedColor.hsvValue < 0.5 ? "white" : "black"
                   border.width: 1
@@ -661,7 +661,7 @@ Popup {
                 Rectangle {
                   width: 24
                   height: 24
-                  radius: Style.radiusXXS
+                  radius: Style.iRadiusXXS
                   color: modelData.color
                   border.color: root.selectedColor.toString() === modelData.color.toString() ? Color.mPrimary : Color.mOutline
                   border.width: Math.max(1, root.selectedColor.toString() === modelData.color.toString() ? Style.borderM : Style.borderS)
@@ -698,7 +698,7 @@ Popup {
                 Rectangle {
                   width: 24
                   height: 24
-                  radius: 4
+                  radius: Math.min(Style.iRadiusXS, width / 2)
                   color: modelData.color
                   border.color: root.selectedColor.toString() === modelData.color.toString() ? Color.mPrimary : Color.mOutline
                   border.width: root.selectedColor.toString() === modelData.color.toString() ? 2 : 1

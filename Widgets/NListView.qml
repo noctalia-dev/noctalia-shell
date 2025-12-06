@@ -11,7 +11,7 @@ Item {
   property color handlePressedColor: handleColor
   property color trackColor: Color.transparent
   property real handleWidth: 6
-  property real handleRadius: Style.radiusM
+  property real handleRadius: Style.iRadiusM
   property int verticalPolicy: ScrollBar.AsNeeded
   property int horizontalPolicy: ScrollBar.AlwaysOff
   readonly property bool verticalScrollBarActive: {
@@ -20,6 +20,8 @@ Item {
     return listView.contentHeight > listView.height;
   }
   readonly property real scrollBarWidth: verticalScrollBarActive ? handleWidth : 0
+  readonly property real scrollBarSpacing: verticalScrollBarActive ? 4 : 0
+  readonly property real scrollBarTotalWidth: verticalScrollBarActive ? (handleWidth + 4) : 0
 
   // Forward ListView properties
   property alias model: listView.model
@@ -113,15 +115,44 @@ Item {
     id: listView
     anchors.fill: parent
 
-    // Enable clipping to keep content within bounds
+    anchors.rightMargin: root.verticalScrollBarActive ? root.handleWidth + 4 : 0
     clip: true
-
-    // Enable flickable for smooth scrolling
     boundsBehavior: Flickable.StopAtBounds
+    flickDeceleration: 1500
+
+    Timer {
+      id: scrollbarActiveTimer
+      interval: 150
+      repeat: false
+    }
+
+    WheelHandler {
+      id: wheelHandler
+      target: listView
+      acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+
+      onWheel: function (event) {
+        if (listView.flicking || listView.moving) {
+          listView.cancelFlick();
+        }
+
+        var delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : (event.angleDelta.y / 8);
+        var newContentY = listView.contentY - delta;
+        newContentY = Math.max(0, Math.min(newContentY, listView.contentHeight - listView.height));
+        listView.contentY = newContentY;
+
+        if (listView.ScrollBar.vertical) {
+          listView.ScrollBar.vertical.active = true;
+        }
+
+        scrollbarActiveTimer.restart();
+        event.accepted = true;
+      }
+    }
 
     ScrollBar.vertical: ScrollBar {
-      parent: listView
-      x: listView.mirrored ? 0 : listView.width - width
+      parent: root // Position relative to root Item, not listView
+      x: listView.mirrored ? 0 : root.width - width
       y: 0
       height: listView.height
       policy: root.verticalPolicy

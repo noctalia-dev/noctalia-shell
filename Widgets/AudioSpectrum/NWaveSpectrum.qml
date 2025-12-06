@@ -36,7 +36,7 @@ Item {
 
   // Clear canvas when not rendering
   onRenderingActiveChanged: {
-    if (!renderingActive) {
+    if (!renderingActive && canvas.available) {
       var ctx = canvas.getContext("2d");
       if (ctx)
         ctx.reset();

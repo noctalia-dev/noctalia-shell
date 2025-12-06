@@ -1,7 +1,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import qs.Commons
+import qs.Services.UI
 import qs.Widgets
 
 Rectangle {
@@ -9,6 +11,7 @@ Rectangle {
 
   // Public properties
   property string icon: ""
+  property string tooltipText: ""
   property bool checked: false
   property int tabIndex: 0
 
@@ -22,7 +25,7 @@ Rectangle {
   Layout.fillHeight: true
 
   // Styling
-  radius: Style.radiusXS
+  radius: Style.iRadiusXS
   color: root.checked ? Color.mPrimary : (root.isHovered ? Color.mHover : Color.mSurface)
 
   Behavior on color {
@@ -51,9 +54,22 @@ Rectangle {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onEntered: root.isHovered = true
-    onExited: root.isHovered = false
+    onEntered: {
+      root.isHovered = true;
+      if (root.tooltipText) {
+        TooltipService.show(parent, root.tooltipText);
+      }
+    }
+    onExited: {
+      root.isHovered = false;
+      if (root.tooltipText) {
+        TooltipService.hide();
+      }
+    }
     onClicked: {
+      if (root.tooltipText) {
+        TooltipService.hide();
+      }
       root.clicked();
       // Update parent NTabBar's currentIndex
       if (root.parent && root.parent.parent && root.parent.parent.currentIndex !== undefined) {

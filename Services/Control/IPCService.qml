@@ -8,6 +8,7 @@ import qs.Commons
 import qs.Services.Compositor
 import qs.Services.Hardware
 import qs.Services.Media
+import qs.Services.Noctalia
 import qs.Services.Power
 import qs.Services.System
 import qs.Services.Theming
@@ -46,8 +47,8 @@ Item {
     target: "calendar"
     function toggle() {
       root.withTargetScreen(screen => {
-                              var calendarPanel = PanelService.getPanel("calendarPanel", screen);
-                              calendarPanel?.toggle(null, "Clock");
+                              var clockPanel = PanelService.getPanel("clockPanel", screen);
+                              clockPanel?.toggle(null, "Clock");
                             });
     }
   }
@@ -106,7 +107,7 @@ Item {
     function toggle() {
       root.withTargetScreen(screen => {
                               var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                              if (!launcherPanel?.windowActive || (launcherPanel?.windowActive && !launcherPanel?.activePlugin))
+                              if (!launcherPanel?.isPanelOpen || (launcherPanel?.isPanelOpen && !launcherPanel?.activePlugin))
                               launcherPanel?.toggle();
                               launcherPanel?.setSearchText("");
                             });
@@ -114,24 +115,27 @@ Item {
     function clipboard() {
       root.withTargetScreen(screen => {
                               var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                              if (!launcherPanel?.windowActive || (launcherPanel?.windowActive && launcherPanel?.searchText.startsWith(">clip")))
-                              launcherPanel?.toggle();
+                              if (!launcherPanel?.isPanelOpen) {
+                                launcherPanel?.toggle();
+                              }
                               launcherPanel?.setSearchText(">clip ");
                             });
     }
     function calculator() {
       root.withTargetScreen(screen => {
                               var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                              if (!launcherPanel?.windowActive || (launcherPanel?.windowActive && launcherPanel?.searchText.startsWith(">calc")))
-                              launcherPanel?.toggle();
+                              if (!launcherPanel?.isPanelOpen) {
+                                launcherPanel?.toggle();
+                              }
                               launcherPanel?.setSearchText(">calc ");
                             });
     }
     function emoji() {
       root.withTargetScreen(screen => {
                               var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                              if (!launcherPanel?.windowActive || (launcherPanel?.windowActive && launcherPanel?.searchText.startsWith(">emoji")))
-                              launcherPanel?.toggle();
+                              if (!launcherPanel?.isPanelOpen) {
+                                launcherPanel?.toggle();
+                              }
                               launcherPanel?.setSearchText(">emoji ");
                             });
     }
@@ -458,6 +462,7 @@ Item {
       implicitHeight: 0
       color: Color.transparent
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
+      WlrLayershell.namespace: "noctalia-ipc-screen-detector"
       mask: Region {}
 
       onScreenChanged: {

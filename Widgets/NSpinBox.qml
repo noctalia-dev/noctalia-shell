@@ -85,7 +85,7 @@ RowLayout {
     id: spinBoxContainer
     implicitWidth: 120
     implicitHeight: Math.round((root.baseSize - 4) / 2) * 2
-    radius: height * 0.5
+    radius: Style.iRadiusS
     color: Color.mSurfaceVariant
     border.color: (root.hovering || decreaseArea.containsMouse || increaseArea.containsMouse) ? Color.mHover : Color.mOutline
     border.width: Style.borderS
@@ -140,7 +140,7 @@ RowLayout {
         Rectangle {
           width: Math.round(parent.height)
           height: parent.height
-          radius: Math.round(width / 2)
+          radius: Math.min(Style.iRadiusL, width / 2)
           anchors.left: parent.left
           color: decreaseArea.containsMouse ? Color.mHover : Color.transparent
           Behavior on color {
@@ -239,7 +239,7 @@ RowLayout {
         Rectangle {
           width: Math.round(parent.height)
           height: parent.height
-          radius: Math.round(width / 2)
+          radius: Math.min(Style.iRadiusL, width / 2)
           anchors.right: parent.right
           color: increaseArea.containsMouse ? Color.mHover : Color.transparent
           Behavior on color {

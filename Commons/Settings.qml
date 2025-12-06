@@ -5,7 +5,9 @@ import Quickshell
 import Quickshell.Io
 import "../Helpers/QtObj2JS.js" as QtObj2JS
 import qs.Commons
+import qs.Commons.Migrations
 import qs.Modules.OSD
+import qs.Services.Noctalia
 import qs.Services.UI
 
 Singleton {
@@ -21,7 +23,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 25
+  readonly property int settingsVersion: 26
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -100,7 +102,7 @@ Singleton {
       if (!isLoaded) {
         Logger.i("Settings", "Settings loaded");
 
-        upgradeSettingsData();
+        upgradeSettings();
 
         root.isLoaded = true;
 
@@ -223,6 +225,8 @@ Singleton {
       property bool forceBlackScreenCorners: false
       property real scaleRatio: 1.0
       property real radiusRatio: 1.0
+      property real iRadiusRatio: 1.0
+      property real boxRadiusRatio: 1.0
       property real screenRadiusRatio: 1.0
       property real animationSpeed: 1.0
       property bool animationDisabled: false
@@ -267,11 +271,11 @@ Singleton {
     property JsonObject calendar: JsonObject {
       property list<var> cards: [
         {
-          "id": "banner-card",
+          "id": "calendar-header-card",
           "enabled": true
         },
         {
-          "id": "calendar-card",
+          "id": "calendar-month-card",
           "enabled": true
         },
         {
@@ -349,6 +353,7 @@ Singleton {
       property string customLaunchPrefix: ""
       // View mode: "list" or "grid"
       property string viewMode: "list"
+      property bool showCategories: true
     }
 
     // control center
@@ -435,7 +440,6 @@ Singleton {
       property bool enabled: true
       property string displayMode: "auto_hide" // "always_visible", "auto_hide", "exclusive"
       property real backgroundOpacity: 1.0
-      property real radiusRatio: 0.1
       property real floatingRatio: 1.0
       property real size: 1
       property bool onlySameOutput: true
@@ -635,6 +639,103 @@ Singleton {
   }
 
   // -----------------------------------------------------
+  // Run versioned migrations using MigrationRegistry
+  function runVersionedMigrations() {
+    const currentVersion = adapter.settingsVersion;
+    const migrations = MigrationRegistry.migrations;
+
+    // Get all migration versions and sort them
+    const versions = Object.keys(migrations).map(v => parseInt(v)).sort((a, b) => a - b);
+
+    // Run migrations in order for versions newer than current
+    for (var i = 0; i < versions.length; i++) {
+      const version = versions[i];
+
+      if (currentVersion < version) {
+        // Create migration instance and run it
+        const migrationComponent = migrations[version];
+        const migration = migrationComponent.createObject(root);
+
+        if (migration && typeof migration.migrate === "function") {
+          const success = migration.migrate(adapter, Logger);
+          if (!success) {
+            Logger.e("Settings", "Migration to v" + version + " failed");
+          }
+        } else {
+          Logger.e("Settings", "Invalid migration for v" + version);
+        }
+
+        // Clean up migration instance
+        if (migration) {
+          migration.destroy();
+        }
+      }
+    }
+  }
+
+  // -----------------------------------------------------
+  // If the settings structure has changed, ensure
+  // backward compatibility by upgrading the settings
+  function upgradeSettings() {
+    // Wait for PluginService to finish loading plugins first
+    // This prevents deleting plugin widgets during reload before plugins are registered
+    if (!PluginService.initialized || !PluginService.pluginsFullyLoaded) {
+      Logger.d("Settings", "Plugins not fully loaded yet, deferring upgrade");
+      Qt.callLater(upgradeSettings);
+      return;
+    }
+
+    // Wait for BarWidgetRegistry to be ready
+    if (!BarWidgetRegistry.widgets || Object.keys(BarWidgetRegistry.widgets).length === 0) {
+      Logger.d("Settings", "BarWidgetRegistry not ready, deferring upgrade");
+      Qt.callLater(upgradeSettings);
+      return;
+    }
+
+    // -----------------
+    // Run versioned migrations from MigrationRegistry
+    runVersionedMigrations();
+
+    // -----------------
+    const sections = ["left", "center", "right"];
+
+    // 1. remove any non existing widget type
+    var removedWidget = false;
+    for (var s = 0; s < sections.length; s++) {
+      const sectionName = sections[s];
+      const widgets = adapter.bar.widgets[sectionName];
+      // Iterate backward through the widgets array, so it does not break when removing a widget
+      for (var i = widgets.length - 1; i >= 0; i--) {
+        var widget = widgets[i];
+        if (!BarWidgetRegistry.hasWidget(widget.id)) {
+          Logger.w(`Settings`, `!!! Deleted invalid widget ${widget.id} !!!`);
+          widgets.splice(i, 1);
+          removedWidget = true;
+        }
+      }
+    }
+
+    // -----------------
+    // 2. upgrade user widget settings
+    for (var s = 0; s < sections.length; s++) {
+      const sectionName = sections[s];
+      for (var i = 0; i < adapter.bar.widgets[sectionName].length; i++) {
+        var widget = adapter.bar.widgets[sectionName][i];
+
+        // Check if widget registry supports user settings, if it does not, then there is nothing to do
+        const reg = BarWidgetRegistry.widgetMetadata[widget.id];
+        if ((reg === undefined) || (reg.allowUserSettings === undefined) || !reg.allowUserSettings) {
+          continue;
+        }
+
+        if (upgradeWidget(widget)) {
+          Logger.d("Settings", `Upgraded ${widget.id} widget:`, JSON.stringify(widget));
+        }
+      }
+    }
+  }
+
+  // -----------------------------------------------------
   // Function to clean up deprecated user/custom bar widgets settings
   function upgradeWidget(widget) {
     // Backup the widget definition before altering
@@ -668,104 +769,5 @@ Singleton {
     // Compare settings, to detect if something has been upgraded
     const widgetAfter = JSON.stringify(widget);
     return (widgetAfter !== widgetBefore);
-  }
-
-  // -----------------------------------------------------
-  // If the settings structure has changed, ensure
-  // backward compatibility by upgrading the settings
-  function upgradeSettingsData() {
-    // Wait for BarWidgetRegistry to be ready
-    if (!BarWidgetRegistry.widgets || Object.keys(BarWidgetRegistry.widgets).length === 0) {
-      Logger.w("Settings", "BarWidgetRegistry not ready, deferring upgrade");
-      Qt.callLater(upgradeSettingsData);
-      return;
-    }
-
-    const sections = ["left", "center", "right"];
-
-    // -----------------
-    // 1st. convert old widget id to new id
-    for (var s = 0; s < sections.length; s++) {
-      const sectionName = sections[s];
-      for (var i = 0; i < adapter.bar.widgets[sectionName].length; i++) {
-        var widget = adapter.bar.widgets[sectionName][i];
-
-        switch (widget.id) {
-        case "DarkModeToggle":
-          widget.id = "DarkMode";
-          break;
-        case "PowerToggle":
-          widget.id = "SessionMenu";
-          break;
-        case "ScreenRecorderIndicator":
-          widget.id = "ScreenRecorder";
-          break;
-        case "SidePanelToggle":
-          widget.id = "ControlCenter";
-          break;
-        }
-      }
-    }
-
-    // -----------------
-    // 2nd. remove any non existing widget type
-    var removedWidget = false;
-    for (var s = 0; s < sections.length; s++) {
-      const sectionName = sections[s];
-      const widgets = adapter.bar.widgets[sectionName];
-      // Iterate backward through the widgets array, so it does not break when removing a widget
-      for (var i = widgets.length - 1; i >= 0; i--) {
-        var widget = widgets[i];
-        if (!BarWidgetRegistry.hasWidget(widget.id)) {
-          Logger.w(`Settings`, `Deleted invalid widget ${widget.id}`);
-          widgets.splice(i, 1);
-          removedWidget = true;
-        }
-      }
-    }
-
-    // -----------------
-    // 3nd. upgrade widget settings
-    for (var s = 0; s < sections.length; s++) {
-      const sectionName = sections[s];
-      for (var i = 0; i < adapter.bar.widgets[sectionName].length; i++) {
-        var widget = adapter.bar.widgets[sectionName][i];
-
-        // Check if widget registry supports user settings, if it does not, then there is nothing to do
-        const reg = BarWidgetRegistry.widgetMetadata[widget.id];
-        if ((reg === undefined) || (reg.allowUserSettings === undefined) || !reg.allowUserSettings) {
-          continue;
-        }
-
-        if (upgradeWidget(widget)) {
-          Logger.d("Settings", `Upgraded ${widget.id} widget:`, JSON.stringify(widget));
-        }
-      }
-    }
-
-    // -----------------
-    // 4th. safety check
-    // if a widget was deleted, ensure we still have a control center
-    if (removedWidget) {
-      var gotControlCenter = false;
-      for (var s = 0; s < sections.length; s++) {
-        const sectionName = sections[s];
-        for (var i = 0; i < adapter.bar.widgets[sectionName].length; i++) {
-          var widget = adapter.bar.widgets[sectionName][i];
-          if (widget.id === "ControlCenter") {
-            gotControlCenter = true;
-            break;
-          }
-        }
-      }
-
-      if (!gotControlCenter) {
-        //const obj = JSON.parse('{"id": "ControlCenter"}');
-        adapter.bar.widgets["right"].push(({
-                                             "id": "ControlCenter"
-                                           }));
-        Logger.w("Settings", "Added a ControlCenter widget to the right section");
-      }
-    }
   }
 }

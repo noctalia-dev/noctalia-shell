@@ -3,8 +3,8 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
+import qs.Modules.Cards
 import qs.Modules.MainScreen
-import qs.Modules.Panels.ControlCenter.Cards
 import qs.Services.Media
 import qs.Services.UI
 import qs.Widgets
@@ -31,7 +31,7 @@ SmartPanel {
   panelAnchorBottom: !shouldCenter && controlCenterPosition !== "close_to_bar_button" && controlCenterPosition.startsWith("bottom_")
   panelAnchorTop: !shouldCenter && controlCenterPosition !== "close_to_bar_button" && controlCenterPosition.startsWith("top_")
 
-  preferredWidth: Math.round(460 * Style.uiScaleRatio)
+  preferredWidth: Math.round(420 * Style.uiScaleRatio)
   preferredHeight: {
     var height = 0;
     var count = 0;

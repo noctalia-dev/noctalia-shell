@@ -357,7 +357,7 @@ Item {
                 width: model.isFocused ? 4 : 0
                 height: model.isFocused ? 4 : 0
                 color: model.isFocused ? Color.mPrimary : Color.transparent
-                radius: width * 0.5
+                radius: Math.min(Style.radiusXXS, width / 2)
               }
 
               layer.effect: ShaderEffect {
@@ -437,7 +437,7 @@ Item {
           id: workspaceNumberBackground
 
           anchors.fill: parent
-          radius: width * 0.5
+          radius: Math.min(Style.radiusL, width / 2)
 
           color: {
             if (workspaceModel.isFocused)

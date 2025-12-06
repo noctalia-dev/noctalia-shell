@@ -43,6 +43,9 @@ ShellRoot {
   Component.onCompleted: {
     Logger.i("Shell", "---------------------------");
     Logger.i("Shell", "Noctalia Hello!");
+
+    // Initialize plugin system early so Settings can validate plugin widgets
+    PluginRegistry.init();
   }
 
   Connections {
@@ -116,8 +119,29 @@ ShellRoot {
 
       LockScreen {}
 
-      // IPCService is treated as a service but it's actually an Item that needs to exists in the shell.
+      // IPCService is treated as a service but it must be in graphics scene.
       IPCService {}
+
+      // Container for plugins Main.qml instances (must be in graphics scene)
+      Item {
+        id: pluginContainer
+        visible: false
+        Component.onCompleted: {
+          PluginService.pluginContainer = pluginContainer;
+        }
+      }
+
+      // Listen for when available plugins are fetched, then check for updates
+      Connections {
+        target: PluginService
+        property bool hasCheckedOnStartup: false
+        function onAvailablePluginsUpdated() {
+          if (!hasCheckedOnStartup) {
+            hasCheckedOnStartup = true;
+            PluginService.checkForUpdates();
+          }
+        }
+      }
     }
   }
 

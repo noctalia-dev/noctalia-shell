@@ -58,6 +58,14 @@
         "low-battery-threshold": {
           "description": "Show a warning when battery falls below this percentage.",
           "label": "Low battery warning threshold"
+        },
+        "show-noctalia-performance": {
+          "description": "Display the Noctalia Performance Mode toggle inside the battery panel.",
+          "label": "Show Noctalia Performance toggle"
+        },
+        "show-power-profile": {
+          "description": "Display the power profile selection inside the battery panel.",
+          "label": "Show power profile controls"
         }
       },
       "brightness": {
@@ -131,10 +139,21 @@
           "label": "Display command output",
           "stream-description": "Enter a command to run continuously."
         },
+        "hide-mode": {
+          "description": "Controls widget visibility when the command has no output.",
+          "label": "Hide mode",
+          "expandWithOutput": "Expand when has output",
+          "alwaysExpanded": "Always expanded",
+          "maxTransparent": "Max expanded but transparent"
+        },
         "dynamic-text": "Dynamic text",
         "icon": {
           "description": "Select an icon from the library.",
           "label": "Icon"
+        },
+        "show-icon": {
+          "description": "Toggles the visibility of the widget's icon.",
+          "label": "Show icon"
         },
         "left-click": {
           "description": "Command to execute when the button is left-clicked.",
@@ -452,7 +471,15 @@
     }
   },
   "clock": {
-    "tooltip": "Open calendar"
+    "tooltip": "Clock"
+  },
+  "common": {
+    "add": "Add",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "check-settings": "Check Settings for details",
+    "close": "Close",
+    "save": "Save"
   },
   "context-menu": {
     "activate-app": "Activate {app}",
@@ -494,6 +521,20 @@
     "unknown": "Unknown"
   },
   "launcher": {
+    "categories": {
+      "all": "All",
+      "audiovideo": "Audio & Video",
+      "chat": "Chat",
+      "development": "Development",
+      "education": "Education",
+      "game": "Games",
+      "graphics": "Graphics",
+      "misc": "Misc",
+      "network": "Network",
+      "office": "Office",
+      "system": "System",
+      "webbrowser": "Web Browser"
+    },
     "pin": "Pin to dock",
     "unpin": "Unpin from dock"
   },
@@ -721,7 +762,7 @@
         "enabled": "Bluetooth"
       },
       "tooltip": {
-        "action": "Click to manage Bluetooth devices"
+        "action": "Bluetooth"
       }
     },
     "keepAwake": {
@@ -730,7 +771,7 @@
         "enabled": "Keep Awake"
       },
       "tooltip": {
-        "action": "Click to toggle Keep Awake mode"
+        "action": "Keep Awake"
       }
     },
     "nightLight": {
@@ -740,7 +781,7 @@
         "forced": "Night Light"
       },
       "tooltip": {
-        "action": "Click to cycle Night Light mode\nRight click: Open settings"
+        "action": "Night Light"
       }
     },
     "notifications": {
@@ -749,7 +790,7 @@
         "enabled": "Notifications"
       },
       "tooltip": {
-        "action": "Left click: Open notification history\nRight click: Open context menu"
+        "action": "Notifications"
       }
     },
     "powerProfile": {
@@ -757,7 +798,7 @@
         "unavailable": "Power Profile"
       },
       "tooltip": {
-        "action": "Click to cycle power profile",
+        "action": "Power profile",
         "disabled": "Install power-profiles-daemon to use power profiles"
       }
     },
@@ -767,13 +808,13 @@
         "stopped": "Record"
       },
       "tooltip": {
-        "action": "Click to start/stop screen recording"
+        "action": "Screen recorder"
       }
     },
     "wallpaperSelector": {
       "label": "Wallpaper",
       "tooltip": {
-        "action": "Left click: Open wallpaper selector\nRight click: Set random wallpaper"
+        "action": "Wallpaper selector"
       }
     },
     "wifi": {
@@ -783,7 +824,7 @@
         "wifi": "Wi-Fi"
       },
       "tooltip": {
-        "action": "Click to manage Wi-Fi connections"
+        "action": "Wi-Fi"
       }
     }
   },
@@ -952,7 +993,7 @@
           "label": "Bar density"
         },
         "floating": {
-          "description": "Displays the bar as a floating 'pill'.",
+          "description": "Display the bar as a floating 'pill'.",
           "label": "Floating bar"
         },
         "margins": {
@@ -962,7 +1003,7 @@
           "vertical": "Vertical"
         },
         "outer-corners": {
-          "description": "Displays outwardly curved corners on the bar.",
+          "description": "Display outwardly curved corners on the bar.",
           "label": "Outer corners"
         },
         "position": {
@@ -997,7 +1038,7 @@
       },
       "widgets": {
         "section": {
-          "description": "Drag and drop widgets to reorder them. Badges indicate usage: [L]eft, [C]enter, [R]ight.",
+          "description": "Drag widgets to change their order. Use the right-click menu to transfer widgets between sections or remove them.",
           "label": "Widgets positioning"
         }
       }
@@ -1256,7 +1297,7 @@
           "cancel": "Cancel"
         },
         "section": {
-          "description": "Configure and manage the shortcuts widgets.",
+          "description": "Drag widgets to change their order. Use the right-click menu to transfer widgets between sections or remove them.",
           "label": "Shortcuts widgets"
         },
         "sectionLeft": "Left",
@@ -1424,7 +1465,7 @@
           "label": "Profile"
         },
         "select-avatar": "Select avatar image",
-        "tooltip": "Browse for avatar image"
+        "tooltip": "Profile picture"
       },
       "screen-corners": {
         "radius": {
@@ -1506,6 +1547,10 @@
           "description": "Display items in a grid layout instead of a list.",
           "label": "Grid view"
         },
+        "show-categories": {
+          "description": "Show category tabs for filtering applications.",
+          "label": "Show categories"
+        },
         "position": {
           "description": "Choose where the launcher panel appears.",
           "label": "Position"
@@ -1531,22 +1576,22 @@
     },
     "location": {
       "calendar": {
-        "banner": {
-          "label": "Header"
-        },
-        "calendar": {
-          "label": "Calendar"
-        },
         "cards": {
           "section": {
             "description": "Organize and enable/disable cards in the calendar panel.",
             "label": "Calendar cards"
           }
+        },
+        "header": {
+          "label": "Calendar Header"
+        },
+        "month": {
+          "label": "Calendar Month"
         }
       },
       "date-time": {
         "12hour-format": {
-          "description": "Displays time in 12-hour format on the lock screen and calendar. The bar clock has its own settings.",
+          "description": "Display time in 12-hour format on the lock screen and calendar. The bar clock has its own settings.",
           "label": "Use 12-hour time format"
         },
         "first-day-of-week": {
@@ -1567,7 +1612,7 @@
           "label": "Use analog style clock"
         },
         "week-numbers": {
-          "description": "Displays the week of the year (e.g., week 38) in the calendar.",
+          "description": "Display the week of the year (e.g., week 38) in the calendar.",
           "label": "Show week numbers"
         }
       },
@@ -1597,7 +1642,7 @@
           "label": "Weather"
         },
         "show-effects": {
-          "description": "Shows additional visual effects (like rain, snow, or lightning) on the weather card.",
+          "description": "Show additional visual effects (like rain, snow, or lightning) on the weather card.",
           "label": "Display weather effects"
         },
         "show-in-calendar": {
@@ -1760,7 +1805,7 @@
           "label": "Lock keys"
         },
         "section": {
-          "description": "Select the events that trigger the OSD. If no events are selected, all available events will trigger the OSD.",
+          "description": "Select the events that trigger the OSD.",
           "label": "OSD trigger events"
         },
         "volume": {
@@ -1768,6 +1813,76 @@
           "label": "Output volume"
         }
       }
+    },
+    "plugins": {
+      "available": {
+        "description": "Browse and install plugins from configured sources.",
+        "label": "Available plugins",
+        "no-plugins-description": "Check your plugin sources or refresh the list.",
+        "no-plugins-label": "No plugins available"
+      },
+      "filter": {
+        "all": "All",
+        "downloaded": "Downloaded",
+        "not-downloaded": "Not Downloaded"
+      },
+      "install": "Install",
+      "install-error": "Failed to install: {error}",
+      "install-success": "Successfully installed {plugin}",
+      "installed": {
+        "description": "Manage and configure all locally installed plugins.",
+        "label": "Installed plugins",
+        "no-plugins-description": "Install plugins from the Available Plugins section below.",
+        "no-plugins-label": "No plugins installed"
+      },
+      "installing": "Installing {plugin}...",
+      "plugin-settings-title": "{plugin} Settings",
+      "refresh": {
+        "refreshing": "Refreshing plugins list...",
+        "tooltip": "Refresh available plugins"
+      },
+      "settings": {
+        "tooltip": "Plugin settings"
+      },
+      "settings-error-not-loaded": "Plugin not loaded",
+      "settings-saved": "Plugin settings saved",
+      "sources": {
+        "add-custom": "Add custom repository",
+        "add-dialog": {
+          "description": "Add a GitHub repository as a plugin source.",
+          "error": "Failed to add plugin source",
+          "name": "Repository name",
+          "name-placeholder": "My Custom Plugins",
+          "success": "Plugin source added successfully",
+          "title": "Add plugin source",
+          "url": "Repository URL"
+        },
+        "description": "Manage plugin repositories where plugins are downloaded from.",
+        "label": "Plugin sources",
+        "placeholder": "My cool repository",
+        "remove": {
+          "tooltip": "Remove plugin source"
+        }
+      },
+      "title": "Plugins",
+      "uninstall": "Uninstall",
+      "uninstall-dialog": {
+        "description": "Are you sure you want to uninstall {plugin}? This will remove all plugin data.",
+        "title": "Uninstall plugin"
+      },
+      "uninstall-error": "Failed to uninstall: {error}",
+      "uninstall-success": "Successfully uninstalled {plugin}",
+      "uninstall.tooltip": "Uninstall plugin",
+      "uninstalling": "Uninstalling {plugin}...",
+      "update": "Update",
+      "update-all": "Update All ({count})",
+      "update-all-success": "All plugins updated successfully",
+      "update-available": "{count} plugins update(s) available",
+      "update-error": "Failed to update plugin: {plugin}: {error}",
+      "update-incompatible": "Requires Noctalia v{version} or higher",
+      "update-success": "Updated {plugin} to v{version}",
+      "update-version": "v{current} → v{new}",
+      "updating": "Updating {plugin}..."
     },
     "screen-recorder": {
       "audio": {
@@ -1788,7 +1903,7 @@
         "output-folder": {
           "description": "Folder where screen recordings will be saved.",
           "label": "Output folder",
-          "tooltip": "Browse for output folder"
+          "tooltip": "Output folder"
         },
         "section": {
           "description": "Manage screen recording output and content.",
@@ -1842,6 +1957,23 @@
           "description": "Customize which power actions appear in the session menu and in what order.",
           "label": "Power actions"
         }
+      },
+      "entry-settings": {
+        "command": {
+          "description": "Custom command to execute for this action. Leave empty to use the default system command.",
+          "label": "Command",
+          "placeholder": "e.g., systemctl poweroff"
+        },
+        "default-command": {
+          "lock": "Internal lock screen (no command)",
+          "logout": "Internal logout (no command)"
+        },
+        "default-info": {
+          "description": "If no custom command is specified, the default system command will be used.",
+          "label": "Default command"
+        },
+        "title": "Configure {entry}",
+        "tooltip": "Configure command"
       },
       "general": {
         "section": {
@@ -1944,10 +2076,15 @@
         "label": "Animation speed",
         "reset": "Reset animation speed"
       },
-      "border-radius": {
-        "description": "Controls the corner roundness of windows, buttons, and other elements.",
-        "label": "Border radius",
-        "reset": "Reset border radius"
+      "box-border-radius": {
+        "description": "Adjusts the corner roundness of major layout sections, such as sidebars, cards, and content panels.",
+        "label": "Container Radius",
+        "reset": "Reset container radius"
+      },
+      "control-border-radius": {
+        "description": "Controls the curvature of interactive elements, including buttons, toggles, and text fields.",
+        "label": "Input Radius",
+        "reset": "Reset input radius"
       },
       "dim-desktop": {
         "description": "Dim the desktop when panels or menus are open.",
@@ -2052,7 +2189,7 @@
         "folder": {
           "description": "Path to your main wallpaper folder.",
           "label": "Wallpaper folder",
-          "tooltip": "Browse for wallpaper folder"
+          "tooltip": "Wallpaper folder"
         },
         "hide-wallpaper-filenames": {
           "description": "Hide wallpaper filenames in the selector.",
@@ -2061,7 +2198,7 @@
         "monitor-specific": {
           "description": "Set a different wallpaper folder for each monitor.",
           "label": "Monitor-specific directories",
-          "tooltip": "Browse for wallpaper folder"
+          "tooltip": "Monitor wallpaper folder"
         },
         "recursive-search": {
           "description": "Also search for wallpapers in subfolders of the wallpaper directory.",
@@ -2076,7 +2213,7 @@
         "selector": {
           "description": "Choose your wallpaper.",
           "label": "Wallpaper selector",
-          "tooltip": "Open wallpaper selector"
+          "tooltip": "Wallpaper selector"
         },
         "selector-position": {
           "description": "Choose where the wallpaper selector panel appears.",
@@ -2192,7 +2329,7 @@
     "noctalia-performance": {
       "disabled": "Performance mode disabled",
       "enabled": "Performance mode enabled",
-      "label": "Noctalia performance"
+      "label": "Noctalia Performance"
     },
     "power-profile": {
       "changed": "Power profile changed",
@@ -2235,70 +2372,70 @@
   "tooltips": {
     "add-widget": "Add widget",
     "bluetooth-devices": "Bluetooth devices",
-    "brightness-at": "Brightness: {brightness}%\nScroll to modify brightness",
-    "cancel-timer": "Cancel timer",
+    "brightness-at": "Brightness: {brightness}%",
+    "cancel-timer": "Timer",
     "clear-history": "Clear history",
-    "click-to-start-recording": "Click to start recording",
-    "click-to-stop-recording": "Click to stop recording",
-    "close": "Close",
-    "connect-disconnect-devices": "Left click to connect\nRight click to forget",
+    "click-to-start-recording": "Screen recorder (start recording)",
+    "click-to-stop-recording": "Screen recorder (stop recording)",
+    "close": "Close button",
+    "connect-disconnect-devices": "Bluetooth device",
     "delete-notification": "Delete notification",
-    "disable-keep-awake": "Click to disable Keep Awake.\nScroll to adjust timeout",
-    "do-not-disturb-disabled": "Do Not Disturb disabled",
-    "do-not-disturb-enabled": "Do Not Disturb enabled",
-    "enable-keep-awake": "Click to enable Keep Awake.\nScroll to adjust timeout",
+    "disable-keep-awake": "Keep Awake",
+    "do-not-disturb-disabled": "Do Not Disturb",
+    "do-not-disturb-enabled": "Do Not Disturb",
+    "enable-keep-awake": "Keep Awake",
     "forget-network": "Forget network",
     "grid-view": "Grid view",
-    "hidden-files-hide": "Hide hidden files",
-    "hidden-files-show": "Show hidden files",
-    "home": "Home",
-    "input-muted": "Toggle input mute",
+    "hidden-files-hide": "Hidden files",
+    "hidden-files-show": "Hidden files",
+    "home": "Home directory",
+    "input-muted": "Microphone",
     "keep-awake": "Keep Awake",
     "keyboard-layout": "{layout} keyboard layout",
     "list-view": "List view",
-    "manage-vpn": "Manage VPN connections",
-    "manage-wifi": "Manage Wi-Fi",
-    "microphone-volume-at": "Microphone volume at {volume}%\nScroll to modify volume",
-    "move-to-center-section": "Move to center section",
-    "move-to-left-section": "Move to left section",
-    "move-to-right-section": "Move to right section",
-    "next-media": "Next media",
+    "manage-vpn": "VPN connections",
+    "manage-wifi": "Wi-Fi",
+    "microphone-volume-at": "Microphone volume: {volume}%",
+    "move-to-center-section": "Center section",
+    "move-to-left-section": "Left section",
+    "move-to-right-section": "Right section",
+    "next-media": "Next track",
     "next-month": "Next month",
-    "night-light-disabled": "Night Light is disabled.\nLeft click to cycle mode\nRight click to access settings",
-    "night-light-enabled": "Night Light is enabled.\nLeft click to cycle mode\nRight click to access settings",
-    "night-light-forced": "Night Light is forced.\nLeft click to cycle mode\nRight click to access settings",
-    "night-light-not-installed": "Night Light is not available\nwlsunset is not installed",
-    "noctalia-performance-disabled": "Noctalia performance mode is disabled\nLeft click to enable",
-    "noctalia-performance-enabled": "Noctalia performance mode is enabled\nLeft click to disable",
-    "open-control-center": "Open control center",
-    "open-notification-history-disable-dnd": "Open notification history\nRight click: Open context menu",
-    "open-notification-history-enable-dnd": "Open notification history\nRight click: Open context menu",
-    "open-settings": "Open settings",
-    "open-tray-dropdown": "Open tray dropdown",
-    "open-wallpaper-selector": "Open wallpaper selector",
-    "output-muted": "Toggle output mute",
-    "pause": "Pause",
-    "play": "Play",
-    "power-profile": "'{profile}' power profile",
-    "previous-media": "Previous media",
+    "night-light-disabled": "Night Light",
+    "night-light-enabled": "Night Light",
+    "night-light-forced": "Night Light",
+    "night-light-not-installed": "Night Light (not available)",
+    "noctalia-performance-disabled": "Noctalia Performance Mode",
+    "noctalia-performance-enabled": "Noctalia Performance Mode",
+    "open-control-center": "Control center",
+    "open-notification-history-disable-dnd": "Notification history",
+    "open-notification-history-enable-dnd": "Notification history",
+    "open-settings": "Settings",
+    "open-tray-dropdown": "System tray",
+    "open-wallpaper-selector": "Wallpaper selector",
+    "output-muted": "Audio output",
+    "pause": "Pause button",
+    "play": "Play button",
+    "power-profile": "{profile} power profile",
+    "previous-media": "Previous track",
     "previous-month": "Previous month",
     "refresh": "Refresh",
     "refresh-devices": "Refresh devices",
     "refresh-wallhaven": "Refresh Wallhaven results",
     "refresh-wallpaper-list": "Refresh wallpaper list",
     "remove-widget": "Remove widget",
-    "screen-recorder-not-installed": "Screen recorder is not installed",
+    "screen-recorder-not-installed": "Screen recorder (not installed)",
     "search": "Search",
     "search-close": "Close search",
     "session-menu": "Session menu",
-    "set-power-profile": "Set \"{profile}\" power profile",
-    "start-screen-recording": "Start screen recording",
-    "stop-screen-recording": "Stop screen recording",
-    "switch-to-dark-mode": "Switch to Dark Mode",
-    "switch-to-light-mode": "Switch to Light Mode",
-    "up": "Up",
-    "volume-at": "Output volume at {volume}%\nScroll to modify volume",
-    "wallpaper-selector": "Left click: Open wallpaper selector.\nRight click: Set random wallpaper",
+    "set-power-profile": "{profile} power profile",
+    "start-screen-recording": "Screen recorder",
+    "stop-screen-recording": "Screen recorder",
+    "switch-to-dark-mode": "Dark Mode",
+    "switch-to-light-mode": "Light Mode",
+    "up": "Parent directory",
+    "volume-at": "Output volume: {volume}%",
+    "wallpaper-selector": "Wallpaper selector",
     "widget-settings": "Widget settings"
   },
   "wallpaper": {

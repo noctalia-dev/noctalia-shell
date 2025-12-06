@@ -1,15 +1,14 @@
 layout {
-    background-color "transparent"
 
     focus-ring {
         active-color   "{{colors.primary.default.hex}}"
-        inactive-color "{{colors.outline.default.hex}}"
+        inactive-color "{{colors.surface.default.hex}}"
         urgent-color   "{{colors.error.default.hex}}"
     }
 
     border {
         active-color   "{{colors.primary.default.hex}}"
-        inactive-color "{{colors.outline.default.hex}}"
+        inactive-color "{{colors.surface.default.hex}}"
         urgent-color   "{{colors.error.default.hex}}"
     }
 
@@ -19,7 +18,7 @@ layout {
 
     tab-indicator {
         active-color   "{{colors.primary.default.hex}}"
-        inactive-color "{{colors.outline.default.hex}}"
+        inactive-color "{{colors.primary_container.default.hex}}"
         urgent-color   "{{colors.error.default.hex}}"
     }
 

@@ -58,6 +58,14 @@
         "low-battery-threshold": {
           "description": "Показувати попередження, коли батарея падає нижче цього відсотка.",
           "label": "Поріг попередження про низький заряд батареї"
+        },
+        "show-noctalia-performance": {
+          "description": "Відображати перемикач режиму продуктивності Noctalia в панелі батареї.",
+          "label": "Показувати перемикач Продуктивність Noctalia"
+        },
+        "show-power-profile": {
+          "description": "Відображати вибір профілю живлення в панелі батареї.",
+          "label": "Показувати елементи керування профілем живлення"
         }
       },
       "brightness": {
@@ -131,10 +139,21 @@
           "label": "Відображати виведення команди",
           "stream-description": "Введіть команду для безперервного запуску."
         },
+        "hide-mode": {
+          "description": "Контролює видимість віджета, коли команда не має виведення.",
+          "label": "Режим приховування",
+          "expandWithOutput": "Розширити, якщо є виведення",
+          "alwaysExpanded": "Завжди розширено",
+          "maxTransparent": "Максимально розширено, але прозоро"
+        },
         "dynamic-text": "Динамічний текст",
         "icon": {
           "description": "Вибрати значок з бібліотеки.",
           "label": "Значок"
+        },
+        "show-icon": {
+          "description": "Перемикає видимість значка віджета.",
+          "label": "Показати значок"
         },
         "left-click": {
           "description": "Команда для виконання при лівому кліку на кнопку.",
@@ -373,14 +392,14 @@
     "battery-level": "Рівень заряду акумулятора",
     "brightness": "Яскравість",
     "charging": "Заряджається",
-    "charging-rate": "Швидкість зарядки: {rate} Вт.",
+    "charging-rate": "Швидкість зарядки: {rate} Вт",
     "discharging": "Розряджається",
-    "discharging-rate": "Швидкість розрядки: {rate} Вт.",
+    "discharging-rate": "Швидкість розрядки: {rate} Вт",
     "health": "Стан: {percent}%",
     "idle": "Простій",
     "inhibit-idle-description": "Підтримує систему активною.",
     "inhibit-idle-label": "Не давати заснути",
-    "no-battery-detected": "Батарею не виявлено.",
+    "no-battery-detected": "Батарею не виявлено",
     "panel-title": "Батарея",
     "plugged-in": "Підключено",
     "power-profile": "Профіль живлення",
@@ -454,6 +473,14 @@
   "clock": {
     "tooltip": "Відкрити календар"
   },
+  "common": {
+    "add": "Додати",
+    "apply": "Подати заявку",
+    "cancel": "Скасувати",
+    "check-settings": "Перевірте налаштування для деталей.",
+    "close": "Закрити",
+    "save": "Зберегти"
+  },
   "context-menu": {
     "activate-app": "Активувати {app}",
     "clear-history": "Очистити історію",
@@ -494,6 +521,20 @@
     "unknown": "Невідомо"
   },
   "launcher": {
+    "categories": {
+      "all": "Все",
+      "audiovideo": "Аудіо та відео",
+      "chat": "Чат",
+      "development": "Розвиток",
+      "education": "Освіта",
+      "game": "Ігри",
+      "graphics": "Графіка",
+      "misc": "Різне",
+      "network": "Мережа",
+      "office": "Офіс",
+      "system": "Система",
+      "webbrowser": "Веб-браузер"
+    },
     "pin": "Закріпити в доці",
     "unpin": "Відкріпити з доку"
   },
@@ -708,7 +749,7 @@
         "enabled": "Bluetooth"
       },
       "tooltip": {
-        "action": "Клацніть для керування пристроями Bluetooth"
+        "action": "Bluetooth"
       }
     },
     "keepAwake": {
@@ -717,7 +758,7 @@
         "enabled": "Не давати заснути"
       },
       "tooltip": {
-        "action": "Клацніть для перемикання режиму неспання"
+        "action": "Заборона сну"
       }
     },
     "nightLight": {
@@ -727,7 +768,7 @@
         "forced": "Нічне світло"
       },
       "tooltip": {
-        "action": "Клацніть для циклічної зміни режиму нічного світла\nПравий клік: Відкрити налаштування"
+        "action": "Нічне світло"
       }
     },
     "notifications": {
@@ -736,7 +777,7 @@
         "enabled": "Сповіщення"
       },
       "tooltip": {
-        "action": "Лівий клік: Відкрити історію сповіщень\nПравий клік: Відкрити контекстне меню"
+        "action": "Сповіщення"
       }
     },
     "powerProfile": {
@@ -744,7 +785,7 @@
         "unavailable": "Профіль живлення"
       },
       "tooltip": {
-        "action": "Клацніть для циклічної зміни профілю живлення",
+        "action": "Профіль живлення",
         "disabled": "Встановіть power-profiles-daemon для використання профілів живлення"
       }
     },
@@ -754,13 +795,13 @@
         "stopped": "Запис"
       },
       "tooltip": {
-        "action": "Клацніть для початку/зупинки запису екрана"
+        "action": "Запис екрана"
       }
     },
     "wallpaperSelector": {
       "label": "Шпалери",
       "tooltip": {
-        "action": "Лівий клік: Відкрити вибір шпалер\nПравий клік: Встановити випадкові шпалери"
+        "action": "Вибір шпалер"
       }
     },
     "wifi": {
@@ -770,7 +811,7 @@
         "wifi": "Wi-Fi"
       },
       "tooltip": {
-        "action": "Клацніть для керування підключеннями Wi-Fi"
+        "action": "Wi-Fi"
       }
     }
   },
@@ -956,7 +997,7 @@
       },
       "widgets": {
         "section": {
-          "description": "Перетягуйте віджети для зміни порядку. Позначки вказують використання: [L]івий, [C]ентр, [R]правий.",
+          "description": "Перетягуйте віджети, щоб змінити їх порядок. Використовуйте контекстне меню (клік правою кнопкою миші), щоб переміщувати віджети між секціями або видаляти їх.",
           "label": "Розміщення віджетів"
         }
       }
@@ -1215,7 +1256,7 @@
           "cancel": "Скасувати"
         },
         "section": {
-          "description": "Налаштуйте та керуйте віджетами швидкого доступу.",
+          "description": "Перетягуйте віджети, щоб змінити їх порядок. Використовуйте контекстне меню (клік правою кнопкою миші), щоб переміщувати віджети між секціями або видаляти їх.",
           "label": "Віджети швидкого доступу"
         },
         "sectionLeft": "Лівий",
@@ -1465,6 +1506,10 @@
           "description": "Показувати елементи у вигляді сітки замість списку.",
           "label": "Режим сітки"
         },
+        "show-categories": {
+          "description": "Показувати вкладки категорій для фільтрації додатків.",
+          "label": "Показувати категорії"
+        },
         "position": {
           "description": "Виберіть, де з'являється панель лаунчера.",
           "label": "Положення"
@@ -1490,17 +1535,17 @@
     },
     "location": {
       "calendar": {
-        "banner": {
-          "label": "Заголовок"
-        },
-        "calendar": {
-          "label": "Календар"
-        },
         "cards": {
           "section": {
             "description": "Організуйте та вмикайте/вимикайте картки на панелі календаря.",
             "label": "Календарні картки"
           }
+        },
+        "header": {
+          "label": "Заголовок календаря"
+        },
+        "month": {
+          "label": "Місяць календаря"
         }
       },
       "date-time": {
@@ -1719,7 +1764,7 @@
           "label": "Клавіші блокування"
         },
         "section": {
-          "description": "Виберіть події, які запускають екранне меню. Якщо жодну подію не вибрано, екранне меню запускатиметься всіма доступними подіями.",
+          "description": "Виберіть події, які запускають екранне меню.",
           "label": "Події, що запускають OSD"
         },
         "volume": {
@@ -1727,6 +1772,75 @@
           "label": "Вихідна гучність"
         }
       }
+    },
+    "plugins": {
+      "available": {
+        "description": "Переглядайте та встановлюйте плагіни з налаштованих джерел.",
+        "label": "Доступні плагіни",
+        "no-plugins-description": "Перевірте вихідні коди вашого плагіна або оновіть список.",
+        "no-plugins-label": "Немає доступних плагінів"
+      },
+      "filter": {
+        "all": "Все",
+        "downloaded": "Завантажено",
+        "not-downloaded": "Не завантажено"
+      },
+      "install": "Встановити",
+      "install-error": "Не вдалося встановити: {error}",
+      "install-success": "Успішно встановлено {plugin}",
+      "installed": {
+        "description": "Керуйте та налаштовуйте всі локально встановлені плагіни.",
+        "label": "Встановлені плагіни",
+        "no-plugins-description": "Встановіть плагіни з розділу \"Доступні плагіни\" нижче.",
+        "no-plugins-label": "Немає встановлених плагінів"
+      },
+      "installing": "Встановлення {plugin}...",
+      "plugin-settings-title": "Налаштування {plugin}",
+      "refresh": {
+        "refreshing": "Оновлення списку плагінів...",
+        "tooltip": "Оновити доступні плагіни"
+      },
+      "settings": {
+        "tooltip": "Налаштування плагіна"
+      },
+      "settings-error-not-loaded": "Плагін не завантажено",
+      "settings-saved": "Налаштування плагіна збережено",
+      "sources": {
+        "add-custom": "Додати власний репозиторій",
+        "add-dialog": {
+          "description": "Додати репозиторій GitHub як джерело плагінів.",
+          "error": "Не вдалося додати джерело плагінів",
+          "name": "Назва репозиторію",
+          "name-placeholder": "Мої власні плагіни",
+          "success": "Джерело плагіна успішно додано",
+          "title": "Додати джерело плагіна",
+          "url": "URL репозиторію"
+        },
+        "description": "Керуйте репозиторіями плагінів, звідки завантажуються плагіни.",
+        "label": "Джерела плагінів",
+        "placeholder": "Мій крутий репозиторій",
+        "remove": {
+          "tooltip": "Видалити джерело плагіна"
+        }
+      },
+      "title": "Плагіни",
+      "uninstall": "Видалити",
+      "uninstall-dialog": {
+        "description": "Ви впевнені, що хочете видалити {plugin}? Це призведе до видалення всіх даних плагіна.",
+        "title": "Видалити плагін"
+      },
+      "uninstall-error": "Не вдалося видалити: {error}",
+      "uninstall-success": "Успішно видалено {plugin}",
+      "uninstalling": "Видалення {plugin}...",
+      "update": "Оновлення",
+      "update-all": "Оновити все ({count})",
+      "update-all-success": "Усі плагіни успішно оновлено.",
+      "update-available": "Доступно оновлень для {count} плагінів",
+      "update-error": "Не вдалося оновити плагін: {plugin}: {error}",
+      "update-incompatible": "Потрібна Noctalia v{version} або вище",
+      "update-success": "Оновлено {plugin} до версії {version}",
+      "update-version": "v{current} → v{new}",
+      "updating": "Оновлення {plugin}..."
     },
     "screen-recorder": {
       "audio": {
@@ -1801,6 +1915,23 @@
           "description": "Налаштувати, які дії живлення відображаються в меню сеансу та в якому порядку.",
           "label": "Дії живлення"
         }
+      },
+      "entry-settings": {
+        "command": {
+          "description": "Спеціальна команда для виконання цієї дії. Залиште поле порожнім, щоб використовувати системну команду за замовчуванням.",
+          "label": "Команда",
+          "placeholder": "systemctl poweroff"
+        },
+        "default-command": {
+          "lock": "Внутрішній екран блокування (без команди)",
+          "logout": "Внутрішній вихід з системи (без команди)"
+        },
+        "default-info": {
+          "description": "Якщо не вказано жодної власної команди, буде використано системну команду за замовчуванням.",
+          "label": "Команда за замовчуванням"
+        },
+        "title": "Налаштувати {entry}",
+        "tooltip": "Налаштувати команду"
       },
       "general": {
         "section": {
@@ -1903,10 +2034,15 @@
         "label": "Швидкість анімації",
         "reset": "Скинути швидкість анімації"
       },
-      "border-radius": {
-        "description": "Керує заокругленістю кутів вікон, кнопок та інших елементів.",
-        "label": "Радіус меж",
-        "reset": "Скинути радіус меж"
+      "box-border-radius": {
+        "description": "Налаштовує заокруглення кутів основних розділів макета, таких як бічні панелі, картки та панелі контенту.",
+        "label": "Радіус контейнера",
+        "reset": "Скинути радіус контейнера"
+      },
+      "control-border-radius": {
+        "description": "Керує кривизною інтерактивних елементів, включно з кнопками, перемикачами та текстовими полями.",
+        "label": "Введіть радіус",
+        "reset": "Скинути радіус введення"
       },
       "dim-desktop": {
         "description": "Затемнювати робочий стіл, коли відкриті панелі або меню.",
@@ -2194,70 +2330,70 @@
   "tooltips": {
     "add-widget": "Додати віджет",
     "bluetooth-devices": "Пристрої Bluetooth",
-    "brightness-at": "Яскравість: {brightness}%\nПравий клік для налаштувань.\nПрокрутка для зміни яскравості.",
-    "cancel-timer": "Скасувати таймер",
+    "brightness-at": "Яскравість: {brightness}%",
+    "cancel-timer": "Таймер",
     "clear-history": "Очистити історію",
-    "click-to-start-recording": "Клацніть для початку запису",
-    "click-to-stop-recording": "Клацніть для зупинки запису",
-    "close": "Закрити",
-    "connect-disconnect-devices": "Лівий клік для підключення. Правий клік для забування.",
+    "click-to-start-recording": "Запис екрана (почати запис)",
+    "click-to-stop-recording": "Запис екрана (зупинити запис)",
+    "close": "Кнопка закрити",
+    "connect-disconnect-devices": "Пристрій Bluetooth",
     "delete-notification": "Видалити сповіщення",
-    "disable-keep-awake": "Клацніть, щоб вимкнути режим неспання.\nПрокрутіть, щоб налаштувати тайм-аут.",
-    "do-not-disturb-disabled": "'Не турбувати' вимкнено",
-    "do-not-disturb-enabled": "'Не турбувати' увімкнено",
-    "enable-keep-awake": "Клацніть, щоб увімкнути режим неспання.\nПрокрутіть, щоб налаштувати тайм-аут.",
+    "disable-keep-awake": "Заборона сну",
+    "do-not-disturb-disabled": "Не турбувати",
+    "do-not-disturb-enabled": "Не турбувати",
+    "enable-keep-awake": "Заборона сну",
     "forget-network": "Забути мережу",
     "grid-view": "Мережевий вигляд",
-    "hidden-files-hide": "Приховати приховані файли",
-    "hidden-files-show": "Показати приховані файли",
-    "home": "Додому",
-    "input-muted": "Перемкнути вимкнення входу",
+    "hidden-files-hide": "Приховані файли",
+    "hidden-files-show": "Приховані файли",
+    "home": "Домашній каталог",
+    "input-muted": "Мікрофон",
     "keep-awake": "Заборона сну",
     "keyboard-layout": "Розкладка клавіатури {layout}",
     "list-view": "Список",
-    "manage-vpn": "Керувати підключеннями VPN",
-    "manage-wifi": "Керувати Wi-Fi",
-    "microphone-volume-at": "Гучність мікрофона {volume}%\nЛівий клік для налаштувань. Правий клік для вимкнення звуку.\nПрокрутка для зміни гучності.",
-    "move-to-center-section": "Перемістити в центральну секцію",
-    "move-to-left-section": "Перемістити в ліву секцію",
-    "move-to-right-section": "Перемістити в праву секцію",
-    "next-media": "Наступне медіа",
+    "manage-vpn": "Підключення VPN",
+    "manage-wifi": "Wi-Fi",
+    "microphone-volume-at": "Гучність мікрофона: {volume}%",
+    "move-to-center-section": "Центральна секція",
+    "move-to-left-section": "Ліва секція",
+    "move-to-right-section": "Права секція",
+    "next-media": "Наступний трек",
     "next-month": "Наступний місяць",
-    "night-light-disabled": "Нічне світло вимкнено.\nЛівий клік для циклічного режиму.\nПравий клік для доступу до налаштувань.",
-    "night-light-enabled": "Нічне світло увімкнено.\nЛівий клік для циклічного режиму.\nПравий клік для доступу до налаштувань.",
-    "night-light-forced": "Нічне світло (примусово).\nЛівий клік для циклічного режиму.\nПравий клік для доступу до налаштувань.",
-    "night-light-not-installed": "Нічне світло недоступне.\nwlsunset не встановлено.",
-    "noctalia-performance-disabled": "Режим продуктивності Noctalia вимкнено.\nЛівий клік для увімкнення.",
-    "noctalia-performance-enabled": "Режим продуктивності Noctalia увімкнено.\nЛівий клік для вимкнення.",
-    "open-control-center": "Відкрити центр керування",
-    "open-notification-history-disable-dnd": "Відкрити історію сповіщень\nПравий клік: Відкрити контекстне меню",
-    "open-notification-history-enable-dnd": "Відкрити історію сповіщень\nПравий клік: Відкрити контекстне меню",
-    "open-settings": "Відкрити налаштування",
-    "open-tray-dropdown": "Відкрити спадне меню трею",
-    "open-wallpaper-selector": "Відкрити вибір шпалер",
-    "output-muted": "Перемкнути вимкнення виходу",
-    "pause": "Пауза",
-    "play": "Відтворити",
-    "power-profile": "Профіль живлення '{profile}'",
-    "previous-media": "Попереднє медіа",
+    "night-light-disabled": "Нічне світло",
+    "night-light-enabled": "Нічне світло",
+    "night-light-forced": "Нічне світло",
+    "night-light-not-installed": "Нічне світло (недоступне)",
+    "noctalia-performance-disabled": "Режим продуктивності Noctalia",
+    "noctalia-performance-enabled": "Режим продуктивності Noctalia",
+    "open-control-center": "Центр керування",
+    "open-notification-history-disable-dnd": "Історія сповіщень",
+    "open-notification-history-enable-dnd": "Історія сповіщень",
+    "open-settings": "Налаштування",
+    "open-tray-dropdown": "Системний трей",
+    "open-wallpaper-selector": "Вибір шпалер",
+    "output-muted": "Аудіовихід",
+    "pause": "Кнопка пауза",
+    "play": "Кнопка відтворити",
+    "power-profile": "{profile} профіль живлення",
+    "previous-media": "Попередній трек",
     "previous-month": "Попередній місяць",
     "refresh": "Оновити",
     "refresh-devices": "Оновити пристрої",
     "refresh-wallhaven": "Оновити результати Wallhaven",
     "refresh-wallpaper-list": "Оновити список шпалер",
     "remove-widget": "Видалити віджет",
-    "screen-recorder-not-installed": "Запис екрана не встановлено",
+    "screen-recorder-not-installed": "Запис екрана (не встановлено)",
     "search": "Пошук",
     "search-close": "Закрити пошук",
     "session-menu": "Меню сеансу",
-    "set-power-profile": "Встановити профіль живлення \"{profile}\"",
-    "start-screen-recording": "Почати запис екрана",
-    "stop-screen-recording": "Зупинити запис екрана",
-    "switch-to-dark-mode": "Перемкнутися на темний режим",
-    "switch-to-light-mode": "Перемкнутися на світлий режим",
-    "up": "Вгору",
-    "volume-at": "Вихідна гучність {volume}%\nЛівий клік для налаштувань. Правий клік для вимкнення звуку.\nПрокрутка для зміни гучності.",
-    "wallpaper-selector": "Лівий клік: Відкрити вибір шпалер.\nПравий клік: Встановити випадкові шпалери.",
+    "set-power-profile": "{profile} профіль живлення",
+    "start-screen-recording": "Запис екрана",
+    "stop-screen-recording": "Запис екрана",
+    "switch-to-dark-mode": "Темний режим",
+    "switch-to-light-mode": "Світлий режим",
+    "up": "Батьківський каталог",
+    "volume-at": "Вихідна гучність: {volume}%",
+    "wallpaper-selector": "Вибір шпалер",
     "widget-settings": "Налаштування віджета"
   },
   "wallpaper": {

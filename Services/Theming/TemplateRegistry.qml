@@ -189,11 +189,11 @@ Singleton {
       "clients": [
         {
           "name": "code",
-          "path": "~/.vscode/extensions/hyprluna.hyprluna-theme-1.0.2/themes/hyprluna.json"
+          "path": "~/.vscode/extensions/undefined_publisher.noctaliatheme-0.0.1/themes/NoctaliaTheme-color-theme.json"
         },
         {
           "name": "codium",
-          "path": "~/.vscode-oss/extensions/hyprluna.hyprluna-theme-1.0.2/themes/hyprluna.json"
+          "path": "~/.vscode-oss/extensions/undefined_publisher.noctaliatheme-0.0.1/themes/NoctaliaTheme-color-theme.json"
         }
       ]
     },

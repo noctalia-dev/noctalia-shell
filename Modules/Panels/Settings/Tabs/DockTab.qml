@@ -85,25 +85,6 @@ ColumnLayout {
     visible: Settings.data.dock.enabled
     spacing: Style.marginXXS
     Layout.fillWidth: true
-    NLabel {
-      label: I18n.tr("settings.dock.appearance.border-radius.label")
-      description: I18n.tr("settings.dock.appearance.border-radius.description")
-    }
-    NValueSlider {
-      Layout.fillWidth: true
-      from: 0
-      to: 1
-      stepSize: 0.01
-      value: Settings.data.dock.radiusRatio
-      onMoved: value => Settings.data.dock.radiusRatio = value
-      text: Math.floor(Settings.data.dock.radiusRatio * 100) + "%"
-    }
-  }
-
-  ColumnLayout {
-    visible: Settings.data.dock.enabled
-    spacing: Style.marginXXS
-    Layout.fillWidth: true
 
     NLabel {
       label: I18n.tr("settings.dock.appearance.floating-distance.label")
@@ -202,7 +183,6 @@ ColumnLayout {
   }
 
   NDivider {
-    visible: Settings.data.dock.enabled
     Layout.fillWidth: true
     Layout.topMargin: Style.marginL
     Layout.bottomMargin: Style.marginL

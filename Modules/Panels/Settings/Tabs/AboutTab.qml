@@ -27,7 +27,7 @@ ColumnLayout {
     Logger.d("AboutTab", "Component.onCompleted - Is git version:", root.isGitVersion);
     // Only fetch commit info for -git versions
     if (root.isGitVersion) {
-      // On NixOS, extract commit hash from the store path
+      // On NixOS, extract commit hash from the store path first
       if (HostService.isNixOS) {
         var shellDir = Quickshell.shellDir || "";
         Logger.d("AboutTab", "Component.onCompleted - NixOS detected, shellDir:", shellDir);
@@ -44,11 +44,13 @@ ColumnLayout {
             Logger.d("AboutTab", "Component.onCompleted - Could not extract commit from NixOS path, trying fallback");
           }
         }
+        fetchGitCommit();
+        return;
+      } else {
+        // On non-NixOS systems, check for pacman first.
+        whichPacmanProcess.running = true;
+        return;
       }
-      // Try to get Arch package version first (which includes commit hash)
-      pacmanProcess.running = true;
-      // Start fallback timer in case pacman fails to start
-      gitFallbackTimer.start();
     }
   }
 
@@ -58,6 +60,22 @@ ColumnLayout {
     running: false
     onTriggered: {
       if (!root.commitInfo) {
+        fetchGitCommit();
+      }
+    }
+  }
+
+  Process {
+    id: whichPacmanProcess
+    command: ["which", "pacman"]
+    running: false
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        Logger.d("AboutTab", "whichPacmanProcess - pacman found, starting query");
+        pacmanProcess.running = true;
+        gitFallbackTimer.start();
+      } else {
+        Logger.d("AboutTab", "whichPacmanProcess - pacman not found, falling back to git");
         fetchGitCommit();
       }
     }
@@ -296,14 +314,14 @@ ColumnLayout {
   Flow {
     id: topContributorsFlow
     Layout.alignment: Qt.AlignHCenter
-    Layout.preferredWidth: Math.round(Style.baseWidgetSize * 14)
+    Layout.fillWidth: true
     spacing: Style.marginM
 
     Repeater {
       model: Math.min(root.contributors.length, root.topContributorsCount)
 
       delegate: Rectangle {
-        width: Math.round(Style.baseWidgetSize * 6.8)
+        width: Math.max(Math.round(topContributorsFlow.width / 2 - Style.marginM - 1), Math.round(Style.baseWidgetSize * 4))
         height: Math.round(Style.baseWidgetSize * 2.3)
         radius: Style.radiusM
         color: contributorArea.containsMouse ? Color.mHover : Color.transparent
@@ -457,7 +475,7 @@ ColumnLayout {
     id: remainingContributorsFlow
     visible: root.contributors.length > root.topContributorsCount
     Layout.alignment: Qt.AlignHCenter
-    Layout.preferredWidth: Math.round(Style.baseWidgetSize * 14)
+    Layout.fillWidth: true
     Layout.topMargin: Style.marginL
     spacing: Style.marginS
 
@@ -511,5 +529,11 @@ ColumnLayout {
         }
       }
     }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginL
+    Layout.bottomMargin: Style.marginL
   }
 }

@@ -27,12 +27,11 @@ Item {
     return {};
   }
 
-  // Use settings or defaults from BarWidgetRegistry
-  readonly property int spacerWidth: widgetSettings.width !== undefined ? widgetSettings.width : widgetMetadata.width
+  readonly property bool isBarVertical: Settings.data.bar.position === "left" || Settings.data.bar.position === "right"
+  readonly property int spacerSize: widgetSettings.width !== undefined ? widgetSettings.width : widgetMetadata.width
 
-  // Set the width based on user settings
-  implicitWidth: spacerWidth
-  implicitHeight: Style.barHeight
+  implicitWidth: isBarVertical ? Style.barHeight : spacerSize
+  implicitHeight: isBarVertical ? spacerSize : Style.barHeight
   width: implicitWidth
   height: implicitHeight
 }

@@ -1,5 +1,4 @@
 pragma Singleton
-import QtMultimedia
 
 import QtQuick
 import Quickshell
@@ -11,68 +10,33 @@ Singleton {
   // Map to track active sound players: resolvedPath -> MediaPlayer instance
   property var activePlayers: ({})
 
+  // Check if QtMultimedia is available
+  property bool multimediaAvailable: false
+
   // Container for dynamically created players
   Item {
     id: playersContainer
   }
 
-  // Component for creating MediaPlayer instances
-  Component {
-    id: playerComponent
-    MediaPlayer {
-      id: mediaPlayer
-      property string resolvedPath: ""
-      property bool shouldFallback: false
-      property real soundVolume: 1.0
-
-      audioOutput: AudioOutput {
-        volume: soundVolume
+  Component.onCompleted: {
+    // Test if QtMultimedia is available by trying to create a simple component
+    try {
+      var testComponent = Qt.createQmlObject(`
+        import QtQuick
+        import QtMultimedia
+        Item {}
+      `, root, "MultimediaTest");
+      if (testComponent) {
+        multimediaAvailable = true;
+        testComponent.destroy();
+        Logger.i("SoundService", "QtMultimedia found - sound playback enabled");
       }
-
-      onErrorOccurred: {
-        Logger.w("SoundService", "Error playing sound:", source, error, errorString);
-        if (shouldFallback) {
-          const fallbackPath = Quickshell.shellDir + "/Assets/Sounds/notification.mp3";
-          if (fallbackPath !== resolvedPath) {
-            root.playSound(fallbackPath, {
-                             volume: soundVolume,
-                             fallback: false,
-                             repeat: false
-                           });
-          }
-        }
-        // Clean up on error
-        if (root.activePlayers[resolvedPath]) {
-          delete root.activePlayers[resolvedPath];
-        }
-        destroy();
-      }
-
-      onPlaybackStateChanged: function (state) {
-        if (state === MediaPlayer.StoppedState && loops === 1) {
-          // Clean up non-looping players when they finish
-          if (root.activePlayers[resolvedPath]) {
-            delete root.activePlayers[resolvedPath];
-          }
-          destroy();
-        }
-      }
-
-      Component.onCompleted: {
-        play();
-      }
+    } catch (e) {
+      multimediaAvailable = false;
+      Logger.w("SoundService", "QtMultimedia not available - no audio will be played from noctalia-shell");
     }
   }
 
-  Component.onCompleted: {
-    Logger.i("SoundService", "Service started");
-  }
-
-  /**
-  * Resolve sound path to absolute file path
-  * @param soundPath - Path to the sound file (absolute, relative to shellDir, or just filename for Assets/Sounds/)
-  * @returns Resolved absolute path
-  */
   function resolvePath(soundPath) {
     if (!soundPath || soundPath === "") {
       return "";
@@ -94,17 +58,14 @@ Singleton {
     return resolvedPath;
   }
 
-  /**
-  * Play a sound file
-  * @param soundPath - Path to the sound file (absolute, relative to shellDir, or just filename for Assets/Sounds/)
-  * @param options - Optional object with:
-  *   - volume: Volume level (0.0 to 1.0, default: 1.0)
-  *   - fallback: Whether to fallback to default notification sound if file not found (default: false)
-  *   - repeat: Whether to repeat/loop the sound continuously (default: false)
-  */
   function playSound(soundPath, options) {
     if (!soundPath || soundPath === "") {
       Logger.w("SoundService", "No sound path provided");
+      return;
+    }
+
+    if (!multimediaAvailable) {
+      Logger.d("SoundService", "QtMultimedia not available, cannot play sound:", soundPath);
       return;
     }
 
@@ -121,17 +82,81 @@ Singleton {
       stopSound(soundPath);
     }
 
-    // Create MediaPlayer instance
-    const player = playerComponent.createObject(playersContainer, {
-                                                  resolvedPath: resolvedPath,
-                                                  source: "file://" + resolvedPath,
-                                                  loops: repeat ? MediaPlayer.Infinite : 1,
-                                                  soundVolume: Math.max(0, Math.min(1, volume)),
-                                                  shouldFallback: fallback && !repeat
-                                                });
+    // Create MediaPlayer instance dynamically with QtMultimedia import
+    const loopsValue = repeat ? "MediaPlayer.Infinite" : "1";
+    const escapedPath = resolvedPath.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const playerQml = `
+      import QtQuick
+      import QtMultimedia
+      import Quickshell
+      import qs.Commons
+      import qs.Services.System
+      MediaPlayer {
+        id: mediaPlayer
+        property string resolvedPath: "${escapedPath}"
+        property bool shouldFallback: ${fallback && !repeat}
+        property real soundVolume: ${Math.max(0, Math.min(1, volume))}
+        source: "file://${escapedPath}"
+        loops: ${loopsValue}
+        audioOutput: AudioOutput {
+          volume: soundVolume
+        }
+        onErrorOccurred: {
+          Logger.w("SoundService", "Error playing sound:", source, error, errorString);
+          if (shouldFallback) {
+            const fallbackPath = Quickshell.shellDir + "/Assets/Sounds/notification.mp3";
+            if (fallbackPath !== resolvedPath) {
+              SoundService.playSound(fallbackPath, {
+                volume: soundVolume,
+                fallback: false,
+                repeat: false
+              });
+            }
+          }
+          if (SoundService.activePlayers[resolvedPath]) {
+            delete SoundService.activePlayers[resolvedPath];
+          }
+          destroy();
+        }
+        onPlaybackStateChanged: function (state) {
+          if (state === MediaPlayer.StoppedState && loops === 1) {
+            if (SoundService.activePlayers[resolvedPath]) {
+              delete SoundService.activePlayers[resolvedPath];
+            }
+            destroy();
+          }
+        }
+        Component.onCompleted: {
+          play();
+        }
+      }
+    `;
 
-    if (!player) {
-      Logger.w("SoundService", "Failed to create MediaPlayer for:", resolvedPath);
+    try {
+      const player = Qt.createQmlObject(playerQml, playersContainer, "MediaPlayer_" + resolvedPath.replace(/[^a-zA-Z0-9]/g, "_"));
+
+      if (!player) {
+        Logger.w("SoundService", "Failed to create MediaPlayer for:", resolvedPath);
+        // Try fallback if requested
+        if (fallback && !repeat) {
+          const defaultSound = Quickshell.shellDir + "/Assets/Sounds/notification.mp3";
+          if (defaultSound !== resolvedPath) {
+            playSound(defaultSound, {
+                        volume: volume,
+                        fallback: false,
+                        repeat: false
+                      });
+          }
+        }
+        return;
+      }
+
+      // Store player in activePlayers map
+      activePlayers[resolvedPath] = player;
+
+      Logger.d("SoundService", "Playing sound:", resolvedPath, `(volume: ${Math.round(volume * 100)}%)`, repeat ? "(repeat)" : "");
+    } catch (e) {
+      Logger.w("SoundService", "Failed to create MediaPlayer:", e);
       // Try fallback if requested
       if (fallback && !repeat) {
         const defaultSound = Quickshell.shellDir + "/Assets/Sounds/notification.mp3";
@@ -143,20 +168,15 @@ Singleton {
                     });
         }
       }
+    }
+  }
+
+  function stopSound(soundPath) {
+    if (!multimediaAvailable) {
+      // If multimedia isn't available, there are no active players to stop
       return;
     }
 
-    // Store player in activePlayers map
-    activePlayers[resolvedPath] = player;
-
-    Logger.d("SoundService", "Playing sound:", resolvedPath, `(volume: ${Math.round(volume * 100)}%)`, repeat ? "(repeat)" : "");
-  }
-
-  /**
-  * Stop a playing sound
-  * @param soundPath - Path to the sound file to stop (optional, if not provided stops all repeating sounds)
-  */
-  function stopSound(soundPath) {
     if (soundPath) {
       // Resolve path the same way as playSound
       const resolvedPath = resolvePath(soundPath);

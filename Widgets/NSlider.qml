@@ -31,7 +31,7 @@ Slider {
     implicitHeight: trackHeight
     width: root.availableWidth
     height: implicitHeight
-    radius: height / 2
+    radius: Math.min(Style.iRadiusL, height / 2)
     color: Qt.alpha(Color.mSurface, 0.5)
     border.color: Qt.alpha(Color.mOutline, 0.5)
     border.width: Style.borderS
@@ -46,7 +46,7 @@ Slider {
       Rectangle {
         width: parent.height
         height: parent.height
-        radius: width / 2
+        radius: Math.min(Style.iRadiusL, width / 2)
         color: Qt.darker(fillColor, 1.2) //starting color of gradient
       }
 
@@ -76,7 +76,7 @@ Slider {
       id: knobCutout
       implicitWidth: knobDiameter + cutoutExtra
       implicitHeight: knobDiameter + cutoutExtra
-      radius: width / 2
+      radius: Math.min(Style.iRadiusL, width / 2)
       color: root.cutoutColor !== undefined ? root.cutoutColor : Color.mSurface
       x: root.leftPadding + root.visualPosition * (root.availableWidth - root.knobDiameter) - cutoutExtra
       anchors.verticalCenter: parent.verticalCenter
@@ -93,7 +93,7 @@ Slider {
       id: knob
       implicitWidth: knobDiameter
       implicitHeight: knobDiameter
-      radius: width / 2
+      radius: Math.min(Style.iRadiusL, width / 2)
       color: root.pressed ? Color.mHover : Color.mSurface
       border.color: fillColor
       border.width: Style.borderL
