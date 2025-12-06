@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 import gi
-
 gi.require_version('EDataServer', '1.2')
 gi.require_version('ECal', '2.0')
 gi.require_version('ICalGLib', "3.0")
-import json
-import sys
-import time
-from datetime import datetime, timezone
 
+import json, sys
+from datetime import datetime, timedelta
 from gi.repository import ECal, EDataServer, ICalGLib
 
 start_time = int(sys.argv[1])
@@ -19,122 +16,202 @@ print(f"Starting with time range: {start_time} to {end_time}", file=sys.stderr)
 all_events = []
 
 def safe_get_time(ical_time):
-    """Safely get time from ICalTime object"""
     if not ical_time:
-        return None
-
+        return None, False
     try:
-        # Later we use `tzinfo=timezone.utc`, so we set all calendar events to UTC
-        if not ical_time.is_utc():
-            ical_time = ical_time.convert_to_zone(ICalGLib.Timezone.get_utc_timezone())
-
+        is_all_day = hasattr(ical_time, "is_date") and ical_time.is_date()
         year = ical_time.get_year()
         month = ical_time.get_month()
         day = ical_time.get_day()
-
-        if year < 1970 or year > 2100 or month < 1 or month > 12 or day < 1 or day > 31:
-            return None
-
-        if ical_time.is_date():
-            local_struct = time.struct_time((year, month, day, 0, 0, 0, 0, 0, -1))
-            return int(time.mktime(local_struct))
-
+        if is_all_day:
+            return int(datetime(year, month, day).timestamp()), True
         hour = ical_time.get_hour()
         minute = ical_time.get_minute()
         second = ical_time.get_second()
+        dt = datetime(year, month, day, hour, minute, second)
+        return int(dt.timestamp()), False
+    except:
+        return None, False
 
-        dt = datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
-        return int(dt.timestamp())
-    except Exception:
-        return None
+def add_event(summary, calendar_name, start_ts, end_ts, location="", description="", all_day=False):
+    all_events.append({
+        'calendar': calendar_name,
+        'summary': summary,
+        'start': start_ts,
+        'end': end_ts,
+        'location': location,
+        'description': description
+    })
 
-print("Getting registry...", file=sys.stderr)
 registry = EDataServer.SourceRegistry.new_sync(None)
-print("Registry obtained", file=sys.stderr)
-
 sources = registry.list_sources(EDataServer.SOURCE_EXTENSION_CALENDAR)
-print(f"Found {len(sources)} calendar sources", file=sys.stderr)
 
 for source in sources:
     if not source.get_enabled():
-        print(f"Skipping disabled calendar: {source.get_display_name()}", file=sys.stderr)
         continue
 
     calendar_name = source.get_display_name()
     print(f"\nProcessing calendar: {calendar_name}", file=sys.stderr)
 
     try:
-        print(f"  Connecting to {calendar_name}...", file=sys.stderr)
-        client = ECal.Client.connect_sync(
-            source,
-            ECal.ClientSourceType.EVENTS,
-            30,
-            None
-        )
-        print(f"  Connected to {calendar_name}", file=sys.stderr)
+        client = ECal.Client.connect_sync(source, ECal.ClientSourceType.EVENTS, 30, None)
 
-        start_dt = datetime.fromtimestamp(start_time, tz=timezone.utc)
-        end_dt = datetime.fromtimestamp(end_time, tz=timezone.utc)
-
-        start_str = start_dt.strftime("%Y%m%dT%H%M%SZ")
-        end_str = end_dt.strftime("%Y%m%dT%H%M%SZ")
+        start_dt = datetime.fromtimestamp(start_time)
+        end_dt = datetime.fromtimestamp(end_time)
+        start_str = start_dt.strftime("%Y%m%dT%H%M%S")
+        end_str = end_dt.strftime("%Y%m%dT%H%M%S")
 
         query = f'(occur-in-time-range? (make-time "{start_str}") (make-time "{end_str}"))'
-        print(f"  Query: {query}", file=sys.stderr)
-
-        print(f"  Getting object list for {calendar_name}...", file=sys.stderr)
-        success, ical_objects = client.get_object_list_sync(query, None)
-        print(f"  Got object list for {calendar_name}: success={success}, count={len(ical_objects) if ical_objects else 0}", file=sys.stderr)
-
-        if not success or not ical_objects:
-            print(f"  No events found in {calendar_name}", file=sys.stderr)
+        success, raw_events = client.get_object_list_sync(query, None)
+        
+        if not success or not raw_events:
             continue
 
-        print(f"  Processing {len(ical_objects)} events from {calendar_name}...", file=sys.stderr)
-        for idx, ical_obj in enumerate(ical_objects):
-            try:
-                if hasattr(ical_obj, 'get_summary'):
-                    comp = ical_obj
-                else:
-                    comp = ECal.Component.new_from_string(ical_obj)
+        for raw_obj in raw_events:
+            obj = raw_obj[1] if isinstance(raw_obj, tuple) else raw_obj
+            comp = None
 
-                if not comp:
-                    continue
+            if isinstance(obj, ICalGLib.Component):
+                comp = obj
+            elif isinstance(obj, ECal.Component):
+                try:
+                    ical_str = obj.to_string()
+                    temp_comp = ICalGLib.Component.new_from_string(ical_str)
+                    if temp_comp.getName() == "VEVENT":
+                        comp = temp_comp
+                except Exception:
+                    comp = None
 
-                summary = comp.get_summary() or "(No title)"
-
-                start_timestamp = safe_get_time(comp.get_dtstart())
-                if start_timestamp is None:
-                    continue
-
-                end_timestamp = safe_get_time(comp.get_dtend())
-                if end_timestamp is None or end_timestamp == start_timestamp:
-                    end_timestamp = start_timestamp + 3600
-
-                location = comp.get_location() or ""
-                description = comp.get_description() or ""
-
-                all_events.append({
-                    'summary': summary,
-                    'start': start_timestamp,
-                    'end': end_timestamp,
-                    'location': location,
-                    'description': description,
-                    'calendar': calendar_name
-                })
-
-                if (idx + 1) % 10 == 0:
-                    print(f"  Processed {idx + 1} events from {calendar_name}...", file=sys.stderr)
-            except Exception as e:
-                print(f"  Error processing event {idx} in {calendar_name}: {e}", file=sys.stderr)
+            if not comp:
+                summary = getattr(obj, "get_summary", lambda: "(No title)")()
+                dtstart = getattr(obj, "get_dtstart", lambda: None)()
+                dtend = getattr(obj, "get_dtend", lambda: None)()
+                start_ts, all_day = safe_get_time(dtstart)
+                end_ts, _ = safe_get_time(dtend)
+                if start_ts:
+                    if end_ts is None:
+                        end_ts = start_ts + 3600
+                    add_event(summary, calendar_name, start_ts, end_ts)
                 continue
 
-        print(f"  Finished processing {calendar_name}, found {len([e for e in all_events if e['calendar'] == calendar_name])} events", file=sys.stderr)
+            summary = getattr(comp, "get_summary", lambda: "(No title)")()
+            dtstart = getattr(comp, "get_dtstart", lambda: None)()
+            dtend = getattr(comp, "get_dtend", lambda: None)()
+            start_ts, all_day = safe_get_time(dtstart)
+            end_ts, _ = safe_get_time(dtend)
+            if end_ts is None and start_ts is not None:
+                end_ts = start_ts + 3600
+
+            rrule_getter = getattr(comp, "get_first_property", None)
+            if rrule_getter:
+                rrule_prop = comp.get_first_property(73)  # ICAL_RRULE_PROPERTY
+                if rrule_prop:
+                    rrule_value = rrule_prop.get_value()  # ICalGLib.Value
+                    
+                    try:
+                        recurrence = rrule_value.get_recur()  # -> ICalGLib.Recurrence
+                        
+                    except AttributeError:
+                        rrule_str = str(rrule_value)
+                        recurrence = ICalGLib.Recurrence.new_from_string(rrule_str)
+
+                    if recurrence:
+                        freq = recurrence.get_freq()
+                        
+            rdates = getattr(comp, "get_rdate_list", lambda: [])()
+            exdates = getattr(comp, "get_exdate_list", lambda: [])()
+
+            # --- normal event ---
+            if not rrule_prop and not rdates:
+                add_event(summary, calendar_name, start_ts, end_ts)
+                continue
+
+            # --- recurrent events ---
+            if freq:
+                summary = comp.get_summary() or "(No title)"
+                dtstart = comp.get_dtstart()
+                dtend = comp.get_dtend()
+                start_ts, all_day = safe_get_time(dtstart)
+                end_ts, _ = safe_get_time(dtend)
+                if end_ts is None and start_ts is not None:
+                    end_ts = start_ts + 3600  # 1h default
+
+                interval = recurrence.get_interval() or 1
+                count = recurrence.get_count()
+                until_dt = recurrence.get_until()
+                until_ts, _ = safe_get_time(until_dt) if until_dt else (None, False)
+                if until_ts is None:
+                    until_ts = end_time
+
+                occurrences = []
+                current_ts = start_ts
+                added = 0
+
+                match freq:
+                    case 0: #SECONDLY
+                        delta = timedelta(seconds=interval)
+                        while (current_ts <= until_ts) and (not count or added < count):
+                            occurrences.append((current_ts, current_ts + (end_ts - start_ts)))
+                            current_ts += int(delta.total_seconds())
+                            added += 1
+
+                    case 1: #MINUTELY
+                        delta = timedelta(minutes=interval)
+                        while (current_ts <= until_ts) and (not count or added < count):
+                            occurrences.append((current_ts, current_ts + (end_ts - start_ts)))
+                            current_ts += int(delta.total_seconds())
+                            added += 1
+                            
+                    case 2: #HOURLY
+                        delta = timedelta(hours=interval)
+                        while (current_ts <= until_ts) and (not count or added < count):
+                            occurrences.append((current_ts, current_ts + (end_ts - start_ts)))
+                            current_ts += int(delta.total_seconds())
+                            added += 1
+
+                    case 3:  # DAILY
+                        delta = timedelta(days=interval)
+                        while (current_ts <= until_ts) and (not count or added < count):
+                            occurrences.append((current_ts, current_ts + (end_ts - start_ts)))
+                            current_ts += int(delta.total_seconds())
+                            added += 1
+
+                    case 4:  # WEEKLY
+                        delta = timedelta(weeks=interval)
+                        while (current_ts <= until_ts) and (not count or added < count):
+                            occurrences.append((current_ts, current_ts + (end_ts - start_ts)))
+                            current_ts += int(delta.total_seconds())
+                            added += 1
+
+                    case 5:  # MONTHLY
+                        from dateutil.relativedelta import relativedelta
+                        dt = datetime.fromtimestamp(current_ts)
+                        while (current_ts <= until_ts) and (not count or added < count):
+                            occurrences.append((current_ts, current_ts + (end_ts - start_ts)))
+                            dt += relativedelta(months=interval)
+                            current_ts = int(dt.timestamp())
+                            added += 1
+
+                    case 6:  # YEARLY
+                        from dateutil.relativedelta import relativedelta
+                        dt = datetime.fromtimestamp(current_ts)
+                        while (current_ts <= until_ts) and (not count or added < count):
+                            occurrences.append((current_ts, current_ts + (end_ts - start_ts)))
+                            dt += relativedelta(years=interval)
+                            current_ts = int(dt.timestamp())
+                            added += 1
+
+                    case _:  # NONE
+                        occurrences.append((start_ts, end_ts))
+
+                # --- add occurences to all_events ---
+                for occ_start, occ_end in occurrences:
+                    add_event(summary, calendar_name, occ_start, occ_end)
+
 
     except Exception as e:
         print(f"  Error for {calendar_name}: {e}", file=sys.stderr)
 
-print(f"\nSorting {len(all_events)} total events...", file=sys.stderr)
 all_events.sort(key=lambda x: x['start'])
-print("Done! Outputting JSON...", file=sys.stderr)
-print(json.dumps(all_events))
+print(json.dumps(all_events, indent=4))
+
