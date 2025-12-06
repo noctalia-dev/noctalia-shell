@@ -1330,6 +1330,10 @@
           "description": "Adjust the dock's background opacity.",
           "label": "Background opacity"
         },
+        "dead-opacity": {
+          "description": "Adjust the opacity of app icons that are not running.",
+          "label": "Dead Opacity"
+        },
         "border-radius": {
           "description": "Adjust the dock's border radius.",
           "label": "Border radius"
@@ -1352,6 +1356,14 @@
         "icon-size": {
           "description": "Adjust the overall size of the dock.",
           "label": "Dock size"
+        },
+        "pinned-static": {
+          "description": "Always push pinned app icons to the left in static order.",
+          "label": "Static Pinned Apps"
+        },
+        "inactive-indicators": {
+          "description": "Display indicatator pills for all apps, not just the currently active one.",
+          "label": "Running Indicators"
         },
         "section": {
           "description": "Customize the dock's behavior and appearance.",

@@ -146,43 +146,49 @@ Loader {
         const combined = [];
         const processedAppIds = new Set();
 
-        // Strategy: Maintain app positions as much as possible
-        // 1. First pass: Add all running apps (both pinned and non-pinned) in their current order
-        runningApps.forEach(toplevel => {
-                              if (toplevel && toplevel.appId && !(Settings.data.dock.onlySameOutput && toplevel.screens && !toplevel.screens.includes(modelData))) {
-                                const isPinned = isAppIdPinned(toplevel.appId, pinnedApps);
-                                const appType = isPinned ? "pinned-running" : "running";
+        //push an app onto combined with the given appType
+        function pushApp(appType, toplevel, appId, title) {
+            if (!processedAppIds.has(appId) && !(toplevel && Settings.data.dock.onlySameOutput && toplevel.screens && !toplevel.screens.includes(modelData))) {
+                combined.push({
+                    "type": appType,
+                    "toplevel": toplevel,
+                    "appId": appId,
+                    "title": title
+                });
+                processedAppIds.add(appId);
+            }
+        }
 
-                                // Use desktop entry name if title is "Loading..." or empty
-                                let appTitle = toplevel.title;
-                                if (!appTitle || appTitle === "Loading..." || appTitle.trim() === "") {
-                                  appTitle = getAppNameFromDesktopEntry(toplevel.appId);
-                                }
+        function pushRunning(first) {
+            runningApps.forEach(toplevel => {
+                if (toplevel) {
+                    pushApp((first && pinnedApps.includes(toplevel.appId)) ? "pinned-running" : "running", toplevel, toplevel.appId, toplevel.title);
+                }
+            });
+        }
 
-                                combined.push({
-                                                "type": appType,
-                                                "toplevel": toplevel,
-                                                "appId": toplevel.appId,
-                                                "title": appTitle
-                                              });
-                                processedAppIds.add(normalizeAppId(toplevel.appId));
-                              }
-                            });
+        function pushPinned() {
+            pinnedApps.forEach(pinnedAppId => {
+                var toplevel = null;
+                for (var app of runningApps) {
+                    if (app.appId === pinnedAppId) {
+                        toplevel = app;
+                    }
+                }
+                pushApp(toplevel ? "pinned-running" : "pinned", toplevel, pinnedAppId, toplevel ? toplevel.title : pinnedAppId);
+            });
+        }
 
-        // 2. Second pass: Add non-running pinned apps at the end
-        pinnedApps.forEach(pinnedAppId => {
-                             const normalizedPinnedId = normalizeAppId(pinnedAppId);
-                             if (!processedAppIds.has(normalizedPinnedId)) {
-                               // Pinned app that is not running - get name from desktop entry
-                               const appName = getAppNameFromDesktopEntry(pinnedAppId);
-                               combined.push({
-                                               "type": "pinned",
-                                               "toplevel": null,
-                                               "appId": pinnedAppId,
-                                               "title": appName
-                                             });
-                             }
-                           });
+        //if pinnedStatic then push all pinned and then all remaining running apps
+        if (Settings.data.dock.pinnedStatic) {
+            pushPinned();
+            pushRunning(false);
+
+            //else add all running apps and then remaining pinned apps
+        } else {
+            pushRunning(true);
+            pushPinned();
+        }
 
         dockApps = combined;
       }
@@ -455,7 +461,7 @@ Loader {
                         cache: true
 
                         // Dim pinned apps that aren't running
-                        opacity: appButton.isRunning ? 1.0 : 0.6
+                        opacity: appButton.isRunning ? 1.0 : Settings.data.dock.deadOpacity
 
                         scale: appButton.hovered ? 1.15 : 1.0
 
@@ -657,7 +663,7 @@ Loader {
 
                       // Active indicator
                       Rectangle {
-                        visible: isActive
+                        visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive;
                         width: iconSize * 0.2
                         height: iconSize * 0.1
                         color: Color.mPrimary

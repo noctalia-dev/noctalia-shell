@@ -440,6 +440,10 @@ Singleton {
       // Desktop entry IDs pinned to the dock (e.g., "org.kde.konsole", "firefox.desktop")
       property list<string> pinnedApps: []
       property bool colorizeIcons: false
+
+      property bool pinnedStatic: false
+      property bool inactiveIndicators: false
+      property double deadOpacity: 0.6
     }
 
     // network
