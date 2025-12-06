@@ -270,6 +270,10 @@
         "visualizer-type": {
           "description": "Elegir el estilo de visualizador de audio a mostrar.",
           "label": "Tipo de visualizador"
+        },
+        "progress-ring-width": {
+          "description": "Ancho de línea del anillo de progreso, si se muestra.",
+          "label": "Ancho del anillo de progreso"
         }
       },
       "microphone": {

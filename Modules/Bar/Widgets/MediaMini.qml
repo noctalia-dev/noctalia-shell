@@ -43,6 +43,7 @@ Item {
   readonly property string visualizerType: (widgetSettings.visualizerType !== undefined && widgetSettings.visualizerType !== "") ? widgetSettings.visualizerType : widgetMetadata.visualizerType
   readonly property string scrollingMode: (widgetSettings.scrollingMode !== undefined) ? widgetSettings.scrollingMode : widgetMetadata.scrollingMode
   readonly property bool showProgressRing: (widgetSettings.showProgressRing !== undefined) ? widgetSettings.showProgressRing : widgetMetadata.showProgressRing
+  readonly property real progressRingWidth: (widgetSettings.progressRingWidth !== undefined) ? widgetSettings.progressRingWidth : widgetMetadata.progressRingWidth
   readonly property bool useFixedWidth: (widgetSettings.useFixedWidth !== undefined) ? widgetSettings.useFixedWidth : widgetMetadata.useFixedWidth
   readonly property real maxWidth: (widgetSettings.maxWidth !== undefined) ? widgetSettings.maxWidth : Math.max(widgetMetadata.maxWidth, screen ? screen.width * 0.06 : 0)
 
@@ -266,7 +267,7 @@ Item {
             anchors.fill: parent
             visible: showProgressRing
             progress: MediaService.trackLength > 0 ? MediaService.currentPosition / MediaService.trackLength : 0
-            lineWidth: 2.5 * scaling
+            lineWidth: progressRingWidth * scaling
           }
 
           Item {
@@ -325,7 +326,7 @@ Item {
           anchors.margins: -4
           visible: showProgressRing
           progress: MediaService.trackLength > 0 ? MediaService.currentPosition / MediaService.trackLength : 0
-          lineWidth: 2.5 * scaling
+          lineWidth: progressRingWidth * scaling
         }
 
         NImageRounded {
@@ -421,7 +422,7 @@ Item {
   // Progress Ring Component
   component ProgressRing: Canvas {
     property real progress: 0
-    property real lineWidth: 2.5
+    property real lineWidth: progressRingWidth
 
     onProgressChanged: requestPaint()
     Component.onCompleted: requestPaint()
