@@ -8,6 +8,7 @@ import Quickshell.Services.Notifications
 import Quickshell.Wayland
 import "../../Helpers/sha256.js" as Checksum
 import qs.Commons
+import qs.Services.Media
 import qs.Services.Power
 import qs.Services.UI
 
@@ -183,6 +184,9 @@ Singleton {
     const data = createData(notification);
     addToHistory(data);
 
+    // Play notification sound if enabled (before checking for existing notifications)
+    playNotificationSound(data.urgency, notification.appName);
+
     if (root.doNotDisturb || PowerProfileService.noctaliaPerformanceMode)
       return;
 
@@ -201,6 +205,97 @@ Singleton {
 
     // Add new notification
     addNewNotification(quickshellId, notification, data);
+  }
+
+  // Function to play notification sound using existing SoundService
+  function playNotificationSound(urgency, appName) {
+    // Check if notification sounds are enabled
+    if (!Settings.data.notifications?.sounds?.enabled) {
+      return;
+    }
+
+    // Always respect do not disturb mode
+    if (root.doNotDisturb) {
+      return;
+    }
+
+    // Check if this app should be excluded
+    if (appName) {
+      const excludedApps = Settings.data.notifications.sounds.excludedApps || "";
+      if (excludedApps.trim() !== "") {
+        const excludedList = excludedApps.toLowerCase().split(',').map(app => app.trim());
+        const normalizedName = appName.toLowerCase();
+
+        if (excludedList.includes(normalizedName)) {
+          Logger.i("NotificationService", `Skipping sound for excluded app: ${appName}`);
+          return;
+        }
+      }
+    }
+
+    // Check if system is muted
+    if (AudioService.muted) {
+      return;
+    }
+
+    // Get the sound file for this urgency level
+    const soundFile = getNotificationSoundFile(urgency);
+    if (!soundFile || soundFile.trim() === "") {
+      // No sound file configured for this urgency level
+      Logger.i("NotificationService", `No sound file configured for urgency ${urgency}`);
+      return;
+    }
+
+    // Play sound using existing SoundService
+    const volume = Settings.data.notifications?.sounds?.volume ?? 0.5;
+    SoundService.playSound(soundFile, {
+                             volume: volume,
+                             fallback: false,
+                             repeat: false
+                           });
+  }
+
+  // Get the appropriate sound file path for a given urgency level
+  function getNotificationSoundFile(urgency) {
+    const settings = Settings.data.notifications?.sounds;
+    if (!settings) {
+      return "";
+    }
+
+    // If separate sounds is disabled, always use normal sound for all urgencies
+    if (!settings.separateSounds) {
+      const soundFile = settings.normalSoundFile;
+      if (soundFile && soundFile.trim() !== "") {
+        return soundFile;
+      }
+      return "";
+    }
+
+    // Map urgency levels to sound file keys (when separate sounds is enabled)
+    let soundKey;
+    switch (urgency) {
+    case 0:
+      soundKey = "lowSoundFile";
+      break;
+    case 1:
+      soundKey = "normalSoundFile";
+      break;
+    case 2:
+      soundKey = "criticalSoundFile";
+      break;
+    default:
+      // Default to normal urgency for invalid values
+      soundKey = "normalSoundFile";
+      break;
+    }
+
+    const soundFile = settings[soundKey];
+    if (soundFile && soundFile.trim() !== "") {
+      return soundFile;
+    }
+
+    // No sound file configured
+    return "";
   }
 
   function updateExistingNotification(internalId, notification, data) {
