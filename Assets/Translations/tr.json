@@ -1522,6 +1522,14 @@
           "description": "Etkinleştirildiğinde, sıkça başlatılan uygulamalar listede ilk olarak görünür.",
           "label": "En çok kullanılana göre sırala"
         },
+        
+        "dimensions": {
+          "description": "Başlatıcının boyutlarını ayarlayın.",
+          "label": "Boyutlar"
+        },
+        "width-ratio": "Genişlik Oranı",
+        "height-ratio": "Yükseklik Oranı",
+        
         "terminal-command": {
           "description": "Bir terminal başlatmak için komut. Örn., 'kitty -e' veya 'gnome-terminal --'.",
           "label": "Terminal komutu"
