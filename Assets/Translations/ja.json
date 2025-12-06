@@ -344,6 +344,16 @@
         "only-same-output": {
           "description": "バーが配置されているディスプレイ上のアプリのみを表示します。",
           "label": "同じディスプレイのみ"
+        },
+        "show-title": {
+          "description": "タスクバーにウィンドウタイトルを表示します。",
+          "description-disabled": "縦型タスクバーはタイトル表示に対応していません。",
+          "label": "タイトルを表示"
+        },
+        "title-width": {
+          "description": "タスクバーのウィンドウタイトルの幅を設定します（ピクセル単位）。",
+          "label": "タイトル幅",
+          "reset-tooltip": "タイトル幅をリセット"
         }
       },
       "taskbar-grouped": {

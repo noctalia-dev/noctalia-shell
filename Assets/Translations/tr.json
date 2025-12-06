@@ -344,6 +344,16 @@
         "only-same-output": {
           "description": "Sadece çubuğun bulunduğu çıktıdan uygulamaları göster.",
           "label": "Sadece aynı çıktıdan"
+        },
+        "show-title": {
+          "description": "Görev çubuğunda pencere başlıklarını göster.",
+          "description-disabled": "Dikey görev çubuğu başlık göstermeyi desteklemiyor.",
+          "label": "Başlığı göster"
+        },
+        "title-width": {
+          "description": "Görev çubuğundaki pencere başlıklarının genişliğini ayarla (piksel olarak).",
+          "label": "Başlık genişliği",
+          "reset-tooltip": "Başlık genişliğini sıfırla"
         }
       },
       "taskbar-grouped": {

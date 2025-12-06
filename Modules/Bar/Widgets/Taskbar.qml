@@ -40,11 +40,16 @@ Rectangle {
   readonly property string hideMode: (widgetSettings.hideMode !== undefined) ? widgetSettings.hideMode : widgetMetadata.hideMode
   readonly property bool onlySameOutput: (widgetSettings.onlySameOutput !== undefined) ? widgetSettings.onlySameOutput : widgetMetadata.onlySameOutput
   readonly property bool onlyActiveWorkspaces: (widgetSettings.onlyActiveWorkspaces !== undefined) ? widgetSettings.onlyActiveWorkspaces : widgetMetadata.onlyActiveWorkspaces
+  readonly property bool showTitle: isVerticalBar ? false : (widgetSettings.showTitle !== undefined) ? widgetSettings.showTitle : widgetMetadata.showTitle
+  readonly property int titleWidth: (widgetSettings.titleWidth !== undefined) ? widgetSettings.titleWidth : widgetMetadata.titleWidth
 
   // Context menu state
   property var selectedWindow: null
   property string selectedAppName: ""
   property int modelUpdateTrigger: 0  // Dummy property to force model re-evaluation
+
+  // Hover state
+  property var hoveredWindowId: ""
 
   NPopupContextMenu {
     id: contextMenu
@@ -136,7 +141,7 @@ Rectangle {
     }
   }
 
-  implicitWidth: visible ? (isVerticalBar ? Style.capsuleHeight : Math.round(taskbarLayout.implicitWidth + Style.marginM * 2)) : 0
+  implicitWidth: visible ? (isVerticalBar ? Style.capsuleHeight : showTitle ? Math.round(taskbarLayout.implicitWidth) : Math.round(taskbarLayout.implicitWidth + Style.marginM * 2)) : 0
   implicitHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginM * 2) : Style.capsuleHeight) : 0
   radius: Style.radiusM
   color: Style.capsuleColor
@@ -145,8 +150,8 @@ Rectangle {
     id: taskbarLayout
     anchors.fill: parent
     anchors {
-      leftMargin: isVerticalBar ? undefined : Style.marginM
-      rightMargin: isVerticalBar ? undefined : Style.marginM
+      leftMargin: (root.showTitle || isVerticalBar) ? undefined : Style.marginM
+      rightMargin: (root.showTitle || isVerticalBar) ? undefined : Style.marginM
       topMargin: (density === "compact") ? 0 : isVerticalBar ? Style.marginM : undefined
       bottomMargin: (density === "compact") ? 0 : isVerticalBar ? Style.marginM : undefined
     }
@@ -169,37 +174,100 @@ Rectangle {
           return ws.id;
         }).includes(modelData.workspaceId))
 
-        Layout.preferredWidth: root.itemSize
+        readonly property bool isHovered: root.hoveredWindowId === modelData.id
+        readonly property real itemSpacing: Style.marginS
+        readonly property real contentWidth: root.showTitle ? root.itemSize + itemSpacing + root.titleWidth : root.itemSize
+
+        readonly property string title: modelData.title || modelData.appId || "Unknown application"
+        readonly property color titleBgColor: (isHovered || modelData.isFocused) ? Color.mHover : Style.capsuleColor
+        readonly property color titleFgColor: (isHovered || modelData.isFocused) ? Color.mOnHover : Color.mOnSurface
+
+        Layout.preferredWidth: root.showTitle ? contentWidth + Style.marginM * 2 : contentWidth
         Layout.preferredHeight: root.itemSize
         Layout.alignment: Qt.AlignCenter
 
-        IconImage {
-          id: appIcon
+        Rectangle {
+          id: titleBackground
+          visible: root.showTitle
+          anchors.centerIn: parent
           width: parent.width
-          height: parent.height
-          source: ThemeIcons.iconForAppId(taskbarItem.modelData.appId)
-          smooth: true
-          asynchronous: true
-          opacity: modelData.isFocused ? Style.opacityFull : 0.6
+          height: root.height
+          color: titleBgColor
+          radius: Style.radiusM
 
-          // Apply dock shader to all taskbar icons
-          layer.enabled: widgetSettings.colorizeIcons !== false
-          layer.effect: ShaderEffect {
-            property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
-            property real colorizeMode: 0.0 // Dock mode (grayscale)
-
-            fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
+          Behavior on color {
+            ColorAnimation {
+              duration: Style.animationFast
+              easing.type: Easing.InOutQuad
+            }
           }
+        }
 
-          Rectangle {
-            id: iconBackground
-            anchors.bottomMargin: -2
-            anchors.bottom: parent.bottom
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: 4
-            height: 4
-            color: modelData.isFocused ? Color.mPrimary : Color.transparent
-            radius: Math.min(Style.radiusXXS, width / 2)
+        Rectangle {
+          anchors.centerIn: parent
+          width: taskbarItem.contentWidth
+          height: parent.height
+          color: "transparent"
+
+          RowLayout {
+            id: itemLayout
+            anchors.fill: parent
+            spacing: taskbarItem.itemSpacing
+
+            Item {
+              Layout.preferredWidth: root.itemSize
+              Layout.preferredHeight: root.itemSize
+              Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+
+              IconImage {
+                id: appIcon
+                anchors.fill: parent
+
+                source: ThemeIcons.iconForAppId(taskbarItem.modelData.appId)
+                smooth: true
+                asynchronous: true
+                opacity: (root.showTitle || modelData.isFocused) ? Style.opacityFull : 0.6
+
+                // Apply dock shader to all taskbar icons
+                layer.enabled: widgetSettings.colorizeIcons !== false
+                layer.effect: ShaderEffect {
+                  property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
+                  property real colorizeMode: 0.0 // Dock mode (grayscale)
+
+                  fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
+                }
+              }
+
+              Rectangle {
+                id: iconBackground
+                visible: !root.showTitle
+                anchors.bottomMargin: -2
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 4
+                height: 4
+                color: modelData.isFocused ? Color.mPrimary : Color.transparent
+                radius: Math.min(Style.radiusXXS, width / 2)
+              }
+            }
+
+            NText {
+              id: titleText
+              visible: root.showTitle
+              Layout.preferredWidth: root.titleWidth
+              Layout.preferredHeight: root.itemSize
+              Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+              Layout.fillWidth: false
+
+              text: taskbarItem.title
+              elide: Text.ElideRight
+              verticalAlignment: Text.AlignVCenter
+              horizontalAlignment: Text.AlignLeft
+
+              pointSize: root.itemSize * 0.5
+              color: titleFgColor
+              opacity: Style.opacityFull
+            }
           }
         }
 
@@ -240,8 +308,14 @@ Rectangle {
               contextMenuOpenTimer.restart();
             }
           }
-          onEntered: TooltipService.show(taskbarItem, taskbarItem.modelData.title || taskbarItem.modelData.appId || "Unknown app.", BarService.getTooltipDirection())
-          onExited: TooltipService.hide()
+          onEntered: {
+            root.hoveredWindowId = taskbarItem.modelData.id;
+            TooltipService.show(taskbarItem, taskbarItem.title, BarService.getTooltipDirection());
+          }
+          onExited: {
+            root.hoveredWindowId = "";
+            TooltipService.hide();
+          }
         }
       }
     }
