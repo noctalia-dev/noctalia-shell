@@ -82,17 +82,14 @@ PanelWindow {
   WlrLayershell.namespace: "noctalia-background-" + (screen?.name || "unknown")
   WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone handles that
   WlrLayershell.keyboardFocus: {
-    const p = PanelService.openedPanel;
-
-    if (!root.isPanelOpen || !p)
-        return WlrKeyboardFocus.None;
-
-    if (Settings.data.virtualKeyboard.enabled)
-        return Settings.data.virtualKeyboard.clicking ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None;
-
-    return p.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.onDemand;
+    if (!root.isPanelOpen) {
+      return WlrKeyboardFocus.None;
+    }
+    if (Settings.data.floatingPanel.enabled) {
+      return Settings.data.floatingPanel.giveFocus ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None;
+    }
+    return PanelService.openedPanel.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand;
   }
-
 
   anchors {
     top: true

@@ -54,13 +54,6 @@ Item {
   }
 
   IpcHandler {
-    target: "keyboard"
-    function toggle() {
-      Settings.data.virtualKeyboard.enabled = !Settings.data.virtualKeyboard.enabled
-    }
-  }
-
-  IpcHandler {
     target: "notifications"
     function toggleHistory() {
       // Will attempt to open the panel next to the bar button if any.

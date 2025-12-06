@@ -302,13 +302,6 @@ Singleton {
       property string videoSource: "portal"
     }
 
-    // virtual keyboard
-    property JsonObject virtualKeyboard: JsonObject {
-      property bool enabled: true
-      property bool clicking: true
-      property string layout: "auto"
-    } 
-
     // wallpaper
     property JsonObject wallpaper: JsonObject {
       property bool enabled: true
@@ -587,6 +580,12 @@ Singleton {
       property bool enabled: false
       property string wallpaperChange: ""
       property string darkModeChange: ""
+    }
+
+    // floating panels
+    property JsonObject floatingPanel: JsonObject {
+      property bool enabled: false                // if this is true, normal panels will have keyboard focus based on the value of giveFocus
+      property bool giveFocus: false              // Only if this is true, normal panels will have keyboard focus
     }
   }
 
