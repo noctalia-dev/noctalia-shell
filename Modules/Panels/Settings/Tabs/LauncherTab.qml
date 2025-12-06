@@ -132,6 +132,56 @@ ColumnLayout {
                }
   }
 
+  NHeader {
+    label: I18n.tr("settings.launcher.settings.dimensions.label") || "Dimensions"
+    description: I18n.tr("settings.launcher.settings.dimensions.description") || "Adjust the size of the launcher panel"
+  }
+  RowLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginM
+    NText {
+      text: (I18n.tr("settings.launcher.settings.width-ratio") || "Width Ratio") + ": " + (Settings.data.appLauncher.preferredWidthRatio || 0.3).toFixed(2)
+      font.pixelSize: Style.fontSizeM
+      Layout.preferredWidth: 150
+    }
+    NSlider {
+      id: widthSlider
+      Layout.fillWidth: true
+      from: 0.1
+      to: 1.0
+      value: Settings.data.appLauncher.preferredWidthRatio || 0.3
+      live: true
+      onMoved: {
+        Settings.data.appLauncher.preferredWidthRatio = value;
+      }
+    }
+  }
+  RowLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginM
+    NText {
+      text: (I18n.tr("settings.launcher.settings.height-ratio") || "Height Ratio") + ": " + (Settings.data.appLauncher.preferredHeightRatio || 0.5).toFixed(2)
+      font.pixelSize: Style.fontSizeM
+      Layout.preferredWidth: 150
+    }
+    NSlider {
+      id: heightSlider
+      Layout.fillWidth: true
+      from: 0.1
+      to: 1.0
+      value: Settings.data.appLauncher.preferredHeightRatio || 0.5
+      live: true
+      onMoved: {
+        Settings.data.appLauncher.preferredHeightRatio = value;
+      }
+    }
+  }
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginL
+    Layout.bottomMargin: Style.marginL
+  }
+
   NTextInput {
     label: I18n.tr("settings.launcher.settings.custom-launch-prefix.label")
     description: I18n.tr("settings.launcher.settings.custom-launch-prefix.description")
