@@ -22,9 +22,10 @@ SmartPanel {
   readonly property int totalBaseWidth: listPanelWidth + (Style.marginL * 2)
 
   preferredWidth: totalBaseWidth
-  preferredHeight: Math.round(600 * Style.uiScaleRatio)
-  preferredWidthRatio: 0.3
-  preferredHeightRatio: 0.5
+  preferredHeight: Math.round(100 * Style.uiScaleRatio)
+
+  preferredWidthRatio: Settings.data.appLauncher.preferredWidthRatio || 0.3
+  preferredHeightRatio: Settings.data.appLauncher.preferredHeightRatio || 0.5
 
   // Positioning
   readonly property string panelPosition: {
