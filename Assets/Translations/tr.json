@@ -1631,11 +1631,27 @@
         "description": "Sistemi askıya alırken otomatik olarak ekranı kilitler.",
         "label": "Askıya alırken kilitle"
       },
+      "show-logout": {
+        "description": "Kilit ekranında 'çıkış yap' seçeneğini göster.",
+        "label": "Çıkış yap seçeneğini göster"
+      },
+      "show-suspend": {
+        "description": "Kilit ekranında 'askıya al' seçeneğini göster.",
+        "label": "Askıya al seçeneğini göster"
+      },
       "show-hibernate": {
-        "description": "Güç işlemlerinde 'hazırda beklet' seçeneğini göster.",
+        "description": "Kilit ekranında 'hazırda beklet' seçeneğini göster.",
         "label": "Hazırda beklet seçeneğini göster"
       },
-      "title": "Ekran Kilit"
+      "show-reboot": {
+        "description": "Kilit ekranında 'yeniden başlat' seçeneğini göster.",
+        "label": "Yeniden başlat seçeneğini göster"
+      },
+      "show-shutdown": {
+        "description": "Kilit ekranında 'kapat' seçeneğini göster.",
+        "label": "Kapat seçeneğini göster"
+      },
+      "title": "Kilit Ekranı"
     },
     "network": {
       "bluetooth": {
