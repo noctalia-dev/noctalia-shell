@@ -232,6 +232,10 @@ Singleton {
       property bool animationDisabled: false
       property bool compactLockScreen: false
       property bool lockOnSuspend: true
+      property bool showLogoutOnLockScreen: true
+      property bool showSuspendOnLockScreen: true
+      property bool showRebootOnLockScreen: true
+      property bool showShutdownOnLockScreen: true
       property bool showHibernateOnLockScreen: false
       property bool enableShadows: true
       property string shadowDirection: "bottom_right"
