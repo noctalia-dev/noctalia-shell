@@ -105,6 +105,15 @@ Singleton {
 
     var name = (device.name || device.deviceName || "").toLowerCase();
     var icon = (device.icon || "").toLowerCase();
+
+
+
+    if (icon.includes("mouse") || name.includes("mouse")) {
+      return "bt-device-mouse";
+    }
+    if (icon.includes("keyboard") || name.includes("keyboard")) {
+      return "bt-device-keyboard";
+    }
     if (icon.includes("controller") || icon.includes("gamepad") || name.includes("controller") || name.includes("gamepad")) {
       return "bt-device-gamepad";
     }
