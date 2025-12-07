@@ -23,10 +23,38 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("settings.lock-screen.show-logout.label")
+    description: I18n.tr("settings.lock-screen.show-logout.description")
+    checked: Settings.data.general.showLogoutOnLockScreen
+    onToggled: checked => Settings.data.general.showLogoutOnLockScreen = checked
+  }
+
+  NToggle {
+    label: I18n.tr("settings.lock-screen.show-suspend.label")
+    description: I18n.tr("settings.lock-screen.show-suspend.description")
+    checked: Settings.data.general.showSuspendOnLockScreen
+    onToggled: checked => Settings.data.general.showSuspendOnLockScreen = checked
+  }
+
+  NToggle {
     label: I18n.tr("settings.lock-screen.show-hibernate.label")
     description: I18n.tr("settings.lock-screen.show-hibernate.description")
     checked: Settings.data.general.showHibernateOnLockScreen
     onToggled: checked => Settings.data.general.showHibernateOnLockScreen = checked
+  }
+  
+  NToggle {
+    label: I18n.tr("settings.lock-screen.show-reboot.label")
+    description: I18n.tr("settings.lock-screen.show-reboot.description")
+    checked: Settings.data.general.showRebootOnLockScreen
+    onToggled: checked => Settings.data.general.showRebootOnLockScreen = checked
+  }
+
+  NToggle {
+    label: I18n.tr("settings.lock-screen.show-shutdown.label")
+    description: I18n.tr("settings.lock-screen.show-shutdown.description")
+    checked: Settings.data.general.showShutdownOnLockScreen
+    onToggled: checked => Settings.data.general.showShutdownOnLockScreen = checked
   }
 
   NDivider {
