@@ -550,13 +550,13 @@ Loader {
                 // Measure all button text widths
                 Text {
                   id: logoutText
-                  text: I18n.tr("session-menu.logout")
+                  text: Settings.data.general.showLogoutOnLockScreen ? I18n.tr("session-menu.logout") : ""
                   font.pointSize: buttonRowTextMeasurer.fontSize
                   font.weight: Font.Medium
                 }
                 Text {
                   id: suspendText
-                  text: I18n.tr("session-menu.suspend")
+                  text: Settings.data.general.showSuspendOnLockScreen ? I18n.tr("session-menu.suspend") : ""
                   font.pointSize: buttonRowTextMeasurer.fontSize
                   font.weight: Font.Medium
                 }
@@ -568,13 +568,13 @@ Loader {
                 }
                 Text {
                   id: rebootText
-                  text: I18n.tr("session-menu.reboot")
+                  text: Settings.data.general.showRebootOnLockScreen ? I18n.tr("session-menu.reboot") : ""
                   font.pointSize: buttonRowTextMeasurer.fontSize
                   font.weight: Font.Medium
                 }
                 Text {
                   id: shutdownText
-                  text: I18n.tr("session-menu.shutdown")
+                  text: Settings.data.general.showShutdownOnLockScreen ? I18n.tr("session-menu.shutdown") : ""
                   font.pointSize: buttonRowTextMeasurer.fontSize
                   font.weight: Font.Medium
                 }
@@ -1141,6 +1141,7 @@ Loader {
 
                   Item {
                     Layout.preferredWidth: Style.marginM
+                    visible: Settings.data.general.showLogoutOnLockScreen
                   }
 
                   NButton {
@@ -1157,11 +1158,13 @@ Loader {
                     fontWeight: Style.fontWeightMedium
                     horizontalAlignment: Qt.AlignHCenter
                     buttonRadius: Style.radiusL
+                    visible: Settings.data.general.showLogoutOnLockScreen
                     onClicked: CompositorService.logout()
                   }
 
                   Item {
                     Layout.preferredWidth: 10
+                    visible: Settings.data.general.showLogoutOnLockScreen
                   }
 
                   NButton {
@@ -1178,6 +1181,7 @@ Loader {
                     fontWeight: Style.fontWeightMedium
                     horizontalAlignment: Qt.AlignHCenter
                     buttonRadius: Style.radiusL
+                    visible: Settings.data.general.showLogoutOnLockScreen
                     onClicked: CompositorService.suspend()
                   }
 
@@ -1206,6 +1210,7 @@ Loader {
 
                   Item {
                     Layout.preferredWidth: 10
+                    visible: Settings.data.general.showRebootOnLockScreen
                   }
 
                   NButton {
@@ -1222,11 +1227,13 @@ Loader {
                     fontWeight: Style.fontWeightMedium
                     horizontalAlignment: Qt.AlignHCenter
                     buttonRadius: Style.radiusL
+                    visible: Settings.data.general.showRebootOnLockScreen
                     onClicked: CompositorService.reboot()
                   }
 
                   Item {
                     Layout.preferredWidth: 10
+                    visible: Settings.data.general.showShutdownOnLockScreen
                   }
 
                   NButton {
@@ -1243,6 +1250,7 @@ Loader {
                     fontWeight: Style.fontWeightMedium
                     horizontalAlignment: Qt.AlignHCenter
                     buttonRadius: Style.radiusL
+                    visible: Settings.data.general.showShutdownOnLockScreen
                     onClicked: CompositorService.shutdown()
                   }
 
