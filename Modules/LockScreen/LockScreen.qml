@@ -1164,7 +1164,7 @@ Loader {
 
                   Item {
                     Layout.preferredWidth: 10
-                    visible: Settings.data.general.showLogoutOnLockScreen
+                    visible: Settings.data.general.showSuspendOnLockScreen
                   }
 
                   NButton {
@@ -1181,7 +1181,7 @@ Loader {
                     fontWeight: Style.fontWeightMedium
                     horizontalAlignment: Qt.AlignHCenter
                     buttonRadius: Style.radiusL
-                    visible: Settings.data.general.showLogoutOnLockScreen
+                    visible: Settings.data.general.showSuspendOnLockScreen
                     onClicked: CompositorService.suspend()
                   }
 
