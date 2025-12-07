@@ -573,10 +573,6 @@ Singleton {
       property string manualSunset: "18:30"
     }
 
-    property JsonObject changelog: JsonObject {
-      property string lastSeenVersion: ""
-    }
-
     // hooks
     property JsonObject hooks: JsonObject {
       property bool enabled: false

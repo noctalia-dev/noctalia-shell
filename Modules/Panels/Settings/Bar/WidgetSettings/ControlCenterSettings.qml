@@ -18,7 +18,7 @@ ColumnLayout {
   property bool valueUseDistroLogo: widgetData.useDistroLogo !== undefined ? widgetData.useDistroLogo : widgetMetadata.useDistroLogo
   property string valueCustomIconPath: widgetData.customIconPath !== undefined ? widgetData.customIconPath : ""
   property bool valueEnableColorization: widgetData.enableColorization || false
-  property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : (widgetMetadata.colorizeSystemIcon !== undefined ? widgetMetadata.colorizeSystemIcon : "none")
+  property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});

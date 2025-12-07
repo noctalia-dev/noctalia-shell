@@ -344,7 +344,7 @@ Singleton {
   }
 
   // Enable a plugin
-  function enablePlugin(pluginId) {
+  function enablePlugin(pluginId, skipAddToBar) {
     if (PluginRegistry.isPluginEnabled(pluginId)) {
       Logger.w("PluginService", "Plugin already enabled:", pluginId);
       return true;
@@ -358,11 +358,13 @@ Singleton {
     PluginRegistry.setPluginEnabled(pluginId, true);
     loadPlugin(pluginId);
 
-    // Add plugin widget to bar if it provides one
-    var manifest = PluginRegistry.getPluginManifest(pluginId);
-    if (manifest && manifest.entryPoints && manifest.entryPoints.barWidget) {
-      var widgetId = "plugin:" + pluginId;
-      addWidgetToBar(widgetId, "right"); // Default to right section
+    // Add plugin widget to bar if it provides one (unless we're restoring from backup)
+    if (!skipAddToBar) {
+      var manifest = PluginRegistry.getPluginManifest(pluginId);
+      if (manifest && manifest.entryPoints && manifest.entryPoints.barWidget) {
+        var widgetId = "plugin:" + pluginId;
+        addWidgetToBar(widgetId, "right"); // Default to right section
+      }
     }
 
     updatePluginInAvailable(pluginId, {
@@ -994,14 +996,15 @@ Singleton {
       if (success) {
         Logger.i("PluginService", "Plugin updated successfully:", pluginId);
 
-        // Restore bar layout
+        // Re-enable the plugin first, so the new component is registered
+        // Skip adding to bar since we'll restore the layout from backup
+        enablePlugin(pluginId, true);
+
+        // Then restore bar layout (so BarWidgetLoaders can find the new component)
         Settings.data.bar.widgets.left = barBackup.left;
         Settings.data.bar.widgets.center = barBackup.center;
         Settings.data.bar.widgets.right = barBackup.right;
         Logger.d("PluginService", "Restored bar layout");
-
-        // Re-enable the plugin
-        enablePlugin(pluginId);
 
         // Remove from updates list
         var updates = Object.assign({}, root.pluginUpdates);
@@ -1062,12 +1065,10 @@ Singleton {
 
         // If this slot is empty, use it
         if (panel.currentPluginId === "") {
-          // Open the panel first so the loader gets created
+          // Set the pluginId first - when panel opens and panelContent loads,
+          // Component.onCompleted will call loadPluginPanel automatically
+          panel.currentPluginId = pluginId;
           panel.open();
-          // Wait a brief moment for the panel to be fully created
-          Qt.callLater(function () {
-            panel.loadPluginPanel(pluginId);
-          });
           return true;
         }
       }
@@ -1077,10 +1078,10 @@ Singleton {
     var panel1 = PanelService.getPanel("pluginPanel1", screen);
     if (panel1) {
       panel1.unloadPluginPanel();
+      // Set the pluginId first - when panel opens and panelContent loads,
+      // Component.onCompleted will call loadPluginPanel automatically
+      panel1.currentPluginId = pluginId;
       panel1.open();
-      Qt.callLater(function () {
-        panel1.loadPluginPanel(pluginId);
-      });
       return true;
     }
 

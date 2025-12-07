@@ -139,21 +139,17 @@
           "label": "Befehlsausgabe anzeigen",
           "stream-description": "Geben Sie einen Befehl ein, der kontinuierlich ausgeführt werden soll."
         },
+        "dynamic-text": "Dynamischer Text",
         "hide-mode": {
-          "description": "Steuert die Sichtbarkeit des Widgets, wenn der Befehl keine Ausgabe hat.",
-          "label": "Ausblendmodus",
-          "expandWithOutput": "Mit Ausgabe erweitern",
           "alwaysExpanded": "Immer erweitert",
+          "description": "Steuert die Sichtbarkeit des Widgets, wenn der Befehl keine Ausgabe hat.",
+          "expandWithOutput": "Mit Ausgabe erweitern",
+          "label": "Ausblendmodus",
           "maxTransparent": "Maximal erweitert aber transparent"
         },
-        "dynamic-text": "Dynamischer Text",
         "icon": {
           "description": "Symbol aus der Bibliothek auswählen.",
           "label": "Symbol"
-        },
-        "show-icon": {
-          "description": "Schaltet die Sichtbarkeit des Widget-Symbols um.",
-          "label": "Symbol anzeigen"
         },
         "left-click": {
           "description": "Befehl, der ausgeführt wird, wenn die Schaltfläche links angeklickt wird.",
@@ -185,6 +181,10 @@
           "description": "Befehl, der ausgeführt wird, wenn die Schaltfläche rechts angeklickt wird.",
           "label": "Rechtsklick",
           "update-text": "Text beim Rechtsklick aktualisieren"
+        },
+        "show-icon": {
+          "description": "Schaltet die Sichtbarkeit des Widget-Symbols um.",
+          "label": "Symbol anzeigen"
         },
         "text-stream": {
           "description": "Gestreamte Zeilen aus dem Befehl werden als Text auf der Schaltfläche angezeigt.",
@@ -344,6 +344,10 @@
         "only-same-output": {
           "description": "Zeige nur Apps von dem Bildschirm, auf dem sich die Taskbar befindet.",
           "label": "Nur vom gleichen Bildschirm"
+        },
+        "show-pinned-apps": {
+          "description": "Angeheftete Apps aus dem Dock in der Taskleiste anzeigen.",
+          "label": "Angeheftete Apps anzeigen"
         }
       },
       "taskbar-grouped": {
@@ -360,6 +364,10 @@
         "drawer-enabled": {
           "description": "Wenn aktiviert, werden nicht angeheftete Tray-Elemente in einem Schubladen-Panel angezeigt. Wenn deaktiviert, werden alle Tray-Elemente inline angezeigt.",
           "label": "Schublade aktivieren"
+        },
+        "hide-passive": {
+          "description": "Wenn aktiviert, werden Tray-Elemente mit dem Status \"Passiv\" ausgeblendet.",
+          "label": "Passive Gegenstände ausblenden"
         }
       },
       "volume": {
@@ -532,11 +540,12 @@
       "misc": "Verschiedenes",
       "network": "Netzwerk",
       "office": "Büro",
+      "pinned": "Angeheftet",
       "system": "System",
       "webbrowser": "Webbrowser"
     },
-    "pin": "An das Dock anheften",
-    "unpin": "Vom Dock lösen"
+    "pin": "Anheften",
+    "unpin": "Lösen"
   },
   "lock-screen": {
     "authenticating": "Authentifizierung...",
@@ -737,6 +746,9 @@
     "clipboard-loading": "Lade Zwischenablageverlauf...",
     "clipboard-loading-description": "Bitte warten",
     "clipboard-search-description": "Zwischenablageverlauf durchsuchen",
+    "command": "Befehl",
+    "command-description": "Shell-Befehle ausführen",
+    "command-name": "Befehl",
     "emoji": "Emoji-Auswahl",
     "emoji-loading": "Lade Emojis...",
     "emoji-loading-description": "Bitte warten",
@@ -1506,10 +1518,6 @@
           "description": "Elemente in einem Raster statt in einer Liste anzeigen.",
           "label": "Rasteransicht"
         },
-        "show-categories": {
-          "description": "Kategorienregisterkarten zum Filtern von Anwendungen anzeigen.",
-          "label": "Kategorien anzeigen"
-        },
         "position": {
           "description": "Wählen Sie, wo das Starter-Panel erscheint.",
           "label": "Position"
@@ -1517,6 +1525,10 @@
         "section": {
           "description": "Verhalten und Erscheinungsbild des Starters anpassen.",
           "label": "Erscheinungsbild"
+        },
+        "show-categories": {
+          "description": "Kategorienregisterkarten zum Filtern von Anwendungen anzeigen.",
+          "label": "Kategorien anzeigen"
         },
         "sort-by-usage": {
           "description": "Wenn aktiviert, erscheinen häufig gestartete Apps zuerst in der Liste.",

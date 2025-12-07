@@ -139,21 +139,17 @@
           "label": "Komut Çıktısını Göster",
           "stream-description": "Sürekli çalıştırılacak bir komut girin."
         },
+        "dynamic-text": "Hareketli metin",
         "hide-mode": {
-          "description": "Komutun çıktı vermemesi durumunda gerecin görünürlüğünü kontrol eder.",
-          "label": "Gizleme modu",
-          "expandWithOutput": "Çıktı olduğunda genişlet",
           "alwaysExpanded": "Her zaman geniş",
+          "description": "Komutun çıktı vermemesi durumunda gerecin görünürlüğünü kontrol eder.",
+          "expandWithOutput": "Çıktı olduğunda genişlet",
+          "label": "Gizleme modu",
           "maxTransparent": "En büyük genişlik ama saydam"
         },
-        "dynamic-text": "Hareketli metin",
         "icon": {
           "description": "Kütüphaneden bir simge seçin.",
           "label": "Simge"
-        },
-        "show-icon": {
-          "description": "Takım aracının simgesinin görünürlüğünü değiştirir.",
-          "label": "Simgeyi göster"
         },
         "left-click": {
           "description": "Düğmeye sol tıklandığında yürütülecek komut.",
@@ -185,6 +181,10 @@
           "description": "Sağ düğmeye tıklandığında yürütülecek komut.",
           "label": "Sağ tıklama",
           "update-text": "Sağ tıklamada görüntülenen metni güncelle"
+        },
+        "show-icon": {
+          "description": "Takım aracının simgesinin görünürlüğünü değiştirir.",
+          "label": "Simgeyi göster"
         },
         "text-stream": {
           "description": "Komuttan gelen akış satırları düğmede metin olarak gösterilecektir.",
@@ -344,6 +344,10 @@
         "only-same-output": {
           "description": "Sadece çubuğun bulunduğu çıktıdan uygulamaları göster.",
           "label": "Sadece aynı çıktıdan"
+        },
+        "show-pinned-apps": {
+          "description": "Dock'taki sabitlenmiş uygulamaları görev çubuğunda göster.",
+          "label": "Sabitlenmiş uygulamaları göster"
         }
       },
       "taskbar-grouped": {
@@ -360,6 +364,10 @@
         "drawer-enabled": {
           "description": "Etkinleştirildiğinde, sabitlenmemiş tepsi öğeleri bir çekmece panelinde gösterilir. Devre dışı bırakıldığında, tüm tepsi öğeleri satır içi gösterilir.",
           "label": "Çekmeceyi Etkinleştir"
+        },
+        "hide-passive": {
+          "description": "Etkinleştirildiğinde, Pasif durumdaki tepsi öğeleri gizlenir.",
+          "label": "Pasif öğeleri gizle"
         }
       },
       "volume": {
@@ -532,11 +540,12 @@
       "misc": "Çeşitli",
       "network": "Ağ",
       "office": "Ofis",
+      "pinned": "Sabitlendi",
       "system": "Sistem",
       "webbrowser": "Tarayıcı"
     },
-    "pin": "Rıhtıma sabitle",
-    "unpin": "Rıhtımdan sabitlemeyi kaldır"
+    "pin": "Sabitle",
+    "unpin": "Sabitlemeyi kaldır"
   },
   "lock-screen": {
     "authenticating": "Doğrulanıyor...",
@@ -737,6 +746,9 @@
     "clipboard-loading": "Panoya geçmişi yükleniyor...",
     "clipboard-loading-description": "Lütfen bekleyin",
     "clipboard-search-description": "Panoya geçmişini ara",
+    "command": "Komut",
+    "command-description": "Kabuk komutlarını çalıştır",
+    "command-name": "Komut",
     "emoji": "Emoji seçici",
     "emoji-loading": "Emojiler yükleniyor...",
     "emoji-loading-description": "Lütfen bekleyin",
@@ -1506,10 +1518,6 @@
           "description": "Öğeleri liste yerine ızgara düzeninde görüntüle.",
           "label": "Izgara görünümü"
         },
-        "show-categories": {
-          "description": "Uygulamaları filtrelemek için kategori sekmelerini göster.",
-          "label": "Kategorileri göster"
-        },
         "position": {
           "description": "Başlatıcı panelinin nerede görüneceğini seçin.",
           "label": "Konum"
@@ -1517,6 +1525,10 @@
         "section": {
           "description": "Başlatıcının davranışını ve görünümünü özelleştirin.",
           "label": "Görünüm"
+        },
+        "show-categories": {
+          "description": "Uygulamaları filtrelemek için kategori sekmelerini göster.",
+          "label": "Kategorileri göster"
         },
         "sort-by-usage": {
           "description": "Etkinleştirildiğinde, sıkça başlatılan uygulamalar listede ilk olarak görünür.",

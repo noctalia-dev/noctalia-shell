@@ -139,21 +139,17 @@
           "label": "Display command output",
           "stream-description": "Enter a command to run continuously."
         },
+        "dynamic-text": "Dynamic text",
         "hide-mode": {
-          "description": "Controls widget visibility when the command has no output.",
-          "label": "Hide mode",
-          "expandWithOutput": "Expand when has output",
           "alwaysExpanded": "Always expanded",
+          "description": "Controls widget visibility when the command has no output.",
+          "expandWithOutput": "Expand when has output",
+          "label": "Hide mode",
           "maxTransparent": "Max expanded but transparent"
         },
-        "dynamic-text": "Dynamic text",
         "icon": {
           "description": "Select an icon from the library.",
           "label": "Icon"
-        },
-        "show-icon": {
-          "description": "Toggles the visibility of the widget's icon.",
-          "label": "Show icon"
         },
         "left-click": {
           "description": "Command to execute when the button is left-clicked.",
@@ -185,6 +181,10 @@
           "description": "Command to execute when the button is right-clicked.",
           "label": "Right click",
           "update-text": "Update displayed text on right-click"
+        },
+        "show-icon": {
+          "description": "Toggles the visibility of the widget's icon.",
+          "label": "Show icon"
         },
         "text-stream": {
           "description": "Streamed lines from the command will be displayed as text on the button.",
@@ -344,6 +344,10 @@
         "only-same-output": {
           "description": "Show only apps from the output where the bar is located.",
           "label": "Only from same output"
+        },
+        "show-pinned-apps": {
+          "description": "Show pinned apps from the dock in the taskbar.",
+          "label": "Show pinned apps"
         }
       },
       "taskbar-grouped": {
@@ -360,6 +364,10 @@
         "drawer-enabled": {
           "description": "When enabled, unpinned tray items are shown in a drawer panel. When disabled, all tray items are shown inline.",
           "label": "Enable drawer"
+        },
+        "hide-passive": {
+          "description": "When enabled, tray items with Passive status will be hidden.",
+          "label": "Hide passive items"
         }
       },
       "volume": {
@@ -532,11 +540,12 @@
       "misc": "Misc",
       "network": "Network",
       "office": "Office",
+      "pinned": "Pinned",
       "system": "System",
       "webbrowser": "Web Browser"
     },
-    "pin": "Pin to dock",
-    "unpin": "Unpin from dock"
+    "pin": "Pin",
+    "unpin": "Unpin"
   },
   "lock-screen": {
     "authenticating": "Authenticating...",
@@ -737,6 +746,9 @@
     "clipboard-loading": "Loading clipboard history...",
     "clipboard-loading-description": "Please wait",
     "clipboard-search-description": "Search clipboard history",
+    "command": "Command",
+    "command-description": "Run shell commands",
+    "command-name": "Command",
     "emoji": "Emoji picker",
     "emoji-loading": "Loading emojis...",
     "emoji-loading-description": "Please wait",
@@ -1506,10 +1518,6 @@
           "description": "Display items in a grid layout instead of a list.",
           "label": "Grid view"
         },
-        "show-categories": {
-          "description": "Show category tabs for filtering applications.",
-          "label": "Show categories"
-        },
         "position": {
           "description": "Choose where the launcher panel appears.",
           "label": "Position"
@@ -1517,6 +1525,10 @@
         "section": {
           "description": "Customize the launcher's behavior and appearance.",
           "label": "Appearance"
+        },
+        "show-categories": {
+          "description": "Show category tabs for filtering applications.",
+          "label": "Show categories"
         },
         "sort-by-usage": {
           "description": "When enabled, frequently launched apps appear first in the list.",

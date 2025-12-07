@@ -15,11 +15,12 @@ Item {
   // Category support
   property string selectedCategory: "all"
   property bool isBrowsingMode: false
-  property var categories: ["all", "AudioVideo", "Chat", "Development", "Education", "Game", "Graphics", "Network", "Office", "System", "Misc", "WebBrowser"]
+  property var categories: ["all", "Pinned", "AudioVideo", "Chat", "Development", "Education", "Game", "Graphics", "Network", "Office", "System", "Misc", "WebBrowser"]
   property var availableCategories: ["all"] // Reactive property for available categories
 
   property var categoryIcons: ({
                                  "all": "apps",
+                                 "Pinned": "pin",
                                  "AudioVideo": "music",
                                  "Chat": "message-circle",
                                  "Development": "code",
@@ -38,6 +39,7 @@ Item {
   function getCategoryName(category) {
     const names = {
       "all": I18n.tr("launcher.categories.all"),
+      "Pinned": I18n.tr("launcher.categories.pinned"),
       "AudioVideo": I18n.tr("launcher.categories.audiovideo"),
       "Chat": I18n.tr("launcher.categories.chat"),
       "Development": I18n.tr("launcher.categories.development"),
@@ -200,10 +202,32 @@ Item {
     return "Misc";
   }
 
+  // Helper function to normalize app IDs for case-insensitive matching
+  function normalizeAppId(appId) {
+    if (!appId || typeof appId !== 'string')
+      return "";
+    return appId.toLowerCase().trim();
+  }
+
+  // Helper function to check if an app is pinned
+  function isAppPinned(app) {
+    if (!app)
+      return false;
+    const pinnedApps = Settings.data.dock.pinnedApps || [];
+    const appId = getAppKey(app);
+    const normalizedId = normalizeAppId(appId);
+    return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+  }
+
   function appMatchesCategory(app, category) {
     // Check if app matches the selected category
     if (category === "all")
       return true;
+
+    // Handle Pinned category separately
+    if (category === "Pinned") {
+      return isAppPinned(app);
+    }
 
     // Get the primary category for this app (first matching standard category)
     const primaryCategory = getAppCategory(app);
@@ -241,6 +265,19 @@ Item {
     let hasAudioVideo = false;
     let hasEducation = false;
     let hasSystem = false;
+    let hasPinned = false;
+
+    // Check if there are any pinned apps
+    const pinnedApps = Settings.data.dock.pinnedApps || [];
+    if (pinnedApps.length > 0) {
+      // Verify that at least one pinned app exists in entries
+      for (let app of entries) {
+        if (isAppPinned(app)) {
+          hasPinned = true;
+          break;
+        }
+      }
+    }
 
     for (let app of entries) {
       const appCategories = getAppCategories(app);
@@ -257,6 +294,13 @@ Item {
       }
     }
 
+    const result = ["all"];
+
+    // Add Pinned category first if there are pinned apps
+    if (hasPinned) {
+      result.push("Pinned");
+    }
+
     if (hasAudioVideo) {
       categorySet.add("AudioVideo");
     }
@@ -267,9 +311,8 @@ Item {
       categorySet.add("System");
     }
 
-    const result = ["all"];
     for (let cat of root.categories) {
-      if (cat !== "all" && cat !== "Misc" && categorySet.has(cat)) {
+      if (cat !== "all" && cat !== "Pinned" && cat !== "Misc" && categorySet.has(cat)) {
         result.push(cat);
       }
     }
@@ -306,6 +349,27 @@ Item {
 
   function updateAvailableCategories() {
     availableCategories = getAvailableCategories();
+  }
+
+  Connections {
+    target: Settings.data.dock
+    function onPinnedAppsChanged() {
+      const wasViewingPinned = selectedCategory === "Pinned";
+      updateAvailableCategories();
+
+      // If we were viewing Pinned category and it's no longer available, switch to "all"
+      if (wasViewingPinned && !availableCategories.includes("Pinned")) {
+        selectedCategory = "all";
+      }
+
+      // Update results if we're currently viewing the Pinned category
+      if (selectedCategory === "Pinned" && launcher) {
+        launcher.updateResults();
+      } else if (wasViewingPinned && selectedCategory === "all" && launcher) {
+        // Also update results when switching to "all"
+        launcher.updateResults();
+      }
+    }
   }
 
   function getExecutableName(app) {

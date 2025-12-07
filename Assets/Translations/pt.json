@@ -139,21 +139,17 @@
           "label": "Exibir Saída de Comando",
           "stream-description": "Insira um comando para executar continuamente."
         },
+        "dynamic-text": "Texto dinâmico",
         "hide-mode": {
-          "description": "Controla a visibilidade do widget quando o comando não tem saída.",
-          "label": "Modo de ocultação",
-          "expandWithOutput": "Expandir quando tem saída",
           "alwaysExpanded": "Sempre expandido",
+          "description": "Controla a visibilidade do widget quando o comando não tem saída.",
+          "expandWithOutput": "Expandir quando tem saída",
+          "label": "Modo de ocultação",
           "maxTransparent": "Totalmente expandido mas transparente"
         },
-        "dynamic-text": "Texto dinâmico",
         "icon": {
           "description": "Selecione um ícone da biblioteca.",
           "label": "Ícone"
-        },
-        "show-icon": {
-          "description": "Alterna a visibilidade do ícone do widget.",
-          "label": "Mostrar ícone"
         },
         "left-click": {
           "description": "Comando a executar quando o botão é clicado com o botão esquerdo.",
@@ -185,6 +181,10 @@
           "description": "Comando a executar quando o botão é clicado com o botão direito.",
           "label": "Clique direito",
           "update-text": "Atualizar o texto exibido ao clicar com o botão direito."
+        },
+        "show-icon": {
+          "description": "Alterna a visibilidade do ícone do widget.",
+          "label": "Mostrar ícone"
         },
         "text-stream": {
           "description": "As linhas transmitidas do comando serão exibidas como texto no botão.",
@@ -344,6 +344,10 @@
         "only-same-output": {
           "description": "Mostrar apenas os aplicativos da saída onde a barra está localizada.",
           "label": "Apenas da mesma saída"
+        },
+        "show-pinned-apps": {
+          "description": "Mostrar aplicativos fixados do Dock na barra de tarefas.",
+          "label": "Mostrar aplicativos fixados"
         }
       },
       "taskbar-grouped": {
@@ -360,6 +364,10 @@
         "drawer-enabled": {
           "description": "Quando habilitado, os itens da bandeja não fixados são exibidos em um painel gaveta. Quando desabilitado, todos os itens da bandeja são exibidos inline.",
           "label": "Habilitar gaveta"
+        },
+        "hide-passive": {
+          "description": "Quando ativado, os itens da bandeja com status Passivo serão ocultados.",
+          "label": "Ocultar itens passivos"
         }
       },
       "volume": {
@@ -532,11 +540,12 @@
       "misc": "Diversos",
       "network": "Rede",
       "office": "Escritório",
+      "pinned": "Fixado",
       "system": "Sistema",
       "webbrowser": "Navegador web"
     },
-    "pin": "Fixar no dock",
-    "unpin": "Desafixar do dock"
+    "pin": "Fixar",
+    "unpin": "Desafixar"
   },
   "lock-screen": {
     "authenticating": "Autenticando...",
@@ -737,6 +746,9 @@
     "clipboard-loading": "Carregando histórico da área de transferência...",
     "clipboard-loading-description": "Por favor, aguarde",
     "clipboard-search-description": "Pesquisar no histórico da área de transferência",
+    "command": "Comando",
+    "command-description": "Executar comandos shell",
+    "command-name": "Comando",
     "emoji": "Seletor de emojis",
     "emoji-loading": "Carregando emojis...",
     "emoji-loading-description": "Por favor, aguarde",
@@ -1506,10 +1518,6 @@
           "description": "Exibir itens em uma grade em vez de uma lista.",
           "label": "Visualização em grade"
         },
-        "show-categories": {
-          "description": "Mostrar abas de categorias para filtrar aplicativos.",
-          "label": "Mostrar categorias"
-        },
         "position": {
           "description": "Escolha onde o painel do lançador aparece.",
           "label": "Posição"
@@ -1517,6 +1525,10 @@
         "section": {
           "description": "Personalize o comportamento e a aparência do lançador.",
           "label": "Aparência"
+        },
+        "show-categories": {
+          "description": "Mostrar abas de categorias para filtrar aplicativos.",
+          "label": "Mostrar categorias"
         },
         "sort-by-usage": {
           "description": "Quando ativado, os aplicativos mais usados aparecem primeiro na lista.",

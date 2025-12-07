@@ -23,7 +23,7 @@ ColumnLayout {
     property bool enableOnStateLogic: (widgetData && widgetData.enableOnStateLogic !== undefined) ? widgetData.enableOnStateLogic : widgetMetadata.enableOnStateLogic
 
     Component.onCompleted: {
-      stateChecksJson = (widgetData && widgetData.stateChecksJson !== undefined) ? widgetData.stateChecksJson : widgetMetadata.stateChecksJson || "[]";
+      stateChecksJson = (widgetData && widgetData.stateChecksJson !== undefined) ? widgetData.stateChecksJson : widgetMetadata.stateChecksJson;
       try {
         var initialChecks = JSON.parse(stateChecksJson);
         if (initialChecks && Array.isArray(initialChecks)) {

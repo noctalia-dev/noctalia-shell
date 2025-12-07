@@ -325,8 +325,8 @@ PanelWindow {
       readonly property string barPosition: Settings.data.bar.position || "top"
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
       readonly property bool barFloating: Settings.data.bar.floating || false
-      readonly property real barMarginH: barFloating ? Math.round(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
-      readonly property real barMarginV: barFloating ? Math.round(Settings.data.bar.marginVertical * Style.marginXL) : 0
+      readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
+      readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0
       readonly property real attachmentOverlap: 1 // Attachment overlap to fix hairline gap with fractional scaling
 
       // Expose bar dimensions directly on this Item for BarBackground
@@ -419,167 +419,100 @@ PanelWindow {
   // ========================================
   // These shortcuts delegate to the opened panel's handler functions
   // Panels can implement: onEscapePressed, onTabPressed, onBackTabPressed,
-  // onUpPressed, onDownPressed, onReturnPressed
-
+  // onUpPressed, onDownPressed, onReturnPressed, etc...
   Shortcut {
     sequence: "Escape"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onEscapePressed) {
-        PanelService.openedPanel.onEscapePressed();
-      } else if (PanelService.openedPanel) {
-        PanelService.openedPanel.close();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onEscapePressed !== undefined)
+    onActivated: PanelService.openedPanel.onEscapePressed()
   }
 
   Shortcut {
     sequence: "Tab"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onTabPressed) {
-        PanelService.openedPanel.onTabPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onTabPressed !== undefined)
+    onActivated: PanelService.openedPanel.onTabPressed()
   }
 
   Shortcut {
     sequence: "Backtab"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onBackTabPressed) {
-        PanelService.openedPanel.onBackTabPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onBackTabPressed !== undefined)
+    onActivated: PanelService.openedPanel.onBackTabPressed()
   }
 
   Shortcut {
     sequence: "Up"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onUpPressed) {
-        PanelService.openedPanel.onUpPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onUpPressed !== undefined)
+    onActivated: PanelService.openedPanel.onUpPressed()
   }
 
   Shortcut {
     sequence: "Down"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onDownPressed) {
-        PanelService.openedPanel.onDownPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onDownPressed !== undefined)
+    onActivated: PanelService.openedPanel.onDownPressed()
   }
 
   Shortcut {
     sequence: "Return"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onReturnPressed) {
-        PanelService.openedPanel.onReturnPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onReturnPressed !== undefined)
+    onActivated: PanelService.openedPanel.onReturnPressed()
   }
 
   Shortcut {
     sequence: "Left"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onLeftPressed) {
-        PanelService.openedPanel.onLeftPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onLeftPressed !== undefined)
+    onActivated: PanelService.openedPanel.onLeftPressed()
   }
 
   Shortcut {
     sequence: "Right"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onRightPressed) {
-        PanelService.openedPanel.onRightPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onRightPressed !== undefined)
+    onActivated: PanelService.openedPanel.onRightPressed()
   }
 
   Shortcut {
     sequence: "Home"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onHomePressed) {
-        PanelService.openedPanel.onHomePressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onHomePressed !== undefined)
+    onActivated: PanelService.openedPanel.onHomePressed()
   }
 
   Shortcut {
     sequence: "End"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onEndPressed) {
-        PanelService.openedPanel.onEndPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onEndPressed !== undefined)
+    onActivated: PanelService.openedPanel.onEndPressed()
   }
 
   Shortcut {
     sequence: "PgUp"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onPageUpPressed) {
-        PanelService.openedPanel.onPageUpPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onPageUpPressed !== undefined)
+    onActivated: PanelService.openedPanel.onPageUpPressed()
   }
 
   Shortcut {
     sequence: "PgDown"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onPageDownPressed) {
-        PanelService.openedPanel.onPageDownPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onPageDownPressed !== undefined)
+    onActivated: PanelService.openedPanel.onPageDownPressed()
   }
 
   Shortcut {
     sequence: "Ctrl+J"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onCtrlJPressed) {
-        PanelService.openedPanel.onCtrlJPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlJPressed !== undefined)
+    onActivated: PanelService.openedPanel.onCtrlJPressed()
   }
 
   Shortcut {
     sequence: "Ctrl+K"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onCtrlKPressed) {
-        PanelService.openedPanel.onCtrlKPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlKPressed !== undefined)
+    onActivated: PanelService.openedPanel.onCtrlKPressed()
   }
 
   Shortcut {
     sequence: "Ctrl+N"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onCtrlNPressed) {
-        PanelService.openedPanel.onCtrlNPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlNPressed !== undefined)
+    onActivated: PanelService.openedPanel.onCtrlNPressed()
   }
 
   Shortcut {
     sequence: "Ctrl+P"
-    enabled: root.isPanelOpen
-    onActivated: {
-      if (PanelService.openedPanel && PanelService.openedPanel.onCtrlPPressed) {
-        PanelService.openedPanel.onCtrlPPressed();
-      }
-    }
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlPPressed !== undefined)
+    onActivated: PanelService.openedPanel.onCtrlPPressed()
   }
 }

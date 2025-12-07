@@ -22,6 +22,19 @@ SmartPanel {
   preferredWidth: Math.round(420 * Style.uiScaleRatio)
   preferredHeight: Math.round(420 * Style.uiScaleRatio)
 
+  Component.onCompleted: {
+    var vol = AudioService.volume;
+    localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+    var inputVol = AudioService.inputVolume;
+    localInputVolume = (inputVol !== undefined && !isNaN(inputVol)) ? inputVol : 0;
+    if (AudioService.sink) {
+      lastSinkId = AudioService.sink.id;
+    }
+    if (AudioService.source) {
+      lastSourceId = AudioService.source.id;
+    }
+  }
+
   // Reset local volume when device changes - use current device's volume
   Connections {
     target: AudioService
@@ -31,7 +44,8 @@ SmartPanel {
         if (newSinkId !== lastSinkId) {
           lastSinkId = newSinkId;
           // Immediately set local volume to current device's volume
-          localOutputVolume = AudioService.volume;
+          var vol = AudioService.volume;
+          localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
         }
       } else {
         lastSinkId = -1;
@@ -48,7 +62,8 @@ SmartPanel {
         if (newSourceId !== lastSourceId) {
           lastSourceId = newSourceId;
           // Immediately set local volume to current device's volume
-          localInputVolume = AudioService.inputVolume;
+          var vol = AudioService.inputVolume;
+          localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
         }
       } else {
         lastSourceId = -1;
@@ -62,7 +77,8 @@ SmartPanel {
     target: AudioService
     function onVolumeChanged() {
       if (!localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === lastSinkId) {
-        localOutputVolume = AudioService.volume;
+        var vol = AudioService.volume;
+        localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
       }
     }
   }
@@ -71,7 +87,8 @@ SmartPanel {
     target: AudioService.sink?.audio ? AudioService.sink?.audio : null
     function onVolumeChanged() {
       if (!localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === lastSinkId) {
-        localOutputVolume = AudioService.volume;
+        var vol = AudioService.volume;
+        localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
       }
     }
   }
@@ -80,7 +97,8 @@ SmartPanel {
     target: AudioService
     function onInputVolumeChanged() {
       if (!localInputVolumeChanging && AudioService.source && AudioService.source.id === lastSourceId) {
-        localInputVolume = AudioService.inputVolume;
+        var vol = AudioService.inputVolume;
+        localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
       }
     }
   }
@@ -89,7 +107,8 @@ SmartPanel {
     target: AudioService.source?.audio ? AudioService.source?.audio : null
     function onVolumeChanged() {
       if (!localInputVolumeChanging && AudioService.source && AudioService.source.id === lastSourceId) {
-        localInputVolume = AudioService.inputVolume;
+        var vol = AudioService.inputVolume;
+        localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
       }
     }
   }
@@ -228,8 +247,8 @@ SmartPanel {
                 value: localOutputVolume
                 stepSize: 0.01
                 heightRatio: 0.5
-                onMoved: value => localOutputVolume = value
-                onPressedChanged: (pressed, value) => localOutputVolumeChanging = pressed
+                onMoved: localOutputVolume = value
+                onPressedChanged: localOutputVolumeChanging = pressed
                 text: Math.round(localOutputVolume * 100) + "%"
                 Layout.bottomMargin: Style.marginM
               }
@@ -285,8 +304,8 @@ SmartPanel {
                 value: localInputVolume
                 stepSize: 0.01
                 heightRatio: 0.5
-                onMoved: value => localInputVolume = value
-                onPressedChanged: (pressed, value) => localInputVolumeChanging = pressed
+                onMoved: localInputVolume = value
+                onPressedChanged: localInputVolumeChanging = pressed
                 text: Math.round(localInputVolume * 100) + "%"
                 Layout.bottomMargin: Style.marginM
               }

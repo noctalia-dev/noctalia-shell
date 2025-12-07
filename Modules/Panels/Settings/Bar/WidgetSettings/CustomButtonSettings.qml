@@ -179,7 +179,7 @@ ColumnLayout {
         Layout.fillWidth: true
         label: I18n.tr("bar.widget-settings.custom-button.wheel-mode-separate.label", "Separate wheel commands")
         description: I18n.tr("bar.widget-settings.custom-button.wheel-mode-separate.description", "Enable separate commands for wheel up and down")
-        property bool internalChecked: (widgetData?.wheelMode || widgetMetadata?.wheelMode || "unified") === "separate"
+        property bool internalChecked: (widgetData?.wheelMode || widgetMetadata?.wheelMode) === "separate"
         checked: internalChecked
         onToggled: checked => {
                      internalChecked = checked;
@@ -201,7 +201,7 @@ ColumnLayout {
             label: I18n.tr("bar.widget-settings.custom-button.wheel.label")
             description: I18n.tr("bar.widget-settings.custom-button.wheel.description")
             placeholderText: I18n.tr("placeholders.enter-command")
-            text: widgetData?.wheelExec || widgetMetadata?.wheelExec || ""
+            text: widgetData?.wheelExec || widgetMetadata?.wheelExec
           }
 
           NToggle {
@@ -230,7 +230,7 @@ ColumnLayout {
               label: I18n.tr("bar.widget-settings.custom-button.wheel-up.label")
               description: I18n.tr("bar.widget-settings.custom-button.wheel-up.description")
               placeholderText: I18n.tr("placeholders.enter-command")
-              text: widgetData?.wheelUpExec || widgetMetadata?.wheelUpExec || ""
+              text: widgetData?.wheelUpExec || widgetMetadata?.wheelUpExec
             }
 
             NToggle {
@@ -240,7 +240,7 @@ ColumnLayout {
               Layout.bottomMargin: Style.marginS
               onEntered: TooltipService.show(wheelUpUpdateText, I18n.tr("bar.widget-settings.custom-button.wheel.update-text"), "auto")
               onExited: TooltipService.hide()
-              checked: (widgetData?.wheelUpUpdateText !== undefined) ? widgetData.wheelUpUpdateText : (widgetMetadata?.wheelUpUpdateText ?? false)
+              checked: (widgetData?.wheelUpUpdateText !== undefined) ? widgetData.wheelUpUpdateText : widgetMetadata?.wheelUpUpdateText
               onToggled: isChecked => checked = isChecked
             }
           }
@@ -254,7 +254,7 @@ ColumnLayout {
               label: I18n.tr("bar.widget-settings.custom-button.wheel-down.label")
               description: I18n.tr("bar.widget-settings.custom-button.wheel-down.description")
               placeholderText: I18n.tr("placeholders.enter-command")
-              text: widgetData?.wheelDownExec || widgetMetadata?.wheelDownExec || ""
+              text: widgetData?.wheelDownExec || widgetMetadata?.wheelDownExec
             }
 
             NToggle {
@@ -264,7 +264,7 @@ ColumnLayout {
               Layout.bottomMargin: Style.marginS
               onEntered: TooltipService.show(wheelDownUpdateText, I18n.tr("bar.widget-settings.custom-button.wheel.update-text"), "auto")
               onExited: TooltipService.hide()
-              checked: (widgetData?.wheelDownUpdateText !== undefined) ? widgetData.wheelDownUpdateText : (widgetMetadata?.wheelDownUpdateText ?? false)
+              checked: (widgetData?.wheelDownUpdateText !== undefined) ? widgetData.wheelDownUpdateText : widgetMetadata?.wheelDownUpdateText
               onToggled: isChecked => checked = isChecked
             }
           }
@@ -338,7 +338,7 @@ ColumnLayout {
         visible: !valueTextStream
         label: I18n.tr("bar.widget-settings.custom-button.refresh-interval.label")
         description: I18n.tr("bar.widget-settings.custom-button.refresh-interval.description")
-        placeholderText: String(widgetMetadata.textIntervalMs || 3000)
+        placeholderText: String(widgetMetadata.textIntervalMs)
         text: widgetData && widgetData.textIntervalMs !== undefined ? String(widgetData.textIntervalMs) : ""
       }
 

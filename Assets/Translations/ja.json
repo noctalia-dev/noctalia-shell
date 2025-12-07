@@ -139,21 +139,17 @@
           "label": "コマンド出力を表示",
           "stream-description": "継続的に実行するコマンドを入力します。"
         },
+        "dynamic-text": "動的テキスト",
         "hide-mode": {
-          "description": "コマンドが出力を持っていない場合のウィジェットの表示を制御します。",
-          "label": "非表示モード",
-          "expandWithOutput": "出力があるときに展開",
           "alwaysExpanded": "常に展開",
+          "description": "コマンドが出力を持っていない場合のウィジェットの表示を制御します。",
+          "expandWithOutput": "出力があるときに展開",
+          "label": "非表示モード",
           "maxTransparent": "最大展開だが透過"
         },
-        "dynamic-text": "動的テキスト",
         "icon": {
           "description": "ライブラリからアイコンを選択します。",
           "label": "アイコン"
-        },
-        "show-icon": {
-          "description": "ウィジェットのアイコンの表示を切り替えます。",
-          "label": "アイコンを表示"
         },
         "left-click": {
           "description": "ボタンを左クリックした際に実行するコマンド。",
@@ -185,6 +181,10 @@
           "description": "ボタンを右クリックした際に実行するコマンド。",
           "label": "右クリック",
           "update-text": "右クリック時に表示テキストを更新"
+        },
+        "show-icon": {
+          "description": "ウィジェットのアイコンの表示を切り替えます。",
+          "label": "アイコンを表示"
         },
         "text-stream": {
           "description": "コマンドからストリーミングされた行を、ボタン上のテキストとして表示します。",
@@ -344,6 +344,10 @@
         "only-same-output": {
           "description": "バーが配置されているディスプレイ上のアプリのみを表示します。",
           "label": "同じディスプレイのみ"
+        },
+        "show-pinned-apps": {
+          "description": "ドックからピン留めされたアプリをタスクバーに表示する。",
+          "label": "ピン留めされたアプリを表示"
         }
       },
       "taskbar-grouped": {
@@ -360,6 +364,10 @@
         "drawer-enabled": {
           "description": "有効にすると、ピン留めされていないトレイ項目をドロワーパネル内に表示します。\n無効にすると、すべての項目をインラインで表示します。",
           "label": "ドロワーを有効化"
+        },
+        "hide-passive": {
+          "description": "有効にすると、非アクティブなステータスのトレイアイコンは非表示になります。",
+          "label": "受動的なアイテムを隠す"
         }
       },
       "volume": {
@@ -532,11 +540,12 @@
       "misc": "その他",
       "network": "ネットワーク",
       "office": "オフィス",
+      "pinned": "ピン留め",
       "system": "システム",
       "webbrowser": "ウェブブラウザ"
     },
-    "pin": "ドックにピン留め",
-    "unpin": "ドックからピン留めを解除"
+    "pin": "ピン留め",
+    "unpin": "ピン留め解除"
   },
   "lock-screen": {
     "authenticating": "認証中...",
@@ -737,6 +746,9 @@
     "clipboard-loading": "クリップボード履歴を読み込み中...",
     "clipboard-loading-description": "お待ちください",
     "clipboard-search-description": "クリップボード履歴を検索",
+    "command": "コマンド",
+    "command-description": "シェルコマンドを実行する",
+    "command-name": "コマンド",
     "emoji": "絵文字選択",
     "emoji-loading": "絵文字を読み込み中...",
     "emoji-loading-description": "お待ちください",
@@ -1506,10 +1518,6 @@
           "description": "リスト形式の代わりに、グリッド（格子状）レイアウトで項目を表示します。",
           "label": "グリッド表示"
         },
-        "show-categories": {
-          "description": "アプリケーションをフィルタリングするためのカテゴリタブを表示します。",
-          "label": "カテゴリを表示"
-        },
         "position": {
           "description": "ランチャーパネルの表示位置を選択します。",
           "label": "表示位置"
@@ -1517,6 +1525,10 @@
         "section": {
           "description": "ランチャーの挙動と外観をカスタマイズします。",
           "label": "外観"
+        },
+        "show-categories": {
+          "description": "アプリケーションをフィルタリングするためのカテゴリタブを表示します。",
+          "label": "カテゴリを表示"
         },
         "sort-by-usage": {
           "description": "有効にすると、よく使うアプリがリストの上位に表示されます。",

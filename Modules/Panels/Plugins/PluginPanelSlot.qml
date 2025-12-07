@@ -23,6 +23,14 @@ SmartPanel {
   // Reference to the plugin content loader (set when panel content is created)
   property var contentLoader: null
 
+  // Pass through anchor properties from plugin panel content
+  panelAnchorHorizontalCenter: pluginInstance?.panelAnchorHorizontalCenter ?? false
+  panelAnchorVerticalCenter: pluginInstance?.panelAnchorVerticalCenter ?? false
+  panelAnchorTop: pluginInstance?.panelAnchorTop ?? false
+  panelAnchorBottom: pluginInstance?.panelAnchorBottom ?? false
+  panelAnchorLeft: pluginInstance?.panelAnchorLeft ?? false
+  panelAnchorRight: pluginInstance?.panelAnchorRight ?? false
+
   // Panel content is dynamically loaded
   panelContent: Component {
     Item {

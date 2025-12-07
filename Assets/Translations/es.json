@@ -139,21 +139,17 @@
           "label": "Mostrar salida de comando",
           "stream-description": "Introduce un comando para ejecutar continuamente."
         },
+        "dynamic-text": "Texto dinámico",
         "hide-mode": {
-          "description": "Controla la visibilidad del widget cuando el comando no tiene salida.",
-          "label": "Modo de ocultar",
-          "expandWithOutput": "Expandir cuando tiene salida",
           "alwaysExpanded": "Siempre expandido",
+          "description": "Controla la visibilidad del widget cuando el comando no tiene salida.",
+          "expandWithOutput": "Expandir cuando tiene salida",
+          "label": "Modo de ocultar",
           "maxTransparent": "Máximo expandido pero transparente"
         },
-        "dynamic-text": "Texto dinámico",
         "icon": {
           "description": "Selecciona un icono de la biblioteca.",
           "label": "Icono"
-        },
-        "show-icon": {
-          "description": "Alterna la visibilidad del icono del widget.",
-          "label": "Mostrar icono"
         },
         "left-click": {
           "description": "Comando a ejecutar cuando se hace clic izquierdo en el botón.",
@@ -185,6 +181,10 @@
           "description": "Comando a ejecutar cuando se hace clic derecho en el botón.",
           "label": "Clic derecho",
           "update-text": "Actualizar el texto mostrado al hacer clic derecho"
+        },
+        "show-icon": {
+          "description": "Alterna la visibilidad del icono del widget.",
+          "label": "Mostrar icono"
         },
         "text-stream": {
           "description": "Las líneas transmitidas desde el comando se mostrarán como texto en el botón.",
@@ -344,6 +344,10 @@
         "only-same-output": {
           "description": "Muestra solo las aplicaciones del resultado donde se encuentra la barra.",
           "label": "Solo de la misma salida"
+        },
+        "show-pinned-apps": {
+          "description": "Mostrar las aplicaciones ancladas desde el dock en la barra de tareas.",
+          "label": "Mostrar aplicaciones ancladas"
         }
       },
       "taskbar-grouped": {
@@ -360,6 +364,10 @@
         "drawer-enabled": {
           "description": "Cuando está habilitado, los elementos de la bandeja no anclados se muestran en un panel cajón. Cuando está deshabilitado, todos los elementos de la bandeja se muestran en línea.",
           "label": "Habilitar cajón"
+        },
+        "hide-passive": {
+          "description": "Cuando está activado, los elementos de la bandeja con estado Pasivo se ocultarán.",
+          "label": "Ocultar objetos pasivos"
         }
       },
       "volume": {
@@ -532,11 +540,12 @@
       "misc": "Varios",
       "network": "Red",
       "office": "Oficina",
+      "pinned": "Anclado",
       "system": "Sistema",
       "webbrowser": "Navegador web"
     },
-    "pin": "Anclar al dock",
-    "unpin": "Desanclar del dock"
+    "pin": "Anclar",
+    "unpin": "Desanclar"
   },
   "lock-screen": {
     "authenticating": "Autenticando...",
@@ -737,6 +746,9 @@
     "clipboard-loading": "Cargando historial del portapapeles...",
     "clipboard-loading-description": "Por favor espera",
     "clipboard-search-description": "Buscar en el historial del portapapeles",
+    "command": "Comando",
+    "command-description": "Ejecutar comandos de shell",
+    "command-name": "Comando",
     "emoji": "Selector de emojis",
     "emoji-loading": "Cargando emojis...",
     "emoji-loading-description": "Por favor espera",
@@ -1506,10 +1518,6 @@
           "description": "Mostrar elementos en una cuadrícula en lugar de una lista.",
           "label": "Vista de cuadrícula"
         },
-        "show-categories": {
-          "description": "Mostrar pestañas de categorías para filtrar aplicaciones.",
-          "label": "Mostrar categorías"
-        },
         "position": {
           "description": "Elige dónde aparece el panel del lanzador.",
           "label": "Posición"
@@ -1517,6 +1525,10 @@
         "section": {
           "description": "Personaliza el comportamiento y la apariencia del lanzador.",
           "label": "Apariencia"
+        },
+        "show-categories": {
+          "description": "Mostrar pestañas de categorías para filtrar aplicaciones.",
+          "label": "Mostrar categorías"
         },
         "sort-by-usage": {
           "description": "Cuando está activado, las aplicaciones más utilizadas aparecen primero en la lista.",

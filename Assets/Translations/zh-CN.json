@@ -139,21 +139,17 @@
           "label": "显示命令输出",
           "stream-description": "输入一个要持续运行的命令。"
         },
+        "dynamic-text": "动态文本",
         "hide-mode": {
-          "description": "控制命令无输出时小部件的可见性。",
-          "label": "隐藏模式",
-          "expandWithOutput": "有输出时展开",
           "alwaysExpanded": "始终展开",
+          "description": "控制命令无输出时小部件的可见性。",
+          "expandWithOutput": "有输出时展开",
+          "label": "隐藏模式",
           "maxTransparent": "最大展开但透明"
         },
-        "dynamic-text": "动态文本",
         "icon": {
           "description": "从库中选择图标。",
           "label": "图标"
-        },
-        "show-icon": {
-          "description": "切换小部件图标的可见性。",
-          "label": "显示图标"
         },
         "left-click": {
           "description": "左键点击按钮时执行的命令。",
@@ -185,6 +181,10 @@
           "description": "右键点击按钮时执行的命令。",
           "label": "右键点击",
           "update-text": "右键单击时更新显示的文本"
+        },
+        "show-icon": {
+          "description": "切换小部件图标的可见性。",
+          "label": "显示图标"
         },
         "text-stream": {
           "description": "来自命令的流式输出行将作为文本显示在按钮上。",
@@ -344,6 +344,10 @@
         "only-same-output": {
           "description": "仅显示任务栏所在屏幕上的应用程序",
           "label": "仅显示同屏幕"
+        },
+        "show-pinned-apps": {
+          "description": "在任务栏中显示 Dock 上固定的应用。",
+          "label": "显示已置顶的应用"
         }
       },
       "taskbar-grouped": {
@@ -360,6 +364,10 @@
         "drawer-enabled": {
           "description": "启用时，未固定的托盘项显示在抽屉面板中。禁用时，所有托盘项都内联显示。",
           "label": "启用抽屉"
+        },
+        "hide-passive": {
+          "description": "启用后，将隐藏状态为“被动”的托盘图标。",
+          "label": "隐藏被动物品"
         }
       },
       "volume": {
@@ -532,11 +540,12 @@
       "misc": "杂项",
       "network": "网络",
       "office": "办公室",
+      "pinned": "已固定",
       "system": "系统",
       "webbrowser": "网页浏览器"
     },
-    "pin": "固定到 Dock",
-    "unpin": "从 Dock 取消固定"
+    "pin": "固定",
+    "unpin": "取消固定"
   },
   "lock-screen": {
     "authenticating": "正在验证...",
@@ -737,6 +746,9 @@
     "clipboard-loading": "正在加载剪贴板历史记录...",
     "clipboard-loading-description": "请稍候",
     "clipboard-search-description": "搜索剪贴板历史记录",
+    "command": "命令",
+    "command-description": "运行 shell 命令",
+    "command-name": "命令",
     "emoji": "表情符号选择器",
     "emoji-loading": "正在加载表情符号...",
     "emoji-loading-description": "请稍候",
@@ -1506,10 +1518,6 @@
           "description": "以网格布局而非列表显示项目。",
           "label": "网格视图"
         },
-        "show-categories": {
-          "description": "显示用于筛选应用程序的类别标签。",
-          "label": "显示类别"
-        },
         "position": {
           "description": "选择启动器面板出现的位置。",
           "label": "位置"
@@ -1517,6 +1525,10 @@
         "section": {
           "description": "自定义启动器的行为和外观。",
           "label": "外观"
+        },
+        "show-categories": {
+          "description": "显示用于筛选应用程序的类别标签。",
+          "label": "显示类别"
         },
         "sort-by-usage": {
           "description": "启用后，经常启动的应用程序将显示在列表首位。",

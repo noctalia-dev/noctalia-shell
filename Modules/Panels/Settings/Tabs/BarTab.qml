@@ -181,7 +181,7 @@ ColumnLayout {
           stepSize: 0.01
           value: Settings.data.bar.marginHorizontal
           onMoved: value => Settings.data.bar.marginHorizontal = value
-          text: Math.round(Settings.data.bar.marginHorizontal * 100) + "%"
+          text: Math.ceil(Settings.data.bar.marginHorizontal * 100) + "%"
         }
       }
     }

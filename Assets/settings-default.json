@@ -378,9 +378,6 @@
     "manualSunrise": "06:30",
     "manualSunset": "18:30"
   },
-  "changelog": {
-    "lastSeenVersion": ""
-  },
   "hooks": {
     "enabled": false,
     "wallpaperChange": "",

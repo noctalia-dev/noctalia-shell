@@ -25,7 +25,7 @@ SmartPanel {
   // Read widget settings for reactivity
   readonly property var widgetSettings: {
     // Reference settingsVersion to force recalculation when it changes
-    var _ = root.settingsVersion;
+    var settingsVersionRef = root.settingsVersion;
     if (widgetSection === "" || widgetIndex < 0)
       return {};
     var widgets = Settings.data.bar.widgets[widgetSection];
@@ -39,6 +39,7 @@ SmartPanel {
 
   // Read pinned list directly from settings for reactivity
   readonly property var pinnedList: widgetSettings.pinned || []
+  readonly property bool hidePassive: widgetSettings.hidePassive !== undefined ? widgetSettings.hidePassive : true
 
   function wildCardMatch(str, rule) {
     if (!str || !rule)
@@ -72,9 +73,20 @@ SmartPanel {
   // Dynamic sizing based on item count
   // Show items that are NOT pinned (unpinned items go to drawer)
   readonly property var trayValuesAll: (SystemTray.items && SystemTray.items.values) ? SystemTray.items.values : []
-  readonly property var trayValues: trayValuesAll.filter(function (it) {
-    return !root.isPinned(it);
-  })
+  // Explicitly reference hidePassive to ensure reactivity
+  readonly property var trayValues: {
+    // Reference hidePassive to ensure dependency tracking
+    var hidePassiveRef = root.hidePassive;
+    return trayValuesAll.filter(function (it) {
+      if (!it)
+        return false;
+      // Filter out passive items if hidePassive is enabled
+      if (root.hidePassive && it.status !== undefined && (it.status === SystemTray.Passive || it.status === 0)) {
+        return false;
+      }
+      return !root.isPinned(it);
+    });
+  }
   readonly property int itemCount: trayValues.length
   readonly property int maxColumns: 8
   readonly property real cellSize: Math.round(Style.capsuleHeight * 0.65)
@@ -111,7 +123,7 @@ SmartPanel {
   // Get the trayMenu window and loader from PanelService (reactive to trigger changes)
   readonly property var popupMenuWindow: {
     // Reference trigger to force re-evaluation
-    var _ = popupMenuUpdateTrigger;
+    var popupMenuUpdateTriggerRef = popupMenuUpdateTrigger;
     return PanelService.getPopupMenuWindow(screen);
   }
 

@@ -67,28 +67,28 @@ Variants {
       readonly property int barOffsetTop: {
         if (barPos !== "top")
           return 0;
-        const floatMarginV = isFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0;
+        const floatMarginV = isFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0;
         return Style.barHeight + floatMarginV;
       }
 
       readonly property int barOffsetBottom: {
         if (barPos !== "bottom")
           return 0;
-        const floatMarginV = isFloating ? Settings.data.bar.marginVertical * Style.marginXL : 0;
+        const floatMarginV = isFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0;
         return Style.barHeight + floatMarginV;
       }
 
       readonly property int barOffsetLeft: {
         if (barPos !== "left")
           return 0;
-        const floatMarginH = isFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0;
+        const floatMarginH = isFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0;
         return Style.barHeight + floatMarginH;
       }
 
       readonly property int barOffsetRight: {
         if (barPos !== "right")
           return 0;
-        const floatMarginH = isFloating ? Settings.data.bar.marginHorizontal * Style.marginXL : 0;
+        const floatMarginH = isFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0;
         return Style.barHeight + floatMarginH;
       }
 

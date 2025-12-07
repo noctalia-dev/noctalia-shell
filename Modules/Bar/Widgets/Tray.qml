@@ -21,7 +21,7 @@ Rectangle {
   // Get shared popup menu window from PanelService (reactive to trigger changes)
   readonly property var popupMenuWindow: {
     // Reference trigger to force re-evaluation
-    var _ = popupMenuUpdateTrigger;
+    var popupMenuUpdateTriggerRef = popupMenuUpdateTrigger;
     return PanelService.getPopupMenuWindow(screen);
   }
 
@@ -61,18 +61,53 @@ Rectangle {
   property list<string> blacklist: widgetSettings.blacklist || widgetMetadata.blacklist || [] // Read from settings
   property list<string> pinned: widgetSettings.pinned || widgetMetadata.pinned || [] // Pinned items (shown inline)
   property bool drawerEnabled: widgetSettings.drawerEnabled !== undefined ? widgetSettings.drawerEnabled : (widgetMetadata.drawerEnabled !== undefined ? widgetMetadata.drawerEnabled : true) // Enable drawer panel
+  property bool hidePassive: widgetSettings.hidePassive !== undefined ? widgetSettings.hidePassive : true // Hide passive status items
   property var filteredItems: [] // Items to show inline (pinned)
   property var dropdownItems: [] // Items to show in drawer (unpinned)
 
-  // Debounce timer for updateFilteredItems to prevent excessive calls
-  // when multiple events (e.g., SystemTray changes, settings saves)
-  // trigger it in rapid succession, reducing redundant processing.
   Timer {
     id: updateDebounceTimer
     interval: 100 // milliseconds
     running: false
     repeat: false
     onTriggered: _performFilteredItemsUpdate()
+  }
+
+  readonly property var statusSignature: {
+    if (!SystemTray.items || !SystemTray.items.values) {
+      return "";
+    }
+    var sig = "";
+    var items = SystemTray.items.values;
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      if (item) {
+        // Direct property access creates reactive binding
+        var s = item.status;
+        sig += (item.id || i) + ":" + (s !== undefined ? s : -1);
+      }
+    }
+    // Trigger update when signature changes (status changed)
+    if (root.hidePassive) {
+      Qt.callLater(root.updateFilteredItems);
+    }
+    return sig;
+  }
+  Repeater {
+    id: statusConnectionsRepeater
+    model: SystemTray.items && SystemTray.items.values ? SystemTray.items.values : []
+
+    delegate: Item {
+      Connections {
+        target: modelData
+        enabled: modelData !== null && modelData !== undefined
+        function onStatusChanged() {
+          if (root.hidePassive) {
+            root.updateFilteredItems();
+          }
+        }
+      }
+    }
   }
 
   function _performFilteredItemsUpdate() {
@@ -86,6 +121,11 @@ Rectangle {
         }
 
         const title = item.tooltipTitle || item.name || item.id || "";
+
+        // Skip passive items if hidePassive is enabled
+        if (root.hidePassive && item.status !== undefined && (item.status === SystemTray.Passive || item.status === 0)) {
+          continue;
+        }
 
         // Check if blacklisted
         let isBlacklisted = false;
@@ -159,7 +199,6 @@ Rectangle {
     if (!str || !rule) {
       return false;
     }
-    //Logger.d("Tray", "wildCardMatch - Input str:", str, "rule:", rule)
 
     // First, convert '*' to a placeholder to preserve it, then escape other special regex characters
     // Use a unique placeholder that won't appear in normal strings
@@ -172,11 +211,9 @@ Rectangle {
     // Add ^ and $ to match the entire string
     pattern = '^' + pattern + '$';
 
-    //Logger.d("Tray", "wildCardMatch - Generated pattern:", pattern)
     try {
       const regex = new RegExp(pattern, 'i');
       // 'i' for case-insensitive
-      //Logger.d("Tray", "wildCardMatch - Regex test result:", regex.test(str))
       return regex.test(str);
     } catch (e) {
       Logger.w("Tray", "Invalid regex pattern for wildcard match:", rule, e.message);
@@ -211,6 +248,7 @@ Rectangle {
     target: SystemTray.items
     function onValuesChanged() {
       root.updateFilteredItems();
+      // Repeater will automatically update when items change
     }
   }
 
@@ -221,10 +259,14 @@ Rectangle {
     }
   }
 
+  // Watch for hidePassive changes to update filtering immediately
+  onHidePassiveChanged: {
+    root.updateFilteredItems();
+  }
+
   Component.onCompleted: {
     root.updateFilteredItems(); // Initial update
   }
-
   visible: filteredItems.length > 0 || dropdownItems.length > 0
   implicitWidth: isVertical ? Style.capsuleHeight : Math.round(trayFlow.implicitWidth)
   implicitHeight: isVertical ? Math.round(trayFlow.implicitHeight) : Style.capsuleHeight
