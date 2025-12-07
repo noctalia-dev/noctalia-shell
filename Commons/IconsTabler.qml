@@ -129,6 +129,8 @@ Singleton {
     "settings-system-monitor": "activity",
     "bluetooth": "bluetooth",
     "bt-device-generic": "bluetooth",
+    "bt-device-keyboard": "keyboard",
+    "bt-device-mouse": "mouse",
     "bt-device-gamepad": "device-gamepad-2",
     "bt-device-microphone": "microphone",
     "bt-device-headset": "headset",
