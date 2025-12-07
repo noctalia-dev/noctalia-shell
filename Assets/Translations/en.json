@@ -1631,9 +1631,25 @@
         "description": "Automatically lock the screen when suspending the system.",
         "label": "Lock on suspend"
       },
+      "show-logout": {
+        "description": "Show the option 'logout' in the energy actions.",
+        "label": "Show logout"
+      },
+      "show-suspend": {
+        "description": "Show the option 'suspend' in the energy actions.",
+        "label": "Show suspend"
+      },
       "show-hibernate": {
         "description": "Show the option 'hibernate' in the energy actions.",
         "label": "Show hibernate"
+      },
+      "show-reboot": {
+        "description": "Show the option 'reboot' in the energy actions.",
+        "label": "Show reboot"
+      },
+      "show-shutdown": {
+        "description": "Show the option 'shutdown' in the energy actions.",
+        "label": "Show shutdown"
       },
       "title": "Lock Screen"
     },
