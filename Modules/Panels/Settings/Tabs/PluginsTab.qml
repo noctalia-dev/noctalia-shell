@@ -347,43 +347,43 @@ ColumnLayout {
     spacing: Style.marginM
     Layout.fillWidth: true
 
-    NTabBar {
-      id: filterTabBar
+    RowLayout {
+      spacing: 1
       Layout.fillWidth: true
-      currentIndex: 0
-      onCurrentIndexChanged: {
-        if (currentIndex === 0)
-          pluginFilter = "all";
-        else if (currentIndex === 1)
-          pluginFilter = "downloaded";
-        else if (currentIndex === 2)
-          pluginFilter = "notDownloaded";
-      }
-      spacing: Style.marginXS
 
-      NTabButton {
+      NButton {
         text: I18n.tr("settings.plugins.filter.all")
-        tabIndex: 0
-        checked: pluginFilter === "all"
+        Layout.fillWidth: true
+        Layout.preferredWidth: 1
+        backgroundColor: pluginFilter === "all" ? Color.mPrimary : Color.mSurface
+        textColor: pluginFilter === "all" ? Color.mOnPrimary : Color.mOnSurfaceVariant
+        onClicked: pluginFilter = "all"
       }
 
-      NTabButton {
+      NButton {
         text: I18n.tr("settings.plugins.filter.downloaded")
-        tabIndex: 1
-        checked: pluginFilter === "downloaded"
+        Layout.fillWidth: true
+        Layout.preferredWidth: 1
+        backgroundColor: pluginFilter === "downloaded" ? Color.mPrimary : Color.mSurface
+        textColor: pluginFilter === "downloaded" ? Color.mOnPrimary : Color.mOnSurfaceVariant
+        onClicked: pluginFilter = "downloaded"
       }
 
-      NTabButton {
+      NButton {
         text: I18n.tr("settings.plugins.filter.not-downloaded")
-        tabIndex: 2
-        checked: pluginFilter === "notDownloaded"
+        Layout.fillWidth: true
+        Layout.preferredWidth: 1
+        backgroundColor: pluginFilter === "notDownloaded" ? Color.mPrimary : Color.mSurface
+        textColor: pluginFilter === "notDownloaded" ? Color.mOnPrimary : Color.mOnSurfaceVariant
+        onClicked: pluginFilter = "notDownloaded"
       }
     }
 
     NIconButton {
       icon: "refresh"
       tooltipText: I18n.tr("settings.plugins.refresh.tooltip")
-      baseSize: Style.baseWidgetSize * 0.9
+      baseSize: Style.baseWidgetSize * 1.1
+      Layout.alignment: Qt.AlignVCenter
       onClicked: {
         PluginService.refreshAvailablePlugins();
         checkUpdatesTimer.restart();
