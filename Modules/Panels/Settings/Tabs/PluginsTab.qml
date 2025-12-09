@@ -338,6 +338,7 @@ ColumnLayout {
           addSourceDialog.open();
         }
         Layout.fillWidth: true
+        Layout.maximumWidth: 490 * Style.uiScaleRatio
       }
     }
   }
@@ -373,6 +374,7 @@ ColumnLayout {
         text: I18n.tr("settings.plugins.filter.not-downloaded")
         Layout.fillWidth: true
         Layout.preferredWidth: 1
+        height: Style.baseWidgetSize * 1.2 * Style.uiScaleRatio
         backgroundColor: pluginFilter === "notDownloaded" ? Color.mPrimary : Color.mSurface
         textColor: pluginFilter === "notDownloaded" ? Color.mOnPrimary : Color.mOnSurfaceVariant
         onClicked: pluginFilter = "notDownloaded"
@@ -382,7 +384,7 @@ ColumnLayout {
     NIconButton {
       icon: "refresh"
       tooltipText: I18n.tr("settings.plugins.refresh.tooltip")
-      baseSize: Style.baseWidgetSize * 1.1
+      baseSize: Style.baseWidgetSize
       Layout.alignment: Qt.AlignVCenter
       onClicked: {
         PluginService.refreshAvailablePlugins();

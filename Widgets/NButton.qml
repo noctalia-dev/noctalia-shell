@@ -34,7 +34,7 @@ Rectangle {
 
   // Dimensions
   implicitWidth: contentRow.implicitWidth + (Style.marginL * 2)
-  implicitHeight: Math.max(Style.baseWidgetSize, contentRow.implicitHeight + (Style.marginM))
+  implicitHeight: Math.max(Style.baseWidgetSize * Style.uiScaleRatio, contentRow.implicitHeight + (Style.marginM))
 
   // Appearance
   radius: root.buttonRadius
