@@ -451,12 +451,15 @@ ColumnLayout {
           ColumnLayout {
             spacing: 2
             Layout.fillWidth: true
+            Layout.preferredWidth: modelData.downloaded ? parent.width * 0.6 : parent.width * 0.7
 
             NText {
               text: modelData.name
               font.weight: Font.Medium
               color: Color.mOnSurface
               Layout.fillWidth: true
+              elide: Text.ElideRight
+              maximumLineCount: 1
             }
 
             NText {
@@ -465,6 +468,8 @@ ColumnLayout {
               color: Color.mOnSurfaceVariant
               wrapMode: Text.WordWrap
               Layout.fillWidth: true
+              elide: Text.ElideRight
+              maximumLineCount: 2
             }
 
             RowLayout {
@@ -502,25 +507,28 @@ ColumnLayout {
             }
           }
 
-          // Downloaded indicator
-          NIcon {
-            icon: "circle-check"
-            pointSize: Style.fontSizeXL
-            color: Color.mPrimary
-            visible: modelData.downloaded === true
-          }
+          RowLayout {
+            spacing: Style.marginXS
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
-          // Install/Uninstall button
-          NIconButton {
-            icon: modelData.downloaded ? "trash" : "download"
-            baseSize: Style.baseWidgetSize * 0.9
-            tooltipText: modelData.downloaded ? I18n.tr("settings.plugins.uninstall") : I18n.tr("settings.plugins.install")
-            onClicked: {
-              if (modelData.downloaded) {
-                uninstallDialog.pluginToUninstall = modelData;
-                uninstallDialog.open();
-              } else {
-                installPlugin(modelData);
+            NIcon {
+              icon: "circle-check"
+              pointSize: Style.fontSizeM
+              color: Color.mPrimary
+              visible: modelData.downloaded === true
+            }
+
+            NIconButton {
+              icon: modelData.downloaded ? "trash" : "download"
+              baseSize: Style.baseWidgetSize * 0.8
+              tooltipText: modelData.downloaded ? I18n.tr("settings.plugins.uninstall") : I18n.tr("settings.plugins.install")
+              onClicked: {
+                if (modelData.downloaded) {
+                  uninstallDialog.pluginToUninstall = modelData;
+                  uninstallDialog.open();
+                } else {
+                  installPlugin(modelData);
+                }
               }
             }
           }
