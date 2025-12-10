@@ -108,14 +108,20 @@ Rectangle {
   }
 
   TextMetrics {
-    id: networkMetrics
+    id: downloadMetrics
     font.family: Settings.data.ui.fontFixed
     font.weight: Style.fontWeightMedium
     font.pointSize: textSize * Settings.data.ui.fontFixedScale
-    text: "99.9Gbit" // Use the longest possible string for measurement
+    text: SystemStatService.formatSpeed(SystemStatService.rxSpeed) + "  "
   }
 
-  readonly property int networkTextWidth: Math.ceil(networkMetrics.boundingRect.width + 2)
+  TextMetrics {
+    id: uploadMetrics
+    font.family: Settings.data.ui.fontFixed
+    font.weight: Style.fontWeightMedium
+    font.pointSize: textSize * Settings.data.ui.fontFixedScale
+    text: SystemStatService.formatSpeed(SystemStatService.txSpeed) + "  "
+  }
 
   anchors.centerIn: parent
   implicitWidth: isVertical ? Style.capsuleHeight : Math.round(mainGrid.implicitWidth + Style.marginM * 2)
@@ -428,7 +434,7 @@ Rectangle {
 
     // Network Download Speed Component
     Item {
-      Layout.preferredWidth: isVertical ? root.width : iconSize + networkTextWidth + (Style.marginXXS)
+      Layout.preferredWidth: isVertical ? root.width : iconSize + Math.ceil(downloadMetrics.boundingRect.width) + (Style.marginXXS)
       Layout.preferredHeight: Style.capsuleHeight
       Layout.alignment: isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
       visible: showNetworkStats
@@ -465,7 +471,7 @@ Rectangle {
           applyUiScale: false
           font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
-          Layout.preferredWidth: isVertical ? -1 : networkTextWidth
+          Layout.preferredWidth: isVertical ? -1 : Math.ceil(downloadMetrics.boundingRect.width)
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
           color: textColor
@@ -478,7 +484,7 @@ Rectangle {
 
     // Network Upload Speed Component
     Item {
-      Layout.preferredWidth: isVertical ? root.width : iconSize + networkTextWidth + (Style.marginXXS)
+      Layout.preferredWidth: isVertical ? root.width : iconSize + Math.ceil(uploadMetrics.boundingRect.width) + (Style.marginXXS)
       Layout.preferredHeight: Style.capsuleHeight
       Layout.alignment: isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
       visible: showNetworkStats
@@ -515,7 +521,7 @@ Rectangle {
           applyUiScale: false
           font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
-          Layout.preferredWidth: isVertical ? -1 : networkTextWidth
+          Layout.preferredWidth: isVertical ? -1 : Math.ceil(uploadMetrics.boundingRect.width)
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
           color: textColor
