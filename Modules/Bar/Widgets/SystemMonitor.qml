@@ -107,6 +107,16 @@ Rectangle {
     text: "99.9K" // Longest value part of network speed
   }
 
+  TextMetrics {
+    id: networkMetrics
+    font.family: Settings.data.ui.fontFixed
+    font.weight: Style.fontWeightMedium
+    font.pointSize: textSize * Settings.data.ui.fontFixedScale
+    text: "999GB" // Use the longest possible network speed string for measurement
+  }
+
+  readonly property int networkTextWidth: Math.ceil(networkMetrics.boundingRect.width + 3)
+
   anchors.centerIn: parent
   implicitWidth: isVertical ? Style.capsuleHeight : Math.round(mainGrid.implicitWidth + Style.marginM * 2)
   implicitHeight: isVertical ? Math.round(mainGrid.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
@@ -418,7 +428,7 @@ Rectangle {
 
     // Network Download Speed Component
     Item {
-      Layout.preferredWidth: isVertical ? root.width : iconSize + memTextWidth + (Style.marginXXS)
+      Layout.preferredWidth: isVertical ? root.width : iconSize + networkTextWidth + (Style.marginXXS)
       Layout.preferredHeight: Style.capsuleHeight
       Layout.alignment: isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
       visible: showNetworkStats
@@ -455,7 +465,7 @@ Rectangle {
           applyUiScale: false
           font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
-          Layout.preferredWidth: isVertical ? -1 : memTextWidth
+          Layout.preferredWidth: isVertical ? -1 : networkTextWidth
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
           color: textColor
@@ -468,7 +478,7 @@ Rectangle {
 
     // Network Upload Speed Component
     Item {
-      Layout.preferredWidth: isVertical ? root.width : iconSize + memTextWidth + (Style.marginXXS)
+      Layout.preferredWidth: isVertical ? root.width : iconSize + networkTextWidth + (Style.marginXXS)
       Layout.preferredHeight: Style.capsuleHeight
       Layout.alignment: isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
       visible: showNetworkStats
@@ -505,7 +515,7 @@ Rectangle {
           applyUiScale: false
           font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
-          Layout.preferredWidth: isVertical ? -1 : memTextWidth
+          Layout.preferredWidth: isVertical ? -1 : networkTextWidth
           horizontalAlignment: isVertical ? Text.AlignHCenter : Text.AlignRight
           verticalAlignment: Text.AlignVCenter
           color: textColor
