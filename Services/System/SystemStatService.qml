@@ -389,17 +389,18 @@ Singleton {
   // -------------------------------------------------------
   // Helper function to format network speeds
   function formatSpeed(bytesPerSecond) {
-    if (bytesPerSecond < 1024 * 1024) {
-      const kb = bytesPerSecond / 1024;
-      if (kb < 10) {
-        return kb.toFixed(1) + "KB";
+    const bitsPerSecond = bytesPerSecond * 8;
+    if (bitsPerSecond < 1000 * 1000) {
+      const kbit = bitsPerSecond / 1000;
+      if (kbit < 10) {
+        return kbit.toFixed(1) + "Kbit";
       } else {
-        return Math.round(kb) + "KB";
+        return Math.round(kbit) + "Kbit";
       }
-    } else if (bytesPerSecond < 1024 * 1024 * 1024) {
-      return (bytesPerSecond / (1024 * 1024)).toFixed(1) + "MB";
+    } else if (bitsPerSecond < 1000 * 1000 * 1000) {
+      return (bitsPerSecond / (1000 * 1000)).toFixed(1) + "Mbit";
     } else {
-      return (bytesPerSecond / (1024 * 1024 * 1024)).toFixed(1) + "GB";
+      return (bitsPerSecond / (1000 * 1000 * 1000)).toFixed(1) + "Gbit";
     }
   }
 
@@ -408,16 +409,17 @@ Singleton {
   function formatCompactSpeed(bytesPerSecond) {
     if (!bytesPerSecond || bytesPerSecond <= 0)
       return "0";
+    const bitsPerSecond = bytesPerSecond * 8;
     const units = ["", "K", "M", "G"];
-    let value = bytesPerSecond;
+    let value = bitsPerSecond;
     let unitIndex = 0;
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value = value / 1024.0;
+    while (value >= 1000 && unitIndex < units.length - 1) {
+      value = value / 1000.0;
       unitIndex++;
     }
     // Promote at ~100 of current unit (e.g., 100k -> ~0.1M shown as 0.1M or 0M if rounded)
     if (unitIndex < units.length - 1 && value >= 100) {
-      value = value / 1024.0;
+      value = value / 1000.0;
       unitIndex++;
     }
     const display = Math.round(value).toString();
