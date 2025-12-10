@@ -197,7 +197,7 @@ Singleton {
     let script = `cat > '${pathEsc}' << '${delimiter}'\n${content}\n${delimiter}\n`;
     script += `NOCTALIA_WP_PATH=$(cat << '${wpDelimiter}'\n${wallpaper}\n${wpDelimiter}\n)\n`;
     
-    // Check if wallpaper is a video file, extract frame if needed (optimized)
+    // Check if wallpaper is a video file, extract frame if needed
     script += `if [[ "$NOCTALIA_WP_PATH" =~ \\.mp4$ ]]; then\n`;
     script += `  NOCTALIA_WP_TEMP="${Settings.cacheDir}video-frame-$(basename "$NOCTALIA_WP_PATH" .mp4).jpg"\n`;
     script += `  if [ ! -f "$NOCTALIA_WP_TEMP" ] || [ "$NOCTALIA_WP_PATH" -nt "$NOCTALIA_WP_TEMP" ]; then\n`;

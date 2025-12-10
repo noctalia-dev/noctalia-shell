@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
 import QtQuick.Layouts
+import QtMultimedia
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pam
@@ -130,15 +131,63 @@ Loader {
             property string currentLayout: KeyboardLayoutService.currentLayout
           }
 
+          // Helper function to check if wallpaper is a video
+          function isVideoWallpaper(path) {
+            if (!path)
+              return false;
+            const pathStr = path.toString().toLowerCase();
+            return pathStr.endsWith(".mp4");
+          }
+
+          readonly property string wallpaperSource: screen ? WallpaperService.getWallpaper(screen.name) : ""
+          readonly property bool isVideo: isVideoWallpaper(wallpaperSource)
+
+          // Image wallpaper
           Image {
             id: lockBgImage
             anchors.fill: parent
             fillMode: Image.PreserveAspectCrop
-            source: screen ? WallpaperService.getWallpaper(screen.name) : ""
+            source: isVideo ? "" : wallpaperSource
             cache: true
             smooth: true
             mipmap: false
             antialiasing: true
+            visible: !isVideo
+          }
+
+          // Video wallpaper
+          MediaPlayer {
+            id: lockVideoPlayer
+            source: isVideo ? wallpaperSource : ""
+            loops: MediaPlayer.Infinite
+            audioOutput: AudioOutput {
+              muted: true
+            }
+            videoOutput: lockVideoOutput
+            Component.onCompleted: {
+              if (isVideo) {
+                play();
+              }
+            }
+          }
+          
+          Connections {
+            target: lockVideoPlayer
+            function onSourceChanged() {
+              if (isVideo && lockVideoPlayer.source !== "") {
+                lockVideoPlayer.play();
+              } else {
+                lockVideoPlayer.stop();
+              }
+            }
+          }
+
+          VideoOutput {
+            id: lockVideoOutput
+            anchors.fill: parent
+            visible: isVideo
+            layer.enabled: true
+            layer.smooth: true
           }
 
           Rectangle {
