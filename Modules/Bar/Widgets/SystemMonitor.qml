@@ -112,7 +112,7 @@ Rectangle {
     font.family: Settings.data.ui.fontFixed
     font.weight: Style.fontWeightMedium
     font.pointSize: textSize * Settings.data.ui.fontFixedScale
-    text: "999.9Gbit" // Use the longest possible string for measurement
+    text: "9.9Gbit" // Use the longest possible string for measurement
   }
 
   readonly property int networkTextWidth: Math.ceil(networkMetrics.boundingRect.width + 3)
