@@ -104,7 +104,7 @@ Rectangle {
     font.family: Settings.data.ui.fontFixed
     font.weight: Style.fontWeightMedium
     font.pointSize: textSize * Settings.data.ui.fontFixedScale
-    text: "99.9K" // Longest value part of network speed
+    text: "99.9K" // Used for memory usage display (e.g., "99.9K", "99.9M", "99.9G")
   }
 
   TextMetrics {
@@ -112,10 +112,10 @@ Rectangle {
     font.family: Settings.data.ui.fontFixed
     font.weight: Style.fontWeightMedium
     font.pointSize: textSize * Settings.data.ui.fontFixedScale
-    text: "999Gbit"
+    text: "999.9Gbit" // Use the longest possible string for measurement
   }
 
-  readonly property int networkTextWidth: Math.ceil(networkMetrics.boundingRect.width + 4)
+  readonly property int networkTextWidth: Math.ceil(networkMetrics.boundingRect.width + 3)
 
   anchors.centerIn: parent
   implicitWidth: isVertical ? Style.capsuleHeight : Math.round(mainGrid.implicitWidth + Style.marginM * 2)
