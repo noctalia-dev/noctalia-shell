@@ -112,10 +112,10 @@ Rectangle {
     font.family: Settings.data.ui.fontFixed
     font.weight: Style.fontWeightMedium
     font.pointSize: textSize * Settings.data.ui.fontFixedScale
-    text: "9.9Gbit" // Use the longest possible string for measurement
+    text: "99.9Gbit" // Use the longest possible string for measurement
   }
 
-  readonly property int networkTextWidth: Math.ceil(networkMetrics.boundingRect.width + 3)
+  readonly property int networkTextWidth: Math.ceil(networkMetrics.boundingRect.width + 2)
 
   anchors.centerIn: parent
   implicitWidth: isVertical ? Style.capsuleHeight : Math.round(mainGrid.implicitWidth + Style.marginM * 2)
