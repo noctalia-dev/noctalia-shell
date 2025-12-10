@@ -196,7 +196,17 @@ Singleton {
     // Use heredoc for wallpaper path to avoid all escaping issues
     let script = `cat > '${pathEsc}' << '${delimiter}'\n${content}\n${delimiter}\n`;
     script += `NOCTALIA_WP_PATH=$(cat << '${wpDelimiter}'\n${wallpaper}\n${wpDelimiter}\n)\n`;
-    script += `matugen image "$NOCTALIA_WP_PATH" --config '${pathEsc}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}`;
+    
+    // Check if wallpaper is a video file, extract frame if needed
+    script += `if [[ "$NOCTALIA_WP_PATH" =~ \\.mp4$ ]]; then\n`;
+    script += `  NOCTALIA_WP_TEMP="${Settings.cacheDir}video-frame-$(basename "$NOCTALIA_WP_PATH" .mp4).jpg"\n`;
+    script += `  ffmpeg -y -i "$NOCTALIA_WP_PATH" -vframes 1 -q:v 2 "$NOCTALIA_WP_TEMP" 2>/dev/null\n`;
+    script += `  NOCTALIA_WP_SOURCE="$NOCTALIA_WP_TEMP"\n`;
+    script += `else\n`;
+    script += `  NOCTALIA_WP_SOURCE="$NOCTALIA_WP_PATH"\n`;
+    script += `fi\n`;
+    
+    script += `matugen image "$NOCTALIA_WP_SOURCE" --config '${pathEsc}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}`;
     script += buildUserTemplateCommand("$NOCTALIA_WP_PATH", mode);
 
     return script + "\n";

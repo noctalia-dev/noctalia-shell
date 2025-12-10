@@ -1,4 +1,5 @@
 import QtQuick
+import QtMultimedia
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
@@ -41,6 +42,13 @@ Variants {
       // Used to debounce wallpaper changes
       property string futureWallpaper: ""
 
+      // Track current sources for video detection
+      property string currentSource: ""
+      property string nextSource: ""
+      
+      // Track which video player is currently active (true = currentVideoPlayer, false = nextVideoPlayer)
+      property bool usingPrimaryVideoPlayer: true
+
       // Fillmode default is "crop"
       property real fillMode: WallpaperService.getFillModeUniform()
       property vector4d fillColor: Qt.vector4d(Settings.data.wallpaper.fillColor.r, Settings.data.wallpaper.fillColor.g, Settings.data.wallpaper.fillColor.b, 1.0)
@@ -53,6 +61,14 @@ Variants {
         shaderLoader.active = false;
         currentWallpaper.source = "";
         nextWallpaper.source = "";
+        currentSource = "";
+        nextSource = "";
+        currentVideoPlayer.waitingForTransition = false;
+        currentVideoPlayer.stop();
+        currentVideoPlayer.source = "";
+        nextVideoPlayer.waitingForTransition = false;
+        nextVideoPlayer.stop();
+        nextVideoPlayer.source = "";
       }
 
       Connections {
@@ -167,6 +183,88 @@ Variants {
         }
       }
 
+      // Video support - current video
+      MediaPlayer {
+        id: currentVideoPlayer
+        source: ""
+        loops: MediaPlayer.Infinite
+        audioOutput: AudioOutput {
+          muted: true
+        }
+        videoOutput: currentVideoOutput
+
+        property bool waitingForTransition: false
+
+        onPlaybackStateChanged: {
+          // Start transition once video is actually playing
+          if (waitingForTransition && playbackState === MediaPlayer.PlayingState) {
+            waitingForTransition = false;
+            Qt.callLater(() => {
+                           if (!transitioning) {
+                             transitionAnimation.start();
+                           }
+                         });
+          }
+        }
+      }
+
+      VideoOutput {
+        id: currentVideoOutput
+        anchors.fill: parent
+        visible: false
+      }
+
+      ShaderEffectSource {
+        id: currentVideoTexture
+        width: parent.width
+        height: parent.height
+        sourceItem: currentVideoOutput
+        hideSource: true
+        live: true
+        visible: false
+      }
+
+      // Video support - next video
+      MediaPlayer {
+        id: nextVideoPlayer
+        source: ""
+        loops: MediaPlayer.Infinite
+        audioOutput: AudioOutput {
+          muted: true
+        }
+        videoOutput: nextVideoOutput
+
+        property bool waitingForTransition: false
+
+        onPlaybackStateChanged: {
+          // Start transition once video is actually playing
+          if (waitingForTransition && playbackState === MediaPlayer.PlayingState) {
+            waitingForTransition = false;
+            Qt.callLater(() => {
+                           if (!transitioning) {
+                             transitionAnimation.start();
+                           }
+                         });
+          }
+        }
+      }
+
+      VideoOutput {
+        id: nextVideoOutput
+        anchors.fill: parent
+        visible: false
+      }
+
+      ShaderEffectSource {
+        id: nextVideoTexture
+        width: parent.width
+        height: parent.height
+        sourceItem: nextVideoOutput
+        hideSource: true
+        live: true
+        visible: false
+      }
+
       // Dynamic shader loader - only loads the active transition shader
       Loader {
         id: shaderLoader
@@ -195,17 +293,17 @@ Variants {
         ShaderEffect {
           anchors.fill: parent
 
-          property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source1: root.isVideoWallpaper(root.currentSource) ? (root.usingPrimaryVideoPlayer ? currentVideoTexture : nextVideoTexture) : currentWallpaper
+          property variant source2: root.isVideoWallpaper(root.nextSource) ? (root.usingPrimaryVideoPlayer ? nextVideoTexture : currentVideoTexture) : nextWallpaper
           property real progress: root.transitionProgress
 
           // Fill mode properties
           property real fillMode: root.fillMode
           property vector4d fillColor: root.fillColor
-          property real imageWidth1: source1.sourceSize.width
-          property real imageHeight1: source1.sourceSize.height
-          property real imageWidth2: source2.sourceSize.width
-          property real imageHeight2: source2.sourceSize.height
+          property real imageWidth1: root.isVideoWallpaper(root.currentSource) ? currentVideoTexture.width : currentWallpaper.sourceSize.width
+          property real imageHeight1: root.isVideoWallpaper(root.currentSource) ? currentVideoTexture.height : currentWallpaper.sourceSize.height
+          property real imageWidth2: root.isVideoWallpaper(root.nextSource) ? nextVideoTexture.width : nextWallpaper.sourceSize.width
+          property real imageHeight2: root.isVideoWallpaper(root.nextSource) ? nextVideoTexture.height : nextWallpaper.sourceSize.height
           property real screenWidth: width
           property real screenHeight: height
 
@@ -219,8 +317,8 @@ Variants {
         ShaderEffect {
           anchors.fill: parent
 
-          property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source1: root.isVideoWallpaper(root.currentSource) ? (root.usingPrimaryVideoPlayer ? currentVideoTexture : nextVideoTexture) : currentWallpaper
+          property variant source2: root.isVideoWallpaper(root.nextSource) ? (root.usingPrimaryVideoPlayer ? nextVideoTexture : currentVideoTexture) : nextWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real direction: root.wipeDirection
@@ -228,10 +326,10 @@ Variants {
           // Fill mode properties
           property real fillMode: root.fillMode
           property vector4d fillColor: root.fillColor
-          property real imageWidth1: source1.sourceSize.width
-          property real imageHeight1: source1.sourceSize.height
-          property real imageWidth2: source2.sourceSize.width
-          property real imageHeight2: source2.sourceSize.height
+          property real imageWidth1: root.isVideoWallpaper(root.currentSource) ? currentVideoTexture.width : currentWallpaper.sourceSize.width
+          property real imageHeight1: root.isVideoWallpaper(root.currentSource) ? currentVideoTexture.height : currentWallpaper.sourceSize.height
+          property real imageWidth2: root.isVideoWallpaper(root.nextSource) ? nextVideoTexture.width : nextWallpaper.sourceSize.width
+          property real imageHeight2: root.isVideoWallpaper(root.nextSource) ? nextVideoTexture.height : nextWallpaper.sourceSize.height
           property real screenWidth: width
           property real screenHeight: height
 
@@ -245,8 +343,8 @@ Variants {
         ShaderEffect {
           anchors.fill: parent
 
-          property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source1: root.isVideoWallpaper(root.currentSource) ? (root.usingPrimaryVideoPlayer ? currentVideoTexture : nextVideoTexture) : currentWallpaper
+          property variant source2: root.isVideoWallpaper(root.nextSource) ? (root.usingPrimaryVideoPlayer ? nextVideoTexture : currentVideoTexture) : nextWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real aspectRatio: root.width / root.height
@@ -256,10 +354,10 @@ Variants {
           // Fill mode properties
           property real fillMode: root.fillMode
           property vector4d fillColor: root.fillColor
-          property real imageWidth1: source1.sourceSize.width
-          property real imageHeight1: source1.sourceSize.height
-          property real imageWidth2: source2.sourceSize.width
-          property real imageHeight2: source2.sourceSize.height
+          property real imageWidth1: root.isVideoWallpaper(root.currentSource) ? currentVideoTexture.width : currentWallpaper.sourceSize.width
+          property real imageHeight1: root.isVideoWallpaper(root.currentSource) ? currentVideoTexture.height : currentWallpaper.sourceSize.height
+          property real imageWidth2: root.isVideoWallpaper(root.nextSource) ? nextVideoTexture.width : nextWallpaper.sourceSize.width
+          property real imageHeight2: root.isVideoWallpaper(root.nextSource) ? nextVideoTexture.height : nextWallpaper.sourceSize.height
           property real screenWidth: width
           property real screenHeight: height
 
@@ -273,8 +371,8 @@ Variants {
         ShaderEffect {
           anchors.fill: parent
 
-          property variant source1: currentWallpaper
-          property variant source2: nextWallpaper
+          property variant source1: root.isVideoWallpaper(root.currentSource) ? (root.usingPrimaryVideoPlayer ? currentVideoTexture : nextVideoTexture) : currentWallpaper
+          property variant source2: root.isVideoWallpaper(root.nextSource) ? (root.usingPrimaryVideoPlayer ? nextVideoTexture : currentVideoTexture) : nextWallpaper
           property real progress: root.transitionProgress
           property real smoothness: root.edgeSmoothness
           property real aspectRatio: root.width / root.height
@@ -284,10 +382,10 @@ Variants {
           // Fill mode properties
           property real fillMode: root.fillMode
           property vector4d fillColor: root.fillColor
-          property real imageWidth1: source1.sourceSize.width
-          property real imageHeight1: source1.sourceSize.height
-          property real imageWidth2: source2.sourceSize.width
-          property real imageHeight2: source2.sourceSize.height
+          property real imageWidth1: root.isVideoWallpaper(root.currentSource) ? currentVideoTexture.width : currentWallpaper.sourceSize.width
+          property real imageHeight1: root.isVideoWallpaper(root.currentSource) ? currentVideoTexture.height : currentWallpaper.sourceSize.height
+          property real imageWidth2: root.isVideoWallpaper(root.nextSource) ? nextVideoTexture.width : nextWallpaper.sourceSize.width
+          property real imageHeight2: root.isVideoWallpaper(root.nextSource) ? nextVideoTexture.height : nextWallpaper.sourceSize.height
           property real screenWidth: width
           property real screenHeight: height
 
@@ -306,9 +404,47 @@ Variants {
         duration: transitionType == "stripes" ? Settings.data.wallpaper.transitionDuration * 1.6 : Settings.data.wallpaper.transitionDuration
         easing.type: Easing.InOutCubic
         onFinished: {
-          // Assign new image to current BEFORE clearing to prevent flicker
-          const tempSource = nextWallpaper.source;
-          currentWallpaper.source = tempSource;
+          // Handle video/image transition completion
+          const nextIsVideo = isVideoWallpaper(root.nextSource);
+          const currentIsVideo = isVideoWallpaper(root.currentSource);
+
+          if (nextIsVideo) {
+            // Swap video player roles instead of copying sources
+            usingPrimaryVideoPlayer = !usingPrimaryVideoPlayer;
+            currentSource = root.nextSource;
+            nextSource = "";
+            currentWallpaper.source = "";
+            
+            // Clean up the now-inactive video player (the old current)
+            Qt.callLater(() => {
+                           if (usingPrimaryVideoPlayer) {
+                             // currentVideoPlayer is now active, clean up nextVideoPlayer
+                             nextVideoPlayer.waitingForTransition = false;
+                             nextVideoPlayer.stop();
+                             nextVideoPlayer.source = "";
+                           } else {
+                             // nextVideoPlayer is now active, clean up currentVideoPlayer
+                             currentVideoPlayer.stop();
+                             currentVideoPlayer.source = "";
+                           }
+                         });
+          } else {
+            // Transfer next image to current
+            const tempSource = nextWallpaper.source;
+            currentWallpaper.source = tempSource;
+            currentSource = root.nextSource;
+            nextSource = "";
+            
+            // Stop both video players when switching to image
+            Qt.callLater(() => {
+                           currentVideoPlayer.stop();
+                           currentVideoPlayer.source = "";
+                           nextVideoPlayer.waitingForTransition = false;
+                           nextVideoPlayer.stop();
+                           nextVideoPlayer.source = "";
+                         });
+          }
+
           transitionProgress = 0.0;
 
           // Now clear nextWallpaper after currentWallpaper has the new source
@@ -321,6 +457,15 @@ Variants {
                                       });
                        });
         }
+      }
+
+      // ------------------------------------------------------
+      // Helper function to detect if a path is a video file
+      function isVideoWallpaper(path) {
+        if (!path)
+          return false;
+        const pathStr = path.toString().toLowerCase();
+        return pathStr.endsWith(".mp4");
       }
 
       // ------------------------------------------------------
@@ -388,20 +533,40 @@ Variants {
         transitionAnimation.stop();
         transitionProgress = 0.0;
 
+        // Stop and clear video players
+        nextVideoPlayer.waitingForTransition = false;
+        nextVideoPlayer.stop();
+        nextVideoPlayer.source = "";
+        nextSource = "";
+        currentVideoPlayer.waitingForTransition = false;
+        currentVideoPlayer.stop();
+        currentVideoPlayer.source = "";
+
         // Clear nextWallpaper completely to free texture memory
         nextWallpaper.source = "";
         nextWallpaper.sourceSize = undefined;
 
         currentWallpaper.source = "";
+        currentSource = "";
+        
+        // Reset to primary player
+        usingPrimaryVideoPlayer = true;
 
         Qt.callLater(() => {
-                       currentWallpaper.source = source;
+                       if (isVideoWallpaper(source)) {
+                         currentSource = source;
+                         currentVideoPlayer.source = source;
+                         currentVideoPlayer.play();
+                       } else {
+                         currentSource = source;
+                         currentWallpaper.source = source;
+                       }
                      });
       }
 
       // ------------------------------------------------------
       function setWallpaperWithTransition(source) {
-        if (source === currentWallpaper.source) {
+        if (source === root.currentSource) {
           return;
         }
 
@@ -410,27 +575,76 @@ Variants {
           transitionAnimation.stop();
           transitionProgress = 0;
 
-          // Assign nextWallpaper to currentWallpaper BEFORE clearing to prevent flicker
-          const newCurrentSource = nextWallpaper.source;
-          currentWallpaper.source = newCurrentSource;
+          // Handle video/image transitions during interruption
+          const nextIsVideo = isVideoWallpaper(root.nextSource);
 
-          // Now clear nextWallpaper after current has the new source
+          if (nextIsVideo) {
+            // Swap to use the next video as current
+            usingPrimaryVideoPlayer = !usingPrimaryVideoPlayer;
+            currentSource = root.nextSource;
+            nextSource = "";
+            currentWallpaper.source = "";
+            
+            // Clean up the now-inactive player
+            if (usingPrimaryVideoPlayer) {
+              nextVideoPlayer.waitingForTransition = false;
+            } else {
+              currentVideoPlayer.waitingForTransition = false;
+            }
+          } else {
+            // Transfer next image to current
+            const newCurrentSource = nextWallpaper.source;
+            currentWallpaper.source = newCurrentSource;
+            currentSource = root.nextSource;
+            nextWallpaper.source = "";
+            nextSource = "";
+          }
+
+          // Now set the new next wallpaper after a brief delay
           Qt.callLater(() => {
-                         nextWallpaper.source = "";
-
-                         // Now set the next wallpaper after a brief delay
-                         Qt.callLater(() => {
-                                        nextWallpaper.source = source;
-                                        currentWallpaper.asynchronous = false;
-                                        transitionAnimation.start();
-                                      });
+                         if (isVideoWallpaper(source)) {
+                           nextSource = source;
+                           // Load into inactive player
+                           if (usingPrimaryVideoPlayer) {
+                             nextVideoPlayer.waitingForTransition = true;
+                             nextVideoPlayer.source = source;
+                             nextVideoPlayer.play();
+                           } else {
+                             currentVideoPlayer.waitingForTransition = true;
+                             currentVideoPlayer.source = source;
+                             currentVideoPlayer.play();
+                           }
+                         } else {
+                           nextSource = source;
+                           nextWallpaper.source = source;
+                           currentWallpaper.asynchronous = false;
+                           Qt.callLater(() => {
+                                          transitionAnimation.start();
+                                        });
+                         }
                        });
           return;
         }
 
-        nextWallpaper.source = source;
-        currentWallpaper.asynchronous = false;
-        transitionAnimation.start();
+        // Start new transition
+        if (isVideoWallpaper(source)) {
+          nextSource = source;
+          // Load video into the inactive player
+          if (usingPrimaryVideoPlayer) {
+            nextVideoPlayer.waitingForTransition = true;
+            nextVideoPlayer.source = source;
+            nextVideoPlayer.play();
+          } else {
+            currentVideoPlayer.waitingForTransition = true;
+            currentVideoPlayer.source = source;
+            currentVideoPlayer.play();
+          }
+        } else {
+          nextSource = source;
+          nextWallpaper.source = source;
+          currentWallpaper.asynchronous = false;
+          transitionAnimation.start();
+        }
       }
 
       // ------------------------------------------------------

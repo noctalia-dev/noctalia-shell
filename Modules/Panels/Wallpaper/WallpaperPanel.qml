@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtMultimedia
 import Quickshell
 import "../../../Helpers/FuzzySort.js" as FuzzySort
 import qs.Commons
@@ -734,11 +735,61 @@ SmartPanel {
             Layout.preferredHeight: Math.round(wallpaperGridView.itemSize * 0.67)
             color: Color.transparent
 
+            // Check if wallpaper is a video file
+            readonly property bool isVideo: wallpaperPath.toLowerCase().endsWith(".mp4")
+
             NImageCached {
               id: img
               imagePath: wallpaperPath
               cacheFolder: Settings.cacheDirImagesWallpapers
               anchors.fill: parent
+              visible: !imageContainer.isVideo
+            }
+
+            // Video preview
+            Loader {
+              anchors.fill: parent
+              active: imageContainer.isVideo
+              sourceComponent: Rectangle {
+                color: Color.mSurfaceVariant
+
+                MediaPlayer {
+                  id: previewPlayer
+                  source: wallpaperPath
+                  audioOutput: AudioOutput {
+                    muted: true
+                  }
+                  videoOutput: previewOutput
+                  playbackRate: 0
+                  Component.onCompleted: {
+                    play();
+                    pause();
+                  }
+                }
+
+                VideoOutput {
+                  id: previewOutput
+                  anchors.fill: parent
+                }
+
+                // Video icon overlay
+                Rectangle {
+                  anchors.right: parent.right
+                  anchors.bottom: parent.bottom
+                  anchors.margins: Style.marginXS
+                  width: 32
+                  height: 32
+                  radius: Style.radiusS
+                  color: Qt.rgba(Color.mSurface.r, Color.mSurface.g, Color.mSurface.b, 0.8)
+
+                  NIcon {
+                    icon: "video"
+                    pointSize: Style.fontSizeM
+                    color: Color.mOnSurface
+                    anchors.centerIn: parent
+                  }
+                }
+              }
             }
 
             Rectangle {
