@@ -199,11 +199,9 @@ Singleton {
     
     // Check if wallpaper is a video file, extract frame if needed
     script += `if [[ "$NOCTALIA_WP_PATH" =~ \\.mp4$ ]]; then\n`;
-    script += `  NOCTALIA_WP_TEMP="${Settings.cacheDir}video-frame-$(basename "$NOCTALIA_WP_PATH" .mp4).jpg"\n`;
+    script += `  NOCTALIA_WP_TEMP="${Settings.cacheDir}video-frame-$(basename "$NOCTALIA_WP_PATH" .mp4)-$(echo -n "$NOCTALIA_WP_PATH" | sha1sum | cut -d' ' -f1).jpg"\n`;
     script += `  if [ ! -f "$NOCTALIA_WP_TEMP" ] || [ "$NOCTALIA_WP_PATH" -nt "$NOCTALIA_WP_TEMP" ]; then\n`;
-    script += `    ffmpeg -y -i "$NOCTALIA_WP_PATH" -vframes 1 -vf "scale=1920:-1" -q:v 2 -threads 0 "$NOCTALIA_WP_TEMP" 2>/dev/null &\n`;
-    script += `    FFMPEG_PID=$!\n`;
-    script += `    wait $FFMPEG_PID\n`;
+    script += `    ffmpeg -y -i "$NOCTALIA_WP_PATH" -vframes 1 -vf "scale=1920:-1" -q:v 2 -threads 0 "$NOCTALIA_WP_TEMP" 2>/dev/null\n`;
     script += `  fi\n`;
     script += `  NOCTALIA_WP_SOURCE="$NOCTALIA_WP_TEMP"\n`;
     script += `else\n`;

@@ -206,6 +206,11 @@ Variants {
                          });
           }
         }
+
+        onErrorOccurred: {
+          Logger.w("Current video player failed to play:", source, error, errorString);
+          // Optionally, trigger a fallback or UI update here
+        }
       }
 
       VideoOutput {
@@ -418,7 +423,6 @@ Variants {
         onFinished: {
           // Handle video/image transition completion
           const nextIsVideo = isVideoWallpaper(root.nextSource);
-          const currentIsVideo = isVideoWallpaper(root.currentSource);
 
           if (nextIsVideo) {
             // Swap video player roles instead of copying sources
@@ -436,6 +440,7 @@ Variants {
                              nextVideoPlayer.source = "";
                            } else {
                              // nextVideoPlayer is now active, clean up currentVideoPlayer
+                             currentVideoPlayer.waitingForTransition = false;
                              currentVideoPlayer.stop();
                              currentVideoPlayer.source = "";
                            }
@@ -598,10 +603,17 @@ Variants {
             currentWallpaper.source = "";
             
             // Clean up the now-inactive player
+            // Clean up the player that was being prepared for transition (now inactive)
             if (usingPrimaryVideoPlayer) {
-              nextVideoPlayer.waitingForTransition = false;
-            } else {
+              // The "next" player was currentVideoPlayer
               currentVideoPlayer.waitingForTransition = false;
+              currentVideoPlayer.stop();
+              currentVideoPlayer.source = "";
+            } else {
+              // The "next" player was nextVideoPlayer
+              nextVideoPlayer.waitingForTransition = false;
+              nextVideoPlayer.stop();
+              nextVideoPlayer.source = "";
             }
           } else {
             // Transfer next image to current
