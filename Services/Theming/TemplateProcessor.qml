@@ -197,10 +197,14 @@ Singleton {
     let script = `cat > '${pathEsc}' << '${delimiter}'\n${content}\n${delimiter}\n`;
     script += `NOCTALIA_WP_PATH=$(cat << '${wpDelimiter}'\n${wallpaper}\n${wpDelimiter}\n)\n`;
     
-    // Check if wallpaper is a video file, extract frame if needed
+    // Check if wallpaper is a video file, extract frame if needed (optimized)
     script += `if [[ "$NOCTALIA_WP_PATH" =~ \\.mp4$ ]]; then\n`;
     script += `  NOCTALIA_WP_TEMP="${Settings.cacheDir}video-frame-$(basename "$NOCTALIA_WP_PATH" .mp4).jpg"\n`;
-    script += `  ffmpeg -y -i "$NOCTALIA_WP_PATH" -vframes 1 -q:v 2 "$NOCTALIA_WP_TEMP" 2>/dev/null\n`;
+    script += `  if [ ! -f "$NOCTALIA_WP_TEMP" ] || [ "$NOCTALIA_WP_PATH" -nt "$NOCTALIA_WP_TEMP" ]; then\n`;
+    script += `    ffmpeg -y -i "$NOCTALIA_WP_PATH" -vframes 1 -vf "scale=1920:-1" -q:v 2 -threads 0 "$NOCTALIA_WP_TEMP" 2>/dev/null &\n`;
+    script += `    FFMPEG_PID=$!\n`;
+    script += `    wait $FFMPEG_PID\n`;
+    script += `  fi\n`;
     script += `  NOCTALIA_WP_SOURCE="$NOCTALIA_WP_TEMP"\n`;
     script += `else\n`;
     script += `  NOCTALIA_WP_SOURCE="$NOCTALIA_WP_PATH"\n`;

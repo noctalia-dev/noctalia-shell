@@ -212,6 +212,8 @@ Variants {
         id: currentVideoOutput
         anchors.fill: parent
         visible: false
+        layer.enabled: true
+        layer.smooth: true
       }
 
       ShaderEffectSource {
@@ -222,6 +224,10 @@ Variants {
         hideSource: true
         live: true
         visible: false
+        mipmap: false
+        smooth: false
+        wrapMode: ShaderEffectSource.ClampToEdge
+        format: ShaderEffectSource.RGB
       }
 
       // Video support - next video
@@ -253,6 +259,8 @@ Variants {
         id: nextVideoOutput
         anchors.fill: parent
         visible: false
+        layer.enabled: true
+        layer.smooth: true
       }
 
       ShaderEffectSource {
@@ -263,6 +271,10 @@ Variants {
         hideSource: true
         live: true
         visible: false
+        mipmap: false
+        smooth: false
+        wrapMode: ShaderEffectSource.ClampToEdge
+        format: ShaderEffectSource.RGB
       }
 
       // Dynamic shader loader - only loads the active transition shader
