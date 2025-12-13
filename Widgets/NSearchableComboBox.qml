@@ -29,6 +29,7 @@ RowLayout {
   // Filtered model for search results
   property ListModel filteredModel: ListModel {}
   property string searchText: ""
+  property bool isFiltering: false
 
   function findIndexByKey(key) {
     for (var i = 0; i < root.model.count; i++) {
@@ -49,10 +50,14 @@ RowLayout {
   }
 
   function filterModel() {
+    if (isFiltering) return;
+    isFiltering = true;
+
     filteredModel.clear();
 
     // Check if model exists and has items
     if (!root.model || root.model.count === undefined || root.model.count === 0) {
+      isFiltering = false;
       return;
     }
 
@@ -91,6 +96,8 @@ RowLayout {
         }
       }
     }
+    
+    isFiltering = false;
   }
 
   onSearchTextChanged: filterModel()
