@@ -14,6 +14,7 @@ Singleton {
   property bool isNiri: false
   property bool isSway: false
   property bool isMango: false
+  property bool isLabwc: false
 
   // Generic workspace and window data
   property ListModel workspaces: ListModel {}
@@ -57,6 +58,7 @@ Singleton {
     const niriSocket = Quickshell.env("NIRI_SOCKET");
     const swaySock = Quickshell.env("SWAYSOCK");
     const currentDesktop = Quickshell.env("XDG_CURRENT_DESKTOP");
+    const labwcPid = Quickshell.env("LABWC_PID");
 
     // Check for MangoWC using XDG_CURRENT_DESKTOP environment variable
     // MangoWC sets XDG_CURRENT_DESKTOP=mango
@@ -65,24 +67,36 @@ Singleton {
       isNiri = false;
       isSway = false;
       isMango = true;
+      isLabwc = false;
       backendLoader.sourceComponent = mangoComponent;
+    } else if (labwcPid && labwcPid.length > 0) {
+      isHyprland = false;
+      isNiri = false;
+      isSway = false;
+      isMango = false;
+      isLabwc = true;
+      backendLoader.sourceComponent = labwcComponent;
+      Logger.i("CompositorService", "Detected LabWC with PID: " + labwcPid);
     } else if (niriSocket && niriSocket.length > 0) {
       isHyprland = false;
       isNiri = true;
       isSway = false;
       isMango = false;
+      isLabwc = false;
       backendLoader.sourceComponent = niriComponent;
     } else if (hyprlandSignature && hyprlandSignature.length > 0) {
       isHyprland = true;
       isNiri = false;
       isSway = false;
       isMango = false;
+      isLabwc = false;
       backendLoader.sourceComponent = hyprlandComponent;
     } else if (swaySock && swaySock.length > 0) {
       isHyprland = false;
       isNiri = false;
       isSway = true;
       isMango = false;
+      isLabwc = false;
       backendLoader.sourceComponent = swayComponent;
     } else {
       // Always fallback to Niri
@@ -90,6 +104,7 @@ Singleton {
       isNiri = true;
       isSway = false;
       isMango = false;
+      isLabwc = false;
       backendLoader.sourceComponent = niriComponent;
     }
   }
@@ -152,6 +167,14 @@ Singleton {
     id: mangoComponent
     MangoService {
       id: mangoBackend
+    }
+  }
+
+  // Labwc backend component
+  Component {
+    id: labwcComponent
+    LabwcService {
+      id: labwcBackend
     }
   }
 
