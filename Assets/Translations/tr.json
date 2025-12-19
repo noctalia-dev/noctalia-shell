@@ -1768,6 +1768,10 @@
         "use-app2unit": {
           "description": "Uygulama süreçlerini daha iyi yönetmek ve sorunları önlemek için alternatif bir başlatma yöntemi kullanır.",
           "label": "Uygulamaları başlatmak için App2Unit kullan"
+        },
+        "open-on-typing-overview": {
+          "description": "Niri genel görünümü açıkken yazmaya başlamak başlatıcıyı otomatik olarak açar.",
+          "label": "Genel görünümde yazınca aç"
         }
       },
       "title": "Başlatıcı"

@@ -1768,6 +1768,10 @@
         "use-app2unit": {
           "description": "Gebruikt een alternatieve startmethode om app-processen beter te beheren en problemen te voorkomen.",
           "label": "App2Unit gebruiken om applicaties te starten"
+        },
+        "open-on-typing-overview": {
+          "description": "Wanneer het Niri-overzicht open is, opent typen automatisch de launcher.",
+          "label": "Openen bij typen in overzicht"
         }
       },
       "title": "Launcher"

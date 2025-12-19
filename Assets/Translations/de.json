@@ -1768,6 +1768,10 @@
         "use-app2unit": {
           "description": "Verwendet eine alternative Startmethode zur besseren Verwaltung von App-Prozessen und Problemvermeidung.",
           "label": "App2Unit zum Starten von Anwendungen verwenden"
+        },
+        "open-on-typing-overview": {
+          "description": "Wenn die Niri-Übersicht geöffnet ist, öffnet Tippen automatisch den Starter.",
+          "label": "Beim Tippen in der Übersicht öffnen"
         }
       },
       "title": "Starter"

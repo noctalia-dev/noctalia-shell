@@ -1768,6 +1768,10 @@
         "use-app2unit": {
           "description": "アプリのプロセス管理を改善し、問題を回避するために代替の起動方法を使用します。",
           "label": "App2Unit を使用して起動"
+        },
+        "open-on-typing-overview": {
+          "description": "Niriの概要が開いているときに文字を入力すると、ランチャーが自動的に開きます。",
+          "label": "概要表示での入力で開く"
         }
       },
       "title": "ランチャー"

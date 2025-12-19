@@ -1768,6 +1768,10 @@
         "use-app2unit": {
           "description": "Usa um método de inicialização alternativo para gerenciar melhor os processos de aplicativos e evitar problemas.",
           "label": "Usar App2Unit para iniciar aplicativos"
+        },
+        "open-on-typing-overview": {
+          "description": "Quando a visão geral do Niri está aberta, digitar abre automaticamente o lançador.",
+          "label": "Abrir ao digitar na visão geral"
         }
       },
       "title": "Lançador"

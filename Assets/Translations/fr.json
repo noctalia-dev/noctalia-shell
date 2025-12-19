@@ -1768,6 +1768,10 @@
         "use-app2unit": {
           "description": "Utilise une méthode de lancement alternative pour mieux gérer les processus des applications et prévenir les problèmes.",
           "label": "Utiliser App2Unit pour lancer les applications"
+        },
+        "open-on-typing-overview": {
+          "description": "Lorsque l’aperçu Niri est ouvert, taper ouvre automatiquement le lanceur.",
+          "label": "Ouvrir en tapant dans l’aperçu"
         }
       },
       "title": "Lanceur"

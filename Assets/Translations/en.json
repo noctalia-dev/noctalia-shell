@@ -869,7 +869,7 @@
   },
   "session-menu": {
     "action-in-seconds": "{action} in {seconds} seconds...",
-    "hibernate": "Hibernate",
+    "hibernate": "Windows",
     "lock": "Lock",
     "lock-and-suspend": "Lock and Suspend",
     "logout": "Logout",
@@ -1768,6 +1768,10 @@
         "use-app2unit": {
           "description": "Uses an alternative launch method to better manage app processes and prevent issues.",
           "label": "Use App2Unit to launch applications"
+        },
+        "open-on-typing-overview": {
+          "description": "When the Niri overview is open, typing automatically opens the launcher.",
+          "label": "Open on typing in overview"
         }
       },
       "title": "Launcher"

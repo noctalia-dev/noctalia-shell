@@ -1768,6 +1768,10 @@
         "use-app2unit": {
           "description": "使用替代启动方法以更好地管理应用程序进程并防止问题。",
           "label": "使用 App2Unit 启动应用程序"
+        },
+        "open-on-typing-overview": {
+          "description": "当 Niri 概览打开时，输入会自动打开启动器。",
+          "label": "在概览中输入时打开"
         }
       },
       "title": "启动器"
