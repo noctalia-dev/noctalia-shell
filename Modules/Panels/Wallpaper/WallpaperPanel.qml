@@ -934,9 +934,20 @@ SmartPanel {
           WallhavenService.resolutions = "";
         }
 
-        // Now check if we can actually search (fetching check is in WallhavenService.search)
-        loading = true;
-        WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1);
+        // Check if we should retain previous results
+        if (Settings.data.wallpaper.wallhavenRetainPage && WallhavenService.currentResults.length > 0) {
+           wallpapers = WallhavenService.currentResults;
+           // If we have an existing error (e.g. from a failed search, maybe we shouldn't show it if we have results? 
+           // But actually if results > 0 we probably don't have an error that blocks display)
+           if (WallhavenService.lastError) {
+              errorMessage = WallhavenService.lastError;
+           }
+           // Don't set loading=true or call search
+        } else {
+           // Standard search logic
+           loading = true;
+           WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1);
+        }
       }
     }
 

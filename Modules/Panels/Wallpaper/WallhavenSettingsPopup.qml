@@ -138,6 +138,30 @@ Popup {
       Layout.fillWidth: true
     }
 
+    // Behavior
+    ColumnLayout {
+      Layout.fillWidth: true
+      spacing: Style.marginS
+
+      NText {
+        text: I18n.tr("wallpaper.panel.behavior.label")
+        color: Color.mOnSurface
+        pointSize: Style.fontSizeM
+      }
+
+      NToggle {
+        label: I18n.tr("wallpaper.panel.behavior.retain_page.label")
+        description: I18n.tr("wallpaper.panel.behavior.retain_page.description")
+        checked: Settings.data.wallpaper.wallhavenRetainPage
+        onToggled: checked => Settings.data.wallpaper.wallhavenRetainPage = checked
+        Layout.fillWidth: true
+      }
+    }
+
+    NDivider {
+      Layout.fillWidth: true
+    }
+
     // Sorting
     RowLayout {
       Layout.fillWidth: true

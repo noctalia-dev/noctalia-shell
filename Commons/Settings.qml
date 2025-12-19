@@ -341,7 +341,7 @@ Singleton {
       property string wallhavenSorting: "relevance"
       property string wallhavenOrder: "desc"
       property string wallhavenCategories: "111" // general,anime,people
-      property string wallhavenPurity: "100" // sfw only
+      property bool wallhavenRetainPage: false
       property string wallhavenResolutionMode: "atleast" // "atleast" or "exact"
       property string wallhavenResolutionWidth: ""
       property string wallhavenResolutionHeight: ""

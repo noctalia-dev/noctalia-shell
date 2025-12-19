@@ -2724,11 +2724,12 @@
         "desc": "Descending",
         "label": "Order"
       },
-      "purity": {
-        "all": "All",
-        "label": "Content filter",
-        "sfw": "SFW",
-        "sketchy": "Sketchy"
+      "behavior": {
+        "label": "Behavior",
+        "retain_page": {
+           "label": "Retain page position",
+           "description": "Keep your place in the search results when closing and reopening the picker."
+        }
       },
       "resolution": {
         "atleast": "At least",
