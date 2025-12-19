@@ -362,6 +362,8 @@ Singleton {
       // View mode: "list" or "grid"
       property string viewMode: "list"
       property bool showCategories: true
+      // If true, when Niri overview is open and the user starts typing, open the launcher automatically
+      property bool openOnTypingInOverview: false
     }
 
     // control center

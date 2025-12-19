@@ -25,6 +25,9 @@ Singleton {
   property var displayScales: ({})
   property bool displayScalesLoaded: false
 
+  // Overview state (only meaningful for Niri)
+  property bool overviewActive: false
+
   // Generic events
   signal workspaceChanged
   signal activeWindowChanged
@@ -213,6 +216,17 @@ Singleton {
     syncWorkspaces();
     syncWindows();
     focusedWindowIndex = backend.focusedWindowIndex;
+
+    // Wire optional backend-specific states
+    if (isNiri && backend.overviewActiveChanged) {
+      // Initialize and subscribe to Niri overview state
+      overviewActive = backend.overviewActive || false;
+      backend.overviewActiveChanged.connect(() => {
+        overviewActive = backend.overviewActive || false;
+      });
+    } else {
+      overviewActive = false;
+    }
   }
 
   function syncWorkspaces() {

@@ -34,6 +34,8 @@ import qs.Services.UI
 */
 PanelWindow {
   id: root
+  // Note: PanelWindow doesn't expose a generic focus property. We manage
+  // keyboard focus via WlrLayershell.keyboardFocus and a hidden FocusScope.
 
   // Expose panels as readonly property aliases
   readonly property alias audioPanel: audioPanel
@@ -74,7 +76,10 @@ PanelWindow {
   readonly property var pluginPanel2Placeholder: pluginPanel2.panelRegion
 
   Component.onCompleted: {
-    Logger.d("MainScreen", "Initialized for screen:", screen?.name, "- Dimensions:", screen?.width, "x", screen?.height, "- Position:", screen?.x, ",", screen?.y);
+    // Arm launcher-on-typing if overview is already active
+    if (CompositorService.isNiri && CompositorService.overviewActive && Settings.data.appLauncher.openOnTypingInOverview) {
+      overviewTypingArmed = true;
+    }
   }
 
   // Wayland
@@ -82,10 +87,15 @@ PanelWindow {
   WlrLayershell.namespace: "noctalia-background-" + (screen?.name || "unknown")
   WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone handles that
   WlrLayershell.keyboardFocus: {
-    if (!root.isPanelOpen) {
-      return WlrKeyboardFocus.None;
+    if (root.isPanelOpen) {
+      return PanelService.openedPanel.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand;
     }
-    return PanelService.openedPanel.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand;
+    // Allow on-demand focus during Niri overview to catch typing and open launcher
+    if (CompositorService.isNiri && CompositorService.overviewActive && Settings.data.appLauncher.openOnTypingInOverview) {
+      // Use Exclusive to reliably receive key events from compositor
+      return WlrKeyboardFocus.Exclusive;
+    }
+    return WlrKeyboardFocus.None;
   }
 
   anchors {
@@ -100,6 +110,9 @@ PanelWindow {
   property bool isPanelOpen: (PanelService.openedPanel !== null) && (PanelService.openedPanel.screen === screen)
   property bool isPanelClosing: (PanelService.openedPanel !== null) && PanelService.openedPanel.isClosing
 
+  // When Niri overview is active, arm a one-shot that opens the launcher on first typed character
+  property bool overviewTypingArmed: false
+
   color: {
     if (dimmerOpacity > 0 && isPanelOpen && !isPanelClosing) {
       return Qt.alpha(Color.mShadow, dimmerOpacity);
@@ -111,6 +124,128 @@ PanelWindow {
     ColorAnimation {
       duration: isPanelClosing ? Style.animationFaster : Style.animationNormal
       easing.type: Easing.OutQuad
+    }
+  }
+
+  // Keep the typing trigger in sync with Niri overview visibility
+  Connections {
+    target: CompositorService
+    function onOverviewActiveChanged() {
+      if (CompositorService.isNiri) {
+        overviewTypingArmed = CompositorService.overviewActive;
+        if (CompositorService.overviewActive && Settings.data.appLauncher.openOnTypingInOverview && !PanelService.openedPanel) {
+          Qt.callLater(() => {
+                            overviewKeyCatcher.forceActiveFocus();
+                          });
+        }
+      } else {
+        overviewTypingArmed = false;
+      }
+    }
+  }
+
+  // Mirror keyboard focus logic and log whenever it changes
+  property int debugKeyboardFocusMode: {
+    if (root.isPanelOpen) {
+      return PanelService.openedPanel.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand;
+    }
+    if (CompositorService.isNiri && CompositorService.overviewActive && Settings.data.appLauncher.openOnTypingInOverview) {
+      return WlrKeyboardFocus.OnDemand;
+    }
+    return WlrKeyboardFocus.None;
+  }
+
+  onDebugKeyboardFocusModeChanged: {
+    if (debugKeyboardFocusMode === WlrKeyboardFocus.OnDemand && CompositorService.overviewActive && Settings.data.appLauncher.openOnTypingInOverview && !PanelService.openedPanel) {
+      Qt.callLater(() => {
+                        overviewKeyCatcher.forceActiveFocus();
+                      });
+    }
+  }
+
+  // (removed diagnostic heartbeat)
+
+  // Helper: determine if a key press should trigger the launcher
+  function isTextTypingEvent(event) {
+    // Ignore if any command modifiers are pressed
+    const mods = event.modifiers || 0;
+    const hasCmdMods = (mods & Qt.ControlModifier) || (mods & Qt.AltModifier) || (mods & Qt.MetaModifier);
+    if (hasCmdMods)
+      return false;
+
+    // Ignore navigation/function keys
+    switch (event.key) {
+    case Qt.Key_Return:
+    case Qt.Key_Enter:
+    case Qt.Key_Tab:
+    case Qt.Key_Backtab:
+    case Qt.Key_Escape:
+    case Qt.Key_Backspace:
+    case Qt.Key_Delete:
+    case Qt.Key_Left:
+    case Qt.Key_Right:
+    case Qt.Key_Up:
+    case Qt.Key_Down:
+    case Qt.Key_Home:
+    case Qt.Key_End:
+    case Qt.Key_PageUp:
+    case Qt.Key_PageDown:
+      return false;
+    }
+
+    // Accept printable characters (basic ASCII range) to keep it simple and reliable
+    const t = event.text || "";
+    return t.length === 1 && t >= " " && t <= "~";
+  }
+
+  // Open launcher on the current screen, optionally priming the search field
+  function openLauncherFromOverview(initialText) {
+    var launcherPanel = PanelService.getPanel("launcherPanel", screen);
+    if (!launcherPanel) {
+      Quickshell.execDetached(["sh", "-c", "qs -c noctalia-shell ipc call launcher toggle"]);
+      return;
+    }
+    if (!launcherPanel?.isPanelOpen || (launcherPanel?.isPanelOpen && !launcherPanel?.activePlugin)) {
+      launcherPanel?.toggle();
+    }
+    if (typeof initialText === "string" && initialText.length > 0) {
+      launcherPanel?.setSearchText(initialText);
+    } else {
+      launcherPanel?.setSearchText("");
+    }
+  }
+
+  // Hidden focus catcher: when overview is active, capture first printable key to open launcher
+  FocusScope {
+    id: overviewKeyCatcher
+    anchors.fill: parent
+    visible: false
+    focus: CompositorService.isNiri && CompositorService.overviewActive && Settings.data.appLauncher.openOnTypingInOverview && !PanelService.openedPanel && overviewTypingArmed
+
+    onFocusChanged: {
+    }
+
+    onActiveFocusChanged: {
+    }
+
+    Component.onCompleted: {
+      if (CompositorService.isNiri && CompositorService.overviewActive && Settings.data.appLauncher.openOnTypingInOverview && !PanelService.openedPanel) {
+        Qt.callLater(() => {
+                          overviewKeyCatcher.forceActiveFocus();
+                        });
+      }
+    }
+
+    Keys.onPressed: event => {
+      if (!overviewTypingArmed) {
+        return;
+      }
+      if (!isTextTypingEvent(event)) {
+        return;
+      }
+      overviewTypingArmed = false;
+      openLauncherFromOverview(event.text);
+      event.accepted = true;
     }
   }
 
