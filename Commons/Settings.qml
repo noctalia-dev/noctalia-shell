@@ -345,6 +345,7 @@ Singleton {
       property string wallhavenResolutionMode: "atleast" // "atleast" or "exact"
       property string wallhavenResolutionWidth: ""
       property string wallhavenResolutionHeight: ""
+      property string wallhavenApiKey: ""
     }
 
     // applauncher

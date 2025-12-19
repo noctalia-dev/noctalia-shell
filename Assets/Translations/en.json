@@ -2728,7 +2728,11 @@
         "all": "All",
         "label": "Content filter",
         "sfw": "SFW",
-        "sketchy": "Sketchy"
+        "sketchy": "Sketchy",
+        "nsfw": "NSFW",
+        "sfw_sketchy": "SFW + Sketchy",
+        "sfw_nsfw": "SFW + NSFW",
+        "sketchy_nsfw": "Sketchy + NSFW"
       },
       "resolution": {
         "atleast": "At least",

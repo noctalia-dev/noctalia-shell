@@ -165,7 +165,8 @@
     "wallhavenPurity": "100",
     "wallhavenResolutionMode": "atleast",
     "wallhavenResolutionWidth": "",
-    "wallhavenResolutionHeight": ""
+    "wallhavenResolutionHeight": "",
+    "wallhavenApiKey": ""
   },
   "appLauncher": {
     "enableClipboardHistory": false,
