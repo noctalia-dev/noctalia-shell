@@ -76,6 +76,7 @@ PanelWindow {
   readonly property var pluginPanel2Placeholder: pluginPanel2.panelRegion
 
   Component.onCompleted: {
+    Logger.d("MainScreen", "Initialized for screen:", screen?.name, "- Dimensions:", screen?.width, "x", screen?.height, "- Position:", screen?.x, ",", screen?.y);
     // Arm launcher-on-typing if overview is already active
     if (CompositorService.isNiri && CompositorService.overviewActive && Settings.data.appLauncher.openOnTypingInOverview) {
       overviewTypingArmed = true;
