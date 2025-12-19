@@ -79,7 +79,10 @@ Item {
 
   // Keyboard event handler
   // These are called from MainScreen's centralized shortcuts
-  // override these in specific panels to handle shortcuts
+  // When collapsed, anchor to top (or bottom if bar is there)
+  // When expanded, use default anchoring
+  property bool isCollapsed: false
+
   function onEscapePressed() {
     if (closeWithEscape)
       close();
@@ -749,6 +752,10 @@ Item {
 
       // Expose self as panelItem for PanelBackground compatibility
       readonly property var panelItem: panelBackground
+
+      // Expose colors to PanelBackground
+      property color panelBackgroundColor: root.panelBackgroundColor
+      property color panelBorderColor: root.panelBorderColor
 
       // Store target dimensions (Initialize to 0, set by setPosition())
       property real targetWidth: 0

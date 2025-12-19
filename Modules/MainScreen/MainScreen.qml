@@ -101,7 +101,9 @@ PanelWindow {
   property bool isPanelClosing: (PanelService.openedPanel !== null) && PanelService.openedPanel.isClosing
 
   color: {
-    if (dimmerOpacity > 0 && isPanelOpen && !isPanelClosing) {
+    // Don't dim if panel is collapsed
+    var collapsed = PanelService.openedPanel && PanelService.openedPanel.isCollapsed;
+    if (dimmerOpacity > 0 && isPanelOpen && !isPanelClosing && !collapsed) {
       return Qt.alpha(Color.mShadow, dimmerOpacity);
     }
     return Color.transparent;

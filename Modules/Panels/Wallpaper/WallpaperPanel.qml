@@ -11,11 +11,16 @@ import qs.Widgets
 
 SmartPanel {
   id: root
+  
 
-  preferredWidth: 800 * Style.uiScaleRatio
-  preferredHeight: 600 * Style.uiScaleRatio
-  preferredWidthRatio: 0.5
-  preferredHeightRatio: 0.45
+
+  preferredWidth: isCollapsed ? (120 * Style.uiScaleRatio) : (800 * Style.uiScaleRatio)
+  preferredHeight: isCollapsed ? (40 * Style.uiScaleRatio) : (600 * Style.uiScaleRatio)
+  preferredWidthRatio: isCollapsed ? 0 : 0.5
+  preferredHeightRatio: isCollapsed ? 0 : 0.45
+
+  panelBackgroundColor: isCollapsed ? Color.transparent : Color.mSurface
+  panelBorderColor: isCollapsed ? Color.transparent : Color.mOutline
 
   // Positioning
   readonly property string panelPosition: {
@@ -29,12 +34,25 @@ SmartPanel {
       return Settings.data.wallpaper.panelPosition;
     }
   }
+  
+  // When collapsed, anchor to top (or bottom if bar is there)
+  // When expanded, use default anchoring
   panelAnchorHorizontalCenter: panelPosition === "center" || panelPosition.endsWith("_center")
-  panelAnchorVerticalCenter: panelPosition === "center"
+  panelAnchorVerticalCenter: !isCollapsed && (panelPosition === "center")
   panelAnchorLeft: panelPosition !== "center" && panelPosition.endsWith("_left")
   panelAnchorRight: panelPosition !== "center" && panelPosition.endsWith("_right")
-  panelAnchorBottom: panelPosition.startsWith("bottom_")
-  panelAnchorTop: panelPosition.startsWith("top_")
+  panelAnchorBottom: (isCollapsed && Settings.data.bar.position === "bottom") || panelPosition.startsWith("bottom_")
+  panelAnchorTop: (isCollapsed && Settings.data.bar.position !== "bottom") || panelPosition.startsWith("top_")
+
+  // Force attachment to bar when collapsed for clean look
+  forceAttachToBar: isCollapsed
+
+  // Explicitly trigger layout recalc when collapsed state changes
+  onIsCollapsedChanged: {
+    // This forces SmartPanel to re-evaluate size and position
+    // Use Qt.callLater to ensure property bindings (height, anchors) have updated first
+    Qt.callLater(() => root.setPosition());
+  }
 
   // Store direct reference to content for instant access
   property var contentItem: null
@@ -202,7 +220,7 @@ SmartPanel {
 
     ColumnLayout {
       anchors.fill: parent
-      anchors.margins: Style.marginL
+      anchors.margins: root.isCollapsed ? 0 : Style.marginL
       spacing: Style.marginM
 
       // Debounce timer for Wallhaven search
@@ -221,14 +239,17 @@ SmartPanel {
       // Header
       NBox {
         Layout.fillWidth: true
-        Layout.preferredHeight: headerColumn.implicitHeight + Style.marginL * 2
-        color: Color.mSurfaceVariant
+        Layout.preferredHeight: root.isCollapsed ? (40 * Style.uiScaleRatio) : (headerColumn.implicitHeight + Style.marginL * 2)
+        color: root.isCollapsed ? Color.transparent : Color.mSurfaceVariant
+        border.color: root.isCollapsed ? Color.transparent : Color.mOutline
 
+        // Normal Header Content
         ColumnLayout {
           id: headerColumn
           anchors.fill: parent
           anchors.margins: Style.marginL
           spacing: Style.marginM
+          visible: !root.isCollapsed
 
           RowLayout {
             Layout.fillWidth: true
@@ -266,12 +287,19 @@ SmartPanel {
               onClicked: {
                 if (Settings.data.wallpaper.useWallhaven) {
                   if (typeof WallhavenService !== "undefined") {
-                    WallhavenService.search(Settings.data.wallpaper.wallhavenQuery, 1);
+                     WallhavenService.search(Settings.data.wallpaper.wallhavenQuery, 1);
                   }
                 } else {
                   WallpaperService.refreshWallpapersList();
                 }
               }
+            }
+
+            NIconButton {
+              icon: "chevron-up"
+              tooltipText: I18n.tr("tooltips.collapse")
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: root.isCollapsed = true
             }
 
             NIconButton {
@@ -372,12 +400,12 @@ SmartPanel {
 
               onEditingFinished: {
                 if (Settings.data.wallpaper.useWallhaven) {
-                  wallhavenSearchDebounceTimer.stop();
-                  Settings.data.wallpaper.wallhavenQuery = text;
-                  if (typeof WallhavenService !== "undefined") {
-                    wallhavenView.loading = true;
-                    WallhavenService.search(text, 1);
-                  }
+                   wallhavenSearchDebounceTimer.stop();
+                   Settings.data.wallpaper.wallhavenQuery = text;
+                   if (typeof WallhavenService !== "undefined") {
+                     wallhavenView.loading = true;
+                     WallhavenService.search(text, 1);
+                   }
                 }
               }
 
@@ -431,22 +459,22 @@ SmartPanel {
                               searchInput.text = wallpaperPanel.filterText || "";
                             }
                             if (useWallhaven && typeof WallhavenService !== "undefined") {
-                              // Update service properties when switching to Wallhaven
-                              // Don't search here - Component.onCompleted will handle it when the component is created
-                              // This prevents duplicate searches
-                              WallhavenService.categories = Settings.data.wallpaper.wallhavenCategories;
-                              WallhavenService.purity = Settings.data.wallpaper.wallhavenPurity;
-                              WallhavenService.sorting = Settings.data.wallpaper.wallhavenSorting;
-                              WallhavenService.order = Settings.data.wallpaper.wallhavenOrder;
+                               // Update service properties when switching to Wallhaven
+                               // Don't search here - Component.onCompleted will handle it when the component is created
+                               // This prevents duplicate searches
+                               WallhavenService.categories = Settings.data.wallpaper.wallhavenCategories;
+                               WallhavenService.purity = Settings.data.wallpaper.wallhavenPurity;
+                               WallhavenService.sorting = Settings.data.wallpaper.wallhavenSorting;
+                               WallhavenService.order = Settings.data.wallpaper.wallhavenOrder;
 
-                              // Update resolution settings
-                              wallpaperPanel.updateWallhavenResolution();
+                               // Update resolution settings
+                               wallpaperPanel.updateWallhavenResolution();
 
-                              // If the view is already initialized, trigger a new search when switching to it
-                              if (wallhavenView && wallhavenView.initialized && !WallhavenService.fetching) {
-                                wallhavenView.loading = true;
-                                WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1);
-                              }
+                               // If the view is already initialized, trigger a new search when switching to it
+                               if (wallhavenView && wallhavenView.initialized && !WallhavenService.fetching) {
+                                 wallhavenView.loading = true;
+                                 WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1);
+                               }
                             }
                           }
             }
@@ -469,12 +497,28 @@ SmartPanel {
             }
           }
         }
+        
+        // Collapsed Header (Minimal)
+        Item {
+          anchors.fill: parent
+          visible: root.isCollapsed
+          
+          NIconButton {
+            id: expandBtn
+            anchors.centerIn: parent
+            icon: "chevron-down"
+            tooltipText: I18n.tr("tooltips.expand")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: root.isCollapsed = false
+          }
+        }
       }
 
       // Content stack: Wallhaven or Local
       NBox {
         Layout.fillWidth: true
         Layout.fillHeight: true
+        visible: !root.isCollapsed
         color: Color.mSurfaceVariant
 
         StackLayout {

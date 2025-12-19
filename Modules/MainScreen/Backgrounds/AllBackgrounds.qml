@@ -160,7 +160,7 @@ Item {
       PanelBackground {
         panel: root.windowRoot.wallpaperPanelPlaceholder
         shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
+        backgroundColor: panelBg ? panelBg.panelBackgroundColor : panelBackgroundColor
       }
 
       // WiFi

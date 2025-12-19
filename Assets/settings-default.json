@@ -162,7 +162,6 @@
     "wallhavenSorting": "relevance",
     "wallhavenOrder": "desc",
     "wallhavenCategories": "111",
-    "wallhavenRetainPage": false,
     "wallhavenPurity": "100",
     "wallhavenResolutionMode": "atleast",
     "wallhavenResolutionWidth": "",

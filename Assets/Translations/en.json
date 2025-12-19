@@ -2634,14 +2634,14 @@
     "click-to-start-recording": "Screen recorder (start recording)",
     "click-to-stop-recording": "Screen recorder (stop recording)",
     "close": "Close",
-    "collapse": "Collapse sidebar",
+    "collapse": "Collapse",
     "connect-disconnect-devices": "Bluetooth device",
     "delete-notification": "Delete notification",
     "disable-keep-awake": "Keep Awake",
     "do-not-disturb-disabled": "Do Not Disturb",
     "do-not-disturb-enabled": "Do Not Disturb",
     "enable-keep-awake": "Keep Awake",
-    "expand": "Expand sidebar",
+    "expand": "Expand",
     "forget-network": "Forget network",
     "grid-view": "Grid view",
     "hidden-files-hide": "Hidden files",
@@ -2724,13 +2724,7 @@
         "desc": "Descending",
         "label": "Order"
       },
-      "behavior": {
-        "label": "Behavior",
-        "retain_page": {
-           "label": "Retain page position",
-           "description": "Keep your place in the search results when closing and reopening the picker."
-        }
-      },
+
       "resolution": {
         "atleast": "At least",
         "exact": "Exact",
