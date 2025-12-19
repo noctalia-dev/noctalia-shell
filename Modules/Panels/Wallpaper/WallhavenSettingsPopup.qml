@@ -138,6 +138,48 @@ Popup {
       Layout.fillWidth: true
     }
 
+    // API Key
+    ColumnLayout {
+      Layout.fillWidth: true
+      spacing: Style.marginS
+
+      NText {
+        text: I18n.tr("wallpaper.panel.apikey.label")
+        color: Color.mOnSurface
+        pointSize: Style.fontSizeM
+      }
+
+      NTextInput {
+        id: apiKeyInput
+        Layout.fillWidth: true
+        placeholderText: I18n.tr("wallpaper.panel.apikey.placeholder")
+        text: Settings.data.wallpaper.wallhavenApiKey || ""
+        
+        // Fix for password echo mode
+        Component.onCompleted: {
+          if (apiKeyInput.inputItem) {
+             apiKeyInput.inputItem.echoMode = TextInput.Password;
+          }
+        }
+
+        onEditingFinished: {
+          Settings.data.wallpaper.wallhavenApiKey = text;
+        }
+      }
+      
+      NText {
+        text: I18n.tr("wallpaper.panel.apikey.help")
+        color: Color.mOnSurfaceVariant
+        pointSize: Style.fontSizeS
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
+      }
+    }
+
+    NDivider {
+      Layout.fillWidth: true
+    }
+
     // Sorting
     RowLayout {
       Layout.fillWidth: true
@@ -241,32 +283,228 @@ Popup {
         Layout.preferredWidth: implicitWidth
       }
 
-      NComboBox {
-        id: purityComboBox
+      Item {
         Layout.fillWidth: true
-        Layout.minimumWidth: 200
-        model: [
-          {
-            "key": "111",
-            "name": I18n.tr("wallpaper.panel.purity.all")
-          },
-          {
-            "key": "100",
-            "name": I18n.tr("wallpaper.panel.purity.sfw")
-          },
-          {
-            "key": "010",
-            "name": I18n.tr("wallpaper.panel.purity.sketchy")
+      }
+
+      RowLayout {
+        id: purityRow
+        spacing: Style.marginL
+
+        function getPurityValue(index) {
+          var purity = Settings.data.wallpaper.wallhavenPurity || "100";
+          return purity.length > index && purity.charAt(index) === "1";
+        }
+
+        function updatePurity(sfw, sketchy, nsfw) {
+          var purity = (sfw ? "1" : "0") + (sketchy ? "1" : "0") + (nsfw ? "1" : "0");
+          Settings.data.wallpaper.wallhavenPurity = purity;
+          // Update checkboxes immediately
+          sfwToggle.checked = sfw;
+          sketchyToggle.checked = sketchy;
+          nsfwToggle.checked = nsfw;
+          if (typeof WallhavenService !== "undefined") {
+            WallhavenService.purity = purity;
+            WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1);
           }
-        ]
-        currentKey: Settings.data.wallpaper.wallhavenPurity
-        onSelected: key => {
-                      Settings.data.wallpaper.wallhavenPurity = key;
-                      if (typeof WallhavenService !== "undefined") {
-                        WallhavenService.purity = key;
-                        WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1);
-                      }
-                    }
+        }
+
+        Connections {
+          target: Settings.data.wallpaper
+          function onWallhavenPurityChanged() {
+            sfwToggle.checked = purityRow.getPurityValue(0);
+            sketchyToggle.checked = purityRow.getPurityValue(1);
+            nsfwToggle.checked = purityRow.getPurityValue(2);
+          }
+          function onWallhavenApiKeyChanged() {
+            // If API key is removed, disable NSFW
+            if (!Settings.data.wallpaper.wallhavenApiKey && nsfwToggle.checked) {
+               nsfwToggle.toggled(false);
+            }
+          }
+        }
+
+        Component.onCompleted: {
+          sfwToggle.checked = purityRow.getPurityValue(0);
+          sketchyToggle.checked = purityRow.getPurityValue(1);
+          nsfwToggle.checked = purityRow.getPurityValue(2);
+        }
+
+        // SFW checkbox
+        Item {
+          Layout.preferredWidth: sfwCheckboxRow.implicitWidth
+          Layout.preferredHeight: sfwCheckboxRow.implicitHeight
+
+          RowLayout {
+            id: sfwCheckboxRow
+            anchors.fill: parent
+            spacing: Style.marginS
+
+            NText {
+              text: I18n.tr("wallpaper.panel.purity.sfw")
+              color: Color.mOnSurface
+              pointSize: Style.fontSizeM
+            }
+
+            Rectangle {
+              id: sfwBox
+              implicitWidth: Math.round(Style.baseWidgetSize * 0.7)
+              implicitHeight: Math.round(Style.baseWidgetSize * 0.7)
+              radius: Style.radiusXS
+              color: sfwToggle.checked ? Color.mPrimary : Color.mSurface
+              border.color: Color.mOutline
+              border.width: Style.borderS
+
+              Behavior on color {
+                ColorAnimation {
+                  duration: Style.animationFast
+                }
+              }
+
+              NIcon {
+                visible: sfwToggle.checked
+                anchors.centerIn: parent
+                anchors.horizontalCenterOffset: -1
+                icon: "check"
+                color: Color.mOnPrimary
+                pointSize: Math.max(Style.fontSizeXS, sfwBox.width * 0.5)
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: sfwToggle.toggled(!sfwToggle.checked)
+              }
+            }
+          }
+        }
+
+        // Sketchy checkbox
+        Item {
+          Layout.preferredWidth: sketchyCheckboxRow.implicitWidth
+          Layout.preferredHeight: sketchyCheckboxRow.implicitHeight
+
+          RowLayout {
+            id: sketchyCheckboxRow
+            anchors.fill: parent
+            spacing: Style.marginS
+
+            NText {
+              text: I18n.tr("wallpaper.panel.purity.sketchy")
+              color: Color.mOnSurface
+              pointSize: Style.fontSizeM
+            }
+
+            Rectangle {
+              id: sketchyBox
+              implicitWidth: Math.round(Style.baseWidgetSize * 0.7)
+              implicitHeight: Math.round(Style.baseWidgetSize * 0.7)
+              radius: Style.radiusXS
+              color: sketchyToggle.checked ? Color.mPrimary : Color.mSurface
+              border.color: Color.mOutline
+              border.width: Style.borderS
+
+              Behavior on color {
+                ColorAnimation {
+                  duration: Style.animationFast
+                }
+              }
+
+              NIcon {
+                visible: sketchyToggle.checked
+                anchors.centerIn: parent
+                anchors.horizontalCenterOffset: -1
+                icon: "check"
+                color: Color.mOnPrimary
+                pointSize: Math.max(Style.fontSizeXS, sketchyBox.width * 0.5)
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: sketchyToggle.toggled(!sketchyToggle.checked)
+              }
+            }
+          }
+        }
+
+        // NSFW checkbox
+        Item {
+          Layout.preferredWidth: nsfwCheckboxRow.implicitWidth
+          Layout.preferredHeight: nsfwCheckboxRow.implicitHeight
+          visible: Settings.data.wallpaper.wallhavenApiKey !== ""
+
+          RowLayout {
+            id: nsfwCheckboxRow
+            anchors.fill: parent
+            spacing: Style.marginS
+
+            NText {
+              text: I18n.tr("wallpaper.panel.purity.nsfw")
+              color: Color.mOnSurface
+              pointSize: Style.fontSizeM
+            }
+
+            Rectangle {
+              id: nsfwBox
+              implicitWidth: Math.round(Style.baseWidgetSize * 0.7)
+              implicitHeight: Math.round(Style.baseWidgetSize * 0.7)
+              radius: Style.radiusXS
+              color: nsfwToggle.checked ? Color.mPrimary : Color.mSurface
+              border.color: Color.mOutline
+              border.width: Style.borderS
+
+              Behavior on color {
+                ColorAnimation {
+                  duration: Style.animationFast
+                }
+              }
+
+              NIcon {
+                visible: nsfwToggle.checked
+                anchors.centerIn: parent
+                anchors.horizontalCenterOffset: -1
+                icon: "check"
+                color: Color.mOnPrimary
+                pointSize: Math.max(Style.fontSizeXS, nsfwBox.width * 0.5)
+              }
+
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: nsfwToggle.toggled(!nsfwToggle.checked)
+              }
+            }
+          }
+        }
+
+        // Invisible objects for logic
+        QtObject {
+          id: sfwToggle
+          property bool checked: false
+          signal toggled(bool checked)
+          onToggled: checked => {
+                       purityRow.updatePurity(checked, purityRow.getPurityValue(1), purityRow.getPurityValue(2));
+                     }
+        }
+
+        QtObject {
+          id: sketchyToggle
+          property bool checked: false
+          signal toggled(bool checked)
+          onToggled: checked => {
+                       purityRow.updatePurity(purityRow.getPurityValue(0), checked, purityRow.getPurityValue(2));
+                     }
+        }
+
+        QtObject {
+          id: nsfwToggle
+          property bool checked: false
+          signal toggled(bool checked)
+          onToggled: checked => {
+                       purityRow.updatePurity(purityRow.getPurityValue(0), purityRow.getPurityValue(1), checked);
+                     }
+        }
       }
     }
 
@@ -657,6 +895,7 @@ Popup {
           WallhavenService.purity = Settings.data.wallpaper.wallhavenPurity;
           WallhavenService.sorting = Settings.data.wallpaper.wallhavenSorting;
           WallhavenService.order = Settings.data.wallpaper.wallhavenOrder;
+          WallhavenService.apiKey = Settings.data.wallpaper.wallhavenApiKey;
 
           // Update resolution settings (without triggering search)
           updateResolution(false);

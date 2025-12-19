@@ -28,6 +28,7 @@ Singleton {
   property string resolutions: "" // e.g., "1920x1080,1920x1200"
   property string ratios: "" // e.g., "16x9,16x10"
   property string colors: "" // Color hex codes
+  property string apiKey: "" // User API key for NSFW access
 
   // Signals
   signal searchCompleted(var results, var meta)
@@ -88,6 +89,10 @@ Singleton {
     if (colors) {
       params.push("colors=" + colors);
     }
+    
+    if (apiKey) {
+      params.push("apikey=" + apiKey);
+    }
 
     params.push("page=" + currentPage);
 
@@ -130,6 +135,11 @@ Singleton {
           var errorMsg = "Rate limit exceeded (45 requests/minute)";
           lastError = errorMsg;
           Logger.w("Wallhaven", errorMsg);
+          searchFailed(errorMsg);
+        } else if (xhr.status === 401) {
+          var errorMsg = "Invalid API Key. Please check your settings.";
+          lastError = errorMsg;
+          Logger.e("Wallhaven", errorMsg);
           searchFailed(errorMsg);
         } else {
           var errorMsg = "API error: " + xhr.status;

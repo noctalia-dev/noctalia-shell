@@ -2728,7 +2728,13 @@
         "all": "All",
         "label": "Content filter",
         "sfw": "SFW",
-        "sketchy": "Sketchy"
+        "sketchy": "Sketchy",
+        "nsfw": "NSFW"
+      },
+      "apikey": {
+        "label": "API Key",
+        "placeholder": "Enter your Wallhaven API Key",
+        "help": "An API key is required to access NSFW content."
       },
       "resolution": {
         "atleast": "At least",
