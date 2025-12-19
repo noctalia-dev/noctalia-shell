@@ -21,6 +21,9 @@ Singleton {
   property Component weatherComponent: Component {
     DesktopWeather {}
   }
+  property Component countdownComponent: Component {
+    DesktopCountdown {}
+  }
 
   // Widget registry object mapping widget names to components
   // Created in Component.onCompleted to ensure Components are ready
@@ -32,6 +35,7 @@ Singleton {
     widgetsObj["Clock"] = clockComponent;
     widgetsObj["MediaPlayer"] = mediaPlayerComponent;
     widgetsObj["Weather"] = weatherComponent;
+    widgetsObj["Countdown"] = countdownComponent;
     widgets = widgetsObj;
 
     Logger.i("DesktopWidgetRegistry", "Service started");
@@ -46,7 +50,8 @@ Singleton {
   property var widgetSettingsMap: ({
                                      "Clock": "WidgetSettings/ClockSettings.qml",
                                      "MediaPlayer": "WidgetSettings/MediaPlayerSettings.qml",
-                                     "Weather": "WidgetSettings/WeatherSettings.qml"
+                                     "Weather": "WidgetSettings/WeatherSettings.qml",
+                                     "Countdown": "WidgetSettings/CountdownSettings.qml"
                                    })
 
   property var widgetMetadata: ({
@@ -67,6 +72,10 @@ Singleton {
                                   "Weather": {
                                     "allowUserSettings": true,
                                     "showBackground": true
+                                  },
+                                  "Countdown": {
+                                    "allowUserSettings": true,
+                                    "showBackground": false
                                   }
                                 })
 

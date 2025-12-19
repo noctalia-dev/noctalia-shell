@@ -1474,6 +1474,88 @@
           "description": "Add and configure desktop widgets",
           "label": "Desktop Widgets"
         }
+      },
+      "countdown": {
+        "editTooltip": "Edit Countdown",
+        "setupPrompt": "Click the edit icon to get started",
+        "setupTitle": "Setup Countdown",
+        "eventNameLabel": "Event Name",
+        "eventNamePlaceholder": "e.g., New Year's Eve",
+        "modeDuration": "By duration",
+        "modeDatetime": "To a specific date/time",
+        "durationLabel": "Duration (in minutes)",
+        "dateLabel": "Target Date",
+        "timeLabel": "Target Time",
+        "saveButton": "Save & Close",
+        "error": {
+          "nameRequired": "Event name cannot be empty.",
+          "durationPositive": "Duration must be greater than 0.",
+          "invalidFormat": "Invalid date or time format. Use YYYY-MM-DD and HH:MM.",
+          "futureDate": "Target date and time must be in the future."
+        },
+        "widgets": {
+          "select-preset-title": "Select a Countdown Preset",
+          "preset-label": "Preset",
+          "select-button": "Select",
+          "pause-tooltip": "Pause",
+          "resume-tooltip": "Resume",
+          "start-tooltip": "Start",
+          "reset-tooltip": "Reset",
+          "edit-tooltip": "Edit Countdown",
+          "setup-prompt": "Set up your countdown"
+        },
+        "settings": {
+          "title": {
+            "label": "Countdown Settings",
+            "description": "Configure your countdown presets and appearance"
+          },
+          "show-background": {
+            "label": "Show Background",
+            "description": "Display a background behind the countdown widget"
+          },
+          "presets": {
+            "label": "Countdown Presets",
+            "description": "Manage your saved countdown timers"
+          },
+          "add-new-preset": {
+            "text": "Add New Preset"
+          },
+          "edit-plan": {
+            "tooltip": "Edit Plan"
+          },
+          "remove-plan": {
+            "tooltip": "Remove Plan"
+          },
+          "modeDuration": "By duration",
+          "modeDatetime": "To a specific date/time",
+          "durationLabel": "Duration (minutes)",
+          "saveButton": "Save",
+          "widgetspreset-label": "Preset",
+          "dialog": {
+            "edit-title": "Edit Countdown Preset",
+            "add-title": "Add New Countdown Preset",
+            "preset-name": {
+              "label": "Preset Name"
+            },
+            "mode": {
+              "label": "Mode"
+            },
+            "date": {
+              "label": "Date",
+              "placeholder": "YYYY-MM-DD"
+            },
+            "time": {
+              "label": "Time",
+              "placeholder": "HH:MM"
+            },
+            "cancel": {
+              "text": "Cancel"
+            },
+            "save": {
+              "text": "Save"
+            }
+          }
+        }
       }
     },
     "display": {

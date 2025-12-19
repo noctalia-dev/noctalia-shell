@@ -58,6 +58,22 @@ Variants {
       WlrLayershell.layer: WlrLayer.Bottom
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
       WlrLayershell.namespace: "noctalia-desktop-widgets-" + (screen?.name || "unknown")
+      WlrLayershell.keyboardFocus: needsKeyboardFocus() ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+      function needsKeyboardFocus() {
+          for (var i = 0; i < screenLoader.screenWidgets.length; i++) {
+              var widget = screenLoader.screenWidgets[i];
+              // The countdown widget is the only one requiring focus for now
+              if (widget.id === 'Countdown') {
+                  // A countdown widget requires focus when it's configured and running
+                  if (widget.targetDate && widget.targetDate !== "" &&
+                      (widget.isRunning || widget.isPaused)) {
+                      return true; // Found a configured and active countdown widget
+                  }
+              }
+          }
+          return false;
+      }
 
       anchors {
         top: true
@@ -217,6 +233,15 @@ Variants {
 
             property var widgetData: modelData
             property int widgetIndex: index
+
+            Connections {
+                target: widgetLoader
+                function onWidgetDataChanged() {
+                    if (widgetLoader.item) {
+                        widgetLoader.item.widgetData = widgetLoader.widgetData;
+                    }
+                }
+            }
 
             sourceComponent: {
               // Access registeredWidgets and pluginReloadCounter to create reactive binding
