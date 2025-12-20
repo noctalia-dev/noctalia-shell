@@ -1701,6 +1701,16 @@
         "label": "画面ロック解除時",
         "placeholder": "例: notify-send \"Screen\" \"Unlocked\""
       },
+      "performance-mode-enabled": {
+        "description": "Noctaliaパフォーマンスモードが有効になった際に実行されるコマンド。",
+        "label": "パフォーマンスモード有効時",
+        "placeholder": "例: notify-send \"Performance\" \"Mode Enabled\""
+      },
+      "performance-mode-disabled": {
+        "description": "Noctaliaパフォーマンスモードが無効になった際に実行されるコマンド。",
+        "label": "パフォーマンスモード無効時",
+        "placeholder": "例: notify-send \"Performance\" \"Mode Disabled\""
+      },
       "system-hooks": {
         "enable": {
           "description": "すべてのフックコマンドの有効・無効を切り替えます。",

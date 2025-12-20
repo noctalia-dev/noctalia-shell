@@ -1701,6 +1701,16 @@
         "label": "屏幕已解锁",
         "placeholder": "例如：notify-send \"屏幕\" \"已解锁\""
       },
+      "performance-mode-enabled": {
+        "description": "启用 Noctalia 性能模式时执行的命令。",
+        "label": "性能模式已启用",
+        "placeholder": "例如：notify-send \"性能\" \"模式已启用\""
+      },
+      "performance-mode-disabled": {
+        "description": "禁用 Noctalia 性能模式时执行的命令。",
+        "label": "性能模式已禁用",
+        "placeholder": "例如：notify-send \"性能\" \"模式已禁用\""
+      },
       "system-hooks": {
         "enable": {
           "description": "启用或禁用所有钩子命令。",

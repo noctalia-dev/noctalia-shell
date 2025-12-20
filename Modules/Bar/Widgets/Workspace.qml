@@ -56,7 +56,7 @@ Item {
   readonly property bool colorizeIcons: (widgetSettings.colorizeIcons !== undefined) ? widgetSettings.colorizeIcons : widgetMetadata.colorizeIcons
   readonly property bool enableScrollWheel: (widgetSettings.enableScrollWheel !== undefined) ? widgetSettings.enableScrollWheel : widgetMetadata.enableScrollWheel
 
-  readonly property real itemSize: (density === "compact") ? Style.capsuleHeight * 0.9 : Style.capsuleHeight * 0.8
+  readonly property int itemSize: Math.round(Style.capsuleHeight * 0.8)
 
   // Context menu state for grouped mode
   property var selectedWindow: null
@@ -83,12 +83,12 @@ Item {
   implicitHeight: showApplications ? (isVertical ? Math.round(groupedGrid.implicitHeight + Style.marginM * 2) : Style.barHeight) : (isVertical ? computeHeight() : Style.barHeight)
 
   function getWorkspaceWidth(ws) {
-    const d = Style.capsuleHeight * root.baseDimensionRatio;
+    const d = Math.round(Style.capsuleHeight * root.baseDimensionRatio);
     const factor = ws.isActive ? 2.2 : 1;
 
     // Don't calculate text width if labels are off
     if (labelMode === "none") {
-      return d * factor;
+      return Math.round(d * factor);
     }
 
     var displayText = ws.idx.toString();
@@ -103,13 +103,13 @@ Item {
 
     const textWidth = displayText.length * (d * 0.4); // Approximate width per character
     const padding = d * 0.6;
-    return Math.max(d * factor, textWidth + padding);
+    return Math.round(Math.max(d * factor, textWidth + padding));
   }
 
   function getWorkspaceHeight(ws) {
-    const d = Style.capsuleHeight * root.baseDimensionRatio;
+    const d = Math.round(Style.capsuleHeight * root.baseDimensionRatio);
     const factor = ws.isActive ? 2.2 : 1;
-    return d * factor;
+    return Math.round(d * factor);
   }
 
   function computeWidth() {
@@ -171,6 +171,7 @@ Item {
     target: CompositorService
     function onWorkspacesChanged() {
       refreshWorkspaces();
+      root.triggerUnifiedWave();
     }
     function onWindowListChanged() {
       if (showApplications || showLabelsOnlyWhenOccupied) {
@@ -231,7 +232,6 @@ Item {
     for (var i = 0; i < localWorkspaces.count; i++) {
       const ws = localWorkspaces.get(i);
       if (ws.isFocused === true) {
-        root.triggerUnifiedWave();
         root.workspaceChanged(ws.id, Color.mPrimary);
         break;
       }
@@ -333,8 +333,7 @@ Item {
                      var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
                      if (popupMenuWindow) {
                        popupMenuWindow.showContextMenu(contextMenu);
-                       const pos = BarService.getContextMenuPosition(workspaceBackground, contextMenu.implicitWidth, contextMenu.implicitHeight);
-                       contextMenu.openAtItem(workspaceBackground, pos.x, pos.y);
+                       contextMenu.openAtItem(workspaceBackground, screen);
                      }
                    }
                  }
@@ -598,7 +597,6 @@ Item {
 
             return Color.mOutline;
           }
-          scale: model.isActive ? 1.0 : 0.9
           z: 0
 
           MouseArea {
@@ -741,15 +739,6 @@ Item {
             width: root.itemSize
             height: root.itemSize
 
-            scale: itemHovered ? 1.1 : 1.0
-
-            Behavior on scale {
-              NumberAnimation {
-                duration: Style.animationNormal
-                easing.type: Easing.OutBack
-              }
-            }
-
             IconImage {
               id: groupedAppIcon
 
@@ -758,15 +747,7 @@ Item {
               source: ThemeIcons.iconForAppId(model.appId)
               smooth: true
               asynchronous: true
-              scale: model.isFocused ? 1.0 : 0.8
               layer.enabled: root.colorizeIcons && !model.isFocused
-
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: Style.animationNormal
-                  easing.type: Easing.InOutCubic
-                }
-              }
 
               Rectangle {
                 id: groupedFocusIndicator
@@ -968,27 +949,8 @@ Item {
   function openGroupedContextMenu(item) {
     var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
     if (popupMenuWindow) {
-      popupMenuWindow.open();
-
-      const globalPos = item.mapToItem(root, 0, 0);
-      let menuX, menuY;
-      if (root.barPosition === "top") {
-        menuX = globalPos.x + (item.width / 2) - (contextMenu.implicitWidth / 2);
-        menuY = Style.barHeight + Style.marginS;
-      } else if (root.barPosition === "bottom") {
-        const menuHeight = 12 + contextMenu.model.length * contextMenu.itemHeight;
-        menuX = globalPos.x + (item.width / 2) - (contextMenu.implicitWidth / 2);
-        menuY = -menuHeight - Style.marginS;
-      } else if (root.barPosition === "left") {
-        menuX = Style.barHeight + Style.marginS;
-        menuY = globalPos.y + (item.height / 2) - (contextMenu.implicitHeight / 2);
-      } else {
-        menuX = -contextMenu.implicitWidth - Style.marginS;
-        menuY = globalPos.y + (item.height / 2) - (contextMenu.implicitHeight / 2);
-      }
-
-      contextMenu.openAtItem(root, menuX, menuY);
-      popupMenuWindow.contentItem = contextMenu;
+      popupMenuWindow.showContextMenu(contextMenu);
+      contextMenu.openAtItem(item, screen);
     }
   }
 }

@@ -16,11 +16,12 @@ Item {
 
   signal hidden
 
-  readonly property int notificationWidth: Math.round(400 * Style.uiScaleRatio)
+  readonly property int notificationWidth: Math.round(440 * Style.uiScaleRatio)
+  readonly property int shadowPadding: Style.shadowBlurMax + Style.marginL
 
   // Use exact notification width to match notifications precisely
   width: notificationWidth
-  height: Math.round(contentLayout.implicitHeight + Style.marginM * 3 * 2)
+  height: Math.round(contentLayout.implicitHeight + Style.marginM * 2 * 2 + shadowPadding * 2)
   visible: true
   opacity: 0
   scale: initialScale
@@ -29,7 +30,7 @@ Item {
   Rectangle {
     id: background
     anchors.fill: parent
-    anchors.margins: Style.marginM
+    anchors.margins: shadowPadding
     radius: Style.radiusL
     color: Qt.alpha(Color.mSurface, Settings.data.notifications.backgroundOpacity || 1.0)
 
@@ -95,14 +96,11 @@ Item {
 
   RowLayout {
     id: contentLayout
-    anchors.top: parent.top
+    anchors.fill: background
     anchors.topMargin: Style.marginM
-    anchors.bottom: parent.bottom
     anchors.bottomMargin: Style.marginM
-    anchors.left: parent.left
-    anchors.leftMargin: Style.marginM * 3
-    anchors.right: parent.right
-    anchors.rightMargin: Style.marginM * 3
+    anchors.leftMargin: Style.marginM * 2
+    anchors.rightMargin: Style.marginM * 2
     spacing: Style.marginL
 
     // Icon

@@ -118,6 +118,9 @@ Item {
               textFormat: TextArea.RichText // Enable HTML rendering
               font.pointSize: Style.fontSizeM // Adjust font size for readability
               color: Color.mOnSurface // Consistent text color
+              background: Rectangle {
+                color: Color.mSurfaceVariant || "#e0e0e0"
+              }
             }
           }
         }

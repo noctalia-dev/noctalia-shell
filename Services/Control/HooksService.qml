@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Services.Power
 import qs.Services.UI
 
 Singleton {
@@ -48,6 +49,26 @@ Singleton {
         executeUnlockHook();
       }
       wasLocked = PanelService.lockScreen.active;
+    }
+  }
+
+  // Track performance mode state for hooks
+  property bool wasPerformanceModeEnabled: false
+
+  Connections {
+    target: PowerProfileService
+    function onNoctaliaPerformanceModeChanged() {
+      const isEnabled = PowerProfileService.noctaliaPerformanceMode;
+
+      // Detect enabled: was disabled, now enabled
+      if (!wasPerformanceModeEnabled && isEnabled) {
+        executePerformanceModeEnabledHook();
+      }
+      // Detect disabled: was enabled, now disabled
+      if (wasPerformanceModeEnabled && !isEnabled) {
+        executePerformanceModeDisabledHook();
+      }
+      wasPerformanceModeEnabled = isEnabled;
     }
   }
 
@@ -130,6 +151,42 @@ Singleton {
     }
   }
 
+  // Execute performance mode enabled hook
+  function executePerformanceModeEnabledHook() {
+    if (!Settings.data.hooks?.enabled) {
+      return;
+    }
+
+    const script = Settings.data.hooks?.performanceModeEnabled;
+    if (!script || script === "") {
+      return;
+    }
+
+    try {
+      Quickshell.execDetached(["sh", "-c", script]);
+    } catch (e) {
+      Logger.e("HooksService", `Failed to execute performance mode enabled hook: ${e}`);
+    }
+  }
+
+  // Execute performance mode disabled hook
+  function executePerformanceModeDisabledHook() {
+    if (!Settings.data.hooks?.enabled) {
+      return;
+    }
+
+    const script = Settings.data.hooks?.performanceModeDisabled;
+    if (!script || script === "") {
+      return;
+    }
+
+    try {
+      Quickshell.execDetached(["sh", "-c", script]);
+    } catch (e) {
+      Logger.e("HooksService", `Failed to execute performance mode disabled hook: ${e}`);
+    }
+  }
+
   // Initialize the service
   function init() {
     Logger.i("HooksService", "Service started");
@@ -139,6 +196,8 @@ Singleton {
                      wasLocked = PanelService.lockScreen.active;
                      lockScreenActiveConnection.target = PanelService.lockScreen;
                    }
+                   // Initialize performance mode state tracking
+                   wasPerformanceModeEnabled = PowerProfileService.noctaliaPerformanceMode;
                  });
   }
 }

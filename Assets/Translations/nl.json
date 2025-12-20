@@ -1701,6 +1701,16 @@
         "label": "Scherm ontgrendeld",
         "placeholder": "bijv. notify-send \"Scherm\" \"Ontgrendeld\""
       },
+      "performance-mode-enabled": {
+        "description": "Commando dat wordt uitgevoerd wanneer de Noctalia Prestatiemodus wordt ingeschakeld.",
+        "label": "Prestatiemodus ingeschakeld",
+        "placeholder": "bijv. notify-send \"Prestatie\" \"Modus Ingeschakeld\""
+      },
+      "performance-mode-disabled": {
+        "description": "Commando dat wordt uitgevoerd wanneer de Noctalia Prestatiemodus wordt uitgeschakeld.",
+        "label": "Prestatiemodus uitgeschakeld",
+        "placeholder": "bijv. notify-send \"Prestatie\" \"Modus Uitgeschakeld\""
+      },
       "system-hooks": {
         "enable": {
           "description": "Schakel alle hook-commando's in of uit.",

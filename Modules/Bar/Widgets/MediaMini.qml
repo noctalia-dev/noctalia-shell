@@ -366,8 +366,7 @@ Item {
                        var popupWindow = PanelService.getPopupMenuWindow(screen);
                        if (popupWindow) {
                          popupWindow.showContextMenu(contextMenu);
-                         const pos = BarService.getContextMenuPosition(container, contextMenu.implicitWidth, contextMenu.implicitHeight);
-                         contextMenu.openAtItem(container, pos.x, pos.y);
+                         contextMenu.openAtItem(container, screen);
                        }
                      } else if (mouse.button === Qt.MiddleButton && hasPlayer && MediaService.canGoPrevious) {
                        MediaService.previous();

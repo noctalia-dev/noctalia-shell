@@ -53,7 +53,7 @@ Rectangle {
 
   // Match Workspace widget pill sizing: base ratio depends on bar density
   readonly property real pillBaseRatio: (density === "compact") ? 0.85 : 0.65
-  readonly property real pillHeight: Style.capsuleHeight * pillBaseRatio
+  readonly property int pillHeight: Math.round(Style.capsuleHeight * pillBaseRatio)
 
   // Highlight colors
   readonly property color warningColor: Settings.data.systemMonitor.useCustomColors ? (Settings.data.systemMonitor.warningColor || Color.mTertiary) : Color.mTertiary
@@ -151,8 +151,7 @@ Rectangle {
                    var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
                    if (popupMenuWindow) {
                      popupMenuWindow.showContextMenu(contextMenu);
-                     const pos = BarService.getContextMenuPosition(root, contextMenu.implicitWidth, contextMenu.implicitHeight);
-                     contextMenu.openAtItem(root, pos.x, pos.y);
+                     contextMenu.openAtItem(root, screen);
                    }
                  }
                }

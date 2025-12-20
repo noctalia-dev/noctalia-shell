@@ -121,6 +121,50 @@ ColumnLayout {
       Layout.fillWidth: true
     }
 
+    // Performance Mode Enabled Hook Section
+    NInputAction {
+      id: performanceModeEnabledHookInput
+      label: I18n.tr("settings.hooks.performance-mode-enabled.label")
+      description: I18n.tr("settings.hooks.performance-mode-enabled.description")
+      placeholderText: I18n.tr("settings.hooks.performance-mode-enabled.placeholder")
+      text: Settings.data.hooks.performanceModeEnabled
+      onEditingFinished: {
+        Settings.data.hooks.performanceModeEnabled = performanceModeEnabledHookInput.text;
+      }
+      onActionClicked: {
+        if (performanceModeEnabledHookInput.text) {
+          HooksService.executePerformanceModeEnabledHook();
+        }
+      }
+      Layout.fillWidth: true
+    }
+
+    NDivider {
+      Layout.fillWidth: true
+    }
+
+    // Performance Mode Disabled Hook Section
+    NInputAction {
+      id: performanceModeDisabledHookInput
+      label: I18n.tr("settings.hooks.performance-mode-disabled.label")
+      description: I18n.tr("settings.hooks.performance-mode-disabled.description")
+      placeholderText: I18n.tr("settings.hooks.performance-mode-disabled.placeholder")
+      text: Settings.data.hooks.performanceModeDisabled
+      onEditingFinished: {
+        Settings.data.hooks.performanceModeDisabled = performanceModeDisabledHookInput.text;
+      }
+      onActionClicked: {
+        if (performanceModeDisabledHookInput.text) {
+          HooksService.executePerformanceModeDisabledHook();
+        }
+      }
+      Layout.fillWidth: true
+    }
+
+    NDivider {
+      Layout.fillWidth: true
+    }
+
     // Info section
     ColumnLayout {
       spacing: Style.marginM

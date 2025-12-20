@@ -272,6 +272,87 @@ Popup {
       }
     }
 
+    // Aspect Ratio
+    RowLayout {
+      Layout.fillWidth: true
+      spacing: Style.marginM
+
+      NText {
+        text: I18n.tr("wallpaper.panel.ratios.label")
+        color: Color.mOnSurface
+        pointSize: Style.fontSizeM
+        Layout.preferredWidth: implicitWidth
+      }
+
+      NComboBox {
+        id: ratioComboBox
+        Layout.fillWidth: true
+        Layout.minimumWidth: 200
+        model: [
+          {
+            "key": "",
+            "name": I18n.tr("wallpaper.panel.ratios.any")
+          },
+          {
+            "key": "16x9",
+            "name": "16x9"
+          },
+          {
+            "key": "16x10",
+            "name": "16x10"
+          },
+          {
+            "key": "21x9",
+            "name": "21x9"
+          },
+          {
+            "key": "32x9",
+            "name": "32x9"
+          },
+          {
+            "key": "48x9",
+            "name": "48x9"
+          },
+          {
+            "key": "9x16",
+            "name": "9x16"
+          },
+          {
+            "key": "10x16",
+            "name": "10x16"
+          },
+          {
+            "key": "9x18",
+            "name": "9x18"
+          },
+          {
+            "key": "1x1",
+            "name": "1x1"
+          },
+          {
+            "key": "3x2",
+            "name": "3x2"
+          },
+          {
+            "key": "4x3",
+            "name": "4x3"
+          },
+          {
+            "key": "5x4",
+            "name": "5x4"
+          }
+        ]
+        currentKey: Settings.data.wallpaper.wallhavenRatios || ""
+        onSelected: key => {
+                      Settings.data.wallpaper.wallhavenRatios = key;
+                      if (typeof WallhavenService !== "undefined") {
+                        WallhavenService.ratios = key;
+                        WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", 1);
+                      }
+                    }
+      }
+    }
+
     // Categories
     RowLayout {
       Layout.fillWidth: true
@@ -659,6 +740,7 @@ Popup {
           WallhavenService.purity = Settings.data.wallpaper.wallhavenPurity;
           WallhavenService.sorting = Settings.data.wallpaper.wallhavenSorting;
           WallhavenService.order = Settings.data.wallpaper.wallhavenOrder;
+          WallhavenService.ratios = Settings.data.wallpaper.wallhavenRatios;
 
           // Update resolution settings (without triggering search)
           updateResolution(false);

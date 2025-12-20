@@ -1701,6 +1701,16 @@
         "label": "Écran déverrouillé",
         "placeholder": "ex: notify-send \"Écran\" \"Déverrouillé\""
       },
+      "performance-mode-enabled": {
+        "description": "Commande à exécuter lorsque le Mode Performance Noctalia est activé.",
+        "label": "Mode performance activé",
+        "placeholder": "ex: notify-send \"Performance\" \"Mode Activé\""
+      },
+      "performance-mode-disabled": {
+        "description": "Commande à exécuter lorsque le Mode Performance Noctalia est désactivé.",
+        "label": "Mode performance désactivé",
+        "placeholder": "ex: notify-send \"Performance\" \"Mode Désactivé\""
+      },
       "system-hooks": {
         "enable": {
           "description": "Activer ou désactiver toutes les commandes de hook.",

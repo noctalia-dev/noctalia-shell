@@ -321,6 +321,7 @@ SmartPanel {
 
         NTabButton {
           Layout.fillWidth: true
+          Layout.preferredWidth: 0
           text: I18n.tr("settings.audio.panel.tabs.volumes")
           tabIndex: 0
           checked: tabBar.currentIndex === 0
@@ -328,6 +329,7 @@ SmartPanel {
 
         NTabButton {
           Layout.fillWidth: true
+          Layout.preferredWidth: 0
           text: I18n.tr("settings.audio.panel.tabs.devices")
           tabIndex: 1
           checked: tabBar.currentIndex === 1

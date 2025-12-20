@@ -1701,6 +1701,16 @@
         "label": "Pantalla desbloqueada",
         "placeholder": "ej., notify-send \"Pantalla\" \"Desbloqueada\""
       },
+      "performance-mode-enabled": {
+        "description": "Comando a ejecutar cuando se habilita el Modo de Rendimiento de Noctalia.",
+        "label": "Modo de rendimiento habilitado",
+        "placeholder": "ej., notify-send \"Rendimiento\" \"Modo Habilitado\""
+      },
+      "performance-mode-disabled": {
+        "description": "Comando a ejecutar cuando se deshabilita el Modo de Rendimiento de Noctalia.",
+        "label": "Modo de rendimiento deshabilitado",
+        "placeholder": "ej., notify-send \"Rendimiento\" \"Modo Deshabilitado\""
+      },
       "system-hooks": {
         "enable": {
           "description": "Activa o desactiva todos los comandos de hooks.",

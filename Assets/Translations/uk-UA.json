@@ -1701,6 +1701,16 @@
         "label": "Екран розблоковано",
         "placeholder": "напр., notify-send \"Екран\" \"Розблоковано\""
       },
+      "performance-mode-enabled": {
+        "description": "Команда для виконання при увімкненні режиму продуктивності Noctalia.",
+        "label": "Режим продуктивності увімкнено",
+        "placeholder": "напр., notify-send \"Продуктивність\" \"Режим Увімкнено\""
+      },
+      "performance-mode-disabled": {
+        "description": "Команда для виконання при вимкненні режиму продуктивності Noctalia.",
+        "label": "Режим продуктивності вимкнено",
+        "placeholder": "напр., notify-send \"Продуктивність\" \"Режим Вимкнено\""
+      },
       "system-hooks": {
         "enable": {
           "description": "Увімкнути або вимкнути всі команди хуків.",

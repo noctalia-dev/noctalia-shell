@@ -1701,6 +1701,16 @@
         "label": "Tela desbloqueada",
         "placeholder": "ex., notify-send \"Tela\" \"Desbloqueada\""
       },
+      "performance-mode-enabled": {
+        "description": "Comando a ser executado quando o Modo de Desempenho Noctalia é habilitado.",
+        "label": "Modo de desempenho habilitado",
+        "placeholder": "ex., notify-send \"Desempenho\" \"Modo Habilitado\""
+      },
+      "performance-mode-disabled": {
+        "description": "Comando a ser executado quando o Modo de Desempenho Noctalia é desabilitado.",
+        "label": "Modo de desempenho desabilitado",
+        "placeholder": "ex., notify-send \"Desempenho\" \"Modo Desabilitado\""
+      },
       "system-hooks": {
         "enable": {
           "description": "Ativa ou desativa todos os comandos de hook.",

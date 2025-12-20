@@ -1701,6 +1701,16 @@
         "label": "Ekran kilidi açıldı",
         "placeholder": "örn., notify-send \"Ekran\" \"Açıldı\""
       },
+      "performance-mode-enabled": {
+        "description": "Noctalia Performans Modu etkinleştirildiğinde çalıştırılacak komut.",
+        "label": "Performans modu etkinleştirildi",
+        "placeholder": "örn., notify-send \"Performans\" \"Mod Etkin\""
+      },
+      "performance-mode-disabled": {
+        "description": "Noctalia Performans Modu devre dışı bırakıldığında çalıştırılacak komut.",
+        "label": "Performans modu devre dışı bırakıldı",
+        "placeholder": "örn., notify-send \"Performans\" \"Mod Devre Dışı\""
+      },
       "system-hooks": {
         "enable": {
           "description": "Tüm kanca komutlarını etkinleştirin veya devre dışı bırakın.",

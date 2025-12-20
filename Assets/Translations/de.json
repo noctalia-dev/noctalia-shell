@@ -1701,6 +1701,16 @@
         "label": "Bildschirm entsperrt",
         "placeholder": "z.B. notify-send \"Bildschirm\" \"Entsperrt\""
       },
+      "performance-mode-enabled": {
+        "description": "Befehl, der ausgeführt wird, wenn der Noctalia-Leistungsmodus aktiviert wird.",
+        "label": "Leistungsmodus aktiviert",
+        "placeholder": "z.B. notify-send \"Leistung\" \"Modus aktiviert\""
+      },
+      "performance-mode-disabled": {
+        "description": "Befehl, der ausgeführt wird, wenn der Noctalia-Leistungsmodus deaktiviert wird.",
+        "label": "Leistungsmodus deaktiviert",
+        "placeholder": "z.B. notify-send \"Leistung\" \"Modus deaktiviert\""
+      },
       "system-hooks": {
         "enable": {
           "description": "Alle Hook-Befehle aktivieren oder deaktivieren.",

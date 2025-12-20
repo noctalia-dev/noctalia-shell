@@ -395,12 +395,14 @@ ColumnLayout {
       }
 
       NTabButton {
+        Layout.fillWidth: true
         text: I18n.tr("settings.plugins.filter.all")
         tabIndex: 0
         checked: pluginFilter === "all"
       }
 
       NTabButton {
+        Layout.fillWidth: true
         text: I18n.tr("settings.plugins.filter.downloaded")
         tabIndex: 1
         checked: pluginFilter === "downloaded"

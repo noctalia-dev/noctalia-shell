@@ -6,19 +6,21 @@ import qs.Commons
 
 // Simple context menu PopupWindow (similar to TrayMenu)
 // Designed to be rendered inside a PopupMenuWindow for click-outside-to-close
+// Automatically positions itself to respect screen boundaries
 PopupWindow {
   id: root
 
   property alias model: repeater.model
-  property real itemHeight: 28  // Match TrayMenu
+  property real itemHeight: 28 // Match TrayMenu
   property real itemPadding: Style.marginM
   property int verticalPolicy: ScrollBar.AsNeeded
   property int horizontalPolicy: ScrollBar.AsNeeded
 
   property var anchorItem: null
-  property real anchorX: 0
-  property real anchorY: 0
+  property ShellScreen screen: null
   property real calculatedWidth: 180
+
+  readonly property string barPosition: Settings.data.bar.position
 
   signal triggered(string action, var item)
 
@@ -76,8 +78,82 @@ PopupWindow {
   }
 
   anchor.item: anchorItem
-  anchor.rect.x: anchorX
-  anchor.rect.y: anchorY
+
+  anchor.rect.x: {
+    if (anchorItem && screen) {
+      const anchorGlobalPos = anchorItem.mapToItem(null, 0, 0);
+
+      // For right bar: position menu to the left of anchor
+      if (root.barPosition === "right") {
+        let baseX = -implicitWidth - Style.marginM;
+        return baseX;
+      }
+
+      // For left bar: position menu to the right of anchor
+      if (root.barPosition === "left") {
+        let baseX = anchorItem.width + Style.marginM;
+        return baseX;
+      }
+
+      // For top/bottom bar: center horizontally on anchor
+      const anchorCenterX = anchorItem.width / 2;
+      let baseX = anchorCenterX - (implicitWidth / 2);
+
+      // Calculate menu position on screen
+      const menuScreenX = anchorGlobalPos.x + baseX;
+      const menuRight = menuScreenX + implicitWidth;
+
+      // Adjust if menu would clip on the right
+      if (menuRight > screen.width - Style.marginM) {
+        const overflow = menuRight - (screen.width - Style.marginM);
+        return baseX - overflow;
+      }
+      // Adjust if menu would clip on the left
+      if (menuScreenX < Style.marginM) {
+        return baseX + (Style.marginM - menuScreenX);
+      }
+      return baseX;
+    }
+    return 0;
+  }
+  anchor.rect.y: {
+    if (anchorItem && screen) {
+      const anchorCenterY = anchorItem.height / 2;
+
+      // Calculate base Y position based on bar orientation
+      let baseY;
+      if (root.barPosition === "bottom") {
+        // For bottom bar: position menu above the bar
+        baseY = -(implicitHeight + Style.marginM);
+      } else if (root.barPosition === "top") {
+        // For top bar: position menu below bar
+        baseY = Style.barHeight + Style.marginM;
+      } else {
+        // For left/right bar: vertically center on anchor
+        baseY = anchorCenterY - (implicitHeight / 2);
+      }
+
+      // Calculate menu position on screen
+      const anchorGlobalPos = anchorItem.mapToItem(null, 0, 0);
+      const menuScreenY = anchorGlobalPos.y + baseY;
+
+      const menuBottom = menuScreenY + implicitHeight;
+
+      // Adjust if menu would clip at bottom
+      if (menuBottom > screen.height - Style.marginM) {
+        const overflow = menuBottom - (screen.height - Style.marginM);
+        return baseY - overflow;
+      }
+
+      return baseY;
+    }
+
+    // Fallback if no screen
+    if (root.barPosition === "bottom") {
+      return -implicitHeight - Style.marginM;
+    }
+    return Style.barHeight;
+  }
 
   Component.onCompleted: {
     Qt.callLater(calculateWidth);
@@ -208,8 +284,9 @@ PopupWindow {
     }
   }
 
-  // Helper function to open at specific position relative to anchor item
-  function openAt(x, y, item) {
+  // Helper function to open context menu anchored to an item
+  // Position is calculated automatically based on bar position and screen boundaries
+  function openAtItem(item, itemScreen) {
     if (!item) {
       Logger.w("NPopupContextMenu", "anchorItem is undefined, won't show menu.");
       return;
@@ -218,19 +295,8 @@ PopupWindow {
     calculateWidth();
 
     anchorItem = item;
-    anchorX = x;
-    anchorY = y;
+    screen = itemScreen || null;
     visible = true;
-
-    Qt.callLater(() => {
-                   if (root.anchor) {
-                     root.anchor.updateAnchor();
-                   }
-                 });
-  }
-
-  function openAtItem(item, mouseX, mouseY) {
-    openAt(mouseX || 0, mouseY || 0, item);
   }
 
   function close() {

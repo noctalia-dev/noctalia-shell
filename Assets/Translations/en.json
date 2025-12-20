@@ -1687,7 +1687,7 @@
           "label": "Hook command information"
         },
         "parameters": {
-          "description": "• Wallpaper hook: $1 = wallpaper path, $2 = screen name<br>• Theme toggle hook: $1 = true/false (Dark Mode state)<br>• Screen lock/unlock hooks: No parameters",
+          "description": "• Wallpaper hook: $1 = wallpaper path, $2 = screen name<br>• Theme toggle hook: $1 = true/false (Dark Mode state)<br>• Screen lock/unlock hooks: No parameters<br>• Performance mode hooks: No parameters",
           "label": "Available parameters"
         }
       },
@@ -1700,6 +1700,16 @@
         "description": "Command to be executed when the lock screen is unlocked.",
         "label": "Screen unlocked",
         "placeholder": "e.g., notify-send \"Screen\" \"Unlocked\""
+      },
+      "performance-mode-enabled": {
+        "description": "Command to be executed when Noctalia Performance Mode is enabled.",
+        "label": "Performance mode enabled",
+        "placeholder": "e.g., notify-send \"Performance\" \"Mode Enabled\""
+      },
+      "performance-mode-disabled": {
+        "description": "Command to be executed when Noctalia Performance Mode is disabled.",
+        "label": "Performance mode disabled",
+        "placeholder": "e.g., notify-send \"Performance\" \"Mode Disabled\""
       },
       "system-hooks": {
         "enable": {
@@ -2724,7 +2734,16 @@
         "desc": "Descending",
         "label": "Order"
       },
-
+      "purity": {
+        "all": "All",
+        "label": "Content filter",
+        "sfw": "SFW",
+        "sketchy": "Sketchy"
+      },
+      "ratios": {
+        "any": "Any",
+        "label": "Aspect Ratio"
+      },
       "resolution": {
         "atleast": "At least",
         "exact": "Exact",
