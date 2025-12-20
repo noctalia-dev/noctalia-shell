@@ -515,4 +515,29 @@ PanelWindow {
     enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlPPressed !== undefined)
     onActivated: PanelService.openedPanel.onCtrlPPressed()
   }
+
+  // ===== VIM BINDINGS =====
+  Shortcut {
+    sequence: "H"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onHPressed !== undefined)
+    onActivated: PanelService.openedPanel.onHPressed()
+  }
+
+  Shortcut {
+    sequence: "J"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onJPressed !== undefined)
+    onActivated: PanelService.openedPanel.onJPressed()
+  }
+
+  Shortcut {
+    sequence: "K"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onKPressed !== undefined)
+    onActivated: PanelService.openedPanel.onKPressed()
+  }
+
+  Shortcut {
+    sequence: "L"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onLPressed !== undefined)
+    onActivated: PanelService.openedPanel.onLPressed()
+  }
 }

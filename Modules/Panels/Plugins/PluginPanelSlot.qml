@@ -31,6 +31,32 @@ SmartPanel {
   panelAnchorLeft: pluginInstance?.panelAnchorLeft ?? false
   panelAnchorRight: pluginInstance?.panelAnchorRight ?? false
 
+  // ===== KEYBOARD EVENT FORWARDING =====
+  // Helper function to safely retrieve a handler function from the plugin instance
+  function getHandler(funcName) {
+    // Check if instance exists and has the function
+    if (root.pluginInstance && typeof root.pluginInstance[funcName] === "function") {
+      // Return a wrapper that calls the function on the instance
+      return function() { root.pluginInstance[funcName]() }
+    }
+    return undefined;
+  }
+
+  // Standard Navigation
+  property var onTabPressed: root.pluginInstance ? getHandler("onTabPressed") : undefined
+  property var onBackTabPressed: root.pluginInstance ? getHandler("onBackTabPressed") : undefined
+  property var onUpPressed: root.pluginInstance ? getHandler("onUpPressed") : undefined
+  property var onDownPressed: root.pluginInstance ? getHandler("onDownPressed") : undefined
+  property var onLeftPressed: root.pluginInstance ? getHandler("onLeftPressed") : undefined
+  property var onRightPressed: root.pluginInstance ? getHandler("onRightPressed") : undefined
+  property var onReturnPressed: root.pluginInstance ? getHandler("onReturnPressed") : undefined
+
+  // Vim Navigation
+  property var onHPressed: root.pluginInstance ? getHandler("onHPressed") : undefined
+  property var onJPressed: root.pluginInstance ? getHandler("onJPressed") : undefined
+  property var onKPressed: root.pluginInstance ? getHandler("onKPressed") : undefined
+  property var onLPressed: root.pluginInstance ? getHandler("onLPressed") : undefined
+
   // Panel content is dynamically loaded
   panelContent: Component {
     Item {
