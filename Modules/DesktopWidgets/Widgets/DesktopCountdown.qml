@@ -136,15 +136,20 @@ DraggableDesktopWidget {
     id: updateTimer
     interval: 1000
     repeat: true
-    running: (countdownMode === "duration" && isRunning && !isPaused) ||
+    running: (countdownMode === "duration" && isRunning && !isPaused && !isCompleted) ||
              (countdownMode === "datetime" && configured && !isCompleted)
     onTriggered: calculateRemaining()
   }
 
   // Calculate the time difference in seconds between two dates
   function getTimeDifferenceInSeconds(fromDate, toDate) {
+    // Check if both dates are valid
+    if (!fromDate || !toDate || isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+      return 0; // Return 0 if either date is invalid
+    }
     var diff = toDate.getTime() - fromDate.getTime();
-    return Math.floor(diff / 1000);
+    // Use ceil instead of floor for UI countdown to avoid "missing" the first second
+    return Math.max(0, Math.ceil(diff / 1000));
   }
 
   // Function to remove the expired datetime plan
@@ -199,24 +204,12 @@ DraggableDesktopWidget {
       }
 
       seconds = getTimeDifferenceInSeconds(now, targetDateTime);
-    } else if (countdownMode === 'datetime') {
-      seconds = getTimeDifferenceInSeconds(now, root.targetDate);
-    } else {
-      return;
-    }
 
-    if (countdownMode === 'datetime') {
-      root.remainingTotalSeconds = Math.max(0, seconds);
-      // For datetime mode, when time is up, we can optionally trigger an event or change appearance
+      // In duration mode, update the remaining seconds
+      root.remainingTotalSeconds = seconds;
+
+      // If seconds <= 0, switch to completed state
       if (seconds <= 0) {
-        // Time has reached or passed the target date
-        // Remove this plan from the settings since it's no longer useful
-        removeExpiredDateTimePlan();
-      }
-    } else {
-      // For duration mode
-      if (seconds <= 0) {
-        // Switch to completed state
         root.countdownState = root.stateCompleted;
         root.remainingTotalSeconds = 0;
         // Send toast notification for duration mode completion, but only once
@@ -238,8 +231,17 @@ DraggableDesktopWidget {
           }
           root.durationCompletedNotified = true;
         }
-      } else {
-        root.remainingTotalSeconds = seconds;
+        return; // Don't continue processing
+      }
+    } else if (countdownMode === 'datetime') {
+      seconds = getTimeDifferenceInSeconds(now, root.targetDate);
+      // Ensure we have a valid integer value before assigning
+      root.remainingTotalSeconds = Math.max(0, seconds || 0);
+      // For datetime mode, when time is up, we can optionally trigger an event or change appearance
+      if (seconds <= 0) {
+        // Time has reached or passed the target date
+        // Remove this plan from the settings since it's no longer useful
+        removeExpiredDateTimePlan();
       }
     }
   }
@@ -252,8 +254,22 @@ DraggableDesktopWidget {
     } else {
       targetDateTime = new Date(Date.now() + totalSeconds * 1000);
     }
+
+    // First update the state to running but don't start the countdown yet
     countdownState = root.stateRunning;
     durationCompletedNotified = false; // Reset the notification flag when timer starts
+
+    // Update UI to show the initial values before starting the countdown
+    var now = new Date();
+    var seconds = getTimeDifferenceInSeconds(now, targetDateTime);
+    // Ensure we have a valid integer value before assigning
+    root.remainingTotalSeconds = seconds || 0;
+
+    // Request paint to update the UI immediately
+    canvas.requestPaint();
+
+    // Now start the countdown by enabling the timer
+    // The timer will call calculateRemaining() on the next tick
   }
 
   function pauseTimer() {
@@ -271,10 +287,12 @@ DraggableDesktopWidget {
       // Calculate initial remaining seconds for datetime mode
       var now = new Date();
       initialRemainingSeconds = getTimeDifferenceInSeconds(now, root.targetDate);
-      calculateRemaining();
     } else {
-      calculateRemaining();
+      // For duration mode, initialRemainingSeconds is not used
+      initialRemainingSeconds = 0;
     }
+
+    calculateRemaining();
   }
 
   Component.onCompleted: {
