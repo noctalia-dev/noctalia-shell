@@ -1535,6 +1535,12 @@
           },
           "modeDuration": "By duration",
           "modeDatetime": "To a specific date/time",
+          "durationHoursLabel": "Hours",
+          "durationHoursDescription": "Number of hours for the countdown",
+          "durationMinutesLabel": "Minutes",
+          "durationMinutesDescription": "Number of minutes for the countdown",
+          "durationSecondsLabel": "Seconds",
+          "durationSecondsDescription": "Number of seconds for the countdown",
           "durationLabel": "Duration (minutes)",
           "saveButton": "Save",
           "widgetspreset-label": "Preset",
@@ -1553,7 +1559,8 @@
             },
             "time": {
               "label": "Time",
-              "placeholder": "HH:MM"
+              "placeholder": "HH:MM",
+              "placeholder-seconds": "HH:MM:SS"
             },
             "cancel": {
               "text": "Cancel"
@@ -1563,7 +1570,7 @@
             },
             "error-title": "Error",
             "invalid-date-time": "Invalid date or time format. Please enter a valid date and time.",
-            "invalid-format": "Invalid date or time format. Use YYYY-MM-DD for date and HH:MM for time.",
+            "invalid-format": "Invalid date or time format. Use YYYY-MM-DD for date and HH:MM or HH:MM:SS for time.",
             "past-date-error": "The selected date and time must be in the future.",
             "name-required": "Plan name is required.",
             "ok": "OK"

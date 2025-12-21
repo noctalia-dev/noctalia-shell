@@ -45,18 +45,22 @@ ColumnLayout {
       return null;
     }
 
+    // Check if timeStr includes seconds (HH:MM:SS format)
+    var timeParts = timeStr.split(':');
+    var hour = parseInt(timeParts[0]);
+    var minute = parseInt(timeParts[1]);
+    var seconds = timeParts.length > 2 ? parseInt(timeParts[2]) : 0;
+
     var year = parseInt(dateStr.substring(0, 4));
     var month = parseInt(dateStr.substring(5, 7)) - 1;  // Month is 0-indexed in JS
     var day = parseInt(dateStr.substring(8, 10));
-    var hour = parseInt(timeStr.substring(0, 2));
-    var minute = parseInt(timeStr.substring(3, 5));
 
-    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute)) {
+    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute) || isNaN(seconds)) {
       Logger.w("CountdownSettings", "Invalid date or time format:", dateStr, timeStr);
       return null;
     }
 
-    return new Date(year, month, day, hour, minute);
+    return new Date(year, month, day, hour, minute, seconds);
   }
 
   // Helper function to set default date and time (current time + 1 hour)
@@ -64,7 +68,7 @@ ColumnLayout {
     var nd = new Date();
     nd.setHours(nd.getHours() + 1);
     var dateStr = root.formatDate(nd);
-    var timeStr = root.formatTime(nd);
+    var timeStr = root.formatTime(nd) + ":" + String(nd.getSeconds()).padStart(2, '0');
     return { dateStr: dateStr, timeStr: timeStr };
   }
 
@@ -205,15 +209,32 @@ ColumnLayout {
 
               NText {
                 Layout.fillWidth: true
-                text: modelData.name
+                text: modelData?.name || "Untitled Plan"
                 elide: Text.ElideRight
                 font.weight: Style.fontWeightBold
               }
 
               NText {
-                text: modelData.mode === "duration"
-                      ? modelData.durationMinutes + " min"
-                      : root.formatTargetDate(modelData.targetDate)
+                text: {
+                  if (modelData?.mode === "duration") {
+                    // Calculate hours, minutes, and seconds from total duration
+                    var totalSeconds = modelData?.totalDurationSeconds ||
+                                      (modelData?.durationMinutes * 60 + (modelData?.durationSeconds || 0));
+                    var hours = Math.floor(totalSeconds / 3600);
+                    var minutes = Math.floor((totalSeconds % 3600) / 60);
+                    var seconds = totalSeconds % 60;
+
+                    var parts = [];
+                    if (hours > 0) parts.push(hours + "h");
+                    if (minutes > 0) parts.push(minutes + "m");
+                    if (seconds > 0) parts.push(seconds + "s");
+
+                    if (parts.length === 0) return "0s";
+                    return parts.join(" ");
+                  } else {
+                    return root.formatTargetDate(modelData?.targetDate);
+                  }
+                }
                 color: Color.mOnSurfaceVariant
               }
 
@@ -269,7 +290,9 @@ ColumnLayout {
 
       function updateUiForMode(mode) {
         currentMode = mode;
-        durationInput.visible = mode === "duration";
+        durationHoursInput.visible = mode === "duration";
+        durationMinutesInput.visible = mode === "duration";
+        durationSecondsInput.visible = mode === "duration";
         datetimeInputs.visible = mode === "datetime";
       }
 
@@ -278,7 +301,24 @@ ColumnLayout {
         if (planData) {
           planNameInput.text = planData.name;
           modeInput.currentKey = planData.mode;
-          durationInput.value = planData.durationMinutes || 10;
+
+          // Handle duration in hours, minutes, seconds
+          var totalDurationMinutes = planData.durationMinutes || 10;
+          var totalDurationSeconds = planData.durationSeconds || 0; // If we store seconds separately
+
+          // If duration is stored as total seconds, we can extract hours, minutes, seconds
+          if (planData.totalDurationSeconds !== undefined) {
+            // If stored as total seconds, convert back to h/m/s
+            var totalSecs = planData.totalDurationSeconds;
+            durationHoursInput.value = Math.floor(totalSecs / 3600);
+            durationMinutesInput.value = Math.floor((totalSecs % 3600) / 60);
+            durationSecondsInput.value = totalSecs % 60;
+          } else {
+            // Legacy: stored as minutes, convert to h/m/s
+            durationHoursInput.value = Math.floor(totalDurationMinutes / 60);
+            durationMinutesInput.value = totalDurationMinutes % 60;
+            durationSecondsInput.value = totalDurationSeconds || 0;
+          }
 
           if (planData.mode === "datetime" && planData.targetDate) {
             var d = new Date(planData.targetDate);
@@ -305,7 +345,11 @@ ColumnLayout {
           // For new plan creation
           planNameInput.text = "";
           modeInput.currentKey = "duration";
-          durationInput.value = 10;
+          // Convert default duration (in minutes) to hours, minutes, and seconds
+          var totalMinutes = 10; // Default 10 minutes
+          durationHoursInput.value = Math.floor(totalMinutes / 60);
+          durationMinutesInput.value = totalMinutes % 60;
+          durationSecondsInput.value = 0; // Default to 0 seconds
 
           var defaultDateTime = root.setDefaultDateTime();
           dateInput.text = defaultDateTime.dateStr;
@@ -375,13 +419,45 @@ ColumnLayout {
                 }
               }
 
-              NSpinBox {
-                id: durationInput
+              RowLayout {
                 Layout.fillWidth: true
-                label: I18n.tr("settings.desktop-widgets.countdown.settings.durationLabel")
-                from: 1
-                to: 525600
-                visible: false  // 由函数控制
+                spacing: Style.marginS
+
+                NSpinBox {
+                  id: durationHoursInput
+                  Layout.fillWidth: true
+                  Layout.preferredWidth: 100
+                  label: I18n.tr("settings.desktop-widgets.countdown.settings.durationHoursLabel")
+                  // description: I18n.tr("settings.desktop-widgets.countdown.settings.durationHoursDescription")
+                  from: 0
+                  to: 999  // Reasonable upper limit
+                  value: 0
+                  visible: false  // 由函数控制
+                }
+
+                NSpinBox {
+                  id: durationMinutesInput
+                  Layout.fillWidth: true
+                  Layout.preferredWidth: 100
+                  label: I18n.tr("settings.desktop-widgets.countdown.settings.durationMinutesLabel")
+                  // description: I18n.tr("settings.desktop-widgets.countdown.settings.durationMinutesDescription")
+                  from: 0
+                  to: 59  // Minutes: 0-59
+                  value: 10
+                  visible: false  // 由函数控制
+                }
+
+                NSpinBox {
+                  id: durationSecondsInput
+                  Layout.fillWidth: true
+                  Layout.preferredWidth: 100
+                  label: I18n.tr("settings.desktop-widgets.countdown.settings.durationSecondsLabel")
+                  // description: I18n.tr("settings.desktop-widgets.countdown.settings.durationSecondsDescription")
+                  from: 0
+                  to: 59  // Seconds: 0-59
+                  value: 0
+                  visible: false  // 由函数控制
+                }
               }
 
               ColumnLayout {
@@ -401,7 +477,7 @@ ColumnLayout {
                   id: timeInput
                   Layout.fillWidth: true
                   label: I18n.tr("settings.desktop-widgets.countdown.settings.dialog.time.label")
-                  placeholderText: I18n.tr("settings.desktop-widgets.countdown.settings.dialog.time.placeholder")
+                  placeholderText: I18n.tr("settings.desktop-widgets.countdown.settings.dialog.time.placeholder-seconds")
                 }
               }
 
@@ -434,10 +510,15 @@ ColumnLayout {
                     var selectedMode = dialogRoot.currentMode;
 
                     if (selectedMode === "duration") {
+                      var totalDurationSeconds = (durationHoursInput.value * 3600) +
+                                                (durationMinutesInput.value * 60) +
+                                                durationSecondsInput.value;
                       var plan = {
                         name: planNameInput.text,
                         mode: selectedMode,
-                        durationMinutes: durationInput.value
+                        durationMinutes: Math.floor(totalDurationSeconds / 60), // Keep for backward compatibility
+                        durationSeconds: totalDurationSeconds % 60,
+                        totalDurationSeconds: totalDurationSeconds
                       };
                     } else if (selectedMode === "datetime") {
                       // Parse the input date and time
@@ -455,7 +536,21 @@ ColumnLayout {
 
                       // Validate the input strings before creating the plan
                       var isValidDateString = /^\d{4}-\d{2}-\d{2}$/.test(dateInput.text);
-                      var isValidTimeString = /^\d{2}:\d{2}$/.test(timeInput.text);
+
+                      // Check time format and validate ranges
+                      var timeMatch = timeInput.text.match(/^(\d{2}):(\d{2})(?::(\d{2}))?$/);
+                      var isValidTimeString = !!timeMatch;
+
+                      if (isValidTimeString) {
+                          var hours = parseInt(timeMatch[1]);
+                          var minutes = parseInt(timeMatch[2]);
+                          var seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
+
+                          // Validate ranges: 00-23 for hours, 00-59 for minutes and seconds
+                          isValidTimeString = (hours >= 0 && hours <= 23) &&
+                                              (minutes >= 0 && minutes <= 59) &&
+                                              (seconds >= 0 && seconds <= 59);
+                      }
 
                       if (!isValidDateString || !isValidTimeString) {
                         Logger.w("CountdownSettings", "Invalid date or time format in input fields");
@@ -483,8 +578,8 @@ ColumnLayout {
                         name: planNameInput.text,
                         mode: selectedMode,
                         // Store as a format that preserves the local time meaning
-                        // Format as YYYY-MM-DDTHH:mm (without timezone conversion)
-                        targetDate: dateInput.text + "T" + timeInput.text + ":00"
+                        // Format as YYYY-MM-DDTHH:mm[:ss] (without timezone conversion)
+                        targetDate: dateInput.text + "T" + timeInput.text
                       };
                     }
 

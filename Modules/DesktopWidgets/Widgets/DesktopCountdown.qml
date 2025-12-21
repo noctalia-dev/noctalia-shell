@@ -15,6 +15,15 @@ DraggableDesktopWidget {
 
   property string eventName: widgetData.eventName || ""
   property int durationMinutes: (widgetData && widgetData.durationMinutes) ? widgetData.durationMinutes : 0
+  property int durationSeconds: (widgetData && widgetData.durationSeconds) ? widgetData.durationSeconds : 0
+  property int totalDurationSeconds: {
+    if (widgetData && widgetData.totalDurationSeconds !== undefined) {
+      return widgetData.totalDurationSeconds;
+    } else {
+      // Calculate from minutes and seconds for backward compatibility
+      return (durationMinutes * 60) + (durationSeconds || 0);
+    }
+  }
   property string countdownMode: (widgetData && widgetData.countdownMode) ? widgetData.countdownMode : 'duration'
 
   // Parse date string with better error handling and timezone awareness
@@ -48,15 +57,50 @@ DraggableDesktopWidget {
 
   property string currentPlanKey: widgetData.currentPlanKey || ""
 
-  property bool configured: (countdownMode === 'duration' && durationMinutes > 0) ||
-                           (countdownMode === 'datetime' && targetDate && !isNaN(targetDate.getTime()))
+  property bool configured: {
+    if (countdownMode === 'duration') {
+      // For duration mode, calculate total duration seconds if not provided
+      var effectiveTotalSeconds = totalDurationSeconds;
+      if (effectiveTotalSeconds <= 0) {
+        // Fallback for backward compatibility: calculate from durationMinutes and durationSeconds
+        effectiveTotalSeconds = (durationMinutes * 60) + durationSeconds;
+      }
+      return effectiveTotalSeconds > 0;
+    } else if (countdownMode === 'datetime') {
+      return targetDate && !isNaN(targetDate.getTime());
+    }
+    return false;
+  }
 
-  property bool isRunning: false
-  property bool isPaused: false
+  // State management constants
+  readonly property int stateIdle: 0
+  readonly property int stateRunning: 1
+  readonly property int statePaused: 2
+  readonly property int stateCompleted: 3
+
+  property int countdownState: root.stateIdle
+  property bool durationCompletedNotified: false
   property date targetDateTime: new Date()
   property int remainingSecondsOnPause: 0
   property int initialRemainingSeconds: 0
-  property int totalSeconds: countdownMode === 'duration' ? durationMinutes * 60 : Math.max(0, initialRemainingSeconds)
+  property int totalSeconds: {
+    if (countdownMode === 'duration') {
+      // Use the same calculation as configured property for consistency
+      var effectiveTotalSeconds = totalDurationSeconds;
+      if (effectiveTotalSeconds <= 0) {
+        // Fallback for backward compatibility: calculate from durationMinutes and durationSeconds
+        effectiveTotalSeconds = (durationMinutes * 60) + (durationSeconds || 0);
+      }
+      return effectiveTotalSeconds;
+    } else {
+      return Math.max(0, initialRemainingSeconds);
+    }
+  }
+
+  // Computed properties for UI
+  readonly property bool isRunning: countdownState === root.stateRunning
+  readonly property bool isPaused: countdownState === root.statePaused
+  readonly property bool isCompleted: countdownState === root.stateCompleted
   property int remainingTotalSeconds: 0
   readonly property real circleMaxValue: {
     if (countdownMode === 'duration') {
@@ -93,7 +137,7 @@ DraggableDesktopWidget {
     interval: 1000
     repeat: true
     running: (countdownMode === "duration" && isRunning && !isPaused) ||
-             (countdownMode === "datetime" && configured)
+             (countdownMode === "datetime" && configured && !isCompleted)
     onTriggered: calculateRemaining()
   }
 
@@ -117,13 +161,17 @@ DraggableDesktopWidget {
 
           // Send toast notification about plan completion
           try {
-            ToastService.showNotice(
-              I18n.tr("notifications.countdown-completed.title"),
-              I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
-              "alarm"
-            );
+            if (typeof ToastService !== 'undefined' && typeof ToastService.showNotice === 'function') {
+              ToastService.showNotice(
+                I18n.tr("notifications.countdown-completed.title"),
+                I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
+                "alarm"
+              );
+            } else {
+              Logger.i("DesktopCountdown", "ToastService not available, countdown completed:", root.eventName);
+            }
           } catch (e) {
-            console.warn("Could not send toast notification:", e);
+            Logger.w("DesktopCountdown", "Could not send toast notification:", e);
             // Fallback to Logger if ToastService is not available
             Logger.i("DesktopCountdown", "Countdown completed:", root.eventName);
           }
@@ -139,10 +187,17 @@ DraggableDesktopWidget {
     var seconds;
 
     if (countdownMode === 'duration') {
-      if (!isRunning) {
+      if (countdownState === root.stateCompleted) {
+        // Already completed, don't update
+        return;
+      }
+
+      if (countdownState === root.stateIdle) {
+        // For duration mode, if idle, keep the initial value
         root.remainingTotalSeconds = root.totalSeconds;
         return;
       }
+
       seconds = getTimeDifferenceInSeconds(now, targetDateTime);
     } else if (countdownMode === 'datetime') {
       seconds = getTimeDifferenceInSeconds(now, root.targetDate);
@@ -159,27 +214,33 @@ DraggableDesktopWidget {
         removeExpiredDateTimePlan();
       }
     } else {
-      root.remainingTotalSeconds = seconds;
-      // For duration mode, when time is up, we should stop the countdown
+      // For duration mode
       if (seconds <= 0) {
-        resetTimer();
-        // Send toast notification for duration mode completion
-        try {
-          ToastService.showNotice(
-            I18n.tr("notifications.countdown-completed.title"),
-            I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
-            "alarm"
-          );
-        } catch (e) {
-          console.warn("Could not send toast notification for duration mode:", e);
-          // Fallback to Logger if ToastService is not available
-          Logger.i("DesktopCountdown", "Duration countdown completed:", root.eventName);
+        // Switch to completed state
+        root.countdownState = root.stateCompleted;
+        root.remainingTotalSeconds = 0;
+        // Send toast notification for duration mode completion, but only once
+        if (!root.durationCompletedNotified) {
+          try {
+            if (typeof ToastService !== 'undefined' && typeof ToastService.showNotice === 'function') {
+              ToastService.showNotice(
+                I18n.tr("notifications.countdown-completed.title"),
+                I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
+                "alarm"
+              );
+            } else {
+              Logger.i("DesktopCountdown", "ToastService not available, duration countdown completed:", root.eventName);
+            }
+          } catch (e) {
+            Logger.w("DesktopCountdown", "Could not send toast notification for duration mode:", e);
+            // Fallback to Logger if ToastService is not available
+            Logger.i("DesktopCountdown", "Duration countdown completed:", root.eventName);
+          }
+          root.durationCompletedNotified = true;
         }
+      } else {
+        root.remainingTotalSeconds = seconds;
       }
-    }
-
-    if (countdownMode === 'duration' && seconds <= 0) {
-      resetTimer();
     }
   }
 
@@ -191,21 +252,20 @@ DraggableDesktopWidget {
     } else {
       targetDateTime = new Date(Date.now() + totalSeconds * 1000);
     }
-    isPaused = false;
-    isRunning = true;
+    countdownState = root.stateRunning;
+    durationCompletedNotified = false; // Reset the notification flag when timer starts
   }
 
   function pauseTimer() {
     if (!isRunning) return;
     remainingSecondsOnPause = remainingTotalSeconds;
-    isRunning = false;
-    isPaused = true;
+    countdownState = root.statePaused;
   }
 
   function resetTimer() {
-    isRunning = false;
-    isPaused = false;
+    countdownState = root.stateIdle;
     remainingSecondsOnPause = 0;
+    durationCompletedNotified = false; // Reset the notification flag
 
     if (countdownMode === "datetime") {
       // Calculate initial remaining seconds for datetime mode
@@ -223,6 +283,8 @@ DraggableDesktopWidget {
       var now = new Date();
       initialRemainingSeconds = getTimeDifferenceInSeconds(now, root.targetDate);
     }
+    // Initialize state based on mode
+    countdownState = root.stateIdle;
     calculateRemaining();
     canvas.requestPaint();
   }
@@ -234,6 +296,7 @@ DraggableDesktopWidget {
       if (root.currentPlanKey) {
         var plans = Settings.data.desktopWidgets.countdownPlans || [];
         for (var i = 0; i < plans.length; i++) {
+          // Check if this plan matches the currentPlanKey
           if (plans[i].key === root.currentPlanKey || i.toString() === root.currentPlanKey) {
             planToApply = plans[i];
             break;
@@ -246,6 +309,8 @@ DraggableDesktopWidget {
         root.countdownMode = planToApply.mode;
         if (planToApply.mode === 'duration') {
           root.durationMinutes = planToApply.durationMinutes || 0;
+          root.durationSeconds = planToApply.durationSeconds || 0;
+          root.totalDurationSeconds = planToApply.totalDurationSeconds || (root.durationMinutes * 60 + root.durationSeconds);
         } else if (planToApply.mode === 'datetime' && planToApply.targetDate) {
           var parsedDate = parseDate(planToApply.targetDate);
           if (parsedDate) {
@@ -255,9 +320,12 @@ DraggableDesktopWidget {
           }
         }
       } else {
+        // If no specific plan is selected, use direct widget data
         root.eventName = root.widgetData.eventName || "";
         root.countdownMode = (root.widgetData && root.widgetData.countdownMode) ? root.widgetData.countdownMode : 'duration';
         root.durationMinutes = (root.widgetData && root.widgetData.durationMinutes !== undefined) ? root.widgetData.durationMinutes : 0;
+        root.durationSeconds = (root.widgetData && root.widgetData.durationSeconds !== undefined) ? root.widgetData.durationSeconds : 0;
+        root.totalDurationSeconds = (root.widgetData && root.widgetData.totalDurationSeconds !== undefined) ? root.widgetData.totalDurationSeconds : (root.durationMinutes * 60 + root.durationSeconds);
         if (root.widgetData && root.widgetData.targetDate) {
           var parsedDate = parseDate(root.widgetData.targetDate);
           if (parsedDate) {
@@ -268,19 +336,22 @@ DraggableDesktopWidget {
         }
       }
 
+      // Ensure proper initialization based on mode
       if (root.countdownMode === "datetime") {
         // Calculate initial remaining seconds for datetime mode
         var now = new Date();
         root.initialRemainingSeconds = getTimeDifferenceInSeconds(now, root.targetDate);
       } else {
+        // For duration mode, initialRemainingSeconds is not used
         root.initialRemainingSeconds = 0;
       }
 
-      if (root.countdownMode === "duration") {
-        root.resetTimer();
-      } else {
-        root.calculateRemaining();
-      }
+      // Reset state when widget data changes
+      root.countdownState = root.stateIdle;
+      root.durationCompletedNotified = false;
+
+      // Update the countdown calculation
+      root.calculateRemaining();
 
       canvas.requestPaint();
     }
@@ -363,7 +434,10 @@ DraggableDesktopWidget {
         readonly property int displaySeconds: secs % 60
 
         text: {
-          if (root.countdownMode === 'datetime' && root.remainingTotalSeconds <= 0) {
+          if (root.isCompleted) {
+            // Show "Time's up!" when countdown is completed in any mode
+            return I18n.tr("settings.desktop-widgets.countdown.widgets.time-up");
+          } else if (root.countdownMode === 'datetime' && root.remainingTotalSeconds <= 0) {
             // For datetime mode when time is up, show a special message
             return I18n.tr("settings.desktop-widgets.countdown.widgets.time-up");
           } else if (root.countdownMode === 'duration' && root.remainingTotalSeconds <= 0) {
@@ -381,7 +455,8 @@ DraggableDesktopWidget {
         }
 
         color: {
-          if ((root.countdownMode === 'datetime' || root.countdownMode === 'duration') && root.remainingTotalSeconds <= 0) {
+          if (root.isCompleted ||
+              ((root.countdownMode === 'datetime' || root.countdownMode === 'duration') && root.remainingTotalSeconds <= 0)) {
             // Use a different color when countdown is finished (both modes)
             return Qt.darker(progressColor, 1.5);
           } else {
@@ -421,6 +496,16 @@ DraggableDesktopWidget {
           onClicked: planSelectionDialog.open()
         }
       }
+
+      // Always show edit button when not configured to allow plan selection
+      NIconButton {
+        visible: !root.configured
+        baseSize: 32 * root.widgetScale
+        icon: "edit"
+        tooltipText: I18n.tr("settings.desktop-widgets.countdown.widgets.edit-tooltip")
+        onClicked: planSelectionDialog.open()
+        Layout.alignment: Qt.AlignHCenter
+      }
     }
   }
 
@@ -435,7 +520,12 @@ DraggableDesktopWidget {
           var plans = Settings.data.desktopWidgets.countdownPlans || [];
           var model = [];
           for (var i = 0; i < plans.length; i++) {
-              model.push({ name: plans[i].name, key: i.toString() });
+              if (plans[i] && typeof plans[i] === "object") {
+                  model.push({
+                      name: plans[i].name || "Untitled Plan",
+                      key: i.toString()
+                  });
+              }
           }
           return model;
       }
