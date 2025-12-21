@@ -73,6 +73,13 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("settings.launcher.settings.open-on-typing-overview.label")
+    description: I18n.tr("settings.launcher.settings.open-on-typing-overview.description")
+    checked: Settings.data.appLauncher.openOnTypingInOverview
+    onToggled: checked => Settings.data.appLauncher.openOnTypingInOverview = checked
+  }
+
+  NToggle {
     label: I18n.tr("settings.launcher.settings.clipboard-history.label")
     description: I18n.tr("settings.launcher.settings.clipboard-history.description")
     checked: Settings.data.appLauncher.enableClipboardHistory
