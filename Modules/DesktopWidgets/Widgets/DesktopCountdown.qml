@@ -5,6 +5,7 @@ import Quickshell
 import qs.Commons
 import qs.Modules.DesktopWidgets
 import qs.Widgets
+import qs.Services.UI
 
 DraggableDesktopWidget {
   id: root
@@ -102,6 +103,37 @@ DraggableDesktopWidget {
     return Math.floor(diff / 1000);
   }
 
+  // Function to remove the expired datetime plan
+  function removeExpiredDateTimePlan() {
+    if (root.currentPlanKey && root.countdownMode === "datetime") {
+      var planKey = root.currentPlanKey;
+      var plans = Settings.data.desktopWidgets.countdownPlans || [];
+
+      // Find and remove the expired plan
+      for (var i = 0; i < plans.length; i++) {
+        if (plans[i].key === planKey || i.toString() === planKey) {
+          plans.splice(i, 1);
+          Settings.data.desktopWidgets.countdownPlans = plans;
+
+          // Send toast notification about plan completion
+          try {
+            ToastService.showNotice(
+              I18n.tr("notifications.countdown-completed.title"),
+              I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
+              "alarm"
+            );
+          } catch (e) {
+            console.warn("Could not send toast notification:", e);
+            // Fallback to Logger if ToastService is not available
+            Logger.i("DesktopCountdown", "Countdown completed:", root.eventName);
+          }
+
+          break;
+        }
+      }
+    }
+  }
+
   function calculateRemaining() {
     var now = new Date();
     var seconds;
@@ -120,8 +152,30 @@ DraggableDesktopWidget {
 
     if (countdownMode === 'datetime') {
       root.remainingTotalSeconds = Math.max(0, seconds);
+      // For datetime mode, when time is up, we can optionally trigger an event or change appearance
+      if (seconds <= 0) {
+        // Time has reached or passed the target date
+        // Remove this plan from the settings since it's no longer useful
+        removeExpiredDateTimePlan();
+      }
     } else {
       root.remainingTotalSeconds = seconds;
+      // For duration mode, when time is up, we should stop the countdown
+      if (seconds <= 0) {
+        resetTimer();
+        // Send toast notification for duration mode completion
+        try {
+          ToastService.showNotice(
+            I18n.tr("notifications.countdown-completed.title"),
+            I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
+            "alarm"
+          );
+        } catch (e) {
+          console.warn("Could not send toast notification for duration mode:", e);
+          // Fallback to Logger if ToastService is not available
+          Logger.i("DesktopCountdown", "Duration countdown completed:", root.eventName);
+        }
+      }
     }
 
     if (countdownMode === 'duration' && seconds <= 0) {
@@ -309,7 +363,13 @@ DraggableDesktopWidget {
         readonly property int displaySeconds: secs % 60
 
         text: {
-          if (secs <= 0) {
+          if (root.countdownMode === 'datetime' && root.remainingTotalSeconds <= 0) {
+            // For datetime mode when time is up, show a special message
+            return I18n.tr("settings.desktop-widgets.countdown.widgets.time-up");
+          } else if (root.countdownMode === 'duration' && root.remainingTotalSeconds <= 0) {
+            // For duration mode when time is up, show a special message
+            return I18n.tr("settings.desktop-widgets.countdown.widgets.time-up");
+          } else if (secs <= 0) {
             return "00:00";
           } else if (root.countdownMode === 'datetime' && secs > 86400) {
             return `${displayDays}d ${displayHours}h`;
@@ -320,7 +380,14 @@ DraggableDesktopWidget {
           }
         }
 
-        color: secs <= 0 && root.countdownMode === 'datetime' ? Qt.lighter(textColor, 1.5) : textColor
+        color: {
+          if ((root.countdownMode === 'datetime' || root.countdownMode === 'duration') && root.remainingTotalSeconds <= 0) {
+            // Use a different color when countdown is finished (both modes)
+            return Qt.darker(progressColor, 1.5);
+          } else {
+            return textColor;
+          }
+        }
         pointSize: Style.fontSizeXXL * root.widgetScale
         font.weight: Style.fontWeightBold
         Layout.alignment: Qt.AlignHCenter
@@ -435,23 +502,34 @@ DraggableDesktopWidget {
                   }
               }
 
-              NButton {
+              RowLayout {
                   Layout.fillWidth: true
                   Layout.topMargin: Style.marginM
-                  text: I18n.tr("settings.desktop-widgets.countdown.widgets.select-button")
-                  enabled: planSelectionDialog.selectedPlanIndex > -1
-                  onClicked: {
-                      if (planSelectionDialog.selectedPlanIndex > -1) {
-                          var selectedPlan = Settings.data.desktopWidgets.countdownPlans[planSelectionDialog.selectedPlanIndex];
-                          var newWidgetData = {
-                              eventName: selectedPlan.name,
-                              countdownMode: selectedPlan.mode,
-                              durationMinutes: selectedPlan.durationMinutes,
-                              targetDate: selectedPlan.targetDate,
-                              currentPlanKey: planSelectionDialog.selectedPlanIndex.toString()
-                          };
-                          root.updateWidgetData(newWidgetData);
-                          planSelectionDialog.close();
+                  spacing: Style.marginS
+
+                  NButton {
+                      Layout.fillWidth: true
+                      text: I18n.tr("settings.desktop-widgets.countdown.widgets.cancel-button")
+                      onClicked: planSelectionDialog.close()
+                  }
+
+                  NButton {
+                      Layout.fillWidth: true
+                      text: I18n.tr("settings.desktop-widgets.countdown.widgets.select-button")
+                      enabled: planSelectionDialog.selectedPlanIndex > -1
+                      onClicked: {
+                          if (planSelectionDialog.selectedPlanIndex > -1) {
+                              var selectedPlan = Settings.data.desktopWidgets.countdownPlans[planSelectionDialog.selectedPlanIndex];
+                              var newWidgetData = {
+                                  eventName: selectedPlan.name,
+                                  countdownMode: selectedPlan.mode,
+                                  durationMinutes: selectedPlan.durationMinutes,
+                                  targetDate: selectedPlan.targetDate,
+                                  currentPlanKey: planSelectionDialog.selectedPlanIndex.toString()
+                              };
+                              root.updateWidgetData(newWidgetData);
+                              planSelectionDialog.close();
+                          }
                       }
                   }
               }
