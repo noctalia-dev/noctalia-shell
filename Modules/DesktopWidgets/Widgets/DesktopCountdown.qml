@@ -58,7 +58,7 @@ DraggableDesktopWidget {
   property string currentPlanKey: widgetData.currentPlanKey || ""
 
   // Button size property for consistent sizing across all buttons
-  property real buttonBaseSize: 28 * root.widgetScale
+  property real buttonBaseSize: 30 * root.widgetScale
 
   property bool configured: {
     if (countdownMode === 'duration') {
@@ -499,6 +499,12 @@ DraggableDesktopWidget {
           baseSize: buttonBaseSize
           icon: isRunning && !isPaused ? "media-pause" : "media-play"
           tooltipText: isRunning && !isPaused ? I18n.tr("settings.desktop-widgets.countdown.widgets.pause-tooltip") : I18n.tr("settings.desktop-widgets.countdown.widgets.start-tooltip")
+          colorBg: showBackground ? Color.mSurface : Qt.rgba(0, 0, 0, 0)
+          colorBgHover: showBackground ? Color.mPrimaryContainer : Color.mPrimary
+          colorFg: showBackground ? Color.mOnSurface : Color.mOnSurface
+          colorFgHover: showBackground ? Color.mOnPrimaryContainer : Color.mOnPrimary
+          colorBorder: showBackground ? Color.mOutline : Qt.rgba(0, 0, 0, 0)
+          colorBorderHover: showBackground ? Color.mOutline : Color.mPrimary
           onClicked: isRunning && !isPaused ? pauseTimer() : startTimer()
         }
 
@@ -507,6 +513,12 @@ DraggableDesktopWidget {
           icon: "refresh"
           visible: isRunning || isPaused
           tooltipText: I18n.tr("settings.desktop-widgets.countdown.widgets.reset-tooltip")
+          colorBg: showBackground ? Color.mSurface : Qt.rgba(0, 0, 0, 0)
+          colorBgHover: showBackground ? Color.mPrimaryContainer : Color.mPrimary
+          colorFg: showBackground ? Color.mOnSurface : Color.mOnSurface
+          colorFgHover: showBackground ? Color.mOnPrimaryContainer : Color.mOnPrimary
+          colorBorder: showBackground ? Color.mOutline : Qt.rgba(0, 0, 0, 0)
+          colorBorderHover: showBackground ? Color.mOutline : Color.mPrimary
           onClicked: resetTimer()
         }
 
@@ -514,6 +526,12 @@ DraggableDesktopWidget {
           baseSize: buttonBaseSize
           icon: "edit"
           tooltipText: I18n.tr("settings.desktop-widgets.countdown.widgets.edit-tooltip")
+          colorBg: showBackground ? Color.mSurface : Qt.rgba(0, 0, 0, 0)
+          colorBgHover: showBackground ? Color.mPrimaryContainer : Color.mPrimary
+          colorFg: showBackground ? Color.mOnSurface : Color.mOnSurface
+          colorFgHover: showBackground ? Color.mOnPrimaryContainer : Color.mOnPrimary
+          colorBorder: showBackground ? Color.mOutline : Qt.rgba(0, 0, 0, 0)
+          colorBorderHover: showBackground ? Color.mOutline : Color.mPrimary
           onClicked: planSelectionDialog.open()
         }
       }
@@ -524,6 +542,12 @@ DraggableDesktopWidget {
         baseSize: buttonBaseSize
         icon: "edit"
         tooltipText: I18n.tr("settings.desktop-widgets.countdown.widgets.edit-tooltip")
+        colorBg: showBackground ? Color.mSurface : Qt.rgba(0, 0, 0, 0)
+        colorBgHover: showBackground ? Color.mPrimaryContainer : Color.mPrimary
+        colorFg: showBackground ? Color.mOnSurface : Color.mOnSurface
+        colorFgHover: showBackground ? Color.mOnPrimaryContainer : Color.mOnPrimary
+        colorBorder: showBackground ? Color.mOutline : Qt.rgba(0, 0, 0, 0)
+        colorBorderHover: showBackground ? Color.mOutline : Color.mPrimary
         onClicked: planSelectionDialog.open()
         Layout.alignment: Qt.AlignHCenter
       }
