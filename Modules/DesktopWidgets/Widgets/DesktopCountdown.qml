@@ -16,14 +16,10 @@ DraggableDesktopWidget {
   property int durationMinutes: (widgetData && widgetData.durationMinutes) ? widgetData.durationMinutes : 0
   property string countdownMode: (widgetData && widgetData.countdownMode) ? widgetData.countdownMode : 'duration'
 
-  // 改进：更安全的日期解析，确保用户本地时区处理
   property date targetDate: {
     if (widgetData && widgetData.targetDate) {
-      // Parse the date string as a local time representation
-      // If it's in YYYY-MM-DDTHH:mm:ss format, create the date directly in local time
       var d = new Date(widgetData.targetDate);
       if (!isNaN(d.getTime())) return d;
-      console.warn("Invalid targetDate:", widgetData.targetDate);
     }
     return new Date(); // fallback
   }
@@ -37,19 +33,29 @@ DraggableDesktopWidget {
   property bool isPaused: false
   property date targetDateTime: new Date()
   property int remainingSecondsOnPause: 0
-
-  // datetime 模式下：初始剩余秒数（切换计划时重置）
   property int initialRemainingSeconds: 0
-
   property int totalSeconds: countdownMode === 'duration' ? durationMinutes * 60 : Math.max(0, initialRemainingSeconds)
-
   property int remainingTotalSeconds: 0
-
-  readonly property real circleMaxValue: totalSeconds > 0 ? totalSeconds : 1
+  readonly property real circleMaxValue: {
+    if (countdownMode === 'duration') {
+      return totalSeconds > 0 ? totalSeconds : 1;
+    } else if (countdownMode === 'datetime') {
+      // For datetime mode, calculate the original total seconds from when the countdown started
+      if (initialRemainingSeconds > 0) {
+        return initialRemainingSeconds;
+      } else {
+        // If not initialized, calculate from current time to target date
+        var now = new Date();
+        var diff = root.targetDate.getTime() - now.getTime();
+        var initialSecs = Math.floor(diff / 1000);
+        return Math.max(1, initialSecs); // At least 1 to avoid division by zero
+      }
+    }
+    return 1;
+  }
   readonly property real circleValue: Math.max(0, remainingTotalSeconds)
-
   readonly property bool active: (countdownMode === "duration" && isRunning && !isPaused) ||
-                                (countdownMode === "datetime" && remainingTotalSeconds > 0)
+                                (countdownMode === "datetime" && configured && remainingTotalSeconds > 0)
 
   implicitWidth: 200 * Style.uiScaleRatio
   implicitHeight: 200 * Style.uiScaleRatio
@@ -88,14 +94,12 @@ DraggableDesktopWidget {
 
     var seconds = Math.floor(diff / 1000);
 
-    // datetime 模式：不超过 0（不显示负数）
     if (countdownMode === 'datetime') {
       root.remainingTotalSeconds = Math.max(0, seconds);
     } else {
       root.remainingTotalSeconds = seconds;
     }
 
-    // duration 模式时间到 → 自动停止
     if (countdownMode === 'duration' && seconds <= 0) {
       resetTimer();
     }
@@ -126,19 +130,22 @@ DraggableDesktopWidget {
     remainingSecondsOnPause = 0;
 
     if (countdownMode === "datetime") {
-      // 只重新计算剩余时间
-      initialRemainingSeconds = 0; // 触发下次计算
+      // Calculate initial remaining seconds for datetime mode
+      var now = new Date();
+      var diff = root.targetDate.getTime() - now.getTime();
+      initialRemainingSeconds = Math.floor(diff / 1000);
       calculateRemaining();
     } else {
-      // duration 模式恢复初始值
       calculateRemaining();
     }
   }
 
   Component.onCompleted: {
-    // 首次加载时计算一次
     if (countdownMode === 'datetime') {
-      initialRemainingSeconds = 0; // 强制下次 binding 重新计算
+      // Calculate initial remaining seconds for datetime mode
+      var now = new Date();
+      var diff = root.targetDate.getTime() - now.getTime();
+      initialRemainingSeconds = Math.floor(diff / 1000);
     }
     calculateRemaining();
     canvas.requestPaint();
@@ -147,7 +154,6 @@ DraggableDesktopWidget {
   Connections {
     target: root
     function onWidgetDataChanged() {
-      // 查找当前计划
       var planToApply = null;
       if (root.currentPlanKey) {
         var plans = Settings.data.desktopWidgets.countdownPlans || [];
@@ -159,34 +165,35 @@ DraggableDesktopWidget {
         }
       }
 
-      // 应用计划后（原逻辑保留）
       if (planToApply) {
         root.eventName = planToApply.name;
         root.countdownMode = planToApply.mode;
         if (planToApply.mode === 'duration') {
           root.durationMinutes = planToApply.durationMinutes || 0;
         } else if (planToApply.mode === 'datetime' && planToApply.targetDate) {
-          // Parse the date string ensuring local timezone interpretation
           root.targetDate = new Date(planToApply.targetDate);
         }
       } else {
-        // fallback 逻辑同原
         root.eventName = root.widgetData.eventName || "";
         root.countdownMode = (root.widgetData && root.widgetData.countdownMode) ? root.widgetData.countdownMode : 'duration';
         root.durationMinutes = (root.widgetData && root.widgetData.durationMinutes !== undefined) ? root.widgetData.durationMinutes : 0;
         if (root.widgetData && root.widgetData.targetDate) {
-          // Parse the date string ensuring local timezone interpretation
           root.targetDate = new Date(root.widgetData.targetDate);
         }
       }
 
-      // 关键修复：每次 widgetData 改变后，重置 datetime 初始值
-      root.initialRemainingSeconds = 0;
+      if (root.countdownMode === "datetime") {
+        // Calculate initial remaining seconds for datetime mode
+        var now = new Date();
+        var diff = root.targetDate.getTime() - now.getTime();
+        root.initialRemainingSeconds = Math.floor(diff / 1000);
+      } else {
+        root.initialRemainingSeconds = 0;
+      }
 
       if (root.countdownMode === "duration") {
         root.resetTimer();
       } else {
-        // datetime 模式：重新计算剩余时间
         root.calculateRemaining();
       }
 
@@ -214,13 +221,11 @@ DraggableDesktopWidget {
         ctx.lineWidth = root.progressWidth;
         ctx.lineCap = "round";
 
-        // 背景圆环
         ctx.strokeStyle = Qt.alpha(root.textColor, 0.05);
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, 2 * Math.PI);
         ctx.stroke();
 
-        // 进度圆环（仅在 active 时绘制）
         if (root.active && root.circleMaxValue > 0) {
           const ratio = root.circleValue / root.circleMaxValue;
           const startAngle = -Math.PI / 2;
@@ -290,7 +295,6 @@ DraggableDesktopWidget {
         Layout.alignment: Qt.AlignHCenter
       }
 
-      // 按钮部分保持不变...
       RowLayout {
         visible: root.configured
         Layout.alignment: Qt.AlignHCenter

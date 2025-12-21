@@ -129,11 +129,11 @@ ColumnLayout {
 
       property var planData: null
       property int editIndex: -1
-      property string currentMode: "duration"  // 默认模式
+      property string currentMode: "duration"
 
 
       function updateUiForMode(mode) {
-        currentMode = mode;  // 更新当前模式
+        currentMode = mode;
         durationInput.visible = mode === "duration";
         datetimeInputs.visible = mode === "datetime";
       }
@@ -302,7 +302,7 @@ ColumnLayout {
                     } else if (selectedMode === "datetime") {
                       // Create date in user's local timezone
                       var year = parseInt(dateInput.text.substring(0, 4));
-                      var month = parseInt(dateInput.text.substring(5, 7)) - 1; // JS months are 0-indexed
+                      var month = parseInt(dateInput.text.substring(5, 7)) - 1;
                       var day = parseInt(dateInput.text.substring(8, 10));
                       var hour = parseInt(timeInput.text.substring(0, 2));
                       var minute = parseInt(timeInput.text.substring(3, 5));
