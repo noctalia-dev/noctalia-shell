@@ -1543,6 +1543,15 @@
           "durationSecondsDescription": "Number of seconds for the countdown",
           "durationLabel": "Duration (minutes)",
           "saveButton": "Save",
+          "command": {
+            "label": "Command to Execute",
+            "description": "Command to run when the countdown completes (leave empty to disable)",
+            "placeholder": "Enter command to execute..."
+          },
+          "show-osd": {
+            "label": "Show OSD Notification",
+            "description": "Show on-screen display notification when countdown completes"
+          },
           "widgetspreset-label": "Preset",
           "dialog": {
             "edit-title": "Edit Countdown Preset",

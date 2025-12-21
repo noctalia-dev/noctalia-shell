@@ -16,11 +16,19 @@ ColumnLayout {
   property bool valueShowBackground: (widgetData && widgetData.showBackground !== undefined)
                                   ? widgetData.showBackground
                                   : (widgetMetadata ? widgetMetadata.showBackground : false)
+  property bool valueShowOSDNotification: (widgetData && widgetData.showOSDNotification !== undefined)
+                                  ? widgetData.showOSDNotification
+                                  : (widgetMetadata ? widgetMetadata.showOSDNotification : true)
+  property string valueCommandToExecute: (widgetData && widgetData.commandToExecute !== undefined)
+                                  ? widgetData.commandToExecute
+                                  : (widgetMetadata ? widgetMetadata.commandToExecute : "")
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     Settings.data.desktopWidgets.countdownPlans = countdownPlans;
     settings.showBackground = valueShowBackground;
+    settings.showOSDNotification = valueShowOSDNotification;
+    settings.commandToExecute = valueCommandToExecute;
     return settings;
   }
 
@@ -176,6 +184,23 @@ ColumnLayout {
     description: I18n.tr("settings.desktop-widgets.countdown.settings.show-background.description")
     checked: valueShowBackground
     onToggled: checked => valueShowBackground = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.desktop-widgets.countdown.settings.show-osd.label")
+    description: I18n.tr("settings.desktop-widgets.countdown.settings.show-osd.description")
+    checked: valueShowOSDNotification
+    onToggled: checked => valueShowOSDNotification = checked
+  }
+
+  NTextInput {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.desktop-widgets.countdown.settings.command.label")
+    description: I18n.tr("settings.desktop-widgets.countdown.settings.command.description")
+    text: valueCommandToExecute
+    placeholderText: I18n.tr("settings.desktop-widgets.countdown.settings.command.placeholder")
+    onTextChanged: valueCommandToExecute = text
   }
 
   NCollapsible {

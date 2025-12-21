@@ -56,6 +56,8 @@ DraggableDesktopWidget {
   }
 
   property string currentPlanKey: widgetData.currentPlanKey || ""
+  property string commandToExecute: widgetData.commandToExecute || ""
+  property bool showOSDNotification: (widgetData && widgetData.showOSDNotification !== undefined) ? widgetData.showOSDNotification : true
 
   // Button size property for consistent sizing across all buttons
   property real buttonBaseSize: 30 * root.widgetScale
@@ -167,21 +169,39 @@ DraggableDesktopWidget {
           plans.splice(i, 1);
           Settings.data.desktopWidgets.countdownPlans = plans;
 
-          // Send toast notification about plan completion
-          try {
-            if (typeof ToastService !== 'undefined' && typeof ToastService.showNotice === 'function') {
-              ToastService.showNotice(
-                I18n.tr("notifications.countdown-completed.title"),
-                I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
-                "alarm"
-              );
-            } else {
-              Logger.i("DesktopCountdown", "ToastService not available, countdown completed:", root.eventName);
+          // Execute custom command if provided
+          if (root.commandToExecute && root.commandToExecute.trim() !== "") {
+            try {
+              var command = root.commandToExecute.trim();
+              if (typeof Quickshell !== 'undefined' && typeof Quickshell.execDetached === 'function') {
+                Quickshell.execDetached(["sh", "-c", command]);
+                Logger.i("DesktopCountdown", "Executed custom command:", command);
+              } else {
+                // Fallback: try to use Qt's process execution if available
+                console.log("Executing custom command:", command);
+              }
+            } catch (e) {
+              Logger.w("DesktopCountdown", "Could not execute custom command:", e);
             }
-          } catch (e) {
-            Logger.w("DesktopCountdown", "Could not send toast notification:", e);
-            // Fallback to Logger if ToastService is not available
-            Logger.i("DesktopCountdown", "Countdown completed:", root.eventName);
+          }
+
+          // Show OSD notification if enabled
+          if (root.showOSDNotification) {
+            try {
+              if (typeof ToastService !== 'undefined' && typeof ToastService.showNotice === 'function') {
+                ToastService.showNotice(
+                  I18n.tr("notifications.countdown-completed.title"),
+                  I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
+                  "alarm"
+                );
+              } else {
+                Logger.i("DesktopCountdown", "ToastService not available, countdown completed:", root.eventName);
+              }
+            } catch (e) {
+              Logger.w("DesktopCountdown", "Could not send toast notification:", e);
+              // Fallback to Logger if ToastService is not available
+              Logger.i("DesktopCountdown", "Countdown completed:", root.eventName);
+            }
           }
 
           break;
@@ -217,20 +237,39 @@ DraggableDesktopWidget {
         root.remainingTotalSeconds = 0;
         // Send toast notification for duration mode completion, but only once
         if (!root.durationCompletedNotified) {
-          try {
-            if (typeof ToastService !== 'undefined' && typeof ToastService.showNotice === 'function') {
-              ToastService.showNotice(
-                I18n.tr("notifications.countdown-completed.title"),
-                I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
-                "alarm"
-              );
-            } else {
-              Logger.i("DesktopCountdown", "ToastService not available, duration countdown completed:", root.eventName);
+          // Execute custom command if provided
+          if (root.commandToExecute && root.commandToExecute.trim() !== "") {
+            try {
+              var command = root.commandToExecute.trim();
+              if (typeof Quickshell !== 'undefined' && typeof Quickshell.execDetached === 'function') {
+                Quickshell.execDetached(["sh", "-c", command]);
+                Logger.i("DesktopCountdown", "Executed custom command:", command);
+              } else {
+                // Fallback: try to use Qt's process execution if available
+                console.log("Executing custom command:", command);
+              }
+            } catch (e) {
+              Logger.w("DesktopCountdown", "Could not execute custom command:", e);
             }
-          } catch (e) {
-            Logger.w("DesktopCountdown", "Could not send toast notification for duration mode:", e);
-            // Fallback to Logger if ToastService is not available
-            Logger.i("DesktopCountdown", "Duration countdown completed:", root.eventName);
+          }
+
+          // Show OSD notification if enabled
+          if (root.showOSDNotification) {
+            try {
+              if (typeof ToastService !== 'undefined' && typeof ToastService.showNotice === 'function') {
+                ToastService.showNotice(
+                  I18n.tr("notifications.countdown-completed.title"),
+                  I18n.tr("notifications.countdown-completed.body", { name: root.eventName }),
+                  "alarm"
+                );
+              } else {
+                Logger.i("DesktopCountdown", "ToastService not available, duration countdown completed:", root.eventName);
+              }
+            } catch (e) {
+              Logger.w("DesktopCountdown", "Could not send toast notification for duration mode:", e);
+              // Fallback to Logger if ToastService is not available
+              Logger.i("DesktopCountdown", "Duration countdown completed:", root.eventName);
+            }
           }
           root.durationCompletedNotified = true;
         }
@@ -347,6 +386,8 @@ DraggableDesktopWidget {
         root.durationMinutes = (root.widgetData && root.widgetData.durationMinutes !== undefined) ? root.widgetData.durationMinutes : 0;
         root.durationSeconds = (root.widgetData && root.widgetData.durationSeconds !== undefined) ? root.widgetData.durationSeconds : 0;
         root.totalDurationSeconds = (root.widgetData && root.widgetData.totalDurationSeconds !== undefined) ? root.widgetData.totalDurationSeconds : (root.durationMinutes * 60 + root.durationSeconds);
+        root.commandToExecute = (root.widgetData && root.widgetData.commandToExecute) ? root.widgetData.commandToExecute : "";
+        root.showOSDNotification = (root.widgetData && root.widgetData.showOSDNotification !== undefined) ? root.widgetData.showOSDNotification : true;
         if (root.widgetData && root.widgetData.targetDate) {
           var parsedDate = parseDate(root.widgetData.targetDate);
           if (parsedDate) {
