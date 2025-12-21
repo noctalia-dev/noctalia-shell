@@ -63,10 +63,9 @@ ColumnLayout {
     return new Date(year, month, day, hour, minute, seconds);
   }
 
-  // Helper function to set default date and time (current time + 1 hour)
+  // Helper function to set default date and time (current time for datetime mode, current time + 1 minute for duration mode)
   function setDefaultDateTime() {
     var nd = new Date();
-    nd.setHours(nd.getHours() + 1);
     var dateStr = root.formatDate(nd);
     var timeStr = root.formatTime(nd) + ":" + String(nd.getSeconds()).padStart(2, '0');
     return { dateStr: dateStr, timeStr: timeStr };
@@ -290,9 +289,7 @@ ColumnLayout {
 
       function updateUiForMode(mode) {
         currentMode = mode;
-        durationHoursInput.visible = mode === "duration";
-        durationMinutesInput.visible = mode === "duration";
-        durationSecondsInput.visible = mode === "duration";
+        durationInputsContainer.visible = mode === "duration";
         datetimeInputs.visible = mode === "datetime";
       }
 
@@ -340,22 +337,25 @@ ColumnLayout {
             timeInput.text = defaultDateTime.timeStr;
           }
 
-          updateUiForMode(planData.mode);
+          // Set the visibility based on the mode
+          durationInputsContainer.visible = planData.mode === "duration";
+          datetimeInputs.visible = planData.mode === "datetime";
         } else {
           // For new plan creation
           planNameInput.text = "";
           modeInput.currentKey = "duration";
-          // Convert default duration (in minutes) to hours, minutes, and seconds
-          var totalMinutes = 10; // Default 10 minutes
-          durationHoursInput.value = Math.floor(totalMinutes / 60);
-          durationMinutesInput.value = totalMinutes % 60;
-          durationSecondsInput.value = 0; // Default to 0 seconds
+          // Set default duration to 1 minute for better UX
+          durationHoursInput.value = 0;
+          durationMinutesInput.value = 1;
+          durationSecondsInput.value = 0;
 
           var defaultDateTime = root.setDefaultDateTime();
           dateInput.text = defaultDateTime.dateStr;
           timeInput.text = defaultDateTime.timeStr;
 
-          updateUiForMode("duration");
+          // Set the initial visibility for duration mode
+          durationInputsContainer.visible = true;
+          datetimeInputs.visible = false;
         }
       }
 
@@ -419,51 +419,49 @@ ColumnLayout {
                 }
               }
 
-              RowLayout {
+              ColumnLayout {
+                id: durationInputsContainer
                 Layout.fillWidth: true
+                Layout.preferredHeight: visible ? implicitHeight : 0  // Only take space when visible
+                visible: false  // Controlled by function
                 spacing: Style.marginS
 
                 NSpinBox {
                   id: durationHoursInput
                   Layout.fillWidth: true
-                  Layout.preferredWidth: 100
                   label: I18n.tr("settings.desktop-widgets.countdown.settings.durationHoursLabel")
                   // description: I18n.tr("settings.desktop-widgets.countdown.settings.durationHoursDescription")
                   from: 0
                   to: 999  // Reasonable upper limit
                   value: 0
-                  visible: false  // 由函数控制
                 }
 
                 NSpinBox {
                   id: durationMinutesInput
                   Layout.fillWidth: true
-                  Layout.preferredWidth: 100
                   label: I18n.tr("settings.desktop-widgets.countdown.settings.durationMinutesLabel")
                   // description: I18n.tr("settings.desktop-widgets.countdown.settings.durationMinutesDescription")
                   from: 0
                   to: 59  // Minutes: 0-59
                   value: 10
-                  visible: false  // 由函数控制
                 }
 
                 NSpinBox {
                   id: durationSecondsInput
                   Layout.fillWidth: true
-                  Layout.preferredWidth: 100
                   label: I18n.tr("settings.desktop-widgets.countdown.settings.durationSecondsLabel")
                   // description: I18n.tr("settings.desktop-widgets.countdown.settings.durationSecondsDescription")
                   from: 0
                   to: 59  // Seconds: 0-59
                   value: 0
-                  visible: false  // 由函数控制
                 }
               }
 
               ColumnLayout {
                 id: datetimeInputs
                 Layout.fillWidth: true
-                visible: false  // 由函数控制
+                Layout.preferredHeight: visible ? implicitHeight : 0  // Only take space when visible
+                visible: false
                 spacing: Style.marginS
 
                 NTextInput {
