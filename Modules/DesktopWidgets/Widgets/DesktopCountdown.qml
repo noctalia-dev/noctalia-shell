@@ -57,6 +57,9 @@ DraggableDesktopWidget {
 
   property string currentPlanKey: widgetData.currentPlanKey || ""
 
+  // Button size property for consistent sizing across all buttons
+  property real buttonBaseSize: 28 * root.widgetScale
+
   property bool configured: {
     if (countdownMode === 'duration') {
       // For duration mode, calculate total duration seconds if not provided
@@ -493,14 +496,14 @@ DraggableDesktopWidget {
 
         NIconButton {
           visible: root.countdownMode === "duration"
-          baseSize: 32 * root.widgetScale
+          baseSize: buttonBaseSize
           icon: isRunning && !isPaused ? "media-pause" : "media-play"
           tooltipText: isRunning && !isPaused ? I18n.tr("settings.desktop-widgets.countdown.widgets.pause-tooltip") : I18n.tr("settings.desktop-widgets.countdown.widgets.start-tooltip")
           onClicked: isRunning && !isPaused ? pauseTimer() : startTimer()
         }
 
         NIconButton {
-          baseSize: 32 * root.widgetScale
+          baseSize: buttonBaseSize
           icon: "refresh"
           visible: isRunning || isPaused
           tooltipText: I18n.tr("settings.desktop-widgets.countdown.widgets.reset-tooltip")
@@ -508,7 +511,7 @@ DraggableDesktopWidget {
         }
 
         NIconButton {
-          baseSize: 32 * root.widgetScale
+          baseSize: buttonBaseSize
           icon: "edit"
           tooltipText: I18n.tr("settings.desktop-widgets.countdown.widgets.edit-tooltip")
           onClicked: planSelectionDialog.open()
@@ -518,7 +521,7 @@ DraggableDesktopWidget {
       // Always show edit button when not configured to allow plan selection
       NIconButton {
         visible: !root.configured
-        baseSize: 32 * root.widgetScale
+        baseSize: buttonBaseSize
         icon: "edit"
         tooltipText: I18n.tr("settings.desktop-widgets.countdown.widgets.edit-tooltip")
         onClicked: planSelectionDialog.open()
