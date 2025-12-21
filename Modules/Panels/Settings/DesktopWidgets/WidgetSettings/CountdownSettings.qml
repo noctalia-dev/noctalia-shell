@@ -13,13 +13,148 @@ ColumnLayout {
 
   property var countdownPlans: Settings.data.desktopWidgets.countdownPlans || []
   property int editIndex: -1
-  property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
+  property bool valueShowBackground: (widgetData && widgetData.showBackground !== undefined)
+                                  ? widgetData.showBackground
+                                  : (widgetMetadata ? widgetMetadata.showBackground : false)
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     Settings.data.desktopWidgets.countdownPlans = countdownPlans;
     settings.showBackground = valueShowBackground;
     return settings;
+  }
+
+  // Helper function to format a date as YYYY-MM-DD string
+  function formatDate(date) {
+    var year = date.getFullYear();
+    var month = (date.getMonth() + 1).toString().padStart(2, '0');
+    var day = date.getDate().toString().padStart(2, '0');
+    return year + "-" + month + "-" + day;
+  }
+
+  // Helper function to format a time as HH:MM string
+  function formatTime(date) {
+    var hours = date.getHours().toString().padStart(2, '0');
+    var minutes = date.getMinutes().toString().padStart(2, '0');
+    return hours + ":" + minutes;
+  }
+
+  // Helper function to parse date string and create a local date object
+  function parseLocalDate(dateStr, timeStr) {
+    if (!dateStr || !timeStr) {
+      return null;
+    }
+
+    var year = parseInt(dateStr.substring(0, 4));
+    var month = parseInt(dateStr.substring(5, 7)) - 1;  // Month is 0-indexed in JS
+    var day = parseInt(dateStr.substring(8, 10));
+    var hour = parseInt(timeStr.substring(0, 2));
+    var minute = parseInt(timeStr.substring(3, 5));
+
+    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute)) {
+      Logger.w("CountdownSettings", "Invalid date or time format:", dateStr, timeStr);
+      return null;
+    }
+
+    return new Date(year, month, day, hour, minute);
+  }
+
+  // Helper function to set default date and time (current time + 1 hour)
+  function setDefaultDateTime() {
+    var nd = new Date();
+    nd.setHours(nd.getHours() + 1);
+    var dateStr = root.formatDate(nd);
+    var timeStr = root.formatTime(nd);
+    return { dateStr: dateStr, timeStr: timeStr };
+  }
+
+  // Helper function to format target date for display
+  function formatTargetDate(targetDate) {
+    if (!targetDate) return "Invalid Date";
+    try {
+      var date = new Date(targetDate);
+      if (isNaN(date.getTime())) {
+        return "Invalid Date";
+      }
+      return root.formatDate(date);
+    } catch (e) {
+      Logger.w("CountdownSettings", "Error formatting date:", targetDate, e);
+      return "Invalid Date";
+    }
+  }
+
+  // Helper function to show error dialog
+  function showErrorDialog(title, message) {
+    // Create a simple error dialog using the same pattern as the edit dialog
+    var dialogComponent = Qt.createQmlObject('
+      import QtQuick
+      import QtQuick.Layouts
+      import qs.Widgets
+      import qs.Commons
+
+      Item {
+        id: errorDialogRoot
+        anchors.fill: parent
+
+        Rectangle {
+          id: errorDialogOverlay
+          anchors.fill: parent
+          color: "#66000000"
+
+          MouseArea {
+            anchors.fill: parent
+            onClicked: errorDialogRoot.destroy()
+          }
+
+          Item {
+            width: 400 * Style.uiScaleRatio
+            height: 150
+            anchors.centerIn: parent
+
+            Rectangle {
+              anchors.fill: parent
+              radius: Style.radiusL
+              color: Color.mSurface
+              border.color: Color.mError
+              border.width: 2
+              focus: true
+              Keys.onEscapePressed: errorDialogRoot.destroy()
+
+              ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: Style.marginL
+                spacing: Style.marginS
+
+                NText {
+                  text: "' + title + '"
+                  pointSize: Style.fontSizeL
+                  font.weight: Style.fontWeightBold
+                  color: Color.mError
+                  Layout.alignment: Qt.AlignHCenter
+                }
+
+                NText {
+                  text: "' + message + '"
+                  pointSize: Style.fontSizeM
+                  Layout.alignment: Qt.AlignHCenter
+                  Layout.fillWidth: true
+                  wrapMode: Text.WordWrap
+                }
+
+                NButton {
+                  text: I18n.tr("settings.desktop-widgets.countdown.settings.dialog.ok")
+                  Layout.alignment: Qt.AlignHCenter
+                  onClicked: errorDialogRoot.destroy()
+                }
+              }
+            }
+          }
+        }
+      }', Overlay.overlay);
+
+    if (dialogComponent) {
+      // Dialog is handled in the component itself
+    }
   }
 
   Component.onCompleted: {
@@ -78,7 +213,7 @@ ColumnLayout {
               NText {
                 text: modelData.mode === "duration"
                       ? modelData.durationMinutes + " min"
-                      : new Date(modelData.targetDate).toLocaleDateString()
+                      : root.formatTargetDate(modelData.targetDate)
                 color: Color.mOnSurfaceVariant
               }
 
@@ -139,8 +274,8 @@ ColumnLayout {
       }
 
       Component.onCompleted: {
+        // Set up the UI based on planData
         if (planData) {
-
           planNameInput.text = planData.name;
           modeInput.currentKey = planData.mode;
           durationInput.value = planData.durationMinutes || 10;
@@ -148,39 +283,33 @@ ColumnLayout {
           if (planData.mode === "datetime" && planData.targetDate) {
             var d = new Date(planData.targetDate);
             if (!isNaN(d.getTime())) {
-              var dateStr = d.toISOString().substring(0, 10);
-              var timeStr = Qt.formatTime(d, "hh:mm");
+              var dateStr = root.formatDate(d);
+              var timeStr = root.formatTime(d);
               dateInput.text = dateStr;
               timeInput.text = timeStr;
             } else {
-              var nd = new Date();
-              nd.setHours(nd.getHours() + 1);
-              var dateStr = nd.toISOString().substring(0, 10);
-              var timeStr = Qt.formatTime(nd, "hh:mm");
-              dateInput.text = dateStr;
-              timeInput.text = timeStr;
+              // Use default date and time if the targetDate is invalid
+              var defaultDateTime = root.setDefaultDateTime();
+              dateInput.text = defaultDateTime.dateStr;
+              timeInput.text = defaultDateTime.timeStr;
             }
           } else {
-            var nd = new Date();
-            nd.setHours(nd.getHours() + 1);
-            var dateStr = nd.toISOString().substring(0, 10);
-            var timeStr = Qt.formatTime(nd, "hh:mm");
-            dateInput.text = dateStr;
-            timeInput.text = timeStr;
+            // For non-datetime mode or when no targetDate is provided, use default
+            var defaultDateTime = root.setDefaultDateTime();
+            dateInput.text = defaultDateTime.dateStr;
+            timeInput.text = defaultDateTime.timeStr;
           }
 
           updateUiForMode(planData.mode);
         } else {
-
+          // For new plan creation
           planNameInput.text = "";
           modeInput.currentKey = "duration";
           durationInput.value = 10;
-          var nd = new Date();
-          nd.setHours(nd.getHours() + 1);
-          var dateStr = nd.toISOString().substring(0, 10);
-          var timeStr = Qt.formatTime(nd, "hh:mm");
-          dateInput.text = dateStr;
-          timeInput.text = timeStr;
+
+          var defaultDateTime = root.setDefaultDateTime();
+          dateInput.text = defaultDateTime.dateStr;
+          timeInput.text = defaultDateTime.timeStr;
 
           updateUiForMode("duration");
         }
@@ -291,6 +420,17 @@ ColumnLayout {
                   icon: "check"
                   Layout.fillWidth: true
                   onClicked: {
+                    // Check if plan name is empty
+                    if (!planNameInput.text || planNameInput.text.trim() === "") {
+                      Logger.w("CountdownSettings", "Plan name is required");
+                      // Show error message to user
+                      showErrorDialog(
+                        I18n.tr("settings.desktop-widgets.countdown.settings.dialog.error-title"),
+                        I18n.tr("settings.desktop-widgets.countdown.settings.dialog.name-required")
+                      );
+                      return; // Don't proceed with saving
+                    }
+
                     var selectedMode = dialogRoot.currentMode;
 
                     if (selectedMode === "duration") {
@@ -300,15 +440,44 @@ ColumnLayout {
                         durationMinutes: durationInput.value
                       };
                     } else if (selectedMode === "datetime") {
-                      // Create date in user's local timezone
-                      var year = parseInt(dateInput.text.substring(0, 4));
-                      var month = parseInt(dateInput.text.substring(5, 7)) - 1;
-                      var day = parseInt(dateInput.text.substring(8, 10));
-                      var hour = parseInt(timeInput.text.substring(0, 2));
-                      var minute = parseInt(timeInput.text.substring(3, 5));
+                      // Parse the input date and time
+                      var localDate = root.parseLocalDate(dateInput.text, timeInput.text);
 
-                      // Create a date object representing the user's local time
-                      var localDate = new Date(year, month, day, hour, minute);
+                      if (!localDate) {
+                        Logger.w("CountdownSettings", "Invalid date or time input");
+                        // Show error message to user - using a simple dialog
+                        showErrorDialog(
+                          I18n.tr("settings.desktop-widgets.countdown.settings.dialog.error-title"),
+                          I18n.tr("settings.desktop-widgets.countdown.settings.dialog.invalid-date-time")
+                        );
+                        return; // Don't proceed with saving
+                      }
+
+                      // Validate the input strings before creating the plan
+                      var isValidDateString = /^\d{4}-\d{2}-\d{2}$/.test(dateInput.text);
+                      var isValidTimeString = /^\d{2}:\d{2}$/.test(timeInput.text);
+
+                      if (!isValidDateString || !isValidTimeString) {
+                        Logger.w("CountdownSettings", "Invalid date or time format in input fields");
+                        // Show error message to user
+                        showErrorDialog(
+                          I18n.tr("settings.desktop-widgets.countdown.settings.dialog.error-title"),
+                          I18n.tr("settings.desktop-widgets.countdown.settings.dialog.invalid-format")
+                        );
+                        return; // Don't proceed with saving
+                      }
+
+                      // Ensure the target date is in the future
+                      var now = new Date();
+                      if (localDate <= now) {
+                        Logger.w("CountdownSettings", "Target date is in the past");
+                        // Show error message to user
+                        showErrorDialog(
+                          I18n.tr("settings.desktop-widgets.countdown.settings.dialog.error-title"),
+                          I18n.tr("settings.desktop-widgets.countdown.settings.dialog.past-date-error")
+                        );
+                        return; // Don't proceed with saving
+                      }
 
                       var plan = {
                         name: planNameInput.text,

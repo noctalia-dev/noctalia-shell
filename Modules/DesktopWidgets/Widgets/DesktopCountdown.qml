@@ -16,12 +16,33 @@ DraggableDesktopWidget {
   property int durationMinutes: (widgetData && widgetData.durationMinutes) ? widgetData.durationMinutes : 0
   property string countdownMode: (widgetData && widgetData.countdownMode) ? widgetData.countdownMode : 'duration'
 
-  property date targetDate: {
-    if (widgetData && widgetData.targetDate) {
-      var d = new Date(widgetData.targetDate);
-      if (!isNaN(d.getTime())) return d;
+  // Parse date string with better error handling and timezone awareness
+  function parseDate(dateString) {
+    if (!dateString) {
+      return null;
     }
-    return new Date(); // fallback
+
+    // Check if dateString is already a Date object
+    if (dateString instanceof Date) {
+      return isNaN(dateString.getTime()) ? null : dateString;
+    }
+
+    // Try to parse the date string
+    var date = new Date(dateString);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      Logger.w("DesktopCountdown", "Invalid date string provided:", dateString);
+      return null;
+    }
+
+    // If it's a valid date, return it
+    return date;
+  }
+
+  property date targetDate: {
+    var parsedDate = parseDate(widgetData && widgetData.targetDate ? widgetData.targetDate : null);
+    return parsedDate ? parsedDate : new Date(); // fallback to current time
   }
 
   property string currentPlanKey: widgetData.currentPlanKey || ""
@@ -46,8 +67,7 @@ DraggableDesktopWidget {
       } else {
         // If not initialized, calculate from current time to target date
         var now = new Date();
-        var diff = root.targetDate.getTime() - now.getTime();
-        var initialSecs = Math.floor(diff / 1000);
+        var initialSecs = getTimeDifferenceInSeconds(now, root.targetDate);
         return Math.max(1, initialSecs); // At least 1 to avoid division by zero
       }
     }
@@ -76,23 +96,27 @@ DraggableDesktopWidget {
     onTriggered: calculateRemaining()
   }
 
+  // Calculate the time difference in seconds between two dates
+  function getTimeDifferenceInSeconds(fromDate, toDate) {
+    var diff = toDate.getTime() - fromDate.getTime();
+    return Math.floor(diff / 1000);
+  }
+
   function calculateRemaining() {
     var now = new Date();
-    var diff;
+    var seconds;
 
     if (countdownMode === 'duration') {
       if (!isRunning) {
         root.remainingTotalSeconds = root.totalSeconds;
         return;
       }
-      diff = targetDateTime.getTime() - now.getTime();
+      seconds = getTimeDifferenceInSeconds(now, targetDateTime);
     } else if (countdownMode === 'datetime') {
-      diff = root.targetDate.getTime() - now.getTime();
+      seconds = getTimeDifferenceInSeconds(now, root.targetDate);
     } else {
       return;
     }
-
-    var seconds = Math.floor(diff / 1000);
 
     if (countdownMode === 'datetime') {
       root.remainingTotalSeconds = Math.max(0, seconds);
@@ -132,8 +156,7 @@ DraggableDesktopWidget {
     if (countdownMode === "datetime") {
       // Calculate initial remaining seconds for datetime mode
       var now = new Date();
-      var diff = root.targetDate.getTime() - now.getTime();
-      initialRemainingSeconds = Math.floor(diff / 1000);
+      initialRemainingSeconds = getTimeDifferenceInSeconds(now, root.targetDate);
       calculateRemaining();
     } else {
       calculateRemaining();
@@ -144,8 +167,7 @@ DraggableDesktopWidget {
     if (countdownMode === 'datetime') {
       // Calculate initial remaining seconds for datetime mode
       var now = new Date();
-      var diff = root.targetDate.getTime() - now.getTime();
-      initialRemainingSeconds = Math.floor(diff / 1000);
+      initialRemainingSeconds = getTimeDifferenceInSeconds(now, root.targetDate);
     }
     calculateRemaining();
     canvas.requestPaint();
@@ -171,22 +193,31 @@ DraggableDesktopWidget {
         if (planToApply.mode === 'duration') {
           root.durationMinutes = planToApply.durationMinutes || 0;
         } else if (planToApply.mode === 'datetime' && planToApply.targetDate) {
-          root.targetDate = new Date(planToApply.targetDate);
+          var parsedDate = parseDate(planToApply.targetDate);
+          if (parsedDate) {
+            root.targetDate = parsedDate;
+          } else {
+            Logger.w("DesktopCountdown", "Failed to parse target date from plan:", planToApply.targetDate);
+          }
         }
       } else {
         root.eventName = root.widgetData.eventName || "";
         root.countdownMode = (root.widgetData && root.widgetData.countdownMode) ? root.widgetData.countdownMode : 'duration';
         root.durationMinutes = (root.widgetData && root.widgetData.durationMinutes !== undefined) ? root.widgetData.durationMinutes : 0;
         if (root.widgetData && root.widgetData.targetDate) {
-          root.targetDate = new Date(root.widgetData.targetDate);
+          var parsedDate = parseDate(root.widgetData.targetDate);
+          if (parsedDate) {
+            root.targetDate = parsedDate;
+          } else {
+            Logger.w("DesktopCountdown", "Failed to parse target date from widgetData:", root.widgetData.targetDate);
+          }
         }
       }
 
       if (root.countdownMode === "datetime") {
         // Calculate initial remaining seconds for datetime mode
         var now = new Date();
-        var diff = root.targetDate.getTime() - now.getTime();
-        root.initialRemainingSeconds = Math.floor(diff / 1000);
+        root.initialRemainingSeconds = getTimeDifferenceInSeconds(now, root.targetDate);
       } else {
         root.initialRemainingSeconds = 0;
       }

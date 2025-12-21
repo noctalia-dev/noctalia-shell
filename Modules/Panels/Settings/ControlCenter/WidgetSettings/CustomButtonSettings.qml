@@ -35,12 +35,12 @@ ColumnLayout {
                                                        "icon": item.icon || ""
                                                      });
             } else {
-              console.warn("⚠️ Invalid stateChecks entry at index " + i + ":", item);
+              Logger.w("CustomButtonSettings", "⚠️ Invalid stateChecks entry at index " + i + ":", item);
             }
           }
         }
       } catch (e) {
-        console.error("CustomButtonSettings: Failed to parse stateChecksJson:", e.message);
+        Logger.e("CustomButtonSettings", "Failed to parse stateChecksJson:", e.message);
       }
     }
   }

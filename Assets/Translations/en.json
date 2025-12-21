@@ -1553,7 +1553,13 @@
             },
             "save": {
               "text": "Save"
-            }
+            },
+            "error-title": "Error",
+            "invalid-date-time": "Invalid date or time format. Please enter a valid date and time.",
+            "invalid-format": "Invalid date or time format. Use YYYY-MM-DD for date and HH:MM for time.",
+            "past-date-error": "The selected date and time must be in the future.",
+            "name-required": "Plan name is required.",
+            "ok": "OK"
           }
         }
       }
