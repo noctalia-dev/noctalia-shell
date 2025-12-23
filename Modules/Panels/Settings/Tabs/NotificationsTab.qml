@@ -37,6 +37,8 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.settings.enabled.label")
       description: I18n.tr("settings.notifications.settings.enabled.description")
       checked: Settings.data.notifications.enabled !== false
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.enabled")
       onToggled: checked => Settings.data.notifications.enabled = checked
     }
 
@@ -77,6 +79,8 @@ ColumnLayout {
         }
       ]
       currentKey: Settings.data.notifications.location || "top_right"
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.location") || "top_right"
       onSelected: key => Settings.data.notifications.location = key
     }
 
@@ -84,28 +88,24 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.settings.always-on-top.label")
       description: I18n.tr("settings.notifications.settings.always-on-top.description")
       checked: Settings.data.notifications.overlayLayer
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.overlayLayer")
       onToggled: checked => Settings.data.notifications.overlayLayer = checked
     }
 
     // Background Opacity
-    ColumnLayout {
-      spacing: Style.marginXXS
+    NValueSlider {
       Layout.fillWidth: true
-
-      NLabel {
-        label: I18n.tr("settings.notifications.settings.background-opacity.label")
-        description: I18n.tr("settings.notifications.settings.background-opacity.description")
-      }
-
-      NValueSlider {
-        Layout.fillWidth: true
-        from: 0
-        to: 100
-        stepSize: 1
-        value: Settings.data.notifications.backgroundOpacity * 100
-        onMoved: value => Settings.data.notifications.backgroundOpacity = value / 100
-        text: Math.round(Settings.data.notifications.backgroundOpacity * 100) + "%"
-      }
+      label: I18n.tr("settings.notifications.settings.background-opacity.label")
+      description: I18n.tr("settings.notifications.settings.background-opacity.description")
+      from: 0
+      to: 100
+      stepSize: 1
+      value: Settings.data.notifications.backgroundOpacity * 100
+      isSettings: true
+      defaultValue: (Settings.getDefaultValue("notifications.backgroundOpacity") || 1) * 100
+      onMoved: value => Settings.data.notifications.backgroundOpacity = value / 100
+      text: Math.round(Settings.data.notifications.backgroundOpacity * 100) + "%"
     }
 
     // OSD settings moved to the dedicated OSD tab
@@ -159,6 +159,8 @@ ColumnLayout {
       description: I18n.tr("settings.notifications.sounds.enabled.description")
       checked: Settings.data.notifications?.sounds?.enabled ?? false
       visible: SoundService.multimediaAvailable
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.sounds.enabled")
       onToggled: checked => Settings.data.notifications.sounds.enabled = checked
     }
 
@@ -168,17 +170,16 @@ ColumnLayout {
       Layout.fillWidth: true
       visible: SoundService.multimediaAvailable && (Settings.data.notifications?.sounds?.enabled ?? false)
 
-      NLabel {
-        label: I18n.tr("settings.notifications.sounds.volume.label")
-        description: I18n.tr("settings.notifications.sounds.volume.description")
-      }
-
       NValueSlider {
         Layout.fillWidth: true
+        label: I18n.tr("settings.notifications.sounds.volume.label")
+        description: I18n.tr("settings.notifications.sounds.volume.description")
         from: 0
         to: 100
         stepSize: 1
         value: (Settings.data.notifications?.sounds?.volume ?? 0.5) * 100
+        isSettings: true
+        defaultValue: (Settings.getDefaultValue("notifications.sounds.volume") || 0.5) * 100
         onMoved: value => Settings.data.notifications.sounds.volume = value / 100
         text: Math.round((Settings.data.notifications?.sounds?.volume ?? 0.5) * 100) + "%"
       }
@@ -191,6 +192,8 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.sounds.separate.label")
       description: I18n.tr("settings.notifications.sounds.separate.description")
       checked: Settings.data.notifications?.sounds?.separateSounds ?? false
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.sounds.separateSounds")
       onToggled: checked => Settings.data.notifications.sounds.separateSounds = checked
     }
 
@@ -332,126 +335,110 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.duration.respect-expire.label")
       description: I18n.tr("settings.notifications.duration.respect-expire.description")
       checked: Settings.data.notifications.respectExpireTimeout
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.respectExpireTimeout")
       onToggled: checked => Settings.data.notifications.respectExpireTimeout = checked
     }
 
     // Low Urgency Duration
-    ColumnLayout {
-      spacing: Style.marginXXS
+    RowLayout {
+      spacing: Style.marginL
       Layout.fillWidth: true
 
-      NLabel {
+      NValueSlider {
+        Layout.fillWidth: true
         label: I18n.tr("settings.notifications.duration.low-urgency.label")
         description: I18n.tr("settings.notifications.duration.low-urgency.description")
+        from: 1
+        to: 30
+        stepSize: 1
+        value: Settings.data.notifications.lowUrgencyDuration
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("notifications.lowUrgencyDuration")
+        onMoved: value => Settings.data.notifications.lowUrgencyDuration = value
+        text: Settings.data.notifications.lowUrgencyDuration + "s"
       }
+      // Reset button container
+      Item {
+        Layout.preferredWidth: 30 * Style.uiScaleRatio
+        Layout.preferredHeight: 30 * Style.uiScaleRatio
 
-      RowLayout {
-        spacing: Style.marginL
-        Layout.fillWidth: true
-
-        NValueSlider {
-          Layout.fillWidth: true
-          from: 1
-          to: 30
-          stepSize: 1
-          value: Settings.data.notifications.lowUrgencyDuration
-          onMoved: value => Settings.data.notifications.lowUrgencyDuration = value
-          text: Settings.data.notifications.lowUrgencyDuration + "s"
-        }
-        // Reset button container
-        Item {
-          Layout.preferredWidth: 30 * Style.uiScaleRatio
-          Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-          NIconButton {
-            icon: "refresh"
-            baseSize: Style.baseWidgetSize * 0.8
-            tooltipText: I18n.tr("settings.notifications.duration.reset")
-            onClicked: Settings.data.notifications.lowUrgencyDuration = 3
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-          }
+        NIconButton {
+          icon: "restore"
+          baseSize: Style.baseWidgetSize * 0.8
+          tooltipText: I18n.tr("settings.notifications.duration.reset")
+          onClicked: Settings.data.notifications.lowUrgencyDuration = 3
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
         }
       }
     }
 
     // Normal Urgency Duration
-    ColumnLayout {
-      spacing: Style.marginXXS
+    RowLayout {
+      spacing: Style.marginL
       Layout.fillWidth: true
 
-      NLabel {
+      NValueSlider {
+        Layout.fillWidth: true
         label: I18n.tr("settings.notifications.duration.normal-urgency.label")
         description: I18n.tr("settings.notifications.duration.normal-urgency.description")
+        from: 1
+        to: 30
+        stepSize: 1
+        value: Settings.data.notifications.normalUrgencyDuration
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("notifications.normalUrgencyDuration")
+        onMoved: value => Settings.data.notifications.normalUrgencyDuration = value
+        text: Settings.data.notifications.normalUrgencyDuration + "s"
       }
 
-      RowLayout {
-        spacing: Style.marginL
-        Layout.fillWidth: true
+      // Reset button container
+      Item {
+        Layout.preferredWidth: 30 * Style.uiScaleRatio
+        Layout.preferredHeight: 30 * Style.uiScaleRatio
 
-        NValueSlider {
-          Layout.fillWidth: true
-          from: 1
-          to: 30
-          stepSize: 1
-          value: Settings.data.notifications.normalUrgencyDuration
-          onMoved: value => Settings.data.notifications.normalUrgencyDuration = value
-          text: Settings.data.notifications.normalUrgencyDuration + "s"
-        }
-
-        // Reset button container
-        Item {
-          Layout.preferredWidth: 30 * Style.uiScaleRatio
-          Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-          NIconButton {
-            icon: "refresh"
-            baseSize: Style.baseWidgetSize * 0.8
-            tooltipText: I18n.tr("settings.notifications.duration.reset")
-            onClicked: Settings.data.notifications.normalUrgencyDuration = 8
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-          }
+        NIconButton {
+          icon: "restore"
+          baseSize: Style.baseWidgetSize * 0.8
+          tooltipText: I18n.tr("settings.notifications.duration.reset")
+          onClicked: Settings.data.notifications.normalUrgencyDuration = 8
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
         }
       }
     }
 
     // Critical Urgency Duration
-    ColumnLayout {
-      spacing: Style.marginXXS
+    RowLayout {
+      spacing: Style.marginL
       Layout.fillWidth: true
 
-      NLabel {
+      NValueSlider {
+        Layout.fillWidth: true
         label: I18n.tr("settings.notifications.duration.critical-urgency.label")
         description: I18n.tr("settings.notifications.duration.critical-urgency.description")
+        from: 1
+        to: 30
+        stepSize: 1
+        value: Settings.data.notifications.criticalUrgencyDuration
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("notifications.criticalUrgencyDuration")
+        onMoved: value => Settings.data.notifications.criticalUrgencyDuration = value
+        text: Settings.data.notifications.criticalUrgencyDuration + "s"
       }
+      // Reset button container
+      Item {
+        Layout.preferredWidth: 30 * Style.uiScaleRatio
+        Layout.preferredHeight: 30 * Style.uiScaleRatio
 
-      RowLayout {
-        spacing: Style.marginL
-        Layout.fillWidth: true
-
-        NValueSlider {
-          Layout.fillWidth: true
-          from: 1
-          to: 30
-          stepSize: 1
-          value: Settings.data.notifications.criticalUrgencyDuration
-          onMoved: value => Settings.data.notifications.criticalUrgencyDuration = value
-          text: Settings.data.notifications.criticalUrgencyDuration + "s"
-        }
-        // Reset button container
-        Item {
-          Layout.preferredWidth: 30 * Style.uiScaleRatio
-          Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-          NIconButton {
-            icon: "refresh"
-            baseSize: Style.baseWidgetSize * 0.8
-            tooltipText: I18n.tr("settings.notifications.duration.reset")
-            onClicked: Settings.data.notifications.criticalUrgencyDuration = 15
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-          }
+        NIconButton {
+          icon: "restore"
+          baseSize: Style.baseWidgetSize * 0.8
+          tooltipText: I18n.tr("settings.notifications.duration.reset")
+          onClicked: Settings.data.notifications.criticalUrgencyDuration = 15
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
         }
       }
     }
@@ -509,6 +496,8 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.toast.keyboard.label")
       description: I18n.tr("settings.notifications.toast.keyboard.description")
       checked: Settings.data.notifications.enableKeyboardLayoutToast
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.enableKeyboardLayoutToast")
       onToggled: checked => Settings.data.notifications.enableKeyboardLayoutToast = checked
     }
   }

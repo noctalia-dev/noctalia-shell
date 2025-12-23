@@ -393,8 +393,8 @@ Variants {
               RowLayout {
                 Layout.fillWidth: true
                 spacing: Style.marginL
-                Layout.leftMargin: Style.marginM * 2
-                Layout.rightMargin: Style.marginM * 2
+                Layout.leftMargin: Style.marginM
+                Layout.rightMargin: Style.marginM
                 Layout.topMargin: Style.marginM
                 Layout.bottomMargin: Style.marginM
 

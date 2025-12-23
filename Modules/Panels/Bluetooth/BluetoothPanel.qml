@@ -62,6 +62,17 @@ SmartPanel {
             baseSize: Style.baseWidgetSize * 0.65
           }
 
+          // Discoverability toggle (advertising)
+          NIconButton {
+            enabled: BluetoothService.enabled
+            icon: BluetoothService.discoverable ? "broadcast" : "broadcast-off"
+            tooltipText: I18n.tr("bluetooth.panel.discoverable")
+            baseSize: Style.baseWidgetSize * 0.8
+            onClicked: {
+              BluetoothService.setDiscoverable(!BluetoothService.discoverable);
+            }
+          }
+
           NIconButton {
             enabled: BluetoothService.enabled
             icon: BluetoothService.adapter && BluetoothService.adapter.discovering ? "stop" : "refresh"
@@ -147,10 +158,12 @@ SmartPanel {
           // Connected devices
           BluetoothDevicesList {
             label: I18n.tr("bluetooth.panel.connected-devices")
+            headerMode: "layout"
             property var items: {
               if (!BluetoothService.adapter || !Bluetooth.devices)
                 return [];
               var filtered = Bluetooth.devices.values.filter(dev => dev && !dev.blocked && dev.connected);
+              filtered = BluetoothService.dedupeDevices(filtered);
               return BluetoothService.sortDevices(filtered);
             }
             model: items
@@ -158,14 +171,16 @@ SmartPanel {
             Layout.fillWidth: true
           }
 
-          // Known devices
+          // Paired devices
           BluetoothDevicesList {
-            label: I18n.tr("bluetooth.panel.known-devices")
+            label: I18n.tr("bluetooth.panel.paired-devices")
             tooltipText: I18n.tr("tooltips.connect-disconnect-devices")
+            headerMode: "layout"
             property var items: {
               if (!BluetoothService.adapter || !Bluetooth.devices)
                 return [];
               var filtered = Bluetooth.devices.values.filter(dev => dev && !dev.blocked && !dev.connected && (dev.paired || dev.trusted));
+              filtered = BluetoothService.dedupeDevices(filtered);
               return BluetoothService.sortDevices(filtered);
             }
             model: items
@@ -173,13 +188,80 @@ SmartPanel {
             Layout.fillWidth: true
           }
 
-          // Available devices
+          // Available devices (for pairing)
           BluetoothDevicesList {
             label: I18n.tr("bluetooth.panel.available-devices")
+            headerMode: "filter"
             property var items: {
               if (!BluetoothService.adapter || !Bluetooth.devices)
                 return [];
               var filtered = Bluetooth.devices.values.filter(dev => dev && !dev.blocked && !dev.paired && !dev.trusted);
+              // Optionally hide devices without a meaningful name when the filter is enabled
+              if (Settings.data && Settings.data.ui && Settings.data.ui.bluetoothHideUnnamedDevices) {
+                filtered = filtered.filter(function (dev) {
+                  // Extract display name
+                  var dn = "";
+                  if (dev && dev.name)
+                    dn = dev.name;
+                  else if (dev && dev.deviceName)
+                    dn = dev.deviceName;
+                  else
+                    dn = "";
+                  if (dn === undefined || dn === null)
+                    dn = "";
+                  var s = String(dn).trim();
+
+                  // 1) Hide empty or whitespace-only
+                  if (s.length === 0)
+                    return false;
+
+                  // 2) Hide common placeholders
+                  var lower = s.toLowerCase();
+                  if (lower === "unknown" || lower === "unnamed" || lower === "n/a" || lower === "na")
+                    return false;
+
+                  // 3) Hide if the name equals the device address (ignoring separators)
+                  var addr = "";
+                  if (dev && dev.address)
+                    addr = String(dev.address);
+                  else if (dev && dev.bdaddr)
+                    addr = String(dev.bdaddr);
+                  else if (dev && dev.mac)
+                    addr = String(dev.mac);
+                  if (addr && addr.length > 0) {
+                    var normName = s.toLowerCase().replace(/[^0-9a-z]/g, "");
+                    var normAddr = addr.toLowerCase().replace(/[^0-9a-z]/g, "");
+                    if (normName.length > 0 && normName === normAddr)
+                      return false;
+                  }
+
+                  // 4) Hide address-like strings
+                  //   - Colon-separated hex: 00:11:22:33:44:55
+                  var macColonHex = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
+                  if (macColonHex.test(s))
+                    return false;
+                  //   - Hyphen-separated hex: 00-11-22-33-44-55
+                  var macHyphenHex = /^([0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}$/;
+                  if (macHyphenHex.test(s))
+                    return false;
+                  //   - Hyphen-separated alnum pairs (to catch non-hex variants like AB-CD-EF-GH-01-23)
+                  var macHyphenAny = /^([0-9A-Za-z]{2}-){5}[0-9A-Za-z]{2}$/;
+                  if (macHyphenAny.test(s))
+                    return false;
+                  //   - Cisco dotted hex: 0011.2233.4455
+                  var macDotted = /^[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}$/;
+                  if (macDotted.test(s))
+                    return false;
+                  //   - Bare hex: 001122334455
+                  var macBare = /^[0-9A-Fa-f]{12}$/;
+                  if (macBare.test(s))
+                    return false;
+
+                  // Keep device otherwise (has a meaningful user-facing name)
+                  return true;
+                });
+              }
+              filtered = BluetoothService.dedupeDevices(filtered);
               return BluetoothService.sortDevices(filtered);
             }
             model: items

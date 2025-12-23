@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
+import qs.Widgets
 
 ColumnLayout {
   id: root
@@ -16,6 +17,9 @@ ColumnLayout {
   property string fontFamily: Settings.data.ui.fontDefault
   property real fontSize: Style.fontSizeS
   property int fontWeight: Style.fontWeightRegular
+  property bool isSettings: false
+  property var defaultValue: ""
+  property string settingsPath: ""
 
   property alias text: input.text
   property alias placeholderText: input.placeholderText
@@ -26,6 +30,11 @@ ColumnLayout {
 
   spacing: Style.marginS
 
+  readonly property bool isValueChanged: isSettings && (text !== defaultValue)
+  readonly property string indicatorTooltip: isSettings ? I18n.tr("settings.indicator.default-value", {
+                                                                    "value": defaultValue === "" ? "(empty)" : String(defaultValue)
+                                                                  }) : ""
+
   NLabel {
     label: root.label
     description: root.description
@@ -33,6 +42,8 @@ ColumnLayout {
     descriptionColor: root.descriptionColor
     visible: root.label !== "" || root.description !== ""
     Layout.fillWidth: true
+    showIndicator: root.isSettings && root.isValueChanged
+    indicatorTooltip: root.indicatorTooltip
   }
 
   // An active control that blocks input, to avoid events leakage and dragging stuff in the background.

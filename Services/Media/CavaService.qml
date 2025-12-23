@@ -9,31 +9,30 @@ import qs.Services.UI
 Singleton {
   id: root
 
-  /**
-  * Cava runs if:
-  *   - Bar has an audio visualizer
-  *   - LockScreen is opened
-  *   - A control center is open
-  *   - Desktop media player has a visualizer enabled
-  */
-  readonly property bool hasDesktopMediaVisualizer: (function () {
-    var monitorWidgets = Settings.data.desktopWidgets.monitorWidgets;
-    if (!monitorWidgets)
-      return false;
-    for (var i = 0; i < monitorWidgets.length; i++) {
-      var widgets = monitorWidgets[i].widgets;
-      if (!widgets)
-        continue;
-      for (var j = 0; j < widgets.length; j++) {
-        var widget = widgets[j];
-        if (widget.id === "MediaPlayer" && widget.visualizerType && widget.visualizerType !== "" && widget.visualizerType !== "none") {
-          return true;
-        }
-      }
-    }
-    return false;
-  })()
-  property bool shouldRun: BarService.hasAudioVisualizer || PanelService.lockScreen?.active || (PanelService.openedPanel && PanelService.openedPanel.objectName.startsWith("controlCenterPanel")) || hasDesktopMediaVisualizer
+  // Register a component that needs audio data, call this when a visualizer becomes active.
+  // Pass a unique identifier (e.g., "lockscreen", "controlcenter:screen1", "plugin:fancy-audiovisualizer")
+  function registerComponent(componentId) {
+    root.registeredComponents[componentId] = true;
+    root.registeredComponents = Object.assign({}, root.registeredComponents);
+    Logger.d("Cava", "Component registered:", componentId, "- total:", root.registeredCount);
+  }
+
+  // Unregister a component when it no longer needs audio data.
+  function unregisterComponent(componentId) {
+    delete root.registeredComponents[componentId];
+    root.registeredComponents = Object.assign({}, root.registeredComponents);
+    Logger.d("Cava", "Component unregistered:", componentId, "- total:", root.registeredCount);
+  }
+
+  // Check if a component is registered
+  function isRegistered(componentId) {
+    return root.registeredComponents[componentId] === true;
+  }
+
+  // Component registration - any component needing audio data registers here
+  property var registeredComponents: ({})
+  readonly property int registeredCount: Object.keys(registeredComponents).length
+  property bool shouldRun: registeredCount > 0
 
   property var values: []
   property int barsCount: 32

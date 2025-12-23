@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Commons
 import qs.Services.UI
+import qs.Widgets
 
 // Generic full-screen popup window for menus and context menus
 // This is a top-level PanelWindow (sibling to MainScreen, not nested inside it)
@@ -19,6 +20,9 @@ PanelWindow {
 
   // Expose the trayMenu Loader directly (for backward compatibility)
   readonly property alias trayMenuLoader: trayMenuLoader
+
+  // Dynamic context menu callback for items in other windows (e.g., desktop widgets)
+  property var dynamicMenuCallback: null
 
   anchors.top: true
   anchors.left: true
@@ -55,6 +59,26 @@ PanelWindow {
     }
   }
 
+  // Dynamic context menu - created as child of this window (Top layer) so input works correctly
+  // Used for items in other windows like desktop widgets (bottom layer)
+  NPopupContextMenu {
+    id: dynamicMenu
+    visible: false
+    screen: root.screen
+
+    onTriggered: (action, item) => {
+                   if (root.dynamicMenuCallback) {
+                     // Callback returns true if it will handle closing (e.g., opening a dialog)
+                     var handled = root.dynamicMenuCallback(action);
+                     if (!handled) {
+                       root.close();
+                     }
+                   } else {
+                     root.close();
+                   }
+                 }
+  }
+
   function open() {
     visible = true;
   }
@@ -67,6 +91,35 @@ PanelWindow {
     }
   }
 
+  // Show a dynamic context menu with model and callback at screen coordinates
+  // Used for items in other window layers (e.g., desktop widgets in bottom layer)
+  function showDynamicContextMenu(model, screenX, screenY, callback) {
+    dynamicMenu.model = model;
+    dynamicMenuCallback = callback;
+
+    // Use the anchor point item for positioning at absolute coordinates
+    dynamicMenu.anchorItem = anchorPoint;
+    anchorPoint.x = screenX;
+    anchorPoint.y = screenY;
+
+    contentItem = dynamicMenu;
+    dynamicMenu.visible = true;
+    open();
+  }
+
+  // Invisible anchor point for dynamic menu positioning
+  Item {
+    id: anchorPoint
+    width: 1
+    height: 1
+  }
+
+  // Hide just the dynamic menu without closing the popup window
+  // Used when transitioning from context menu to a dialog
+  function hideDynamicMenu() {
+    dynamicMenu.visible = false;
+  }
+
   function close() {
     visible = false;
     // Call close/hide method on current content
@@ -77,6 +130,9 @@ PanelWindow {
         contentItem.close();
       }
     }
+    // Hide dynamic menu
+    dynamicMenu.visible = false;
+    dynamicMenuCallback = null;
     // Restore TrayMenu as default content
     if (trayMenuLoader.item) {
       contentItem = trayMenuLoader.item;

@@ -119,7 +119,11 @@ PopupWindow {
                       "icon": "chevron-right",
                       "text": action.name,
                       "action": function () {
-                        action.execute();
+                        if (action.command && action.command.length > 0) {
+                          Quickshell.execDetached(action.command);
+                        } else if (action.execute) {
+                          action.execute();
+                        }
                       }
                     });
         });

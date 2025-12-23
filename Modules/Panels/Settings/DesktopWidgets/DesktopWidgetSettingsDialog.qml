@@ -157,7 +157,6 @@ Popup {
       var api = PluginService.getPluginAPI(pluginId);
 
       settingsLoader.setSource(settingsPath + "?v=" + loadVersion, {
-                                 "widgetData": widgetData,
                                  "pluginApi": api
                                });
       return;

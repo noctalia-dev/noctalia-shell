@@ -179,7 +179,8 @@
     "customLaunchPrefixEnabled": false,
     "customLaunchPrefix": "",
     "viewMode": "list",
-    "showCategories": true
+    "showCategories": true,
+    "iconMode": "tabler"
   },
   "controlCenter": {
     "position": "close_to_bar_button",
@@ -353,7 +354,6 @@
     "volumeOverdrive": false,
     "cavaFrameRate": 30,
     "visualizerType": "linear",
-    "visualizerQuality": "high",
     "mprisBlacklist": [],
     "preferredPlayer": "",
     "externalMixer": "pwvucontrol || pavucontrol"
@@ -394,6 +394,7 @@
     "yazi": false,
     "emacs": false,
     "niri": false,
+    "hyprland": false,
     "mango": false,
     "zed": false,
     "enableUserTemplates": false
@@ -418,7 +419,6 @@
   },
   "desktopWidgets": {
     "enabled": false,
-    "editMode": false,
     "gridSnap": false,
     "monitorWidgets": []
   }

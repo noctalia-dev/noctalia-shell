@@ -94,6 +94,12 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("settings.launcher.settings.icon-mode.label")
+    description: I18n.tr("settings.launcher.settings.icon-mode.description")
+    checked: Settings.data.appLauncher.iconMode === "native"
+    onToggled: checked => Settings.data.appLauncher.iconMode = checked ? "native" : "tabler"
+  }
+  NToggle {
     label: I18n.tr("settings.launcher.settings.use-app2unit.label")
     description: I18n.tr("settings.launcher.settings.use-app2unit.description")
     checked: Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable

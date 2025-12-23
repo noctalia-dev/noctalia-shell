@@ -14,7 +14,12 @@ APP_NAME="$1"
 case "$APP_NAME" in
 kitty)
     echo "🎨 Applying 'noctalia' theme to kitty..."
-    kitty +kitten themes --reload-in=all noctalia
+    KITTY_CONF="$HOME/.config/kitty/kitty.conf"
+    if [ -w "$KITTY_CONF" ]; then
+        kitty +kitten themes --reload-in=all noctalia
+    else
+        kitty +runpy "from kitty.utils import *; reload_conf_in_all_kitties()"
+    fi
     ;;
 
 ghostty)
@@ -281,6 +286,29 @@ niri)
     fi
     ;;
 
+hyprland)
+    echo "🎨 Applying 'noctalia' theme to Hyprland..."
+    CONFIG_FILE="$HOME/.config/hypr/hyprland.conf"
+    INCLUDE_LINE="source = ~/.config/hypr/noctalia/noctalia-colors.conf"
+
+    # Check if the config file exists.
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "Config file not found, creating $CONFIG_FILE..."
+        mkdir -p "$(dirname "$CONFIG_FILE")"
+        echo "$INCLUDE_LINE" >"$CONFIG_FILE"
+        echo "Created new config file with noctalia theme."
+    else
+        # Check if include line already exists
+        if grep -qF "$INCLUDE_LINE" "$CONFIG_FILE"; then
+            echo "Theme already included, skipping modification."
+        else
+            # Add the include line to the end of the file
+            echo "$INCLUDE_LINE" >>"$CONFIG_FILE"
+            echo "✅ Added noctalia theme include to config."
+        fi
+    fi
+    ;;
+
 mango)
     echo "🎨 Applying 'noctalia' theme to mango..."
     CONFIG_DIR="$HOME/.config/mango"
@@ -302,41 +330,41 @@ mango)
     else
         # First-time setup: backup and remove legacy color definitions
         echo "Setting up noctalia theme for the first time..."
-        
+
         # Scan all .conf files in config directory for legacy color variables
         FOUND_LEGACY=false
         for conf_file in "$CONFIG_DIR"/*.conf; do
             # Skip if no .conf files exist or if it's the theme file itself
             [ -e "$conf_file" ] || continue
             [ "$conf_file" = "$THEME_FILE" ] && continue
-            
+
             # Check if this file contains any color variable definitions
             if grep -qE "^($COLOR_VARS)\s*=" "$conf_file"; then
                 FOUND_LEGACY=true
                 echo "Found legacy colors in $(basename "$conf_file"), backing up..."
-                
+
                 # Extract and append color definitions to backup file
-                grep -E "^($COLOR_VARS)\s*=" "$conf_file" >> "$BACKUP_FILE"
-                
+                grep -E "^($COLOR_VARS)\s*=" "$conf_file" >>"$BACKUP_FILE"
+
                 # Remove color definitions from original file
                 sed -i -E "/^($COLOR_VARS)\s*=/d" "$conf_file"
             fi
         done
-        
+
         if [ "$FOUND_LEGACY" = true ]; then
             echo "✅ Legacy color definitions backed up to $(basename "$BACKUP_FILE")"
         fi
-        
-         # Add source line to main config
-         if [ -f "$MAIN_CONFIG" ]; then
-             echo "" >> "$MAIN_CONFIG"
-             echo "# This sources the noctalia theme" >> "$MAIN_CONFIG"
-             echo "$SOURCE_LINE" >> "$MAIN_CONFIG"
-         else
-             echo "# This sources the noctalia theme" > "$MAIN_CONFIG"
-             echo "$SOURCE_LINE" >> "$MAIN_CONFIG"
-         fi
-        
+
+        # Add source line to main config
+        if [ -f "$MAIN_CONFIG" ]; then
+            echo "" >>"$MAIN_CONFIG"
+            echo "# This sources the noctalia theme" >>"$MAIN_CONFIG"
+            echo "$SOURCE_LINE" >>"$MAIN_CONFIG"
+        else
+            echo "# This sources the noctalia theme" >"$MAIN_CONFIG"
+            echo "$SOURCE_LINE" >>"$MAIN_CONFIG"
+        fi
+
         echo "✅ Added noctalia theme to config."
     fi
 

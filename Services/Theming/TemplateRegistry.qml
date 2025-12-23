@@ -204,14 +204,15 @@ Singleton {
     },
     {
       "id": "zed",
-      "name": "Zeditor",
+      "name": "Zed",
       "category": "applications",
       "input": "zed.json",
       "outputs": [
         {
           "path": "~/.config/zed/themes/noctalia.json"
         }
-      ]
+      ],
+      "dualMode": true // Template contains both dark and light theme patterns
     },
     {
       "id": "spicetify",
@@ -285,6 +286,18 @@ Singleton {
         }
       ],
       "postProcess": () => `${colorsApplyScript} niri`
+    },
+    {
+      "id": "hyprland",
+      "name": "Hyprland",
+      "category": "compositors",
+      "input": "hyprland.conf",
+      "outputs": [
+        {
+          "path": "~/.config/hypr/noctalia/noctalia-colors.conf"
+        }
+      ],
+      "postProcess": () => `${colorsApplyScript} hyprland`
     },
     {
       "id": "mango",

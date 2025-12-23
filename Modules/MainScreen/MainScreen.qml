@@ -516,6 +516,61 @@ PanelWindow {
     onActivated: PanelService.openedPanel.onCtrlPPressed()
   }
 
+  // Shift+Number shortcuts for SessionMenu
+  Shortcut {
+    sequence: "Shift+1"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(1)
+  }
+
+  Shortcut {
+    sequence: "Shift+2"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(2)
+  }
+
+  Shortcut {
+    sequence: "Shift+3"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(3)
+  }
+
+  Shortcut {
+    sequence: "Shift+4"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(4)
+  }
+
+  Shortcut {
+    sequence: "Shift+5"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(5)
+  }
+
+  Shortcut {
+    sequence: "Shift+6"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(6)
+  }
+
+  Shortcut {
+    sequence: "Shift+7"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(7)
+  }
+
+  Shortcut {
+    sequence: "Shift+8"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(8)
+  }
+
+  Shortcut {
+    sequence: "Shift+9"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(9)
+  }
+
   // ===== VIM BINDINGS =====
   Shortcut {
     sequence: "H"

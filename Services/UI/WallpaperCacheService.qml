@@ -124,10 +124,11 @@ Singleton {
     const dstEsc = outputPath.replace(/'/g, "'\\''");
 
     // Resize to cover screen dimensions, preserve aspect ratio
+    // -auto-orient applies EXIF orientation before processing
     // The ^ flag ensures the image covers the target (smaller dimension fits exactly)
     // The > flag ensures we only shrink, never enlarge (prevents blurry upscaling)
     // The shader will handle actual fill mode (crop/fit/center/stretch)
-    return `convert '${srcEsc}' -resize '${width}x${height}^>' -quality 95 '${dstEsc}'`;
+    return `convert '${srcEsc}' -auto-orient -resize '${width}x${height}^>' -quality 95 '${dstEsc}'`;
   }
 
   // -------------------------------------------------

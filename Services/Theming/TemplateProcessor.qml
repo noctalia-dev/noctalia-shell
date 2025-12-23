@@ -54,7 +54,7 @@ Singleton {
     handleTerminalThemes(mode);
 
     const colors = schemeData[mode];
-    let script = processAllTemplates(colors, mode);
+    let script = processAllTemplates(colors, mode, schemeData);
 
     // Add user templates if enabled (requirement #1)
     script += buildUserTemplateCommandForPredefined(schemeData, mode);
@@ -199,7 +199,7 @@ Singleton {
   // ================================================================================
   // PREDEFINED SCHEME GENERATION (sed scripts)
   // ================================================================================
-  function processAllTemplates(colors, mode) {
+  function processAllTemplates(colors, mode, schemeData) {
     let script = "";
     const homeDir = Quickshell.env("HOME");
 
@@ -214,7 +214,7 @@ Singleton {
                                               }
                                             } else {
                                               if (Settings.data.templates[app.id]) {
-                                                script += processTemplate(app, colors, mode, homeDir);
+                                                script += processTemplate(app, colors, mode, homeDir, schemeData);
                                               }
                                             }
                                           });
@@ -278,8 +278,17 @@ Singleton {
     return script;
   }
 
-  function processTemplate(app, colors, mode, homeDir) {
+  function processTemplate(app, colors, mode, homeDir, schemeData) {
     const palette = ColorPaletteGenerator.generatePalette(colors, Settings.data.colorSchemes.darkMode, app.strict || false);
+
+    // For templates with both dark and light patterns (like zed.json), generate both palettes
+    const hasDualModePatterns = app.dualMode || false;
+    let darkPalette, lightPalette;
+    if (hasDualModePatterns && schemeData) {
+      darkPalette = ColorPaletteGenerator.generatePalette(schemeData.dark, true, app.strict || false);
+      lightPalette = ColorPaletteGenerator.generatePalette(schemeData.light, false, app.strict || false);
+    }
+
     let script = "";
 
     if (app.id === "emacs" && app.checkDoomFirst) {
@@ -310,6 +319,9 @@ Singleton {
                             script += `mkdir -p ${outputDir}\n`;
                             script += `cp '${templatePath}' '${outputPath}'\n`;
                             script += replaceColorsInFile(outputPath, palette);
+                            if (hasDualModePatterns && darkPalette && lightPalette) {
+                              script += replaceColorsInFileWithMode(outputPath, darkPalette, lightPalette);
+                            }
                             script += `\n`;
                           });
     }
@@ -323,6 +335,7 @@ Singleton {
 
   function replaceColorsInFile(filePath, colors) {
     let script = "";
+
     Object.keys(colors).forEach(colorKey => {
                                   const hexValue = colors[colorKey].default.hex;
                                   const hexStrippedValue = colors[colorKey].default.hex_stripped;
@@ -330,12 +343,38 @@ Singleton {
                                   const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                   const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-                                  // replace hex_stripped
+                                  // replace .default. patterns (hex_stripped and hex)
                                   script += `sed -i 's/{{colors\\.${colorKey}\\.default\\.hex_stripped}}/${escapedHexStripped}/g' '${filePath}'\n`;
-
-                                  // replace hex
                                   script += `sed -i 's/{{colors\\.${colorKey}\\.default\\.hex}}/${escapedHex}/g' '${filePath}'\n`;
                                 });
+    return script;
+  }
+
+  function replaceColorsInFileWithMode(filePath, darkColors, lightColors) {
+    let script = "";
+
+    // Replace dark mode patterns
+    Object.keys(darkColors).forEach(colorKey => {
+                                      const hexValue = darkColors[colorKey].default.hex;
+                                      const hexStrippedValue = darkColors[colorKey].default.hex_stripped;
+                                      const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                      const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+                                      script += `sed -i 's/{{colors\\.${colorKey}\\.dark\\.hex_stripped}}/${escapedHexStripped}/g' '${filePath}'\n`;
+                                      script += `sed -i 's/{{colors\\.${colorKey}\\.dark\\.hex}}/${escapedHex}/g' '${filePath}'\n`;
+                                    });
+
+    // Replace light mode patterns
+    Object.keys(lightColors).forEach(colorKey => {
+                                       const hexValue = lightColors[colorKey].default.hex;
+                                       const hexStrippedValue = lightColors[colorKey].default.hex_stripped;
+                                       const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                       const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+                                       script += `sed -i 's/{{colors\\.${colorKey}\\.light\\.hex_stripped}}/${escapedHexStripped}/g' '${filePath}'\n`;
+                                       script += `sed -i 's/{{colors\\.${colorKey}\\.light\\.hex}}/${escapedHex}/g' '${filePath}'\n`;
+                                     });
+
     return script;
   }
 

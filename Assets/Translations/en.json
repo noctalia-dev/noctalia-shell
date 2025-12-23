@@ -279,9 +279,9 @@
         }
       },
       "notification-history": {
-        "hide-badge-when-zero": {
-          "description": "Hide the notification badge when there are no unread notifications.",
-          "label": "Hide badge when zero"
+        "hide-widget-when-zero": {
+          "description": "Hide the notification icon when there are no unread notifications.",
+          "label": "Hide icon when zero"
         },
         "show-unread-badge": {
           "description": "Display a badge showing the number of unread notifications.",
@@ -449,18 +449,28 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Available devices",
+      "battery": "Battery",
       "blocked": "Blocked",
       "connect": "Connect",
       "connected-devices": "Connected devices",
       "connecting": "Connecting...",
+      "device-address": "Device address",
       "disabled": "Bluetooth is disabled",
       "disconnect": "Disconnect",
+      "discoverable": "Discoverable",
       "enable-message": "Enable Bluetooth to see available devices.",
+      "info": "Info",
       "known-devices": "Known devices",
+      "pair": "Pair",
+      "paired": "Paired",
+      "paired-devices": "Paired devices",
       "pairing": "Pairing...",
       "pairing-mode": "Make sure your device is in pairing mode.",
       "scanning": "Scanning for devices...",
-      "title": "Bluetooth"
+      "signal": "Signal",
+      "title": "Bluetooth",
+      "trusted": "Trusted",
+      "unpair": "Unpair"
     }
   },
   "calendar": {
@@ -520,13 +530,16 @@
     "cancel": "Cancel",
     "check-settings": "Check Settings for details",
     "close": "Close",
-    "save": "Save"
+    "no": "No",
+    "save": "Save",
+    "yes": "Yes"
   },
   "context-menu": {
     "clear-history": "Clear history",
     "close-app": "Close {app}",
     "connect-vpn": "Connect to {name}",
     "cycle-visualizer": "Cycle visualizer",
+    "delete": "Delete",
     "disable-bluetooth": "Disable Bluetooth",
     "disable-dnd": "Disable Do Not Disturb",
     "disable-wifi": "Disable Wi-Fi",
@@ -567,6 +580,18 @@
       "chat": "Chat",
       "development": "Development",
       "education": "Education",
+      "emoji": {
+        "activity": "Activity",
+        "animals": "Animals",
+        "flags": "Flags",
+        "food": "Food & Drink",
+        "nature": "Nature",
+        "objects": "Objects",
+        "people": "People & Body",
+        "recent": "Recent",
+        "symbols": "Symbols",
+        "travel": "Travel & Places"
+      },
       "game": "Games",
       "graphics": "Graphics",
       "misc": "Misc",
@@ -735,10 +760,6 @@
       "top_left": "Top left",
       "top_right": "Top right"
     },
-    "visualizer-quality": {
-      "high": "High",
-      "low": "Low"
-    },
     "visualizer-types": {
       "linear": "Linear",
       "mirrored": "Mirrored",
@@ -840,7 +861,7 @@
         "unavailable": "Power Profile"
       },
       "tooltip": {
-        "action": "Power profile",
+        "action": "Power Profile",
         "disabled": "Install power-profiles-daemon to use power profiles"
       }
     },
@@ -850,13 +871,13 @@
         "stopped": "Record"
       },
       "tooltip": {
-        "action": "Screen recorder"
+        "action": "Screen Recorder"
       }
     },
     "wallpaperSelector": {
       "label": "Wallpaper",
       "tooltip": {
-        "action": "Wallpaper selector"
+        "action": "Wallpaper Selector"
       }
     },
     "wifi": {
@@ -949,10 +970,6 @@
         "section": {
           "description": "Set your preferred and ignored media applications.",
           "label": "Media players"
-        },
-        "visualizer-quality": {
-          "description": "High quality use more GPU ressources.",
-          "label": "Visualization quality"
         },
         "visualizer-type": {
           "description": "Choose a visualization type for media playback.",
@@ -1156,14 +1173,15 @@
       "templates": {
         "compositors": {
           "description": "Compositor theming.",
+          "hyprland": {
+            "description": "Write {filepath}."
+          },
           "label": "Compositors",
           "mango": {
-            "description": "Write {filepath}. Requires mango",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath}."
           },
           "niri": {
-            "description": "Write {filepath}. Requires niri v25.11+",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath}. Requires niri v25.11+"
           }
         },
         "misc": {
@@ -1176,54 +1194,42 @@
         },
         "programs": {
           "cava": {
-            "description": "Write {filepath}",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath}"
           },
           "code": {
-            "description": "Write {filepath} — HyprLuna theme needs to be installed and activated manually",
-            "description-missing": "No Code client detected — install VSCode or VSCodium"
+            "description": "Write {filepath} — HyprLuna theme needs to be installed and activated manually"
           },
           "description": "Application-specific theming.",
           "discord": {
-            "description": "Write {filepath} for {client} — HyprLuna theme needs to be activated manually",
-            "description-missing": "No Discord client detected — install vencord, vesktop, webcord, armcord, equibop, lightcord, or dorion"
+            "description": "Write {filepath} for {client} — HyprLuna theme needs to be activated manually"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standard: ~/.emacs.d/themes/noctalia.el<br>Apply manually: (load-theme 'noctalia t)",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standard: ~/.emacs.d/themes/noctalia.el<br>Apply manually: (load-theme 'noctalia t)"
           },
           "fuzzel": {
-            "description": "Write {filepath} and reload",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and reload."
           },
           "label": "Programs",
           "pywalfox": {
-            "description": "Write {filepath} and run pywalfox update",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and run pywalfox update"
           },
           "spicetify": {
-            "description": "Write {filepath} — Comfy theme needs to be installed and activated manually",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} — Comfy theme needs to be installed and activated manually"
           },
           "telegram": {
-            "description": "Write {filepath}",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath}"
           },
           "vicinae": {
-            "description": "Write {filepath} and reload",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and reload."
           },
           "walker": {
-            "description": "Write {filepath} and set theme to noctalia",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and set theme to noctalia"
           },
           "yazi": {
-            "description": "Write {filepath} — flavor needs to be activated manually",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} — flavor needs to be activated manually"
           },
           "zed": {
-            "description": "Write {filepath} and reload",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and reload."
           }
         },
         "section": {
@@ -1232,26 +1238,21 @@
         },
         "terminal": {
           "alacritty": {
-            "description": "Write {filepath} and reload",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and reload."
           },
           "description": "Terminal emulator theming.",
           "foot": {
-            "description": "Write {filepath} and reload",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and reload."
           },
           "ghostty": {
-            "description": "Write {filepath} and reload",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and reload."
           },
           "kitty": {
-            "description": "Write {filepath} and reload",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and reload."
           },
           "label": "Terminal",
           "wezterm": {
-            "description": "Write {filepath} and reload",
-            "description-missing": "Requires {app} to be installed"
+            "description": "Write {filepath} and reload."
           }
         },
         "ui": {
@@ -1378,10 +1379,6 @@
           "label": "Minimal mode"
         },
         "preview": "Preview",
-        "section": {
-          "description": "Configure the clock widget appearance.",
-          "label": "Clock Widget"
-        },
         "show-background": {
           "description": "Show the background container for the clock widget.",
           "label": "Show background"
@@ -1415,16 +1412,18 @@
         }
       },
       "edit-mode": {
+        "add-widget": "Add widget",
         "button": {
           "label": "Enter edit mode"
         },
-        "controls-explanation": "Left Mouse Button: Move widget\nRight Mouse Button: Resize widget",
+        "controls-explanation": "Left-click & drag: Move or resize the widget.\nRight-click: Open the context menu options.",
         "description": "Enable edit mode to move and reposition desktop widgets. When enabled, widgets show a drag outline and can be repositioned.",
         "exit-button": "Exit edit mode",
         "grid-snap": {
           "label": "Grid snap"
         },
-        "label": "Edit mode"
+        "label": "Edit mode",
+        "open-settings": "Open settings"
       },
       "enabled": {
         "description": "Enable or disable desktop widgets entirely.",
@@ -1433,7 +1432,7 @@
       "general": {
         "section": {
           "description": "Configure widgets that appear on your desktop.",
-          "label": "Desktop Widgets"
+          "label": "Desktop widgets"
         }
       },
       "media-player": {
@@ -1445,13 +1444,13 @@
           "description": "Controls how the widget behaves when no media is playing.",
           "label": "Hiding mode"
         },
-        "section": {
-          "description": "Configure the media player widget appearance.",
-          "label": "Media Player Widget"
-        },
         "show-background": {
           "description": "Show the background container for the media player widget.",
           "label": "Show background"
+        },
+        "show-buttons": {
+          "description": "Show media control buttons (play/pause, previous, next) on the media player widget.",
+          "label": "Show buttons"
         },
         "visualizer-type": {
           "description": "Choose a visualization type for the desktop media player background.",
@@ -1468,19 +1467,9 @@
           "description": "Show a weather widget on the desktop.",
           "label": "Enable weather widget"
         },
-        "section": {
-          "description": "Configure the weather widget appearance.",
-          "label": "Weather Widget"
-        },
         "show-background": {
           "description": "Show the background container for the weather widget.",
           "label": "Show background"
-        }
-      },
-      "widgets": {
-        "section": {
-          "description": "Add and configure desktop widgets",
-          "label": "Desktop Widgets"
         }
       }
     },
@@ -1736,6 +1725,10 @@
         "placeholder": "e.g., notify-send \"Wallpaper\" \"Changed\""
       }
     },
+    "indicator": {
+      "default-value": "Default: {value}",
+      "system-default": "System Default"
+    },
     "launcher": {
       "settings": {
         "clip-preview": {
@@ -1757,6 +1750,10 @@
         "grid-view": {
           "description": "Display items in a grid layout instead of a list.",
           "label": "Grid view"
+        },
+        "icon-mode": {
+          "description": "Use native system icons instead of Tabler icons.",
+          "label": "Use native icons"
         },
         "position": {
           "description": "Choose where the launcher panel appears.",
@@ -1883,6 +1880,7 @@
     },
     "network": {
       "bluetooth": {
+        "description": "Activate Bluetooth management.",
         "label": "Enable Bluetooth"
       },
       "section": {
@@ -1890,6 +1888,7 @@
       },
       "title": "Network",
       "wifi": {
+        "description": "Manage wireless networks (requires NetworkManager).",
         "label": "Enable Wi-Fi"
       }
     },
@@ -2160,7 +2159,7 @@
       "update-incompatible": "Requires Noctalia v{version} or higher",
       "update-success": "Updated {plugin} to v{version}",
       "update-version": "v{current} → v{new}",
-      "updating": "Updating {plugin}..."
+      "updating": "Updating..."
     },
     "screen-recorder": {
       "audio": {
@@ -2549,8 +2548,20 @@
       "low-desc": "Battery is at {percent}%. Please connect the charger."
     },
     "bluetooth": {
+      "confirm-code": "Confirm code {value} on the other device",
+      "connect-failed": "Failed to connect to device",
       "disabled": "Disabled",
-      "enabled": "Enabled"
+      "disconnect-failed": "Failed to disconnect from device",
+      "discoverable-change-failed": "Failed to change discoverable state",
+      "discoverable-disabled": "Discoverable disabled",
+      "discoverable-enabled": "Discoverable enabled",
+      "display-code": "Enter code {value} on the other device",
+      "enabled": "Enabled",
+      "forget-failed": "Failed to forget device",
+      "pair-failed": "Failed to pair device",
+      "passkey-required": "Passkey required by the device",
+      "pincode-required": "PIN code required by the device",
+      "state-change-failed": "Failed to change Bluetooth state"
     },
     "clipboard": {
       "unavailable": "Clipboard history unavailable",
@@ -2633,9 +2644,13 @@
     },
     "wifi": {
       "connected": "Connected to '{ssid}'",
+      "connection-failed": "Connection failed",
+      "connection-timeout": "Connection timeout",
       "disabled": "Disabled",
       "disconnected": "Disconnected from '{ssid}'",
-      "enabled": "Enabled"
+      "enabled": "Enabled",
+      "incorrect-password": "Incorrect password",
+      "network-not-found": "Network not found"
     }
   },
   "tooltips": {
@@ -2659,6 +2674,7 @@
     "grid-view": "Grid view",
     "hidden-files-hide": "Hidden files",
     "hidden-files-show": "Hidden files",
+    "hide-unnamed-devices": "Hide unnamed devices",
     "home": "Home directory",
     "input-muted": "Toggle input mute",
     "keep-awake": "Keep Awake",
@@ -2701,6 +2717,7 @@
     "search-close": "Close search",
     "session-menu": "Session menu",
     "set-power-profile": "{profile} power profile",
+    "show-all-devices": "Show all devices",
     "start-screen-recording": "Screen recorder",
     "stop-screen-recording": "Screen recorder",
     "switch-to-dark-mode": "Dark Mode",
@@ -2890,21 +2907,30 @@
       "available-networks": "Available networks",
       "connect": "Connect",
       "connected": "Connected",
-      "disabled": "Wi-Fi is disabled",
+      "disabled": "Wi‑Fi is disabled",
       "disconnect": "Disconnect",
-      "disconnecting": "Disconnecting...",
-      "enable-message": "Enable Wi-Fi to see available networks.",
-      "enter-password": "Enter password...",
+      "disconnecting": "Disconnecting…",
+      "dns": "DNS",
+      "enable-message": "Enable Wi‑Fi to see available networks.",
+      "enter-password": "Enter Wi‑Fi password",
       "forget": "Forget",
-      "forget-network": "Forget this network?",
-      "forgetting": "Forgetting...",
+      "forget-network": "Forget this network",
+      "forgetting": "Forgetting…",
+      "gateway": "Gateway",
+      "info": "Info",
+      "internet": "Internet",
+      "internet-connected": "Internet connected",
+      "internet-limited": "No internet",
+      "ipv4": "IPv4",
       "known-networks": "Known networks",
-      "no-networks": "No networks found",
+      "link-speed": "Link speed",
+      "no-networks": "No Wi‑Fi networks found",
       "password": "Password",
       "saved": "Saved",
       "scan-again": "Scan again",
-      "searching": "Searching for nearby networks...",
-      "title": "Wi-Fi"
+      "searching": "Searching for networks...",
+      "security": "Security",
+      "title": "Wi‑Fi"
     }
   }
 }

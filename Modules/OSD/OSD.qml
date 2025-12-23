@@ -190,6 +190,11 @@ Variants {
 
     function onBrightnessChanged(newBrightness) {
       root.currentBrightness = newBrightness;
+      // Don't show OSD if brightness panel is open
+      var brightnessPanel = PanelService.getPanel("brightnessPanel", root.modelData);
+      if (brightnessPanel && brightnessPanel.isPanelOpen) {
+        return;
+      }
       showOSD(OSD.Type.Brightness);
     }
 

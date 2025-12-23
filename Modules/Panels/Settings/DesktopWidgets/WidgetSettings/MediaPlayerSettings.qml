@@ -15,6 +15,7 @@ ColumnLayout {
   property string valueVisualizerType: widgetData.visualizerType !== undefined ? widgetData.visualizerType : widgetMetadata.visualizerType
   property string valueHideMode: widgetData.hideMode !== undefined ? widgetData.hideMode : widgetMetadata.hideMode
   property string valueVisualizerVisibility: widgetData.visualizerVisibility !== undefined ? widgetData.visualizerVisibility : (widgetMetadata.visualizerVisibility !== undefined ? widgetMetadata.visualizerVisibility : "always")
+  property bool valueShowButtons: widgetData.showButtons !== undefined ? widgetData.showButtons : (widgetMetadata.showButtons !== undefined ? widgetMetadata.showButtons : true)
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -22,6 +23,7 @@ ColumnLayout {
     settings.visualizerType = valueVisualizerType;
     settings.hideMode = valueHideMode;
     settings.visualizerVisibility = valueVisualizerVisibility;
+    settings.showButtons = valueShowButtons;
     return settings;
   }
 
@@ -31,6 +33,14 @@ ColumnLayout {
     description: I18n.tr("settings.desktop-widgets.media-player.show-background.description")
     checked: valueShowBackground
     onToggled: checked => valueShowBackground = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.desktop-widgets.media-player.show-buttons.label")
+    description: I18n.tr("settings.desktop-widgets.media-player.show-buttons.description")
+    checked: valueShowButtons
+    onToggled: checked => valueShowButtons = checked
   }
 
   NComboBox {

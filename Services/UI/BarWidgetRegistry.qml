@@ -179,7 +179,7 @@ Singleton {
                                   "NotificationHistory": {
                                     "allowUserSettings": true,
                                     "showUnreadBadge": true,
-                                    "hideWhenZero": true
+                                    "hideWhenZero": false
                                   },
                                   "SessionMenu": {
                                     "allowUserSettings": true,

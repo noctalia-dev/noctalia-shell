@@ -34,6 +34,7 @@ Singleton {
   FileView {
     id: githubDataFileView
     path: githubDataFile
+    printErrors: false
     watchChanges: false  // Disable to prevent reload on our own writes
     Component.onCompleted: {
       loadCacheMetadata();

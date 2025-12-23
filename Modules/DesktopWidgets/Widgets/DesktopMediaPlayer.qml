@@ -5,6 +5,7 @@ import Quickshell
 import qs.Commons
 import qs.Modules.DesktopWidgets
 import qs.Services.Media
+import qs.Services.UI
 import qs.Widgets
 import qs.Widgets.AudioSpectrum
 
@@ -15,18 +16,40 @@ DraggableDesktopWidget {
 
   // Widget settings
   readonly property string hideMode: (widgetData.hideMode !== undefined) ? widgetData.hideMode : "visible"
+  readonly property bool showButtons: (widgetData.showButtons !== undefined) ? widgetData.showButtons : true
   readonly property bool hasPlayer: MediaService.currentPlayer !== null
   readonly property bool isPlaying: MediaService.isPlaying
 
   // State
   readonly property bool shouldHideIdle: (hideMode === "idle") && !isPlaying
   readonly property bool shouldHideEmpty: !hasPlayer && hideMode === "hidden"
-  readonly property bool isHidden: (shouldHideIdle || shouldHideEmpty) && !Settings.data.desktopWidgets.editMode
+  readonly property bool isHidden: (shouldHideIdle || shouldHideEmpty) && !DesktopWidgetRegistry.editMode
   visible: !isHidden
+
+  // CavaService registration for visualizer
+  readonly property string cavaComponentId: "desktopmediaplayer:" + (root.screen ? root.screen.name : "unknown")
+
+  onShouldShowVisualizerChanged: {
+    if (root.shouldShowVisualizer) {
+      CavaService.registerComponent(root.cavaComponentId);
+    } else {
+      CavaService.unregisterComponent(root.cavaComponentId);
+    }
+  }
+
+  Component.onCompleted: {
+    if (root.shouldShowVisualizer) {
+      CavaService.registerComponent(root.cavaComponentId);
+    }
+  }
+
+  Component.onDestruction: {
+    CavaService.unregisterComponent(root.cavaComponentId);
+  }
 
   readonly property bool showPrev: hasPlayer && MediaService.canGoPrevious
   readonly property bool showNext: hasPlayer && MediaService.canGoNext
-  readonly property int visibleButtonCount: 1 + (showPrev ? 1 : 0) + (showNext ? 1 : 0)
+  readonly property int visibleButtonCount: root.showButtons ? (1 + (showPrev ? 1 : 0) + (showNext ? 1 : 0)) : 0
   readonly property int baseWidth: 400 * Style.uiScaleRatio
   readonly property int buttonWidth: 32 * Style.uiScaleRatio
   readonly property int buttonSpacing: Style.marginXS
@@ -85,6 +108,26 @@ DraggableDesktopWidget {
     z: 0
     clip: true
     active: shouldShowVisualizer
+    layer.enabled: true
+    layer.smooth: true
+    layer.samples: 4
+    layer.effect: MultiEffect {
+      maskEnabled: true
+      maskThresholdMin: 0.95
+      maskSpreadAtMin: 0.0
+      maskSource: ShaderEffectSource {
+        sourceItem: Rectangle {
+          width: root.width - Style.marginXS * 2
+          height: root.height - Style.marginXS * 2
+          radius: Math.max(0, Style.radiusL - Style.marginXS)
+          color: "white"
+          antialiasing: true
+          smooth: true
+        }
+        smooth: true
+        mipmap: true
+      }
+    }
 
     sourceComponent: {
       var visualizerType = (widgetData && widgetData.visualizerType) ? widgetData.visualizerType : "";
@@ -192,6 +235,7 @@ DraggableDesktopWidget {
       id: controlsRow
       spacing: Style.marginXS
       z: 10
+      visible: root.showButtons
 
       NIconButton {
         visible: showPrev

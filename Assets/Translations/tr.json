@@ -279,9 +279,9 @@
         }
       },
       "notification-history": {
-        "hide-badge-when-zero": {
-          "description": "Okunmamış bildirim olmadığında bildirim rozetini gizle.",
-          "label": "Sıfırken rozeti gizle"
+        "hide-widget-when-zero": {
+          "description": "Okunmamış bildirim olmadığında bildirim simgesini gizle.",
+          "label": "Sıfırken simgeyi gizle"
         },
         "show-unread-badge": {
           "description": "Okunmamış bildirim sayısını gösteren bir rozet göster.",
@@ -449,18 +449,28 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Mevcut cihazlar",
+      "battery": "Pil",
       "blocked": "Engellendi",
       "connect": "Bağlan",
       "connected-devices": "Bağlı cihazlar",
       "connecting": "Bağlanılıyor…",
+      "device-address": "Cihaz adresi",
       "disabled": "Bluetooth devre dışı",
       "disconnect": "Bağlantıyı Kes",
+      "discoverable": "Keşfedilebilir",
       "enable-message": "Mevcut cihazları görmek için Bluetooth'u etkinleştirin.",
+      "info": "Bilgi",
       "known-devices": "Bilinen cihazlar",
+      "pair": "Çift",
+      "paired": "Eşleştirilmiş",
+      "paired-devices": "Eşleştirilmiş cihazlar",
       "pairing": "Eşleştiriliyor...",
       "pairing-mode": "Cihazınızın eşleştirme modunda olduğundan emin olun.",
       "scanning": "Cihazlar tarınıyor...",
-      "title": "Bluetooth"
+      "signal": "Sinyal",
+      "title": "Bluetooth",
+      "trusted": "Güvenilir",
+      "unpair": "Eşleştirmeyi kaldır"
     }
   },
   "calendar": {
@@ -520,13 +530,16 @@
     "cancel": "İptal",
     "check-settings": "Ayrıntılar için Ayarları Kontrol Et",
     "close": "Kapat",
-    "save": "Kaydet"
+    "no": "Hayır",
+    "save": "Kaydet",
+    "yes": "Evet"
   },
   "context-menu": {
     "clear-history": "Geçmişi temizle",
     "close-app": "{app}'i kapat",
     "connect-vpn": "{name} bağlantısına bağlan",
     "cycle-visualizer": "Döngü görselleştirici",
+    "delete": "Sil",
     "disable-bluetooth": "Bluetooth'u kapat",
     "disable-dnd": "Rahatsız Etmeyin'i Kapat",
     "disable-wifi": "Kablosuz Bağlantıyı kapat",
@@ -567,6 +580,18 @@
       "chat": "Sohbet",
       "development": "Geliştirme",
       "education": "Eğitim",
+      "emoji": {
+        "activity": "Aktivite",
+        "animals": "Hayvanlar",
+        "flags": "Bayraklar",
+        "food": "Yiyecek ve içecek",
+        "nature": "Doğa",
+        "objects": "Nesneler",
+        "people": "İnsanlar ve vücut",
+        "recent": "Son kullanılanlar",
+        "symbols": "Semboller",
+        "travel": "Seyahat ve yerler"
+      },
       "game": "Oyunlar",
       "graphics": "Grafikler",
       "misc": "Çeşitli",
@@ -734,10 +759,6 @@
       "top": "Üst",
       "top_left": "Sol üst",
       "top_right": "Sağ üst"
-    },
-    "visualizer-quality": {
-      "high": "Yüksek",
-      "low": "Düşük"
     },
     "visualizer-types": {
       "linear": "Doğrusal",
@@ -950,10 +971,6 @@
           "description": "Tercih ettiğiniz ve yoksayacağınız ortam uygulamalarını ayarlayın.",
           "label": "Ortam oynatıcıları"
         },
-        "visualizer-quality": {
-          "description": "Yüksek kalite ekran kartını daha fazla kullanır.",
-          "label": "Görselleştirme kalitesi"
-        },
         "visualizer-type": {
           "description": "Ortam oynatımı için bir görselleştirme türü seçin",
           "label": "Görselleştirme türü"
@@ -1156,14 +1173,15 @@
       "templates": {
         "compositors": {
           "description": "Birleştirici temalandırma.",
+          "hyprland": {
+            "description": "{filepath} dosyasına yaz."
+          },
           "label": "Birleştiriciler",
           "mango": {
-            "description": "{filepath} dosyasına yaz. mango gerektirir",
-            "description-missing": "{app} yüklü olmalıdır"
+            "description": "{filepath} dosyasına yaz. mango gerektirir"
           },
           "niri": {
-            "description": "{filepath} dosyasına yaz. niri v25.11+ gerektirir",
-            "description-missing": "{app} yüklü olmalıdır"
+            "description": "{filepath} dosyasına yaz. niri v25.11+ gerektirir"
           }
         },
         "misc": {
@@ -1176,54 +1194,42 @@
         },
         "programs": {
           "cava": {
-            "description": "{filepath} dosyasına yaz",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz"
           },
           "code": {
-            "description": "{filepath} dosyasına yaz — HyprLuna temasının kurulu ve manuel olarak etkinleştirilmiş olması gerekir",
-            "description-missing": "Code istemcisi tespit edilmedi — VSCode veya VSCodium kurun"
+            "description": "{filepath} dosyasına yaz — HyprLuna temasının kurulu ve manuel olarak etkinleştirilmiş olması gerekir"
           },
           "description": "Uygulamaya özel temalandırma.",
           "discord": {
-            "description": "{client} için {filepath} dosyasına yaz — HyprLuna temasının manuel olarak etkinleştirilmesi gerekir",
-            "description-missing": "Discord istemcisi tespit edilmedi — Vencord, vesktop, webcord, armcord, equibop, lightcord veya dorion kurun"
+            "description": "{client} için {filepath} dosyasına yaz — HyprLuna temasının manuel olarak etkinleştirilmesi gerekir"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standart: ~/.emacs.d/themes/noctalia.el<br>Manuel olarak uygula: (load-theme 'noctalia t)",
-            "description-missing": "{app} uygulamasının yüklü olmasını gerektirir"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standart: ~/.emacs.d/themes/noctalia.el<br>Manuel olarak uygula: (load-theme 'noctalia t)"
           },
           "fuzzel": {
-            "description": "{filepath} dosyasına yaz ve yeniden yükle",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz ve yeniden yükle"
           },
           "label": "Programlar",
           "pywalfox": {
-            "description": "{filepath} dosyasına yaz ve pywalfox güncellemesini çalıştır",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz ve pywalfox güncellemesini çalıştır"
           },
           "spicetify": {
-            "description": "{filepath} dosyasına yaz — Comfy temasının kurulu ve manuel olarak etkinleştirilmiş olması gerekir",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz — Comfy temasının kurulu ve manuel olarak etkinleştirilmiş olması gerekir"
           },
           "telegram": {
-            "description": "{filepath} dosyasına yaz",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz"
           },
           "vicinae": {
-            "description": "{filepath} dosyasına yaz ve yeniden yükle",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz ve yeniden yükle"
           },
           "walker": {
-            "description": "{filepath} dosyasına yaz ve temayı noctalia olarak ayarla",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz ve temayı noctalia olarak ayarla"
           },
           "yazi": {
-            "description": "{filepath} dosyasına yaz — flavor manuel etkinleştirilmesi gerekir",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz — flavor manuel etkinleştirilmesi gerekir"
           },
           "zed": {
-            "description": "{filepath} dosyasına yaz ve yeniden yükle",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz ve yeniden yükle"
           }
         },
         "section": {
@@ -1232,26 +1238,21 @@
         },
         "terminal": {
           "alacritty": {
-            "description": "{filepath} yaz ve yeniden yükle",
-            "description-missing": "{app} uygulamasının yüklü olmasını gerektirir"
+            "description": "{filepath} yaz ve yeniden yükle"
           },
           "description": "Terminal emülatörü temalandırma.",
           "foot": {
-            "description": "{filepath} dosyasına yaz ve yeniden yükle",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz ve yeniden yükle"
           },
           "ghostty": {
-            "description": "{filepath} dosyasına yaz ve yeniden yükle",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz ve yeniden yükle"
           },
           "kitty": {
-            "description": "{filepath} dosyasına yaz ve yeniden yükle",
-            "description-missing": "Kurulum için {app} gereklidir"
+            "description": "{filepath} dosyasına yaz ve yeniden yükle"
           },
           "label": "Terminal",
           "wezterm": {
-            "description": "{filepath} yaz ve yeniden yükle",
-            "description-missing": "{app} uygulamasının yüklü olmasını gerektirir"
+            "description": "{filepath} yaz ve yeniden yükle"
           }
         },
         "ui": {
@@ -1378,10 +1379,6 @@
           "label": "Minimal mod"
         },
         "preview": "Önizleme",
-        "section": {
-          "description": "Saat aracı görünümünü yapılandırın.",
-          "label": "Saat Widget'ı"
-        },
         "show-background": {
           "description": "Saat widget'ı için arka plan kabını göster.",
           "label": "Arka planı göster"
@@ -1415,16 +1412,18 @@
         }
       },
       "edit-mode": {
+        "add-widget": "Araç ekle",
         "button": {
           "label": "Düzenleme moduna gir"
         },
-        "controls-explanation": "Sol fare tuşu: Araç taşı\nSağ fare tuşu: Araç yeniden boyutlandır",
+        "controls-explanation": "Sol tıklayıp sürükleyin: Bileşeni taşıyın veya yeniden boyutlandırın.\nSağ tıklayın: Bağlam menüsü seçeneklerini açın.",
         "description": "Masaüstü araçlarını taşımak ve yeniden konumlandırmak için düzenleme modunu etkinleştirin. Etkinleştirildiğinde, araçlar bir sürükleme ana hattı gösterir ve yeniden konumlandırılabilir.",
         "exit-button": "Düzenleme modundan çık",
         "grid-snap": {
           "label": "Izgaraya hizala"
         },
-        "label": "Düzenleme modu"
+        "label": "Düzenleme modu",
+        "open-settings": "Ayarları aç"
       },
       "enabled": {
         "description": "Masaüstü araçlarını tamamen etkinleştir veya devre dışı bırak.",
@@ -1445,13 +1444,13 @@
           "description": "Ortam çalınmadığında araç takımının nasıl davrandığını kontrol eder.",
           "label": "Gizleme modu"
         },
-        "section": {
-          "description": "Medya oynatıcı araç görünümünü yapılandırın.",
-          "label": "Medya Oynatıcı Aracı"
-        },
         "show-background": {
           "description": "Medya oynatıcı widget'ı için arka plan konteynerini göster.",
           "label": "Arka planı göster"
+        },
+        "show-buttons": {
+          "description": "Medya oynatıcı widget'ında medya kontrol düğmelerini (oynat/durdur, önceki, sonraki) göster.",
+          "label": "Düğmeleri göster"
         },
         "visualizer-type": {
           "description": "Masaüstü medya oynatıcı arka planı için bir görselleştirme türü seçin.",
@@ -1468,19 +1467,9 @@
           "description": "Masaüstünde bir hava durumu aracı göster.",
           "label": "Hava durumu araç kutusunu etkinleştir"
         },
-        "section": {
-          "description": "Hava durumu widget'ının görünümünü yapılandırın.",
-          "label": "Hava Durumu Aracı"
-        },
         "show-background": {
           "description": "Hava durumu widget'ı için arka plan konteynerini göster.",
           "label": "Arka planı göster"
-        }
-      },
-      "widgets": {
-        "section": {
-          "description": "Masaüstü araçlarını ekle ve yapılandır",
-          "label": "Masaüstü Araçları"
         }
       }
     },
@@ -1736,6 +1725,10 @@
         "placeholder": "örn., notify-send \"Duvar Kâğıdı\" \"Değişti\""
       }
     },
+    "indicator": {
+      "default-value": "Varsayılan: {value}",
+      "system-default": "Sistem Varsayılanı"
+    },
     "launcher": {
       "settings": {
         "clip-preview": {
@@ -1757,6 +1750,10 @@
         "grid-view": {
           "description": "Öğeleri liste yerine ızgara düzeninde görüntüle.",
           "label": "Izgara görünümü"
+        },
+        "icon-mode": {
+          "description": "Tabler simgeleri yerine yerel sistem simgelerini kullanın.",
+          "label": "Yerel simgeleri kullan"
         },
         "position": {
           "description": "Başlatıcı panelinin nerede görüneceğini seçin.",
@@ -1883,6 +1880,7 @@
     },
     "network": {
       "bluetooth": {
+        "description": "Bluetooth yönetimini etkinleştir.",
         "label": "Bluetooth'u Etkinleştir"
       },
       "section": {
@@ -1890,6 +1888,7 @@
       },
       "title": "Ağ",
       "wifi": {
+        "description": "Kablosuz ağları yönet (NetworkManager gerektirir).",
         "label": "Kablosuz Bağlantıyı Etkinleştir"
       }
     },
@@ -2160,7 +2159,7 @@
       "update-incompatible": "Noctalia v{version} veya üzeri gerektirir.",
       "update-success": "{plugin} v{version} sürümüne güncellendi",
       "update-version": "v{mevcut} → v{yeni}",
-      "updating": "{plugin} güncelleniyor..."
+      "updating": "Güncelleniyor..."
     },
     "screen-recorder": {
       "audio": {
@@ -2549,8 +2548,20 @@
       "low-desc": "Batarya % {percent}. Lütfen şarj bağlantısını yapın."
     },
     "bluetooth": {
+      "confirm-code": "Diğer cihazdaki {value} kodunu onayla",
+      "connect-failed": "Cihaza bağlanılamadı",
       "disabled": "Devre dışı",
-      "enabled": "Etkin"
+      "disconnect-failed": "Cihazla bağlantı kesilemedi",
+      "discoverable-change-failed": "Keşfedilebilir durum değiştirilemedi",
+      "discoverable-disabled": "Keşfedilebilir devre dışı",
+      "discoverable-enabled": "Keşfedilebilir etkinleştirildi",
+      "display-code": "Diğer cihazda {value} kodunu girin",
+      "enabled": "Etkin",
+      "forget-failed": "Cihazı unutma başarısız oldu",
+      "pair-failed": "Cihaz eşleştirilemedi",
+      "passkey-required": "Cihaz tarafından istenen geçiş anahtarı",
+      "pincode-required": "Cihaz tarafından PIN kodu gerekiyor.",
+      "state-change-failed": "Bluetooth durumu değiştirilemedi"
     },
     "clipboard": {
       "unavailable": "Panoya geçmişi kullanılamıyor",
@@ -2633,9 +2644,13 @@
     },
     "wifi": {
       "connected": "'{ssid}' ile bağlandı",
+      "connection-failed": "Bağlantı başarısız.",
+      "connection-timeout": "Bağlantı zaman aşımı",
       "disabled": "Devre dışı",
       "disconnected": "'{ssid}' bağlantısı kesildi",
-      "enabled": "Etkin"
+      "enabled": "Etkin",
+      "incorrect-password": "Yanlış şifre",
+      "network-not-found": "Ağ bulunamadı"
     }
   },
   "tooltips": {
@@ -2659,6 +2674,7 @@
     "grid-view": "Izgara görünümü",
     "hidden-files-hide": "Gizli dosyalar",
     "hidden-files-show": "Gizli dosyalar",
+    "hide-unnamed-devices": "Adsız cihazları gizle",
     "home": "Ana dizin",
     "input-muted": "Giriş sesini kapat/aç",
     "keep-awake": "Uyanık kal",
@@ -2701,6 +2717,7 @@
     "search-close": "Aramayı kapat",
     "session-menu": "Oturum Menüsü",
     "set-power-profile": "{profile} güç profili",
+    "show-all-devices": "Tüm cihazları göster",
     "start-screen-recording": "Ekran kaydedici",
     "stop-screen-recording": "Ekran kaydedici",
     "switch-to-dark-mode": "Koyu mod",
@@ -2893,17 +2910,26 @@
       "disabled": "Kablosuz Bağlantı devre dışı",
       "disconnect": "Bağlantıyı kes",
       "disconnecting": "Bağlantı kesiliyor...",
+      "dns": "DNS",
       "enable-message": "Mevcut ağları görmek için kablosuz bağlantıyı etkinleştirin.",
       "enter-password": "Parola girin...",
       "forget": "Unut",
       "forget-network": "Bu ağı unut?",
       "forgetting": "Unutuluyor...",
+      "gateway": "Geçit",
+      "info": "Bilgi",
+      "internet": "İnternet",
+      "internet-connected": "İnternete bağlı",
+      "internet-limited": "İnternet yok",
+      "ipv4": "IPv4",
       "known-networks": "Bilinen Ağlar",
+      "link-speed": "Bağlantı hızı",
       "no-networks": "Ağ bulunamadı",
       "password": "Parola",
       "saved": "Kaydedildi",
       "scan-again": "Yeniden tara",
       "searching": "Yakındaki ağlar aranıyor...",
+      "security": "Güvenlik",
       "title": "Kablosuz Bağlantı"
     }
   }

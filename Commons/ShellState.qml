@@ -212,6 +212,7 @@ Singleton {
           barVisible: BarService.isVisible,
           lockScreenActive: PanelService.lockScreen?.active || false,
           wallpapers: WallpaperService.currentWallpapers || {},
+          desktopWidgetsEditMode: DesktopWidgetRegistry.editMode || false,
           // -------------
           display: shellStateData.display || {},
           notificationsState: shellStateData.notificationsState || {},

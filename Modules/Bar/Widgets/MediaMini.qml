@@ -66,6 +66,24 @@ Item {
     return showArtistFirst ? (artist ? `${artist} - ${track}` : track) : (artist ? `${track} - ${artist}` : track);
   }
 
+  // CavaService registration for visualizer
+  readonly property string cavaComponentId: "bar:mediamini:" + root.screen.name + ":" + root.section + ":" + root.sectionWidgetIndex
+  readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none"
+
+  onNeedsCavaChanged: {
+    if (root.needsCava) {
+      CavaService.registerComponent(root.cavaComponentId);
+    } else {
+      CavaService.unregisterComponent(root.cavaComponentId);
+    }
+  }
+
+  Component.onDestruction: {
+    if (root.needsCava) {
+      CavaService.unregisterComponent(root.cavaComponentId);
+    }
+  }
+
   readonly property string tooltipText: {
     var text = title;
     var controls = [];

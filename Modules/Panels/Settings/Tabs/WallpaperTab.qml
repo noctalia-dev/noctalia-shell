@@ -237,13 +237,10 @@ ColumnLayout {
 
     // Transition Duration
     ColumnLayout {
-      NLabel {
-        label: I18n.tr("settings.wallpaper.look-feel.transition-duration.label")
-        description: I18n.tr("settings.wallpaper.look-feel.transition-duration.description")
-      }
-
       NValueSlider {
         Layout.fillWidth: true
+        label: I18n.tr("settings.wallpaper.look-feel.transition-duration.label")
+        description: I18n.tr("settings.wallpaper.look-feel.transition-duration.description")
         from: 500
         to: 10000
         stepSize: 100
@@ -255,13 +252,10 @@ ColumnLayout {
 
     // Edge Smoothness
     ColumnLayout {
-      NLabel {
-        label: I18n.tr("settings.wallpaper.look-feel.edge-smoothness.label")
-        description: I18n.tr("settings.wallpaper.look-feel.edge-smoothness.description")
-      }
-
       NValueSlider {
         Layout.fillWidth: true
+        label: I18n.tr("settings.wallpaper.look-feel.edge-smoothness.label")
+        description: I18n.tr("settings.wallpaper.look-feel.edge-smoothness.description")
         from: 0.0
         to: 1.0
         value: Settings.data.wallpaper.transitionEdgeSmoothness

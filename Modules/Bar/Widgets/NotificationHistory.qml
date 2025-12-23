@@ -46,6 +46,8 @@ NIconButton {
     return count;
   }
 
+  readonly property int count: computeUnreadCount()
+
   baseSize: Style.capsuleHeight
   applyUiScale: false
   density: Settings.data.bar.density
@@ -59,6 +61,8 @@ NIconButton {
   colorBorderHover: Color.transparent
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
+  visible: count > 0 || !hideWhenZero
+  opacity: (count > 0 || !hideWhenZero) ? 1.0 : 0.0
 
   NPopupContextMenu {
     id: contextMenu
@@ -116,17 +120,16 @@ NIconButton {
     anchors.rightMargin: 2
     anchors.topMargin: 1
     z: 2
-    active: showUnreadBadge && (!hideWhenZero || computeUnreadCount() > 0)
+    active: showUnreadBadge
     sourceComponent: Rectangle {
       id: badge
-      readonly property int count: computeUnreadCount()
       height: 8
       width: height
       radius: Style.radiusXS
       color: Color.mError
       border.color: Color.mSurface
       border.width: Style.borderS
-      visible: count > 0 || !hideWhenZero
+      visible: count > 0
     }
   }
 }

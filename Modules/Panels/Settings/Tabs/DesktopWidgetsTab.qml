@@ -37,17 +37,19 @@ ColumnLayout {
     label: I18n.tr("settings.desktop-widgets.enabled.label")
     description: I18n.tr("settings.desktop-widgets.enabled.description")
     checked: Settings.data.desktopWidgets.enabled
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("desktopWidgets.enabled")
     onToggled: checked => Settings.data.desktopWidgets.enabled = checked
   }
 
   NButton {
     visible: Settings.data.desktopWidgets.enabled
     Layout.fillWidth: true
-    text: Settings.data.desktopWidgets.editMode ? I18n.tr("settings.desktop-widgets.edit-mode.exit-button") : I18n.tr("settings.desktop-widgets.edit-mode.button.label")
+    text: DesktopWidgetRegistry.editMode ? I18n.tr("settings.desktop-widgets.edit-mode.exit-button") : I18n.tr("settings.desktop-widgets.edit-mode.button.label")
     icon: "edit"
     onClicked: {
-      Settings.data.desktopWidgets.editMode = !Settings.data.desktopWidgets.editMode;
-      if (Settings.data.desktopWidgets.editMode && Settings.data.ui.settingsPanelMode !== "window") {
+      DesktopWidgetRegistry.editMode = !DesktopWidgetRegistry.editMode;
+      if (DesktopWidgetRegistry.editMode && Settings.data.ui.settingsPanelMode !== "window") {
         var item = root.parent;
         while (item) {
           if (item.closeRequested !== undefined) {

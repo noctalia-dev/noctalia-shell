@@ -294,8 +294,9 @@ Rectangle {
           const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
           const command = terminal.concat(app.command);
           Quickshell.execDetached(command);
+        } else if (app.command && app.command.length > 0) {
+          Quickshell.execDetached(app.command);
         } else if (app.execute) {
-          // Default execution for GUI apps
           app.execute();
         } else {
           Logger.w("Taskbar", `Could not launch: ${app.name}. No valid launch method.`);
@@ -376,8 +377,11 @@ Rectangle {
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(root.screen, root.section, root.sectionWidgetIndex, root.widgetId, root.widgetSettings);
                    } else if (action.startsWith("desktop-action-") && item && item.desktopAction) {
-                     // Execute desktop entry action
-                     item.desktopAction.execute();
+                     if (item.desktopAction.command && item.desktopAction.command.length > 0) {
+                       Quickshell.execDetached(item.desktopAction.command);
+                     } else if (item.desktopAction.execute) {
+                       item.desktopAction.execute();
+                     }
                    }
                    root.selectedWindowId = "";
                    root.selectedAppId = "";

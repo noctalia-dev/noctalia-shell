@@ -29,23 +29,6 @@ Item {
     return (item && item.visible) ? Math.round(item[prop]) : 0;
   }
 
-  // Create a dummy pluginApi that returns empty strings to avoid undefined warnings
-  property var _dummyApi: QtObject {
-    property var pluginSettings: ({})
-    property var manifest: ({
-                              metadata: {
-                                defaultSettings: {}
-                              }
-                            })
-
-    function tr(key) {
-      return "";
-    }
-    function trp(key, count) {
-      return "";
-    }
-  }
-
   // Only load if widget exists in registry
   function checkWidgetExists(): bool {
     return root.widgetId !== "" && BarWidgetRegistry.hasWidget(root.widgetId);
@@ -84,13 +67,6 @@ Item {
       if (!item)
         return;
 
-      // Inject dummy API immediately for plugin widgets before any other code runs
-      if (BarWidgetRegistry.isPluginWidget(widgetId) && item.hasOwnProperty("pluginApi")) {
-        if (!item.pluginApi) {
-          item.pluginApi = root._dummyApi;
-        }
-      }
-
       Logger.d("BarWidgetLoader", "Loading widget", widgetId, "on screen:", widgetScreen.name);
 
       // Apply properties to loaded widget
@@ -113,11 +89,11 @@ Item {
       }
 
       // Inject plugin API for plugin widgets
+      // The API is fully populated (settings/translations already loaded) by PluginService
       if (BarWidgetRegistry.isPluginWidget(widgetId)) {
         var pluginId = widgetId.replace("plugin:", "");
         var api = PluginService.getPluginAPI(pluginId);
         if (api && item.hasOwnProperty("pluginApi")) {
-          // Inject API into widget
           item.pluginApi = api;
           Logger.d("BarWidgetLoader", "Injected plugin API for", widgetId);
         }

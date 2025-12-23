@@ -279,7 +279,7 @@
         }
       },
       "notification-history": {
-        "hide-badge-when-zero": {
+        "hide-widget-when-zero": {
           "description": "Скрыть значок уведомлений, когда нет непрочитанных уведомлений.",
           "label": "Скрыть значок, если ноль"
         },
@@ -449,18 +449,28 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Доступные устройства",
+      "battery": "Батарея",
       "blocked": "Заблокировано",
       "connect": "Подключить",
       "connected-devices": "Подключенные устройства",
       "connecting": "Подключение…",
+      "device-address": "Адрес устройства",
       "disabled": "Bluetooth отключен",
       "disconnect": "Отключить",
+      "discoverable": "Обнаруживаемый",
       "enable-message": "Включите Bluetooth, чтобы увидеть доступные устройства.",
+      "info": "Информация",
       "known-devices": "Известные устройства",
+      "pair": "Пара",
+      "paired": "Парный",
+      "paired-devices": "Сопряжённые устройства",
       "pairing": "Сопряжение...",
       "pairing-mode": "Убедитесь, что ваше устройство находится в режиме сопряжения.",
       "scanning": "Поиск устройств...",
-      "title": "Bluetooth"
+      "signal": "Сигнал",
+      "title": "Bluetooth",
+      "trusted": "Надёжный",
+      "unpair": "Разорвать пару"
     }
   },
   "calendar": {
@@ -520,13 +530,16 @@
     "cancel": "Отменить",
     "check-settings": "Проверьте настройки для получения подробной информации.",
     "close": "Закрыть",
-    "save": "Сохранить"
+    "no": "Нет",
+    "save": "Сохранить",
+    "yes": "Да"
   },
   "context-menu": {
     "clear-history": "Очистить историю",
     "close-app": "Закрыть {app}",
     "connect-vpn": "Подключиться к {name}",
     "cycle-visualizer": "Визуализатор циклов",
+    "delete": "Удалить",
     "disable-bluetooth": "Отключить Bluetooth",
     "disable-dnd": "Отключить режим \"Не беспокоить\"",
     "disable-wifi": "Отключить Wi-Fi",
@@ -567,6 +580,18 @@
       "chat": "Чат",
       "development": "Разработка",
       "education": "Образование",
+      "emoji": {
+        "activity": "Активность",
+        "animals": "Животные",
+        "flags": "Флаги",
+        "food": "Еда и напитки",
+        "nature": "Природа",
+        "objects": "Объекты",
+        "people": "Люди и тело",
+        "recent": "Недавние",
+        "symbols": "Символы",
+        "travel": "Путешествия и места"
+      },
       "game": "Игры",
       "graphics": "Графика",
       "misc": "Разное",
@@ -734,10 +759,6 @@
       "top": "Вверху",
       "top_left": "Вверху слева",
       "top_right": "Вверху справа"
-    },
-    "visualizer-quality": {
-      "high": "Высокое",
-      "low": "Низкое"
     },
     "visualizer-types": {
       "linear": "Линейный",
@@ -950,10 +971,6 @@
           "description": "Установите предпочитаемые и игнорируемые медиа-приложения.",
           "label": "Медиаплееры"
         },
-        "visualizer-quality": {
-          "description": "Высокое качество использует больше ресурсов GPU.",
-          "label": "Качество визуализации"
-        },
         "visualizer-type": {
           "description": "Выберите тип визуализации для воспроизведения медиа.",
           "label": "Тип визуализации"
@@ -1156,14 +1173,15 @@
       "templates": {
         "compositors": {
           "description": "Оформление композитора.",
+          "hyprland": {
+            "description": "Записать {filepath}."
+          },
           "label": "Компоновщики",
           "mango": {
-            "description": "Записать {filepath}. Требуется mango",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath}. Требуется mango"
           },
           "niri": {
-            "description": "Записать {filepath}. Требуется niri v25.11+",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath}. Требуется niri v25.11+"
           }
         },
         "misc": {
@@ -1176,54 +1194,42 @@
         },
         "programs": {
           "cava": {
-            "description": "Записать {filepath}",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath}"
           },
           "code": {
-            "description": "Записать {filepath} — тему HyprLuna нужно установить и активировать вручную",
-            "description-missing": "Клиент Code не обнаружен. Установите VSCode или VSCodium"
+            "description": "Записать {filepath} — тему HyprLuna нужно установить и активировать вручную"
           },
           "description": "Тематика для конкретных приложений.",
           "discord": {
-            "description": "Записать {filepath} для {client} — тему HyprLuna нужно активировать вручную",
-            "description-missing": "Клиент Discord не обнаружен — установите vencord, vesktop, webcord, armcord, equibop, lightcord или dorion"
+            "description": "Записать {filepath} для {client} — тему HyprLuna нужно активировать вручную"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Стандартный: ~/.emacs.d/themes/noctalia.el<br>Применить вручную: (load-theme 'noctalia t)",
-            "description-missing": "Требуется установка {app}"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Стандартный: ~/.emacs.d/themes/noctalia.el<br>Применить вручную: (load-theme 'noctalia t)"
           },
           "fuzzel": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "label": "Программы",
           "pywalfox": {
-            "description": "Записать {filepath} и запустить pywalfox update",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и запустить pywalfox update"
           },
           "spicetify": {
-            "description": "Записать {filepath} — тему Comfy нужно установить и активировать вручную",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} — тему Comfy нужно установить и активировать вручную"
           },
           "telegram": {
-            "description": "Записать {filepath}",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath}"
           },
           "vicinae": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "walker": {
-            "description": "Записать {filepath} и установить тему noctalia",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и установить тему noctalia"
           },
           "yazi": {
-            "description": "Записать {filepath} — flavor необходимо активировать вручную",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} — flavor необходимо активировать вручную"
           },
           "zed": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           }
         },
         "section": {
@@ -1232,26 +1238,21 @@
         },
         "terminal": {
           "alacritty": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "description": "Тематика эмулятора терминала.",
           "foot": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "ghostty": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "kitty": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "label": "Терминал",
           "wezterm": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           }
         },
         "ui": {
@@ -1378,10 +1379,6 @@
           "label": "Минимальный режим"
         },
         "preview": "Предварительный просмотр",
-        "section": {
-          "description": "Настроить внешний вид виджета часов.",
-          "label": "Виджет часов"
-        },
         "show-background": {
           "description": "Показать фоновый контейнер для виджета часов.",
           "label": "Показать фон"
@@ -1415,16 +1412,18 @@
         }
       },
       "edit-mode": {
+        "add-widget": "Добавить виджет",
         "button": {
           "label": "Войти в режим редактирования"
         },
-        "controls-explanation": "Левая кнопка мыши: Перемещать виджет\nПравая кнопка мыши: Изменять размер виджета",
+        "controls-explanation": "Левый клик и перетаскивание: Переместить или изменить размер виджета.\nПравый клик: Открыть контекстное меню.",
         "description": "Включите режим редактирования, чтобы перемещать и изменять положение виджетов рабочего стола. В этом режиме виджеты отображаются с контуром перетаскивания и могут быть перемещены.",
         "exit-button": "Выйти из режима редактирования",
         "grid-snap": {
           "label": "Привязка к сетке"
         },
-        "label": "Режим редактирования"
+        "label": "Режим редактирования",
+        "open-settings": "Открыть настройки"
       },
       "enabled": {
         "description": "Включить или отключить виджеты рабочего стола полностью.",
@@ -1445,13 +1444,13 @@
           "description": "Управляет поведением виджета, когда медиа не воспроизводится.",
           "label": "Режим скрытия"
         },
-        "section": {
-          "description": "Настроить внешний вид виджета медиаплеера.",
-          "label": "Виджет медиаплеера"
-        },
         "show-background": {
           "description": "Показать фоновый контейнер для виджета медиаплеера.",
           "label": "Показать фон"
+        },
+        "show-buttons": {
+          "description": "Показать кнопки управления медиа (воспроизведение/пауза, предыдущий, следующий) на виджете медиаплеера.",
+          "label": "Показать кнопки"
         },
         "visualizer-type": {
           "description": "Выберите тип визуализации для фона медиаплеера.",
@@ -1468,19 +1467,9 @@
           "description": "Показать погодный виджет на рабочем столе.",
           "label": "Включить виджет погоды"
         },
-        "section": {
-          "description": "Настроить внешний вид виджета погоды.",
-          "label": "Виджет погоды"
-        },
         "show-background": {
           "description": "Показать фоновый контейнер для погодного виджета.",
           "label": "Показать фон"
-        }
-      },
-      "widgets": {
-        "section": {
-          "description": "Добавить и настроить виджеты рабочего стола",
-          "label": "Настольные виджеты"
         }
       }
     },
@@ -1736,6 +1725,10 @@
         "placeholder": "например, notify-send \"Wallpaper\" \"Changed\""
       }
     },
+    "indicator": {
+      "default-value": "По умолчанию: {value}",
+      "system-default": "По умолчанию"
+    },
     "launcher": {
       "settings": {
         "clip-preview": {
@@ -1757,6 +1750,10 @@
         "grid-view": {
           "description": "Показывать элементы в виде сетки вместо списка.",
           "label": "Вид сетки"
+        },
+        "icon-mode": {
+          "description": "Использовать нативные системные иконки вместо иконок Tabler.",
+          "label": "Использовать нативные иконки"
         },
         "position": {
           "description": "Выберите, где появляется панель запуска.",
@@ -1883,6 +1880,7 @@
     },
     "network": {
       "bluetooth": {
+        "description": "Включить управление Bluetooth.",
         "label": "Включить Bluetooth"
       },
       "section": {
@@ -1890,6 +1888,7 @@
       },
       "title": "Сеть",
       "wifi": {
+        "description": "Управление беспроводными сетями (требуется NetworkManager).",
         "label": "Включить Wi-Fi"
       }
     },
@@ -2160,7 +2159,7 @@
       "update-incompatible": "Требуется Noctalia v{version} или выше",
       "update-success": "Плагин {plugin} обновлён до версии {version}",
       "update-version": "v{текущее} → v{новое}",
-      "updating": "Обновление {plugin}..."
+      "updating": "Обновление..."
     },
     "screen-recorder": {
       "audio": {
@@ -2549,8 +2548,20 @@
       "low-desc": "Заряд батареи {percent}%. Пожалуйста, подключите зарядное устройство."
     },
     "bluetooth": {
+      "confirm-code": "Подтвердите код {value} на другом устройстве.",
+      "connect-failed": "Не удалось подключиться к устройству",
       "disabled": "Отключен",
-      "enabled": "Включен"
+      "disconnect-failed": "Не удалось отключиться от устройства",
+      "discoverable-change-failed": "Не удалось изменить состояние видимости",
+      "discoverable-disabled": "Обнаружение отключено",
+      "discoverable-enabled": "Обнаружение включено",
+      "display-code": "Введите код {value} на другом устройстве.",
+      "enabled": "Включен",
+      "forget-failed": "Не удалось удалить устройство",
+      "pair-failed": "Не удалось выполнить сопряжение устройства.",
+      "passkey-required": "Требуется ключ доступа устройства",
+      "pincode-required": "PIN-код, требуемый устройством",
+      "state-change-failed": "Не удалось изменить состояние Bluetooth."
     },
     "clipboard": {
       "unavailable": "История буфера обмена недоступна",
@@ -2633,9 +2644,13 @@
     },
     "wifi": {
       "connected": "Подключено к '{ssid}'",
+      "connection-failed": "Соединение не установлено.",
+      "connection-timeout": "Превышено время ожидания соединения",
       "disabled": "Отключен",
       "disconnected": "Отключено от '{ssid}'",
-      "enabled": "Включен"
+      "enabled": "Включен",
+      "incorrect-password": "Неверный пароль",
+      "network-not-found": "Сеть не найдена"
     }
   },
   "tooltips": {
@@ -2659,6 +2674,7 @@
     "grid-view": "Вид сеткой",
     "hidden-files-hide": "Скрытые файлы",
     "hidden-files-show": "Скрытые файлы",
+    "hide-unnamed-devices": "Скрыть безымянные устройства",
     "home": "Домашний каталог",
     "input-muted": "Включить/выключить отключение микрофона",
     "keep-awake": "Не засыпать",
@@ -2701,6 +2717,7 @@
     "search-close": "Закрыть поиск",
     "session-menu": "Меню сеанса",
     "set-power-profile": "{profile} профиль питания",
+    "show-all-devices": "Показать все устройства",
     "start-screen-recording": "Запись экрана",
     "stop-screen-recording": "Запись экрана",
     "switch-to-dark-mode": "Темный режим",
@@ -2893,17 +2910,26 @@
       "disabled": "Wi-Fi отключен",
       "disconnect": "Отключить",
       "disconnecting": "Отключение...",
+      "dns": "DNS",
       "enable-message": "Включите Wi-Fi, чтобы увидеть доступные сети.",
       "enter-password": "Введите пароль...",
       "forget": "Забыть",
       "forget-network": "Забыть эту сеть?",
       "forgetting": "Забывание...",
+      "gateway": "Шлюз",
+      "info": "Информация",
+      "internet": "Интернет",
+      "internet-connected": "Подключено к интернету",
+      "internet-limited": "Нет интернета",
+      "ipv4": "IPv4",
       "known-networks": "Известные сети",
+      "link-speed": "Скорость соединения",
       "no-networks": "Сети не найдены",
       "password": "Пароль",
       "saved": "Сохранено",
       "scan-again": "Сканировать снова",
       "searching": "Поиск ближайших сетей...",
+      "security": "Безопасность",
       "title": "Wi-Fi"
     }
   }

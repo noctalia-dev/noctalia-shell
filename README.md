@@ -8,7 +8,11 @@
 
 <p align="center">
   <a href="https://docs.noctalia.dev/getting-started/installation">
-    <img src="https://img.shields.io/badge/⚡_QUICK_INSTALL-Get_Started_Now-A8AEFF?style=for-the-badge&logoColor=FFFFFF&labelColor=0C0D11" alt="Quick Install" style="height: 50px" />
+    <img
+      src="https://img.shields.io/badge/🌙_Install_Noctalia-A8AEFF?style=for-the-badge&labelColor=0C0D11"
+      alt="Install Noctalia"
+      style="height: 50px"
+    />
   </a>
 </p>
 

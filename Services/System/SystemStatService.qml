@@ -28,6 +28,8 @@ Singleton {
   property var diskPercents: ({})
   property real rxSpeed: 0
   property real txSpeed: 0
+  property real zfsArcSizeKb: 0 // ZFS ARC cache size in KB
+  property real zfsArcCminKb: 0 // ZFS ARC minimum (non-reclaimable) size in KB
 
   // Internal state for CPU calculation
   property var prevCpuStats: null
@@ -66,6 +68,9 @@ Singleton {
 
     // Kickoff the gpu sensor detection for temperature
     gpuTempNameReader.checkNext();
+
+    // Check for ZFS ARC stats on startup
+    zfsArcStatsFile.reload();
   }
 
   // Re-run GPU detection when NVIDIA opt-in setting changes
@@ -134,7 +139,10 @@ Singleton {
         restart();
       }
     }
-    onTriggered: memInfoFile.reload()
+    onTriggered: {
+      memInfoFile.reload();
+      zfsArcStatsFile.reload();
+    }
   }
 
   // Timer for disk usage
@@ -200,6 +208,19 @@ Singleton {
     id: netDevFile
     path: "/proc/net/dev"
     onLoaded: calculateNetworkSpeed(text())
+  }
+
+  // ZFS ARC stats file (only exists on ZFS systems)
+  FileView {
+    id: zfsArcStatsFile
+    path: "/proc/spl/kstat/zfs/arcstats"
+    printErrors: false
+    onLoaded: parseZfsArcStats(text())
+    onLoadFailed: {
+      // File doesn't exist (non-ZFS system), set ARC values to 0
+      root.zfsArcSizeKb = 0;
+      root.zfsArcCminKb = 0;
+    }
   }
 
   // --------------------------------------------
@@ -449,6 +470,49 @@ Singleton {
 
   // -------------------------------------------------------
   // -------------------------------------------------------
+  // Parse ZFS ARC stats from /proc/spl/kstat/zfs/arcstats
+  function parseZfsArcStats(text) {
+    if (!text)
+      return;
+    const lines = text.split('\n');
+
+    // The file format is: name type data
+    // We need to find the lines with "size" and "c_min" and extract the values (third column)
+    let foundSize = false;
+    let foundCmin = false;
+
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length >= 3) {
+        if (parts[0] === 'size') {
+          // The value is in bytes, convert to KB
+          const arcSizeBytes = parseInt(parts[2]) || 0;
+          root.zfsArcSizeKb = Math.floor(arcSizeBytes / 1024);
+          foundSize = true;
+        } else if (parts[0] === 'c_min') {
+          // The value is in bytes, convert to KB
+          const arcCminBytes = parseInt(parts[2]) || 0;
+          root.zfsArcCminKb = Math.floor(arcCminBytes / 1024);
+          foundCmin = true;
+        }
+
+        // If we found both, we can return early
+        if (foundSize && foundCmin) {
+          return;
+        }
+      }
+    }
+
+    // If fields not found, set to 0
+    if (!foundSize) {
+      root.zfsArcSizeKb = 0;
+    }
+    if (!foundCmin) {
+      root.zfsArcCminKb = 0;
+    }
+  }
+
+  // -------------------------------------------------------
   // Parse memory info from /proc/meminfo
   function parseMemoryInfo(text) {
     if (!text)
@@ -466,7 +530,11 @@ Singleton {
     }
 
     if (memTotal > 0) {
-      const usageKb = memTotal - memAvailable;
+      // Calculate usage, adjusting for ZFS ARC cache if present
+      let usageKb = memTotal - memAvailable;
+      if (root.zfsArcSizeKb > 0) {
+        usageKb = Math.max(0, usageKb - root.zfsArcSizeKb + root.zfsArcCminKb);
+      }
       root.memGb = (usageKb / 1048576).toFixed(1); // 1024*1024 = 1048576
       root.memPercent = Math.round((usageKb / memTotal) * 100);
     }

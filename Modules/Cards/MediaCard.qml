@@ -15,6 +15,27 @@ NBox {
   // Track whether we have an active media player
   readonly property bool hasActivePlayer: MediaService.currentPlayer && MediaService.canPlay
 
+  // CavaService registration for visualizer
+  readonly property bool needsCava: Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
+
+  onNeedsCavaChanged: {
+    if (root.needsCava) {
+      CavaService.registerComponent("mediacard");
+    } else {
+      CavaService.unregisterComponent("mediacard");
+    }
+  }
+
+  Component.onCompleted: {
+    if (root.needsCava) {
+      CavaService.registerComponent("mediacard");
+    }
+  }
+
+  Component.onDestruction: {
+    CavaService.unregisterComponent("mediacard");
+  }
+
   property string wallpaper: WallpaperService.getWallpaper(screen.name)
 
   // External state management

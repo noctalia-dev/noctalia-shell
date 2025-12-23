@@ -489,5 +489,8 @@ Item {
     function enable() {
       Settings.data.desktopWidgets.enabled = true;
     }
+    function edit() {
+      DesktopWidgetRegistry.editMode = !DesktopWidgetRegistry.editMode;
+    }
   }
 }

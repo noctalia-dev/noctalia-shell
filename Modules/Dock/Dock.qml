@@ -679,8 +679,9 @@ Loader {
                                   const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
                                   const command = terminal.concat(app.command);
                                   Quickshell.execDetached(command);
+                                } else if (app.command && app.command.length > 0) {
+                                  Quickshell.execDetached(app.command);
                                 } else if (app.execute) {
-                                  // Default execution for GUI apps
                                   app.execute();
                                 } else {
                                   Logger.w("Dock", `Could not launch: ${app.name}. No valid launch method.`);

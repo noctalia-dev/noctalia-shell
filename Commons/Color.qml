@@ -18,6 +18,8 @@ misinterpreting them as signals (e.g., the 'onPrimary' property name).
 Singleton {
   id: root
 
+  property bool reloadColors: false
+
   // --- Key Colors: These are the main accent colors that define your app's style
   readonly property color mPrimary: customColorsData.mPrimary
   readonly property color mOnPrimary: customColorsData.mOnPrimary
@@ -87,6 +89,7 @@ Singleton {
     watchChanges: true
     onFileChanged: {
       Logger.i("Color", "Reloading colors from disk");
+      reloadColors = true;
       reload();
     }
     onAdapterUpdated: {
@@ -101,6 +104,11 @@ Singleton {
       }
     }
     onLoadFailed: function (error) {
+      if (reloadColors) {
+        reloadColors = false;
+        return;
+      }
+
       // Error code 2 = ENOENT (No such file or directory)
       if (error === 2 || error.toString().includes("No such file")) {
         // File doesn't exist, create it with default values

@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import qs.Commons
 import qs.Services.Networking
+import qs.Services.System
 import qs.Widgets
 
 ColumnLayout {
@@ -16,12 +17,20 @@ ColumnLayout {
 
   NToggle {
     label: I18n.tr("settings.network.wifi.label")
-    checked: Settings.data.network.wifiEnabled
+    description: I18n.tr("settings.network.wifi.description")
+    checked: ProgramCheckerService.nmcliAvailable && Settings.data.network.wifiEnabled
     onToggled: checked => NetworkService.setWifiEnabled(checked)
+    enabled: ProgramCheckerService.nmcliAvailable
   }
 
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  // Bluetooth adapter toggle grouped with its panel settings
   NToggle {
     label: I18n.tr("settings.network.bluetooth.label")
+    description: I18n.tr("settings.network.bluetooth.description")
     checked: BluetoothService.enabled
     onToggled: checked => BluetoothService.setBluetoothEnabled(checked)
   }

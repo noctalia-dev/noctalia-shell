@@ -24,6 +24,8 @@ ColumnLayout {
     label: I18n.tr("settings.system-monitor.enable-nvidia-gpu.label")
     description: I18n.tr("settings.system-monitor.enable-nvidia-gpu.description")
     checked: Settings.data.systemMonitor.enableNvidiaGpu
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("systemMonitor.enableNvidiaGpu")
     onToggled: checked => Settings.data.systemMonitor.enableNvidiaGpu = checked
   }
 
@@ -36,6 +38,8 @@ ColumnLayout {
       label: I18n.tr("settings.system-monitor.use-custom-highlight-colors.label")
       description: I18n.tr("settings.system-monitor.use-custom-highlight-colors.description")
       checked: Settings.data.systemMonitor.useCustomColors
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("systemMonitor.useCustomColors")
       onToggled: {
         // If enabling custom colors and no custom color is saved, persist current theme colors
         if (checked) {
@@ -136,6 +140,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.cpuWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.cpuWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.cpuWarningThreshold = value;
           // Ensure critical >= warning
@@ -164,6 +170,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.cpuCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.cpuCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.cpuCriticalThreshold = value
         suffix: "%"
       }
@@ -186,6 +194,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.cpuPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.cpuPollingInterval")
         onValueChanged: Settings.data.systemMonitor.cpuPollingInterval = value
         suffix: " ms"
       }
@@ -221,6 +231,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.tempWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.tempWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.tempWarningThreshold = value;
           if (Settings.data.systemMonitor.tempCriticalThreshold < value) {
@@ -248,6 +260,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.tempCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.tempCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.tempCriticalThreshold = value
         suffix: "°C"
       }
@@ -270,6 +284,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.tempPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.tempPollingInterval")
         onValueChanged: Settings.data.systemMonitor.tempPollingInterval = value
         suffix: " ms"
       }
@@ -307,6 +323,8 @@ ColumnLayout {
         to: 120
         stepSize: 5
         value: Settings.data.systemMonitor.gpuWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.gpuWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.gpuWarningThreshold = value;
           if (Settings.data.systemMonitor.gpuCriticalThreshold < value) {
@@ -334,6 +352,8 @@ ColumnLayout {
         to: 120
         stepSize: 5
         value: Settings.data.systemMonitor.gpuCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.gpuCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.gpuCriticalThreshold = value
         suffix: "°C"
       }
@@ -356,6 +376,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.gpuPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.gpuPollingInterval")
         onValueChanged: Settings.data.systemMonitor.gpuPollingInterval = value
         suffix: " ms"
       }
@@ -391,6 +413,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.memWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.memWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.memWarningThreshold = value;
           if (Settings.data.systemMonitor.memCriticalThreshold < value) {
@@ -418,6 +442,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.memCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.memCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.memCriticalThreshold = value
         suffix: "%"
       }
@@ -440,6 +466,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.memPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.memPollingInterval")
         onValueChanged: Settings.data.systemMonitor.memPollingInterval = value
         suffix: " ms"
       }
@@ -475,6 +503,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.diskWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.diskWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.diskWarningThreshold = value;
           if (Settings.data.systemMonitor.diskCriticalThreshold < value) {
@@ -502,6 +532,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.diskCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.diskCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.diskCriticalThreshold = value
         suffix: "%"
       }
@@ -524,6 +556,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.diskPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.diskPollingInterval")
         onValueChanged: Settings.data.systemMonitor.diskPollingInterval = value
         suffix: " ms"
       }
@@ -559,6 +593,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.networkPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.networkPollingInterval")
         onValueChanged: Settings.data.systemMonitor.networkPollingInterval = value
         suffix: " ms"
       }

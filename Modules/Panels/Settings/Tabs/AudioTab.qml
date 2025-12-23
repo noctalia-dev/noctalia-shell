@@ -93,13 +93,10 @@ ColumnLayout {
     spacing: Style.marginXS
     Layout.fillWidth: true
 
-    NLabel {
-      label: I18n.tr("settings.audio.volumes.input-volume.label")
-      description: I18n.tr("settings.audio.volumes.input-volume.description")
-    }
-
     NValueSlider {
       Layout.fillWidth: true
+      label: I18n.tr("settings.audio.volumes.input-volume.label")
+      description: I18n.tr("settings.audio.volumes.input-volume.description")
       from: 0
       to: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
       value: AudioService.inputVolume
@@ -136,6 +133,8 @@ ColumnLayout {
       value: Settings.data.audio.volumeStep
       stepSize: 1
       suffix: "%"
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("audio.volumeStep")
       onValueChanged: Settings.data.audio.volumeStep = value
     }
   }
@@ -149,6 +148,8 @@ ColumnLayout {
       label: I18n.tr("settings.audio.volumes.volume-overdrive.label")
       description: I18n.tr("settings.audio.volumes.volume-overdrive.description")
       checked: Settings.data.audio.volumeOverdrive
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("audio.volumeOverdrive")
       onToggled: checked => Settings.data.audio.volumeOverdrive = checked
     }
   }
@@ -159,6 +160,8 @@ ColumnLayout {
     description: I18n.tr("settings.audio.external-mixer.description")
     placeholderText: I18n.tr("settings.audio.external-mixer.placeholder")
     text: Settings.data.audio.externalMixer
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("audio.externalMixer")
     onTextChanged: Settings.data.audio.externalMixer = text
   }
 
@@ -262,6 +265,8 @@ ColumnLayout {
       description: I18n.tr("settings.audio.media.primary-player.description")
       placeholderText: I18n.tr("settings.audio.media.primary-player.placeholder")
       text: Settings.data.audio.preferredPlayer
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("audio.preferredPlayer")
       onTextChanged: {
         Settings.data.audio.preferredPlayer = text;
         MediaService.updateCurrentPlayer();
@@ -373,24 +378,9 @@ ColumnLayout {
         }
       ]
       currentKey: Settings.data.audio.visualizerType
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("audio.visualizerType")
       onSelected: key => Settings.data.audio.visualizerType = key
-    }
-
-    NComboBox {
-      label: I18n.tr("settings.audio.media.visualizer-quality.label")
-      description: I18n.tr("settings.audio.media.visualizer-quality.description")
-      model: [
-        {
-          "key": "low",
-          "name": I18n.tr("options.visualizer-quality.low")
-        },
-        {
-          "key": "high",
-          "name": I18n.tr("options.visualizer-quality.high")
-        }
-      ]
-      currentKey: Settings.data.audio.visualizerQuality
-      onSelected: key => Settings.data.audio.visualizerQuality = key
     }
 
     NComboBox {
@@ -441,6 +431,8 @@ ColumnLayout {
         }
       ]
       currentKey: Settings.data.audio.cavaFrameRate
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("audio.cavaFrameRate")
       onSelected: key => Settings.data.audio.cavaFrameRate = key
     }
   }

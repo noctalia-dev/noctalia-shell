@@ -143,18 +143,6 @@ ShellRoot {
           PluginService.screenDetector = screenDetector;
         }
       }
-
-      // Listen for when available plugins are fetched, then check for updates
-      Connections {
-        target: PluginService
-        property bool hasCheckedOnStartup: false
-        function onAvailablePluginsUpdated() {
-          if (!hasCheckedOnStartup) {
-            hasCheckedOnStartup = true;
-            PluginService.checkForUpdates();
-          }
-        }
-      }
     }
   }
 

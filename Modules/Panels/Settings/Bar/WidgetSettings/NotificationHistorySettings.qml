@@ -31,8 +31,8 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.notification-history.hide-badge-when-zero.label")
-    description: I18n.tr("bar.widget-settings.notification-history.hide-badge-when-zero.description")
+    label: I18n.tr("bar.widget-settings.notification-history.hide-widget-when-zero.label")
+    description: I18n.tr("bar.widget-settings.notification-history.hide-widget-when-zero.description")
     checked: valueHideWhenZero
     onToggled: checked => valueHideWhenZero = checked
   }

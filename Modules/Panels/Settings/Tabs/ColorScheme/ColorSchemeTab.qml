@@ -584,35 +584,37 @@ ColumnLayout {
 
       NCheckbox {
         label: "Niri"
-        description: ProgramCheckerService.niriAvailable ? I18n.tr("settings.color-scheme.templates.compositors.niri.description", {
-                                                                     "filepath": "~/.config/niri/noctalia.kdl"
-                                                                   }) : I18n.tr("settings.color-scheme.templates.compositors.niri.description-missing", {
-                                                                                  "app": "niri"
-                                                                                })
+        description: I18n.tr("settings.color-scheme.templates.compositors.niri.description", {
+                               "filepath": "~/.config/niri/noctalia.kdl"
+                             })
         checked: Settings.data.templates.niri
-        enabled: ProgramCheckerService.niriAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.niriAvailable) {
-                       Settings.data.templates.niri = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.niri = checked;
+                     AppThemeService.generate();
+                   }
+      }
+
+      NCheckbox {
+        label: "Hyprland"
+        description: I18n.tr("settings.color-scheme.templates.compositors.hyprland.description", {
+                               "filepath": "~/.config/hypr/noctalia/noctalia-colors.conf"
+                             })
+        checked: Settings.data.templates.hyprland
+        onToggled: checked => {
+                     Settings.data.templates.hyprland = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Mango"
-        description: ProgramCheckerService.mangoAvailable ? I18n.tr("settings.color-scheme.templates.compositors.mango.description", {
-                                                                      "filepath": "~/.config/mango/noctalia.conf"
-                                                                    }) : I18n.tr("settings.color-scheme.templates.compositors.mango.description-missing", {
-                                                                                   "app": "Mango"
-                                                                                 })
+        description: I18n.tr("settings.color-scheme.templates.compositors.mango.description", {
+                               "filepath": "~/.config/mango/noctalia.conf"
+                             })
         checked: Settings.data.templates.mango
-        enabled: ProgramCheckerService.mangoAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.mangoAvailable) {
-                       Settings.data.templates.mango = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.mango = checked;
+                     AppThemeService.generate();
                    }
       }
     }
@@ -626,86 +628,61 @@ ColumnLayout {
 
       NCheckbox {
         label: "Alacritty"
-        description: ProgramCheckerService.footAvailable ? I18n.tr("settings.color-scheme.templates.terminal.alacritty.description", {
-                                                                     "filepath": "~/.config/alacritty/themes/noctalia"
-                                                                   }) : I18n.tr("settings.color-scheme.templates.terminal.alacritty.description-missing", {
-                                                                                  "app": "alacritty"
-                                                                                })
+        description: I18n.tr("settings.color-scheme.templates.terminal.alacritty.description", {
+                               "filepath": "~/.config/alacritty/themes/noctalia"
+                             })
         checked: Settings.data.templates.alacritty
-        enabled: ProgramCheckerService.alacrittyAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.alacrittyAvailable) {
-                       Settings.data.templates.alacritty = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.alacritty = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Kitty"
-        description: ProgramCheckerService.kittyAvailable ? I18n.tr("settings.color-scheme.templates.terminal.kitty.description", {
-                                                                      "filepath": "~/.config/kitty/themes/noctalia.conf"
-                                                                    }) : I18n.tr("settings.color-scheme.templates.terminal.kitty.description-missing", {
-                                                                                   "app": "kitty"
-                                                                                 })
+        description: I18n.tr("settings.color-scheme.templates.terminal.kitty.description", {
+                               "filepath": "~/.config/kitty/themes/noctalia.conf"
+                             })
         checked: Settings.data.templates.kitty
-        enabled: ProgramCheckerService.kittyAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.kittyAvailable) {
-                       Settings.data.templates.kitty = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.kitty = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Ghostty"
-        description: ProgramCheckerService.ghosttyAvailable ? I18n.tr("settings.color-scheme.templates.terminal.ghostty.description", {
-                                                                        "filepath": "~/.config/ghostty/themes/noctalia"
-                                                                      }) : I18n.tr("settings.color-scheme.templates.terminal.ghostty.description-missing", {
-                                                                                     "app": "ghostty"
-                                                                                   })
+        description: I18n.tr("settings.color-scheme.templates.terminal.ghostty.description", {
+                               "filepath": "~/.config/ghostty/themes/noctalia"
+                             })
         checked: Settings.data.templates.ghostty
-        enabled: ProgramCheckerService.ghosttyAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.ghosttyAvailable) {
-                       Settings.data.templates.ghostty = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.ghostty = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Foot"
-        description: ProgramCheckerService.footAvailable ? I18n.tr("settings.color-scheme.templates.terminal.foot.description", {
-                                                                     "filepath": "~/.config/foot/themes/noctalia"
-                                                                   }) : I18n.tr("settings.color-scheme.templates.terminal.foot.description-missing", {
-                                                                                  "app": "foot"
-                                                                                })
+        description: I18n.tr("settings.color-scheme.templates.terminal.foot.description", {
+                               "filepath": "~/.config/foot/themes/noctalia"
+                             })
         checked: Settings.data.templates.foot
-        enabled: ProgramCheckerService.footAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.footAvailable) {
-                       Settings.data.templates.foot = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.foot = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Wezterm"
-        description: ProgramCheckerService.weztermAvailable ? I18n.tr("settings.color-scheme.templates.terminal.wezterm.description", {
-                                                                        "filepath": "~/.config/wezterm/colors/Noctalia.toml"
-                                                                      }) : I18n.tr("settings.color-scheme.templates.terminal.wezterm.description-missing", {
-                                                                                     "app": "wezterm"
-                                                                                   })
+        description: I18n.tr("settings.color-scheme.templates.terminal.wezterm.description", {
+                               "filepath": "~/.config/wezterm/colors/Noctalia.toml"
+                             })
         checked: Settings.data.templates.wezterm
-        enabled: ProgramCheckerService.weztermAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.weztermAvailable) {
-                       Settings.data.templates.wezterm = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.wezterm = checked;
+                     AppThemeService.generate();
                    }
       }
     }
@@ -719,18 +696,13 @@ ColumnLayout {
 
       NCheckbox {
         label: "Fuzzel"
-        description: ProgramCheckerService.fuzzelAvailable ? I18n.tr("settings.color-scheme.templates.programs.fuzzel.description", {
-                                                                       "filepath": "~/.config/fuzzel/themes/noctalia"
-                                                                     }) : I18n.tr("settings.color-scheme.templates.programs.fuzzel.description-missing", {
-                                                                                    "app": "fuzzel"
-                                                                                  })
+        description: I18n.tr("settings.color-scheme.templates.programs.fuzzel.description", {
+                               "filepath": "~/.config/fuzzel/themes/noctalia"
+                             })
         checked: Settings.data.templates.fuzzel
-        enabled: ProgramCheckerService.fuzzelAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.fuzzelAvailable) {
-                       Settings.data.templates.fuzzel = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.fuzzel = checked;
+                     AppThemeService.generate();
                    }
       }
 
@@ -766,50 +738,35 @@ ColumnLayout {
 
       NCheckbox {
         label: "Pywalfox"
-        description: ProgramCheckerService.pywalfoxAvailable ? I18n.tr("settings.color-scheme.templates.programs.pywalfox.description", {
-                                                                         "filepath": "~/.cache/wal/colors.json"
-                                                                       }) : I18n.tr("settings.color-scheme.templates.programs.pywalfox.description-missing", {
-                                                                                      "app": "pywalfox"
-                                                                                    })
+        description: I18n.tr("settings.color-scheme.templates.programs.pywalfox.description", {
+                               "filepath": "~/.cache/wal/colors.json"
+                             })
         checked: Settings.data.templates.pywalfox
-        enabled: ProgramCheckerService.pywalfoxAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.pywalfoxAvailable) {
-                       Settings.data.templates.pywalfox = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.pywalfox = checked;
+                     AppThemeService.generate();
                    }
       }
       NCheckbox {
         label: "Vicinae"
-        description: ProgramCheckerService.vicinaeAvailable ? I18n.tr("settings.color-scheme.templates.programs.vicinae.description", {
-                                                                        "filepath": "~/.local/share/vicinae/themes/matugen.toml"
-                                                                      }) : I18n.tr("settings.color-scheme.templates.programs.vicinae.description-missing", {
-                                                                                     "app": "vicinae"
-                                                                                   })
+        description: I18n.tr("settings.color-scheme.templates.programs.vicinae.description", {
+                               "filepath": "~/.local/share/vicinae/themes/matugen.toml"
+                             })
         checked: Settings.data.templates.vicinae
-        enabled: ProgramCheckerService.vicinaeAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.vicinaeAvailable) {
-                       Settings.data.templates.vicinae = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.vicinae = checked;
+                     AppThemeService.generate();
                    }
       }
       NCheckbox {
         label: "Walker"
-        description: ProgramCheckerService.walkerAvailable ? I18n.tr("settings.color-scheme.templates.programs.walker.description", {
-                                                                       "filepath": "~/.config/walker/style.css"
-                                                                     }) : I18n.tr("settings.color-scheme.templates.programs.walker.description-missing", {
-                                                                                    "app": "walker"
-                                                                                  })
+        description: I18n.tr("settings.color-scheme.templates.programs.walker.description", {
+                               "filepath": "~/.config/walker/style.css"
+                             })
         checked: Settings.data.templates.walker
-        enabled: ProgramCheckerService.walkerAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.walkerAvailable) {
-                       Settings.data.templates.walker = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.walker = checked;
+                     AppThemeService.generate();
                    }
       }
 
@@ -853,101 +810,72 @@ ColumnLayout {
 
       NCheckbox {
         label: "Spicetify"
-        description: ProgramCheckerService.spicetifyAvailable ? I18n.tr("settings.color-scheme.templates.programs.spicetify.description", {
-                                                                          "filepath": "~/.config/spicetify/Themes/Comfy/color.ini"
-                                                                        }) : I18n.tr("settings.color-scheme.templates.programs.spicetify.description-missing", {
-                                                                                       "app": "spicetify"
-                                                                                     })
+        description: I18n.tr("settings.color-scheme.templates.programs.spicetify.description", {
+                               "filepath": "~/.config/spicetify/Themes/Comfy/color.ini"
+                             })
         checked: Settings.data.templates.spicetify
-        enabled: ProgramCheckerService.spicetifyAvailable
+
         onToggled: checked => {
-                     if (ProgramCheckerService.spicetifyAvailable) {
-                       Settings.data.templates.spicetify = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.spicetify = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Telegram"
-        description: ProgramCheckerService.telegramAvailable ? I18n.tr("settings.color-scheme.templates.programs.telegram.description", {
-                                                                         "filepath": "~/.config/telegram-desktop/themes/noctalia.tdesktop-theme"
-                                                                       }) : I18n.tr("settings.color-scheme.templates.programs.telegram.description-missing", {
-                                                                                      "app": "telegram"
-                                                                                    })
+        description: I18n.tr("settings.color-scheme.templates.programs.telegram.description", {
+                               "filepath": "~/.config/telegram-desktop/themes/noctalia.tdesktop-theme"
+                             })
         checked: Settings.data.templates.telegram
-        enabled: ProgramCheckerService.telegramAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.telegramAvailable) {
-                       Settings.data.templates.telegram = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.telegram = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Cava"
-        description: ProgramCheckerService.cavaAvailable ? I18n.tr("settings.color-scheme.templates.programs.cava.description", {
-                                                                     "filepath": "~/.config/cava/themes/noctalia"
-                                                                   }) : I18n.tr("settings.color-scheme.templates.programs.cava.description-missing", {
-                                                                                  "app": "cava"
-                                                                                })
+        description: I18n.tr("settings.color-scheme.templates.programs.cava.description", {
+                               "filepath": "~/.config/cava/themes/noctalia"
+                             })
         checked: Settings.data.templates.cava
-        enabled: ProgramCheckerService.cavaAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.cavaAvailable) {
-                       Settings.data.templates.cava = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.cava = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Yazi"
-        description: ProgramCheckerService.yaziAvailable ? I18n.tr("settings.color-scheme.templates.programs.yazi.description", {
-                                                                     "filepath": "~/.config/yazi/flavors/noctalia.yazi/flavor.toml"
-                                                                   }) : I18n.tr("settings.color-scheme.templates.programs.yazi.description-missing", {
-                                                                                  "app": "yazi"
-                                                                                })
+        description: I18n.tr("settings.color-scheme.templates.programs.yazi.description", {
+                               "filepath": "~/.config/yazi/flavors/noctalia.yazi/flavor.toml"
+                             })
         checked: Settings.data.templates.yazi
-        enabled: ProgramCheckerService.yaziAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.yaziAvailable) {
-                       Settings.data.templates.yazi = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.yazi = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
-        label: "Zeditor"
-        description: ProgramCheckerService.zedAvailable ? I18n.tr("settings.color-scheme.templates.programs.zed.description", {
-                                                                    "filepath": "~/.config/zed/themes/noctalia.json"
-                                                                  }) : I18n.tr("settings.color-scheme.templates.programs.zed.description-missing", {
-                                                                                 "app": "zed"
-                                                                               })
+        label: "Zed"
+        description: I18n.tr("settings.color-scheme.templates.programs.zed.description", {
+                               "filepath": "~/.config/zed/themes/noctalia.json"
+                             })
         checked: Settings.data.templates.zed
-        enabled: ProgramCheckerService.zedAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.zedAvailable) {
-                       Settings.data.templates.zed = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.zed = checked;
+                     AppThemeService.generate();
                    }
       }
 
       NCheckbox {
         label: "Emacs"
-        description: ProgramCheckerService.emacsAvailable ? I18n.tr("settings.color-scheme.templates.programs.emacs.description") : I18n.tr("settings.color-scheme.templates.programs.emacs.description-missing", {
-                                                                                                                                              "app": "emacs"
-                                                                                                                                            })
+        description: I18n.tr("settings.color-scheme.templates.programs.emacs.description")
         checked: Settings.data.templates.emacs
-        enabled: ProgramCheckerService.emacsAvailable
         onToggled: checked => {
-                     if (ProgramCheckerService.emacsAvailable) {
-                       Settings.data.templates.emacs = checked;
-                       AppThemeService.generate();
-                     }
+                     Settings.data.templates.emacs = checked;
+                     AppThemeService.generate();
                    }
       }
     }

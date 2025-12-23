@@ -91,6 +91,9 @@ ColumnLayout {
         searchPlaceholder: I18n.tr("settings.general.fonts.default.search-placeholder")
         popupHeight: 420
         minimumWidth: 300
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("ui.fontDefault")
+        settingsPath: "ui.fontDefault"
         onSelected: key => Settings.data.ui.fontDefault = key
       }
 
@@ -103,79 +106,76 @@ ColumnLayout {
         searchPlaceholder: I18n.tr("settings.general.fonts.monospace.search-placeholder")
         popupHeight: 320
         minimumWidth: 300
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("ui.fontFixed")
+        settingsPath: "ui.fontFixed"
         onSelected: key => Settings.data.ui.fontFixed = key
       }
 
-      ColumnLayout {
-        NLabel {
+      RowLayout {
+        spacing: Style.marginL
+        Layout.fillWidth: true
+
+        NValueSlider {
+          Layout.fillWidth: true
           label: I18n.tr("settings.general.fonts.default.scale.label")
           description: I18n.tr("settings.general.fonts.default.scale.description")
+          from: 0.75
+          to: 1.25
+          stepSize: 0.01
+          value: Settings.data.ui.fontDefaultScale
+          isSettings: true
+          defaultValue: Settings.getDefaultValue("ui.fontDefaultScale")
+          onMoved: value => Settings.data.ui.fontDefaultScale = value
+          text: Math.floor(Settings.data.ui.fontDefaultScale * 100) + "%"
         }
 
-        RowLayout {
-          spacing: Style.marginL
-          Layout.fillWidth: true
+        // Reset button container
+        Item {
+          Layout.preferredWidth: 30 * Style.uiScaleRatio
+          Layout.preferredHeight: 30 * Style.uiScaleRatio
 
-          NValueSlider {
-            Layout.fillWidth: true
-            from: 0.75
-            to: 1.25
-            stepSize: 0.01
-            value: Settings.data.ui.fontDefaultScale
-            onMoved: value => Settings.data.ui.fontDefaultScale = value
-            text: Math.floor(Settings.data.ui.fontDefaultScale * 100) + "%"
-          }
-
-          // Reset button container
-          Item {
-            Layout.preferredWidth: 30 * Style.uiScaleRatio
-            Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-            NIconButton {
-              icon: "refresh"
-              baseSize: Style.baseWidgetSize * 0.8
-              tooltipText: I18n.tr("settings.general.fonts.reset-scaling")
-              onClicked: Settings.data.ui.fontDefaultScale = 1.0
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-            }
+          NIconButton {
+            icon: "restore"
+            baseSize: Style.baseWidgetSize * 0.8
+            tooltipText: I18n.tr("settings.general.fonts.reset-scaling")
+            onClicked: Settings.data.ui.fontDefaultScale = 1.0
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
           }
         }
       }
 
-      ColumnLayout {
-        NLabel {
+      RowLayout {
+        spacing: Style.marginL
+        Layout.fillWidth: true
+
+        NValueSlider {
+          Layout.fillWidth: true
           label: I18n.tr("settings.general.fonts.monospace.scale.label")
           description: I18n.tr("settings.general.fonts.monospace.scale.description")
+          from: 0.75
+          to: 1.25
+          stepSize: 0.01
+          value: Settings.data.ui.fontFixedScale
+          isSettings: true
+          defaultValue: Settings.getDefaultValue("ui.fontFixedScale")
+          onMoved: value => Settings.data.ui.fontFixedScale = value
+          text: Math.floor(Settings.data.ui.fontFixedScale * 100) + "%"
         }
 
-        RowLayout {
-          spacing: Style.marginL
-          Layout.fillWidth: true
+        // Reset button container
+        Item {
+          Layout.preferredWidth: 30 * Style.uiScaleRatio
+          Layout.preferredHeight: 30 * Style.uiScaleRatio
 
-          NValueSlider {
-            Layout.fillWidth: true
-            from: 0.75
-            to: 1.25
-            stepSize: 0.01
-            value: Settings.data.ui.fontFixedScale
-            onMoved: value => Settings.data.ui.fontFixedScale = value
-            text: Math.floor(Settings.data.ui.fontFixedScale * 100) + "%"
-          }
-
-          // Reset button container
-          Item {
-            Layout.preferredWidth: 30 * Style.uiScaleRatio
-            Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-            NIconButton {
-              icon: "refresh"
-              baseSize: Style.baseWidgetSize * 0.8
-              tooltipText: I18n.tr("settings.general.fonts.reset-scaling")
-              onClicked: Settings.data.ui.fontFixedScale = 1.0
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-            }
+          NIconButton {
+            icon: "restore"
+            baseSize: Style.baseWidgetSize * 0.8
+            tooltipText: I18n.tr("settings.general.fonts.reset-scaling")
+            onClicked: Settings.data.ui.fontFixedScale = 1.0
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
           }
         }
       }
@@ -202,6 +202,8 @@ ColumnLayout {
       Layout.fillWidth: true
       label: I18n.tr("settings.general.language.select.label")
       description: I18n.tr("settings.general.language.select.description")
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("general.language")
       model: [
         {
           "key": "",
@@ -214,6 +216,7 @@ ColumnLayout {
         };
       }))
       currentKey: Settings.data.general.language
+      settingsPath: "general.language"
       onSelected: key => {
                     // Need to change language on next frame using "callLater" or it will pull the rug below our feet: the NComboBox would be rebuilt immediately before it can close properly.
                     Qt.callLater(() => {

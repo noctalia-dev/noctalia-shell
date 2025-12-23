@@ -22,8 +22,8 @@ SmartPanel {
     if (!Settings.data.network.wifiEnabled)
       return [];
 
-    const nets = Object.values(NetworkService.networks);
-    const known = nets.filter(n => n.connected || n.existing || n.cached);
+    var nets = Object.values(NetworkService.networks);
+    var known = nets.filter(n => n.connected || n.existing || n.cached);
 
     // Sort: connected first, then by signal strength
     known.sort((a, b) => {
@@ -39,8 +39,8 @@ SmartPanel {
     if (!Settings.data.network.wifiEnabled)
       return [];
 
-    const nets = Object.values(NetworkService.networks);
-    const available = nets.filter(n => !n.connected && !n.existing && !n.cached);
+    var nets = Object.values(NetworkService.networks);
+    var available = nets.filter(n => !n.connected && !n.existing && !n.cached);
 
     // Sort by signal strength
     available.sort((a, b) => b.signal - a.signal);
@@ -51,6 +51,8 @@ SmartPanel {
   onOpened: {
     hasHadNetworks = false;
     NetworkService.scan();
+    // Preload active Wi‑Fi details so Info shows instantly
+    NetworkService.refreshActiveWifiDetails();
   }
 
   onKnownNetworksChanged: {
