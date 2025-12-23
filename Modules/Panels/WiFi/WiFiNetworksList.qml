@@ -70,8 +70,6 @@ NBox {
         font.weight: Style.fontWeightBold
         Layout.fillWidth: true
       }
-
-      // (moved) details view toggle is now inside the info box
     }
 
     Repeater {
@@ -133,21 +131,16 @@ NBox {
                 spacing: Style.marginXS
 
                 NText {
-                  text: "Signal: " + modelData.signal + "%"
+                  text: I18n.tr("wifi.panel.signal") + ": " + modelData.signal + "%"
                   pointSize: Style.fontSizeXXS
                   color: Color.mOnSurfaceVariant
                 }
 
-                NText {
-                  text: "•"
+                NIcon {
+                  icon: "lock-off"
                   pointSize: Style.fontSizeXXS
                   color: Color.mOnSurfaceVariant
-                }
-
-                NText {
-                  text: NetworkService.isSecured(modelData.security) ? modelData.security : "Open"
-                  pointSize: Style.fontSizeXXS
-                  color: Color.mOnSurfaceVariant
+                  visible: !NetworkService.isSecured(modelData.security)
                 }
 
                 Item {

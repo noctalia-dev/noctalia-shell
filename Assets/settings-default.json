@@ -95,7 +95,10 @@
     "tooltipsEnabled": true,
     "panelBackgroundOpacity": 0.85,
     "panelsAttachedToBar": true,
-    "settingsPanelMode": "attached"
+    "settingsPanelMode": "attached",
+    "wifiDetailsViewMode": "grid",
+    "bluetoothDetailsViewMode": "grid",
+    "bluetoothHideUnnamedDevices": false
   },
   "location": {
     "name": "Tokyo",
@@ -255,7 +258,7 @@
     "cpuPollingInterval": 3000,
     "tempPollingInterval": 3000,
     "gpuPollingInterval": 3000,
-    "enableNvidiaGpu": false,
+    "enableDgpuMonitoring": false,
     "memPollingInterval": 3000,
     "diskPollingInterval": 3000,
     "networkPollingInterval": 3000,
@@ -397,6 +400,7 @@
     "hyprland": false,
     "mango": false,
     "zed": false,
+    "helix": false,
     "enableUserTemplates": false
   },
   "nightLight": {

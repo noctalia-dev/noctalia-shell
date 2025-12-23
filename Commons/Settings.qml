@@ -24,7 +24,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 31
+  readonly property int settingsVersion: 32
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -483,7 +483,7 @@ Singleton {
       property int cpuPollingInterval: 3000
       property int tempPollingInterval: 3000
       property int gpuPollingInterval: 3000
-      property bool enableNvidiaGpu: false // Opt-in: nvidia-smi wakes dGPU on laptops, draining battery
+      property bool enableDgpuMonitoring: false // Opt-in: reading dGPU sysfs/nvidia-smi wakes it from D3cold, draining battery
       property int memPollingInterval: 3000
       property int diskPollingInterval: 3000
       property int networkPollingInterval: 3000
@@ -639,6 +639,7 @@ Singleton {
       property bool hyprland: false
       property bool mango: false
       property bool zed: false
+      property bool helix: false
       property bool enableUserTemplates: false
     }
 

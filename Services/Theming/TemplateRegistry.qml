@@ -215,6 +215,17 @@ Singleton {
       "dualMode": true // Template contains both dark and light theme patterns
     },
     {
+      "id": "helix",
+      "name": "Helix",
+      "category": "applications",
+      "input": "helix.toml",
+      "outputs": [
+        {
+          "path": "~/.config/helix/themes/noctalia.toml"
+        }
+      ]
+    },
+    {
       "id": "spicetify",
       "name": "Spicetify",
       "category": "applications",

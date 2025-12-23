@@ -55,6 +55,10 @@
           "description": "Elige cómo te gustaría que apareciera este valor.",
           "label": "Modo de visualización"
         },
+        "hide-if-not-detected": {
+          "description": "Ocultar el widget cuando no se detecte batería en el sistema.",
+          "label": "Ocultar si no se detecta"
+        },
         "low-battery-threshold": {
           "description": "Muestra una advertencia cuando la batería cae por debajo de este porcentaje.",
           "label": "Umbral de advertencia de batería baja"
@@ -2285,9 +2289,9 @@
       "disk-section": {
         "label": "Uso de disco"
       },
-      "enable-nvidia-gpu": {
-        "description": "Advertencia: Esto activará tu GPU NVIDIA, lo que podría afectar significativamente la duración de la batería en portátiles con gráficos híbridos.",
-        "label": "Habilitar la monitorización de la GPU NVIDIA"
+      "enable-dgpu-monitoring": {
+        "description": "Advertencia: Esto activará tu GPU dedicada (NVIDIA/AMD), lo que podría afectar significativamente la duración de la batería en portátiles con gráficos híbridos.",
+        "label": "Habilitar la monitorización de la GPU dedicada"
       },
       "general": {
         "section": {
@@ -2930,6 +2934,7 @@
       "scan-again": "Escanear de nuevo",
       "searching": "Buscando redes cercanas...",
       "security": "Seguridad",
+      "signal": "Señal",
       "title": "Wi-Fi"
     }
   }

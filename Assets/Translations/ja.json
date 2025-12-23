@@ -55,6 +55,10 @@
           "description": "値の表示方法を選択します。",
           "label": "表示モード"
         },
+        "hide-if-not-detected": {
+          "description": "システムでバッテリーが検出されない場合は、ウィジェットを非表示にします。",
+          "label": "検出されなければ隠れる"
+        },
         "low-battery-threshold": {
           "description": "バッテリー残量がこのパーセンテージを下回ると警告を表示します。",
           "label": "低バッテリー警告の閾値"
@@ -2285,9 +2289,9 @@
       "disk-section": {
         "label": "ストレージ使用量"
       },
-      "enable-nvidia-gpu": {
-        "description": "警告: これにより NVIDIA GPU が起動状態になるため、ハイブリッドグラフィックス搭載のノート PC ではバッテリー駆動時間に大きな影響を与える可能性があります。",
-        "label": "NVIDIA GPU モニタリングを有効にする"
+      "enable-dgpu-monitoring": {
+        "description": "警告: これにより外部GPU (NVIDIA/AMD) が起動状態になるため、ハイブリッドグラフィックス搭載のノート PC ではバッテリー駆動時間に大きな影響を与える可能性があります。",
+        "label": "外部GPUモニタリングを有効にする"
       },
       "general": {
         "section": {
@@ -2930,6 +2934,7 @@
       "scan-again": "再スキャン",
       "searching": "近くのネットワークを検索中...",
       "security": "セキュリティ",
+      "signal": "信号 (Shingō)",
       "title": "Wi-Fi"
     }
   }

@@ -55,6 +55,10 @@
           "description": "选择您希望此值显示的方式。",
           "label": "显示模式"
         },
+        "hide-if-not-detected": {
+          "description": "当系统未检测到电池时，隐藏该小部件。",
+          "label": "如果未被发现，则隐藏。"
+        },
         "low-battery-threshold": {
           "description": "当电量低于此百分比时显示警告。",
           "label": "低电量警告阈值"
@@ -2285,9 +2289,9 @@
       "disk-section": {
         "label": "磁盘使用率"
       },
-      "enable-nvidia-gpu": {
-        "description": "警告：这将唤醒您的 NVIDIA GPU，这可能会显著影响配备混合显卡的笔记本电脑的电池续航时间。",
-        "label": "启用 NVIDIA GPU 监控"
+      "enable-dgpu-monitoring": {
+        "description": "警告：这将唤醒您的独立显卡 (NVIDIA/AMD)，这可能会显著影响配备混合显卡的笔记本电脑的电池续航时间。",
+        "label": "启用独立显卡监控"
       },
       "general": {
         "section": {
@@ -2930,6 +2934,7 @@
       "scan-again": "重新扫描",
       "searching": "正在搜索附近网络...",
       "security": "安全",
+      "signal": "信号",
       "title": "Wi-Fi"
     }
   }

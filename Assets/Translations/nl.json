@@ -55,6 +55,10 @@
           "description": "Kies hoe je wilt dat deze waarde wordt weergegeven.",
           "label": "Weergavemodus"
         },
+        "hide-if-not-detected": {
+          "description": "Verberg de widget als er geen batterij op het systeem wordt gedetecteerd.",
+          "label": "Verbergen indien niet gedetecteerd."
+        },
         "low-battery-threshold": {
           "description": "Toon een waarschuwing wanneer de batterij onder dit percentage komt.",
           "label": "Waarschuwingsdrempel voor lage batterij"
@@ -2285,9 +2289,9 @@
       "disk-section": {
         "label": "Schijfgebruik"
       },
-      "enable-nvidia-gpu": {
-        "description": "Waarschuwing: Dit zal uw NVIDIA GPU activeren, wat een aanzienlijke impact kan hebben op de batterijduur van laptops met hybride grafische kaarten.",
-        "label": "NVIDIA GPU-monitoring inschakelen"
+      "enable-dgpu-monitoring": {
+        "description": "Waarschuwing: Dit zal uw dedicated GPU (NVIDIA/AMD) activeren, wat een aanzienlijke impact kan hebben op de batterijduur van laptops met hybride grafische kaarten.",
+        "label": "Dedicated GPU-monitoring inschakelen"
       },
       "general": {
         "section": {
@@ -2930,6 +2934,7 @@
       "scan-again": "Opnieuw scannen",
       "searching": "Zoeken naar netwerken in de buurt...",
       "security": "Beveiliging",
+      "signal": "Signaal",
       "title": "Wi-Fi"
     }
   }

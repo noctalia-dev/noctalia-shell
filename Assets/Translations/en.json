@@ -55,6 +55,10 @@
           "description": "Choose how you'd like this value to appear.",
           "label": "Display mode"
         },
+        "hide-if-not-detected": {
+          "description": "Hide the widget when no battery is detected on the system.",
+          "label": "Hide if not detected"
+        },
         "low-battery-threshold": {
           "description": "Show a warning when battery falls below this percentage.",
           "label": "Low battery warning threshold"
@@ -2285,9 +2289,9 @@
       "disk-section": {
         "label": "Disk usage"
       },
-      "enable-nvidia-gpu": {
-        "description": "Warning: This will wake up your NVIDIA GPU, which may significantly impact battery life on laptops with hybrid graphics.",
-        "label": "Enable NVIDIA GPU monitoring"
+      "enable-dgpu-monitoring": {
+        "description": "Warning: This will wake up your discrete GPU (NVIDIA/AMD), which may significantly impact battery life on laptops with hybrid graphics.",
+        "label": "Enable discrete GPU monitoring"
       },
       "general": {
         "section": {
@@ -2930,6 +2934,7 @@
       "scan-again": "Scan again",
       "searching": "Searching for networks...",
       "security": "Security",
+      "signal": "Signal",
       "title": "Wi‑Fi"
     }
   }

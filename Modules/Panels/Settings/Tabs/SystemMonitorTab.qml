@@ -21,12 +21,12 @@ ColumnLayout {
   NToggle {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginM
-    label: I18n.tr("settings.system-monitor.enable-nvidia-gpu.label")
-    description: I18n.tr("settings.system-monitor.enable-nvidia-gpu.description")
-    checked: Settings.data.systemMonitor.enableNvidiaGpu
+    label: I18n.tr("settings.system-monitor.enable-dgpu-monitoring.label")
+    description: I18n.tr("settings.system-monitor.enable-dgpu-monitoring.description")
+    checked: Settings.data.systemMonitor.enableDgpuMonitoring
     isSettings: true
-    defaultValue: Settings.getDefaultValue("systemMonitor.enableNvidiaGpu")
-    onToggled: checked => Settings.data.systemMonitor.enableNvidiaGpu = checked
+    defaultValue: Settings.getDefaultValue("systemMonitor.enableDgpuMonitoring")
+    onToggled: checked => Settings.data.systemMonitor.enableDgpuMonitoring = checked
   }
 
   // Colors Section

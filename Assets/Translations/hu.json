@@ -55,6 +55,10 @@
           "description": "Válassza ki, hogyan szeretné, hogy ez az érték megjelenjen.",
           "label": "Megjelenítési mód"
         },
+        "hide-if-not-detected": {
+          "description": "Rejtse el a widgetet, ha a rendszer nem észlel akkumulátort.",
+          "label": "Rejtőzz, ha nem észleltek."
+        },
         "low-battery-threshold": {
           "description": "Figyelmeztetés megjelenítése, ha az akkumulátor töltöttsége e százalék alá esik.",
           "label": "Alacsony akkumulátor töltöttségi figyelmeztetési küszöb"
@@ -2285,9 +2289,9 @@
       "disk-section": {
         "label": "Lemezhasználat"
       },
-      "enable-nvidia-gpu": {
-        "description": "Figyelem: Ez felébreszti az NVIDIA GPU-t, ami jelentősen befolyásolhatja az akkumulátor élettartamát a hibrid grafikával rendelkező laptopokon.",
-        "label": "NVIDIA GPU felügyelet engedélyezése"
+      "enable-dgpu-monitoring": {
+        "description": "Figyelem: Ez felébreszti a dedikált GPU-t (NVIDIA/AMD), ami jelentősen befolyásolhatja az akkumulátor élettartamát a hibrid grafikával rendelkező laptopokon.",
+        "label": "Dedikált GPU felügyelet engedélyezése"
       },
       "general": {
         "section": {
@@ -2930,6 +2934,7 @@
       "scan-again": "Keresés újra",
       "searching": "Hálózatok keresése…",
       "security": "Biztonság",
+      "signal": "Jel",
       "title": "Wi‑Fi"
     }
   }

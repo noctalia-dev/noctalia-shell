@@ -55,6 +55,10 @@
           "description": "Bu değerin nasıl görünmesini istediğinizi seçin.",
           "label": "Görüntüleme modu"
         },
+        "hide-if-not-detected": {
+          "description": "Sistemde pil algılanmadığında araç çubuğunu gizle.",
+          "label": "Algılanmazsa gizle"
+        },
         "low-battery-threshold": {
           "description": "Batarya bu yüzdeye düştüğünde uyarı göster.",
           "label": "Düşük batarya eşiği"
@@ -2285,9 +2289,9 @@
       "disk-section": {
         "label": "Disk Kullanımı"
       },
-      "enable-nvidia-gpu": {
-        "description": "Uyarı: Bu, NVIDIA GPU'nuzu uyandıracak ve bu da hibrit grafiklere sahip dizüstü bilgisayarlarda pil ömrünü önemli ölçüde etkileyebilir.",
-        "label": "NVIDIA GPU izlemeyi etkinleştir"
+      "enable-dgpu-monitoring": {
+        "description": "Uyarı: Bu, ayrık GPU'nuzu (NVIDIA/AMD) uyandıracak ve bu da hibrit grafiklere sahip dizüstü bilgisayarlarda pil ömrünü önemli ölçüde etkileyebilir.",
+        "label": "Ayrık GPU izlemeyi etkinleştir"
       },
       "general": {
         "section": {
@@ -2930,6 +2934,7 @@
       "scan-again": "Yeniden tara",
       "searching": "Yakındaki ağlar aranıyor...",
       "security": "Güvenlik",
+      "signal": "Sinyal",
       "title": "Kablosuz Bağlantı"
     }
   }

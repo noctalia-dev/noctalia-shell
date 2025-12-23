@@ -73,11 +73,11 @@ Singleton {
     zfsArcStatsFile.reload();
   }
 
-  // Re-run GPU detection when NVIDIA opt-in setting changes
+  // Re-run GPU detection when dGPU opt-in setting changes
   Connections {
     target: Settings.data.systemMonitor
-    function onEnableNvidiaGpuChanged() {
-      Logger.i("SystemStat", "NVIDIA opt-in setting changed, re-detecting GPUs");
+    function onEnableDgpuMonitoringChanged() {
+      Logger.i("SystemStat", "dGPU monitoring opt-in setting changed, re-detecting GPUs");
       restartGpuDetection();
     }
   }
@@ -341,13 +341,13 @@ Singleton {
     function checkNext() {
       if (currentIndex >= 16) {
         // Finished scanning all hwmon entries
-        // Only check nvidia-smi if user has explicitly enabled NVIDIA monitoring (opt-in)
+        // Only check nvidia-smi if user has explicitly enabled dGPU monitoring (opt-in)
         // because nvidia-smi wakes up the dGPU on laptops, draining battery
-        if (Settings.data.systemMonitor.enableNvidiaGpu) {
-          Logger.d("SystemStat", `Found ${root.foundGpuSensors.length} sysfs GPU sensor(s), checking nvidia-smi (opt-in enabled)`);
+        if (Settings.data.systemMonitor.enableDgpuMonitoring) {
+          Logger.d("SystemStat", `Found ${root.foundGpuSensors.length} sysfs GPU sensor(s), checking nvidia-smi (dGPU opt-in enabled)`);
           nvidiaSmiCheck.running = true;
         } else {
-          Logger.d("SystemStat", `Found ${root.foundGpuSensors.length} sysfs GPU sensor(s), skipping nvidia-smi (opt-in disabled)`);
+          Logger.d("SystemStat", `Found ${root.foundGpuSensors.length} sysfs GPU sensor(s), skipping nvidia-smi (dGPU opt-in disabled)`);
           root.gpuVramCheckIndex = 0;
           checkNextGpuVram();
         }
@@ -794,36 +794,47 @@ Singleton {
 
   // -------------------------------------------------------
   // Function to select the best GPU based on priority
-  // Priority: NVIDIA > AMD dGPU > Intel Arc > AMD iGPU
+  // Priority (when dGPU monitoring enabled): NVIDIA > AMD dGPU > Intel Arc > AMD iGPU
+  // Priority (when dGPU monitoring disabled): AMD iGPU only (discrete GPUs skipped to preserve D3cold)
   function selectBestGpu() {
     if (root.foundGpuSensors.length === 0) {
       Logger.d("SystemStat", "No GPU temperature sensor found");
       return;
     }
 
+    const dgpuEnabled = Settings.data.systemMonitor.enableDgpuMonitoring;
     let best = null;
 
     for (var i = 0; i < root.foundGpuSensors.length; i++) {
       const gpu = root.foundGpuSensors[i];
 
-      // NVIDIA is always highest priority (always discrete)
+      // NVIDIA is always highest priority (always discrete) - skip if dGPU monitoring disabled
       if (gpu.type === "nvidia") {
-        best = gpu;
-        break;
+        if (dgpuEnabled) {
+          best = gpu;
+          break;
+        }
+        continue;
       }
 
-      // AMD dGPU is second priority
+      // AMD dGPU is second priority - skip if dGPU monitoring disabled (preserves D3cold power state)
       if (gpu.type === "amd" && gpu.hasDedicatedVram) {
-        best = gpu;
-        break;
+        if (dgpuEnabled) {
+          best = gpu;
+          break;
+        }
+        continue;
       }
 
-      // Intel Arc is third priority (always discrete)
+      // Intel Arc is third priority (always discrete) - skip if dGPU monitoring disabled
       if (gpu.type === "intel" && !best) {
-        best = gpu;
+        if (dgpuEnabled) {
+          best = gpu;
+        }
+        continue;
       }
 
-      // AMD iGPU is lowest priority (fallback)
+      // AMD iGPU is lowest priority (fallback) - always allowed (no D3cold issue)
       if (gpu.type === "amd" && !gpu.hasDedicatedVram && !best) {
         best = gpu;
       }
@@ -836,6 +847,8 @@ Singleton {
 
       const gpuDesc = best.type === "nvidia" ? "NVIDIA" : (best.type === "intel" ? "Intel Arc" : (best.hasDedicatedVram ? "AMD dGPU" : "AMD iGPU"));
       Logger.i("SystemStat", `Selected ${gpuDesc} for temperature monitoring at ${best.hwmonPath || "nvidia-smi"}`);
+    } else if (!dgpuEnabled) {
+      Logger.d("SystemStat", "No iGPU found and dGPU monitoring is disabled");
     }
   }
 

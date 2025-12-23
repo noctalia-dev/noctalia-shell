@@ -55,6 +55,10 @@
           "description": "Wählen Sie, wie dieser Wert angezeigt werden soll.",
           "label": "Anzeigemodus"
         },
+        "hide-if-not-detected": {
+          "description": "Verberge das Widget, wenn keine Batterie im System erkannt wird.",
+          "label": "Verstecken, wenn nicht entdeckt."
+        },
         "low-battery-threshold": {
           "description": "Warnung anzeigen, wenn Batterie unter diesen Prozentsatz fällt.",
           "label": "Schwellenwert für niedrigen Batteriestand"
@@ -2285,9 +2289,9 @@
       "disk-section": {
         "label": "Festplattennutzung"
       },
-      "enable-nvidia-gpu": {
-        "description": "Warnung: Dies aktiviert Ihre NVIDIA-GPU, was die Akkulaufzeit von Laptops mit Hybridgrafik erheblich beeinträchtigen kann.",
-        "label": "NVIDIA GPU-Überwachung aktivieren"
+      "enable-dgpu-monitoring": {
+        "description": "Warnung: Dies aktiviert Ihre dedizierte GPU (NVIDIA/AMD), was die Akkulaufzeit von Laptops mit Hybridgrafik erheblich beeinträchtigen kann.",
+        "label": "Dedizierte GPU-Überwachung aktivieren"
       },
       "general": {
         "section": {
@@ -2930,6 +2934,7 @@
       "scan-again": "Erneut scannen",
       "searching": "Suche nach nahegelegenen Netzwerken...",
       "security": "Sicherheit",
+      "signal": "Signal",
       "title": "WLAN"
     }
   }

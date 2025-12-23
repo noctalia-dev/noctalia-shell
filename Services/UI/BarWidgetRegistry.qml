@@ -91,7 +91,8 @@ Singleton {
                                     "warningThreshold": 30,
                                     "deviceNativePath": "",
                                     "showPowerProfiles": false,
-                                    "showNoctaliaPerformance": false
+                                    "showNoctaliaPerformance": false,
+                                    "hideIfNotDetected": true
                                   },
                                   "Bluetooth": {
                                     "allowUserSettings": true,

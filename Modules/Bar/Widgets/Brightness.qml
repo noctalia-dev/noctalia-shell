@@ -39,6 +39,7 @@ Item {
   implicitWidth: pill.width
   implicitHeight: pill.height
   visible: getMonitor() !== null
+  opacity: getMonitor() !== null ? 1.0 : 0.0
 
   function getMonitor() {
     return BrightnessService.getMonitorForScreen(screen) || null;

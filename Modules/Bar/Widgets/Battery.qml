@@ -35,8 +35,14 @@ Item {
   readonly property bool isBarVertical: Settings.data.bar.position === "left" || Settings.data.bar.position === "right"
   readonly property string displayMode: widgetSettings.displayMode !== undefined ? widgetSettings.displayMode : widgetMetadata.displayMode
   readonly property real warningThreshold: widgetSettings.warningThreshold !== undefined ? widgetSettings.warningThreshold : widgetMetadata.warningThreshold
+  readonly property bool hideIfNotDetected: widgetSettings.hideIfNotDetected !== undefined ? widgetSettings.hideIfNotDetected : widgetMetadata.hideIfNotDetected
   // Only show low battery warning if device is ready (prevents false positive during initialization)
   readonly property bool isLowBattery: isReady && !charging && percent <= warningThreshold
+
+  // Visibility: show if hideIfNotDetected is false, or if battery is ready (after initialization)
+  readonly property bool shouldShow: !hideIfNotDetected || isReady
+  visible: shouldShow
+  opacity: shouldShow ? 1.0 : 0.0
 
   // Test mode
   readonly property bool testMode: false
@@ -106,7 +112,12 @@ Item {
       return false;
     }
     if (battery) {
-      return (battery.type === UPowerDeviceType.Battery && battery.isPresent !== undefined) ? battery.isPresent : (battery.ready && battery.percentage !== undefined);
+      // For default device, check isPresent if it's a Battery type, otherwise require percentage > 0
+      if (battery.type === UPowerDeviceType.Battery && battery.isPresent !== undefined) {
+        return battery.isPresent;
+      }
+      // For non-battery types or when isPresent is undefined, require actual percentage
+      return battery.ready && battery.percentage !== undefined && battery.percentage > 0;
     }
     return false;
   }

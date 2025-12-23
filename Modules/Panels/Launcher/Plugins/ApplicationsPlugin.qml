@@ -337,13 +337,41 @@ Item {
     }
 
     const allApps = DesktopEntries.applications.values || [];
-    entries = allApps.filter(app => app && !app.noDisplay).map(app => {
-                                                                 // Add executable name property for search
-                                                                 app.executableName = getExecutableName(app);
-                                                                 return app;
-                                                               });
+    const seen = new Map(); // Map of appId -> exec command
+
+    entries = allApps.filter(app => {
+                               if (!app || app.noDisplay)
+                               return false;
+
+                               const appId = app.id || app.name;
+                               const execCmd = getExecutableName(app);
+
+                               // Check if we've seen this app ID before
+                               if (seen.has(appId)) {
+                                 const previousExec = seen.get(appId);
+
+                                 // If exec is different, it's a legitimate different entry - keep it
+                                 if (previousExec !== execCmd) {
+                                   Logger.d("ApplicationsPlugin", `Keeping variant of ${appId}: ${execCmd} (differs from ${previousExec})`);
+                                   // Add with modified ID to make it unique
+                                   app.id = `${appId}_${execCmd}`;
+                                   seen.set(app.id, execCmd);
+                                   return true;
+                                 }
+
+                                 // Same appId AND same exec = true duplicate, skip it
+                                 Logger.d("ApplicationsPlugin", `Skipping duplicate: ${appId}`);
+                                 return false;
+                               }
+
+                               seen.set(appId, execCmd);
+                               return true;
+                             }).map(app => {
+                                      app.executableName = getExecutableName(app);
+                                      return app;
+                                    });
+
     Logger.d("ApplicationsPlugin", `Loaded ${entries.length} applications`);
-    // Update available categories when apps are loaded
     updateAvailableCategories();
   }
 
