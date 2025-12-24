@@ -334,7 +334,7 @@ Singleton {
   }
 
   function replaceColorsInFile(filePath, colors) {
-    let script = "";
+    let expressions = [];
 
     Object.keys(colors).forEach(colorKey => {
                                   const hexValue = colors[colorKey].default.hex;
@@ -343,15 +343,15 @@ Singleton {
                                   const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                   const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-                                  // replace .default. patterns (hex_stripped and hex)
-                                  script += `sed -i 's/{{colors\\.${colorKey}\\.default\\.hex_stripped}}/${escapedHexStripped}/g' '${filePath}'\n`;
-                                  script += `sed -i 's/{{colors\\.${colorKey}\\.default\\.hex}}/${escapedHex}/g' '${filePath}'\n`;
+                                  // Batch all replacements into a single sed command to avoid ARG_MAX limits
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hex_stripped}}/${escapedHexStripped}/g'`);
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hex}}/${escapedHex}/g'`);
                                 });
-    return script;
+    return `sed -i ${expressions.join(' ')} '${filePath}'\n`;
   }
 
   function replaceColorsInFileWithMode(filePath, darkColors, lightColors) {
-    let script = "";
+    let expressions = [];
 
     // Replace dark mode patterns
     Object.keys(darkColors).forEach(colorKey => {
@@ -360,8 +360,8 @@ Singleton {
                                       const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                       const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-                                      script += `sed -i 's/{{colors\\.${colorKey}\\.dark\\.hex_stripped}}/${escapedHexStripped}/g' '${filePath}'\n`;
-                                      script += `sed -i 's/{{colors\\.${colorKey}\\.dark\\.hex}}/${escapedHex}/g' '${filePath}'\n`;
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hex_stripped}}/${escapedHexStripped}/g'`);
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hex}}/${escapedHex}/g'`);
                                     });
 
     // Replace light mode patterns
@@ -371,11 +371,12 @@ Singleton {
                                        const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                        const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-                                       script += `sed -i 's/{{colors\\.${colorKey}\\.light\\.hex_stripped}}/${escapedHexStripped}/g' '${filePath}'\n`;
-                                       script += `sed -i 's/{{colors\\.${colorKey}\\.light\\.hex}}/${escapedHex}/g' '${filePath}'\n`;
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hex_stripped}}/${escapedHexStripped}/g'`);
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hex}}/${escapedHex}/g'`);
                                      });
 
-    return script;
+    // Batch all replacements into a single sed command to avoid ARG_MAX limits
+    return `sed -i ${expressions.join(' ')} '${filePath}'\n`;
   }
 
   // ================================================================================

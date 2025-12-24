@@ -409,6 +409,7 @@ SmartPanel {
     const index = number - 1;
     if (index >= 0 && index < powerOptions.length) {
       const option = powerOptions[index];
+      selectedIndex = index;
       startTimer(option.action);
     }
   }
@@ -700,10 +701,10 @@ SmartPanel {
       // Text content in the middle
       ColumnLayout {
         anchors.left: iconElement.right
-        anchors.right: numberIndicator.visible ? numberIndicator.left : (pendingIndicator.visible ? pendingIndicator.left : parent.right)
+        anchors.right: numberIndicator.visible ? numberIndicator.left : parent.right
         anchors.verticalCenter: parent.verticalCenter
         anchors.leftMargin: Style.marginL
-        anchors.rightMargin: (pendingIndicator.visible || numberIndicator.visible) ? Style.marginM : 0
+        anchors.rightMargin: numberIndicator.visible ? Style.marginM : 0
         spacing: 0
 
         NText {
@@ -732,11 +733,10 @@ SmartPanel {
       // Number indicator on the right (when not pending)
       Rectangle {
         id: numberIndicator
-        anchors.right: pendingIndicator.visible ? pendingIndicator.left : parent.right
+        anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        anchors.rightMargin: pendingIndicator.visible ? Style.marginXS : 0
-        width: numberText.width + Style.marginM
-        height: 24
+        width: Style.marginM * 2
+        height: width
         radius: Math.min(Style.radiusM, height / 2)
         color: Qt.alpha(Color.mSurfaceVariant, 0.5)
         border.width: Style.borderS
@@ -746,9 +746,8 @@ SmartPanel {
         NText {
           id: numberText
           anchors.centerIn: parent
-          text: "Shift+" + buttonRoot.number
+          text: buttonRoot.number
           pointSize: Style.fontSizeS
-          font.weight: Style.fontWeightBold
           color: {
             if (buttonRoot.isSelected || mouseArea.containsMouse)
               return Color.mOnHover;
@@ -761,26 +760,6 @@ SmartPanel {
               easing.type: Easing.OutCirc
             }
           }
-        }
-      }
-
-      // Pending indicator on the right
-      Rectangle {
-        id: pendingIndicator
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-        width: 20
-        height: 20
-        radius: Math.min(Style.radiusL, width / 2)
-        color: Color.mPrimary
-        visible: buttonRoot.pending
-
-        NText {
-          anchors.centerIn: parent
-          text: Math.ceil(timeRemaining / 1000)
-          pointSize: Style.fontSizeS
-          font.weight: Style.fontWeightBold
-          color: Color.mOnPrimary
         }
       }
     }
@@ -830,17 +809,6 @@ SmartPanel {
       origin.y: largeButtonRoot.height / 2
       xScale: hoverScale
       yScale: hoverScale
-    }
-
-    // Subtle shadow/glow effect
-    layer.enabled: isSelected || mouseArea.containsMouse || pending
-    layer.effect: MultiEffect {
-      shadowEnabled: true
-      shadowBlur: 20
-      shadowOpacity: 0.3
-      shadowColor: pending ? Color.mPrimary : (isShutdown ? Color.mError : Color.mPrimary)
-      shadowHorizontalOffset: 0
-      shadowVerticalOffset: 0
     }
 
     Behavior on color {
@@ -945,8 +913,8 @@ SmartPanel {
       anchors.top: parent.top
       anchors.right: parent.right
       anchors.margins: Style.marginM
-      width: largeNumberText.width + Style.marginM
-      height: 28
+      width: Style.fontSizeM * 2
+      height: width
       radius: Math.min(Style.radiusM, height / 2)
       color: Qt.alpha(Color.mSurfaceVariant, 0.7)
       border.width: Style.borderS
@@ -957,9 +925,8 @@ SmartPanel {
       NText {
         id: largeNumberText
         anchors.centerIn: parent
-        text: "Shift+" + largeButtonRoot.number
+        text: largeButtonRoot.number
         pointSize: Style.fontSizeM
-        font.weight: Style.fontWeightBold
         color: {
           if (largeButtonRoot.isSelected || mouseArea.containsMouse)
             return Color.mOnPrimary;

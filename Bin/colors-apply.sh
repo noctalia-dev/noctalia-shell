@@ -110,24 +110,24 @@ alacritty)
 wezterm)
     echo "🎨 Applying 'noctalia' theme to wezterm..."
     CONFIG_FILE="$HOME/.config/wezterm/wezterm.lua"
-    local wezterm_scheme_line="config\.color\_scheme = \"Noctalia\""
+    WEZTERM_SCHEME_LINE='config.color_scheme = "Noctalia"'
 
     # Check if the config file exists.
     if [ -f "$CONFIG_FILE" ]; then
 
         # Check if theme is already set to Noctalia (matches 'Noctalia' or "Noctalia")
-        if grep -q "^\s*config\.color\_scheme\s*\=\s*[\'\"]Noctalia[\'\"]\s*" "$CONFIG_FILE"; then
+        if grep -q "^\s*config\.color_scheme\s*=\s*['\"]Noctalia['\"]\s*" "$CONFIG_FILE"; then
             echo "Theme already set to Noctalia, skipping modification."
         else
             # Not set to Noctalia. Check if *any* color_scheme line exists.
-            if grep -q '^\s*config\.color\_scheme\s*\=' "$CONFIG_FILE"; then
+            if grep -q '^\s*config\.color_scheme\s*=' "$CONFIG_FILE"; then
                 # It exists, so we replace it with our desired line.
-                sed -i "s|^\(\s*config\.color_scheme\s*=\s*\).*$|\1$wezterm_scheme_line|" "$CONFIG_FILE"
+                sed -i "s|^\(\s*config\.color_scheme\s*=\s*\).*$|\1\"Noctalia\"|" "$CONFIG_FILE"
             else
                 # It doesn't exist, so we add it before the 'return config' line.
                 if grep -q '^\s*return\s*config' "$CONFIG_FILE"; then
                     # 'return config' exists. Insert the line before it.
-                    sed -i "/^\s*return\s*config/i\\$wezterm_scheme_line" "$CONFIG_FILE"
+                    sed -i "/^\s*return\s*config/i\\$WEZTERM_SCHEME_LINE" "$CONFIG_FILE"
                 else
                     # This is a problem. We can't find the insertion point.
                     echo "Warning: 'config.color_scheme' not set and 'return config' line not found." >&2
@@ -195,9 +195,9 @@ walker)
     ;;
 
 vicinae)
-    echo "🎨 Applying 'matugen' theme to vicinae..."
+    echo "🎨 Applying noctalia theme to vicinae..."
     # Apply the theme
-    vicinae theme set matugen
+    vicinae theme set noctalia
     ;;
 
 pywalfox)

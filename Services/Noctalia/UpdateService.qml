@@ -11,8 +11,8 @@ Singleton {
   id: root
 
   // Version properties
-  readonly property string baseVersion: "3.7.4"
-  readonly property bool isDevelopment: false
+  readonly property string baseVersion: "3.7.5"
+  readonly property bool isDevelopment: true
   readonly property string developmentSuffix: "-git"
   readonly property string currentVersion: `v${!isDevelopment ? baseVersion : baseVersion + developmentSuffix}`
 
