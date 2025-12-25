@@ -465,7 +465,7 @@ Singleton {
       property string currentDirectory: root.getMonitorDirectory(screenName)
 
       folder: "file://" + currentDirectory
-      nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.pnm", "*.bmp"]
+      nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.pnm", "*.bmp", "*.webp"]
       showDirs: false
       sortField: FolderListModel.Name
 

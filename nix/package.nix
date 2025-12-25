@@ -63,6 +63,7 @@ stdenvNoCC.mkDerivation {
 
   buildInputs = [
     qt6.qtbase
+    qt6.qtimageformats
     qt6.qtmultimedia
   ];
 
