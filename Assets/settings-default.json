@@ -328,6 +328,11 @@
     "normalUrgencyDuration": 8,
     "criticalUrgencyDuration": 15,
     "enableKeyboardLayoutToast": true,
+    "saveToHistory": {
+      "low": true,
+      "normal": true,
+      "critical": true
+    },
     "sounds": {
       "enabled": false,
       "volume": 0.5,

@@ -1920,6 +1920,24 @@
           "label": "Notification duration"
         }
       },
+      "history": {
+        "section": {
+          "description": "Control which notifications are saved to history based on their urgency level.",
+          "label": "History"
+        },
+        "low-urgency": {
+          "description": "Save low priority notifications to history.",
+          "label": "Save low urgency to history"
+        },
+        "normal-urgency": {
+          "description": "Save normal priority notifications to history.",
+          "label": "Save normal urgency to history"
+        },
+        "critical-urgency": {
+          "description": "Save critical priority notifications to history.",
+          "label": "Save critical urgency to history"
+        }
+      },
       "monitors": {
         "section": {
           "description": "Show notification on specific monitors. Defaults to all if none are chosen.",

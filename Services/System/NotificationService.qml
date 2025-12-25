@@ -186,7 +186,29 @@ Singleton {
   function handleNotification(notification) {
     const quickshellId = notification.id;
     const data = createData(notification);
-    addToHistory(data);
+
+    // Check if we should save to history based on urgency
+    const saveToHistorySettings = Settings.data.notifications?.saveToHistory;
+    if (saveToHistorySettings) {
+      let shouldSave = true;
+      switch (data.urgency) {
+      case 0: // low
+        shouldSave = saveToHistorySettings.low !== false;
+        break;
+      case 1: // normal
+        shouldSave = saveToHistorySettings.normal !== false;
+        break;
+      case 2: // critical
+        shouldSave = saveToHistorySettings.critical !== false;
+        break;
+      }
+      if (shouldSave) {
+        addToHistory(data);
+      }
+    } else {
+      // Default behavior: save all if settings not configured
+      addToHistory(data);
+    }
 
     if (root.doNotDisturb || PowerProfileService.noctaliaPerformanceMode)
       return;

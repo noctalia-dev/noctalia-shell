@@ -1920,6 +1920,24 @@
           "label": "Értesítés időtartama"
         }
       },
+      "history": {
+        "section": {
+          "description": "Szabályozza, hogy mely értesítések kerüljenek mentésre az előzményekbe a sürgősségi szintjük alapján.",
+          "label": "Előzmények"
+        },
+        "low-urgency": {
+          "description": "Alacsony prioritású értesítések mentése az előzményekbe.",
+          "label": "Alacsony sürgősség mentése az előzményekbe"
+        },
+        "normal-urgency": {
+          "description": "Normál prioritású értesítések mentése az előzményekbe.",
+          "label": "Normál sürgősség mentése az előzményekbe"
+        },
+        "critical-urgency": {
+          "description": "Kritikus prioritású értesítések mentése az előzményekbe.",
+          "label": "Kritikus sürgősség mentése az előzményekbe"
+        }
+      },
       "monitors": {
         "section": {
           "description": "Értesítés megjelenítése meghatározott monitorokon. Alapértelmezetten mindegyiken, ha nincs kiválasztva.",

@@ -563,6 +563,11 @@ Singleton {
       property int normalUrgencyDuration: 8
       property int criticalUrgencyDuration: 15
       property bool enableKeyboardLayoutToast: true
+      property JsonObject saveToHistory: JsonObject {
+        property bool low: true
+        property bool normal: true
+        property bool critical: true
+      }
       property JsonObject sounds: JsonObject {
         property bool enabled: false
         property real volume: 0.5

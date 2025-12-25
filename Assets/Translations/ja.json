@@ -1920,6 +1920,24 @@
           "label": "通知の表示時間"
         }
       },
+      "history": {
+        "section": {
+          "description": "緊急度レベルに基づいて、履歴に保存する通知を制御します。",
+          "label": "履歴"
+        },
+        "low-urgency": {
+          "description": "低優先度の通知を履歴に保存します。",
+          "label": "低緊急度を履歴に保存"
+        },
+        "normal-urgency": {
+          "description": "通常優先度の通知を履歴に保存します。",
+          "label": "通常緊急度を履歴に保存"
+        },
+        "critical-urgency": {
+          "description": "緊急優先度の通知を履歴に保存します。",
+          "label": "緊急度: 重大を履歴に保存"
+        }
+      },
       "monitors": {
         "section": {
           "description": "通知を表示するディスプレイを選択します。未選択の場合は全てに表示されます。",

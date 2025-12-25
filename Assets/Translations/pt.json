@@ -1920,6 +1920,24 @@
           "label": "Duração da notificação"
         }
       },
+      "history": {
+        "section": {
+          "description": "Controlar quais notificações são salvas no histórico com base no nível de urgência.",
+          "label": "Histórico"
+        },
+        "low-urgency": {
+          "description": "Salvar notificações de prioridade baixa no histórico.",
+          "label": "Salvar urgência baixa no histórico"
+        },
+        "normal-urgency": {
+          "description": "Salvar notificações de prioridade normal no histórico.",
+          "label": "Salvar urgência normal no histórico"
+        },
+        "critical-urgency": {
+          "description": "Salvar notificações de prioridade crítica no histórico.",
+          "label": "Salvar urgência crítica no histórico"
+        }
+      },
       "monitors": {
         "section": {
           "description": "Mostra a notificação em monitores específicos. O padrão é todos, se nenhum for escolhido.",

@@ -1920,6 +1920,24 @@
           "label": "Benachrichtigungsdauer"
         }
       },
+      "history": {
+        "section": {
+          "description": "Steuern, welche Benachrichtigungen basierend auf ihrer Dringlichkeitsstufe im Verlauf gespeichert werden.",
+          "label": "Verlauf"
+        },
+        "low-urgency": {
+          "description": "Niedrige Prioritätsbenachrichtigungen im Verlauf speichern.",
+          "label": "Niedrige Dringlichkeit im Verlauf speichern"
+        },
+        "normal-urgency": {
+          "description": "Normale Prioritätsbenachrichtigungen im Verlauf speichern.",
+          "label": "Normale Dringlichkeit im Verlauf speichern"
+        },
+        "critical-urgency": {
+          "description": "Kritische Prioritätsbenachrichtigungen im Verlauf speichern.",
+          "label": "Kritische Dringlichkeit im Verlauf speichern"
+        }
+      },
       "monitors": {
         "section": {
           "description": "Benachrichtigungen auf bestimmten Monitoren anzeigen. Standardmäßig werden sie auf allen Monitoren angezeigt.",

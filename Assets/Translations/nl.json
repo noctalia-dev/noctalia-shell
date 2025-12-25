@@ -1920,6 +1920,24 @@
           "label": "Duur van meldingen"
         }
       },
+      "history": {
+        "section": {
+          "description": "Bepalen welke meldingen worden opgeslagen in de geschiedenis op basis van hun urgentieniveau.",
+          "label": "Geschiedenis"
+        },
+        "low-urgency": {
+          "description": "Meldingen met lage prioriteit opslaan in de geschiedenis.",
+          "label": "Lage urgentie opslaan in geschiedenis"
+        },
+        "normal-urgency": {
+          "description": "Meldingen met normale prioriteit opslaan in de geschiedenis.",
+          "label": "Normale urgentie opslaan in geschiedenis"
+        },
+        "critical-urgency": {
+          "description": "Meldingen met kritieke prioriteit opslaan in de geschiedenis.",
+          "label": "Kritieke urgentie opslaan in geschiedenis"
+        }
+      },
       "monitors": {
         "section": {
           "description": "Meldingen op specifieke monitoren tonen. Standaard op alle als er geen zijn gekozen.",

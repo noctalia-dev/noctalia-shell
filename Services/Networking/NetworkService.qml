@@ -643,12 +643,12 @@ Singleton {
       onStreamFinished: {
         if (text && text.trim()) {
           Logger.w("Network", "Profile check stderr:", text.trim());
-        }
-        // Fail safe
-        if (root.scanning) {
-          root.scanning = false;
-          delayedScanTimer.interval = 5000;
-          delayedScanTimer.restart();
+          // Fail safe - only restart scan on actual error
+          if (root.scanning) {
+            root.scanning = false;
+            delayedScanTimer.interval = 5000;
+            delayedScanTimer.restart();
+          }
         }
       }
     }

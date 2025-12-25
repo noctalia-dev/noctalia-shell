@@ -1920,6 +1920,24 @@
           "label": "通知持续时间"
         }
       },
+      "history": {
+        "section": {
+          "description": "根据紧急级别控制哪些通知保存到历史记录。",
+          "label": "历史记录"
+        },
+        "low-urgency": {
+          "description": "将低优先级通知保存到历史记录。",
+          "label": "将低紧急度保存到历史记录"
+        },
+        "normal-urgency": {
+          "description": "将正常优先级通知保存到历史记录。",
+          "label": "将正常紧急度保存到历史记录"
+        },
+        "critical-urgency": {
+          "description": "将关键优先级通知保存到历史记录。",
+          "label": "将高紧急度保存到历史记录"
+        }
+      },
       "monitors": {
         "section": {
           "description": "在特定显示器上显示通知。如果未选择，则默认为全部。",

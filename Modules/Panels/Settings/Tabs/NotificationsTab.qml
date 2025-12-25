@@ -449,6 +449,45 @@ ColumnLayout {
       Layout.bottomMargin: Style.marginL
     }
 
+    // History Configuration
+    NHeader {
+      label: I18n.tr("settings.notifications.history.section.label")
+      description: I18n.tr("settings.notifications.history.section.description")
+    }
+
+    NToggle {
+      label: I18n.tr("settings.notifications.history.low-urgency.label")
+      description: I18n.tr("settings.notifications.history.low-urgency.description")
+      checked: Settings.data.notifications?.saveToHistory?.low !== false
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.low") ?? true
+      onToggled: checked => Settings.data.notifications.saveToHistory.low = checked
+    }
+
+    NToggle {
+      label: I18n.tr("settings.notifications.history.normal-urgency.label")
+      description: I18n.tr("settings.notifications.history.normal-urgency.description")
+      checked: Settings.data.notifications?.saveToHistory?.normal !== false
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.normal") ?? true
+      onToggled: checked => Settings.data.notifications.saveToHistory.normal = checked
+    }
+
+    NToggle {
+      label: I18n.tr("settings.notifications.history.critical-urgency.label")
+      description: I18n.tr("settings.notifications.history.critical-urgency.description")
+      checked: Settings.data.notifications?.saveToHistory?.critical !== false
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.critical") ?? true
+      onToggled: checked => Settings.data.notifications.saveToHistory.critical = checked
+    }
+
+    NDivider {
+      Layout.fillWidth: true
+      Layout.topMargin: Style.marginL
+      Layout.bottomMargin: Style.marginL
+    }
+
     // Monitor Configuration
     NHeader {
       label: I18n.tr("settings.notifications.monitors.section.label")

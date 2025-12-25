@@ -1920,6 +1920,24 @@
           "label": "Durée des notifications"
         }
       },
+      "history": {
+        "section": {
+          "description": "Contrôler quelles notifications sont enregistrées dans l'historique en fonction de leur niveau d'urgence.",
+          "label": "Historique"
+        },
+        "low-urgency": {
+          "description": "Enregistrer les notifications de priorité faible dans l'historique.",
+          "label": "Enregistrer l'urgence faible dans l'historique"
+        },
+        "normal-urgency": {
+          "description": "Enregistrer les notifications de priorité normale dans l'historique.",
+          "label": "Enregistrer l'urgence normale dans l'historique"
+        },
+        "critical-urgency": {
+          "description": "Enregistrer les notifications de priorité critique dans l'historique.",
+          "label": "Enregistrer l'urgence critique dans l'historique"
+        }
+      },
       "monitors": {
         "section": {
           "description": "Afficher les notifications sur des moniteurs spécifiques. Par défaut, sur tous si aucun n'est choisi.",

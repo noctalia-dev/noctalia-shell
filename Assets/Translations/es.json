@@ -1920,6 +1920,24 @@
           "label": "Duración de la notificación"
         }
       },
+      "history": {
+        "section": {
+          "description": "Controlar qué notificaciones se guardan en el historial según su nivel de urgencia.",
+          "label": "Historial"
+        },
+        "low-urgency": {
+          "description": "Guardar notificaciones de prioridad baja en el historial.",
+          "label": "Guardar urgencia baja en el historial"
+        },
+        "normal-urgency": {
+          "description": "Guardar notificaciones de prioridad normal en el historial.",
+          "label": "Guardar urgencia normal en el historial"
+        },
+        "critical-urgency": {
+          "description": "Guardar notificaciones de prioridad crítica en el historial.",
+          "label": "Guardar urgencia crítica en el historial"
+        }
+      },
       "monitors": {
         "section": {
           "description": "Muestra notificaciones en monitores específicos. Por defecto, se muestra en todos si no se elige ninguno.",

@@ -1920,6 +1920,24 @@
           "label": "Bildirim süresi"
         }
       },
+      "history": {
+        "section": {
+          "description": "Aciliyet seviyelerine göre hangi bildirimlerin geçmişe kaydedileceğini kontrol edin.",
+          "label": "Geçmiş"
+        },
+        "low-urgency": {
+          "description": "Düşük öncelikli bildirimleri geçmişe kaydet.",
+          "label": "Düşük aciliyeti geçmişe kaydet"
+        },
+        "normal-urgency": {
+          "description": "Normal öncelikli bildirimleri geçmişe kaydet.",
+          "label": "Normal aciliyeti geçmişe kaydet"
+        },
+        "critical-urgency": {
+          "description": "Kritik öncelikli bildirimleri geçmişe kaydet.",
+          "label": "Kritik aciliyeti geçmişe kaydet"
+        }
+      },
       "monitors": {
         "section": {
           "description": "Bildirimleri belirli ekranlarda gösterin. Hiçbiri seçilmezse varsayılan olarak tümünde gösterilir.",
