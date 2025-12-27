@@ -21,6 +21,7 @@ ColumnLayout {
   property bool valueShowApplications: widgetData.showApplications !== undefined ? widgetData.showApplications : widgetMetadata.showApplications
   property bool valueShowLabelsOnlyWhenOccupied: widgetData.showLabelsOnlyWhenOccupied !== undefined ? widgetData.showLabelsOnlyWhenOccupied : widgetMetadata.showLabelsOnlyWhenOccupied
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
+  property real valueUnfocusedIconsOpacity: widgetData.unfocusedIconsOpacity !== undefined ? widgetData.unfocusedIconsOpacity : widgetMetadata.unfocusedIconsOpacity
   property bool valueEnableScrollWheel: widgetData.enableScrollWheel !== undefined ? widgetData.enableScrollWheel : widgetMetadata.enableScrollWheel
 
   function saveSettings() {
@@ -32,6 +33,7 @@ ColumnLayout {
     settings.showApplications = valueShowApplications;
     settings.showLabelsOnlyWhenOccupied = valueShowLabelsOnlyWhenOccupied;
     settings.colorizeIcons = valueColorizeIcons;
+    settings.unfocusedIconsOpacity = valueUnfocusedIconsOpacity;
     settings.enableScrollWheel = valueEnableScrollWheel;
     return settings;
   }
@@ -114,5 +116,23 @@ ColumnLayout {
     checked: valueColorizeIcons
     onToggled: checked => valueColorizeIcons = checked
     visible: valueShowApplications
+  }
+  RowLayout {
+    spacing: Style.marginL
+    Layout.fillWidth: true
+    NLabel {
+      label: I18n.tr("bar.widget-settings.workspace.unfocused-icons-opacity.label")
+      description: I18n.tr("bar.widget-settings.workspace.unfocused-icons-opacity.description")
+    }
+    NValueSlider {
+      Layout.fillWidth: true
+      from: 0
+      to: 1
+      stepSize: 0.01
+      value: valueUnfocusedIconsOpacity
+      visible: valueShowApplications
+      onMoved: value => valueUnfocusedIconsOpacity = value
+      text: Math.floor(valueUnfocusedIconsOpacity * 100) + "%"
+    }
   }
 }

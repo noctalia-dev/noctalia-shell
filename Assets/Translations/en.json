@@ -433,6 +433,10 @@
           "description": "Choose how workspace labels are displayed.",
           "label": "Label mode"
         },
+        "unfocused-icons-opacity": {
+          "description": "Set the opacity level for unfocused app icons",
+          "label": "Unfocused icons opacity"
+        },
         "show-applications": {
           "description": "Display application icons inside each workspace.",
           "label": "Show applications"
