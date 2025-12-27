@@ -332,7 +332,7 @@ SmartPanel {
               }
 
               var availableCount = Bluetooth.devices.values.filter(dev => {
-                                                                     return dev && !dev.paired && !dev.pairing && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
+                                                                     return dev && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
                                                                    }).length;
               return (availableCount === 0);
             }
