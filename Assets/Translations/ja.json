@@ -94,6 +94,10 @@
           "label": "水平バー"
         },
         "preview": "プレビュー",
+        "tooltip-format": {
+          "description": "時計にマウスを合わせたときに表示されるツールチップのフォーマット文字列。デフォルトのツールチップを使用するには空のままにします。",
+          "label": "ツールチップ形式"
+        },
         "use-custom-font": {
           "description": "デフォルトのフォント設定を上書きし、時計にカスタムフォントを使用します。",
           "label": "カスタムフォントを使用"
@@ -303,6 +307,10 @@
         }
       },
       "system-monitor": {
+        "compact-mode": {
+          "description": "テキスト値の代わりに、ミニ棒グラフとして統計を表示します。レイアウトのずれを防ぎます。",
+          "label": "コンパクトモード"
+        },
         "cpu-temperature": {
           "description": "利用可能な場合、CPU 温度を表示します。",
           "label": "CPU 温度"
@@ -334,6 +342,10 @@
         "storage-usage": {
           "description": "ストレージの使用状況を表示します。",
           "label": "ストレージ使用量"
+        },
+        "use-monospace-font": {
+          "description": "```\nタイプライター体で翻訳します。\n\n```",
+          "label": "等幅フォント"
         }
       },
       "taskbar": {
@@ -465,11 +477,13 @@
       "enable-message": "利用可能なデバイスを表示するには Bluetooth を有効にしてください。",
       "info": "情報 (Jōhō)",
       "known-devices": "登録済みデバイス",
+      "no-devices": "利用可能なデバイスはありません",
       "pair": "ペア",
       "paired": "ペアリング済み",
       "paired-devices": "ペアリングされたデバイス",
       "pairing": "ペアリング中...",
       "pairing-mode": "デバイスがペアリングモードになっていることを確認してください。",
+      "refresh-devices": "デバイスを更新",
       "scanning": "デバイスをスキャン中...",
       "signal": "信号 (shingō)",
       "title": "Bluetooth",
@@ -526,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "時計"
+    "tooltip": "カレンダー"
   },
   "common": {
     "add": "追加",
@@ -1182,10 +1196,10 @@
           },
           "label": "コンポジタ",
           "mango": {
-            "description": "{filepath} を書き込みます。mango が必要です。"
+            "description": "{filepath} を書き込みます。Mango が必要です。"
           },
           "niri": {
-            "description": "{filepath} を書き込みます。niri v25.11+ が必要です。"
+            "description": "{filepath} を書き込みます。Niri v25.11+ が必要です。"
           }
         },
         "misc": {
@@ -1201,14 +1215,18 @@
             "description": "{filepath} を書き込みます。"
           },
           "code": {
-            "description": "{filepath} を書き込みます。HyprLuna テーマを手動でインストールして有効化する必要があります。"
+            "description": "{filepath} を書き込みます。",
+            "description-detected": "デフォルトプロファイルに適用されました。検出: {clients}",
+            "description-missing": "コードエディタが検出されませんでした（VSCode または VSCodium）"
           },
           "description": "アプリケーションごとのテーマ設定",
           "discord": {
-            "description": "{client} 用に {filepath} を書き込みます。HyprLuna テーマを手動でインストールして有効化する必要があります。"
+            "description": "{client} 用に {filepath} を書き込みます。テーマを手動で有効化する必要があります。",
+            "description-detected": "検出: {clients}",
+            "description-missing": "Discord クライアントが検出されませんでした"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>標準: ~/.emacs.d/themes/noctalia.el<br>手動で適用: (load-theme 'noctalia t)"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>標準: ~/.emacs.d/themes/noctalia.el"
           },
           "fuzzel": {
             "description": "{filepath} を書き込み、リロードします。"
@@ -1285,6 +1303,10 @@
       "position": {
         "description": "コントロールセンターを開いたときの表示位置を選択します。",
         "label": "表示位置"
+      },
+      "system-monitor-disk-path": {
+        "description": "コントロールセンターのシステムモニターカードが監視するディスクのマウントポイントを選択します。",
+        "label": "システムモニターのディスクパス"
       },
       "section": {
         "description": "コントロールセンターの位置や挙動を設定します。",
@@ -1397,6 +1419,7 @@
         },
         "style": {
           "analog": "アナログ",
+          "binary": "バイナリ",
           "description": "時計の表示スタイルを選択します。",
           "digital": "デジタル",
           "label": "時計のスタイル",
@@ -1921,9 +1944,9 @@
         }
       },
       "history": {
-        "section": {
-          "description": "緊急度レベルに基づいて、履歴に保存する通知を制御します。",
-          "label": "履歴"
+        "critical-urgency": {
+          "description": "緊急優先度の通知を履歴に保存します。",
+          "label": "緊急度: 重大を履歴に保存"
         },
         "low-urgency": {
           "description": "低優先度の通知を履歴に保存します。",
@@ -1933,9 +1956,9 @@
           "description": "通常優先度の通知を履歴に保存します。",
           "label": "通常緊急度を履歴に保存"
         },
-        "critical-urgency": {
-          "description": "緊急優先度の通知を履歴に保存します。",
-          "label": "緊急度: 重大を履歴に保存"
+        "section": {
+          "description": "緊急度レベルに基づいて、履歴に保存する通知を制御します。",
+          "label": "履歴"
         }
       },
       "monitors": {
@@ -2292,6 +2315,10 @@
         "description": "セッションメニューの上部にタイトルと閉じるボタンを表示します。",
         "label": "ヘッダーを表示"
       },
+      "show-number-labels": {
+        "description": "ボタンに数字ラベル（1-2-3-4...）を表示し、クイック選択用の数字キーバインドを有効にします。",
+        "label": "数字ラベルを表示"
+      },
       "title": "セッションメニュー"
     },
     "system-monitor": {
@@ -2306,6 +2333,10 @@
       },
       "disk-section": {
         "label": "ストレージ使用量"
+      },
+      "disk-path": {
+        "description": "監視するディスクのマウントポイントを選択します。",
+        "label": "ディスクパス"
       },
       "enable-dgpu-monitoring": {
         "description": "警告: これにより外部GPU (NVIDIA/AMD) が起動状態になるため、ハイブリッドグラフィックス搭載のノート PC ではバッテリー駆動時間に大きな影響を与える可能性があります。",
@@ -2426,6 +2457,12 @@
     },
     "wallpaper": {
       "automation": {
+        "change-mode": {
+          "alphabetical": "アルファベット順",
+          "description": "自動変更時に壁紙を選択する方法を選択します。",
+          "label": "変更モード",
+          "random": "ランダム"
+        },
         "custom-interval": {
           "description": "時間を HH:MM 形式で入力してください（例: 01:30）。",
           "label": "カスタム間隔"
@@ -2437,6 +2474,10 @@
         "random-wallpaper": {
           "description": "一定間隔でランダムに壁紙を変更します。",
           "label": "ランダム変更"
+        },
+        "scheduled-change": {
+          "description": "一定間隔で壁紙を自動的に変更します。",
+          "label": "スケジュール変更"
         },
         "section": {
           "label": "自動化"
@@ -2558,6 +2599,18 @@
     "user-requested": "ユーザーの要求",
     "welcome-back": "おかえりなさい、",
     "widget-settings-title": "{widget} の設定"
+  },
+  "system-monitor": {
+    "cpu-temp": "CPU温度",
+    "cpu-usage": "CPU使用率",
+    "disk": "ディスク",
+    "download": "ダウンロード",
+    "download-speed": "ダウンロード速度 (Daunrōdo sokudo)",
+    "gpu-temp": "GPU温度",
+    "memory": "記憶",
+    "title": "システムモニター",
+    "upload": "アップロード",
+    "upload-speed": "アップロード速度"
   },
   "toast": {
     "airplane-mode": {
@@ -2761,6 +2814,11 @@
     "no-match": "一致する項目がありません。",
     "no-wallpaper": "壁紙が見つかりません。",
     "panel": {
+      "apikey": {
+        "help": "成人向けコンテンツにアクセスするには、APIキーが必要です。",
+        "label": "APIキー",
+        "placeholder": "Wallhaven APIキーを入力してください。"
+      },
       "apply-all-monitors": {
         "description": "選択した壁紙をすべてのディスプレイに適用します。",
         "label": "全ディスプレイに適用"
@@ -2779,6 +2837,7 @@
       "purity": {
         "all": "すべて",
         "label": "コンテンツフィルタ",
+        "nsfw": "R-18",
         "sfw": "SFW（全年齢）",
         "sketchy": "Sketchy（際どい）"
       },
@@ -2926,6 +2985,7 @@
   },
   "wifi": {
     "panel": {
+      "action-required": "アクションが必要",
       "available-networks": "利用可能なネットワーク",
       "connect": "接続",
       "connected": "接続済み",
@@ -2938,6 +2998,7 @@
       "forget": "削除",
       "forget-network": "このネットワーク設定を削除しますか？",
       "forgetting": "削除中...",
+      "frequency": "周波数",
       "gateway": "ゲートウェイ",
       "info": "情報 (Jōhō)",
       "internet": "インターネット",
@@ -2952,8 +3013,15 @@
       "scan-again": "再スキャン",
       "searching": "近くのネットワークを検索中...",
       "security": "セキュリティ",
-      "signal": "信号 (Shingō)",
       "title": "Wi-Fi"
+    },
+    "signal": {
+      "excellent": "優秀",
+      "fair": "普通",
+      "good": "良い",
+      "poor": "悪い",
+      "very-good": "とても良い",
+      "weak": "弱い"
     }
   }
 }

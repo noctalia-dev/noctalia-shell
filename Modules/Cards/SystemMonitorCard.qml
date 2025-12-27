@@ -67,20 +67,20 @@ NBox {
         textColor: (SystemStatService.memPercent > Settings.data.systemMonitor.memCriticalThreshold) ? Color.mSurfaceVariant : (SystemStatService.memPercent > Settings.data.systemMonitor.memWarningThreshold) ? Color.mSurfaceVariant : Color.mOnSurface
       }
       NCircleStat {
-        value: SystemStatService.diskPercents["/"] ?? 0
+        readonly property string diskPath: Settings.data.systemMonitor.diskPath || "/"
+        readonly property real diskPercent: SystemStatService.diskPercents[diskPath] ?? 0
+        value: diskPercent
         icon: "storage"
         flat: true
         contentScale: 0.8
         height: content.widgetHeight
         Layout.alignment: Qt.AlignHCenter
         // Highlight color based on thresholds
-        fillColor: ((SystemStatService.diskPercents["/"] ?? 0) > Settings.data.systemMonitor.diskCriticalThreshold) ? (Settings.data.systemMonitor.useCustomColors ? (Settings.data.systemMonitor.criticalColor || Color.mError) : Color.mError) : ((SystemStatService.diskPercents["/"] ?? 0) > Settings.data.systemMonitor.diskWarningThreshold) ? (
-                                                                                                                                                                                                                                                                                                                                                       Settings.data.systemMonitor.useCustomColors
-                                                                                                                                                                                                                                                                                                                                                       ? (Settings.data.systemMonitor.warningColor
-                                                                                                                                                                                                                                                                                                                                                          || Color.mTertiary) :
-                                                                                                                                                                                                                                                                                                                                                         Color.mTertiary) :
-                                                                                                                                                                                                                                                                                                                                                     Color.mPrimary
-        textColor: ((SystemStatService.diskPercents["/"] ?? 0) > Settings.data.systemMonitor.diskCriticalThreshold) ? Color.mSurfaceVariant : ((SystemStatService.diskPercents["/"] ?? 0) > Settings.data.systemMonitor.diskWarningThreshold) ? Color.mSurfaceVariant : Color.mOnSurface
+        fillColor: (diskPercent > Settings.data.systemMonitor.diskCriticalThreshold) ? (Settings.data.systemMonitor.useCustomColors ? (Settings.data.systemMonitor.criticalColor || Color.mError) : Color.mError) : (diskPercent > Settings.data.systemMonitor.diskWarningThreshold) ? (Settings.data.systemMonitor.useCustomColors ? (
+                                                                                                                                                                                                                                                                                                                                        Settings.data.systemMonitor.warningColor
+                                                                                                                                                                                                                                                                                                                                        || Color.mTertiary) :
+                                                                                                                                                                                                                                                                                                                                      Color.mTertiary) : Color.mPrimary
+        textColor: (diskPercent > Settings.data.systemMonitor.diskCriticalThreshold) ? Color.mSurfaceVariant : (diskPercent > Settings.data.systemMonitor.diskWarningThreshold) ? Color.mSurfaceVariant : Color.mOnSurface
       }
     }
   }

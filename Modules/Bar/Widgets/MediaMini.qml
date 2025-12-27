@@ -67,7 +67,7 @@ Item {
   }
 
   // CavaService registration for visualizer
-  readonly property string cavaComponentId: "bar:mediamini:" + root.screen.name + ":" + root.section + ":" + root.sectionWidgetIndex
+  readonly property string cavaComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
   readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none"
 
   onNeedsCavaChanged: {

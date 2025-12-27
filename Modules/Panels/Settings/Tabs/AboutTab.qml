@@ -16,8 +16,16 @@ ColumnLayout {
   property string currentVersion: UpdateService.currentVersion
   property var contributors: GitHubService.contributors
   property string commitInfo: ""
+  property int avatarCacheVersion: 0
 
   readonly property int topContributorsCount: 20
+
+  Connections {
+    target: GitHubService
+    function onCachedAvatarsChanged() {
+      root.avatarCacheVersion++;
+    }
+  }
   readonly property bool isGitVersion: root.currentVersion.endsWith("-git")
 
   spacing: Style.marginL
@@ -334,9 +342,11 @@ ColumnLayout {
               Image {
                 anchors.fill: parent
                 source: {
+                  // Depend on avatarCacheVersion to trigger re-evaluation
+                  var _ = root.avatarCacheVersion;
                   // Try cached circular version first
                   var username = root.contributors[index].login;
-                  var cached = GitHubService.cachedCircularAvatars[username];
+                  var cached = GitHubService.getAvatarPath(username);
                   if (cached) {
                     wrapper.isRounded = true;
                     return cached;

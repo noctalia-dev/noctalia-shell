@@ -202,7 +202,10 @@ BluetoothAgent {
     id: discoveryTimer
     interval: 1000
     repeat: false
-    onTriggered: adapter.discovering = true
+    onTriggered: {
+      if (adapter)
+      adapter.discovering = true;
+    }
   }
 
   Connections {
@@ -479,8 +482,10 @@ BluetoothAgent {
       printf 'agent DisplayYesNo\n';
       printf 'default-agent\n';
       printf 'pair ${addr}\n';
+      sleep 2;
       printf 'yes\n';
       printf 'trust ${addr}\n';
+      sleep 1;
       printf 'connect ${addr}\n';
       printf 'quit\n';
     ) | bluetoothctl`;

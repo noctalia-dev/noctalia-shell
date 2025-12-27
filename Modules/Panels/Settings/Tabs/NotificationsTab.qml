@@ -37,9 +37,9 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.settings.enabled.label")
       description: I18n.tr("settings.notifications.settings.enabled.description")
       checked: Settings.data.notifications.enabled !== false
+      onToggled: checked => Settings.data.notifications.enabled = checked
       isSettings: true
       defaultValue: Settings.getDefaultValue("notifications.enabled")
-      onToggled: checked => Settings.data.notifications.enabled = checked
     }
 
     NToggle {
@@ -79,18 +79,18 @@ ColumnLayout {
         }
       ]
       currentKey: Settings.data.notifications.location || "top_right"
-      isSettings: true
-      defaultValue: Settings.getDefaultValue("notifications.location") || "top_right"
       onSelected: key => Settings.data.notifications.location = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.location")
     }
 
     NToggle {
       label: I18n.tr("settings.notifications.settings.always-on-top.label")
       description: I18n.tr("settings.notifications.settings.always-on-top.description")
       checked: Settings.data.notifications.overlayLayer
+      onToggled: checked => Settings.data.notifications.overlayLayer = checked
       isSettings: true
       defaultValue: Settings.getDefaultValue("notifications.overlayLayer")
-      onToggled: checked => Settings.data.notifications.overlayLayer = checked
     }
 
     // Background Opacity
@@ -99,13 +99,13 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.settings.background-opacity.label")
       description: I18n.tr("settings.notifications.settings.background-opacity.description")
       from: 0
-      to: 100
-      stepSize: 1
-      value: Settings.data.notifications.backgroundOpacity * 100
-      isSettings: true
-      defaultValue: (Settings.getDefaultValue("notifications.backgroundOpacity") || 1) * 100
-      onMoved: value => Settings.data.notifications.backgroundOpacity = value / 100
+      to: 1
+      stepSize: 0.01
+      value: Settings.data.notifications.backgroundOpacity
+      onMoved: value => Settings.data.notifications.backgroundOpacity = value
       text: Math.round(Settings.data.notifications.backgroundOpacity * 100) + "%"
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.backgroundOpacity")
     }
 
     // OSD settings moved to the dedicated OSD tab
@@ -159,9 +159,9 @@ ColumnLayout {
       description: I18n.tr("settings.notifications.sounds.enabled.description")
       checked: Settings.data.notifications?.sounds?.enabled ?? false
       visible: SoundService.multimediaAvailable
+      onToggled: checked => Settings.data.notifications.sounds.enabled = checked
       isSettings: true
       defaultValue: Settings.getDefaultValue("notifications.sounds.enabled")
-      onToggled: checked => Settings.data.notifications.sounds.enabled = checked
     }
 
     // Sound Volume
@@ -175,13 +175,13 @@ ColumnLayout {
         label: I18n.tr("settings.notifications.sounds.volume.label")
         description: I18n.tr("settings.notifications.sounds.volume.description")
         from: 0
-        to: 100
-        stepSize: 1
-        value: (Settings.data.notifications?.sounds?.volume ?? 0.5) * 100
-        isSettings: true
-        defaultValue: (Settings.getDefaultValue("notifications.sounds.volume") || 0.5) * 100
-        onMoved: value => Settings.data.notifications.sounds.volume = value / 100
+        to: 1
+        stepSize: 0.01
+        value: Settings.data.notifications?.sounds?.volume ?? 0.5
+        onMoved: value => Settings.data.notifications.sounds.volume = value
         text: Math.round((Settings.data.notifications?.sounds?.volume ?? 0.5) * 100) + "%"
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("notifications.sounds.volume")
       }
     }
 
@@ -192,9 +192,9 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.sounds.separate.label")
       description: I18n.tr("settings.notifications.sounds.separate.description")
       checked: Settings.data.notifications?.sounds?.separateSounds ?? false
+      onToggled: checked => Settings.data.notifications.sounds.separateSounds = checked
       isSettings: true
       defaultValue: Settings.getDefaultValue("notifications.sounds.separateSounds")
-      onToggled: checked => Settings.data.notifications.sounds.separateSounds = checked
     }
 
     // Unified Sound File (shown when separateSounds is false)
@@ -335,9 +335,9 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.duration.respect-expire.label")
       description: I18n.tr("settings.notifications.duration.respect-expire.description")
       checked: Settings.data.notifications.respectExpireTimeout
+      onToggled: checked => Settings.data.notifications.respectExpireTimeout = checked
       isSettings: true
       defaultValue: Settings.getDefaultValue("notifications.respectExpireTimeout")
-      onToggled: checked => Settings.data.notifications.respectExpireTimeout = checked
     }
 
     // Low Urgency Duration
@@ -353,10 +353,10 @@ ColumnLayout {
         to: 30
         stepSize: 1
         value: Settings.data.notifications.lowUrgencyDuration
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("notifications.lowUrgencyDuration")
         onMoved: value => Settings.data.notifications.lowUrgencyDuration = value
         text: Settings.data.notifications.lowUrgencyDuration + "s"
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("notifications.lowUrgencyDuration")
       }
       // Reset button container
       Item {
@@ -387,10 +387,10 @@ ColumnLayout {
         to: 30
         stepSize: 1
         value: Settings.data.notifications.normalUrgencyDuration
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("notifications.normalUrgencyDuration")
         onMoved: value => Settings.data.notifications.normalUrgencyDuration = value
         text: Settings.data.notifications.normalUrgencyDuration + "s"
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("notifications.normalUrgencyDuration")
       }
 
       // Reset button container
@@ -422,10 +422,10 @@ ColumnLayout {
         to: 30
         stepSize: 1
         value: Settings.data.notifications.criticalUrgencyDuration
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("notifications.criticalUrgencyDuration")
         onMoved: value => Settings.data.notifications.criticalUrgencyDuration = value
         text: Settings.data.notifications.criticalUrgencyDuration + "s"
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("notifications.criticalUrgencyDuration")
       }
       // Reset button container
       Item {
@@ -459,27 +459,27 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.history.low-urgency.label")
       description: I18n.tr("settings.notifications.history.low-urgency.description")
       checked: Settings.data.notifications?.saveToHistory?.low !== false
-      isSettings: true
-      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.low") ?? true
       onToggled: checked => Settings.data.notifications.saveToHistory.low = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.low")
     }
 
     NToggle {
       label: I18n.tr("settings.notifications.history.normal-urgency.label")
       description: I18n.tr("settings.notifications.history.normal-urgency.description")
       checked: Settings.data.notifications?.saveToHistory?.normal !== false
-      isSettings: true
-      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.normal") ?? true
       onToggled: checked => Settings.data.notifications.saveToHistory.normal = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.normal")
     }
 
     NToggle {
       label: I18n.tr("settings.notifications.history.critical-urgency.label")
       description: I18n.tr("settings.notifications.history.critical-urgency.description")
       checked: Settings.data.notifications?.saveToHistory?.critical !== false
-      isSettings: true
-      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.critical") ?? true
       onToggled: checked => Settings.data.notifications.saveToHistory.critical = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("notifications.saveToHistory.critical")
     }
 
     NDivider {
@@ -535,9 +535,9 @@ ColumnLayout {
       label: I18n.tr("settings.notifications.toast.keyboard.label")
       description: I18n.tr("settings.notifications.toast.keyboard.description")
       checked: Settings.data.notifications.enableKeyboardLayoutToast
+      onToggled: checked => Settings.data.notifications.enableKeyboardLayoutToast = checked
       isSettings: true
       defaultValue: Settings.getDefaultValue("notifications.enableKeyboardLayoutToast")
-      onToggled: checked => Settings.data.notifications.enableKeyboardLayoutToast = checked
     }
   }
 

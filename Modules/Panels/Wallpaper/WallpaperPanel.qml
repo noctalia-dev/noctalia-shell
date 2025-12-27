@@ -47,11 +47,15 @@ SmartPanel {
     if (view?.gridView) {
       if (!view.gridView.activeFocus) {
         view.gridView.forceActiveFocus();
-        if (view.gridView.currentIndex < 0) {
+        if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
           view.gridView.currentIndex = 0;
         }
       } else {
-        view.gridView.moveCurrentIndexDown();
+        if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
+          view.gridView.currentIndex = 0;
+        } else {
+          view.gridView.moveCurrentIndexDown();
+        }
       }
     }
   }
@@ -61,7 +65,11 @@ SmartPanel {
       return;
     let view = contentItem.screenRepeater.itemAt(contentItem.currentScreenIndex);
     if (view?.gridView?.activeFocus) {
-      view.gridView.moveCurrentIndexUp();
+      if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
+        view.gridView.currentIndex = 0;
+      } else {
+        view.gridView.moveCurrentIndexUp();
+      }
     }
   }
 
@@ -70,7 +78,11 @@ SmartPanel {
       return;
     let view = contentItem.screenRepeater.itemAt(contentItem.currentScreenIndex);
     if (view?.gridView?.activeFocus) {
-      view.gridView.moveCurrentIndexLeft();
+      if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
+        view.gridView.currentIndex = 0;
+      } else {
+        view.gridView.moveCurrentIndexLeft();
+      }
     }
   }
 
@@ -79,7 +91,11 @@ SmartPanel {
       return;
     let view = contentItem.screenRepeater.itemAt(contentItem.currentScreenIndex);
     if (view?.gridView?.activeFocus) {
-      view.gridView.moveCurrentIndexRight();
+      if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
+        view.gridView.currentIndex = 0;
+      } else {
+        view.gridView.moveCurrentIndexRight();
+      }
     }
   }
 
@@ -174,6 +190,16 @@ SmartPanel {
         // Ensure contentItem is set
         if (!root.contentItem) {
           root.contentItem = wallpaperPanel;
+        }
+        // Reset grid view selections
+        for (var i = 0; i < screenRepeater.count; i++) {
+          let item = screenRepeater.itemAt(i);
+          if (item && item.gridView) {
+            item.gridView.currentIndex = -1;
+          }
+        }
+        if (wallhavenView && wallhavenView.gridView) {
+          wallhavenView.gridView.currentIndex = -1;
         }
         // Give initial focus to search input
         Qt.callLater(() => {
@@ -614,8 +640,14 @@ SmartPanel {
         focus: true
         keyNavigationEnabled: true
         keyNavigationWraps: false
+        currentIndex: -1
 
         model: filteredWallpapers
+
+        onModelChanged: {
+          // Reset selection when model changes
+          currentIndex = -1;
+        }
 
         // Capture clicks on empty areas to give focus to GridView
         MouseArea {
@@ -623,9 +655,6 @@ SmartPanel {
           z: -1
           onClicked: {
             wallpaperGridView.forceActiveFocus();
-            if (wallpaperGridView.currentIndex < 0 && filteredWallpapers.length > 0) {
-              wallpaperGridView.currentIndex = 0;
-            }
           }
         }
 
@@ -738,7 +767,6 @@ SmartPanel {
             NImageCached {
               id: img
               imagePath: wallpaperPath
-              cacheFolder: Settings.cacheDirImagesWallpapers
               anchors.fill: parent
             }
 
@@ -959,8 +987,14 @@ SmartPanel {
           focus: true
           keyNavigationEnabled: true
           keyNavigationWraps: false
+          currentIndex: -1
 
           model: wallpapers || []
+
+          onModelChanged: {
+            // Reset selection when model changes
+            currentIndex = -1;
+          }
 
           property int columns: (screen.width > 1920) ? 5 : 4
           property int itemSize: cellWidth

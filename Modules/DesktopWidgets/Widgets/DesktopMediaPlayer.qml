@@ -19,9 +19,11 @@ DraggableDesktopWidget {
   readonly property bool showButtons: (widgetData.showButtons !== undefined) ? widgetData.showButtons : true
   readonly property bool hasPlayer: MediaService.currentPlayer !== null
   readonly property bool isPlaying: MediaService.isPlaying
+  readonly property bool hasActiveTrack: hasPlayer && (MediaService.trackTitle || MediaService.trackArtist)
 
   // State
-  readonly property bool shouldHideIdle: (hideMode === "idle") && !isPlaying
+  // Hide when idle only if not playing AND no active track (to handle players like mpv that may not report playback state correctly)
+  readonly property bool shouldHideIdle: (hideMode === "idle") && !isPlaying && !hasActiveTrack
   readonly property bool shouldHideEmpty: !hasPlayer && hideMode === "hidden"
   readonly property bool isHidden: (shouldHideIdle || shouldHideEmpty) && !DesktopWidgetRegistry.editMode
   visible: !isHidden

@@ -17,6 +17,7 @@ Loader {
 
       required property ShellScreen modelData
       property string wallpaper: ""
+      property string cachedWallpaper: ""
 
       Component.onCompleted: {
         if (modelData) {
@@ -52,6 +53,16 @@ Loader {
         }
       }
 
+      // Request cached wallpaper when source changes
+      onWallpaperChanged: {
+        if (!wallpaper)
+          return;
+        // Use 1280x720 for overview since it's heavily blurred anyway
+        ImageCacheService.getFullscreen(wallpaper, modelData.name, 1280, 720, function (path, success) {
+          cachedWallpaper = path;
+        });
+      }
+
       color: Color.transparent
       screen: modelData
       WlrLayershell.layer: WlrLayer.Background
@@ -69,14 +80,11 @@ Loader {
         id: bgImage
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
-        source: wallpaper
+        source: cachedWallpaper
         smooth: true
         mipmap: false
         cache: false
         asynchronous: true
-
-        // Image is heavily blurred, so use low resolution to save memory
-        sourceSize: Qt.size(1280, 720)
 
         layer.enabled: true
         layer.smooth: false

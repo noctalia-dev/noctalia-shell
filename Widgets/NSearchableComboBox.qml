@@ -8,8 +8,8 @@ import qs.Widgets
 RowLayout {
   id: root
 
-  property real minimumWidth: 280 * Style.uiScaleRatio
-  property real popupHeight: 180 * Style.uiScaleRatio
+  property real minimumWidth: 280
+  property real popupHeight: 180
 
   property string label: ""
   property string description: ""
@@ -22,7 +22,7 @@ RowLayout {
   property var defaultValue: ""
   property string settingsPath: ""
 
-  readonly property real preferredHeight: Style.baseWidgetSize * 1.1
+  readonly property real preferredHeight: Math.round(Style.baseWidgetSize * 1.1)
 
   signal selected(string key)
 
@@ -171,8 +171,9 @@ RowLayout {
   ComboBox {
     id: combo
 
-    Layout.minimumWidth: root.minimumWidth
-    Layout.preferredHeight: root.preferredHeight
+    Layout.minimumWidth: Math.round(root.minimumWidth * Style.uiScaleRatio)
+    Layout.preferredHeight: Math.round(root.preferredHeight * Style.uiScaleRatio)
+    implicitWidth: Layout.minimumWidth
     model: root.activeModel
     currentIndex: findIndexInActiveModel(currentKey)
     onActivated: {
@@ -182,8 +183,8 @@ RowLayout {
     }
 
     background: Rectangle {
-      implicitWidth: Style.baseWidgetSize * 3.75 * Style.uiScaleRatio
-      implicitHeight: preferredHeight
+      implicitWidth: Math.round(Style.baseWidgetSize * 3.75 * Style.uiScaleRatio)
+      implicitHeight: Math.round(root.preferredHeight * Style.uiScaleRatio)
       color: Color.mSurface
       border.color: combo.activeFocus ? Color.mSecondary : Color.mOutline
       border.width: Style.borderS
@@ -221,7 +222,7 @@ RowLayout {
     popup: Popup {
       y: combo.height
       width: combo.width
-      height: root.popupHeight + 60
+      height: Math.round((root.popupHeight + 60) * Style.uiScaleRatio)
       padding: Style.marginM
 
       contentItem: ColumnLayout {
@@ -333,8 +334,8 @@ RowLayout {
                           return Style.fontSizeXS;
                       }
                       color: highlighted ? Color.mOnHover : (badgeData && badgeData.color ? badgeData.color : Color.mOnSurface)
-                      Layout.preferredWidth: Style.baseWidgetSize * 0.6
-                      Layout.preferredHeight: Style.baseWidgetSize * 0.6
+                      Layout.preferredWidth: Math.round(Style.baseWidgetSize * 0.6)
+                      Layout.preferredHeight: Math.round(Style.baseWidgetSize * 0.6)
                       visible: badgeData && badgeData.icon !== undefined && badgeData.icon !== ""
                     }
                   }

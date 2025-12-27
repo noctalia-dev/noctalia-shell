@@ -94,6 +94,10 @@
           "label": "Horizontal bar"
         },
         "preview": "Preview",
+        "tooltip-format": {
+          "description": "Format string for the tooltip shown when hovering over the clock. Leave empty to use the default tooltip.",
+          "label": "Tooltip format"
+        },
         "use-custom-font": {
           "description": "Override the default font selection with a custom font for the clock.",
           "label": "Use custom font"
@@ -303,6 +307,10 @@
         }
       },
       "system-monitor": {
+        "compact-mode": {
+          "description": "Display stats as mini bar charts instead of text values. Prevents layout shifting.",
+          "label": "Compact mode"
+        },
         "cpu-temperature": {
           "description": "Show CPU temperature readings if available.",
           "label": "CPU temperature"
@@ -334,6 +342,10 @@
         "storage-usage": {
           "description": "Show disk space usage information.",
           "label": "Storage usage"
+        },
+        "use-monospace-font": {
+          "description": "Use monospace font for consistent character width.",
+          "label": "Monospace font"
         }
       },
       "taskbar": {
@@ -465,11 +477,13 @@
       "enable-message": "Enable Bluetooth to see available devices.",
       "info": "Info",
       "known-devices": "Known devices",
+      "no-devices": "No devices available",
       "pair": "Pair",
       "paired": "Paired",
       "paired-devices": "Paired devices",
       "pairing": "Pairing...",
       "pairing-mode": "Make sure your device is in pairing mode.",
+      "refresh-devices": "Refresh devices",
       "scanning": "Scanning for devices...",
       "signal": "Signal",
       "title": "Bluetooth",
@@ -526,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "Clock"
+    "tooltip": "Calendar"
   },
   "common": {
     "add": "Add",
@@ -1178,14 +1192,14 @@
         "compositors": {
           "description": "Compositor theming.",
           "hyprland": {
-            "description": "Write {filepath}."
+            "description": "Write {filepath}"
           },
           "label": "Compositors",
           "mango": {
-            "description": "Write {filepath}."
+            "description": "Write {filepath} — requires Mango"
           },
           "niri": {
-            "description": "Write {filepath}. Requires niri v25.11+"
+            "description": "Write {filepath} — requires Niri v25.11+"
           }
         },
         "misc": {
@@ -1201,17 +1215,21 @@
             "description": "Write {filepath}"
           },
           "code": {
-            "description": "Write {filepath} — HyprLuna theme needs to be installed and activated manually"
+            "description": "Write {filepath}",
+            "description-detected": "Applied to default profile — detected: {clients}",
+            "description-missing": "No Code editor detected (VSCode or VSCodium)"
           },
           "description": "Application-specific theming.",
           "discord": {
-            "description": "Write {filepath} for {client} — HyprLuna theme needs to be activated manually"
+            "description": "Write {filepath} for {client} — the theme needs to be activated manually",
+            "description-detected": "Detected: {clients}",
+            "description-missing": "No Discord client detected"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standard: ~/.emacs.d/themes/noctalia.el<br>Apply manually: (load-theme 'noctalia t)"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standard: ~/.emacs.d/themes/noctalia.el"
           },
           "fuzzel": {
-            "description": "Write {filepath} and reload."
+            "description": "Write {filepath} and reload"
           },
           "label": "Programs",
           "pywalfox": {
@@ -1224,7 +1242,7 @@
             "description": "Write {filepath}"
           },
           "vicinae": {
-            "description": "Write {filepath} and reload."
+            "description": "Write {filepath} and reload"
           },
           "walker": {
             "description": "Write {filepath} and set theme to noctalia"
@@ -1233,7 +1251,7 @@
             "description": "Write {filepath} — flavor needs to be activated manually"
           },
           "zed": {
-            "description": "Write {filepath} and reload."
+            "description": "Write {filepath} and reload"
           }
         },
         "section": {
@@ -1242,21 +1260,21 @@
         },
         "terminal": {
           "alacritty": {
-            "description": "Write {filepath} and reload."
+            "description": "Write {filepath} and reload"
           },
           "description": "Terminal emulator theming.",
           "foot": {
-            "description": "Write {filepath} and reload."
+            "description": "Write {filepath} and reload"
           },
           "ghostty": {
-            "description": "Write {filepath} and reload."
+            "description": "Write {filepath} and reload"
           },
           "kitty": {
-            "description": "Write {filepath} and reload."
+            "description": "Write {filepath} and reload"
           },
           "label": "Terminal",
           "wezterm": {
-            "description": "Write {filepath} and reload."
+            "description": "Write {filepath} and reload"
           }
         },
         "ui": {
@@ -1285,6 +1303,10 @@
       "position": {
         "description": "Choose where the control center panel appears when opened.",
         "label": "Position"
+      },
+      "system-monitor-disk-path": {
+        "description": "Select which disk mount point the system monitor card in the control center should monitor.",
+        "label": "System monitor disk path"
       },
       "section": {
         "description": "Configure the control center panel positioning and behavior.",
@@ -1397,6 +1419,7 @@
         },
         "style": {
           "analog": "Analog",
+          "binary": "Binary",
           "description": "Choose the clock display style.",
           "digital": "Digital",
           "label": "Clock style",
@@ -1921,9 +1944,9 @@
         }
       },
       "history": {
-        "section": {
-          "description": "Control which notifications are saved to history based on their urgency level.",
-          "label": "History"
+        "critical-urgency": {
+          "description": "Save critical priority notifications to history.",
+          "label": "Save critical urgency to history"
         },
         "low-urgency": {
           "description": "Save low priority notifications to history.",
@@ -1933,9 +1956,9 @@
           "description": "Save normal priority notifications to history.",
           "label": "Save normal urgency to history"
         },
-        "critical-urgency": {
-          "description": "Save critical priority notifications to history.",
-          "label": "Save critical urgency to history"
+        "section": {
+          "description": "Control which notifications are saved to history based on their urgency level.",
+          "label": "History"
         }
       },
       "monitors": {
@@ -2292,6 +2315,10 @@
         "description": "Display the title and close button at the top of the session menu.",
         "label": "Show header"
       },
+      "show-number-labels": {
+        "description": "Display number labels (1-2-3-4...) on buttons and enable number keybinds for quick selection.",
+        "label": "Show number labels"
+      },
       "title": "Session Menu"
     },
     "system-monitor": {
@@ -2306,6 +2333,10 @@
       },
       "disk-section": {
         "label": "Disk usage"
+      },
+      "disk-path": {
+        "description": "Select which disk mount point to monitor.",
+        "label": "Disk path"
       },
       "enable-dgpu-monitoring": {
         "description": "Warning: This will wake up your discrete GPU (NVIDIA/AMD), which may significantly impact battery life on laptops with hybrid graphics.",
@@ -2426,6 +2457,12 @@
     },
     "wallpaper": {
       "automation": {
+        "change-mode": {
+          "alphabetical": "Alphabetical",
+          "description": "Choose how wallpapers are selected when changing automatically.",
+          "label": "Change mode",
+          "random": "Random"
+        },
         "custom-interval": {
           "description": "Enter time as HH:MM (e.g., 01:30).",
           "label": "Custom interval"
@@ -2437,6 +2474,10 @@
         "random-wallpaper": {
           "description": "Schedule random wallpaper changes at regular intervals.",
           "label": "Random wallpaper"
+        },
+        "scheduled-change": {
+          "description": "Automatically change wallpapers at regular intervals.",
+          "label": "Scheduled change"
         },
         "section": {
           "label": "Automation"
@@ -2558,6 +2599,18 @@
     "user-requested": "User requested",
     "welcome-back": "Welcome back,",
     "widget-settings-title": "{widget} Settings"
+  },
+  "system-monitor": {
+    "cpu-temp": "CPU Temp",
+    "cpu-usage": "CPU Usage",
+    "disk": "Disk",
+    "download": "Download",
+    "download-speed": "Download Speed",
+    "gpu-temp": "GPU Temp",
+    "memory": "Memory",
+    "title": "System Monitor",
+    "upload": "Upload",
+    "upload-speed": "Upload Speed"
   },
   "toast": {
     "airplane-mode": {
@@ -2761,6 +2814,11 @@
     "no-match": "No match found.",
     "no-wallpaper": "No wallpaper found.",
     "panel": {
+      "apikey": {
+        "help": "An API key is required to access NSFW content.",
+        "label": "API Key",
+        "placeholder": "Enter your Wallhaven API Key"
+      },
       "apply-all-monitors": {
         "description": "Apply the selected wallpaper to all monitors.",
         "label": "Apply to all monitors"
@@ -2779,6 +2837,7 @@
       "purity": {
         "all": "All",
         "label": "Content filter",
+        "nsfw": "NSFW",
         "sfw": "SFW",
         "sketchy": "Sketchy"
       },
@@ -2926,6 +2985,7 @@
   },
   "wifi": {
     "panel": {
+      "action-required": "Action required",
       "available-networks": "Available networks",
       "connect": "Connect",
       "connected": "Connected",
@@ -2938,6 +2998,7 @@
       "forget": "Forget",
       "forget-network": "Forget this network",
       "forgetting": "Forgetting…",
+      "frequency": "Frequency",
       "gateway": "Gateway",
       "info": "Info",
       "internet": "Internet",
@@ -2952,8 +3013,15 @@
       "scan-again": "Scan again",
       "searching": "Searching for networks...",
       "security": "Security",
-      "signal": "Signal",
       "title": "Wi‑Fi"
+    },
+    "signal": {
+      "excellent": "Excellent",
+      "fair": "Fair",
+      "good": "Good",
+      "poor": "Poor",
+      "very-good": "Very Good",
+      "weak": "Weak"
     }
   }
 }

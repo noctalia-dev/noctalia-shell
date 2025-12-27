@@ -24,14 +24,11 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 32
+  readonly property int settingsVersion: 33
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
   readonly property string cacheDir: Quickshell.env("NOCTALIA_CACHE_DIR") || (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/" + shellName + "/"
-  readonly property string cacheDirImages: cacheDir + "images/"
-  readonly property string cacheDirImagesWallpapers: cacheDir + "images/wallpapers/"
-  readonly property string cacheDirImagesNotifications: cacheDir + "images/notifications/"
   readonly property string settingsFile: Quickshell.env("NOCTALIA_SETTINGS_FILE") || (configDir + "settings.json")
   readonly property string defaultLocation: "Tokyo"
   readonly property string defaultAvatar: Quickshell.env("HOME") + "/.face"
@@ -49,9 +46,6 @@ Singleton {
     // ensure settings dir exists
     Quickshell.execDetached(["mkdir", "-p", configDir]);
     Quickshell.execDetached(["mkdir", "-p", cacheDir]);
-
-    Quickshell.execDetached(["mkdir", "-p", cacheDirImagesWallpapers]);
-    Quickshell.execDetached(["mkdir", "-p", cacheDirImagesNotifications]);
 
     // Ensure PAM config file exists in configDir (create once, never override)
     ensurePamConfig();
@@ -296,7 +290,7 @@ Singleton {
       property real fontDefaultScale: 1.0
       property real fontFixedScale: 1.0
       property bool tooltipsEnabled: true
-      property real panelBackgroundOpacity: 0.85
+      property real panelBackgroundOpacity: 0.93
       property bool panelsAttachedToBar: true
       property string settingsPanelMode: "attached" // "centered", "attached", "window"
       // Details view mode persistence for panels
@@ -366,7 +360,8 @@ Singleton {
       property bool setWallpaperOnAllMonitors: true
       property string fillMode: "crop"
       property color fillColor: "#000000"
-      property bool randomEnabled: false
+      property bool randomEnabled: false // Deprecated: use wallpaperChangeMode instead
+      property string wallpaperChangeMode: "random" // "random" or "alphabetical"
       property int randomIntervalSec: 300 // 5 min
       property int transitionDuration: 1500 // 1500 ms
       property string transitionType: "random"
@@ -381,6 +376,7 @@ Singleton {
       property string wallhavenCategories: "111" // general,anime,people
       property string wallhavenPurity: "100" // sfw only
       property string wallhavenRatios: ""
+      property string wallhavenApiKey: ""
       property string wallhavenResolutionMode: "atleast" // "atleast" or "exact"
       property string wallhavenResolutionWidth: ""
       property string wallhavenResolutionHeight: ""
@@ -490,6 +486,7 @@ Singleton {
       property bool useCustomColors: false
       property string warningColor: ""
       property string criticalColor: ""
+      property string diskPath: "/"
     }
 
     // dock
@@ -523,6 +520,7 @@ Singleton {
       property string position: "center"
       property bool showHeader: true
       property bool largeButtonsStyle: false
+      property bool showNumberLabels: true
       property list<var> powerOptions: [
         {
           "action": "lock",

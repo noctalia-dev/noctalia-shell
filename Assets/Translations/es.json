@@ -94,6 +94,10 @@
           "label": "Barra horizontal"
         },
         "preview": "Vista previa",
+        "tooltip-format": {
+          "description": "Cadena de formato para la información sobre herramientas que se muestra al pasar el cursor sobre el reloj. Déjelo vacío para usar la información sobre herramientas predeterminada.",
+          "label": "Formato de información sobre herramientas"
+        },
         "use-custom-font": {
           "description": "Anular la selección de fuente predeterminada con una fuente personalizada para el reloj.",
           "label": "Usar fuente personalizada"
@@ -303,6 +307,10 @@
         }
       },
       "system-monitor": {
+        "compact-mode": {
+          "description": "Mostrar estadísticas como mini gráficos de barras en lugar de valores de texto. Evita el desplazamiento del diseño.",
+          "label": "Modo compacto"
+        },
         "cpu-temperature": {
           "description": "Mostrar lecturas de temperatura de CPU si están disponibles.",
           "label": "Temperatura de la CPU"
@@ -334,6 +342,10 @@
         "storage-usage": {
           "description": "Mostrar información del uso del espacio en disco.",
           "label": "Uso de almacenamiento"
+        },
+        "use-monospace-font": {
+          "description": "```\nUtilice fuente monoespaciada para un ancho de carácter consistente.\n```",
+          "label": "Fuente monoespaciada"
         }
       },
       "taskbar": {
@@ -465,11 +477,13 @@
       "enable-message": "Activa Bluetooth para ver los dispositivos disponibles.",
       "info": "Información",
       "known-devices": "Dispositivos conocidos",
+      "no-devices": "No hay dispositivos disponibles",
       "pair": "Emparejar",
       "paired": "Emparejado",
       "paired-devices": "Dispositivos emparejados",
       "pairing": "Emparejamiento...",
       "pairing-mode": "Asegúrate de que tu dispositivo esté en modo de emparejamiento.",
+      "refresh-devices": "Actualizar dispositivos",
       "scanning": "Buscando dispositivos...",
       "signal": "Señal",
       "title": "Bluetooth",
@@ -526,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "Reloj"
+    "tooltip": "Calendario"
   },
   "common": {
     "add": "Añadir",
@@ -1064,7 +1078,7 @@
           "label": "Mostrar contornos de widgets"
         },
         "transparent": {
-          "description": "Esto evitará que los paneles se adhieran a la barra.",
+          "description": "Esto evitará que los paneles se adjunten a la barra.",
           "label": "Fondo transparente"
         }
       },
@@ -1178,14 +1192,14 @@
         "compositors": {
           "description": "Tematización del compositor.",
           "hyprland": {
-            "description": "Escribe {filepath}."
+            "description": "Escribir {filepath}"
           },
           "label": "Compositores",
           "mango": {
-            "description": "Escribir {filepath}. Requiere mango"
+            "description": "Escribir {filepath} — requiere Mango"
           },
           "niri": {
-            "description": "Escribir {filepath}. Requiere niri v25.11+"
+            "description": "Escribir {filepath} — requiere Niri v25.11+"
           }
         },
         "misc": {
@@ -1198,17 +1212,21 @@
         },
         "programs": {
           "cava": {
-            "description": "Escribe {filepath}"
+            "description": "Escribir {filepath}"
           },
           "code": {
-            "description": "Escribe {filepath} — el tema HyprLuna debe ser instalado y activado manualmente"
+            "description": "Escribir {filepath}",
+            "description-detected": "Aplicado al perfil predeterminado — detectado: {clients}",
+            "description-missing": "No se detectó ningún editor de código (VSCode o VSCodium)"
           },
           "description": "Tematización específica de aplicaciones.",
           "discord": {
-            "description": "Escribir {filepath} para {client} — el tema HyprLuna debe ser instalado y activado manualmente"
+            "description": "Escribir {filepath} para {client} — el tema debe ser activado manualmente",
+            "description-detected": "Detectado: {clients}",
+            "description-missing": "No se detectó ningún cliente de Discord"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Estándar: ~/.emacs.d/themes/noctalia.el<br>Aplicar manualmente: (load-theme 'noctalia t)"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Estándar: ~/.emacs.d/themes/noctalia.el"
           },
           "fuzzel": {
             "description": "Escribir {filepath} y recargar"
@@ -1218,10 +1236,10 @@
             "description": "Escribir {filepath} y ejecutar pywalfox update"
           },
           "spicetify": {
-            "description": "Escribe {filepath} — el tema Comfy debe ser instalado y activado manualmente"
+            "description": "Escribir {filepath} — el tema Comfy debe ser instalado y activado manualmente"
           },
           "telegram": {
-            "description": "Escribe {filepath}"
+            "description": "Escribir {filepath}"
           },
           "vicinae": {
             "description": "Escribir {filepath} y recargar"
@@ -1230,7 +1248,7 @@
             "description": "Escribir {filepath} y establecer tema a noctalia"
           },
           "yazi": {
-            "description": "Escriba en {filepath} — el sabor debe activarse manualmente"
+            "description": "Escribir {filepath} — el sabor debe activarse manualmente"
           },
           "zed": {
             "description": "Escribir {filepath} y recargar"
@@ -1242,7 +1260,7 @@
         },
         "terminal": {
           "alacritty": {
-            "description": "Escribe {filepath} y recarga"
+            "description": "Escribir {filepath} y recargar"
           },
           "description": "Tematización del emulador de terminal.",
           "foot": {
@@ -1256,7 +1274,7 @@
           },
           "label": "Terminal",
           "wezterm": {
-            "description": "Escribe {filepath} y recarga"
+            "description": "Escribir {filepath} y recargar"
           }
         },
         "ui": {
@@ -1285,6 +1303,10 @@
       "position": {
         "description": "Elige dónde aparece el panel del Centro de control cuando se abre.",
         "label": "Posición"
+      },
+      "system-monitor-disk-path": {
+        "description": "Selecciona qué punto de montaje de disco debe monitorear la tarjeta del monitor del sistema en el centro de control.",
+        "label": "Ruta del disco del monitor del sistema"
       },
       "section": {
         "description": "Configurar el posicionamiento y el comportamiento del panel del Centro de control.",
@@ -1397,6 +1419,7 @@
         },
         "style": {
           "analog": "Analógico",
+          "binary": "Binario",
           "description": "Elige el estilo de visualización del reloj.",
           "digital": "Digital",
           "label": "Estilo de reloj",
@@ -1921,9 +1944,9 @@
         }
       },
       "history": {
-        "section": {
-          "description": "Controlar qué notificaciones se guardan en el historial según su nivel de urgencia.",
-          "label": "Historial"
+        "critical-urgency": {
+          "description": "Guardar notificaciones de prioridad crítica en el historial.",
+          "label": "Guardar urgencia crítica en el historial"
         },
         "low-urgency": {
           "description": "Guardar notificaciones de prioridad baja en el historial.",
@@ -1933,9 +1956,9 @@
           "description": "Guardar notificaciones de prioridad normal en el historial.",
           "label": "Guardar urgencia normal en el historial"
         },
-        "critical-urgency": {
-          "description": "Guardar notificaciones de prioridad crítica en el historial.",
-          "label": "Guardar urgencia crítica en el historial"
+        "section": {
+          "description": "Controlar qué notificaciones se guardan en el historial según su nivel de urgencia.",
+          "label": "Historial"
         }
       },
       "monitors": {
@@ -2292,6 +2315,10 @@
         "description": "Mostrar el título y el botón de cerrar en la parte superior del Menú de sesión.",
         "label": "Mostrar encabezado"
       },
+      "show-number-labels": {
+        "description": "Mostrar etiquetas numéricas (1-2-3-4...) en los botones y habilitar atajos de teclado numéricos para selección rápida.",
+        "label": "Mostrar etiquetas numéricas"
+      },
       "title": "Menú de sesión"
     },
     "system-monitor": {
@@ -2306,6 +2333,10 @@
       },
       "disk-section": {
         "label": "Uso de disco"
+      },
+      "disk-path": {
+        "description": "Selecciona qué punto de montaje de disco monitorear.",
+        "label": "Ruta del disco"
       },
       "enable-dgpu-monitoring": {
         "description": "Advertencia: Esto activará tu GPU dedicada (NVIDIA/AMD), lo que podría afectar significativamente la duración de la batería en portátiles con gráficos híbridos.",
@@ -2408,7 +2439,7 @@
       },
       "settings-panel-mode": {
         "description": "Elegir diseño de configuración (puede requerir reapertura).",
-        "label": "Modo panel de configuración"
+        "label": "Modo del panel de configuración"
       },
       "shadows": {
         "description": "Habilita sombras paralelas debajo de las barras y los paneles.",
@@ -2426,6 +2457,12 @@
     },
     "wallpaper": {
       "automation": {
+        "change-mode": {
+          "alphabetical": "Alfabético",
+          "description": "Elija cómo se seleccionan los fondos de pantalla al cambiar automáticamente.",
+          "label": "Modo de cambio",
+          "random": "Aleatorio"
+        },
         "custom-interval": {
           "description": "Ingresa el tiempo como HH:MM (ej., 01:30).",
           "label": "Intervalo personalizado"
@@ -2437,6 +2474,10 @@
         "random-wallpaper": {
           "description": "Programa cambios aleatorios de fondo de pantalla a intervalos regulares.",
           "label": "Fondo de pantalla aleatorio"
+        },
+        "scheduled-change": {
+          "description": "Cambiar automáticamente los fondos de pantalla a intervalos regulares.",
+          "label": "Cambio programado"
         },
         "section": {
           "label": "Automatización"
@@ -2558,6 +2599,18 @@
     "user-requested": "Solicitado por el usuario",
     "welcome-back": "¡Bienvenido de nuevo,",
     "widget-settings-title": "Configuración de {widget}"
+  },
+  "system-monitor": {
+    "cpu-temp": "Temperatura de la CPU",
+    "cpu-usage": "Uso de CPU",
+    "disk": "Disco",
+    "download": "Descargar",
+    "download-speed": "Velocidad de descarga",
+    "gpu-temp": "Temperatura de la GPU",
+    "memory": "Memoria",
+    "title": "Monitor del sistema",
+    "upload": "Subir",
+    "upload-speed": "Velocidad de subida"
   },
   "toast": {
     "airplane-mode": {
@@ -2761,6 +2814,11 @@
     "no-match": "No se encontraron coincidencias.",
     "no-wallpaper": "No se encontraron fondos de pantalla.",
     "panel": {
+      "apikey": {
+        "help": "Se requiere una clave API para acceder a contenido NSFW.",
+        "label": "Clave API",
+        "placeholder": "Introduce tu clave API de Wallhaven"
+      },
       "apply-all-monitors": {
         "description": "Aplica el fondo de pantalla seleccionado a todos los monitores a la vez.",
         "label": "Aplicar a todos los monitores"
@@ -2779,6 +2837,7 @@
       "purity": {
         "all": "Todo",
         "label": "Filtro de contenido",
+        "nsfw": "NSFW",
         "sfw": "SFW",
         "sketchy": "Sketchy"
       },
@@ -2926,6 +2985,7 @@
   },
   "wifi": {
     "panel": {
+      "action-required": "Acción requerida",
       "available-networks": "Redes disponibles",
       "connect": "Conectar",
       "connected": "Conectado",
@@ -2938,6 +2998,7 @@
       "forget": "Olvidar",
       "forget-network": "¿Olvidar esta red?",
       "forgetting": "Olvidando...",
+      "frequency": "Frecuencia",
       "gateway": "Puerta de enlace",
       "info": "Información",
       "internet": "Internet",
@@ -2952,8 +3013,15 @@
       "scan-again": "Escanear de nuevo",
       "searching": "Buscando redes cercanas...",
       "security": "Seguridad",
-      "signal": "Señal",
       "title": "Wi-Fi"
+    },
+    "signal": {
+      "excellent": "Excelente",
+      "fair": "Regular",
+      "good": "Bueno",
+      "poor": "Pobre",
+      "very-good": "Muy bueno",
+      "weak": "Débil"
     }
   }
 }

@@ -26,6 +26,8 @@ Singleton {
   property real memGb: 0
   property real memPercent: 0
   property var diskPercents: ({})
+  property var diskUsedGb: ({}) // Used space in GB per mount point
+  property var diskSizeGb: ({}) // Total size in GB per mount point
   property real rxSpeed: 0
   property real txSpeed: 0
   property real zfsArcSizeKb: 0 // ZFS ARC cache size in KB
@@ -224,27 +226,37 @@ Singleton {
   }
 
   // --------------------------------------------
-  // Process to fetch disk usage in percent
+  // Process to fetch disk usage (percent, used, size)
   // Uses 'df' aka 'disk free'
   // "-x efivarfs' skips efivarfs mountpoints, for which the `statfs` syscall may cause system-wide stuttering
+  // --block-size=1 gives us bytes for precise GB calculation
   Process {
     id: dfProcess
-    command: ["df", "--output=target,pcent", "-x", "efivarfs"]
+    command: ["df", "--output=target,pcent,used,size", "--block-size=1", "-x", "efivarfs"]
     running: false
     stdout: StdioCollector {
       onStreamFinished: {
         const lines = text.trim().split('\n');
         const newPercents = {};
+        const newUsedGb = {};
+        const newSizeGb = {};
+        const bytesPerGb = 1024 * 1024 * 1024;
         // Start from line 1 (skip header)
         for (var i = 1; i < lines.length; i++) {
           const parts = lines[i].trim().split(/\s+/);
-          if (parts.length >= 2) {
+          if (parts.length >= 4) {
             const target = parts[0];
             const percent = parseInt(parts[1].replace(/[^0-9]/g, '')) || 0;
+            const usedBytes = parseFloat(parts[2]) || 0;
+            const sizeBytes = parseFloat(parts[3]) || 0;
             newPercents[target] = percent;
+            newUsedGb[target] = usedBytes / bytesPerGb;
+            newSizeGb[target] = sizeBytes / bytesPerGb;
           }
         }
         root.diskPercents = newPercents;
+        root.diskUsedGb = newUsedGb;
+        root.diskSizeGb = newSizeGb;
       }
     }
   }
@@ -652,42 +664,20 @@ Singleton {
   // -------------------------------------------------------
   // Helper function to format network speeds
   function formatSpeed(bytesPerSecond) {
-    if (bytesPerSecond < 1024 * 1024) {
-      const kb = bytesPerSecond / 1024;
-      if (kb < 10) {
-        let formatted = kb.toFixed(1) + "KB";
-        if (formatted.length > 5) {
-          formatted = kb.toFixed(1) + "K";
-        }
-        return formatted;
-      } else {
-        let formatted = Math.round(kb) + "KB";
-        if (formatted.length > 5) {
-          formatted = Math.round(kb) + "K";
-        }
-        return formatted;
-      }
-    } else if (bytesPerSecond < 1024 * 1024 * 1024) {
-      const mb = bytesPerSecond / (1024 * 1024);
-      let formatted = mb.toFixed(1) + "MB";
-      if (formatted.length > 5) {
-        formatted = mb.toFixed(1) + "M";
-        if (formatted.length > 5) {
-          formatted = Math.round(mb) + "M";
-        }
-      }
-      return formatted;
-    } else {
-      const gb = bytesPerSecond / (1024 * 1024 * 1024);
-      let formatted = gb.toFixed(1) + "GB";
-      if (formatted.length > 5) {
-        formatted = gb.toFixed(1) + "G";
-        if (formatted.length > 5) {
-          formatted = Math.round(gb) + "G";
-        }
-      }
-      return formatted;
+    const units = ["KB", "MB", "GB"];
+    let value = bytesPerSecond / 1024;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex++;
     }
+
+    const unit = units[unitIndex];
+    const shortUnit = unit[0];
+    const numStr = value < 10 ? value.toFixed(1) : Math.round(value).toString();
+
+    return (numStr + unit).length > 5 ? numStr + shortUnit : numStr + unit;
   }
 
   // -------------------------------------------------------

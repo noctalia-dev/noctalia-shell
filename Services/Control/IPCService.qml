@@ -493,4 +493,14 @@ Item {
       DesktopWidgetRegistry.editMode = !DesktopWidgetRegistry.editMode;
     }
   }
+
+  IpcHandler {
+    target: "location"
+    function get(): string {
+      return Settings.data.location.name;
+    }
+    function set(name: string) {
+      Settings.data.location.name = name;
+    }
+  }
 }

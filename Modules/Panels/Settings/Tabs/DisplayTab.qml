@@ -174,6 +174,8 @@ ColumnLayout {
       stepSize: 1
       suffix: "%"
       onValueChanged: Settings.data.brightness.brightnessStep = value
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("brightness.brightnessStep")
     }
 
     NToggle {
@@ -182,6 +184,8 @@ ColumnLayout {
       description: I18n.tr("settings.display.monitors.enforce-minimum.description")
       checked: Settings.data.brightness.enforceMinimum
       onToggled: checked => Settings.data.brightness.enforceMinimum = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("brightness.enforceMinimum")
     }
 
     NToggle {
@@ -194,6 +198,8 @@ ColumnLayout {
                    // DDC detection will run on next monitor change when enabled
                    // Monitors will stop using DDC immediately when disabled
                  }
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("brightness.enableDdcSupport")
     }
   }
 

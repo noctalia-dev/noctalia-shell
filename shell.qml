@@ -91,7 +91,7 @@ ShellRoot {
       Component.onCompleted: {
         Logger.i("Shell", "---------------------------");
         WallpaperService.init();
-        WallpaperCacheService.init();
+        ImageCacheService.init();
         AppThemeService.init();
         ColorSchemeService.init();
         LocationService.init();

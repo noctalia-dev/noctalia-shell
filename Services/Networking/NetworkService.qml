@@ -284,6 +284,19 @@ Singleton {
     return security && security !== "--" && security.trim() !== "";
   }
 
+  function getSignalStrengthLabel(signal) {
+    switch (true) {
+    case (signal >= 80):
+      return I18n.tr("wifi.signal.excellent");
+    case (signal >= 50):
+      return I18n.tr("wifi.signal.good");
+    case (signal >= 20):
+      return I18n.tr("wifi.signal.fair");
+    default:
+      return I18n.tr("wifi.signal.poor");
+    }
+  }
+
   // Processes
   Process {
     id: ethernetStateProcess
@@ -429,15 +442,43 @@ Singleton {
       onStreamFinished: {
         const details = root.activeWifiDetails || ({});
         let rate = "";
+        let freq = "";
         const lines = text.split("\n");
         for (var k = 0; k < lines.length; k++) {
           var line2 = lines[k].trim();
           var low = line2.toLowerCase();
           if (low.indexOf("tx bitrate:") === 0) {
             rate = line2.substring(11).trim();
-            break;
+          } else if (low.indexOf("freq:") === 0) {
+            freq = line2.substring(5).trim();
           }
         }
+
+        // Determine band from frequency
+        // https://en.wikipedia.org/wiki/List_of_WLAN_channels
+        let band = "";
+        if (freq) {
+          const f = +freq;
+          if (f) {
+            switch (true) {
+              // https://en.wikipedia.org/wiki/List_of_WLAN_channels#6_GHz_(802.11ax_and_802.11be)
+              case (f >= 5925 && f < 7125):
+              band = "6 GHz";
+              break;
+              // https://en.wikipedia.org/wiki/List_of_WLAN_channels#5_GHz_(802.11a/h/n/ac/ax/be)
+              case (f >= 5150 && f < 5925):
+              band = "5 GHz";
+              break;
+              // https://en.wikipedia.org/wiki/List_of_WLAN_channels#2.4_GHz_(802.11b/g/n/ax/be)
+              case (f >= 2400 && f < 2500):
+              band = "2.4 GHz";
+              break;
+              default:
+              band = `${f} MHz`;
+            }
+          }
+        }
+
         // Shorten verbose bitrate strings like: "360.0 MBit/s VHT-MCS 8 40MHz short GI"
         let rateShort = "";
         if (rate) {
@@ -473,6 +514,7 @@ Singleton {
         }
         details.rate = rate;
         details.rateShort = rateShort;
+        details.band = band;
         root.activeWifiDetails = details;
         root.activeWifiDetailsTimestamp = Date.now();
         root.detailsLoading = false;

@@ -78,7 +78,7 @@ ColumnLayout {
       ]
       currentKey: Settings.data.osd.location || "top_right"
       isSettings: true
-      defaultValue: Settings.getDefaultValue("osd.location") || "top_right"
+      defaultValue: Settings.getDefaultValue("osd.location")
       onSelected: key => Settings.data.osd.location = key
     }
   }

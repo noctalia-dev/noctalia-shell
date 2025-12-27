@@ -14,6 +14,8 @@ ColumnLayout {
     description: I18n.tr("settings.lock-screen.lock-on-suspend.description")
     checked: Settings.data.general.lockOnSuspend
     onToggled: checked => Settings.data.general.lockOnSuspend = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("general.lockOnSuspend")
   }
 
   NToggle {
@@ -21,6 +23,8 @@ ColumnLayout {
     description: I18n.tr("settings.lock-screen.compact-lockscreen.description")
     checked: Settings.data.general.compactLockScreen
     onToggled: checked => Settings.data.general.compactLockScreen = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("general.compactLockScreen")
   }
 
   NToggle {
@@ -28,6 +32,8 @@ ColumnLayout {
     description: I18n.tr("settings.lock-screen.show-session-buttons.description")
     checked: Settings.data.general.showSessionButtonsOnLockScreen
     onToggled: checked => Settings.data.general.showSessionButtonsOnLockScreen = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("general.showSessionButtonsOnLockScreen")
   }
 
   NToggle {
@@ -36,6 +42,8 @@ ColumnLayout {
     checked: Settings.data.general.showHibernateOnLockScreen
     onToggled: checked => Settings.data.general.showHibernateOnLockScreen = checked
     visible: Settings.data.general.showSessionButtonsOnLockScreen
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("general.showSessionButtonsOnLockScreen")
   }
 
   NDivider {

@@ -94,6 +94,10 @@
           "label": "水平栏"
         },
         "preview": "预览",
+        "tooltip-format": {
+          "description": "悬停在时钟上时显示的工具提示的格式字符串。留空以使用默认工具提示。",
+          "label": "工具提示格式"
+        },
         "use-custom-font": {
           "description": "使用自定义字体覆盖时钟的默认字体选择。",
           "label": "使用自定义字体"
@@ -303,6 +307,10 @@
         }
       },
       "system-monitor": {
+        "compact-mode": {
+          "description": "将统计数据以迷你条形图而非文本值的形式显示。防止布局偏移。",
+          "label": "紧凑模式"
+        },
         "cpu-temperature": {
           "description": "如果可用，显示CPU温度读数。",
           "label": "CPU温度"
@@ -334,6 +342,10 @@
         "storage-usage": {
           "description": "显示磁盘空间使用信息。",
           "label": "存储使用率"
+        },
+        "use-monospace-font": {
+          "description": "请使用等宽字体以保持字符宽度一致。",
+          "label": "等宽字体"
         }
       },
       "taskbar": {
@@ -465,11 +477,13 @@
       "enable-message": "启用蓝牙以查看可用设备。",
       "info": "信息",
       "known-devices": "已知设备",
+      "no-devices": "没有可用设备",
       "pair": "一对",
       "paired": "配对",
       "paired-devices": "已配对的设备",
       "pairing": "配对...",
       "pairing-mode": "确保您的设备处于配对模式。",
+      "refresh-devices": "刷新设备",
       "scanning": "正在扫描设备...",
       "signal": "信号",
       "title": "蓝牙",
@@ -526,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "时钟"
+    "tooltip": "日历"
   },
   "common": {
     "add": "添加",
@@ -749,7 +763,7 @@
       "never": "从不滚动"
     },
     "settings-panel-mode": {
-      "attached": "连接到杆的面板",
+      "attached": "面板附加到工具栏",
       "centered": "居中面板",
       "window": "分离窗口"
     },
@@ -1064,7 +1078,7 @@
           "label": "显示小部件轮廓"
         },
         "transparent": {
-          "description": "这将阻止面板连接到栏上。",
+          "description": "这将阻止面板附加到工具栏。",
           "label": "透明背景"
         }
       },
@@ -1178,14 +1192,14 @@
         "compositors": {
           "description": "合成器主题。",
           "hyprland": {
-            "description": "写入 {filepath}。"
+            "description": "写入 {filepath}"
           },
           "label": "合成器",
           "mango": {
-            "description": "写入 {filepath}。需要芒果"
+            "description": "写入 {filepath}，需要 Mango"
           },
           "niri": {
-            "description": "写入 {filepath}。需要 niri v25.11+"
+            "description": "写入 {filepath}，需要 Niri v25.11+"
           }
         },
         "misc": {
@@ -1201,14 +1215,18 @@
             "description": "写入 {filepath}"
           },
           "code": {
-            "description": "写入 {filepath}，Hyprluna 主题需要手动安装和激活"
+            "description": "写入 {filepath}",
+            "description-detected": "已应用到默认配置文件，检测到: {clients}",
+            "description-missing": "未检测到代码编辑器（VSCode 或 VSCodium）"
           },
           "description": "应用程序特定主题",
           "discord": {
-            "description": "为 {client} 写入 {filepath}，Hyprluna 主题需要手动安装和激活"
+            "description": "为 {client} 写入 {filepath}，主题需要手动激活",
+            "description-detected": "检测到: {clients}",
+            "description-missing": "未检测到 Discord 客户端"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>标准: ~/.emacs.d/themes/noctalia.el<br>手动应用: (load-theme 'noctalia t)"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>标准: ~/.emacs.d/themes/noctalia.el"
           },
           "fuzzel": {
             "description": "写入 {filepath} 并重新加载"
@@ -1285,6 +1303,10 @@
       "position": {
         "description": "选择打开控制中心时面板出现的位置。",
         "label": "位置"
+      },
+      "system-monitor-disk-path": {
+        "description": "选择控制中心中的系统监视器卡片应监视的磁盘挂载点。",
+        "label": "系统监视器磁盘路径"
       },
       "section": {
         "description": "配置控制中心面板的位置和行为。",
@@ -1397,6 +1419,7 @@
         },
         "style": {
           "analog": "模拟",
+          "binary": "二进制",
           "description": "选择时钟显示样式。",
           "digital": "数字",
           "label": "时钟样式",
@@ -1921,9 +1944,9 @@
         }
       },
       "history": {
-        "section": {
-          "description": "根据紧急级别控制哪些通知保存到历史记录。",
-          "label": "历史记录"
+        "critical-urgency": {
+          "description": "将关键优先级通知保存到历史记录。",
+          "label": "将高紧急度保存到历史记录"
         },
         "low-urgency": {
           "description": "将低优先级通知保存到历史记录。",
@@ -1933,9 +1956,9 @@
           "description": "将正常优先级通知保存到历史记录。",
           "label": "将正常紧急度保存到历史记录"
         },
-        "critical-urgency": {
-          "description": "将关键优先级通知保存到历史记录。",
-          "label": "将高紧急度保存到历史记录"
+        "section": {
+          "description": "根据紧急级别控制哪些通知保存到历史记录。",
+          "label": "历史记录"
         }
       },
       "monitors": {
@@ -2292,6 +2315,10 @@
         "description": "在会话菜单顶部显示标题和关闭按钮。",
         "label": "显示标题"
       },
+      "show-number-labels": {
+        "description": "在按钮上显示数字标签（1-2-3-4...）并启用数字快捷键以快速选择。",
+        "label": "显示数字标签"
+      },
       "title": "会话菜单"
     },
     "system-monitor": {
@@ -2306,6 +2333,10 @@
       },
       "disk-section": {
         "label": "磁盘使用率"
+      },
+      "disk-path": {
+        "description": "选择要监视的磁盘挂载点。",
+        "label": "磁盘路径"
       },
       "enable-dgpu-monitoring": {
         "description": "警告：这将唤醒您的独立显卡 (NVIDIA/AMD)，这可能会显著影响配备混合显卡的笔记本电脑的电池续航时间。",
@@ -2426,6 +2457,12 @@
     },
     "wallpaper": {
       "automation": {
+        "change-mode": {
+          "alphabetical": "按字母顺序",
+          "description": "选择自动更改时如何选择壁纸。",
+          "label": "更改模式",
+          "random": "随机"
+        },
         "custom-interval": {
           "description": "以 HH:MM 格式输入时间（例如：01:30）。",
           "label": "自定义间隔"
@@ -2437,6 +2474,10 @@
         "random-wallpaper": {
           "description": "按固定间隔调度随机壁纸更改。",
           "label": "随机壁纸"
+        },
+        "scheduled-change": {
+          "description": "按固定间隔自动更改壁纸。",
+          "label": "计划更改"
         },
         "section": {
           "label": "自动化"
@@ -2558,6 +2599,18 @@
     "user-requested": "用户请求",
     "welcome-back": "欢迎回来，",
     "widget-settings-title": "{widget} 设置"
+  },
+  "system-monitor": {
+    "cpu-temp": "CPU 温度",
+    "cpu-usage": "CPU 使用率",
+    "disk": "磁盘",
+    "download": "下载",
+    "download-speed": "下载速度",
+    "gpu-temp": "GPU 温度",
+    "memory": "内存",
+    "title": "系统监视器",
+    "upload": "上传",
+    "upload-speed": "上传速度"
   },
   "toast": {
     "airplane-mode": {
@@ -2761,6 +2814,11 @@
     "no-match": "未找到匹配项。",
     "no-wallpaper": "未找到壁纸。",
     "panel": {
+      "apikey": {
+        "help": "访问 NSFW 内容需要 API 密钥。",
+        "label": "API 密钥",
+        "placeholder": "输入您的Wallhaven API密钥"
+      },
       "apply-all-monitors": {
         "description": "一次性将选定的壁纸应用到所有显示器。",
         "label": "应用到所有显示器"
@@ -2779,6 +2837,7 @@
       "purity": {
         "all": "全部",
         "label": "内容过滤器",
+        "nsfw": "少儿不宜",
         "sfw": "SFW",
         "sketchy": "Sketchy"
       },
@@ -2926,6 +2985,7 @@
   },
   "wifi": {
     "panel": {
+      "action-required": "需要动作",
       "available-networks": "可用网络",
       "connect": "连接",
       "connected": "已连接",
@@ -2938,6 +2998,7 @@
       "forget": "忘记",
       "forget-network": "忘记此网络？",
       "forgetting": "正在忘记...",
+      "frequency": "频率",
       "gateway": "网关",
       "info": "信息",
       "internet": "互联网",
@@ -2952,8 +3013,15 @@
       "scan-again": "重新扫描",
       "searching": "正在搜索附近网络...",
       "security": "安全",
-      "signal": "信号",
       "title": "Wi-Fi"
+    },
+    "signal": {
+      "excellent": "优秀",
+      "fair": "一般",
+      "good": "好",
+      "poor": "差",
+      "very-good": "非常好",
+      "weak": "弱"
     }
   }
 }

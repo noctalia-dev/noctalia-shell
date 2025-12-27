@@ -178,6 +178,16 @@ ColumnLayout {
     onToggled: checked => Settings.data.sessionMenu.largeButtonsStyle = checked
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.session-menu.show-number-labels.label")
+    description: I18n.tr("settings.session-menu.show-number-labels.description")
+    checked: Settings.data.sessionMenu.showNumberLabels !== false
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("sessionMenu.showNumberLabels") ?? true
+    onToggled: checked => Settings.data.sessionMenu.showNumberLabels = checked
+  }
+
   NComboBox {
     label: I18n.tr("settings.session-menu.position.label")
     description: I18n.tr("settings.session-menu.position.description")
@@ -215,6 +225,8 @@ ColumnLayout {
     currentKey: Settings.data.sessionMenu.position
     onSelected: key => Settings.data.sessionMenu.position = key
     visible: !Settings.data.sessionMenu.largeButtonsStyle
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("sessionMenu.position")
   }
 
   NToggle {
@@ -224,6 +236,8 @@ ColumnLayout {
     checked: Settings.data.sessionMenu.showHeader
     onToggled: checked => Settings.data.sessionMenu.showHeader = checked
     visible: !Settings.data.sessionMenu.largeButtonsStyle
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("sessionMenu.showHeader")
   }
 
   NToggle {
@@ -232,6 +246,8 @@ ColumnLayout {
     description: I18n.tr("settings.session-menu.enable-countdown.description")
     checked: Settings.data.sessionMenu.enableCountdown
     onToggled: checked => Settings.data.sessionMenu.enableCountdown = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("sessionMenu.enableCountdown")
   }
 
   ColumnLayout {
@@ -252,6 +268,8 @@ ColumnLayout {
       value: Settings.data.sessionMenu.countdownDuration
       onMoved: value => Settings.data.sessionMenu.countdownDuration = value
       text: Math.round(Settings.data.sessionMenu.countdownDuration / 1000) + "s"
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("sessionMenu.countdownDuration")
     }
   }
 

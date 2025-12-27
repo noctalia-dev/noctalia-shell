@@ -82,6 +82,10 @@ ColumnLayout {
       {
         "key": "analog",
         "name": I18n.tr("settings.desktop-widgets.clock.style.analog")
+      },
+      {
+        "key": "binary",
+        "name": I18n.tr("settings.desktop-widgets.clock.style.binary")
       }
     ]
     onSelected: key => valueClockStyle = key

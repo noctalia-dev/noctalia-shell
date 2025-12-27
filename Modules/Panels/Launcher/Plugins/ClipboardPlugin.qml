@@ -81,7 +81,7 @@ Item {
           {
             "name": ">clip clear",
             "description": I18n.tr("plugins.clipboard-clear-description"),
-            "icon": iconMode === "tabler" ? "trash" : "delete_sweep",
+            "icon": iconMode === "tabler" ? "trash" : "user-trash",
             "isTablerIcon": true,
             "isImage": false,
             "onActivate": function () {

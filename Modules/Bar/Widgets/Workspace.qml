@@ -911,7 +911,7 @@ Item {
           id: groupedWorkspaceNumberBackground
 
           anchors.fill: parent
-          radius: width / 2
+          radius: Math.min(Style.radiusL, width / 2)
 
           color: {
             if (groupedContainer.workspaceModel.isFocused)

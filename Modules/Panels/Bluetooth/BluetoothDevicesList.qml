@@ -247,9 +247,6 @@ NBox {
                     }
                   }
                 }
-                onRightClicked: {
-                  BluetoothService.forgetDevice(modelData);
-                }
               }
             }
           }

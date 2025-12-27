@@ -269,6 +269,59 @@ SmartPanel {
             Layout.fillWidth: true
           }
 
+          // Empty state when no devices
+          NBox {
+            visible: {
+              if (!BluetoothService.adapter || BluetoothService.adapter.discovering || !Bluetooth.devices)
+                return false;
+
+              var availableCount = Bluetooth.devices.values.filter(dev => {
+                                                                     return dev && !dev.paired && !dev.pairing && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
+                                                                   }).length;
+              return (availableCount === 0);
+            }
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            ColumnLayout {
+              anchors.fill: parent
+              spacing: Style.marginL
+
+              Item {
+                Layout.fillHeight: true
+              }
+
+              NIcon {
+                icon: "bluetooth"
+                pointSize: 64
+                color: Color.mOnSurfaceVariant
+                Layout.alignment: Qt.AlignHCenter
+              }
+
+              NText {
+                text: I18n.tr("bluetooth.panel.no-devices")
+                pointSize: Style.fontSizeL
+                color: Color.mOnSurfaceVariant
+                Layout.alignment: Qt.AlignHCenter
+              }
+
+              NButton {
+                text: I18n.tr("bluetooth.panel.refresh-devices")
+                icon: "refresh"
+                Layout.alignment: Qt.AlignHCenter
+                onClicked: {
+                  if (BluetoothService.adapter) {
+                    BluetoothService.adapter.discovering = !BluetoothService.adapter.discovering;
+                  }
+                }
+              }
+
+              Item {
+                Layout.fillHeight: true
+              }
+            }
+          }
+
           // Fallback - No devices, scanning
           NBox {
             Layout.fillWidth: true

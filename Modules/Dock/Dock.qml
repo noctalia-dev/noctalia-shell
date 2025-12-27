@@ -312,6 +312,7 @@ Loader {
 
             onExited: {
               peekHovered = false;
+              showTimer.stop();
               if (!hidden && !dockHovered && !anyAppHovered && !menuHovered) {
                 hideTimer.restart();
               }

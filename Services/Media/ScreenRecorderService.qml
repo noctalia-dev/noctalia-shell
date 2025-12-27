@@ -140,6 +140,7 @@ Singleton {
         if (exitCode !== 0) {
           if (stderr.length > 0 && !wasCancelled) {
             ToastService.showError(I18n.tr("toast.recording.failed-start"), stderr);
+            Logger.e(stderr);
           }
           // If user cancelled, silently return without error toast
         }
@@ -153,10 +154,12 @@ Singleton {
         } else {
           // Don't show error if user intentionally cancelled
           if (!wasCancelled) {
-            if (stderr.length > 0)
+            if (stderr.length > 0) {
               ToastService.showError(I18n.tr("toast.recording.failed-start"), stderr);
-            else
+              Logger.e(stderr);
+            } else {
               ToastService.showError(I18n.tr("toast.recording.failed-start"), I18n.tr("toast.recording.failed-general"));
+            }
           }
         }
       }

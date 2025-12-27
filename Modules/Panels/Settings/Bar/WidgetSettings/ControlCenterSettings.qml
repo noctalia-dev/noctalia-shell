@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
+import qs.Services.UI
 import qs.Widgets
 
 ColumnLayout {
@@ -133,7 +134,7 @@ ColumnLayout {
     id: imagePicker
     title: I18n.tr("bar.widget-settings.control-center.select-custom-icon")
     selectionMode: "files"
-    nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.pnm", "*.bmp"]
+    nameFilters: ImageCacheService.basicImageFilters
     initialPath: Quickshell.env("HOME")
     onAccepted: paths => {
                   if (paths.length > 0) {

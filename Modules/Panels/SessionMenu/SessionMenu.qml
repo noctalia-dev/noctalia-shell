@@ -61,7 +61,7 @@ SmartPanel {
   property int timeRemaining: 0
 
   // Navigation properties
-  property int selectedIndex: 0
+  property int selectedIndex: -1
 
   // Action metadata mapping
   readonly property var actionMetadata: {
@@ -148,12 +148,12 @@ SmartPanel {
 
   // Lifecycle handlers
   onOpened: {
-    selectedIndex = 0;
+    selectedIndex = -1;
   }
 
   onClosed: {
     cancelTimer();
-    selectedIndex = 0;
+    selectedIndex = -1;
   }
 
   // Timer management
@@ -258,25 +258,37 @@ SmartPanel {
   // Navigation functions
   function selectNextWrapped() {
     if (powerOptions.length > 0) {
-      selectedIndex = (selectedIndex + 1) % powerOptions.length;
+      if (selectedIndex < 0) {
+        selectedIndex = 0;
+      } else {
+        selectedIndex = (selectedIndex + 1) % powerOptions.length;
+      }
     }
   }
 
   function selectPreviousWrapped() {
     if (powerOptions.length > 0) {
-      selectedIndex = (((selectedIndex - 1) % powerOptions.length) + powerOptions.length) % powerOptions.length;
+      if (selectedIndex < 0) {
+        selectedIndex = powerOptions.length - 1;
+      } else {
+        selectedIndex = (((selectedIndex - 1) % powerOptions.length) + powerOptions.length) % powerOptions.length;
+      }
     }
   }
 
   function selectFirst() {
-    selectedIndex = 0;
+    if (powerOptions.length > 0) {
+      selectedIndex = 0;
+    } else {
+      selectedIndex = -1;
+    }
   }
 
   function selectLast() {
     if (powerOptions.length > 0) {
       selectedIndex = powerOptions.length - 1;
     } else {
-      selectedIndex = 0;
+      selectedIndex = -1;
     }
   }
 
@@ -286,8 +298,8 @@ SmartPanel {
     return {
       columns,
       rows,
-      currentRow: Math.floor(selectedIndex / columns),
-      currentCol: selectedIndex % columns,
+      currentRow: selectedIndex >= 0 ? Math.floor(selectedIndex / columns) : -1,
+      currentCol: selectedIndex >= 0 ? selectedIndex % columns : -1,
       itemsInRow: row => Math.min(columns, powerOptions.length - row * columns)
     };
   }
@@ -298,8 +310,9 @@ SmartPanel {
       return;
 
     const grid = getGridInfo();
-    let newRow = grid.currentRow;
-    let newCol = grid.currentCol;
+    // If no selection, start at first item
+    let newRow = grid.currentRow >= 0 ? grid.currentRow : 0;
+    let newCol = grid.currentCol >= 0 ? grid.currentCol : 0;
 
     switch (direction) {
     case "left":
@@ -329,7 +342,7 @@ SmartPanel {
   }
 
   function activate() {
-    if (powerOptions.length > 0 && powerOptions[selectedIndex]) {
+    if (powerOptions.length > 0 && selectedIndex >= 0 && powerOptions[selectedIndex]) {
       const option = powerOptions[selectedIndex];
       startTimer(option.action);
     }
@@ -405,6 +418,9 @@ SmartPanel {
   }
 
   function onNumberPressed(number) {
+    if (!Settings.data.sessionMenu.showNumberLabels) {
+      return;
+    }
     // Number is 1-based, convert to 0-based index
     const index = number - 1;
     if (index >= 0 && index < powerOptions.length) {
@@ -741,7 +757,7 @@ SmartPanel {
         color: Qt.alpha(Color.mSurfaceVariant, 0.5)
         border.width: Style.borderS
         border.color: Color.mOutline
-        visible: buttonRoot.number > 0 && !buttonRoot.pending
+        visible: Settings.data.sessionMenu.showNumberLabels && buttonRoot.number > 0 && !buttonRoot.pending
 
         NText {
           id: numberText
@@ -919,7 +935,7 @@ SmartPanel {
       color: Qt.alpha(Color.mSurfaceVariant, 0.7)
       border.width: Style.borderS
       border.color: Color.mOutline
-      visible: largeButtonRoot.number > 0 && !largeButtonRoot.pending
+      visible: Settings.data.sessionMenu.showNumberLabels && largeButtonRoot.number > 0 && !largeButtonRoot.pending
       z: 10
 
       NText {

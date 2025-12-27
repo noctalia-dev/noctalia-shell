@@ -93,7 +93,7 @@
     "fontDefaultScale": 1,
     "fontFixedScale": 1,
     "tooltipsEnabled": true,
-    "panelBackgroundOpacity": 0.85,
+    "panelBackgroundOpacity": 0.93,
     "panelsAttachedToBar": true,
     "settingsPanelMode": "attached",
     "wifiDetailsViewMode": "grid",
@@ -154,6 +154,7 @@
     "fillMode": "crop",
     "fillColor": "#000000",
     "randomEnabled": false,
+    "wallpaperChangeMode": "random",
     "randomIntervalSec": 300,
     "transitionDuration": 1500,
     "transitionType": "random",
@@ -167,6 +168,7 @@
     "wallhavenCategories": "111",
     "wallhavenPurity": "100",
     "wallhavenRatios": "",
+    "wallhavenApiKey": "",
     "wallhavenResolutionMode": "atleast",
     "wallhavenResolutionWidth": "",
     "wallhavenResolutionHeight": ""
@@ -264,7 +266,8 @@
     "networkPollingInterval": 3000,
     "useCustomColors": false,
     "warningColor": "",
-    "criticalColor": ""
+    "criticalColor": "",
+    "diskPath": "/"
   },
   "dock": {
     "enabled": true,
@@ -290,6 +293,7 @@
     "position": "center",
     "showHeader": true,
     "largeButtonsStyle": false,
+    "showNumberLabels": true,
     "powerOptions": [
       {
         "action": "lock",

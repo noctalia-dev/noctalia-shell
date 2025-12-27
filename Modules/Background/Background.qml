@@ -313,7 +313,7 @@ Variants {
           Qt.callLater(setWallpaperInitial);
           return;
         }
-        if (!WallpaperCacheService || !WallpaperCacheService.initialized) {
+        if (!ImageCacheService || !ImageCacheService.initialized) {
           Qt.callLater(setWallpaperInitial);
           return;
         }
@@ -323,7 +323,7 @@ Variants {
         const targetWidth = Math.round(modelData.width * compositorScale);
         const targetHeight = Math.round(modelData.height * compositorScale);
 
-        WallpaperCacheService.getPreprocessed(wallpaperPath, modelData.name, targetWidth, targetHeight, function (cachedPath, success) {
+        ImageCacheService.getFullscreen(wallpaperPath, modelData.name, targetWidth, targetHeight, function (cachedPath, success) {
           if (success) {
             futureWallpaper = cachedPath;
           } else {
@@ -340,7 +340,7 @@ Variants {
         const targetWidth = Math.round(modelData.width * compositorScale);
         const targetHeight = Math.round(modelData.height * compositorScale);
 
-        WallpaperCacheService.getPreprocessed(originalPath, modelData.name, targetWidth, targetHeight, function (cachedPath, success) {
+        ImageCacheService.getFullscreen(originalPath, modelData.name, targetWidth, targetHeight, function (cachedPath, success) {
           if (success) {
             futureWallpaper = cachedPath;
           } else {

@@ -74,9 +74,7 @@ ColumnLayout {
         Layout.preferredHeight: Style.baseWidgetSize
         enabled: Settings.data.systemMonitor.useCustomColors
         selectedColor: Settings.data.systemMonitor.warningColor || Color.mTertiary
-        onColorSelected: function (color) {
-          Settings.data.systemMonitor.warningColor = color;
-        }
+        onColorSelected: color => Settings.data.systemMonitor.warningColor = color
       }
     }
 
@@ -94,9 +92,7 @@ ColumnLayout {
         Layout.preferredHeight: Style.baseWidgetSize
         enabled: Settings.data.systemMonitor.useCustomColors
         selectedColor: Settings.data.systemMonitor.criticalColor || Color.mError
-        onColorSelected: function (color) {
-          Settings.data.systemMonitor.criticalColor = color;
-        }
+        onColorSelected: color => Settings.data.systemMonitor.criticalColor = color
       }
     }
   }

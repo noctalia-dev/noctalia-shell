@@ -40,7 +40,7 @@ DraggableDesktopWidget {
     id: nclockComponent
     NClock {
       now: root.now
-      clockStyle: root.clockStyle === "analog" ? "analog" : "digital"
+      clockStyle: root.clockStyle
       backgroundColor: Color.transparent
       clockColor: clockTextColor
       progressColor: Color.mPrimary

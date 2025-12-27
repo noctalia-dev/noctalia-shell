@@ -111,7 +111,7 @@ NBox {
             NIcon {
               icon: NetworkService.signalIcon(modelData.signal, modelData.connected)
               pointSize: Style.fontSizeXXL
-              color: modelData.connected ? Color.mPrimary : Color.mOnSurface
+              color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mPrimary : Color.mError) : Color.mOnSurface
             }
 
             ColumnLayout {
@@ -131,7 +131,7 @@ NBox {
                 spacing: Style.marginXS
 
                 NText {
-                  text: I18n.tr("wifi.panel.signal") + ": " + modelData.signal + "%"
+                  text: NetworkService.getSignalStrengthLabel(modelData.signal) + " (" + modelData.signal + "%)"
                   pointSize: Style.fontSizeXXS
                   color: Color.mOnSurfaceVariant
                 }
@@ -150,7 +150,7 @@ NBox {
                 // Status badges
                 Rectangle {
                   visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
-                  color: Color.mPrimary
+                  color: NetworkService.internetConnectivity ? Color.mPrimary : Color.mError
                   radius: height * 0.5
                   width: connectedText.implicitWidth + (Style.marginS * 2)
                   height: connectedText.implicitHeight + (Style.marginXXS * 2)
@@ -158,7 +158,21 @@ NBox {
                   NText {
                     id: connectedText
                     anchors.centerIn: parent
-                    text: I18n.tr("wifi.panel.connected")
+                    text: {
+                      switch (NetworkService.networkConnectivity) {
+                      case "full":
+                        return I18n.tr("wifi.panel.connected");
+                      case "limited":
+                        return I18n.tr("wifi.panel.internet-limited");
+                      case "portal":  // Where Captive Portal is detected (User intervention needed)
+                        return I18n.tr("wifi.panel.action-required");
+                        // I assume unknown is for connecting/disconnecting state where connectivity hasn't been determined yet (Shouldn't be visible for long enough to matter)
+                        // and none is for no connectivity at all.
+                        // None and Unknown will return direct output of NetworkService.networkConnectivity
+                      default:
+                        return NetworkService.networkConnectivity;
+                      }
+                    }
                     pointSize: Style.fontSizeXXS
                     color: Color.mOnPrimary
                   }
@@ -337,8 +351,7 @@ NBox {
               }
 
               // Icons only; values have labels as tooltips on hover
-
-              // Row 1: Security | Internet
+              // Row 1: Security | Band
               RowLayout {
                 Layout.fillWidth: true
                 spacing: Style.marginXS
@@ -369,20 +382,18 @@ NBox {
                 Layout.fillWidth: true
                 spacing: Style.marginXS
                 NIcon {
-                  icon: NetworkService.internetConnectivity ? "world" : "world-off"
+                  icon: "router"
                   pointSize: Style.fontSizeXS
-                  color: NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
-                    onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.internet"))
+                    onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.frequency"))
                     onExited: TooltipService.hide()
                   }
                 }
                 NText {
-                  text: NetworkService.internetConnectivity ? I18n.tr("wifi.panel.internet-connected") : I18n.tr("wifi.panel.internet-limited")
+                  text: NetworkService.activeWifiDetails.band
                   pointSize: Style.fontSizeXS
-                  color: NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError
                   Layout.fillWidth: true
                   wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
                   elide: Text.ElideNone

@@ -94,6 +94,10 @@
           "label": "Vízszintes sáv"
         },
         "preview": "Előnézet",
+        "tooltip-format": {
+          "description": "Formátumsztring az óra fölé húzva megjelenő eszköztipphez. Hagyja üresen az alapértelmezett eszköztipp használatához.",
+          "label": "Eszköztipp formátum"
+        },
         "use-custom-font": {
           "description": "Felülbírálja az alapértelmezett betűtípus kiválasztását egy egyéni betűtípussal az órához.",
           "label": "Egyéni betűtípus használata"
@@ -303,6 +307,10 @@
         }
       },
       "system-monitor": {
+        "compact-mode": {
+          "description": "A statisztikákat mini sávdiagramokként jelenítse meg a szöveges értékek helyett. Megakadályozza az elrendezés eltolódását.",
+          "label": "Kompakt mód"
+        },
         "cpu-temperature": {
           "description": "CPU hőmérséklet-adatok megjelenítése, ha elérhetőek.",
           "label": "CPU hőmérséklet"
@@ -334,6 +342,10 @@
         "storage-usage": {
           "description": "Lemezterület-használati információk megjelenítése.",
           "label": "Tárhelyhasználat"
+        },
+        "use-monospace-font": {
+          "description": "```\nHasználj monospace betűtípust az egységes karakter-szélességhez.\n```",
+          "label": "Monospace betűtípus"
         }
       },
       "taskbar": {
@@ -465,11 +477,13 @@
       "enable-message": "Kapcsolja be a Bluetooth-t az elérhető eszközök megtekintéséhez.",
       "info": "Infó",
       "known-devices": "Ismert eszközök",
+      "no-devices": "Nincsenek elérhető eszközök",
       "pair": "Párosítás",
       "paired": "Párosítva",
       "paired-devices": "Párosított eszközök",
       "pairing": "Párosítás folyamatban...",
       "pairing-mode": "Győződjön meg arról, hogy eszköze párosítási módban van.",
+      "refresh-devices": "Eszközök frissítése",
       "scanning": "Eszközök keresése...",
       "signal": "Jel",
       "title": "Bluetooth",
@@ -526,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "Óra"
+    "tooltip": "Naptár"
   },
   "common": {
     "add": "Hozzáadás",
@@ -749,7 +763,7 @@
       "never": "Soha ne görgessen"
     },
     "settings-panel-mode": {
-      "attached": "Sávhoz csatolt panel",
+      "attached": "Panel a sávhoz rögzítve",
       "centered": "Középre igazított panel",
       "window": "Külön ablak"
     },
@@ -1064,7 +1078,7 @@
           "label": "Widget körvonalak megjelenítése"
         },
         "transparent": {
-          "description": "Ez megakadályozza, hogy a panelek a sávhoz tapadjanak.",
+          "description": "Ez megakadályozza, hogy a panelek rögzüljenek a sávhoz",
           "label": "Átlátszó háttér"
         }
       },
@@ -1178,21 +1192,21 @@
         "compositors": {
           "description": "Kompozitor témázás.",
           "hyprland": {
-            "description": "{filepath} írása."
+            "description": "{filepath} írása"
           },
           "label": "Kompozitorok",
           "mango": {
-            "description": "{filepath} írása."
+            "description": "{filepath} írása — ehhez Mango szükséges"
           },
           "niri": {
-            "description": "{filepath} írása. Ehhez niri v25.11+ szükséges"
+            "description": "{filepath} írása — ehhez Niri v25.11+ szükséges"
           }
         },
         "misc": {
           "description": "Hozzon létre saját sablonokat",
           "label": "Haladó",
           "user-templates": {
-            "description": "Csak akkor engedélyezze, ha tudja, mit csinál – lásd az online dokumentációt",
+            "description": "Csak akkor engedélyezze, ha tudja, mit csinál — lásd az online dokumentációt",
             "label": "Felhasználói sablonok engedélyezése"
           }
         },
@@ -1201,30 +1215,34 @@
             "description": "{filepath} írása"
           },
           "code": {
-            "description": "{filepath} írása — A HyprLuna-témát kézileg kell telepíteni és aktiválni"
+            "description": "{filepath} írása",
+            "description-detected": "Alapértelmezett profilra alkalmazva — észlelve: {clients}",
+            "description-missing": "Nem észlelt kódszerkesztő (VSCode vagy VSCodium)"
           },
           "description": "Alkalmazásspecifikus téma.",
           "discord": {
-            "description": "{filepath} írása a(z) {client} számára — A HyprLuna témát manuálisan kell aktiválni"
+            "description": "{filepath} írása a(z) {client} számára — a témát manuálisan kell aktiválni",
+            "description-detected": "Észlelve: {clients}",
+            "description-missing": "Nem észlelt Discord kliens"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standard: ~/.emacs.d/themes/noctalia.el<br>Alkalmazás manuálisan: (load-theme 'noctalia t)"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standard: ~/.emacs.d/themes/noctalia.el"
           },
           "fuzzel": {
-            "description": "{filepath} írása és újratöltés."
+            "description": "{filepath} írása és újratöltés"
           },
           "label": "Programok",
           "pywalfox": {
             "description": "{filepath} írása és a pywalfox update futtatása"
           },
           "spicetify": {
-            "description": "{filepath} írása — A Comfy témát manuálisan kell telepíteni és aktiválni"
+            "description": "{filepath} írása — a Comfy témát manuálisan kell telepíteni és aktiválni"
           },
           "telegram": {
             "description": "{filepath} írása"
           },
           "vicinae": {
-            "description": "{filepath} írása és újratöltés."
+            "description": "{filepath} írása és újratöltés"
           },
           "walker": {
             "description": "{filepath} írása és a téma beállítása noctalia-ra"
@@ -1233,7 +1251,7 @@
             "description": "{filepath} írása — a stílust kézzel kell aktiválni"
           },
           "zed": {
-            "description": "{filepath} írása és újratöltés."
+            "description": "{filepath} írása és újratöltés"
           }
         },
         "section": {
@@ -1242,21 +1260,21 @@
         },
         "terminal": {
           "alacritty": {
-            "description": "{filepath} írása és újratöltés."
+            "description": "{filepath} írása és újratöltés"
           },
           "description": "Terminálemulátor témázás.",
           "foot": {
-            "description": "{filepath} írása és újratöltés."
+            "description": "{filepath} írása és újratöltés"
           },
           "ghostty": {
-            "description": "{filepath} írása és újratöltés."
+            "description": "{filepath} írása és újratöltés"
           },
           "kitty": {
-            "description": "{filepath} írása és újratöltés."
+            "description": "{filepath} írása és újratöltés"
           },
           "label": "Terminál",
           "wezterm": {
-            "description": "{filepath} írása és újratöltés."
+            "description": "{filepath} írása és újratöltés"
           }
         },
         "ui": {
@@ -1285,6 +1303,10 @@
       "position": {
         "description": "Válassza ki, hol jelenjen meg a vezérlőközpont panel megnyitáskor.",
         "label": "Pozíció"
+      },
+      "system-monitor-disk-path": {
+        "description": "Válassza ki, hogy melyik lemez csatolási pontot kell figyelnie a rendszerfigyelő kártyának a vezérlőközpontban.",
+        "label": "Rendszerfigyelő lemez elérési útja"
       },
       "section": {
         "description": "A vezérlőközpont panel pozicionálásának és viselkedésének konfigurálása.",
@@ -1397,6 +1419,7 @@
         },
         "style": {
           "analog": "Analóg",
+          "binary": "Bináris",
           "description": "Válassza ki az óra kijelzési stílusát.",
           "digital": "Digitális",
           "label": "Óra stílus",
@@ -1921,9 +1944,9 @@
         }
       },
       "history": {
-        "section": {
-          "description": "Szabályozza, hogy mely értesítések kerüljenek mentésre az előzményekbe a sürgősségi szintjük alapján.",
-          "label": "Előzmények"
+        "critical-urgency": {
+          "description": "Kritikus prioritású értesítések mentése az előzményekbe.",
+          "label": "Kritikus sürgősség mentése az előzményekbe"
         },
         "low-urgency": {
           "description": "Alacsony prioritású értesítések mentése az előzményekbe.",
@@ -1933,9 +1956,9 @@
           "description": "Normál prioritású értesítések mentése az előzményekbe.",
           "label": "Normál sürgősség mentése az előzményekbe"
         },
-        "critical-urgency": {
-          "description": "Kritikus prioritású értesítések mentése az előzményekbe.",
-          "label": "Kritikus sürgősség mentése az előzményekbe"
+        "section": {
+          "description": "Szabályozza, hogy mely értesítések kerüljenek mentésre az előzményekbe a sürgősségi szintjük alapján.",
+          "label": "Előzmények"
         }
       },
       "monitors": {
@@ -2292,6 +2315,10 @@
         "description": "A cím és a bezárás gomb megjelenítése a munkamenet menü tetején.",
         "label": "Fejléc megjelenítése"
       },
+      "show-number-labels": {
+        "description": "Számcímkék (1-2-3-4...) megjelenítése a gombokon és számbillentyűk engedélyezése a gyors kiválasztáshoz.",
+        "label": "Számcímkék megjelenítése"
+      },
       "title": "Munkamenet menü"
     },
     "system-monitor": {
@@ -2306,6 +2333,10 @@
       },
       "disk-section": {
         "label": "Lemezhasználat"
+      },
+      "disk-path": {
+        "description": "Válassza ki, hogy melyik lemez csatolási pontot szeretné figyelni.",
+        "label": "Lemez elérési útja"
       },
       "enable-dgpu-monitoring": {
         "description": "Figyelem: Ez felébreszti a dedikált GPU-t (NVIDIA/AMD), ami jelentősen befolyásolhatja az akkumulátor élettartamát a hibrid grafikával rendelkező laptopokon.",
@@ -2426,6 +2457,12 @@
     },
     "wallpaper": {
       "automation": {
+        "change-mode": {
+          "alphabetical": "Ábécérend",
+          "description": "Válassza ki, hogyan választódnak ki a háttérképek automatikus váltáskor.",
+          "label": "Váltási mód",
+          "random": "Véletlenszerű"
+        },
         "custom-interval": {
           "description": "Adja meg az időt ÓÓ:PP formátumban (pl. 01:30).",
           "label": "Egyéni intervallum"
@@ -2437,6 +2474,10 @@
         "random-wallpaper": {
           "description": "Ütemezze a véletlenszerű háttérképváltásokat rendszeres időközönként.",
           "label": "Véletlenszerű háttérkép"
+        },
+        "scheduled-change": {
+          "description": "Automatikusan változtassa a háttérképeket rendszeres időközönként.",
+          "label": "Ütemezett váltás"
         },
         "section": {
           "label": "Automatizálás"
@@ -2558,6 +2599,18 @@
     "user-requested": "Felhasználó kérte",
     "welcome-back": "Üdvözöljük újra,",
     "widget-settings-title": "{widget} beállítások"
+  },
+  "system-monitor": {
+    "cpu-temp": "CPU hőmérséklet",
+    "cpu-usage": "CPU-használat",
+    "disk": "Lemez",
+    "download": "Letöltés",
+    "download-speed": "Letöltési sebesség",
+    "gpu-temp": "GPU hőmérséklet",
+    "memory": "Memória",
+    "title": "Rendszerfigyelő",
+    "upload": "Feltöltés",
+    "upload-speed": "Feltöltési sebesség"
   },
   "toast": {
     "airplane-mode": {
@@ -2761,6 +2814,11 @@
     "no-match": "Nincs találat.",
     "no-wallpaper": "Nincs háttérkép találat.",
     "panel": {
+      "apikey": {
+        "help": "NSFW tartalom eléréséhez API kulcs szükséges.",
+        "label": "API kulcs",
+        "placeholder": "Add meg a Wallhaven API kulcsodat!"
+      },
       "apply-all-monitors": {
         "description": "A kiválasztott háttérkép alkalmazása minden monitorra.",
         "label": "Alkalmazás minden monitorra"
@@ -2779,6 +2837,7 @@
       "purity": {
         "all": "Mind",
         "label": "Tartalomszűrő",
+        "nsfw": "Tilos a kiskorúaknak / Nem biztonságos munkahelyen",
         "sfw": "SFW",
         "sketchy": "Vázlatos"
       },
@@ -2926,6 +2985,7 @@
   },
   "wifi": {
     "panel": {
+      "action-required": "Szukseges akció",
       "available-networks": "Elérhető hálózatok",
       "connect": "Csatlakozás",
       "connected": "Csatlakozva",
@@ -2938,6 +2998,7 @@
       "forget": "Elfelejtés",
       "forget-network": "Hálózat elfelejtése",
       "forgetting": "Elfelejtés…",
+      "frequency": "Frekvencia",
       "gateway": "Átjáró",
       "info": "Infó",
       "internet": "Internet",
@@ -2952,8 +3013,15 @@
       "scan-again": "Keresés újra",
       "searching": "Hálózatok keresése…",
       "security": "Biztonság",
-      "signal": "Jel",
       "title": "Wi‑Fi"
+    },
+    "signal": {
+      "excellent": "Kiválóság",
+      "fair": "Közepes",
+      "good": "Jó",
+      "poor": "Rossz",
+      "very-good": "Nagyon jó",
+      "weak": "Gyenge"
     }
   }
 }

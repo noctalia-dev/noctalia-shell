@@ -56,6 +56,9 @@ ColumnLayout {
     onSelected: function (key) {
       Settings.data.appLauncher.position = key;
     }
+
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.position")
   }
 
   NToggle {
@@ -63,6 +66,8 @@ ColumnLayout {
     description: I18n.tr("settings.launcher.settings.grid-view.description")
     checked: Settings.data.appLauncher.viewMode === "grid"
     onToggled: checked => Settings.data.appLauncher.viewMode = checked ? "grid" : "list"
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.viewMode")
   }
 
   NToggle {
@@ -70,6 +75,8 @@ ColumnLayout {
     description: I18n.tr("settings.launcher.settings.show-categories.description")
     checked: Settings.data.appLauncher.showCategories
     onToggled: checked => Settings.data.appLauncher.showCategories = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.showCategories")
   }
 
   NToggle {
@@ -77,6 +84,8 @@ ColumnLayout {
     description: I18n.tr("settings.launcher.settings.clipboard-history.description")
     checked: Settings.data.appLauncher.enableClipboardHistory
     onToggled: checked => Settings.data.appLauncher.enableClipboardHistory = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardHistory")
   }
 
   NToggle {
@@ -84,6 +93,8 @@ ColumnLayout {
     description: I18n.tr("settings.launcher.settings.clip-preview.description")
     checked: Settings.data.appLauncher.enableClipPreview
     onToggled: checked => Settings.data.appLauncher.enableClipPreview = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipPreview")
   }
 
   NToggle {
@@ -91,6 +102,8 @@ ColumnLayout {
     description: I18n.tr("settings.launcher.settings.sort-by-usage.description")
     checked: Settings.data.appLauncher.sortByMostUsed
     onToggled: checked => Settings.data.appLauncher.sortByMostUsed = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.sortByMostUsed")
   }
 
   NToggle {
@@ -98,6 +111,8 @@ ColumnLayout {
     description: I18n.tr("settings.launcher.settings.icon-mode.description")
     checked: Settings.data.appLauncher.iconMode === "native"
     onToggled: checked => Settings.data.appLauncher.iconMode = checked ? "native" : "tabler"
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.iconMode")
   }
   NToggle {
     label: I18n.tr("settings.launcher.settings.use-app2unit.label")
@@ -113,6 +128,8 @@ ColumnLayout {
                    }
                  }
                }
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.useApp2Unit")
   }
 
   NTextInput {
@@ -136,6 +153,8 @@ ColumnLayout {
                    Settings.data.appLauncher.useApp2Unit = false;
                  }
                }
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.customLaunchPrefixEnabled")
   }
 
   NTextInput {
@@ -145,9 +164,7 @@ ColumnLayout {
     text: Settings.data.appLauncher.customLaunchPrefix
     enabled: Settings.data.appLauncher.customLaunchPrefixEnabled
     visible: Settings.data.appLauncher.customLaunchPrefixEnabled
-    onEditingFinished: {
-      Settings.data.appLauncher.customLaunchPrefix = text;
-    }
+    onEditingFinished: Settings.data.appLauncher.customLaunchPrefix = text
   }
 
   NDivider {

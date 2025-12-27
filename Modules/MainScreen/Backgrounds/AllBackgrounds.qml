@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import qs.Commons
+import qs.Services.UI
 import qs.Widgets
 
 /**
@@ -62,126 +63,30 @@ Item {
       }
 
       /**
-      *  Panels
+      *  Panel Background Slots
+      *  Only 2 slots needed: one for currently open/opening panel, one for closing panel
       */
 
-      // Audio
+      // Slot 0: Currently open/opening panel
       PanelBackground {
-        panel: root.windowRoot.audioPanelPlaceholder
+        assignedPanel: {
+          var p = PanelService.backgroundSlotAssignments[0];
+          // Only render if this panel belongs to this screen
+          return (p && p.screen === root.windowRoot.screen) ? p : null;
+        }
         shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
+        defaultBackgroundColor: panelBackgroundColor
       }
 
-      // Battery
+      // Slot 1: Closing panel (during transitions)
       PanelBackground {
-        panel: root.windowRoot.batteryPanelPlaceholder
+        assignedPanel: {
+          var p = PanelService.backgroundSlotAssignments[1];
+          // Only render if this panel belongs to this screen
+          return (p && p.screen === root.windowRoot.screen) ? p : null;
+        }
         shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Bluetooth
-      PanelBackground {
-        panel: root.windowRoot.bluetoothPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Brightness
-      PanelBackground {
-        panel: root.windowRoot.brightnessPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Clock
-      PanelBackground {
-        panel: root.windowRoot.clockPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Control Center
-      PanelBackground {
-        panel: root.windowRoot.controlCenterPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Changelog
-      PanelBackground {
-        panel: root.windowRoot.changelogPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Launcher
-      PanelBackground {
-        panel: root.windowRoot.launcherPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Notification History
-      PanelBackground {
-        panel: root.windowRoot.notificationHistoryPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Session Menu
-      PanelBackground {
-        panel: root.windowRoot.sessionMenuPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: Settings.data.sessionMenu.largeButtonsStyle ? Color.transparent : panelBackgroundColor
-      }
-
-      // Settings
-      PanelBackground {
-        panel: root.windowRoot.settingsPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Setup Wizard
-      PanelBackground {
-        panel: root.windowRoot.setupWizardPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // TrayDrawer
-      PanelBackground {
-        panel: root.windowRoot.trayDrawerPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Wallpaper
-      PanelBackground {
-        panel: root.windowRoot.wallpaperPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // WiFi
-      PanelBackground {
-        panel: root.windowRoot.wifiPanelPlaceholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Plugin Panel Slot 1
-      PanelBackground {
-        panel: root.windowRoot.pluginPanel1Placeholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
-      }
-
-      // Plugin Panel Slot 2
-      PanelBackground {
-        panel: root.windowRoot.pluginPanel2Placeholder
-        shapeContainer: backgroundsShape
-        backgroundColor: panelBackgroundColor
+        defaultBackgroundColor: panelBackgroundColor
       }
     }
 

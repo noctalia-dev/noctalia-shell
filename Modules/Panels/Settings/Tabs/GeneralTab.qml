@@ -53,7 +53,7 @@ ColumnLayout {
     title: I18n.tr("settings.general.profile.select-avatar")
     selectionMode: "files"
     initialPath: Settings.preprocessPath(Settings.data.general.avatarImage).substr(0, Settings.preprocessPath(Settings.data.general.avatarImage).lastIndexOf("/")) || Quickshell.env("HOME")
-    nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.pnm", "*.bmp"]
+    nameFilters: ImageCacheService.basicImageFilters
     onAccepted: paths => {
                   if (paths.length > 0) {
                     Settings.data.general.avatarImage = paths[0];
@@ -90,7 +90,6 @@ ColumnLayout {
         placeholder: I18n.tr("settings.general.fonts.default.placeholder")
         searchPlaceholder: I18n.tr("settings.general.fonts.default.search-placeholder")
         popupHeight: 420
-        minimumWidth: 300
         isSettings: true
         defaultValue: Settings.getDefaultValue("ui.fontDefault")
         settingsPath: "ui.fontDefault"
@@ -105,7 +104,6 @@ ColumnLayout {
         placeholder: I18n.tr("settings.general.fonts.monospace.placeholder")
         searchPlaceholder: I18n.tr("settings.general.fonts.monospace.search-placeholder")
         popupHeight: 320
-        minimumWidth: 300
         isSettings: true
         defaultValue: Settings.getDefaultValue("ui.fontFixed")
         settingsPath: "ui.fontFixed"
