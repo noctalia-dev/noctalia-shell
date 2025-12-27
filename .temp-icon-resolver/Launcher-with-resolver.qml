@@ -184,17 +184,6 @@ SmartPanel {
     selectPreviousWrapped();
   }
 
-  function onDeletePressed() {
-    // Delete clipboard entry if one is selected
-    if (selectedIndex >= 0 && results && results[selectedIndex] && results[selectedIndex].clipboardId) {
-      const clipboardId = results[selectedIndex].clipboardId;
-      clipPlugin.gotResults = false;
-      clipPlugin.isWaitingForData = true;
-      clipPlugin.lastSearchText = root.searchText;
-      ClipboardService.deleteById(String(clipboardId));
-    }
-  }
-
   // Public API for plugins
   function setSearchText(text) {
     searchText = text;
@@ -664,9 +653,6 @@ SmartPanel {
                   } else if (event.key === Qt.Key_Enter) {
                     root.activate();
                     event.accepted = true;
-                  } else if (event.key === Qt.Key_Delete) {
-                    root.onDeletePressed();
-                    event.accepted = true;
                   }
                 });
               }
@@ -705,7 +691,6 @@ SmartPanel {
               required property string modelData
               required property int index
               icon: emojiPlugin.categoryIcons[modelData] || "star"
-              tooltipText: emojiPlugin.getCategoryName ? emojiPlugin.getCategoryName(modelData) : modelData
               tabIndex: index
               checked: emojiCategoryTabs.currentIndex === index
               onClicked: {

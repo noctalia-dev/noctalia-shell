@@ -26,6 +26,7 @@ import qs.Modules.Panels.Settings
 import qs.Modules.Toast
 import qs.Services.Control
 import qs.Services.Hardware
+import qs.Services.Icons
 import qs.Services.Location
 import qs.Services.Networking
 import qs.Services.Noctalia
