@@ -17,9 +17,10 @@ ColumnLayout {
   // Local state
   property bool valueUsePrimaryColor: widgetData.usePrimaryColor !== undefined ? widgetData.usePrimaryColor : widgetMetadata.usePrimaryColor
   property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
-  property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : widgetMetadata.customFont
-  property string valueFormatHorizontal: widgetData.formatHorizontal !== undefined ? widgetData.formatHorizontal : widgetMetadata.formatHorizontal
-  property string valueFormatVertical: widgetData.formatVertical !== undefined ? widgetData.formatVertical : widgetMetadata.formatVertical
+  property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : (widgetMetadata.customFont !== undefined ? widgetMetadata.customFont : "")
+  property string valueFormatHorizontal: widgetData.formatHorizontal !== undefined ? widgetData.formatHorizontal : (widgetMetadata.formatHorizontal !== undefined ? widgetMetadata.formatHorizontal : "")
+  property string valueFormatVertical: widgetData.formatVertical !== undefined ? widgetData.formatVertical : (widgetMetadata.formatVertical !== undefined ? widgetMetadata.formatVertical : "")
+  property string valueTooltipFormat: widgetData.tooltipFormat !== undefined ? widgetData.tooltipFormat : (widgetMetadata.tooltipFormat !== undefined ? widgetMetadata.tooltipFormat : "")
 
   // Track the currently focused input field
   property var focusedInput: null
@@ -34,6 +35,7 @@ ColumnLayout {
     settings.customFont = valueCustomFont;
     settings.formatHorizontal = valueFormatHorizontal.trim();
     settings.formatVertical = valueFormatVertical.trim();
+    settings.tooltipFormat = valueTooltipFormat.trim();
     return settings;
   }
 
@@ -156,6 +158,25 @@ ColumnLayout {
             inputItem.onActiveFocusChanged.connect(function () {
               if (inputItem.activeFocus) {
                 root.focusedInput = inputVert;
+              }
+            });
+          }
+        }
+      }
+
+      NTextInput {
+        id: inputTooltip
+        Layout.fillWidth: true
+        label: I18n.tr("bar.widget-settings.clock.tooltip-format.label")
+        description: I18n.tr("bar.widget-settings.clock.tooltip-format.description")
+        placeholderText: "HH:mm, ddd MMM dd"
+        text: valueTooltipFormat
+        onTextChanged: valueTooltipFormat = text
+        Component.onCompleted: {
+          if (inputItem) {
+            inputItem.onActiveFocusChanged.connect(function () {
+              if (inputItem.activeFocus) {
+                root.focusedInput = inputTooltip;
               }
             });
           }

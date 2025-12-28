@@ -535,6 +535,30 @@ SmartPanel {
           anchors.fill: parent
           anchors.margins: Style.borderS
           radius: Style.radiusM
+
+          // Get active grid view for scroll position
+          readonly property var activeGridView: {
+            if (Settings.data.wallpaper.useWallhaven) {
+              return wallhavenView.gridView;
+            } else {
+              const view = screenRepeater.itemAt(currentScreenIndex);
+              return view?.gridView ?? null;
+            }
+          }
+
+          opacity: {
+            if (!activeGridView)
+              return 1;
+            return (activeGridView.contentY + activeGridView.height >= activeGridView.contentHeight - 10) ? 0 : 1;
+          }
+
+          Behavior on opacity {
+            NumberAnimation {
+              duration: Style.animationFast
+              easing.type: Easing.InOutQuad
+            }
+          }
+
           gradient: Gradient {
             GradientStop {
               position: 0.0

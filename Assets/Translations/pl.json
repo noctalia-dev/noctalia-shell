@@ -94,6 +94,10 @@
           "label": "Pasek poziomy"
         },
         "preview": "Podgląd",
+        "tooltip-format": {
+          "description": "Ciąg formatujący dla etykietki wyświetlanej po najechaniu na zegar. Pozostaw puste, aby użyć domyślnej etykietki.",
+          "label": "Format etykietki"
+        },
         "use-custom-font": {
           "description": "Zastąp domyślną czcionkę zegara czcionką niestandardową.",
           "label": "Użyj niestandardowej czcionki"
@@ -536,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "Zegar"
+    "tooltip": "Kalendarz"
   },
   "common": {
     "add": "Dodaj",
@@ -1366,6 +1370,10 @@
         "sectionLeft": "Lewo",
         "sectionRight": "Prawo"
       },
+      "system-monitor-disk-path": {
+        "description": "Wybierz, który punkt montowania dysku ma być monitorowany przez kartę monitora systemu w centrum sterowania.",
+        "label": "Ścieżka dysku monitora systemu"
+      },
       "title": "Centrum sterowania"
     },
     "desktop-widgets": {
@@ -1463,6 +1471,14 @@
           "description": "Kontroluje zachowanie widżetu, gdy żadne media nie są odtwarzane.",
           "label": "Tryb ukrywania"
         },
+        "rounded-corners": {
+          "description": "Włącz zaokrąglone rogi na krawędziach widżetu.",
+          "label": "Zaokrąglone rogi"
+        },
+        "show-album-art": {
+          "description": "Pokaż okładkę albumu i informacje o utworach (tytuł i wykonawca).",
+          "label": "Pokaż okładkę albumu i tytuł."
+        },
         "show-background": {
           "description": "Pokaż tło dla widżetu odtwarzacza.",
           "label": "Pokaż tło"
@@ -1471,13 +1487,13 @@
           "description": "Pokaż przyciski sterowania multimediami (odtwarzanie/pauza, poprzedni, następny) na widżecie odtwarzacza multimedialnego.",
           "label": "Pokaż przyciski"
         },
+        "show-visualizer": {
+          "description": "Pokaż nakładkę wizualizatora audio.",
+          "label": "Pokaż wizualizator"
+        },
         "visualizer-type": {
           "description": "Wybierz typ wizualizacji dla tła odtwarzacza pulpitu.",
           "label": "Typ wizualizacji"
-        },
-        "visualizer-visibility": {
-          "description": "Kontroluj, kiedy wizualizator dźwięku jest widoczny.",
-          "label": "Widoczność wizualizatora"
         }
       },
       "title": "Widżety pulpitu",
@@ -2214,6 +2230,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Skopiuj plik do schowka po zakończeniu nagrywania.",
+          "label": "Kopiuj do schowka"
+        },
         "output-folder": {
           "description": "Folder, w którym będą zapisywane nagrania.",
           "label": "Folder wyjściowy",
@@ -2322,6 +2342,10 @@
       },
       "custom-highlight-colors-title": {
         "label": "Własne kolory podświetlenia"
+      },
+      "disk-path": {
+        "description": "Wybierz, który punkt montowania dysku ma być monitorowany.",
+        "label": "Ścieżka dysku"
       },
       "disk-section": {
         "label": "Użycie dysku"

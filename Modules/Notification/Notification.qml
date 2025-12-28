@@ -50,6 +50,24 @@ Variants {
 
       color: Color.transparent
 
+      // Make shadow area click-through, only notification content is clickable
+      mask: Region {
+        x: 0
+        y: 0
+        width: notifWindow.width
+        height: notifWindow.height
+        intersection: Intersection.Xor
+
+        Region {
+          // The clickable content area is inset by shadowPadding from all edges
+          x: notifWindow.shadowPadding
+          y: notifWindow.shadowPadding
+          width: notifWindow.notifWidth
+          height: Math.max(0, notifWindow.height - notifWindow.shadowPadding * 2)
+          intersection: Intersection.Subtract
+        }
+      }
+
       // Parse location setting
       readonly property string location: Settings.data.notifications?.location || "top_right"
       readonly property bool isTop: location.startsWith("top")
@@ -277,11 +295,11 @@ Variants {
 
             // Right-click to dismiss
             MouseArea {
-              anchors.fill: parent
+              anchors.fill: cardBackground
               acceptedButtons: Qt.RightButton
               hoverEnabled: true
-              onEntered: parent.hoverCount++
-              onExited: parent.hoverCount--
+              onEntered: card.hoverCount++
+              onExited: card.hoverCount--
               onClicked: {
                 if (mouse.button === Qt.RightButton) {
                   animateOut();

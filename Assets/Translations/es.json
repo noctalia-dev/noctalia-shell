@@ -94,6 +94,10 @@
           "label": "Barra horizontal"
         },
         "preview": "Vista previa",
+        "tooltip-format": {
+          "description": "Cadena de formato para la información sobre herramientas que se muestra al pasar el cursor sobre el reloj. Déjelo vacío para usar la información sobre herramientas predeterminada.",
+          "label": "Formato de información sobre herramientas"
+        },
         "use-custom-font": {
           "description": "Anular la selección de fuente predeterminada con una fuente personalizada para el reloj.",
           "label": "Usar fuente personalizada"
@@ -536,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "Reloj"
+    "tooltip": "Calendario"
   },
   "common": {
     "add": "Añadir",
@@ -1366,6 +1370,10 @@
         "sectionLeft": "Izquierda",
         "sectionRight": "Derecha"
       },
+      "system-monitor-disk-path": {
+        "description": "Selecciona qué punto de montaje de disco debe monitorear la tarjeta del monitor del sistema en el centro de control.",
+        "label": "Ruta del disco del monitor del sistema"
+      },
       "title": "Centro de control"
     },
     "desktop-widgets": {
@@ -1463,6 +1471,14 @@
           "description": "Controla el comportamiento del widget cuando no se está reproduciendo ningún medio.",
           "label": "Modo de ocultación"
         },
+        "rounded-corners": {
+          "description": "Habilitar esquinas redondeadas en los bordes del widget.",
+          "label": "Esquinas redondeadas"
+        },
+        "show-album-art": {
+          "description": "Mostrar la carátula del álbum y la información de las pistas (título y artista).",
+          "label": "Mostrar la carátula y el título del álbum"
+        },
         "show-background": {
           "description": "Mostrar el contenedor de fondo para el widget del reproductor multimedia.",
           "label": "Mostrar fondo"
@@ -1471,13 +1487,13 @@
           "description": "Mostrar botones de control de medios (reproducir/pausar, anterior, siguiente) en el widget del reproductor multimedia.",
           "label": "Mostrar botones"
         },
+        "show-visualizer": {
+          "description": "Mostrar la superposición del visualizador de audio.",
+          "label": "Mostrar visualizador"
+        },
         "visualizer-type": {
           "description": "Elige un tipo de visualización para el fondo del reproductor multimedia de escritorio.",
           "label": "Tipo de visualización"
-        },
-        "visualizer-visibility": {
-          "description": "Controla cuándo el visualizador de audio es visible.",
-          "label": "Visibilidad del visualizador de audio"
         }
       },
       "title": "Widgets de escritorio",
@@ -2214,6 +2230,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Copiar el archivo al portapapeles después de que termine la grabación.",
+          "label": "Copiar al portapapeles"
+        },
         "output-folder": {
           "description": "Carpeta donde se guardarán las grabaciones de pantalla.",
           "label": "Carpeta de salida",
@@ -2322,6 +2342,10 @@
       },
       "custom-highlight-colors-title": {
         "label": "Colores de resaltado personalizados"
+      },
+      "disk-path": {
+        "description": "Selecciona qué punto de montaje de disco monitorear.",
+        "label": "Ruta del disco"
       },
       "disk-section": {
         "label": "Uso de disco"

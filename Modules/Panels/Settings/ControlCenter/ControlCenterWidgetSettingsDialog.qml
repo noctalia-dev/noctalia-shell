@@ -30,10 +30,18 @@ Popup {
 
   readonly property var screen: findScreen()
   readonly property real maxHeight: screen ? screen.height * 0.9 : (parent ? parent.height * 0.9 : 800)
+  readonly property real defaultContentWidth: Math.round(600 * Style.uiScaleRatio)
+  readonly property real settingsContentWidth: {
+    if (settingsLoader.item && settingsLoader.item.implicitWidth > 0) {
+      return settingsLoader.item.implicitWidth;
+    }
+    return defaultContentWidth;
+  }
 
-  width: Math.max(content.implicitWidth + padding * 2, 500)
-  height: Math.min(content.implicitHeight + padding * 2, maxHeight)
-  padding: Style.marginXL
+  readonly property real dialogPadding: Style.marginXL
+  width: Math.max(settingsContentWidth + dialogPadding * 2, 500)
+  height: Math.min(content.implicitHeight + dialogPadding * 2, maxHeight)
+  padding: 0
   modal: true
   anchors.centerIn: parent
 
@@ -53,6 +61,7 @@ Popup {
   contentItem: ColumnLayout {
     id: content
     anchors.fill: parent
+    anchors.margins: dialogPadding
     spacing: Style.marginM
 
     // Title
@@ -100,6 +109,14 @@ Popup {
         Loader {
           id: settingsLoader
           Layout.fillWidth: true
+          onItemChanged: {
+            if (item) {
+              // Force width recalculation when content loads
+              Qt.callLater(() => {
+                             root.width = Math.max(root.settingsContentWidth + root.dialogPadding * 2, 500);
+                           });
+            }
+          }
         }
       }
     }

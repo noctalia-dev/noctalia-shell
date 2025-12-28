@@ -345,6 +345,7 @@ Singleton {
       property string quality: "very_high"
       property string colorRange: "limited"
       property bool showCursor: true
+      property bool copyToClipboard: false
       property string audioSource: "default_output"
       property string videoSource: "portal"
     }
@@ -486,6 +487,7 @@ Singleton {
       property bool useCustomColors: false
       property string warningColor: ""
       property string criticalColor: ""
+      property string diskPath: "/"
     }
 
     // dock

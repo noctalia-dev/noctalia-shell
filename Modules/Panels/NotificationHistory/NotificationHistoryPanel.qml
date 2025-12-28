@@ -523,6 +523,18 @@ SmartPanel {
           anchors.fill: parent
           color: Color.transparent
           visible: scrollView.ScrollBar.vertical && scrollView.ScrollBar.vertical.size < 1.0
+          opacity: {
+            const scrollBar = scrollView.ScrollBar.vertical;
+            return (scrollBar.position + scrollBar.size >= 0.99) ? 0 : 1;
+          }
+
+          Behavior on opacity {
+            NumberAnimation {
+              duration: Style.animationFast
+              easing.type: Easing.InOutQuad
+            }
+          }
+
           gradient: Gradient {
             GradientStop {
               position: 0.0

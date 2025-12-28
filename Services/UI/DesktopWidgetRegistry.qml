@@ -67,7 +67,10 @@ Singleton {
                                     "showBackground": true,
                                     "visualizerType": "linear",
                                     "hideMode": "visible",
-                                    "showButtons": true
+                                    "showButtons": true,
+                                    "showAlbumArt": true,
+                                    "showVisualizer": true,
+                                    "roundedCorners": true
                                   },
                                   "Weather": {
                                     "allowUserSettings": true,

@@ -94,6 +94,10 @@
           "label": "Yatay çubuk"
         },
         "preview": "Önizleme",
+        "tooltip-format": {
+          "description": "Saat üzerine geldiğinizde gösterilen ipucu için format dizesi. Varsayılan ipucunu kullanmak için boş bırakın.",
+          "label": "İpucu formatı"
+        },
         "use-custom-font": {
           "description": "Saat için varsayılan yazı tipi seçimini özel bir yazı tipiyle geçersiz kılın.",
           "label": "Özel yazı tipi kullan"
@@ -536,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "Saat"
+    "tooltip": "Takvim"
   },
   "common": {
     "add": "Ekle",
@@ -1366,6 +1370,10 @@
         "sectionLeft": "Sol",
         "sectionRight": "Sağ"
       },
+      "system-monitor-disk-path": {
+        "description": "Kontrol merkezindeki sistem izleyici kartının izlemesi gereken disk bağlama noktasını seçin.",
+        "label": "Sistem izleyici disk yolu"
+      },
       "title": "Kontrol Merkezi"
     },
     "desktop-widgets": {
@@ -1463,6 +1471,14 @@
           "description": "Ortam çalınmadığında araç takımının nasıl davrandığını kontrol eder.",
           "label": "Gizleme modu"
         },
+        "rounded-corners": {
+          "description": "Widget kenarlarında yuvarlak köşeleri etkinleştir.",
+          "label": "Yuvarlatılmış köşeler"
+        },
+        "show-album-art": {
+          "description": "Albüm kapağını ve parça bilgilerini (başlık ve sanatçı) göster.",
+          "label": "Albüm kapağını ve başlığını göster"
+        },
         "show-background": {
           "description": "Medya oynatıcı widget'ı için arka plan konteynerini göster.",
           "label": "Arka planı göster"
@@ -1471,13 +1487,13 @@
           "description": "Medya oynatıcı widget'ında medya kontrol düğmelerini (oynat/durdur, önceki, sonraki) göster.",
           "label": "Düğmeleri göster"
         },
+        "show-visualizer": {
+          "description": "Ses görselleştirici katmanını göster.",
+          "label": "Görselleştiriciyi göster"
+        },
         "visualizer-type": {
           "description": "Masaüstü medya oynatıcı arka planı için bir görselleştirme türü seçin.",
           "label": "Görselleştirme türü"
-        },
-        "visualizer-visibility": {
-          "description": "Ses görselleştiricisinin ne zaman görünür olduğunu kontrol edin.",
-          "label": "Ses görselleştirici görünürlüğü"
         }
       },
       "title": "Masaüstü Araçları",
@@ -2214,6 +2230,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Kaydı bitirdikten sonra dosyayı panoya kopyala.",
+          "label": "Panoya kopyala"
+        },
         "output-folder": {
           "description": "Ekran kayıtlarının kaydedileceği klasör.",
           "label": "Çıktı klasörü",
@@ -2322,6 +2342,10 @@
       },
       "custom-highlight-colors-title": {
         "label": "Özel vurgulama renkleri"
+      },
+      "disk-path": {
+        "description": "Hangi disk bağlama noktasının izleneceğini seçin.",
+        "label": "Disk yolu"
       },
       "disk-section": {
         "label": "Disk Kullanımı"

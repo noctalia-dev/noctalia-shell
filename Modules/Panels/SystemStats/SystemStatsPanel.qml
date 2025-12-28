@@ -5,6 +5,7 @@ import Quickshell
 import qs.Commons
 import qs.Modules.MainScreen
 import qs.Services.System
+import qs.Services.UI
 import qs.Widgets
 
 SmartPanel {
@@ -14,7 +15,17 @@ SmartPanel {
   preferredHeight: Math.round(420 * Style.uiScaleRatio)
 
   panelContent: Item {
+    id: content
     property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
+
+    // Get diskPath from bar's SystemMonitor widget if available, otherwise use "/"
+    readonly property string diskPath: {
+      const sysMonWidget = BarService.lookupWidget("SystemMonitor");
+      if (sysMonWidget && sysMonWidget.diskPath) {
+        return sysMonWidget.diskPath;
+      }
+      return "/";
+    }
 
     ColumnLayout {
       id: mainColumn
@@ -79,53 +90,53 @@ SmartPanel {
 
             // CPU Usage
             NCircleStat {
-              value: SystemStatService.cpuUsage
+              ratio: SystemStatService.cpuUsage / 100
               icon: "cpu-usage"
               suffix: "%"
-              flat: true
-              fillColor: getStatColor(SystemStatService.cpuUsage, Settings.data.systemMonitor.cpuWarningThreshold, Settings.data.systemMonitor.cpuCriticalThreshold)
+              fillColor: SystemStatService.cpuColor
+              tooltipText: I18n.tr("system-monitor.cpu-usage") + `: ${Math.round(SystemStatService.cpuUsage)}%`
               Layout.fillWidth: true
             }
 
             // CPU Temperature
             NCircleStat {
-              value: SystemStatService.cpuTemp
+              ratio: SystemStatService.cpuTemp / 100
               icon: "cpu-temperature"
               suffix: "\u00B0"
-              flat: true
-              fillColor: getStatColor(SystemStatService.cpuTemp, Settings.data.systemMonitor.tempWarningThreshold, Settings.data.systemMonitor.tempCriticalThreshold)
+              fillColor: SystemStatService.tempColor
               visible: SystemStatService.cpuTemp > 0
+              tooltipText: I18n.tr("system-monitor.cpu-temp") + `: ${Math.round(SystemStatService.cpuTemp)}°C`
               Layout.fillWidth: true
             }
 
             // GPU Temperature
             NCircleStat {
-              value: SystemStatService.gpuTemp
+              ratio: SystemStatService.gpuTemp / 100
               icon: "gpu-temperature"
               suffix: "\u00B0"
-              flat: true
-              fillColor: getStatColor(SystemStatService.gpuTemp, Settings.data.systemMonitor.gpuWarningThreshold, Settings.data.systemMonitor.gpuCriticalThreshold)
+              fillColor: SystemStatService.gpuColor
               visible: SystemStatService.gpuAvailable
+              tooltipText: I18n.tr("system-monitor.gpu-temp") + `: ${Math.round(SystemStatService.gpuTemp)}°C`
               Layout.fillWidth: true
             }
 
             // Memory Usage
             NCircleStat {
-              value: SystemStatService.memPercent
+              ratio: SystemStatService.memPercent / 100
               icon: "memory"
               suffix: "%"
-              flat: true
-              fillColor: getStatColor(SystemStatService.memPercent, Settings.data.systemMonitor.memWarningThreshold, Settings.data.systemMonitor.memCriticalThreshold)
+              fillColor: SystemStatService.memColor
+              tooltipText: I18n.tr("system-monitor.memory") + `: ${Math.round(SystemStatService.memPercent)}%`
               Layout.fillWidth: true
             }
 
             // Disk Usage
             NCircleStat {
-              value: SystemStatService.diskPercents["/"] ?? 0
+              ratio: (SystemStatService.diskPercents[content.diskPath] ?? 0) / 100
               icon: "storage"
               suffix: "%"
-              flat: true
-              fillColor: getStatColor(SystemStatService.diskPercents["/"] ?? 0, Settings.data.systemMonitor.diskWarningThreshold, Settings.data.systemMonitor.diskCriticalThreshold)
+              fillColor: SystemStatService.getDiskColor(content.diskPath)
+              tooltipText: I18n.tr("system-monitor.disk") + `: ${SystemStatService.diskPercents[content.diskPath] || 0}%\n${content.diskPath}`
               Layout.fillWidth: true
             }
           }
@@ -143,21 +154,21 @@ SmartPanel {
 
             // Download gauge
             NCircleStat {
-              value: getNetworkPercent(SystemStatService.rxSpeed)
+              ratio: SystemStatService.rxRatio
               icon: "download-speed"
               suffix: "%"
-              flat: true
               fillColor: Color.mPrimary
+              tooltipText: I18n.tr("system-monitor.download") + `: ${SystemStatService.formatSpeed(SystemStatService.rxSpeed)}`
               Layout.preferredWidth: Math.round(80 * Style.uiScaleRatio)
             }
 
             // Upload gauge
             NCircleStat {
-              value: getNetworkPercent(SystemStatService.txSpeed)
+              ratio: SystemStatService.txRatio
               icon: "upload-speed"
               suffix: "%"
-              flat: true
               fillColor: Color.mPrimary
+              tooltipText: I18n.tr("system-monitor.upload") + `: ${SystemStatService.formatSpeed(SystemStatService.txSpeed)}`
               Layout.preferredWidth: Math.round(80 * Style.uiScaleRatio)
             }
 
@@ -264,8 +275,8 @@ SmartPanel {
 
                 NText {
                   text: {
-                    const usedGb = SystemStatService.diskUsedGb["/"] || 0;
-                    const sizeGb = SystemStatService.diskSizeGb["/"] || 0;
+                    const usedGb = SystemStatService.diskUsedGb[content.diskPath] || 0;
+                    const sizeGb = SystemStatService.diskSizeGb[content.diskPath] || 0;
                     return `${usedGb.toFixed(1)}G / ${sizeGb.toFixed(1)}G`;
                   }
                   pointSize: Style.fontSizeXS
@@ -279,24 +290,5 @@ SmartPanel {
         }
       }
     }
-  }
-
-  // Helper function to get color based on thresholds
-  function getStatColor(value, warningThreshold, criticalThreshold) {
-    if (value >= criticalThreshold) {
-      return Color.mError;
-    } else if (value >= warningThreshold) {
-      return Color.mTertiary;
-    }
-    return Color.mPrimary;
-  }
-
-  // Convert network speed to percentage (log scale)
-  function getNetworkPercent(bytesPerSecond) {
-    if (bytesPerSecond <= 0)
-      return 0;
-    // Log scale: 1KB=0%, 1MB=50%, 100MB=100%
-    const kb = bytesPerSecond / 1024;
-    return Math.min(100, Math.max(0, (Math.log10(kb) / 5) * 100));
   }
 }

@@ -474,12 +474,11 @@ NBox {
     NTabBar {
       id: modeTabBar
       Layout.fillWidth: true
-      Layout.preferredWidth: buttonRow.width
       Layout.preferredHeight: startButton.implicitHeight
       implicitHeight: startButton.implicitHeight
-      Layout.alignment: Qt.AlignHCenter
       visible: totalSeconds === 0
       currentIndex: isStopwatchMode ? 1 : 0
+      margins: 0
       onCurrentIndexChanged: {
         const newMode = currentIndex === 1;
         if (newMode !== isStopwatchMode) {
@@ -515,6 +514,7 @@ NBox {
 
       NTabButton {
         Layout.fillWidth: true
+        Layout.preferredWidth: 0
         text: I18n.tr("calendar.timer.countdown")
         tabIndex: 0
         checked: !isStopwatchMode
@@ -523,6 +523,7 @@ NBox {
 
       NTabButton {
         Layout.fillWidth: true
+        Layout.preferredWidth: 0
         text: I18n.tr("calendar.timer.stopwatch")
         tabIndex: 1
         checked: isStopwatchMode

@@ -30,6 +30,22 @@ Singleton {
     (isRecording || isPending) ? stopRecording() : startRecording();
   }
 
+  // Copy file to clipboard as file reference
+  function copyFileToClipboard(filePath) {
+    if (!filePath) {
+      return;
+    }
+    // Convert path to file:// URI format for copying as file reference
+    // Escape special characters in URI (space -> %20, etc.)
+    const fileUri = "file://" + filePath.replace(/ /g, "%20").replace(/'/g, "%27").replace(/"/g, "%22");
+    // Escape single quotes in URI for shell safety
+    const escapedUri = fileUri.replace(/'/g, "'\\''");
+    const command = "printf '%s' '" + escapedUri + "' | wl-copy --type text/uri-list";
+    copyToClipboardProcess.exec({
+                                  "command": ["sh", "-c", command]
+                                });
+  }
+
   // Start screen recording using Quickshell.execDetached
   function startRecording() {
     if (!isAvailable) {
@@ -144,13 +160,15 @@ Singleton {
           }
           // If user cancelled, silently return without error toast
         }
-      } else if (isRecording) {
-        // Process ended normally while recording
+      } else if (isRecording || hasActiveRecording) {
+        // Process ended normally while recording (check both flags to handle race condition)
         isRecording = false;
         monitorTimer.running = false;
-        // Consider successful save if exitCode == 0
         if (exitCode === 0) {
           ToastService.showNotice(I18n.tr("toast.recording.saved"), outputPath, "settings-screen-recorder");
+          if (settings.copyToClipboard) {
+            copyFileToClipboard(outputPath);
+          }
         } else {
           // Don't show error if user intentionally cancelled
           if (!wasCancelled) {
@@ -161,6 +179,14 @@ Singleton {
               ToastService.showError(I18n.tr("toast.recording.failed-start"), I18n.tr("toast.recording.failed-general"));
             }
           }
+        }
+        hasActiveRecording = false;
+      } else if (!isPending && exitCode === 0 && outputPath) {
+        // Fallback: if process exited successfully with an outputPath, handle it
+        // (handles case where flags were cleared before onExited fired)
+        ToastService.showNotice(I18n.tr("toast.recording.saved"), outputPath, "settings-screen-recorder");
+        if (settings.copyToClipboard) {
+          copyFileToClipboard(outputPath);
         }
       }
     }
@@ -177,6 +203,16 @@ Singleton {
         isPending = false;
         hasActiveRecording = false;
         ToastService.showError(I18n.tr("toast.recording.no-portals"), I18n.tr("toast.recording.no-portals-desc"));
+      }
+    }
+  }
+
+  // Process to copy file to clipboard
+  Process {
+    id: copyToClipboardProcess
+    onExited: function (exitCode, exitStatus) {
+      if (exitCode !== 0) {
+        Logger.e("ScreenRecorderService", "Failed to copy file to clipboard, exit code:", exitCode);
       }
     }
   }

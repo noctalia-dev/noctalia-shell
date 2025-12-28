@@ -108,7 +108,8 @@ Singleton {
                                     "useCustomFont": false,
                                     "customFont": "",
                                     "formatHorizontal": "HH:mm ddd, MMM dd",
-                                    "formatVertical": "HH mm - dd MM"
+                                    "formatVertical": "HH mm - dd MM",
+                                    "tooltipFormat": "HH:mm ddd, MMM dd"
                                   },
                                   "ControlCenter": {
                                     "allowUserSettings": true,

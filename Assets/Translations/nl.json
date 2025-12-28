@@ -94,6 +94,10 @@
           "label": "Horizontale balk"
         },
         "preview": "Voorbeeld",
+        "tooltip-format": {
+          "description": "Opmaakreeks voor de tooltip die wordt weergegeven bij het zweven over de klok. Laat leeg om de standaard tooltip te gebruiken.",
+          "label": "Tooltip-opmaak"
+        },
         "use-custom-font": {
           "description": "Overschrijf het standaardlettertype met een aangepast lettertype voor de klok.",
           "label": "Aangepast lettertype gebruiken"
@@ -536,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "Klok"
+    "tooltip": "Kalender"
   },
   "common": {
     "add": "Toevoegen",
@@ -1366,6 +1370,10 @@
         "sectionLeft": "Links",
         "sectionRight": "Rechts"
       },
+      "system-monitor-disk-path": {
+        "description": "Selecteer welk schijf-mountpunt de systeemmonitor-kaart in het bedieningscentrum moet bewaken.",
+        "label": "Systeemmonitor schijfpad"
+      },
       "title": "Bedieningscentrum"
     },
     "desktop-widgets": {
@@ -1463,6 +1471,14 @@
           "description": "Bepaalt hoe de widget zich gedraagt wanneer er geen media wordt afgespeeld.",
           "label": "Verbergmodus"
         },
+        "rounded-corners": {
+          "description": "Ronde hoeken inschakelen op de widgetranden.",
+          "label": "Afgeronde hoeken"
+        },
+        "show-album-art": {
+          "description": "Toon de albumhoes en trackinformatie (titel en artiest).",
+          "label": "Toon albumhoes & titel"
+        },
         "show-background": {
           "description": "Toon de achtergrondcontainer voor de mediaspeler-widget.",
           "label": "Toon achtergrond"
@@ -1471,13 +1487,13 @@
           "description": "Toon mediabesturingsknoppen (afspelen/pauzeren, vorige, volgende) op de mediaspeler-widget.",
           "label": "Knoppen weergeven"
         },
+        "show-visualizer": {
+          "description": "Toon de audio-visualisatie overlay.",
+          "label": "Visualiseerder weergeven"
+        },
         "visualizer-type": {
           "description": "Kies een visualisatietype voor de achtergrond van de desktop mediaspeler.",
           "label": "Visualisatietype"
-        },
-        "visualizer-visibility": {
-          "description": "Bepaal wanneer de audiovisualizer zichtbaar is.",
-          "label": "Audiovisualizer zichtbaarheid"
         }
       },
       "title": "Desktopwidgets",
@@ -2214,6 +2230,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Kopieer het bestand naar het klembord nadat de opname is voltooid.",
+          "label": "Kopiëren naar klembord"
+        },
         "output-folder": {
           "description": "Map waarin schermopnamen worden opgeslagen.",
           "label": "Uitvoermap",
@@ -2322,6 +2342,10 @@
       },
       "custom-highlight-colors-title": {
         "label": "Aangepaste markeerkleuren"
+      },
+      "disk-path": {
+        "description": "Selecteer welk schijf-mountpunt moet worden bewaakt.",
+        "label": "Schijfpad"
       },
       "disk-section": {
         "label": "Schijfgebruik"

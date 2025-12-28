@@ -94,6 +94,10 @@
           "label": "Barre horizontale"
         },
         "preview": "Aperçu",
+        "tooltip-format": {
+          "description": "Chaîne de format pour l'info-bulle affichée lors du survol de l'horloge. Laissez vide pour utiliser l'info-bulle par défaut.",
+          "label": "Format de l'info-bulle"
+        },
         "use-custom-font": {
           "description": "Remplacez la police par défaut par une police personnalisée pour l'horloge.",
           "label": "Utiliser une police personnalisée."
@@ -536,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "Horloge"
+    "tooltip": "Calendrier"
   },
   "common": {
     "add": "Ajouter",
@@ -1366,6 +1370,10 @@
         "sectionLeft": "Gauche",
         "sectionRight": "Droite"
       },
+      "system-monitor-disk-path": {
+        "description": "Sélectionnez le point de montage du disque que la carte du moniteur système dans le centre de contrôle doit surveiller.",
+        "label": "Chemin du disque du moniteur système"
+      },
       "title": "Centre de contrôle"
     },
     "desktop-widgets": {
@@ -1463,6 +1471,14 @@
           "description": "Contrôle le comportement du widget lorsqu'aucun média n'est en cours de lecture.",
           "label": "Mode de masquage"
         },
+        "rounded-corners": {
+          "description": "Activer les coins arrondis sur les bords du widget.",
+          "label": "Coins arrondis"
+        },
+        "show-album-art": {
+          "description": "Afficher la pochette de l'album et les informations sur les pistes (titre et artiste).",
+          "label": "Afficher la pochette et le titre de l'album"
+        },
         "show-background": {
           "description": "Afficher le conteneur d'arrière-plan pour le widget lecteur multimédia.",
           "label": "Afficher l'arrière-plan"
@@ -1471,13 +1487,13 @@
           "description": "Afficher les boutons de contrôle multimédia (lecture/pause, précédent, suivant) sur le widget lecteur multimédia.",
           "label": "Afficher les boutons"
         },
+        "show-visualizer": {
+          "description": "Afficher la superposition de l'visualiseur audio.",
+          "label": "Afficher le visualiseur"
+        },
         "visualizer-type": {
           "description": "Choisissez un type de visualisation pour l'arrière-plan du lecteur multimédia de bureau.",
           "label": "Type de visualisation"
-        },
-        "visualizer-visibility": {
-          "description": "Contrôler quand le visualiseur audio est visible.",
-          "label": "Visibilité du visualiseur audio"
         }
       },
       "title": "Widgets de bureau",
@@ -2214,6 +2230,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Copier le fichier dans le presse-papiers une fois l'enregistrement terminé.",
+          "label": "Copier dans le presse-papiers"
+        },
         "output-folder": {
           "description": "Dossier où les enregistrements d'écran seront sauvegardés.",
           "label": "Dossier de sortie",
@@ -2322,6 +2342,10 @@
       },
       "custom-highlight-colors-title": {
         "label": "Couleurs de surbrillance personnalisées"
+      },
+      "disk-path": {
+        "description": "Sélectionnez le point de montage du disque à surveiller.",
+        "label": "Chemin du disque"
       },
       "disk-section": {
         "label": "Utilisation disque"

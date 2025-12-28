@@ -22,8 +22,9 @@ Item {
   readonly property bool isScaling: internal.isScaling
 
   property bool showBackground: (widgetData && widgetData.showBackground !== undefined) ? widgetData.showBackground : true
+  property bool roundedCorners: (widgetData && widgetData.roundedCorners !== undefined) ? widgetData.roundedCorners : true
 
-  property real widgetScale: (widgetData && widgetData.scale !== undefined) ? widgetData.scale : 1.0
+  property real widgetScale: 1.0
   property real minScale: 0.5
   property real maxScale: 3.0
 
@@ -241,12 +242,22 @@ Item {
   scale: widgetScale
   transformOrigin: Item.TopLeft
 
+  Component.onCompleted: {
+    // Initialize scale from widgetData when component is first created
+    if (widgetData && widgetData.scale !== undefined) {
+      widgetScale = widgetData.scale;
+    }
+  }
+
   onWidgetDataChanged: {
-    if (!internal.isDragging) {
+    if (!internal.isDragging && !internal.isScaling) {
       internal.baseX = (widgetData && widgetData.x !== undefined) ? widgetData.x : defaultX;
       internal.baseY = (widgetData && widgetData.y !== undefined) ? widgetData.y : defaultY;
       if (widgetData && widgetData.scale !== undefined) {
         widgetScale = widgetData.scale;
+      } else if (widgetData) {
+        // If widgetData exists but scale is not set, default to 1.0
+        widgetScale = 1.0;
       }
     }
   }
@@ -265,7 +276,7 @@ Item {
   Rectangle {
     id: container
     anchors.fill: parent
-    radius: Style.radiusL
+    radius: root.roundedCorners ? Style.radiusL : 0
     color: Color.mSurface
     border {
       width: 1

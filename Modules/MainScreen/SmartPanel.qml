@@ -602,9 +602,9 @@ Item {
     panelBackground.targetX = calculatedX;
     panelBackground.targetY = calculatedY;
 
-    Logger.d("SmartPanel", "Position calculated:", calculatedX, calculatedY);
-    Logger.d("SmartPanel", "  Panel size:", panelWidth, "x", panelHeight);
-    Logger.d("SmartPanel", "  Parent size:", root.width, "x", root.height);
+    // Logger.d("SmartPanel", "Position calculated:", calculatedX, calculatedY);
+    // Logger.d("SmartPanel", "  Panel size:", panelWidth, "x", panelHeight);
+    // Logger.d("SmartPanel", "  Parent size:", root.width, "x", root.height);
   }
 
   // Watch for changes in content-driven sizes and update position
@@ -649,7 +649,7 @@ Item {
             root.opacityFadeComplete = true;
             var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
             if (shouldFinalizeNow) {
-              Logger.d("SmartPanel", "Zero-duration opacity + no size animation - finalizing", root.objectName);
+              // Logger.d("SmartPanel", "Zero-duration opacity + no size animation - finalizing", root.objectName);
               Qt.callLater(root.finalizeClose);
             }
           } else if (root.isPanelVisible && root.opacity === 1.0) {
@@ -667,10 +667,10 @@ Item {
           // Detached panels (allowAttach === false) should always animate from top
           var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
           if (shouldFinalizeNow) {
-            Logger.d("SmartPanel", "No animation - finalizing immediately", root.objectName);
+            //Logger.d("SmartPanel", "No animation - finalizing immediately", root.objectName);
             Qt.callLater(root.finalizeClose);
           } else {
-            Logger.d("SmartPanel", "Animation will run - waiting for size animation", root.objectName, "shouldAnimateHeight:", panelContent.geometryPlaceholder.shouldAnimateHeight, "shouldAnimateWidth:", panelContent.geometryPlaceholder.shouldAnimateWidth);
+            //Logger.d("SmartPanel", "Animation will run - waiting for size animation", root.objectName, "shouldAnimateHeight:", panelContent.geometryPlaceholder.shouldAnimateHeight, "shouldAnimateWidth:", panelContent.geometryPlaceholder.shouldAnimateWidth);
           }
         } // When opacity fade completes during open, stop watchdog
         else if (!running && root.isPanelVisible && root.opacity === 1.0) {

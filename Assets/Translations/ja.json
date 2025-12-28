@@ -94,6 +94,10 @@
           "label": "水平バー"
         },
         "preview": "プレビュー",
+        "tooltip-format": {
+          "description": "時計にマウスを合わせたときに表示されるツールチップのフォーマット文字列。デフォルトのツールチップを使用するには空のままにします。",
+          "label": "ツールチップ形式"
+        },
         "use-custom-font": {
           "description": "デフォルトのフォント設定を上書きし、時計にカスタムフォントを使用します。",
           "label": "カスタムフォントを使用"
@@ -536,7 +540,7 @@
     }
   },
   "clock": {
-    "tooltip": "時計"
+    "tooltip": "カレンダー"
   },
   "common": {
     "add": "追加",
@@ -1366,6 +1370,10 @@
         "sectionLeft": "左",
         "sectionRight": "右"
       },
+      "system-monitor-disk-path": {
+        "description": "コントロールセンターのシステムモニターカードが監視するディスクのマウントポイントを選択します。",
+        "label": "システムモニターのディスクパス"
+      },
       "title": "コントロールセンター"
     },
     "desktop-widgets": {
@@ -1463,6 +1471,14 @@
           "description": "再生中のメディアがない場合のウィジェットの動作を制御します。",
           "label": "非表示モード"
         },
+        "rounded-corners": {
+          "description": "ウィジェットの端を丸くする。",
+          "label": "角を丸くする"
+        },
+        "show-album-art": {
+          "description": "アルバムのアートワークとトラック情報（タイトルとアーティスト）を表示してください。",
+          "label": "アルバムアートとタイトルを表示"
+        },
         "show-background": {
           "description": "メディアプレーヤーウィジェットの背景コンテナを表示します。",
           "label": "背景を表示"
@@ -1471,13 +1487,13 @@
           "description": "メディアプレーヤーウィジェットにメディアコントロールボタン（再生/一時停止、前へ、次へ）を表示します。",
           "label": "ボタンを表示"
         },
+        "show-visualizer": {
+          "description": "オーディオビジュアライザーのオーバーレイを表示する。",
+          "label": "ビジュアライザーを表示"
+        },
         "visualizer-type": {
           "description": "デスクトップメディアプレーヤーの背景に使用するビジュアライザーの種類を選択します。",
           "label": "ビジュアライザーの種類"
-        },
-        "visualizer-visibility": {
-          "description": "オーディオビジュアライザーを表示するタイミングを制御します。",
-          "label": "ビジュアライザーの表示設定"
         }
       },
       "title": "デスクトップウィジェット",
@@ -2214,6 +2230,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "録画終了後、ファイルをクリップボードにコピーします。",
+          "label": "クリップボードにコピー"
+        },
         "output-folder": {
           "description": "画面録画ファイルを保存するフォルダ。",
           "label": "出力フォルダ",
@@ -2322,6 +2342,10 @@
       },
       "custom-highlight-colors-title": {
         "label": "カスタムハイライト色"
+      },
+      "disk-path": {
+        "description": "監視するディスクのマウントポイントを選択します。",
+        "label": "ディスクパス"
       },
       "disk-section": {
         "label": "ストレージ使用量"

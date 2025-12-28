@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
+import qs.Services.System
 import qs.Services.UI
 import qs.Widgets
 
@@ -168,6 +169,25 @@ ColumnLayout {
       }
       isSettings: true
       defaultValue: Settings.getDefaultValue("controlCenter.position")
+    }
+
+    NComboBox {
+      id: diskPathComboBox
+      Layout.fillWidth: true
+      Layout.topMargin: Style.marginM
+      label: I18n.tr("settings.control-center.system-monitor-disk-path.label")
+      description: I18n.tr("settings.control-center.system-monitor-disk-path.description")
+      model: {
+        const paths = Object.keys(SystemStatService.diskPercents).sort();
+        return paths.map(path => ({
+                                    key: path,
+                                    name: path
+                                  }));
+      }
+      currentKey: Settings.data.systemMonitor.diskPath || "/"
+      onSelected: key => Settings.data.systemMonitor.diskPath = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("systemMonitor.diskPath") || "/"
     }
   }
 

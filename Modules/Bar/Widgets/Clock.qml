@@ -42,6 +42,7 @@ Rectangle {
   readonly property string customFont: widgetSettings.customFont !== undefined ? widgetSettings.customFont : widgetMetadata.customFont
   readonly property string formatHorizontal: widgetSettings.formatHorizontal !== undefined ? widgetSettings.formatHorizontal : widgetMetadata.formatHorizontal
   readonly property string formatVertical: widgetSettings.formatVertical !== undefined ? widgetSettings.formatVertical : widgetMetadata.formatVertical
+  readonly property string tooltipFormat: widgetSettings.tooltipFormat !== undefined ? widgetSettings.tooltipFormat : widgetMetadata.tooltipFormat
 
   implicitWidth: isBarVertical ? Style.capsuleHeight : Math.round((isBarVertical ? verticalLoader.implicitWidth : horizontalLoader.implicitWidth) + Style.marginM * 2)
 
@@ -149,6 +150,15 @@ Rectangle {
                  }
   }
 
+  // Build tooltip text with formatted time/date
+  function buildTooltipText() {
+    if (tooltipFormat && tooltipFormat.trim() !== "") {
+      return I18n.locale.toString(now, tooltipFormat.trim());
+    }
+    // Fallback to default if no format is set
+    return I18n.tr("clock.tooltip"); // Defaults to "Calendar"
+  }
+
   MouseArea {
     id: clockMouseArea
     anchors.fill: parent
@@ -157,10 +167,12 @@ Rectangle {
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     onEntered: {
       if (!PanelService.getPanel("clockPanel", screen)?.active) {
-        TooltipService.show(root, I18n.tr("clock.tooltip"), BarService.getTooltipDirection());
+        TooltipService.show(root, buildTooltipText(), BarService.getTooltipDirection());
+        tooltipRefreshTimer.start();
       }
     }
     onExited: {
+      tooltipRefreshTimer.stop();
       TooltipService.hide();
     }
     onClicked: mouse => {
@@ -175,5 +187,16 @@ Rectangle {
                    PanelService.getPanel("clockPanel", screen)?.toggle(this);
                  }
                }
+  }
+
+  Timer {
+    id: tooltipRefreshTimer
+    interval: 1000
+    repeat: true
+    onTriggered: {
+      if (clockMouseArea.containsMouse && !PanelService.getPanel("clockPanel", screen)?.active) {
+        TooltipService.updateText(buildTooltipText());
+      }
+    }
   }
 }

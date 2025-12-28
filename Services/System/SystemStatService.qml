@@ -33,6 +33,74 @@ Singleton {
   property real zfsArcSizeKb: 0 // ZFS ARC cache size in KB
   property real zfsArcCminKb: 0 // ZFS ARC minimum (non-reclaimable) size in KB
 
+  // Network max speed tracking (learned over time, cached for 7 days)
+  readonly property real rxMaxSpeed: {
+    const peaks = networkStatsAdapter.rxPeaks || [];
+    return peaks.length > 0 ? Math.max(...peaks.map(p => p.speed)) : 0;
+  }
+  readonly property real txMaxSpeed: {
+    const peaks = networkStatsAdapter.txPeaks || [];
+    return peaks.length > 0 ? Math.max(...peaks.map(p => p.speed)) : 0;
+  }
+
+  // Ready-to-use ratios based on learned maximums (0..1 range)
+  readonly property real rxRatio: rxMaxSpeed > 0 ? Math.min(1, rxSpeed / rxMaxSpeed) : 0
+  readonly property real txRatio: txMaxSpeed > 0 ? Math.min(1, txSpeed / txMaxSpeed) : 0
+
+  // Color resolution (respects useCustomColors setting)
+  readonly property color warningColor: Settings.data.systemMonitor.useCustomColors ? (Settings.data.systemMonitor.warningColor || Color.mTertiary) : Color.mTertiary
+  readonly property color criticalColor: Settings.data.systemMonitor.useCustomColors ? (Settings.data.systemMonitor.criticalColor || Color.mError) : Color.mError
+
+  // Threshold values from settings
+  readonly property int cpuWarningThreshold: Settings.data.systemMonitor.cpuWarningThreshold
+  readonly property int cpuCriticalThreshold: Settings.data.systemMonitor.cpuCriticalThreshold
+  readonly property int tempWarningThreshold: Settings.data.systemMonitor.tempWarningThreshold
+  readonly property int tempCriticalThreshold: Settings.data.systemMonitor.tempCriticalThreshold
+  readonly property int gpuWarningThreshold: Settings.data.systemMonitor.gpuWarningThreshold
+  readonly property int gpuCriticalThreshold: Settings.data.systemMonitor.gpuCriticalThreshold
+  readonly property int memWarningThreshold: Settings.data.systemMonitor.memWarningThreshold
+  readonly property int memCriticalThreshold: Settings.data.systemMonitor.memCriticalThreshold
+  readonly property int diskWarningThreshold: Settings.data.systemMonitor.diskWarningThreshold
+  readonly property int diskCriticalThreshold: Settings.data.systemMonitor.diskCriticalThreshold
+
+  // Computed warning/critical states (uses >= inclusive comparison)
+  readonly property bool cpuWarning: cpuUsage >= cpuWarningThreshold
+  readonly property bool cpuCritical: cpuUsage >= cpuCriticalThreshold
+  readonly property bool tempWarning: cpuTemp >= tempWarningThreshold
+  readonly property bool tempCritical: cpuTemp >= tempCriticalThreshold
+  readonly property bool gpuWarning: gpuAvailable && gpuTemp >= gpuWarningThreshold
+  readonly property bool gpuCritical: gpuAvailable && gpuTemp >= gpuCriticalThreshold
+  readonly property bool memWarning: memPercent >= memWarningThreshold
+  readonly property bool memCritical: memPercent >= memCriticalThreshold
+
+  // Helper functions for disk (disk path is dynamic)
+  function isDiskWarning(diskPath) {
+    return (diskPercents[diskPath] || 0) >= diskWarningThreshold;
+  }
+
+  function isDiskCritical(diskPath) {
+    return (diskPercents[diskPath] || 0) >= diskCriticalThreshold;
+  }
+
+  // Ready-to-use stat colors (for gauges, panels, icons)
+  readonly property color cpuColor: cpuCritical ? criticalColor : (cpuWarning ? warningColor : Color.mPrimary)
+  readonly property color tempColor: tempCritical ? criticalColor : (tempWarning ? warningColor : Color.mPrimary)
+  readonly property color gpuColor: gpuCritical ? criticalColor : (gpuWarning ? warningColor : Color.mPrimary)
+  readonly property color memColor: memCritical ? criticalColor : (memWarning ? warningColor : Color.mPrimary)
+
+  function getDiskColor(diskPath) {
+    return isDiskCritical(diskPath) ? criticalColor : (isDiskWarning(diskPath) ? warningColor : Color.mPrimary);
+  }
+
+  // Helper function for color resolution based on value and thresholds
+  function getStatColor(value, warningThreshold, criticalThreshold) {
+    if (value >= criticalThreshold)
+      return criticalColor;
+    if (value >= warningThreshold)
+      return warningColor;
+    return Color.mPrimary;
+  }
+
   // Internal state for CPU calculation
   property var prevCpuStats: null
 
@@ -60,6 +128,52 @@ Singleton {
   property string gpuTempHwmonPath: ""
   property var foundGpuSensors: [] // [{hwmonPath, type, hasDedicatedVram}]
   property int gpuVramCheckIndex: 0
+
+  // --------------------------------------------
+  // Network speed stats cache (7-day rolling window)
+  property string networkStatsFile: Settings.cacheDir + "network_stats.json"
+
+  FileView {
+    id: networkStatsView
+    path: root.networkStatsFile
+    printErrors: false
+
+    JsonAdapter {
+      id: networkStatsAdapter
+      property var rxPeaks: []
+      property var txPeaks: []
+    }
+
+    onLoadFailed: {
+      networkStatsAdapter.rxPeaks = [];
+      networkStatsAdapter.txPeaks = [];
+    }
+
+    onLoaded: {
+      root.pruneExpiredPeaks();
+    }
+  }
+
+  Timer {
+    id: networkStatsSaveDebounce
+    interval: 1000
+    onTriggered: networkStatsView.writeAdapter()
+  }
+
+  function pruneExpiredPeaks() {
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const cutoff = Date.now() - sevenDaysMs;
+    const rxBefore = (networkStatsAdapter.rxPeaks || []).length;
+    const txBefore = (networkStatsAdapter.txPeaks || []).length;
+
+    networkStatsAdapter.rxPeaks = (networkStatsAdapter.rxPeaks || []).filter(p => p.timestamp > cutoff);
+    networkStatsAdapter.txPeaks = (networkStatsAdapter.txPeaks || []).filter(p => p.timestamp > cutoff);
+
+    // Save if any were pruned
+    if (networkStatsAdapter.rxPeaks.length !== rxBefore || networkStatsAdapter.txPeaks.length !== txBefore) {
+      networkStatsSaveDebounce.restart();
+    }
+  }
 
   // --------------------------------------------
   Component.onCompleted: {
@@ -653,6 +767,27 @@ Singleton {
 
         root.rxSpeed = Math.round(rxDiff / timeDiff); // Speed in Bytes/s
         root.txSpeed = Math.round(txDiff / timeDiff);
+
+        // Record new peaks if higher than current max (for adaptive ratio calculation)
+        const now = Date.now();
+        if (root.rxSpeed > root.rxMaxSpeed) {
+          networkStatsAdapter.rxPeaks = [...(networkStatsAdapter.rxPeaks || []),
+                                         {
+                                           speed: root.rxSpeed,
+                                           timestamp: now
+                                         }
+              ];
+          networkStatsSaveDebounce.restart();
+        }
+        if (root.txSpeed > root.txMaxSpeed) {
+          networkStatsAdapter.txPeaks = [...(networkStatsAdapter.txPeaks || []),
+                                         {
+                                           speed: root.txSpeed,
+                                           timestamp: now
+                                         }
+              ];
+          networkStatsSaveDebounce.restart();
+        }
       }
     }
 
