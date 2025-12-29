@@ -79,8 +79,34 @@ Loader {
         id: lockSession
         locked: root.active
 
+        // Reset state when lock screen activates
+        onLockedChanged: {
+          if (locked) {
+            lockContext.resetForNewSession();
+          }
+        }
+
         WlSessionLockSurface {
+          id: lockSurface
           readonly property var now: Time.now
+
+          Timer {
+            id: fingerprintStartTimer
+            interval: 100
+            repeat: false
+            onTriggered: lockContext.startFingerprintAuth()
+          }
+
+          // Start fingerprint auth when FingerprintService becomes ready or lock screen appears
+          // Single consolidated handler to avoid race conditions
+          Connections {
+            target: FingerprintService
+            function onReadyChanged() {
+              if (FingerprintService.ready && !lockContext.pamStarted && !lockContext.unlockInProgress) {
+                fingerprintStartTimer.start();
+              }
+            }
+          }
 
           Item {
             id: batteryIndicator
@@ -121,6 +147,11 @@ Loader {
           Component.onCompleted: {
             if (screen) {
               Qt.callLater(requestCachedWallpaper);
+            }
+            // Start fingerprint auth if already ready (handles case where service detected before lock)
+            // Uses same timer to avoid race with onReadyChanged handler
+            if (FingerprintService.ready && !lockContext.pamStarted && !lockContext.unlockInProgress) {
+              fingerprintStartTimer.start();
             }
           }
 
@@ -515,6 +546,50 @@ Loader {
                   secondHandColor: Color.mPrimary
                   hoursFontSize: Style.fontSizeL
                   minutesFontSize: Style.fontSizeL
+                }
+              }
+            }
+
+            // Fingerprint status indicator (icon only)
+            Rectangle {
+              width: 50
+              height: 50
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 340 : 420) * Style.uiScaleRatio
+              radius: width / 2
+              color: Color.mSurfaceVariant
+              border.color: Qt.alpha(Color.mPrimary, 0.3)
+              border.width: 1
+              visible: lockContext.showFingerprintIndicator
+              opacity: visible ? 1.0 : 0.0
+
+              NIcon {
+                anchors.centerIn: parent
+                icon: "fingerprint"
+                pointSize: Style.fontSizeXXL
+                color: Color.mPrimary
+
+                SequentialAnimation on opacity {
+                  loops: Animation.Infinite
+                  running: parent.visible
+                  NumberAnimation {
+                    to: 0.4
+                    duration: 800
+                    easing.type: Easing.InOutQuad
+                  }
+                  NumberAnimation {
+                    to: 1.0
+                    duration: 800
+                    easing.type: Easing.InOutQuad
+                  }
+                }
+              }
+
+              Behavior on opacity {
+                NumberAnimation {
+                  duration: 300
+                  easing.type: Easing.OutCubic
                 }
               }
             }
@@ -1043,7 +1118,7 @@ Loader {
                         width: 0
                         height: 0
                         visible: false
-                        enabled: !lockContext.unlockInProgress
+                        enabled: true
                         font.pointSize: Style.fontSizeM
                         color: Color.mPrimary
                         echoMode: parent.parent.passwordVisible ? TextInput.Normal : TextInput.Password

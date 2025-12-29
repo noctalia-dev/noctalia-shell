@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Pam
 import qs.Commons
+import qs.Services.Hardware
 import qs.Services.System
 
 Scope {
@@ -16,16 +17,34 @@ Scope {
   property string infoMessage: ""
   property bool pamAvailable: typeof PamContext !== "undefined"
 
-  // Determine PAM config based on OS
-  // On NixOS: use /etc/pam.d/login
-  // Otherwise: use generated config in configDir
+  // Fingerprint authentication properties
+  readonly property bool fingerprintMode: FingerprintService.ready
+  property bool waitingForPassword: false // True when PAM needs password but none entered yet
+  property bool pamStarted: false // Track if PAM session started for this lock
+  property bool usePasswordOnly: false // True when user typed password during fingerprint scan
+  property bool abortInProgress: false // True when aborting fingerprint to switch to password
+
+  // Computed property for fingerprint indicator visibility
+  // Keep showing while typing - only hide when Enter pressed (switches to password mode)
+  readonly property bool showFingerprintIndicator: fingerprintMode && unlockInProgress && !waitingForPassword && !showFailure && !usePasswordOnly
+
+  // Determine PAM config based on OS and mode
+  // Password-only mode: always use configDir (works on both NixOS and non-NixOS)
+  // Normal mode on NixOS: use /etc/pam.d/login
+  // Normal mode otherwise: use generated config in configDir
   readonly property string pamConfigDirectory: {
+    if (usePasswordOnly) {
+      return Settings.configDir + "pam";
+    }
     if (HostService.isReady && HostService.isNixOS) {
       return "/etc/pam.d";
     }
     return Settings.configDir + "pam";
   }
   readonly property string pamConfig: {
+    if (usePasswordOnly) {
+      return "password-only.conf";
+    }
     if (HostService.isReady && HostService.isNixOS) {
       return "login";
     }
@@ -58,10 +77,77 @@ Scope {
     }
   }
 
+  // Reset state for a new lock session
+  function resetForNewSession() {
+    abortTimer.stop();
+    pamStarted = false;
+    waitingForPassword = false;
+    usePasswordOnly = false;
+    abortInProgress = false;
+    showFailure = false;
+    errorMessage = "";
+    infoMessage = "";
+    currentText = "";
+  }
+
+  // Timeout for PAM abort operation
+  Timer {
+    id: abortTimer
+    interval: 500 // 500ms timeout
+    repeat: false
+    onTriggered: {
+      if (root.abortInProgress) {
+        Logger.w("LockContext", "PAM abort timeout, forcing state reset");
+        root.abortInProgress = false;
+        root.unlockInProgress = false;
+        root.usePasswordOnly = true;
+        root.pamStarted = false;
+        // Retry with password-only
+        root.tryUnlock();
+      }
+    }
+  }
+
+  // Start fingerprint authentication when lock screen becomes visible
+  // Called from LockScreen.qml when surface becomes visible
+  function startFingerprintAuth() {
+    if (!fingerprintMode) {
+      Logger.d("LockContext", "Fingerprint mode not available, skipping auto-start");
+      return;
+    }
+
+    if (pamStarted || unlockInProgress) {
+      Logger.d("LockContext", "PAM already started, skipping");
+      return;
+    }
+
+    Logger.i("LockContext", "Starting fingerprint authentication");
+    pamStarted = true;
+    tryUnlock();
+  }
+
   function tryUnlock() {
     if (!pamAvailable) {
       errorMessage = "PAM not available";
       showFailure = true;
+      return;
+    }
+
+    // If we're waiting for password input and user has typed something, respond
+    if (waitingForPassword && currentText !== "") {
+      Logger.i("LockContext", "Responding to PAM with password");
+      pam.respond(currentText);
+      waitingForPassword = false;
+      return;
+    }
+
+    // If fingerprint is scanning and user typed password, switch to password-only mode
+    if (root.unlockInProgress && currentText !== "" && !waitingForPassword && !abortInProgress) {
+      Logger.i("LockContext", "User typed password during fingerprint scan, switching to password-only mode");
+      root.abortInProgress = true;
+      abortTimer.start();
+      pam.abort();
+      // Don't continue - wait for PAM onCompleted/onError or abort timeout
       return;
     }
 
@@ -74,7 +160,7 @@ Scope {
     errorMessage = "";
     showFailure = false;
 
-    Logger.i("LockContext", "Starting PAM authentication for user:", pam.user);
+    Logger.i("LockContext", "Starting PAM authentication for user:", pam.user, "config:", pamConfig);
     pam.start();
   }
 
@@ -97,13 +183,34 @@ Scope {
       }
 
       if (this.responseRequired) {
-        Logger.i("LockContext", "Responding to PAM with password");
-        this.respond(root.currentText);
+        // In fingerprint mode with auto-start, don't respond with empty password
+        // Wait for user to type password instead
+        if (root.currentText !== "") {
+          Logger.i("LockContext", "Responding to PAM with password");
+          this.respond(root.currentText);
+        } else {
+          // No password entered yet - set flag so user can type and submit
+          Logger.i("LockContext", "Password required, waiting for user input");
+          root.waitingForPassword = true;
+        }
       }
     }
 
     onCompleted: result => {
                    Logger.i("LockContext", "PAM completed with result:", result);
+
+                   // Handle abort completion - restart with password-only
+                   if (root.abortInProgress) {
+                     Logger.i("LockContext", "PAM aborted, restarting with password-only config");
+                     abortTimer.stop();
+                     root.abortInProgress = false;
+                     root.unlockInProgress = false;
+                     root.usePasswordOnly = true;
+                     root.pamStarted = false;
+                     root.tryUnlock();
+                     return;
+                   }
+
                    if (result === PamResult.Success) {
                      Logger.i("LockContext", "Authentication successful");
                      root.unlocked();
@@ -115,13 +222,33 @@ Scope {
                      root.failed();
                    }
                    root.unlockInProgress = false;
+                   root.waitingForPassword = false;
+                   root.usePasswordOnly = false;
+                   // Reset pamStarted so fingerprint can be retried on next visibility
+                   root.pamStarted = false;
                  }
 
     onError: {
       Logger.i("LockContext", "PAM error:", error, "message:", message);
+
+      // Handle abort completion - restart with password-only
+      if (root.abortInProgress) {
+        Logger.i("LockContext", "PAM abort error, restarting with password-only config");
+        abortTimer.stop();
+        root.abortInProgress = false;
+        root.unlockInProgress = false;
+        root.usePasswordOnly = true;
+        root.pamStarted = false;
+        root.tryUnlock();
+        return;
+      }
+
       errorMessage = message || "Authentication error";
       showFailure = true;
       root.unlockInProgress = false;
+      root.waitingForPassword = false;
+      root.usePasswordOnly = false;
+      root.pamStarted = false;
       root.failed();
     }
   }

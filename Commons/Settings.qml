@@ -920,14 +920,25 @@ Singleton {
   }
 
   // -----------------------------------------------------
-  // Ensure PAM password.conf exists in configDir (create once, never override)
+  // Ensure PAM configs exist in configDir (create once, never override)
   function ensurePamConfig() {
+    // Always ensure password-only.conf exists (needed for both NixOS and non-NixOS)
+    ensurePasswordOnlyConfig();
+
+    // Check if we need to create password.conf (skip on NixOS)
     var pamConfigDir = configDir + "pam";
     var pamConfigFile = pamConfigDir + "/password.conf";
-
-    // Check if file already exists
     fileCheckPamProcess.command = ["sh", "-c", `grep -q '^ID=nixos' /etc/os-release || test -f ${pamConfigFile}`];
     fileCheckPamProcess.running = true;
+  }
+
+  function ensurePasswordOnlyConfig() {
+    var pamConfigDir = configDir + "pam";
+    var passwordOnlyFile = pamConfigDir + "/password-only.conf";
+
+    // Check if password-only.conf exists
+    fileCheckPasswordOnlyProcess.command = ["test", "-f", passwordOnlyFile];
+    fileCheckPasswordOnlyProcess.running = true;
   }
 
   function doCreatePamConfig() {
@@ -936,35 +947,66 @@ Singleton {
     var pamConfigDirEsc = pamConfigDir.replace(/'/g, "'\\''");
     var pamConfigFileEsc = pamConfigFile.replace(/'/g, "'\\''");
 
-    // Ensure directory exists
-    Quickshell.execDetached(["mkdir", "-p", pamConfigDir]);
+    // Ensure directory exists with restricted permissions
+    Quickshell.execDetached(["sh", "-c", `mkdir -p '${pamConfigDirEsc}' && chmod 700 '${pamConfigDirEsc}'`]);
 
     // Generate the PAM config file content
-    var configContent = "#auth sufficient pam_fprintd.so max-tries=1\n";
-    configContent += "# only uncomment this if you have a fingerprint reader\n";
+    // Fingerprint auth is enabled by default - pam_fprintd.so will be skipped if no device/enrollment
+    var configContent = "auth sufficient pam_fprintd.so max-tries=1\n";
     configContent += "auth required pam_unix.so\n";
 
-    // Write the config file using heredoc to avoid escaping issues
+    // Write the config file using heredoc and set secure permissions
     var script = `cat > '${pamConfigFileEsc}' << 'EOF'\n`;
     script += configContent;
-    script += "EOF\n";
+    script += `EOF\nchmod 600 '${pamConfigFileEsc}'`;
     Quickshell.execDetached(["sh", "-c", script]);
 
     Logger.d("Settings", "PAM config file created at:", pamConfigFile);
   }
 
-  // Process for checking if PAM config file exists
+  function doCreatePasswordOnlyConfig() {
+    var pamConfigDir = configDir + "pam";
+    var passwordOnlyFile = pamConfigDir + "/password-only.conf";
+    var pamConfigDirEsc = pamConfigDir.replace(/'/g, "'\\''");
+    var passwordOnlyFileEsc = passwordOnlyFile.replace(/'/g, "'\\''");
+
+    // Ensure directory exists with restricted permissions
+    Quickshell.execDetached(["sh", "-c", `mkdir -p '${pamConfigDirEsc}' && chmod 700 '${pamConfigDirEsc}'`]);
+
+    // Password-only config (for bypassing fingerprint when user types password)
+    var passwordOnlyContent = "auth required pam_unix.so\n";
+    var passwordOnlyScript = `cat > '${passwordOnlyFileEsc}' << 'EOF'\n`;
+    passwordOnlyScript += passwordOnlyContent;
+    passwordOnlyScript += `EOF\nchmod 600 '${passwordOnlyFileEsc}'`;
+    Quickshell.execDetached(["sh", "-c", passwordOnlyScript]);
+
+    Logger.d("Settings", "Password-only PAM config file created at:", passwordOnlyFile);
+  }
+
+  // Process for checking if PAM password.conf exists
   Process {
     id: fileCheckPamProcess
     running: false
 
     onExited: function (exitCode) {
       if (exitCode === 0) {
-        // File exists, skip creation
         Logger.d("Settings", "On NixOS or PAM config file already exists, skipping creation");
       } else {
-        // File doesn't exist, create it
         doCreatePamConfig();
+      }
+    }
+  }
+
+  // Process for checking if password-only.conf exists
+  Process {
+    id: fileCheckPasswordOnlyProcess
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        Logger.d("Settings", "Password-only PAM config already exists, skipping creation");
+      } else {
+        doCreatePasswordOnlyConfig();
       }
     }
   }
