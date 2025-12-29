@@ -360,12 +360,13 @@ Item {
           }
         }
 
-        // Sidebar toggle button
+        // Sidebar content
         ColumnLayout {
           anchors.fill: parent
           spacing: Style.marginS
           anchors.margins: sidebar.panelVeryTransparent ? Style.marginM : 0
 
+          // Sidebar toggle button
           Item {
             id: toggleContainer
             Layout.fillWidth: true
@@ -395,7 +396,7 @@ Item {
 
                 NIcon {
                   icon: root.sidebarExpanded ? "layout-sidebar-right-expand" : "layout-sidebar-left-expand"
-                  color: Color.mOnSurface
+                  color: toggleMouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
                   pointSize: Style.fontSizeXL
                 }
               }
@@ -542,6 +543,7 @@ Item {
             }
           }
         }
+
         // Overlay gradient for sidebar scrolling
         Rectangle {
           anchors.fill: parent
@@ -549,6 +551,15 @@ Item {
           radius: Style.radiusM
           color: Color.transparent
           visible: sidebarList.verticalScrollBarActive
+          opacity: (sidebarList.contentY + sidebarList.height >= sidebarList.contentHeight - 10) ? 0 : 1
+
+          Behavior on opacity {
+            NumberAnimation {
+              duration: Style.animationFast
+              easing.type: Easing.InOutQuad
+            }
+          }
+
           gradient: Gradient {
             GradientStop {
               position: 0.0
@@ -620,6 +631,8 @@ Item {
           Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.leftMargin: -Style.marginM
+            Layout.rightMargin: -Style.marginL
             color: Color.transparent
 
             Repeater {
@@ -667,6 +680,20 @@ Item {
               anchors.fill: parent
               color: Color.transparent
               visible: root.activeScrollView && root.activeScrollView.ScrollBar.vertical && root.activeScrollView.ScrollBar.vertical.size < 1.0
+              opacity: {
+                if (!root.activeScrollView)
+                  return 1;
+                const scrollBar = root.activeScrollView.ScrollBar.vertical;
+                return (scrollBar.position + scrollBar.size >= 0.99) ? 0 : 1;
+              }
+
+              Behavior on opacity {
+                NumberAnimation {
+                  duration: Style.animationFast
+                  easing.type: Easing.InOutQuad
+                }
+              }
+
               gradient: Gradient {
                 GradientStop {
                   position: 0.0

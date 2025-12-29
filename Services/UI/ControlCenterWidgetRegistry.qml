@@ -24,7 +24,6 @@ Singleton {
 
   property var widgetMetadata: ({
                                   "CustomButton": {
-                                    "allowUserSettings": true,
                                     "icon": "heart",
                                     "onClicked": "",
                                     "onRightClicked": "",
@@ -89,7 +88,7 @@ Singleton {
 
   // Helper function to check if widget has user settings
   function widgetHasUserSettings(id) {
-    return (widgetMetadata[id] !== undefined) && (widgetMetadata[id].allowUserSettings === true);
+    return widgetMetadata[id] !== undefined;
   }
 
   // ------------------------------

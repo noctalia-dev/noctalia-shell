@@ -55,6 +55,7 @@ Singleton {
   function init() {
     Logger.i("ImageCache", "Service started");
     createDirectories();
+    cleanupOldCache();
     checkMagickProcess.running = true;
   }
 
@@ -65,8 +66,16 @@ Singleton {
     Quickshell.execDetached(["mkdir", "-p", contributorsDir]);
   }
 
+  function cleanupOldCache() {
+    const dirs = [wpThumbDir, wpLargeDir, notificationsDir, contributorsDir];
+    dirs.forEach(function (dir) {
+      Quickshell.execDetached(["find", dir, "-type", "f", "-mtime", "+30", "-delete"]);
+    });
+    Logger.d("ImageCache", "Cleanup triggered for files older than 30 days");
+  }
+
   // -------------------------------------------------
-  // Public API: Get Thumbnail (256x256)
+  // Public API: Get Thumbnail (384x384)
   // -------------------------------------------------
   function getThumbnail(sourcePath, callback) {
     if (!sourcePath || sourcePath === "") {
@@ -82,7 +91,7 @@ Singleton {
         if (imageMagickAvailable) {
           startThumbnailProcessing(sourcePath, cachedPath, cacheKey);
         } else {
-          queueFallbackProcessing(sourcePath, cachedPath, cacheKey, 256);
+          queueFallbackProcessing(sourcePath, cachedPath, cacheKey, 384);
         }
       });
     });
@@ -183,7 +192,7 @@ Singleton {
   // Cache Key Generation
   // -------------------------------------------------
   function generateThumbnailKey(sourcePath, mtime) {
-    const keyString = sourcePath + "@256x256@" + (mtime || "unknown");
+    const keyString = sourcePath + "@384x384@" + (mtime || "unknown");
     return Checksum.sha256(keyString);
   }
 
@@ -260,7 +269,7 @@ Singleton {
     const srcEsc = sourcePath.replace(/'/g, "'\\''");
     const dstEsc = outputPath.replace(/'/g, "'\\''");
 
-    const command = `magick -define jpeg:size=512x512 '${srcEsc}' -auto-orient -thumbnail '256x256^' -gravity center -extent 256x256 -quality 85 '${dstEsc}'`;
+    const command = `magick -define jpeg:size=768x768 '${srcEsc}' -auto-orient -thumbnail '384x384^' -gravity center -extent 384x384 -quality 85 '${dstEsc}'`;
 
     runProcess(command, cacheKey, outputPath, sourcePath);
   }

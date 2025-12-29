@@ -189,7 +189,7 @@ NBox {
                 visible: modelData.connected
                 icon: "info-circle"
                 tooltipText: I18n.tr("bluetooth.panel.info")
-                baseSize: Style.baseWidgetSize * 0.8
+                baseSize: Style.baseWidgetSize
                 onClicked: {
                   const key = BluetoothService.deviceKey(modelData);
                   root.expandedDeviceKey = (root.expandedDeviceKey === key) ? "" : key;
@@ -201,7 +201,7 @@ NBox {
                 visible: (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
                 icon: "trash"
                 tooltipText: I18n.tr("bluetooth.panel.unpair")
-                baseSize: Style.baseWidgetSize * 0.8
+                baseSize: Style.baseWidgetSize
                 onClicked: BluetoothService.unpairDevice(modelData)
               }
 

@@ -60,7 +60,7 @@ Item {
         Timer {
           id: screenDetectorDebounce
           running: false
-          interval: 20
+          interval: 40
           onTriggered: {
             Logger.d("CurrentScreenDetector", "Screen debounced to:", root.detectedScreen?.name || "null");
 
@@ -77,8 +77,15 @@ Item {
               }
 
               Logger.d("CurrentScreenDetector", "Executing callback on screen:", root.detectedScreen.name);
-              root.pendingCallback(root.detectedScreen);
+              // Store callback locally and clear pendingCallback first to prevent deadlock
+              // if the callback throws an error
+              var callback = root.pendingCallback;
               root.pendingCallback = null;
+              try {
+                callback(root.detectedScreen);
+              } catch (e) {
+                Logger.e("CurrentScreenDetector", "Callback failed:", e);
+              }
             }
 
             // Clean up

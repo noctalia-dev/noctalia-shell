@@ -40,6 +40,16 @@ ColumnLayout {
       isSettings: true
       defaultValue: Settings.getDefaultValue("screenRecorder.showCursor")
     }
+
+    // Copy to Clipboard
+    NToggle {
+      label: I18n.tr("settings.screen-recorder.general.copy-to-clipboard.label")
+      description: I18n.tr("settings.screen-recorder.general.copy-to-clipboard.description")
+      checked: Settings.data.screenRecorder.copyToClipboard
+      onToggled: checked => Settings.data.screenRecorder.copyToClipboard = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.copyToClipboard")
+    }
   }
 
   NDivider {

@@ -425,6 +425,10 @@
           "description": "Zeigt Arbeitsbereiche vom aktuell fokussierten Bildschirm an, statt vom Bildschirm, auf dem sich die Leiste befindet.",
           "label": "Fokussiertem Bildschirm folgen"
         },
+        "grouped-border-opacity": {
+          "description": "Lege die Deckkraft für Workspace-Container-Rahmen fest.",
+          "label": "Rahmen-Deckkraft"
+        },
         "hide-unoccupied": {
           "description": "Arbeitsbereiche ohne Fenster nicht anzeigen.",
           "label": "Unbesetzte ausblenden"
@@ -440,6 +444,10 @@
         "show-labels-only-when-occupied": {
           "description": "Arbeitsbereichsbezeichnungen nur anzeigen, wenn sie Fenster enthalten.",
           "label": "Beschriftungen nur anzeigen, wenn belegt"
+        },
+        "unfocused-icons-opacity": {
+          "description": "Transparenzgrad für nicht fokussierte App-Symbole festlegen",
+          "label": "Deckkraft unscharfer Symbole"
         }
       }
     }
@@ -565,6 +573,7 @@
     "enable-bluetooth": "Bluetooth aktivieren",
     "enable-dnd": "'Nicht stören' aktivieren",
     "enable-wifi": "WLAN aktivieren",
+    "lower-to-bottom": "Senken bis zum Anschlag / Ganz nach unten senken",
     "next": "Nächste/r/s",
     "open-calendar": "Kalender öffnen",
     "open-display-settings": "Anzeigeeinstellungen",
@@ -574,7 +583,9 @@
     "pause": "Pause",
     "play": "Spielen",
     "previous": "Vorherige",
+    "raise-to-top": "Nach oben verschieben",
     "random-wallpaper": "Zufälliges Hintergrundbild",
+    "reset": "Zurücksetzen",
     "toggle-mute": "Stummschaltung umschalten",
     "widget-settings": "Widget-Einstellungen"
   },
@@ -718,7 +729,7 @@
         "center": "Mitte (Standard)",
         "center_left": "Links mittig",
         "center_right": "Rechts mittig",
-        "follow_bar": "Folge dem Balken (Standard)",
+        "follow_bar": "Folge der Leiste (Standard)",
         "top_center": "Oben mittig",
         "top_left": "Oben links",
         "top_right": "Oben rechts"
@@ -1039,6 +1050,10 @@
     },
     "bar": {
       "appearance": {
+        "background-opacity": {
+          "description": "Lege die Hintergrundtransparenz speziell für die Leiste fest.",
+          "label": "Leisten-Hintergrundtransparenz"
+        },
         "capsule-opacity": {
           "description": "Deckkraft der Widget-Hintergründe festlegen, wenn Kapsel angezeigt wird.",
           "label": "Kapsel-Deckkraft"
@@ -1077,9 +1092,9 @@
           "description": "Zeigt eine sichtbare Umrandung um jedes Widget an.",
           "label": "Widget-Umrisse anzeigen"
         },
-        "transparent": {
-          "description": "Dies verhindert, dass die Panels an der Leiste angeheftet werden können.",
-          "label": "Transparenter Hintergrund"
+        "use-separate-opacity": {
+          "description": "Ermöglicht die Verwendung eines separaten Deckkraftwerts für den Leistenhintergrund.",
+          "label": "Separate Leisten-Deckkraft"
         }
       },
       "monitors": {
@@ -1304,10 +1319,6 @@
         "description": "Wählen Sie aus, wo das Kontrollzentrum-Panel angezeigt wird, wenn es geöffnet wird.",
         "label": "Position"
       },
-      "system-monitor-disk-path": {
-        "description": "Wählen Sie, welchen Festplatten-Mountpunkt die Systemmonitor-Karte im Kontrollzentrum überwachen soll.",
-        "label": "Systemmonitor Festplattenpfad"
-      },
       "section": {
         "description": "Konfigurieren Sie die Positionierung und das Verhalten des Kontrollzentrum-Panels.",
         "label": "Aussehen"
@@ -1374,6 +1385,10 @@
         "sectionLeft": "Links",
         "sectionRight": "Rechts"
       },
+      "system-monitor-disk-path": {
+        "description": "Wählen Sie, welchen Festplatten-Mountpunkt die Systemmonitor-Karte im Kontrollzentrum überwachen soll.",
+        "label": "Systemmonitor Festplattenpfad"
+      },
       "title": "Kontrollzentrum"
     },
     "desktop-widgets": {
@@ -1405,6 +1420,10 @@
           "label": "Minimaler Modus"
         },
         "preview": "Vorschau",
+        "rounded-corners": {
+          "description": "Verwende abgerundete Ecken für den Widget-Hintergrund.",
+          "label": "Abgerundete Ecken"
+        },
         "show-background": {
           "description": "Zeige den Hintergrundcontainer für das Uhr-Widget an.",
           "label": "Hintergrund anzeigen"
@@ -1471,6 +1490,14 @@
           "description": "Steuert das Verhalten des Widgets, wenn keine Medien abgespielt werden.",
           "label": "Ausblendmodus"
         },
+        "rounded-corners": {
+          "description": "Aktiviere abgerundete Ecken an den Widget-Kanten.",
+          "label": "Abgerundete Ecken"
+        },
+        "show-album-art": {
+          "description": "Zeige das Albumcover und die Titelinformationen (Titel und Künstler).",
+          "label": "Albumcover & Titel anzeigen"
+        },
         "show-background": {
           "description": "Zeige den Hintergrundcontainer für das Media-Player-Widget an.",
           "label": "Hintergrund anzeigen"
@@ -1479,13 +1506,13 @@
           "description": "Mediensteuerungstasten (Wiedergabe/Pause, Zurück, Weiter) im Media-Player-Widget anzeigen.",
           "label": "Tasten anzeigen"
         },
+        "show-visualizer": {
+          "description": "Audiovisualisierungs-Overlay anzeigen.",
+          "label": "Visualisierer anzeigen"
+        },
         "visualizer-type": {
           "description": "Wählen Sie einen Visualisierungstyp für den Hintergrund des Desktop-Mediaplayers.",
           "label": "Visualisierungsart"
-        },
-        "visualizer-visibility": {
-          "description": "Steuern Sie, wann der Audio-Visualizer sichtbar ist.",
-          "label": "Audio-Visualizer-Sichtbarkeit"
         }
       },
       "title": "Desktop-Widgets",
@@ -1563,8 +1590,8 @@
     "dock": {
       "appearance": {
         "background-opacity": {
-          "description": "Hintergrund-Transparenz des Docks anpassen.",
-          "label": "Hintergrund-Transparenz"
+          "description": "Hintergrundtransparenz des Docks anpassen.",
+          "label": "Hintergrundtransparenz"
         },
         "border-radius": {
           "description": "Den Radius der Dock-Umrandung anpassen.",
@@ -1974,7 +2001,7 @@
         },
         "background-opacity": {
           "description": "Transparenz der Benachrichtigungshintergründe anpassen.",
-          "label": "Hintergrund-Transparenz"
+          "label": "Hintergrundtransparenz"
         },
         "do-not-disturb": {
           "description": "Alle Benachrichtigungs-Popups deaktivieren.",
@@ -2071,7 +2098,7 @@
       },
       "background-opacity": {
         "description": "Kontrolliert die Transparenz des OSD Hintergrunds.",
-        "label": "Hintergrund-Transparenz"
+        "label": "Hintergrundtransparenz"
       },
       "description": "Bildschirm-Overlays wie Lautstärke- und Helligkeitsanzeigen konfigurieren.",
       "duration": {
@@ -2222,6 +2249,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Kopiere die Datei nach Beendigung der Aufnahme in die Zwischenablage.",
+          "label": "In die Zwischenablage kopieren"
+        },
         "output-folder": {
           "description": "Ordner, in dem Bildschirmaufnahmen gespeichert werden.",
           "label": "Ausgabe-Ordner",
@@ -2331,12 +2362,12 @@
       "custom-highlight-colors-title": {
         "label": "Benutzerdefinierte Hervorhebungsfarben"
       },
-      "disk-section": {
-        "label": "Festplattennutzung"
-      },
       "disk-path": {
         "description": "Wählen Sie, welchen Festplatten-Mountpunkt überwacht werden soll.",
         "label": "Festplattenpfad"
+      },
+      "disk-section": {
+        "label": "Festplattennutzung"
       },
       "enable-dgpu-monitoring": {
         "description": "Warnung: Dies aktiviert Ihre dedizierte GPU (NVIDIA/AMD), was die Akkulaufzeit von Laptops mit Hybridgrafik erheblich beeinträchtigen kann.",
@@ -2442,7 +2473,7 @@
         "label": "Einstellungs-Panel-Modus"
       },
       "shadows": {
-        "description": "Aktiviert Schlagschatten unter Balken und Panels.",
+        "description": "Aktiviert Schlagschatten unter Leisten und Panels.",
         "direction": {
           "description": "Wählen, aus welcher Richtung der Schatten fällt.",
           "label": "Schattenrichtung"

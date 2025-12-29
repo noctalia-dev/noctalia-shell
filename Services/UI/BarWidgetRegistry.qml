@@ -71,7 +71,6 @@ Singleton {
 
   property var widgetMetadata: ({
                                   "ActiveWindow": {
-                                    "allowUserSettings": true,
                                     "showIcon": true,
                                     "hideMode": "hidden",
                                     "scrollingMode": "hover",
@@ -80,13 +79,11 @@ Singleton {
                                     "colorizeIcons": false
                                   },
                                   "AudioVisualizer": {
-                                    "allowUserSettings": true,
                                     "width": 200,
                                     "colorName": "primary",
                                     "hideWhenIdle": false
                                   },
                                   "Battery": {
-                                    "allowUserSettings": true,
                                     "displayMode": "onhover",
                                     "warningThreshold": 30,
                                     "deviceNativePath": "",
@@ -95,23 +92,20 @@ Singleton {
                                     "hideIfNotDetected": true
                                   },
                                   "Bluetooth": {
-                                    "allowUserSettings": true,
                                     "displayMode": "onhover"
                                   },
                                   "Brightness": {
-                                    "allowUserSettings": true,
                                     "displayMode": "onhover"
                                   },
                                   "Clock": {
-                                    "allowUserSettings": true,
                                     "usePrimaryColor": true,
                                     "useCustomFont": false,
                                     "customFont": "",
                                     "formatHorizontal": "HH:mm ddd, MMM dd",
-                                    "formatVertical": "HH mm - dd MM"
+                                    "formatVertical": "HH mm - dd MM",
+                                    "tooltipFormat": "HH:mm ddd, MMM dd"
                                   },
                                   "ControlCenter": {
-                                    "allowUserSettings": true,
                                     "useDistroLogo": false,
                                     "icon": "noctalia",
                                     "customIconPath": "",
@@ -120,7 +114,6 @@ Singleton {
                                     "enableColorization": false
                                   },
                                   "CustomButton": {
-                                    "allowUserSettings": true,
                                     "icon": "heart",
                                     "showIcon": true,
                                     "hideMode": "alwaysExpanded",
@@ -148,11 +141,9 @@ Singleton {
                                     }
                                   },
                                   "KeyboardLayout": {
-                                    "allowUserSettings": true,
                                     "displayMode": "onhover"
                                   },
                                   "LockKeys": {
-                                    "allowUserSettings": true,
                                     "showCapsLock": true,
                                     "showNumLock": true,
                                     "showScrollLock": true,
@@ -161,7 +152,6 @@ Singleton {
                                     "scrollLockIcon": "letter-s"
                                   },
                                   "MediaMini": {
-                                    "allowUserSettings": true,
                                     "hideMode": "hidden",
                                     "scrollingMode": "hover",
                                     "maxWidth": 145,
@@ -174,24 +164,19 @@ Singleton {
                                     "visualizerType": "linear"
                                   },
                                   "Microphone": {
-                                    "allowUserSettings": true,
                                     "displayMode": "onhover"
                                   },
                                   "NotificationHistory": {
-                                    "allowUserSettings": true,
                                     "showUnreadBadge": true,
                                     "hideWhenZero": false
                                   },
                                   "SessionMenu": {
-                                    "allowUserSettings": true,
                                     "colorName": "error"
                                   },
                                   "Spacer": {
-                                    "allowUserSettings": true,
                                     "width": 20
                                   },
                                   "SystemMonitor": {
-                                    "allowUserSettings": true,
                                     "compactMode": true,
                                     "usePrimaryColor": false,
                                     "useMonospaceFont": true,
@@ -205,7 +190,6 @@ Singleton {
                                     "diskPath": "/"
                                   },
                                   "Taskbar": {
-                                    "allowUserSettings": true,
                                     "onlySameOutput": true,
                                     "onlyActiveWorkspaces": true,
                                     "hideMode": "hidden",
@@ -218,7 +202,6 @@ Singleton {
                                     "iconScale": 1.0
                                   },
                                   "Tray": {
-                                    "allowUserSettings": true,
                                     "blacklist": [],
                                     "colorizeIcons": false,
                                     "pinned": [],
@@ -226,15 +209,12 @@ Singleton {
                                     "hidePassive": false
                                   },
                                   "VPN": {
-                                    "allowUserSettings": true,
                                     "displayMode": "onhover"
                                   },
                                   "WiFi": {
-                                    "allowUserSettings": true,
                                     "displayMode": "onhover"
                                   },
                                   "Workspace": {
-                                    "allowUserSettings": true,
                                     "labelMode": "index",
                                     "followFocusedScreen": false,
                                     "hideUnoccupied": false,
@@ -242,10 +222,11 @@ Singleton {
                                     "showApplications": false,
                                     "showLabelsOnlyWhenOccupied": true,
                                     "colorizeIcons": false,
+                                    "unfocusedIconsOpacity": 1.0,
+                                    "groupedBorderOpacity": 1.0,
                                     "enableScrollWheel": true
                                   },
                                   "Volume": {
-                                    "allowUserSettings": true,
                                     "displayMode": "onhover"
                                   }
                                 })
@@ -360,7 +341,7 @@ Singleton {
 
   // Helper function to check if widget has user settings
   function widgetHasUserSettings(id) {
-    return (widgetMetadata[id] !== undefined) && (widgetMetadata[id].allowUserSettings === true);
+    return widgetMetadata[id] !== undefined;
   }
 
   // ------------------------------

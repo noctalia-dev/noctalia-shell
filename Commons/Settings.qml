@@ -17,6 +17,7 @@ Singleton {
   property bool reloadSettings: false
   property bool directoriesCreated: false
   property bool shouldOpenSetupWizard: false
+  property bool isFreshInstall: false
 
   /*
   Shell directories.
@@ -24,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 33
+  readonly property int settingsVersion: 35
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -58,6 +59,7 @@ Singleton {
     // default settings on every start
     if (isDebug) {
       generateDefaultSettings();
+      generateWidgetDefaultSettings();
     }
 
     // Patch-in the local default, resolved to user's home
@@ -132,6 +134,7 @@ Singleton {
       }
       if (error.toString().includes("No such file") || error === 2) {
         // File doesn't exist, create it with default values
+        root.isFreshInstall = true;
         writeAdapter();
 
         // Also write to fallback if set
@@ -188,10 +191,13 @@ Singleton {
       property string position: "top" // "top", "bottom", "left", or "right"
       property list<string> monitors: [] // holds bar visibility per monitor
       property string density: "default" // "compact", "default", "comfortable"
-      property bool transparent: false
       property bool showOutline: false
       property bool showCapsule: true
       property real capsuleOpacity: 1.0
+
+      // Bar background opacity settings
+      property real backgroundOpacity: 0.93
+      property bool useSeparateOpacity: false
 
       // Floating bar settings
       property bool floating: false
@@ -345,6 +351,7 @@ Singleton {
       property string quality: "very_high"
       property string colorRange: "limited"
       property bool showCursor: true
+      property bool copyToClipboard: false
       property string audioSource: "default_output"
       property string videoSource: "portal"
     }
@@ -592,7 +599,7 @@ Singleton {
     property JsonObject audio: JsonObject {
       property int volumeStep: 5
       property bool volumeOverdrive: false
-      property int cavaFrameRate: 30
+      property int cavaFrameRate: 60
       property string visualizerType: "linear"
       property list<string> mprisBlacklist: []
       property string preferredPlayer: ""
@@ -770,7 +777,7 @@ Singleton {
   }
 
   // -----------------------------------------------------
-  // Generate default settings at the root of the repo
+  // Generate default settings: for reference only, not used by the shell
   function generateDefaultSettings() {
     try {
       Logger.d("Settings", "Generating settings-default.json");
@@ -790,9 +797,37 @@ Singleton {
   }
 
   // -----------------------------------------------------
+  // Generate default widget settings: for reference only, not used by the shell
+  function generateWidgetDefaultSettings() {
+    try {
+      Logger.d("Settings", "Generating settings-widgets-default.json");
+
+      var output = {
+        "bar": QtObj2JS.qtObjectToPlainObject(BarWidgetRegistry.widgetMetadata),
+        "controlCenter": QtObj2JS.qtObjectToPlainObject(ControlCenterWidgetRegistry.widgetMetadata),
+        "desktop": QtObj2JS.qtObjectToPlainObject(DesktopWidgetRegistry.widgetMetadata)
+      };
+      var jsonData = JSON.stringify(output, null, 2);
+
+      var defaultPath = Quickshell.shellDir + "/Assets/settings-widgets-default.json";
+
+      var base64Data = Qt.btoa(jsonData);
+      Quickshell.execDetached(["sh", "-c", `echo "${base64Data}" | base64 -d > "${defaultPath}"`]);
+    } catch (error) {
+      Logger.e("Settings", "Failed to generate widget default settings file: " + error);
+    }
+  }
+
+  // -----------------------------------------------------
   // Run versioned migrations using MigrationRegistry
   // rawJson is the parsed JSON file content (before adapter filtering)
   function runVersionedMigrations(rawJson) {
+    // Skip migrations on fresh installs (no prior settings file)
+    if (!rawJson || root.isFreshInstall) {
+      Logger.i("Settings", "Fresh install detected, skipping migrations");
+      return;
+    }
+
     const currentVersion = adapter.settingsVersion;
     const migrations = MigrationRegistry.migrations;
 
@@ -873,8 +908,7 @@ Singleton {
         var widget = adapter.bar.widgets[sectionName][i];
 
         // Check if widget registry supports user settings, if it does not, then there is nothing to do
-        const reg = BarWidgetRegistry.widgetMetadata[widget.id];
-        if ((reg === undefined) || (reg.allowUserSettings === undefined) || !reg.allowUserSettings) {
+        if (BarWidgetRegistry.widgetMetadata[widget.id] === undefined) {
           continue;
         }
 

@@ -425,6 +425,10 @@
           "description": "Mostrar espacios de trabajo de la pantalla actualmente enfocada, en lugar de la pantalla donde se encuentra la barra.",
           "label": "Seguir Pantalla Enfocada"
         },
+        "grouped-border-opacity": {
+          "description": "Establecer el nivel de opacidad para los bordes del contenedor del espacio de trabajo.",
+          "label": "Opacidad del borde"
+        },
         "hide-unoccupied": {
           "description": "No mostrar espacios de trabajo sin ventanas.",
           "label": "Ocultar desocupados"
@@ -440,6 +444,10 @@
         "show-labels-only-when-occupied": {
           "description": "Mostrar solo las etiquetas del espacio de trabajo cuando contengan ventanas.",
           "label": "Mostrar etiquetas solo cuando esté ocupado."
+        },
+        "unfocused-icons-opacity": {
+          "description": "Establecer el nivel de opacidad para los iconos de aplicaciones no enfocadas.",
+          "label": "Opacidad de iconos desenfocados"
         }
       }
     }
@@ -565,6 +573,7 @@
     "enable-bluetooth": "Activar Bluetooth",
     "enable-dnd": "Activar No molestar",
     "enable-wifi": "Activar Wi-Fi",
+    "lower-to-bottom": "Bajar hasta el fondo",
     "next": "Siguiente",
     "open-calendar": "Abrir calendario",
     "open-display-settings": "Configuración de pantalla",
@@ -574,7 +583,9 @@
     "pause": "Pausa",
     "play": "Reproducir",
     "previous": "Anterior",
+    "raise-to-top": "Subir al principio",
     "random-wallpaper": "Fondo de pantalla aleatorio",
+    "reset": "Restablecer",
     "toggle-mute": "Activar/desactivar silencio",
     "widget-settings": "Configuración del widget"
   },
@@ -1039,6 +1050,10 @@
     },
     "bar": {
       "appearance": {
+        "background-opacity": {
+          "description": "Establece la opacidad del fondo específicamente para la barra.",
+          "label": "Opacidad del fondo de la barra"
+        },
         "capsule-opacity": {
           "description": "Establecer el nivel de opacidad para los fondos de los widgets cuando se muestra la cápsula.",
           "label": "Opacidad de la cápsula"
@@ -1077,9 +1092,9 @@
           "description": "Muestra un borde visible alrededor de cada widget.",
           "label": "Mostrar contornos de widgets"
         },
-        "transparent": {
-          "description": "Esto evitará que los paneles se adjunten a la barra.",
-          "label": "Fondo transparente"
+        "use-separate-opacity": {
+          "description": "Permitir usar un valor de opacidad separado para el fondo de la barra.",
+          "label": "Usar opacidad de barra separada"
         }
       },
       "monitors": {
@@ -1304,10 +1319,6 @@
         "description": "Elige dónde aparece el panel del Centro de control cuando se abre.",
         "label": "Posición"
       },
-      "system-monitor-disk-path": {
-        "description": "Selecciona qué punto de montaje de disco debe monitorear la tarjeta del monitor del sistema en el centro de control.",
-        "label": "Ruta del disco del monitor del sistema"
-      },
       "section": {
         "description": "Configurar el posicionamiento y el comportamiento del panel del Centro de control.",
         "label": "Apariencia"
@@ -1374,6 +1385,10 @@
         "sectionLeft": "Izquierda",
         "sectionRight": "Derecha"
       },
+      "system-monitor-disk-path": {
+        "description": "Selecciona qué punto de montaje de disco debe monitorear la tarjeta del monitor del sistema en el centro de control.",
+        "label": "Ruta del disco del monitor del sistema"
+      },
       "title": "Centro de control"
     },
     "desktop-widgets": {
@@ -1405,6 +1420,10 @@
           "label": "Modo minimalista"
         },
         "preview": "Vista previa",
+        "rounded-corners": {
+          "description": "Usa esquinas redondeadas para el fondo del widget.",
+          "label": "Esquinas redondeadas"
+        },
         "show-background": {
           "description": "Mostrar el contenedor de fondo para el widget de reloj.",
           "label": "Mostrar fondo"
@@ -1471,6 +1490,14 @@
           "description": "Controla el comportamiento del widget cuando no se está reproduciendo ningún medio.",
           "label": "Modo de ocultación"
         },
+        "rounded-corners": {
+          "description": "Habilitar esquinas redondeadas en los bordes del widget.",
+          "label": "Esquinas redondeadas"
+        },
+        "show-album-art": {
+          "description": "Mostrar la carátula del álbum y la información de las pistas (título y artista).",
+          "label": "Mostrar la carátula y el título del álbum"
+        },
         "show-background": {
           "description": "Mostrar el contenedor de fondo para el widget del reproductor multimedia.",
           "label": "Mostrar fondo"
@@ -1479,13 +1506,13 @@
           "description": "Mostrar botones de control de medios (reproducir/pausar, anterior, siguiente) en el widget del reproductor multimedia.",
           "label": "Mostrar botones"
         },
+        "show-visualizer": {
+          "description": "Mostrar la superposición del visualizador de audio.",
+          "label": "Mostrar visualizador"
+        },
         "visualizer-type": {
           "description": "Elige un tipo de visualización para el fondo del reproductor multimedia de escritorio.",
           "label": "Tipo de visualización"
-        },
-        "visualizer-visibility": {
-          "description": "Controla cuándo el visualizador de audio es visible.",
-          "label": "Visibilidad del visualizador de audio"
         }
       },
       "title": "Widgets de escritorio",
@@ -2222,6 +2249,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Copiar el archivo al portapapeles después de que termine la grabación.",
+          "label": "Copiar al portapapeles"
+        },
         "output-folder": {
           "description": "Carpeta donde se guardarán las grabaciones de pantalla.",
           "label": "Carpeta de salida",
@@ -2331,12 +2362,12 @@
       "custom-highlight-colors-title": {
         "label": "Colores de resaltado personalizados"
       },
-      "disk-section": {
-        "label": "Uso de disco"
-      },
       "disk-path": {
         "description": "Selecciona qué punto de montaje de disco monitorear.",
         "label": "Ruta del disco"
+      },
+      "disk-section": {
+        "label": "Uso de disco"
       },
       "enable-dgpu-monitoring": {
         "description": "Advertencia: Esto activará tu GPU dedicada (NVIDIA/AMD), lo que podría afectar significativamente la duración de la batería en portátiles con gráficos híbridos.",

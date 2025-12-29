@@ -425,6 +425,10 @@
           "description": "Display workspaces from the currently focused screen, rather than the screen where the bar is located.",
           "label": "Follow focused screen"
         },
+        "grouped-border-opacity": {
+          "description": "Set the opacity level for workspace container borders",
+          "label": "Border opacity"
+        },
         "hide-unoccupied": {
           "description": "Don't display workspaces without windows.",
           "label": "Hide unoccupied"
@@ -440,6 +444,10 @@
         "show-labels-only-when-occupied": {
           "description": "Only show workspace labels when they contain windows.",
           "label": "Show labels only when occupied"
+        },
+        "unfocused-icons-opacity": {
+          "description": "Set the opacity level for unfocused app icons",
+          "label": "Unfocused icons opacity"
         }
       }
     }
@@ -565,6 +573,7 @@
     "enable-bluetooth": "Enable Bluetooth",
     "enable-dnd": "Enable Do Not Disturb",
     "enable-wifi": "Enable Wi-Fi",
+    "lower-to-bottom": "Lower to bottom",
     "next": "Next",
     "open-calendar": "Open calendar",
     "open-display-settings": "Display settings",
@@ -574,7 +583,9 @@
     "pause": "Pause",
     "play": "Play",
     "previous": "Previous",
+    "raise-to-top": "Raise to top",
     "random-wallpaper": "Random wallpaper",
+    "reset": "Reset",
     "toggle-mute": "Toggle mute",
     "widget-settings": "Widget settings"
   },
@@ -1039,6 +1050,10 @@
     },
     "bar": {
       "appearance": {
+        "background-opacity": {
+          "description": "Set the background opacity specifically for the bar.",
+          "label": "Bar background opacity"
+        },
         "capsule-opacity": {
           "description": "Set the opacity level for widget backgrounds when capsule is shown.",
           "label": "Capsule opacity"
@@ -1077,9 +1092,9 @@
           "description": "Displays a visible border around every widget.",
           "label": "Show widget outlines"
         },
-        "transparent": {
-          "description": "This will prevent the panels from attaching to the bar.",
-          "label": "Transparent background"
+        "use-separate-opacity": {
+          "description": "Enable to use a separate opacity value for the bar background.",
+          "label": "Use separate bar opacity"
         }
       },
       "monitors": {
@@ -1304,10 +1319,6 @@
         "description": "Choose where the control center panel appears when opened.",
         "label": "Position"
       },
-      "system-monitor-disk-path": {
-        "description": "Select which disk mount point the system monitor card in the control center should monitor.",
-        "label": "System monitor disk path"
-      },
       "section": {
         "description": "Configure the control center panel positioning and behavior.",
         "label": "Appearance"
@@ -1374,6 +1385,10 @@
         "sectionLeft": "Left",
         "sectionRight": "Right"
       },
+      "system-monitor-disk-path": {
+        "description": "Select which disk mount point the system monitor card in the control center should monitor.",
+        "label": "System monitor disk path"
+      },
       "title": "Control Center"
     },
     "desktop-widgets": {
@@ -1405,6 +1420,10 @@
           "label": "Minimal mode"
         },
         "preview": "Preview",
+        "rounded-corners": {
+          "description": "Use rounded corners for the widget background.",
+          "label": "Rounded corners"
+        },
         "show-background": {
           "description": "Show the background container for the clock widget.",
           "label": "Show background"
@@ -1471,21 +1490,29 @@
           "description": "Controls how the widget behaves when no media is playing.",
           "label": "Hiding mode"
         },
+        "rounded-corners": {
+          "description": "Enable rounded corners on the widget edges.",
+          "label": "Rounded corners"
+        },
+        "show-album-art": {
+          "description": "Show the album artwork and track information (title and artist).",
+          "label": "Show album art & title"
+        },
         "show-background": {
-          "description": "Show the background container for the media player widget.",
+          "description": "Show the background container.",
           "label": "Show background"
         },
         "show-buttons": {
-          "description": "Show media control buttons (play/pause, previous, next) on the media player widget.",
+          "description": "Show media control buttons (play/pause, previous, next).",
           "label": "Show buttons"
         },
-        "visualizer-type": {
-          "description": "Choose a visualization type for the desktop media player background.",
-          "label": "Visualization type"
+        "show-visualizer": {
+          "description": "Show the audio visualizer overlay.",
+          "label": "Show visualizer"
         },
-        "visualizer-visibility": {
-          "description": "Control when the audio visualizer is visible.",
-          "label": "Audio visualizer visibility"
+        "visualizer-type": {
+          "description": "Choose a visualization type.",
+          "label": "Visualization type"
         }
       },
       "title": "Desktop Widgets",
@@ -2222,6 +2249,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Copy the file to clipboard after recording finishes.",
+          "label": "Copy to clipboard"
+        },
         "output-folder": {
           "description": "Folder where screen recordings will be saved.",
           "label": "Output folder",
@@ -2331,12 +2362,12 @@
       "custom-highlight-colors-title": {
         "label": "Custom highlight colors"
       },
-      "disk-section": {
-        "label": "Disk usage"
-      },
       "disk-path": {
         "description": "Select which disk mount point to monitor.",
         "label": "Disk path"
+      },
+      "disk-section": {
+        "label": "Disk usage"
       },
       "enable-dgpu-monitoring": {
         "description": "Warning: This will wake up your discrete GPU (NVIDIA/AMD), which may significantly impact battery life on laptops with hybrid graphics.",

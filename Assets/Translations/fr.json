@@ -425,6 +425,10 @@
           "description": "Afficher les espaces de travail de l'écran actuellement ciblé, plutôt que de l'écran où se trouve la barre.",
           "label": "Suivre l'Écran Ciblé"
         },
+        "grouped-border-opacity": {
+          "description": "Définir le niveau d'opacité des bordures des conteneurs d'espace de travail.",
+          "label": "Opacité de la bordure"
+        },
         "hide-unoccupied": {
           "description": "Ne pas afficher les espaces de travail sans fenêtres.",
           "label": "Masquer les inoccupés"
@@ -440,6 +444,10 @@
         "show-labels-only-when-occupied": {
           "description": "Afficher uniquement les étiquettes d'espace de travail lorsqu'elles contiennent des fenêtres.",
           "label": "Afficher les étiquettes uniquement lorsque le champ est occupé."
+        },
+        "unfocused-icons-opacity": {
+          "description": "Définir le niveau d'opacité des icônes d'applications non focalisées.",
+          "label": "Opacité des icônes non ciblées"
         }
       }
     }
@@ -565,6 +573,7 @@
     "enable-bluetooth": "Activer le Bluetooth",
     "enable-dnd": "Activer le mode Ne pas déranger",
     "enable-wifi": "Activer le Wi-Fi",
+    "lower-to-bottom": "Abaisser au plus bas / Descendre au plus bas",
     "next": "Suivant",
     "open-calendar": "Ouvrir le calendrier",
     "open-display-settings": "Paramètres d'affichage",
@@ -574,7 +583,9 @@
     "pause": "Pause",
     "play": "Jouer",
     "previous": "Précédent",
+    "raise-to-top": "Remonter en haut",
     "random-wallpaper": "Fond d'écran aléatoire",
+    "reset": "Réinitialiser",
     "toggle-mute": "Activer/désactiver le mode muet",
     "widget-settings": "Paramètres du widget"
   },
@@ -1039,6 +1050,10 @@
     },
     "bar": {
       "appearance": {
+        "background-opacity": {
+          "description": "Définir l'opacité de l'arrière-plan spécifiquement pour la barre.",
+          "label": "Opacité de l'arrière-plan de la barre"
+        },
         "capsule-opacity": {
           "description": "Définir le niveau d'opacité des arrière-plans des widgets quand la capsule est affichée.",
           "label": "Opacité de la capsule"
@@ -1077,9 +1092,9 @@
           "description": "Affiche une bordure visible autour de chaque widget.",
           "label": "Afficher les contours des widgets"
         },
-        "transparent": {
-          "description": "Cela empêchera les panneaux de se fixer à la barre.",
-          "label": "Fond transparent"
+        "use-separate-opacity": {
+          "description": "Activer l'utilisation d'une valeur d'opacité distincte pour l'arrière-plan de la barre.",
+          "label": "Utiliser l'opacité des barres séparément"
         }
       },
       "monitors": {
@@ -1304,10 +1319,6 @@
         "description": "Choisissez où le panneau du Centre de contrôle apparaît lorsqu'il est ouvert.",
         "label": "Position"
       },
-      "system-monitor-disk-path": {
-        "description": "Sélectionnez le point de montage du disque que la carte du moniteur système dans le centre de contrôle doit surveiller.",
-        "label": "Chemin du disque du moniteur système"
-      },
       "section": {
         "description": "Configurer le positionnement et le comportement du panneau du Centre de contrôle.",
         "label": "Apparence"
@@ -1374,6 +1385,10 @@
         "sectionLeft": "Gauche",
         "sectionRight": "Droite"
       },
+      "system-monitor-disk-path": {
+        "description": "Sélectionnez le point de montage du disque que la carte du moniteur système dans le centre de contrôle doit surveiller.",
+        "label": "Chemin du disque du moniteur système"
+      },
       "title": "Centre de contrôle"
     },
     "desktop-widgets": {
@@ -1405,6 +1420,10 @@
           "label": "Mode minimaliste"
         },
         "preview": "Aperçu",
+        "rounded-corners": {
+          "description": "Utiliser des coins arrondis pour l'arrière-plan du widget.",
+          "label": "Coins arrondis."
+        },
         "show-background": {
           "description": "Afficher le conteneur d'arrière-plan pour le widget d'horloge.",
           "label": "Afficher l'arrière-plan"
@@ -1471,6 +1490,14 @@
           "description": "Contrôle le comportement du widget lorsqu'aucun média n'est en cours de lecture.",
           "label": "Mode de masquage"
         },
+        "rounded-corners": {
+          "description": "Activer les coins arrondis sur les bords du widget.",
+          "label": "Coins arrondis"
+        },
+        "show-album-art": {
+          "description": "Afficher la pochette de l'album et les informations sur les pistes (titre et artiste).",
+          "label": "Afficher la pochette et le titre de l'album"
+        },
         "show-background": {
           "description": "Afficher le conteneur d'arrière-plan pour le widget lecteur multimédia.",
           "label": "Afficher l'arrière-plan"
@@ -1479,13 +1506,13 @@
           "description": "Afficher les boutons de contrôle multimédia (lecture/pause, précédent, suivant) sur le widget lecteur multimédia.",
           "label": "Afficher les boutons"
         },
+        "show-visualizer": {
+          "description": "Afficher la superposition de l'visualiseur audio.",
+          "label": "Afficher le visualiseur"
+        },
         "visualizer-type": {
           "description": "Choisissez un type de visualisation pour l'arrière-plan du lecteur multimédia de bureau.",
           "label": "Type de visualisation"
-        },
-        "visualizer-visibility": {
-          "description": "Contrôler quand le visualiseur audio est visible.",
-          "label": "Visibilité du visualiseur audio"
         }
       },
       "title": "Widgets de bureau",
@@ -2222,6 +2249,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Copier le fichier dans le presse-papiers une fois l'enregistrement terminé.",
+          "label": "Copier dans le presse-papiers"
+        },
         "output-folder": {
           "description": "Dossier où les enregistrements d'écran seront sauvegardés.",
           "label": "Dossier de sortie",
@@ -2331,12 +2362,12 @@
       "custom-highlight-colors-title": {
         "label": "Couleurs de surbrillance personnalisées"
       },
-      "disk-section": {
-        "label": "Utilisation disque"
-      },
       "disk-path": {
         "description": "Sélectionnez le point de montage du disque à surveiller.",
         "label": "Chemin du disque"
+      },
+      "disk-section": {
+        "label": "Utilisation disque"
       },
       "enable-dgpu-monitoring": {
         "description": "Attention : Ceci va activer votre GPU dédié (NVIDIA/AMD), ce qui peut avoir un impact significatif sur l'autonomie de la batterie des ordinateurs portables dotés de cartes graphiques hybrides.",

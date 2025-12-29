@@ -197,7 +197,24 @@ Item {
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
-      //mask: Region {}
+      // Make shadow area click-through, only toast content is clickable
+      mask: Region {
+        x: 0
+        y: 0
+        width: panel.width
+        height: panel.height
+        intersection: Intersection.Xor
+
+        Region {
+          // The clickable content area is inset by shadowPadding from all edges
+          x: panel.shadowPadding
+          y: panel.shadowPadding
+          width: Math.max(0, panel.width - panel.shadowPadding * 2)
+          height: Math.max(0, panel.height - panel.shadowPadding * 2)
+          intersection: Intersection.Subtract
+        }
+      }
+
       function showToast(message, description, icon, type, duration) {
         toastItem.show(message, description, icon, type, duration);
       }

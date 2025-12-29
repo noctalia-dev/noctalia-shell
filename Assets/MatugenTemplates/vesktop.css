@@ -174,11 +174,23 @@ body {
   color: var(--text-4) !important;
 }
 
+/* Make timestamps more readable by overriding inline styles */
+[class*="timestamp"],
+[class*="timestamp"] time {
+  color: var(--text-4) !important;
+}
+
 .postTitleText_faa96b {
-  color: var(--text-3) !important;
+  color: var(--text-2) !important;
 }
 
 .postTitleText_faa96b .highlight {
+  color: var(--text-2) !important;
+}
+
+/* Make thread titles more readable by overriding inline styles */
+[class*="headerText"] [class*="postTitleText"],
+[class*="headerText"] h3[class*="postTitleText"] {
   color: var(--text-2) !important;
 }
 
@@ -190,4 +202,18 @@ body {
 .messageContent_c19a55 .highlight,
 .messageContent_faa96b .highlight {
   color: var(--text-2) !important;
+}
+
+/* Make message content more readable by overriding inline styles */
+[class*="messageContent"] {
+  color: var(--text-3) !important;
+}
+
+[class*="messageContent"] .highlight {
+  color: var(--text-2) !important;
+}
+
+/* Make slowmode/cooldown text more readable by overriding inline styles */
+[class*="cooldownText"] {
+  color: var(--text-4) !important;
 }

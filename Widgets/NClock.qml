@@ -53,6 +53,9 @@ Item {
   property real hoursFontSize: Style.fontSizeXS
   property real minutesFontSize: Style.fontSizeXXS
 
+  // Scale ratio for canvas line widths (used by desktop widget scaling)
+  property real scaleRatio: Style.uiScaleRatio
+
   height: Math.round((Style.fontSizeXXXL * 1.9) / 2 * Style.uiScaleRatio) * 2
   width: root.height
 
@@ -98,6 +101,11 @@ Item {
           return root.minutesFontSize;
         });
       }
+      if (item.hasOwnProperty("scaleRatio")) {
+        item.scaleRatio = Qt.binding(function () {
+          return root.scaleRatio;
+        });
+      }
     }
   }
 
@@ -107,6 +115,7 @@ Item {
     property color backgroundColor: Color.mPrimary
     property color clockColor: Color.mOnPrimary
     property color secondHandColor: Color.mError
+    property real scaleRatio: Style.uiScaleRatio
     anchors.fill: parent
 
     Canvas {
@@ -134,7 +143,7 @@ Item {
 
         // Hour marks
         ctx.strokeStyle = Qt.alpha(clockColor, markAlpha);
-        ctx.lineWidth = 2 * Style.uiScaleRatio;
+        ctx.lineWidth = 2 * scaleRatio;
         var scaleFactor = 0.7;
 
         for (var i = 0; i < 12; i++) {
@@ -156,7 +165,7 @@ Item {
         var hourAngle = (hours % 12 + minutes / 60) * Math.PI / 6;
         ctx.rotate(hourAngle);
         ctx.strokeStyle = clockColor;
-        ctx.lineWidth = 3 * Style.uiScaleRatio;
+        ctx.lineWidth = 3 * scaleRatio;
         ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -169,7 +178,7 @@ Item {
         var minuteAngle = (minutes + seconds / 60) * Math.PI / 30;
         ctx.rotate(minuteAngle);
         ctx.strokeStyle = clockColor;
-        ctx.lineWidth = 2 * Style.uiScaleRatio;
+        ctx.lineWidth = 2 * scaleRatio;
         ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -182,7 +191,7 @@ Item {
         var secondAngle = seconds * Math.PI / 30;
         ctx.rotate(secondAngle);
         ctx.strokeStyle = secondHandColor;
-        ctx.lineWidth = 1.6 * Style.uiScaleRatio;
+        ctx.lineWidth = 1.6 * scaleRatio;
         ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -192,7 +201,7 @@ Item {
 
         // Center dot
         ctx.beginPath();
-        ctx.arc(0, 0, 3 * Style.uiScaleRatio, 0, 2 * Math.PI);
+        ctx.arc(0, 0, 3 * scaleRatio, 0, 2 * Math.PI);
         ctx.fillStyle = clockColor;
         ctx.fill();
       }
@@ -209,6 +218,7 @@ Item {
     property color progressColor: Color.mError
     property real hoursFontSize: Style.fontSizeXS
     property real minutesFontSize: Style.fontSizeXXS
+    property real scaleRatio: Style.uiScaleRatio
 
     anchors.fill: parent
 
@@ -229,20 +239,20 @@ Item {
         var ctx = getContext("2d");
         var centerX = width / 2;
         var centerY = height / 2;
-        var radius = Math.min(width, height) / 2 - 3;
+        var radius = Math.min(width, height) / 2 - 3 * scaleRatio;
         ctx.reset();
 
         // Background circle
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2.5 * scaleRatio;
         ctx.strokeStyle = Qt.alpha(clockColor, 0.15);
         ctx.stroke();
 
         // Progress arc
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progress * 2 * Math.PI);
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2.5 * scaleRatio;
         ctx.strokeStyle = progressColor;
         ctx.lineCap = "round";
         ctx.stroke();

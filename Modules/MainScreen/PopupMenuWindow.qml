@@ -65,6 +65,7 @@ PanelWindow {
     id: dynamicMenu
     visible: false
     screen: root.screen
+    minWidth: 180
 
     onTriggered: (action, item) => {
                    if (root.dynamicMenuCallback) {

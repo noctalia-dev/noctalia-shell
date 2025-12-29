@@ -35,6 +35,7 @@ Variants {
     required property ShellScreen modelData
 
     // Reactive property for widgets on this specific screen
+    // Returns a fresh array whenever Settings changes
     property var screenWidgets: {
       if (!modelData || !modelData.name) {
         return [];
@@ -48,8 +49,8 @@ Variants {
       return [];
     }
 
-    // Only create PanelWindow if enabled AND screen has widgets
-    active: modelData && Settings.data.desktopWidgets.enabled && screenWidgets.length > 0 && !PowerProfileService.noctaliaPerformanceMode
+    // Only create PanelWindow if enabled AND (screen has widgets OR in edit mode)
+    active: modelData && Settings.data.desktopWidgets.enabled && (screenWidgets.length > 0 || DesktopWidgetRegistry.editMode) && !PowerProfileService.noctaliaPerformanceMode
 
     sourceComponent: PanelWindow {
       id: window
@@ -271,8 +272,8 @@ Variants {
             // Bind to registeredWidgets and pluginReloadCounter to re-evaluate when plugins register/unregister
             active: (modelData.id in root.registeredWidgets) && (root.pluginReloadCounter >= 0)
 
-            property var widgetData: modelData
-            property int widgetIndex: index
+            required property var modelData
+            required property int index
 
             sourceComponent: {
               // Access registeredWidgets and pluginReloadCounter to create reactive binding
@@ -285,8 +286,8 @@ Variants {
               if (item) {
                 item.screen = window.screen;
                 item.parent = widgetsContainer;
-                item.widgetData = widgetData;
-                item.widgetIndex = widgetIndex;
+                item.widgetData = modelData;
+                item.widgetIndex = index;
 
                 // Inject plugin API for plugin widgets
                 if (DesktopWidgetRegistry.isPluginWidget(modelData.id)) {

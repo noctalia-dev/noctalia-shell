@@ -246,7 +246,6 @@ NBox {
                 visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
                 icon: "info-circle"
                 tooltipText: I18n.tr("wifi.panel.info")
-                baseSize: Style.baseWidgetSize * 0.8
                 onClicked: {
                   if (root.infoSsid === modelData.ssid) {
                     root.infoSsid = "";
@@ -261,7 +260,6 @@ NBox {
                 visible: (modelData.existing || modelData.cached) && !modelData.connected && NetworkService.connectingTo !== modelData.ssid && NetworkService.forgettingNetwork !== modelData.ssid && NetworkService.disconnectingFrom !== modelData.ssid
                 icon: "trash"
                 tooltipText: I18n.tr("tooltips.forget-network")
-                baseSize: Style.baseWidgetSize * 0.8
                 onClicked: root.forgetRequested(modelData.ssid)
               }
 
@@ -518,7 +516,7 @@ NBox {
             color: Color.mSurfaceVariant
             border.color: Color.mOutline
             border.width: Style.borderS
-            radius: Style.radiusS
+            radius: Style.iRadiusXS
 
             RowLayout {
               id: passwordRow
@@ -529,7 +527,7 @@ NBox {
               Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: Style.radiusXS
+                radius: Style.iRadiusXS
                 color: Color.mSurface
                 border.color: pwdInput.activeFocus ? Color.mSecondary : Color.mOutline
                 border.width: Style.borderS
@@ -577,7 +575,7 @@ NBox {
 
               NIconButton {
                 icon: "close"
-                baseSize: Style.baseWidgetSize * 0.8
+                baseSize: Style.baseWidgetSize
                 onClicked: root.passwordCancelled()
               }
             }
@@ -625,7 +623,7 @@ NBox {
 
               NIconButton {
                 icon: "close"
-                baseSize: Style.baseWidgetSize * 0.8
+                baseSize: Style.baseWidgetSize
                 onClicked: root.forgetCancelled()
               }
             }

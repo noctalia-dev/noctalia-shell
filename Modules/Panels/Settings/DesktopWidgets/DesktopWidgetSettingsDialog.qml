@@ -199,9 +199,15 @@ Popup {
     const source = DesktopWidgetRegistry.widgetSettingsMap[widgetId];
     if (source) {
       var currentWidgetData = widgetData;
-      var widgets = Settings.data.desktopWidgets.widgets;
-      if (widgets && widgetIndex >= 0 && widgetIndex < widgets.length) {
-        currentWidgetData = widgets[widgetIndex];
+      var monitorWidgets = Settings.data.desktopWidgets.monitorWidgets || [];
+      for (var i = 0; i < monitorWidgets.length; i++) {
+        if (monitorWidgets[i].name === sectionId) {
+          var widgets = monitorWidgets[i].widgets || [];
+          if (widgetIndex >= 0 && widgetIndex < widgets.length) {
+            currentWidgetData = widgets[widgetIndex];
+          }
+          break;
+        }
       }
       var fullPath = Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/DesktopWidgets/" + source);
       settingsLoader.setSource(fullPath, {

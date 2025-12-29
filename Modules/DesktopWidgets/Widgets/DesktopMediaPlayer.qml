@@ -14,9 +14,13 @@ DraggableDesktopWidget {
 
   defaultY: 200
 
-  // Widget settings
-  readonly property string hideMode: (widgetData.hideMode !== undefined) ? widgetData.hideMode : "visible"
-  readonly property bool showButtons: (widgetData.showButtons !== undefined) ? widgetData.showButtons : true
+  // Widget settings - check widgetData exists before accessing properties
+  readonly property string hideMode: (widgetData && widgetData.hideMode !== undefined) ? widgetData.hideMode : "visible"
+  readonly property bool showButtons: (widgetData && widgetData.showButtons !== undefined) ? widgetData.showButtons : true
+  readonly property bool showAlbumArt: (widgetData && widgetData.showAlbumArt !== undefined) ? widgetData.showAlbumArt : true
+  readonly property bool showVisualizer: (widgetData && widgetData.showVisualizer !== undefined) ? widgetData.showVisualizer : true
+  readonly property string visualizerType: (widgetData && widgetData.visualizerType && widgetData.visualizerType !== "") ? widgetData.visualizerType : "linear"
+  readonly property bool roundedCorners: (widgetData && widgetData.roundedCorners !== undefined) ? widgetData.roundedCorners : true
   readonly property bool hasPlayer: MediaService.currentPlayer !== null
   readonly property bool isPlaying: MediaService.isPlaying
   readonly property bool hasActiveTrack: hasPlayer && (MediaService.trackTitle || MediaService.trackArtist)
@@ -52,88 +56,50 @@ DraggableDesktopWidget {
   readonly property bool showPrev: hasPlayer && MediaService.canGoPrevious
   readonly property bool showNext: hasPlayer && MediaService.canGoNext
   readonly property int visibleButtonCount: root.showButtons ? (1 + (showPrev ? 1 : 0) + (showNext ? 1 : 0)) : 0
-  readonly property int baseWidth: 400 * Style.uiScaleRatio
-  readonly property int buttonWidth: 32 * Style.uiScaleRatio
-  readonly property int buttonSpacing: Style.marginXS
-  readonly property int controlsWidth: visibleButtonCount * buttonWidth + (visibleButtonCount > 1 ? (visibleButtonCount - 1) * buttonSpacing : 0)
 
-  implicitWidth: baseWidth - (3 - visibleButtonCount) * (buttonWidth + buttonSpacing)
-  implicitHeight: contentLayout.implicitHeight + Style.marginM * 2
+  implicitWidth: Math.round(400 * widgetScale)
+  implicitHeight: Math.round(64 * widgetScale + Style.marginM * widgetScale * 2)
   width: implicitWidth
   height: implicitHeight
 
-  // Background container with masking (only visible when showBackground is true)
-  Item {
-    anchors.fill: parent
-    anchors.margins: Style.marginXS
-    z: 0
-    clip: true
-    visible: root.showBackground
-    layer.enabled: true
-    layer.smooth: true
-    layer.samples: 4
-    layer.effect: MultiEffect {
-      maskEnabled: true
-      maskThresholdMin: 0.95
-      maskSpreadAtMin: 0.0
-      maskSource: ShaderEffectSource {
-        sourceItem: Rectangle {
-          width: root.width - Style.marginXS * 2
-          height: root.height - Style.marginXS * 2
-          radius: Math.max(0, Style.radiusL - Style.marginXS)
-          color: "white"
-          antialiasing: true
-          smooth: true
-        }
-        smooth: true
-        mipmap: true
-      }
-    }
-  }
-
   // Visualizer visibility mode
-  readonly property string visualizerVisibility: (widgetData && widgetData.visualizerVisibility !== undefined) ? widgetData.visualizerVisibility : "always"
   readonly property bool shouldShowVisualizer: {
-    if (!(widgetData && widgetData.visualizerType) || widgetData.visualizerType === "" || widgetData.visualizerType === "none")
+    if (!root.showVisualizer)
       return false;
-    if (visualizerVisibility === "always")
-      return true;
-    if (visualizerVisibility === "with-background")
-      return root.showBackground;
-    return true; // default to always visible
+    if (root.visualizerType === "" || root.visualizerType === "none")
+      return false;
+    return true;
   }
 
   // Visualizer overlay (visibility controlled by visualizerVisibility setting)
+  // Completely disabled during scaling to avoid expensive canvas redraws
   Loader {
     anchors.fill: parent
-    anchors.margins: Style.marginXS
+    anchors.leftMargin: Math.round(Style.marginXS * widgetScale)
+    anchors.rightMargin: Math.round(Style.marginXS * widgetScale)
+    anchors.topMargin: Math.round(Style.marginXS * widgetScale)
+    anchors.bottomMargin: 0
     z: 0
     clip: true
-    active: shouldShowVisualizer
-    layer.enabled: true
+    active: shouldShowVisualizer && !root.isScaling
+    layer.enabled: root.roundedCorners
     layer.smooth: true
-    layer.samples: 4
     layer.effect: MultiEffect {
       maskEnabled: true
       maskThresholdMin: 0.95
       maskSpreadAtMin: 0.0
       maskSource: ShaderEffectSource {
         sourceItem: Rectangle {
-          width: root.width - Style.marginXS * 2
-          height: root.height - Style.marginXS * 2
-          radius: Math.max(0, Style.radiusL - Style.marginXS)
+          width: root.width - Math.round(Style.marginXS * widgetScale) * 2
+          height: root.height - Math.round(Style.marginXS * widgetScale)
+          radius: root.roundedCorners ? Math.round(Math.max(0, (Style.radiusL - Style.marginXS) * widgetScale)) : 0
           color: "white"
-          antialiasing: true
-          smooth: true
         }
-        smooth: true
-        mipmap: true
       }
     }
 
     sourceComponent: {
-      var visualizerType = (widgetData && widgetData.visualizerType) ? widgetData.visualizerType : "";
-      switch (visualizerType) {
+      switch (root.visualizerType) {
       case "linear":
         return linearComponent;
       case "mirrored":
@@ -151,7 +117,7 @@ DraggableDesktopWidget {
         anchors.fill: parent
         values: CavaService.values
         fillColor: Color.mPrimary
-        opacity: 0.6
+        opacity: 1.0
       }
     }
 
@@ -161,7 +127,7 @@ DraggableDesktopWidget {
         anchors.fill: parent
         values: CavaService.values
         fillColor: Color.mPrimary
-        opacity: 0.6
+        opacity: 1.0
       }
     }
 
@@ -171,30 +137,71 @@ DraggableDesktopWidget {
         anchors.fill: parent
         values: CavaService.values
         fillColor: Color.mPrimary
-        opacity: 0.6
+        opacity: 1.0
       }
     }
   }
 
+  // Drop shadow for text and controls readability over visualizer
+  // Disabled during scaling to avoid expensive recomputations
+  NDropShadow {
+    visible: !root.isScaling
+    anchors.fill: contentLayout
+    source: contentLayout
+    z: 1
+    autoPaddingEnabled: true
+    shadowBlur: 1.0
+    shadowOpacity: 0.9
+    shadowHorizontalOffset: 0
+    shadowVerticalOffset: 0
+  }
+
   RowLayout {
     id: contentLayout
-    anchors.fill: parent
-    anchors.margins: Style.marginM
-    spacing: Style.marginS
+    states: [
+      State {
+        when: root.showButtons
+        AnchorChanges {
+          target: contentLayout
+          anchors.horizontalCenter: undefined
+          anchors.verticalCenter: undefined
+          anchors.top: parent.top
+          anchors.bottom: parent.bottom
+          anchors.left: parent.left
+          anchors.right: parent.right
+        }
+      },
+      State {
+        when: !root.showButtons
+        AnchorChanges {
+          target: contentLayout
+          anchors.horizontalCenter: parent.horizontalCenter
+          anchors.verticalCenter: parent.verticalCenter
+          anchors.top: undefined
+          anchors.bottom: undefined
+          anchors.left: undefined
+          anchors.right: undefined
+        }
+      }
+    ]
+    anchors.margins: Math.round(Style.marginM * widgetScale)
+    spacing: Math.round(Style.marginS * widgetScale)
     z: 2
 
     Item {
-      Layout.preferredWidth: 64 * Style.uiScaleRatio
-      Layout.preferredHeight: 64 * Style.uiScaleRatio
+      visible: root.showAlbumArt
+      Layout.preferredWidth: Math.round(48 * widgetScale)
+      Layout.preferredHeight: Math.round(48 * widgetScale)
       Layout.alignment: Qt.AlignVCenter
 
       NImageRounded {
         visible: hasPlayer
         anchors.fill: parent
-        radius: width / 2
+        radius: Math.round(Style.radiusM * widgetScale)
         imagePath: MediaService.trackArtUrl
+        imageFillMode: Image.PreserveAspectCrop
         fallbackIcon: isPlaying ? "media-pause" : "media-play"
-        fallbackIconSize: 20 * Style.uiScaleRatio
+        fallbackIconSize: Math.round(20 * widgetScale)
         borderWidth: 0
       }
 
@@ -202,19 +209,21 @@ DraggableDesktopWidget {
         visible: !hasPlayer
         anchors.centerIn: parent
         icon: "disc"
-        pointSize: 24
+        pointSize: Math.round(24 * widgetScale)
         color: Color.mOnSurfaceVariant
       }
     }
 
     ColumnLayout {
+      visible: root.showAlbumArt
       Layout.fillWidth: true
+      Layout.alignment: root.showButtons ? Qt.AlignVCenter : Qt.AlignCenter
       spacing: 0
 
       NText {
         Layout.fillWidth: true
         text: hasPlayer ? (MediaService.trackTitle || "Unknown Track") : "No media playing"
-        pointSize: Style.fontSizeS
+        pointSize: Math.round(Style.fontSizeS * widgetScale)
         font.weight: Style.fontWeightSemiBold
         color: Color.mOnSurface
         elide: Text.ElideRight
@@ -225,7 +234,7 @@ DraggableDesktopWidget {
         visible: hasPlayer && MediaService.trackArtist
         Layout.fillWidth: true
         text: MediaService.trackArtist || ""
-        pointSize: Style.fontSizeXS
+        pointSize: Math.round(Style.fontSizeXS * widgetScale)
         font.weight: Style.fontWeightRegular
         color: Color.mOnSurfaceVariant
         elide: Text.ElideRight
@@ -235,17 +244,19 @@ DraggableDesktopWidget {
 
     RowLayout {
       id: controlsRow
-      spacing: Style.marginXS
+      spacing: Math.round(Style.marginXS * widgetScale)
       z: 10
       visible: root.showButtons
+      Layout.alignment: root.showAlbumArt ? Qt.AlignVCenter : Qt.AlignCenter
 
       NIconButton {
         visible: showPrev
-        baseSize: 32
+        baseSize: Math.round(32 * widgetScale)
         icon: "media-prev"
         enabled: hasPlayer && MediaService.canGoPrevious
         colorBg: Color.mSurfaceVariant
         colorFg: enabled ? Color.mPrimary : Color.mOnSurfaceVariant
+        customRadius: Math.round(Style.radiusS * widgetScale)
         onClicked: {
           if (enabled)
             MediaService.previous();
@@ -253,13 +264,14 @@ DraggableDesktopWidget {
       }
 
       NIconButton {
-        baseSize: 36
+        baseSize: Math.round(36 * widgetScale)
         icon: isPlaying ? "media-pause" : "media-play"
         enabled: hasPlayer && (MediaService.canPlay || MediaService.canPause)
         colorBg: Color.mPrimary
         colorFg: Color.mOnPrimary
         colorBgHover: Qt.lighter(Color.mPrimary, 1.1)
         colorFgHover: Color.mOnPrimary
+        customRadius: Math.round(Style.radiusS * widgetScale)
         onClicked: {
           if (enabled) {
             MediaService.playPause();
@@ -269,11 +281,12 @@ DraggableDesktopWidget {
 
       NIconButton {
         visible: showNext
-        baseSize: 32
+        baseSize: Math.round(32 * widgetScale)
         icon: "media-next"
         enabled: hasPlayer && MediaService.canGoNext
         colorBg: Color.mSurfaceVariant
         colorFg: enabled ? Color.mPrimary : Color.mOnSurfaceVariant
+        customRadius: Math.round(Style.radiusS * widgetScale)
         onClicked: {
           if (enabled)
             MediaService.next();

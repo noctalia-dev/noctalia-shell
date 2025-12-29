@@ -18,6 +18,7 @@ PopupWindow {
 
   property var anchorItem: null
   property ShellScreen screen: null
+  property real minWidth: 120
   property real calculatedWidth: 180
 
   readonly property string barPosition: Settings.data.bar.position
@@ -74,7 +75,7 @@ PopupWindow {
         }
       }
     }
-    calculatedWidth = Math.max(maxWidth + (Style.marginS * 2), 120);
+    calculatedWidth = Math.max(maxWidth + (Style.marginS * 2), minWidth);
   }
 
   anchor.item: anchorItem

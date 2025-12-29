@@ -425,6 +425,10 @@
           "description": "Werkruimten weergeven van het momenteel gefocuste scherm, in plaats van het scherm waar de balk zich bevindt.",
           "label": "Gefocust Scherm Volgen"
         },
+        "grouped-border-opacity": {
+          "description": "Stel het dekkingsniveau in voor de randen van de werkruimtecontainer.",
+          "label": "Randdekking"
+        },
         "hide-unoccupied": {
           "description": "Werkruimten zonder vensters niet weergeven.",
           "label": "Ongebruikte verbergen"
@@ -440,6 +444,10 @@
         "show-labels-only-when-occupied": {
           "description": "Toon alleen werkruimtelabels wanneer ze vensters bevatten.",
           "label": "Toon labels alleen wanneer bezet."
+        },
+        "unfocused-icons-opacity": {
+          "description": "Stel het dekkingsniveau in voor app-pictogrammen die niet in focus zijn.",
+          "label": "Ondoorzichtige, niet-focusseerbare pictogrammen"
         }
       }
     }
@@ -565,6 +573,7 @@
     "enable-bluetooth": "Bluetooth inschakelen",
     "enable-dnd": "Niet Storen inschakelen",
     "enable-wifi": "Wi-Fi inschakelen",
+    "lower-to-bottom": "Laagste naar beneden",
     "next": "Volgende",
     "open-calendar": "Open agenda",
     "open-display-settings": "Beeldscherminstellingen",
@@ -574,7 +583,9 @@
     "pause": "Pauze",
     "play": "Spelen",
     "previous": "Vorige",
+    "raise-to-top": "Naar boven halen",
     "random-wallpaper": "Willekeurige achtergrond",
+    "reset": "Resetten",
     "toggle-mute": "Dempen aan/uit",
     "widget-settings": "Widgetinstellingen"
   },
@@ -1039,6 +1050,10 @@
     },
     "bar": {
       "appearance": {
+        "background-opacity": {
+          "description": "Stel de achtergronddoorzichtigheid specifiek in voor de balk.",
+          "label": "Balk achtergronddoorzichtigheid"
+        },
         "capsule-opacity": {
           "description": "Stel het doorzichtigheidsniveau in voor widget-achtergronden wanneer capsule wordt getoond.",
           "label": "Capsule-doorzichtigheid"
@@ -1077,9 +1092,9 @@
           "description": "Toont een zichtbare rand rondom elke widget.",
           "label": "Toon widget-omtrekken"
         },
-        "transparent": {
-          "description": "Dit voorkomt dat de panelen aan de balk worden bevestigd.",
-          "label": "Transparante achtergrond"
+        "use-separate-opacity": {
+          "description": "Maak het mogelijk om een aparte dekkingswaarde te gebruiken voor de achtergrond van de balk.",
+          "label": "Gebruik afzonderlijke balkdekking"
         }
       },
       "monitors": {
@@ -1304,10 +1319,6 @@
         "description": "Kies waar het Bedieningscentrum-paneel verschijnt wanneer het wordt geopend.",
         "label": "Positie"
       },
-      "system-monitor-disk-path": {
-        "description": "Selecteer welk schijf-mountpunt de systeemmonitor-kaart in het bedieningscentrum moet bewaken.",
-        "label": "Systeemmonitor schijfpad"
-      },
       "section": {
         "description": "Configureer de positie en het gedrag van het Bedieningscentrum-paneel.",
         "label": "Uiterlijk"
@@ -1374,6 +1385,10 @@
         "sectionLeft": "Links",
         "sectionRight": "Rechts"
       },
+      "system-monitor-disk-path": {
+        "description": "Selecteer welk schijf-mountpunt de systeemmonitor-kaart in het bedieningscentrum moet bewaken.",
+        "label": "Systeemmonitor schijfpad"
+      },
       "title": "Bedieningscentrum"
     },
     "desktop-widgets": {
@@ -1405,6 +1420,10 @@
           "label": "Minimale modus"
         },
         "preview": "Voorbeeld",
+        "rounded-corners": {
+          "description": "Gebruik afgeronde hoeken voor de widgetachtergrond.",
+          "label": "Afgeronde hoeken"
+        },
         "show-background": {
           "description": "Toon de achtergrondcontainer voor de klokwidget.",
           "label": "Achtergrond weergeven"
@@ -1471,6 +1490,14 @@
           "description": "Bepaalt hoe de widget zich gedraagt wanneer er geen media wordt afgespeeld.",
           "label": "Verbergmodus"
         },
+        "rounded-corners": {
+          "description": "Ronde hoeken inschakelen op de widgetranden.",
+          "label": "Afgeronde hoeken"
+        },
+        "show-album-art": {
+          "description": "Toon de albumhoes en trackinformatie (titel en artiest).",
+          "label": "Toon albumhoes & titel"
+        },
         "show-background": {
           "description": "Toon de achtergrondcontainer voor de mediaspeler-widget.",
           "label": "Toon achtergrond"
@@ -1479,13 +1506,13 @@
           "description": "Toon mediabesturingsknoppen (afspelen/pauzeren, vorige, volgende) op de mediaspeler-widget.",
           "label": "Knoppen weergeven"
         },
+        "show-visualizer": {
+          "description": "Toon de audio-visualisatie overlay.",
+          "label": "Visualiseerder weergeven"
+        },
         "visualizer-type": {
           "description": "Kies een visualisatietype voor de achtergrond van de desktop mediaspeler.",
           "label": "Visualisatietype"
-        },
-        "visualizer-visibility": {
-          "description": "Bepaal wanneer de audiovisualizer zichtbaar is.",
-          "label": "Audiovisualizer zichtbaarheid"
         }
       },
       "title": "Desktopwidgets",
@@ -2222,6 +2249,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Kopieer het bestand naar het klembord nadat de opname is voltooid.",
+          "label": "Kopiëren naar klembord"
+        },
         "output-folder": {
           "description": "Map waarin schermopnamen worden opgeslagen.",
           "label": "Uitvoermap",
@@ -2331,12 +2362,12 @@
       "custom-highlight-colors-title": {
         "label": "Aangepaste markeerkleuren"
       },
-      "disk-section": {
-        "label": "Schijfgebruik"
-      },
       "disk-path": {
         "description": "Selecteer welk schijf-mountpunt moet worden bewaakt.",
         "label": "Schijfpad"
+      },
+      "disk-section": {
+        "label": "Schijfgebruik"
       },
       "enable-dgpu-monitoring": {
         "description": "Waarschuwing: Dit zal uw dedicated GPU (NVIDIA/AMD) activeren, wat een aanzienlijke impact kan hebben op de batterijduur van laptops met hybride grafische kaarten.",

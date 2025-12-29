@@ -30,6 +30,7 @@ NBox {
     if (root.needsCava) {
       CavaService.registerComponent("mediacard");
     }
+    updateCachedWallpaper();
   }
 
   Component.onDestruction: {
@@ -37,6 +38,7 @@ NBox {
   }
 
   property string wallpaper: WallpaperService.getWallpaper(screen.name)
+  property string cachedWallpaper: ""
 
   // External state management
   Connections {
@@ -44,8 +46,27 @@ NBox {
     function onWallpaperChanged(screenName, path) {
       if (screenName === screen.name) {
         wallpaper = path;
+        updateCachedWallpaper();
       }
     }
+  }
+
+  function updateCachedWallpaper() {
+    if (!wallpaper) {
+      cachedWallpaper = "";
+      return;
+    }
+
+    if (!ImageCacheService.initialized) {
+      cachedWallpaper = wallpaper;
+      return;
+    }
+
+    ImageCacheService.getThumbnail(wallpaper, function (cachedPath, success) {
+      if (!root)
+        return;
+      cachedWallpaper = success ? cachedPath : wallpaper;
+    });
   }
 
   // Wrapper - rounded rect clipper
@@ -72,7 +93,7 @@ NBox {
       id: bgImage
       readonly property int dim: Math.round(256 * Style.uiScaleRatio)
       anchors.fill: parent
-      source: MediaService.trackArtUrl || wallpaper
+      source: MediaService.trackArtUrl || root.cachedWallpaper
       sourceSize: Qt.size(dim, dim)
       fillMode: Image.PreserveAspectCrop
       layer.enabled: true

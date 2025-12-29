@@ -414,7 +414,7 @@ Rectangle {
                              } else {
                                // For horizontal bars: center horizontally and position below
                                menuX = (width / 2) - (trayMenu.item.width / 2);
-                               menuY = (barPosition === "top") ? Style.barHeight : -Style.barHeight;
+                               menuY = (barPosition === "top") ? Style.barHeight + Style.marginS - 2 : Style.barHeight + Style.marginS - 2;
                              }
                              trayMenu.item.trayItem = modelData;
                              trayMenu.item.widgetSection = root.section;

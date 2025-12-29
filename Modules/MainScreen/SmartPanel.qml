@@ -149,38 +149,45 @@ Item {
       buttonItem = BarService.lookupWidget(buttonName, screen.name);
     }
 
-    if (buttonItem) {
-      root.buttonItem = buttonItem;
-      // Map button position within its window
-      var buttonLocal = buttonItem.mapToItem(null, 0, 0);
+    // Validate buttonItem is a valid QML Item with mapToItem function
+    if (buttonItem && typeof buttonItem.mapToItem === "function") {
+      try {
+        root.buttonItem = buttonItem;
+        // Map button position within its window
+        var buttonLocal = buttonItem.mapToItem(null, 0, 0);
 
-      // Calculate the bar window's position on screen based on bar settings
-      // The BarContentWindow uses anchors, so we need to compute its position
-      var barWindowX = 0;
-      var barWindowY = 0;
-      var screenWidth = root.screen?.width || 0;
-      var screenHeight = root.screen?.height || 0;
+        // Calculate the bar window's position on screen based on bar settings
+        // The BarContentWindow uses anchors, so we need to compute its position
+        var barWindowX = 0;
+        var barWindowY = 0;
+        var screenWidth = root.screen?.width || 0;
+        var screenHeight = root.screen?.height || 0;
 
-      if (root.barPosition === "right") {
-        barWindowX = screenWidth - root.barMarginH - Style.barHeight;
-      } else if (root.barPosition === "left") {
-        barWindowX = root.barMarginH;
+        if (root.barPosition === "right") {
+          barWindowX = screenWidth - root.barMarginH - Style.barHeight;
+        } else if (root.barPosition === "left") {
+          barWindowX = root.barMarginH;
+        }
+        // For top/bottom bars, barWindowX stays 0 (full width window)
+
+        if (root.barPosition === "bottom") {
+          barWindowY = screenHeight - root.barMarginV - Style.barHeight;
+        } else if (root.barPosition === "top") {
+          barWindowY = root.barMarginV;
+        }
+        // For left/right bars, barWindowY stays 0 (full height window)
+
+        root.buttonPosition = Qt.point(barWindowX + buttonLocal.x, barWindowY + buttonLocal.y);
+        root.buttonWidth = buttonItem.width;
+        root.buttonHeight = buttonItem.height;
+        root.useButtonPosition = true;
+      } catch (e) {
+        Logger.w("SmartPanel", "Failed to get button position, using default positioning:", e);
+        root.buttonItem = null;
+        root.useButtonPosition = false;
       }
-      // For top/bottom bars, barWindowX stays 0 (full width window)
-
-      if (root.barPosition === "bottom") {
-        barWindowY = screenHeight - root.barMarginV - Style.barHeight;
-      } else if (root.barPosition === "top") {
-        barWindowY = root.barMarginV;
-      }
-      // For left/right bars, barWindowY stays 0 (full height window)
-
-      root.buttonPosition = Qt.point(barWindowX + buttonLocal.x, barWindowY + buttonLocal.y);
-      root.buttonWidth = buttonItem.width;
-      root.buttonHeight = buttonItem.height;
-      root.useButtonPosition = true;
     } else {
-      // No button provided: reset button position mode
+      // No valid button provided: reset button position mode
       root.buttonItem = null;
       root.useButtonPosition = false;
     }
@@ -602,9 +609,9 @@ Item {
     panelBackground.targetX = calculatedX;
     panelBackground.targetY = calculatedY;
 
-    Logger.d("SmartPanel", "Position calculated:", calculatedX, calculatedY);
-    Logger.d("SmartPanel", "  Panel size:", panelWidth, "x", panelHeight);
-    Logger.d("SmartPanel", "  Parent size:", root.width, "x", root.height);
+    // Logger.d("SmartPanel", "Position calculated:", calculatedX, calculatedY);
+    // Logger.d("SmartPanel", "  Panel size:", panelWidth, "x", panelHeight);
+    // Logger.d("SmartPanel", "  Parent size:", root.width, "x", root.height);
   }
 
   // Watch for changes in content-driven sizes and update position
@@ -649,7 +656,7 @@ Item {
             root.opacityFadeComplete = true;
             var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
             if (shouldFinalizeNow) {
-              Logger.d("SmartPanel", "Zero-duration opacity + no size animation - finalizing", root.objectName);
+              // Logger.d("SmartPanel", "Zero-duration opacity + no size animation - finalizing", root.objectName);
               Qt.callLater(root.finalizeClose);
             }
           } else if (root.isPanelVisible && root.opacity === 1.0) {
@@ -667,10 +674,10 @@ Item {
           // Detached panels (allowAttach === false) should always animate from top
           var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
           if (shouldFinalizeNow) {
-            Logger.d("SmartPanel", "No animation - finalizing immediately", root.objectName);
+            //Logger.d("SmartPanel", "No animation - finalizing immediately", root.objectName);
             Qt.callLater(root.finalizeClose);
           } else {
-            Logger.d("SmartPanel", "Animation will run - waiting for size animation", root.objectName, "shouldAnimateHeight:", panelContent.geometryPlaceholder.shouldAnimateHeight, "shouldAnimateWidth:", panelContent.geometryPlaceholder.shouldAnimateWidth);
+            //Logger.d("SmartPanel", "Animation will run - waiting for size animation", root.objectName, "shouldAnimateHeight:", panelContent.geometryPlaceholder.shouldAnimateHeight, "shouldAnimateWidth:", panelContent.geometryPlaceholder.shouldAnimateWidth);
           }
         } // When opacity fade completes during open, stop watchdog
         else if (!running && root.isPanelVisible && root.opacity === 1.0) {
@@ -740,7 +747,7 @@ Item {
       return Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar;
     }
     readonly property bool allowAttachToBar: {
-      if (!(Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar) || Settings.data.bar.transparent) {
+      if (!(Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar)) {
         return false;
       }
 

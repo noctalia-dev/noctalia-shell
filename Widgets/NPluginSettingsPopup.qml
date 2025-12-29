@@ -123,9 +123,10 @@ Popup {
     // Get plugin directory
     var pluginDir = PluginRegistry.getPluginDir(pluginManifest.id);
     var settingsPath = pluginDir + "/" + pluginManifest.entryPoints.settings;
+    var loadVersion = PluginRegistry.pluginLoadVersions[pluginManifest.id] || 0;
 
-    // Load settings component
-    settingsLoader.setSource("file://" + settingsPath, {
+    // Load settings component (use version counter to avoid caching)
+    settingsLoader.setSource("file://" + settingsPath + "?v=" + loadVersion, {
                                "pluginApi": currentPluginApi
                              });
 

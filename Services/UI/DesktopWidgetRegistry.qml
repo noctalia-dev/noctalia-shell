@@ -55,7 +55,6 @@ Singleton {
 
   property var widgetMetadata: ({
                                   "Clock": {
-                                    "allowUserSettings": true,
                                     "showBackground": true,
                                     "clockStyle": "digital",
                                     "usePrimaryColor": false,
@@ -63,14 +62,15 @@ Singleton {
                                     "format": "HH:mm\\nd MMMM yyyy"
                                   },
                                   "MediaPlayer": {
-                                    "allowUserSettings": true,
                                     "showBackground": true,
                                     "visualizerType": "linear",
                                     "hideMode": "visible",
-                                    "showButtons": true
+                                    "showButtons": true,
+                                    "showAlbumArt": true,
+                                    "showVisualizer": true,
+                                    "roundedCorners": true
                                   },
                                   "Weather": {
-                                    "allowUserSettings": true,
                                     "showBackground": true
                                   }
                                 })
@@ -102,7 +102,7 @@ Singleton {
 
   // Helper function to check if widget has user settings
   function widgetHasUserSettings(id) {
-    return (widgetMetadata[id] !== undefined) && (widgetMetadata[id].allowUserSettings === true);
+    return widgetMetadata[id] !== undefined;
   }
 
   // Check if a widget is a plugin widget
@@ -151,7 +151,6 @@ Singleton {
 
     var newMetadata = Object.assign({}, widgetMetadata);
     newMetadata[widgetId] = Object.assign({}, {
-                                            "allowUserSettings": true,
                                             "showBackground": true
                                           }, metadata || {});
     widgetMetadata = newMetadata;

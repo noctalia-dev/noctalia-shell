@@ -425,6 +425,10 @@
           "description": "Wyświetl obszary robocze z aktualnie aktywnego ekranu, zamiast ekranu, na którym znajduje się pasek.",
           "label": "Podążaj za skupionym ekranem"
         },
+        "grouped-border-opacity": {
+          "description": "Ustaw poziom krycia dla obramowań kontenerów obszaru roboczego.",
+          "label": "Krycie obramowania"
+        },
         "hide-unoccupied": {
           "description": "Nie wyświetlaj obszarów roboczych bez okien.",
           "label": "Ukryj nieobsadzone"
@@ -440,6 +444,10 @@
         "show-labels-only-when-occupied": {
           "description": "Pokazuj etykiety obszarów roboczych tylko wtedy, gdy zawierają okna.",
           "label": "Pokaż etykiety tylko gdy obsadzone"
+        },
+        "unfocused-icons-opacity": {
+          "description": "Ustaw poziom przezroczystości dla ikon nieaktywnych aplikacji.",
+          "label": "Krycie ikon bez ostrości"
         }
       }
     }
@@ -565,6 +573,7 @@
     "enable-bluetooth": "Włącz Bluetooth",
     "enable-dnd": "Włącz Nie przeszkadzać",
     "enable-wifi": "Włącz Wi-Fi",
+    "lower-to-bottom": "Opuść na dół.",
     "next": "Następny",
     "open-calendar": "Otwórz kalendarz",
     "open-display-settings": "Ustawienia ekranu",
@@ -574,7 +583,9 @@
     "pause": "Wstrzymaj",
     "play": "Odtwarzaj",
     "previous": "Poprzedni",
+    "raise-to-top": "Przenieś na górę",
     "random-wallpaper": "Losowa tapeta",
+    "reset": "Zresetuj",
     "toggle-mute": "Przełącz wyciszenie",
     "widget-settings": "Ustawienia widżetu"
   },
@@ -1039,6 +1050,10 @@
     },
     "bar": {
       "appearance": {
+        "background-opacity": {
+          "description": "Ustaw przezroczystość tła konkretnie dla paska.",
+          "label": "Krycie tła paska"
+        },
         "capsule-opacity": {
           "description": "Ustaw poziom przezroczystości tła widżetów, gdy kapsuła jest widoczna.",
           "label": "Przezroczystość kapsuły"
@@ -1077,9 +1092,9 @@
           "description": "Wyświetla widoczne obramowanie wokół każdego widżetu.",
           "label": "Pokaż obramowanie widżetów"
         },
-        "transparent": {
-          "description": "To zapobiegnie przypięciu się paneli do paska.",
-          "label": "Przezroczyste tło"
+        "use-separate-opacity": {
+          "description": "Umożliwia użycie oddzielnej wartości krycia dla tła paska.",
+          "label": "Użyj osobnej przezroczystości słupków."
         }
       },
       "monitors": {
@@ -1304,10 +1319,6 @@
         "description": "Wybierz, gdzie pojawia się panel centrum sterowania po otwarciu.",
         "label": "Pozycja"
       },
-      "system-monitor-disk-path": {
-        "description": "Wybierz, który punkt montowania dysku ma być monitorowany przez kartę monitora systemu w centrum sterowania.",
-        "label": "Ścieżka dysku monitora systemu"
-      },
       "section": {
         "description": "Konfiguruj pozycjonowanie i zachowanie panelu centrum sterowania.",
         "label": "Wygląd"
@@ -1374,6 +1385,10 @@
         "sectionLeft": "Lewo",
         "sectionRight": "Prawo"
       },
+      "system-monitor-disk-path": {
+        "description": "Wybierz, który punkt montowania dysku ma być monitorowany przez kartę monitora systemu w centrum sterowania.",
+        "label": "Ścieżka dysku monitora systemu"
+      },
       "title": "Centrum sterowania"
     },
     "desktop-widgets": {
@@ -1405,6 +1420,10 @@
           "label": "Tryb minimalistyczny"
         },
         "preview": "Podgląd",
+        "rounded-corners": {
+          "description": "Użyj zaokrąglonych rogów dla tła widżetu.",
+          "label": "Zaokrąglone rogi"
+        },
         "show-background": {
           "description": "Pokaż tło dla widżetu zegara.",
           "label": "Pokaż tło"
@@ -1471,6 +1490,14 @@
           "description": "Kontroluje zachowanie widżetu, gdy żadne media nie są odtwarzane.",
           "label": "Tryb ukrywania"
         },
+        "rounded-corners": {
+          "description": "Włącz zaokrąglone rogi na krawędziach widżetu.",
+          "label": "Zaokrąglone rogi"
+        },
+        "show-album-art": {
+          "description": "Pokaż okładkę albumu i informacje o utworach (tytuł i wykonawca).",
+          "label": "Pokaż okładkę albumu i tytuł."
+        },
         "show-background": {
           "description": "Pokaż tło dla widżetu odtwarzacza.",
           "label": "Pokaż tło"
@@ -1479,13 +1506,13 @@
           "description": "Pokaż przyciski sterowania multimediami (odtwarzanie/pauza, poprzedni, następny) na widżecie odtwarzacza multimedialnego.",
           "label": "Pokaż przyciski"
         },
+        "show-visualizer": {
+          "description": "Pokaż nakładkę wizualizatora audio.",
+          "label": "Pokaż wizualizator"
+        },
         "visualizer-type": {
           "description": "Wybierz typ wizualizacji dla tła odtwarzacza pulpitu.",
           "label": "Typ wizualizacji"
-        },
-        "visualizer-visibility": {
-          "description": "Kontroluj, kiedy wizualizator dźwięku jest widoczny.",
-          "label": "Widoczność wizualizatora"
         }
       },
       "title": "Widżety pulpitu",
@@ -2222,6 +2249,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Skopiuj plik do schowka po zakończeniu nagrywania.",
+          "label": "Kopiuj do schowka"
+        },
         "output-folder": {
           "description": "Folder, w którym będą zapisywane nagrania.",
           "label": "Folder wyjściowy",
@@ -2331,12 +2362,12 @@
       "custom-highlight-colors-title": {
         "label": "Własne kolory podświetlenia"
       },
-      "disk-section": {
-        "label": "Użycie dysku"
-      },
       "disk-path": {
         "description": "Wybierz, który punkt montowania dysku ma być monitorowany.",
         "label": "Ścieżka dysku"
+      },
+      "disk-section": {
+        "label": "Użycie dysku"
       },
       "enable-dgpu-monitoring": {
         "description": "Ostrzeżenie: To obudzi twoją dedykowaną kartę graficzną (NVIDIA/AMD), co może znacząco wpłynąć na żywotność baterii w laptopach z hybrydową grafiką.",

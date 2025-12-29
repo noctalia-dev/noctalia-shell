@@ -709,7 +709,7 @@ Popup {
                     hoverEnabled: true
 
                     onEntered: {
-                      TooltipService.show(screen, parent, modelData.name + "\n" + parent.color.toString().toUpperCase(), "auto");
+                      TooltipService.show(parent, modelData.name + "\n" + parent.color.toString().toUpperCase(), "auto");
                     }
                     onExited: {
                       TooltipService.hide();

@@ -1,0 +1,195 @@
+{
+  "bar": {
+    "ActiveWindow": {
+      "showIcon": true,
+      "hideMode": "hidden",
+      "scrollingMode": "hover",
+      "maxWidth": 145,
+      "useFixedWidth": false,
+      "colorizeIcons": false
+    },
+    "AudioVisualizer": {
+      "width": 200,
+      "colorName": "primary",
+      "hideWhenIdle": false
+    },
+    "Battery": {
+      "displayMode": "onhover",
+      "warningThreshold": 30,
+      "deviceNativePath": "",
+      "showPowerProfiles": false,
+      "showNoctaliaPerformance": false,
+      "hideIfNotDetected": true
+    },
+    "Bluetooth": {
+      "displayMode": "onhover"
+    },
+    "Brightness": {
+      "displayMode": "onhover"
+    },
+    "Clock": {
+      "usePrimaryColor": true,
+      "useCustomFont": false,
+      "customFont": "",
+      "formatHorizontal": "HH:mm ddd, MMM dd",
+      "formatVertical": "HH mm - dd MM",
+      "tooltipFormat": "HH:mm ddd, MMM dd"
+    },
+    "ControlCenter": {
+      "useDistroLogo": false,
+      "icon": "noctalia",
+      "customIconPath": "",
+      "colorizeDistroLogo": false,
+      "colorizeSystemIcon": "none",
+      "enableColorization": false
+    },
+    "CustomButton": {
+      "icon": "heart",
+      "showIcon": true,
+      "hideMode": "alwaysExpanded",
+      "leftClickExec": "",
+      "leftClickUpdateText": false,
+      "rightClickExec": "",
+      "rightClickUpdateText": false,
+      "middleClickExec": "",
+      "middleClickUpdateText": false,
+      "textCommand": "",
+      "textStream": false,
+      "textIntervalMs": 3000,
+      "textCollapse": "",
+      "parseJson": false,
+      "wheelExec": "",
+      "wheelUpExec": "",
+      "wheelDownExec": "",
+      "wheelMode": "unified",
+      "wheelUpdateText": false,
+      "wheelUpUpdateText": false,
+      "wheelDownUpdateText": false,
+      "maxTextLength": {
+        "horizontal": 10,
+        "vertical": 10
+      }
+    },
+    "KeyboardLayout": {
+      "displayMode": "onhover"
+    },
+    "LockKeys": {
+      "showCapsLock": true,
+      "showNumLock": true,
+      "showScrollLock": true,
+      "capsLockIcon": "letter-c",
+      "numLockIcon": "letter-n",
+      "scrollLockIcon": "letter-s"
+    },
+    "MediaMini": {
+      "hideMode": "hidden",
+      "scrollingMode": "hover",
+      "maxWidth": 145,
+      "useFixedWidth": false,
+      "hideWhenIdle": false,
+      "showAlbumArt": false,
+      "showArtistFirst": true,
+      "showVisualizer": false,
+      "showProgressRing": true,
+      "visualizerType": "linear"
+    },
+    "Microphone": {
+      "displayMode": "onhover"
+    },
+    "NotificationHistory": {
+      "showUnreadBadge": true,
+      "hideWhenZero": false
+    },
+    "SessionMenu": {
+      "colorName": "error"
+    },
+    "Spacer": {
+      "width": 20
+    },
+    "SystemMonitor": {
+      "compactMode": true,
+      "usePrimaryColor": false,
+      "useMonospaceFont": true,
+      "showCpuUsage": true,
+      "showCpuTemp": true,
+      "showGpuTemp": false,
+      "showMemoryUsage": true,
+      "showMemoryAsPercent": false,
+      "showNetworkStats": false,
+      "showDiskUsage": false,
+      "diskPath": "/"
+    },
+    "Taskbar": {
+      "onlySameOutput": true,
+      "onlyActiveWorkspaces": true,
+      "hideMode": "hidden",
+      "colorizeIcons": false,
+      "showTitle": false,
+      "titleWidth": 120,
+      "showPinnedApps": true,
+      "smartWidth": true,
+      "maxTaskbarWidth": 40,
+      "iconScale": 1
+    },
+    "Tray": {
+      "blacklist": [],
+      "colorizeIcons": false,
+      "pinned": [],
+      "drawerEnabled": true,
+      "hidePassive": false
+    },
+    "VPN": {
+      "displayMode": "onhover"
+    },
+    "WiFi": {
+      "displayMode": "onhover"
+    },
+    "Workspace": {
+      "labelMode": "index",
+      "followFocusedScreen": false,
+      "hideUnoccupied": false,
+      "characterCount": 2,
+      "showApplications": false,
+      "showLabelsOnlyWhenOccupied": true,
+      "colorizeIcons": false,
+      "unfocusedIconsOpacity": 1,
+      "groupedBorderOpacity": 1,
+      "enableScrollWheel": true
+    },
+    "Volume": {
+      "displayMode": "onhover"
+    }
+  },
+  "controlCenter": {
+    "CustomButton": {
+      "icon": "heart",
+      "onClicked": "",
+      "onRightClicked": "",
+      "onMiddleClicked": "",
+      "stateChecks": [],
+      "generalTooltipText": "Custom Button",
+      "enableOnStateLogic": false
+    }
+  },
+  "desktop": {
+    "Clock": {
+      "showBackground": true,
+      "clockStyle": "digital",
+      "usePrimaryColor": false,
+      "useCustomFont": false,
+      "format": "HH:mm\\nd MMMM yyyy"
+    },
+    "MediaPlayer": {
+      "showBackground": true,
+      "visualizerType": "linear",
+      "hideMode": "visible",
+      "showButtons": true,
+      "showAlbumArt": true,
+      "showVisualizer": true,
+      "roundedCorners": true
+    },
+    "Weather": {
+      "showBackground": true
+    }
+  }
+}

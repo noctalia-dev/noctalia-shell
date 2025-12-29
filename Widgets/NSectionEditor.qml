@@ -65,10 +65,10 @@ NBox {
 
     // Header height + spacing + (rows * widget height) + (spacing between rows) + margins
     var headerHeight = Style.fontSizeL * 2;
-    // Account for grid margins and add buffer to prevent overlap
-    var gridTopMargin = Style.marginXXS;
-    var gridBottomMargin = Style.marginXXS;
-    var widgetAreaHeight = gridTopMargin + (rows * widgetItemHeight) + ((rows - 1) * Style.marginS) + gridBottomMargin + Style.marginM;
+    // Account for grid margins
+    var gridTopMargin = Style.marginS;
+    var gridBottomMargin = Style.marginL;
+    var widgetAreaHeight = gridTopMargin + (rows * widgetItemHeight) + ((rows - 1) * Style.marginL) + gridBottomMargin;
 
     return Math.max(absoluteMin, (Style.marginL * 2) + headerHeight + Style.marginM + widgetAreaHeight);
   }
@@ -105,11 +105,13 @@ NBox {
 
     RowLayout {
       Layout.fillWidth: true
+      Layout.rightMargin: Style.marginS
 
       ColumnLayout {
         spacing: Style.marginXXS
         Layout.alignment: Qt.AlignVCenter
         Layout.fillWidth: false
+        Layout.leftMargin: Style.marginS
         Layout.maximumWidth: {
           // Reserve space for other elements: count indicator, combo box (~200), button (~50), and margins
           // Use a reasonable maximum that leaves room for controls on the right
@@ -215,10 +217,9 @@ NBox {
         var containerWidth = width > 0 ? width : (parent ? parent.width : 400);
         var rows = Math.ceil(widgetModel.length / root.gridColumns);
         // Calculate height: (rows * item height) + (row spacing between items) + grid margins
-        // Add extra buffer to prevent overlap
-        var gridTopMargin = Style.marginXXS;
-        var gridBottomMargin = Style.marginXXS;
-        var calculatedHeight = gridTopMargin + (rows * root.widgetItemHeight) + ((rows - 1) * Style.marginS) + gridBottomMargin + Style.marginXS;
+        var gridTopMargin = Style.marginS;
+        var gridBottomMargin = Style.marginS;
+        var calculatedHeight = gridTopMargin + (rows * root.widgetItemHeight) + ((rows - 1) * Style.marginS) + gridBottomMargin;
         return Math.max(65 * Style.uiScaleRatio, calculatedHeight);
       }
       Layout.minimumHeight: 65 * Style.uiScaleRatio
@@ -226,8 +227,14 @@ NBox {
 
       Grid {
         id: widgetGrid
-        anchors.fill: parent
-        anchors.margins: Style.marginS
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.leftMargin: Style.marginS
+        anchors.rightMargin: Style.marginS
+        anchors.topMargin: Style.marginS
+        anchors.bottomMargin: Style.marginS
         columns: root.gridColumns
         rowSpacing: Style.marginS
         columnSpacing: Style.marginM

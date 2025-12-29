@@ -425,6 +425,10 @@
           "description": "Munkaterületek megjelenítése az aktuálisan fókuszált képernyőről, nem arról a képernyőről, ahol a sáv található.",
           "label": "Fókuszált képernyő követése"
         },
+        "grouped-border-opacity": {
+          "description": "A munkaterület-konténerek szegélyeinek átlátszósági szintjének beállítása",
+          "label": "Szegély átlátszósága"
+        },
         "hide-unoccupied": {
           "description": "Ne jelenítse meg az ablak nélküli munkaterületeket.",
           "label": "Foglalatlan elrejtése"
@@ -440,6 +444,10 @@
         "show-labels-only-when-occupied": {
           "description": "Csak akkor jelenítse meg a munkaterület címkéket, ha azok tartalmaznak ablakokat.",
           "label": "Címkék megjelenítése csak foglalt állapotban"
+        },
+        "unfocused-icons-opacity": {
+          "description": "Állítsa be a nem fókuszált alkalmazásikonok átlátszóságának szintjét.",
+          "label": "Fókuszálatlan ikonok átlátszósága"
         }
       }
     }
@@ -565,6 +573,7 @@
     "enable-bluetooth": "Bluetooth bekapcsolása",
     "enable-dnd": "Ne zavarjanak bekapcsolása",
     "enable-wifi": "Wi-Fi bekapcsolása",
+    "lower-to-bottom": "Engedd le a legaljára / Engedd le az aljára",
     "next": "Következő",
     "open-calendar": "Naptár megnyitása",
     "open-display-settings": "Kijelzőbeállítások",
@@ -574,7 +583,9 @@
     "pause": "Szünet",
     "play": "Lejátszás",
     "previous": "Előző",
+    "raise-to-top": "Felülre emelés",
     "random-wallpaper": "Véletlenszerű háttérkép",
+    "reset": "Visszaállítás",
     "toggle-mute": "Némítás kapcsolása",
     "widget-settings": "Widget beállítások"
   },
@@ -1039,6 +1050,10 @@
     },
     "bar": {
       "appearance": {
+        "background-opacity": {
+          "description": "Állítsa be a sáv háttér átlátszóságát.",
+          "label": "Sáv háttér átlátszósága"
+        },
         "capsule-opacity": {
           "description": "Beállítja a widget hátterének átlátszósági szintjét, amikor a kapszula megjelenik.",
           "label": "Kapszula átlátszósága"
@@ -1077,9 +1092,9 @@
           "description": "Látható szegély megjelenítése minden widget körül.",
           "label": "Widget körvonalak megjelenítése"
         },
-        "transparent": {
-          "description": "Ez megakadályozza, hogy a panelek rögzüljenek a sávhoz",
-          "label": "Átlátszó háttér"
+        "use-separate-opacity": {
+          "description": "Lehetővé teszi egy külön átlátszatlansági érték használatát a sáv hátteréhez.",
+          "label": "Külön oszlop átlátszóság használata"
         }
       },
       "monitors": {
@@ -1304,10 +1319,6 @@
         "description": "Válassza ki, hol jelenjen meg a vezérlőközpont panel megnyitáskor.",
         "label": "Pozíció"
       },
-      "system-monitor-disk-path": {
-        "description": "Válassza ki, hogy melyik lemez csatolási pontot kell figyelnie a rendszerfigyelő kártyának a vezérlőközpontban.",
-        "label": "Rendszerfigyelő lemez elérési útja"
-      },
       "section": {
         "description": "A vezérlőközpont panel pozicionálásának és viselkedésének konfigurálása.",
         "label": "Megjelenés"
@@ -1374,6 +1385,10 @@
         "sectionLeft": "Bal",
         "sectionRight": "Jobb"
       },
+      "system-monitor-disk-path": {
+        "description": "Válassza ki, hogy melyik lemez csatolási pontot kell figyelnie a rendszerfigyelő kártyának a vezérlőközpontban.",
+        "label": "Rendszerfigyelő lemez elérési útja"
+      },
       "title": "Vezérlőközpont"
     },
     "desktop-widgets": {
@@ -1405,6 +1420,10 @@
           "label": "Minimális mód"
         },
         "preview": "Előnézet",
+        "rounded-corners": {
+          "description": "A widget háttere legyen lekerekített sarkú.",
+          "label": "Lekerekített sarkok"
+        },
         "show-background": {
           "description": "Jelenítse meg az óra widget háttérkonténerét.",
           "label": "Háttér megjelenítése"
@@ -1471,6 +1490,14 @@
           "description": "Szabályozza a widget viselkedését, ha nincs lejátszva média.",
           "label": "Elrejtési mód"
         },
+        "rounded-corners": {
+          "description": "Engedélyezi a lekerekített sarkokat a widget szélein.",
+          "label": "Lekerekített sarkok"
+        },
+        "show-album-art": {
+          "description": "Mutasd az album borítóját és a számok adatait (cím és előadó).",
+          "label": "Album borító és cím megjelenítése"
+        },
         "show-background": {
           "description": "Jelenítse meg a média lejátszó widget háttérkonténerét.",
           "label": "Háttér megjelenítése"
@@ -1479,13 +1506,13 @@
           "description": "Médiavezérlő gombok (lejátszás/szünet, előző, következő) megjelenítése a média lejátszó widgeten.",
           "label": "Gombok megjelenítése"
         },
+        "show-visualizer": {
+          "description": "Audiovizuális megjelenítő fedvény megjelenítése.",
+          "label": "Vizualizáló megjelenítése"
+        },
         "visualizer-type": {
           "description": "Válasszon vizualizációs típust az asztali média lejátszó hátteréhez.",
           "label": "Vizualizációs típus"
-        },
-        "visualizer-visibility": {
-          "description": "Szabályozza, mikor látható a a hangvizualizátor.",
-          "label": "Hangvizualizátor láthatósága"
         }
       },
       "title": "Asztali Widgetek",
@@ -2222,6 +2249,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "A felvétel befejezése után másold a fájlt a vágólapra.",
+          "label": "Másolás a vágólapra"
+        },
         "output-folder": {
           "description": "Mappa, ahová a képernyőfelvételek mentésre kerülnek.",
           "label": "Kimeneti mappa",
@@ -2331,12 +2362,12 @@
       "custom-highlight-colors-title": {
         "label": "Egyéni kiemelőszínek"
       },
-      "disk-section": {
-        "label": "Lemezhasználat"
-      },
       "disk-path": {
         "description": "Válassza ki, hogy melyik lemez csatolási pontot szeretné figyelni.",
         "label": "Lemez elérési útja"
+      },
+      "disk-section": {
+        "label": "Lemezhasználat"
       },
       "enable-dgpu-monitoring": {
         "description": "Figyelem: Ez felébreszti a dedikált GPU-t (NVIDIA/AMD), ami jelentősen befolyásolhatja az akkumulátor élettartamát a hibrid grafikával rendelkező laptopokon.",
