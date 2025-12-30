@@ -116,6 +116,7 @@ NBox {
 
       // Brightness Slider
       NSlider {
+        id: brightnessSlider
         Layout.fillWidth: true
         from: 0
         to: 1
@@ -126,6 +127,24 @@ NBox {
         onPressedChanged: localBrightnessChanging = pressed
         tooltipText: `${Math.round(localBrightness * 100)}%`
         tooltipDirection: "bottom"
+
+        // MouseArea to handle wheel events when hovering over the slider
+        MouseArea {
+          anchors.fill: parent
+          hoverEnabled: true
+          acceptedButtons: Qt.NoButton
+          propagateComposedEvents: true
+
+          onWheel: wheel => {
+                     if (brightnessSlider.enabled && brightnessMonitor && brightnessMonitor.brightnessControlAvailable) {
+                       const delta = wheel.angleDelta.y || wheel.angleDelta.x;
+                       const step = Settings.data.brightness.brightnessStep / 100.0; // Convert percentage to 0-1 range
+                       const increment = delta > 0 ? step : -step;
+                       const newValue = Math.max(0, Math.min(1, localBrightness + increment));
+                       localBrightness = newValue;
+                     }
+                   }
+        }
       }
     }
   }

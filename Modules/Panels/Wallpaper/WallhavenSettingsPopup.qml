@@ -31,7 +31,13 @@ Popup {
   y: {
     if (anchorItem) {
       var itemPos = anchorItem.mapToItem(parent, 0, 0);
-      return itemPos.y + anchorItem.height + Style.marginS;
+      var barPosition = Settings.data.bar.position || "top";
+      // Position above the anchor when bar is at bottom, otherwise position below
+      if (barPosition === "bottom") {
+        return itemPos.y - height - Style.marginS;
+      } else {
+        return itemPos.y + anchorItem.height + Style.marginS;
+      }
     }
     return 0;
   }
