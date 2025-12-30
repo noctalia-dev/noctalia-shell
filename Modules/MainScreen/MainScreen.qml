@@ -294,25 +294,24 @@ PanelWindow {
       readonly property string barPosition: Settings.data.bar.position || "top"
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
       readonly property bool barFloating: Settings.data.bar.floating || false
-      readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
-      readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0
-      readonly property real attachmentOverlap: 1 // Attachment overlap to fix hairline gap with fractional scaling
+      readonly property real barMarginH: barFloating ? Math.floor(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
+      readonly property real barMarginV: barFloating ? Math.floor(Settings.data.bar.marginVertical * Style.marginXL) : 0
 
       // Expose bar dimensions directly on this Item for BarBackground
       // Use screen dimensions directly
       x: {
         if (barPosition === "right")
-          return screen.width - Style.barHeight - barMarginH - attachmentOverlap; // Extend left towards panels
+          return screen.width - Style.barHeight - barMarginH;
         return barMarginH;
       }
       y: {
         if (barPosition === "bottom")
-          return screen.height - Style.barHeight - barMarginV - attachmentOverlap;
+          return screen.height - Style.barHeight - barMarginV;
         return barMarginV;
       }
       width: {
         if (barIsVertical) {
-          return Style.barHeight + attachmentOverlap;
+          return Style.barHeight;
         }
         return screen.width - barMarginH * 2;
       }
@@ -320,7 +319,7 @@ PanelWindow {
         if (barIsVertical) {
           return screen.height - barMarginV * 2;
         }
-        return Style.barHeight + attachmentOverlap;
+        return Style.barHeight;
       }
 
       // Corner states (same as Bar.qml)

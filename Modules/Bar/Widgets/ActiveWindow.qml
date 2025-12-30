@@ -75,8 +75,11 @@ Item {
   }
 
   function calculatedVerticalDimension() {
-    return Math.round((Style.baseWidgetSize - 5) * scaling);
+    return Style.toOdd((Style.baseWidgetSize - 5) * scaling);
   }
+
+  // Icon size for consistent sizing
+  readonly property int iconSize: Style.toOdd(18 * scaling)
 
   function calculateContentWidth() {
     // Calculate the actual content width based on visible elements
@@ -85,7 +88,7 @@ Item {
 
     // Icon width (if visible)
     if (showIcon) {
-      contentWidth += 18 * scaling;
+      contentWidth += iconSize;
       contentWidth += Style.marginS * scaling; // Spacing after icon
     }
 
@@ -194,7 +197,8 @@ Item {
   Rectangle {
     id: windowActiveRect
     visible: root.visible
-    anchors.verticalCenter: parent.verticalCenter
+    x: isVerticalBar ? Style.pixelAlignCenter(parent.width, width) : 0
+    y: isVerticalBar ? 0 : Style.pixelAlignCenter(parent.height, height)
     width: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : calculatedVerticalDimension()) : ((!hasFocusedWindow) && (hideMode === "hidden") ? 0 : dynamicWidth)
     height: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : calculatedVerticalDimension()) : Style.capsuleHeight
     radius: Style.radiusM
@@ -219,15 +223,15 @@ Item {
       // Horizontal layout for top/bottom bars
       RowLayout {
         id: rowLayout
-        anchors.verticalCenter: parent.verticalCenter
+        y: Style.pixelAlignCenter(parent.height, height)
         spacing: Style.marginS * scaling
         visible: !isVerticalBar
         z: 1
 
         // Window icon
         Item {
-          Layout.preferredWidth: 18 * scaling
-          Layout.preferredHeight: 18 * scaling
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: iconSize
           Layout.alignment: Qt.AlignVCenter
           visible: showIcon
 
@@ -255,7 +259,7 @@ Item {
           id: titleContainer
           Layout.preferredWidth: {
             // Calculate available width based on other elements
-            var iconWidth = (showIcon && windowIcon.visible ? (18 + Style.marginS) : 0);
+            var iconWidth = (showIcon && windowIcon.visible ? (iconSize + Style.marginS) : 0);
             var totalMargins = Style.marginXXS * 2;
             var availableWidth = mainContainer.width - iconWidth - totalMargins;
             return Math.max(20, availableWidth);
@@ -397,17 +401,20 @@ Item {
       // Vertical layout for left/right bars - icon only
       Item {
         id: verticalLayout
-        anchors.centerIn: parent
         width: parent.width - Style.marginM * 2
         height: parent.height - Style.marginM * 2
+        x: Style.pixelAlignCenter(parent.width, width)
+        y: Style.pixelAlignCenter(parent.height, height)
         visible: isVerticalBar
         z: 1
 
         // Window icon
         Item {
-          width: Style.baseWidgetSize * 0.5 * scaling
+          id: verticalIconContainer
+          width: Style.toOdd(Style.baseWidgetSize * 0.5 * scaling)
           height: width
-          anchors.centerIn: parent
+          x: Style.pixelAlignCenter(parent.width, width)
+          y: Style.pixelAlignCenter(parent.height, height)
           visible: windowTitle !== ""
 
           IconImage {

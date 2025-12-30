@@ -61,10 +61,9 @@ Rectangle {
     }
     applyUiScale: root.applyUiScale
     color: root.enabled && root.hovering ? colorFgHover : colorFg
-    // Center horizontally
-    x: (root.width - width) / 2
-    // Center vertically accounting for font metrics
-    y: (root.height - height) / 2 + (height - contentHeight) / 2
+    // Pixel-perfect centering
+    x: Style.pixelAlignCenter(root.width, width)
+    y: Style.pixelAlignCenter(root.height, contentHeight)
 
     Behavior on color {
       ColorAnimation {

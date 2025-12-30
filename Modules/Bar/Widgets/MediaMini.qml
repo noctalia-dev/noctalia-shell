@@ -47,9 +47,9 @@ Item {
   readonly property real maxWidth: (widgetSettings.maxWidth !== undefined) ? widgetSettings.maxWidth : Math.max(widgetMetadata.maxWidth, screen ? screen.width * 0.06 : 0)
 
   // Dimensions
-  readonly property int iconSize: Math.round(18 * scaling)
-  readonly property int artSize: Math.round(21 * scaling)
-  readonly property int verticalSize: Math.round((Style.baseWidgetSize - 5) * scaling)
+  readonly property int iconSize: Style.toOdd(18 * scaling)
+  readonly property int artSize: Style.toOdd(21 * scaling)
+  readonly property int verticalSize: Style.toOdd((Style.baseWidgetSize - 5) * scaling)
 
   // State
   readonly property bool hasPlayer: MediaService.currentPlayer !== null
@@ -236,8 +236,8 @@ Item {
 
       // Visualizer
       Loader {
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.horizontalCenter: parent.horizontalCenter
+        x: Style.pixelAlignCenter(parent.width, width)
+        y: Style.pixelAlignCenter(parent.height, height)
         width: parent.width
         height: parent.height
         active: showVisualizer
@@ -306,7 +306,8 @@ Item {
 
             NIcon {
               visible: !showAlbumArt && showProgressRing && hasPlayer
-              anchors.centerIn: parent
+              x: Style.pixelAlignCenter(parent.width, width)
+              y: Style.pixelAlignCenter(parent.height, contentHeight)
               icon: MediaService.isPlaying ? "media-pause" : "media-play"
               color: Color.mOnSurface
               pointSize: 8 * scaling
@@ -334,10 +335,12 @@ Item {
 
       // Vertical layout
       Item {
+        id: verticalLayout
         visible: isVertical
-        anchors.centerIn: parent
-        width: showProgressRing ? (Style.baseWidgetSize * 0.5 * scaling) : (verticalSize - 4 * scaling)
+        width: Style.toOdd(showProgressRing ? (Style.baseWidgetSize * 0.5 * scaling) : (verticalSize - 4 * scaling))
         height: width
+        x: Style.pixelAlignCenter(parent.width, width)
+        y: Style.pixelAlignCenter(parent.height, height)
         z: 1
 
         ProgressRing {
@@ -360,7 +363,8 @@ Item {
 
         NIcon {
           visible: !showAlbumArt || !hasPlayer
-          anchors.centerIn: parent
+          x: Style.pixelAlignCenter(parent.width, width)
+          y: Style.pixelAlignCenter(parent.height, contentHeight)
           width: parent.width
           height: parent.height
           icon: hasPlayer ? (MediaService.isPlaying ? "media-pause" : "media-play") : "disc"

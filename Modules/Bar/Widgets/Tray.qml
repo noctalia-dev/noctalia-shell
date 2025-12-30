@@ -56,7 +56,7 @@ Rectangle {
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
   readonly property bool density: Settings.data.bar.density
-  readonly property real iconSize: Math.round(Style.capsuleHeight * 0.65)
+  readonly property int iconSize: Style.toOdd(Style.capsuleHeight * 0.65)
 
   property list<string> blacklist: widgetSettings.blacklist || widgetMetadata.blacklist || [] // Read from settings
   property list<string> pinned: widgetSettings.pinned || widgetMetadata.pinned || [] // Pinned items (shown inline)
@@ -281,6 +281,10 @@ Rectangle {
     spacing: Style.marginXS
     flow: isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
+    // Pixel-perfect centering
+    x: isVertical ? Style.pixelAlignCenter(parent.width, width) : 0
+    y: isVertical ? 0 : Style.pixelAlignCenter(parent.height, height)
+
     // Drawer opener (before items if opposite direction)
     NIconButton {
       id: chevronIconBefore
@@ -326,7 +330,8 @@ Rectangle {
           id: trayIcon
           width: iconSize
           height: iconSize
-          anchors.centerIn: parent
+          x: Style.pixelAlignCenter(parent.width, width)
+          y: Style.pixelAlignCenter(parent.height, height)
           asynchronous: true
           backer.fillMode: Image.PreserveAspectFit
 

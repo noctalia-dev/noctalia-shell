@@ -58,7 +58,7 @@ Item {
   readonly property real groupedBorderOpacity: (widgetSettings.groupedBorderOpacity !== undefined) ? widgetSettings.groupedBorderOpacity : widgetMetadata.groupedBorderOpacity
   readonly property bool enableScrollWheel: (widgetSettings.enableScrollWheel !== undefined) ? widgetSettings.enableScrollWheel : widgetMetadata.enableScrollWheel
 
-  readonly property int itemSize: Math.round(Style.capsuleHeight * 0.8)
+  readonly property int itemSize: Style.toOdd(Style.capsuleHeight * 0.8)
 
   // Context menu state for grouped mode - store IDs instead of object references to avoid stale references
   property string selectedWindowId: ""
@@ -123,13 +123,13 @@ Item {
 
     const textWidth = displayText.length * (d * 0.4); // Approximate width per character
     const padding = d * 0.6;
-    return Math.round(Math.max(d * factor, textWidth + padding));
+    return Style.toOdd(Math.max(d * factor, textWidth + padding));
   }
 
   function getWorkspaceHeight(ws) {
     const d = Math.round(Style.capsuleHeight * root.baseDimensionRatio);
     const factor = ws.isActive ? 2.2 : 1;
-    return Math.round(d * factor);
+    return Style.toOdd(d * factor);
   }
 
   function computeWidth() {
@@ -140,7 +140,7 @@ Item {
     }
     total += Math.max(localWorkspaces.count - 1, 0) * spacingBetweenPills;
     total += horizontalPadding * 2;
-    return Math.round(total);
+    return Style.toOdd(total);
   }
 
   function computeHeight() {
@@ -151,7 +151,7 @@ Item {
     }
     total += Math.max(localWorkspaces.count - 1, 0) * spacingBetweenPills;
     total += horizontalPadding * 2;
-    return Math.round(total);
+    return Style.toOdd(total);
   }
 
   function getFocusedLocalIndex() {
@@ -410,8 +410,8 @@ Item {
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
 
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.verticalCenter: parent.verticalCenter
+    x: isVertical ? Style.pixelAlignCenter(parent.width, width) : 0
+    y: isVertical ? 0 : Style.pixelAlignCenter(parent.height, height)
 
     MouseArea {
       anchors.fill: parent
@@ -473,8 +473,8 @@ Item {
   Row {
     id: pillRow
     spacing: spacingBetweenPills
-    anchors.verticalCenter: workspaceBackground.verticalCenter
     x: horizontalPadding
+    y: workspaceBackground.y + Style.pixelAlignCenter(workspaceBackground.height, height)
     visible: !isVertical && !showApplications
 
     Repeater {
@@ -483,7 +483,7 @@ Item {
       Item {
         id: workspacePillContainer
         width: root.getWorkspaceWidth(model)
-        height: Style.capsuleHeight * root.baseDimensionRatio
+        height: Style.toOdd(Style.capsuleHeight * root.baseDimensionRatio)
 
         Rectangle {
           id: pill
@@ -493,8 +493,8 @@ Item {
             active: (labelMode !== "none") && (!root.showLabelsOnlyWhenOccupied || model.isOccupied || model.isFocused)
             sourceComponent: Component {
               NText {
-                x: (pill.width - width) / 2
-                y: (pill.height - height) / 2 + (height - contentHeight) / 2
+                x: Style.pixelAlignCenter(pill.width, width)
+                y: Style.pixelAlignCenter(pill.height, height)
                 text: {
                   if (model.name && model.name.length > 0) {
                     if (root.labelMode === "name") {
@@ -621,7 +621,7 @@ Item {
   Column {
     id: pillColumn
     spacing: spacingBetweenPills
-    anchors.horizontalCenter: workspaceBackground.horizontalCenter
+    x: workspaceBackground.x + Style.pixelAlignCenter(workspaceBackground.width, width)
     y: horizontalPadding
     visible: isVertical && !showApplications
 
@@ -630,7 +630,7 @@ Item {
       model: localWorkspaces
       Item {
         id: workspacePillContainerVertical
-        width: Style.capsuleHeight * root.baseDimensionRatio
+        width: Style.toOdd(Style.capsuleHeight * root.baseDimensionRatio)
         height: root.getWorkspaceHeight(model)
 
         Rectangle {
@@ -641,8 +641,8 @@ Item {
             active: (labelMode !== "none") && (!root.showLabelsOnlyWhenOccupied || model.isOccupied || model.isFocused)
             sourceComponent: Component {
               NText {
-                x: (pillVertical.width - width) / 2
-                y: (pillVertical.height - height) / 2 + (height - contentHeight) / 2
+                x: Style.pixelAlignCenter(pillVertical.width, width)
+                y: Style.pixelAlignCenter(pillVertical.height, height)
                 text: {
                   if (model.name && model.name.length > 0) {
                     if (root.labelMode === "name") {
@@ -779,8 +779,8 @@ Item {
       property var workspaceModel: model
       property bool hasWindows: (workspaceModel?.windows?.count ?? 0) > 0
 
-      width: (hasWindows ? groupedIconsFlow.implicitWidth : root.itemSize) + (root.isVertical ? Style.marginXS : Style.marginXL)
-      height: (hasWindows ? groupedIconsFlow.implicitHeight : root.itemSize) + (root.isVertical ? Style.marginL : Style.marginXS)
+      width: Style.toOdd((hasWindows ? groupedIconsFlow.implicitWidth : root.itemSize) + (root.isVertical ? Style.marginXS : Style.marginXL))
+      height: Style.toOdd((hasWindows ? groupedIconsFlow.implicitHeight : root.itemSize) + (root.isVertical ? Style.marginL : Style.marginXS))
       color: Style.capsuleColor
       radius: Style.radiusS
       border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : Color.mOutline), root.groupedBorderOpacity)
@@ -812,7 +812,8 @@ Item {
       Flow {
         id: groupedIconsFlow
 
-        anchors.centerIn: parent
+        x: Style.pixelAlignCenter(parent.width, width)
+        y: Style.pixelAlignCenter(parent.height, height)
         spacing: 4
         flow: root.isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
@@ -1019,15 +1020,11 @@ Item {
     id: groupedGrid
     visible: showApplications
 
-    anchors.verticalCenter: isVertical ? undefined : parent.verticalCenter
-    anchors.left: isVertical ? undefined : parent.left
-    anchors.leftMargin: isVertical ? 0 : Style.marginM
-    anchors.horizontalCenter: isVertical ? parent.horizontalCenter : undefined
-    anchors.top: isVertical ? parent.top : undefined
-    anchors.topMargin: isVertical ? Style.marginM : 0
+    x: root.isVertical ? Style.pixelAlignCenter(parent.width, width) : Style.marginM
+    y: root.isVertical ? Style.marginM : Style.pixelAlignCenter(parent.height, height)
 
     spacing: Style.marginS
-    flow: isVertical ? Flow.TopToBottom : Flow.LeftToRight
+    flow: root.isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
     Repeater {
       model: showApplications ? localWorkspaces : null

@@ -87,30 +87,40 @@ Singleton {
 
   // Bar Dimensions
   readonly property real barHeight: {
+    let h;
     switch (Settings.data.bar.density) {
       case "mini":
-      return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 22 : 20;
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 23 : 21;
+      break;
       case "compact":
-      return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 27 : 25;
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 27 : 25;
+      break;
       case "comfortable":
-      return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 39 : 37;
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 39 : 37;
+      break;
       default:
       case "default":
-      return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 33 : 31;
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 33 : 31;
     }
+    return toOdd(h);
   }
   readonly property real capsuleHeight: {
+    let h;
     switch (Settings.data.bar.density) {
       case "mini":
-      return Math.round(barHeight * 1.0);
+      h = Math.round(barHeight * 1.0);
+      break;
       case "compact":
-      return Math.round(barHeight * 0.85);
+      h = Math.round(barHeight * 0.85);
+      break;
       case "comfortable":
-      return Math.round(barHeight * 0.73);
+      h = Math.round(barHeight * 0.73);
+      break;
       default:
       case "default":
-      return Math.round(barHeight * 0.82);
+      h = Math.round(barHeight * 0.82);
     }
+    return toOdd(h);
   }
   readonly property color capsuleColor: Settings.data.bar.showCapsule ? Qt.alpha(Color.mSurfaceVariant, Settings.data.bar.capsuleOpacity) : Color.transparent
 
@@ -120,5 +130,15 @@ Singleton {
   // Pixel-perfect utility for centering content without subpixel positioning
   function pixelAlignCenter(containerSize, contentSize) {
     return Math.round((containerSize - contentSize) / 2);
+  }
+
+  // Ensures a number is always odd (rounds down to nearest odd)
+  function toOdd(n) {
+    return Math.floor(n / 2) * 2 + 1;
+  }
+
+  // Ensures a number is always even (rounds down to nearest even)
+  function toEven(n) {
+    return Math.floor(n / 2) * 2;
   }
 }

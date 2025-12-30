@@ -390,7 +390,7 @@ NBox {
                   }
                 }
                 NText {
-                  text: NetworkService.activeWifiDetails.band
+                  text: NetworkService.activeWifiDetails.band || "-"
                   pointSize: Style.fontSizeXS
                   Layout.fillWidth: true
                   wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap

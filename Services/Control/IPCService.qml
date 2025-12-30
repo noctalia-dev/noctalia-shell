@@ -224,6 +224,24 @@ Item {
     function muteInput() {
       AudioService.setInputMuted(!AudioService.inputMuted);
     }
+    function togglePanel() {
+      root.screenDetector.withCurrentScreen(screen => {
+                                              var panel = PanelService.getPanel("audioPanel", screen);
+                                              panel?.toggle();
+                                            });
+    }
+    function openPanel() {
+      root.screenDetector.withCurrentScreen(screen => {
+                                              var panel = PanelService.getPanel("audioPanel", screen);
+                                              panel?.open();
+                                            });
+    }
+    function closePanel() {
+      root.screenDetector.withCurrentScreen(screen => {
+                                              var panel = PanelService.getPanel("audioPanel", screen);
+                                              panel?.close();
+                                            });
+    }
   }
 
   IpcHandler {

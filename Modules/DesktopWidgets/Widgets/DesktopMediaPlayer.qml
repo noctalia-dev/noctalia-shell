@@ -81,7 +81,7 @@ DraggableDesktopWidget {
     anchors.bottomMargin: 0
     z: 0
     clip: true
-    active: shouldShowVisualizer && !root.isScaling
+    active: shouldShowVisualizer
     layer.enabled: root.roundedCorners
     layer.smooth: true
     layer.effect: MultiEffect {
@@ -236,7 +236,7 @@ DraggableDesktopWidget {
         text: MediaService.trackArtist || ""
         pointSize: Math.round(Style.fontSizeXS * widgetScale)
         font.weight: Style.fontWeightRegular
-        color: Color.mOnSurfaceVariant
+        color: Color.mSecondary
         elide: Text.ElideRight
         maximumLineCount: 1
       }

@@ -528,7 +528,7 @@ Singleton {
   // #3 - Check if nvidia-smi is available (for NVIDIA GPUs)
   Process {
     id: nvidiaSmiCheck
-    command: ["which", "nvidia-smi"]
+    command: ["sh", "-c", "command -v nvidia-smi"]
     running: false
     stdout: StdioCollector {
       onStreamFinished: {
