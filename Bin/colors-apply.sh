@@ -307,6 +307,10 @@ hyprland)
             echo "✅ Added noctalia theme include to config."
         fi
     fi
+
+    # Reload hyprland
+    echo "✅ Reloading hyprland"
+    hyprctl reload
     ;;
 
 mango)

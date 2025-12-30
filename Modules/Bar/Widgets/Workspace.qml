@@ -22,6 +22,7 @@ Item {
   property string section: ""
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
+  property real barScaling: 1.0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
   property var widgetSettings: {
@@ -36,14 +37,7 @@ Item {
 
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
-  readonly property bool density: Settings.data.bar.density
-  readonly property real baseDimensionRatio: {
-    const b = (density === "compact") ? 0.85 : 0.65;
-    if (widgetSettings.labelMode === "none") {
-      return b * 0.75;
-    }
-    return b;
-  }
+  readonly property real baseDimensionRatio: root.barScaling * 0.65 * (widgetSettings.labelMode === "none" ? 0.75 : 1)
 
   readonly property string labelMode: (widgetSettings.labelMode !== undefined) ? widgetSettings.labelMode : widgetMetadata.labelMode
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
@@ -58,6 +52,7 @@ Item {
   readonly property real groupedBorderOpacity: (widgetSettings.groupedBorderOpacity !== undefined) ? widgetSettings.groupedBorderOpacity : widgetMetadata.groupedBorderOpacity
   readonly property bool enableScrollWheel: (widgetSettings.enableScrollWheel !== undefined) ? widgetSettings.enableScrollWheel : widgetMetadata.enableScrollWheel
 
+  // Only for grouped mode / show apps
   readonly property int itemSize: Style.toOdd(Style.capsuleHeight * 0.8)
 
   // Context menu state for grouped mode - store IDs instead of object references to avoid stale references

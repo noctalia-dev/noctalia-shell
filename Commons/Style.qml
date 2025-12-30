@@ -98,11 +98,15 @@ Singleton {
       case "comfortable":
       h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 39 : 37;
       break;
+      case "spacious":
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 49 : 47;
+      break;
       default:
       case "default":
       h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 33 : 31;
     }
-    return toOdd(h);
+    return h;
+    //return toOdd(h);
   }
   readonly property real capsuleHeight: {
     let h;
@@ -114,7 +118,10 @@ Singleton {
       h = Math.round(barHeight * 0.85);
       break;
       case "comfortable":
-      h = Math.round(barHeight * 0.73);
+      h = Math.round(barHeight * 0.75);
+      break;
+      case "spacious":
+      h = Math.round(barHeight * 0.75);
       break;
       default:
       case "default":

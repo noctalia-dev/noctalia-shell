@@ -672,7 +672,8 @@
         "comfortable": "Comfortable",
         "compact": "Compact",
         "default": "Berdest",
-        "mini": "Mini"
+        "mini": "Mini",
+        "spacious": "Berfireh"
       },
       "position": {
         "bottom": "Jêr",
@@ -729,7 +730,7 @@
         "center": "Navend",
         "center_left": "Navend çep",
         "center_right": "Navend rast",
-        "follow_bar": "Darikê bişopîne (berdest)",
+        "follow_bar": "Darikê bişopîne",
         "top_center": "Navenda jor",
         "top_left": "Jor çep",
         "top_right": "Jor rast"
@@ -2796,6 +2797,7 @@
     "next-media": "Strana pêş",
     "next-month": "Next month",
     "night-light-disabled": "Night Light",
+    "night-light-enabled": "Ronahiya Şevê",
     "night-light-forced": "Night Light",
     "night-light-not-installed": "Night Light (not available)",
     "noctalia-performance-disabled": "Noctalia Performance Mode",

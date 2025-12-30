@@ -78,6 +78,10 @@ ColumnLayout {
       {
         "key": "comfortable",
         "name": I18n.tr("options.bar.density.comfortable")
+      },
+      {
+        "key": "spacious",
+        "name": I18n.tr("options.bar.density.spacious")
       }
     ]
     currentKey: Settings.data.bar.density

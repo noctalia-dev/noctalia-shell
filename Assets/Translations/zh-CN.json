@@ -672,7 +672,8 @@
         "comfortable": "舒适",
         "compact": "紧凑",
         "default": "默认",
-        "mini": "迷你"
+        "mini": "迷你",
+        "spacious": "宽敞"
       },
       "position": {
         "bottom": "底部",
@@ -726,10 +727,10 @@
         "bottom_center": "底部居中",
         "bottom_left": "左下角",
         "bottom_right": "右下角",
-        "center": "居中（默认）",
+        "center": "居中",
         "center_left": "左侧居中",
         "center_right": "右侧居中",
-        "follow_bar": "跟随栏（默认）",
+        "follow_bar": "跟随栏",
         "top_center": "顶部居中",
         "top_left": "左上角",
         "top_right": "右上角"

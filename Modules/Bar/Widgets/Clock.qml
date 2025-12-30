@@ -17,7 +17,7 @@ Rectangle {
   property string section: ""
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
-  property real scaling: 1.0
+  property real barScaling: 1.0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
   property var widgetSettings: {
@@ -75,14 +75,14 @@ Rectangle {
             Binding on pointSize {
               value: {
                 if (repeater.model.length == 1) {
-                  return Style.fontSizeS * scaling;
+                  return Style.capsuleHeight * 0.4 * barScaling;
                 } else {
-                  return (index == 0) ? Style.fontSizeXS * scaling : Style.fontSizeXXS * scaling;
+                  return (index == 0) ? Style.capsuleHeight * 0.35 * barScaling : Style.capsuleHeight * 0.3 * barScaling;
                 }
               }
             }
             applyUiScale: false
-            font.weight: Style.fontWeightBold
+            font.weight: Style.fontWeightSemiBold
             color: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
             wrapMode: Text.WordWrap
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -106,7 +106,7 @@ Rectangle {
             text: modelData
             family: useCustomFont && customFont ? customFont : Settings.data.ui.fontDefault
             Binding on pointSize {
-              value: Style.fontSizeS * scaling
+              value: Style.fontSizeS * barScaling
             }
             applyUiScale: false
 

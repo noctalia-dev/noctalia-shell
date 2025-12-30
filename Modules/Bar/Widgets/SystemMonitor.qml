@@ -19,6 +19,7 @@ Rectangle {
   property string section: ""
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
+  property real barScaling: 1.0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
   property var widgetSettings: {
@@ -34,6 +35,7 @@ Rectangle {
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
   readonly property bool density: Settings.data.bar.density
+  readonly property bool barCompact: Settings.data.bar.density === "compact"
 
   readonly property bool compactMode: widgetSettings.compactMode !== undefined ? widgetSettings.compactMode : widgetMetadata.compactMode
   readonly property bool usePrimaryColor: widgetSettings.usePrimaryColor !== undefined ? widgetSettings.usePrimaryColor : widgetMetadata.usePrimaryColor
@@ -46,17 +48,11 @@ Rectangle {
   readonly property bool showNetworkStats: (widgetSettings.showNetworkStats !== undefined) ? widgetSettings.showNetworkStats : widgetMetadata.showNetworkStats
   readonly property bool showDiskUsage: (widgetSettings.showDiskUsage !== undefined) ? widgetSettings.showDiskUsage : widgetMetadata.showDiskUsage
   readonly property string diskPath: (widgetSettings.diskPath !== undefined) ? widgetSettings.diskPath : widgetMetadata.diskPath
-
   readonly property string fontFamily: useMonospaceFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
-  readonly property real iconSize: compactMode ? textSize * 1.2 : textSize * 1.4
-  readonly property real textSize: {
-    var base = isVertical ? width * 0.82 : height;
-    return Math.max(1, (density === "compact") ? base * 0.43 : base * 0.33);
-  }
 
-  // Mini bar dimensions for compact mode
-  readonly property real miniBarWidth: Math.max(16, Math.round(iconSize * 1.8))
-  readonly property real miniBarHeight: Math.max(3, Math.round(iconSize * 0.25))
+  readonly property real iconSize: Style.toOdd(Style.capsuleHeight * root.barScaling * (root.barCompact ? 0.55 : 0.45))
+  readonly property real miniGaugeWidth: Math.max(3, Style.toOdd(root.iconSize * 0.25))
+  readonly property real textSize: Math.max(7, iconSize * barScaling * 0.6 * (isVertical ? 0.85 : 1.0))
 
   // Build comprehensive tooltip text with all stats
   function buildTooltipText() {
@@ -90,10 +86,6 @@ Rectangle {
 
     return lines.join("\n");
   }
-
-  // Match Workspace widget pill sizing: base ratio depends on bar density
-  readonly property real pillBaseRatio: (density === "compact") ? 0.85 : 0.65
-  readonly property int pillHeight: Math.round(Style.capsuleHeight * pillBaseRatio)
 
   readonly property color textColor: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
 
@@ -150,6 +142,8 @@ Rectangle {
                    PanelService.getPanel("systemStatsPanel", screen)?.toggle(root);
                    TooltipService.hide();
                  } else if (mouse.button === Qt.RightButton) {
+                   TooltipService.hide();
+                   5;
                    var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
                    if (popupMenuWindow) {
                      popupMenuWindow.showContextMenu(contextMenu);
@@ -187,7 +181,7 @@ Rectangle {
       property real ratio: 0 // 0..1
       property color statColor: Color.mPrimary // Color based on warning/critical state
 
-      width: miniBarHeight // Thin vertical gauge
+      width: miniGaugeWidth
       height: iconSize
       radius: width / 2
       color: Color.mOutline

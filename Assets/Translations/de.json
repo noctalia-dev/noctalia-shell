@@ -672,7 +672,8 @@
         "comfortable": "Bequem",
         "compact": "Kompakt",
         "default": "Standard",
-        "mini": "Mini"
+        "mini": "Mini",
+        "spacious": "Geräumig"
       },
       "position": {
         "bottom": "Unten",
@@ -726,10 +727,10 @@
         "bottom_center": "Unten mittig",
         "bottom_left": "Unten links",
         "bottom_right": "Unten rechts",
-        "center": "Mitte (Standard)",
+        "center": "Mitte",
         "center_left": "Links mittig",
         "center_right": "Rechts mittig",
-        "follow_bar": "Folge der Leiste (Standard)",
+        "follow_bar": "Folge der Leiste",
         "top_center": "Oben mittig",
         "top_left": "Oben links",
         "top_right": "Oben rechts"

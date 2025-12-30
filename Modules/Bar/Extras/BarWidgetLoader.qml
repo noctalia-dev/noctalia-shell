@@ -12,7 +12,7 @@ Item {
   required property var widgetProps
 
   property string barDensity: "default"
-  readonly property real scaling: barDensity === "mini" ? 0.8 : (barDensity === "compact" ? 0.9 : 1.0)
+  readonly property real barScaling: barDensity === "mini" ? 0.8 : (barDensity === "compact" ? 0.9 : 1.0)
 
   // Extract section info from widgetProps
   readonly property string section: widgetProps ? (widgetProps.section || "") : ""
@@ -81,10 +81,10 @@ Item {
         item.screen = widgetScreen;
       }
 
-      // Set scaling property
-      if (item.hasOwnProperty("scaling")) {
-        item.scaling = Qt.binding(function () {
-          return root.scaling;
+      // Set bar scaling property
+      if (item.hasOwnProperty("barScaling")) {
+        item.barScaling = Qt.binding(function () {
+          return root.barScaling;
         });
       }
 

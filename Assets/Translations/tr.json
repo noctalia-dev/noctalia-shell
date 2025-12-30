@@ -672,7 +672,8 @@
         "comfortable": "Rahat",
         "compact": "Sıkı",
         "default": "Varsayılan",
-        "mini": "Ufak"
+        "mini": "Ufak",
+        "spacious": "Geniş"
       },
       "position": {
         "bottom": "Alt",
@@ -726,10 +727,10 @@
         "bottom_center": "Alt merkez",
         "bottom_left": "Sol alt",
         "bottom_right": "Sağ alt",
-        "center": "Merkez (varsayılan)",
+        "center": "Merkez",
         "center_left": "Sol merkez",
         "center_right": "Sağ merkez",
-        "follow_bar": "Çubuğu takip et (varsayılan)",
+        "follow_bar": "Çubuğu takip et",
         "top_center": "Üst merkez",
         "top_left": "Sol üst",
         "top_right": "Sağ üst"

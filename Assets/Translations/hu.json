@@ -672,7 +672,8 @@
         "comfortable": "Kényelmes",
         "compact": "Kompakt",
         "default": "Alapértelmezett",
-        "mini": "Mini"
+        "mini": "Mini",
+        "spacious": "Tágas"
       },
       "position": {
         "bottom": "Alul",
@@ -729,7 +730,7 @@
         "center": "Középen",
         "center_left": "Bal középen",
         "center_right": "Jobb középen",
-        "follow_bar": "Követi a sávot (alapértelmezett)",
+        "follow_bar": "Követi a sávot",
         "top_center": "Fent középen",
         "top_left": "Fent balra",
         "top_right": "Fent jobbra"

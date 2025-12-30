@@ -672,7 +672,8 @@
         "comfortable": "Confortable",
         "compact": "Compact",
         "default": "Défaut",
-        "mini": "Mini"
+        "mini": "Mini",
+        "spacious": "Spacieux/Spacieuse"
       },
       "position": {
         "bottom": "Bas",
@@ -726,10 +727,10 @@
         "bottom_center": "En bas au centre",
         "bottom_left": "En bas à gauche",
         "bottom_right": "En bas à droite",
-        "center": "Centre (par défaut)",
+        "center": "Centre",
         "center_left": "Gauche centre",
         "center_right": "Droite centre",
-        "follow_bar": "Suivre la barre (par défaut)",
+        "follow_bar": "Suivre la barre",
         "top_center": "En haut au centre",
         "top_left": "En haut à gauche",
         "top_right": "En haut à droite"

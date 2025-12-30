@@ -186,7 +186,7 @@ BluetoothAgent {
     id: fallbackBluetoothctlAgent
     // Prefer bt-agent (if available). Otherwise, fall back to bluetoothctl
     // and register as the default agent, keeping the session alive.
-    command: ["sh", "-c", "(pkill -f '^bt-agent( |$)' 2>/dev/null || true; pkill -f '^bluetoothctl( |$)' 2>/dev/null || true; " + "if command -v bt-agent >/dev/null 2>&1; then exec bt-agent -c DisplayYesNo; " + "else (printf 'agent off\nagent on\nagent KeyboardDisplay\ndefault-agent\n'; while sleep 3600; do :; done) | bluetoothctl; fi)"]
+    command: ["sh", "-c", "pkill -f '^bt-agent( |$)' 2>/dev/null || true; pkill -f '^bluetoothctl( |$)' 2>/dev/null || true; " + "if command -v bt-agent >/dev/null 2>&1; then exec bt-agent -c DisplayYesNo; " + "else exec sh -c \"printf 'agent off\nagent on\nagent KeyboardDisplay\ndefault-agent\n'; cat - | bluetoothctl\"; fi"]
     running: false
     stdout: StdioCollector {}
     stderr: StdioCollector {

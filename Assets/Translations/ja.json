@@ -672,7 +672,8 @@
         "comfortable": "ゆったり",
         "compact": "コンパクト",
         "default": "標準",
-        "mini": "ミニ"
+        "mini": "ミニ",
+        "spacious": "広々とした"
       },
       "position": {
         "bottom": "下",
@@ -729,7 +730,7 @@
         "center": "中央",
         "center_left": "左側中央",
         "center_right": "右側中央",
-        "follow_bar": "バーに追従 (デフォルト)",
+        "follow_bar": "バーに追従",
         "top_center": "上部中央",
         "top_left": "左上",
         "top_right": "右上"

@@ -672,7 +672,8 @@
         "comfortable": "Comfortable",
         "compact": "Compact",
         "default": "Default",
-        "mini": "Mini"
+        "mini": "Mini",
+        "spacious": "Spacious"
       },
       "position": {
         "bottom": "Bottom",
@@ -729,7 +730,7 @@
         "center": "Center",
         "center_left": "Left center",
         "center_right": "Right center",
-        "follow_bar": "Follow bar (default)",
+        "follow_bar": "Follow bar",
         "top_center": "Top center",
         "top_left": "Top left",
         "top_right": "Top right"

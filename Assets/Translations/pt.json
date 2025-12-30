@@ -672,7 +672,8 @@
         "comfortable": "Confortável",
         "compact": "Compacta",
         "default": "Padrão",
-        "mini": "Mini"
+        "mini": "Mini",
+        "spacious": "Espaçoso(a)"
       },
       "position": {
         "bottom": "Inferior",
@@ -726,10 +727,10 @@
         "bottom_center": "Centro inferior",
         "bottom_left": "Inferior esquerdo",
         "bottom_right": "Inferior direito",
-        "center": "Centro (padrão)",
+        "center": "Centro",
         "center_left": "Centro à esquerda",
         "center_right": "Centro à direita",
-        "follow_bar": "Seguir barra (padrão)",
+        "follow_bar": "Seguir barra",
         "top_center": "Centro superior",
         "top_left": "Superior esquerdo",
         "top_right": "Superior direito"
