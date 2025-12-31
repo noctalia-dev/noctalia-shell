@@ -27,6 +27,9 @@ Item {
     function toggle() {
       BarService.isVisible = !BarService.isVisible;
     }
+    function isVisible(): bool {
+      return BarService.isVisible;
+    }
   }
 
   IpcHandler {
