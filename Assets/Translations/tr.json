@@ -670,6 +670,7 @@
     "authenticating": "Doğrulanıyor...",
     "authentication-failed": "Kimlik doğrulama başarısız",
     "password": "Parolanızı girin...",
+    "press-to-unlock": "Kilidi açmak için herhangi bir tuşa basın",
     "restart": "Yeniden başlat",
     "shut-down": "Kapat",
     "suspend": "Askıya al",

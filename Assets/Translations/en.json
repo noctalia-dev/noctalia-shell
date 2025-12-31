@@ -670,6 +670,7 @@
     "authenticating": "Authenticating...",
     "authentication-failed": "Authentication failed",
     "password": "Enter your password...",
+    "press-to-unlock": "Press any key to unlock",
     "restart": "Restart",
     "shut-down": "Shut down",
     "suspend": "Suspend",
