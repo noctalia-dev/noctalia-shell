@@ -14,14 +14,17 @@ ColumnLayout {
 
   // Local state
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
+  property bool valueShowIcon: widgetData.showIcon !== undefined ? widgetData.showIcon : widgetMetadata.showIcon
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.displayMode = valueDisplayMode;
+    settings.showIcon = valueShowIcon;
     return settings;
   }
 
   NComboBox {
+    visible: valueShowIcon // Hide display mode setting when icon is disabled
     label: I18n.tr("bar.widget-settings.keyboard-layout.display-mode.label")
     description: I18n.tr("bar.widget-settings.keyboard-layout.display-mode.description")
     minimumWidth: 134
@@ -41,5 +44,12 @@ ColumnLayout {
     ]
     currentKey: valueDisplayMode
     onSelected: key => valueDisplayMode = key
+  }
+
+  NToggle {
+    label: I18n.tr("bar.widget-settings.keyboard-layout.show-icon.label")
+    description: I18n.tr("bar.widget-settings.keyboard-layout.show-icon.description")
+    checked: valueShowIcon
+    onToggled: checked => valueShowIcon = checked
   }
 }

@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 35
+  readonly property int settingsVersion: 36
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -406,6 +406,7 @@ Singleton {
       property bool showCategories: true
       // Icon mode: "tabler" or "native"
       property string iconMode: "tabler"
+      property bool ignoreMouseInput: false
     }
 
     // control center
@@ -494,6 +495,7 @@ Singleton {
       property string warningColor: ""
       property string criticalColor: ""
       property string diskPath: "/"
+      property string externalMonitor: "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
     }
 
     // dock

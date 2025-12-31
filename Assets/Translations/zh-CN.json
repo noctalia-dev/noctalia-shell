@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "选择您希望此值显示的方式。",
           "label": "显示模式"
+        },
+        "show-icon": {
+          "description": "显示键盘布局图标。",
+          "label": "显示图标"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "应用程序",
     "calculator": "计算器",
+    "calculator-deprecated": ">calc 命令已弃用，即将移除。请直接在搜索中输入数学表达式。",
     "calculator-description": "计算器 — 计算数学表达式",
     "calculator-enter-expression": "输入数学表达式",
     "calculator-error": "错误",
@@ -1810,6 +1815,10 @@
           "description": "使用本地系统图标而不是 Tabler 图标。",
           "label": "使用本地图标"
         },
+        "ignore-mouse-input": {
+          "description": "禁用启动器中的鼠标交互和滚轮。",
+          "label": "忽略鼠标输入"
+        },
         "position": {
           "description": "选择启动器面板出现的位置。",
           "label": "位置"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "警告：这将唤醒您的独立显卡 (NVIDIA/AMD)，这可能会显著影响配备混合显卡的笔记本电脑的电池续航时间。",
         "label": "启用独立显卡监控"
+      },
+      "external-monitor": {
+        "description": "输入启动外部系统监视器应用程序时要执行的命令或应用程序路径。",
+        "label": "外部系统监视器命令",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

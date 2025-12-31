@@ -24,6 +24,7 @@ ColumnLayout {
   property real valueUnfocusedIconsOpacity: widgetData.unfocusedIconsOpacity !== undefined ? widgetData.unfocusedIconsOpacity : widgetMetadata.unfocusedIconsOpacity
   property real valueGroupedBorderOpacity: widgetData.groupedBorderOpacity !== undefined ? widgetData.groupedBorderOpacity : widgetMetadata.groupedBorderOpacity
   property bool valueEnableScrollWheel: widgetData.enableScrollWheel !== undefined ? widgetData.enableScrollWheel : widgetMetadata.enableScrollWheel
+  property real valueIconScale: widgetData.iconScale !== undefined ? widgetData.iconScale : widgetMetadata.iconScale
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -37,6 +38,7 @@ ColumnLayout {
     settings.unfocusedIconsOpacity = valueUnfocusedIconsOpacity;
     settings.groupedBorderOpacity = valueGroupedBorderOpacity;
     settings.enableScrollWheel = valueEnableScrollWheel;
+    settings.iconScale = valueIconScale;
     return settings;
   }
 
@@ -145,6 +147,18 @@ ColumnLayout {
     value: valueGroupedBorderOpacity
     onMoved: value => valueGroupedBorderOpacity = value
     text: Math.floor(valueGroupedBorderOpacity * 100) + "%"
+    visible: valueShowApplications
+  }
+
+  NValueSlider {
+    label: I18n.tr("bar.widget-settings.taskbar.icon-scale.label")
+    description: I18n.tr("bar.widget-settings.taskbar.icon-scale.description")
+    from: 0.5
+    to: 1
+    stepSize: 0.01
+    value: valueIconScale
+    onMoved: value => valueIconScale = value
+    text: Math.round(valueIconScale * 100) + "%"
     visible: valueShowApplications
   }
 }

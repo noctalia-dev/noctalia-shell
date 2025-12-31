@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Elige cómo te gustaría que apareciera este valor.",
           "label": "Modo de visualización"
+        },
+        "show-icon": {
+          "description": "Mostrar el icono de la distribución del teclado.",
+          "label": "Mostrar icono"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Aplicaciones",
     "calculator": "Calculadora",
+    "calculator-deprecated": "El comando >calc está obsoleto y será eliminado pronto. Por favor, escribe expresiones matemáticas directamente en la búsqueda en su lugar.",
     "calculator-description": "Calculadora — evalúa expresiones matemáticas",
     "calculator-enter-expression": "Ingresa una expresión matemática",
     "calculator-error": "Error",
@@ -1810,6 +1815,10 @@
           "description": "Usa iconos nativos del sistema en lugar de iconos Tabler.",
           "label": "Usar iconos nativos"
         },
+        "ignore-mouse-input": {
+          "description": "Deshabilitar la interacción del ratón y la rueda de desplazamiento en el lanzador.",
+          "label": "Ignorar la entrada del ratón"
+        },
         "position": {
           "description": "Elige dónde aparece el panel del lanzador.",
           "label": "Posición"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Advertencia: Esto activará tu GPU dedicada (NVIDIA/AMD), lo que podría afectar significativamente la duración de la batería en portátiles con gráficos híbridos.",
         "label": "Habilitar la monitorización de la GPU dedicada"
+      },
+      "external-monitor": {
+        "description": "Ingrese el comando o ruta de la aplicación para ejecutar al activar la aplicación externa del monitor del sistema.",
+        "label": "Comando del monitor del sistema externo",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

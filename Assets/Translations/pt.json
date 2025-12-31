@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Escolha como você gostaria que este valor aparecesse.",
           "label": "Modo de exibição"
+        },
+        "show-icon": {
+          "description": "Exibir o ícone do layout do teclado.",
+          "label": "Mostrar ícone"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Aplicativos",
     "calculator": "Calculadora",
+    "calculator-deprecated": "O comando >calc está obsoleto e será removido em breve. Por favor, digite expressões matemáticas diretamente na pesquisa.",
     "calculator-description": "Calculadora — avalie expressões matemáticas",
     "calculator-enter-expression": "Digite uma expressão matemática",
     "calculator-error": "Erro",
@@ -1810,6 +1815,10 @@
           "description": "Use ícones nativos do sistema em vez de ícones Tabler.",
           "label": "Usar ícones nativos"
         },
+        "ignore-mouse-input": {
+          "description": "Desativar a interação do mouse e a roda de rolagem no iniciador.",
+          "label": "Ignorar entrada do mouse."
+        },
         "position": {
           "description": "Escolha onde o painel do lançador aparece.",
           "label": "Posição"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Atenção: Isto irá ativar sua GPU dedicada (NVIDIA/AMD), o que pode impactar significativamente a duração da bateria em laptops com gráficos híbridos.",
         "label": "Ativar o monitoramento da GPU dedicada"
+      },
+      "external-monitor": {
+        "description": "Digite o comando ou caminho da aplicação para executar ao ativar a aplicação externa de monitoramento do sistema.",
+        "label": "Comando do monitor do sistema externo",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

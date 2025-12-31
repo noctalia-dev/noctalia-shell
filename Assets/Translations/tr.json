@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Bu değerin nasıl görünmesini istediğinizi seçin.",
           "label": "Görüntüleme modu"
+        },
+        "show-icon": {
+          "description": "Klavye düzeni simgesini görüntüle.",
+          "label": "Simgeyi göster"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Uygulamalar",
     "calculator": "Hesap makinesi",
+    "calculator-deprecated": ">calc komutu kullanımdan kaldırılmıştır ve yakında kaldırılacaktır. Lütfen matematiksel ifadeleri doğrudan aramaya yazın.",
     "calculator-description": "Hesap makinesi — matematiksel ifadeleri hesapla",
     "calculator-enter-expression": "Matematiksel bir ifade girin",
     "calculator-error": "Hata",
@@ -1810,6 +1815,10 @@
           "description": "Tabler simgeleri yerine yerel sistem simgelerini kullanın.",
           "label": "Yerel simgeleri kullan"
         },
+        "ignore-mouse-input": {
+          "description": "Başlatıcıda fare etkileşimini ve kaydırma tekerleğini devre dışı bırak.",
+          "label": "Fare girişini yoksay."
+        },
         "position": {
           "description": "Başlatıcı panelinin nerede görüneceğini seçin.",
           "label": "Konum"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Uyarı: Bu, ayrık GPU'nuzu (NVIDIA/AMD) uyandıracak ve bu da hibrit grafiklere sahip dizüstü bilgisayarlarda pil ömrünü önemli ölçüde etkileyebilir.",
         "label": "Ayrık GPU izlemeyi etkinleştir"
+      },
+      "external-monitor": {
+        "description": "Harici sistem izleyici uygulamasını etkinleştirirken başlatılacak komut veya uygulama yolunu girin.",
+        "label": "Harici sistem izleyici komutu",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

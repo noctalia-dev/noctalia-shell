@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Виберіть, як ви хочете, щоб це значення відображалося.",
           "label": "Режим відображення"
+        },
+        "show-icon": {
+          "description": "Показувати піктограму розкладки клавіатури.",
+          "label": "Показати значок"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Застосунки",
     "calculator": "Калькулятор",
+    "calculator-deprecated": "Команда >calc застаріла і скоро буде видалена. Будь ласка, введіть математичні вирази безпосередньо в пошуку.",
     "calculator-description": "Калькулятор — обчислення математичних виразів",
     "calculator-enter-expression": "Введіть математичний вираз",
     "calculator-error": "Помилка",
@@ -1810,6 +1815,10 @@
           "description": "Використовувати нативні системні іконки замість іконок Tabler.",
           "label": "Використовувати нативні іконки"
         },
+        "ignore-mouse-input": {
+          "description": "Вимкнути взаємодію з мишею та коліщатко прокрутки в лаунчері.",
+          "label": "Ігнорувати введення миші"
+        },
         "position": {
           "description": "Виберіть, де з'являється панель лаунчера.",
           "label": "Положення"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Увага: Це розбудить ваш дискретний графічний процесор (NVIDIA/AMD), що може значно вплинути на час роботи акумулятора на ноутбуках з гібридною графікою.",
         "label": "Увімкнути моніторинг дискретного GPU"
+      },
+      "external-monitor": {
+        "description": "Введіть команду або шлях до програми для запуску при активації зовнішньої програми моніторингу системи.",
+        "label": "Команда зовнішнього монітора системи",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

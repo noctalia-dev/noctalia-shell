@@ -10,53 +10,25 @@ Popup {
   id: root
 
   property ShellScreen screen
-  property Item anchorItem: null
 
-  width: Math.max(440, contentColumn.implicitWidth + (Style.marginL * 2))
-  height: contentColumn.implicitHeight + (Style.marginL * 2)
+  width: Math.max(440, Math.round(contentColumn.implicitWidth + (Style.marginL * 2)))
+  height: Math.round(contentColumn.implicitHeight + (Style.marginL * 2))
   padding: Style.marginL
   modal: true
   dim: false
   closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-  parent: anchorItem ? anchorItem.parent : Overlay.overlay
-
-  x: {
-    if (anchorItem) {
-      var itemPos = anchorItem.mapToItem(parent, 0, 0);
-      return itemPos.x - width + anchorItem.width;
-    }
-    return 0;
-  }
-
-  y: {
-    if (anchorItem) {
-      var itemPos = anchorItem.mapToItem(parent, 0, 0);
-      var barPosition = Settings.data.bar.position || "top";
-      // Position above the anchor when bar is at bottom, otherwise position below
-      if (barPosition === "bottom") {
-        return itemPos.y - height - Style.marginS;
-      } else {
-        return itemPos.y + anchorItem.height + Style.marginS;
-      }
-    }
-    return 0;
-  }
 
   function showAt(item) {
-    if (!item) {
-      return;
-    }
-    anchorItem = item;
     open();
-    Qt.callLater(() => {
-                   // Try to focus the first input if available
-                   if (resolutionWidthInput.inputItem) {
-                     resolutionWidthInput.inputItem.forceActiveFocus();
-                   }
-                 });
   }
 
   onOpened: {
+    // Center on screen after popup is opened and parent position is known
+    if (screen && parent) {
+      var parentPos = parent.mapToItem(null, 0, 0);
+      x = Math.round((screen.width - width) / 2 - parentPos.x);
+      y = Math.round((screen.height - height) / 2 - parentPos.y);
+    }
     Qt.callLater(() => {
                    if (resolutionWidthInput.inputItem) {
                      resolutionWidthInput.inputItem.forceActiveFocus();

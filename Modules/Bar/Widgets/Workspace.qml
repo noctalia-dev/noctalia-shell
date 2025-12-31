@@ -51,9 +51,11 @@ Item {
   readonly property real unfocusedIconsOpacity: (widgetSettings.unfocusedIconsOpacity !== undefined) ? widgetSettings.unfocusedIconsOpacity : widgetMetadata.unfocusedIconsOpacity
   readonly property real groupedBorderOpacity: (widgetSettings.groupedBorderOpacity !== undefined) ? widgetSettings.groupedBorderOpacity : widgetMetadata.groupedBorderOpacity
   readonly property bool enableScrollWheel: (widgetSettings.enableScrollWheel !== undefined) ? widgetSettings.enableScrollWheel : widgetMetadata.enableScrollWheel
+  readonly property real iconScale: (widgetSettings.iconScale !== undefined) ? widgetSettings.iconScale : widgetMetadata.iconScale
 
   // Only for grouped mode / show apps
-  readonly property int itemSize: Style.toOdd(Style.capsuleHeight * 0.8)
+  readonly property int baseItemSize: Style.toOdd(Style.capsuleHeight * 0.8)
+  readonly property int iconSize: Style.toOdd(baseItemSize * iconScale)
 
   // Context menu state for grouped mode - store IDs instead of object references to avoid stale references
   property string selectedWindowId: ""
@@ -68,7 +70,8 @@ Item {
       if (ws && ws.windows) {
         for (var j = 0; j < ws.windows.count; j++) {
           var win = ws.windows.get(j);
-          if (win && (win.id === selectedWindowId || win.address === selectedWindowId)) {
+          // Using loose equality on purpose (==)
+          if (win && (win.id == selectedWindowId || win.address == selectedWindowId)) {
             return win;
           }
         }
@@ -774,8 +777,8 @@ Item {
       property var workspaceModel: model
       property bool hasWindows: (workspaceModel?.windows?.count ?? 0) > 0
 
-      width: Style.toOdd((hasWindows ? groupedIconsFlow.implicitWidth : root.itemSize) + (root.isVertical ? Style.marginXS : Style.marginXL))
-      height: Style.toOdd((hasWindows ? groupedIconsFlow.implicitHeight : root.itemSize) + (root.isVertical ? Style.marginL : Style.marginXS))
+      width: Style.toOdd((hasWindows ? groupedIconsFlow.implicitWidth : root.iconSize) + (root.isVertical ? (root.baseItemSize - root.iconSize + Style.marginXS) : Style.marginXL))
+      height: Style.toOdd((hasWindows ? groupedIconsFlow.implicitHeight : root.iconSize) + (root.isVertical ? Style.marginL : (root.baseItemSize - root.iconSize + Style.marginXS)))
       color: Style.capsuleColor
       radius: Style.radiusS
       border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : Color.mOutline), root.groupedBorderOpacity)
@@ -797,8 +800,8 @@ Item {
                       if (mouse.button === Qt.RightButton) {
                         mouse.accepted = true;
                         TooltipService.hide();
-                        root.selectedWindow = null;
-                        root.selectedAppName = "";
+                        root.selectedWindowId = "";
+                        root.selectedAppId = "";
                         openGroupedContextMenu(groupedContainer);
                       }
                     }
@@ -809,7 +812,7 @@ Item {
 
         x: Style.pixelAlignCenter(parent.width, width)
         y: Style.pixelAlignCenter(parent.height, height)
-        spacing: 4
+        spacing: 2
         flow: root.isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
         Repeater {
@@ -820,8 +823,8 @@ Item {
 
             property bool itemHovered: false
 
-            width: root.itemSize
-            height: root.itemSize
+            width: root.iconSize
+            height: root.iconSize
 
             IconImage {
               id: groupedAppIcon
@@ -836,12 +839,13 @@ Item {
 
               Rectangle {
                 id: groupedFocusIndicator
-                anchors.bottomMargin: 0
+                visible: model.isFocused
+                anchors.bottomMargin: -2
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: model.isFocused ? 4 : 0
-                height: model.isFocused ? 4 : 0
-                color: model.isFocused ? Color.mPrimary : Color.transparent
+                width: Style.toOdd(root.iconSize * 0.25)
+                height: 4
+                color: Color.mPrimary
                 radius: Math.min(Style.radiusXXS, width / 2)
               }
 

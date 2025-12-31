@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "値の表示方法を選択します。",
           "label": "表示モード"
+        },
+        "show-icon": {
+          "description": "キーボードレイアウトのアイコンを表示します。",
+          "label": "アイコンを表示 (Aikona o hyōji)"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "アプリケーション",
     "calculator": "電卓",
+    "calculator-deprecated": ">calc コマンドは非推奨となり、まもなく削除されます。代わりに、検索で数式を直接入力してください。",
     "calculator-description": "電卓 — 数式を計算します",
     "calculator-enter-expression": "数式を入力",
     "calculator-error": "エラー",
@@ -1810,6 +1815,10 @@
           "description": "Tablerアイコンではなく、ネイティブのシステムアイコンを使用します。",
           "label": "ネイティブアイコンを使用"
         },
+        "ignore-mouse-input": {
+          "description": "ランチャーでのマウス操作とスクロールホイールを無効にする。",
+          "label": "マウス入力を無視する"
+        },
         "position": {
           "description": "ランチャーパネルの表示位置を選択します。",
           "label": "表示位置"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "警告: これにより外部GPU (NVIDIA/AMD) が起動状態になるため、ハイブリッドグラフィックス搭載のノート PC ではバッテリー駆動時間に大きな影響を与える可能性があります。",
         "label": "外部GPUモニタリングを有効にする"
+      },
+      "external-monitor": {
+        "description": "外部システムモニターアプリケーションを起動する際に実行するコマンドまたはアプリケーションパスを入力してください。",
+        "label": "外部システムモニターコマンド",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

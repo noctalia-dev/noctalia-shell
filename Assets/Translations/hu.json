@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Válassza ki, hogyan jelenjen meg ez az érték.",
           "label": "Megjelenítési mód"
+        },
+        "show-icon": {
+          "description": "Billentse a billentyűzetkiosztás ikont.",
+          "label": "Ikon megjelenítése"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Alkalmazások",
     "calculator": "Számológép",
+    "calculator-deprecated": "A >calc parancs elavult, és hamarosan el lesz távolítva. Kérjük, a matematikai kifejezéseket közvetlenül a keresésbe írja be helyette.",
     "calculator-description": "Számológép — matematikai kifejezések kiértékelése",
     "calculator-enter-expression": "Írjon be egy matematikai kifejezést",
     "calculator-error": "Hiba",
@@ -1810,6 +1815,10 @@
           "description": "Használjon natív rendszerikonokat a Tabler ikonok helyett.",
           "label": "Natív ikonok használata"
         },
+        "ignore-mouse-input": {
+          "description": "A launcherben tiltsd le az egérműveleteket és a görgőt.",
+          "label": "Egérbemenet figyelmen kívül hagyása"
+        },
         "position": {
           "description": "Hol jelenjen meg az indító panel.",
           "label": "Pozíció"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Figyelem: Ez felébreszti a dedikált GPU-t (NVIDIA/AMD), ami jelentősen befolyásolhatja az akkumulátor élettartamát a hibrid grafikával rendelkező laptopokon.",
         "label": "Dedikált GPU felügyelet engedélyezése"
+      },
+      "external-monitor": {
+        "description": "Adja meg a parancsot vagy alkalmazás elérési útját a külső rendszermonitor alkalmazás indításához.",
+        "label": "Külső rendszermonitor parancs",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

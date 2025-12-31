@@ -114,6 +114,15 @@ ColumnLayout {
     isSettings: true
     defaultValue: Settings.getDefaultValue("appLauncher.iconMode")
   }
+
+  NToggle {
+    label: I18n.tr("settings.launcher.settings.ignore-mouse-input.label")
+    description: I18n.tr("settings.launcher.settings.ignore-mouse-input.description")
+    checked: Settings.data.appLauncher.ignoreMouseInput
+    onToggled: checked => Settings.data.appLauncher.ignoreMouseInput = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.ignoreMouseInput")
+  }
   NToggle {
     label: I18n.tr("settings.launcher.settings.use-app2unit.label")
     description: I18n.tr("settings.launcher.settings.use-app2unit.description")

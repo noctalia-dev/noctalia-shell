@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
+import "../../../Helpers/AdvancedMath.js" as AdvancedMath
 import "../../../Helpers/FuzzySort.js" as Fuzzysort
 
 import "Plugins"
@@ -52,7 +53,7 @@ SmartPanel {
   property var plugins: []
   property var activePlugin: null
   property bool resultsReady: false
-  property bool ignoreMouseHover: false
+  property bool ignoreMouseHover: Settings.data.appLauncher.ignoreMouseInput
 
   readonly property int badgeSize: Math.round(Style.baseWidgetSize * 1.6 * Style.uiScaleRatio)
   readonly property int entryHeight: Math.round(badgeSize + Style.marginM * 2)
@@ -207,6 +208,56 @@ SmartPanel {
       plugin.init();
   }
 
+  // Caclualtor handling
+  function isMathExpression(expr) {
+    // Allow: digits, operators, parentheses, decimal points, whitespace, letters (for functions), commas
+    if (!/^[\d\s\+\-\*\/\(\)\.\%\^a-zA-Z,]+$/.test(expr)) {
+      return false;
+    }
+
+    // Must contain at least one operator OR a function call (letter followed by parenthesis)
+    if (!/[+\-*/%\^]/.test(expr) && !/[a-zA-Z]\s*\(/.test(expr)) {
+      return false;
+    }
+
+    // Reject if ends with an operator (incomplete expression)
+    if (/[+\-*/%\^]\s*$/.test(expr)) {
+      return false;
+    }
+
+    // Reject if it's just letters (would match app names)
+    if (/^[a-zA-Z\s]+$/.test(expr)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function getInlineCalculatorResult(query) {
+    const trimmed = query.trim();
+    if (!trimmed || !isMathExpression(trimmed)) {
+      return null;
+    }
+
+    try {
+      const result = AdvancedMath.evaluate(trimmed);
+      const iconMode = Settings.data.appLauncher.iconMode;
+      return {
+        "name": AdvancedMath.formatResult(result),
+        "description": `${trimmed} = ${result}`,
+        "icon": iconMode === "tabler" ? "calculator" : "accessories-calculator",
+        "isTablerIcon": true,
+        "isImage": false,
+        "onActivate": function () {
+          // TODO: copy entry to clipboard via ClipHist
+          root.close();
+        }
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
   // Search handling
   function updateResults() {
     results = [];
@@ -267,6 +318,12 @@ SmartPanel {
           const pluginResults = plugin.getResults(searchText);
           results = results.concat(pluginResults);
         }
+      }
+
+      // Inline calculator - append result if query is a valid math expression
+      const inlineResult = getInlineCalculatorResult(searchText);
+      if (inlineResult) {
+        results = results.concat([inlineResult]);
       }
     }
 
@@ -559,6 +616,7 @@ SmartPanel {
       hoverEnabled: true
       propagateComposedEvents: true
       acceptedButtons: Qt.NoButton
+      enabled: !Settings.data.appLauncher.ignoreMouseInput
 
       property real lastX: 0
       property real lastY: 0
@@ -797,6 +855,7 @@ SmartPanel {
             model: results
             currentIndex: selectedIndex
             cacheBuffer: resultsList.height * 2
+            interactive: !Settings.data.appLauncher.ignoreMouseInput
             onCurrentIndexChanged: {
               cancelFlick();
               if (currentIndex >= 0) {
@@ -1014,7 +1073,7 @@ SmartPanel {
                       text: modelData.description || ""
                       pointSize: Style.fontSizeS
                       color: entry.isSelected ? Color.mOnHover : Color.mOnSurfaceVariant
-                      elide: Text.ElideRight
+                      wrapMode: Text.WordWrap
                       Layout.fillWidth: true
                       visible: text !== ""
                     }
@@ -1061,6 +1120,7 @@ SmartPanel {
                 z: -1
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
+                enabled: !Settings.data.appLauncher.ignoreMouseInput
                 onEntered: {
                   if (!root.ignoreMouseHover) {
                     selectedIndex = index;
@@ -1113,7 +1173,7 @@ SmartPanel {
             cacheBuffer: resultsGrid.height * 2
             keyNavigationEnabled: false
             focus: false
-            interactive: true
+            interactive: !Settings.data.appLauncher.ignoreMouseInput
 
             Component.onCompleted: {
               // Initialize gridColumns when grid view is created
@@ -1421,6 +1481,7 @@ SmartPanel {
                 z: -1
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
+                enabled: !Settings.data.appLauncher.ignoreMouseInput
                 onEntered: {
                   root.ignoreMouseHover = false;
                   selectedIndex = index;

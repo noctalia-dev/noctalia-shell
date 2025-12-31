@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "ka tu dixwaz ev nirx çawa xuya bibe hilbijêre.",
           "label": "Awaya nîşandanê"
+        },
+        "show-icon": {
+          "description": "Nîşana şêweya klavyeyê nîşan bide.",
+          "label": "Nîşanê nîşan bide"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Applications",
     "calculator": "Calculator",
+    "calculator-deprecated": "Fermana >calc hatiye betalkirin û dê di demeke nêz de were rakirin. Ji kerema xwe rasterast di lêgerînê de îfadeyên matematîkê binivîse.",
     "calculator-description": "Calculator — evaluate mathematical expressions",
     "calculator-enter-expression": "Enter a mathematical expression",
     "calculator-error": "Şaşetî",
@@ -1810,6 +1815,10 @@
           "description": "Use native system icons instead of Tabler icons.",
           "label": "Use native icons"
         },
+        "ignore-mouse-input": {
+          "description": "Di nav destpêkerê de, danûstandina mişkê û çerxa gerokê neçalak bike.",
+          "label": "Guherandina mişkê paşguh bike"
+        },
         "position": {
           "description": "Choose where the launcher panel appears.",
           "label": "Cih"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Hişyarî: Ev dê GPUya weya veqetandî (NVIDIA/AMD) hişyar bike, ku dibe ku bandorek girîng li ser jiyana pîlê li ser laptopên bi grafîkên hîbrîd bike.",
         "label": "Çavdêriya GPU'ya veqetandî çalak bike"
+      },
+      "external-monitor": {
+        "description": "Fermanî an rêya sepanê binivîse ku dema sepana monitora pergala derveyî çalak dike were xebitandin.",
+        "label": "Fermana monitora pergala derveyî",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

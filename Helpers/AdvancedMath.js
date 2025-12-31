@@ -80,6 +80,9 @@ function evaluate(expression) {
             .replace(/\bcosd\s*\(/g, '(function(x) { return Math.cos(' + (Math.PI / 180) + ' * x); })(')
             .replace(/\btand\s*\(/g, '(function(x) { return Math.tan(' + (Math.PI / 180) + ' * x); })(');
 
+        // Handle ^ for exponentiation: convert 2^3 to Math.pow(2,3)
+        processed = processed.replace(/([\d.]+|\))\^([\d.]+|\([^)]*\))/g, 'Math.pow($1,$2)');
+
         // Sanitize expression (only allow safe characters)
         if (!/^[0-9+\-*/().\s\w,]+$/.test(processed)) {
             throw new Error("Invalid characters in expression");

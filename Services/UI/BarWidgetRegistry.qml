@@ -141,7 +141,8 @@ Singleton {
                                     }
                                   },
                                   "KeyboardLayout": {
-                                    "displayMode": "onhover"
+                                    "displayMode": "onhover",
+                                    "showIcon": true
                                   },
                                   "LockKeys": {
                                     "showCapsLock": true,
@@ -199,7 +200,7 @@ Singleton {
                                     "showPinnedApps": true,
                                     "smartWidth": true,
                                     "maxTaskbarWidth": 40,
-                                    "iconScale": 1.0
+                                    "iconScale": 0.8
                                   },
                                   "Tray": {
                                     "blacklist": [],
@@ -224,7 +225,8 @@ Singleton {
                                     "colorizeIcons": false,
                                     "unfocusedIconsOpacity": 1.0,
                                     "groupedBorderOpacity": 1.0,
-                                    "enableScrollWheel": true
+                                    "enableScrollWheel": true,
+                                    "iconScale": 0.8
                                   },
                                   "Volume": {
                                     "displayMode": "onhover"

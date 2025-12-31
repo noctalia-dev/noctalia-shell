@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Choisissez comment vous souhaitez que cette valeur apparaisse.",
           "label": "Mode d'affichage"
+        },
+        "show-icon": {
+          "description": "Afficher l'icône de disposition du clavier.",
+          "label": "Afficher l'icône"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Applications",
     "calculator": "Calculatrice",
+    "calculator-deprecated": "La commande >calc est obsolète et sera bientôt supprimée. Veuillez saisir les expressions mathématiques directement dans la recherche à la place.",
     "calculator-description": "Calculatrice — évaluez des expressions mathématiques",
     "calculator-enter-expression": "Entrez une expression mathématique",
     "calculator-error": "Erreur",
@@ -1810,6 +1815,10 @@
           "description": "Utiliser les icônes natives du système au lieu des icônes Tabler.",
           "label": "Utiliser les icônes natives"
         },
+        "ignore-mouse-input": {
+          "description": "Désactiver l'interaction de la souris et la molette de défilement dans le lanceur.",
+          "label": "Ignorer l'entrée de la souris."
+        },
         "position": {
           "description": "Choisissez où le panneau du lanceur apparaît.",
           "label": "Position"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Attention : Ceci va activer votre GPU dédié (NVIDIA/AMD), ce qui peut avoir un impact significatif sur l'autonomie de la batterie des ordinateurs portables dotés de cartes graphiques hybrides.",
         "label": "Activer la surveillance du GPU dédié"
+      },
+      "external-monitor": {
+        "description": "Entrez la commande ou le chemin de l'application à lancer lors de l'activation de l'application externe de surveillance du système.",
+        "label": "Commande du moniteur système externe",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

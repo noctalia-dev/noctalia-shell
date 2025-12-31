@@ -82,7 +82,8 @@ Rectangle {
     if (!selectedWindowId)
       return null;
     for (var i = 0; i < combinedModel.length; i++) {
-      if (combinedModel[i].id === selectedWindowId && combinedModel[i].window) {
+      // Using loose equality on purpose (==)
+      if (combinedModel[i].id == selectedWindowId && combinedModel[i].window) {
         return combinedModel[i].window;
       }
     }

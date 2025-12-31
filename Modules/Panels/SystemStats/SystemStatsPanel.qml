@@ -90,6 +90,7 @@ SmartPanel {
 
             // CPU Usage
             NCircleStat {
+              id: cpuGauge
               ratio: SystemStatService.cpuUsage / 100
               icon: "cpu-usage"
               suffix: "%"
@@ -104,7 +105,6 @@ SmartPanel {
               icon: "cpu-temperature"
               suffix: "\u00B0"
               fillColor: SystemStatService.tempColor
-              visible: SystemStatService.cpuTemp > 0
               tooltipText: I18n.tr("system-monitor.cpu-temp") + `: ${Math.round(SystemStatService.cpuTemp)}°C`
               Layout.fillWidth: true
             }
@@ -150,26 +150,26 @@ SmartPanel {
           RowLayout {
             id: bottomRow
             Layout.fillWidth: true
-            spacing: Style.marginM
+            spacing: Style.marginS
 
-            // Download gauge
+            // Download gauge (width bound to CPU gauge for alignment)
             NCircleStat {
               ratio: SystemStatService.rxRatio
               icon: "download-speed"
               suffix: "%"
               fillColor: Color.mPrimary
               tooltipText: I18n.tr("system-monitor.download") + `: ${SystemStatService.formatSpeed(SystemStatService.rxSpeed)}`
-              Layout.preferredWidth: Math.round(80 * Style.uiScaleRatio)
+              Layout.preferredWidth: cpuGauge.width
             }
 
-            // Upload gauge
+            // Upload gauge (width bound to CPU gauge for alignment)
             NCircleStat {
               ratio: SystemStatService.txRatio
               icon: "upload-speed"
               suffix: "%"
               fillColor: Color.mPrimary
               tooltipText: I18n.tr("system-monitor.upload") + `: ${SystemStatService.formatSpeed(SystemStatService.txSpeed)}`
-              Layout.preferredWidth: Math.round(80 * Style.uiScaleRatio)
+              Layout.preferredWidth: cpuGauge.width
             }
 
             // Detailed Stats column
@@ -196,7 +196,7 @@ SmartPanel {
                 }
 
                 NText {
-                  text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
+                  text: SystemStatService.formatSpeed(SystemStatService.rxSpeed) + "/s"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true
@@ -222,7 +222,7 @@ SmartPanel {
                 }
 
                 NText {
-                  text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
+                  text: SystemStatService.formatSpeed(SystemStatService.txSpeed) + "/s"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true

@@ -250,7 +250,7 @@ NBox {
 
             width: root.calculateWidgetWidth(parent.width)
             height: root.widgetItemHeight
-            radius: Style.radiusL
+            radius: Style.iRadiusL
             color: root.getWidgetColor(modelData)[0]
             border.color: Color.mOutline
             border.width: Style.borderS
@@ -456,7 +456,7 @@ NBox {
         id: dragGhost
         width: 0
         height: Style.baseWidgetSize * 1.15
-        radius: Style.radiusL
+        radius: Style.iRadiusL
         color: Color.transparent
         border.color: Color.mOutline
         border.width: Style.borderS

@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Kies hoe je wilt dat deze waarde wordt weergegeven.",
           "label": "Weergavemodus"
+        },
+        "show-icon": {
+          "description": "Toon het toetsenbordindeling-icoon.",
+          "label": "Icoon weergeven"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Applicaties",
     "calculator": "Rekenmachine",
+    "calculator-deprecated": "De >calc opdracht is verouderd en zal binnenkort verwijderd worden. Typ wiskundige uitdrukkingen in plaats daarvan direct in de zoekopdracht.",
     "calculator-description": "Rekenmachine — bereken wiskundige expressies",
     "calculator-enter-expression": "Voer een wiskundige expressie in",
     "calculator-error": "Fout",
@@ -1810,6 +1815,10 @@
           "description": "Gebruik native systeemiconen in plaats van Tabler-iconen.",
           "label": "Gebruik native iconen"
         },
+        "ignore-mouse-input": {
+          "description": "Schakel muisinteractie en scrollwiel uit in de launcher.",
+          "label": "Negeer muisinvoer"
+        },
         "position": {
           "description": "Kies waar het launcher-paneel verschijnt.",
           "label": "Positie"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Waarschuwing: Dit zal uw dedicated GPU (NVIDIA/AMD) activeren, wat een aanzienlijke impact kan hebben op de batterijduur van laptops met hybride grafische kaarten.",
         "label": "Dedicated GPU-monitoring inschakelen"
+      },
+      "external-monitor": {
+        "description": "Voer de opdracht of applicatiepad in om te starten bij het activeren van de externe systeemmonitor applicatie.",
+        "label": "Externe systeemmonitor opdracht",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

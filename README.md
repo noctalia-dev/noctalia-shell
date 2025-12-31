@@ -140,6 +140,7 @@ While all donations are greatly appreciated, they are completely voluntary.
 * JustCurtis
 * llego
 * Grune
+* Maitreya (Max)
 
 ---
 

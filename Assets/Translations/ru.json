@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Выберите, как это значение должно отображаться.",
           "label": "Режим отображения"
+        },
+        "show-icon": {
+          "description": "Отображать значок раскладки клавиатуры.",
+          "label": "Показать значок"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Приложения",
     "calculator": "Калькулятор",
+    "calculator-deprecated": "Команда >calc устарела и скоро будет удалена. Пожалуйста, вводите математические выражения прямо в поиск.",
     "calculator-description": "Калькулятор — вычисление математических выражений",
     "calculator-enter-expression": "Введите математическое выражение",
     "calculator-error": "Ошибка",
@@ -1810,6 +1815,10 @@
           "description": "Использовать нативные системные иконки вместо иконок Tabler.",
           "label": "Использовать нативные иконки"
         },
+        "ignore-mouse-input": {
+          "description": "Отключить взаимодействие с мышью и колесо прокрутки в лаунчере.",
+          "label": "Игнорировать ввод мыши"
+        },
         "position": {
           "description": "Выберите, где появляется панель запуска.",
           "label": "Положение"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Внимание: Это разбудит ваш дискретный графический процессор (NVIDIA/AMD), что может значительно повлиять на время работы от аккумулятора на ноутбуках с гибридной графикой.",
         "label": "Включить мониторинг дискретного GPU"
+      },
+      "external-monitor": {
+        "description": "Введите команду или путь к приложению для запуска при активации внешнего приложения мониторинга системы.",
+        "label": "Команда внешнего монитора системы",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

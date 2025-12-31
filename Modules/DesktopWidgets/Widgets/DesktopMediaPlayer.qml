@@ -26,8 +26,8 @@ DraggableDesktopWidget {
   readonly property bool hasActiveTrack: hasPlayer && (MediaService.trackTitle || MediaService.trackArtist)
 
   // State
-  // Hide when idle only if not playing AND no active track (to handle players like mpv that may not report playback state correctly)
-  readonly property bool shouldHideIdle: (hideMode === "idle") && !isPlaying && !hasActiveTrack
+  // Hide when idle when playback is not active
+  readonly property bool shouldHideIdle: (hideMode === "idle") && !isPlaying
   readonly property bool shouldHideEmpty: !hasPlayer && hideMode === "hidden"
   readonly property bool isHidden: (shouldHideIdle || shouldHideEmpty) && !DesktopWidgetRegistry.editMode
   visible: !isHidden

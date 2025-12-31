@@ -187,7 +187,8 @@
     "customLaunchPrefix": "",
     "viewMode": "list",
     "showCategories": true,
-    "iconMode": "tabler"
+    "iconMode": "tabler",
+    "ignoreMouseInput": false
   },
   "controlCenter": {
     "position": "close_to_bar_button",
@@ -269,7 +270,8 @@
     "useCustomColors": false,
     "warningColor": "",
     "criticalColor": "",
-    "diskPath": "/"
+    "diskPath": "/",
+    "externalMonitor": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
   },
   "dock": {
     "enabled": true,

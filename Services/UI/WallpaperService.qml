@@ -468,6 +468,18 @@ Singleton {
     scanningCount++;
     Logger.i("Wallpaper", "Starting recursive scan for", screenName, "in", directory);
 
+    // Build find command args dynamically from ImageCacheService filters
+    var filters = ImageCacheService.imageFilters;
+    var findArgs = ["find", "-L", directory, "-type", "f", "("];
+    for (var i = 0; i < filters.length; i++) {
+      if (i > 0) {
+        findArgs.push("-o");
+      }
+      findArgs.push("-iname");
+      findArgs.push(filters[i]);
+    }
+    findArgs.push(")");
+
     // Create Process component inline
     var processComponent = Qt.createComponent("", root);
     var processString = `
@@ -475,7 +487,7 @@ Singleton {
     import Quickshell.Io
     Process {
     id: process
-    command: ["find", "-L", "` + directory + `", "-type", "f", "(", "-iname", "*.jpg", "-o", "-iname", "*.jpeg", "-o", "-iname", "*.png", "-o", "-iname", "*.gif", "-o", "-iname", "*.pnm", "-o", "-iname", "*.bmp", ")"]
+    command: ` + JSON.stringify(findArgs) + `
     stdout: StdioCollector {}
     stderr: StdioCollector {}
     }

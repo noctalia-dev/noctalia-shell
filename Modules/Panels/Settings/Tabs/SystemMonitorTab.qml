@@ -40,18 +40,18 @@ ColumnLayout {
       checked: Settings.data.systemMonitor.useCustomColors
       isSettings: true
       defaultValue: Settings.getDefaultValue("systemMonitor.useCustomColors")
-      onToggled: {
-        // If enabling custom colors and no custom color is saved, persist current theme colors
-        if (checked) {
-          if (!Settings.data.systemMonitor.warningColor || Settings.data.systemMonitor.warningColor === "") {
-            Settings.data.systemMonitor.warningColor = Color.mTertiary.toString();
-          }
-          if (!Settings.data.systemMonitor.criticalColor || Settings.data.systemMonitor.criticalColor === "") {
-            Settings.data.systemMonitor.criticalColor = Color.mError.toString();
-          }
-        }
-        Settings.data.systemMonitor.useCustomColors = checked;
-      }
+      onToggled: checked => {
+                   // If enabling custom colors and no custom color is saved, persist current theme colors
+                   if (checked) {
+                     if (!Settings.data.systemMonitor.warningColor || Settings.data.systemMonitor.warningColor === "") {
+                       Settings.data.systemMonitor.warningColor = Color.mTertiary.toString();
+                     }
+                     if (!Settings.data.systemMonitor.criticalColor || Settings.data.systemMonitor.criticalColor === "") {
+                       Settings.data.systemMonitor.criticalColor = Color.mError.toString();
+                     }
+                   }
+                   Settings.data.systemMonitor.useCustomColors = checked;
+                 }
     }
   }
 
@@ -595,6 +595,16 @@ ColumnLayout {
         suffix: " ms"
       }
     }
+  }
+
+  NTextInput {
+    label: I18n.tr("settings.system-monitor.external-monitor.label")
+    description: I18n.tr("settings.system-monitor.external-monitor.description")
+    placeholderText: I18n.tr("settings.system-monitor.external-monitor.placeholder")
+    text: Settings.data.systemMonitor.externalMonitor
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("systemMonitor.externalMonitor")
+    onTextChanged: Settings.data.systemMonitor.externalMonitor = text
   }
 
   NDivider {

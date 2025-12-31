@@ -224,6 +224,10 @@
         "display-mode": {
           "description": "Wählen Sie, wie dieser Wert angezeigt werden soll.",
           "label": "Anzeigemodus"
+        },
+        "show-icon": {
+          "description": "Das Tastaturlayout-Symbol anzeigen.",
+          "label": "Symbol anzeigen"
         }
       },
       "lock-keys": {
@@ -826,6 +830,7 @@
   "plugins": {
     "applications": "Anwendungen",
     "calculator": "Rechner",
+    "calculator-deprecated": "Der Befehl >calc ist veraltet und wird bald entfernt. Bitte geben Sie stattdessen mathematische Ausdrücke direkt in die Suche ein.",
     "calculator-description": "Rechner — mathematische Ausdrücke auswerten",
     "calculator-enter-expression": "Mathematischen Ausdruck eingeben",
     "calculator-error": "Fehler",
@@ -1810,6 +1815,10 @@
           "description": "Verwende native System-Icons anstelle von Tabler-Icons.",
           "label": "Native Icons verwenden"
         },
+        "ignore-mouse-input": {
+          "description": "Deaktivieren Sie die Mausinteraktion und das Mausrad im Launcher.",
+          "label": "Maus-Eingabe ignorieren"
+        },
         "position": {
           "description": "Wählen Sie, wo das Starter-Panel erscheint.",
           "label": "Position"
@@ -2373,6 +2382,11 @@
       "enable-dgpu-monitoring": {
         "description": "Warnung: Dies aktiviert Ihre dedizierte GPU (NVIDIA/AMD), was die Akkulaufzeit von Laptops mit Hybridgrafik erheblich beeinträchtigen kann.",
         "label": "Dedizierte GPU-Überwachung aktivieren"
+      },
+      "external-monitor": {
+        "description": "Geben Sie den Befehl oder Anwendungspfad ein, um die externe Systemmonitor-Anwendung zu starten.",
+        "label": "Externer Systemmonitor-Befehl",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {

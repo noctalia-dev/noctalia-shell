@@ -356,7 +356,18 @@ ColumnLayout {
   }
 
   function readDirectoryImages(directoryPath) {
-    directoryScanner.command = ["find", directoryPath, "-type", "f", "\\(-iname", "*.jpg", "-o", "-iname", "*.jpeg", "-o", "-iname", "*.png", "-o", "-iname", "*.bmp", "-o", "-iname", "*.webp", "-o", "-iname", "*.svg", "\\)"];
+    // Build find command args dynamically from ImageCacheService filters
+    var filters = ImageCacheService.imageFilters;
+    var findArgs = ["find", directoryPath, "-type", "f", "("];
+    for (var i = 0; i < filters.length; i++) {
+      if (i > 0) {
+        findArgs.push("-o");
+      }
+      findArgs.push("-iname");
+      findArgs.push(filters[i]);
+    }
+    findArgs.push(")");
+    directoryScanner.command = findArgs;
     directoryScanner.running = true;
     return [];
   }
@@ -416,7 +427,7 @@ ColumnLayout {
 
   Process {
     id: directoryScanner
-    command: ["find", "", "-type", "f", "\\(-iname", "*.jpg", "-o", "-iname", "*.jpeg", "-o", "-iname", "*.png", "-o", "-iname", "*.bmp", "-o", "-iname", "*.webp", "-o", "-iname", "*.svg", "\\)"]
+    command: []
     running: false
     stdout: StdioCollector {}
     stderr: StdioCollector {}
