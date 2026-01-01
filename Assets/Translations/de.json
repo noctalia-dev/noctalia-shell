@@ -331,6 +331,10 @@
           "description": "Zeige GPU-Temperaturwerte an, falls verfügbar.",
           "label": "GPU-Temperatur"
         },
+        "load-average": {
+          "description": "Systemlastdurchschnitt anzeigen.",
+          "label": "Lastdurchschnitt"
+        },
         "memory-percentage": {
           "description": "Speicherverbrauch als Prozentsatz statt absolute Werte anzeigen.",
           "label": "Speicher als Prozentsatz"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "System-Ausgabe + Mikrofon-Eingabe",
         "microphone-input": "Mikrofon-Eingabe",
+        "none": "Kein Audio",
         "system-output": "System-Ausgabe"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "Immer Scrollen",
       "hover": "Beim Hover Scrollen",
       "never": "Nie Scrollen"
+    },
+    "session-menu-grid-layout": {
+      "grid": "Raster",
+      "single-row": "Einzelne Reihe"
     },
     "settings-panel-mode": {
       "attached": "Panel an der Leiste angeheftet",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "Überprüfen Sie Ihre Plugin-Quellen oder aktualisieren Sie die Liste.",
         "no-plugins-label": "Keine Plugins verfügbar"
       },
+      "collision": {
+        "already-installed": "Dieses Plugin ist bereits installiert.",
+        "custom-version-exists": "Eine benutzerdefinierte Version von \"{source}\" ist bereits installiert.",
+        "official-version-exists": "Die offizielle Version dieses Plugins ist bereits installiert."
+      },
       "filter": {
         "all": "Alle",
         "downloaded": "Heruntergeladen",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "Keine Plugins installiert"
       },
       "installing": "{Plugin} wird installiert...",
+      "open-plugins-tab": "Plugin-Einstellungen öffnen",
       "plugin-settings-title": "{plugin} Einstellungen",
       "refresh": {
         "refreshing": "Aktualisiere Plugin-Liste...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "Plugin nicht geladen",
       "settings-saved": "Plugin-Einstellungen gespeichert",
+      "source": {
+        "custom": "Benutzerdefinierte Quelle",
+        "official": "Offiziell"
+      },
       "sources": {
         "add-custom": "Benutzerdefiniertes Repository hinzufügen",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "Alle aktualisieren ({count})",
       "update-all-success": "Alle Plugins wurden erfolgreich aktualisiert.",
       "update-available": "{count} Plugin-Update(s) verfügbar",
+      "update-available_plural": "{count} Plugin-Aktualisierungen verfügbar",
       "update-error": "Fehler beim Aktualisieren des Plugins: {plugin}: {error}",
       "update-incompatible": "Benötigt Noctalia v{version} oder höher",
       "update-success": "{plugin} wurde auf v{version} aktualisiert",
@@ -2344,6 +2364,10 @@
           "label": "Allgemein"
         }
       },
+      "large-buttons-layout": {
+        "description": "Wählen Sie, wie die Sitzungsmenü-Schaltflächen angezeigt werden.",
+        "label": "Layout mit großen Schaltflächen"
+      },
       "large-buttons-style": {
         "description": "Das Sitzungsmenü mit großen Schaltflächen in einem Rasterlayout anzeigen.",
         "label": "Stil: Große Schaltflächen"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "Hervorhebungsfarben"
+      },
+      "load-average-section": {
+        "label": "Lastdurchschnitt"
       },
       "memory-section": {
         "label": "Speicherverbrauch"
@@ -2653,6 +2680,7 @@
     "download": "Herunterladen",
     "download-speed": "Download-Geschwindigkeit",
     "gpu-temp": "GPU-Temperatur",
+    "load-average": "Lastdurchschnitt",
     "memory": "Arbeitsspeicher",
     "title": "Systemüberwachung",
     "upload": "Hochladen",
@@ -2711,7 +2739,8 @@
       "enabled": "Aktiviert"
     },
     "keyboard-layout": {
-      "changed": "Tastaturlayout geändert zu {layout}"
+      "changed": "Tastaturlayout geändert zu {layout}",
+      "title": "Tastatur"
     },
     "kofi": {
       "opened": "Ko-fi-Seite in Ihrem Browser geöffnet"

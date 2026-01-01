@@ -331,6 +331,10 @@
           "description": "Mostrar las lecturas de temperatura de la GPU si están disponibles.",
           "label": "Temperatura de la GPU"
         },
+        "load-average": {
+          "description": "Mostrar promedio de carga del sistema.",
+          "label": "Promedio de carga"
+        },
         "memory-percentage": {
           "description": "Mostrar el uso de memoria como porcentaje en lugar de valores absolutos.",
           "label": "Memoria como porcentaje"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "Salida del sistema + entrada del micrófono",
         "microphone-input": "Entrada del micrófono",
+        "none": "No audio",
         "system-output": "Salida del sistema"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "Desplazar Siempre",
       "hover": "Desplazar al Pasar",
       "never": "Nunca Desplazar"
+    },
+    "session-menu-grid-layout": {
+      "grid": "Cuadrícula",
+      "single-row": "Fila única"
     },
     "settings-panel-mode": {
       "attached": "Panel adjunto a la barra",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "Comprueba las fuentes de tu plugin o actualiza la lista.",
         "no-plugins-label": "No hay plugins disponibles."
       },
+      "collision": {
+        "already-installed": "Este plugin ya está instalado.",
+        "custom-version-exists": "Ya hay instalada una versión personalizada de \"{source}\"",
+        "official-version-exists": "La versión oficial de este plugin ya está instalada."
+      },
       "filter": {
         "all": "Todo",
         "downloaded": "Descargado",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "No hay plugins instalados."
       },
       "installing": "Instalando {plugin}...",
+      "open-plugins-tab": "Abrir la configuración de los plugins",
       "plugin-settings-title": "Ajustes de {plugin}",
       "refresh": {
         "refreshing": "Actualizando la lista de plugins...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "Plugin no cargado",
       "settings-saved": "Ajustes del plugin guardados",
+      "source": {
+        "custom": "Fuente personalizada",
+        "official": "Oficial"
+      },
       "sources": {
         "add-custom": "Añadir repositorio personalizado",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "Actualizar todo ({count})",
       "update-all-success": "Todos los plugins se actualizaron correctamente.",
       "update-available": "{count} actualización(es) de plugin(s) disponible(s)",
+      "update-available_plural": "{count} actualizaciones de plugins disponibles",
       "update-error": "Error al actualizar el plugin: {plugin}: {error}",
       "update-incompatible": "Requiere Noctalia v{version} o superior",
       "update-success": "{plugin} actualizado a la versión {version}",
@@ -2344,6 +2364,10 @@
           "label": "General"
         }
       },
+      "large-buttons-layout": {
+        "description": "Elige cómo se muestran los botones del menú de sesión.",
+        "label": "Diseño de botones grandes"
+      },
       "large-buttons-style": {
         "description": "Mostrar el menú de sesión con botones grandes en un diseño de cuadrícula.",
         "label": "Estilo de botones grandes"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "Colores de resaltado"
+      },
+      "load-average-section": {
+        "label": "Promedio de carga"
       },
       "memory-section": {
         "label": "Uso de memoria"
@@ -2653,6 +2680,7 @@
     "download": "Descargar",
     "download-speed": "Velocidad de descarga",
     "gpu-temp": "Temperatura de la GPU",
+    "load-average": "Promedio de carga",
     "memory": "Memoria",
     "title": "Monitor del sistema",
     "upload": "Subir",
@@ -2711,7 +2739,8 @@
       "enabled": "Activado"
     },
     "keyboard-layout": {
-      "changed": "Distribución de teclado cambiada a {layout}"
+      "changed": "Distribución de teclado cambiada a {layout}",
+      "title": "Teclado"
     },
     "kofi": {
       "opened": "Página de Ko-fi abierta en tu navegador"

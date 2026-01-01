@@ -277,6 +277,10 @@ ColumnLayout {
       description: I18n.tr("settings.screen-recorder.audio.audio-source.description")
       model: [
         {
+          "key": "none",
+          "name": I18n.tr("options.screen-recording.audio-sources.none")
+        },
+        {
           "key": "default_output",
           "name": I18n.tr("options.screen-recording.audio-sources.system-output")
         },

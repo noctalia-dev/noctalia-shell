@@ -332,6 +332,13 @@ SmartPanel {
 
   onSearchTextChanged: updateResults()
 
+  // Watch for view mode changes and reset mouse tracking
+  onIsGridViewChanged: {
+    // Reset mouse tracking when switching views
+    ignoreMouseHover = true;
+    mouseMovementDetector.initialized = false;
+  }
+
   // Lifecycle
   onOpened: {
     resultsReady = false;
@@ -621,6 +628,7 @@ SmartPanel {
       property real lastX: 0
       property real lastY: 0
       property bool initialized: false
+      property int movementThreshold: 5 // Increased threshold for more reliable detection
 
       onPositionChanged: mouse => {
                            if (!initialized) {
@@ -632,7 +640,7 @@ SmartPanel {
 
                            const deltaX = Math.abs(mouse.x - lastX);
                            const deltaY = Math.abs(mouse.y - lastY);
-                           if (deltaX > 1 || deltaY > 1) {
+                           if (deltaX > movementThreshold || deltaY > movementThreshold) {
                              root.ignoreMouseHover = false;
                              lastX = mouse.x;
                              lastY = mouse.y;
@@ -643,6 +651,14 @@ SmartPanel {
         target: root
         function onOpened() {
           mouseMovementDetector.initialized = false;
+          mouseMovementDetector.lastX = 0;
+          mouseMovementDetector.lastY = 0;
+        }
+        function onIsGridViewChanged() {
+          // Reset when view changes
+          mouseMovementDetector.initialized = false;
+          mouseMovementDetector.lastX = 0;
+          mouseMovementDetector.lastY = 0;
         }
       }
     }
@@ -839,6 +855,12 @@ SmartPanel {
           Layout.fillWidth: true
           Layout.fillHeight: true
           sourceComponent: root.isGridView ? gridViewComponent : listViewComponent
+
+          // Reset mouse tracking when loader switches components
+          onLoaded: {
+            root.ignoreMouseHover = true;
+            mouseMovementDetector.initialized = false;
+          }
         }
 
         Component {
@@ -1121,6 +1143,19 @@ SmartPanel {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 enabled: !Settings.data.appLauncher.ignoreMouseInput
+                onContainsMouseChanged: {
+                  if (containsMouse && !root.ignoreMouseHover) {
+                    selectedIndex = index;
+                  }
+                }
+                Connections {
+                  target: root
+                  function onIgnoreMouseHoverChanged() {
+                    if (!root.ignoreMouseHover && mouseArea.containsMouse) {
+                      selectedIndex = index;
+                    }
+                  }
+                }
                 onEntered: {
                   if (!root.ignoreMouseHover) {
                     selectedIndex = index;
@@ -1244,7 +1279,7 @@ SmartPanel {
             delegate: Rectangle {
               id: gridEntry
 
-              property bool isSelected: (!root.ignoreMouseHover && mouseArea.containsMouse) || (index === selectedIndex)
+              property bool isSelected: (!root.ignoreMouseHover && gridMouseArea.containsMouse) || (index === selectedIndex)
               property string appId: (modelData && modelData.appId) ? String(modelData.appId) : ""
 
               // Helper function to normalize app IDs for case-insensitive matching
@@ -1405,7 +1440,7 @@ SmartPanel {
                       // Scale font size relative to cell width for low res, but cap at maximum
                       const cellBasedSize = gridEntry.width * 0.25;
                       const baseSize = Style.fontSizeXL * Style.uiScaleRatio;
-                      const maxSize = Style.fontSizeXXL * Style.uiScaleRatio;
+                      const maxSize = Style.fontSizeXXXL * Style.uiScaleRatio;
                       return Math.min(Math.max(cellBasedSize, baseSize), maxSize);
                     }
                     font.weight: Style.fontWeightBold
@@ -1476,16 +1511,63 @@ SmartPanel {
               }
 
               MouseArea {
-                id: mouseArea
+                id: gridMouseArea
                 anchors.fill: parent
                 z: -1
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 enabled: !Settings.data.appLauncher.ignoreMouseInput
-                onEntered: {
-                  root.ignoreMouseHover = false;
-                  selectedIndex = index;
+
+                property bool hasInitialPosition: false
+                property real initialX: 0
+                property real initialY: 0
+
+                onPositionChanged: mouse => {
+                                     if (!hasInitialPosition) {
+                                       initialX = mouse.x;
+                                       initialY = mouse.y;
+                                       hasInitialPosition = true;
+                                       return;
+                                     }
+
+                                     // Check if mouse has moved significantly from initial position
+                                     const deltaX = Math.abs(mouse.x - initialX);
+                                     const deltaY = Math.abs(mouse.y - initialY);
+                                     if (deltaX > 5 || deltaY > 5) {
+                                       root.ignoreMouseHover = false;
+                                       if (containsMouse) {
+                                         selectedIndex = index;
+                                       }
+                                     }
+                                   }
+
+                onContainsMouseChanged: {
+                  if (containsMouse && !root.ignoreMouseHover) {
+                    selectedIndex = index;
+                  }
                 }
+
+                Connections {
+                  target: root
+                  function onIgnoreMouseHoverChanged() {
+                    if (!root.ignoreMouseHover && gridMouseArea.containsMouse) {
+                      selectedIndex = index;
+                    }
+                  }
+                  function onOpened() {
+                    gridMouseArea.hasInitialPosition = false;
+                  }
+                  function onIsGridViewChanged() {
+                    gridMouseArea.hasInitialPosition = false;
+                  }
+                }
+
+                onEntered: {
+                  if (!root.ignoreMouseHover) {
+                    selectedIndex = index;
+                  }
+                }
+
                 onClicked: mouse => {
                              if (mouse.button === Qt.LeftButton) {
                                selectedIndex = index;

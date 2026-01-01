@@ -331,6 +331,10 @@
           "description": "Toon GPU-temperatuurmetingen indien beschikbaar.",
           "label": "GPU-temperatuur"
         },
+        "load-average": {
+          "description": "Systeembelasting gemiddelde weergeven.",
+          "label": "Gemiddelde belasting"
+        },
         "memory-percentage": {
           "description": "Toon geheugengebruik als percentage in plaats van absolute waarden.",
           "label": "Geheugen als percentage"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "Systeemuitvoer + microfooninvoer",
         "microphone-input": "Microfooninvoer",
+        "none": "Geen audio",
         "system-output": "Systeemuitvoer"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "Altijd scrollen",
       "hover": "Scrollen bij hover",
       "never": "Nooit scrollen"
+    },
+    "session-menu-grid-layout": {
+      "grid": "Raster",
+      "single-row": "Enkele rij"
     },
     "settings-panel-mode": {
       "attached": "Paneel bevestigd aan de balk",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "Controleer je plugin-bronnen of vernieuw de lijst.",
         "no-plugins-label": "Geen plug-ins beschikbaar"
       },
+      "collision": {
+        "already-installed": "Deze plugin is al geïnstalleerd.",
+        "custom-version-exists": "Er is al een aangepaste versie van \"{source}\" geïnstalleerd.",
+        "official-version-exists": "De officiële versie van deze plugin is al geïnstalleerd."
+      },
       "filter": {
         "all": "Alles",
         "downloaded": "Gedownload",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "Geen plugins geïnstalleerd"
       },
       "installing": "{plugin} installeren...",
+      "open-plugins-tab": "Open plugininstellingen",
       "plugin-settings-title": "{plugin} Instellingen",
       "refresh": {
         "refreshing": "Pluginlijst vernieuwen...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "Plugin niet geladen",
       "settings-saved": "Plugininstellingen opgeslagen",
+      "source": {
+        "custom": "Aangepaste bron",
+        "official": "Officieel"
+      },
       "sources": {
         "add-custom": "Aangepaste repository toevoegen",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "Alles bijwerken ({count})",
       "update-all-success": "Alle plugins succesvol bijgewerkt",
       "update-available": "{count} plugin(s) update(s) beschikbaar",
+      "update-available_plural": "{count} plugin updates beschikbaar",
       "update-error": "Plugin bijwerken mislukt: {plugin}: {error}",
       "update-incompatible": "Vereist Noctalia v{version} of hoger",
       "update-success": "{plugin} is bijgewerkt naar v{version}",
@@ -2344,6 +2364,10 @@
           "label": "Algemeen"
         }
       },
+      "large-buttons-layout": {
+        "description": "Kies hoe sessiemenuknoppen worden weergegeven.",
+        "label": "Lay-out met grote knoppen"
+      },
       "large-buttons-style": {
         "description": "Toon het sessiemenu met grote knoppen in een rasterindeling.",
         "label": "Stijl met grote knoppen"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "Markeerkleuren"
+      },
+      "load-average-section": {
+        "label": "Gemiddelde belasting"
       },
       "memory-section": {
         "label": "Geheugengebruik"
@@ -2653,6 +2680,7 @@
     "download": "Downloaden",
     "download-speed": "Downloadsnelheid",
     "gpu-temp": "GPU-temperatuur",
+    "load-average": "Gemiddelde belasting",
     "memory": "Geheugen",
     "title": "Systeemmonitor",
     "upload": "Uploaden",
@@ -2711,7 +2739,8 @@
       "enabled": "\"Wakker houden\" ingeschakeld"
     },
     "keyboard-layout": {
-      "changed": "Toetsenbordindeling gewijzigd naar {layout}"
+      "changed": "Toetsenbordindeling gewijzigd naar {layout}",
+      "title": "Toetsenbord"
     },
     "kofi": {
       "opened": "Ko-fi-pagina geopend in je browser"

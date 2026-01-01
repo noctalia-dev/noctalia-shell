@@ -331,6 +331,10 @@
           "description": "显示GPU温度读数（如果可用）。",
           "label": "GPU温度"
         },
+        "load-average": {
+          "description": "显示系统平均负载。",
+          "label": "平均负载"
+        },
         "memory-percentage": {
           "description": "以百分比而不是绝对值显示内存使用情况。",
           "label": "内存百分比"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "系统输出 + 麦克风输入",
         "microphone-input": "麦克风输入",
+        "none": "No audio",
         "system-output": "系统输出"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "始终滚动",
       "hover": "悬停时滚动",
       "never": "从不滚动"
+    },
+    "session-menu-grid-layout": {
+      "grid": "网格",
+      "single-row": "单行"
     },
     "settings-panel-mode": {
       "attached": "面板附加到工具栏",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "检查你的插件源或刷新列表。",
         "no-plugins-label": "没有可用的插件"
       },
+      "collision": {
+        "already-installed": "此插件已安装",
+        "custom-version-exists": "来自“{source}”的自定义版本已安装",
+        "official-version-exists": "此插件的官方版本已安装。"
+      },
       "filter": {
         "all": "全部",
         "downloaded": "已下载",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "未安装插件"
       },
       "installing": "正在安装 {plugin}...",
+      "open-plugins-tab": "打开插件设置",
       "plugin-settings-title": "{插件} 设置",
       "refresh": {
         "refreshing": "正在刷新插件列表...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "插件未加载",
       "settings-saved": "插件设置已保存",
+      "source": {
+        "custom": "自定义源",
+        "official": "官方"
+      },
       "sources": {
         "add-custom": "添加自定义存储库",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "全部更新（{count}）",
       "update-all-success": "所有插件已成功更新",
       "update-available": "有{count}个插件可更新",
+      "update-available_plural": "{count} 个插件有可用更新",
       "update-error": "更新插件失败：{plugin}：{error}",
       "update-incompatible": "需要 Noctalia v{version} 或更高版本",
       "update-success": "已将 {plugin} 更新至 v{version}",
@@ -2344,6 +2364,10 @@
           "label": "常规"
         }
       },
+      "large-buttons-layout": {
+        "description": "选择会话菜单按钮的显示方式。",
+        "label": "大按钮布局"
+      },
       "large-buttons-style": {
         "description": "以网格布局显示带有大按钮的会话菜单。",
         "label": "大按钮样式"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "高亮颜色"
+      },
+      "load-average-section": {
+        "label": "平均负载"
       },
       "memory-section": {
         "label": "内存使用率"
@@ -2653,6 +2680,7 @@
     "download": "下载",
     "download-speed": "下载速度",
     "gpu-temp": "GPU 温度",
+    "load-average": "平均负载",
     "memory": "内存",
     "title": "系统监视器",
     "upload": "上传",
@@ -2711,7 +2739,8 @@
       "enabled": "已启用"
     },
     "keyboard-layout": {
-      "changed": "键盘布局已更改为 {layout}"
+      "changed": "键盘布局已更改为 {layout}",
+      "title": "键盘"
     },
     "kofi": {
       "opened": "Ko-fi 页面已在您的浏览器中打开"

@@ -77,9 +77,17 @@ Singleton {
     }
     outputPath = videoDir + filename;
 
-    var audioArg = (settings.audioSource === "both") ? `-a "default_output|default_input"` : `-a ${settings.audioSource}`;
+    const audioFlags = (() => {
+                          if (settings.audioSource === "none") {
+                            return "";
+                          }
+                          if (settings.audioSource === "both") {
+                            return `-ac ${settings.audioCodec} -a "default_output|default_input"`;
+                          }
+                          return `-ac ${settings.audioCodec} -a ${settings.audioSource}`;
+                        })();
 
-    var flags = `-w ${settings.videoSource} -f ${settings.frameRate} -ac ${settings.audioCodec} -k ${settings.videoCodec} ${audioArg} -q ${settings.quality} -cursor ${settings.showCursor ? "yes" : "no"} -cr ${settings.colorRange} -o "${outputPath}"`;
+    var flags = `-w ${settings.videoSource} -f ${settings.frameRate} -k ${settings.videoCodec} ${audioFlags} -q ${settings.quality} -cursor ${settings.showCursor ? "yes" : "no"} -cr ${settings.colorRange} -o "${outputPath}"`;
     var command = `
     _gpuscreenrecorder_flatpak_installed() {
     flatpak list --app | grep -q "com.dec05eba.gpu_screen_recorder"

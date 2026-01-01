@@ -380,6 +380,43 @@ ColumnLayout {
     }
   }
 
+  // Load Average
+  NText {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginM
+    text: I18n.tr("settings.system-monitor.load-average-section.label")
+    pointSize: Style.fontSizeM
+  }
+
+  RowLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginM
+
+    ColumnLayout {
+      Layout.fillWidth: true
+      spacing: Style.marginM
+
+      NText {
+        Layout.alignment: Qt.AlignHCenter
+        horizontalAlignment: Text.AlignHCenter
+        text: I18n.tr("settings.system-monitor.polling-interval.label")
+        pointSize: Style.fontSizeS
+      }
+
+      NSpinBox {
+        Layout.alignment: Qt.AlignHCenter
+        from: 250
+        to: 10000
+        stepSize: 250
+        value: Settings.data.systemMonitor.loadAvgPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.loadAvgPollingInterval")
+        onValueChanged: Settings.data.systemMonitor.loadAvgPollingInterval = value
+        suffix: " ms"
+      }
+    }
+  }
+
   // Memory Usage
   NText {
     Layout.fillWidth: true

@@ -331,6 +331,10 @@
           "description": "GPU sıcaklık değerleri varsa göster.",
           "label": "GPU sıcaklığı"
         },
+        "load-average": {
+          "description": "Sistem ortalama yükünü göster.",
+          "label": "Ortalama yük"
+        },
         "memory-percentage": {
           "description": "Mutlak değerler yerine bellek kullanımını yüzde olarak göster.",
           "label": "Bellek yüzde olarak"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "Sistem çıktısı + mikrofon girişi",
         "microphone-input": "Mikrofon girişi",
+        "none": "Ses yok.",
         "system-output": "Sistem çıktısı"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "Her Zaman Kaydır",
       "hover": "Üzerine Gelince Kaydır",
       "never": "Asla Kaydırma"
+    },
+    "session-menu-grid-layout": {
+      "grid": "Izgara",
+      "single-row": "Tek Sıra"
     },
     "settings-panel-mode": {
       "attached": "Panel çubuğa takılı",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "Eklenti kaynaklarınızı kontrol edin veya listeyi yenileyin.",
         "no-plugins-label": "Kullanılabilir eklenti yok"
       },
+      "collision": {
+        "already-installed": "Bu eklenti zaten yüklü.",
+        "custom-version-exists": "\"{source}\" kaynağından özel bir sürüm zaten yüklü.",
+        "official-version-exists": "Bu eklentinin resmi sürümü zaten yüklü."
+      },
       "filter": {
         "all": "Tüm",
         "downloaded": "İndirildi",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "Eklenti kurulu değil"
       },
       "installing": "{eklenti} kuruluyor...",
+      "open-plugins-tab": "Eklenti ayarlarına git",
       "plugin-settings-title": "{plugin} Ayarları",
       "refresh": {
         "refreshing": "Eklenti listesi yenileniyor...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "Eklenti yüklenmedi",
       "settings-saved": "Eklenti ayarları kaydedildi.",
+      "source": {
+        "custom": "Özel kaynak",
+        "official": "Resmi"
+      },
       "sources": {
         "add-custom": "Özel depo ekle",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "Tümünü Güncelle ({count})",
       "update-all-success": "Tüm eklentiler başarıyla güncellendi.",
       "update-available": "{count} eklenti için güncelleme mevcut",
+      "update-available_plural": "{count} eklenti güncellemesi mevcut",
       "update-error": "Eklenti güncellenemedi: {plugin}: {error}",
       "update-incompatible": "Noctalia v{version} veya üzeri gerektirir.",
       "update-success": "{plugin} v{version} sürümüne güncellendi",
@@ -2344,6 +2364,10 @@
           "label": "Genel"
         }
       },
+      "large-buttons-layout": {
+        "description": "Oturum menüsü düğmelerinin nasıl görüntüleneceğini seçin.",
+        "label": "Büyük düğme düzeni"
+      },
       "large-buttons-style": {
         "description": "Oturum menüsünü büyük butonlarla ızgara düzeninde görüntüle.",
         "label": "Büyük düğme stili"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "Vurgulama Renkleri"
+      },
+      "load-average-section": {
+        "label": "Ortalama yük"
       },
       "memory-section": {
         "label": "Bellek Kullanımı"
@@ -2653,6 +2680,7 @@
     "download": "İndir",
     "download-speed": "İndirme Hızı",
     "gpu-temp": "GPU Sıcaklığı",
+    "load-average": "Ortalama yük",
     "memory": "Hafıza",
     "title": "Sistem İzleyici",
     "upload": "Yükle",
@@ -2711,7 +2739,8 @@
       "enabled": "Etkin"
     },
     "keyboard-layout": {
-      "changed": "Klavye düzeni {layout} olarak değiştirildi"
+      "changed": "Klavye düzeni {layout} olarak değiştirildi",
+      "title": "Klavye"
     },
     "kofi": {
       "opened": "Ko-fi sayfası tarayıcınızda açıldı"

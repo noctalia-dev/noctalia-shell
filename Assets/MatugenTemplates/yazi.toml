@@ -3,11 +3,6 @@
 [mgr]
 cwd = { fg = "{{colors.on_surface.default.hex}}" }
 
-# Tab
-tab_active = { fg = "{{colors.on_primary.default.hex}}", bg = "{{colors.primary.default.hex}}", bold = true }
-tab_inactive = { fg = "{{colors.primary_container.default.hex}}", bg = "{{colors.on_primary_container.default.hex}}" }
-tab_width = 1
-
 # Find
 find_keyword = { fg = "{{colors.error.default.hex}}", bold = true, italic = true, underline = true }
 find_position = { fg = "{{colors.error.default.hex}}", bold = true, italic = true }
@@ -32,20 +27,9 @@ border_style  = { fg = "{{colors.primary.default.hex}}" }
 # : Status [[[
 
 [status]
-separator_style = { bg = "{{colors.on_primary.default.hex}}", fg = "#F4A261" }
-
-[mode]
-# Mode
-normal_main = { bg = "{{colors.primary.default.hex}}", fg = "{{colors.on_primary.default.hex}}", bold = true }
-normal_alt  = { bg = "{{colors.surface_variant.default.hex}}", fg = "{{colors.on_surface_variant.default.hex}}" }
-
-# Select mode
-select_main = { bg = "{{colors.secondary.default.hex}}", fg = "{{colors.on_secondary.default.hex}}", bold = true }
-select_alt  = { bg = "{{colors.surface_variant.default.hex}}", fg = "{{colors.on_surface_variant.default.hex}}" }
-
-# Unset mode
-unset_main = { bg = "{{colors.tertiary.default.hex}}", fg = "{{colors.on_tertiary.default.hex}}", bold = true }
-unset_alt  = { bg = "{{colors.surface_variant.default.hex}}", fg = "{{colors.on_surface_variant.default.hex}}" }
+overall = { fg = "{{colors.primary.default.hex}}" }
+sep_left  = { open = "", close = "" }
+sep_right = { open = "", close = "" }
 
 # Progress
 progress_label = { bold = true }
@@ -53,20 +37,27 @@ progress_normal = { fg = "{{colors.primary.default.hex}}", bg = "{{colors.surfac
 progress_error = { fg = "{{colors.error.default.hex}}", bg = "{{colors.surface.default.hex}}" }
 
 # Permissions
-permissions_t = { fg = "{{colors.secondary.default.hex}}" }
-permissions_w = { fg = "{{colors.tertiary.default.hex}}" }
-permissions_x = { fg = "{{colors.error.default.hex}}" }
-permissions_r = { fg = "{{colors.tertiary_container.default.hex}}" }
-permissions_s = { fg = "{{colors.primary_container.default.hex}}" }
+perm_type = { fg = "{{colors.secondary.default.hex}}" }
+perm_write = { fg = "{{colors.tertiary.default.hex}}" }
+perm_exec = { fg = "{{colors.error.default.hex}}" }
+perm_read = { fg = "{{colors.tertiary_container.default.hex}}" }
+perm_sep = { fg = "{{colors.primary_container.default.hex}}" }
 
 # : ]]]
 
 
-# : Select [[[
+# : Mode [[[
 
-[select]
-border = { fg = "{{colors.primary.default.hex}}" }
-active = { fg = "{{colors.tertiary.default.hex}}", bold = true }
+[mode]
+
+normal_main = { bg = "{{colors.primary.default.hex}}", fg = "{{colors.on_primary.default.hex}}", bold = true }
+normal_alt  = { bg = "{{colors.surface_variant.default.hex}}", fg = "{{colors.on_surface_variant.default.hex}}" }
+
+select_main = { bg = "{{colors.secondary.default.hex}}", fg = "{{colors.on_secondary.default.hex}}", bold = true }
+select_alt  = { bg = "{{colors.surface_variant.default.hex}}", fg = "{{colors.on_surface_variant.default.hex}}" }
+
+unset_main = { bg = "{{colors.tertiary.default.hex}}", fg = "{{colors.on_tertiary.default.hex}}", bold = true }
+unset_alt  = { bg = "{{colors.surface_variant.default.hex}}", fg = "{{colors.on_surface_variant.default.hex}}" }
 
 # : ]]]
 
@@ -75,9 +66,12 @@ active = { fg = "{{colors.tertiary.default.hex}}", bold = true }
 
 [input]
 border = { fg = "{{colors.primary.default.hex}}" }
+title = {}
 value = { fg = "{{colors.on_surface.default.hex}}" }
+selected = { reversed = true }
 
 # : ]]]
+
 
 # : Tabs [[[
 
@@ -91,7 +85,7 @@ sep_inner = { open = "[", close = "]" }
 
 # : Completion [[[
 
-[completion]
+[cmp]
 border = { fg = "{{colors.primary.default.hex}}", bg = "{{colors.on_primary.default.hex}}" }
 
 # : ]]]
@@ -120,12 +114,23 @@ separator_style = { fg = "{{colors.on_surface.default.hex}}" }
 
 # : ]]]
 
+# : Spotter [[[
+
+[spot]
+border   = { fg = "{{colors.primary.default.hex}}" }
+title    = { fg = "{{colors.primary.default.hex}}" }
+tbl_col  = { fg = "{{colors.on_surface.default.hex}}" }
+tbl_cell = { fg = "{{colors.on_surface.default.hex}}", bg = "{{colors.surface.default.hex}}" }
+
+# : ]]]
+
 
 # : Help [[[
 
 [help]
 on = { fg = "{{colors.on_surface.default.hex}}" }
 run = { fg = "{{colors.on_surface.default.hex}}" }
+hovered = { reversed = true, bold = true }
 footer = { fg = "{{colors.on_secondary.default.hex}}", bg = "{{colors.secondary.default.hex}}" }
 
 # : ]]]
@@ -159,12 +164,12 @@ rules = [
     { mime = "application/{pdf,doc,rtf}", fg = "#a6e3a1" },
 
     # Special files
-    { name = "*", is = "orphan", bg = "{{colors.error_container.default.hex}}" },
-    { name = "*", is = "exec", fg = "{{colors.on_error_container.default.hex}}" },
+    { mime = "*", is = "orphan", fg = "{{colors.on_error_container.default.hex}}", bg = "{{colors.error_container.default.hex}}" },
+    { mime = "application/*exec*", fg = "{{colors.error.default.hex}}" },
 
     # Fallback
-    { name = "*", fg = "{{colors.on_surface.default.hex}}" },
-    { name = "*/", fg = "{{colors.primary.default.hex}}" },
+    { url = "*", fg = "{{colors.on_surface.default.hex}}" },
+    { url = "*/", fg = "{{colors.primary.default.hex}}" },
 ]
 
 # : ]]]

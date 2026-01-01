@@ -331,6 +331,10 @@
           "description": "Показувати показники температури GPU, якщо доступні.",
           "label": "Температура GPU"
         },
+        "load-average": {
+          "description": "Показати середнє навантаження системи.",
+          "label": "Середнє навантаження"
+        },
         "memory-percentage": {
           "description": "Показувати використання пам'яті у відсотках замість абсолютних значень.",
           "label": "Пам'ять у відсотках"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "Системний вихід + вхід мікрофона",
         "microphone-input": "Вхід мікрофона",
+        "none": "Немає аудіо",
         "system-output": "Системний вихід"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "Завжди прокручувати",
       "hover": "Прокручувати при наведенні",
       "never": "Ніколи не прокручувати"
+    },
+    "session-menu-grid-layout": {
+      "grid": "Сітка",
+      "single-row": "Один рядок"
     },
     "settings-panel-mode": {
       "attached": "Панель прикріплена до панелі",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "Перевірте вихідні коди вашого плагіна або оновіть список.",
         "no-plugins-label": "Немає доступних плагінів"
       },
+      "collision": {
+        "already-installed": "Цей плагін вже встановлено.",
+        "custom-version-exists": "Вже встановлено власну версію з \"{source}\"",
+        "official-version-exists": "Офіційна версія цього плагіна вже встановлена."
+      },
       "filter": {
         "all": "Все",
         "downloaded": "Завантажено",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "Немає встановлених плагінів"
       },
       "installing": "Встановлення {plugin}...",
+      "open-plugins-tab": "Відкрити налаштування плагінів",
       "plugin-settings-title": "Налаштування {plugin}",
       "refresh": {
         "refreshing": "Оновлення списку плагінів...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "Плагін не завантажено",
       "settings-saved": "Налаштування плагіна збережено",
+      "source": {
+        "custom": "Власне джерело",
+        "official": "Офіційний"
+      },
       "sources": {
         "add-custom": "Додати власний репозиторій",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "Оновити все ({count})",
       "update-all-success": "Усі плагіни успішно оновлено.",
       "update-available": "Доступно оновлень для {count} плагінів",
+      "update-available_plural": "Доступно {count} оновлень плагінів",
       "update-error": "Не вдалося оновити плагін: {plugin}: {error}",
       "update-incompatible": "Потрібна Noctalia v{version} або вище",
       "update-success": "Оновлено {plugin} до версії {version}",
@@ -2344,6 +2364,10 @@
           "label": "Загальні"
         }
       },
+      "large-buttons-layout": {
+        "description": "Виберіть спосіб відображення кнопок меню сеансу.",
+        "label": "Розкладка з великими кнопками"
+      },
       "large-buttons-style": {
         "description": "Відобразити меню сеансу великими кнопками у вигляді сітки.",
         "label": "Стиль великих кнопок"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "Кольори підсвічування"
+      },
+      "load-average-section": {
+        "label": "Середнє навантаження"
       },
       "memory-section": {
         "label": "Використання пам'яті"
@@ -2653,6 +2680,7 @@
     "download": "Завантажити",
     "download-speed": "Швидкість завантаження",
     "gpu-temp": "Температура GPU",
+    "load-average": "Середнє навантаження",
     "memory": "Пам'ять",
     "title": "Системний монітор",
     "upload": "Завантажити",
@@ -2711,7 +2739,8 @@
       "enabled": "Увімкнено"
     },
     "keyboard-layout": {
-      "changed": "Розкладка клавіатури змінена на {layout}"
+      "changed": "Розкладка клавіатури змінена на {layout}",
+      "title": "Клавіатура"
     },
     "kofi": {
       "opened": "Сторінка Ko-fi відкрита у вашому браузері"

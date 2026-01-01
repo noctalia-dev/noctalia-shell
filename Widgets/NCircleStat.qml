@@ -16,8 +16,22 @@ Item {
   property string tooltipText: ""
   property string tooltipDirection: "top"
 
-  implicitWidth: Math.round(64 * contentScale)
-  implicitHeight: Math.round(64 * contentScale)
+  // Arc geometry constants
+  readonly property real _gaugeSize: 60 * contentScale
+  readonly property real _lineWidth: 6 * contentScale
+  readonly property real _arcRadius: _gaugeSize / 2 - 5 * contentScale
+  // Arc goes from 150° to 390° (30°), gap at bottom
+  // Bottom of arc is at y = center + radius * sin(30°) = center + radius * 0.5
+  // Plus half line width for stroke
+  readonly property real _arcBottomY: _gaugeSize / 2 + _arcRadius * 0.5 + _lineWidth / 2
+  // Height needs to include the icon which sits inside the arc gap
+  // Icon is ~12px tall, positioned 4px below text center, need ~4px more padding
+  readonly property real _contentHeight: _arcBottomY + 4 * contentScale
+
+  implicitWidth: Math.round(_gaugeSize)
+  implicitHeight: Math.round(_contentHeight)
+  Layout.maximumWidth: implicitWidth
+  Layout.maximumHeight: implicitHeight
 
   // Animated ratio for smooth transitions - reduces repaint frequency
   property real animatedRatio: ratio
@@ -52,85 +66,81 @@ Item {
     }
   }
 
-  // Main gauge container - sized to fit content tightly
-  Item {
-    id: gaugeContainer
-    anchors.centerIn: parent
-    width: 60 * contentScale
-    height: 60 * contentScale
+  Canvas {
+    id: gauge
+    width: root._gaugeSize
+    height: root._gaugeSize
+    anchors.horizontalCenter: parent.horizontalCenter
+    y: 0
 
-    Canvas {
-      id: gauge
-      anchors.fill: parent
+    // Optimized Canvas settings for better GPU performance
+    renderStrategy: Canvas.Cooperative
+    renderTarget: Canvas.FramebufferObject
 
-      // Optimized Canvas settings for better GPU performance
-      renderStrategy: Canvas.Cooperative
-      renderTarget: Canvas.FramebufferObject
+    // Enable layer caching - critical for performance!
+    layer.enabled: true
+    layer.smooth: true
 
-      // Enable layer caching - critical for performance!
-      layer.enabled: true
-      layer.smooth: true
+    Component.onCompleted: {
+      requestPaint();
+    }
 
-      Component.onCompleted: {
-        requestPaint();
-      }
+    onPaint: {
+      const ctx = getContext("2d");
+      const w = width, h = height;
+      const cx = w / 2, cy = h / 2;
+      const r = root._arcRadius;
 
-      onPaint: {
-        const ctx = getContext("2d");
-        const w = width, h = height;
-        const cx = w / 2, cy = h / 2;
-        const r = Math.min(w, h) / 2 - 5 * root.contentScale;
+      // Rotated 90° to the right: gap at the bottom
+      // Start at 150° and end at 390° (30°) → bottom opening
+      const start = Math.PI * 5 / 6; // 150°
+      const endBg = Math.PI * 13 / 6; // 390° (equivalent to 30°)
 
-        // Rotated 90° to the right: gap at the bottom
-        // Start at 150° and end at 390° (30°) → bottom opening
-        const start = Math.PI * 5 / 6; // 150°
-        const endBg = Math.PI * 13 / 6; // 390° (equivalent to 30°)
+      ctx.reset();
+      ctx.lineWidth = root._lineWidth;
+      ctx.lineCap = Settings.data.general.iRadiusRatio > 0 ? "round" : "butt";
 
-        ctx.reset();
-        ctx.lineWidth = 6 * root.contentScale;
-        ctx.lineCap = Settings.data.general.iRadiusRatio > 0 ? "round" : "butt";
+      // Track uses outline for contrast against surfaceVariant backgrounds
+      ctx.strokeStyle = Color.mOutline;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, start, endBg);
+      ctx.stroke();
 
-        // Track uses outline for contrast against surfaceVariant backgrounds
-        ctx.strokeStyle = Color.mOutline;
+      // Value arc - only draw if ratio is meaningful (> 0.5%)
+      const r2 = Math.max(0, Math.min(1, root.animatedRatio));
+      if (r2 > 0.005) {
+        const end = start + (endBg - start) * r2;
+        ctx.strokeStyle = root.fillColor;
         ctx.beginPath();
-        ctx.arc(cx, cy, r, start, endBg);
+        ctx.arc(cx, cy, r, start, end);
         ctx.stroke();
-
-        // Value arc - only draw if ratio is meaningful (> 0.5%)
-        const r2 = Math.max(0, Math.min(1, root.animatedRatio));
-        if (r2 > 0.005) {
-          const end = start + (endBg - start) * r2;
-          ctx.strokeStyle = root.fillColor;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, start, end);
-          ctx.stroke();
-        }
       }
     }
+  }
 
-    // Percent centered in the circle
-    NText {
-      id: valueLabel
-      anchors.centerIn: parent
-      anchors.verticalCenterOffset: -4 * root.contentScale
-      text: `${Math.round(root.animatedRatio * 100)}${root.suffix}`
-      pointSize: Style.fontSizeM * root.contentScale * 0.9
-      font.weight: Style.fontWeightBold
-      color: root.fillColor
-      horizontalAlignment: Text.AlignHCenter
-    }
+  // Percent centered in the circle
+  NText {
+    id: valueLabel
+    anchors.horizontalCenter: gauge.horizontalCenter
+    anchors.verticalCenter: gauge.verticalCenter
+    anchors.verticalCenterOffset: -4 * root.contentScale
+    text: `${Math.round(root.animatedRatio * 100)}${root.suffix}`
+    pointSize: Style.fontSizeM * root.contentScale * 0.9
+    font.weight: Style.fontWeightBold
+    color: root.fillColor
+    horizontalAlignment: Text.AlignHCenter
+  }
 
-    NIcon {
-      id: iconText
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.top: valueLabel.bottom
-      anchors.topMargin: 4 * root.contentScale
-      icon: root.icon
-      color: root.fillColor
-      pointSize: Style.fontSizeM * root.contentScale
-      horizontalAlignment: Text.AlignHCenter
-      verticalAlignment: Text.AlignVCenter
-    }
+  NIcon {
+    id: iconText
+    anchors.horizontalCenter: gauge.horizontalCenter
+    anchors.top: valueLabel.bottom
+    anchors.topMargin: 4 * root.contentScale
+    icon: root.icon
+    color: root.fillColor
+    pointSize: Style.fontSizeM * root.contentScale
+    horizontalAlignment: Text.AlignHCenter
+    verticalAlignment: Text.AlignVCenter
   }
 
   MouseArea {

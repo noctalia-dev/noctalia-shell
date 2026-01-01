@@ -331,6 +331,10 @@
           "description": "Mostrar as leituras de temperatura da GPU, se disponíveis.",
           "label": "Temperatura da GPU"
         },
+        "load-average": {
+          "description": "Exibir média de carga do sistema.",
+          "label": "Média de carga"
+        },
         "memory-percentage": {
           "description": "Mostrar o uso de memória como percentual em vez de valores absolutos.",
           "label": "Memória como percentual"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "Saída do sistema + entrada do microfone",
         "microphone-input": "Entrada do microfone",
+        "none": "No audio",
         "system-output": "Saída do sistema"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "Rolar Sempre",
       "hover": "Rolar ao Passar o Mouse",
       "never": "Nunca Rolar"
+    },
+    "session-menu-grid-layout": {
+      "grid": "Grade",
+      "single-row": "Linha Única"
     },
     "settings-panel-mode": {
       "attached": "Painel anexado à barra",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "Verifique as fontes do seu plugin ou atualize a lista.",
         "no-plugins-label": "Nenhum plugin disponível."
       },
+      "collision": {
+        "already-installed": "Este plugin já está instalado.",
+        "custom-version-exists": "Uma versão personalizada de \"{source}\" já está instalada.",
+        "official-version-exists": "A versão oficial deste plugin já está instalada."
+      },
       "filter": {
         "all": "Tudo",
         "downloaded": "Baixado",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "Nenhum plugin instalado"
       },
       "installing": "Instalando {plugin}...",
+      "open-plugins-tab": "Abrir configurações de plugins",
       "plugin-settings-title": "Configurações do {plugin}",
       "refresh": {
         "refreshing": "Atualizando a lista de plugins...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "Plugin não carregado",
       "settings-saved": "Configurações do plugin salvas.",
+      "source": {
+        "custom": "Fonte personalizada",
+        "official": "Oficial"
+      },
       "sources": {
         "add-custom": "Adicionar repositório personalizado",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "Atualizar Tudo ({count})",
       "update-all-success": "Todos os plugins foram atualizados com sucesso.",
       "update-available": "{count} atualização(ões) de plugin disponível(eis)",
+      "update-available_plural": "{count} atualizações de plugin disponíveis",
       "update-error": "Falha ao atualizar o plugin: {plugin}: {error}",
       "update-incompatible": "Requer Noctalia v{version} ou superior",
       "update-success": "{plugin} atualizado para a versão {version}",
@@ -2344,6 +2364,10 @@
           "label": "Geral"
         }
       },
+      "large-buttons-layout": {
+        "description": "Escolha como os botões do menu de sessão são exibidos.",
+        "label": "Layout de botões grandes"
+      },
       "large-buttons-style": {
         "description": "Exibir o menu de sessão com botões grandes em um layout de grade.",
         "label": "Estilo de botões grandes"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "Cores de destaque"
+      },
+      "load-average-section": {
+        "label": "Média de carga"
       },
       "memory-section": {
         "label": "Uso de memória"
@@ -2653,6 +2680,7 @@
     "download": "Baixar",
     "download-speed": "Velocidade de Download",
     "gpu-temp": "Temperatura da GPU",
+    "load-average": "Média de carga",
     "memory": "Memória",
     "title": "Monitor do Sistema",
     "upload": "Enviar",
@@ -2711,7 +2739,8 @@
       "enabled": "Ativado"
     },
     "keyboard-layout": {
-      "changed": "Layout de teclado alterado para {layout}"
+      "changed": "Layout de teclado alterado para {layout}",
+      "title": "Teclado"
     },
     "kofi": {
       "opened": "Página do Ko-fi aberta no seu navegador"

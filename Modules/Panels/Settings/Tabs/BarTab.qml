@@ -509,6 +509,14 @@ ColumnLayout {
     }
   }
 
+  // Update available widgets when plugin widgets are registered/unregistered
+  Connections {
+    target: BarWidgetRegistry
+    function onPluginWidgetRegistryUpdated() {
+      updateAvailableWidgetsModel();
+    }
+  }
+
   // Shared Plugin Settings Popup
   NPluginSettingsPopup {
     id: pluginSettingsDialog

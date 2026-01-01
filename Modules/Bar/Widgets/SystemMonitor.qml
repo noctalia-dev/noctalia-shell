@@ -48,6 +48,7 @@ Rectangle {
   readonly property bool showMemoryAsPercent: (widgetSettings.showMemoryAsPercent !== undefined) ? widgetSettings.showMemoryAsPercent : widgetMetadata.showMemoryAsPercent
   readonly property bool showNetworkStats: (widgetSettings.showNetworkStats !== undefined) ? widgetSettings.showNetworkStats : widgetMetadata.showNetworkStats
   readonly property bool showDiskUsage: (widgetSettings.showDiskUsage !== undefined) ? widgetSettings.showDiskUsage : widgetMetadata.showDiskUsage
+  readonly property bool showLoadAverage: (widgetSettings.showLoadAverage !== undefined) ? widgetSettings.showLoadAverage : widgetMetadata.showLoadAverage
   readonly property string diskPath: (widgetSettings.diskPath !== undefined) ? widgetSettings.diskPath : widgetMetadata.diskPath
   readonly property string fontFamily: useMonospaceFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
 
@@ -72,6 +73,11 @@ Rectangle {
     // GPU (if available)
     if (SystemStatService.gpuAvailable) {
       lines.push(`${I18n.tr("system-monitor.gpu-temp")}: ${Math.round(SystemStatService.gpuTemp)}°C`);
+    }
+
+    // Load Average
+    if (SystemStatService.loadAvg1 >= 0) {
+      lines.push(`${I18n.tr("system-monitor.load-average")}: ${SystemStatService.loadAvg1.toFixed(2)} ${SystemStatService.loadAvg5.toFixed(2)} ${SystemStatService.loadAvg15.toFixed(2)}`);
     }
 
     // Memory
@@ -441,6 +447,76 @@ Rectangle {
           onLoaded: {
             item.ratio = Qt.binding(() => SystemStatService.gpuTemp / 100);
             item.statColor = Qt.binding(() => SystemStatService.gpuColor);
+          }
+        }
+      }
+    }
+
+    // Load Average Component
+    Item {
+      id: loadAvgContainer
+      implicitWidth: loadAvgContent.implicitWidth
+      implicitHeight: loadAvgContent.implicitHeight
+      Layout.preferredWidth: isVertical ? root.width : implicitWidth
+      Layout.preferredHeight: compactMode ? implicitHeight : Style.capsuleHeight
+      Layout.alignment: isVertical ? Qt.AlignHCenter : Qt.AlignVCenter
+      visible: showLoadAverage && SystemStatService.nproc > 0 && SystemStatService.loadAvg1 > 0
+
+      GridLayout {
+        id: loadAvgContent
+        anchors.centerIn: parent
+        flow: (isVertical && !compactMode) ? GridLayout.TopToBottom : GridLayout.LeftToRight
+        rows: (isVertical && !compactMode) ? 2 : 1
+        columns: (isVertical && !compactMode) ? 1 : 2
+        rowSpacing: Style.marginXXS
+        columnSpacing: compactMode ? 3 : Style.marginXS
+
+        Item {
+          Layout.alignment: Qt.AlignCenter
+          Layout.row: (isVertical && !compactMode) ? 1 : 0
+          Layout.column: 0
+          Layout.fillWidth: isVertical
+          implicitWidth: iconSize
+          implicitHeight: iconSize
+
+          NIcon {
+            icon: "weight"
+            pointSize: iconSize
+            applyUiScale: false
+            anchors.centerIn: parent
+            color: Color.mOnSurface
+          }
+        }
+
+        // Text mode
+        NText {
+          visible: !compactMode
+          text: SystemStatService.loadAvg1.toFixed(1)
+          family: fontFamily
+          pointSize: textSize
+          applyUiScale: false
+          font.weight: Style.fontWeightMedium
+          Layout.alignment: Qt.AlignCenter
+          horizontalAlignment: Text.AlignHCenter
+          verticalAlignment: Text.AlignVCenter
+          color: textColor
+          Layout.row: isVertical ? 0 : 0
+          Layout.column: isVertical ? 0 : 1
+          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
+        }
+
+        // Compact mode
+        Loader {
+          active: compactMode
+          visible: compactMode
+          sourceComponent: miniGaugeComponent
+          Layout.alignment: Qt.AlignCenter
+          Layout.row: 0
+          Layout.column: 1
+
+          onLoaded: {
+            item.ratio = Qt.binding(() => Math.min(1, SystemStatService.loadAvg1 / SystemStatService.nproc));
+            item.statColor = Qt.binding(() => Color.mPrimary);
           }
         }
       }

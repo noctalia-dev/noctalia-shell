@@ -331,6 +331,10 @@
           "description": "Показать показания температуры GPU, если доступны.",
           "label": "Температура GPU"
         },
+        "load-average": {
+          "description": "Показать среднюю нагрузку системы.",
+          "label": "Средняя нагрузка"
+        },
         "memory-percentage": {
           "description": "Показывать использование памяти в процентах вместо абсолютных значений.",
           "label": "Память в процентах"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "Системный вывод + ввод с микрофона",
         "microphone-input": "Ввод с микрофона",
+        "none": "Нет звука",
         "system-output": "Системный вывод"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "Всегда прокручивать",
       "hover": "Прокручивать при наведении",
       "never": "Никогда не прокручивать"
+    },
+    "session-menu-grid-layout": {
+      "grid": "Сетка",
+      "single-row": "Один ряд"
     },
     "settings-panel-mode": {
       "attached": "Панель прикреплена к панели",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "Проверьте исходники вашего плагина или обновите список.",
         "no-plugins-label": "Нет доступных плагинов."
       },
+      "collision": {
+        "already-installed": "Этот плагин уже установлен.",
+        "custom-version-exists": "Пользовательская версия из \"{source}\" уже установлена.",
+        "official-version-exists": "Официальная версия этого плагина уже установлена."
+      },
       "filter": {
         "all": "Всё",
         "downloaded": "Скачано",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "Нет установленных плагинов"
       },
       "installing": "Установка {plugin}...",
+      "open-plugins-tab": "Открыть настройки плагинов",
       "plugin-settings-title": "Настройки {plugin}",
       "refresh": {
         "refreshing": "Обновление списка плагинов...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "Плагин не загружен",
       "settings-saved": "Настройки плагина сохранены",
+      "source": {
+        "custom": "Пользовательский источник",
+        "official": "Официальный"
+      },
       "sources": {
         "add-custom": "Добавить пользовательский репозиторий",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "Обновить все ({count})",
       "update-all-success": "Все плагины успешно обновлены.",
       "update-available": "Доступно {count} обновлений плагинов",
+      "update-available_plural": "Доступно {count} обновлений плагинов",
       "update-error": "Не удалось обновить плагин: {plugin}: {error}",
       "update-incompatible": "Требуется Noctalia v{version} или выше",
       "update-success": "Плагин {plugin} обновлён до версии {version}",
@@ -2344,6 +2364,10 @@
           "label": "Общие"
         }
       },
+      "large-buttons-layout": {
+        "description": "Выберите способ отображения кнопок меню сеанса.",
+        "label": "Крупная раскладка кнопок"
+      },
       "large-buttons-style": {
         "description": "Отобразить меню сеанса с большими кнопками в виде сетки.",
         "label": "Стиль \"крупные кнопки\""
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "Цвета выделения"
+      },
+      "load-average-section": {
+        "label": "Средняя нагрузка"
       },
       "memory-section": {
         "label": "Использование памяти"
@@ -2653,6 +2680,7 @@
     "download": "Скачать",
     "download-speed": "Скорость загрузки",
     "gpu-temp": "Температура GPU",
+    "load-average": "Средняя нагрузка",
     "memory": "Память",
     "title": "Системный монитор",
     "upload": "Загрузить",
@@ -2711,7 +2739,8 @@
       "enabled": "Включен"
     },
     "keyboard-layout": {
-      "changed": "Раскладка клавиатуры изменена на {layout}"
+      "changed": "Раскладка клавиатуры изменена на {layout}",
+      "title": "Клавиатура"
     },
     "kofi": {
       "opened": "Страница Ko-fi открыта в вашем браузере"

@@ -32,6 +32,10 @@ Singleton {
   property real txSpeed: 0
   property real zfsArcSizeKb: 0 // ZFS ARC cache size in KB
   property real zfsArcCminKb: 0 // ZFS ARC minimum (non-reclaimable) size in KB
+  property real loadAvg1: 0
+  property real loadAvg5: 0
+  property real loadAvg15: 0
+  property int nproc: 0 // Number of cpu cores
 
   // Network max speed tracking (learned over time, cached for 7 days)
   readonly property real rxMaxSpeed: {
@@ -187,6 +191,12 @@ Singleton {
 
     // Check for ZFS ARC stats on startup
     zfsArcStatsFile.reload();
+
+    // Get nproc on startup
+    nprocProcess.running = true;
+
+    // Get initial load average
+    loadAvgFile.reload();
   }
 
   // Re-run GPU detection when dGPU opt-in setting changes
@@ -226,6 +236,21 @@ Singleton {
       }
     }
     onTriggered: cpuStatFile.reload()
+  }
+
+  // Timer for load average
+  Timer {
+    id: loadAvgTimer
+    interval: root.normalizeInterval(Settings.data.systemMonitor.loadAvgPollingInterval)
+    repeat: true
+    running: true
+    triggeredOnStart: true
+    onIntervalChanged: {
+      if (running) {
+        restart();
+      }
+    }
+    onTriggered: loadAvgFile.reload()
   }
 
   // Timer for CPU temperature
@@ -326,6 +351,12 @@ Singleton {
     onLoaded: calculateNetworkSpeed(text())
   }
 
+  FileView {
+    id: loadAvgFile
+    path: "/proc/loadavg"
+    onLoaded: parseLoadAverage(text())
+  }
+
   // ZFS ARC stats file (only exists on ZFS systems)
   FileView {
     id: zfsArcStatsFile
@@ -371,6 +402,18 @@ Singleton {
         root.diskPercents = newPercents;
         root.diskUsedGb = newUsedGb;
         root.diskSizeGb = newSizeGb;
+      }
+    }
+  }
+
+  // Process to get number of processors
+  Process {
+    id: nprocProcess
+    command: ["nproc"]
+    running: false
+    stdout: StdioCollector {
+      onStreamFinished: {
+        root.nproc = parseInt(text.trim());
       }
     }
   }
@@ -635,6 +678,19 @@ Singleton {
     }
     if (!foundCmin) {
       root.zfsArcCminKb = 0;
+    }
+  }
+
+  // -------------------------------------------------------
+  // Parse load average from /proc/loadavg
+  function parseLoadAverage(text) {
+    if (!text)
+      return;
+    const parts = text.trim().split(/\s+/);
+    if (parts.length >= 3) {
+      root.loadAvg1 = parseFloat(parts[0]);
+      root.loadAvg5 = parseFloat(parts[1]);
+      root.loadAvg15 = parseFloat(parts[2]);
     }
   }
 

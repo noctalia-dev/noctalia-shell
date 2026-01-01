@@ -331,6 +331,10 @@
           "description": "GPU hőmérséklet-értékek megjelenítése, ha elérhetőek.",
           "label": "GPU hőmérséklet"
         },
+        "load-average": {
+          "description": "Rendszerterhelés átlagának megjelenítése.",
+          "label": "Átlagos terhelés"
+        },
         "memory-percentage": {
           "description": "A memória használatának megjelenítése százalékos értékben, abszolút értékek helyett.",
           "label": "Memória százalékban"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "Rendszerkimenet + mikrofonbemenet",
         "microphone-input": "Mikrofonbemenet",
+        "none": "No audio",
         "system-output": "Rendszerkimenet"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "Mindig görgetés",
       "hover": "Görgetés rámutatáskor",
       "never": "Soha ne görgessen"
+    },
+    "session-menu-grid-layout": {
+      "grid": "Rács",
+      "single-row": "Egy sor"
     },
     "settings-panel-mode": {
       "attached": "Panel a sávhoz rögzítve",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "Ellenőrizze a bővítményforrásokat, vagy frissítse a listát.",
         "no-plugins-label": "Nincsenek elérhető bővítmények"
       },
+      "collision": {
+        "already-installed": "Ez a bővítmény már telepítve van.",
+        "custom-version-exists": "Egyéni verzió a következő helyről: \"{source}\" már telepítve van",
+        "official-version-exists": "A plugin hivatalos verziója már telepítve van."
+      },
       "filter": {
         "all": "Összes",
         "downloaded": "Letöltött",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "Nincs telepített bővítmény"
       },
       "installing": "Telepítés: {plugin}...",
+      "open-plugins-tab": "Bővítmények beállításainak megnyitása",
       "plugin-settings-title": "{plugin} beállításai",
       "refresh": {
         "refreshing": "Bővítmények listájának frissítése...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "Bővítmény nincs betöltve",
       "settings-saved": "Bővítmény beállításai mentve",
+      "source": {
+        "custom": "Egyéni forrás",
+        "official": "hivatalos"
+      },
       "sources": {
         "add-custom": "Egyéni adattár hozzáadása",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "Összes frissítése ({count})",
       "update-all-success": "Minden bővítmény sikeresen frissítve",
       "update-available": "{count} frissítés érhető el a bővítményekhez",
+      "update-available_plural": "{count} bővítményfrissítés érhető el",
       "update-error": "Nem sikerült frissíteni a bővítményt: {plugin}: {error}",
       "update-incompatible": "Noctalia v{version} vagy újabb szükséges",
       "update-success": "A(z) {plugin} frissítve lett a v{version} verzióra",
@@ -2344,6 +2364,10 @@
           "label": "Általános"
         }
       },
+      "large-buttons-layout": {
+        "description": "Válaszd ki, hogyan jelenjenek meg a munkamenü menügombjai.",
+        "label": "Nagy gombok elrendezése"
+      },
       "large-buttons-style": {
         "description": "A munkamenet menü megjelenítése nagy gombokkal, rácsos elrendezésben.",
         "label": "Nagyméretű gombok stílusa"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "Kiemelőszínek"
+      },
+      "load-average-section": {
+        "label": "Átlagos terhelés"
       },
       "memory-section": {
         "label": "Memóriahasználat"
@@ -2653,6 +2680,7 @@
     "download": "Letöltés",
     "download-speed": "Letöltési sebesség",
     "gpu-temp": "GPU hőmérséklet",
+    "load-average": "Átlagos terhelés",
     "memory": "Memória",
     "title": "Rendszerfigyelő",
     "upload": "Feltöltés",
@@ -2711,7 +2739,8 @@
       "enabled": "Bekapcsolva"
     },
     "keyboard-layout": {
-      "changed": "Billentyűzetkiosztás megváltozott: {layout}"
+      "changed": "Billentyűzetkiosztás megváltozott: {layout}",
+      "title": "Billentyűzet"
     },
     "kofi": {
       "opened": "A Ko-fi oldal megnyílt a böngészőjében"

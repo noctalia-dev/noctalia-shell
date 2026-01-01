@@ -331,6 +331,10 @@
           "description": "利用可能な場合、GPU 温度を表示します。",
           "label": "GPU 温度"
         },
+        "load-average": {
+          "description": "システム負荷平均を表示します。",
+          "label": "負荷平均"
+        },
         "memory-percentage": {
           "description": "メモリ使用量を絶対値ではなくパーセンテージで表示します。",
           "label": "メモリをパーセント表示"
@@ -756,6 +760,7 @@
       "audio-sources": {
         "both": "システム出力 + マイク入力",
         "microphone-input": "マイク入力",
+        "none": "No audio",
         "system-output": "システム出力"
       },
       "color-range": {
@@ -777,6 +782,10 @@
       "always": "常にスクロール",
       "hover": "ホバー時にスクロール",
       "never": "スクロールしない"
+    },
+    "session-menu-grid-layout": {
+      "grid": "グリッド",
+      "single-row": "単一行"
     },
     "settings-panel-mode": {
       "attached": "バーに吸着",
@@ -2176,6 +2185,11 @@
         "no-plugins-description": "プラグインのソースを確認するか、リストを更新してください。",
         "no-plugins-label": "利用可能なプラグインはありません"
       },
+      "collision": {
+        "already-installed": "このプラグインはすでにインストールされています。",
+        "custom-version-exists": "\"{source}\" 発 の カスタム版 は 既に インストール されています。",
+        "official-version-exists": "このプラグインの公式バージョンはすでにインストールされています。"
+      },
       "filter": {
         "all": "すべて",
         "downloaded": "ダウンロード済み",
@@ -2196,6 +2210,7 @@
         "no-plugins-label": "インストールされているプラグインはありません"
       },
       "installing": "{plugin} をインストール中...",
+      "open-plugins-tab": "プラグイン設定を開く",
       "plugin-settings-title": "{plugin} の設定",
       "refresh": {
         "refreshing": "プラグインリストを更新中...",
@@ -2206,6 +2221,10 @@
       },
       "settings-error-not-loaded": "プラグインは読み込まれていません",
       "settings-saved": "プラグイン設定を保存しました",
+      "source": {
+        "custom": "カスタムソース",
+        "official": "公式 (kōshiki)"
+      },
       "sources": {
         "add-custom": "カスタムリポジトリを追加",
         "add-dialog": {
@@ -2237,6 +2256,7 @@
       "update-all": "すべてアップデート ({count})",
       "update-all-success": "すべてのプラグインをアップデートしました。",
       "update-available": "{count} 件のプラグインアップデートがあります",
+      "update-available_plural": "{count} 個のプラグインアップデートがあります",
       "update-error": "プラグインのアップデートに失敗しました: {plugin}: {error}",
       "update-incompatible": "Noctalia v{version} 以降が必要です。",
       "update-success": "{plugin} を v{version} にアップデートしました。",
@@ -2344,6 +2364,10 @@
           "label": "一般"
         }
       },
+      "large-buttons-layout": {
+        "description": "セッションメニューのボタンの表示方法を選択してください。",
+        "label": "大きなボタンのレイアウト"
+      },
       "large-buttons-style": {
         "description": "セッションメニューを、グリッド配置の大きなボタンで表示します。",
         "label": "大きなボタンのスタイル"
@@ -2399,6 +2423,9 @@
       },
       "highlight-colors-section": {
         "label": "ハイライト色"
+      },
+      "load-average-section": {
+        "label": "負荷平均"
       },
       "memory-section": {
         "label": "メモリ使用量"
@@ -2653,6 +2680,7 @@
     "download": "ダウンロード",
     "download-speed": "ダウンロード速度 (Daunrōdo sokudo)",
     "gpu-temp": "GPU温度",
+    "load-average": "負荷平均",
     "memory": "記憶",
     "title": "システムモニター",
     "upload": "アップロード",
@@ -2711,7 +2739,8 @@
       "enabled": "有効"
     },
     "keyboard-layout": {
-      "changed": "キーボードレイアウトを {layout} に変更しました"
+      "changed": "キーボードレイアウトを {layout} に変更しました",
+      "title": "キーボード"
     },
     "kofi": {
       "opened": "ブラウザで Ko-fi ページを開きました"

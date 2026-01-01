@@ -61,7 +61,7 @@ ColumnLayout {
       function updateNext() {
         if (currentIndex >= pluginIds.length) {
           isUpdating = false;
-          ToastService.showNotice(I18n.tr("settings.plugins.update-all-success"));
+          ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.update-all-success"));
           return;
         }
 
@@ -97,12 +97,22 @@ ColumnLayout {
         var allIds = PluginRegistry.getAllInstalledPluginIds();
         var plugins = [];
         for (var i = 0; i < allIds.length; i++) {
-          var manifest = PluginRegistry.getPluginManifest(allIds[i]);
+          var compositeKey = allIds[i];
+          var manifest = PluginRegistry.getPluginManifest(compositeKey);
           if (manifest) {
-            // Create a copy of manifest and include update info and enabled state
+            // Create a copy of manifest and include update info, enabled state, and source info
             var pluginData = JSON.parse(JSON.stringify(manifest));
-            pluginData._updateInfo = PluginService.pluginUpdates[allIds[i]];
-            pluginData._enabled = PluginRegistry.isPluginEnabled(allIds[i]);
+            pluginData.compositeKey = compositeKey;
+            pluginData.updateInfo = PluginService.pluginUpdates[compositeKey];
+            pluginData.enabled = PluginRegistry.isPluginEnabled(compositeKey);
+
+            // Add source info
+            var parsed = PluginRegistry.parseCompositeKey(compositeKey);
+            pluginData.isOfficial = parsed.isOfficial;
+            if (!parsed.isOfficial) {
+              pluginData.sourceName = PluginRegistry.getSourceNameByHash(parsed.sourceHash);
+            }
+
             plugins.push(pluginData);
           }
         }
@@ -125,7 +135,7 @@ ColumnLayout {
           NIcon {
             icon: "plugin"
             pointSize: Style.fontSizeXL
-            color: PluginService.hasPluginError(modelData.id) ? Color.mError : Color.mOnSurface
+            color: PluginService.hasPluginError(modelData.compositeKey) ? Color.mError : Color.mOnSurface
           }
 
           ColumnLayout {
@@ -154,13 +164,13 @@ ColumnLayout {
               spacing: Style.marginS
 
               NText {
-                text: modelData._updateInfo ? I18n.tr("settings.plugins.update-version", {
-                                                        "current": modelData.version,
-                                                        "new": modelData._updateInfo.availableVersion
-                                                      }) : "v" + modelData.version
+                text: modelData.updateInfo ? I18n.tr("settings.plugins.update-version", {
+                                                       "current": modelData.version,
+                                                       "new": modelData.updateInfo.availableVersion
+                                                     }) : "v" + modelData.version
                 font.pointSize: Style.fontSizeXXS
-                color: modelData._updateInfo ? Color.mPrimary : Color.mOnSurfaceVariant
-                font.weight: modelData._updateInfo ? Font.Medium : Font.Normal
+                color: modelData.updateInfo ? Color.mPrimary : Color.mOnSurfaceVariant
+                font.weight: modelData.updateInfo ? Font.Medium : Font.Normal
               }
 
               NText {
@@ -174,12 +184,27 @@ ColumnLayout {
                 font.pointSize: Style.fontSizeXXS
                 color: Color.mOnSurfaceVariant
               }
+
+              // Source indicator for non-official plugins
+              NText {
+                visible: !modelData.isOfficial
+                text: "•"
+                font.pointSize: Style.fontSizeXXS
+                color: Color.mOnSurfaceVariant
+              }
+
+              NText {
+                visible: !modelData.isOfficial
+                text: modelData.sourceName || I18n.tr("settings.plugins.source.custom")
+                font.pointSize: Style.fontSizeXXS
+                color: Color.mTertiary
+              }
             }
 
             // Error indicator
             RowLayout {
               spacing: Style.marginS
-              visible: PluginService.hasPluginError(modelData.id)
+              visible: PluginService.hasPluginError(modelData.compositeKey)
 
               NIcon {
                 icon: "alert-triangle"
@@ -188,7 +213,7 @@ ColumnLayout {
               }
 
               NText {
-                property var errorInfo: PluginService.getPluginError(modelData.id)
+                property var errorInfo: PluginService.getPluginError(modelData.compositeKey)
                 text: errorInfo ? errorInfo.error : ""
                 font.pointSize: Style.fontSizeXXS
                 color: Color.mError
@@ -222,19 +247,19 @@ ColumnLayout {
 
           NButton {
             id: updateButton
-            property string pluginId: modelData.id
+            property string pluginId: modelData.compositeKey
             property bool isUpdating: root.updatingPlugins[pluginId] === true
 
             text: isUpdating ? I18n.tr("settings.plugins.updating") : I18n.tr("settings.plugins.update")
             icon: isUpdating ? "" : "download"
-            visible: modelData._updateInfo !== undefined
+            visible: modelData.updateInfo !== undefined
             enabled: !isUpdating
             backgroundColor: Color.mPrimary
             textColor: Color.mOnPrimary
             onClicked: {
               var pid = pluginId;
               var pname = modelData.name;
-              var pversion = modelData._updateInfo?.availableVersion || "";
+              var pversion = modelData.updateInfo?.availableVersion || "";
               var rootRef = root;
               var updates = Object.assign({}, rootRef.updatingPlugins);
               updates[pid] = true;
@@ -246,28 +271,28 @@ ColumnLayout {
                 rootRef.updatingPlugins = updates2;
 
                 if (success) {
-                  ToastService.showNotice(I18n.tr("settings.plugins.update-success", {
-                                                    "plugin": pname,
-                                                    "version": pversion
-                                                  }));
+                  ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.update-success", {
+                                                                                       "plugin": pname,
+                                                                                       "version": pversion
+                                                                                     }));
                 } else {
-                  ToastService.showError(I18n.tr("settings.plugins.update-error", {
-                                                   "plugin": pname,
-                                                   "error": error || "Unknown error"
-                                                 }));
+                  ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.update-error", {
+                                                                                      "plugin": pname,
+                                                                                      "error": error || "Unknown error"
+                                                                                    }));
                 }
               });
             }
           }
 
           NToggle {
-            checked: modelData._enabled
+            checked: modelData.enabled
             baseSize: Style.baseWidgetSize * 0.7
             onToggled: function (checked) {
               if (checked) {
-                PluginService.enablePlugin(modelData.id);
+                PluginService.enablePlugin(modelData.compositeKey);
               } else {
-                PluginService.disablePlugin(modelData.id);
+                PluginService.disablePlugin(modelData.compositeKey);
               }
             }
           }
@@ -362,7 +387,7 @@ ColumnLayout {
             onToggled: function (checked) {
               PluginRegistry.setSourceEnabled(modelData.url, checked);
               PluginService.refreshAvailablePlugins();
-              ToastService.showNotice(I18n.tr("settings.plugins.refresh.refreshing"));
+              ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.refresh.refreshing"));
             }
           }
         }
@@ -434,7 +459,7 @@ ColumnLayout {
       onClicked: {
         PluginService.refreshAvailablePlugins();
         checkUpdatesTimer.restart();
-        ToastService.showNotice(I18n.tr("settings.plugins.refresh.refreshing"));
+        ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.refresh.refreshing"));
       }
     }
   }
@@ -717,13 +742,13 @@ ColumnLayout {
           enabled: sourceNameInput.text.length > 0 && sourceUrlInput.text.length > 0
           onClicked: {
             if (PluginRegistry.addPluginSource(sourceNameInput.text, sourceUrlInput.text)) {
-              ToastService.showNotice(I18n.tr("settings.plugins.sources.add-dialog.success"));
+              ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.sources.add-dialog.success"));
               PluginService.refreshAvailablePlugins();
               addSourceDialog.close();
               sourceNameInput.text = "";
               sourceUrlInput.text = "";
             } else {
-              ToastService.showNotice(I18n.tr("settings.plugins.sources.add-dialog.error"));
+              ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.sources.add-dialog.error"));
             }
           }
         }
@@ -780,7 +805,7 @@ ColumnLayout {
           textColor: Color.mOnPrimary
           onClicked: {
             if (uninstallDialog.pluginToUninstall) {
-              root.uninstallPlugin(uninstallDialog.pluginToUninstall.id);
+              root.uninstallPlugin(uninstallDialog.pluginToUninstall.compositeKey);
               uninstallDialog.close();
             }
           }
@@ -818,21 +843,21 @@ ColumnLayout {
   // ------------------------------
 
   function installPlugin(pluginMetadata) {
-    ToastService.showNotice(I18n.tr("settings.plugins.installing", {
-                                      "plugin": pluginMetadata.name
-                                    }));
+    ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.installing", {
+                                                                         "plugin": pluginMetadata.name
+                                                                       }));
 
-    PluginService.installPlugin(pluginMetadata, function (success, error) {
+    PluginService.installPlugin(pluginMetadata, false, function (success, error, registeredKey) {
       if (success) {
-        ToastService.showNotice(I18n.tr("settings.plugins.install-success", {
-                                          "plugin": pluginMetadata.name
-                                        }));
-        // Auto-enable the plugin after installation
-        PluginService.enablePlugin(pluginMetadata.id);
+        ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.install-success", {
+                                                                             "plugin": pluginMetadata.name
+                                                                           }));
+        // Auto-enable the plugin after installation (use registered key which may be composite)
+        PluginService.enablePlugin(registeredKey);
       } else {
-        ToastService.showNotice(I18n.tr("settings.plugins.install-error", {
-                                          "error": error || "Unknown error"
-                                        }));
+        ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.install-error", {
+                                                                            "error": error || "Unknown error"
+                                                                          }));
       }
     });
   }
@@ -841,19 +866,19 @@ ColumnLayout {
     var manifest = PluginRegistry.getPluginManifest(pluginId);
     var pluginName = manifest?.name || pluginId;
 
-    ToastService.showNotice(I18n.tr("settings.plugins.uninstalling", {
-                                      "plugin": pluginName
-                                    }));
+    ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.uninstalling", {
+                                                                         "plugin": pluginName
+                                                                       }));
 
     PluginService.uninstallPlugin(pluginId, function (success, error) {
       if (success) {
-        ToastService.showNotice(I18n.tr("settings.plugins.uninstall-success", {
-                                          "plugin": pluginName
-                                        }));
+        ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.uninstall-success", {
+                                                                             "plugin": pluginName
+                                                                           }));
       } else {
-        ToastService.showNotice(I18n.tr("settings.plugins.uninstall-error", {
-                                          "error": error || "Unknown error"
-                                        }));
+        ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.uninstall-error", {
+                                                                            "error": error || "Unknown error"
+                                                                          }));
       }
     });
   }

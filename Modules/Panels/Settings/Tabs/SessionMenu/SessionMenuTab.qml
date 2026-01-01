@@ -178,6 +178,27 @@ ColumnLayout {
     onToggled: checked => Settings.data.sessionMenu.largeButtonsStyle = checked
   }
 
+  NComboBox {
+    visible: Settings.data.sessionMenu.largeButtonsStyle
+    Layout.fillWidth: true
+    label: I18n.tr("settings.session-menu.large-buttons-layout.label")
+    description: I18n.tr("settings.session-menu.large-buttons-layout.description")
+    model: [
+      {
+        "key": "grid",
+        "name": I18n.tr("options.session-menu-grid-layout.grid")
+      },
+      {
+        "key": "single-row",
+        "name": I18n.tr("options.session-menu-grid-layout.single-row")
+      }
+    ]
+    currentKey: Settings.data.sessionMenu.largeButtonsLayout
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("sessionMenu.largeButtonsLayout")
+    onSelected: key => Settings.data.sessionMenu.largeButtonsLayout = key
+  }
+
   NToggle {
     Layout.fillWidth: true
     label: I18n.tr("settings.session-menu.show-number-labels.label")

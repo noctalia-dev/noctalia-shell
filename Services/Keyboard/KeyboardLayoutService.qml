@@ -61,7 +61,7 @@ Singleton {
         const message = I18n.tr("toast.keyboard-layout.changed", {
                                   "layout": currentLayout.toUpperCase()
                                 });
-        ToastService.showNotice(message, "", "", 2000);
+        ToastService.showNotice(I18n.tr("toast.keyboard-layout.title"), message, "", 2000);
       }
       Logger.d("KeyboardLayout", "Layout changed from", previousLayout, "to", currentLayout);
     }

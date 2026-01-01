@@ -16,6 +16,7 @@ SmartPanel {
   id: root
 
   readonly property bool largeButtonsStyle: Settings.data.sessionMenu.largeButtonsStyle || false
+  readonly property bool largeButtonsLayout: Settings.data.sessionMenu.largeButtonsLayout || "grid"
 
   // Make panel background transparent for large buttons style
   panelBackgroundColor: largeButtonsStyle ? Color.transparent : Color.mSurface
@@ -293,8 +294,14 @@ SmartPanel {
   }
 
   function getGridInfo() {
-    const columns = Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)));
-    const rows = Math.ceil(powerOptions.length / columns);
+    if (Settings.data.sessionMenu.largeButtonsLayout === "single-row") {
+      const columns = powerOptions.length;
+      const rows = 1;
+    } else {
+      const columns = Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)));
+      const rows = Math.ceil(powerOptions.length / columns);
+    }
+
     return {
       columns,
       rows,
@@ -521,7 +528,7 @@ SmartPanel {
       GridLayout {
         id: largeButtonsGrid
         Layout.alignment: Qt.AlignHCenter
-        columns: Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)))
+        columns: Settings.data.sessionMenu.largeButtonsLayout === "single-row" ? powerOptions.length : Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)))
         rowSpacing: Style.marginXL
         columnSpacing: Style.marginXL
         width: columns * 200 * Style.uiScaleRatio + (columns - 1) * Style.marginXL
