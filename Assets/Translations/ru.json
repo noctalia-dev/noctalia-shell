@@ -55,6 +55,10 @@
           "description": "Выберите, как это значение должно отображаться.",
           "label": "Режим отображения"
         },
+        "hide-if-not-detected": {
+          "description": "Скрыть виджет, если в системе не обнаружена батарея.",
+          "label": "Скрыться, если не обнаружен."
+        },
         "low-battery-threshold": {
           "description": "Показывать предупреждение, когда уровень заряда батареи падает ниже этого процента.",
           "label": "Порог предупреждения о низком заряде батареи"
@@ -90,6 +94,10 @@
           "label": "Горизонтальная панель"
         },
         "preview": "Предварительный просмотр",
+        "tooltip-format": {
+          "description": "Строка формата для подсказки, отображаемой при наведении на часы. Оставьте пустым, чтобы использовать подсказку по умолчанию.",
+          "label": "Формат подсказки"
+        },
         "use-custom-font": {
           "description": "Переопределить выбор шрифта по умолчанию пользовательским шрифтом для часов.",
           "label": "Использовать пользовательский шрифт"
@@ -216,6 +224,10 @@
         "display-mode": {
           "description": "Выберите, как это значение должно отображаться.",
           "label": "Режим отображения"
+        },
+        "show-icon": {
+          "description": "Отображать значок раскладки клавиатуры.",
+          "label": "Показать значок"
         }
       },
       "lock-keys": {
@@ -279,7 +291,7 @@
         }
       },
       "notification-history": {
-        "hide-badge-when-zero": {
+        "hide-widget-when-zero": {
           "description": "Скрыть значок уведомлений, когда нет непрочитанных уведомлений.",
           "label": "Скрыть значок, если ноль"
         },
@@ -299,6 +311,10 @@
         }
       },
       "system-monitor": {
+        "compact-mode": {
+          "description": "Отображать статистику в виде мини-диаграмм вместо текстовых значений. Предотвращает сдвиг макета.",
+          "label": "Компактный режим"
+        },
         "cpu-temperature": {
           "description": "Показывать показания температуры процессора, если доступны.",
           "label": "Температура CPU"
@@ -315,6 +331,10 @@
           "description": "Показать показания температуры GPU, если доступны.",
           "label": "Температура GPU"
         },
+        "load-average": {
+          "description": "Показать среднюю нагрузку системы.",
+          "label": "Средняя нагрузка"
+        },
         "memory-percentage": {
           "description": "Показывать использование памяти в процентах вместо абсолютных значений.",
           "label": "Память в процентах"
@@ -330,6 +350,10 @@
         "storage-usage": {
           "description": "Показывать информацию об использовании дискового пространства.",
           "label": "Использование хранилища"
+        },
+        "use-monospace-font": {
+          "description": "```\nИспользуйте моноширинный шрифт для единообразной ширины символов.\n```",
+          "label": "Моноширинный шрифт"
         }
       },
       "taskbar": {
@@ -409,6 +433,10 @@
           "description": "Отображать рабочие пространства с текущего активного экрана, а не с экрана, на котором расположена панель.",
           "label": "Следовать за Активным Экраном"
         },
+        "grouped-border-opacity": {
+          "description": "Установить уровень прозрачности для границ контейнера рабочей области.",
+          "label": "Прозрачность границы"
+        },
         "hide-unoccupied": {
           "description": "Не отображать рабочие пространства без окон.",
           "label": "Скрыть незанятые"
@@ -424,6 +452,10 @@
         "show-labels-only-when-occupied": {
           "description": "Показывать метки рабочих пространств только тогда, когда они содержат окна.",
           "label": "Показывать метки только при наличии содержимого"
+        },
+        "unfocused-icons-opacity": {
+          "description": "Установить уровень прозрачности для неактивных значков приложений.",
+          "label": "Неактивные значки, прозрачность"
         }
       }
     }
@@ -449,18 +481,39 @@
   "bluetooth": {
     "panel": {
       "available-devices": "Доступные устройства",
+      "battery": "Батарея",
       "blocked": "Заблокировано",
       "connect": "Подключить",
       "connected-devices": "Подключенные устройства",
       "connecting": "Подключение…",
+      "device-address": "Адрес устройства",
       "disabled": "Bluetooth отключен",
       "disconnect": "Отключить",
+      "disconnecting": "Отключение...",
+      "discoverable": "Обнаруживаемый",
       "enable-message": "Включите Bluetooth, чтобы увидеть доступные устройства.",
+      "info": "Информация",
       "known-devices": "Известные устройства",
+      "no-devices": "Нет доступных устройств",
+      "pair": "Пара",
+      "paired": "Парный",
+      "paired-devices": "Сопряжённые устройства",
       "pairing": "Сопряжение...",
       "pairing-mode": "Убедитесь, что ваше устройство находится в режиме сопряжения.",
+      "refresh-devices": "Обновить устройства",
       "scanning": "Поиск устройств...",
-      "title": "Bluetooth"
+      "signal": "Сигнал",
+      "signal-text": {
+        "excellent": "Сигнал: Отличный",
+        "fair": "Сигнал: Средний",
+        "good": "Сигнал: Хороший",
+        "poor": "Сигнал: Плохой",
+        "unknown": "Сигнал: Неизвестен",
+        "very-poor": "Сигнал: Очень слабый"
+      },
+      "title": "Bluetooth",
+      "trusted": "Надёжный",
+      "unpair": "Разорвать пару"
     }
   },
   "calendar": {
@@ -512,7 +565,7 @@
     }
   },
   "clock": {
-    "tooltip": "Часы"
+    "tooltip": "Календарь"
   },
   "common": {
     "add": "Добавить",
@@ -520,13 +573,16 @@
     "cancel": "Отменить",
     "check-settings": "Проверьте настройки для получения подробной информации.",
     "close": "Закрыть",
-    "save": "Сохранить"
+    "no": "Нет",
+    "save": "Сохранить",
+    "yes": "Да"
   },
   "context-menu": {
     "clear-history": "Очистить историю",
     "close-app": "Закрыть {app}",
     "connect-vpn": "Подключиться к {name}",
     "cycle-visualizer": "Визуализатор циклов",
+    "delete": "Удалить",
     "disable-bluetooth": "Отключить Bluetooth",
     "disable-dnd": "Отключить режим \"Не беспокоить\"",
     "disable-wifi": "Отключить Wi-Fi",
@@ -534,6 +590,7 @@
     "enable-bluetooth": "Включить Bluetooth",
     "enable-dnd": "Не беспокоить",
     "enable-wifi": "Включить Wi-Fi",
+    "lower-to-bottom": "Опустить до дна",
     "next": "Следующий",
     "open-calendar": "Открыть календарь",
     "open-display-settings": "Настройки экрана",
@@ -543,7 +600,9 @@
     "pause": "Пауза",
     "play": "Играть",
     "previous": "Предыдущий",
+    "raise-to-top": "Поднять наверх",
     "random-wallpaper": "Случайные обои",
+    "reset": "Сброс",
     "toggle-mute": "Включить/выключить звук",
     "widget-settings": "Настройки виджета"
   },
@@ -567,6 +626,18 @@
       "chat": "Чат",
       "development": "Разработка",
       "education": "Образование",
+      "emoji": {
+        "activity": "Активность",
+        "animals": "Животные",
+        "flags": "Флаги",
+        "food": "Еда и напитки",
+        "nature": "Природа",
+        "objects": "Объекты",
+        "people": "Люди и тело",
+        "recent": "Недавние",
+        "symbols": "Символы",
+        "travel": "Путешествия и места"
+      },
       "game": "Игры",
       "graphics": "Графика",
       "misc": "Разное",
@@ -618,7 +689,8 @@
         "comfortable": "Комфортная",
         "compact": "Компактная",
         "default": "По умолчанию",
-        "mini": "Мини"
+        "mini": "Мини",
+        "spacious": "Просторный"
       },
       "position": {
         "bottom": "Внизу",
@@ -675,7 +747,7 @@
         "center": "По центру",
         "center_left": "По центру слева",
         "center_right": "По центру справа",
-        "follow_bar": "Следовать за панелью (по умолчанию)",
+        "follow_bar": "Следовать за панелью",
         "top_center": "Вверху по центру",
         "top_left": "Вверху слева",
         "top_right": "Вверху справа"
@@ -697,6 +769,7 @@
       "audio-sources": {
         "both": "Системный вывод + ввод с микрофона",
         "microphone-input": "Ввод с микрофона",
+        "none": "Нет звука",
         "system-output": "Системный вывод"
       },
       "color-range": {
@@ -719,8 +792,12 @@
       "hover": "Прокручивать при наведении",
       "never": "Никогда не прокручивать"
     },
+    "session-menu-grid-layout": {
+      "grid": "Сетка",
+      "single-row": "Один ряд"
+    },
     "settings-panel-mode": {
-      "attached": "Панель, прикреплённая к перекладине",
+      "attached": "Панель прикреплена к панели",
       "centered": "Центрированная панель",
       "window": "Отдельное окно"
     },
@@ -734,10 +811,6 @@
       "top": "Вверху",
       "top_left": "Вверху слева",
       "top_right": "Вверху справа"
-    },
-    "visualizer-quality": {
-      "high": "Высокое",
-      "low": "Низкое"
     },
     "visualizer-types": {
       "linear": "Линейный",
@@ -775,6 +848,7 @@
   "plugins": {
     "applications": "Приложения",
     "calculator": "Калькулятор",
+    "calculator-deprecated": "Команда >calc устарела и скоро будет удалена. Пожалуйста, вводите математические выражения прямо в поиск.",
     "calculator-description": "Калькулятор — вычисление математических выражений",
     "calculator-enter-expression": "Введите математическое выражение",
     "calculator-error": "Ошибка",
@@ -950,10 +1024,6 @@
           "description": "Установите предпочитаемые и игнорируемые медиа-приложения.",
           "label": "Медиаплееры"
         },
-        "visualizer-quality": {
-          "description": "Высокое качество использует больше ресурсов GPU.",
-          "label": "Качество визуализации"
-        },
         "visualizer-type": {
           "description": "Выберите тип визуализации для воспроизведения медиа.",
           "label": "Тип визуализации"
@@ -1004,6 +1074,10 @@
     },
     "bar": {
       "appearance": {
+        "background-opacity": {
+          "description": "Установите прозрачность фона специально для панели.",
+          "label": "Прозрачность фона бара"
+        },
         "capsule-opacity": {
           "description": "Установить уровень непрозрачности для фона виджетов, когда капсула отображается.",
           "label": "Непрозрачность капсулы"
@@ -1042,9 +1116,9 @@
           "description": "Отображает видимую границу вокруг каждого виджета.",
           "label": "Показать контуры виджетов"
         },
-        "transparent": {
-          "description": "Это предотвратит прикрепление панелей к планке.",
-          "label": "Прозрачный фон"
+        "use-separate-opacity": {
+          "description": "Включить использование отдельного значения прозрачности для фона полосы.",
+          "label": "Использовать раздельную прозрачность столбцов"
         }
       },
       "monitors": {
@@ -1156,14 +1230,15 @@
       "templates": {
         "compositors": {
           "description": "Оформление композитора.",
+          "hyprland": {
+            "description": "Записать {filepath}"
+          },
           "label": "Компоновщики",
           "mango": {
-            "description": "Записать {filepath}. Требуется mango",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} — требуется Mango"
           },
           "niri": {
-            "description": "Записать {filepath}. Требуется niri v25.11+",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} — требуется Niri v25.11+"
           }
         },
         "misc": {
@@ -1176,54 +1251,46 @@
         },
         "programs": {
           "cava": {
-            "description": "Записать {filepath}",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath}"
           },
           "code": {
-            "description": "Записать {filepath} — тему HyprLuna нужно установить и активировать вручную",
-            "description-missing": "Клиент Code не обнаружен. Установите VSCode или VSCodium"
+            "description": "Записать {filepath}",
+            "description-detected": "Применено к профилю по умолчанию — обнаружено: {clients}",
+            "description-missing": "Редактор кода не обнаружен (VSCode или VSCodium)"
           },
           "description": "Тематика для конкретных приложений.",
           "discord": {
-            "description": "Записать {filepath} для {client} — тему HyprLuna нужно активировать вручную",
-            "description-missing": "Клиент Discord не обнаружен — установите vencord, vesktop, webcord, armcord, equibop, lightcord или dorion"
+            "description": "Записать {filepath} для {client} — тему нужно активировать вручную",
+            "description-detected": "Обнаружено: {clients}",
+            "description-missing": "Клиент Discord не обнаружен"
           },
           "emacs": {
-            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Стандартный: ~/.emacs.d/themes/noctalia.el<br>Применить вручную: (load-theme 'noctalia t)",
-            "description-missing": "Требуется установка {app}"
+            "description": "Doom: ~/.config/doom/themes/noctalia.el<br>Стандартный: ~/.emacs.d/themes/noctalia.el"
           },
           "fuzzel": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "label": "Программы",
           "pywalfox": {
-            "description": "Записать {filepath} и запустить pywalfox update",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и запустить pywalfox update"
           },
           "spicetify": {
-            "description": "Записать {filepath} — тему Comfy нужно установить и активировать вручную",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} — тему Comfy нужно установить и активировать вручную"
           },
           "telegram": {
-            "description": "Записать {filepath}",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath}"
           },
           "vicinae": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "walker": {
-            "description": "Записать {filepath} и установить тему noctalia",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и установить тему noctalia"
           },
           "yazi": {
-            "description": "Записать {filepath} — flavor необходимо активировать вручную",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} — flavor необходимо активировать вручную"
           },
           "zed": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           }
         },
         "section": {
@@ -1232,26 +1299,21 @@
         },
         "terminal": {
           "alacritty": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "description": "Тематика эмулятора терминала.",
           "foot": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "ghostty": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "kitty": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           },
           "label": "Терминал",
           "wezterm": {
-            "description": "Записать {filepath} и перезагрузить",
-            "description-missing": "Требуется установка {app}"
+            "description": "Записать {filepath} и перезагрузить"
           }
         },
         "ui": {
@@ -1347,6 +1409,10 @@
         "sectionLeft": "Слева",
         "sectionRight": "Справа"
       },
+      "system-monitor-disk-path": {
+        "description": "Выберите точку монтирования диска, которую должна отслеживать карта системного монитора в центре управления.",
+        "label": "Путь к диску системного монитора"
+      },
       "title": "Центр управления"
     },
     "desktop-widgets": {
@@ -1378,9 +1444,9 @@
           "label": "Минимальный режим"
         },
         "preview": "Предварительный просмотр",
-        "section": {
-          "description": "Настроить внешний вид виджета часов.",
-          "label": "Виджет часов"
+        "rounded-corners": {
+          "description": "Использовать скруглённые углы для фона виджета.",
+          "label": "Скруглённые углы"
         },
         "show-background": {
           "description": "Показать фоновый контейнер для виджета часов.",
@@ -1396,6 +1462,7 @@
         },
         "style": {
           "analog": "Аналоговый",
+          "binary": "Бинарный",
           "description": "Выберите стиль отображения часов.",
           "digital": "Цифровой",
           "label": "Стиль часов",
@@ -1415,16 +1482,18 @@
         }
       },
       "edit-mode": {
+        "add-widget": "Добавить виджет",
         "button": {
           "label": "Войти в режим редактирования"
         },
-        "controls-explanation": "Левая кнопка мыши: Перемещать виджет\nПравая кнопка мыши: Изменять размер виджета",
+        "controls-explanation": "Левый клик и перетаскивание: Переместить или изменить размер виджета.\nПравый клик: Открыть контекстное меню.",
         "description": "Включите режим редактирования, чтобы перемещать и изменять положение виджетов рабочего стола. В этом режиме виджеты отображаются с контуром перетаскивания и могут быть перемещены.",
         "exit-button": "Выйти из режима редактирования",
         "grid-snap": {
           "label": "Привязка к сетке"
         },
-        "label": "Режим редактирования"
+        "label": "Режим редактирования",
+        "open-settings": "Открыть настройки"
       },
       "enabled": {
         "description": "Включить или отключить виджеты рабочего стола полностью.",
@@ -1445,21 +1514,29 @@
           "description": "Управляет поведением виджета, когда медиа не воспроизводится.",
           "label": "Режим скрытия"
         },
-        "section": {
-          "description": "Настроить внешний вид виджета медиаплеера.",
-          "label": "Виджет медиаплеера"
+        "rounded-corners": {
+          "description": "Включить скругленные углы на краях виджета.",
+          "label": "Скруглённые углы"
+        },
+        "show-album-art": {
+          "description": "Показать обложку альбома и информацию о треках (название и исполнитель).",
+          "label": "Показывать обложку альбома и название"
         },
         "show-background": {
           "description": "Показать фоновый контейнер для виджета медиаплеера.",
           "label": "Показать фон"
         },
+        "show-buttons": {
+          "description": "Показать кнопки управления медиа (воспроизведение/пауза, предыдущий, следующий) на виджете медиаплеера.",
+          "label": "Показать кнопки"
+        },
+        "show-visualizer": {
+          "description": "Показать наложение аудиовизуализатора.",
+          "label": "Показать визуализатор"
+        },
         "visualizer-type": {
           "description": "Выберите тип визуализации для фона медиаплеера.",
           "label": "Тип визуализации"
-        },
-        "visualizer-visibility": {
-          "description": "Управлять видимостью аудиовизуализатора.",
-          "label": "Видимость аудиовизуализатора"
         }
       },
       "title": "Настольные виджеты",
@@ -1468,19 +1545,9 @@
           "description": "Показать погодный виджет на рабочем столе.",
           "label": "Включить виджет погоды"
         },
-        "section": {
-          "description": "Настроить внешний вид виджета погоды.",
-          "label": "Виджет погоды"
-        },
         "show-background": {
           "description": "Показать фоновый контейнер для погодного виджета.",
           "label": "Показать фон"
-        }
-      },
-      "widgets": {
-        "section": {
-          "description": "Добавить и настроить виджеты рабочего стола",
-          "label": "Настольные виджеты"
         }
       }
     },
@@ -1736,6 +1803,10 @@
         "placeholder": "например, notify-send \"Wallpaper\" \"Changed\""
       }
     },
+    "indicator": {
+      "default-value": "По умолчанию: {value}",
+      "system-default": "По умолчанию"
+    },
     "launcher": {
       "settings": {
         "clip-preview": {
@@ -1757,6 +1828,14 @@
         "grid-view": {
           "description": "Показывать элементы в виде сетки вместо списка.",
           "label": "Вид сетки"
+        },
+        "icon-mode": {
+          "description": "Использовать нативные системные иконки вместо иконок Tabler.",
+          "label": "Использовать нативные иконки"
+        },
+        "ignore-mouse-input": {
+          "description": "Отключить взаимодействие с мышью и колесо прокрутки в лаунчере.",
+          "label": "Игнорировать ввод мыши"
         },
         "position": {
           "description": "Выберите, где появляется панель запуска.",
@@ -1883,13 +1962,19 @@
     },
     "network": {
       "bluetooth": {
-        "label": "Включить Bluetooth"
+        "description": "Включить управление Bluetooth.",
+        "label": "Включить Bluetooth",
+        "rssi-polling": {
+          "description": "Периодически опрашивать RSSI для подключенных устройств через bluetoothctl. Может быть недоступно для всех устройств; использует минимальные ресурсы при включении.",
+          "label": "Опрос сигнала Bluetooth"
+        }
       },
       "section": {
         "description": "Управление Wi-Fi и Bluetooth подключениями."
       },
       "title": "Сеть",
       "wifi": {
+        "description": "Управление беспроводными сетями (требуется NetworkManager).",
         "label": "Включить Wi-Fi"
       }
     },
@@ -1915,6 +2000,24 @@
         "section": {
           "description": "Настройка времени видимости уведомлений в зависимости от их уровня срочности.",
           "label": "Продолжительность уведомлений"
+        }
+      },
+      "history": {
+        "critical-urgency": {
+          "description": "Сохранять уведомления с критическим приоритетом в истории.",
+          "label": "Сохранять критическую срочность в истории"
+        },
+        "low-urgency": {
+          "description": "Сохранять уведомления с низким приоритетом в истории.",
+          "label": "Сохранять низкую срочность в истории"
+        },
+        "normal-urgency": {
+          "description": "Сохранять уведомления с нормальным приоритетом в истории.",
+          "label": "Сохранять нормальную срочность в истории"
+        },
+        "section": {
+          "description": "Управление тем, какие уведомления сохраняются в истории в зависимости от их уровня срочности.",
+          "label": "История"
         }
       },
       "monitors": {
@@ -2095,6 +2198,11 @@
         "no-plugins-description": "Проверьте исходники вашего плагина или обновите список.",
         "no-plugins-label": "Нет доступных плагинов."
       },
+      "collision": {
+        "already-installed": "Этот плагин уже установлен.",
+        "custom-version-exists": "Пользовательская версия из \"{source}\" уже установлена.",
+        "official-version-exists": "Официальная версия этого плагина уже установлена."
+      },
       "filter": {
         "all": "Всё",
         "downloaded": "Скачано",
@@ -2115,6 +2223,7 @@
         "no-plugins-label": "Нет установленных плагинов"
       },
       "installing": "Установка {plugin}...",
+      "open-plugins-tab": "Открыть настройки плагинов",
       "plugin-settings-title": "Настройки {plugin}",
       "refresh": {
         "refreshing": "Обновление списка плагинов...",
@@ -2125,6 +2234,10 @@
       },
       "settings-error-not-loaded": "Плагин не загружен",
       "settings-saved": "Настройки плагина сохранены",
+      "source": {
+        "custom": "Пользовательский источник",
+        "official": "Официальный"
+      },
       "sources": {
         "add-custom": "Добавить пользовательский репозиторий",
         "add-dialog": {
@@ -2156,11 +2269,12 @@
       "update-all": "Обновить все ({count})",
       "update-all-success": "Все плагины успешно обновлены.",
       "update-available": "Доступно {count} обновлений плагинов",
+      "update-available_plural": "Доступно {count} обновлений плагинов",
       "update-error": "Не удалось обновить плагин: {plugin}: {error}",
       "update-incompatible": "Требуется Noctalia v{version} или выше",
       "update-success": "Плагин {plugin} обновлён до версии {version}",
       "update-version": "v{текущее} → v{новое}",
-      "updating": "Обновление {plugin}..."
+      "updating": "Обновление..."
     },
     "screen-recorder": {
       "audio": {
@@ -2178,6 +2292,10 @@
         }
       },
       "general": {
+        "copy-to-clipboard": {
+          "description": "Скопировать файл в буфер обмена после завершения записи.",
+          "label": "Скопировать в буфер обмена"
+        },
         "output-folder": {
           "description": "Папка, в которую будут сохраняться записи экрана.",
           "label": "Выходная папка",
@@ -2259,6 +2377,10 @@
           "label": "Общие"
         }
       },
+      "large-buttons-layout": {
+        "description": "Выберите способ отображения кнопок меню сеанса.",
+        "label": "Крупная раскладка кнопок"
+      },
       "large-buttons-style": {
         "description": "Отобразить меню сеанса с большими кнопками в виде сетки.",
         "label": "Стиль \"крупные кнопки\""
@@ -2270,6 +2392,10 @@
       "show-header": {
         "description": "Отображать заголовок и кнопку закрытия в верхней части меню сеанса.",
         "label": "Показывать заголовок"
+      },
+      "show-number-labels": {
+        "description": "Отображать числовые метки (1-2-3-4...) на кнопках и включить числовые горячие клавиши для быстрого выбора.",
+        "label": "Показывать числовые метки"
       },
       "title": "Меню сеанса"
     },
@@ -2283,12 +2409,21 @@
       "custom-highlight-colors-title": {
         "label": "Пользовательские цвета выделения"
       },
+      "disk-path": {
+        "description": "Выберите точку монтирования диска для мониторинга.",
+        "label": "Путь к диску"
+      },
       "disk-section": {
         "label": "Использование диска"
       },
-      "enable-nvidia-gpu": {
-        "description": "Внимание: Это разбудит ваш графический процессор NVIDIA, что может значительно повлиять на время работы от аккумулятора на ноутбуках с гибридной графикой.",
-        "label": "Включить мониторинг GPU NVIDIA"
+      "enable-dgpu-monitoring": {
+        "description": "Внимание: Это разбудит ваш дискретный графический процессор (NVIDIA/AMD), что может значительно повлиять на время работы от аккумулятора на ноутбуках с гибридной графикой.",
+        "label": "Включить мониторинг дискретного GPU"
+      },
+      "external-monitor": {
+        "description": "Введите команду или путь к приложению для запуска при активации внешнего приложения мониторинга системы.",
+        "label": "Команда внешнего монитора системы",
+        "placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
       },
       "general": {
         "section": {
@@ -2301,6 +2436,9 @@
       },
       "highlight-colors-section": {
         "label": "Цвета выделения"
+      },
+      "load-average-section": {
+        "label": "Средняя нагрузка"
       },
       "memory-section": {
         "label": "Использование памяти"
@@ -2405,6 +2543,12 @@
     },
     "wallpaper": {
       "automation": {
+        "change-mode": {
+          "alphabetical": "Алфавитный",
+          "description": "Выберите, как выбираются обои при автоматической смене.",
+          "label": "Режим смены",
+          "random": "Случайный"
+        },
         "custom-interval": {
           "description": "Введите время в формате ЧЧ:ММ (например, 01:30).",
           "label": "Пользовательский интервал"
@@ -2416,6 +2560,10 @@
         "random-wallpaper": {
           "description": "Запланировать смену случайных обоев через регулярные интервалы.",
           "label": "Случайные обои"
+        },
+        "scheduled-change": {
+          "description": "Автоматически менять обои через регулярные интервалы.",
+          "label": "Запланированная смена"
         },
         "section": {
           "label": "Автоматизация"
@@ -2461,8 +2609,8 @@
           "tooltip": "Папка с обоями"
         },
         "hide-wallpaper-filenames": {
-          "description": "Скрыть имена файлов обоев в селекторе.",
-          "label": "Скрыть имена файлов"
+          "tooltip-hide": "Скрыть имена файлов",
+          "tooltip-show": "Показать имена файлов"
         },
         "monitor-specific": {
           "description": "Установить отдельную папку с обоями для каждого монитора.",
@@ -2538,6 +2686,19 @@
     "welcome-back": "С возвращением,",
     "widget-settings-title": "Настройки виджета {widget}"
   },
+  "system-monitor": {
+    "cpu-temp": "Температура процессора",
+    "cpu-usage": "Использование ЦП",
+    "disk": "Диск",
+    "download": "Скачать",
+    "download-speed": "Скорость загрузки",
+    "gpu-temp": "Температура GPU",
+    "load-average": "Средняя нагрузка",
+    "memory": "Память",
+    "title": "Системный монитор",
+    "upload": "Загрузить",
+    "upload-speed": "Скорость загрузки"
+  },
   "toast": {
     "airplane-mode": {
       "disabled": "Отключен",
@@ -2549,8 +2710,21 @@
       "low-desc": "Заряд батареи {percent}%. Пожалуйста, подключите зарядное устройство."
     },
     "bluetooth": {
+      "address-copied": "Адрес скопирован в буфер обмена",
+      "confirm-code": "Подтвердите код {value} на другом устройстве.",
+      "connect-failed": "Не удалось подключиться к устройству",
       "disabled": "Отключен",
-      "enabled": "Включен"
+      "disconnect-failed": "Не удалось отключиться от устройства",
+      "discoverable-change-failed": "Не удалось изменить состояние видимости",
+      "discoverable-disabled": "Обнаружение отключено",
+      "discoverable-enabled": "Обнаружение включено",
+      "display-code": "Введите код {value} на другом устройстве.",
+      "enabled": "Включен",
+      "forget-failed": "Не удалось удалить устройство",
+      "pair-failed": "Не удалось выполнить сопряжение устройства.",
+      "passkey-required": "Требуется ключ доступа устройства",
+      "pincode-required": "PIN-код, требуемый устройством",
+      "state-change-failed": "Не удалось изменить состояние Bluetooth."
     },
     "clipboard": {
       "unavailable": "История буфера обмена недоступна",
@@ -2579,7 +2753,8 @@
       "enabled": "Включен"
     },
     "keyboard-layout": {
-      "changed": "Раскладка клавиатуры изменена на {layout}"
+      "changed": "Раскладка клавиатуры изменена на {layout}",
+      "title": "Клавиатура"
     },
     "kofi": {
       "opened": "Страница Ko-fi открыта в вашем браузере"
@@ -2633,9 +2808,13 @@
     },
     "wifi": {
       "connected": "Подключено к '{ssid}'",
+      "connection-failed": "Соединение не установлено.",
+      "connection-timeout": "Превышено время ожидания соединения",
       "disabled": "Отключен",
       "disconnected": "Отключено от '{ssid}'",
-      "enabled": "Включен"
+      "enabled": "Включен",
+      "incorrect-password": "Неверный пароль",
+      "network-not-found": "Сеть не найдена"
     }
   },
   "tooltips": {
@@ -2649,6 +2828,7 @@
     "close": "Закрыть",
     "collapse": "Свернуть боковую панель",
     "connect-disconnect-devices": "Устройство Bluetooth",
+    "copy-address": "Копировать адрес",
     "delete-notification": "Удалить уведомление",
     "disable-keep-awake": "Не засыпать",
     "do-not-disturb-disabled": "Не беспокоить",
@@ -2659,6 +2839,7 @@
     "grid-view": "Вид сеткой",
     "hidden-files-hide": "Скрытые файлы",
     "hidden-files-show": "Скрытые файлы",
+    "hide-unnamed-devices": "Скрыть безымянные устройства",
     "home": "Домашний каталог",
     "input-muted": "Включить/выключить отключение микрофона",
     "keep-awake": "Не засыпать",
@@ -2701,6 +2882,7 @@
     "search-close": "Закрыть поиск",
     "session-menu": "Меню сеанса",
     "set-power-profile": "{profile} профиль питания",
+    "show-all-devices": "Показать все устройства",
     "start-screen-recording": "Запись экрана",
     "stop-screen-recording": "Запись экрана",
     "switch-to-dark-mode": "Темный режим",
@@ -2722,6 +2904,11 @@
     "no-match": "Совпадений не найдено.",
     "no-wallpaper": "Обои не найдены.",
     "panel": {
+      "apikey": {
+        "help": "Для доступа к контенту NSFW требуется ключ API.",
+        "label": "Ключ API",
+        "placeholder": "Введите свой API-ключ Wallhaven"
+      },
       "apply-all-monitors": {
         "description": "Применить выбранные обои ко всем мониторам одновременно.",
         "label": "Применить ко всем мониторам"
@@ -2740,6 +2927,7 @@
       "purity": {
         "all": "Все",
         "label": "Фильтр контента",
+        "nsfw": "NSFW -> Не для работы (НСР) / Контент 18+",
         "sfw": "SFW",
         "sketchy": "Sketchy"
       },
@@ -2756,6 +2944,9 @@
         }
       },
       "search": "Поиск:",
+      "solid-color": {
+        "tooltip": "Однотонный фон"
+      },
       "sorting": {
         "date_added": "Дата добавления",
         "favorites": "Избранное",
@@ -2887,24 +3078,43 @@
   },
   "wifi": {
     "panel": {
+      "action-required": "Требуется действие",
       "available-networks": "Доступные сети",
       "connect": "Подключить",
       "connected": "Подключено",
       "disabled": "Wi-Fi отключен",
       "disconnect": "Отключить",
       "disconnecting": "Отключение...",
+      "dns": "DNS",
       "enable-message": "Включите Wi-Fi, чтобы увидеть доступные сети.",
       "enter-password": "Введите пароль...",
       "forget": "Забыть",
       "forget-network": "Забыть эту сеть?",
       "forgetting": "Забывание...",
+      "frequency": "Частота",
+      "gateway": "Шлюз",
+      "info": "Информация",
+      "internet": "Интернет",
+      "internet-connected": "Подключено к интернету",
+      "internet-limited": "Нет интернета",
+      "ipv4": "IPv4",
       "known-networks": "Известные сети",
+      "link-speed": "Скорость соединения",
       "no-networks": "Сети не найдены",
       "password": "Пароль",
       "saved": "Сохранено",
       "scan-again": "Сканировать снова",
       "searching": "Поиск ближайших сетей...",
+      "security": "Безопасность",
       "title": "Wi-Fi"
+    },
+    "signal": {
+      "excellent": "Отличный",
+      "fair": "Средний",
+      "good": "Хороший",
+      "poor": "Плохой",
+      "very-good": "Очень хороший",
+      "weak": "Слабый"
     }
   }
 }

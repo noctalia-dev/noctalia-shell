@@ -5,6 +5,7 @@ import qs.Commons
 Item {
   property var launcher: null
   property string name: I18n.tr("plugins.command")
+  property string iconMode: Settings.data.appLauncher.iconMode
 
   function handleCommand(query) {
     return query.startsWith(">cmd");
@@ -15,7 +16,8 @@ Item {
           {
             "name": ">cmd",
             "description": I18n.tr("plugins.command-description"),
-            "icon": "utilities-terminal",
+            "icon": iconMode === "tabler" ? "terminal" : "utilities-terminal",
+            "isTablerIcon": true,
             "isImage": false,
             "onActivate": function () {
               launcher.setSearchText(">cmd ");
@@ -33,11 +35,14 @@ Item {
           {
             "name": I18n.tr("plugins.command-name"),
             "description": I18n.tr("plugins.command-description"),
-            "icon": "utilities-terminal",
+            "icon": iconMode === "tabler" ? "terminal" : "utilities-terminal",
+            "isTablerIcon": true,
             "isImage": false,
             "onActivate": function () {
-              launcher.close();
-              Quickshell.execDetached(["sh", "-c", expression]);
+              launcher.closeImmediately();
+              Qt.callLater(() => {
+                             Quickshell.execDetached(["sh", "-c", expression]);
+                           });
             }
           }
         ];

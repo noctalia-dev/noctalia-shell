@@ -103,7 +103,7 @@ Singleton {
                                              var ddcModel = ddcModelMatch ? ddcModelMatch.length > 0 : false;
                                              var model = modelMatch ? modelMatch[1] : "Unknown";
                                              var bus = busMatch ? busMatch[1] : "Unknown";
-                                             Logger.i("Brigthness", "Detected DDC Monitor:", model, "on bus", bus, "is DDC:", !ddcModel);
+                                             Logger.i("Brightness", "Detected DDC Monitor:", model, "on bus", bus, "is DDC:", !ddcModel);
                                              return {
                                                "model": model,
                                                "busNum": bus,
@@ -137,6 +137,7 @@ Singleton {
     property real brightness
     property real lastBrightness: 0
     property real queuedBrightness: NaN
+    property bool commandRunning: false
 
     // For internal displays - store the backlight device path
     property string backlightDevice: ""
@@ -173,6 +174,20 @@ Singleton {
               }
             }
           }
+        }
+      }
+    }
+
+    readonly property Process setBrightnessProc: Process {
+      stdout: StdioCollector {}
+      onExited: (exitCode, exitStatus) => {
+        monitor.commandRunning = false;
+        // If there's a queued brightness change, process it now
+        if (!isNaN(monitor.queuedBrightness)) {
+          Qt.callLater(() => {
+                         monitor.setBrightness(monitor.queuedBrightness);
+                         monitor.queuedBrightness = NaN;
+                       });
         }
       }
     }
@@ -300,29 +315,35 @@ Singleton {
       value = Math.max(minBrightnessValue, Math.min(1, value));
       var rounded = Math.round(value * 100);
 
+      // Always update internal value and trigger UI feedback immediately
+      monitor.brightness = value;
+      monitor.brightnessUpdated(value);
+      root.monitorBrightnessChanged(monitor, monitor.brightness);
+
       if (timer.running) {
         monitor.queuedBrightness = value;
         return;
       }
 
-      // Update internal value and trigger UI feedback
-      monitor.brightness = value;
-      monitor.brightnessUpdated(value);
-      root.monitorBrightnessChanged(monitor, monitor.brightness);
-
-      if (isAppleDisplay) {
-        monitor.ignoreNextChange = true;
-        Quickshell.execDetached(["asdbctl", "set", rounded]);
-      } else if (isDdc) {
-        monitor.ignoreNextChange = true;
-        Quickshell.execDetached(["ddcutil", "-b", busNum, "setvcp", "10", rounded]);
-      } else {
-        monitor.ignoreNextChange = true;
-        Quickshell.execDetached(["brightnessctl", "s", rounded + "%"]);
+      // If a command is already running, queue this value
+      if (monitor.commandRunning) {
+        monitor.queuedBrightness = value;
+        return;
       }
 
-      if (isDdc) {
-        timer.restart();
+      // Execute the brightness change command
+      monitor.commandRunning = true;
+      monitor.ignoreNextChange = true;
+
+      if (isAppleDisplay) {
+        setBrightnessProc.command = ["asdbctl", "set", rounded];
+        setBrightnessProc.running = true;
+      } else if (isDdc) {
+        setBrightnessProc.command = ["ddcutil", "-b", busNum, "--sleep-multiplier=0.05", "setvcp", "10", rounded];
+        setBrightnessProc.running = true;
+      } else {
+        setBrightnessProc.command = ["brightnessctl", "s", rounded + "%"];
+        setBrightnessProc.running = true;
       }
     }
 

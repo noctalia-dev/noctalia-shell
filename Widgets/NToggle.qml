@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
+import qs.Widgets
 
 RowLayout {
   id: root
@@ -12,6 +13,9 @@ RowLayout {
   property bool checked: false
   property bool hovering: false
   property int baseSize: Math.round(Style.baseWidgetSize * 0.8 * Style.uiScaleRatio)
+  property bool isSettings: false
+  property var defaultValue: false
+  property string settingsPath: ""
 
   signal toggled(bool checked)
   signal entered
@@ -22,10 +26,17 @@ RowLayout {
   opacity: enabled ? 1.0 : 0.6
   spacing: Style.marginM
 
+  readonly property bool isValueChanged: isSettings && (checked !== defaultValue)
+  readonly property string indicatorTooltip: isSettings ? I18n.tr("settings.indicator.default-value", {
+                                                                    "value": typeof defaultValue === "boolean" ? (defaultValue ? "true" : "false") : String(defaultValue)
+                                                                  }) : ""
+
   NLabel {
     label: root.label
     description: root.description
     visible: root.label !== "" || root.description !== ""
+    showIndicator: root.isSettings && root.isValueChanged
+    indicatorTooltip: root.indicatorTooltip
   }
 
   Rectangle {

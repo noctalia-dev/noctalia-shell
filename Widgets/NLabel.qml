@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.Commons
+import qs.Widgets
 
 ColumnLayout {
   id: root
@@ -9,17 +10,38 @@ ColumnLayout {
   property string description: ""
   property color labelColor: Color.mOnSurface
   property color descriptionColor: Color.mOnSurfaceVariant
+  property bool showIndicator: false
+  property string indicatorTooltip: ""
 
   spacing: Style.marginXXS
   Layout.fillWidth: true
 
-  NText {
-    text: label
-    pointSize: Style.fontSizeL
-    font.weight: Style.fontWeightSemiBold
-    color: labelColor
-    visible: label !== ""
+  RowLayout {
+    spacing: Style.marginXS
     Layout.fillWidth: true
+    visible: label !== ""
+
+    NText {
+      text: label
+      pointSize: Style.fontSizeL
+      font.weight: Style.fontWeightSemiBold
+      color: labelColor
+    }
+
+    // Settings indicator
+    Loader {
+      active: showIndicator
+      sourceComponent: indicatorComponent
+    }
+  }
+
+  Component {
+    id: indicatorComponent
+    NSettingsIndicator {
+      show: true
+      tooltipText: root.indicatorTooltip || ""
+      Layout.alignment: Qt.AlignVCenter
+    }
   }
 
   NText {

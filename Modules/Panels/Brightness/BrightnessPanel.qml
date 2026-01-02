@@ -15,12 +15,13 @@ SmartPanel {
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(420 * Style.uiScaleRatio)
 
-  function getIcon(brightness) {
-    return brightness <= 0.5 ? "brightness-low" : "brightness-high";
-  }
-
   panelContent: Item {
+    id: panelContent
     property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
+
+    function getIcon(brightness) {
+      return brightness <= 0.5 ? "brightness-low" : "brightness-high";
+    }
 
     ColumnLayout {
       id: mainColumn

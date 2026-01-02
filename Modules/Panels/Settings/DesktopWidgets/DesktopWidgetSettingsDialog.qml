@@ -18,12 +18,30 @@ Popup {
 
   signal updateWidgetSettings(string section, int index, var settings)
 
+  // Helper function to find screen from parent chain
+  function findScreen() {
+    var item = parent;
+    while (item) {
+      if (item.screen !== undefined) {
+        return item.screen;
+      }
+      item = item.parent;
+    }
+    return null;
+  }
+
+  readonly property var screen: findScreen()
+  readonly property real maxHeight: screen ? screen.height * 0.9 : (parent ? parent.height * 0.9 : 800)
+
   width: Math.max(content.implicitWidth + padding * 2, 500)
-  height: content.implicitHeight + padding * 2
+  height: Math.min(content.implicitHeight + padding * 2, maxHeight)
   padding: Style.marginXL
   modal: true
   dim: false
-  anchors.centerIn: parent
+
+  // Center in parent
+  x: Math.round((parent.width - width) / 2)
+  y: Math.round((parent.height - height) / 2)
 
   onOpened: {
     if (widgetData && widgetId) {
@@ -50,7 +68,9 @@ Popup {
       spacing: Style.marginM
 
       RowLayout {
+        id: titleRow
         Layout.fillWidth: true
+        Layout.preferredHeight: implicitHeight
 
         NText {
           text: I18n.tr("system.widget-settings-title", {
@@ -70,49 +90,65 @@ Popup {
       }
 
       Rectangle {
+        id: separator
         Layout.fillWidth: true
         Layout.preferredHeight: 1
         color: Color.mOutline
       }
 
-      Loader {
-        id: settingsLoader
+      // Scrollable settings area
+      NScrollView {
+        id: scrollView
         Layout.fillWidth: true
-        onLoaded: {
-          if (item) {
-            Qt.callLater(() => {
-                           var firstInput = findFirstFocusable(item);
-                           if (firstInput) {
-                             firstInput.forceActiveFocus();
-                           } else {
-                             focusScope.forceActiveFocus();
-                           }
-                         });
-          }
-        }
+        Layout.fillHeight: true
+        Layout.minimumHeight: 100
 
-        function findFirstFocusable(item) {
-          if (!item)
-            return null;
-          if (item.focus !== undefined && item.focus === true)
-            return item;
-          if (item.children) {
-            for (var i = 0; i < item.children.length; i++) {
-              var child = item.children[i];
-              if (child && child.focus !== undefined && child.focus === true)
-                return child;
-              var found = findFirstFocusable(child);
-              if (found)
-                return found;
+        ColumnLayout {
+          width: scrollView.width
+          spacing: Style.marginM
+
+          Loader {
+            id: settingsLoader
+            Layout.fillWidth: true
+            onLoaded: {
+              if (item) {
+                Qt.callLater(() => {
+                               var firstInput = findFirstFocusable(item);
+                               if (firstInput) {
+                                 firstInput.forceActiveFocus();
+                               } else {
+                                 focusScope.forceActiveFocus();
+                               }
+                             });
+              }
+            }
+
+            function findFirstFocusable(item) {
+              if (!item)
+                return null;
+              if (item.focus !== undefined && item.focus === true)
+                return item;
+              if (item.children) {
+                for (var i = 0; i < item.children.length; i++) {
+                  var child = item.children[i];
+                  if (child && child.focus !== undefined && child.focus === true)
+                    return child;
+                  var found = findFirstFocusable(child);
+                  if (found)
+                    return found;
+                }
+              }
+              return null;
             }
           }
-          return null;
         }
       }
 
       RowLayout {
+        id: buttonRow
         Layout.fillWidth: true
         Layout.topMargin: Style.marginM
+        Layout.preferredHeight: implicitHeight
         spacing: Style.marginM
 
         Item {
@@ -157,7 +193,6 @@ Popup {
       var api = PluginService.getPluginAPI(pluginId);
 
       settingsLoader.setSource(settingsPath + "?v=" + loadVersion, {
-                                 "widgetData": widgetData,
                                  "pluginApi": api
                                });
       return;
@@ -167,9 +202,15 @@ Popup {
     const source = DesktopWidgetRegistry.widgetSettingsMap[widgetId];
     if (source) {
       var currentWidgetData = widgetData;
-      var widgets = Settings.data.desktopWidgets.widgets;
-      if (widgets && widgetIndex >= 0 && widgetIndex < widgets.length) {
-        currentWidgetData = widgets[widgetIndex];
+      var monitorWidgets = Settings.data.desktopWidgets.monitorWidgets || [];
+      for (var i = 0; i < monitorWidgets.length; i++) {
+        if (monitorWidgets[i].name === sectionId) {
+          var widgets = monitorWidgets[i].widgets || [];
+          if (widgetIndex >= 0 && widgetIndex < widgets.length) {
+            currentWidgetData = widgets[widgetIndex];
+          }
+          break;
+        }
       }
       var fullPath = Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/DesktopWidgets/" + source);
       settingsLoader.setSource(fullPath, {

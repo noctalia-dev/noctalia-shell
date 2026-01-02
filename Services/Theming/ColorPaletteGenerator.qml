@@ -60,6 +60,21 @@ Singleton {
     const outline = isStrict ? colors.mOutline : ColorsConvert.adjustLightnessAndSaturation(colors.mOnSurface, isDarkMode ? -30 : 30, isDarkMode ? -30 : 30);
     const outlineVariant = ColorsConvert.adjustLightness(outline, isDarkMode ? -20 : 20);
 
+    // Generate surface_dim (darker/dimmer surface variant)
+    const surfaceDim = ColorsConvert.generateSurfaceVariant(surface, -1, isDarkMode);
+
+    // Generate "fixed" colors (high-chroma accents that are consistent across modes)
+    // Fixed colors are lighter in dark mode, darker in light mode - opposite of containers
+    const primaryFixed = isDarkMode ? ColorsConvert.adjustLightness(colors.mPrimary, 30) : ColorsConvert.adjustLightness(colors.mPrimary, -10);
+    const primaryFixedDim = ColorsConvert.adjustLightness(primaryFixed, isDarkMode ? -15 : 10);
+    const onPrimaryFixedVariant = ColorsConvert.generateOnColor(primaryFixedDim, isDarkMode);
+
+    const secondaryFixed = isDarkMode ? ColorsConvert.adjustLightness(colors.mSecondary, 30) : ColorsConvert.adjustLightness(colors.mSecondary, -10);
+
+    const tertiaryFixed = isDarkMode ? ColorsConvert.adjustLightness(colors.mTertiary, 30) : ColorsConvert.adjustLightness(colors.mTertiary, -10);
+    const tertiaryFixedDim = ColorsConvert.adjustLightness(tertiaryFixed, isDarkMode ? -15 : 10);
+    const onTertiaryFixed = ColorsConvert.generateOnColor(tertiaryFixed, isDarkMode);
+
     // Shadow is always pitch black
     const shadow = "#000000";
 
@@ -93,7 +108,15 @@ Singleton {
       "surface_container_highest": c(surfaceContainerHighest),
       "outline": c(outline),
       "outline_variant": c(outlineVariant),
-      "shadow": c(shadow)
+      "shadow": c(shadow),
+      "surface_dim": c(surfaceDim),
+      "primary_fixed": c(primaryFixed),
+      "primary_fixed_dim": c(primaryFixedDim),
+      "on_primary_fixed_variant": c(onPrimaryFixedVariant),
+      "secondary_fixed": c(secondaryFixed),
+      "tertiary_fixed": c(tertiaryFixed),
+      "tertiary_fixed_dim": c(tertiaryFixedDim),
+      "on_tertiary_fixed": c(onTertiaryFixed)
     };
   }
 }

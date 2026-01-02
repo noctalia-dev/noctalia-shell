@@ -17,183 +17,184 @@ SmartPanel {
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(460 * Style.uiScaleRatio)
 
-  // Get device selection from Battery widget settings (check right section first, then any Battery widget)
-  function getBatteryDevicePath() {
-    var widget = BarService.lookupWidget("Battery");
-    if (widget !== undefined) {
-      return widget.deviceNativePath;
-    }
-    return "";
-  }
+  panelContent: Item {
+    id: panelContent
+    property real contentPreferredHeight: mainLayout.implicitHeight + Style.marginL * 2
 
-  // Helper function to find battery device by nativePath
-  function findBatteryDevice(nativePath) {
-    if (!nativePath || nativePath === "") {
-      return UPower.displayDevice;
+    // Get device selection from Battery widget settings (check right section first, then any Battery widget)
+    function getBatteryDevicePath() {
+      var widget = BarService.lookupWidget("Battery");
+      if (widget !== undefined && widget.deviceNativePath !== undefined) {
+        return widget.deviceNativePath;
+      }
+      return "";
     }
 
-    if (!UPower.devices) {
-      return UPower.displayDevice;
-    }
+    // Helper function to find battery device by nativePath
+    function findBatteryDevice(nativePath) {
+      if (!nativePath || nativePath === "") {
+        return UPower.displayDevice;
+      }
 
-    var deviceArray = UPower.devices.values || [];
-    for (var i = 0; i < deviceArray.length; i++) {
-      var device = deviceArray[i];
-      if (device && device.nativePath === nativePath) {
-        if (device.type === UPowerDeviceType.LinePower) {
-          continue;
+      if (!UPower.devices) {
+        return UPower.displayDevice;
+      }
+
+      var deviceArray = UPower.devices.values || [];
+      for (var i = 0; i < deviceArray.length; i++) {
+        var device = deviceArray[i];
+        if (device && device.nativePath === nativePath) {
+          if (device.type === UPowerDeviceType.LinePower) {
+            continue;
+          }
+          if (device.percentage !== undefined) {
+            return device;
+          }
         }
-        if (device.percentage !== undefined) {
+      }
+      return UPower.displayDevice;
+    }
+
+    // Helper function to find Bluetooth device by MAC address from nativePath
+    function findBluetoothDevice(nativePath) {
+      if (!nativePath || !BluetoothService.devices) {
+        return null;
+      }
+
+      var macMatch = nativePath.match(/([0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})/);
+      if (!macMatch) {
+        return null;
+      }
+
+      var macAddress = macMatch[1].toUpperCase();
+      var deviceArray = BluetoothService.devices.values || [];
+
+      for (var i = 0; i < deviceArray.length; i++) {
+        var device = deviceArray[i];
+        if (device && device.address && device.address.toUpperCase() === macAddress) {
           return device;
         }
       }
-    }
-    return UPower.displayDevice;
-  }
-
-  // Helper function to find Bluetooth device by MAC address from nativePath
-  function findBluetoothDevice(nativePath) {
-    if (!nativePath || !BluetoothService.devices) {
       return null;
     }
 
-    var macMatch = nativePath.match(/([0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})/);
-    if (!macMatch) {
-      return null;
-    }
+    readonly property string deviceNativePath: getBatteryDevicePath()
+    readonly property var battery: findBatteryDevice(deviceNativePath)
+    readonly property var bluetoothDevice: deviceNativePath ? findBluetoothDevice(deviceNativePath) : null
+    readonly property bool hasBluetoothBattery: bluetoothDevice && bluetoothDevice.batteryAvailable && bluetoothDevice.battery !== undefined
+    readonly property bool isBluetoothConnected: bluetoothDevice && bluetoothDevice.connected !== undefined ? bluetoothDevice.connected : false
 
-    var macAddress = macMatch[1].toUpperCase();
-    var deviceArray = BluetoothService.devices.values || [];
-
-    for (var i = 0; i < deviceArray.length; i++) {
-      var device = deviceArray[i];
-      if (device && device.address && device.address.toUpperCase() === macAddress) {
-        return device;
+    // Check if device is actually present/connected
+    readonly property bool isDevicePresent: {
+      if (deviceNativePath && deviceNativePath !== "") {
+        if (bluetoothDevice) {
+          return isBluetoothConnected;
+        }
+        if (battery && battery.nativePath === deviceNativePath) {
+          if (battery.type === UPowerDeviceType.Battery && battery.isPresent !== undefined) {
+            return battery.isPresent;
+          }
+          return battery.ready && battery.percentage !== undefined && (battery.percentage > 0 || battery.state === UPowerDeviceState.Charging);
+        }
+        return false;
       }
-    }
-    return null;
-  }
-
-  readonly property string deviceNativePath: getBatteryDevicePath()
-  readonly property var battery: findBatteryDevice(deviceNativePath)
-  readonly property var bluetoothDevice: deviceNativePath ? findBluetoothDevice(deviceNativePath) : null
-  readonly property bool hasBluetoothBattery: bluetoothDevice && bluetoothDevice.batteryAvailable && bluetoothDevice.battery !== undefined
-  readonly property bool isBluetoothConnected: bluetoothDevice && bluetoothDevice.connected !== undefined ? bluetoothDevice.connected : false
-
-  // Check if device is actually present/connected
-  readonly property bool isDevicePresent: {
-    if (deviceNativePath && deviceNativePath !== "") {
-      if (bluetoothDevice) {
-        return isBluetoothConnected;
-      }
-      if (battery && battery.nativePath === deviceNativePath) {
+      if (battery) {
         if (battery.type === UPowerDeviceType.Battery && battery.isPresent !== undefined) {
           return battery.isPresent;
         }
-        return battery.ready && battery.percentage !== undefined && (battery.percentage > 0 || battery.state === UPowerDeviceState.Charging);
+        return battery.ready && battery.percentage !== undefined;
       }
       return false;
     }
-    if (battery) {
-      if (battery.type === UPowerDeviceType.Battery && battery.isPresent !== undefined) {
-        return battery.isPresent;
+
+    readonly property bool isReady: battery && battery.ready && isDevicePresent && (battery.percentage !== undefined || hasBluetoothBattery)
+    readonly property int percent: isReady ? Math.round(hasBluetoothBattery ? (bluetoothDevice.battery * 100) : (battery.percentage * 100)) : -1
+    readonly property bool charging: isReady ? battery.state === UPowerDeviceState.Charging : false
+    readonly property bool healthAvailable: isReady && battery.healthSupported
+    readonly property int healthPercent: healthAvailable ? Math.round(battery.healthPercentage) : -1
+
+    function getDeviceName() {
+      if (!isReady) {
+        return "";
       }
-      return battery.ready && battery.percentage !== undefined;
-    }
-    return false;
-  }
-
-  readonly property bool isReady: battery && battery.ready && isDevicePresent && (battery.percentage !== undefined || hasBluetoothBattery)
-  readonly property int percent: isReady ? Math.round(hasBluetoothBattery ? (bluetoothDevice.battery * 100) : (battery.percentage * 100)) : -1
-  readonly property bool charging: isReady ? battery.state === UPowerDeviceState.Charging : false
-  readonly property bool healthAvailable: isReady && battery.healthSupported
-  readonly property int healthPercent: healthAvailable ? Math.round(battery.healthPercentage) : -1
-
-  function getDeviceName() {
-    if (!isReady) {
+      // Don't show name for laptop batteries
+      if (battery && battery.isLaptopBattery) {
+        return "";
+      }
+      if (bluetoothDevice && bluetoothDevice.name) {
+        return bluetoothDevice.name;
+      }
+      if (battery && battery.model) {
+        return battery.model;
+      }
       return "";
     }
-    // Don't show name for laptop batteries
-    if (battery && battery.isLaptopBattery) {
-      return "";
+
+    readonly property string deviceName: getDeviceName()
+    readonly property string panelTitle: deviceName ? `${I18n.tr("battery.panel-title")} - ${deviceName}` : I18n.tr("battery.panel-title")
+
+    readonly property string timeText: {
+      if (!isReady || !isDevicePresent)
+        return I18n.tr("battery.no-battery-detected");
+      if (charging && battery.timeToFull > 0) {
+        return I18n.tr("battery.time-until-full", {
+                         "time": Time.formatVagueHumanReadableDuration(battery.timeToFull)
+                       });
+      }
+      if (!charging && battery.timeToEmpty > 0) {
+        return I18n.tr("battery.time-left", {
+                         "time": Time.formatVagueHumanReadableDuration(battery.timeToEmpty)
+                       });
+      }
+      return I18n.tr("battery.idle");
     }
-    if (bluetoothDevice && bluetoothDevice.name) {
-      return bluetoothDevice.name;
+    readonly property string iconName: BatteryService.getIcon(percent, charging, isReady)
+
+    property var batteryWidgetInstance: BarService.lookupWidget("Battery", screen ? screen.name : null)
+    readonly property var batteryWidgetSettings: batteryWidgetInstance ? batteryWidgetInstance.widgetSettings : null
+    readonly property var batteryWidgetMetadata: BarWidgetRegistry.widgetMetadata["Battery"]
+    readonly property bool powerProfileAvailable: PowerProfileService.available
+    readonly property var powerProfiles: [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance]
+    readonly property bool profilesAvailable: PowerProfileService.available
+    property int profileIndex: profileToIndex(PowerProfileService.profile)
+    readonly property bool showPowerProfiles: resolveWidgetSetting("showPowerProfiles", false)
+    readonly property bool showNoctaliaPerformance: resolveWidgetSetting("showNoctaliaPerformance", false)
+
+    function profileToIndex(p) {
+      return powerProfiles.indexOf(p) ?? 1;
     }
-    if (battery && battery.model) {
-      return battery.model;
+
+    function indexToProfile(idx) {
+      return powerProfiles[idx] ?? PowerProfile.Balanced;
     }
-    return "";
-  }
 
-  readonly property string deviceName: getDeviceName()
-  readonly property string panelTitle: deviceName ? `${I18n.tr("battery.panel-title")} - ${deviceName}` : I18n.tr("battery.panel-title")
-
-  readonly property string timeText: {
-    if (!isReady || !isDevicePresent)
-      return I18n.tr("battery.no-battery-detected");
-    if (charging && battery.timeToFull > 0) {
-      return I18n.tr("battery.time-until-full", {
-                       "time": Time.formatVagueHumanReadableDuration(battery.timeToFull)
-                     });
+    function setProfileByIndex(idx) {
+      var prof = indexToProfile(idx);
+      profileIndex = idx;
+      PowerProfileService.setProfile(prof);
     }
-    if (!charging && battery.timeToEmpty > 0) {
-      return I18n.tr("battery.time-left", {
-                       "time": Time.formatVagueHumanReadableDuration(battery.timeToEmpty)
-                     });
+
+    function resolveWidgetSetting(key, defaultValue) {
+      if (batteryWidgetSettings && batteryWidgetSettings[key] !== undefined)
+        return batteryWidgetSettings[key];
+      if (batteryWidgetMetadata && batteryWidgetMetadata[key] !== undefined)
+        return batteryWidgetMetadata[key];
+      return defaultValue;
     }
-    return I18n.tr("battery.idle");
-  }
-  readonly property string iconName: BatteryService.getIcon(percent, charging, isReady)
 
-  property var batteryWidgetInstance: BarService.lookupWidget("Battery", screen ? screen.name : null)
-  readonly property var batteryWidgetSettings: batteryWidgetInstance ? batteryWidgetInstance.widgetSettings : null
-  readonly property var batteryWidgetMetadata: BarWidgetRegistry.widgetMetadata["Battery"]
-  readonly property bool powerProfileAvailable: PowerProfileService.available
-  readonly property var powerProfiles: [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance]
-  readonly property bool profilesAvailable: PowerProfileService.available
-  property int profileIndex: profileToIndex(PowerProfileService.profile)
-  readonly property bool showPowerProfiles: resolveWidgetSetting("showPowerProfiles", false)
-  readonly property bool showNoctaliaPerformance: resolveWidgetSetting("showNoctaliaPerformance", false)
-
-  function profileToIndex(p) {
-    return powerProfiles.indexOf(p) ?? 1;
-  }
-
-  function indexToProfile(idx) {
-    return powerProfiles[idx] ?? PowerProfile.Balanced;
-  }
-
-  function setProfileByIndex(idx) {
-    var prof = indexToProfile(idx);
-    profileIndex = idx;
-    PowerProfileService.setProfile(prof);
-  }
-
-  function resolveWidgetSetting(key, defaultValue) {
-    if (batteryWidgetSettings && batteryWidgetSettings[key] !== undefined)
-      return batteryWidgetSettings[key];
-    if (batteryWidgetMetadata && batteryWidgetMetadata[key] !== undefined)
-      return batteryWidgetMetadata[key];
-    return defaultValue;
-  }
-
-  Connections {
-    target: PowerProfileService
-    function onProfileChanged() {
-      profileIndex = profileToIndex(PowerProfileService.profile);
+    Connections {
+      target: PowerProfileService
+      function onProfileChanged() {
+        panelContent.profileIndex = panelContent.profileToIndex(PowerProfileService.profile);
+      }
     }
-  }
 
-  Connections {
-    target: BarService
-    function onActiveWidgetsChanged() {
-      batteryWidgetInstance = BarService.lookupWidget("Battery", screen ? screen.name : null);
+    Connections {
+      target: BarService
+      function onActiveWidgetsChanged() {
+        panelContent.batteryWidgetInstance = BarService.lookupWidget("Battery", screen ? screen.name : null);
+      }
     }
-  }
-
-  panelContent: Item {
-    property real contentPreferredHeight: mainLayout.implicitHeight + Style.marginL * 2
 
     ColumnLayout {
       id: mainLayout
@@ -214,7 +215,7 @@ SmartPanel {
 
           NIcon {
             pointSize: Style.fontSizeXXL
-            color: root.charging ? Color.mPrimary : Color.mOnSurface
+            color: charging ? Color.mPrimary : Color.mOnSurface
             icon: iconName
           }
 
@@ -223,7 +224,7 @@ SmartPanel {
             Layout.fillWidth: true
 
             NText {
-              text: root.panelTitle
+              text: panelTitle
               pointSize: Style.fontSizeL
               font.weight: Style.fontWeightBold
               color: Color.mOnSurface
@@ -320,7 +321,7 @@ SmartPanel {
       NBox {
         Layout.fillWidth: true
         height: controlsLayout.implicitHeight + Style.marginL * 2
-        visible: root.showPowerProfiles || root.showNoctaliaPerformance
+        visible: showPowerProfiles || showNoctaliaPerformance
 
         ColumnLayout {
           id: controlsLayout
@@ -329,7 +330,7 @@ SmartPanel {
           spacing: Style.marginM
 
           ColumnLayout {
-            visible: root.powerProfileAvailable && root.showPowerProfiles
+            visible: powerProfileAvailable && showPowerProfiles
 
             RowLayout {
               Layout.fillWidth: true
@@ -391,13 +392,13 @@ SmartPanel {
 
           NDivider {
             Layout.fillWidth: true
-            visible: root.showPowerProfiles && root.showNoctaliaPerformance
+            visible: showPowerProfiles && showNoctaliaPerformance
           }
 
           RowLayout {
             Layout.fillWidth: true
             spacing: Style.marginS
-            visible: root.showNoctaliaPerformance
+            visible: showNoctaliaPerformance
 
             NText {
               text: I18n.tr("toast.noctalia-performance.label")

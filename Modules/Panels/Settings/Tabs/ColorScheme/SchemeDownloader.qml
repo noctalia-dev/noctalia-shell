@@ -71,31 +71,9 @@ Popup {
     return defaults[colorKey] || Color.mOnSurfaceVariant;
   }
 
-  // Fetch scheme JSON to get colors for swatches
+  // Colors are now provided directly in the registry, no need to fetch individual files
   function fetchSchemeColors(scheme) {
-    // Skip if already cached
-    if (schemeColorsCache[scheme.name]) {
-      return;
-    }
-
-    var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === XMLHttpRequest.DONE) {
-        if (xhr.status === 200) {
-          try {
-            var jsonData = JSON.parse(xhr.responseText);
-            schemeColorsCache[scheme.name] = jsonData;
-            cacheVersion++;
-          } catch (e) {
-            Logger.w("ColorSchemeDownload", "Failed to parse scheme JSON for", scheme.name, e);
-          }
-        }
-      }
-    };
-
-    // Try to get the JSON file from the scheme directory
-    xhr.open("GET", "https://raw.githubusercontent.com/noctalia-dev/noctalia-colorschemes/main/" + scheme.path + "/" + scheme.name + ".json");
-    xhr.send();
+    return;
   }
 
   background: Rectangle {
@@ -139,7 +117,18 @@ Popup {
 
       if (cachedSchemes.length > 0) {
         availableSchemes = cachedSchemes;
+        // Restore color cache from cached schemes
+        for (var i = 0; i < cachedSchemes.length; i++) {
+          var cachedScheme = cachedSchemes[i];
+          if (cachedScheme.dark || cachedScheme.light) {
+            schemeColorsCache[cachedScheme.name] = {
+              "dark": cachedScheme.dark || null,
+              "light": cachedScheme.light || null
+            };
+          }
+        }
         hasInitialData = true;
+        cacheVersion++;
         fetching = false;
       } else {
         // Cache is empty, only fetch if we haven't fetched recently
@@ -202,29 +191,34 @@ Popup {
     // availableSchemes = [];
     downloadError = "";
 
-    // Use GitHub API to list contents of the repo
+    // Fetch registry.json
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
       if (xhr.readyState === XMLHttpRequest.DONE) {
         fetching = false;
         if (xhr.status === 200) {
           try {
-            var response = JSON.parse(xhr.responseText);
-            if (Array.isArray(response)) {
-              // Filter to only directories (type === "dir")
+            var registry = JSON.parse(xhr.responseText);
+            if (registry && registry.themes && Array.isArray(registry.themes)) {
               var schemes = [];
-              for (var i = 0; i < response.length; i++) {
-                if (response[i].type === "dir") {
-                  schemes.push({
-                                 "name": response[i].name,
-                                 "path": response[i].path,
-                                 "url": response[i].url
-                               });
-                }
+              // Process themes
+              for (var i = 0; i < registry.themes.length; i++) {
+                var theme = registry.themes[i];
+                schemes.push({
+                               "name": theme.name,
+                               "path": theme.path,
+                               "dark": theme.dark || null,
+                               "light": theme.light || null
+                             });
+                schemeColorsCache[theme.name] = {
+                  "dark": theme.dark || null,
+                  "light": theme.light || null
+                };
               }
               availableSchemes = schemes;
               hasInitialData = true;
-              Logger.i("ColorSchemeDownload", "Fetched", schemes.length, "available schemes from API");
+              cacheVersion++;
+              Logger.d("ColorSchemeDownload", "Fetched", schemes.length, "available schemes from registry.json");
               // Save to cache
               saveSchemesToCache();
             } else {
@@ -246,7 +240,18 @@ Popup {
             const cachedSchemes = cacheData.schemes || [];
             if (cachedSchemes.length > 0) {
               availableSchemes = cachedSchemes;
+              // Restore color cache from cached schemes
+              for (var j = 0; j < cachedSchemes.length; j++) {
+                var cachedScheme = cachedSchemes[j];
+                if (cachedScheme.dark || cachedScheme.light) {
+                  schemeColorsCache[cachedScheme.name] = {
+                    "dark": cachedScheme.dark || null,
+                    "light": cachedScheme.light || null
+                  };
+                }
+              }
               hasInitialData = true;
+              cacheVersion++;
               Logger.i("ColorSchemeDownload", "Using cached schemes due to rate limit");
             }
           }
@@ -259,7 +264,7 @@ Popup {
       }
     };
 
-    xhr.open("GET", "https://api.github.com/repos/noctalia-dev/noctalia-colorschemes/contents");
+    xhr.open("GET", "https://raw.githubusercontent.com/noctalia-dev/noctalia-colorschemes/main/registry.json");
     xhr.send();
   }
 
@@ -568,8 +573,29 @@ Popup {
         ToastService.showError(I18n.tr("settings.color-scheme.download.error.title"), I18n.tr("settings.color-scheme.download.error.description", {
                                                                                                 "scheme": schemeName
                                                                                               }) + "\n" + errorDetails);
-        downloading = false;
-        downloadingScheme = "";
+        // Clean up the partially downloaded directory on failure
+        var cleanupScript = "rm -rf '" + targetDir + "'";
+        var cleanupProcess = Qt.createQmlObject(`
+                                                 import QtQuick
+                                                 import Quickshell.Io
+                                                 Process {
+                                                 id: cleanupProcess
+                                                 command: ["sh", "-c", ` + JSON.stringify(cleanupScript) + `]
+                                                 }
+                                                 `, root, "CleanupProcess_" + schemeName);
+
+        cleanupProcess.exited.connect(function (cleanupExitCode) {
+          if (cleanupExitCode === 0) {
+            Logger.d("ColorSchemeDownload", "Partially downloaded scheme directory cleaned up:", targetDir);
+          } else {
+            Logger.w("ColorSchemeDownload", "Failed to clean up partially downloaded scheme directory:", targetDir);
+          }
+          downloading = false;
+          downloadingScheme = "";
+          cleanupProcess.destroy();
+        });
+
+        cleanupProcess.running = true;
       }
       root.lastStderrOutput = "";
       downloadProcess.destroy();
@@ -691,12 +717,8 @@ Popup {
   function preFetchSchemeColors() {
     if (availableSchemes.length > 0 && visible) {
       Qt.callLater(function () {
-        for (var i = 0; i < availableSchemes.length; i++) {
-          var scheme = availableSchemes[i];
-          if (!schemeColorsCache[scheme.name]) {
-            fetchSchemeColors(scheme);
-          }
-        }
+        // Just trigger a cache version update to ensure UI refreshes
+        cacheVersion++;
       });
     }
   }

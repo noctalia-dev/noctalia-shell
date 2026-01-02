@@ -190,6 +190,11 @@ Variants {
 
     function onBrightnessChanged(newBrightness) {
       root.currentBrightness = newBrightness;
+      // Don't show OSD if brightness panel is open
+      var brightnessPanel = PanelService.getPanel("brightnessPanel", root.modelData);
+      if (brightnessPanel && brightnessPanel.isPanelOpen) {
+        return;
+      }
       showOSD(OSD.Type.Brightness);
     }
 
@@ -643,7 +648,7 @@ Variants {
               Layout.fillWidth: true
               Layout.alignment: Qt.AlignVCenter
               height: panel.barThickness
-              radius: Math.round(panel.barThickness / 2)
+              radius: Math.min(Style.iRadiusL, panel.barThickness / 2)
               color: Color.mSurfaceVariant
 
               Rectangle {
@@ -781,7 +786,7 @@ Variants {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 width: panel.barThickness
-                radius: Math.round(panel.barThickness / 2)
+                radius: Math.min(Style.iRadiusL, panel.barThickness / 2)
                 color: Color.mSurfaceVariant
 
                 Rectangle {

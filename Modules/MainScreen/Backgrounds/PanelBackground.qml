@@ -4,13 +4,11 @@ import qs.Commons
 import qs.Modules.MainScreen.Backgrounds
 
 /**
-* PanelBackground - ShapePath component for rendering a single background
+* PanelBackground - Dynamic ShapePath for rendering panel backgrounds
 *
-* Unified shadow system. This component is a ShapePath that will
-* be a child of the unified AllBackgrounds Shape container.
-*
-* Reads positioning and geometry from PanelPlaceholder (via panel.panelItem).
-* The actual panel content lives in a separate SmartPanelWindow.
+* Dynamically switches between panels based on which panel is currently
+* assigned by PanelService. Only 2 instances are needed: one for the
+* currently open panel and one for a closing panel during transitions.
 *
 * Uses 4-state per-corner system for flexible corner rendering:
 * - State -1: No radius (flat/square corner)
@@ -21,20 +19,34 @@ import qs.Modules.MainScreen.Backgrounds
 ShapePath {
   id: root
 
-  // Required reference to PanelPlaceholder (e.g., windowRoot.audioPanelPlaceholder)
-  required property var panel
+  // Dynamically assigned panel (null if slot is unused)
+  property var assignedPanel: null
 
   // Required reference to AllBackgrounds shapeContainer
   required property var shapeContainer
 
+  // Default background color (used if panel doesn't specify one)
+  property color defaultBackgroundColor: Color.mSurface
+
   // Corner radius (from Style)
   readonly property real radius: Style.radiusL
 
-  required property color backgroundColor
+  // Get panel's panelRegion (geometry placeholder)
+  readonly property var panelRegion: assignedPanel?.panelRegion ?? null
 
-  // Get the actual panelBackground Item from PanelPlaceholder
-  // Only access panelItem if panel exists and is visible
-  readonly property var panelBg: (panel && panel.visible) ? panel.panelItem : null
+  // Get the actual panelBackground Item from panelRegion
+  // Only access panelItem if panelRegion exists and is visible
+  readonly property var panelBg: (panelRegion && panelRegion.visible) ? panelRegion.panelItem : null
+
+  // Effective background color: use panel's if defined, else default
+  readonly property color effectiveBackgroundColor: {
+    if (!assignedPanel)
+      return Color.transparent;
+    if (assignedPanel.panelBackgroundColor !== undefined) {
+      return assignedPanel.panelBackgroundColor;
+    }
+    return defaultBackgroundColor;
+  }
 
   // Panel position - panelBg is in screen coordinates already
   readonly property real panelX: panelBg ? panelBg.x : 0
@@ -79,7 +91,7 @@ ShapePath {
   startX: panelX + tlRadius * tlMultX
   startY: panelY
 
-  fillColor: backgroundColor
+  fillColor: effectiveBackgroundColor
 
   // ========== PATH DEFINITION ==========
   // Draws a rectangle with potentially inverted corners

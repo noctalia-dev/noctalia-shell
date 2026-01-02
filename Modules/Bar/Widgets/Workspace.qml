@@ -36,14 +36,7 @@ Item {
 
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
-  readonly property bool density: Settings.data.bar.density
-  readonly property real baseDimensionRatio: {
-    const b = (density === "compact") ? 0.85 : 0.65;
-    if (widgetSettings.labelMode === "none") {
-      return b * 0.75;
-    }
-    return b;
-  }
+  readonly property real baseDimensionRatio: 0.65 * (widgetSettings.labelMode === "none" ? 0.75 : 1)
 
   readonly property string labelMode: (widgetSettings.labelMode !== undefined) ? widgetSettings.labelMode : widgetMetadata.labelMode
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
@@ -54,9 +47,15 @@ Item {
   readonly property bool showApplications: (widgetSettings.showApplications !== undefined) ? widgetSettings.showApplications : widgetMetadata.showApplications
   readonly property bool showLabelsOnlyWhenOccupied: (widgetSettings.showLabelsOnlyWhenOccupied !== undefined) ? widgetSettings.showLabelsOnlyWhenOccupied : widgetMetadata.showLabelsOnlyWhenOccupied
   readonly property bool colorizeIcons: (widgetSettings.colorizeIcons !== undefined) ? widgetSettings.colorizeIcons : widgetMetadata.colorizeIcons
+  readonly property real unfocusedIconsOpacity: (widgetSettings.unfocusedIconsOpacity !== undefined) ? widgetSettings.unfocusedIconsOpacity : widgetMetadata.unfocusedIconsOpacity
+  readonly property real groupedBorderOpacity: (widgetSettings.groupedBorderOpacity !== undefined) ? widgetSettings.groupedBorderOpacity : widgetMetadata.groupedBorderOpacity
   readonly property bool enableScrollWheel: (widgetSettings.enableScrollWheel !== undefined) ? widgetSettings.enableScrollWheel : widgetMetadata.enableScrollWheel
+  readonly property real iconScale: (widgetSettings.iconScale !== undefined) ? widgetSettings.iconScale : widgetMetadata.iconScale
 
-  readonly property int itemSize: Math.round(Style.capsuleHeight * 0.8)
+  // Only for grouped mode / show apps
+  readonly property int baseItemSize: Style.toOdd(Style.capsuleHeight * 0.8)
+  readonly property int iconSize: Style.toOdd(baseItemSize * iconScale)
+  readonly property real textRatio: 0.50
 
   // Context menu state for grouped mode - store IDs instead of object references to avoid stale references
   property string selectedWindowId: ""
@@ -71,7 +70,8 @@ Item {
       if (ws && ws.windows) {
         for (var j = 0; j < ws.windows.count; j++) {
           var win = ws.windows.get(j);
-          if (win && (win.id === selectedWindowId || win.address === selectedWindowId)) {
+          // Using loose equality on purpose (==)
+          if (win && (win.id == selectedWindowId || win.address == selectedWindowId)) {
             return win;
           }
         }
@@ -121,13 +121,13 @@ Item {
 
     const textWidth = displayText.length * (d * 0.4); // Approximate width per character
     const padding = d * 0.6;
-    return Math.round(Math.max(d * factor, textWidth + padding));
+    return Style.toOdd(Math.max(d * factor, textWidth + padding));
   }
 
   function getWorkspaceHeight(ws) {
     const d = Math.round(Style.capsuleHeight * root.baseDimensionRatio);
     const factor = ws.isActive ? 2.2 : 1;
-    return Math.round(d * factor);
+    return Style.toOdd(d * factor);
   }
 
   function computeWidth() {
@@ -138,7 +138,7 @@ Item {
     }
     total += Math.max(localWorkspaces.count - 1, 0) * spacingBetweenPills;
     total += horizontalPadding * 2;
-    return Math.round(total);
+    return Style.toOdd(total);
   }
 
   function computeHeight() {
@@ -149,7 +149,7 @@ Item {
     }
     total += Math.max(localWorkspaces.count - 1, 0) * spacingBetweenPills;
     total += horizontalPadding * 2;
-    return Math.round(total);
+    return Style.toOdd(total);
   }
 
   function getFocusedLocalIndex() {
@@ -387,7 +387,11 @@ Item {
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    } else if (action.startsWith("desktop-action-") && item && item.desktopAction) {
-                     item.desktopAction.execute();
+                     if (item.desktopAction.command && item.desktopAction.command.length > 0) {
+                       Quickshell.execDetached(item.desktopAction.command);
+                     } else if (item.desktopAction.execute) {
+                       item.desktopAction.execute();
+                     }
                    }
                    selectedWindowId = "";
                    selectedAppId = "";
@@ -404,8 +408,8 @@ Item {
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
 
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.verticalCenter: parent.verticalCenter
+    x: isVertical ? Style.pixelAlignCenter(parent.width, width) : 0
+    y: isVertical ? 0 : Style.pixelAlignCenter(parent.height, height)
 
     MouseArea {
       anchors.fill: parent
@@ -467,8 +471,8 @@ Item {
   Row {
     id: pillRow
     spacing: spacingBetweenPills
-    anchors.verticalCenter: workspaceBackground.verticalCenter
     x: horizontalPadding
+    y: workspaceBackground.y + Style.pixelAlignCenter(workspaceBackground.height, height)
     visible: !isVertical && !showApplications
 
     Repeater {
@@ -477,7 +481,7 @@ Item {
       Item {
         id: workspacePillContainer
         width: root.getWorkspaceWidth(model)
-        height: Style.capsuleHeight * root.baseDimensionRatio
+        height: Style.toOdd(Style.capsuleHeight * root.baseDimensionRatio)
 
         Rectangle {
           id: pill
@@ -487,8 +491,8 @@ Item {
             active: (labelMode !== "none") && (!root.showLabelsOnlyWhenOccupied || model.isOccupied || model.isFocused)
             sourceComponent: Component {
               NText {
-                x: (pill.width - width) / 2
-                y: (pill.height - height) / 2 + (height - contentHeight) / 2
+                x: Style.pixelAlignCenter(pill.width, width)
+                y: Style.pixelAlignCenter(pill.height, height)
                 text: {
                   if (model.name && model.name.length > 0) {
                     if (root.labelMode === "name") {
@@ -501,7 +505,7 @@ Item {
                   return model.idx.toString();
                 }
                 family: Settings.data.ui.fontFixed
-                pointSize: model.isActive ? workspacePillContainer.height * 0.45 : workspacePillContainer.height * 0.42
+                pointSize: workspacePillContainer.height * root.textRatio
                 applyUiScale: false
                 font.capitalization: Font.AllUppercase
                 font.weight: Style.fontWeightBold
@@ -615,7 +619,7 @@ Item {
   Column {
     id: pillColumn
     spacing: spacingBetweenPills
-    anchors.horizontalCenter: workspaceBackground.horizontalCenter
+    x: workspaceBackground.x + Style.pixelAlignCenter(workspaceBackground.width, width)
     y: horizontalPadding
     visible: isVertical && !showApplications
 
@@ -624,7 +628,7 @@ Item {
       model: localWorkspaces
       Item {
         id: workspacePillContainerVertical
-        width: Style.capsuleHeight * root.baseDimensionRatio
+        width: Style.toOdd(Style.capsuleHeight * root.baseDimensionRatio)
         height: root.getWorkspaceHeight(model)
 
         Rectangle {
@@ -632,11 +636,11 @@ Item {
           anchors.fill: parent
 
           Loader {
-            active: (labelMode !== "none") && (!root.showLabelsOnlyWhenOccupied || model.isOccupied)
+            active: (labelMode !== "none") && (!root.showLabelsOnlyWhenOccupied || model.isOccupied || model.isFocused)
             sourceComponent: Component {
               NText {
-                x: (pillVertical.width - width) / 2
-                y: (pillVertical.height - height) / 2 + (height - contentHeight) / 2
+                x: Style.pixelAlignCenter(pillVertical.width, width)
+                y: Style.pixelAlignCenter(pillVertical.height, height)
                 text: {
                   if (model.name && model.name.length > 0) {
                     if (root.labelMode === "name") {
@@ -649,7 +653,7 @@ Item {
                   return model.idx.toString();
                 }
                 family: Settings.data.ui.fontFixed
-                pointSize: model.isActive ? workspacePillContainerVertical.width * 0.45 : workspacePillContainerVertical.width * 0.42
+                pointSize: workspacePillContainerVertical.width * root.textRatio
                 applyUiScale: false
                 font.capitalization: Font.AllUppercase
                 font.weight: Style.fontWeightBold
@@ -662,7 +666,7 @@ Item {
                   if (model.isOccupied)
                     return Color.mOnSecondary;
 
-                  return Color.mOnSurface;
+                  return Color.mOnSecondary;
                 }
               }
             }
@@ -677,7 +681,7 @@ Item {
             if (model.isOccupied)
               return Color.mSecondary;
 
-            return Color.mOutline;
+            return Qt.alpha(Color.mSecondary, 0.3);
           }
           z: 0
 
@@ -773,11 +777,11 @@ Item {
       property var workspaceModel: model
       property bool hasWindows: (workspaceModel?.windows?.count ?? 0) > 0
 
-      width: (hasWindows ? groupedIconsFlow.implicitWidth : root.itemSize) + (root.isVertical ? Style.marginXS : Style.marginXL)
-      height: (hasWindows ? groupedIconsFlow.implicitHeight : root.itemSize) + (root.isVertical ? Style.marginL : Style.marginXS)
+      width: Style.toOdd((hasWindows ? groupedIconsFlow.implicitWidth : root.iconSize) + (root.isVertical ? (root.baseItemSize - root.iconSize + Style.marginXS) : Style.marginXL))
+      height: Style.toOdd((hasWindows ? groupedIconsFlow.implicitHeight : root.iconSize) + (root.isVertical ? Style.marginL : (root.baseItemSize - root.iconSize + Style.marginXS)))
       color: Style.capsuleColor
       radius: Style.radiusS
-      border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : (workspaceModel.isFocused ? Color.mPrimary : Color.mOutline)
+      border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : Color.mOutline), root.groupedBorderOpacity)
       border.width: Style.borderS
 
       MouseArea {
@@ -796,8 +800,8 @@ Item {
                       if (mouse.button === Qt.RightButton) {
                         mouse.accepted = true;
                         TooltipService.hide();
-                        root.selectedWindow = null;
-                        root.selectedAppName = "";
+                        root.selectedWindowId = "";
+                        root.selectedAppId = "";
                         openGroupedContextMenu(groupedContainer);
                       }
                     }
@@ -806,8 +810,9 @@ Item {
       Flow {
         id: groupedIconsFlow
 
-        anchors.centerIn: parent
-        spacing: 4
+        x: Style.pixelAlignCenter(parent.width, width)
+        y: Style.pixelAlignCenter(parent.height, height)
+        spacing: 2
         flow: root.isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
         Repeater {
@@ -818,8 +823,8 @@ Item {
 
             property bool itemHovered: false
 
-            width: root.itemSize
-            height: root.itemSize
+            width: root.iconSize
+            height: root.iconSize
 
             IconImage {
               id: groupedAppIcon
@@ -829,16 +834,18 @@ Item {
               source: ThemeIcons.iconForAppId(model.appId)
               smooth: true
               asynchronous: true
+              opacity: model.isFocused ? Style.opacityFull : unfocusedIconsOpacity
               layer.enabled: root.colorizeIcons && !model.isFocused
 
               Rectangle {
                 id: groupedFocusIndicator
-                anchors.bottomMargin: 0
+                visible: model.isFocused
+                anchors.bottomMargin: -2
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: model.isFocused ? 4 : 0
-                height: model.isFocused ? 4 : 0
-                color: model.isFocused ? Color.mPrimary : Color.transparent
+                width: Style.toOdd(root.iconSize * 0.25)
+                height: 4
+                color: Color.mPrimary
                 radius: Math.min(Style.radiusXXS, width / 2)
               }
 
@@ -907,7 +914,7 @@ Item {
           id: groupedWorkspaceNumberBackground
 
           anchors.fill: parent
-          radius: width / 2
+          radius: Math.min(Style.radiusL, width / 2)
 
           color: {
             if (groupedContainer.workspaceModel.isFocused)
@@ -975,7 +982,7 @@ Item {
 
           family: Settings.data.ui.fontFixed
           font {
-            pointSize: Style.fontSizeXXS
+            pointSize: Style.barFontSize * 0.75
             weight: Style.fontWeightBold
             capitalization: Font.AllUppercase
           }
@@ -1012,15 +1019,11 @@ Item {
     id: groupedGrid
     visible: showApplications
 
-    anchors.verticalCenter: isVertical ? undefined : parent.verticalCenter
-    anchors.left: isVertical ? undefined : parent.left
-    anchors.leftMargin: isVertical ? 0 : Style.marginM
-    anchors.horizontalCenter: isVertical ? parent.horizontalCenter : undefined
-    anchors.top: isVertical ? parent.top : undefined
-    anchors.topMargin: isVertical ? Style.marginM : 0
+    x: root.isVertical ? Style.pixelAlignCenter(parent.width, width) : Style.marginM
+    y: root.isVertical ? Style.marginM : Style.pixelAlignCenter(parent.height, height)
 
     spacing: Style.marginS
-    flow: isVertical ? Flow.TopToBottom : Flow.LeftToRight
+    flow: root.isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
     Repeater {
       model: showApplications ? localWorkspaces : null

@@ -13,7 +13,7 @@ layout(std140, binding = 0) uniform buf {
     float progress;      // Transition progress (0.0 to 1.0)
     float direction;     // 0=left, 1=right, 2=up, 3=down
     float smoothness;    // Edge smoothness (0.0 to 1.0, 0=sharp, 1=very smooth)
-    
+
     // Fill mode parameters
     float fillMode;      // 0=no(center), 1=crop(fill), 2=fit(contain), 3=stretch
     float imageWidth1;   // Width of source1 image
@@ -23,6 +23,12 @@ layout(std140, binding = 0) uniform buf {
     float screenWidth;   // Screen width
     float screenHeight;  // Screen height
     vec4 fillColor;      // Fill color for empty areas (default: black)
+
+    // Solid color mode
+    float isSolid1;      // 1.0 if source1 is solid color, 0.0 otherwise
+    float isSolid2;      // 1.0 if source2 is solid color, 0.0 otherwise
+    vec4 solidColor1;    // Solid color for source1
+    vec4 solidColor2;    // Solid color for source2
 } ubuf;
 
 // Calculate UV coordinates based on fill mode
@@ -66,24 +72,30 @@ vec2 calculateUV(vec2 uv, float imgWidth, float imgHeight) {
 }
 
 // Sample texture with fill mode and handle out-of-bounds
-vec4 sampleWithFillMode(sampler2D tex, vec2 uv, float imgWidth, float imgHeight) {
+// If isSolid > 0.5, returns solidColor instead of sampling texture
+vec4 sampleWithFillMode(sampler2D tex, vec2 uv, float imgWidth, float imgHeight, float isSolid, vec4 solidColor) {
+    // Return solid color if in solid color mode
+    if (isSolid > 0.5) {
+        return solidColor;
+    }
+
     vec2 transformedUV = calculateUV(uv, imgWidth, imgHeight);
-    
+
     // Check if UV is out of bounds
-    if (transformedUV.x < 0.0 || transformedUV.x > 1.0 || 
+    if (transformedUV.x < 0.0 || transformedUV.x > 1.0 ||
         transformedUV.y < 0.0 || transformedUV.y > 1.0) {
         return ubuf.fillColor;
     }
-    
+
     return texture(tex, transformedUV);
 }
 
 void main() {
     vec2 uv = qt_TexCoord0;
-    
-    // Sample textures with fill mode
-    vec4 color1 = sampleWithFillMode(source1, uv, ubuf.imageWidth1, ubuf.imageHeight1);
-    vec4 color2 = sampleWithFillMode(source2, uv, ubuf.imageWidth2, ubuf.imageHeight2);
+
+    // Sample textures with fill mode (handles solid colors)
+    vec4 color1 = sampleWithFillMode(source1, uv, ubuf.imageWidth1, ubuf.imageHeight1, ubuf.isSolid1, ubuf.solidColor1);
+    vec4 color2 = sampleWithFillMode(source2, uv, ubuf.imageWidth2, ubuf.imageHeight2, ubuf.isSolid2, ubuf.solidColor2);
     
     // Map smoothness from 0.0-1.0 to 0.001-0.5 range
     // Using a non-linear mapping for better control

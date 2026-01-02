@@ -4,9 +4,13 @@ import QtQuick
 import Quickshell
 import qs.Commons
 import qs.Modules.DesktopWidgets.Widgets
+import qs.Services.Noctalia
 
 Singleton {
   id: root
+
+  // Transient state - not persisted, resets on shell restart
+  property bool editMode: false
 
   // Signal emitted when plugin widgets are registered/unregistered
   signal pluginWidgetRegistryUpdated
@@ -51,7 +55,6 @@ Singleton {
 
   property var widgetMetadata: ({
                                   "Clock": {
-                                    "allowUserSettings": true,
                                     "showBackground": true,
                                     "clockStyle": "digital",
                                     "usePrimaryColor": false,
@@ -59,13 +62,15 @@ Singleton {
                                     "format": "HH:mm\\nd MMMM yyyy"
                                   },
                                   "MediaPlayer": {
-                                    "allowUserSettings": true,
                                     "showBackground": true,
                                     "visualizerType": "linear",
-                                    "hideMode": "visible"
+                                    "hideMode": "visible",
+                                    "showButtons": true,
+                                    "showAlbumArt": true,
+                                    "showVisualizer": true,
+                                    "roundedCorners": true
                                   },
                                   "Weather": {
-                                    "allowUserSettings": true,
                                     "showBackground": true
                                   }
                                 })
@@ -97,7 +102,7 @@ Singleton {
 
   // Helper function to check if widget has user settings
   function widgetHasUserSettings(id) {
-    return (widgetMetadata[id] !== undefined) && (widgetMetadata[id].allowUserSettings === true);
+    return widgetMetadata[id] !== undefined;
   }
 
   // Check if a widget is a plugin widget
@@ -108,6 +113,17 @@ Singleton {
   // Get list of plugin widget IDs
   function getPluginWidgets() {
     return Object.keys(pluginWidgets);
+  }
+
+  // Get display name for a widget ID
+  function getWidgetDisplayName(widgetId) {
+    if (widgetId.startsWith("plugin:")) {
+      var pluginId = widgetId.replace("plugin:", "");
+      var manifest = PluginRegistry.getPluginManifest(pluginId);
+      return manifest ? manifest.name : pluginId;
+    }
+    // Core widgets - return as-is (Clock, MediaPlayer, Weather)
+    return widgetId;
   }
 
   // Register a plugin desktop widget
@@ -135,7 +151,6 @@ Singleton {
 
     var newMetadata = Object.assign({}, widgetMetadata);
     newMetadata[widgetId] = Object.assign({}, {
-                                            "allowUserSettings": true,
                                             "showBackground": true
                                           }, metadata || {});
     widgetMetadata = newMetadata;

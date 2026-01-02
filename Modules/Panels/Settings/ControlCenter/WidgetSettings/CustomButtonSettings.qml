@@ -1,11 +1,15 @@
 import QtQml.Models
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
 
 ColumnLayout {
   id: root
+  spacing: Style.marginM
+  Layout.preferredWidth: Math.round(600 * Style.uiScaleRatio)
+  implicitWidth: Layout.preferredWidth
 
   property var widgetData: null
   property var widgetMetadata: null
@@ -13,17 +17,17 @@ ColumnLayout {
   QtObject {
     id: _settings
 
-    property string icon: (widgetData && widgetData.icon !== undefined) ? widgetData.icon : widgetMetadata.icon
-    property string onClicked: (widgetData && widgetData.onClicked !== undefined) ? widgetData.onClicked : widgetMetadata.onClicked
-    property string onRightClicked: (widgetData && widgetData.onRightClicked !== undefined) ? widgetData.onRightClicked : widgetMetadata.onRightClicked
-    property string onMiddleClicked: (widgetData && widgetData.onMiddleClicked !== undefined) ? widgetData.onMiddleClicked : widgetMetadata.onMiddleClicked
+    property string icon: (widgetData && widgetData.icon !== undefined) ? widgetData.icon : (widgetMetadata && widgetMetadata.icon ? widgetMetadata.icon : "")
+    property string onClicked: (widgetData && widgetData.onClicked !== undefined) ? widgetData.onClicked : (widgetMetadata && widgetMetadata.onClicked ? widgetMetadata.onClicked : "")
+    property string onRightClicked: (widgetData && widgetData.onRightClicked !== undefined) ? widgetData.onRightClicked : (widgetMetadata && widgetMetadata.onRightClicked ? widgetMetadata.onRightClicked : "")
+    property string onMiddleClicked: (widgetData && widgetData.onMiddleClicked !== undefined) ? widgetData.onMiddleClicked : (widgetMetadata && widgetMetadata.onMiddleClicked ? widgetMetadata.onMiddleClicked : "")
     property ListModel _stateChecksListModel: ListModel {}
     property string stateChecksJson: "[]"
-    property string generalTooltipText: (widgetData && widgetData.generalTooltipText !== undefined) ? widgetData.generalTooltipText : widgetMetadata.generalTooltipText
-    property bool enableOnStateLogic: (widgetData && widgetData.enableOnStateLogic !== undefined) ? widgetData.enableOnStateLogic : widgetMetadata.enableOnStateLogic
+    property string generalTooltipText: (widgetData && widgetData.generalTooltipText !== undefined) ? widgetData.generalTooltipText : (widgetMetadata && widgetMetadata.generalTooltipText ? widgetMetadata.generalTooltipText : "Custom Button")
+    property bool enableOnStateLogic: (widgetData && widgetData.enableOnStateLogic !== undefined) ? widgetData.enableOnStateLogic : (widgetMetadata && widgetMetadata.enableOnStateLogic !== undefined ? widgetMetadata.enableOnStateLogic : false)
 
     Component.onCompleted: {
-      stateChecksJson = (widgetData && widgetData.stateChecksJson !== undefined) ? widgetData.stateChecksJson : widgetMetadata.stateChecksJson;
+      stateChecksJson = (widgetData && widgetData.stateChecksJson !== undefined) ? widgetData.stateChecksJson : (widgetMetadata && widgetMetadata.stateChecksJson ? widgetMetadata.stateChecksJson : "[]");
       try {
         var initialChecks = JSON.parse(stateChecksJson);
         if (initialChecks && Array.isArray(initialChecks)) {
@@ -74,9 +78,9 @@ ColumnLayout {
 
     NIcon {
       Layout.alignment: Qt.AlignVCenter
-      icon: _settings.icon || widgetMetadata.icon
+      icon: _settings.icon || (widgetMetadata && widgetMetadata.icon ? widgetMetadata.icon : "")
       pointSize: Style?.fontSizeXL ?? 24
-      visible: (_settings.icon || widgetMetadata.icon) !== ""
+      visible: (_settings.icon || (widgetMetadata && widgetMetadata.icon ? widgetMetadata.icon : "")) !== ""
     }
 
     NButton {

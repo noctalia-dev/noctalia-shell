@@ -32,59 +32,10 @@ Singleton {
   // Internal state
   property var activeNotifications: ({}) // Maps internal ID to {notification, watcher, metadata}
   property var quickshellIdToInternalId: ({})
-  property var imageQueue: []
 
   // Rate limiting for notification sounds (minimum 100ms between sounds)
   property var lastSoundTime: 0
   readonly property int minSoundInterval: 100
-
-  PanelWindow {
-    implicitHeight: 0
-    implicitWidth: 0
-    WlrLayershell.exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.namespace: "noctalia-notification-image-renderer"
-    color: Color.transparent
-    mask: Region {}
-
-    Image {
-      id: cacher
-      width: 64
-      height: 64
-      visible: true
-      cache: false
-      asynchronous: true
-      mipmap: true
-      antialiasing: true
-
-      onStatusChanged: {
-        if (imageQueue.length === 0) {
-          return;
-        }
-
-        const req = imageQueue[0];
-
-        if (status === Image.Ready) {
-          Quickshell.execDetached(["mkdir", "-p", Settings.cacheDirImagesNotifications]);
-          grabToImage(result => {
-                        if (result.saveToFile(req.dest))
-                        updateImagePath(req.imageId, req.dest);
-                        processNextImage();
-                      });
-        } else if (status === Image.Error) {
-          processNextImage();
-        }
-      }
-
-      function processNextImage() {
-        imageQueue.shift();
-        if (imageQueue.length > 0) {
-          source = imageQueue[0].src;
-        } else {
-          source = "";
-        }
-      }
-    }
-  }
 
   // Notification server
   property var notificationServerLoader: null
@@ -186,7 +137,29 @@ Singleton {
   function handleNotification(notification) {
     const quickshellId = notification.id;
     const data = createData(notification);
-    addToHistory(data);
+
+    // Check if we should save to history based on urgency
+    const saveToHistorySettings = Settings.data.notifications?.saveToHistory;
+    if (saveToHistorySettings) {
+      let shouldSave = true;
+      switch (data.urgency) {
+      case 0: // low
+        shouldSave = saveToHistorySettings.low !== false;
+        break;
+      case 1: // normal
+        shouldSave = saveToHistorySettings.normal !== false;
+        break;
+      case 2: // critical
+        shouldSave = saveToHistorySettings.critical !== false;
+        break;
+      }
+      if (shouldSave) {
+        addToHistory(data);
+      }
+    } else {
+      // Default behavior: save all if settings not configured
+      addToHistory(data);
+    }
 
     if (root.doNotDisturb || PowerProfileService.noctaliaPerformanceMode)
       return;
@@ -409,7 +382,7 @@ Singleton {
 
     const image = n.image || getIcon(n.appIcon);
     const imageId = generateImageId(n, image);
-    queueImage(image, imageId);
+    queueImage(image, n.appName || "", n.summary || "", id);
 
     return {
       "id": id,
@@ -421,7 +394,8 @@ Singleton {
       "timestamp": time,
       "progress": 1.0,
       "originalImage": image,
-      "cachedImage": imageId ? (Settings.cacheDirImagesNotifications + imageId + ".png") : image,
+      "cachedImage": image  // Start with original, update when cached
+                     ,
       "actionsJson": JSON.stringify((n.actions || []).map(a => ({
                                                                   "text": a.text || "Action",
                                                                   "identifier": a.identifier || ""
@@ -523,35 +497,26 @@ Singleton {
   }
 
   // Image handling
-  function queueImage(path, imageId) {
-    if (!path || !path.startsWith("image://") || !imageId)
+  function queueImage(path, appName, summary, notificationId) {
+    if (!path || !path.startsWith("image://") || !notificationId)
       return;
-    const dest = Settings.cacheDirImagesNotifications + imageId + ".png";
 
-    for (const req of imageQueue) {
-      if (req.imageId === imageId)
-        return;
-    }
-
-    imageQueue.push({
-                      "src": path,
-                      "dest": dest,
-                      "imageId": imageId
-                    });
-
-    if (imageQueue.length === 1)
-      cacher.source = path;
+    ImageCacheService.getNotificationIcon(path, appName, summary, function (cachedPath, success) {
+      if (success && cachedPath) {
+        updateImagePath(notificationId, "file://" + cachedPath);
+      }
+    });
   }
 
-  function updateImagePath(id, path) {
-    updateModel(activeList, id, "cachedImage", path);
-    updateModel(historyList, id, "cachedImage", path);
+  function updateImagePath(notificationId, path) {
+    updateModel(activeList, notificationId, "cachedImage", path);
+    updateModel(historyList, notificationId, "cachedImage", path);
     saveHistory();
   }
 
-  function updateModel(model, id, prop, value) {
+  function updateModel(model, notificationId, prop, value) {
     for (var i = 0; i < model.count; i++) {
-      if (model.get(i).id === id) {
+      if (model.get(i).id === notificationId) {
         model.setProperty(i, prop, value);
         break;
       }
@@ -565,8 +530,9 @@ Singleton {
     while (historyList.count > maxHistory) {
       const old = historyList.get(historyList.count - 1);
       // Only delete cached images that are in our cache directory
-      if (old.cachedImage && old.cachedImage.startsWith(Settings.cacheDirImagesNotifications)) {
-        Quickshell.execDetached(["rm", "-f", old.cachedImage]);
+      const cachedPath = old.cachedImage ? old.cachedImage.replace(/^file:\/\//, "") : "";
+      if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
+        Quickshell.execDetached(["rm", "-f", cachedPath]);
       }
       historyList.remove(historyList.count - 1);
     }
@@ -622,12 +588,10 @@ Singleton {
       for (const item of adapter.notifications || []) {
         const time = new Date(item.timestamp);
 
+        // Use the cached image if it exists and starts with file://, otherwise use originalImage
         let cachedImage = item.cachedImage || "";
-        if (item.originalImage && item.originalImage.startsWith("image://") && !cachedImage) {
-          const imageId = generateImageId(item, item.originalImage);
-          if (imageId) {
-            cachedImage = Settings.cacheDirImagesNotifications + imageId + ".png";
-          }
+        if (!cachedImage || (!cachedImage.startsWith("file://") && !cachedImage.startsWith("/"))) {
+          cachedImage = item.originalImage || "";
         }
 
         historyList.append({
@@ -804,8 +768,9 @@ Singleton {
       const notif = historyList.get(i);
       if (notif.id === notificationId) {
         // Only delete cached images that are in our cache directory
-        if (notif.cachedImage && notif.cachedImage.startsWith(Settings.cacheDirImagesNotifications)) {
-          Quickshell.execDetached(["rm", "-f", notif.cachedImage]);
+        const cachedPath = notif.cachedImage ? notif.cachedImage.replace(/^file:\/\//, "") : "";
+        if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
+          Quickshell.execDetached(["rm", "-f", cachedPath]);
         }
         historyList.remove(i);
         saveHistory();
@@ -819,8 +784,9 @@ Singleton {
     if (historyList.count > 0) {
       const oldest = historyList.get(historyList.count - 1);
       // Only delete cached images that are in our cache directory
-      if (oldest.cachedImage && oldest.cachedImage.startsWith(Settings.cacheDirImagesNotifications)) {
-        Quickshell.execDetached(["rm", "-f", oldest.cachedImage]);
+      const cachedPath = oldest.cachedImage ? oldest.cachedImage.replace(/^file:\/\//, "") : "";
+      if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
+        Quickshell.execDetached(["rm", "-f", cachedPath]);
       }
       historyList.remove(historyList.count - 1);
       saveHistory();
@@ -831,7 +797,7 @@ Singleton {
 
   function clearHistory() {
     try {
-      Quickshell.execDetached(["sh", "-c", `rm -rf "${Settings.cacheDirImagesNotifications}"*`]);
+      Quickshell.execDetached(["sh", "-c", `rm -rf "${ImageCacheService.notificationsDir}"*`]);
     } catch (e) {
       Logger.e("Notifications", "Failed to clear cache directory:", e);
     }

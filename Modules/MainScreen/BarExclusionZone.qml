@@ -45,9 +45,9 @@ PanelWindow {
       // Vertical bar: reserve bar height + margin on the anchored edge only
       if (barFloating) {
         // For left bar, reserve left margin; for right bar, reserve right margin
-        return Style.barHeight + barMarginH + 1;
+        return Style.barHeight + barMarginH;
       }
-      return Style.barHeight + 1;
+      return Style.barHeight;
     }
     return 0; // Auto-width when left/right anchors are true
   }
@@ -57,9 +57,9 @@ PanelWindow {
       // Horizontal bar: reserve bar height + margin on the anchored edge only
       if (barFloating) {
         // For top bar, reserve top margin; for bottom bar, reserve bottom margin
-        return Style.barHeight + barMarginV + 1;
+        return Style.barHeight + barMarginV;
       }
-      return Style.barHeight + 1;
+      return Style.barHeight;
     }
     return 0; // Auto-height when top/bottom anchors are true
   }

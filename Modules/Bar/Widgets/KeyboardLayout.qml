@@ -33,6 +33,7 @@ Item {
   }
 
   readonly property string displayMode: (widgetSettings.displayMode !== undefined) ? widgetSettings.displayMode : widgetMetadata.displayMode
+  readonly property bool showIcon: (widgetSettings.showIcon !== undefined) ? widgetSettings.showIcon : widgetMetadata.showIcon
 
   // Use the shared service for keyboard layout
   property string currentLayout: KeyboardLayoutService.currentLayout
@@ -66,18 +67,17 @@ Item {
   BarPill {
     id: pill
     anchors.verticalCenter: parent.verticalCenter
-
     screen: root.screen
-    density: Settings.data.bar.density
     oppositeDirection: BarService.getPillDirection(root)
-    icon: "keyboard"
+    icon: root.showIcon ? "keyboard" : ""
     autoHide: false // Important to be false so we can hover as long as we want
     text: currentLayout.toUpperCase()
     tooltipText: I18n.tr("tooltips.keyboard-layout", {
                            "layout": currentLayout.toUpperCase()
                          })
-    forceOpen: root.displayMode === "forceOpen"
-    forceClose: root.displayMode === "alwaysHide"
+    // When icon is disabled, always show the layout text
+    forceOpen: !root.showIcon || root.displayMode === "forceOpen"
+    forceClose: root.showIcon && root.displayMode === "alwaysHide"
     onClicked: {}
     onRightClicked: {
       var popupMenuWindow = PanelService.getPopupMenuWindow(screen);

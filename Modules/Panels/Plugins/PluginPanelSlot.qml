@@ -64,34 +64,11 @@ SmartPanel {
         id: pluginContentItem
         anchors.fill: parent
 
+        // Plugin content loader, pluginApi is injected synchronously in loadPluginPanel()
         Loader {
           id: pluginContentLoader
           anchors.fill: parent
           active: false
-
-          // Create a dummy pluginApi that returns empty strings to avoid undefined warnings
-          property var _dummyApi: QtObject {
-            property var pluginSettings: ({})
-            property var manifest: ({
-                                      metadata: {
-                                        defaultSettings: {}
-                                      }
-                                    })
-
-            function tr(key) {
-              return "";
-            }
-            function trp(key, count) {
-              return "";
-            }
-          }
-
-          onLoaded: {
-            // Inject the dummy API immediately to prevent undefined warnings
-            if (item && item.hasOwnProperty("pluginApi") && !item.pluginApi) {
-              item.pluginApi = _dummyApi;
-            }
-          }
         }
       }
 

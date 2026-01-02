@@ -16,8 +16,7 @@ Item {
   property int imageFillMode: Image.PreserveAspectFit
 
   readonly property bool showFallback: (fallbackIcon !== undefined && fallbackIcon !== "") && (imagePath === undefined || imagePath === "")
-
-  signal statusChanged(int status)
+  readonly property int status: imageSource.status
 
   Rectangle {
     anchors.fill: parent
@@ -37,7 +36,6 @@ Item {
       asynchronous: true
       antialiasing: true
       fillMode: root.imageFillMode
-      onStatusChanged: root.statusChanged(status)
     }
 
     ShaderEffect {

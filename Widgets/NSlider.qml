@@ -15,6 +15,8 @@ Slider {
   property string tooltipDirection: "auto"
   property bool hovering: false
 
+  readonly property color effectiveFillColor: enabled ? fillColor : Color.mOutline
+
   readonly property real knobDiameter: Math.round((Style.baseWidgetSize * heightRatio * Style.uiScaleRatio) / 2) * 2
   readonly property real trackHeight: Math.round((knobDiameter * 0.4 * Style.uiScaleRatio) / 2) * 2
   readonly property real cutoutExtra: Math.round((Style.baseWidgetSize * 0.1 * Style.uiScaleRatio) / 2) * 2
@@ -47,7 +49,7 @@ Slider {
         width: parent.height
         height: parent.height
         radius: Math.min(Style.iRadiusL, width / 2)
-        color: Qt.darker(fillColor, 1.2) //starting color of gradient
+        color: Qt.darker(effectiveFillColor, 1.2) //starting color of gradient
       }
 
       // The main rectangle
@@ -61,11 +63,11 @@ Slider {
           orientation: Gradient.Horizontal
           GradientStop {
             position: 0.0
-            color: Qt.darker(fillColor, 1.2)
+            color: Qt.darker(effectiveFillColor, 1.2)
           }
           GradientStop {
             position: 1.0
-            color: fillColor
+            color: effectiveFillColor
           }
         }
       }
@@ -95,7 +97,7 @@ Slider {
       implicitHeight: knobDiameter
       radius: Math.min(Style.iRadiusL, width / 2)
       color: root.pressed ? Color.mHover : Color.mSurface
-      border.color: fillColor
+      border.color: effectiveFillColor
       border.width: Style.borderL
       anchors.centerIn: parent
 

@@ -15,7 +15,30 @@ NBox {
   // Track whether we have an active media player
   readonly property bool hasActivePlayer: MediaService.currentPlayer && MediaService.canPlay
 
+  // CavaService registration for visualizer
+  readonly property bool needsCava: Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
+
+  onNeedsCavaChanged: {
+    if (root.needsCava) {
+      CavaService.registerComponent("mediacard");
+    } else {
+      CavaService.unregisterComponent("mediacard");
+    }
+  }
+
+  Component.onCompleted: {
+    if (root.needsCava) {
+      CavaService.registerComponent("mediacard");
+    }
+    updateCachedWallpaper();
+  }
+
+  Component.onDestruction: {
+    CavaService.unregisterComponent("mediacard");
+  }
+
   property string wallpaper: WallpaperService.getWallpaper(screen.name)
+  property string cachedWallpaper: ""
 
   // External state management
   Connections {
@@ -23,8 +46,33 @@ NBox {
     function onWallpaperChanged(screenName, path) {
       if (screenName === screen.name) {
         wallpaper = path;
+        updateCachedWallpaper();
       }
     }
+  }
+
+  function updateCachedWallpaper() {
+    // Handle solid color mode - no wallpaper to cache
+    if (Settings.data.wallpaper.useSolidColor || WallpaperService.isSolidColorPath(wallpaper)) {
+      cachedWallpaper = "";
+      return;
+    }
+
+    if (!wallpaper) {
+      cachedWallpaper = "";
+      return;
+    }
+
+    if (!ImageCacheService.initialized) {
+      cachedWallpaper = wallpaper;
+      return;
+    }
+
+    ImageCacheService.getThumbnail(wallpaper, function (cachedPath, success) {
+      if (!root)
+        return;
+      cachedWallpaper = success ? cachedPath : wallpaper;
+    });
   }
 
   // Wrapper - rounded rect clipper
@@ -46,12 +94,19 @@ NBox {
       }
     }
 
+    // Solid color background (always present as base layer)
+    Rectangle {
+      anchors.fill: parent
+      color: Settings.data.wallpaper.useSolidColor ? Settings.data.wallpaper.solidColor : Color.mSurface
+    }
+
     // Background image that covers everything
     Image {
       id: bgImage
       readonly property int dim: Math.round(256 * Style.uiScaleRatio)
       anchors.fill: parent
-      source: MediaService.trackArtUrl || wallpaper
+      visible: source.toString() !== ""
+      source: MediaService.trackArtUrl || (Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor ? root.cachedWallpaper : "")
       sourceSize: Qt.size(dim, dim)
       fillMode: Image.PreserveAspectCrop
       layer.enabled: true

@@ -22,7 +22,6 @@ Rectangle {
 
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
-  readonly property string density: Settings.data.bar.density
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
   property var widgetSettings: {
@@ -43,7 +42,7 @@ Rectangle {
   readonly property bool smartWidth: (widgetSettings.smartWidth !== undefined) ? widgetSettings.smartWidth : widgetMetadata.smartWidth
   readonly property int maxTaskbarWidthPercent: (widgetSettings.maxTaskbarWidth !== undefined) ? widgetSettings.maxTaskbarWidth : widgetMetadata.maxTaskbarWidth
   readonly property real iconScale: (widgetSettings.iconScale !== undefined) ? widgetSettings.iconScale : widgetMetadata.iconScale
-  readonly property int itemSize: Math.round(((density === "compact") ? Style.capsuleHeight * 1.0 : Style.capsuleHeight * 0.9) * Math.max(0.1, iconScale))
+  readonly property int itemSize: Style.toOdd(Style.capsuleHeight * Math.max(0.1, iconScale))
 
   // Maximum width for the taskbar widget to prevent overlapping with other widgets
   readonly property real maxTaskbarWidth: {
@@ -81,7 +80,8 @@ Rectangle {
     if (!selectedWindowId)
       return null;
     for (var i = 0; i < combinedModel.length; i++) {
-      if (combinedModel[i].id === selectedWindowId && combinedModel[i].window) {
+      // Using loose equality on purpose (==)
+      if (combinedModel[i].id == selectedWindowId && combinedModel[i].window) {
         return combinedModel[i].window;
       }
     }
@@ -93,6 +93,10 @@ Rectangle {
   property var hoveredWindowId: ""
   // Combined model of running windows and pinned apps
   property var combinedModel: []
+
+  // Wheel scroll handling
+  property int wheelAccumulatedDelta: 0
+  property bool wheelCooldown: false
 
   // Helper function to normalize app IDs for case-insensitive matching
   function normalizeAppId(appId) {
@@ -294,8 +298,9 @@ Rectangle {
           const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
           const command = terminal.concat(app.command);
           Quickshell.execDetached(command);
+        } else if (app.command && app.command.length > 0) {
+          Quickshell.execDetached(app.command);
         } else if (app.execute) {
-          // Default execution for GUI apps
           app.execute();
         } else {
           Logger.w("Taskbar", `Could not launch: ${app.name}. No valid launch method.`);
@@ -376,8 +381,11 @@ Rectangle {
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(root.screen, root.section, root.sectionWidgetIndex, root.widgetId, root.widgetSettings);
                    } else if (action.startsWith("desktop-action-") && item && item.desktopAction) {
-                     // Execute desktop entry action
-                     item.desktopAction.execute();
+                     if (item.desktopAction.command && item.desktopAction.command.length > 0) {
+                       Quickshell.execDetached(item.desktopAction.command);
+                     } else if (item.desktopAction.execute) {
+                       item.desktopAction.execute();
+                     }
                    }
                    root.selectedWindowId = "";
                    root.selectedAppId = "";
@@ -414,6 +422,69 @@ Rectangle {
   }
   onScreenChanged: updateCombinedModel()
 
+  // Debounce timer for wheel interactions
+  Timer {
+    id: wheelDebounce
+    interval: 150
+    repeat: false
+    onTriggered: {
+      root.wheelCooldown = false;
+      root.wheelAccumulatedDelta = 0;
+    }
+  }
+
+  // Scroll to switch between windows
+  WheelHandler {
+    id: wheelHandler
+    target: root
+    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    onWheel: function (event) {
+      if (root.wheelCooldown || root.combinedModel.length === 0)
+        return;
+      var dy = event.angleDelta.y;
+      var dx = event.angleDelta.x;
+      var useDy = Math.abs(dy) >= Math.abs(dx);
+      var delta = useDy ? dy : dx;
+      root.wheelAccumulatedDelta += delta;
+      var step = 120;
+      if (Math.abs(root.wheelAccumulatedDelta) >= step) {
+        var direction = root.wheelAccumulatedDelta > 0 ? -1 : 1;
+        // Find the focused window or first running window
+        var currentIndex = -1;
+        for (var i = 0; i < root.combinedModel.length; i++) {
+          if (root.combinedModel[i].window && root.combinedModel[i].window.isFocused) {
+            currentIndex = i;
+            break;
+          }
+        }
+        if (currentIndex < 0) {
+          // No focused window, find first running window
+          for (var j = 0; j < root.combinedModel.length; j++) {
+            if (root.combinedModel[j].window) {
+              currentIndex = j;
+              break;
+            }
+          }
+        }
+        if (currentIndex >= 0) {
+          var nextIndex = (currentIndex + direction + root.combinedModel.length) % root.combinedModel.length;
+          var nextItem = root.combinedModel[nextIndex];
+          if (nextItem && nextItem.window) {
+            try {
+              CompositorService.focusWindow(nextItem.window);
+            } catch (error) {
+              Logger.e("Taskbar", "Failed to focus window: " + error);
+            }
+          }
+        }
+        root.wheelCooldown = true;
+        wheelDebounce.restart();
+        root.wheelAccumulatedDelta = 0;
+        event.accepted = true;
+      }
+    }
+  }
+
   // "visible": Always Visible, "hidden": Hide When Empty, "transparent": Transparent When Empty
   visible: hideMode !== "hidden" || hasWindow
   opacity: ((hideMode !== "hidden" && hideMode !== "transparent") || hasWindow) ? 1.0 : 0.0
@@ -447,13 +518,10 @@ Rectangle {
 
   GridLayout {
     id: taskbarLayout
-    anchors.fill: parent
-    anchors {
-      leftMargin: (root.showTitle || isVerticalBar) ? undefined : Style.marginM
-      rightMargin: (root.showTitle || isVerticalBar) ? undefined : Style.marginM
-      topMargin: (density === "compact") ? 0 : isVerticalBar ? Style.marginM : undefined
-      bottomMargin: (density === "compact") ? 0 : isVerticalBar ? Style.marginM : undefined
-    }
+
+    // Pixel-perfect centering
+    x: isVerticalBar ? Style.pixelAlignCenter(parent.width, width) : ((root.showTitle) ? Style.pixelAlignCenter(parent.width, width) : Style.marginM)
+    y: Style.pixelAlignCenter(parent.height, height)
 
     // Configure GridLayout to behave like RowLayout or ColumnLayout
     rows: isVerticalBar ? -1 : 1 // -1 means unlimited
@@ -544,7 +612,7 @@ Rectangle {
                 anchors.bottomMargin: -2
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: 4
+                width: Style.toOdd(root.itemSize * 0.25)
                 height: 4
                 color: taskbarItem.isFocused ? Color.mPrimary : Color.transparent
                 radius: Math.min(Style.radiusXXS, width / 2)
@@ -564,7 +632,7 @@ Rectangle {
               verticalAlignment: Text.AlignVCenter
               horizontalAlignment: Text.AlignLeft
 
-              pointSize: root.itemSize * 0.5
+              pointSize: Style.barFontSize
               color: titleFgColor
               opacity: Style.opacityFull
             }

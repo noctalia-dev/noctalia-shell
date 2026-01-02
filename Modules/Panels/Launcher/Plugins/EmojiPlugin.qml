@@ -9,6 +9,7 @@ Item {
   // Plugin metadata
   property string name: I18n.tr("plugins.emoji")
   property var launcher: null
+  property string iconMode: Settings.data.appLauncher.iconMode
   property bool handleSearch: false
 
   property string selectedCategory: "recent"
@@ -28,6 +29,22 @@ Item {
                                })
 
   property var categories: ["recent", "people", "animals", "nature", "food", "activity", "travel", "objects", "symbols", "flags"]
+
+  function getCategoryName(category) {
+    const names = {
+      "recent": I18n.tr("launcher.categories.emoji.recent"),
+      "people": I18n.tr("launcher.categories.emoji.people"),
+      "animals": I18n.tr("launcher.categories.emoji.animals"),
+      "nature": I18n.tr("launcher.categories.emoji.nature"),
+      "food": I18n.tr("launcher.categories.emoji.food"),
+      "activity": I18n.tr("launcher.categories.emoji.activity"),
+      "travel": I18n.tr("launcher.categories.emoji.travel"),
+      "objects": I18n.tr("launcher.categories.emoji.objects"),
+      "symbols": I18n.tr("launcher.categories.emoji.symbols"),
+      "flags": I18n.tr("launcher.categories.emoji.flags")
+    };
+    return names[category] || category;
+  }
 
   // Force update results when emoji service loads
   Connections {
@@ -67,7 +84,8 @@ Item {
           {
             "name": ">emoji",
             "description": I18n.tr("plugins.emoji-search-description"),
-            "icon": "face-smile",
+            "icon": iconMode === "tabler" ? "mood-smile" : "face-smile",
+            "isTablerIcon": true,
             "isImage": false,
             "onActivate": function () {
               launcher.setSearchText(">emoji ");
@@ -87,7 +105,8 @@ Item {
             {
               "name": I18n.tr("plugins.emoji-loading"),
               "description": I18n.tr("plugins.emoji-loading-description"),
-              "icon": "view-refresh",
+              "icon": iconMode === "tabler" ? "refresh" : "view-refresh",
+              "isTablerIcon": true,
               "isImage": false,
               "onActivate": function () {}
             }

@@ -21,7 +21,10 @@ ColumnLayout {
   property bool valueShowApplications: widgetData.showApplications !== undefined ? widgetData.showApplications : widgetMetadata.showApplications
   property bool valueShowLabelsOnlyWhenOccupied: widgetData.showLabelsOnlyWhenOccupied !== undefined ? widgetData.showLabelsOnlyWhenOccupied : widgetMetadata.showLabelsOnlyWhenOccupied
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
+  property real valueUnfocusedIconsOpacity: widgetData.unfocusedIconsOpacity !== undefined ? widgetData.unfocusedIconsOpacity : widgetMetadata.unfocusedIconsOpacity
+  property real valueGroupedBorderOpacity: widgetData.groupedBorderOpacity !== undefined ? widgetData.groupedBorderOpacity : widgetMetadata.groupedBorderOpacity
   property bool valueEnableScrollWheel: widgetData.enableScrollWheel !== undefined ? widgetData.enableScrollWheel : widgetMetadata.enableScrollWheel
+  property real valueIconScale: widgetData.iconScale !== undefined ? widgetData.iconScale : widgetMetadata.iconScale
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -32,7 +35,10 @@ ColumnLayout {
     settings.showApplications = valueShowApplications;
     settings.showLabelsOnlyWhenOccupied = valueShowLabelsOnlyWhenOccupied;
     settings.colorizeIcons = valueColorizeIcons;
+    settings.unfocusedIconsOpacity = valueUnfocusedIconsOpacity;
+    settings.groupedBorderOpacity = valueGroupedBorderOpacity;
     settings.enableScrollWheel = valueEnableScrollWheel;
+    settings.iconScale = valueIconScale;
     return settings;
   }
 
@@ -101,6 +107,10 @@ ColumnLayout {
     onToggled: checked => valueEnableScrollWheel = checked
   }
 
+  NDivider {
+    Layout.fillWidth: true
+  }
+
   NToggle {
     label: I18n.tr("bar.widget-settings.workspace.show-applications.label")
     description: I18n.tr("bar.widget-settings.workspace.show-applications.description")
@@ -113,6 +123,42 @@ ColumnLayout {
     description: I18n.tr("bar.widget-settings.active-window.colorize-icons.description")
     checked: valueColorizeIcons
     onToggled: checked => valueColorizeIcons = checked
+    visible: valueShowApplications
+  }
+
+  NValueSlider {
+    label: I18n.tr("bar.widget-settings.workspace.unfocused-icons-opacity.label")
+    description: I18n.tr("bar.widget-settings.workspace.unfocused-icons-opacity.description")
+    from: 0
+    to: 1
+    stepSize: 0.01
+    value: valueUnfocusedIconsOpacity
+    onMoved: value => valueUnfocusedIconsOpacity = value
+    text: Math.floor(valueUnfocusedIconsOpacity * 100) + "%"
+    visible: valueShowApplications
+  }
+
+  NValueSlider {
+    label: I18n.tr("bar.widget-settings.workspace.grouped-border-opacity.label")
+    description: I18n.tr("bar.widget-settings.workspace.grouped-border-opacity.description")
+    from: 0
+    to: 1
+    stepSize: 0.01
+    value: valueGroupedBorderOpacity
+    onMoved: value => valueGroupedBorderOpacity = value
+    text: Math.floor(valueGroupedBorderOpacity * 100) + "%"
+    visible: valueShowApplications
+  }
+
+  NValueSlider {
+    label: I18n.tr("bar.widget-settings.taskbar.icon-scale.label")
+    description: I18n.tr("bar.widget-settings.taskbar.icon-scale.description")
+    from: 0.5
+    to: 1
+    stepSize: 0.01
+    value: valueIconScale
+    onMoved: value => valueIconScale = value
+    text: Math.round(valueIconScale * 100) + "%"
     visible: valueShowApplications
   }
 }

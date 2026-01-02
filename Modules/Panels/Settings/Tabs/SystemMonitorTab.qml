@@ -10,6 +10,8 @@ import qs.Widgets
 ColumnLayout {
   id: root
 
+  property var screen
+
   spacing: Style.marginL
 
   NHeader {
@@ -21,10 +23,12 @@ ColumnLayout {
   NToggle {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginM
-    label: I18n.tr("settings.system-monitor.enable-nvidia-gpu.label")
-    description: I18n.tr("settings.system-monitor.enable-nvidia-gpu.description")
-    checked: Settings.data.systemMonitor.enableNvidiaGpu
-    onToggled: checked => Settings.data.systemMonitor.enableNvidiaGpu = checked
+    label: I18n.tr("settings.system-monitor.enable-dgpu-monitoring.label")
+    description: I18n.tr("settings.system-monitor.enable-dgpu-monitoring.description")
+    checked: Settings.data.systemMonitor.enableDgpuMonitoring
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("systemMonitor.enableDgpuMonitoring")
+    onToggled: checked => Settings.data.systemMonitor.enableDgpuMonitoring = checked
   }
 
   // Colors Section
@@ -36,18 +40,20 @@ ColumnLayout {
       label: I18n.tr("settings.system-monitor.use-custom-highlight-colors.label")
       description: I18n.tr("settings.system-monitor.use-custom-highlight-colors.description")
       checked: Settings.data.systemMonitor.useCustomColors
-      onToggled: {
-        // If enabling custom colors and no custom color is saved, persist current theme colors
-        if (checked) {
-          if (!Settings.data.systemMonitor.warningColor || Settings.data.systemMonitor.warningColor === "") {
-            Settings.data.systemMonitor.warningColor = Color.mTertiary.toString();
-          }
-          if (!Settings.data.systemMonitor.criticalColor || Settings.data.systemMonitor.criticalColor === "") {
-            Settings.data.systemMonitor.criticalColor = Color.mError.toString();
-          }
-        }
-        Settings.data.systemMonitor.useCustomColors = checked;
-      }
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("systemMonitor.useCustomColors")
+      onToggled: checked => {
+                   // If enabling custom colors and no custom color is saved, persist current theme colors
+                   if (checked) {
+                     if (!Settings.data.systemMonitor.warningColor || Settings.data.systemMonitor.warningColor === "") {
+                       Settings.data.systemMonitor.warningColor = Color.mTertiary.toString();
+                     }
+                     if (!Settings.data.systemMonitor.criticalColor || Settings.data.systemMonitor.criticalColor === "") {
+                       Settings.data.systemMonitor.criticalColor = Color.mError.toString();
+                     }
+                   }
+                   Settings.data.systemMonitor.useCustomColors = checked;
+                 }
     }
   }
 
@@ -66,13 +72,12 @@ ColumnLayout {
       }
 
       NColorPicker {
+        screen: root.screen
         Layout.preferredWidth: Style.sliderWidth
         Layout.preferredHeight: Style.baseWidgetSize
         enabled: Settings.data.systemMonitor.useCustomColors
         selectedColor: Settings.data.systemMonitor.warningColor || Color.mTertiary
-        onColorSelected: function (color) {
-          Settings.data.systemMonitor.warningColor = color;
-        }
+        onColorSelected: color => Settings.data.systemMonitor.warningColor = color
       }
     }
 
@@ -86,13 +91,12 @@ ColumnLayout {
       }
 
       NColorPicker {
+        screen: root.screen
         Layout.preferredWidth: Style.sliderWidth
         Layout.preferredHeight: Style.baseWidgetSize
         enabled: Settings.data.systemMonitor.useCustomColors
         selectedColor: Settings.data.systemMonitor.criticalColor || Color.mError
-        onColorSelected: function (color) {
-          Settings.data.systemMonitor.criticalColor = color;
-        }
+        onColorSelected: color => Settings.data.systemMonitor.criticalColor = color
       }
     }
   }
@@ -136,6 +140,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.cpuWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.cpuWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.cpuWarningThreshold = value;
           // Ensure critical >= warning
@@ -164,6 +170,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.cpuCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.cpuCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.cpuCriticalThreshold = value
         suffix: "%"
       }
@@ -186,6 +194,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.cpuPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.cpuPollingInterval")
         onValueChanged: Settings.data.systemMonitor.cpuPollingInterval = value
         suffix: " ms"
       }
@@ -221,6 +231,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.tempWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.tempWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.tempWarningThreshold = value;
           if (Settings.data.systemMonitor.tempCriticalThreshold < value) {
@@ -248,6 +260,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.tempCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.tempCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.tempCriticalThreshold = value
         suffix: "°C"
       }
@@ -270,6 +284,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.tempPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.tempPollingInterval")
         onValueChanged: Settings.data.systemMonitor.tempPollingInterval = value
         suffix: " ms"
       }
@@ -307,6 +323,8 @@ ColumnLayout {
         to: 120
         stepSize: 5
         value: Settings.data.systemMonitor.gpuWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.gpuWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.gpuWarningThreshold = value;
           if (Settings.data.systemMonitor.gpuCriticalThreshold < value) {
@@ -334,6 +352,8 @@ ColumnLayout {
         to: 120
         stepSize: 5
         value: Settings.data.systemMonitor.gpuCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.gpuCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.gpuCriticalThreshold = value
         suffix: "°C"
       }
@@ -356,7 +376,46 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.gpuPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.gpuPollingInterval")
         onValueChanged: Settings.data.systemMonitor.gpuPollingInterval = value
+        suffix: " ms"
+      }
+    }
+  }
+
+  // Load Average
+  NText {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginM
+    text: I18n.tr("settings.system-monitor.load-average-section.label")
+    pointSize: Style.fontSizeM
+  }
+
+  RowLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginM
+
+    ColumnLayout {
+      Layout.fillWidth: true
+      spacing: Style.marginM
+
+      NText {
+        Layout.alignment: Qt.AlignHCenter
+        horizontalAlignment: Text.AlignHCenter
+        text: I18n.tr("settings.system-monitor.polling-interval.label")
+        pointSize: Style.fontSizeS
+      }
+
+      NSpinBox {
+        Layout.alignment: Qt.AlignHCenter
+        from: 250
+        to: 10000
+        stepSize: 250
+        value: Settings.data.systemMonitor.loadAvgPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.loadAvgPollingInterval")
+        onValueChanged: Settings.data.systemMonitor.loadAvgPollingInterval = value
         suffix: " ms"
       }
     }
@@ -391,6 +450,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.memWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.memWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.memWarningThreshold = value;
           if (Settings.data.systemMonitor.memCriticalThreshold < value) {
@@ -418,6 +479,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.memCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.memCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.memCriticalThreshold = value
         suffix: "%"
       }
@@ -440,6 +503,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.memPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.memPollingInterval")
         onValueChanged: Settings.data.systemMonitor.memPollingInterval = value
         suffix: " ms"
       }
@@ -475,6 +540,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.diskWarningThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.diskWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.diskWarningThreshold = value;
           if (Settings.data.systemMonitor.diskCriticalThreshold < value) {
@@ -502,6 +569,8 @@ ColumnLayout {
         to: 100
         stepSize: 5
         value: Settings.data.systemMonitor.diskCriticalThreshold
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.diskCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.diskCriticalThreshold = value
         suffix: "%"
       }
@@ -524,6 +593,8 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.diskPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.diskPollingInterval")
         onValueChanged: Settings.data.systemMonitor.diskPollingInterval = value
         suffix: " ms"
       }
@@ -559,10 +630,22 @@ ColumnLayout {
         to: 10000
         stepSize: 250
         value: Settings.data.systemMonitor.networkPollingInterval
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("systemMonitor.networkPollingInterval")
         onValueChanged: Settings.data.systemMonitor.networkPollingInterval = value
         suffix: " ms"
       }
     }
+  }
+
+  NTextInput {
+    label: I18n.tr("settings.system-monitor.external-monitor.label")
+    description: I18n.tr("settings.system-monitor.external-monitor.description")
+    placeholderText: I18n.tr("settings.system-monitor.external-monitor.placeholder")
+    text: Settings.data.systemMonitor.externalMonitor
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("systemMonitor.externalMonitor")
+    onTextChanged: Settings.data.systemMonitor.externalMonitor = text
   }
 
   NDivider {

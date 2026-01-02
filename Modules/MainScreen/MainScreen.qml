@@ -23,6 +23,7 @@ import qs.Modules.Panels.Plugins
 import qs.Modules.Panels.SessionMenu
 import qs.Modules.Panels.Settings
 import qs.Modules.Panels.SetupWizard
+import qs.Modules.Panels.SystemStats
 import qs.Modules.Panels.Tray
 import qs.Modules.Panels.Wallpaper
 import qs.Modules.Panels.WiFi
@@ -34,44 +35,6 @@ import qs.Services.UI
 */
 PanelWindow {
   id: root
-
-  // Expose panels as readonly property aliases
-  readonly property alias audioPanel: audioPanel
-  readonly property alias batteryPanel: batteryPanel
-  readonly property alias bluetoothPanel: bluetoothPanel
-  readonly property alias brightnessPanel: brightnessPanel
-  readonly property alias clockPanel: clockPanel
-  readonly property alias changelogPanel: changelogPanel
-  readonly property alias controlCenterPanel: controlCenterPanel
-  readonly property alias launcherPanel: launcherPanel
-  readonly property alias notificationHistoryPanel: notificationHistoryPanel
-  readonly property alias sessionMenuPanel: sessionMenuPanel
-  readonly property alias settingsPanel: settingsPanel
-  readonly property alias setupWizardPanel: setupWizardPanel
-  readonly property alias trayDrawerPanel: trayDrawerPanel
-  readonly property alias wallpaperPanel: wallpaperPanel
-  readonly property alias wifiPanel: wifiPanel
-  readonly property alias pluginPanel1: pluginPanel1
-  readonly property alias pluginPanel2: pluginPanel2
-
-  // Expose panel backgrounds for AllBackgrounds
-  readonly property var audioPanelPlaceholder: audioPanel.panelRegion
-  readonly property var batteryPanelPlaceholder: batteryPanel.panelRegion
-  readonly property var bluetoothPanelPlaceholder: bluetoothPanel.panelRegion
-  readonly property var brightnessPanelPlaceholder: brightnessPanel.panelRegion
-  readonly property var clockPanelPlaceholder: clockPanel.panelRegion
-  readonly property var changelogPanelPlaceholder: changelogPanel.panelRegion
-  readonly property var controlCenterPanelPlaceholder: controlCenterPanel.panelRegion
-  readonly property var launcherPanelPlaceholder: launcherPanel.panelRegion
-  readonly property var notificationHistoryPanelPlaceholder: notificationHistoryPanel.panelRegion
-  readonly property var sessionMenuPanelPlaceholder: sessionMenuPanel.panelRegion
-  readonly property var settingsPanelPlaceholder: settingsPanel.panelRegion
-  readonly property var setupWizardPanelPlaceholder: setupWizardPanel.panelRegion
-  readonly property var trayDrawerPanelPlaceholder: trayDrawerPanel.panelRegion
-  readonly property var wallpaperPanelPlaceholder: wallpaperPanel.panelRegion
-  readonly property var wifiPanelPlaceholder: wifiPanel.panelRegion
-  readonly property var pluginPanel1Placeholder: pluginPanel1.panelRegion
-  readonly property var pluginPanel2Placeholder: pluginPanel2.panelRegion
 
   Component.onCompleted: {
     Logger.d("MainScreen", "Initialized for screen:", screen?.name, "- Dimensions:", screen?.width, "x", screen?.height, "- Position:", screen?.x, ",", screen?.y);
@@ -293,6 +256,12 @@ PanelWindow {
       screen: root.screen
     }
 
+    SystemStatsPanel {
+      id: systemStatsPanel
+      objectName: "systemStatsPanel-" + (root.screen?.name || "unknown")
+      screen: root.screen
+    }
+
     // ----------------------------------------------
     // Plugin panel slots
     // ----------------------------------------------
@@ -325,25 +294,24 @@ PanelWindow {
       readonly property string barPosition: Settings.data.bar.position || "top"
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
       readonly property bool barFloating: Settings.data.bar.floating || false
-      readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
-      readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0
-      readonly property real attachmentOverlap: 1 // Attachment overlap to fix hairline gap with fractional scaling
+      readonly property real barMarginH: barFloating ? Math.floor(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
+      readonly property real barMarginV: barFloating ? Math.floor(Settings.data.bar.marginVertical * Style.marginXL) : 0
 
       // Expose bar dimensions directly on this Item for BarBackground
       // Use screen dimensions directly
       x: {
         if (barPosition === "right")
-          return screen.width - Style.barHeight - barMarginH - attachmentOverlap; // Extend left towards panels
+          return screen.width - Style.barHeight - barMarginH;
         return barMarginH;
       }
       y: {
         if (barPosition === "bottom")
-          return screen.height - Style.barHeight - barMarginV - attachmentOverlap;
+          return screen.height - Style.barHeight - barMarginV;
         return barMarginV;
       }
       width: {
         if (barIsVertical) {
-          return Style.barHeight + attachmentOverlap;
+          return Style.barHeight;
         }
         return screen.width - barMarginH * 2;
       }
@@ -351,7 +319,7 @@ PanelWindow {
         if (barIsVertical) {
           return screen.height - barMarginV * 2;
         }
-        return Style.barHeight + attachmentOverlap;
+        return Style.barHeight;
       }
 
       // Corner states (same as Bar.qml)
@@ -514,5 +482,59 @@ PanelWindow {
     sequence: "Ctrl+P"
     enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlPPressed !== undefined)
     onActivated: PanelService.openedPanel.onCtrlPPressed()
+  }
+
+  Shortcut {
+    sequence: "1"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(1)
+  }
+
+  Shortcut {
+    sequence: "2"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(2)
+  }
+
+  Shortcut {
+    sequence: "3"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(3)
+  }
+
+  Shortcut {
+    sequence: "4"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(4)
+  }
+
+  Shortcut {
+    sequence: "5"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(5)
+  }
+
+  Shortcut {
+    sequence: "6"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(6)
+  }
+
+  Shortcut {
+    sequence: "7"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(7)
+  }
+
+  Shortcut {
+    sequence: "8"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(8)
+  }
+
+  Shortcut {
+    sequence: "9"
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onNumberPressed !== undefined)
+    onActivated: PanelService.openedPanel.onNumberPressed(9)
   }
 }

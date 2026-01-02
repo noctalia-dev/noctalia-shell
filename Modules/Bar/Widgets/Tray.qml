@@ -56,7 +56,7 @@ Rectangle {
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
   readonly property bool density: Settings.data.bar.density
-  readonly property real iconSize: Math.round(Style.capsuleHeight * 0.65)
+  readonly property int iconSize: Style.toOdd(Style.capsuleHeight * 0.65)
 
   property list<string> blacklist: widgetSettings.blacklist || widgetMetadata.blacklist || [] // Read from settings
   property list<string> pinned: widgetSettings.pinned || widgetMetadata.pinned || [] // Pinned items (shown inline)
@@ -281,13 +281,16 @@ Rectangle {
     spacing: Style.marginXS
     flow: isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
+    // Pixel-perfect centering
+    x: isVertical ? Style.pixelAlignCenter(parent.width, width) : 0
+    y: isVertical ? 0 : Style.pixelAlignCenter(parent.height, height)
+
     // Drawer opener (before items if opposite direction)
     NIconButton {
       id: chevronIconBefore
       visible: root.drawerEnabled && dropdownItems.length > 0 && BarService.getPillDirection(root)
       tooltipText: I18n.tr("tooltips.open-tray-dropdown")
       tooltipDirection: BarService.getTooltipDirection()
-      density: Settings.data.bar.density
       baseSize: Style.capsuleHeight
       applyUiScale: false
       customRadius: Style.radiusL
@@ -326,7 +329,8 @@ Rectangle {
           id: trayIcon
           width: iconSize
           height: iconSize
-          anchors.centerIn: parent
+          x: Style.pixelAlignCenter(parent.width, width)
+          y: Style.pixelAlignCenter(parent.height, height)
           asynchronous: true
           backer.fillMode: Image.PreserveAspectFit
 
@@ -414,7 +418,7 @@ Rectangle {
                              } else {
                                // For horizontal bars: center horizontally and position below
                                menuX = (width / 2) - (trayMenu.item.width / 2);
-                               menuY = (barPosition === "top") ? Style.barHeight : -Style.barHeight;
+                               menuY = (barPosition === "top") ? Style.barHeight + Style.marginS - 2 : Style.barHeight + Style.marginS - 2;
                              }
                              trayMenu.item.trayItem = modelData;
                              trayMenu.item.widgetSection = root.section;
@@ -443,7 +447,6 @@ Rectangle {
       visible: root.drawerEnabled && dropdownItems.length > 0 && !BarService.getPillDirection(root)
       tooltipText: I18n.tr("tooltips.open-tray-dropdown")
       tooltipDirection: BarService.getTooltipDirection()
-      density: Settings.data.bar.density
       baseSize: Style.capsuleHeight
       applyUiScale: false
       customRadius: Style.radiusL

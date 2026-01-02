@@ -46,22 +46,72 @@ Singleton {
     generateProcess.running = true;
   }
 
+  // Queue for processing templates one by one
+  property var templateQueue: []
+  property var currentTemplateContext: null
+
   /**
   * Process predefined color scheme using sed scripts
   * Dual-path architecture (predefined uses sed scripts)
+  * Templates are processed one by one for better error reporting
   */
   function processPredefinedScheme(schemeData, mode) {
     handleTerminalThemes(mode);
 
     const colors = schemeData[mode];
-    let script = processAllTemplates(colors, mode);
+    const homeDir = Quickshell.env("HOME");
 
-    // Add user templates if enabled (requirement #1)
-    script += buildUserTemplateCommandForPredefined(schemeData, mode);
+    // Build queue of templates to process
+    templateQueue = buildTemplateQueue(colors, mode, schemeData, homeDir);
 
-    generateProcess.generator = "predefined";
-    generateProcess.command = ["bash", "-lc", script];
-    generateProcess.running = true;
+    // Add user templates if enabled
+    const userScript = buildUserTemplateCommandForPredefined(schemeData, mode);
+    if (userScript) {
+      templateQueue.push({
+                           id: "user-templates",
+                           script: userScript
+                         });
+    }
+
+    // Start processing
+    processNextTemplate();
+  }
+
+  function buildTemplateQueue(colors, mode, schemeData, homeDir) {
+    const queue = [];
+
+    TemplateRegistry.applications.forEach(app => {
+                                            if (app.id === "discord") {
+                                              if (Settings.data.templates.discord) {
+                                                const items = buildDiscordTemplateItems(app, colors, homeDir);
+                                                items.forEach(item => queue.push(item));
+                                              }
+                                            } else if (app.id === "code") {
+                                              if (Settings.data.templates.code) {
+                                                const items = buildCodeTemplateItems(app, colors, homeDir);
+                                                items.forEach(item => queue.push(item));
+                                              }
+                                            } else {
+                                              if (Settings.data.templates[app.id]) {
+                                                const items = buildAppTemplateItems(app, colors, mode, homeDir, schemeData);
+                                                items.forEach(item => queue.push(item));
+                                              }
+                                            }
+                                          });
+    return queue;
+  }
+
+  function processNextTemplate() {
+    if (templateQueue.length === 0) {
+      currentTemplateContext = null;
+      return;
+    }
+
+    const item = templateQueue.shift();
+    currentTemplateContext = item;
+
+    templateProcess.command = ["bash", "-lc", item.script];
+    templateProcess.running = true;
   }
 
   // ================================================================================
@@ -197,100 +247,94 @@ Singleton {
   }
 
   // ================================================================================
-  // PREDEFINED SCHEME GENERATION (sed scripts)
+  // PREDEFINED SCHEME GENERATION (queue-based, template by template)
   // ================================================================================
-  function processAllTemplates(colors, mode) {
-    let script = "";
-    const homeDir = Quickshell.env("HOME");
-
-    TemplateRegistry.applications.forEach(app => {
-                                            if (app.id === "discord") {
-                                              if (Settings.data.templates.discord) {
-                                                script += processDiscordClients(app, colors, mode, homeDir);
-                                              }
-                                            } else if (app.id === "code") {
-                                              if (Settings.data.templates.code) {
-                                                script += processCodeClients(app, colors, mode, homeDir);
-                                              }
-                                            } else {
-                                              if (Settings.data.templates[app.id]) {
-                                                script += processTemplate(app, colors, mode, homeDir);
-                                              }
-                                            }
-                                          });
-    return script;
-  }
-
-  function processDiscordClients(discordApp, colors, mode, homeDir) {
-    let script = "";
+  function buildDiscordTemplateItems(discordApp, colors, homeDir) {
+    const items = [];
     const palette = ColorPaletteGenerator.generatePalette(colors, Settings.data.colorSchemes.darkMode, false);
 
     discordApp.clients.forEach(client => {
                                  if (!isDiscordClientEnabled(client.name))
                                  return;
+
                                  const templatePath = `${Quickshell.shellDir}/Assets/MatugenTemplates/${discordApp.input}`;
                                  const outputPath = `${client.path}/themes/noctalia.theme.css`.replace("~", homeDir);
                                  const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
                                  const baseConfigDir = outputDir.replace("/themes", "");
 
-                                 script += `\n`;
+                                 let script = "";
                                  script += `if [ -d "${baseConfigDir}" ]; then\n`;
                                  script += `  mkdir -p ${outputDir}\n`;
                                  script += `  cp '${templatePath}' '${outputPath}'\n`;
                                  script += `  ${replaceColorsInFile(outputPath, palette)}`;
-                                 script += `else\n`;
-                                 script += `  echo "Discord client ${client.name} not found at ${baseConfigDir}, skipping"\n`;
                                  script += `fi\n`;
+
+                                 items.push({
+                                              id: `discord-${client.name}`,
+                                              outputPath: outputPath,
+                                              script: script
+                                            });
                                });
 
-    return script;
+    return items;
   }
 
-  function processCodeClients(codeApp, colors, mode, homeDir) {
-    let script = "";
+  function buildCodeTemplateItems(codeApp, colors, homeDir) {
+    const items = [];
     const palette = ColorPaletteGenerator.generatePalette(colors, Settings.data.colorSchemes.darkMode, false);
 
     codeApp.clients.forEach(client => {
                               if (!isCodeClientEnabled(client.name))
                               return;
+
                               const templatePath = `${Quickshell.shellDir}/Assets/MatugenTemplates/${codeApp.input}`;
                               const outputPath = client.path.replace("~", homeDir);
                               const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
 
-                              // Extract base config directory for checking
-                              var baseConfigDir = "";
+                              let baseConfigDir = "";
                               if (client.name === "code") {
-                                baseConfigDir = "~/.vscode".replace("~", homeDir);
+                                baseConfigDir = homeDir + "/.vscode";
                               } else if (client.name === "codium") {
-                                baseConfigDir = "~/.vscode-oss".replace("~", homeDir);
+                                baseConfigDir = homeDir + "/.vscode-oss";
                               }
 
-                              script += `\n`;
+                              let script = "";
                               script += `if [ -d "${baseConfigDir}" ]; then\n`;
                               script += `  mkdir -p ${outputDir}\n`;
                               script += `  cp '${templatePath}' '${outputPath}'\n`;
                               script += `  ${replaceColorsInFile(outputPath, palette)}`;
-                              script += `else\n`;
-                              script += `  echo "Code client ${client.name} not found at ${baseConfigDir}, skipping"\n`;
                               script += `fi\n`;
+
+                              items.push({
+                                           id: `code-${client.name}`,
+                                           outputPath: outputPath,
+                                           script: script
+                                         });
                             });
 
-    return script;
+    return items;
   }
 
-  function processTemplate(app, colors, mode, homeDir) {
+  function buildAppTemplateItems(app, colors, mode, homeDir, schemeData) {
+    const items = [];
     const palette = ColorPaletteGenerator.generatePalette(colors, Settings.data.colorSchemes.darkMode, app.strict || false);
-    let script = "";
+
+    const hasDualModePatterns = app.dualMode || false;
+    let darkPalette, lightPalette;
+    if (hasDualModePatterns && schemeData) {
+      darkPalette = ColorPaletteGenerator.generatePalette(schemeData.dark, true, app.strict || false);
+      lightPalette = ColorPaletteGenerator.generatePalette(schemeData.light, false, app.strict || false);
+    }
 
     if (app.id === "emacs" && app.checkDoomFirst) {
       const doomPath = app.outputs[0].path.replace("~", homeDir);
       const doomDir = doomPath.substring(0, doomPath.lastIndexOf('/'));
-      const doomConfigDir = doomDir.substring(0, doomDir.lastIndexOf('/')); // ~/.config/doom
+      const doomConfigDir = doomDir.substring(0, doomDir.lastIndexOf('/'));
       const standardPath = app.outputs[1].path.replace("~", homeDir);
       const standardDir = standardPath.substring(0, standardPath.lastIndexOf('/'));
       const templatePath = `${Quickshell.shellDir}/Assets/MatugenTemplates/${app.input}`;
 
-      script += `\n`;
+      let script = "";
       script += `if [ -d "${doomConfigDir}" ]; then\n`;
       script += `  mkdir -p ${doomDir}\n`;
       script += `  cp '${templatePath}' '${doomPath}'\n`;
@@ -300,29 +344,45 @@ Singleton {
       script += `  cp '${templatePath}' '${standardPath}'\n`;
       script += replaceColorsInFile(standardPath, palette);
       script += `fi\n`;
+
+      items.push({
+                   id: app.id,
+                   outputPath: doomPath,
+                   script: script
+                 });
     } else {
-      app.outputs.forEach(output => {
+      app.outputs.forEach((output, idx) => {
                             const templatePath = `${Quickshell.shellDir}/Assets/MatugenTemplates/${app.input}`;
                             const outputPath = output.path.replace("~", homeDir);
                             const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
 
-                            script += `\n`;
+                            let script = "";
                             script += `mkdir -p ${outputDir}\n`;
                             script += `cp '${templatePath}' '${outputPath}'\n`;
                             script += replaceColorsInFile(outputPath, palette);
-                            script += `\n`;
+                            if (hasDualModePatterns && darkPalette && lightPalette) {
+                              script += replaceColorsInFileWithMode(outputPath, darkPalette, lightPalette);
+                            }
+
+                            // Add postProcess only on last output
+                            if (app.postProcess && idx === app.outputs.length - 1) {
+                              script += app.postProcess(mode);
+                            }
+
+                            items.push({
+                                         id: app.outputs.length > 1 ? `${app.id}-${idx}` : app.id,
+                                         outputPath: outputPath,
+                                         script: script
+                                       });
                           });
     }
 
-    if (app.postProcess) {
-      script += app.postProcess(mode);
-    }
-
-    return script;
+    return items;
   }
 
   function replaceColorsInFile(filePath, colors) {
-    let script = "";
+    let expressions = [];
+
     Object.keys(colors).forEach(colorKey => {
                                   const hexValue = colors[colorKey].default.hex;
                                   const hexStrippedValue = colors[colorKey].default.hex_stripped;
@@ -330,13 +390,40 @@ Singleton {
                                   const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                   const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-                                  // replace hex_stripped
-                                  script += `sed -i 's/{{colors\\.${colorKey}\\.default\\.hex_stripped}}/${escapedHexStripped}/g' '${filePath}'\n`;
-
-                                  // replace hex
-                                  script += `sed -i 's/{{colors\\.${colorKey}\\.default\\.hex}}/${escapedHex}/g' '${filePath}'\n`;
+                                  // Batch all replacements into a single sed command to avoid ARG_MAX limits
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hex_stripped}}/${escapedHexStripped}/g'`);
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hex}}/${escapedHex}/g'`);
                                 });
-    return script;
+    return `sed -i ${expressions.join(' ')} '${filePath}'\n`;
+  }
+
+  function replaceColorsInFileWithMode(filePath, darkColors, lightColors) {
+    let expressions = [];
+
+    // Replace dark mode patterns
+    Object.keys(darkColors).forEach(colorKey => {
+                                      const hexValue = darkColors[colorKey].default.hex;
+                                      const hexStrippedValue = darkColors[colorKey].default.hex_stripped;
+                                      const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                      const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hex_stripped}}/${escapedHexStripped}/g'`);
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hex}}/${escapedHex}/g'`);
+                                    });
+
+    // Replace light mode patterns
+    Object.keys(lightColors).forEach(colorKey => {
+                                       const hexValue = lightColors[colorKey].default.hex;
+                                       const hexStrippedValue = lightColors[colorKey].default.hex_stripped;
+                                       const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                       const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hex_stripped}}/${escapedHexStripped}/g'`);
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hex}}/${escapedHex}/g'`);
+                                     });
+
+    // Batch all replacements into a single sed command to avoid ARG_MAX limits
+    return `sed -i ${expressions.join(' ')} '${filePath}'\n`;
   }
 
   // ================================================================================
@@ -484,7 +571,8 @@ Singleton {
     onExited: function (exitCode) {
       if (exitCode !== 0) {
         const description = generateProcess.buildErrorMessage();
-        Logger.e("TemplateProcessor", "Process failed with exit code", exitCode, description);
+        Logger.e("TemplateProcessor", `Process failed (generator: ${generator}) with exit code`, exitCode, description);
+        Logger.d("TemplateProcessor", "Failed command:", command.join(" ").substring(0, 500));
       }
     }
 
@@ -493,6 +581,40 @@ Singleton {
         if (this.text)
         Logger.d("TemplateProcessor", "stdout:", this.text);
       }
+    }
+
+    stderr: StdioCollector {
+      onStreamFinished: {}
+    }
+  }
+
+  // ------------
+  // Process for queue-based template processing (predefined schemes)
+  Process {
+    id: templateProcess
+    workingDirectory: Quickshell.shellDir
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode !== 0) {
+        const ctx = currentTemplateContext;
+        const errText = stderr.text ? stderr.text.trim() : "";
+        const outText = stdout.text ? stdout.text.trim() : "";
+        const description = errText || outText || "Unknown error";
+
+        Logger.e("TemplateProcessor", `Template "${ctx?.id}" failed (exit code ${exitCode}): ${description}`);
+        if (ctx?.outputPath) {
+          Logger.e("TemplateProcessor", `  Output path: ${ctx.outputPath}`);
+        }
+        Logger.d("TemplateProcessor", `  Script: ${ctx?.script?.substring(0, 300)}`);
+      }
+
+      // Continue with next template regardless of success/failure
+      processNextTemplate();
+    }
+
+    stdout: StdioCollector {
+      onStreamFinished: {}
     }
 
     stderr: StdioCollector {

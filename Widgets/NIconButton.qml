@@ -13,7 +13,6 @@ Rectangle {
   property string icon
   property string tooltipText
   property string tooltipDirection: "auto"
-  property string density: ""
   property bool enabled: true
   property bool allowClickWhenDisabled: false
   property bool hovering: false
@@ -33,8 +32,8 @@ Rectangle {
   signal middleClicked
   signal wheel(int angleDelta)
 
-  implicitWidth: applyUiScale ? Math.round(baseSize * Style.uiScaleRatio) : Math.round(baseSize)
-  implicitHeight: applyUiScale ? Math.round(baseSize * Style.uiScaleRatio) : Math.round(baseSize)
+  implicitWidth: applyUiScale ? Style.toOdd(baseSize * Style.uiScaleRatio) : Style.toOdd(baseSize)
+  implicitHeight: applyUiScale ? Style.toOdd(baseSize * Style.uiScaleRatio) : Style.toOdd(baseSize)
 
   opacity: root.enabled ? Style.opacityFull : Style.opacityMedium
   color: root.enabled && root.hovering ? colorBgHover : colorBg
@@ -51,20 +50,12 @@ Rectangle {
 
   NIcon {
     icon: root.icon
-    pointSize: {
-      switch (root.density) {
-      case "compact":
-        return Math.max(1, root.width * 0.65);
-      default:
-        return Math.max(1, root.width * 0.48);
-      }
-    }
+    pointSize: Style.toOdd(root.width * 0.48)
     applyUiScale: root.applyUiScale
     color: root.enabled && root.hovering ? colorFgHover : colorFg
-    // Center horizontally
-    x: (root.width - width) / 2
-    // Center vertically accounting for font metrics
-    y: (root.height - height) / 2 + (height - contentHeight) / 2
+    // Pixel-perfect centering
+    x: Style.pixelAlignCenter(root.width, width)
+    y: Style.pixelAlignCenter(root.height, contentHeight)
 
     Behavior on color {
       ColorAnimation {

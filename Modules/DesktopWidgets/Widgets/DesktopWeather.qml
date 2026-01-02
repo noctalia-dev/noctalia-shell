@@ -44,47 +44,47 @@ DraggableDesktopWidget {
     return chunks[0];
   }
 
-  implicitWidth: Math.max(240 * Style.uiScaleRatio, contentLayout.implicitWidth + Style.marginM * 2)
-  implicitHeight: 64 * Style.uiScaleRatio + Style.marginM * 2
+  implicitWidth: Math.round(Math.max(240 * widgetScale, contentLayout.implicitWidth + Style.marginM * widgetScale * 2))
+  implicitHeight: Math.round(64 * widgetScale + Style.marginM * widgetScale * 2)
   width: implicitWidth
   height: implicitHeight
 
   RowLayout {
     id: contentLayout
     anchors.fill: parent
-    anchors.margins: Style.marginM
-    spacing: Style.marginM
+    anchors.margins: Math.round(Style.marginM * widgetScale)
+    spacing: Math.round(Style.marginM * widgetScale)
     z: 2
 
     Item {
-      Layout.preferredWidth: 64 * Style.uiScaleRatio
-      Layout.preferredHeight: 64 * Style.uiScaleRatio
+      Layout.preferredWidth: Math.round(64 * widgetScale)
+      Layout.preferredHeight: Math.round(64 * widgetScale)
       Layout.alignment: Qt.AlignVCenter
 
       NIcon {
         anchors.centerIn: parent
         icon: weatherReady ? LocationService.weatherSymbolFromCode(currentWeatherCode) : "cloud"
-        pointSize: Style.fontSizeXXXL * 2
+        pointSize: Math.round(Style.fontSizeXXXL * 2 * widgetScale)
         color: weatherReady ? Color.mPrimary : Color.mOnSurfaceVariant
       }
     }
 
     NText {
       text: weatherReady ? `${currentTemp}°${tempUnit}` : "---"
-      pointSize: Style.fontSizeXXXL
+      pointSize: Math.round(Style.fontSizeXXXL * widgetScale)
       font.weight: Style.fontWeightBold
       color: Color.mOnSurface
     }
 
     ColumnLayout {
       Layout.fillWidth: true
-      spacing: Style.marginXXS
+      spacing: Math.round(Style.marginXXS * widgetScale)
       Layout.alignment: Qt.AlignVCenter
 
       NText {
         Layout.fillWidth: true
         text: locationName || "No location"
-        pointSize: Style.fontSizeS
+        pointSize: Math.round(Style.fontSizeS * widgetScale)
         font.weight: Style.fontWeightRegular
         color: Color.mOnSurfaceVariant
         elide: Text.ElideRight
@@ -92,37 +92,35 @@ DraggableDesktopWidget {
       }
 
       RowLayout {
-        spacing: Style.marginXS
+        spacing: Math.round(Style.marginXS * widgetScale)
         visible: weatherReady && todayMax > 0 && todayMin > 0
 
         NText {
           text: "H:"
-          pointSize: Style.fontSizeXS
+          pointSize: Math.round(Style.fontSizeXS * widgetScale)
           color: Color.mOnSurfaceVariant
         }
         NText {
           text: `${todayMax}°`
-          pointSize: Style.fontSizeXS
-          font.weight: Style.fontWeightMedium
+          pointSize: Math.round(Style.fontSizeXS * widgetScale)
           color: Color.mOnSurface
         }
 
         NText {
           text: "•"
-          pointSize: Style.fontSizeXXS
+          pointSize: Math.round(Style.fontSizeXXS * widgetScale)
           color: Color.mOnSurfaceVariant
           opacity: 0.5
         }
 
         NText {
           text: "L:"
-          pointSize: Style.fontSizeXS
+          pointSize: Math.round(Style.fontSizeXS * widgetScale)
           color: Color.mOnSurfaceVariant
         }
         NText {
           text: `${todayMin}°`
-          pointSize: Style.fontSizeXS
-          font.weight: Style.fontWeightMedium
+          pointSize: Math.round(Style.fontSizeXS * widgetScale)
           color: Color.mOnSurfaceVariant
         }
       }

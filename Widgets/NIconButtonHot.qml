@@ -14,7 +14,6 @@ Rectangle {
   property string icon: ""
   property string tooltipText: ""
   property string tooltipDirection: "auto"
-  property string density: ""
   property bool enabled: true
   property bool allowClickWhenDisabled: false
   property bool hot: false

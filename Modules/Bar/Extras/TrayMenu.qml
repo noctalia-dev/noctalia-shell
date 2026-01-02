@@ -89,8 +89,8 @@ PopupWindow {
       // Calculate base Y offset (relative to anchor item)
       let baseY = anchorY;
       if (!isSubMenu && barPosition === "bottom") {
-        // For bottom bar, position menu above the anchor with margin
-        baseY = -(implicitHeight + Style.marginM);
+        // For bottom bar, position menu above the anchor with margin (adjusted to match widget menu positioning)
+        baseY = -(implicitHeight + Style.marginL + 2);
       }
 
       // Calculate position relative to current screen (not global coordinates)
@@ -424,7 +424,6 @@ PopupWindow {
             color: Color.mPrimary
             text: root.isPinned ? I18n.tr("settings.bar.tray.unpin-application") : I18n.tr("settings.bar.tray.pin-application")
             pointSize: Style.fontSizeS
-            font.weight: Font.Medium
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
           }

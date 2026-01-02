@@ -55,6 +55,23 @@ Item {
 
   readonly property bool shouldShow: (currentVisualizerType !== "" && currentVisualizerType !== "none") && (!hideWhenIdle || MediaService.isPlaying)
 
+  // Register/unregister with CavaService based on visibility
+  readonly property string cavaComponentId: "bar:audiovisualizer:" + root.screen.name + ":" + root.section + ":" + root.sectionWidgetIndex
+
+  onShouldShowChanged: {
+    if (root.shouldShow) {
+      CavaService.registerComponent(root.cavaComponentId);
+    } else {
+      CavaService.unregisterComponent(root.cavaComponentId);
+    }
+  }
+
+  Component.onDestruction: {
+    if (root.shouldShow) {
+      CavaService.unregisterComponent(root.cavaComponentId);
+    }
+  }
+
   implicitWidth: !shouldShow ? 0 : isVerticalBar ? Style.capsuleHeight : visualizerWidth
   implicitHeight: !shouldShow ? 0 : isVerticalBar ? visualizerWidth : Style.capsuleHeight
   visible: shouldShow

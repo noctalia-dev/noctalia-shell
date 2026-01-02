@@ -107,7 +107,7 @@ Singleton {
       "input": "vicinae.toml",
       "outputs": [
         {
-          "path": "~/.local/share/vicinae/themes/matugen.toml"
+          "path": "~/.local/share/vicinae/themes/noctalia.toml"
         }
       ],
       "postProcess": () => `cp --update=none ${Quickshell.shellDir}/Assets/noctalia.svg ~/.local/share/vicinae/themes/noctalia.svg && ${colorsApplyScript} vicinae`
@@ -204,12 +204,24 @@ Singleton {
     },
     {
       "id": "zed",
-      "name": "Zeditor",
+      "name": "Zed",
       "category": "applications",
       "input": "zed.json",
       "outputs": [
         {
           "path": "~/.config/zed/themes/noctalia.json"
+        }
+      ],
+      "dualMode": true // Template contains both dark and light theme patterns
+    },
+    {
+      "id": "helix",
+      "name": "Helix",
+      "category": "applications",
+      "input": "helix.toml",
+      "outputs": [
+        {
+          "path": "~/.config/helix/themes/noctalia.toml"
         }
       ]
     },
@@ -285,6 +297,18 @@ Singleton {
         }
       ],
       "postProcess": () => `${colorsApplyScript} niri`
+    },
+    {
+      "id": "hyprland",
+      "name": "Hyprland",
+      "category": "compositors",
+      "input": "hyprland.conf",
+      "outputs": [
+        {
+          "path": "~/.config/hypr/noctalia/noctalia-colors.conf"
+        }
+      ],
+      "postProcess": () => `${colorsApplyScript} hyprland`
     },
     {
       "id": "mango",

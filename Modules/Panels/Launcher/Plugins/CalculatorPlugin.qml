@@ -2,9 +2,12 @@ import QtQuick
 import "../../../../Helpers/AdvancedMath.js" as AdvancedMath
 import qs.Commons
 
+// Legacy calculator plugin for >calc command
+// TODO: Remove this plugin in 2-3 bussiness days
 Item {
   property var launcher: null
   property string name: I18n.tr("plugins.calculator")
+  property string iconMode: Settings.data.appLauncher.iconMode
 
   function handleCommand(query) {
     // Handle >calc command or direct math expressions after >
@@ -15,8 +18,9 @@ Item {
     return [
           {
             "name": ">calc",
-            "description": I18n.tr("plugins.calculator-description"),
-            "icon": "accessories-calculator",
+            "description": I18n.tr("plugins.calculator-deprecated"),
+            "icon": "alert-triangle",
+            "isTablerIcon": true,
             "isImage": false,
             "onActivate": function () {
               launcher.setSearchText(">calc ");
@@ -40,8 +44,9 @@ Item {
       return [
             {
               "name": I18n.tr("plugins.calculator-name"),
-              "description": I18n.tr("plugins.calculator-enter-expression"),
-              "icon": "accessories-calculator",
+              "description": I18n.tr("plugins.calculator-deprecated"),
+              "icon": "alert-triangle",
+              "isTablerIcon": true,
               "isImage": false,
               "onActivate": function () {}
             }
@@ -55,7 +60,8 @@ Item {
             {
               "name": AdvancedMath.formatResult(result),
               "description": `${expression} = ${result}`,
-              "icon": "accessories-calculator",
+              "icon": iconMode === "tabler" ? "calculator" : "accessories-calculator",
+              "isTablerIcon": true,
               "isImage": false,
               "onActivate": function () {
                 // TODO: copy entry to clipboard via ClipHist
@@ -68,7 +74,8 @@ Item {
             {
               "name": I18n.tr("plugins.calculator-error"),
               "description": error.message || "Invalid expression",
-              "icon": "dialog-error",
+              "icon": iconMode === "tabler" ? "circle-x" : "dialog-error",
+              "isTablerIcon": true,
               "isImage": false,
               "onActivate": function () {}
             }

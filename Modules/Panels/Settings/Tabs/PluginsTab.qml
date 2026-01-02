@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../../../../Helpers/FuzzySort.js" as Fuzzysort
 import qs.Commons
 import qs.Services.Noctalia
 import qs.Services.UI
@@ -60,7 +61,7 @@ ColumnLayout {
       function updateNext() {
         if (currentIndex >= pluginIds.length) {
           isUpdating = false;
-          ToastService.showNotice(I18n.tr("settings.plugins.update-all-success"));
+          ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.update-all-success"));
           return;
         }
 
@@ -96,11 +97,22 @@ ColumnLayout {
         var allIds = PluginRegistry.getAllInstalledPluginIds();
         var plugins = [];
         for (var i = 0; i < allIds.length; i++) {
-          var manifest = PluginRegistry.getPluginManifest(allIds[i]);
+          var compositeKey = allIds[i];
+          var manifest = PluginRegistry.getPluginManifest(compositeKey);
           if (manifest) {
-            // Create a copy of manifest and include update info
+            // Create a copy of manifest and include update info, enabled state, and source info
             var pluginData = JSON.parse(JSON.stringify(manifest));
-            pluginData._updateInfo = PluginService.pluginUpdates[allIds[i]];
+            pluginData.compositeKey = compositeKey;
+            pluginData.updateInfo = PluginService.pluginUpdates[compositeKey];
+            pluginData.enabled = PluginRegistry.isPluginEnabled(compositeKey);
+
+            // Add source info
+            var parsed = PluginRegistry.parseCompositeKey(compositeKey);
+            pluginData.isOfficial = parsed.isOfficial;
+            if (!parsed.isOfficial) {
+              pluginData.sourceName = PluginRegistry.getSourceNameByHash(parsed.sourceHash);
+            }
+
             plugins.push(pluginData);
           }
         }
@@ -123,7 +135,7 @@ ColumnLayout {
           NIcon {
             icon: "plugin"
             pointSize: Style.fontSizeXL
-            color: PluginService.hasPluginError(modelData.id) ? Color.mError : Color.mOnSurface
+            color: PluginService.hasPluginError(modelData.compositeKey) ? Color.mError : Color.mOnSurface
           }
 
           ColumnLayout {
@@ -132,7 +144,6 @@ ColumnLayout {
 
             NText {
               text: modelData.name
-              font.weight: Font.Medium
               color: Color.mOnSurface
               elide: Text.ElideRight
               Layout.fillWidth: true
@@ -152,13 +163,13 @@ ColumnLayout {
               spacing: Style.marginS
 
               NText {
-                text: modelData._updateInfo ? I18n.tr("settings.plugins.update-version", {
-                                                        "current": modelData.version,
-                                                        "new": modelData._updateInfo.availableVersion
-                                                      }) : "v" + modelData.version
+                text: modelData.updateInfo ? I18n.tr("settings.plugins.update-version", {
+                                                       "current": modelData.version,
+                                                       "new": modelData.updateInfo.availableVersion
+                                                     }) : "v" + modelData.version
                 font.pointSize: Style.fontSizeXXS
-                color: modelData._updateInfo ? Color.mPrimary : Color.mOnSurfaceVariant
-                font.weight: modelData._updateInfo ? Font.Medium : Font.Normal
+                color: modelData.updateInfo ? Color.mPrimary : Color.mOnSurfaceVariant
+                font.weight: modelData.updateInfo ? Style.fontWeightMedium : Style.fontWeightRegular
               }
 
               NText {
@@ -172,12 +183,27 @@ ColumnLayout {
                 font.pointSize: Style.fontSizeXXS
                 color: Color.mOnSurfaceVariant
               }
+
+              // Source indicator for non-official plugins
+              NText {
+                visible: !modelData.isOfficial
+                text: "•"
+                font.pointSize: Style.fontSizeXXS
+                color: Color.mOnSurfaceVariant
+              }
+
+              NText {
+                visible: !modelData.isOfficial
+                text: modelData.sourceName || I18n.tr("settings.plugins.source.custom")
+                font.pointSize: Style.fontSizeXXS
+                color: Color.mTertiary
+              }
             }
 
             // Error indicator
             RowLayout {
               spacing: Style.marginS
-              visible: PluginService.hasPluginError(modelData.id)
+              visible: PluginService.hasPluginError(modelData.compositeKey)
 
               NIcon {
                 icon: "alert-triangle"
@@ -186,7 +212,7 @@ ColumnLayout {
               }
 
               NText {
-                property var errorInfo: PluginService.getPluginError(modelData.id)
+                property var errorInfo: PluginService.getPluginError(modelData.compositeKey)
                 text: errorInfo ? errorInfo.error : ""
                 font.pointSize: Style.fontSizeXXS
                 color: Color.mError
@@ -208,23 +234,31 @@ ColumnLayout {
             }
           }
 
+          NIconButton {
+            icon: "trash"
+            tooltipText: I18n.tr("settings.plugins.uninstall")
+            baseSize: Style.baseWidgetSize * 0.7
+            onClicked: {
+              uninstallDialog.pluginToUninstall = modelData;
+              uninstallDialog.open();
+            }
+          }
+
           NButton {
             id: updateButton
-            property string pluginId: modelData.id
+            property string pluginId: modelData.compositeKey
             property bool isUpdating: root.updatingPlugins[pluginId] === true
 
-            text: isUpdating ? I18n.tr("settings.plugins.updating", {
-                                         "plugin": modelData.name
-                                       }) : I18n.tr("settings.plugins.update")
+            text: isUpdating ? I18n.tr("settings.plugins.updating") : I18n.tr("settings.plugins.update")
             icon: isUpdating ? "" : "download"
-            visible: modelData._updateInfo !== undefined
+            visible: modelData.updateInfo !== undefined
             enabled: !isUpdating
             backgroundColor: Color.mPrimary
             textColor: Color.mOnPrimary
             onClicked: {
               var pid = pluginId;
               var pname = modelData.name;
-              var pversion = modelData._updateInfo?.availableVersion || "";
+              var pversion = modelData.updateInfo?.availableVersion || "";
               var rootRef = root;
               var updates = Object.assign({}, rootRef.updatingPlugins);
               updates[pid] = true;
@@ -236,30 +270,30 @@ ColumnLayout {
                 rootRef.updatingPlugins = updates2;
 
                 if (success) {
-                  ToastService.showNotice(I18n.tr("settings.plugins.update-success", {
-                                                    "plugin": pname,
-                                                    "version": pversion
-                                                  }));
+                  ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.update-success", {
+                                                                                       "plugin": pname,
+                                                                                       "version": pversion
+                                                                                     }));
                 } else {
-                  ToastService.showError(I18n.tr("settings.plugins.update-error", {
-                                                   "plugin": pname,
-                                                   "error": error || "Unknown error"
-                                                 }));
+                  ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.update-error", {
+                                                                                      "plugin": pname,
+                                                                                      "error": error || "Unknown error"
+                                                                                    }));
                 }
               });
             }
           }
 
           NToggle {
-            checked: PluginRegistry.isPluginEnabled(modelData.id)
+            checked: modelData.enabled
             baseSize: Style.baseWidgetSize * 0.7
-            onToggled: function (checked) {
-              if (checked) {
-                PluginService.enablePlugin(modelData.id);
-              } else {
-                PluginService.disablePlugin(modelData.id);
-              }
-            }
+            onToggled: checked => {
+                         if (checked) {
+                           PluginService.enablePlugin(modelData.compositeKey);
+                         } else {
+                           PluginService.disablePlugin(modelData.compositeKey);
+                         }
+                       }
           }
         }
       }
@@ -318,7 +352,6 @@ ColumnLayout {
 
             NText {
               text: modelData.name
-              font.weight: Font.Medium
               color: Color.mOnSurface
               Layout.fillWidth: true
             }
@@ -349,11 +382,11 @@ ColumnLayout {
           NToggle {
             checked: modelData.enabled !== false // Default to true if not set
             baseSize: Style.baseWidgetSize * 0.7
-            onToggled: function (checked) {
-              PluginRegistry.setSourceEnabled(modelData.url, checked);
-              PluginService.refreshAvailablePlugins();
-              ToastService.showNotice(I18n.tr("settings.plugins.refresh.refreshing"));
-            }
+            onToggled: checked => {
+                         PluginRegistry.setSourceEnabled(modelData.url, checked);
+                         PluginService.refreshAvailablePlugins();
+                         ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.refresh.refreshing"));
+                       }
           }
         }
       }
@@ -378,6 +411,7 @@ ColumnLayout {
   RowLayout {
     spacing: Style.marginM
     Layout.fillWidth: true
+    Layout.topMargin: Style.marginM
     Layout.bottomMargin: Style.marginM
 
     NTabBar {
@@ -423,30 +457,23 @@ ColumnLayout {
       onClicked: {
         PluginService.refreshAvailablePlugins();
         checkUpdatesTimer.restart();
-        ToastService.showNotice(I18n.tr("settings.plugins.refresh.refreshing"));
+        ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.refresh.refreshing"));
       }
     }
   }
 
-  // Timer to check for updates after refresh starts
-  Timer {
-    id: checkUpdatesTimer
-    interval: 100
-    onTriggered: {
-      PluginService.checkForUpdates();
-    }
-  }
-
-  // Timer to recheck updates after available plugins are updated
-  Timer {
-    id: recheckUpdatesTimer
-    interval: 50
-    onTriggered: {
-      PluginService.checkForUpdates();
-    }
-  }
-
   property string pluginFilter: "all"
+  property string pluginSearchText: ""
+
+  // Search input
+  NTextInput {
+    placeholderText: I18n.tr("placeholders.search")
+    inputIconName: "search"
+    text: root.pluginSearchText
+    onTextChanged: root.pluginSearchText = text
+    Layout.fillWidth: true
+    Layout.bottomMargin: Style.marginL
+  }
 
   // Available plugins list
   ColumnLayout {
@@ -460,6 +487,7 @@ ColumnLayout {
         var all = PluginService.availablePlugins || [];
         var filtered = [];
 
+        // First apply download filter
         for (var i = 0; i < all.length; i++) {
           var plugin = all[i];
           var downloaded = plugin.downloaded || false;
@@ -473,105 +501,161 @@ ColumnLayout {
           }
         }
 
+        // Then apply fuzzy search if there's search text
+        var query = root.pluginSearchText.trim();
+        if (query !== "") {
+          var results = Fuzzysort.go(query, filtered, {
+                                       "keys": ["name", "description"],
+                                       "threshold": 0.35,
+                                       "limit": 50
+                                     });
+          filtered = [];
+          for (var j = 0; j < results.length; j++) {
+            filtered.push(results[j].obj);
+          }
+        } else {
+          // Sort by lastUpdated (most recent first) when not searching
+          filtered.sort(function (a, b) {
+            var dateA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+            var dateB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+            return dateB - dateA;
+          });
+        }
+
         return filtered;
       }
 
       delegate: NBox {
+        id: pluginBox
+        property bool isHovered: hoverHandler.hovered
+
         Layout.fillWidth: true
         Layout.leftMargin: Style.borderS
         Layout.rightMargin: Style.borderS
-        implicitHeight: Math.round(contentRow.implicitHeight + Style.marginL * 2)
+        implicitHeight: Math.round(contentColumn.implicitHeight + Style.marginL * 2)
         color: Color.mSurface
 
-        RowLayout {
-          id: contentRow
+        Behavior on implicitHeight {
+          NumberAnimation {
+            duration: 150
+            easing.type: Easing.OutCubic
+          }
+        }
+
+        HoverHandler {
+          id: hoverHandler
+        }
+
+        ColumnLayout {
+          id: contentColumn
           anchors.fill: parent
           anchors.margins: Style.marginL
-          spacing: Style.marginM
+          spacing: Style.marginS
 
-          NIcon {
-            icon: "plugin"
-            pointSize: Style.fontSizeXL
-            color: Color.mOnSurface
-          }
-
-          ColumnLayout {
-            spacing: 2
+          RowLayout {
+            spacing: Style.marginM
             Layout.fillWidth: true
+
+            NIcon {
+              icon: "plugin"
+              pointSize: Style.fontSizeL
+              color: Color.mOnSurface
+            }
 
             NText {
               text: modelData.name
-              font.weight: Font.Medium
               color: Color.mOnSurface
               elide: Text.ElideRight
+            }
+
+            // Description excerpt - visible when not hovered
+            NText {
+              visible: !pluginBox.isHovered && modelData.description
+              text: modelData.description || ""
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+              elide: Text.ElideRight
               Layout.fillWidth: true
+            }
+
+            // Spacer when hovered or no description
+            Item {
+              visible: pluginBox.isHovered || !modelData.description
+              Layout.fillWidth: true
+            }
+
+            // Downloaded indicator
+            NIcon {
+              icon: "circle-check"
+              pointSize: Style.fontSizeL
+              color: Color.mPrimary
+              visible: modelData.downloaded === true
+            }
+
+            // Install/Uninstall button
+            NIconButton {
+              icon: modelData.downloaded ? "trash" : "download"
+              baseSize: Style.baseWidgetSize * 0.7
+              tooltipText: modelData.downloaded ? I18n.tr("settings.plugins.uninstall") : I18n.tr("settings.plugins.install")
+              onClicked: {
+                if (modelData.downloaded) {
+                  uninstallDialog.pluginToUninstall = modelData;
+                  uninstallDialog.open();
+                } else {
+                  installPlugin(modelData);
+                }
+              }
+            }
+          }
+
+          // Description - visible on hover
+          NText {
+            visible: pluginBox.isHovered && modelData.description
+            text: modelData.description || ""
+            font.pointSize: Style.fontSizeXS
+            color: Color.mOnSurface
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+          }
+
+          // Details row - visible on hover
+          RowLayout {
+            visible: pluginBox.isHovered
+            spacing: Style.marginS
+            Layout.fillWidth: true
+
+            NText {
+              text: "v" + modelData.version
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
             }
 
             NText {
-              text: modelData.description
+              text: "•"
               font.pointSize: Style.fontSizeXS
               color: Color.mOnSurfaceVariant
-              wrapMode: Text.WordWrap
-              maximumLineCount: 2
-              elide: Text.ElideRight
+            }
+
+            NText {
+              text: stripAuthorEmail(modelData.author)
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
+            NText {
+              text: "•"
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
+            NText {
+              text: modelData.source ? modelData.source.name : ""
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
+            Item {
               Layout.fillWidth: true
-            }
-
-            RowLayout {
-              spacing: Style.marginS
-
-              NText {
-                text: "v" + modelData.version
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mOnSurfaceVariant
-              }
-
-              NText {
-                text: "•"
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mOnSurfaceVariant
-              }
-
-              NText {
-                text: stripAuthorEmail(modelData.author)
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mOnSurfaceVariant
-              }
-
-              NText {
-                text: "•"
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mOnSurfaceVariant
-              }
-
-              NText {
-                text: modelData.source?.name || "Unknown"
-                font.pointSize: Style.fontSizeXS
-                color: Color.mOnSurfaceVariant
-              }
-            }
-          }
-
-          // Downloaded indicator
-          NIcon {
-            icon: "circle-check"
-            pointSize: Style.fontSizeXL
-            color: Color.mPrimary
-            visible: modelData.downloaded === true
-          }
-
-          // Install/Uninstall button
-          NIconButton {
-            icon: modelData.downloaded ? "trash" : "download"
-            baseSize: Style.baseWidgetSize * 0.7
-            tooltipText: modelData.downloaded ? I18n.tr("settings.plugins.uninstall") : I18n.tr("settings.plugins.install")
-            onClicked: {
-              if (modelData.downloaded) {
-                uninstallDialog.pluginToUninstall = modelData;
-                uninstallDialog.open();
-              } else {
-                installPlugin(modelData);
-              }
             }
           }
         }
@@ -599,6 +683,7 @@ ColumnLayout {
   // Add source dialog
   Popup {
     id: addSourceDialog
+    parent: Overlay.overlay
     modal: true
     dim: false
     anchors.centerIn: parent
@@ -655,13 +740,13 @@ ColumnLayout {
           enabled: sourceNameInput.text.length > 0 && sourceUrlInput.text.length > 0
           onClicked: {
             if (PluginRegistry.addPluginSource(sourceNameInput.text, sourceUrlInput.text)) {
-              ToastService.showNotice(I18n.tr("settings.plugins.sources.add-dialog.success"));
+              ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.sources.add-dialog.success"));
               PluginService.refreshAvailablePlugins();
               addSourceDialog.close();
               sourceNameInput.text = "";
               sourceUrlInput.text = "";
             } else {
-              ToastService.showNotice(I18n.tr("settings.plugins.sources.add-dialog.error"));
+              ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.sources.add-dialog.error"));
             }
           }
         }
@@ -672,6 +757,7 @@ ColumnLayout {
   // Uninstall confirmation dialog
   Popup {
     id: uninstallDialog
+    parent: Overlay.overlay
     modal: true
     dim: false
     anchors.centerIn: parent
@@ -717,7 +803,7 @@ ColumnLayout {
           textColor: Color.mOnPrimary
           onClicked: {
             if (uninstallDialog.pluginToUninstall) {
-              root.uninstallPlugin(uninstallDialog.pluginToUninstall.id);
+              root.uninstallPlugin(uninstallDialog.pluginToUninstall.compositeKey);
               uninstallDialog.close();
             }
           }
@@ -733,26 +819,43 @@ ColumnLayout {
     showToastOnSave: true
   }
 
+  // Timer to check for updates after refresh starts
+  Timer {
+    id: checkUpdatesTimer
+    interval: 100
+    onTriggered: {
+      PluginService.checkForUpdates();
+    }
+  }
+
+  // Timer to recheck updates after available plugins are updated
+  Timer {
+    id: recheckUpdatesTimer
+    interval: 50
+    onTriggered: {
+      PluginService.checkForUpdates();
+    }
+  }
   // ------------------------------
   // Functions
   // ------------------------------
 
   function installPlugin(pluginMetadata) {
-    ToastService.showNotice(I18n.tr("settings.plugins.installing", {
-                                      "plugin": pluginMetadata.name
-                                    }));
+    ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.installing", {
+                                                                         "plugin": pluginMetadata.name
+                                                                       }));
 
-    PluginService.installPlugin(pluginMetadata, function (success, error) {
+    PluginService.installPlugin(pluginMetadata, false, function (success, error, registeredKey) {
       if (success) {
-        ToastService.showNotice(I18n.tr("settings.plugins.install-success", {
-                                          "plugin": pluginMetadata.name
-                                        }));
-        // Auto-enable the plugin after installation
-        PluginService.enablePlugin(pluginMetadata.id);
+        ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.install-success", {
+                                                                             "plugin": pluginMetadata.name
+                                                                           }));
+        // Auto-enable the plugin after installation (use registered key which may be composite)
+        PluginService.enablePlugin(registeredKey);
       } else {
-        ToastService.showNotice(I18n.tr("settings.plugins.install-error", {
-                                          "error": error || "Unknown error"
-                                        }));
+        ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.install-error", {
+                                                                            "error": error || "Unknown error"
+                                                                          }));
       }
     });
   }
@@ -761,19 +864,19 @@ ColumnLayout {
     var manifest = PluginRegistry.getPluginManifest(pluginId);
     var pluginName = manifest?.name || pluginId;
 
-    ToastService.showNotice(I18n.tr("settings.plugins.uninstalling", {
-                                      "plugin": pluginName
-                                    }));
+    ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.uninstalling", {
+                                                                         "plugin": pluginName
+                                                                       }));
 
     PluginService.uninstallPlugin(pluginId, function (success, error) {
       if (success) {
-        ToastService.showNotice(I18n.tr("settings.plugins.uninstall-success", {
-                                          "plugin": pluginName
-                                        }));
+        ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.uninstall-success", {
+                                                                             "plugin": pluginName
+                                                                           }));
       } else {
-        ToastService.showNotice(I18n.tr("settings.plugins.uninstall-error", {
-                                          "error": error || "Unknown error"
-                                        }));
+        ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.uninstall-error", {
+                                                                            "error": error || "Unknown error"
+                                                                          }));
       }
     });
   }
@@ -783,21 +886,8 @@ ColumnLayout {
     target: PluginRegistry
 
     function onPluginsChanged() {
-      // Force model refresh for installed plugins
-      installedPluginsRepeater.model = undefined;
-      Qt.callLater(function () {
-        installedPluginsRepeater.model = Qt.binding(function () {
-          var allIds = PluginRegistry.getAllInstalledPluginIds();
-          var plugins = [];
-          for (var i = 0; i < allIds.length; i++) {
-            var manifest = PluginRegistry.getPluginManifest(allIds[i]);
-            if (manifest) {
-              plugins.push(manifest);
-            }
-          }
-          return plugins;
-        });
-      });
+      // Force model refresh for installed plugins by incrementing counter
+      root.installedPluginsRefreshCounter++;
 
       // Force model refresh for plugin sources
       pluginSourcesRepeater.model = undefined;

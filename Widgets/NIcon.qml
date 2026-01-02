@@ -23,7 +23,7 @@ Text {
     return Icons.get(icon);
   }
   font.family: Icons.fontFamily
-  font.pointSize: applyUiScale ? root.pointSize * Style.uiScaleRatio : root.pointSize
+  font.pointSize: Math.max(1, applyUiScale ? root.pointSize * Style.uiScaleRatio : root.pointSize)
   color: Color.mOnSurface
   verticalAlignment: Text.AlignVCenter
   horizontalAlignment: Text.AlignHCenter

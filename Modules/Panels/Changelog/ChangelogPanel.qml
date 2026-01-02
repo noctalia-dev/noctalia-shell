@@ -16,19 +16,45 @@ SmartPanel {
   panelAnchorHorizontalCenter: true
   panelAnchorVerticalCenter: true
 
-  readonly property string currentVersion: UpdateService.changelogCurrentVersion || UpdateService.currentVersion
-  readonly property string previousVersion: UpdateService.previousVersion
-  readonly property bool hasPreviousVersion: previousVersion && previousVersion.length > 0
-  readonly property var releaseHighlights: UpdateService.releaseHighlights || []
-  readonly property string subtitleText: hasPreviousVersion ? I18n.tr("changelog.panel.subtitle.updated", {
-                                                                        "previousVersion": previousVersion
-                                                                      }) : I18n.tr("changelog.panel.subtitle.fresh")
-
   panelContent: Rectangle {
+    id: panelContent
     color: Color.mSurfaceVariant
     radius: Style.radiusM
     border.color: Color.mOutline
     border.width: Style.borderS
+
+    readonly property string currentVersion: UpdateService.changelogCurrentVersion || UpdateService.currentVersion
+    readonly property string previousVersion: UpdateService.previousVersion
+    readonly property bool hasPreviousVersion: previousVersion && previousVersion.length > 0
+    readonly property var releaseHighlights: UpdateService.releaseHighlights || []
+    readonly property string subtitleText: hasPreviousVersion ? I18n.tr("changelog.panel.subtitle.updated", {
+                                                                          "previousVersion": previousVersion
+                                                                        }) : I18n.tr("changelog.panel.subtitle.fresh")
+
+    function headingLevel(text) {
+      if (!text)
+        return 0;
+      const trimmed = text.trim();
+      if (trimmed.length === 0)
+        return 0;
+      const match = trimmed.match(/^(#+)\s+/);
+      if (!match)
+        return 0;
+      return Math.min(match[1].length, 2);
+    }
+
+    function formatReleaseDate(dateString) {
+      if (!dateString || dateString.length === 0)
+        return "";
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime()))
+          return dateString;
+        return Qt.formatDate(date, Qt.DefaultLocaleLongDate);
+      } catch (error) {
+        return dateString;
+      }
+    }
 
     ColumnLayout {
       anchors.fill: parent
@@ -148,7 +174,7 @@ SmartPanel {
                 Repeater {
                   model: modelData.entries
                   delegate: NText {
-                    readonly property int headingLevel: root.headingLevel(modelData)
+                    readonly property int headingLevel: panelContent.headingLevel(modelData)
                     text: {
                       if (modelData.length === 0)
                         return "\u00A0";
@@ -158,7 +184,7 @@ SmartPanel {
                     }
                     wrapMode: Text.WordWrap
                     elide: Text.ElideNone
-                    textFormat: Text.PlainText
+                    textFormat: Text.MarkdownText
                     color: headingLevel > 0 ? Color.mPrimary : Color.mOnSurface
                     font.weight: headingLevel > 0 ? Style.fontWeightBold : Style.fontWeightMedium
                     pointSize: headingLevel === 1 ? Style.fontSizeXXL : headingLevel === 2 ? Style.fontSizeXL : Style.fontSizeM
@@ -209,34 +235,9 @@ SmartPanel {
     }
   }
 
-  function headingLevel(text) {
-    if (!text)
-      return 0;
-    const trimmed = text.trim();
-    if (trimmed.length === 0)
-      return 0;
-    const match = trimmed.match(/^(#+)\s+/);
-    if (!match)
-      return 0;
-    return Math.min(match[1].length, 2);
-  }
-
   onClosed: {
     if (UpdateService && UpdateService.changelogCurrentVersion) {
       UpdateService.markChangelogSeen(UpdateService.changelogCurrentVersion);
-    }
-  }
-
-  function formatReleaseDate(dateString) {
-    if (!dateString || dateString.length === 0)
-      return "";
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime()))
-        return dateString;
-      return Qt.formatDate(date, Qt.DefaultLocaleLongDate);
-    } catch (error) {
-      return dateString;
     }
   }
 }

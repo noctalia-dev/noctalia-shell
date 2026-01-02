@@ -11,29 +11,22 @@ Singleton {
   id: root
 
   // Program availability properties
-  property bool matugenAvailable: false
-  property bool pywalfoxAvailable: false
-  property bool alacrittyAvailable: false
-  property bool kittyAvailable: false
-  property bool ghosttyAvailable: false
-  property bool footAvailable: false
-  property bool weztermAvailable: false
-  property bool fuzzelAvailable: false
-  property bool vicinaeAvailable: false
-  property bool walkerAvailable: false
   property bool gpuScreenRecorderAvailable: false
+  property bool matugenAvailable: false
+  property bool nmcliAvailable: false
   property bool wlsunsetAvailable: false
   property bool app2unitAvailable: false
-  property bool codeAvailable: false
   property bool gnomeCalendarAvailable: false
-  property bool spicetifyAvailable: false
-  property bool telegramAvailable: false
-  property bool cavaAvailable: false
-  property bool yaziAvailable: false
-  property bool emacsAvailable: false
-  property bool zedAvailable: false
-  property bool niriAvailable: false
-  property bool mangoAvailable: false
+
+  // Programs to check - maps property names to commands
+  readonly property var programsToCheck: ({
+                                            "gpuScreenRecorderAvailable": ["sh", "-c", "command -v gpu-screen-recorder >/dev/null 2>&1 || (command -v flatpak >/dev/null 2>&1 && flatpak list --app | grep -q 'com.dec05eba.gpu_screen_recorder')"],
+                                            "matugenAvailable": ["sh", "-c", "command -v matugen"],
+                                            "nmcliAvailable": ["sh", "-c", "command -v nmcli"],
+                                            "wlsunsetAvailable": ["sh", "-c", "command -v wlsunset"],
+                                            "app2unitAvailable": ["sh", "-c", "command -v app2unit"],
+                                            "gnomeCalendarAvailable": ["sh", "-c", "command -v gnome-calendar"]
+                                          })
 
   // Discord client auto-detection
   property var availableDiscordClients: []
@@ -170,33 +163,6 @@ Singleton {
     stdout: StdioCollector {}
     stderr: StdioCollector {}
   }
-
-  // Programs to check - maps property names to commands
-  readonly property var programsToCheck: ({
-                                            "matugenAvailable": ["which", "matugen"],
-                                            "pywalfoxAvailable": ["sh", "-c", "command -v pywalfox >/dev/null 2>&1 || test -x \"$HOME/.local/bin/pywalfox\""],
-                                            "alacrittyAvailable": ["which", "alacritty"],
-                                            "kittyAvailable": ["which", "kitty"],
-                                            "ghosttyAvailable": ["which", "ghostty"],
-                                            "footAvailable": ["which", "foot"],
-                                            "weztermAvailable": ["which", "wezterm"],
-                                            "fuzzelAvailable": ["which", "fuzzel"],
-                                            "vicinaeAvailable": ["sh", "-c", "command -v vicinae >/dev/null 2>&1 || (IFS=:; find $PATH -maxdepth 1 -iname 'vicinae*.appimage' -type f -executable 2>/dev/null | grep -q .)"],
-                                            "walkerAvailable": ["which", "walker"],
-                                            "app2unitAvailable": ["which", "app2unit"],
-                                            "gpuScreenRecorderAvailable": ["sh", "-c", "command -v gpu-screen-recorder >/dev/null 2>&1 || (command -v flatpak >/dev/null 2>&1 && flatpak list --app | grep -q 'com.dec05eba.gpu_screen_recorder')"],
-                                            "wlsunsetAvailable": ["which", "wlsunset"],
-                                            "codeAvailable": ["which", "code"],
-                                            "gnomeCalendarAvailable": ["which", "gnome-calendar"],
-                                            "spicetifyAvailable": ["which", "spicetify"],
-                                            "telegramAvailable": ["sh", "-c", "command -v telegram-desktop >/dev/null 2>&1 || command -v Telegram >/dev/null 2>&1 || (command -v flatpak >/dev/null 2>&1 && flatpak list --app | grep -q 'org.telegram.desktop')"],
-                                            "cavaAvailable": ["which", "cava"],
-                                            "yaziAvailable": ["which", "yazi"],
-                                            "zedAvailable": ["which", "zeditor"],
-                                            "emacsAvailable": ["sh", "-c", "test -d \"$HOME/.config/doom\" || test -d \"$HOME/.emacs.d\""],
-                                            "niriAvailable": ["which", "niri"],
-                                            "mangoAvailable": ["which", "mmsg"]
-                                          })
 
   // Internal tracking
   property int completedChecks: 0

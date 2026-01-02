@@ -7,16 +7,19 @@ import qs.Widgets
 RowLayout {
   id: root
 
-  property real minimumWidth: 200 * Style.uiScaleRatio
-  property real popupHeight: 180 * Style.uiScaleRatio
+  property real minimumWidth: 200
+  property real popupHeight: 180
 
   property string label: ""
   property string description: ""
   property var model
   property string currentKey: ""
   property string placeholder: ""
+  property bool isSettings: false
+  property var defaultValue: ""
+  property string settingsPath: ""
 
-  readonly property real preferredHeight: Style.baseWidgetSize * 1.1 * Style.uiScaleRatio
+  readonly property real preferredHeight: Math.round(Style.baseWidgetSize * 1.1)
   readonly property var comboBox: combo
 
   signal selected(string key)
@@ -24,6 +27,74 @@ RowLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
   opacity: enabled ? 1.0 : 0.6
+
+  // Less strict comparison with != (instead of !==) so it can properly compare int vs string (ex for FPS: 30 and "30")
+  readonly property bool isValueChanged: isSettings && (currentKey != defaultValue)
+
+  readonly property string indicatorTooltip: {
+    if (!isSettings)
+      return "";
+    var displayValue = "";
+    if (defaultValue === "") {
+      // Try to find the display name for empty key in the model
+      var found = false;
+      if (root.model) {
+        if (Array.isArray(root.model)) {
+          for (var i = 0; i < root.model.length; i++) {
+            var item = root.model[i];
+            if (item && item.key === "") {
+              displayValue = item.name || I18n.tr("settings.indicator.system-default");
+              found = true;
+              break;
+            }
+          }
+        } else if (typeof root.model.get === 'function') {
+          for (var i = 0; i < root.itemCount(); i++) {
+            var item = root.getItem(i);
+            if (item && item.key === "") {
+              displayValue = item.name || I18n.tr("settings.indicator.system-default");
+              found = true;
+              break;
+            }
+          }
+        }
+      }
+      // If not found in model, show "System Default" instead of "(empty)"
+      if (!found) {
+        displayValue = I18n.tr("settings.indicator.system-default");
+      }
+    } else {
+      // Try to find the display name for the default key in the model
+      var found = false;
+      if (root.model) {
+        if (Array.isArray(root.model)) {
+          for (var i = 0; i < root.model.length; i++) {
+            var item = root.model[i];
+            if (item && item.key === defaultValue) {
+              displayValue = item.name || String(defaultValue);
+              found = true;
+              break;
+            }
+          }
+        } else if (typeof root.model.get === 'function') {
+          for (var i = 0; i < root.itemCount(); i++) {
+            var item = root.getItem(i);
+            if (item && item.key === defaultValue) {
+              displayValue = item.name || String(defaultValue);
+              found = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!found) {
+        displayValue = String(defaultValue);
+      }
+    }
+    return I18n.tr("settings.indicator.default-value", {
+                     "value": displayValue
+                   });
+  }
 
   function itemCount() {
     if (!root.model)
@@ -57,13 +128,16 @@ RowLayout {
   NLabel {
     label: root.label
     description: root.description
+    showIndicator: root.isSettings && root.isValueChanged
+    indicatorTooltip: root.indicatorTooltip
   }
 
   ComboBox {
     id: combo
 
-    Layout.minimumWidth: root.minimumWidth
-    Layout.preferredHeight: root.preferredHeight
+    Layout.minimumWidth: Math.round(root.minimumWidth * Style.uiScaleRatio)
+    Layout.preferredHeight: Math.round(root.preferredHeight * Style.uiScaleRatio)
+    implicitWidth: Layout.minimumWidth
     model: root.model
     currentIndex: root.findIndexByKey(root.currentKey)
 
@@ -74,8 +148,8 @@ RowLayout {
     }
 
     background: Rectangle {
-      implicitWidth: Style.baseWidgetSize * 3.75
-      implicitHeight: root.preferredHeight
+      implicitWidth: Math.round(Style.baseWidgetSize * 3.75 * Style.uiScaleRatio)
+      implicitHeight: Math.round(root.preferredHeight * Style.uiScaleRatio)
       color: Color.mSurface
       border.color: combo.activeFocus ? Color.mSecondary : Color.mOutline
       border.width: Style.borderS
@@ -114,7 +188,7 @@ RowLayout {
     popup: Popup {
       y: combo.height
       implicitWidth: combo.width - Style.marginM
-      implicitHeight: Math.min(root.popupHeight, listView.contentHeight + Style.marginM * 2)
+      implicitHeight: Math.min(Math.round(root.popupHeight * Style.uiScaleRatio), listView.contentHeight + Style.marginM * 2)
       padding: Style.marginM
 
       contentItem: ListView {

@@ -12,16 +12,26 @@ ColumnLayout {
   property var widgetMetadata: null
 
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
-  property string valueVisualizerType: widgetData.visualizerType !== undefined ? widgetData.visualizerType : widgetMetadata.visualizerType
+  property string valueVisualizerType: (widgetData.visualizerType && widgetData.visualizerType !== "") ? widgetData.visualizerType : (widgetMetadata.visualizerType || "linear")
   property string valueHideMode: widgetData.hideMode !== undefined ? widgetData.hideMode : widgetMetadata.hideMode
-  property string valueVisualizerVisibility: widgetData.visualizerVisibility !== undefined ? widgetData.visualizerVisibility : (widgetMetadata.visualizerVisibility !== undefined ? widgetMetadata.visualizerVisibility : "always")
+  property bool valueShowButtons: widgetData.showButtons !== undefined ? widgetData.showButtons : (widgetMetadata.showButtons !== undefined ? widgetMetadata.showButtons : true)
+  property bool valueShowAlbumArt: widgetData.showAlbumArt !== undefined ? widgetData.showAlbumArt : (widgetMetadata.showAlbumArt !== undefined ? widgetMetadata.showAlbumArt : true)
+  property bool valueShowVisualizer: widgetData.showVisualizer !== undefined ? widgetData.showVisualizer : (widgetMetadata.showVisualizer !== undefined ? widgetMetadata.showVisualizer : true)
+  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : (widgetMetadata.roundedCorners !== undefined ? widgetMetadata.roundedCorners : true)
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showBackground = valueShowBackground;
     settings.visualizerType = valueVisualizerType;
     settings.hideMode = valueHideMode;
-    settings.visualizerVisibility = valueVisualizerVisibility;
+    settings.showButtons = valueShowButtons;
+    settings.showAlbumArt = valueShowAlbumArt;
+    settings.showVisualizer = valueShowVisualizer;
+    settings.roundedCorners = valueRoundedCorners;
+
+    // Clean up legacy property
+    delete settings.visualizerVisibility;
+
     return settings;
   }
 
@@ -33,15 +43,44 @@ ColumnLayout {
     onToggled: checked => valueShowBackground = checked
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.desktop-widgets.media-player.rounded-corners.label")
+    description: I18n.tr("settings.desktop-widgets.media-player.rounded-corners.description")
+    checked: valueRoundedCorners
+    onToggled: checked => valueRoundedCorners = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.desktop-widgets.media-player.show-album-art.label")
+    description: I18n.tr("settings.desktop-widgets.media-player.show-album-art.description")
+    checked: valueShowAlbumArt
+    onToggled: checked => valueShowAlbumArt = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.desktop-widgets.media-player.show-visualizer.label")
+    description: I18n.tr("settings.desktop-widgets.media-player.show-visualizer.description")
+    checked: valueShowVisualizer
+    onToggled: checked => valueShowVisualizer = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("settings.desktop-widgets.media-player.show-buttons.label")
+    description: I18n.tr("settings.desktop-widgets.media-player.show-buttons.description")
+    checked: valueShowButtons
+    onToggled: checked => valueShowButtons = checked
+  }
+
   NComboBox {
     Layout.fillWidth: true
     label: I18n.tr("settings.desktop-widgets.media-player.visualizer-type.label")
     description: I18n.tr("settings.desktop-widgets.media-player.visualizer-type.description")
+    enabled: valueShowVisualizer
     model: [
-      {
-        "key": "",
-        "name": I18n.tr("options.visualizer-types.none")
-      },
       {
         "key": "linear",
         "name": I18n.tr("options.visualizer-types.linear")
@@ -57,25 +96,6 @@ ColumnLayout {
     ]
     currentKey: valueVisualizerType
     onSelected: key => valueVisualizerType = key
-  }
-
-  NComboBox {
-    Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.media-player.visualizer-visibility.label")
-    description: I18n.tr("settings.desktop-widgets.media-player.visualizer-visibility.description")
-    enabled: valueVisualizerType && valueVisualizerType !== "" && valueVisualizerType !== "none"
-    model: [
-      {
-        "key": "always",
-        "name": I18n.tr("options.visualizer-visibility.always")
-      },
-      {
-        "key": "with-background",
-        "name": I18n.tr("options.visualizer-visibility.with-background")
-      }
-    ]
-    currentKey: valueVisualizerVisibility
-    onSelected: key => valueVisualizerVisibility = key
   }
 
   NComboBox {

@@ -19,6 +19,9 @@ Singleton {
   readonly property string envRealName: (Quickshell.env("NOCTALIA_REALNAME") || "")
   property string realName: ""
 
+  // Internal: pending logo name for fallback after probe fails
+  property string pendingLogoName: ""
+
   readonly property string displayName: {
     // Explicit override
     if (envRealName && envRealName.length > 0) {
@@ -85,9 +88,34 @@ Singleton {
   }
 
   function resolveLogo(name) {
-    const all = buildCandidates(name);
-    if (all.length === 0)
+    const n = (name || "").trim();
+    if (!n)
       return;
+
+    // First try Quickshell's icon lookup for direct file paths
+    try {
+      const path = Quickshell.iconPath(n, "");
+      if (path && path !== "" && !path.startsWith("image://")) {
+        // Got a direct file path - use it
+        const finalPath = path.startsWith("file://") ? path : "file://" + path;
+        root.osLogo = finalPath;
+        Logger.d("HostService", "Found logo via icon theme:", root.osLogo);
+        return;
+      }
+    } catch (e) {
+      // Ignore and continue to manual probe
+    }
+
+    // Try manual probing for hicolor/pixmaps paths
+    // Store name for fallback to image:// URI if probe fails
+    root.pendingLogoName = n;
+    const all = buildCandidates(n);
+    if (all.length === 0) {
+      // No candidates, try image:// URI directly
+      root.osLogo = `image://icon/${n}`;
+      Logger.d("HostService", "Using theme icon URI:", root.osLogo);
+      return;
+    }
     const script = all.map(p => `if [ -f "${p}" ]; then echo "${p}"; exit 0; fi`).join("; ") + "; exit 1";
     probe.command = ["sh", "-c", script];
     probe.running = true;
@@ -110,6 +138,7 @@ Singleton {
         const osId = (val("ID") || "").toLowerCase();
         root.isNixOS = osId === "nixos" || (root.osPretty || "").toLowerCase().includes("nixos");
         const logoName = val("LOGO");
+        Logger.i("HostService", "Looking for logo icon:", logoName);
         if (logoName) {
           resolveLogo(logoName);
         }
@@ -126,10 +155,16 @@ Singleton {
       const p = String(stdout.text || "").trim();
       if (code === 0 && p) {
         root.osLogo = `file://${p}`;
+        root.pendingLogoName = "";
         Logger.d("HostService", "Found", root.osLogo);
+      } else if (root.pendingLogoName) {
+        // Manual probe failed, fallback to image:// URI (theme icon)
+        root.osLogo = `image://icon/${root.pendingLogoName}`;
+        root.pendingLogoName = "";
+        Logger.d("HostService", "Using theme icon URI:", root.osLogo);
       } else {
         root.osLogo = "";
-        Logger.w("HostService", "None logo found");
+        Logger.w("HostService", "No distro logo found");
       }
     }
     stdout: StdioCollector {}

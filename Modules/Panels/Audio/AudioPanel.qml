@@ -11,265 +11,268 @@ import qs.Widgets
 SmartPanel {
   id: root
 
-  property real localOutputVolume: AudioService.volume || 0
-  property bool localOutputVolumeChanging: false
-  property int lastSinkId: -1
-
-  property real localInputVolume: AudioService.inputVolume || 0
-  property bool localInputVolumeChanging: false
-  property int lastSourceId: -1
-
-  property int currentTabIndex: 0
-
-  // Find application streams that are actually playing audio (connected to default sink)
-  // Use linkGroups to find nodes connected to the default audio sink
-  // Note: We need to use link IDs since source/target properties require binding
-  readonly property var appStreams: {
-    if (!Pipewire.ready || !AudioService.sink) {
-      return [];
-    }
-
-    var defaultSink = AudioService.sink;
-    var defaultSinkId = defaultSink.id;
-    var connectedStreamIds = {};
-    var connectedStreams = [];
-
-    // Use PwNodeLinkTracker to get properly bound link groups
-    if (!sinkLinkTracker.linkGroups) {
-      return [];
-    }
-
-    // Check if linkGroups is an array or ObjectModel
-    var linkGroupsCount = 0;
-    if (sinkLinkTracker.linkGroups.length !== undefined) {
-      linkGroupsCount = sinkLinkTracker.linkGroups.length;
-    } else if (sinkLinkTracker.linkGroups.count !== undefined) {
-      linkGroupsCount = sinkLinkTracker.linkGroups.count;
-    } else {
-      return [];
-    }
-
-    if (linkGroupsCount === 0) {
-      return [];
-    }
-
-    // Collect intermediate node IDs that are connected to the sink
-    var intermediateNodeIds = {};
-
-    // Process link groups from sinkLinkTracker
-    var nodesToCheck = [];
-
-    for (var i = 0; i < linkGroupsCount; i++) {
-      var linkGroup;
-      if (sinkLinkTracker.linkGroups.get) {
-        linkGroup = sinkLinkTracker.linkGroups.get(i);
-      } else {
-        linkGroup = sinkLinkTracker.linkGroups[i];
-      }
-
-      if (!linkGroup || !linkGroup.source) {
-        continue;
-      }
-
-      var sourceNode = linkGroup.source;
-
-      // If it's a stream node, add it directly
-      if (sourceNode.isStream && sourceNode.audio) {
-        if (!connectedStreamIds[sourceNode.id]) {
-          connectedStreamIds[sourceNode.id] = true;
-          connectedStreams.push(sourceNode);
-        }
-      } else {
-        // Not a stream - this is an intermediate node, track it
-        intermediateNodeIds[sourceNode.id] = true;
-        nodesToCheck.push(sourceNode);
-      }
-    }
-
-    // If we found intermediate nodes, we need to find streams connected to them
-    // Since Pipewire.linkGroups is not directly accessible, we'll use a heuristic:
-    // When intermediate nodes are present, include all active stream nodes
-    // (reasonable assumption: if audio is playing, streams are connected)
-    if (nodesToCheck.length > 0 || connectedStreams.length === 0) {
-      try {
-        // Get all nodes from Pipewire
-        var allNodes = [];
-        if (Pipewire.nodes) {
-          if (Pipewire.nodes.count !== undefined) {
-            var nodeCount = Pipewire.nodes.count;
-            for (var n = 0; n < nodeCount; n++) {
-              var node;
-              if (Pipewire.nodes.get) {
-                node = Pipewire.nodes.get(n);
-              } else {
-                node = Pipewire.nodes[n];
-              }
-              if (node)
-                allNodes.push(node);
-            }
-          } else if (Pipewire.nodes.values) {
-            allNodes = Pipewire.nodes.values;
-          }
-        }
-
-        // Find all stream nodes
-        for (var j = 0; j < allNodes.length; j++) {
-          var node = allNodes[j];
-          if (!node || !node.isStream || !node.audio) {
-            continue;
-          }
-
-          var streamId = node.id;
-          if (connectedStreamIds[streamId]) {
-            continue; // Already added
-          }
-
-          // When intermediate nodes are present, include all stream nodes
-          // This is a reasonable heuristic since if audio is playing, they're likely connected
-          if (Object.keys(intermediateNodeIds).length > 0) {
-            connectedStreamIds[streamId] = true;
-            connectedStreams.push(node);
-          } else if (connectedStreams.length === 0) {
-            // Fallback: if no streams found yet, include as fallback
-            connectedStreamIds[streamId] = true;
-            connectedStreams.push(node);
-          }
-        }
-      } catch (e)
-        // Error finding stream nodes - continue with what we have
-      {}
-    }
-
-    return connectedStreams;
-  }
-
-  // Track links to the default sink using PwNodeLinkTracker (properly binds links)
-  PwNodeLinkTracker {
-    id: sinkLinkTracker
-    node: AudioService.sink
-  }
-
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(420 * Style.uiScaleRatio)
 
-  Component.onCompleted: {
-    var vol = AudioService.volume;
-    localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-    var inputVol = AudioService.inputVolume;
-    localInputVolume = (inputVol !== undefined && !isNaN(inputVol)) ? inputVol : 0;
-    if (AudioService.sink) {
-      lastSinkId = AudioService.sink.id;
-    }
-    if (AudioService.source) {
-      lastSourceId = AudioService.source.id;
-    }
-  }
-
-  // Reset local volume when device changes - use current device's volume
-  Connections {
-    target: AudioService
-    function onSinkChanged() {
-      if (AudioService.sink) {
-        const newSinkId = AudioService.sink.id;
-        if (newSinkId !== lastSinkId) {
-          lastSinkId = newSinkId;
-          // Immediately set local volume to current device's volume
-          var vol = AudioService.volume;
-          localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-        }
-      } else {
-        lastSinkId = -1;
-        localOutputVolume = 0;
-      }
-    }
-  }
-
-  Connections {
-    target: AudioService
-    function onSourceChanged() {
-      if (AudioService.source) {
-        const newSourceId = AudioService.source.id;
-        if (newSourceId !== lastSourceId) {
-          lastSourceId = newSourceId;
-          // Immediately set local volume to current device's volume
-          var vol = AudioService.inputVolume;
-          localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-        }
-      } else {
-        lastSourceId = -1;
-        localInputVolume = 0;
-      }
-    }
-  }
-
-  // Connections to update local volumes when AudioService changes
-  Connections {
-    target: AudioService
-    function onVolumeChanged() {
-      if (!localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === lastSinkId) {
-        var vol = AudioService.volume;
-        localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-      }
-    }
-  }
-
-  Connections {
-    target: AudioService.sink?.audio ? AudioService.sink?.audio : null
-    function onVolumeChanged() {
-      if (!localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === lastSinkId) {
-        var vol = AudioService.volume;
-        localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-      }
-    }
-  }
-
-  Connections {
-    target: AudioService
-    function onInputVolumeChanged() {
-      if (!localInputVolumeChanging && AudioService.source && AudioService.source.id === lastSourceId) {
-        var vol = AudioService.inputVolume;
-        localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-      }
-    }
-  }
-
-  Connections {
-    target: AudioService.source?.audio ? AudioService.source?.audio : null
-    function onVolumeChanged() {
-      if (!localInputVolumeChanging && AudioService.source && AudioService.source.id === lastSourceId) {
-        var vol = AudioService.inputVolume;
-        localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
-      }
-    }
-  }
-
-  // Timer to debounce volume changes
-  // Only sync if the device hasn't changed (check by comparing IDs)
-  Timer {
-    interval: 100
-    running: true
-    repeat: true
-    onTriggered: {
-      // Only sync if sink hasn't changed
-      if (AudioService.sink && AudioService.sink.id === lastSinkId) {
-        if (Math.abs(localOutputVolume - AudioService.volume) >= 0.01) {
-          AudioService.setVolume(localOutputVolume);
-        }
-      }
-      // Only sync if source hasn't changed
-      if (AudioService.source && AudioService.source.id === lastSourceId) {
-        if (Math.abs(localInputVolume - AudioService.inputVolume) >= 0.01) {
-          AudioService.setInputVolume(localInputVolume);
-        }
-      }
-    }
-  }
-
   panelContent: Item {
+    id: panelContent
+
+    // Volume state (lazy-loaded with panelContent)
+    property real localOutputVolume: AudioService.volume || 0
+    property bool localOutputVolumeChanging: false
+    property int lastSinkId: -1
+
+    property real localInputVolume: AudioService.inputVolume || 0
+    property bool localInputVolumeChanging: false
+    property int lastSourceId: -1
+
+    // UI state (lazy-loaded with panelContent)
+    property int currentTabIndex: 0
+
+    Component.onCompleted: {
+      var vol = AudioService.volume;
+      localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+      var inputVol = AudioService.inputVolume;
+      localInputVolume = (inputVol !== undefined && !isNaN(inputVol)) ? inputVol : 0;
+      if (AudioService.sink) {
+        lastSinkId = AudioService.sink.id;
+      }
+      if (AudioService.source) {
+        lastSourceId = AudioService.source.id;
+      }
+    }
+
+    // Reset local volume when device changes - use current device's volume
+    Connections {
+      target: AudioService
+      function onSinkChanged() {
+        if (AudioService.sink) {
+          const newSinkId = AudioService.sink.id;
+          if (newSinkId !== panelContent.lastSinkId) {
+            panelContent.lastSinkId = newSinkId;
+            // Immediately set local volume to current device's volume
+            var vol = AudioService.volume;
+            panelContent.localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+          }
+        } else {
+          panelContent.lastSinkId = -1;
+          panelContent.localOutputVolume = 0;
+        }
+      }
+    }
+
+    Connections {
+      target: AudioService
+      function onSourceChanged() {
+        if (AudioService.source) {
+          const newSourceId = AudioService.source.id;
+          if (newSourceId !== panelContent.lastSourceId) {
+            panelContent.lastSourceId = newSourceId;
+            // Immediately set local volume to current device's volume
+            var vol = AudioService.inputVolume;
+            panelContent.localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+          }
+        } else {
+          panelContent.lastSourceId = -1;
+          panelContent.localInputVolume = 0;
+        }
+      }
+    }
+
+    // Connections to update local volumes when AudioService changes
+    Connections {
+      target: AudioService
+      function onVolumeChanged() {
+        if (!panelContent.localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === panelContent.lastSinkId) {
+          var vol = AudioService.volume;
+          panelContent.localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+        }
+      }
+    }
+
+    Connections {
+      target: AudioService.sink?.audio ? AudioService.sink?.audio : null
+      function onVolumeChanged() {
+        if (!panelContent.localOutputVolumeChanging && AudioService.sink && AudioService.sink.id === panelContent.lastSinkId) {
+          var vol = AudioService.volume;
+          panelContent.localOutputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+        }
+      }
+    }
+
+    Connections {
+      target: AudioService
+      function onInputVolumeChanged() {
+        if (!panelContent.localInputVolumeChanging && AudioService.source && AudioService.source.id === panelContent.lastSourceId) {
+          var vol = AudioService.inputVolume;
+          panelContent.localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+        }
+      }
+    }
+
+    Connections {
+      target: AudioService.source?.audio ? AudioService.source?.audio : null
+      function onVolumeChanged() {
+        if (!panelContent.localInputVolumeChanging && AudioService.source && AudioService.source.id === panelContent.lastSourceId) {
+          var vol = AudioService.inputVolume;
+          panelContent.localInputVolume = (vol !== undefined && !isNaN(vol)) ? vol : 0;
+        }
+      }
+    }
+
+    // Timer to debounce volume changes
+    // Only sync if the device hasn't changed (check by comparing IDs)
+    Timer {
+      interval: 100
+      running: true
+      repeat: true
+      onTriggered: {
+        // Only sync if sink hasn't changed
+        if (AudioService.sink && AudioService.sink.id === panelContent.lastSinkId) {
+          if (Math.abs(panelContent.localOutputVolume - AudioService.volume) >= 0.01) {
+            AudioService.setVolume(panelContent.localOutputVolume);
+          }
+        }
+        // Only sync if source hasn't changed
+        if (AudioService.source && AudioService.source.id === panelContent.lastSourceId) {
+          if (Math.abs(panelContent.localInputVolume - AudioService.inputVolume) >= 0.01) {
+            AudioService.setInputVolume(panelContent.localInputVolume);
+          }
+        }
+      }
+    }
+
+    // Find application streams that are actually playing audio (connected to default sink)
+    // Use linkGroups to find nodes connected to the default audio sink
+    // Note: We need to use link IDs since source/target properties require binding
+    readonly property var appStreams: {
+      if (!Pipewire.ready || !AudioService.sink) {
+        return [];
+      }
+
+      var defaultSink = AudioService.sink;
+      var defaultSinkId = defaultSink.id;
+      var connectedStreamIds = {};
+      var connectedStreams = [];
+
+      // Use PwNodeLinkTracker to get properly bound link groups
+      if (!sinkLinkTracker.linkGroups) {
+        return [];
+      }
+
+      // Check if linkGroups is an array or ObjectModel
+      var linkGroupsCount = 0;
+      if (sinkLinkTracker.linkGroups.length !== undefined) {
+        linkGroupsCount = sinkLinkTracker.linkGroups.length;
+      } else if (sinkLinkTracker.linkGroups.count !== undefined) {
+        linkGroupsCount = sinkLinkTracker.linkGroups.count;
+      } else {
+        return [];
+      }
+
+      if (linkGroupsCount === 0) {
+        return [];
+      }
+
+      // Collect intermediate node IDs that are connected to the sink
+      var intermediateNodeIds = {};
+
+      // Process link groups from sinkLinkTracker
+      var nodesToCheck = [];
+
+      for (var i = 0; i < linkGroupsCount; i++) {
+        var linkGroup;
+        if (sinkLinkTracker.linkGroups.get) {
+          linkGroup = sinkLinkTracker.linkGroups.get(i);
+        } else {
+          linkGroup = sinkLinkTracker.linkGroups[i];
+        }
+
+        if (!linkGroup || !linkGroup.source) {
+          continue;
+        }
+
+        var sourceNode = linkGroup.source;
+
+        // If it's a stream node, add it directly
+        if (sourceNode.isStream && sourceNode.audio) {
+          if (!connectedStreamIds[sourceNode.id]) {
+            connectedStreamIds[sourceNode.id] = true;
+            connectedStreams.push(sourceNode);
+          }
+        } else {
+          // Not a stream - this is an intermediate node, track it
+          intermediateNodeIds[sourceNode.id] = true;
+          nodesToCheck.push(sourceNode);
+        }
+      }
+
+      // If we found intermediate nodes, we need to find streams connected to them
+      // Since Pipewire.linkGroups is not directly accessible, we'll use a heuristic:
+      // When intermediate nodes are present, include all active stream nodes
+      // (reasonable assumption: if audio is playing, streams are connected)
+      if (nodesToCheck.length > 0 || connectedStreams.length === 0) {
+        try {
+          // Get all nodes from Pipewire
+          var allNodes = [];
+          if (Pipewire.nodes) {
+            if (Pipewire.nodes.count !== undefined) {
+              var nodeCount = Pipewire.nodes.count;
+              for (var n = 0; n < nodeCount; n++) {
+                var node;
+                if (Pipewire.nodes.get) {
+                  node = Pipewire.nodes.get(n);
+                } else {
+                  node = Pipewire.nodes[n];
+                }
+                if (node)
+                  allNodes.push(node);
+              }
+            } else if (Pipewire.nodes.values) {
+              allNodes = Pipewire.nodes.values;
+            }
+          }
+
+          // Find all stream nodes
+          for (var j = 0; j < allNodes.length; j++) {
+            var node = allNodes[j];
+            if (!node || !node.isStream || !node.audio) {
+              continue;
+            }
+
+            var streamId = node.id;
+            if (connectedStreamIds[streamId]) {
+              continue; // Already added
+            }
+
+            // When intermediate nodes are present, include all stream nodes
+            // This is a reasonable heuristic since if audio is playing, they're likely connected
+            if (Object.keys(intermediateNodeIds).length > 0) {
+              connectedStreamIds[streamId] = true;
+              connectedStreams.push(node);
+            } else if (connectedStreams.length === 0) {
+              // Fallback: if no streams found yet, include as fallback
+              connectedStreamIds[streamId] = true;
+              connectedStreams.push(node);
+            }
+          }
+        } catch (e)
+          // Error finding stream nodes - continue with what we have
+        {}
+      }
+
+      return connectedStreams;
+    }
+
+    // Track links to the default sink using PwNodeLinkTracker (properly binds links)
+    PwNodeLinkTracker {
+      id: sinkLinkTracker
+      node: AudioService.sink
+    }
+
     // Use implicitHeight from content + margins to avoid binding loops
     property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
 
-    // property real contentPreferredHeight: Math.min(screen.height * 0.42, mainColumn.implicitHeight) + Style.marginL * 2
     ColumnLayout {
       id: mainColumn
       anchors.fill: parent
@@ -316,8 +319,8 @@ SmartPanel {
       NTabBar {
         id: tabBar
         Layout.fillWidth: true
-        currentIndex: root.currentTabIndex
-        onCurrentIndexChanged: root.currentTabIndex = currentIndex
+        currentIndex: panelContent.currentTabIndex
+        onCurrentIndexChanged: panelContent.currentTabIndex = currentIndex
 
         NTabButton {
           Layout.fillWidth: true
@@ -340,7 +343,7 @@ SmartPanel {
       StackLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        currentIndex: root.currentTabIndex
+        currentIndex: panelContent.currentTabIndex
 
         // Applications Tab (Volume)
         NScrollView {
@@ -486,11 +489,11 @@ SmartPanel {
             // Bind all app stream nodes to access their audio properties
             PwObjectTracker {
               id: appStreamsTracker
-              objects: root.appStreams
+              objects: panelContent.appStreams
             }
 
             Repeater {
-              model: root.appStreams
+              model: panelContent.appStreams
 
               NBox {
                 id: appBox
@@ -745,9 +748,6 @@ SmartPanel {
                           appBox.nodeAudio.volume = value;
                         }
                       }
-                      onPressedChanged: function (pressed) {
-                        appBox.volumeChanging = pressed;
-                      }
                       text: Math.round((appBox.appVolume !== undefined ? appBox.appVolume : 0.0) * 100) + "%"
                     }
                   }
@@ -770,7 +770,7 @@ SmartPanel {
 
             // Empty state
             NText {
-              visible: root.appStreams.length === 0
+              visible: panelContent.appStreams.length === 0
               text: I18n.tr("settings.audio.panel.applications.empty")
               pointSize: Style.fontSizeM
               color: Color.mOnSurfaceVariant

@@ -44,7 +44,7 @@ body {
   --custom-dms-icon: custom; /* off: use default discord icon, hide: remove icon entirely, custom: use custom icon */
   --dms-icon-svg-url: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB3aWR0aD0iMjU2IgogICBoZWlnaHQ9IjI1NiIKICAgdmlld0JveD0iMCAwIDY3LjczMzMzNCA2Ny43MzMzMzQiCiAgIHZlcnNpb249IjEuMSIKICAgaWQ9InN2ZzEiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGRlZnMKICAgICBpZD0iZGVmczEiIC8+CiAgPGcKICAgICBpZD0iZzEiCiAgICAgdHJhbnNmb3JtPSJtYXRyaXgoMS4xMDEwODY5LDAsMCwxLjEwMTA4NjksLTMuNDIzODM0NywtMy40MjM0ODkzKSI+CiAgICA8ZwogICAgICAgaWQ9Imc1NSIKICAgICAgIHN0eWxlPSJmaWxsOiMwMDAwMDA7ZmlsbC1vcGFjaXR5OjEiCiAgICAgICB0cmFuc2Zvcm09Im1hdHJpeCg0LjIwNTU5MDUsMCwwLDQuMjA1NTkwNSwtMTQuNzg4ODk4LC0xODAuNDMzNjIpIj4KICAgICAgPHBhdGgKICAgICAgICAgaWQ9InBhdGg1NSIKICAgICAgICAgc3R5bGU9ImZpbGw6IzAwMDAwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2U6bm9uZTtzdHJva2Utd2lkdGg6MTtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6OS4xO3N0cm9rZS1kYXNoYXJyYXk6bm9uZTtwYWludC1vcmRlcjpmaWxsIG1hcmtlcnMgc3Ryb2tlIgogICAgICAgICBkPSJtIDExLjY0NjQ4NCw0My42NDI1NzggYSA3LjMxNDEzNTYsNy4zMTQxMzU2IDAgMCAwIC03LjMxMjQ5OTYsNy4zMTI1IDcuMzE0MTM1Niw3LjMxNDEzNTYgMCAwIDAgNy4zMTI0OTk2LDcuMzE0NDUzIDcuMzE0MTM1Niw3LjMxNDEzNTYgMCAwIDAgNy4xNTgyMDQsLTUuODk4NDM3IDYuMjIwMzMwMiw2LjIyMDMzMDIgMCAwIDEgLTMuNDE2MDE2LDMuNDY0ODQ0IGMgMC4wMDE1LDAuMjc3NDA2IDAuMDAzOSwwLjUzMjU1IDAuMDAzOSwwLjcyNjU2MiAtMC43Mzk0NDUsMCAtMS4zNzU4MzUsLTAuMTAxODg2IC0xLjkyMTg3NSwtMC4yNzE0ODQgYSA2LjIyMDMzMDIsNi4yMjAzMzAyIDAgMCAxIC0wLjQ0MTQwNiwwLjAzNTE2IDYuMjIwMzMwMiw2LjIyMDMzMDIgMCAwIDEgLTYuMjIwNzAzMiwtNi4yMjA3MDMgNi4yMjAzMzAyLDYuMjIwMzMwMiAwIDAgMSA2LjIyMDcwMzIsLTYuMjIwNzAzIDYuMjIwMzMwMiw2LjIyMDMzMDIgMCAwIDEgMC41NzYxNzIsMC4wMjczNCA3LjMxNDEzNTYsNy4zMTQxMzU2IDAgMCAwIC0xLjk1ODk4NSwtMC4yNjk1MzEgeiIgLz4KICAgIDwvZz4KICAgIDxwYXRoCiAgICAgICBpZD0icGF0aDU2IgogICAgICAgc3R5bGU9ImZpbGw6IzAwMDAwMDtmaWxsLW9wYWNpdHk6MTtzdHJva2U6bm9uZTtzdHJva2Utd2lkdGg6MS4zNDYwODtzdHJva2UtbWl0ZXJsaW1pdDo5LjE7cGFpbnQtb3JkZXI6ZmlsbCBtYXJrZXJzIHN0cm9rZSIKICAgICAgIGQ9Im0gNDIuNjY0NDQsMzEuMjkxNDc0IGMgLTEuODAyODgyLDIuMDIzMTA1IC00Ljk1MDEzOSwyLjQ5MjY2MSAtOC41MjU0LDIuNTAyOCAtMi43MTgxNiwtMC4wMDc3IC01LjQ1MDQ3NiwtMC4xMjgyMjcgLTcuMjY5NTYsLTEuMzg5NTUxIC0xLjgxNjU0MiwwLjMyNDE4MiAtMi41NzkxNTcsMi4zNDQwMzMgLTIuNDE1ODY2LDQuNzAyNzc3IDEuMTY0NjQ3LDE2LjgyMjk2NyAxMS44MTY3MiwxNS43MzQ2NDUgMTEuOTEyMTk4LDE1LjcwNzE0NSAtNy43OTMzNjYsLTMuODAyNDQ3IC02LjUxNjQ5OCwtMTAuMDAwNDggLTYuNzcyNjIyLC0xMS45NzUyOTMgMC4zMjA5MjgsMy4zNDIzMyAzLjg5NTkyNiwxMi44NTY3NjQgMTcuMjM1NDk0LDEyLjg1Njc2NCAwLC00LjAwOTY1NSAwLjAxOTkyLC0xNC4zMTEwMzUgLTEuMjc5MDgsLTE3LjQ4NzAyNCAtMC40MDkxMjQsLTEuMjM3MzEyIC0xLjUyNTI2LC00LjU0Njk2MyAtMi44ODUxNjQsLTQuOTE3NjE4IHoiIC8+CiAgICA8cGF0aAogICAgICAgaWQ9InBhdGg1NyIKICAgICAgIHN0eWxlPSJmaWxsOiMwMDAwMDA7ZmlsbC1vcGFjaXR5OjE7c3Ryb2tlOm5vbmU7c3Ryb2tlLXdpZHRoOjMuNzY1NjU7c3Ryb2tlLW1pdGVybGltaXQ6OS4xO3BhaW50LW9yZGVyOmZpbGwgbWFya2VycyBzdHJva2UiCiAgICAgICBkPSJtIDIwLjk5MjAxMywxNi4wODcwMDQgYyAwLjYwODk0NCwxLjg2NTU0NSAxLjgzNTMzNCwzLjcwNDMxNCAzLjQ4MDA4Niw0LjQwMTc0NSAtMC40NTg3ODEsMS4zODI4MDQgLTAuNDYwODMxLDMuMDI0OTQ5IC0wLjQ2MDgzMSw0Ljc4MzEyNiAwLDQuOTI3ODk1IDQuNTMzNjk4LDguOTE5NDEzIDEwLjEzMDM1OSw4LjkzODU1OSA1LjU5NjY2NCwtMC4wMTkxMiAxMC4xMzAzNjcsLTQuMDEwNjY3IDEwLjEzMDM2NywtOC45Mzg1NTkgMCwtMS43NTgxNzcgLTAuMDAyMSwtMy40MDAzMjIgLTAuNDYwODMzLC00Ljc4MzEyNiAxLjY0NDc1MywtMC42OTc0MzEgMi44NzExNDIsLTIuNTM2MiAzLjQ4MDA4NCwtNC40MDE3NDUgLTEuOTg3Nzc2LC0wLjAzMDUgLTUuMTUwOTA4LDAuNzAwNzU3IC03Ljg1MDA0NywwLjc4NjU5NSAtMS4zNTE1MzksLTAuMzUxODQ1IC0zLjA4NjEzNywtMC41NDU4NjggLTUuMjk5NTcxLC0wLjU0ODIzMyAtMi4yMTM0MzEsMC4wMDI0IC0zLjk0ODAyNywwLjE5NjM2NyAtNS4yOTk1NjgsMC41NDgyMzMgLTIuNjk5MTM1LC0wLjA4NTg0IC01Ljg2MjI2NiwtMC44MTcxODcgLTcuODUwMDQ2LC0wLjc4NjU5NSB6IG0gNi43Nzc0MTksNC42NDgwNTMgYyAwLjU1NTQ3LC0wLjAxMzgzIDEuMjk5Nzc5LDAuMDYyMDQgMi4zMDQxNjEsMC4yNDYzMTkgMC42NzIxOTgsMC4xMjMzMDIgMS41MjM1MzYsMC40NTI0MDIgMi4wMzQwMTksMC43NTQ4MTMgMC45NTA4MDcsMC41NjMyNjQgMS4wNzM1OTUsMS4yMDc2OTcgMi4wMzQwMTUsMS4yMDc2OTcgMC45NjA0MiwwIDEuMDgzMjA3LC0wLjY0NDQzMyAyLjAzNDAxOCwtMS4yMDc2OTcgMC41MTA0ODMsLTAuMzAyNDE4IDEuMzYxODIyLC0wLjYzMTUxMSAyLjAzNDAyMSwtMC43NTQ4MTMgNC41OTE0NTksLTAuODQyMzI4IDMuODIxNzMyLDAuNTIzOTYyIDMuODIxNzMyLDIuODM2NTA1IDAsMi4zODcxMzIgLTEuOTM1MTU1LDQuMzIyMjkgLTQuMzIyMjkxLDQuMzIyMjkgLTAuNzYyOTUsLTAuMDAzNyAtMS41MTEzMzIsLTAuMjA5MzQgLTIuMTY5MDkxLC0wLjU5NTkwNSAtMC4wMTU0NiwwLjAzMzc1IC0wLjAyODg3LDAuMDY0ODQgLTAuMDQ3NjgsMC4wOTUzNSBsIC0wLjk2OTMzOCwxLjU3MzE4OSBjIC0wLjEwNTIzOSwwLjE3MTIyMiAtMC4yNDM3OTcsMC4yNTc0NjcgLTAuMzgxMzc4LDAuMjU0MjUxIC0wLjEzNzU4LDAuMDAzMSAtMC4yNzYxMzksLTAuMDgzMDMgLTAuMzgxMzc4LC0wLjI1NDI1MSBsIC0wLjk2OTMzOCwtMS41NzMxODkgYyAtMC4wMTg3MSwtMC4wMzA1IC0wLjAzMjEyLC0wLjA2MTU5IC0wLjA0NzY4LC0wLjA5NTM1IC0wLjY1Nzc2MywwLjM4NjU4NSAtMS40MDYxNDIsMC41OTIxODggLTIuMTY5MDkxLDAuNTk1OTA1IC0yLjM4NzEzNywwIC00LjMyMjI5LC0xLjkzNTE1OCAtNC4zMjIyOSwtNC4zMjIyOSAwLC0xLjgwNjY3MyAtMC40NjYyNzEsLTMuMDMzMTczIDEuNTE3NTY5LC0zLjA4MjgxNCB6IiAvPgogICAgPHBhdGgKICAgICAgIGlkPSJwYXRoNTgiCiAgICAgICBzdHlsZT0iZmlsbDpub25lO3N0cm9rZTojMDAwMDAwO3N0cm9rZS13aWR0aDoxLjIyMDUyO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjkuMTtzdHJva2UtZGFzaGFycmF5Om5vbmU7c3Ryb2tlLW9wYWNpdHk6MTtwYWludC1vcmRlcjpmaWxsIG1hcmtlcnMgc3Ryb2tlIgogICAgICAgZD0iTSAzMi4zMDQyLDI1LjMwMDU5NiBBIDEuOTkxNDQzOCwxLjk5MTQ0MzggMCAwIDEgMzAuNTc5NTU5LDI2LjI5NjMyIDEuOTkxNDQzOCwxLjk5MTQ0MzggMCAwIDEgMjguODU0OTE4LDI1LjMwMDU5NiIgLz4KICAgIDxwYXRoCiAgICAgICBpZD0icGF0aDU5IgogICAgICAgc3R5bGU9ImZpbGw6bm9uZTtzdHJva2U6IzAwMDAwMDtzdHJva2Utd2lkdGg6MS4yMjA1MjtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDo5LjE7c3Ryb2tlLWRhc2hhcnJheTpub25lO3N0cm9rZS1vcGFjaXR5OjE7cGFpbnQtb3JkZXI6ZmlsbCBtYXJrZXJzIHN0cm9rZSIKICAgICAgIGQ9Ik0gMzkuNDI4MzM0LDI1LjMwMDU5NiBBIDEuOTkxNDQzOCwxLjk5MTQ0MzggMCAwIDEgMzcuNzAzNjk2LDI2LjI5NjMyIDEuOTkxNDQzOCwxLjk5MTQ0MzggMCAwIDEgMzUuOTc5MDUzLDI1LjMwMDU5NiIgLz4KICA8L2c+Cjwvc3ZnPg=='); /* icon svg url. MUST BE A SVG. */
   --dms-icon-svg-size: 90%; /* size of the svg (css mask-size property) */
-  --dms-icon-color-before: var(--icon-secondary); /* normal icon color */
+  --dms-icon-color-before: var(--icon-subtle); /* normal icon color */
   --dms-icon-color-after: var(--white); /* icon color when button is hovered/selected */
   --custom-dms-background: off; /* off to disable, image to use a background image (must set url variable below), color to use a custom color/gradient */
   --dms-background-image-url: url(''); /* url of the background image */
@@ -88,7 +88,7 @@ body {
 --bg-2: {{colors.surface_container_low.default.hex}}; /* dark buttons */
 --bg-3: {{colors.surface_container.default.hex}}; /* spacing, secondary elements */
 --bg-4: {{colors.surface.default.hex}}; /* main background color */
---hover: {{colors.surface_container_high.default.hex}}20; /* channels and buttons when hovered */
+--hover: {{colors.on_surface.default.hex}}15; /* channels and buttons when hovered */
 --active: {{colors.surface_container_highest.default.hex}}40; /* channels and buttons when clicked or selected */
 --active-2: {{colors.surface.default.hex}}30; /* extra state for transparent buttons */
 --message-hover: {{colors.surface_variant.default.hex}}40; /* messages when hovered */
@@ -174,11 +174,23 @@ body {
   color: var(--text-4) !important;
 }
 
+/* Make timestamps more readable by overriding inline styles */
+[class*="timestamp"],
+[class*="timestamp"] time {
+  color: var(--text-4) !important;
+}
+
 .postTitleText_faa96b {
-  color: var(--text-3) !important;
+  color: var(--text-2) !important;
 }
 
 .postTitleText_faa96b .highlight {
+  color: var(--text-2) !important;
+}
+
+/* Make thread titles more readable by overriding inline styles */
+[class*="headerText"] [class*="postTitleText"],
+[class*="headerText"] h3[class*="postTitleText"] {
   color: var(--text-2) !important;
 }
 
@@ -190,4 +202,18 @@ body {
 .messageContent_c19a55 .highlight,
 .messageContent_faa96b .highlight {
   color: var(--text-2) !important;
+}
+
+/* Make message content more readable by overriding inline styles */
+[class*="messageContent"] {
+  color: var(--text-3) !important;
+}
+
+[class*="messageContent"] .highlight {
+  color: var(--text-2) !important;
+}
+
+/* Make slowmode/cooldown text more readable by overriding inline styles */
+[class*="cooldownText"] {
+  color: var(--text-4) !important;
 }

@@ -315,6 +315,24 @@
    `(info-menu-header ((t (:foreground ,primary :weight bold))))
    `(info-menu-star ((t (:foreground ,primary))))
    `(info-node ((t (:foreground ,tertiary :weight bold))))
+
+   ;; Tabs
+   `(tab-bar ((t (:background ,surface-container :foreground ,on-surface :box nil))))
+   `(tab-bar-tab ((t (:background ,surface-container-high :foreground ,on-surface :weight bold :box nil))))
+   `(tab-bar-tab-inactive ((t (:background ,surface :foreground ,on-surface-variant :box nil))))
+
+   `(tab-line ((t (:background ,surface-container :foreground ,on-surface :box nil))))
+   `(tab-line-tab ((t (:background ,surface :foreground ,on-surface-variant :box nil))))
+   `(tab-line-tab-current ((t (:background ,surface-container-high :foreground ,on-surface :weight bold :box nil))))
+   `(tab-line-tab-inactive ((t (:background ,surface :foreground ,on-surface-variant :box nil))))
+   `(tab-line-highlight ((t (:background ,surface-container-highest :foreground ,on-surface))))
+
+   `(centaur-tabs-default ((t (:background ,surface-container :foreground ,on-surface))))
+   `(centaur-tabs-selected ((t (:background ,surface-container-high :foreground ,on-surface :weight bold))))
+   `(centaur-tabs-unselected ((t (:background ,surface :foreground ,on-surface-variant))))
+   `(centaur-tabs-selected-modified ((t (:background ,surface-container-high :foreground ,tertiary :weight bold))))
+   `(centaur-tabs-unselected-modified ((t (:background ,surface :foreground ,tertiary))))
+   `(centaur-tabs-active-bar-face ((t (:background ,primary))))
    
    ;; Fixed-pitch faces
    `(fixed-pitch ((t (:family "monospace"))))

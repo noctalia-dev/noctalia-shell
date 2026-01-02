@@ -85,33 +85,56 @@ Singleton {
 
   readonly property real uiScaleRatio: Settings.data.general.scaleRatio
 
-  // Bar Dimensions
+  // Bar Height
   readonly property real barHeight: {
+    let h;
     switch (Settings.data.bar.density) {
       case "mini":
-      return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 22 : 20;
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 23 : 21;
+      break;
       case "compact":
-      return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 27 : 25;
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 27 : 25;
+      break;
       case "comfortable":
-      return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 39 : 37;
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 39 : 37;
+      break;
+      case "spacious":
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 49 : 47;
+      break;
       default:
       case "default":
-      return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 33 : 31;
+      h = (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? 33 : 31;
     }
+    return toOdd(h);
   }
+
+  // Capsule Height
   readonly property real capsuleHeight: {
+    let h;
     switch (Settings.data.bar.density) {
       case "mini":
-      return Math.round(barHeight * 1.0);
+      h = Math.round(barHeight * 1.0);
+      break;
       case "compact":
-      return Math.round(barHeight * 0.85);
+      h = Math.round(barHeight * 0.85);
+      break;
       case "comfortable":
-      return Math.round(barHeight * 0.73);
+      h = Math.round(barHeight * 0.75);
+      break;
+      case "spacious":
+      h = Math.round(barHeight * 0.65);
+      break;
       default:
-      case "default":
-      return Math.round(barHeight * 0.82);
+      h = Math.round(barHeight * 0.82);
+      break;
     }
+    return toOdd(h);
   }
+
+  // The base/default font size for all texts in the bar
+  readonly property real _barBaseFontSize: Math.max(1, (Style.barHeight / Style.capsuleHeight) * Style.fontSizeXXS)
+  readonly property real barFontSize: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? _barBaseFontSize * 0.9 : _barBaseFontSize
+
   readonly property color capsuleColor: Settings.data.bar.showCapsule ? Qt.alpha(Color.mSurfaceVariant, Settings.data.bar.capsuleOpacity) : Color.transparent
 
   readonly property color capsuleBorderColor: Settings.data.bar.showOutline ? Color.mPrimary : Color.transparent
@@ -120,5 +143,15 @@ Singleton {
   // Pixel-perfect utility for centering content without subpixel positioning
   function pixelAlignCenter(containerSize, contentSize) {
     return Math.round((containerSize - contentSize) / 2);
+  }
+
+  // Ensures a number is always odd (rounds down to nearest odd)
+  function toOdd(n) {
+    return Math.floor(n / 2) * 2 + 1;
+  }
+
+  // Ensures a number is always even (rounds down to nearest even)
+  function toEven(n) {
+    return Math.floor(n / 2) * 2;
   }
 }

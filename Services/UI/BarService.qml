@@ -7,7 +7,6 @@ import qs.Commons
 Singleton {
   id: root
 
-  property bool hasAudioVisualizer: false
   property bool isVisible: true
   property var readyBars: ({})
 
@@ -17,33 +16,6 @@ Singleton {
 
   signal activeWidgetsChanged
   signal barReadyChanged(string screenName)
-
-  // onHasAudioVisualizerChanged: {
-  //   Logger.d("BarService", "hasAudioVisualizer", hasAudioVisualizer)
-  // }
-
-  // Simple timer that run once when the widget structure has changed
-  // and determine if any MediaMini widget has the visualizer on
-  Timer {
-    id: timerCheckVisualizer
-    interval: 100
-    repeat: false
-    onTriggered: {
-      hasAudioVisualizer = false;
-      if (getAllWidgetInstances("AudioVisualizer").length > 0) {
-        hasAudioVisualizer = true;
-        return;
-      }
-      const widgets = getAllWidgetInstances("MediaMini");
-      for (var i = 0; i < widgets.length; i++) {
-        const widget = widgets[i];
-        if (widget.showVisualizer) {
-          hasAudioVisualizer = true;
-          return;
-        }
-      }
-    }
-  }
 
   Component.onCompleted: {
     Logger.i("BarService", "Service started");
@@ -74,8 +46,6 @@ Singleton {
       "index": index,
       "instance": instance
     };
-
-    timerCheckVisualizer.restart();
 
     Logger.d("BarService", "Registered widget:", key);
     root.activeWidgetsChanged();

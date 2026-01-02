@@ -14,6 +14,7 @@ ColumnLayout {
   property var widgetMetadata: null
 
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
+  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : true
   property string valueClockStyle: widgetData.clockStyle !== undefined ? widgetData.clockStyle : widgetMetadata.clockStyle
   property bool valueUsePrimaryColor: widgetData.usePrimaryColor !== undefined ? widgetData.usePrimaryColor : widgetMetadata.usePrimaryColor
   property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
@@ -29,6 +30,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showBackground = valueShowBackground;
+    settings.roundedCorners = valueRoundedCorners;
     settings.clockStyle = valueClockStyle;
     settings.usePrimaryColor = valueUsePrimaryColor;
     settings.useCustomFont = valueUseCustomFont;
@@ -82,6 +84,10 @@ ColumnLayout {
       {
         "key": "analog",
         "name": I18n.tr("settings.desktop-widgets.clock.style.analog")
+      },
+      {
+        "key": "binary",
+        "name": I18n.tr("settings.desktop-widgets.clock.style.binary")
       }
     ]
     onSelected: key => valueClockStyle = key
@@ -245,5 +251,14 @@ ColumnLayout {
     description: I18n.tr("settings.desktop-widgets.clock.show-background.description")
     checked: valueShowBackground
     onToggled: checked => valueShowBackground = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    visible: valueShowBackground
+    label: I18n.tr("settings.desktop-widgets.clock.rounded-corners.label")
+    description: I18n.tr("settings.desktop-widgets.clock.rounded-corners.description")
+    checked: valueRoundedCorners
+    onToggled: checked => valueRoundedCorners = checked
   }
 }

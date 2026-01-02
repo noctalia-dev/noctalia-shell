@@ -39,6 +39,7 @@ Item {
   implicitWidth: pill.width
   implicitHeight: pill.height
   visible: getMonitor() !== null
+  opacity: getMonitor() !== null ? 1.0 : 0.0
 
   function getMonitor() {
     return BrightnessService.getMonitorForScreen(screen) || null;
@@ -113,7 +114,6 @@ Item {
     id: pill
 
     screen: root.screen
-    density: Settings.data.bar.density
     oppositeDirection: BarService.getPillDirection(root)
     icon: getIcon()
     autoHide: false // Important to be false so we can hover as long as we want

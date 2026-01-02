@@ -16,6 +16,15 @@
   imagemagick,
   wget,
   gpu-screen-recorder, # optional
+  # calendar support
+  calendarSupport ? false,
+  python3,
+  evolution-data-server,
+  libical,
+  glib,
+  libsoup_3,
+  json-glib,
+  gobject-introspection,
 }:
 let
   src = lib.cleanSourceWith {
@@ -35,6 +44,7 @@ let
         /shell.nix
         /lefthook.yml
         /CLAUDE.md
+        /CREDITS.md
       ]);
   };
 
@@ -51,6 +61,16 @@ let
   ]
   ++ lib.optionals (stdenvNoCC.hostPlatform.system == "x86_64-linux") [
     gpu-screen-recorder
+  ]
+  ++ lib.optional calendarSupport (python3.withPackages (pp: [ pp.pygobject3 ]));
+
+  giTypelibPath = lib.makeSearchPath "lib/girepository-1.0" [
+    evolution-data-server
+    libical
+    glib.out
+    libsoup_3
+    json-glib
+    gobject-introspection
   ];
 in
 stdenvNoCC.mkDerivation {
@@ -76,6 +96,7 @@ stdenvNoCC.mkDerivation {
     qtWrapperArgs+=(
       --prefix PATH : ${lib.makeBinPath runtimeDeps}
       --add-flags "-p $out/share/noctalia-shell"
+      ${lib.optionalString calendarSupport "--prefix GI_TYPELIB_PATH : ${giTypelibPath}"}
     )
   '';
 

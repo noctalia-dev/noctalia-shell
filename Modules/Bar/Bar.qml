@@ -211,7 +211,7 @@ Item {
 
       // Top section (left widgets)
       ColumnLayout {
-        anchors.horizontalCenter: parent.horizontalCenter
+        x: Style.pixelAlignCenter(parent.width, width)
         anchors.top: parent.top
         anchors.topMargin: Style.marginM
         spacing: Style.marginS
@@ -223,7 +223,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -238,7 +237,7 @@ Item {
 
       // Center section (center widgets)
       ColumnLayout {
-        anchors.horizontalCenter: parent.horizontalCenter
+        x: Style.pixelAlignCenter(parent.width, width)
         anchors.verticalCenter: parent.verticalCenter
         spacing: Style.marginS
 
@@ -249,7 +248,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -264,7 +262,7 @@ Item {
 
       // Bottom section (right widgets)
       ColumnLayout {
-        anchors.horizontalCenter: parent.horizontalCenter
+        x: Style.pixelAlignCenter(parent.width, width)
         anchors.bottom: parent.bottom
         anchors.bottomMargin: Style.marginM
         spacing: Style.marginS
@@ -276,7 +274,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -304,7 +301,7 @@ Item {
         objectName: "leftSection"
         anchors.left: parent.left
         anchors.leftMargin: Style.marginS
-        anchors.verticalCenter: parent.verticalCenter
+        y: Style.pixelAlignCenter(parent.height, height)
         spacing: Style.marginS
 
         Repeater {
@@ -314,7 +311,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -332,7 +328,7 @@ Item {
         id: centerSection
         objectName: "centerSection"
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.verticalCenter: parent.verticalCenter
+        y: Style.pixelAlignCenter(parent.height, height)
         spacing: Style.marginS
 
         Repeater {
@@ -342,7 +338,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -361,7 +356,7 @@ Item {
         objectName: "rightSection"
         anchors.right: parent.right
         anchors.rightMargin: Style.marginS
-        anchors.verticalCenter: parent.verticalCenter
+        y: Style.pixelAlignCenter(parent.height, height)
         spacing: Style.marginS
 
         Repeater {
@@ -371,7 +366,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,

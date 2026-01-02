@@ -6,6 +6,7 @@ import Quickshell.Bluetooth
 import Quickshell.Wayland
 import qs.Commons
 import qs.Services.Networking
+import qs.Services.UI
 import qs.Widgets
 
 NBox {
@@ -14,6 +15,13 @@ NBox {
   property string label: ""
   property string tooltipText: ""
   property var model: {}
+  // Header control mode: "layout" (default) shows grid/list toggle; "filter" shows unnamed-devices filter toggle
+  property string headerMode: "layout"
+  // Per-list expanded details (by device key)
+  property string expandedDeviceKey: ""
+  // Local layout toggle for details: true = grid (2 cols), false = rows (1 col)
+  // Persisted under Settings.data.ui.bluetoothDetailsViewMode
+  property bool detailsGrid: (Settings.data && Settings.data.ui && Settings.data.ui.bluetoothDetailsViewMode !== undefined) ? (Settings.data.ui.bluetoothDetailsViewMode === "grid") : true
 
   Layout.fillWidth: true
   Layout.preferredHeight: column.implicitHeight + Style.marginM * 2
@@ -25,14 +33,35 @@ NBox {
 
     spacing: Style.marginM
 
-    NText {
-      text: root.label
-      pointSize: Style.fontSizeS
-      color: Color.mSecondary
-      font.weight: Style.fontWeightBold
-      visible: root.model.length > 0
+    RowLayout {
       Layout.fillWidth: true
+      visible: root.model.length > 0
       Layout.leftMargin: Style.marginM
+      spacing: Style.marginS
+
+      NText {
+        text: root.label
+        pointSize: Style.fontSizeS
+        color: Color.mSecondary
+        font.weight: Style.fontWeightBold
+        Layout.fillWidth: true
+      }
+
+      // (moved) details view toggle is now inside the expanded info box
+
+      // Filter toggle (for Available devices): hide unnamed devices
+      NIconButton {
+        visible: root.headerMode === "filter"
+        // Option A: filter/filter-off
+        // Off (show all): filter; On (hide unnamed): filter-off
+        icon: (Settings.data && Settings.data.ui && Settings.data.ui.bluetoothHideUnnamedDevices) ? "filter-off" : "filter"
+        tooltipText: (Settings.data && Settings.data.ui && Settings.data.ui.bluetoothHideUnnamedDevices) ? I18n.tr("tooltips.hide-unnamed-devices") : I18n.tr("tooltips.show-all-devices")
+        onClicked: {
+          if (Settings.data && Settings.data.ui) {
+            Settings.data.ui.bluetoothHideUnnamedDevices = !(Settings.data.ui.bluetoothHideUnnamedDevices);
+          }
+        }
+      }
     }
 
     Repeater {
@@ -46,7 +75,9 @@ NBox {
 
         readonly property bool canConnect: BluetoothService.canConnect(modelData)
         readonly property bool canDisconnect: BluetoothService.canDisconnect(modelData)
+        readonly property bool canPair: BluetoothService.canPair(modelData)
         readonly property bool isBusy: BluetoothService.isDeviceBusy(modelData)
+        readonly property bool isExpanded: root.expandedDeviceKey === BluetoothService.deviceKey(modelData)
 
         function getContentColor(defaultColor = Color.mOnSurface) {
           if (modelData.pairing || modelData.state === BluetoothDeviceState.Connecting)
@@ -57,128 +88,382 @@ NBox {
         }
 
         Layout.fillWidth: true
-        Layout.preferredHeight: deviceLayout.implicitHeight + (Style.marginM * 2)
+        Layout.preferredHeight: deviceColumn.implicitHeight + (Style.marginM * 2)
         radius: Style.radiusM
         color: Color.mSurface
         border.width: Style.borderS
         border.color: getContentColor(Color.mOutline)
+        clip: true
 
-        RowLayout {
-          id: deviceLayout
+        // Content column so expanded details are laid out inside the card
+        ColumnLayout {
+          id: deviceColumn
           anchors.fill: parent
           anchors.margins: Style.marginM
-          spacing: Style.marginM
-          Layout.alignment: Qt.AlignVCenter
+          spacing: Style.marginS
 
-          // One device BT icon
-          NIcon {
-            icon: BluetoothService.getDeviceIcon(modelData)
-            pointSize: Style.fontSizeXXL
-            color: getContentColor(Color.mOnSurface)
-            Layout.alignment: Qt.AlignVCenter
-          }
-
-          ColumnLayout {
+          RowLayout {
+            id: deviceLayout
             Layout.fillWidth: true
-            spacing: Style.marginXXS
+            spacing: Style.marginM
+            Layout.alignment: Qt.AlignVCenter
 
-            // Device name
-            NText {
-              text: modelData.name || modelData.deviceName
-              pointSize: Style.fontSizeM
-              font.weight: modelData.connected ? Style.fontWeightBold : Style.fontWeightMedium
-              elide: Text.ElideRight
+            // One device BT icon
+            NIcon {
+              icon: BluetoothService.getDeviceIcon(modelData)
+              pointSize: Style.fontSizeXXL
               color: getContentColor(Color.mOnSurface)
-              Layout.fillWidth: true
+              Layout.alignment: Qt.AlignVCenter
             }
 
-            // Status
-            NText {
-              text: BluetoothService.getStatusString(modelData)
-              visible: text !== ""
-              pointSize: Style.fontSizeXS
-              color: getContentColor(Color.mOnSurfaceVariant)
-            }
-
-            // Signal Strength
-            RowLayout {
-              visible: modelData.signalStrength !== undefined
+            ColumnLayout {
               Layout.fillWidth: true
-              spacing: Style.marginXS
+              spacing: Style.marginXXS
 
-              // Device signal strength - "Unknown" when not connected
+              // Device name
               NText {
-                text: BluetoothService.getSignalStrength(modelData)
+                text: modelData.name || modelData.deviceName
+                pointSize: Style.fontSizeM
+                font.weight: modelData.connected ? Style.fontWeightBold : Style.fontWeightMedium
+                elide: Text.ElideRight
+                color: getContentColor(Color.mOnSurface)
+                Layout.fillWidth: true
+              }
+
+              // Status
+              NText {
+                text: {
+                  const k = BluetoothService.getStatusKey(modelData);
+                  if (k === "pairing")
+                    return I18n.tr("bluetooth.panel.pairing");
+                  if (k === "blocked")
+                    return I18n.tr("bluetooth.panel.blocked");
+                  if (k === "connecting")
+                    return I18n.tr("bluetooth.panel.connecting");
+                  if (k === "disconnecting")
+                    return I18n.tr("bluetooth.panel.disconnecting");
+                  return "";
+                }
+                visible: text !== ""
                 pointSize: Style.fontSizeXS
                 color: getContentColor(Color.mOnSurfaceVariant)
               }
 
-              NIcon {
-                visible: modelData.signalStrength > 0 && !modelData.pairing && !modelData.blocked
-                icon: BluetoothService.getSignalIcon(modelData)
-                pointSize: Style.fontSizeXS
-                color: getContentColor(Color.mOnSurface)
+              // Signal strength: show only in the expanded info panel (hidden in compact row)
+              RowLayout {
+                visible: false
+                Layout.fillWidth: true
+                spacing: Style.marginXS
               }
 
-              NText {
-                visible: modelData.signalStrength > 0 && !modelData.pairing && !modelData.blocked
-                text: (modelData.signalStrength !== undefined && modelData.signalStrength > 0) ? modelData.signalStrength + "%" : ""
-                pointSize: Style.fontSizeXS
-                color: getContentColor(Color.mOnSurface)
+              // Battery (icon + percent)
+              RowLayout {
+                visible: modelData.batteryAvailable
+                spacing: Style.marginXS
+
+                NIcon {
+                  icon: "battery"
+                  pointSize: Style.fontSizeXS
+                  color: getContentColor(Color.mOnSurface)
+                }
+
+                NText {
+                  text: {
+                    var b = BluetoothService.getBatteryPercent(modelData);
+                    return b === null ? "-" : (b + "%");
+                  }
+                  pointSize: Style.fontSizeXS
+                  color: getContentColor(Color.mOnSurfaceVariant)
+                }
               }
             }
 
-            // Battery
-            NText {
-              visible: modelData.batteryAvailable
-              text: BluetoothService.getBattery(modelData)
-              pointSize: Style.fontSizeXS
-              color: getContentColor(Color.mOnSurfaceVariant)
+            // Spacer to push actions to the right
+            Item {
+              Layout.fillWidth: true
+            }
+
+            // Actions (Info on the left to match Wi‑Fi, then Unpair, then main CTA)
+            RowLayout {
+              spacing: Style.marginS
+
+              // Info for connected device (placed before the CTA for consistency with Wi‑Fi)
+              NIconButton {
+                visible: modelData.connected
+                icon: "info-circle"
+                tooltipText: I18n.tr("bluetooth.panel.info")
+                baseSize: Style.baseWidgetSize
+                onClicked: {
+                  const key = BluetoothService.deviceKey(modelData);
+                  root.expandedDeviceKey = (root.expandedDeviceKey === key) ? "" : key;
+                }
+              }
+
+              // Unpair for saved devices when not connected
+              NIconButton {
+                visible: (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
+                icon: "trash"
+                tooltipText: I18n.tr("bluetooth.panel.unpair")
+                baseSize: Style.baseWidgetSize
+                onClicked: BluetoothService.unpairDevice(modelData)
+              }
+
+              // Main Call to action
+              NButton {
+                id: button
+                visible: (modelData.state !== BluetoothDeviceState.Connecting)
+                enabled: (canConnect || canDisconnect || canPair) && !isBusy
+                outlined: !button.hovered
+                fontSize: Style.fontSizeXS
+                fontWeight: Style.fontWeightMedium
+                backgroundColor: {
+                  if (device.canDisconnect && !isBusy) {
+                    return Color.mError;
+                  }
+                  return Color.mPrimary;
+                }
+                tooltipText: root.tooltipText
+                text: {
+                  if (modelData.pairing) {
+                    return I18n.tr("bluetooth.panel.pairing");
+                  }
+                  if (modelData.blocked) {
+                    return I18n.tr("bluetooth.panel.blocked");
+                  }
+                  if (modelData.connected) {
+                    return I18n.tr("bluetooth.panel.disconnect");
+                  }
+                  if (device.canPair) {
+                    return I18n.tr("bluetooth.panel.pair");
+                  }
+                  return I18n.tr("bluetooth.panel.connect");
+                }
+                icon: (isBusy ? "busy" : null)
+                onClicked: {
+                  if (modelData.connected) {
+                    BluetoothService.disconnectDevice(modelData);
+                  } else {
+                    if (device.canPair) {
+                      BluetoothService.pairDevice(modelData);
+                    } else {
+                      BluetoothService.connectDeviceWithTrust(modelData);
+                    }
+                  }
+                }
+              }
             }
           }
 
-          // Spacer to push connect button to the right
-          Item {
+          // Expanded info section
+          Rectangle {
+            visible: device.isExpanded
             Layout.fillWidth: true
-          }
+            implicitHeight: infoColumn.implicitHeight + Style.marginS * 2
+            radius: Style.radiusS
+            color: Color.mSurfaceVariant
+            border.width: Style.borderS
+            border.color: Color.mOutline
+            clip: true
+            onVisibleChanged: {
+              if (visible && infoColumn && infoColumn.forceLayout) {
+                Qt.callLater(function () {
+                  infoColumn.forceLayout();
+                });
+              }
+            }
 
-          // Call to action
-          NButton {
-            id: button
-            visible: (modelData.state !== BluetoothDeviceState.Connecting)
-            enabled: (canConnect || canDisconnect) && !isBusy
-            outlined: !button.hovered
-            fontSize: Style.fontSizeXS
-            fontWeight: Style.fontWeightMedium
-            backgroundColor: {
-              if (device.canDisconnect && !isBusy) {
-                return Color.mError;
+            // Grid/List toggle moved here to the top-right corner of the info box
+            NIconButton {
+              id: detailsToggle
+              anchors.top: parent.top
+              anchors.right: parent.right
+              anchors.margins: Style.marginS
+              // Use Tabler layout icons; "grid" alone doesn't exist in our font
+              icon: root.detailsGrid ? "layout-list" : "layout-grid"
+              tooltipText: root.detailsGrid ? I18n.tr("tooltips.list-view") : I18n.tr("tooltips.grid-view")
+              onClicked: {
+                root.detailsGrid = !root.detailsGrid;
+                if (Settings.data && Settings.data.ui) {
+                  Settings.data.ui.bluetoothDetailsViewMode = root.detailsGrid ? "grid" : "list";
+                }
               }
-              return Color.mPrimary;
+              z: 1
             }
-            tooltipText: root.tooltipText
-            text: {
-              if (modelData.pairing) {
-                return I18n.tr("bluetooth.panel.pairing");
+
+            GridLayout {
+              id: infoColumn
+              anchors.fill: parent
+              anchors.margins: Style.marginS
+              // Layout toggle based on local state
+              columns: root.detailsGrid ? 2 : 1
+              columnSpacing: Style.marginM
+              rowSpacing: Style.marginXS
+              // Ensure proper relayout when switching grid/list while open
+              onColumnsChanged: {
+                if (infoColumn.forceLayout) {
+                  Qt.callLater(function () {
+                    infoColumn.forceLayout();
+                  });
+                }
               }
-              if (modelData.blocked) {
-                return I18n.tr("bluetooth.panel.blocked");
+
+              // Icons only; labels shown as tooltips on hover
+
+              // Row 1: Signal | Battery
+              RowLayout {
+                Layout.fillWidth: true
+                spacing: Style.marginXS
+                NIcon {
+                  icon: BluetoothService.getSignalIcon(modelData)
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: TooltipService.show(parent, I18n.tr("bluetooth.panel.signal"))
+                    onExited: TooltipService.hide()
+                  }
+                }
+                NText {
+                  text: BluetoothService.getSignalStrength(modelData)
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  Layout.fillWidth: true
+                  // Wrap only when needed to avoid extra spacing
+                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
+                  elide: Text.ElideNone
+                  maximumLineCount: 4
+                  clip: true
+                }
               }
-              if (modelData.connected) {
-                return I18n.tr("bluetooth.panel.disconnect");
+              RowLayout {
+                Layout.fillWidth: true
+                spacing: Style.marginXS
+                NIcon {
+                  icon: "battery"
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: TooltipService.show(parent, I18n.tr("bluetooth.panel.battery"))
+                    onExited: TooltipService.hide()
+                  }
+                }
+                NText {
+                  text: {
+                    var b = BluetoothService.getBatteryPercent(modelData);
+                    return b === null ? "-" : (b + "%");
+                  }
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  Layout.fillWidth: true
+                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
+                  elide: Text.ElideNone
+                  maximumLineCount: 4
+                  clip: true
+                }
               }
-              return I18n.tr("bluetooth.panel.connect");
-            }
-            icon: (isBusy ? "busy" : null)
-            onClicked: {
-              if (modelData.connected) {
-                BluetoothService.disconnectDevice(modelData);
-              } else {
-                BluetoothService.connectDeviceWithTrust(modelData);
+
+              // Row 2: Paired | Trusted
+              RowLayout {
+                Layout.fillWidth: true
+                spacing: Style.marginXS
+                NIcon {
+                  icon: "link"
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: TooltipService.show(parent, I18n.tr("bluetooth.panel.paired"))
+                    onExited: TooltipService.hide()
+                  }
+                }
+                NText {
+                  text: modelData.paired ? I18n.tr("common.yes") : I18n.tr("common.no")
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  Layout.fillWidth: true
+                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
+                  elide: Text.ElideNone
+                  maximumLineCount: 2
+                  clip: true
+                }
               }
-            }
-            onRightClicked: {
-              BluetoothService.forgetDevice(modelData);
+              RowLayout {
+                Layout.fillWidth: true
+                spacing: Style.marginXS
+                NIcon {
+                  icon: "shield-check"
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: TooltipService.show(parent, I18n.tr("bluetooth.panel.trusted"))
+                    onExited: TooltipService.hide()
+                  }
+                }
+                NText {
+                  text: modelData.trusted ? I18n.tr("common.yes") : I18n.tr("common.no")
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  Layout.fillWidth: true
+                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
+                  elide: Text.ElideNone
+                  maximumLineCount: 2
+                  clip: true
+                }
+              }
+
+              // Row 3: Address (single row; spans two columns when grid)
+              RowLayout {
+                Layout.fillWidth: true
+                Layout.columnSpan: infoColumn.columns === 2 ? 2 : 1
+                spacing: Style.marginXS
+                NIcon {
+                  icon: "hash"
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: TooltipService.show(parent, I18n.tr("bluetooth.panel.device-address"))
+                    onExited: TooltipService.hide()
+                  }
+                }
+                NText {
+                  id: macAddressText
+                  text: modelData.address || "-"
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  Layout.fillWidth: true
+                  // MAC addresses usually fit; wrap only if necessary
+                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
+                  elide: Text.ElideNone
+                  maximumLineCount: 2
+                  clip: true
+
+                  // Click-to-copy MAC address
+                  MouseArea {
+                    anchors.fill: parent
+                    enabled: (modelData.address && modelData.address.length > 0)
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                    onExited: TooltipService.hide()
+                    onClicked: {
+                      const addr = modelData.address || "";
+                      if (addr.length > 0) {
+                        // Copy to clipboard via wl-copy (runtime dependency)
+                        Quickshell.execDetached(["wl-copy", addr]);
+                        ToastService.showNotice(I18n.tr("bluetooth.panel.title"), I18n.tr("toast.bluetooth.address-copied"), "bluetooth");
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

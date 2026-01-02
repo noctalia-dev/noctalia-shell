@@ -47,11 +47,15 @@ SmartPanel {
     if (view?.gridView) {
       if (!view.gridView.activeFocus) {
         view.gridView.forceActiveFocus();
-        if (view.gridView.currentIndex < 0) {
+        if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
           view.gridView.currentIndex = 0;
         }
       } else {
-        view.gridView.moveCurrentIndexDown();
+        if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
+          view.gridView.currentIndex = 0;
+        } else {
+          view.gridView.moveCurrentIndexDown();
+        }
       }
     }
   }
@@ -61,7 +65,11 @@ SmartPanel {
       return;
     let view = contentItem.screenRepeater.itemAt(contentItem.currentScreenIndex);
     if (view?.gridView?.activeFocus) {
-      view.gridView.moveCurrentIndexUp();
+      if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
+        view.gridView.currentIndex = 0;
+      } else {
+        view.gridView.moveCurrentIndexUp();
+      }
     }
   }
 
@@ -70,7 +78,11 @@ SmartPanel {
       return;
     let view = contentItem.screenRepeater.itemAt(contentItem.currentScreenIndex);
     if (view?.gridView?.activeFocus) {
-      view.gridView.moveCurrentIndexLeft();
+      if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
+        view.gridView.currentIndex = 0;
+      } else {
+        view.gridView.moveCurrentIndexLeft();
+      }
     }
   }
 
@@ -79,7 +91,11 @@ SmartPanel {
       return;
     let view = contentItem.screenRepeater.itemAt(contentItem.currentScreenIndex);
     if (view?.gridView?.activeFocus) {
-      view.gridView.moveCurrentIndexRight();
+      if (view.gridView.currentIndex < 0 && view.gridView.model.length > 0) {
+        view.gridView.currentIndex = 0;
+      } else {
+        view.gridView.moveCurrentIndexRight();
+      }
     }
   }
 
@@ -101,7 +117,7 @@ SmartPanel {
   }
 
   panelContent: Rectangle {
-    id: wallpaperPanel
+    id: panelContent
 
     property int currentScreenIndex: {
       if (screen !== null) {
@@ -118,7 +134,7 @@ SmartPanel {
     property alias screenRepeater: screenRepeater
 
     Component.onCompleted: {
-      root.contentItem = wallpaperPanel;
+      root.contentItem = panelContent;
     }
 
     // Function to update Wallhaven resolution filter
@@ -167,13 +183,31 @@ SmartPanel {
       }
     }
 
+    // Solid color picker dialog
+    NColorPickerDialog {
+      id: solidColorPicker
+      screen: root.screen
+      selectedColor: Settings.data.wallpaper.solidColor
+      onColorSelected: color => WallpaperService.setSolidColor(color.toString())
+    }
+
     // Focus management
     Connections {
       target: root
       function onOpened() {
         // Ensure contentItem is set
         if (!root.contentItem) {
-          root.contentItem = wallpaperPanel;
+          root.contentItem = panelContent;
+        }
+        // Reset grid view selections
+        for (var i = 0; i < screenRepeater.count; i++) {
+          let item = screenRepeater.itemAt(i);
+          if (item && item.gridView) {
+            item.gridView.currentIndex = -1;
+          }
+        }
+        if (wallhavenView && wallhavenView.gridView) {
+          wallhavenView.gridView.currentIndex = -1;
         }
         // Give initial focus to search input
         Qt.callLater(() => {
@@ -189,7 +223,7 @@ SmartPanel {
       id: searchDebounceTimer
       interval: 150
       onTriggered: {
-        wallpaperPanel.filterText = searchInput.text;
+        panelContent.filterText = searchInput.text;
         // Trigger update on all screen views
         for (var i = 0; i < screenRepeater.count; i++) {
           let item = screenRepeater.itemAt(i);
@@ -249,6 +283,15 @@ SmartPanel {
             }
 
             NIconButton {
+              icon: "palette"
+              tooltipText: I18n.tr("wallpaper.panel.solid-color.tooltip")
+              baseSize: Style.baseWidgetSize * 0.8
+              colorBg: Settings.data.wallpaper.useSolidColor ? Color.mPrimary : Color.mSurfaceVariant
+              colorFg: Settings.data.wallpaper.useSolidColor ? Color.mOnPrimary : Color.mPrimary
+              onClicked: solidColorPicker.open()
+            }
+
+            NIconButton {
               icon: "settings"
               tooltipText: I18n.tr("settings.wallpaper.settings.section.label")
               baseSize: Style.baseWidgetSize * 0.8
@@ -272,6 +315,13 @@ SmartPanel {
                   WallpaperService.refreshWallpapersList();
                 }
               }
+            }
+            //Hide Wallpaper Filenames
+            NIconButton {
+              icon: Settings.data.wallpaper.hideWallpaperFilenames ? "eye-closed" : "eye"
+              tooltipText: Settings.data.wallpaper.hideWallpaperFilenames ? I18n.tr("settings.wallpaper.settings.hide-wallpaper-filenames.tooltip-show") : I18n.tr("settings.wallpaper.settings.hide-wallpaper-filenames.tooltip-hide")
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: Settings.data.wallpaper.hideWallpaperFilenames = !Settings.data.wallpaper.hideWallpaperFilenames
             }
 
             NIconButton {
@@ -334,7 +384,7 @@ SmartPanel {
                 if (Settings.data.wallpaper.useWallhaven) {
                   searchInput.text = Settings.data.wallpaper.wallhavenQuery || "";
                 } else {
-                  searchInput.text = wallpaperPanel.filterText || "";
+                  searchInput.text = panelContent.filterText || "";
                 }
                 // Give focus to search input
                 if (searchInput.inputItem && searchInput.inputItem.visible) {
@@ -353,7 +403,7 @@ SmartPanel {
                   if (Settings.data.wallpaper.useWallhaven) {
                     searchInput.text = Settings.data.wallpaper.wallhavenQuery || "";
                   } else {
-                    searchInput.text = wallpaperPanel.filterText || "";
+                    searchInput.text = panelContent.filterText || "";
                   }
                 }
               }
@@ -428,7 +478,7 @@ SmartPanel {
                             if (useWallhaven) {
                               searchInput.text = Settings.data.wallpaper.wallhavenQuery || "";
                             } else {
-                              searchInput.text = wallpaperPanel.filterText || "";
+                              searchInput.text = panelContent.filterText || "";
                             }
                             if (useWallhaven && typeof WallhavenService !== "undefined") {
                               // Update service properties when switching to Wallhaven
@@ -440,7 +490,7 @@ SmartPanel {
                               WallhavenService.order = Settings.data.wallpaper.wallhavenOrder;
 
                               // Update resolution settings
-                              wallpaperPanel.updateWallhavenResolution();
+                              panelContent.updateWallhavenResolution();
 
                               // If the view is already initialized, trigger a new search when switching to it
                               if (wallhavenView && wallhavenView.initialized && !WallhavenService.fetching) {
@@ -509,6 +559,30 @@ SmartPanel {
           anchors.fill: parent
           anchors.margins: Style.borderS
           radius: Style.radiusM
+
+          // Get active grid view for scroll position
+          readonly property var activeGridView: {
+            if (Settings.data.wallpaper.useWallhaven) {
+              return wallhavenView.gridView;
+            } else {
+              const view = screenRepeater.itemAt(currentScreenIndex);
+              return view?.gridView ?? null;
+            }
+          }
+
+          opacity: {
+            if (!activeGridView)
+              return 1;
+            return (activeGridView.contentY + activeGridView.height >= activeGridView.contentHeight - 10) ? 0 : 1;
+          }
+
+          Behavior on opacity {
+            NumberAnimation {
+              duration: Style.animationFast
+              easing.type: Easing.InOutQuad
+            }
+          }
+
           gradient: Gradient {
             GradientStop {
               position: 0.0
@@ -541,12 +615,12 @@ SmartPanel {
 
     // Expose updateFiltered as a proper function property
     function updateFiltered() {
-      if (!wallpaperPanel.filterText || wallpaperPanel.filterText.trim().length === 0) {
+      if (!panelContent.filterText || panelContent.filterText.trim().length === 0) {
         filteredWallpapers = wallpapersList;
         return;
       }
 
-      const results = FuzzySort.go(wallpaperPanel.filterText.trim(), wallpapersWithNames, {
+      const results = FuzzySort.go(panelContent.filterText.trim(), wallpapersWithNames, {
                                      "key": 'name',
                                      "limit": 200
                                    });
@@ -614,8 +688,14 @@ SmartPanel {
         focus: true
         keyNavigationEnabled: true
         keyNavigationWraps: false
+        currentIndex: -1
 
         model: filteredWallpapers
+
+        onModelChanged: {
+          // Reset selection when model changes
+          currentIndex = -1;
+        }
 
         // Capture clicks on empty areas to give focus to GridView
         MouseArea {
@@ -623,9 +703,6 @@ SmartPanel {
           z: -1
           onClicked: {
             wallpaperGridView.forceActiveFocus();
-            if (wallpaperGridView.currentIndex < 0 && filteredWallpapers.length > 0) {
-              wallpaperGridView.currentIndex = 0;
-            }
           }
         }
 
@@ -719,105 +796,140 @@ SmartPanel {
           }
         }
 
-        delegate: ColumnLayout {
-          id: wallpaperItem
+        delegate: Item {
+          id: wallpaperItemWrapper
+          width: wallpaperGridView.cellWidth
+          height: wallpaperGridView.cellHeight
 
-          property string wallpaperPath: modelData
-          property bool isSelected: (wallpaperPath === currentWallpaper)
-          property string filename: wallpaperPath.split('/').pop()
+          ColumnLayout {
+            id: wallpaperItem
+            anchors.fill: parent
+            anchors.margins: Style.marginXS
 
-          width: wallpaperGridView.itemSize
-          spacing: Style.marginXS
+            property string wallpaperPath: modelData
+            property bool isSelected: (wallpaperPath === currentWallpaper)
+            property string filename: wallpaperPath.split('/').pop()
+            property string cachedPath: ""
 
-          Rectangle {
-            id: imageContainer
-            Layout.fillWidth: true
-            Layout.preferredHeight: Math.round(wallpaperGridView.itemSize * 0.67)
-            color: Color.transparent
+            spacing: Style.marginXS
 
-            NImageCached {
-              id: img
-              imagePath: wallpaperPath
-              cacheFolder: Settings.cacheDirImagesWallpapers
-              anchors.fill: parent
-            }
-
-            Rectangle {
-              anchors.fill: parent
-              color: Color.transparent
-              border.color: {
-                if (isSelected) {
-                  return Color.mSecondary;
-                }
-                if (wallpaperGridView.currentIndex === index) {
-                  return Color.mHover;
-                }
-                return Color.mSurface;
+            Component.onCompleted: {
+              if (ImageCacheService.initialized) {
+                ImageCacheService.getThumbnail(wallpaperPath, function (path, success) {
+                  if (wallpaperItem)
+                    wallpaperItem.cachedPath = success ? path : wallpaperPath;
+                });
+              } else {
+                cachedPath = wallpaperPath;
               }
-              border.width: Math.max(1, Style.borderL * 1.5)
             }
 
-            Rectangle {
-              anchors.top: parent.top
-              anchors.right: parent.right
-              anchors.margins: Style.marginS
-              width: 28
-              height: 28
-              radius: width / 2
-              color: Color.mSecondary
-              border.color: Color.mOutline
-              border.width: Style.borderS
-              visible: isSelected
+            Item {
+              id: imageContainer
+              Layout.fillWidth: true
+              Layout.preferredHeight: Math.round(wallpaperGridView.itemSize * 0.67)
 
-              NIcon {
-                icon: "check"
-                pointSize: Style.fontSizeM
-                color: Color.mOnSecondary
+              NImageRounded {
+                id: img
+                anchors.fill: parent
+                imagePath: wallpaperItem.cachedPath
+                radius: Style.radiusM
+                borderColor: {
+                  if (wallpaperItem.isSelected) {
+                    return Color.mSecondary;
+                  }
+                  if (wallpaperGridView.currentIndex === index) {
+                    return Color.mHover;
+                  }
+                  return Color.mSurface;
+                }
+                borderWidth: Math.max(1, Style.borderL * 1.5)
+                imageFillMode: Image.PreserveAspectCrop
+              }
+
+              // Loading/error state background
+              Rectangle {
+                anchors.fill: parent
+                color: Color.mSurfaceVariant
+                radius: Style.radiusM
+                visible: img.status === Image.Loading || img.status === Image.Error || wallpaperItem.cachedPath === ""
+
+                NIcon {
+                  icon: "image"
+                  pointSize: Style.fontSizeL
+                  color: Color.mOnSurfaceVariant
+                  anchors.centerIn: parent
+                }
+              }
+
+              NBusyIndicator {
                 anchors.centerIn: parent
+                visible: img.status === Image.Loading || wallpaperItem.cachedPath === ""
+                running: visible
+                size: 18
               }
-            }
 
-            Rectangle {
-              anchors.fill: parent
-              color: Color.mSurface
-              opacity: (hoverHandler.hovered || isSelected || wallpaperGridView.currentIndex === index) ? 0 : 0.3
-              radius: parent.radius
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: Style.animationFast
+              Rectangle {
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.margins: Style.marginS
+                width: 28
+                height: 28
+                radius: width / 2
+                color: Color.mSecondary
+                border.color: Color.mOutline
+                border.width: Style.borderS
+                visible: wallpaperItem.isSelected
+
+                NIcon {
+                  icon: "check"
+                  pointSize: Style.fontSizeM
+                  color: Color.mOnSecondary
+                  anchors.centerIn: parent
+                }
+              }
+
+              Rectangle {
+                anchors.fill: parent
+                color: Color.mSurface
+                radius: Style.radiusM
+                opacity: (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index) ? 0 : 0.3
+                Behavior on opacity {
+                  NumberAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+              }
+
+              HoverHandler {
+                id: hoverHandler
+              }
+
+              TapHandler {
+                onTapped: {
+                  wallpaperGridView.forceActiveFocus();
+                  wallpaperGridView.currentIndex = index;
+                  if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
+                    WallpaperService.changeWallpaper(wallpaperItem.wallpaperPath, undefined);
+                  } else {
+                    WallpaperService.changeWallpaper(wallpaperItem.wallpaperPath, targetScreen.name);
+                  }
                 }
               }
             }
 
-            // More efficient hover handling
-            HoverHandler {
-              id: hoverHandler
+            NText {
+              text: wallpaperItem.filename
+              visible: !Settings.data.wallpaper.hideWallpaperFilenames
+              color: (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index) ? Color.mOnSurface : Color.mOnSurfaceVariant
+              pointSize: Style.fontSizeXS
+              Layout.fillWidth: true
+              Layout.leftMargin: Style.marginS
+              Layout.rightMargin: Style.marginS
+              Layout.alignment: Qt.AlignHCenter
+              horizontalAlignment: Text.AlignHCenter
+              elide: Text.ElideRight
             }
-
-            TapHandler {
-              onTapped: {
-                wallpaperGridView.forceActiveFocus();
-                wallpaperGridView.currentIndex = index;
-                if (Settings.data.wallpaper.setWallpaperOnAllMonitors) {
-                  WallpaperService.changeWallpaper(wallpaperPath, undefined);
-                } else {
-                  WallpaperService.changeWallpaper(wallpaperPath, targetScreen.name);
-                }
-              }
-            }
-          }
-
-          NText {
-            text: filename
-            visible: !Settings.data.wallpaper.hideWallpaperFilenames
-            color: (hoverHandler.hovered || isSelected || wallpaperGridView.currentIndex === index) ? Color.mOnSurface : Color.mOnSurfaceVariant
-            pointSize: Style.fontSizeXS
-            Layout.fillWidth: true
-            Layout.leftMargin: Style.marginS
-            Layout.rightMargin: Style.marginS
-            Layout.alignment: Qt.AlignHCenter
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
           }
         }
       }
@@ -853,13 +965,13 @@ SmartPanel {
             Layout.alignment: Qt.AlignHCenter
           }
           NText {
-            text: (wallpaperPanel.filterText && wallpaperPanel.filterText.length > 0) ? I18n.tr("wallpaper.no-match") : I18n.tr("wallpaper.no-wallpaper")
+            text: (panelContent.filterText && panelContent.filterText.length > 0) ? I18n.tr("wallpaper.no-match") : I18n.tr("wallpaper.no-wallpaper")
             color: Color.mOnSurface
             font.weight: Style.fontWeightBold
             Layout.alignment: Qt.AlignHCenter
           }
           NText {
-            text: (wallpaperPanel.filterText && wallpaperPanel.filterText.length > 0) ? I18n.tr("wallpaper.try-different-search") : I18n.tr("wallpaper.configure-directory")
+            text: (panelContent.filterText && panelContent.filterText.length > 0) ? I18n.tr("wallpaper.try-different-search") : I18n.tr("wallpaper.configure-directory")
             color: Color.mOnSurfaceVariant
             wrapMode: Text.WordWrap
             Layout.alignment: Qt.AlignHCenter
@@ -959,8 +1071,14 @@ SmartPanel {
           focus: true
           keyNavigationEnabled: true
           keyNavigationWraps: false
+          currentIndex: -1
 
           model: wallpapers || []
+
+          onModelChanged: {
+            // Reset selection when model changes
+            currentIndex = -1;
+          }
 
           property int columns: (screen.width > 1920) ? 5 : 4
           property int itemSize: cellWidth

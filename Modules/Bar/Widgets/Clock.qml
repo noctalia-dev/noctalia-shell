@@ -17,7 +17,6 @@ Rectangle {
   property string section: ""
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
-  property real scaling: 1.0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
   property var widgetSettings: {
@@ -32,8 +31,6 @@ Rectangle {
 
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
-  readonly property bool density: Settings.data.bar.density
-
   readonly property var now: Time.now
 
   // Resolve settings: try user settings or defaults from BarWidgetRegistry
@@ -42,6 +39,7 @@ Rectangle {
   readonly property string customFont: widgetSettings.customFont !== undefined ? widgetSettings.customFont : widgetMetadata.customFont
   readonly property string formatHorizontal: widgetSettings.formatHorizontal !== undefined ? widgetSettings.formatHorizontal : widgetMetadata.formatHorizontal
   readonly property string formatVertical: widgetSettings.formatVertical !== undefined ? widgetSettings.formatVertical : widgetMetadata.formatVertical
+  readonly property string tooltipFormat: widgetSettings.tooltipFormat !== undefined ? widgetSettings.tooltipFormat : widgetMetadata.tooltipFormat
 
   implicitWidth: isBarVertical ? Style.capsuleHeight : Math.round((isBarVertical ? verticalLoader.implicitWidth : horizontalLoader.implicitWidth) + Style.marginM * 2)
 
@@ -74,14 +72,13 @@ Rectangle {
             Binding on pointSize {
               value: {
                 if (repeater.model.length == 1) {
-                  return Style.fontSizeS * scaling;
+                  return Style.barFontSize;
                 } else {
-                  return (index == 0) ? Style.fontSizeXS * scaling : Style.fontSizeXXS * scaling;
+                  return (index == 0) ? Style.barFontSize * 0.9 : Style.barFontSize * 0.75;
                 }
               }
             }
             applyUiScale: false
-            font.weight: Style.fontWeightBold
             color: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
             wrapMode: Text.WordWrap
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -104,12 +101,8 @@ Rectangle {
             visible: text !== ""
             text: modelData
             family: useCustomFont && customFont ? customFont : Settings.data.ui.fontDefault
-            Binding on pointSize {
-              value: Style.fontSizeS * scaling
-            }
+            pointSize: Style.barFontSize
             applyUiScale: false
-
-            font.weight: Style.fontWeightBold
             color: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
             wrapMode: Text.WordWrap
             Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
@@ -149,6 +142,15 @@ Rectangle {
                  }
   }
 
+  // Build tooltip text with formatted time/date
+  function buildTooltipText() {
+    if (tooltipFormat && tooltipFormat.trim() !== "") {
+      return I18n.locale.toString(now, tooltipFormat.trim());
+    }
+    // Fallback to default if no format is set
+    return I18n.tr("clock.tooltip"); // Defaults to "Calendar"
+  }
+
   MouseArea {
     id: clockMouseArea
     anchors.fill: parent
@@ -157,10 +159,12 @@ Rectangle {
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     onEntered: {
       if (!PanelService.getPanel("clockPanel", screen)?.active) {
-        TooltipService.show(root, I18n.tr("clock.tooltip"), BarService.getTooltipDirection());
+        TooltipService.show(root, buildTooltipText(), BarService.getTooltipDirection());
+        tooltipRefreshTimer.start();
       }
     }
     onExited: {
+      tooltipRefreshTimer.stop();
       TooltipService.hide();
     }
     onClicked: mouse => {
@@ -175,5 +179,16 @@ Rectangle {
                    PanelService.getPanel("clockPanel", screen)?.toggle(this);
                  }
                }
+  }
+
+  Timer {
+    id: tooltipRefreshTimer
+    interval: 1000
+    repeat: true
+    onTriggered: {
+      if (clockMouseArea.containsMouse && !PanelService.getPanel("clockPanel", screen)?.active) {
+        TooltipService.updateText(buildTooltipText());
+      }
+    }
   }
 }

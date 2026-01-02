@@ -27,7 +27,7 @@ Singleton {
     if (strategy === "auto") {
       // Check if systemd-inhibit is available
       try {
-        var systemdResult = Quickshell.execDetached(["which", "systemd-inhibit"]);
+        var systemdResult = Quickshell.execDetached(["sh", "-c", "command -v systemd-inhibit"]);
         strategy = "systemd";
         Logger.d("IdleInhibitor", "Using systemd-inhibit strategy");
         return;
@@ -37,7 +37,7 @@ Singleton {
       {}
 
       try {
-        var waylandResult = Quickshell.execDetached(["which", "wayhibitor"]);
+        var waylandResult = Quickshell.execDetached(["sh", "-c", "command -v wayhibitor"]);
         strategy = "wayland";
         Logger.d("IdleInhibitor", "Using wayhibitor strategy");
         return;

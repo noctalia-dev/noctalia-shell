@@ -20,7 +20,6 @@ Item {
   property string section: ""
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
-  property real scaling: 1.0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] || {}
   property var widgetSettings: {
@@ -47,8 +46,11 @@ Item {
   readonly property string windowTitle: CompositorService.getFocusedWindowTitle() || "No active window"
   readonly property string fallbackIcon: "user-desktop"
 
-  implicitHeight: visible ? (isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : calculatedVerticalDimension()) : Style.capsuleHeight) : 0
-  implicitWidth: visible ? (isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : calculatedVerticalDimension()) : (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : dynamicWidth)) : 0
+  readonly property int iconSize: Style.toOdd(Style.capsuleHeight * 0.75)
+  readonly property int verticalSize: Style.toOdd(Style.capsuleHeight * 0.85)
+
+  implicitHeight: visible ? (isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : Style.capsuleHeight) : 0
+  implicitWidth: visible ? (isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : dynamicWidth)) : 0
 
   // "visible": Always Visible, "hidden": Hide When Empty, "transparent": Transparent When Empty
   visible: (hideMode !== "hidden" || hasFocusedWindow) || opacity > 0
@@ -74,19 +76,15 @@ Item {
     }
   }
 
-  function calculatedVerticalDimension() {
-    return Math.round((Style.baseWidgetSize - 5) * scaling);
-  }
-
   function calculateContentWidth() {
     // Calculate the actual content width based on visible elements
     var contentWidth = 0;
-    var margins = Style.marginS * scaling * 2; // Left and right margins
+    var margins = Style.marginS * 2; // Left and right margins
 
     // Icon width (if visible)
     if (showIcon) {
-      contentWidth += 18 * scaling;
-      contentWidth += Style.marginS * scaling; // Spacing after icon
+      contentWidth += iconSize;
+      contentWidth += Style.marginS; // Spacing after icon
     }
 
     // Text width (use the measured width)
@@ -163,9 +161,8 @@ Item {
     id: fullTitleMetrics
     visible: false
     text: windowTitle
-    pointSize: Style.fontSizeS * scaling
+    pointSize: Style.barFontSize
     applyUiScale: false
-    font.weight: Style.fontWeightMedium
   }
 
   NPopupContextMenu {
@@ -194,9 +191,10 @@ Item {
   Rectangle {
     id: windowActiveRect
     visible: root.visible
-    anchors.verticalCenter: parent.verticalCenter
-    width: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : calculatedVerticalDimension()) : ((!hasFocusedWindow) && (hideMode === "hidden") ? 0 : dynamicWidth)
-    height: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : calculatedVerticalDimension()) : Style.capsuleHeight
+    x: isVerticalBar ? Style.pixelAlignCenter(parent.width, width) : 0
+    y: isVerticalBar ? 0 : Style.pixelAlignCenter(parent.height, height)
+    width: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : verticalSize) : ((!hasFocusedWindow) && (hideMode === "hidden") ? 0 : dynamicWidth)
+    height: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : verticalSize) : Style.capsuleHeight
     radius: Style.radiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
@@ -213,21 +211,21 @@ Item {
     Item {
       id: mainContainer
       anchors.fill: parent
-      anchors.leftMargin: isVerticalBar ? 0 : Style.marginS * scaling
-      anchors.rightMargin: isVerticalBar ? 0 : Style.marginS * scaling
+      anchors.leftMargin: isVerticalBar ? 0 : Style.marginS
+      anchors.rightMargin: isVerticalBar ? 0 : Style.marginS
 
       // Horizontal layout for top/bottom bars
       RowLayout {
         id: rowLayout
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: Style.marginS * scaling
+        y: Style.pixelAlignCenter(parent.height, height)
+        spacing: Style.marginS
         visible: !isVerticalBar
         z: 1
 
         // Window icon
         Item {
-          Layout.preferredWidth: 18 * scaling
-          Layout.preferredHeight: 18 * scaling
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: iconSize
           Layout.alignment: Qt.AlignVCenter
           visible: showIcon
 
@@ -255,7 +253,7 @@ Item {
           id: titleContainer
           Layout.preferredWidth: {
             // Calculate available width based on other elements
-            var iconWidth = (showIcon && windowIcon.visible ? (18 + Style.marginS) : 0);
+            var iconWidth = (showIcon && windowIcon.visible ? (iconSize + Style.marginS) : 0);
             var totalMargins = Style.marginXXS * 2;
             var availableWidth = mainContainer.width - iconWidth - totalMargins;
             return Math.max(20, availableWidth);
@@ -342,9 +340,8 @@ Item {
               NText {
                 id: titleText
                 text: windowTitle
-                pointSize: Style.fontSizeS * scaling
+                pointSize: Style.barFontSize
                 applyUiScale: false
-                font.weight: Style.fontWeightMedium
                 verticalAlignment: Text.AlignVCenter
                 color: Color.mOnSurface
                 onTextChanged: {
@@ -361,7 +358,7 @@ Item {
               NText {
                 text: windowTitle
                 font: titleText.font
-                pointSize: Style.fontSizeS * scaling
+                pointSize: Style.barFontSize
                 applyUiScale: false
                 verticalAlignment: Text.AlignVCenter
                 color: Color.mOnSurface
@@ -397,17 +394,20 @@ Item {
       // Vertical layout for left/right bars - icon only
       Item {
         id: verticalLayout
-        anchors.centerIn: parent
         width: parent.width - Style.marginM * 2
         height: parent.height - Style.marginM * 2
+        x: Style.pixelAlignCenter(parent.width, width)
+        y: Style.pixelAlignCenter(parent.height, height)
         visible: isVerticalBar
         z: 1
 
         // Window icon
         Item {
-          width: Style.baseWidgetSize * 0.5 * scaling
+          id: verticalIconContainer
+          width: root.iconSize
           height: width
-          anchors.centerIn: parent
+          x: Style.pixelAlignCenter(parent.width, width)
+          y: Style.pixelAlignCenter(parent.height, height)
           visible: windowTitle !== ""
 
           IconImage {

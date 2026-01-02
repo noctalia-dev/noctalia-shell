@@ -4,17 +4,26 @@ set -euo pipefail
 # QML Formatter Script
 
 # Find qmlformat binary
-if [ ! -x "/usr/lib/qt6/bin/qmlformat" ]; then
-    echo "No 'qmlformat' found in /usr/lib/qt6/bin." >&2
-    echo "Install it via 'qt6-tools' or 'qt6-declarative-tools' to proceed." >&2
+QMLFORMAT=""
+for path in "/usr/lib64/qt6/bin/qmlformat" "/usr/lib/qt6/bin/qmlformat"; do
+    if [ -x "$path" ]; then
+        QMLFORMAT="$path"
+        break
+    fi
+done
+
+if [ -z "$QMLFORMAT" ]; then
+    echo "No 'qmlformat' found in standard locations." >&2
+    echo "To proceed, install it via 'qt6-tools', 'qt6-declarative-tools' or 'qt6-qtdeclarative-devel'" >&2
     exit 1
 fi
 
 format_file() {
-    /usr/lib/qt6/bin/qmlformat -w 2 -W 360 -S --semicolon-rule always -i "$1" || { echo "Failed: $1" >&2; return 1; }
+    "${QMLFORMAT}" -w 2 -W 360 -S --semicolon-rule always -i "$1" || { echo "Failed: $1" >&2; return 1; }
 }
 
 export -f format_file
+export QMLFORMAT
 
 # Find all .qml files
 mapfile -t all_files < <(find "${1:-.}" -name "*.qml" -type f)

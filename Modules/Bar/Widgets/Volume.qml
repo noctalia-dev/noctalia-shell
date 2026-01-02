@@ -113,7 +113,6 @@ Item {
     id: pill
 
     screen: root.screen
-    density: Settings.data.bar.density
     oppositeDirection: BarService.getPillDirection(root)
     icon: AudioService.getOutputIcon()
     autoHide: false // Important to be false so we can hover as long as we want

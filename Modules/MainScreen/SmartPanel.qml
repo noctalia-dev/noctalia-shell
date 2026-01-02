@@ -93,6 +93,7 @@ Item {
   readonly property bool barFloating: Settings.data.bar.floating
   readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
   readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0
+  readonly property real attachmentOverlap: 1 // Panel extends 1px into bar area to fix hairline gap with fractional scaling
 
   // Check if bar should be visible on this screen
   readonly property bool barShouldShow: {
@@ -149,38 +150,45 @@ Item {
       buttonItem = BarService.lookupWidget(buttonName, screen.name);
     }
 
-    if (buttonItem) {
-      root.buttonItem = buttonItem;
-      // Map button position within its window
-      var buttonLocal = buttonItem.mapToItem(null, 0, 0);
+    // Validate buttonItem is a valid QML Item with mapToItem function
+    if (buttonItem && typeof buttonItem.mapToItem === "function") {
+      try {
+        root.buttonItem = buttonItem;
+        // Map button position within its window
+        var buttonLocal = buttonItem.mapToItem(null, 0, 0);
 
-      // Calculate the bar window's position on screen based on bar settings
-      // The BarContentWindow uses anchors, so we need to compute its position
-      var barWindowX = 0;
-      var barWindowY = 0;
-      var screenWidth = root.screen?.width || 0;
-      var screenHeight = root.screen?.height || 0;
+        // Calculate the bar window's position on screen based on bar settings
+        // The BarContentWindow uses anchors, so we need to compute its position
+        var barWindowX = 0;
+        var barWindowY = 0;
+        var screenWidth = root.screen?.width || 0;
+        var screenHeight = root.screen?.height || 0;
 
-      if (root.barPosition === "right") {
-        barWindowX = screenWidth - root.barMarginH - Style.barHeight;
-      } else if (root.barPosition === "left") {
-        barWindowX = root.barMarginH;
+        if (root.barPosition === "right") {
+          barWindowX = screenWidth - root.barMarginH - Style.barHeight;
+        } else if (root.barPosition === "left") {
+          barWindowX = root.barMarginH;
+        }
+        // For top/bottom bars, barWindowX stays 0 (full width window)
+
+        if (root.barPosition === "bottom") {
+          barWindowY = screenHeight - root.barMarginV - Style.barHeight;
+        } else if (root.barPosition === "top") {
+          barWindowY = root.barMarginV;
+        }
+        // For left/right bars, barWindowY stays 0 (full height window)
+
+        root.buttonPosition = Qt.point(barWindowX + buttonLocal.x, barWindowY + buttonLocal.y);
+        root.buttonWidth = buttonItem.width;
+        root.buttonHeight = buttonItem.height;
+        root.useButtonPosition = true;
+      } catch (e) {
+        Logger.w("SmartPanel", "Failed to get button position, using default positioning:", e);
+        root.buttonItem = null;
+        root.useButtonPosition = false;
       }
-      // For top/bottom bars, barWindowX stays 0 (full width window)
-
-      if (root.barPosition === "bottom") {
-        barWindowY = screenHeight - root.barMarginV - Style.barHeight;
-      } else if (root.barPosition === "top") {
-        barWindowY = root.barMarginV;
-      }
-      // For left/right bars, barWindowY stays 0 (full height window)
-
-      root.buttonPosition = Qt.point(barWindowX + buttonLocal.x, barWindowY + buttonLocal.y);
-      root.buttonWidth = buttonItem.width;
-      root.buttonHeight = buttonItem.height;
-      root.useButtonPosition = true;
     } else {
-      // No button provided: reset button position mode
+      // No valid button provided: reset button position mode
       root.buttonItem = null;
       root.useButtonPosition = false;
     }
@@ -220,6 +228,29 @@ Item {
 
     // Opacity will fade out, then size will shrink, then finalizeClose() will complete
     Logger.d("SmartPanel", "Closing panel", objectName);
+  }
+
+  function closeImmediately() {
+    // Close without any animation, useful for app launches to avoid focus issues
+    opacityTrigger.stop();
+    openWatchdogActive = false;
+    openWatchdogTimer.stop();
+    closeWatchdogActive = false;
+    closeWatchdogTimer.stop();
+
+    // Don't set opacity directly as it breaks the binding
+    root.isPanelVisible = false;
+    root.sizeAnimationComplete = false;
+    root.isClosing = false;
+    root.opacityFadeComplete = false;
+    root.closeFinalized = true;
+    root.isPanelOpen = false;
+    panelBackground.dimensionsInitialized = false;
+
+    PanelService.closedPanel(root);
+    closed();
+
+    Logger.d("SmartPanel", "Panel closed immediately", objectName);
   }
 
   function finalizeClose() {
@@ -299,12 +330,13 @@ Item {
         // For vertical bars
         if (panelContent.allowAttach) {
           // Attached panels: align with bar edge (left or right side)
+          // Subtract attachmentOverlap to extend panel 1px into bar area
           if (root.barPosition === "left") {
-            var leftBarEdge = root.barMarginH + Style.barHeight;
+            var leftBarEdge = root.barMarginH + Style.barHeight - root.attachmentOverlap;
             calculatedX = leftBarEdge;
           } else {
             // right
-            var rightBarEdge = root.width - root.barMarginH - Style.barHeight;
+            var rightBarEdge = root.width - root.barMarginH - Style.barHeight + root.attachmentOverlap;
             calculatedX = rightBarEdge - panelWidth;
           }
         } else {
@@ -358,7 +390,8 @@ Item {
         if (root.effectivePanelAnchorRight) {
           // Attached: snap to edge/bar
           if (root.barIsVertical && root.barPosition === "right") {
-            var rightBarEdge = root.width - root.barMarginH - Style.barHeight;
+            // Add attachmentOverlap to extend panel 1px into bar area
+            var rightBarEdge = root.width - root.barMarginH - Style.barHeight + root.attachmentOverlap;
             calculatedX = rightBarEdge - panelWidth;
           } else {
             var panelOnSameEdgeAsBar = (root.barPosition === "top" && root.effectivePanelAnchorTop) || (root.barPosition === "bottom" && root.effectivePanelAnchorBottom);
@@ -378,7 +411,8 @@ Item {
         if (root.effectivePanelAnchorLeft) {
           // Attached: snap to edge/bar
           if (root.barIsVertical && root.barPosition === "left") {
-            var leftBarEdge = root.barMarginH + Style.barHeight;
+            // Subtract attachmentOverlap to extend panel 1px into bar area
+            var leftBarEdge = root.barMarginH + Style.barHeight - root.attachmentOverlap;
             calculatedX = leftBarEdge;
           } else {
             var panelOnSameEdgeAsBar = (root.barPosition === "top" && root.effectivePanelAnchorTop) || (root.barPosition === "bottom" && root.effectivePanelAnchorBottom);
@@ -397,12 +431,12 @@ Item {
         // No explicit anchor: attach to bar if allowAttach, otherwise center
         if (root.barIsVertical) {
           if (panelContent.allowAttach) {
-            // Attach to the bar edge
+            // Attach to the bar edge (with overlap into bar area)
             if (root.barPosition === "left") {
-              var leftBarEdge = root.barMarginH + Style.barHeight;
+              var leftBarEdge = root.barMarginH + Style.barHeight - root.attachmentOverlap;
               calculatedX = leftBarEdge;
             } else {
-              var rightBarEdge = root.width - root.barMarginH - Style.barHeight;
+              var rightBarEdge = root.width - root.barMarginH - Style.barHeight + root.attachmentOverlap;
               calculatedX = rightBarEdge - panelWidth;
             }
           } else {
@@ -459,14 +493,16 @@ Item {
       if (root.barPosition === "top") {
         var topBarEdge = root.barMarginV + Style.barHeight;
         if (panelContent.allowAttach) {
-          calculatedY = topBarEdge;
+          // Subtract attachmentOverlap to extend panel 1px into bar area
+          calculatedY = topBarEdge - root.attachmentOverlap;
         } else {
           calculatedY = topBarEdge + Style.marginM;
         }
       } else if (root.barPosition === "bottom") {
         var bottomBarEdge = root.height - root.barMarginV - Style.barHeight;
         if (panelContent.allowAttach) {
-          calculatedY = bottomBarEdge - panelHeight;
+          // Add attachmentOverlap to extend panel 1px into bar area
+          calculatedY = bottomBarEdge - panelHeight + root.attachmentOverlap;
         } else {
           calculatedY = bottomBarEdge - panelHeight - Style.marginM;
         }
@@ -494,14 +530,18 @@ Item {
         }
       } else {
         if (root.effectivePanelAnchorTop && root.barPosition === "top") {
-          calculatedY = root.barMarginV + Style.barHeight;
+          // Subtract attachmentOverlap to extend panel 1px into bar area
+          calculatedY = root.barMarginV + Style.barHeight - root.attachmentOverlap;
         } else if (root.effectivePanelAnchorBottom && root.barPosition === "bottom") {
-          calculatedY = root.height - root.barMarginV - Style.barHeight - panelHeight;
+          // Add attachmentOverlap to extend panel 1px into bar area
+          calculatedY = root.height - root.barMarginV - Style.barHeight - panelHeight + root.attachmentOverlap;
         } else if (!root.hasExplicitVerticalAnchor) {
           if (root.barPosition === "top") {
-            calculatedY = root.barMarginV + Style.barHeight;
+            // Subtract attachmentOverlap to extend panel 1px into bar area
+            calculatedY = root.barMarginV + Style.barHeight - root.attachmentOverlap;
           } else if (root.barPosition === "bottom") {
-            calculatedY = root.height - root.barMarginV - Style.barHeight - panelHeight;
+            // Add attachmentOverlap to extend panel 1px into bar area
+            calculatedY = root.height - root.barMarginV - Style.barHeight - panelHeight + root.attachmentOverlap;
           }
         }
       }
@@ -525,8 +565,8 @@ Item {
         } else if (root.panelAnchorTop) {
           // Use raw panelAnchorTop for positioning decision
           if (root.effectivePanelAnchorTop) {
-            // Attached: snap to edge/bar
-            calculatedY = root.barPosition === "top" ? root.barMarginV + Style.barHeight : 0;
+            // Attached: snap to edge/bar (with overlap into bar area)
+            calculatedY = root.barPosition === "top" ? root.barMarginV + Style.barHeight - root.attachmentOverlap : 0;
           } else {
             // Not attached: position at top with margin
             var topBarOffset = (root.barPosition === "top") ? barOffset : 0;
@@ -535,8 +575,8 @@ Item {
         } else if (root.panelAnchorBottom) {
           // Use raw panelAnchorBottom for positioning decision
           if (root.effectivePanelAnchorBottom) {
-            // Attached: snap to edge/bar
-            calculatedY = root.barPosition === "bottom" ? root.height - root.barMarginV - Style.barHeight - panelHeight : root.height - panelHeight;
+            // Attached: snap to edge/bar (with overlap into bar area)
+            calculatedY = root.barPosition === "bottom" ? root.height - root.barMarginV - Style.barHeight - panelHeight + root.attachmentOverlap : root.height - panelHeight;
           } else {
             // Not attached: position at bottom with margin
             var bottomBarOffset = (root.barPosition === "bottom") ? barOffset : 0;
@@ -556,9 +596,11 @@ Item {
           } else {
             if (panelContent.allowAttach && !root.barIsVertical) {
               if (root.barPosition === "top") {
-                calculatedY = root.barMarginV + Style.barHeight;
+                // Subtract attachmentOverlap to extend panel 1px into bar area
+                calculatedY = root.barMarginV + Style.barHeight - root.attachmentOverlap;
               } else if (root.barPosition === "bottom") {
-                calculatedY = root.height - root.barMarginV - Style.barHeight - panelHeight;
+                // Add attachmentOverlap to extend panel 1px into bar area
+                calculatedY = root.height - root.barMarginV - Style.barHeight - panelHeight + root.attachmentOverlap;
               }
             } else {
               if (root.barPosition === "top") {
@@ -602,9 +644,9 @@ Item {
     panelBackground.targetX = calculatedX;
     panelBackground.targetY = calculatedY;
 
-    Logger.d("SmartPanel", "Position calculated:", calculatedX, calculatedY);
-    Logger.d("SmartPanel", "  Panel size:", panelWidth, "x", panelHeight);
-    Logger.d("SmartPanel", "  Parent size:", root.width, "x", root.height);
+    // Logger.d("SmartPanel", "Position calculated:", calculatedX, calculatedY);
+    // Logger.d("SmartPanel", "  Panel size:", panelWidth, "x", panelHeight);
+    // Logger.d("SmartPanel", "  Parent size:", root.width, "x", root.height);
   }
 
   // Watch for changes in content-driven sizes and update position
@@ -649,7 +691,7 @@ Item {
             root.opacityFadeComplete = true;
             var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
             if (shouldFinalizeNow) {
-              Logger.d("SmartPanel", "Zero-duration opacity + no size animation - finalizing", root.objectName);
+              // Logger.d("SmartPanel", "Zero-duration opacity + no size animation - finalizing", root.objectName);
               Qt.callLater(root.finalizeClose);
             }
           } else if (root.isPanelVisible && root.opacity === 1.0) {
@@ -667,10 +709,10 @@ Item {
           // Detached panels (allowAttach === false) should always animate from top
           var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
           if (shouldFinalizeNow) {
-            Logger.d("SmartPanel", "No animation - finalizing immediately", root.objectName);
+            //Logger.d("SmartPanel", "No animation - finalizing immediately", root.objectName);
             Qt.callLater(root.finalizeClose);
           } else {
-            Logger.d("SmartPanel", "Animation will run - waiting for size animation", root.objectName, "shouldAnimateHeight:", panelContent.geometryPlaceholder.shouldAnimateHeight, "shouldAnimateWidth:", panelContent.geometryPlaceholder.shouldAnimateWidth);
+            //Logger.d("SmartPanel", "Animation will run - waiting for size animation", root.objectName, "shouldAnimateHeight:", panelContent.geometryPlaceholder.shouldAnimateHeight, "shouldAnimateWidth:", panelContent.geometryPlaceholder.shouldAnimateWidth);
           }
         } // When opacity fade completes during open, stop watchdog
         else if (!running && root.isPanelVisible && root.opacity === 1.0) {
@@ -740,7 +782,7 @@ Item {
       return Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar;
     }
     readonly property bool allowAttachToBar: {
-      if (!(Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar) || Settings.data.bar.transparent) {
+      if (!(Settings.data.ui.panelsAttachedToBar || root.forceAttachToBar)) {
         return false;
       }
 

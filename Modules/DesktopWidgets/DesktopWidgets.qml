@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import qs.Modules.Panels.Settings
 import qs.Services.Compositor
 import qs.Services.Noctalia
 import qs.Services.Power
@@ -34,6 +35,7 @@ Variants {
     required property ShellScreen modelData
 
     // Reactive property for widgets on this specific screen
+    // Returns a fresh array whenever Settings changes
     property var screenWidgets: {
       if (!modelData || !modelData.name) {
         return [];
@@ -47,8 +49,8 @@ Variants {
       return [];
     }
 
-    // Only create PanelWindow if enabled AND screen has widgets
-    active: modelData && Settings.data.desktopWidgets.enabled && screenWidgets.length > 0 && !PowerProfileService.noctaliaPerformanceMode
+    // Only create PanelWindow if enabled AND (screen has widgets OR in edit mode)
+    active: modelData && Settings.data.desktopWidgets.enabled && (screenWidgets.length > 0 || DesktopWidgetRegistry.editMode) && !PowerProfileService.noctaliaPerformanceMode
 
     sourceComponent: PanelWindow {
       id: window
@@ -70,6 +72,57 @@ Variants {
         Logger.d("DesktopWidgets", "Created panel window for", screen?.name);
       }
 
+      // Add a new widget to the current screen
+      function addWidgetToCurrentScreen(widgetId) {
+        var monitorName = window.screen.name;
+        var newWidget = {
+          "id": widgetId
+        };
+
+        // Load default metadata if available
+        var metadata = DesktopWidgetRegistry.widgetMetadata[widgetId];
+        if (metadata) {
+          Object.keys(metadata).forEach(function (key) {
+            if (key !== "allowUserSettings") {
+              newWidget[key] = metadata[key];
+            }
+          });
+        }
+
+        // Place at screen center
+        newWidget.x = (window.screen.width / 2) - 100;
+        newWidget.y = (window.screen.height / 2) - 100;
+        newWidget.scale = 1.0;
+
+        // Get current widgets and add new one
+        var monitorWidgets = Settings.data.desktopWidgets.monitorWidgets || [];
+        var newMonitorWidgets = monitorWidgets.slice();
+        var found = false;
+
+        for (var i = 0; i < newMonitorWidgets.length; i++) {
+          if (newMonitorWidgets[i].name === monitorName) {
+            var widgets = (newMonitorWidgets[i].widgets || []).slice();
+            widgets.push(newWidget);
+            newMonitorWidgets[i] = {
+              "name": monitorName,
+              "widgets": widgets
+            };
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          newMonitorWidgets.push({
+                                   "name": monitorName,
+                                   "widgets": [newWidget]
+                                 });
+        }
+
+        Settings.data.desktopWidgets.monitorWidgets = newMonitorWidgets;
+        Logger.i("DesktopWidgets", "Added widget", widgetId, "to", monitorName);
+      }
+
       Item {
         id: widgetsContainer
         anchors.fill: parent
@@ -78,7 +131,7 @@ Variants {
         // Using Loader to properly unload Canvas when not needed
         Loader {
           id: gridOverlayLoader
-          active: Settings.data.desktopWidgets.editMode && Settings.data.desktopWidgets.enabled && Settings.data.desktopWidgets.gridSnap
+          active: DesktopWidgetRegistry.editMode && Settings.data.desktopWidgets.enabled && Settings.data.desktopWidgets.gridSnap
           anchors.fill: parent
           z: -1  // Behind widgets but above background
           asynchronous: false
@@ -197,6 +250,10 @@ Variants {
                   gridOverlay.requestPaint();
                 }
               }
+            }
+
+            Connections {
+              target: DesktopWidgetRegistry
               function onEditModeChanged() {
                 if (gridOverlayLoader.active) {
                   gridOverlay.requestPaint();
@@ -215,8 +272,8 @@ Variants {
             // Bind to registeredWidgets and pluginReloadCounter to re-evaluate when plugins register/unregister
             active: (modelData.id in root.registeredWidgets) && (root.pluginReloadCounter >= 0)
 
-            property var widgetData: modelData
-            property int widgetIndex: index
+            required property var modelData
+            required property int index
 
             sourceComponent: {
               // Access registeredWidgets and pluginReloadCounter to create reactive binding
@@ -229,8 +286,8 @@ Variants {
               if (item) {
                 item.screen = window.screen;
                 item.parent = widgetsContainer;
-                item.widgetData = widgetData;
-                item.widgetIndex = widgetIndex;
+                item.widgetData = modelData;
+                item.widgetIndex = index;
 
                 // Inject plugin API for plugin widgets
                 if (DesktopWidgetRegistry.isPluginWidget(modelData.id)) {
@@ -245,140 +302,188 @@ Variants {
           }
         }
 
-        // Background for edit mode controls
+        // Edit mode controls panel
         Rectangle {
-          id: editModeControlsBackground
-          visible: Settings.data.desktopWidgets.editMode && Settings.data.desktopWidgets.enabled
+          id: editModeControlsPanel
+          visible: DesktopWidgetRegistry.editMode && Settings.data.desktopWidgets.enabled
 
           readonly property string barPos: Settings.data.bar.position || "top"
           readonly property bool barFloating: Settings.data.bar.floating || false
-          // Calculate offset from bar based on position and floating state
+
           readonly property int barOffsetTop: {
             if (barPos !== "top")
-              return Style.marginXL * Style.uiScaleRatio;
+              return Style.marginM;
             const floatMarginV = barFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0;
-            return Style.barHeight + floatMarginV + Style.marginM + (Style.marginXL * Style.uiScaleRatio);
+            return Style.barHeight + floatMarginV + Style.marginM;
           }
           readonly property int barOffsetRight: {
             if (barPos !== "right")
-              return Style.marginXL * Style.uiScaleRatio;
+              return Style.marginM;
             const floatMarginH = barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0;
-            return Style.barHeight + floatMarginH + Style.marginM + (Style.marginXL * Style.uiScaleRatio);
+            return Style.barHeight + floatMarginH + Style.marginM;
           }
 
-          anchors {
-            top: parent.top
-            right: parent.right
-            topMargin: barOffsetTop
-            rightMargin: barOffsetRight
+          // Internal state for drag tracking (session-only, resets on restart)
+          QtObject {
+            id: panelInternal
+            property bool isDragging: false
+            property real dragOffsetX: 0
+            property real dragOffsetY: 0
+            // Default position: top-right corner accounting for bar
+            property real baseX: widgetsContainer.width - editModeControlsPanel.width - editModeControlsPanel.barOffsetRight
+            property real baseY: editModeControlsPanel.barOffsetTop
           }
 
-          // Calculate width to accommodate all controls
-          width: {
-            var buttonWidth = editModeButton.visible ? editModeButton.implicitWidth : 0;
-            var explanationWidth = controlsExplanation.visible ? controlsExplanation.width : 0;
-            var checkboxWidth = gridSnapCheckbox.visible ? gridSnapCheckbox.implicitWidth : 0;
-            return Math.max(buttonWidth, explanationWidth, checkboxWidth, 200) + (Style.marginXL * 2);
+          // Reset position when bar position changes
+          Connections {
+            target: Settings.data.bar
+            function onPositionChanged() {
+              panelInternal.baseX = widgetsContainer.width - editModeControlsPanel.width - editModeControlsPanel.barOffsetRight;
+              panelInternal.baseY = editModeControlsPanel.barOffsetTop;
+            }
           }
 
-          // Calculate height to cover all controls with spacing
-          height: {
-            var buttonHeight = editModeButton.visible ? editModeButton.height : 0;
-            var explanationHeight = controlsExplanation.visible ? controlsExplanation.height : 0;
-            var checkboxHeight = gridSnapCheckbox.visible ? gridSnapCheckbox.height : 0;
-            return buttonHeight + Style.marginXL + explanationHeight + Style.marginXL + checkboxHeight + (Style.marginXL * 2);
-          }
+          x: panelInternal.isDragging ? panelInternal.dragOffsetX : panelInternal.baseX
+          y: panelInternal.isDragging ? panelInternal.dragOffsetY : panelInternal.baseY
+
+          width: controlsLayout.implicitWidth + (Style.marginXL * 2)
+          height: controlsLayout.implicitHeight + (Style.marginXL * 2)
 
           color: Qt.rgba(Color.mSurface.r, Color.mSurface.g, Color.mSurface.b, 0.85)
           radius: Style.radiusL
           border {
-            width: 1
-            color: Qt.alpha(Color.mOutline, 0.2)
+            width: Style.borderS
+            color: Color.mOutline
           }
           z: 9999
-        }
 
-        // Exit edit mode button
-        NButton {
-          id: editModeButton
-          visible: Settings.data.desktopWidgets.editMode && Settings.data.desktopWidgets.enabled
+          // Drag area for relocating the panel
+          MouseArea {
+            id: dragArea
+            anchors.fill: parent
+            cursorShape: panelInternal.isDragging ? Qt.ClosedHandCursor : Qt.OpenHandCursor
 
-          readonly property string barPos: Settings.data.bar.position || "top"
-          readonly property bool barFloating: Settings.data.bar.floating || false
-          // Calculate offset from bar based on position and floating state
-          readonly property int barOffsetTop: {
-            if (barPos !== "top")
-              return Style.marginXL * Style.uiScaleRatio;
-            const floatMarginV = barFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0;
-            return Style.barHeight + floatMarginV + Style.marginM + (Style.marginXL * Style.uiScaleRatio);
-          }
-          readonly property int barOffsetRight: {
-            if (barPos !== "right")
-              return Style.marginXL * Style.uiScaleRatio;
-            const floatMarginH = barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0;
-            return Style.barHeight + floatMarginH + Style.marginM + (Style.marginXL * Style.uiScaleRatio);
-          }
+            property point pressPos: Qt.point(0, 0)
 
-          anchors {
-            top: editModeControlsBackground.top
-            right: editModeControlsBackground.right
-            topMargin: Style.marginXL
-            rightMargin: Style.marginXL
-          }
-          text: I18n.tr("settings.desktop-widgets.edit-mode.exit-button")
-          icon: "logout"
-          //backgroundColor: Color.mSurface
-          //textColor: Color.mOnSurface
-          //hoverColor: Color.mSurfaceVariant
-          outlined: false
-          fontSize: Style.fontSizeM * 1.1
-          iconSize: Style.fontSizeL * 1.1
-          z: 10000
-          onClicked: Settings.data.desktopWidgets.editMode = false
-        }
+            onPressed: mouse => {
+                         pressPos = mapToItem(widgetsContainer, mouse.x, mouse.y);
+                         panelInternal.dragOffsetX = editModeControlsPanel.x;
+                         panelInternal.dragOffsetY = editModeControlsPanel.y;
+                         panelInternal.isDragging = true;
+                       }
 
-        // Controls explanation text
-        NText {
-          id: controlsExplanation
-          visible: Settings.data.desktopWidgets.editMode && Settings.data.desktopWidgets.enabled
-          anchors {
-            top: editModeButton.bottom
-            right: editModeControlsBackground.right
-            topMargin: Style.marginXL
-            rightMargin: Style.marginXL
-          }
-          text: I18n.tr("settings.desktop-widgets.edit-mode.controls-explanation")
-          pointSize: Style.fontSizeS
-          color: Color.mOnSurfaceVariant
-          horizontalAlignment: Text.AlignRight
-          wrapMode: Text.WordWrap
-          width: Math.min(implicitWidth, 300 * Style.uiScaleRatio)
-          z: 10000
-        }
+            onPositionChanged: mouse => {
+                                 if (panelInternal.isDragging && pressed) {
+                                   var currentPos = mapToItem(widgetsContainer, mouse.x, mouse.y);
+                                   var deltaX = currentPos.x - pressPos.x;
+                                   var deltaY = currentPos.y - pressPos.y;
 
-        // Grid snap checkbox
-        RowLayout {
-          id: gridSnapCheckbox
-          visible: Settings.data.desktopWidgets.editMode && Settings.data.desktopWidgets.enabled
-          anchors {
-            top: controlsExplanation.bottom
-            right: editModeControlsBackground.right
-            topMargin: Style.marginXL
-            rightMargin: Style.marginXL
-          }
-          spacing: Style.marginS
-          z: 10000
+                                   var newX = panelInternal.baseX + deltaX;
+                                   var newY = panelInternal.baseY + deltaY;
 
-          NText {
-            text: I18n.tr("settings.desktop-widgets.edit-mode.grid-snap.label")
-            pointSize: Style.fontSizeS
-            color: Color.mOnSurfaceVariant
-            horizontalAlignment: Text.AlignRight
+                                   // Boundary clamping
+                                   newX = Math.max(0, Math.min(newX, widgetsContainer.width - editModeControlsPanel.width));
+                                   newY = Math.max(0, Math.min(newY, widgetsContainer.height - editModeControlsPanel.height));
+
+                                   panelInternal.dragOffsetX = newX;
+                                   panelInternal.dragOffsetY = newY;
+                                 }
+                               }
+
+            onReleased: {
+              if (panelInternal.isDragging) {
+                panelInternal.baseX = panelInternal.dragOffsetX;
+                panelInternal.baseY = panelInternal.dragOffsetY;
+                panelInternal.isDragging = false;
+              }
+            }
+
+            onCanceled: {
+              panelInternal.isDragging = false;
+            }
           }
 
-          NCheckbox {
-            checked: Settings.data.desktopWidgets.gridSnap
-            onToggled: checked => Settings.data.desktopWidgets.gridSnap = checked
+          ColumnLayout {
+            id: controlsLayout
+            anchors {
+              fill: parent
+              margins: Style.marginXL
+            }
+            spacing: Style.marginL
+
+            RowLayout {
+              Layout.alignment: Qt.AlignRight
+              spacing: Style.marginS
+
+              NIconButton {
+                id: addWidgetButton
+                icon: "layout-grid-add"
+                tooltipText: I18n.tr("settings.desktop-widgets.edit-mode.add-widget")
+                onClicked: {
+                  var popupMenuWindow = PanelService.getPopupMenuWindow(window.screen);
+                  if (popupMenuWindow) {
+                    // Build menu items from registry
+                    var items = [];
+                    var widgets = DesktopWidgetRegistry.widgets;
+                    for (var id in widgets) {
+                      items.push({
+                                   action: id,
+                                   text: DesktopWidgetRegistry.getWidgetDisplayName(id),
+                                   icon: "layout-grid-add"
+                                 });
+                    }
+                    var globalPos = addWidgetButton.mapToItem(null, 0, addWidgetButton.height + Style.marginS);
+                    popupMenuWindow.showDynamicContextMenu(items, globalPos.x, globalPos.y, function (widgetId) {
+                      addWidgetToCurrentScreen(widgetId);
+                      return false;
+                    });
+                  }
+                }
+              }
+
+              NIconButton {
+                icon: "grid-4x4"
+                tooltipText: I18n.tr("settings.desktop-widgets.edit-mode.grid-snap.label")
+                colorBg: Settings.data.desktopWidgets.gridSnap ? Color.mPrimary : Color.mSurfaceVariant
+                colorFg: Settings.data.desktopWidgets.gridSnap ? Color.mOnPrimary : Color.mPrimary
+                onClicked: Settings.data.desktopWidgets.gridSnap = !Settings.data.desktopWidgets.gridSnap
+              }
+
+              NIconButton {
+                icon: "settings"
+                tooltipText: I18n.tr("settings.desktop-widgets.edit-mode.open-settings")
+                onClicked: {
+                  if (Settings.data.ui.settingsPanelMode === "window") {
+                    SettingsPanelService.toggleWindow(SettingsPanel.Tab.DesktopWidgets);
+                  } else {
+                    var settingsPanel = PanelService.getPanel("settingsPanel", screenLoader.modelData);
+                    if (settingsPanel) {
+                      settingsPanel.requestedTab = SettingsPanel.Tab.DesktopWidgets;
+                      settingsPanel.toggle();
+                    }
+                  }
+                }
+              }
+
+              NButton {
+                text: I18n.tr("settings.desktop-widgets.edit-mode.exit-button")
+                icon: "logout"
+                outlined: false
+                fontSize: Style.fontSizeS
+                iconSize: Style.fontSizeM
+                onClicked: DesktopWidgetRegistry.editMode = false
+              }
+            }
+
+            NText {
+              Layout.alignment: Qt.AlignRight
+              Layout.maximumWidth: 300 * Style.uiScaleRatio
+              text: I18n.tr("settings.desktop-widgets.edit-mode.controls-explanation")
+              pointSize: Style.fontSizeS
+              color: Color.mOnSurfaceVariant
+              horizontalAlignment: Text.AlignRight
+              wrapMode: Text.WordWrap
+            }
           }
         }
       }

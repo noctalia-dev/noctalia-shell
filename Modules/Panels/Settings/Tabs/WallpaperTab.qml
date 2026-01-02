@@ -11,6 +11,7 @@ import qs.Widgets
 ColumnLayout {
   id: root
 
+  property var screen
   property string specificFolderMonitorName: ""
 
   spacing: Style.marginL
@@ -26,6 +27,8 @@ ColumnLayout {
     checked: Settings.data.wallpaper.enabled
     onToggled: checked => Settings.data.wallpaper.enabled = checked
     Layout.bottomMargin: Style.marginL
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("wallpaper.enabled")
   }
 
   NToggle {
@@ -35,6 +38,8 @@ ColumnLayout {
     checked: Settings.data.wallpaper.overviewEnabled
     onToggled: checked => Settings.data.wallpaper.overviewEnabled = checked
     Layout.bottomMargin: Style.marginL
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("wallpaper.overviewEnabled")
   }
 
   NDivider {
@@ -81,6 +86,8 @@ ColumnLayout {
       description: I18n.tr("settings.wallpaper.settings.recursive-search.description")
       checked: Settings.data.wallpaper.recursiveSearch
       onToggled: checked => Settings.data.wallpaper.recursiveSearch = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("wallpaper.recursiveSearch")
     }
 
     // Monitor-specific directories
@@ -89,13 +96,8 @@ ColumnLayout {
       description: I18n.tr("settings.wallpaper.settings.monitor-specific.description")
       checked: Settings.data.wallpaper.enableMultiMonitorDirectories
       onToggled: checked => Settings.data.wallpaper.enableMultiMonitorDirectories = checked
-    }
-    // Hide wallpaper filenames
-    NToggle {
-      label: I18n.tr("settings.wallpaper.settings.hide-wallpaper-filenames.label")
-      description: I18n.tr("settings.wallpaper.settings.hide-wallpaper-filenames.description")
-      checked: Settings.data.wallpaper.hideWallpaperFilenames
-      onToggled: checked => Settings.data.wallpaper.hideWallpaperFilenames = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("wallpaper.enableMultiMonitorDirectories")
     }
 
     NBox {
@@ -182,9 +184,9 @@ ColumnLayout {
         }
       ]
       currentKey: Settings.data.wallpaper.panelPosition
-      onSelected: function (key) {
-        Settings.data.wallpaper.panelPosition = key;
-      }
+      onSelected: key => Settings.data.wallpaper.panelPosition = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("wallpaper.panelPosition")
     }
   }
 
@@ -211,6 +213,8 @@ ColumnLayout {
       model: WallpaperService.fillModeModel
       currentKey: Settings.data.wallpaper.fillMode
       onSelected: key => Settings.data.wallpaper.fillMode = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("wallpaper.fillMode")
     }
 
     RowLayout {
@@ -221,6 +225,7 @@ ColumnLayout {
       }
 
       NColorPicker {
+        screen: root.screen
         selectedColor: Settings.data.wallpaper.fillColor
         onColorSelected: color => Settings.data.wallpaper.fillColor = color
       }
@@ -233,40 +238,40 @@ ColumnLayout {
       model: WallpaperService.transitionsModel
       currentKey: Settings.data.wallpaper.transitionType
       onSelected: key => Settings.data.wallpaper.transitionType = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("wallpaper.transitionType")
     }
 
     // Transition Duration
     ColumnLayout {
-      NLabel {
-        label: I18n.tr("settings.wallpaper.look-feel.transition-duration.label")
-        description: I18n.tr("settings.wallpaper.look-feel.transition-duration.description")
-      }
-
       NValueSlider {
         Layout.fillWidth: true
+        label: I18n.tr("settings.wallpaper.look-feel.transition-duration.label")
+        description: I18n.tr("settings.wallpaper.look-feel.transition-duration.description")
         from: 500
         to: 10000
         stepSize: 100
         value: Settings.data.wallpaper.transitionDuration
         onMoved: value => Settings.data.wallpaper.transitionDuration = value
         text: (Settings.data.wallpaper.transitionDuration / 1000).toFixed(1) + "s"
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("wallpaper.transitionDuration")
       }
     }
 
     // Edge Smoothness
     ColumnLayout {
-      NLabel {
-        label: I18n.tr("settings.wallpaper.look-feel.edge-smoothness.label")
-        description: I18n.tr("settings.wallpaper.look-feel.edge-smoothness.description")
-      }
-
       NValueSlider {
         Layout.fillWidth: true
+        label: I18n.tr("settings.wallpaper.look-feel.edge-smoothness.label")
+        description: I18n.tr("settings.wallpaper.look-feel.edge-smoothness.description")
         from: 0.0
         to: 1.0
         value: Settings.data.wallpaper.transitionEdgeSmoothness
         onMoved: value => Settings.data.wallpaper.transitionEdgeSmoothness = value
         text: Math.round(Settings.data.wallpaper.transitionEdgeSmoothness * 100) + "%"
+        isSettings: true
+        defaultValue: Settings.getDefaultValue("wallpaper.transitionEdgeSmoothness")
       }
     }
   }
@@ -287,12 +292,34 @@ ColumnLayout {
       label: I18n.tr("settings.wallpaper.automation.section.label")
     }
 
-    // Random Wallpaper
+    // Scheduled change toggle
     NToggle {
-      label: I18n.tr("settings.wallpaper.automation.random-wallpaper.label")
-      description: I18n.tr("settings.wallpaper.automation.random-wallpaper.description")
+      label: I18n.tr("settings.wallpaper.automation.scheduled-change.label")
+      description: I18n.tr("settings.wallpaper.automation.scheduled-change.description")
       checked: Settings.data.wallpaper.randomEnabled
       onToggled: checked => Settings.data.wallpaper.randomEnabled = checked
+    }
+
+    // Change mode combo box
+    NComboBox {
+      visible: Settings.data.wallpaper.randomEnabled
+      label: I18n.tr("settings.wallpaper.automation.change-mode.label")
+      description: I18n.tr("settings.wallpaper.automation.change-mode.description")
+      Layout.fillWidth: true
+      model: [
+        {
+          "key": "random",
+          "name": I18n.tr("settings.wallpaper.automation.change-mode.random")
+        },
+        {
+          "key": "alphabetical",
+          "name": I18n.tr("settings.wallpaper.automation.change-mode.alphabetical")
+        }
+      ]
+      currentKey: Settings.data.wallpaper.wallpaperChangeMode || "random"
+      onSelected: key => Settings.data.wallpaper.wallpaperChangeMode = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("wallpaper.transitionType")
     }
 
     // Interval

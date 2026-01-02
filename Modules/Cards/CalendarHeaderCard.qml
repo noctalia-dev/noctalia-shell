@@ -96,7 +96,6 @@ Rectangle {
               return chunks[0];
             }
             pointSize: Style.fontSizeM
-            font.weight: Style.fontWeightMedium
             color: Color.mOnPrimary
             Layout.maximumWidth: 150
             elide: Text.ElideRight
@@ -105,7 +104,6 @@ Rectangle {
           NText {
             text: root.weatherReady ? ` (${LocationService.data.weather.timezone_abbreviation})` : ""
             pointSize: Style.fontSizeXS
-            font.weight: Style.fontWeightMedium
             color: Qt.alpha(Color.mOnPrimary, 0.7)
           }
         }

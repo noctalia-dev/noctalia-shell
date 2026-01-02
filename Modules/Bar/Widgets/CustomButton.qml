@@ -142,7 +142,6 @@ Item {
     oppositeDirection: BarService.getPillDirection(root)
     icon: _pillIcon
     text: _pillText
-    density: Settings.data.bar.density
     rotateText: isVerticalBar && currentMaxTextLength > 0
     autoHide: false
     forceOpen: _pillForceOpen

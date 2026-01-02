@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.System
 import qs.Services.UI
 
 Singleton {
@@ -16,12 +17,27 @@ Singleton {
   property string connectingTo: ""
   property string lastError: ""
   property bool ethernetConnected: false
+  // Active Ethernet connection details
+  property var activeEthernetDetails: ({})
+  property string activeEthernetIf: ""
+  property bool ethernetDetailsLoading: false
+  property double activeEthernetDetailsTimestamp: 0
+  // Keep same TTL policy for both kinds of links
+  property int activeEthernetDetailsTtlMs: 5000
   property string disconnectingFrom: ""
   property string forgettingNetwork: ""
   property string networkConnectivity: "unknown"
   property bool internetConnectivity: true
   property bool ignoreScanResults: false
   property bool scanPending: false
+
+  // Active Wi‑Fi connection details (for info panel)
+  property var activeWifiDetails: ({})
+  property string activeWifiIf: ""
+  property bool detailsLoading: false
+  property double activeWifiDetailsTimestamp: 0
+  // Cache TTL to avoid spamming nmcli/iw on rapid toggles
+  property int activeWifiDetailsTtlMs: 5000
 
   // Persistent cache
   property string cacheFile: Settings.cacheDir + "network.json"
@@ -68,8 +84,30 @@ Singleton {
 
   Component.onCompleted: {
     Logger.i("Network", "Service started");
-    syncWifiState();
-    scan();
+    if (ProgramCheckerService.nmcliAvailable) {
+      syncWifiState();
+      scan();
+      // Prime ethernet state immediately so UI can reflect wired status on startup
+      ethernetStateProcess.running = true;
+      refreshActiveWifiDetails();
+      refreshActiveEthernetDetails();
+    }
+  }
+
+  // Start initial checks when nmcli becomes available
+  Connections {
+    target: ProgramCheckerService
+    function onNmcliAvailableChanged() {
+      if (ProgramCheckerService.nmcliAvailable) {
+        syncWifiState();
+        scan();
+        // Refresh ethernet status as soon as nmcli becomes available
+        ethernetStateProcess.running = true;
+        // Also refresh details so panels get info without waiting for timers
+        refreshActiveWifiDetails();
+        refreshActiveEthernetDetails();
+      }
+    }
   }
 
   // Save cache with debounce
@@ -77,6 +115,21 @@ Singleton {
     id: saveDebounce
     interval: 1000
     onTriggered: cacheFileView.writeAdapter()
+  }
+
+  // Refresh details for the currently active Wi‑Fi link
+  function refreshActiveWifiDetails() {
+    const now = Date.now();
+    // If we're already fetching, don't start a new one
+    if (detailsLoading)
+      return;
+
+    // Use cached details if they are fresh
+    if (activeWifiIf && activeWifiDetails && (now - activeWifiDetailsTimestamp) < activeWifiDetailsTtlMs)
+      return;
+
+    detailsLoading = true;
+    wifiDeviceListProcess.running = true;
   }
 
   function saveCache() {
@@ -91,37 +144,60 @@ Singleton {
   }
 
   // Ethernet check timer
-  // Always running every 30s
+  // Runs every 30s if nmcli is available
   Timer {
     id: ethernetCheckTimer
     interval: 30000
-    running: true
+    running: ProgramCheckerService.nmcliAvailable
     repeat: true
     onTriggered: ethernetStateProcess.running = true
   }
 
+  // Refresh details for the currently active Ethernet link
+  function refreshActiveEthernetDetails() {
+    const now = Date.now();
+    if (ethernetDetailsLoading)
+      return;
+    if (!root.ethernetConnected) {
+      // Clear details when not connected
+      root.activeEthernetIf = "";
+      root.activeEthernetDetails = ({});
+      return;
+    }
+    // If we have fresh details for the same iface, skip
+    if (activeEthernetIf && activeEthernetDetails && (now - activeEthernetDetailsTimestamp) < activeEthernetDetailsTtlMs)
+      return;
+
+    ethernetDetailsLoading = true;
+    ethernetDeviceListProcess.running = true;
+  }
+
   // Internet connectivity check timer
-  // Always running every 15s
+  // Runs every 15s if nmcli is available
   Timer {
     id: connectivityCheckTimer
     interval: 15000
-    running: true
+    running: ProgramCheckerService.nmcliAvailable
     repeat: true
     onTriggered: connectivityCheckProcess.running = true
   }
 
   // Core functions
   function syncWifiState() {
+    if (!ProgramCheckerService.nmcliAvailable)
+      return;
     wifiStateProcess.running = true;
   }
 
   function setWifiEnabled(enabled) {
+    if (!ProgramCheckerService.nmcliAvailable)
+      return;
     Settings.data.network.wifiEnabled = enabled;
     wifiStateEnableProcess.running = true;
   }
 
   function scan() {
-    if (!Settings.data.network.wifiEnabled)
+    if (!ProgramCheckerService.nmcliAvailable || !Settings.data.network.wifiEnabled)
       return;
     if (scanning) {
       // Mark current scan results to be ignored and schedule a new scan
@@ -141,14 +217,14 @@ Singleton {
   }
 
   function connect(ssid, password = "") {
-    if (connecting)
+    if (!ProgramCheckerService.nmcliAvailable || connecting)
       return;
     connecting = true;
     connectingTo = ssid;
     lastError = "";
 
     // Check if we have a saved connection
-    if (networks[ssid]?.existing || cachedNetworks[ssid]) {
+    if ((networks[ssid] && networks[ssid].existing) || cachedNetworks[ssid]) {
       connectProcess.mode = "saved";
       connectProcess.ssid = ssid;
       connectProcess.password = "";
@@ -162,12 +238,16 @@ Singleton {
   }
 
   function disconnect(ssid) {
+    if (!ProgramCheckerService.nmcliAvailable)
+      return;
     disconnectingFrom = ssid;
     disconnectProcess.ssid = ssid;
     disconnectProcess.running = true;
   }
 
   function forget(ssid) {
+    if (!ProgramCheckerService.nmcliAvailable)
+      return;
     forgettingNetwork = ssid;
 
     // Remove from cache
@@ -220,7 +300,9 @@ Singleton {
   }
 
   // Helper functions
-  function signalIcon(signal, isConnected = false) {
+  function signalIcon(signal, isConnected) {
+    if (isConnected === undefined)
+      isConnected = false;
     if (isConnected && !root.internetConnectivity)
       return "world-off";
     if (signal >= 80)
@@ -236,22 +318,443 @@ Singleton {
     return security && security !== "--" && security.trim() !== "";
   }
 
+  function getSignalStrengthLabel(signal) {
+    switch (true) {
+    case (signal >= 80):
+      return I18n.tr("wifi.signal.excellent");
+    case (signal >= 50):
+      return I18n.tr("wifi.signal.good");
+    case (signal >= 20):
+      return I18n.tr("wifi.signal.fair");
+    default:
+      return I18n.tr("wifi.signal.poor");
+    }
+  }
+
   // Processes
   Process {
     id: ethernetStateProcess
-    running: true
+    running: ProgramCheckerService.nmcliAvailable
     command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
 
     stdout: StdioCollector {
       onStreamFinished: {
-        const connected = text.split("\n").some(line => {
-                                                  const parts = line.split(":");
-                                                  return parts[1] === "ethernet" && parts[2] === "connected";
-                                                });
+        var connected = false;
+        var devIf = "";
+        var lines = text.split("\n");
+        for (var i = 0; i < lines.length; i++) {
+          var parts = lines[i].split(":");
+          if (parts.length >= 3 && parts[1] === "ethernet" && parts[2] === "connected") {
+            connected = true;
+            devIf = parts[0];
+            break;
+          }
+        }
         if (root.ethernetConnected !== connected) {
           root.ethernetConnected = connected;
           Logger.d("Network", "Ethernet connected:", root.ethernetConnected);
         }
+        if (connected) {
+          if (root.activeEthernetIf !== devIf) {
+            root.activeEthernetIf = devIf;
+            // refresh details for the new interface
+            root.activeEthernetDetailsTimestamp = 0;
+          }
+          root.refreshActiveEthernetDetails();
+        } else {
+          root.activeEthernetIf = "";
+          root.activeEthernetDetails = ({});
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "ethernetState nmcli stderr:", text.trim());
+        }
+      }
+    }
+  }
+
+  // Discover connected Ethernet interface and fetch details
+  Process {
+    id: ethernetDeviceListProcess
+    running: false
+    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        let ifname = "";
+        const lines = text.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const parts = lines[i].trim().split(":");
+          if (parts.length >= 3) {
+            const dev = parts[0];
+            const type = parts[1];
+            const state = parts[2];
+            if (type === "ethernet" && state === "connected") {
+              ifname = dev;
+              break;
+            }
+          }
+        }
+        root.activeEthernetIf = ifname;
+        if (ifname) {
+          ethernetDeviceShowProcess.ifname = ifname;
+          ethernetDeviceShowProcess.running = true;
+        } else {
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "nmcli device list (eth) stderr:", text.trim());
+        }
+        if (!root.activeEthernetIf) {
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
+        }
+      }
+    }
+  }
+
+  // Fetch IPv4/Gateway/DNS and Connection Name for Ethernet iface
+  Process {
+    id: ethernetDeviceShowProcess
+    property string ifname: ""
+    running: false
+    // Speed is resolved via ethtool fallback below to avoid stderr warnings
+    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS", "device", "show", ifname]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const details = root.activeEthernetDetails || ({});
+        let connName = "";
+        let ipv4 = "";
+        let gw4 = "";
+        let dnsServers = [];
+        const lines = text.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line)
+          continue;
+          const idx = line.indexOf(":");
+          if (idx === -1)
+          continue;
+          const key = line.substring(0, idx);
+          const val = line.substring(idx + 1);
+          if (key === "GENERAL.CONNECTION") {
+            connName = val;
+          } else if (key.indexOf("IP4.ADDRESS") === 0) {
+            ipv4 = val.split("/")[0];
+          } else if (key === "IP4.GATEWAY") {
+            gw4 = val;
+          } else if (key.indexOf("IP4.DNS") === 0) {
+            if (val && dnsServers.indexOf(val) === -1)
+            dnsServers.push(val);
+          }
+        }
+        details.ifname = ethernetDeviceShowProcess.ifname;
+        details.connectionName = connName;
+        // No speed from nmcli: keep empty so ethtool fallback below fills it
+        details.speed = details.speed && details.speed.length > 0 ? details.speed : "";
+        details.ipv4 = ipv4;
+        details.gateway4 = gw4;
+        details.dnsServers = dnsServers;
+        details.dns = dnsServers.join(", ");
+        root.activeEthernetDetails = details;
+        // If speed missing, try sysfs first, then fallback to ethtool
+        if (!details.speed || details.speed.length === 0) {
+          ethernetSysfsSpeedProcess.ifname = ethernetDeviceShowProcess.ifname;
+          ethernetSysfsSpeedProcess.running = true;
+        } else {
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "nmcli device show (eth) stderr:", text.trim());
+        }
+        root.activeEthernetDetailsTimestamp = Date.now();
+        root.ethernetDetailsLoading = false;
+      }
+    }
+  }
+
+  // Try to read Ethernet speed from sysfs first: /sys/class/net/<if>/speed (numeric Mbit/s)
+  Process {
+    id: ethernetSysfsSpeedProcess
+    property string ifname: ""
+    running: false
+    command: ["sh", "-c", "cat '/sys/class/net/" + ifname + "/speed' 2>/dev/null || true"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const details = root.activeEthernetDetails || ({});
+        let speedText = "";
+        const v = text.trim();
+        // Expect a number like 1000
+        const num = parseFloat(v);
+        if (!isNaN(num) && num > 0) {
+          details.speed = Math.round(num) + " Mbit/s";
+          details.speedMbit = num;
+          root.activeEthernetDetails = details;
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
+        } else {
+          // Fallback to ethtool if sysfs unreadable or invalid
+          ethernetEthtoolProcess.ifname = ethernetSysfsSpeedProcess.ifname;
+          ethernetEthtoolProcess.running = true;
+        }
+      }
+    }
+    stderr: StdioCollector {}
+  }
+
+  // Optional: query Ethernet speed via ethtool as a fallback
+  Process {
+    id: ethernetEthtoolProcess
+    property string ifname: ""
+    running: false
+    command: ["sh", "-c", "ethtool '" + ifname + "' 2>/dev/null || true"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const details = root.activeEthernetDetails || ({});
+        let speedText = "";
+        const lines = text.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.toLowerCase().indexOf("speed:") === 0) {
+            // Example: "Speed: 1000Mb/s"
+            const v = line.substring(6).trim();
+            if (v) {
+              // Normalize to "1000 Mbit/s"
+              const normalized = v.replace(/mb\/?s/i, "Mbit/s").replace(/\s+/g, " ");
+              speedText = normalized;
+            }
+            break;
+          }
+        }
+        if (speedText && speedText.length > 0) {
+          details.speed = speedText;
+          // Try to derive numeric value
+          const m = speedText.match(/([0-9]+(?:\.[0-9]+)?)\s*Mbit\/s/i);
+          if (m)
+          details.speedMbit = parseFloat(m[1]);
+          root.activeEthernetDetails = details;
+        }
+        root.activeEthernetDetailsTimestamp = Date.now();
+        root.ethernetDetailsLoading = false;
+      }
+    }
+    stderr: StdioCollector {}
+  }
+
+  // Discover connected Wi‑Fi interface
+  Process {
+    id: wifiDeviceListProcess
+    running: false
+    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        let ifname = "";
+        const lines = text.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const parts = lines[i].trim().split(":");
+          if (parts.length >= 3) {
+            const dev = parts[0];
+            const type = parts[1];
+            const state = parts[2];
+            if (type === "wifi" && state === "connected") {
+              ifname = dev;
+              break;
+            }
+          }
+        }
+        root.activeWifiIf = ifname;
+        if (ifname) {
+          wifiDeviceShowProcess.ifname = ifname;
+          wifiDeviceShowProcess.running = true;
+        } else {
+          // Nothing to fetch
+          root.activeWifiDetailsTimestamp = Date.now();
+          root.detailsLoading = false;
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "nmcli device list stderr:", text.trim());
+        }
+        // Fail-safe to avoid spinner
+        if (!root.activeWifiIf) {
+          root.activeWifiDetailsTimestamp = Date.now();
+          root.detailsLoading = false;
+        }
+      }
+    }
+  }
+
+  // Fetch IPv4 and gateway for the interface
+  Process {
+    id: wifiDeviceShowProcess
+    property string ifname: ""
+    running: false
+    command: ["nmcli", "-t", "-f", "IP4.ADDRESS,IP4.GATEWAY,IP4.DNS", "device", "show", ifname]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const details = root.activeWifiDetails || ({});
+        let ipv4 = "";
+        let gw4 = "";
+        let dnsServers = [];
+        const lines = text.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line)
+          continue;
+          const idx = line.indexOf(":");
+          if (idx === -1)
+          continue;
+          const key = line.substring(0, idx);
+          const val = line.substring(idx + 1);
+          if (key.indexOf("IP4.ADDRESS") === 0) {
+            ipv4 = val.split("/")[0];
+          } else if (key === "IP4.GATEWAY") {
+            gw4 = val;
+          } else if (key.indexOf("IP4.DNS") === 0) {
+            if (val && dnsServers.indexOf(val) === -1) {
+              dnsServers.push(val);
+            }
+          }
+        }
+        details.ipv4 = ipv4;
+        details.gateway4 = gw4;
+        details.dnsServers = dnsServers;
+        details.dns = dnsServers.join(", ");
+        root.activeWifiDetails = details;
+
+        // Try to get link rate (best effort)
+        wifiIwLinkProcess.ifname = wifiDeviceShowProcess.ifname;
+        wifiIwLinkProcess.running = true;
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "nmcli device show stderr:", text.trim());
+        }
+        // Still proceed to finalize details to avoid UI waiting forever
+        root.activeWifiDetailsTimestamp = Date.now();
+      }
+    }
+  }
+
+  // Optional: query Wi‑Fi bitrate via iw if available
+  Process {
+    id: wifiIwLinkProcess
+    property string ifname: ""
+    running: false
+    command: ["sh", "-c", "iw dev '" + ifname + "' link 2>/dev/null || true"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const details = root.activeWifiDetails || ({});
+        let rate = "";
+        let freq = "";
+        const lines = text.split("\n");
+        for (var k = 0; k < lines.length; k++) {
+          var line2 = lines[k].trim();
+          var low = line2.toLowerCase();
+          if (low.indexOf("tx bitrate:") === 0) {
+            rate = line2.substring(11).trim();
+          } else if (low.indexOf("freq:") === 0) {
+            freq = line2.substring(5).trim();
+          }
+        }
+
+        // Determine band from frequency
+        // https://en.wikipedia.org/wiki/List_of_WLAN_channels
+        let band = "";
+        if (freq) {
+          const f = +freq;
+          if (f) {
+            switch (true) {
+              // https://en.wikipedia.org/wiki/List_of_WLAN_channels#6_GHz_(802.11ax_and_802.11be)
+              case (f >= 5925 && f < 7125):
+              band = "6 GHz";
+              break;
+              // https://en.wikipedia.org/wiki/List_of_WLAN_channels#5_GHz_(802.11a/h/n/ac/ax/be)
+              case (f >= 5150 && f < 5925):
+              band = "5 GHz";
+              break;
+              // https://en.wikipedia.org/wiki/List_of_WLAN_channels#2.4_GHz_(802.11b/g/n/ax/be)
+              case (f >= 2400 && f < 2500):
+              band = "2.4 GHz";
+              break;
+              default:
+              band = `${f} MHz`;
+            }
+          }
+        }
+
+        // Shorten verbose bitrate strings like: "360.0 MBit/s VHT-MCS 8 40MHz short GI"
+        let rateShort = "";
+        if (rate) {
+          var parts = rate.trim().split(" ");
+          // compact consecutive spaces
+          var compact = [];
+          for (var i = 0; i < parts.length; i++) {
+            var p = parts[i];
+            if (p && p.length > 0)
+            compact.push(p);
+          }
+          // Find a token that represents Mbit/s and use the previous number
+          var unitIdx = -1;
+          for (var j = 0; j < compact.length; j++) {
+            var token = compact[j].toLowerCase();
+            if (token === "mbit/s" || token === "mb/s" || token === "mbits/s") {
+              unitIdx = j;
+              break;
+            }
+          }
+          if (unitIdx > 0) {
+            var num = compact[unitIdx - 1];
+            // Basic numeric check
+            var parsed = parseFloat(num);
+            if (!isNaN(parsed)) {
+              rateShort = parsed + " Mbit/s";
+            }
+          }
+          if (!rateShort) {
+            // Fallback to first two tokens
+            rateShort = compact.slice(0, 2).join(" ");
+          }
+        }
+        details.rate = rate;
+        details.rateShort = rateShort;
+        details.band = band;
+        root.activeWifiDetails = details;
+        root.activeWifiDetailsTimestamp = Date.now();
+        root.detailsLoading = false;
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "iw link stderr:", text.trim());
+        }
+        root.activeWifiDetailsTimestamp = Date.now();
+        root.detailsLoading = false;
       }
     }
   }
@@ -269,6 +772,13 @@ Singleton {
         Logger.d("Network", "Wi-Fi adapter was detect as enabled:", enabled);
         if (Settings.data.network.wifiEnabled !== enabled) {
           Settings.data.network.wifiEnabled = enabled;
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "Wi-Fi state query stderr:", text.trim());
         }
       }
     }
@@ -353,7 +863,7 @@ Singleton {
     id: pingCheckProcess
     command: ["sh", "-c", "ping -c1 -W2 ping.archlinux.org >/dev/null 2>&1 || " + "ping -c1 -W2 1.1.1.1 >/dev/null 2>&1 || " + "curl -fsI --max-time 5 https://cloudflare.com/cdn-cgi/trace >/dev/null 2>&1"]
 
-    onExited: (exitCode, exitStatus) => {
+    onExited: function (exitCode, exitStatus) {
       if (exitCode === 0) {
         connectivityCheckProcess.failedChecks = 0;
       } else {
@@ -387,13 +897,29 @@ Singleton {
           return;
         }
 
-        const profiles = {};
-        const lines = text.split("\n").filter(l => l.trim());
-        for (const line of lines) {
-          profiles[line.trim()] = true;
+        var profiles = {};
+        var lines = text.split("\n");
+        for (var i = 0; i < lines.length; i++) {
+          var l = lines[i];
+          if (l && l.trim()) {
+            profiles[l.trim()] = true;
+          }
         }
         scanProcess.existingProfiles = profiles;
         scanProcess.running = true;
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "Profile check stderr:", text.trim());
+          // Fail safe - only restart scan on actual error
+          if (root.scanning) {
+            root.scanning = false;
+            delayedScanTimer.interval = 5000;
+            delayedScanTimer.restart();
+          }
+        }
       }
     }
   }
@@ -495,8 +1021,12 @@ Singleton {
         // Logging
         const oldSSIDs = Object.keys(root.networks);
         const newSSIDs = Object.keys(networksMap);
-        const newNetworks = newSSIDs.filter(ssid => !oldSSIDs.includes(ssid));
-        const lostNetworks = oldSSIDs.filter(ssid => !newSSIDs.includes(ssid));
+        const newNetworks = newSSIDs.filter(function (ssid) {
+          return oldSSIDs.indexOf(ssid) === -1;
+        });
+        const lostNetworks = oldSSIDs.filter(function (ssid) {
+          return newSSIDs.indexOf(ssid) === -1;
+        });
 
         if (newNetworks.length > 0 || lostNetworks.length > 0) {
           if (newNetworks.length > 0) {
@@ -511,6 +1041,22 @@ Singleton {
         Logger.d("Network", "Wi-Fi scan completed");
         root.networks = networksMap;
         root.scanning = false;
+
+        // Preload active Wi‑Fi details so Info panel shows instantly when opened
+        // This is lightweight and guarded by detailsLoading + TTL.
+        var hasConnected = false;
+        for (var ssid in networksMap) {
+          if (networksMap.hasOwnProperty(ssid)) {
+            var net = networksMap[ssid];
+            if (net && net.connected) {
+              hasConnected = true;
+              break;
+            }
+          }
+        }
+        if (hasConnected) {
+          root.refreshActiveWifiDetails();
+        }
 
         // Check if we need to start a new scan
         if (root.scanPending) {
@@ -545,7 +1091,7 @@ Singleton {
       if (mode === "saved") {
         return ["nmcli", "connection", "up", "id", ssid];
       } else {
-        const cmd = ["nmcli", "device", "wifi", "connect", ssid];
+        var cmd = ["nmcli", "device", "wifi", "connect", ssid];
         if (password) {
           cmd.push("password", password);
         }
@@ -563,7 +1109,7 @@ Singleton {
         // on success. Empty output or other messages indicate failure.
         const output = text.trim();
 
-        if (!output || (!output.includes("successfully activated") && !output.includes("Connection successfully"))) {
+        if (!output || (output.indexOf("successfully activated") === -1 && output.indexOf("Connection successfully") === -1)) {
           // No success message - likely an error occurred
           // Don't update anything, let stderr handler deal with it
           return;
@@ -582,9 +1128,12 @@ Singleton {
         // Immediately update the UI before scanning
         root.updateNetworkStatus(connectProcess.ssid, true);
 
+        // Preload details immediately so Info panel has data instantly
+        root.refreshActiveWifiDetails();
+
         root.connecting = false;
         root.connectingTo = "";
-        Logger.i("Network", `Connected to network: '${connectProcess.ssid}'`);
+        Logger.i("Network", "Connected to network: '" + connectProcess.ssid + "'");
         ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.connected", {
                                                                        "ssid": connectProcess.ssid
                                                                      }), "wifi");
@@ -602,18 +1151,21 @@ Singleton {
 
         if (text.trim()) {
           // Parse common errors
-          if (text.includes("Secrets were required") || text.includes("no secrets provided")) {
-            root.lastError = "Incorrect password";
+          if (text.indexOf("Secrets were required") !== -1 || text.indexOf("no secrets provided") !== -1) {
+            root.lastError = I18n.tr("toast.wifi.incorrect-password");
             forget(connectProcess.ssid);
-          } else if (text.includes("No network with SSID")) {
-            root.lastError = "Network not found";
-          } else if (text.includes("Timeout")) {
-            root.lastError = "Connection timeout";
+          } else if (text.indexOf("No network with SSID") !== -1) {
+            root.lastError = I18n.tr("toast.wifi.network-not-found");
+          } else if (text.indexOf("Timeout") !== -1) {
+            root.lastError = I18n.tr("toast.wifi.connection-timeout");
           } else {
-            root.lastError = text.split("\n")[0].trim();
+            // Generic fallback
+            root.lastError = I18n.tr("toast.wifi.connection-failed");
           }
 
           Logger.w("Network", "Connect error: " + text);
+          // Notify user about the failure
+          ToastService.showWarning(I18n.tr("wifi.panel.title"), root.lastError || I18n.tr("toast.wifi.connection-failed"));
         }
       }
     }
@@ -627,7 +1179,7 @@ Singleton {
 
     stdout: StdioCollector {
       onStreamFinished: {
-        Logger.i("Network", `Disconnected from network: '${disconnectProcess.ssid}'`);
+        Logger.i("Network", "Disconnected from network: '" + disconnectProcess.ssid + "'");
         ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.disconnected", {
                                                                        "ssid": disconnectProcess.ssid
                                                                      }), "wifi-off");
@@ -661,38 +1213,36 @@ Singleton {
     running: false
 
     // Try multiple common profile name patterns
-    command: ["sh", "-c", `
-      ssid="$1"
-      deleted=false
-
-      # Try exact SSID match first
-      if nmcli connection delete id "$ssid" 2>/dev/null; then
-      echo "Deleted profile: $ssid"
-      deleted=true
-      fi
-
-      # Try "Auto <SSID>" pattern
-      if nmcli connection delete id "Auto $ssid" 2>/dev/null; then
-      echo "Deleted profile: Auto $ssid"
-      deleted=true
-      fi
-
-      # Try "<SSID> 1", "<SSID> 2", etc. patterns
-      for i in 1 2 3; do
-      if nmcli connection delete id "$ssid $i" 2>/dev/null; then
-      echo "Deleted profile: $ssid $i"
-      deleted=true
-      fi
-      done
-
-      if [ "$deleted" = "false" ]; then
-      echo "No profiles found for SSID: $ssid"
-      fi
-      `, "--", ssid]
+    command: {
+      var script = "";
+      script += "ssid=\"$1\"\n";
+      script += "deleted=false\n\n";
+      script += "# Try exact SSID match first\n";
+      script += "if nmcli connection delete id \"$ssid\" 2>/dev/null; then\n";
+      script += "  echo \"Deleted profile: $ssid\"\n";
+      script += "  deleted=true\n";
+      script += "fi\n\n";
+      script += "# Try \"Auto $ssid\" pattern\n";
+      script += "if nmcli connection delete id \"Auto $ssid\" 2>/dev/null; then\n";
+      script += "  echo \"Deleted profile: Auto $ssid\"\n";
+      script += "  deleted=true\n";
+      script += "fi\n\n";
+      script += "# Try \"$ssid 1\", \"$ssid 2\", etc. patterns\n";
+      script += "for i in 1 2 3; do\n";
+      script += "  if nmcli connection delete id \"$ssid $i\" 2>/dev/null; then\n";
+      script += "    echo \"Deleted profile: $ssid $i\"\n";
+      script += "    deleted=true\n";
+      script += "  fi\n";
+      script += "done\n\n";
+      script += "if [ \"$deleted\" = \"false\" ]; then\n";
+      script += "  echo \"No profiles found for SSID: $ssid\"\n";
+      script += "fi\n";
+      return ["sh", "-c", script, "--", ssid];
+    }
 
     stdout: StdioCollector {
       onStreamFinished: {
-        Logger.i("Network", `Forget network: "${forgetProcess.ssid}"`);
+        Logger.i("Network", "Forget network: \"" + forgetProcess.ssid + "\"");
         Logger.d("Network", text.trim().replace(/[\r\n]/g, " "));
 
         // Update both cached and existing status immediately
@@ -716,7 +1266,7 @@ Singleton {
     stderr: StdioCollector {
       onStreamFinished: {
         root.forgettingNetwork = "";
-        if (text.trim() && !text.includes("No profiles found")) {
+        if (text.trim() && text.indexOf("No profiles found") === -1) {
           Logger.w("Network", "Forget error: " + text);
         }
         // Still Trigger a scan even on error

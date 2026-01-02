@@ -12,8 +12,23 @@ Singleton {
   // Panels
   property var registeredPanels: ({})
   property var openedPanel: null
+  property var closingPanel: null
   signal willOpen
   signal didClose
+
+  // Background slot assignments for dynamic panel background rendering
+  // Slot 0: currently opening/open panel, Slot 1: closing panel
+  property var backgroundSlotAssignments: [null, null]
+  signal slotAssignmentChanged(int slotIndex, var panel)
+
+  function assignToSlot(slotIndex, panel) {
+    if (backgroundSlotAssignments[slotIndex] !== panel) {
+      var newAssignments = backgroundSlotAssignments.slice();
+      newAssignments[slotIndex] = panel;
+      backgroundSlotAssignments = newAssignments;
+      slotAssignmentChanged(slotIndex, panel);
+    }
+  }
 
   // Popup menu windows (one per screen) - used for both tray menus and context menus
   property var popupMenuWindows: ({})
@@ -74,9 +89,15 @@ Singleton {
   // Helper to keep only one panel open at any time
   function willOpenPanel(panel) {
     if (openedPanel && openedPanel !== panel) {
+      // Move current panel to closing slot before closing it
+      closingPanel = openedPanel;
+      assignToSlot(1, closingPanel);
       openedPanel.close();
     }
+
+    // Assign new panel to open slot
     openedPanel = panel;
+    assignToSlot(0, panel);
 
     // emit signal
     willOpen();
@@ -85,6 +106,12 @@ Singleton {
   function closedPanel(panel) {
     if (openedPanel && openedPanel === panel) {
       openedPanel = null;
+      assignToSlot(0, null);
+    }
+
+    if (closingPanel && closingPanel === panel) {
+      closingPanel = null;
+      assignToSlot(1, null);
     }
 
     // emit signal

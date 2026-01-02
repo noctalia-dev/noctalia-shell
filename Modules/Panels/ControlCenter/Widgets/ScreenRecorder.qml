@@ -1,6 +1,7 @@
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
+import qs.Modules.Panels.Settings
 import qs.Services.Media
 import qs.Services.System
 import qs.Services.UI
@@ -18,5 +19,11 @@ NIconButtonHot {
     if (!ScreenRecorderService.isRecording) {
       PanelService.getPanel("controlCenterPanel", screen)?.close;
     }
+  }
+
+  onRightClicked: {
+    var settingsPanel = PanelService.getPanel("settingsPanel", screen);
+    settingsPanel.requestedTab = SettingsPanel.Tab.ScreenRecorder;
+    settingsPanel.open();
   }
 }

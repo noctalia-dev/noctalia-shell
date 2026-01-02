@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import qs.Commons
+import qs.Services.UI
 import qs.Widgets
 
 ColumnLayout {
@@ -34,18 +35,14 @@ ColumnLayout {
     label: I18n.tr("bar.widget-settings.control-center.use-distro-logo.label")
     description: I18n.tr("bar.widget-settings.control-center.use-distro-logo.description")
     checked: valueUseDistroLogo
-    onToggled: function (checked) {
-      valueUseDistroLogo = checked;
-    }
+    onToggled: checked => valueUseDistroLogo = checked
   }
 
   NToggle {
     label: I18n.tr("bar.widget-settings.control-center.enable-colorization.label")
     description: I18n.tr("bar.widget-settings.control-center.enable-colorization.description")
     checked: valueEnableColorization
-    onToggled: function (checked) {
-      valueEnableColorization = checked;
-    }
+    onToggled: checked => valueEnableColorization = checked
   }
 
   NComboBox {
@@ -133,7 +130,7 @@ ColumnLayout {
     id: imagePicker
     title: I18n.tr("bar.widget-settings.control-center.select-custom-icon")
     selectionMode: "files"
-    nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.pnm", "*.bmp"]
+    nameFilters: ImageCacheService.basicImageFilters
     initialPath: Quickshell.env("HOME")
     onAccepted: paths => {
                   if (paths.length > 0) {

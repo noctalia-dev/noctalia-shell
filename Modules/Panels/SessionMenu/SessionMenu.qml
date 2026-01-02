@@ -16,6 +16,7 @@ SmartPanel {
   id: root
 
   readonly property bool largeButtonsStyle: Settings.data.sessionMenu.largeButtonsStyle || false
+  readonly property bool largeButtonsLayout: Settings.data.sessionMenu.largeButtonsLayout || "grid"
 
   // Make panel background transparent for large buttons style
   panelBackgroundColor: largeButtonsStyle ? Color.transparent : Color.mSurface
@@ -61,7 +62,7 @@ SmartPanel {
   property int timeRemaining: 0
 
   // Navigation properties
-  property int selectedIndex: 0
+  property int selectedIndex: -1
 
   // Action metadata mapping
   readonly property var actionMetadata: {
@@ -98,7 +99,11 @@ SmartPanel {
   }
 
   // Build powerOptions from settings, filtering enabled ones and adding metadata
+  // _powerOptionsVersion forces re-evaluation when settings change
+  property int _powerOptionsVersion: 0
   property var powerOptions: {
+    // Reference version to trigger re-evaluation
+    void (_powerOptionsVersion);
     var options = [];
     var settingsOptions = Settings.data.sessionMenu.powerOptions || [];
 
@@ -120,40 +125,21 @@ SmartPanel {
     return options;
   }
 
-  // Update powerOptions when settings change
   Connections {
     target: Settings.data.sessionMenu
     function onPowerOptionsChanged() {
-      var options = [];
-      var settingsOptions = Settings.data.sessionMenu.powerOptions || [];
-
-      for (var i = 0; i < settingsOptions.length; i++) {
-        var settingOption = settingsOptions[i];
-        if (settingOption.enabled && actionMetadata[settingOption.action]) {
-          var metadata = actionMetadata[settingOption.action];
-          options.push({
-                         "action": settingOption.action,
-                         "icon": metadata.icon,
-                         "title": metadata.title,
-                         "isShutdown": metadata.isShutdown,
-                         "countdownEnabled": settingOption.countdownEnabled !== undefined ? settingOption.countdownEnabled : true,
-                         "command": settingOption.command || ""
-                       });
-        }
-      }
-
-      root.powerOptions = options;
+      root._powerOptionsVersion++;
     }
   }
 
   // Lifecycle handlers
   onOpened: {
-    selectedIndex = 0;
+    selectedIndex = -1;
   }
 
   onClosed: {
     cancelTimer();
-    selectedIndex = 0;
+    selectedIndex = -1;
   }
 
   // Timer management
@@ -258,30 +244,98 @@ SmartPanel {
   // Navigation functions
   function selectNextWrapped() {
     if (powerOptions.length > 0) {
-      selectedIndex = (selectedIndex + 1) % powerOptions.length;
+      if (selectedIndex < 0) {
+        selectedIndex = 0;
+      } else {
+        selectedIndex = (selectedIndex + 1) % powerOptions.length;
+      }
     }
   }
 
   function selectPreviousWrapped() {
     if (powerOptions.length > 0) {
-      selectedIndex = (((selectedIndex - 1) % powerOptions.length) + powerOptions.length) % powerOptions.length;
+      if (selectedIndex < 0) {
+        selectedIndex = powerOptions.length - 1;
+      } else {
+        selectedIndex = (((selectedIndex - 1) % powerOptions.length) + powerOptions.length) % powerOptions.length;
+      }
     }
   }
 
   function selectFirst() {
-    selectedIndex = 0;
+    if (powerOptions.length > 0) {
+      selectedIndex = 0;
+    } else {
+      selectedIndex = -1;
+    }
   }
 
   function selectLast() {
     if (powerOptions.length > 0) {
       selectedIndex = powerOptions.length - 1;
     } else {
-      selectedIndex = 0;
+      selectedIndex = -1;
+    }
+  }
+
+  function getGridInfo() {
+    let columns, rows;
+    if (Settings.data.sessionMenu.largeButtonsLayout === "single-row") {
+      columns = powerOptions.length;
+      rows = 1;
+    } else {
+      columns = Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)));
+      rows = Math.ceil(powerOptions.length / columns);
+    }
+
+    return {
+      columns,
+      rows,
+      currentRow: selectedIndex >= 0 ? Math.floor(selectedIndex / columns) : -1,
+      currentCol: selectedIndex >= 0 ? selectedIndex % columns : -1,
+      itemsInRow: row => Math.min(columns, powerOptions.length - row * columns)
+    };
+  }
+
+  // Unified navigation function
+  function navigateGrid(direction) {
+    if (powerOptions.length === 0)
+      return;
+
+    const grid = getGridInfo();
+    // If no selection, start at first item
+    let newRow = grid.currentRow >= 0 ? grid.currentRow : 0;
+    let newCol = grid.currentCol >= 0 ? grid.currentCol : 0;
+
+    switch (direction) {
+    case "left":
+      newCol = newCol - 1 < 0 ? grid.itemsInRow(newRow) - 1 : newCol - 1;
+      break;
+    case "right":
+      newCol = newCol + 1 >= grid.itemsInRow(newRow) ? 0 : newCol + 1;
+      break;
+    case "up":
+      newRow = newRow - 1 < 0 ? grid.rows - 1 : newRow - 1;
+      break;
+    case "down":
+      newRow = newRow + 1 >= grid.rows ? 0 : newRow + 1;
+      break;
+    }
+
+    // For vertical movement, clamp column if row has fewer items
+    if (direction === "up" || direction === "down") {
+      const itemsInNewRow = grid.itemsInRow(newRow);
+      newCol = Math.min(newCol, itemsInNewRow - 1);
+    }
+
+    const newIndex = newRow * grid.columns + newCol;
+    if (newIndex < powerOptions.length) {
+      selectedIndex = newIndex;
     }
   }
 
   function activate() {
-    if (powerOptions.length > 0 && powerOptions[selectedIndex]) {
+    if (powerOptions.length > 0 && selectedIndex >= 0 && powerOptions[selectedIndex]) {
       const option = powerOptions[selectedIndex];
       startTimer(option.action);
     }
@@ -305,19 +359,35 @@ SmartPanel {
   }
 
   function onLeftPressed() {
-    selectPreviousWrapped();
+    if (largeButtonsStyle) {
+      navigateGrid("left");
+    } else {
+      selectPreviousWrapped();
+    }
   }
 
   function onRightPressed() {
-    selectNextWrapped();
+    if (largeButtonsStyle) {
+      navigateGrid("right");
+    } else {
+      selectNextWrapped();
+    }
   }
 
   function onUpPressed() {
-    selectPreviousWrapped();
+    if (largeButtonsStyle) {
+      navigateGrid("up");
+    } else {
+      selectPreviousWrapped();
+    }
   }
 
   function onDownPressed() {
-    selectNextWrapped();
+    if (largeButtonsStyle) {
+      navigateGrid("down");
+    } else {
+      selectNextWrapped();
+    }
   }
 
   function onReturnPressed() {
@@ -340,6 +410,19 @@ SmartPanel {
     selectPreviousWrapped();
   }
 
+  function onNumberPressed(number) {
+    if (!Settings.data.sessionMenu.showNumberLabels) {
+      return;
+    }
+    // Number is 1-based, convert to 0-based index
+    const index = number - 1;
+    if (index >= 0 && index < powerOptions.length) {
+      const option = powerOptions[index];
+      selectedIndex = index;
+      startTimer(option.action);
+    }
+  }
+
   // Countdown timer
   Timer {
     id: countdownTimer
@@ -354,32 +437,22 @@ SmartPanel {
   }
 
   panelContent: Rectangle {
-    id: ui
+    id: panelContent
     color: Color.transparent
+    focus: true
 
     // For large buttons style, use full screen dimensions
     readonly property var contentPreferredWidth: largeButtonsStyle ? (root.screen?.width || root.width || 0) : undefined
     readonly property var contentPreferredHeight: largeButtonsStyle ? (root.screen?.height || root.height || 0) : undefined
 
-    // Navigation functions
-    function selectFirst() {
-      root.selectFirst();
-    }
-
-    function selectLast() {
-      root.selectLast();
-    }
-
-    function selectNextWrapped() {
-      root.selectNextWrapped();
-    }
-
-    function selectPreviousWrapped() {
-      root.selectPreviousWrapped();
-    }
-
-    function activate() {
-      root.activate();
+    // Focus management
+    Connections {
+      target: root
+      function onOpened() {
+        Qt.callLater(() => {
+                       panelContent.forceActiveFocus();
+                     });
+      }
     }
 
     // Timer text for large buttons style (above buttons) - positioned absolutely with background
@@ -420,7 +493,7 @@ SmartPanel {
       GridLayout {
         id: largeButtonsGrid
         Layout.alignment: Qt.AlignHCenter
-        columns: Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)))
+        columns: Settings.data.sessionMenu.largeButtonsLayout === "single-row" ? powerOptions.length : Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)))
         rowSpacing: Style.marginXL
         columnSpacing: Style.marginXL
         width: columns * 200 * Style.uiScaleRatio + (columns - 1) * Style.marginXL
@@ -435,6 +508,7 @@ SmartPanel {
             title: modelData.title
             isShutdown: modelData.isShutdown || false
             isSelected: index === selectedIndex
+            number: index + 1
             onClicked: {
               selectedIndex = index;
               startTimer(modelData.action);
@@ -514,6 +588,7 @@ SmartPanel {
               title: modelData.title
               isShutdown: modelData.isShutdown || false
               isSelected: index === selectedIndex
+              number: index + 1
               onClicked: {
                 selectedIndex = index;
                 startTimer(modelData.action);
@@ -553,6 +628,7 @@ SmartPanel {
     property bool pending: false
     property bool isShutdown: false
     property bool isSelected: false
+    property int number: 0
 
     signal clicked
 
@@ -613,10 +689,10 @@ SmartPanel {
       // Text content in the middle
       ColumnLayout {
         anchors.left: iconElement.right
-        anchors.right: pendingIndicator.visible ? pendingIndicator.left : parent.right
+        anchors.right: numberIndicator.visible ? numberIndicator.left : parent.right
         anchors.verticalCenter: parent.verticalCenter
         anchors.leftMargin: Style.marginL
-        anchors.rightMargin: pendingIndicator.visible ? Style.marginM : 0
+        anchors.rightMargin: numberIndicator.visible ? Style.marginM : 0
         spacing: 0
 
         NText {
@@ -642,23 +718,36 @@ SmartPanel {
         }
       }
 
-      // Pending indicator on the right
+      // Number indicator on the right (when not pending)
       Rectangle {
-        id: pendingIndicator
+        id: numberIndicator
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        width: 20
-        height: 20
-        radius: Math.min(Style.radiusL, width / 2)
-        color: Color.mPrimary
-        visible: buttonRoot.pending
+        width: Style.marginM * 2
+        height: width
+        radius: Math.min(Style.radiusM, height / 2)
+        color: Qt.alpha(Color.mSurfaceVariant, 0.5)
+        border.width: Style.borderS
+        border.color: Color.mOutline
+        visible: Settings.data.sessionMenu.showNumberLabels && buttonRoot.number > 0 && !buttonRoot.pending
 
         NText {
+          id: numberText
           anchors.centerIn: parent
-          text: Math.ceil(timeRemaining / 1000)
+          text: buttonRoot.number
           pointSize: Style.fontSizeS
-          font.weight: Style.fontWeightBold
-          color: Color.mOnPrimary
+          color: {
+            if (buttonRoot.isSelected || mouseArea.containsMouse)
+              return Color.mOnHover;
+            return Color.mOnSurface;
+          }
+
+          Behavior on color {
+            ColorAnimation {
+              duration: Style.animationFast
+              easing.type: Easing.OutCirc
+            }
+          }
         }
       }
     }
@@ -682,6 +771,7 @@ SmartPanel {
     property bool pending: false
     property bool isShutdown: false
     property bool isSelected: false
+    property int number: 0
 
     signal clicked
 
@@ -707,17 +797,6 @@ SmartPanel {
       origin.y: largeButtonRoot.height / 2
       xScale: hoverScale
       yScale: hoverScale
-    }
-
-    // Subtle shadow/glow effect
-    layer.enabled: isSelected || mouseArea.containsMouse || pending
-    layer.effect: MultiEffect {
-      shadowEnabled: true
-      shadowBlur: 20
-      shadowOpacity: 0.3
-      shadowColor: pending ? Color.mPrimary : (isShutdown ? Color.mError : Color.mPrimary)
-      shadowHorizontalOffset: 0
-      shadowVerticalOffset: 0
     }
 
     Behavior on color {
@@ -803,6 +882,40 @@ SmartPanel {
             return Color.mOnPrimary;
           if (largeButtonRoot.isShutdown && !largeButtonRoot.isSelected && !mouseArea.containsMouse)
             return Color.mError;
+          if (largeButtonRoot.isSelected || mouseArea.containsMouse)
+            return Color.mOnPrimary;
+          return Color.mOnSurface;
+        }
+
+        Behavior on color {
+          ColorAnimation {
+            duration: Style.animationFast
+            easing.type: Easing.OutCirc
+          }
+        }
+      }
+    }
+
+    // Number indicator in top-right corner
+    Rectangle {
+      anchors.top: parent.top
+      anchors.right: parent.right
+      anchors.margins: Style.marginM
+      width: Style.fontSizeM * 2
+      height: width
+      radius: Math.min(Style.radiusM, height / 2)
+      color: Qt.alpha(Color.mSurfaceVariant, 0.7)
+      border.width: Style.borderS
+      border.color: Color.mOutline
+      visible: Settings.data.sessionMenu.showNumberLabels && largeButtonRoot.number > 0 && !largeButtonRoot.pending
+      z: 10
+
+      NText {
+        id: largeNumberText
+        anchors.centerIn: parent
+        text: largeButtonRoot.number
+        pointSize: Style.fontSizeM
+        color: {
           if (largeButtonRoot.isSelected || mouseArea.containsMouse)
             return Color.mOnPrimary;
           return Color.mOnSurface;

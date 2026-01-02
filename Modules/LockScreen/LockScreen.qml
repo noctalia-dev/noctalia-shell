@@ -24,6 +24,25 @@ Loader {
   id: root
   active: false
 
+  // Track if the visualizer should be shown (lockscreen active + media playing + non-compact mode)
+  readonly property bool needsCava: root.active && !Settings.data.general.compactLockScreen && Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
+
+  onActiveChanged: {
+    if (root.active && root.needsCava) {
+      CavaService.registerComponent("lockscreen");
+    } else {
+      CavaService.unregisterComponent("lockscreen");
+    }
+  }
+
+  onNeedsCavaChanged: {
+    if (root.needsCava) {
+      CavaService.registerComponent("lockscreen");
+    } else {
+      CavaService.unregisterComponent("lockscreen");
+    }
+  }
+
   Component.onCompleted: {
     // Register with panel service
     PanelService.lockScreen = this;
@@ -95,12 +114,109 @@ Loader {
             property string currentLayout: KeyboardLayoutService.currentLayout
           }
 
+          // Cached wallpaper path
+          property string resolvedWallpaperPath: ""
+
+          // Request preprocessed wallpaper when lock screen becomes active or dimensions change
+          Component.onCompleted: {
+            if (screen) {
+              Qt.callLater(requestCachedWallpaper);
+            }
+          }
+
+          onWidthChanged: {
+            if (screen && width > 0 && height > 0) {
+              Qt.callLater(requestCachedWallpaper);
+            }
+          }
+
+          onHeightChanged: {
+            if (screen && width > 0 && height > 0) {
+              Qt.callLater(requestCachedWallpaper);
+            }
+          }
+
+          // Listen for wallpaper changes
+          Connections {
+            target: WallpaperService
+            function onWallpaperChanged(screenName, path) {
+              if (screen && screenName === screen.name) {
+                Qt.callLater(requestCachedWallpaper);
+              }
+            }
+          }
+
+          // Listen for display scale changes
+          Connections {
+            target: CompositorService
+            function onDisplayScalesChanged() {
+              if (screen && width > 0 && height > 0) {
+                Qt.callLater(requestCachedWallpaper);
+              }
+            }
+          }
+
+          function requestCachedWallpaper() {
+            if (!screen || width <= 0 || height <= 0) {
+              return;
+            }
+
+            // Check for solid color mode first
+            if (Settings.data.wallpaper.useSolidColor) {
+              resolvedWallpaperPath = "";
+              return;
+            }
+
+            const originalPath = WallpaperService.getWallpaper(screen.name) || "";
+            if (originalPath === "") {
+              resolvedWallpaperPath = "";
+              return;
+            }
+
+            // Handle solid color paths
+            if (WallpaperService.isSolidColorPath(originalPath)) {
+              resolvedWallpaperPath = "";
+              return;
+            }
+
+            if (!ImageCacheService || !ImageCacheService.initialized) {
+              // Fallback to original if services not ready
+              resolvedWallpaperPath = originalPath;
+              return;
+            }
+
+            const compositorScale = CompositorService.getDisplayScale(screen.name);
+            const targetWidth = Math.round(width * compositorScale);
+            const targetHeight = Math.round(height * compositorScale);
+            if (targetWidth <= 0 || targetHeight <= 0) {
+              return;
+            }
+
+            // Don't set resolvedWallpaperPath until cache is ready
+            // This prevents loading the original huge image
+            ImageCacheService.getLarge(originalPath, targetWidth, targetHeight, function (cachedPath, success) {
+              if (success) {
+                resolvedWallpaperPath = cachedPath;
+              } else {
+                // Only fall back to original if caching failed
+                resolvedWallpaperPath = originalPath;
+              }
+            });
+          }
+
+          // Background - solid color or black fallback
+          Rectangle {
+            anchors.fill: parent
+            color: Settings.data.wallpaper.useSolidColor ? Settings.data.wallpaper.solidColor : "#000000"
+          }
+
           Image {
             id: lockBgImage
+            visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor
             anchors.fill: parent
             fillMode: Image.PreserveAspectCrop
-            source: screen ? WallpaperService.getWallpaper(screen.name) : ""
-            cache: true
+            source: resolvedWallpaperPath
+            cache: false
             smooth: true
             mipmap: false
             antialiasing: true
@@ -273,6 +389,18 @@ Loader {
           Item {
             anchors.fill: parent
 
+            // Mouse area to trigger focus on cursor movement (workaround for Hyprland focus issues)
+            MouseArea {
+              anchors.fill: parent
+              hoverEnabled: true
+              acceptedButtons: Qt.NoButton
+              onPositionChanged: {
+                if (passwordInput) {
+                  passwordInput.forceActiveFocus();
+                }
+              }
+            }
+
             // Time, Date, and User Profile Container
             Rectangle {
               width: Math.max(500, contentRow.implicitWidth + 32)
@@ -354,7 +482,6 @@ Loader {
                   NText {
                     text: I18n.tr("lock-screen.welcome-back") + " " + HostService.displayName + "!"
                     pointSize: Style.fontSizeXXL
-                    font.weight: Font.Medium
                     color: Color.mOnSurface
                     horizontalAlignment: Text.AlignLeft
                   }
@@ -376,7 +503,6 @@ Loader {
                       return I18n.locale.toString(Time.now, formats[lang] || "dddd, d MMMM");
                     }
                     pointSize: Style.fontSizeXL
-                    font.weight: Font.Medium
                     color: Color.mOnSurfaceVariant
                     horizontalAlignment: Text.AlignLeft
                   }
@@ -432,7 +558,6 @@ Loader {
                   text: lockContext.errorMessage || "Authentication failed"
                   color: Color.mOnError
                   pointSize: Style.fontSizeL
-                  font.weight: Font.Medium
                   horizontalAlignment: Text.AlignHCenter
                 }
               }
@@ -487,7 +612,6 @@ Loader {
                     text: Math.round(batteryIndicator.percent) + "%"
                     color: Color.mOnSurfaceVariant
                     pointSize: Style.fontSizeM
-                    font.weight: Font.Medium
                   }
                 }
 
@@ -506,7 +630,6 @@ Loader {
                     text: keyboardLayout.currentLayout
                     color: Color.mOnSurfaceVariant
                     pointSize: Style.fontSizeM
-                    font.weight: Font.Medium
                     elide: Text.ElideRight
                   }
                 }
@@ -543,35 +666,30 @@ Loader {
                 property real padding: 18 // Approximate horizontal padding per button
 
                 // Measure all button text widths
-                Text {
+                NText {
                   id: logoutText
                   text: I18n.tr("session-menu.logout")
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
-                Text {
+                NText {
                   id: suspendText
                   text: I18n.tr("session-menu.suspend")
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
-                Text {
+                NText {
                   id: hibernateText
                   text: Settings.data.general.showHibernateOnLockScreen ? I18n.tr("session-menu.hibernate") : ""
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
-                Text {
+                NText {
                   id: rebootText
                   text: I18n.tr("session-menu.reboot")
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
-                Text {
+                NText {
                   id: shutdownText
                   text: I18n.tr("session-menu.shutdown")
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
 
                 // Calculate maximum width needed
@@ -682,7 +800,6 @@ Loader {
                         NText {
                           text: MediaService.trackTitle || "No media"
                           pointSize: Style.fontSizeM
-                          font.weight: Style.fontWeightMedium
                           color: Color.mOnSurface
                           Layout.fillWidth: true
                           elide: Text.ElideRight
@@ -762,7 +879,6 @@ Loader {
                           }
                           pointSize: Style.fontSizeM
                           color: Color.mOnSurfaceVariant
-                          font.weight: Font.Normal
                         }
                       }
 
@@ -863,7 +979,6 @@ Loader {
                         text: Math.round(batteryIndicator.percent) + "%"
                         color: Color.mOnSurfaceVariant
                         pointSize: Style.fontSizeM
-                        font.weight: Font.Medium
                       }
                     }
 
@@ -882,7 +997,6 @@ Loader {
                         text: keyboardLayout.currentLayout
                         color: Color.mOnSurfaceVariant
                         pointSize: Style.fontSizeM
-                        font.weight: Font.Medium
                         elide: Text.ElideRight
                       }
                     }
@@ -999,7 +1113,6 @@ Loader {
                           text: passwordInput.text
                           color: Color.mPrimary
                           pointSize: Style.fontSizeM
-                          font.weight: Font.Medium
                           visible: passwordInput.text.length > 0 && parent.parent.parent.passwordVisible
                           anchors.verticalCenter: parent.verticalCenter
                           elide: Text.ElideRight

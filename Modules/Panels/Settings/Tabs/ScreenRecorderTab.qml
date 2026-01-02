@@ -37,6 +37,18 @@ ColumnLayout {
       description: I18n.tr("settings.screen-recorder.general.show-cursor.description")
       checked: Settings.data.screenRecorder.showCursor
       onToggled: checked => Settings.data.screenRecorder.showCursor = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.showCursor")
+    }
+
+    // Copy to Clipboard
+    NToggle {
+      label: I18n.tr("settings.screen-recorder.general.copy-to-clipboard.label")
+      description: I18n.tr("settings.screen-recorder.general.copy-to-clipboard.description")
+      checked: Settings.data.screenRecorder.copyToClipboard
+      onToggled: checked => Settings.data.screenRecorder.copyToClipboard = checked
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.copyToClipboard")
     }
   }
 
@@ -72,6 +84,8 @@ ColumnLayout {
       ]
       currentKey: Settings.data.screenRecorder.videoSource
       onSelected: key => Settings.data.screenRecorder.videoSource = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.videoSource")
     }
 
     // Frame Rate
@@ -124,6 +138,8 @@ ColumnLayout {
       ]
       currentKey: Settings.data.screenRecorder.frameRate
       onSelected: key => Settings.data.screenRecorder.frameRate = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.frameRate")
     }
 
     // Video Quality
@@ -150,6 +166,8 @@ ColumnLayout {
       ]
       currentKey: Settings.data.screenRecorder.quality
       onSelected: key => Settings.data.screenRecorder.quality = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.quality")
     }
 
     // Video Codec
@@ -201,6 +219,8 @@ ColumnLayout {
                       Settings.data.screenRecorder.colorRange = "full";
                     }
                   }
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.videoCodec")
       // If user switches source to portal while an HDR codec is selected, reset to h264
       Connections {
         target: Settings.data.screenRecorder
@@ -230,6 +250,8 @@ ColumnLayout {
       ]
       currentKey: Settings.data.screenRecorder.colorRange
       onSelected: key => Settings.data.screenRecorder.colorRange = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.colorRange")
     }
   }
 
@@ -255,6 +277,10 @@ ColumnLayout {
       description: I18n.tr("settings.screen-recorder.audio.audio-source.description")
       model: [
         {
+          "key": "none",
+          "name": I18n.tr("options.screen-recording.audio-sources.none")
+        },
+        {
           "key": "default_output",
           "name": I18n.tr("options.screen-recording.audio-sources.system-output")
         },
@@ -269,6 +295,8 @@ ColumnLayout {
       ]
       currentKey: Settings.data.screenRecorder.audioSource
       onSelected: key => Settings.data.screenRecorder.audioSource = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.audioSource")
     }
 
     // Audio Codec
@@ -287,6 +315,8 @@ ColumnLayout {
       ]
       currentKey: Settings.data.screenRecorder.audioCodec
       onSelected: key => Settings.data.screenRecorder.audioCodec = key
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("screenRecorder.audioCodec")
     }
   }
 

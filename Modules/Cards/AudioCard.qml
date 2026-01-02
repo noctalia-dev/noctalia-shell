@@ -166,7 +166,6 @@ NBox {
           text: AudioService.sink ? AudioService.sink.description : "No output device"
           pointSize: Style.fontSizeXS
           color: Color.mOnSurfaceVariant
-          font.weight: Style.fontWeightMedium
           elide: Text.ElideRight
           Layout.fillWidth: true
           Layout.preferredWidth: 0
@@ -175,6 +174,7 @@ NBox {
 
       // Output Volume Slider
       NSlider {
+        id: outputVolumeSlider
         Layout.fillWidth: true
         from: 0
         to: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
@@ -185,6 +185,25 @@ NBox {
         onPressedChanged: localOutputVolumeChanging = pressed
         tooltipText: `${Math.round(localOutputVolume * 100)}%`
         tooltipDirection: "bottom"
+
+        // MouseArea to handle wheel events when hovering over the slider
+        MouseArea {
+          anchors.fill: parent
+          hoverEnabled: true
+          acceptedButtons: Qt.NoButton
+          propagateComposedEvents: true
+
+          onWheel: wheel => {
+                     if (outputVolumeSlider.enabled && AudioService.sink) {
+                       const delta = wheel.angleDelta.y || wheel.angleDelta.x;
+                       const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+                       const increment = delta > 0 ? step : -step;
+                       const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                       const newValue = Math.max(0, Math.min(maxVolume, localOutputVolume + increment));
+                       localOutputVolume = newValue;
+                     }
+                   }
+        }
       }
     }
 
@@ -215,7 +234,6 @@ NBox {
           text: AudioService.source ? AudioService.source.description : "No input device"
           pointSize: Style.fontSizeXS
           color: Color.mOnSurfaceVariant
-          font.weight: Style.fontWeightMedium
           elide: Text.ElideRight
           Layout.fillWidth: true
           Layout.preferredWidth: 0
@@ -224,6 +242,7 @@ NBox {
 
       // Input Volume Slider
       NSlider {
+        id: inputVolumeSlider
         Layout.fillWidth: true
         from: 0
         to: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
@@ -234,6 +253,25 @@ NBox {
         onPressedChanged: localInputVolumeChanging = pressed
         tooltipText: `${Math.round(localInputVolume * 100)}%`
         tooltipDirection: "bottom"
+
+        // MouseArea to handle wheel events when hovering over the slider
+        MouseArea {
+          anchors.fill: parent
+          hoverEnabled: true
+          acceptedButtons: Qt.NoButton
+          propagateComposedEvents: true
+
+          onWheel: wheel => {
+                     if (inputVolumeSlider.enabled && AudioService.source) {
+                       const delta = wheel.angleDelta.y || wheel.angleDelta.x;
+                       const step = Settings.data.audio.volumeStep / 100.0; // Convert percentage to 0-1 range
+                       const increment = delta > 0 ? step : -step;
+                       const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                       const newValue = Math.max(0, Math.min(maxVolume, localInputVolume + increment));
+                       localInputVolume = newValue;
+                     }
+                   }
+        }
       }
     }
   }

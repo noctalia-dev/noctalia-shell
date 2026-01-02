@@ -152,7 +152,7 @@ Slider {
       onEntered: {
         root.hovering = true;
         if (root.tooltipText) {
-          TooltipService.show(screen, knob, root.tooltipText, root.tooltipDirection);
+          TooltipService.show(knob, root.tooltipText, root.tooltipDirection);
         }
       }
 

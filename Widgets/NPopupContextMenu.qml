@@ -18,6 +18,7 @@ PopupWindow {
 
   property var anchorItem: null
   property ShellScreen screen: null
+  property real minWidth: 120
   property real calculatedWidth: 180
 
   readonly property string barPosition: Settings.data.bar.position
@@ -74,7 +75,7 @@ PopupWindow {
         }
       }
     }
-    calculatedWidth = Math.max(maxWidth + (Style.marginS * 2), 120);
+    calculatedWidth = Math.max(maxWidth + (Style.marginS * 2), minWidth);
   }
 
   anchor.item: anchorItem
@@ -118,6 +119,22 @@ PopupWindow {
   }
   anchor.rect.y: {
     if (anchorItem && screen) {
+      // Check if using absolute positioning (small anchor point item)
+      const isAbsolutePosition = anchorItem.width <= 1 && anchorItem.height <= 1;
+
+      if (isAbsolutePosition) {
+        // For absolute positioning, show menu directly at anchor Y
+        // Only adjust if menu would clip at bottom
+        const anchorGlobalPos = anchorItem.mapToItem(null, 0, 0);
+        const menuBottom = anchorGlobalPos.y + implicitHeight;
+
+        if (menuBottom > screen.height - Style.marginM) {
+          // Position above the click point instead
+          return -implicitHeight;
+        }
+        return 0;
+      }
+
       const anchorCenterY = anchorItem.height / 2;
 
       // Calculate base Y position based on bar orientation

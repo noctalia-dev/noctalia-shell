@@ -18,6 +18,7 @@ SmartPanel {
   readonly property bool isWindowMode: settingsPanelMode === "window"
   readonly property bool attachToBar: settingsPanelMode === "attached"
 
+  readonly property string barDensity: Settings.data.bar.density
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool barFloating: Settings.data.bar.floating
   readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
@@ -38,6 +39,12 @@ SmartPanel {
   }
 
   onBarPositionChanged: {
+    if (isPanelOpen) {
+      Qt.callLater(root.setPosition);
+    }
+  }
+
+  onBarDensityChanged: {
     if (isPanelOpen) {
       Qt.callLater(root.setPosition);
     }
@@ -213,11 +220,13 @@ SmartPanel {
   }
 
   panelContent: Rectangle {
+    id: panelContent
     color: Color.transparent
 
     SettingsContent {
       id: settingsContent
       anchors.fill: parent
+      screen: root.screen
       onCloseRequested: root.close()
       Component.onCompleted: {
         root._settingsContent = settingsContent;

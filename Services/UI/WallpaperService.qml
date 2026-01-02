@@ -5,12 +5,14 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.UI
 
 Singleton {
   id: root
 
   readonly property ListModel fillModeModel: ListModel {}
   readonly property string defaultDirectory: Settings.preprocessPath(Settings.data.wallpaper.directory)
+  readonly property string solidColorPrefix: "solid://"
 
   // All available wallpaper transitions
   readonly property ListModel transitionsModel: ListModel {}
@@ -25,6 +27,9 @@ Singleton {
 
   // Cache for current wallpapers - can be updated directly since we use signals for notifications
   property var currentWallpapers: ({})
+
+  // Track current alphabetical index for each screen
+  property var alphabeticalIndices: ({})
 
   property bool isInitialized: false
   property string wallpaperCacheFile: ""
@@ -76,8 +81,37 @@ Singleton {
     function onRandomIntervalSecChanged() {
       root.restartRandomWallpaperTimer();
     }
+    function onWallpaperChangeModeChanged() {
+      // Reset alphabetical indices when mode changes
+      root.alphabeticalIndices = {};
+      if (Settings.data.wallpaper.randomEnabled) {
+        root.restartRandomWallpaperTimer();
+        root.setNextWallpaper();
+      }
+    }
     function onRecursiveSearchChanged() {
       root.refreshWallpapersList();
+    }
+    function onUseSolidColorChanged() {
+      if (Settings.data.wallpaper.useSolidColor) {
+        var solidPath = root.createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+        for (var i = 0; i < Quickshell.screens.length; i++) {
+          root.wallpaperChanged(Quickshell.screens[i].name, solidPath);
+        }
+      } else {
+        for (var i = 0; i < Quickshell.screens.length; i++) {
+          var screenName = Quickshell.screens[i].name;
+          root.wallpaperChanged(screenName, currentWallpapers[screenName] || root.defaultWallpaper);
+        }
+      }
+    }
+    function onSolidColorChanged() {
+      if (Settings.data.wallpaper.useSolidColor) {
+        var solidPath = root.createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+        for (var i = 0; i < Quickshell.screens.length; i++) {
+          root.wallpaperChanged(Quickshell.screens[i].name, solidPath);
+        }
+      }
     }
   }
 
@@ -170,6 +204,29 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
+  // Solid color helpers
+  // -------------------------------------------------------------------
+  function isSolidColorPath(path) {
+    return path && typeof path === "string" && path.startsWith(solidColorPrefix);
+  }
+
+  function getSolidColor(path) {
+    if (!isSolidColorPath(path)) {
+      return null;
+    }
+    return path.substring(solidColorPrefix.length);
+  }
+
+  function createSolidColorPath(colorString) {
+    return solidColorPrefix + colorString;
+  }
+
+  function setSolidColor(colorString) {
+    Settings.data.wallpaper.solidColor = colorString;
+    Settings.data.wallpaper.useSolidColor = true;
+  }
+
+  // -------------------------------------------------------------------
   // Get specific monitor wallpaper data
   function getMonitorConfig(screenName) {
     var monitors = Settings.data.wallpaper.monitorDirectories;
@@ -233,11 +290,20 @@ Singleton {
   // -------------------------------------------------------------------
   // Get specific monitor wallpaper - now from cache
   function getWallpaper(screenName) {
+    // Return solid color path when in solid color mode
+    if (Settings.data.wallpaper.useSolidColor) {
+      return createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+    }
     return currentWallpapers[screenName] || root.defaultWallpaper;
   }
 
   // -------------------------------------------------------------------
   function changeWallpaper(path, screenName) {
+    // Turn off solid color mode when selecting a wallpaper
+    if (Settings.data.wallpaper.useSolidColor) {
+      Settings.data.wallpaper.useSolidColor = false;
+    }
+
     if (screenName !== undefined) {
       _setWallpaper(screenName, path);
     } else {
@@ -314,17 +380,79 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
+  function setAlphabeticalWallpaper() {
+    Logger.d("Wallpaper", "setAlphabeticalWallpaper");
+
+    if (Settings.data.wallpaper.enableMultiMonitorDirectories) {
+      // Pick next alphabetical wallpaper per screen
+      for (var i = 0; i < Quickshell.screens.length; i++) {
+        var screenName = Quickshell.screens[i].name;
+        var wallpaperList = getWallpapersList(screenName);
+
+        if (wallpaperList.length > 0) {
+          // Get or initialize index for this screen
+          if (alphabeticalIndices[screenName] === undefined) {
+            // Find current wallpaper in list to set initial index
+            var currentWallpaper = currentWallpapers[screenName] || "";
+            var foundIndex = wallpaperList.indexOf(currentWallpaper);
+            alphabeticalIndices[screenName] = (foundIndex >= 0) ? foundIndex : 0;
+          }
+
+          // Get next index (wrap around)
+          var currentIndex = alphabeticalIndices[screenName];
+          var nextIndex = (currentIndex + 1) % wallpaperList.length;
+          alphabeticalIndices[screenName] = nextIndex;
+
+          var nextPath = wallpaperList[nextIndex];
+          changeWallpaper(nextPath, screenName);
+        }
+      }
+    } else {
+      // Pick next alphabetical wallpaper common to all screens
+      var wallpaperList = getWallpapersList(Screen.name);
+      if (wallpaperList.length > 0) {
+        // Use primary screen name as key for single directory mode
+        var key = "all";
+        if (alphabeticalIndices[key] === undefined) {
+          // Find current wallpaper in list to set initial index
+          var currentWallpaper = currentWallpapers[Screen.name] || "";
+          var foundIndex = wallpaperList.indexOf(currentWallpaper);
+          alphabeticalIndices[key] = (foundIndex >= 0) ? foundIndex : 0;
+        }
+
+        // Get next index (wrap around)
+        var currentIndex = alphabeticalIndices[key];
+        var nextIndex = (currentIndex + 1) % wallpaperList.length;
+        alphabeticalIndices[key] = nextIndex;
+
+        var nextPath = wallpaperList[nextIndex];
+        changeWallpaper(nextPath, undefined);
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------
   function toggleRandomWallpaper() {
     Logger.d("Wallpaper", "toggleRandomWallpaper");
     if (Settings.data.wallpaper.randomEnabled) {
       restartRandomWallpaperTimer();
+      setNextWallpaper();
+    }
+  }
+
+  // -------------------------------------------------------------------
+  function setNextWallpaper() {
+    var mode = Settings.data.wallpaper.wallpaperChangeMode || "random";
+    if (mode === "alphabetical") {
+      setAlphabeticalWallpaper();
+    } else {
       setRandomWallpaper();
     }
   }
 
   // -------------------------------------------------------------------
   function restartRandomWallpaperTimer() {
-    if (Settings.data.wallpaper.isRandom) {
+    if (Settings.data.wallpaper.randomEnabled) {
       randomWallpaperTimer.restart();
     }
   }
@@ -394,6 +522,18 @@ Singleton {
     scanningCount++;
     Logger.i("Wallpaper", "Starting recursive scan for", screenName, "in", directory);
 
+    // Build find command args dynamically from ImageCacheService filters
+    var filters = ImageCacheService.imageFilters;
+    var findArgs = ["find", "-L", directory, "-type", "f", "("];
+    for (var i = 0; i < filters.length; i++) {
+      if (i > 0) {
+        findArgs.push("-o");
+      }
+      findArgs.push("-iname");
+      findArgs.push(filters[i]);
+    }
+    findArgs.push(")");
+
     // Create Process component inline
     var processComponent = Qt.createComponent("", root);
     var processString = `
@@ -401,7 +541,7 @@ Singleton {
     import Quickshell.Io
     Process {
     id: process
-    command: ["find", "-L", "` + directory + `", "-type", "f", "(", "-iname", "*.jpg", "-o", "-iname", "*.jpeg", "-o", "-iname", "*.png", "-o", "-iname", "*.gif", "-o", "-iname", "*.pnm", "-o", "-iname", "*.bmp", ")"]
+    command: ` + JSON.stringify(findArgs) + `
     stdout: StdioCollector {}
     stderr: StdioCollector {}
     }
@@ -427,11 +567,24 @@ Singleton {
         // Sort files for consistent ordering
         files.sort();
         wallpaperLists[screenName] = files;
+
+        // Reset alphabetical indices when list changes
+        if (alphabeticalIndices[screenName] !== undefined) {
+          // Reset to 0 or find current wallpaper in new list
+          var currentWallpaper = currentWallpapers[screenName] || "";
+          var foundIndex = files.indexOf(currentWallpaper);
+          alphabeticalIndices[screenName] = (foundIndex >= 0) ? foundIndex : 0;
+        }
+
         Logger.i("Wallpaper", "Recursive scan completed for", screenName, "found", files.length, "files");
         wallpaperListChanged(screenName, files.length);
       } else {
         Logger.w("Wallpaper", "Recursive scan failed for", screenName, "exit code:", exitCode, "(directory might not exist)");
         wallpaperLists[screenName] = [];
+        // Reset alphabetical index when list is empty
+        if (alphabeticalIndices[screenName] !== undefined) {
+          alphabeticalIndices[screenName] = 0;
+        }
         wallpaperListChanged(screenName, 0);
       }
       // Clean up
@@ -452,7 +605,7 @@ Singleton {
     interval: Settings.data.wallpaper.randomIntervalSec * 1000
     running: Settings.data.wallpaper.randomEnabled
     repeat: true
-    onTriggered: setRandomWallpaper()
+    onTriggered: setNextWallpaper()
     triggeredOnStart: false
   }
 
@@ -465,7 +618,7 @@ Singleton {
       property string currentDirectory: root.getMonitorDirectory(screenName)
 
       folder: "file://" + currentDirectory
-      nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.pnm", "*.bmp"]
+      nameFilters: ImageCacheService.imageFilters
       showDirs: false
       sortField: FolderListModel.Name
 
@@ -502,6 +655,14 @@ Singleton {
 
           // Update the list
           root.wallpaperLists[screenName] = files;
+
+          // Reset alphabetical indices when list changes
+          if (root.alphabeticalIndices[screenName] !== undefined) {
+            // Reset to 0 or find current wallpaper in new list
+            var currentWallpaper = root.currentWallpapers[screenName] || "";
+            var foundIndex = files.indexOf(currentWallpaper);
+            root.alphabeticalIndices[screenName] = (foundIndex >= 0) ? foundIndex : 0;
+          }
 
           scanningCount--;
           Logger.d("Wallpaper", "List refreshed for", screenName, "count:", files.length);
