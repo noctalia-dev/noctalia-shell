@@ -1787,6 +1787,7 @@
       "editorOverviewRuler.wordHighlightForeground": "{{colors.secondary.default.hex}}",
       "editorOverviewRuler.wordHighlightStrongForeground": "{{colors.secondary.default.hex}}",
       "editorRuler.foreground": "{{colors.outline_variant.default.hex}}",
+      "editorStickyScrollHover.background": "{{colors.surface_variant.default.hex}}", 
       "editorSuggestWidget.background": "{{colors.surface.default.hex}}",
       "editorSuggestWidget.border": "{{colors.outline.default.hex}}",
       "editorSuggestWidget.foreground": "{{colors.on_surface.default.hex}}",
