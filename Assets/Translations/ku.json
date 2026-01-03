@@ -1869,6 +1869,10 @@
           "description": "Tabên kategoriyê nîşan bide ji bo parzûnkirina sepanan.",
           "label": "Kategoriyan nîşan bide"
         },
+        "show-icon-background": {
+          "description": "Li paş îkonan paşxaneyeke çargoşe ya gilover nîşan bide.",
+          "label": "Paşxaneya îkonê nîşan bide"
+        },
         "sort-by-usage": {
           "description": "Dema ku çalak be, sepanên ku pir caran têne destpêkirin pêşî di lîsteyê de xuya dibin.",
           "label": "Li gorî ya herî pir tê bikaranîn rêz bike"

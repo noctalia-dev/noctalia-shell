@@ -1869,6 +1869,10 @@
           "description": "Show category tabs for filtering applications.",
           "label": "Show categories"
         },
+        "show-icon-background": {
+          "description": "Show a rounded rectangle background behind icons.",
+          "label": "Show icon background"
+        },
         "sort-by-usage": {
           "description": "When enabled, frequently launched apps appear first in the list.",
           "label": "Sort by most used"

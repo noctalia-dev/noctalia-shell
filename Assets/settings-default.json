@@ -185,6 +185,7 @@
     "viewMode": "list",
     "showCategories": true,
     "iconMode": "tabler",
+    "showIconBackground": true,
     "ignoreMouseInput": false,
     "screenshotAnnotationTool": ""
   },

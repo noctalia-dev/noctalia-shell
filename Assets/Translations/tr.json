@@ -1869,6 +1869,10 @@
           "description": "Uygulamaları filtrelemek için kategori sekmelerini göster.",
           "label": "Kategorileri göster"
         },
+        "show-icon-background": {
+          "description": "Simgelerin arkasında yuvarlak köşeli dikdörtgen bir arka plan göster.",
+          "label": "Simge arka planını göster"
+        },
         "sort-by-usage": {
           "description": "Etkinleştirildiğinde, sıkça başlatılan uygulamalar listede ilk olarak görünür.",
           "label": "En çok kullanılana göre sırala"

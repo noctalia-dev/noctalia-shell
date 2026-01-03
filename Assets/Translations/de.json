@@ -1869,6 +1869,10 @@
           "description": "Kategorienregisterkarten zum Filtern von Anwendungen anzeigen.",
           "label": "Kategorien anzeigen"
         },
+        "show-icon-background": {
+          "description": "Zeige einen abgerundeten Rechteck-Hintergrund hinter Icons.",
+          "label": "Symbolhintergrund anzeigen"
+        },
         "sort-by-usage": {
           "description": "Wenn aktiviert, erscheinen häufig gestartete Apps zuerst in der Liste.",
           "label": "Nach Häufigkeit sortieren"

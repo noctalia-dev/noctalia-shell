@@ -1869,6 +1869,10 @@
           "description": "Categorieën-tabbladen weergeven voor het filteren van applicaties.",
           "label": "Categorieën weergeven"
         },
+        "show-icon-background": {
+          "description": "Toon een afgeronde rechthoek achtergrond achter pictogrammen.",
+          "label": "Toon pictogramachtergrond"
+        },
         "sort-by-usage": {
           "description": "Indien ingeschakeld, verschijnen vaak gestarte apps bovenaan in de lijst.",
           "label": "Sorteren op meest gebruikt"

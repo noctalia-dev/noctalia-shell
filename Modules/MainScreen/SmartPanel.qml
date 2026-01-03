@@ -146,6 +146,9 @@ Item {
   }
 
   function open(buttonItem, buttonName) {
+    // Reset immediate close flag to ensure animations work properly
+    PanelService.closedImmediately = false;
+
     if (!buttonItem && buttonName) {
       buttonItem = BarService.lookupWidget(buttonName, screen.name);
     }
@@ -204,6 +207,9 @@ Item {
   }
 
   function close() {
+    // Reset immediate close flag to ensure animations work properly
+    PanelService.closedImmediately = false;
+
     // Start close sequence: fade opacity first
     isClosing = true;
     sizeAnimationComplete = false;

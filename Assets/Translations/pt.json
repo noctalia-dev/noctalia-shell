@@ -1869,6 +1869,10 @@
           "description": "Mostrar abas de categorias para filtrar aplicativos.",
           "label": "Mostrar categorias"
         },
+        "show-icon-background": {
+          "description": "Mostrar um fundo retangular arredondado atrás dos ícones.",
+          "label": "Mostrar fundo do ícone"
+        },
         "sort-by-usage": {
           "description": "Quando ativado, os aplicativos mais usados aparecem primeiro na lista.",
           "label": "Ordenar por mais usados"

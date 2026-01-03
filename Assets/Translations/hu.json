@@ -1869,6 +1869,10 @@
           "description": "Kategóriafülek megjelenítése az alkalmazások szűréséhez.",
           "label": "Kategóriák megjelenítése"
         },
+        "show-icon-background": {
+          "description": "Ikonok mögött lekerekített téglalap hátteret mutass.",
+          "label": "Ikon háttér megjelenítése"
+        },
         "sort-by-usage": {
           "description": "Ha engedélyezve van, a gyakran indított alkalmazások jelennek meg először a listán.",
           "label": "Rendezés gyakoriság szerint"

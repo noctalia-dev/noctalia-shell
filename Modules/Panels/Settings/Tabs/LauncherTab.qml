@@ -116,6 +116,15 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("settings.launcher.settings.show-icon-background.label")
+    description: I18n.tr("settings.launcher.settings.show-icon-background.description")
+    checked: Settings.data.appLauncher.showIconBackground
+    onToggled: checked => Settings.data.appLauncher.showIconBackground = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.showIconBackground")
+  }
+
+  NToggle {
     label: I18n.tr("settings.launcher.settings.ignore-mouse-input.label")
     description: I18n.tr("settings.launcher.settings.ignore-mouse-input.description")
     checked: Settings.data.appLauncher.ignoreMouseInput

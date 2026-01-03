@@ -1869,6 +1869,10 @@
           "description": "Mostrar pestañas de categorías para filtrar aplicaciones.",
           "label": "Mostrar categorías"
         },
+        "show-icon-background": {
+          "description": "Mostrar un fondo rectangular redondeado detrás de los iconos.",
+          "label": "Mostrar fondo del icono"
+        },
         "sort-by-usage": {
           "description": "Cuando está activado, las aplicaciones más utilizadas aparecen primero en la lista.",
           "label": "Ordenar por más usados"

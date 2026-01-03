@@ -1869,6 +1869,10 @@
           "description": "Pokaż karty kategorii do filtrowania aplikacji.",
           "label": "Pokaż kategorie"
         },
+        "show-icon-background": {
+          "description": "Pokaż zaokrąglone tło prostokątne za ikonami.",
+          "label": "Pokaż tło ikony"
+        },
         "sort-by-usage": {
           "description": "Gdy włączone, najczęściej uruchamiane aplikacje pojawiają się na początku listy.",
           "label": "Sortuj według użycia"

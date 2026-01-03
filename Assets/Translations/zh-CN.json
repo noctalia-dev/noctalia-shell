@@ -1869,6 +1869,10 @@
           "description": "显示用于筛选应用程序的类别标签。",
           "label": "显示类别"
         },
+        "show-icon-background": {
+          "description": "在图标后显示一个圆角矩形背景。",
+          "label": "显示图标背景"
+        },
         "sort-by-usage": {
           "description": "启用后，经常启动的应用程序将显示在列表首位。",
           "label": "按使用频率排序"

@@ -401,6 +401,7 @@ Singleton {
       property bool showCategories: true
       // Icon mode: "tabler" or "native"
       property string iconMode: "tabler"
+      property bool showIconBackground: true
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
     }

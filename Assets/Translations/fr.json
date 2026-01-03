@@ -1869,6 +1869,10 @@
           "description": "Afficher les onglets de catégories pour filtrer les applications.",
           "label": "Afficher les catégories"
         },
+        "show-icon-background": {
+          "description": "Afficher un arrière-plan rectangulaire arrondi derrière les icônes.",
+          "label": "Afficher l'arrière-plan de l'icône"
+        },
         "sort-by-usage": {
           "description": "Lorsque cette option est activée, les applications fréquemment lancées apparaissent en premier dans la liste.",
           "label": "Trier par les plus utilisés"

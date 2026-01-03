@@ -376,6 +376,7 @@ SmartPanel {
             NTextInput {
               id: searchInput
               placeholderText: Settings.data.wallpaper.useWallhaven ? I18n.tr("placeholders.search-wallhaven") : I18n.tr("placeholders.search-wallpapers")
+              fontSize: Style.fontSizeM
               Layout.fillWidth: true
 
               property bool initializing: true

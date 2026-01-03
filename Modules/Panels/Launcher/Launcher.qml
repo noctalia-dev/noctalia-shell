@@ -62,6 +62,10 @@ SmartPanel {
     if (searchText.startsWith(">clip") || searchText.startsWith(">calc")) {
       return false;
     }
+    // Force list view for inline calculator (pure math expressions)
+    if (isMathExpression(searchText.trim())) {
+      return false;
+    }
     if (activeProvider === emojiProvider && emojiProvider.isBrowsingMode) {
       return true;
     }
@@ -689,6 +693,7 @@ SmartPanel {
 
             text: searchText
             placeholderText: I18n.tr("placeholders.search-launcher")
+            fontSize: Style.fontSizeM
 
             onTextChanged: searchText = text
 
@@ -745,6 +750,9 @@ SmartPanel {
           visible: root.activeProvider === emojiProvider && emojiProvider.isBrowsingMode
           Layout.fillWidth: true
           margins: Style.marginM
+          border.color: Style.boxBorderColor
+          border.width: Style.borderS
+
           property int computedCurrentIndex: {
             if (visible && emojiProvider.categories) {
               return emojiProvider.categories.indexOf(emojiProvider.selectedCategory);
@@ -791,6 +799,9 @@ SmartPanel {
           visible: (root.activeProvider === null || root.activeProvider === appsProvider) && appsProvider.isBrowsingMode && !root.searchText.startsWith(">") && Settings.data.appLauncher.showCategories
           Layout.fillWidth: true
           margins: Style.marginM
+          border.color: Style.boxBorderColor
+          border.width: Style.borderS
+
           property int computedCurrentIndex: {
             if (visible && appsProvider.availableCategories) {
               return appsProvider.availableCategories.indexOf(appsProvider.selectedCategory);
@@ -844,11 +855,11 @@ SmartPanel {
             id: resultsList
 
             horizontalPolicy: ScrollBar.AlwaysOff
-            verticalPolicy: ScrollBar.AsNeeded
+            verticalPolicy: ScrollBar.AlwaysOff
 
             width: parent.width
             height: parent.height
-            spacing: Style.marginXXS
+            spacing: Style.marginXS
             model: results
             currentIndex: selectedIndex
             cacheBuffer: resultsList.height * 2
@@ -864,7 +875,7 @@ SmartPanel {
             }
             onModelChanged: {}
 
-            delegate: Rectangle {
+            delegate: NBox {
               id: entry
 
               property bool isSelected: (!root.ignoreMouseHover && mouseArea.containsMouse) || (index === selectedIndex)
@@ -911,9 +922,8 @@ SmartPanel {
                 }
               }
 
-              width: resultsList.width - Style.marginS
+              width: resultsList.width
               implicitHeight: entryHeight
-              radius: Style.radiusM
               color: entry.isSelected ? Color.mHover : Color.mSurface
 
               Behavior on color {
@@ -938,6 +948,14 @@ SmartPanel {
                   Item {
                     Layout.preferredWidth: badgeSize
                     Layout.preferredHeight: badgeSize
+
+                    // Icon background
+                    Rectangle {
+                      anchors.fill: parent
+                      radius: Style.radiusM
+                      color: Color.mSurfaceVariant
+                      visible: Settings.data.appLauncher.showIconBackground && !modelData.isImage && !modelData.emojiChar
+                    }
 
                     // Image preview for clipboard images
                     NImageRounded {
@@ -1155,7 +1173,7 @@ SmartPanel {
             id: resultsGrid
 
             horizontalPolicy: ScrollBar.AlwaysOff
-            verticalPolicy: ScrollBar.AsNeeded
+            verticalPolicy: ScrollBar.AlwaysOff
 
             width: parent.width
             height: parent.height
@@ -1288,11 +1306,10 @@ SmartPanel {
                 return arr.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
               }
 
-              Rectangle {
+              NBox {
                 id: gridEntry
                 anchors.fill: parent
                 anchors.margins: Style.marginXXS
-                radius: Style.radiusM
                 color: gridEntryContainer.isSelected ? Color.mHover : Color.mSurface
 
                 Behavior on color {
@@ -1327,6 +1344,14 @@ SmartPanel {
                       return Math.round(gridEntry.width * 0.6);
                     }
                     Layout.alignment: Qt.AlignHCenter
+
+                    // Icon background
+                    Rectangle {
+                      anchors.fill: parent
+                      radius: Style.radiusM
+                      color: Color.mSurfaceVariant
+                      visible: Settings.data.appLauncher.showIconBackground && !modelData.isImage && !modelData.emojiChar
+                    }
 
                     // Image preview for clipboard images
                     NImageRounded {
