@@ -136,6 +136,28 @@
           "label": "Use distro logo instead of icon"
         }
       },
+      "currency-converter": {
+        "display-mode": {
+          "both": "Icon and Text",
+          "description": "How the widget will be displayed on the bar",
+          "icon": "Icon Only",
+          "label": "Display Mode",
+          "text": "Text Only"
+        },
+        "from-currency": {
+          "description": "Currency that will be used as the base in the widget",
+          "label": "From Currency"
+        },
+        "header": "Converter Settings",
+        "to-currency": {
+          "description": "Currency to convert to",
+          "label": "To Currency"
+        },
+        "update-interval": {
+          "description": "Time in minutes between automatic updates",
+          "label": "Update Interval"
+        }
+      },
       "custom-button": {
         "browse": "Browse",
         "collapse-condition": {
@@ -605,6 +627,25 @@
     "reset": "Reset",
     "toggle-mute": "Toggle mute",
     "widget-settings": "Widget settings"
+  },
+  "currency-converter": {
+    "error": "Error",
+    "error": {
+      "invalid-currency": "Invalid currency",
+      "network": "Network error",
+      "parse": "Parse error"
+    },
+    "from": "From",
+    "loading": "Loading...",
+    "no-data": "No data available",
+    "refresh": "Refresh rate",
+    "swap": "Swap currencies",
+    "title": "Currency Converter",
+    "to": "To",
+    "tooltip": {
+      "click": "Click to open converter",
+      "waiting": "Waiting for data..."
+    }
   },
   "dock": {
     "menu": {

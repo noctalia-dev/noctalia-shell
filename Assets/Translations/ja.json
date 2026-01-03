@@ -606,6 +606,25 @@
     "toggle-mute": "ミュート切り替え",
     "widget-settings": "ウィジェット設定"
   },
+  "currency-converter": {
+    "error": "エラー",
+    "error": {
+      "invalid-currency": "無効な通貨",
+      "network": "ネットワークエラー",
+      "parse": "データ処理エラー"
+    },
+    "from": "元",
+    "loading": "読み込み中...",
+    "no-data": "利用可能なデータがありません",
+    "refresh": "為替レートを更新",
+    "swap": "通貨を交換",
+    "title": "通貨コンバーター",
+    "to": "先",
+    "tooltip": {
+      "click": "クリックしてコンバーターを開く",
+      "waiting": "データを待っています..."
+    }
+  },
   "dock": {
     "menu": {
       "close": "閉じる",

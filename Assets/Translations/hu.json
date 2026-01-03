@@ -606,6 +606,25 @@
     "toggle-mute": "Némítás kapcsolása",
     "widget-settings": "Widget beállítások"
   },
+  "currency-converter": {
+    "error": "Hiba",
+    "error": {
+      "invalid-currency": "Érvénytelen pénznem",
+      "network": "Hálózati hiba",
+      "parse": "Adatfeldolgozási hiba"
+    },
+    "from": "Forrás",
+    "loading": "Betöltés...",
+    "no-data": "Nincs elérhető adat",
+    "refresh": "Árfolyam frissítése",
+    "swap": "Pénznemek cseréje",
+    "title": "Pénznem Átváltó",
+    "to": "Cél",
+    "tooltip": {
+      "click": "Kattintson az átváltó megnyitásához",
+      "waiting": "Adatokra várva..."
+    }
+  },
   "dock": {
     "menu": {
       "close": "Bezárás",

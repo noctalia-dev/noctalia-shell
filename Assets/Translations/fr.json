@@ -136,6 +136,28 @@
           "label": "Utiliser le logo de la distribution au lieu de l'icône"
         }
       },
+      "currency-converter": {
+        "display-mode": {
+          "both": "Icône et Texte",
+          "description": "Comment le widget sera affiché dans la barre",
+          "icon": "Icône uniquement",
+          "label": "Mode d'affichage",
+          "text": "Texte uniquement"
+        },
+        "from-currency": {
+          "description": "Devise qui sera utilisée comme base dans le widget",
+          "label": "Devise d'origine"
+        },
+        "header": "Paramètres du Convertisseur",
+        "to-currency": {
+          "description": "Devise vers laquelle sera convertie",
+          "label": "Devise de destination"
+        },
+        "update-interval": {
+          "description": "Temps en minutes entre les mises à jour automatiques",
+          "label": "Intervalle de mise à jour"
+        }
+      },
       "custom-button": {
         "browse": "Parcourir",
         "collapse-condition": {

@@ -606,6 +606,25 @@
     "toggle-mute": "Sesi kapat/aç",
     "widget-settings": "Araç takımı ayarları"
   },
+  "currency-converter": {
+    "error": "Hata",
+    "error": {
+      "invalid-currency": "Geçersiz para birimi",
+      "network": "Ağ hatası",
+      "parse": "Veri işleme hatası"
+    },
+    "from": "Kaynak",
+    "loading": "Yükleniyor...",
+    "no-data": "Kullanılabilir veri yok",
+    "refresh": "Kuru yenile",
+    "swap": "Para birimlerini değiştir",
+    "title": "Döviz Dönüştürücü",
+    "to": "Hedef",
+    "tooltip": {
+      "click": "Dönüştürücüyü açmak için tıklayın",
+      "waiting": "Veriler bekleniyor..."
+    }
+  },
   "dock": {
     "menu": {
       "close": "Kapat",

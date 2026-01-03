@@ -136,6 +136,28 @@
           "label": "Usar logo da distribuição em vez de ícone"
         }
       },
+      "currency-converter": {
+        "display-mode": {
+          "both": "Ícone e Texto",
+          "description": "Como o widget será exibido na barra",
+          "icon": "Apenas Ícone",
+          "label": "Modo de Exibição",
+          "text": "Apenas Texto"
+        },
+        "from-currency": {
+          "description": "Moeda que será usada como base no widget",
+          "label": "Moeda de Origem"
+        },
+        "header": "Configurações do Conversor",
+        "to-currency": {
+          "description": "Moeda para qual será convertida",
+          "label": "Moeda de Destino"
+        },
+        "update-interval": {
+          "description": "Tempo em minutos entre atualizações automáticas",
+          "label": "Intervalo de Atualização"
+        }
+      },
       "custom-button": {
         "browse": "Navegar",
         "collapse-condition": {
@@ -605,6 +627,25 @@
     "reset": "Reiniciar",
     "toggle-mute": "Alternar mudo",
     "widget-settings": "Configurações do widget"
+  },
+  "currency-converter": {
+    "error": "Erro",
+    "error": {
+      "invalid-currency": "Moeda inválida",
+      "network": "Erro de rede",
+      "parse": "Erro ao processar dados"
+    },
+    "from": "De",
+    "loading": "Carregando...",
+    "no-data": "Sem dados disponíveis",
+    "refresh": "Atualizar cotação",
+    "swap": "Trocar moedas",
+    "title": "Conversor de Moedas",
+    "to": "Para",
+    "tooltip": {
+      "click": "Clique para abrir conversor",
+      "waiting": "Aguardando dados..."
+    }
   },
   "dock": {
     "menu": {

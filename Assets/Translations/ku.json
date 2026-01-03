@@ -606,6 +606,25 @@
     "toggle-mute": "Guherandin bêdeng bike",
     "widget-settings": "Sazkariyên alavê"
   },
+  "currency-converter": {
+    "error": "Xeletî",
+    "error": {
+      "invalid-currency": "Pereyê nederbasdar",
+      "network": "Xeletiya torê",
+      "parse": "Xeletiya pêvajoya daneyan"
+    },
+    "from": "Ji",
+    "loading": "Tê barkirin...",
+    "no-data": "Daneyên berdest tune",
+    "refresh": "Nrxê nûve bike",
+    "swap": "Pareyan biguherîne",
+    "title": "Veguherînerê Pareyan",
+    "to": "Bo",
+    "tooltip": {
+      "click": "Ji bo vekirina veguherîner bitikîne",
+      "waiting": "Li benda daneyan..."
+    }
+  },
   "dock": {
     "menu": {
       "close": "Bigire",

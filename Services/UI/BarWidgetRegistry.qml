@@ -20,6 +20,7 @@ Singleton {
                            "Brightness": brightnessComponent,
                            "Clock": clockComponent,
                            "ControlCenter": controlCenterComponent,
+                           "CurrencyConverter": currencyConverterComponent,
                            "CustomButton": customButtonComponent,
                            "DarkMode": darkModeComponent,
                            "KeepAwake": keepAwakeComponent,
@@ -52,6 +53,7 @@ Singleton {
                                      "Brightness": "WidgetSettings/BrightnessSettings.qml",
                                      "Clock": "WidgetSettings/ClockSettings.qml",
                                      "ControlCenter": "WidgetSettings/ControlCenterSettings.qml",
+                                     "CurrencyConverter": "WidgetSettings/CurrencyConverterSettings.qml",
                                      "CustomButton": "WidgetSettings/CustomButtonSettings.qml",
                                      "KeyboardLayout": "WidgetSettings/KeyboardLayoutSettings.qml",
                                      "LockKeys": "WidgetSettings/LockKeysSettings.qml",
@@ -112,6 +114,12 @@ Singleton {
                                     "colorizeDistroLogo": false,
                                     "colorizeSystemIcon": "none",
                                     "enableColorization": false
+                                  },
+                                  "CurrencyConverter": {
+                                    "fromCurrency": "USD",
+                                    "toCurrency": "BRL",
+                                    "updateInterval": 30,
+                                    "displayMode": "both"
                                   },
                                   "CustomButton": {
                                     "icon": "heart",
@@ -252,6 +260,9 @@ Singleton {
   }
   property Component clockComponent: Component {
     Clock {}
+  }
+  property Component currencyConverterComponent: Component {
+    CurrencyConverter {}
   }
   property Component customButtonComponent: Component {
     CustomButton {}

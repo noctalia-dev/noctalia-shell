@@ -606,6 +606,25 @@
     "toggle-mute": "Przełącz wyciszenie",
     "widget-settings": "Ustawienia widżetu"
   },
+  "currency-converter": {
+    "error": "Błąd",
+    "error": {
+      "invalid-currency": "Nieprawidłowa waluta",
+      "network": "Błąd sieci",
+      "parse": "Błąd przetwarzania danych"
+    },
+    "from": "Z",
+    "loading": "Ładowanie...",
+    "no-data": "Brak dostępnych danych",
+    "refresh": "Odśwież kurs",
+    "swap": "Zamień waluty",
+    "title": "Konwerter Walut",
+    "to": "Do",
+    "tooltip": {
+      "click": "Kliknij, aby otworzyć konwerter",
+      "waiting": "Oczekiwanie na dane..."
+    }
+  },
   "dock": {
     "menu": {
       "close": "Zamknij",

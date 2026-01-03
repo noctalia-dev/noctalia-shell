@@ -606,6 +606,25 @@
     "toggle-mute": "Dempen aan/uit",
     "widget-settings": "Widgetinstellingen"
   },
+  "currency-converter": {
+    "error": "Fout",
+    "error": {
+      "invalid-currency": "Ongeldige valuta",
+      "network": "Netwerkfout",
+      "parse": "Fout bij verwerken van gegevens"
+    },
+    "from": "Van",
+    "loading": "Laden...",
+    "no-data": "Geen gegevens beschikbaar",
+    "refresh": "Wisselkoers bijwerken",
+    "swap": "Valuta's wisselen",
+    "title": "Valutaconverter",
+    "to": "Naar",
+    "tooltip": {
+      "click": "Klik om converter te openen",
+      "waiting": "Wachten op gegevens..."
+    }
+  },
   "dock": {
     "menu": {
       "close": "Sluiten",

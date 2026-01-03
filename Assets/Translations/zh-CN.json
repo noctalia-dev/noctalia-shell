@@ -606,6 +606,25 @@
     "toggle-mute": "切换静音",
     "widget-settings": "小部件设置"
   },
+  "currency-converter": {
+    "error": "错误",
+    "error": {
+      "invalid-currency": "无效货币",
+      "network": "网络错误",
+      "parse": "数据处理错误"
+    },
+    "from": "从",
+    "loading": "加载中...",
+    "no-data": "无可用数据",
+    "refresh": "刷新汇率",
+    "swap": "交换货币",
+    "title": "货币转换器",
+    "to": "到",
+    "tooltip": {
+      "click": "点击打开转换器",
+      "waiting": "等待数据..."
+    }
+  },
   "dock": {
     "menu": {
       "close": "关闭",

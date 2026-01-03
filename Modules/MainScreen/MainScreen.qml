@@ -17,6 +17,7 @@ import qs.Modules.Panels.Brightness
 import qs.Modules.Panels.Changelog
 import qs.Modules.Panels.Clock
 import qs.Modules.Panels.ControlCenter
+import qs.Modules.Panels.CurrencyConverter
 import qs.Modules.Panels.Launcher
 import qs.Modules.Panels.NotificationHistory
 import qs.Modules.Panels.Plugins
@@ -214,6 +215,12 @@ PanelWindow {
     ClockPanel {
       id: clockPanel
       objectName: "clockPanel-" + (root.screen?.name || "unknown")
+      screen: root.screen
+    }
+
+    CurrencyConverterPanel {
+      id: currencyConverterPanel
+      objectName: "currencyConverterPanel-" + (root.screen?.name || "unknown")
       screen: root.screen
     }
 

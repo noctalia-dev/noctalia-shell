@@ -606,6 +606,25 @@
     "toggle-mute": "Stummschaltung umschalten",
     "widget-settings": "Widget-Einstellungen"
   },
+  "currency-converter": {
+    "error": "Fehler",
+    "error": {
+      "invalid-currency": "Ungültige Währung",
+      "network": "Netzwerkfehler",
+      "parse": "Fehler beim Verarbeiten der Daten"
+    },
+    "from": "Von",
+    "loading": "Laden...",
+    "no-data": "Keine Daten verfügbar",
+    "refresh": "Wechselkurs aktualisieren",
+    "swap": "Währungen tauschen",
+    "title": "Währungsrechner",
+    "to": "Nach",
+    "tooltip": {
+      "click": "Klicken Sie zum Öffnen des Konverters",
+      "waiting": "Warte auf Daten..."
+    }
+  },
   "dock": {
     "menu": {
       "close": "Schließen",
