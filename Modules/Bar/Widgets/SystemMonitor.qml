@@ -228,7 +228,7 @@ Rectangle {
     flow: isVertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
     rows: isVertical ? -1 : 1
     columns: isVertical ? 1 : -1
-    rowSpacing: isVertical ? (compactMode ? Style.marginL : Style.marginM) : 0
+    rowSpacing: isVertical ? Style.marginL : 0
     columnSpacing: isVertical ? 0 : (Style.marginM)
 
     // CPU Usage Component
