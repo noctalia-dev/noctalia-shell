@@ -938,6 +938,10 @@ Singleton {
     // Check and create password-only.conf
     fileCheckPasswordOnlyProcess.command = ["test", "-f", pamConfigDir + "/password-only.conf"];
     fileCheckPasswordOnlyProcess.running = true;
+
+    // Check and create "other" fallback config (silences PAM init warning)
+    fileCheckOtherProcess.command = ["test", "-f", pamConfigDir + "/other"];
+    fileCheckOtherProcess.running = true;
   }
 
   function doCreateFingerprintOnlyConfig() {
@@ -983,6 +987,26 @@ Singleton {
     Logger.d("Settings", "Password-only PAM config created at:", passwordOnlyFile);
   }
 
+  function doCreateOtherConfig() {
+    var pamConfigDir = configDir + "pam";
+    var otherFile = pamConfigDir + "/other";
+    var pamConfigDirEsc = pamConfigDir.replace(/'/g, "'\\''");
+    var otherFileEsc = otherFile.replace(/'/g, "'\\''");
+
+    // Ensure directory exists with restricted permissions
+    Quickshell.execDetached(["sh", "-c", `mkdir -p '${pamConfigDirEsc}' && chmod 700 '${pamConfigDirEsc}'`]);
+
+    // "other" fallback config - denies all auth (standard PAM safety fallback)
+    var configContent = "auth required pam_deny.so\n";
+
+    var script = `cat > '${otherFileEsc}' << 'EOF'\n`;
+    script += configContent;
+    script += `EOF\nchmod 600 '${otherFileEsc}'`;
+    Quickshell.execDetached(["sh", "-c", script]);
+
+    Logger.d("Settings", "PAM 'other' fallback config created at:", otherFile);
+  }
+
   // Process for checking if fingerprint-only.conf exists
   Process {
     id: fileCheckFingerprintProcess
@@ -1007,6 +1031,20 @@ Singleton {
         Logger.d("Settings", "Password-only PAM config already exists");
       } else {
         doCreatePasswordOnlyConfig();
+      }
+    }
+  }
+
+  // Process for checking if "other" exists
+  Process {
+    id: fileCheckOtherProcess
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        Logger.d("Settings", "PAM 'other' fallback config already exists");
+      } else {
+        doCreateOtherConfig();
       }
     }
   }
