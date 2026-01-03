@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
-import "../../../Helpers/AdvancedMath.js" as AdvancedMath
 import "../../../Helpers/FuzzySort.js" as Fuzzysort
 
 import "Plugins"
@@ -54,7 +53,7 @@ SmartPanel {
   property var plugins: []
   property var activePlugin: null
   property bool resultsReady: false
-  property bool ignoreMouseHover: Settings.data.appLauncher.ignoreMouseInput
+  property bool ignoreMouseHover: false
 
   readonly property int badgeSize: Math.round(Style.baseWidgetSize * 1.6 * Style.uiScaleRatio)
   readonly property int entryHeight: Math.round(badgeSize + Style.marginM * 2)
@@ -185,17 +184,6 @@ SmartPanel {
     selectPreviousWrapped();
   }
 
-  function onDeletePressed() {
-    // Delete clipboard entry if one is selected
-    if (selectedIndex >= 0 && results && results[selectedIndex] && results[selectedIndex].clipboardId) {
-      const clipboardId = results[selectedIndex].clipboardId;
-      clipPlugin.gotResults = false;
-      clipPlugin.isWaitingForData = true;
-      clipPlugin.lastSearchText = root.searchText;
-      ClipboardService.deleteById(String(clipboardId));
-    }
-  }
-
   // Public API for plugins
   function setSearchText(text) {
     searchText = text;
@@ -207,56 +195,6 @@ SmartPanel {
     plugin.launcher = root;
     if (plugin.init)
       plugin.init();
-  }
-
-  // Caclualtor handling
-  function isMathExpression(expr) {
-    // Allow: digits, operators, parentheses, decimal points, whitespace, letters (for functions), commas
-    if (!/^[\d\s\+\-\*\/\(\)\.\%\^a-zA-Z,]+$/.test(expr)) {
-      return false;
-    }
-
-    // Must contain at least one operator OR a function call (letter followed by parenthesis)
-    if (!/[+\-*/%\^]/.test(expr) && !/[a-zA-Z]\s*\(/.test(expr)) {
-      return false;
-    }
-
-    // Reject if ends with an operator (incomplete expression)
-    if (/[+\-*/%\^]\s*$/.test(expr)) {
-      return false;
-    }
-
-    // Reject if it's just letters (would match app names)
-    if (/^[a-zA-Z\s]+$/.test(expr)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  function getInlineCalculatorResult(query) {
-    const trimmed = query.trim();
-    if (!trimmed || !isMathExpression(trimmed)) {
-      return null;
-    }
-
-    try {
-      const result = AdvancedMath.evaluate(trimmed);
-      const iconMode = Settings.data.appLauncher.iconMode;
-      return {
-        "name": AdvancedMath.formatResult(result),
-        "description": `${trimmed} = ${result}`,
-        "icon": iconMode === "tabler" ? "calculator" : "accessories-calculator",
-        "isTablerIcon": true,
-        "isImage": false,
-        "onActivate": function () {
-          // TODO: copy entry to clipboard via ClipHist
-          root.close();
-        }
-      };
-    } catch (error) {
-      return null;
-    }
   }
 
   // Search handling
@@ -319,12 +257,6 @@ SmartPanel {
           const pluginResults = plugin.getResults(searchText);
           results = results.concat(pluginResults);
         }
-      }
-
-      // Inline calculator - append result if query is a valid math expression
-      const inlineResult = getInlineCalculatorResult(searchText);
-      if (inlineResult) {
-        results = results.concat([inlineResult]);
       }
     }
 
@@ -617,7 +549,6 @@ SmartPanel {
       hoverEnabled: true
       propagateComposedEvents: true
       acceptedButtons: Qt.NoButton
-      enabled: !Settings.data.appLauncher.ignoreMouseInput
 
       property real lastX: 0
       property real lastY: 0
@@ -688,6 +619,9 @@ SmartPanel {
             id: searchInput
             Layout.fillWidth: true
 
+            fontSize: Style.fontSizeL
+            fontWeight: Style.fontWeightSemiBold
+
             text: searchText
             placeholderText: I18n.tr("placeholders.search-launcher")
 
@@ -718,9 +652,6 @@ SmartPanel {
                     event.accepted = true;
                   } else if (event.key === Qt.Key_Enter) {
                     root.activate();
-                    event.accepted = true;
-                  } else if (event.key === Qt.Key_Delete) {
-                    root.onDeletePressed();
                     event.accepted = true;
                   }
                 });
@@ -760,7 +691,6 @@ SmartPanel {
               required property string modelData
               required property int index
               icon: emojiPlugin.categoryIcons[modelData] || "star"
-              tooltipText: emojiPlugin.getCategoryName ? emojiPlugin.getCategoryName(modelData) : modelData
               tabIndex: index
               checked: emojiCategoryTabs.currentIndex === index
               onClicked: {
@@ -853,7 +783,6 @@ SmartPanel {
             model: results
             currentIndex: selectedIndex
             cacheBuffer: resultsList.height * 2
-            interactive: !Settings.data.appLauncher.ignoreMouseInput
             onCurrentIndexChanged: {
               cancelFlick();
               if (currentIndex >= 0) {
@@ -939,7 +868,7 @@ SmartPanel {
                   Rectangle {
                     Layout.preferredWidth: badgeSize
                     Layout.preferredHeight: badgeSize
-                    radius: 0
+                    radius: Style.radiusM
                     color: Color.mSurfaceVariant
 
                     // Image preview for clipboard images
@@ -1106,7 +1035,7 @@ SmartPanel {
                       text: modelData.description || ""
                       pointSize: Style.fontSizeS
                       color: entry.isSelected ? Color.mOnHover : Color.mOnSurfaceVariant
-                      wrapMode: Text.WordWrap
+                      elide: Text.ElideRight
                       Layout.fillWidth: true
                       visible: text !== ""
                     }
@@ -1153,7 +1082,6 @@ SmartPanel {
                 z: -1
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                enabled: !Settings.data.appLauncher.ignoreMouseInput
                 onEntered: {
                   if (!root.ignoreMouseHover) {
                     selectedIndex = index;
@@ -1206,7 +1134,7 @@ SmartPanel {
             cacheBuffer: resultsGrid.height * 2
             keyNavigationEnabled: false
             focus: false
-            interactive: !Settings.data.appLauncher.ignoreMouseInput
+            interactive: true
 
             Component.onCompleted: {
               // Initialize gridColumns when grid view is created
@@ -1549,7 +1477,6 @@ SmartPanel {
                 z: -1
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                enabled: !Settings.data.appLauncher.ignoreMouseInput
                 onEntered: {
                   root.ignoreMouseHover = false;
                   selectedIndex = index;

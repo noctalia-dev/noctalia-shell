@@ -21,6 +21,7 @@ Item {
   property string section: ""
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
+  property real scaling: 1.0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] || {}
   property var widgetSettings: {
@@ -47,13 +48,8 @@ Item {
   readonly property string windowTitle: CompositorService.getFocusedWindowTitle() || "No active window"
   readonly property string fallbackIcon: "user-desktop"
 
-  readonly property int iconSize: Style.toOdd(Style.capsuleHeight * 0.75)
-  readonly property int verticalSize: Style.toOdd(Style.capsuleHeight * 0.85)
-
-  // For horizontal bars, height is always capsuleHeight (no animation needed)
-  // For vertical bars, collapse to 0 when hidden
-  implicitHeight: isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : Style.capsuleHeight
-  implicitWidth: isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : dynamicWidth)
+  implicitHeight: visible ? (isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : calculatedVerticalDimension()) : Style.capsuleHeight) : 0
+  implicitWidth: visible ? (isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : calculatedVerticalDimension()) : (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : dynamicWidth)) : 0
 
   // "visible": Always Visible, "hidden": Hide When Empty, "transparent": Transparent When Empty
   visible: (hideMode !== "hidden" || hasFocusedWindow) || opacity > 0
@@ -79,19 +75,23 @@ Item {
     }
   }
 
+  function calculatedVerticalDimension() {
+    return Math.round((Style.baseWidgetSize - 5) * scaling);
+  }
+
   function calculateContentWidth() {
     // Calculate the actual content width based on visible elements
     var contentWidth = 0;
-    var margins = Style.marginS * 2; // Left and right margins
+    var margins = Style.marginS * scaling * 2; // Left and right margins
 
     // Icon width (if visible)
     if (showIcon) {
-      contentWidth += iconSize;
-      contentWidth += Style.marginS; // Spacing after icon
+      contentWidth += 18 * scaling;
+      contentWidth += Style.marginS * scaling; // Spacing after icon
     }
 
     // Text width (use the measured width)
-    contentWidth += titleContainer.measuredWidth;
+    contentWidth += fullTitleMetrics.contentWidth;
 
     // Additional small margin for text
     contentWidth += Style.marginXXS * 2;
@@ -143,6 +143,16 @@ Item {
     }
   }
 
+  // Hidden text element to measure full title width
+  NText {
+    id: fullTitleMetrics
+    visible: false
+    text: windowTitle
+    pointSize: Style.fontSizeS * scaling
+    applyUiScale: false
+    font.weight: Style.fontWeightMedium
+  }
+
   NPopupContextMenu {
     id: contextMenu
 
@@ -169,10 +179,9 @@ Item {
   Rectangle {
     id: windowActiveRect
     visible: root.visible
-    x: isVerticalBar ? Style.pixelAlignCenter(parent.width, width) : 0
-    y: isVerticalBar ? 0 : Style.pixelAlignCenter(parent.height, height)
-    width: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : verticalSize) : ((!hasFocusedWindow) && (hideMode === "hidden") ? 0 : dynamicWidth)
-    height: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : verticalSize) : Style.capsuleHeight
+    anchors.verticalCenter: parent.verticalCenter
+    width: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : calculatedVerticalDimension()) : ((!hasFocusedWindow) && (hideMode === "hidden") ? 0 : dynamicWidth)
+    height: isVerticalBar ? ((!hasFocusedWindow) && hideMode === "hidden" ? 0 : calculatedVerticalDimension()) : Style.capsuleHeight
     radius: Style.radiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
@@ -189,22 +198,21 @@ Item {
     Item {
       id: mainContainer
       anchors.fill: parent
-      anchors.leftMargin: isVerticalBar ? 0 : Style.marginS
-      anchors.rightMargin: isVerticalBar ? 0 : Style.marginS
+      anchors.leftMargin: isVerticalBar ? 0 : Style.marginS * scaling
+      anchors.rightMargin: isVerticalBar ? 0 : Style.marginS * scaling
 
       // Horizontal layout for top/bottom bars
       RowLayout {
         id: rowLayout
-        height: iconSize
-        y: Style.pixelAlignCenter(parent.height, height)
-        spacing: Style.marginS
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Style.marginS * scaling
         visible: !isVerticalBar
         z: 1
 
         // Window icon
         Item {
-          Layout.preferredWidth: iconSize
-          Layout.preferredHeight: iconSize
+          Layout.preferredWidth: 18 * scaling
+          Layout.preferredHeight: 18 * scaling
           Layout.alignment: Qt.AlignVCenter
           visible: showIcon
 
@@ -255,41 +263,155 @@ Item {
               }
             }
 
-            // Apply dock shader to active window icon (always themed)
             layer.enabled: widgetSettings.colorizeIcons !== false
             layer.effect: ShaderEffect {
-              property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
-              property real colorizeMode: 0.0 // Dock mode (grayscale)
-
+              property color targetColor: Color.mOnSurface
+              property real colorizeMode: 0.0
               fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
             }
           }
         }
 
-        NScrollText {
+        // Title container with scrolling
+        Item {
           id: titleContainer
-          text: windowTitle
-          Layout.alignment: Qt.AlignVCenter
-          maxWidth: {
+          Layout.preferredWidth: {
             // Calculate available width based on other elements
-            var iconWidth = (showIcon && windowIcon.visible ? (iconSize + Style.marginS) : 0);
+            var iconWidth = (showIcon && windowIcon.visible ? (18 + Style.marginS) : 0);
             var totalMargins = Style.marginXXS * 2;
             var availableWidth = mainContainer.width - iconWidth - totalMargins;
             return Math.max(20, availableWidth);
           }
-          scrollMode: {
-            if (scrollingMode === "always")
-              return NScrollText.ScrollMode.Always;
-            if (scrollingMode === "hover")
-              return NScrollText.ScrollMode.Hover;
-            return NScrollText.ScrollMode.Never;
+          Layout.maximumWidth: Layout.preferredWidth
+          Layout.alignment: Qt.AlignVCenter
+          Layout.preferredHeight: titleText.height
+
+          clip: true
+
+          property bool isScrolling: false
+          property bool isResetting: false
+          property real textWidth: fullTitleMetrics.contentWidth
+          property real containerWidth: width
+          property bool needsScrolling: textWidth > containerWidth
+
+          // Timer for "always" mode with delay
+          Timer {
+            id: scrollStartTimer
+            interval: 1000
+            repeat: false
+            onTriggered: {
+              if (scrollingMode === "always" && titleContainer.needsScrolling) {
+                titleContainer.isScrolling = true;
+                titleContainer.isResetting = false;
+              }
+            }
           }
-          NText {
-            text: windowTitle
-            pointSize: Style.barFontSize
-            applyUiScale: false
-            font.weight: Style.fontWeightMedium
-            color: Color.mOnSurface
+
+          // Update scrolling state based on mode
+          property var updateScrollingState: function () {
+            if (scrollingMode === "never") {
+              isScrolling = false;
+              isResetting = false;
+            } else if (scrollingMode === "always") {
+              if (needsScrolling) {
+                if (mouseArea.containsMouse) {
+                  isScrolling = false;
+                  isResetting = true;
+                } else {
+                  scrollStartTimer.restart();
+                }
+              } else {
+                scrollStartTimer.stop();
+                isScrolling = false;
+                isResetting = false;
+              }
+            } else if (scrollingMode === "hover") {
+              if (mouseArea.containsMouse && needsScrolling) {
+                isScrolling = true;
+                isResetting = false;
+              } else {
+                isScrolling = false;
+                if (needsScrolling) {
+                  isResetting = true;
+                }
+              }
+            }
+          }
+
+          onWidthChanged: updateScrollingState()
+          Component.onCompleted: updateScrollingState()
+
+          // React to hover changes
+          Connections {
+            target: mouseArea
+            function onContainsMouseChanged() {
+              titleContainer.updateScrollingState();
+            }
+          }
+
+          // Scrolling content with seamless loop
+          Item {
+            id: scrollContainer
+            height: parent.height
+            width: childrenRect.width
+
+            property real scrollX: 0
+            x: scrollX
+
+            RowLayout {
+              spacing: 50 // Gap between text copies
+
+              NText {
+                id: titleText
+                text: windowTitle
+                pointSize: Style.fontSizeS * scaling
+                applyUiScale: false
+                font.weight: Style.fontWeightMedium
+                verticalAlignment: Text.AlignVCenter
+                color: Color.mOnSurface
+                onTextChanged: {
+                  if (root.scrollingMode === "always") {
+                    titleContainer.isScrolling = false;
+                    titleContainer.isResetting = false;
+                    scrollContainer.scrollX = 0;
+                    scrollStartTimer.restart();
+                  }
+                }
+              }
+
+              // Second copy for seamless scrolling
+              NText {
+                text: windowTitle
+                font: titleText.font
+                pointSize: Style.fontSizeS * scaling
+                applyUiScale: false
+                verticalAlignment: Text.AlignVCenter
+                color: Color.mOnSurface
+                visible: titleContainer.needsScrolling && titleContainer.isScrolling
+              }
+            }
+
+            // Reset animation
+            NumberAnimation on scrollX {
+              running: titleContainer.isResetting
+              to: 0
+              duration: 300
+              easing.type: Easing.OutQuad
+              onFinished: {
+                titleContainer.isResetting = false;
+              }
+            }
+
+            // Seamless infinite scroll
+            NumberAnimation on scrollX {
+              id: infiniteScroll
+              running: titleContainer.isScrolling && !titleContainer.isResetting
+              from: 0
+              to: -(titleContainer.textWidth + 50)
+              duration: Math.max(4000, windowTitle.length * 100)
+              loops: Animation.Infinite
+              easing.type: Easing.Linear
+            }
           }
         }
       }
@@ -297,20 +419,17 @@ Item {
       // Vertical layout for left/right bars - icon only
       Item {
         id: verticalLayout
+        anchors.centerIn: parent
         width: parent.width - Style.marginM * 2
         height: parent.height - Style.marginM * 2
-        x: Style.pixelAlignCenter(parent.width, width)
-        y: Style.pixelAlignCenter(parent.height, height)
         visible: isVerticalBar
         z: 1
 
         // Window icon
         Item {
-          id: verticalIconContainer
-          width: root.iconSize
+          width: Style.baseWidgetSize * 0.5 * scaling
           height: width
-          x: Style.pixelAlignCenter(parent.width, width)
-          y: Style.pixelAlignCenter(parent.height, height)
+          anchors.centerIn: parent
           visible: windowTitle !== ""
 
           IconImage {
@@ -360,12 +479,10 @@ Item {
               }
             }
 
-            // Apply dock shader to active window icon (always themed)
             layer.enabled: widgetSettings.colorizeIcons !== false
             layer.effect: ShaderEffect {
               property color targetColor: Color.mOnSurface
-              property real colorizeMode: 0.0 // Dock mode (grayscale)
-
+              property real colorizeMode: 0.0
               fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")
             }
           }
