@@ -27,7 +27,7 @@ SmartPanel {
 
   // All tray items from SystemTray
   readonly property var trayValuesAll: (SystemTray.items && SystemTray.items.values) ? SystemTray.items.values : []
-  
+
   // Filtered items - computed in panelContent where isPinned is available
   property var trayValues: []
 
@@ -82,17 +82,17 @@ SmartPanel {
         var item = root.trayValuesAll[i];
         if (!item)
           continue;
-        
+
         // Filter out passive items if hidePassive is enabled
         if (hidePassive && item.status !== undefined && (item.status === SystemTray.Passive || item.status === 0)) {
           continue;
         }
-        
+
         // Filter out pinned items
         if (isPinned(item)) {
           continue;
         }
-        
+
         filtered.push(item);
       }
       root.trayValues = filtered;
@@ -102,7 +102,7 @@ SmartPanel {
     Component.onCompleted: updateFilteredItems()
     onPinnedListChanged: updateFilteredItems()
     onHidePassiveChanged: updateFilteredItems()
-    
+
     Connections {
       target: root
       function onTrayValuesAllChanged() {

@@ -142,12 +142,20 @@
           "description": "Wenn der Ausgabetext diesem Wert entspricht, wird die Schaltfläche eingeklappt.",
           "label": "Einklappbedingung"
         },
+        "color-selection": {
+          "description": "Designfarben auf Symbol und Text anwenden.",
+          "label": "Farbe auswählen"
+        },
         "display-command-output": {
           "description": "Befehl eingeben, der in regelmäßigen Abständen ausgeführt wird. Die erste Zeile seiner Ausgabe wird als Text angezeigt.",
           "label": "Befehlsausgabe anzeigen",
           "stream-description": "Geben Sie einen Befehl ein, der kontinuierlich ausgeführt werden soll."
         },
         "dynamic-text": "Dynamischer Text",
+        "enable-colorization": {
+          "description": "Färbung für das benutzerdefinierte Schaltflächensymbol und den Text aktivieren, Designfarben anwenden.",
+          "label": "Färbung aktivieren"
+        },
         "hide-mode": {
           "alwaysExpanded": "Immer erweitert",
           "description": "Steuert die Sichtbarkeit des Widgets, wenn der Befehl keine Ausgabe hat.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Das Tastaturlayout-Symbol anzeigen.",
           "label": "Symbol anzeigen"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Wenn aktiviert, wird die Primärfarbe zur Hervorhebung verwendet.",
+          "label": "Primärfarbe verwenden"
         }
       },
       "lock-keys": {
@@ -590,6 +604,7 @@
     "enable-bluetooth": "Bluetooth aktivieren",
     "enable-dnd": "'Nicht stören' aktivieren",
     "enable-wifi": "WLAN aktivieren",
+    "launcher-settings": "Launcher-Einstellungen",
     "lower-to-bottom": "Senken bis zum Anschlag / Ganz nach unten senken",
     "next": "Nächste/r/s",
     "open-calendar": "Kalender öffnen",

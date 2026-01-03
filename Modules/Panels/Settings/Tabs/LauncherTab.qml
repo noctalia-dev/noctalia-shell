@@ -176,6 +176,15 @@ ColumnLayout {
     onEditingFinished: Settings.data.appLauncher.customLaunchPrefix = text
   }
 
+  NTextInput {
+    label: I18n.tr("settings.launcher.settings.annotation-tool.label")
+    description: I18n.tr("settings.launcher.settings.annotation-tool.description")
+    Layout.fillWidth: true
+    text: Settings.data.appLauncher.screenshotAnnotationTool
+    placeholderText: I18n.tr("settings.launcher.settings.annotation-tool.placeholder")
+    onEditingFinished: Settings.data.appLauncher.screenshotAnnotationTool = text
+  }
+
   NDivider {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginL

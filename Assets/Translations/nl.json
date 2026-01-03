@@ -142,12 +142,20 @@
           "description": "Als de uitvoer overeenkomt met deze waarde, wordt de knop samengevouwen.",
           "label": "Inklapvoorwaarde"
         },
+        "color-selection": {
+          "description": "Pas themakleuren toe op pictogram en tekst.",
+          "label": "Kleur selecteren"
+        },
         "display-command-output": {
           "description": "Voer een commando in dat regelmatig wordt uitgevoerd. De eerste regel van de uitvoer wordt als tekst weergegeven.",
           "label": "Commando-uitvoer weergeven",
           "stream-description": "Voer een commando in dat continu wordt uitgevoerd."
         },
         "dynamic-text": "Dynamische tekst",
+        "enable-colorization": {
+          "description": "Kleurtoepassing inschakelen voor het aangepaste knoppictogram en de tekst, met toepassing van themakleuren.",
+          "label": "Kleurtoepassing inschakelen"
+        },
         "hide-mode": {
           "alwaysExpanded": "Altijd uitgeklapt",
           "description": "Bepaalt de zichtbaarheid van de widget wanneer het commando geen uitvoer heeft.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Toon het toetsenbordindeling-icoon.",
           "label": "Icoon weergeven"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Indien ingeschakeld, past dit de primaire kleur toe voor nadruk.",
+          "label": "Gebruik een primaire kleur"
         }
       },
       "lock-keys": {
@@ -590,6 +604,7 @@
     "enable-bluetooth": "Bluetooth inschakelen",
     "enable-dnd": "Niet Storen inschakelen",
     "enable-wifi": "Wi-Fi inschakelen",
+    "launcher-settings": "Launcher instellingen",
     "lower-to-bottom": "Laagste naar beneden",
     "next": "Volgende",
     "open-calendar": "Open agenda",

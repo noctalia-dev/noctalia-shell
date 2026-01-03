@@ -247,6 +247,8 @@ Item {
     root.isPanelOpen = false;
     panelBackground.dimensionsInitialized = false;
 
+    // Signal immediate close so MainScreen can skip dimmer animation
+    PanelService.closedImmediately = true;
     PanelService.closedPanel(root);
     closed();
 
@@ -679,6 +681,7 @@ Item {
   }
 
   Behavior on opacity {
+    enabled: !PanelService.closedImmediately
     NumberAnimation {
       id: opacityAnimation
       duration: root.isClosing ? Style.animationFaster : Style.animationFast
@@ -1070,6 +1073,7 @@ Item {
       }
 
       Behavior on width {
+        enabled: !PanelService.closedImmediately
         NumberAnimation {
           id: widthAnimation
           // Use 0ms if dimensions not initialized to prevent initial changes from animating
@@ -1099,6 +1103,7 @@ Item {
       }
 
       Behavior on height {
+        enabled: !PanelService.closedImmediately
         NumberAnimation {
           id: heightAnimation
           // Use 0ms if dimensions not initialized to prevent initial changes from animating

@@ -50,11 +50,17 @@ PanelWindow {
       return WlrKeyboardFocus.None;
     }
     // Panel open on THIS screen: use panel's preferred focus mode
-    // Exception: Hyprland's Exclusive captures all input globally, preventing
-    // click-to-close from working on other monitors, so always use OnDemand
-    if (root.isPanelOpen && !CompositorService.isHyprland) {
+    if (root.isPanelOpen) {
+      // Hyprland's Exclusive captures ALL input globally (including pointer),
+      // preventing click-to-close from working on other monitors.
+      // Workaround: briefly use Exclusive when panel opens (for text input focus),
+      // then switch to OnDemand (for click-to-close on other screens).
+      if (CompositorService.isHyprland) {
+        return PanelService.isInitializingKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand;
+      }
       return PanelService.openedPanel.exclusiveKeyboard ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand;
     }
+    // Panel open on ANOTHER screen: OnDemand allows receiving pointer events for click-to-close
     return WlrKeyboardFocus.OnDemand;
   }
 
@@ -79,9 +85,17 @@ PanelWindow {
   }
 
   Behavior on color {
+    enabled: !PanelService.closedImmediately
     ColorAnimation {
       duration: isPanelClosing ? Style.animationFaster : Style.animationNormal
       easing.type: Easing.OutQuad
+    }
+  }
+
+  // Reset closedImmediately flag after color change is applied
+  onColorChanged: {
+    if (PanelService.closedImmediately) {
+      PanelService.closedImmediately = false;
     }
   }
 

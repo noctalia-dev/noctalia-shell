@@ -130,6 +130,48 @@ Item {
     return " ".repeat(currentMaxTextLength);
   }
 
+  readonly property bool enableColorization: widgetSettings.enableColorization || false
+  readonly property string colorizeSystemIcon: {
+    if (widgetSettings.colorizeSystemIcon !== undefined)
+      return widgetSettings.colorizeSystemIcon;
+    return widgetMetadata.colorizeSystemIcon !== undefined ? widgetMetadata.colorizeSystemIcon : "none";
+  }
+
+  readonly property bool isColorizing: enableColorization && colorizeSystemIcon !== "none"
+
+  readonly property color iconColor: {
+    if (!isColorizing)
+      return Color.mOnSurface;
+    switch (colorizeSystemIcon) {
+    case "primary":
+      return Color.mPrimary;
+    case "secondary":
+      return Color.mSecondary;
+    case "tertiary":
+      return Color.mTertiary;
+    case "error":
+      return Color.mError;
+    default:
+      return Color.mOnSurface;
+    }
+  }
+  readonly property color iconHoverColor: {
+    if (!isColorizing)
+      return Color.mOnHover;
+    switch (colorizeSystemIcon) {
+    case "primary":
+      return Qt.darker(Color.mPrimary, 1.2);
+    case "secondary":
+      return Qt.darker(Color.mSecondary, 1.2);
+    case "tertiary":
+      return Qt.darker(Color.mTertiary, 1.2);
+    case "error":
+      return Qt.darker(Color.mError, 1.2);
+    default:
+      return Color.mOnHover;
+    }
+  }
+
   implicitWidth: pill.width
   implicitHeight: pill.height
 
@@ -145,6 +187,7 @@ Item {
     rotateText: isVerticalBar && currentMaxTextLength > 0
     autoHide: false
     forceOpen: _pillForceOpen
+    customTextIconColor: isColorizing ? iconColor : Color.transparent
 
     tooltipText: {
       var tooltipLines = [];

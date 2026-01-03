@@ -142,12 +142,20 @@
           "description": "Ger nivîsa derketî bi vê nirxê re têkildar be, dê bişkok hilweşe.",
           "label": "Rewşa hilweşînê"
         },
+        "color-selection": {
+          "description": "Rengên mûqeyê li îkon û nivîsê bi kar bîne.",
+          "label": "Reng hilbijêre"
+        },
         "display-command-output": {
           "description": "Fermanekê binivîse ku di navberên rêkûpêk de bixebite. Rêza yekem a derketina wê dê wekî nivîs were xuyang kirin.",
           "label": "Nîşandana derketina fermanê",
           "stream-description": "Fermanekê binivîse ku bi berdewamî bixebite."
         },
         "dynamic-text": "Teksta dînamîk",
+        "enable-colorization": {
+          "description": "Rengînkirinê ji bo îkona bişkoka xwerû û nivîsê çalak bike, rengên mûqeyê bi kar bîne.",
+          "label": "Rengînkirin çalak bike"
+        },
         "hide-mode": {
           "alwaysExpanded": "Her tim berfireh kirin",
           "description": "Kontrola xuyabûna widgetê dema ku ferman encamek tune.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Nîşana şêweya klavyeyê nîşan bide.",
           "label": "Nîşanê nîşan bide"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Dema ku hat çalak kirin, ev rengê sereke ji bo teqezkirinê bikar tîne.",
+          "label": "Rengê bingehîn bikar bîne"
         }
       },
       "lock-keys": {
@@ -590,6 +604,7 @@
     "enable-bluetooth": "Bluetooth çalak bike",
     "enable-dnd": "Dengê dernexîne çalak bike",
     "enable-wifi": "Wi-Fi çalak bike",
+    "launcher-settings": "Mîhengên destpêkerê",
     "lower-to-bottom": "Daxistin bo binî",
     "next": "Pêş",
     "open-calendar": "Salnameyê veke",

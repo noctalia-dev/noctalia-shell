@@ -49,8 +49,10 @@ Item {
   readonly property int iconSize: Style.toOdd(Style.capsuleHeight * 0.75)
   readonly property int verticalSize: Style.toOdd(Style.capsuleHeight * 0.85)
 
-  implicitHeight: visible ? (isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : Style.capsuleHeight) : 0
-  implicitWidth: visible ? (isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : dynamicWidth)) : 0
+  // For horizontal bars, height is always capsuleHeight (no animation needed)
+  // For vertical bars, collapse to 0 when hidden
+  implicitHeight: isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : Style.capsuleHeight
+  implicitWidth: isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : dynamicWidth)
 
   // "visible": Always Visible, "hidden": Hide When Empty, "transparent": Transparent When Empty
   visible: (hideMode !== "hidden" || hasFocusedWindow) || opacity > 0
@@ -88,7 +90,7 @@ Item {
     }
 
     // Text width (use the measured width)
-    contentWidth += fullTitleMetrics.contentWidth;
+    contentWidth += titleContainer.measuredWidth;
 
     // Additional small margin for text
     contentWidth += Style.marginXXS * 2;
@@ -156,15 +158,6 @@ Item {
     }
   }
 
-  // Hidden text element to measure full title width
-  NText {
-    id: fullTitleMetrics
-    visible: false
-    text: windowTitle
-    pointSize: Style.barFontSize
-    applyUiScale: false
-  }
-
   NPopupContextMenu {
     id: contextMenu
 
@@ -217,6 +210,7 @@ Item {
       // Horizontal layout for top/bottom bars
       RowLayout {
         id: rowLayout
+        height: iconSize
         y: Style.pixelAlignCenter(parent.height, height)
         spacing: Style.marginS
         visible: !isVerticalBar
@@ -248,145 +242,30 @@ Item {
           }
         }
 
-        // Title container with scrolling
-        Item {
+        NScrollText {
           id: titleContainer
-          Layout.preferredWidth: {
+          text: windowTitle
+          Layout.alignment: Qt.AlignVCenter
+          maxWidth: {
             // Calculate available width based on other elements
             var iconWidth = (showIcon && windowIcon.visible ? (iconSize + Style.marginS) : 0);
             var totalMargins = Style.marginXXS * 2;
             var availableWidth = mainContainer.width - iconWidth - totalMargins;
             return Math.max(20, availableWidth);
           }
-          Layout.maximumWidth: Layout.preferredWidth
-          Layout.alignment: Qt.AlignVCenter
-          Layout.preferredHeight: titleText.height
-
-          clip: true
-
-          property bool isScrolling: false
-          property bool isResetting: false
-          property real textWidth: fullTitleMetrics.contentWidth
-          property real containerWidth: width
-          property bool needsScrolling: textWidth > containerWidth
-
-          // Timer for "always" mode with delay
-          Timer {
-            id: scrollStartTimer
-            interval: 1000
-            repeat: false
-            onTriggered: {
-              if (scrollingMode === "always" && titleContainer.needsScrolling) {
-                titleContainer.isScrolling = true;
-                titleContainer.isResetting = false;
-              }
-            }
+          scrollMode: {
+            if (scrollingMode === "always")
+              return NScrollText.ScrollMode.Always;
+            if (scrollingMode === "hover")
+              return NScrollText.ScrollMode.Hover;
+            return NScrollText.ScrollMode.Never;
           }
-
-          // Update scrolling state based on mode
-          property var updateScrollingState: function () {
-            if (scrollingMode === "never") {
-              isScrolling = false;
-              isResetting = false;
-            } else if (scrollingMode === "always") {
-              if (needsScrolling) {
-                if (mouseArea.containsMouse) {
-                  isScrolling = false;
-                  isResetting = true;
-                } else {
-                  scrollStartTimer.restart();
-                }
-              } else {
-                scrollStartTimer.stop();
-                isScrolling = false;
-                isResetting = false;
-              }
-            } else if (scrollingMode === "hover") {
-              if (mouseArea.containsMouse && needsScrolling) {
-                isScrolling = true;
-                isResetting = false;
-              } else {
-                isScrolling = false;
-                if (needsScrolling) {
-                  isResetting = true;
-                }
-              }
-            }
-          }
-
-          onWidthChanged: updateScrollingState()
-          Component.onCompleted: updateScrollingState()
-
-          // React to hover changes
-          Connections {
-            target: mouseArea
-            function onContainsMouseChanged() {
-              titleContainer.updateScrollingState();
-            }
-          }
-
-          // Scrolling content with seamless loop
-          Item {
-            id: scrollContainer
-            height: parent.height
-            width: childrenRect.width
-
-            property real scrollX: 0
-            x: scrollX
-
-            RowLayout {
-              spacing: 50 // Gap between text copies
-
-              NText {
-                id: titleText
-                text: windowTitle
-                pointSize: Style.barFontSize
-                applyUiScale: false
-                verticalAlignment: Text.AlignVCenter
-                color: Color.mOnSurface
-                onTextChanged: {
-                  if (root.scrollingMode === "always") {
-                    titleContainer.isScrolling = false;
-                    titleContainer.isResetting = false;
-                    scrollContainer.scrollX = 0;
-                    scrollStartTimer.restart();
-                  }
-                }
-              }
-
-              // Second copy for seamless scrolling
-              NText {
-                text: windowTitle
-                font: titleText.font
-                pointSize: Style.barFontSize
-                applyUiScale: false
-                verticalAlignment: Text.AlignVCenter
-                color: Color.mOnSurface
-                visible: titleContainer.needsScrolling && titleContainer.isScrolling
-              }
-            }
-
-            // Reset animation
-            NumberAnimation on scrollX {
-              running: titleContainer.isResetting
-              to: 0
-              duration: 300
-              easing.type: Easing.OutQuad
-              onFinished: {
-                titleContainer.isResetting = false;
-              }
-            }
-
-            // Seamless infinite scroll
-            NumberAnimation on scrollX {
-              id: infiniteScroll
-              running: titleContainer.isScrolling && !titleContainer.isResetting
-              from: 0
-              to: -(titleContainer.textWidth + 50)
-              duration: Math.max(4000, windowTitle.length * 100)
-              loops: Animation.Infinite
-              easing.type: Easing.Linear
-            }
+          NText {
+            text: windowTitle
+            pointSize: Style.barFontSize
+            applyUiScale: false
+            font.weight: Style.fontWeightMedium
+            color: Color.mOnSurface
           }
         }
       }

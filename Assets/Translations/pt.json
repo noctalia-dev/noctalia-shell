@@ -142,12 +142,20 @@
           "description": "Se o texto de saída corresponder a este valor, o botão será recolhido.",
           "label": "Condição de recolhimento"
         },
+        "color-selection": {
+          "description": "Aplicar cores do tema ao ícone e ao texto.",
+          "label": "Selecionar cor"
+        },
         "display-command-output": {
           "description": "Digite um comando para ser executado em um intervalo regular. A primeira linha da sua saída será exibida como texto.",
           "label": "Exibir Saída de Comando",
           "stream-description": "Insira um comando para executar continuamente."
         },
         "dynamic-text": "Texto dinâmico",
+        "enable-colorization": {
+          "description": "Ativar colorização para o ícone e texto do botão personalizado, aplicando cores do tema.",
+          "label": "Ativar colorização"
+        },
         "hide-mode": {
           "alwaysExpanded": "Sempre expandido",
           "description": "Controla a visibilidade do widget quando o comando não tem saída.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Exibir o ícone do layout do teclado.",
           "label": "Mostrar ícone"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Quando ativado, aplica a cor primária para ênfase.",
+          "label": "Use cores primárias"
         }
       },
       "lock-keys": {
@@ -590,6 +604,7 @@
     "enable-bluetooth": "Ativar Bluetooth",
     "enable-dnd": "Ativar Não Perturbe",
     "enable-wifi": "Ativar Wi-Fi",
+    "launcher-settings": "Configurações do iniciador",
     "lower-to-bottom": "Abaixar para o fundo",
     "next": "Próximo(a)",
     "open-calendar": "Abrir calendário",

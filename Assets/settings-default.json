@@ -188,7 +188,8 @@
     "viewMode": "list",
     "showCategories": true,
     "iconMode": "tabler",
-    "ignoreMouseInput": false
+    "ignoreMouseInput": false,
+    "screenshotAnnotationTool": ""
   },
   "controlCenter": {
     "position": "close_to_bar_button",

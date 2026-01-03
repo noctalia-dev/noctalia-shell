@@ -544,8 +544,10 @@ Item {
         Qt.callLater(() => {
                        Logger.d("ApplicationsPlugin", `Launching: ${app.name}`);
                        // Record usage and persist asynchronously
-                       if (Settings.data.appLauncher.sortByMostUsed)
-                       recordUsage(app);
+                       if (Settings.data.appLauncher.sortByMostUsed) {
+                         recordUsage(app);
+                       }
+
                        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
                          // Use custom launch prefix
                          const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");

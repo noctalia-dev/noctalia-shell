@@ -142,12 +142,20 @@
           "description": "Jeśli tekst wyjściowy pasuje do tej wartości, przycisk zostanie zwinięty.",
           "label": "Warunek zwinięcia"
         },
+        "color-selection": {
+          "description": "Zastosuj kolory motywu do ikony i tekstu.",
+          "label": "Wybierz kolor"
+        },
         "display-command-output": {
           "description": "Wpisz polecenie do uruchamiania w regularnych odstępach czasu. Pierwsza linia wyniku zostanie wyświetlona jako tekst.",
           "label": "Wyświetl wynik polecenia",
           "stream-description": "Wpisz polecenie do uruchamiania w trybie ciągłym."
         },
         "dynamic-text": "Dynamiczny tekst",
+        "enable-colorization": {
+          "description": "Włącz kolorowanie ikony i tekstu niestandardowego przycisku, stosując kolory motywu.",
+          "label": "Włącz kolorowanie"
+        },
         "hide-mode": {
           "alwaysExpanded": "Zawsze rozwinięty",
           "description": "Kontroluje widoczność widżetu, gdy polecenie nie zwraca wyniku.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Wyświetl ikonę układu klawiatury.",
           "label": "Pokaż ikonę"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Po włączeniu, stosuje kolor podstawowy dla podkreślenia.",
+          "label": "Użyj koloru podstawowego."
         }
       },
       "lock-keys": {
@@ -590,6 +604,7 @@
     "enable-bluetooth": "Włącz Bluetooth",
     "enable-dnd": "Włącz Nie przeszkadzać",
     "enable-wifi": "Włącz Wi-Fi",
+    "launcher-settings": "Ustawienia programu uruchamiającego",
     "lower-to-bottom": "Opuść na dół.",
     "next": "Następny",
     "open-calendar": "Otwórz kalendarz",

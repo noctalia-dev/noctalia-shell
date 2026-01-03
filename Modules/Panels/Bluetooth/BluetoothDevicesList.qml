@@ -70,7 +70,7 @@ NBox {
       model: root.model
       visible: BluetoothService.adapter && BluetoothService.adapter.enabled
 
-      Rectangle {
+      NBox {
         id: device
 
         readonly property bool canConnect: BluetoothService.canConnect(modelData)
@@ -90,10 +90,9 @@ NBox {
         Layout.fillWidth: true
         Layout.preferredHeight: deviceColumn.implicitHeight + (Style.marginM * 2)
         radius: Style.radiusM
-        color: Color.mSurface
-        border.width: Style.borderS
-        border.color: getContentColor(Color.mOutline)
         clip: true
+
+        color: modelData.connected ? Qt.alpha(getContentColor(), 0.08) : Color.mSurface
 
         // Content column so expanded details are laid out inside the card
         ColumnLayout {

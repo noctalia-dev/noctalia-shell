@@ -142,12 +142,20 @@
           "description": "如果输出文本与此值匹配，按钮将折叠。",
           "label": "折叠条件"
         },
+        "color-selection": {
+          "description": "将主题颜色应用到图标和文本。",
+          "label": "选择颜色"
+        },
         "display-command-output": {
           "description": "输入一个定期运行的命令。其输出的第一行将显示为文本。",
           "label": "显示命令输出",
           "stream-description": "输入一个要持续运行的命令。"
         },
         "dynamic-text": "动态文本",
+        "enable-colorization": {
+          "description": "启用自定义按钮图标和文本的着色，应用主题颜色。",
+          "label": "启用着色"
+        },
         "hide-mode": {
           "alwaysExpanded": "始终展开",
           "description": "控制命令无输出时小部件的可见性。",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "显示键盘布局图标。",
           "label": "显示图标"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "启用后，将应用主色来突出显示。",
+          "label": "使用原色"
         }
       },
       "lock-keys": {
@@ -590,6 +604,7 @@
     "enable-bluetooth": "启用蓝牙",
     "enable-dnd": "启用勿扰模式",
     "enable-wifi": "启用 Wi-Fi",
+    "launcher-settings": "启动器设置",
     "lower-to-bottom": "降至底部",
     "next": "下一首",
     "open-calendar": "打开日历",

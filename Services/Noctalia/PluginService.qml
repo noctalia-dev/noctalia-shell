@@ -1128,6 +1128,15 @@ Singleton {
 
         // Compare versions
         if (compareVersions(availableVersion, currentVersion) > 0) {
+          // Check if the available version requires a higher Noctalia version
+          if (availablePlugin.minNoctaliaVersion) {
+            var noctaliaVersion = UpdateService.baseVersion;
+            if (compareVersions(availablePlugin.minNoctaliaVersion, noctaliaVersion) > 0) {
+              Logger.d("PluginService", "Skipping update for", pluginId + ": requires Noctalia v" + availablePlugin.minNoctaliaVersion + " (current: v" + noctaliaVersion + ")");
+              continue;
+            }
+          }
+
           updates[pluginId] = {
             currentVersion: currentVersion,
             availableVersion: availableVersion

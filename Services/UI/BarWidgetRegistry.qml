@@ -25,6 +25,7 @@ Singleton {
                            "KeepAwake": keepAwakeComponent,
                            "KeyboardLayout": keyboardLayoutComponent,
                            "LockKeys": lockKeysComponent,
+                           "Launcher": launcherComponent,
                            "MediaMini": mediaMiniComponent,
                            "Microphone": microphoneComponent,
                            "NightLight": nightLightComponent,
@@ -54,6 +55,7 @@ Singleton {
                                      "ControlCenter": "WidgetSettings/ControlCenterSettings.qml",
                                      "CustomButton": "WidgetSettings/CustomButtonSettings.qml",
                                      "KeyboardLayout": "WidgetSettings/KeyboardLayoutSettings.qml",
+                                     "Launcher": "WidgetSettings/LauncherSettings.qml",
                                      "LockKeys": "WidgetSettings/LockKeysSettings.qml",
                                      "MediaMini": "WidgetSettings/MediaMiniSettings.qml",
                                      "Microphone": "WidgetSettings/MicrophoneSettings.qml",
@@ -98,7 +100,7 @@ Singleton {
                                     "displayMode": "onhover"
                                   },
                                   "Clock": {
-                                    "usePrimaryColor": true,
+                                    "usePrimaryColor": false,
                                     "useCustomFont": false,
                                     "customFont": "",
                                     "formatHorizontal": "HH:mm ddd, MMM dd",
@@ -138,7 +140,9 @@ Singleton {
                                     "maxTextLength": {
                                       "horizontal": 10,
                                       "vertical": 10
-                                    }
+                                    },
+                                    "enableColorization": false,
+                                    "colorizeSystemIcon": "none"
                                   },
                                   "KeyboardLayout": {
                                     "displayMode": "onhover",
@@ -151,6 +155,10 @@ Singleton {
                                     "capsLockIcon": "letter-c",
                                     "numLockIcon": "letter-n",
                                     "scrollLockIcon": "letter-s"
+                                  },
+                                  "Launcher": {
+                                    "icon": "rocket",
+                                    "usePrimaryColor": false
                                   },
                                   "MediaMini": {
                                     "hideMode": "hidden",
@@ -268,6 +276,9 @@ Singleton {
   property Component lockKeysComponent: Component {
     LockKeys {}
   }
+  property Component launcherComponent: Component {
+    Launcher {}
+  }
   property Component mediaMiniComponent: Component {
     MediaMini {}
   }
@@ -344,7 +355,13 @@ Singleton {
 
   // Helper function to check if widget has user settings
   function widgetHasUserSettings(id) {
-    return widgetMetadata[id] !== undefined;
+    var meta = widgetMetadata[id];
+    if (meta === undefined)
+      return false;
+    // allowUserSettings=false lets a widget opt out of the settings dialog
+    if (meta.allowUserSettings === false)
+      return false;
+    return true;
   }
 
   // ------------------------------

@@ -142,12 +142,20 @@
           "description": "If the output text matches this value, the button will collapse.",
           "label": "Collapse condition"
         },
+        "color-selection": {
+          "description": "Apply theme colors to icon and text.",
+          "label": "Select Color"
+        },
         "display-command-output": {
           "description": "Enter a command to run at a regular interval. The first line of its output will be displayed as text.",
           "label": "Display command output",
           "stream-description": "Enter a command to run continuously."
         },
         "dynamic-text": "Dynamic text",
+        "enable-colorization": {
+          "description": "Enable colorization for the custom button icon and text, applying theme colors.",
+          "label": "Enable Colorization"
+        },
         "hide-mode": {
           "alwaysExpanded": "Always expanded",
           "description": "Controls widget visibility when the command has no output.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Display the keyboard layout icon.",
           "label": "Show icon"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "When enabled, this applies the primary color for emphasis.",
+          "label": "Use primary color"
         }
       },
       "lock-keys": {
@@ -590,6 +604,7 @@
     "enable-bluetooth": "Enable Bluetooth",
     "enable-dnd": "Enable Do Not Disturb",
     "enable-wifi": "Enable Wi-Fi",
+    "launcher-settings": "Launcher settings",
     "lower-to-bottom": "Lower to bottom",
     "next": "Next",
     "open-calendar": "Open calendar",
@@ -1860,6 +1875,11 @@
         "use-app2unit": {
           "description": "Uses an alternative launch method to better manage app processes and prevent issues.",
           "label": "Use App2Unit to launch applications"
+        },
+        "annotation-tool": {
+          "label": "Annotation tool",
+          "description": "Command to run when clicking the annotate button in clipboard history, The image will be piped to this command.",
+          "placeholder": "e.g. 'gradia', 'satty -f -'"
         }
       },
       "title": "Launcher"
@@ -2895,7 +2915,8 @@
     "up": "Parent directory",
     "volume-at": "Output volume: {volume}%",
     "wallpaper-selector": "Wallpaper selector",
-    "widget-settings": "Widget settings"
+    "widget-settings": "Widget settings",
+    "open-annotation-tool": "Open with annotation tool"
   },
   "wallpaper": {
     "configure-directory": "Configure your wallpaper directory with images.",

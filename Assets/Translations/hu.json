@@ -142,12 +142,20 @@
           "description": "Ha a kimeneti szöveg megegyezik ezzel az értékkel, a gomb összecsukódik.",
           "label": "Összecsukási feltétel"
         },
+        "color-selection": {
+          "description": "Témák színeinek alkalmazása az ikonra és a szövegre.",
+          "label": "Szín kiválasztása"
+        },
         "display-command-output": {
           "description": "Adjon meg egy parancsot, amelyet rendszeres időközönként futtatni szeretne. A kimenetének első sora szövegként jelenik meg.",
           "label": "Parancs kimenetének megjelenítése",
           "stream-description": "Adjon meg egy parancsot, amelyet folyamatosan futtatni szeretne."
         },
         "dynamic-text": "Dinamikus szöveg",
+        "enable-colorization": {
+          "description": "Színezés engedélyezése az egyéni gomb ikonjához és szövegéhez, a téma színeinek alkalmazása.",
+          "label": "Színezés engedélyezése"
+        },
         "hide-mode": {
           "alwaysExpanded": "Mindig kibontva",
           "description": "Szabályozza a widget láthatóságát, ha a parancsnak nincs kimenete.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Billentse a billentyűzetkiosztás ikont.",
           "label": "Ikon megjelenítése"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Ha engedélyezve van, akkor a hangsúlyozáshoz az elsődleges színt használja.",
+          "label": "Használj alapszínt."
         }
       },
       "lock-keys": {
@@ -590,6 +604,7 @@
     "enable-bluetooth": "Bluetooth bekapcsolása",
     "enable-dnd": "Ne zavarjanak bekapcsolása",
     "enable-wifi": "Wi-Fi bekapcsolása",
+    "launcher-settings": "Indító beállítások",
     "lower-to-bottom": "Engedd le a legaljára / Engedd le az aljára",
     "next": "Következő",
     "open-calendar": "Naptár megnyitása",

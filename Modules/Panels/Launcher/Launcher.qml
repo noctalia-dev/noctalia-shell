@@ -1117,6 +1117,7 @@ SmartPanel {
                           NIcon {
                             icon: modelData.icon
                             pointSize: Style.fontSizeXXXL
+                            color: entry.isSelected ? Color.mOnPrimary : Color.mOnSurface
                             visible: modelData.icon && !modelData.emojiChar
                           }
                         }
@@ -1140,7 +1141,7 @@ SmartPanel {
                         text: modelData.emojiChar ? modelData.emojiChar : modelData.name.charAt(0).toUpperCase()
                         pointSize: modelData.emojiChar ? Style.fontSizeXXXL : Style.fontSizeXXL  // Larger font for emojis
                         font.weight: Style.fontWeightBold
-                        color: modelData.emojiChar ? Color.mOnSurface : Color.mOnPrimary  // Different color for emojis
+                        color: entry.isSelected ? Color.mOnPrimary : (modelData.emojiChar ? Color.mOnSurface : Color.mOnPrimary)
                       }
 
                       // Image type indicator overlay
@@ -1206,6 +1207,21 @@ SmartPanel {
                         icon: entry.isPinned(entry.appId) ? "unpin" : "pin"
                         tooltipText: entry.isPinned(entry.appId) ? I18n.tr("launcher.unpin") : I18n.tr("launcher.pin")
                         onClicked: entry.togglePin(entry.appId)
+                      }
+
+                      // open an annotation tool for images
+                      NIconButton {
+                        visible: !!modelData.clipboardId && entry.isSelected && modelData.isImage && Settings.data.appLauncher.screenshotAnnotationTool !== ""
+                        icon: "pencil"
+                        tooltipText: I18n.tr("tooltips.open-annotation-tool")
+                        z: 1
+                        onClicked: {
+                          var tool = Settings.data.appLauncher.screenshotAnnotationTool;
+                          if (modelData.clipboardId) {
+                            Quickshell.execDetached(["sh", "-c", "cliphist decode " + modelData.clipboardId + " | " + tool]);
+                            root.close();
+                          }
+                        }
                       }
 
                       // Delete action icon button for clipboard entries
@@ -1500,6 +1516,7 @@ SmartPanel {
                         NIcon {
                           icon: modelData.icon
                           pointSize: Style.fontSizeXXXL
+                          color: gridEntry.isSelected ? Color.mOnPrimary : Color.mOnSurface
                           visible: modelData.icon && !modelData.emojiChar
                         }
                       }
@@ -1538,7 +1555,7 @@ SmartPanel {
                         return Math.min(Math.max(cellBasedSize, baseSize), maxSize);
                       }
                       font.weight: Style.fontWeightBold
-                      color: modelData.emojiChar ? Color.mOnSurface : Color.mOnPrimary
+                      color: gridEntry.isSelected ? Color.mOnPrimary : (modelData.emojiChar ? Color.mOnSurface : Color.mOnPrimary)
                     }
                   }
 

@@ -94,11 +94,14 @@ Item {
   }
 
   // Layout
-  implicitWidth: visible ? (isVertical ? (isHidden ? 0 : verticalSize) : (isHidden ? 0 : contentWidth)) : 0
-  implicitHeight: visible ? (isVertical ? (isHidden ? 0 : verticalSize) : Style.capsuleHeight) : 0
+  // For horizontal bars, height is always capsuleHeight (no animation needed to prevent jitter)
+  // For vertical bars, collapse to 0 when hidden
+  implicitWidth: isVertical ? (isHidden ? 0 : verticalSize) : (isHidden ? 0 : contentWidth)
+  implicitHeight: isVertical ? (isHidden ? 0 : verticalSize) : Style.capsuleHeight
   visible: !shouldHideIdle && (hideMode !== "hidden" || opacity > 0)
   opacity: isHidden ? 0.0 : ((hideMode === "transparent" && !hasPlayer) ? 0.0 : 1.0)
 
+  property real mainContentWidth: 0
   readonly property real contentWidth: {
     if (useFixedWidth)
       return maxWidth;
@@ -111,14 +114,20 @@ Item {
       iconWidth = artSize;
     }
 
+    var margins = isVertical ? 0 : (Style.marginS * 2);
+
     // Add spacing and text width
     var textWidth = 0;
-    if (titleMetrics.contentWidth > 0) {
-      textWidth = Style.marginS + titleMetrics.contentWidth + Style.marginXXS * 2;
+    if (titleContainer.measuredWidth > 0) {
+      margins += Style.marginS;
+      textWidth = titleContainer.measuredWidth + Style.marginXXS * 2;
     }
 
-    var margins = isVertical ? 0 : (Style.marginS * 2);
     var total = iconWidth + textWidth + margins;
+
+    // calculate the width of all elements except the scrolling text
+    mainContentWidth = total - textWidth;
+
     return hasPlayer ? Math.min(total, maxWidth) : total;
   }
 
@@ -139,15 +148,6 @@ Item {
       duration: Style.animationNormal
       easing.type: Easing.InOutCubic
     }
-  }
-
-  // Hidden text for measurements
-  NText {
-    id: titleMetrics
-    visible: false
-    text: title
-    applyUiScale: false
-    pointSize: Style.barFontSize
   }
 
   // Context menu
@@ -251,7 +251,6 @@ Item {
       anchors.fill: parent
       anchors.leftMargin: isVertical ? 0 : Style.marginS
       anchors.rightMargin: isVertical ? 0 : Style.marginS
-      clip: true
 
       // Visualizer
       Loader {
@@ -335,19 +334,27 @@ Item {
         }
 
         // Scrolling title
-        Item {
+        NScrollText {
           id: titleContainer
           Layout.fillWidth: true
           Layout.alignment: Qt.AlignVCenter
           Layout.preferredHeight: Style.capsuleHeight
 
-          ScrollingText {
-            anchors.fill: parent
-            text: title
-            textColor: hasPlayer ? Color.mOnSurface : Color.mOnSurfaceVariant
-            fontSize: Style.barFontSize
-            scrollMode: scrollingMode
-            needsScroll: titleMetrics.contentWidth > parent.width
+          text: title
+
+          scrollMode: {
+            if (scrollingMode === "always")
+              return NScrollText.ScrollMode.Always;
+            if (scrollingMode === "hover")
+              return NScrollText.ScrollMode.Hover;
+            return NScrollText.ScrollMode.Never;
+          }
+          cursorShape: hasPlayer ? Qt.PointingHandCursor : Qt.ArrowCursor
+          maxWidth: root.maxWidth - root.mainContentWidth
+          NText {
+            // anchors.fill: parent
+            color: hasPlayer ? Color.mOnSurface : Color.mOnSurfaceVariant
+            pointSize: Style.barFontSize
           }
         }
       }
@@ -498,119 +505,6 @@ Item {
       ctx.strokeStyle = Color.mPrimary;
       ctx.lineCap = "round";
       ctx.stroke();
-    }
-  }
-
-  // Scrolling Text Component
-  component ScrollingText: Item {
-    id: scrollText
-    property string text
-    property color textColor
-    property real fontSize
-    property string scrollMode
-    property bool needsScroll
-
-    clip: true
-    implicitHeight: titleText.height
-
-    property bool isScrolling: false
-    property bool isResetting: false
-
-    Timer {
-      id: scrollTimer
-      interval: 1000
-      onTriggered: {
-        if (scrollMode === "always" && needsScroll) {
-          scrollText.isScrolling = true;
-          scrollText.isResetting = false;
-        }
-      }
-    }
-
-    MouseArea {
-      id: hoverArea
-      anchors.fill: parent
-      hoverEnabled: true
-      acceptedButtons: Qt.NoButton
-      cursorShape: hasPlayer ? Qt.PointingHandCursor : Qt.ArrowCursor
-    }
-
-    function updateState() {
-      if (scrollMode === "never") {
-        isScrolling = false;
-        isResetting = false;
-      } else if (scrollMode === "always") {
-        if (needsScroll) {
-          if (hoverArea.containsMouse) {
-            isScrolling = false;
-            isResetting = true;
-          } else {
-            scrollTimer.restart();
-          }
-        }
-      } else if (scrollMode === "hover") {
-        isScrolling = hoverArea.containsMouse && needsScroll;
-        isResetting = !hoverArea.containsMouse && needsScroll;
-      }
-    }
-
-    onWidthChanged: updateState()
-    Component.onCompleted: updateState()
-    Connections {
-      target: hoverArea
-      function onContainsMouseChanged() {
-        scrollText.updateState();
-      }
-    }
-
-    Item {
-      id: scrollContainer
-      y: (parent.height - titleText.contentHeight) / 2
-      height: titleText.contentHeight
-      property real scrollX: 0
-      x: scrollX
-
-      Row {
-        spacing: 50
-        NText {
-          id: titleText
-          text: scrollText.text
-          color: textColor
-          pointSize: fontSize
-          applyUiScale: false
-          onTextChanged: {
-            scrollText.isScrolling = false;
-            scrollText.isResetting = false;
-            scrollContainer.scrollX = 0;
-            if (scrollText.needsScroll)
-              scrollTimer.restart();
-          }
-        }
-        NText {
-          text: scrollText.text
-          color: textColor
-          pointSize: fontSize
-          applyUiScale: false
-          visible: scrollText.needsScroll && scrollText.isScrolling
-        }
-      }
-
-      NumberAnimation on scrollX {
-        running: scrollText.isResetting
-        to: 0
-        duration: 300
-        easing.type: Easing.OutQuad
-        onFinished: scrollText.isResetting = false
-      }
-
-      NumberAnimation on scrollX {
-        running: scrollText.isScrolling && !scrollText.isResetting
-        from: 0
-        to: -(titleMetrics.contentWidth + 50)
-        duration: Math.max(4000, scrollText.text.length * 120)
-        loops: Animation.Infinite
-        easing.type: Easing.Linear
-      }
     }
   }
 }
