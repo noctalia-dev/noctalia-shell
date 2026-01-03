@@ -8,7 +8,6 @@ import qs.Modules.Bar.Widgets
 Singleton {
   id: root
 
-  // Signal emitted when plugin widgets are registered/unregistered
   signal pluginWidgetRegistryUpdated
 
   // Widget registry object mapping widget names to components
@@ -39,7 +38,7 @@ Singleton {
                            "Tray": trayComponent,
                            "Volume": volumeComponent,
                            "VPN": vpnComponent,
-                           "WiFi": wiFiComponent,
+                           "Network": networkComponent,
                            "WallpaperSelector": wallpaperSelectorComponent,
                            "Workspace": workspaceComponent
                          })
@@ -65,7 +64,9 @@ Singleton {
                                      "Tray": "WidgetSettings/TraySettings.qml",
                                      "Volume": "WidgetSettings/VolumeSettings.qml",
                                      "VPN": "WidgetSettings/VPNSettings.qml",
+                                     // Reuse the same settings UI for renamed widget
                                      "WiFi": "WidgetSettings/WiFiSettings.qml",
+                                     "Network": "WidgetSettings/WiFiSettings.qml",
                                      "Workspace": "WidgetSettings/WorkspaceSettings.qml"
                                    })
 
@@ -216,6 +217,9 @@ Singleton {
                                   "WiFi": {
                                     "displayMode": "onhover"
                                   },
+                                  "Network": {
+                                    "displayMode": "onhover"
+                                  },
                                   "Workspace": {
                                     "labelMode": "index",
                                     "followFocusedScreen": false,
@@ -310,8 +314,8 @@ Singleton {
   property Component vpnComponent: Component {
     VPN {}
   }
-  property Component wiFiComponent: Component {
-    WiFi {}
+  property Component networkComponent: Component {
+    Network {}
   }
   property Component wallpaperSelectorComponent: Component {
     WallpaperSelector {}

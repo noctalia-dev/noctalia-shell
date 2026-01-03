@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 36
+  readonly property int settingsVersion: 37
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -302,6 +302,8 @@ Singleton {
       // Details view mode persistence for panels
       property string wifiDetailsViewMode: "grid"   // "grid" or "list"
       property string bluetoothDetailsViewMode: "grid" // "grid" or "list"
+      // Persist the last-opened view for the unified network panel: "wifi" | "ethernet"
+      property string networkPanelView: "wifi"
       // Bluetooth available devices list: hide items without a name
       property bool bluetoothHideUnnamedDevices: false
     }
@@ -420,7 +422,7 @@ Singleton {
       shortcuts: JsonObject {
         property list<var> left: [
           {
-            "id": "WiFi"
+            "id": "Network"
           },
           {
             "id": "Bluetooth"

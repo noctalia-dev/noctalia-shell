@@ -2903,6 +2903,9 @@
       "scan-again": "Scan again",
       "known-networks": "Known networks",
       "available-networks": "Available networks",
+      "available-interfaces": "Available interfaces",
+      "no-ethernet-devices": "No Ethernet devices detected",
+      "action-required": "Action required",
       "connect": "Connect",
       "disconnect": "Disconnect",
       "password": "Password",
@@ -2922,7 +2925,7 @@
       "ipv4": "IPv4",
       "gateway": "Gateway",
       "dns": "DNS",
-      "internet": "Internet"
+      "internet-status": "Internet status"
     }
   },
   "wallpaper": {
@@ -3111,6 +3114,7 @@
   "wifi": {
     "panel": {
       "action-required": "Action required",
+      "available-interfaces": "Available interfaces",
       "available-networks": "Available networks",
       "connect": "Connect",
       "connected": "Connected",
@@ -3132,13 +3136,15 @@
       "ipv4": "IPv4",
       "known-networks": "Known networks",
       "link-speed": "Link speed",
+      "no-ethernet-devices": "No Ethernet devices detected",
       "no-networks": "No Wi‑Fi networks found",
       "password": "Password",
       "saved": "Saved",
       "scan-again": "Scan again",
       "searching": "Searching for networks...",
       "security": "Security",
-      "title": "Wi‑Fi"
+      "title": "Wi‑Fi",
+      "internet-status": "Internet status"
     },
     "signal": {
       "excellent": "Excellent",
