@@ -2924,6 +2924,7 @@
     "widget-settings": "Widget settings"
   },
   "wallpaper": {
+    "all-folders": "All Folders",
     "configure-directory": "Configure your wallpaper directory with images.",
     "fill-modes": {
       "center": "Center",
@@ -2931,6 +2932,8 @@
       "fit": "Fit (Contain)",
       "stretch": "Stretch"
     },
+    "folder": "Folder",
+    "images": "images",
     "no-match": "No match found.",
     "no-wallpaper": "No wallpaper found.",
     "panel": {

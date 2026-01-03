@@ -2924,6 +2924,7 @@
     "widget-settings": "Configurações do widget"
   },
   "wallpaper": {
+    "all-folders": "Todas as Pastas",
     "configure-directory": "Configure seu diretório de papéis de parede com imagens.",
     "fill-modes": {
       "center": "Centralizar",
@@ -2931,6 +2932,8 @@
       "fit": "Ajustar (Conter)",
       "stretch": "Esticar"
     },
+    "folder": "Pasta",
+    "images": "imagens",
     "no-match": "Nenhuma correspondência encontrada.",
     "no-wallpaper": "Nenhum papel de parede encontrado.",
     "panel": {
