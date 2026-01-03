@@ -8,7 +8,7 @@ Item {
   id: root
 
   property var launcher: null
-  property string name: I18n.tr("plugins.applications")
+  property string name: I18n.tr("launcher.providers.applications")
   property bool handleSearch: true
   property var entries: []
 
@@ -332,7 +332,7 @@ Item {
 
   function loadApplications() {
     if (typeof DesktopEntries === 'undefined') {
-      Logger.w("ApplicationsPlugin", "DesktopEntries service not available");
+      Logger.w("ApplicationsProvider", "DesktopEntries service not available");
       return;
     }
 
@@ -352,7 +352,7 @@ Item {
 
                                  // If exec is different, it's a legitimate different entry - keep it
                                  if (previousExec !== execCmd) {
-                                   Logger.d("ApplicationsPlugin", `Keeping variant of ${appId}: ${execCmd} (differs from ${previousExec})`);
+                                   Logger.d("ApplicationsProvider", `Keeping variant of ${appId}: ${execCmd} (differs from ${previousExec})`);
                                    // Add with modified ID to make it unique
                                    app.id = `${appId}_${execCmd}`;
                                    seen.set(app.id, execCmd);
@@ -360,7 +360,7 @@ Item {
                                  }
 
                                  // Same appId AND same exec = true duplicate, skip it
-                                 Logger.d("ApplicationsPlugin", `Skipping duplicate: ${appId}`);
+                                 Logger.d("ApplicationsProvider", `Skipping duplicate: ${appId}`);
                                  return false;
                                }
 
@@ -371,7 +371,7 @@ Item {
                                       return app;
                                     });
 
-    Logger.d("ApplicationsPlugin", `Loaded ${entries.length} applications`);
+    Logger.d("ApplicationsProvider", `Loaded ${entries.length} applications`);
     updateAvailableCategories();
   }
 
@@ -542,7 +542,7 @@ Item {
 
         // Defer execution to next event loop iteration to ensure panel is fully closed
         Qt.callLater(() => {
-                       Logger.d("ApplicationsPlugin", `Launching: ${app.name}`);
+                       Logger.d("ApplicationsProvider", `Launching: ${app.name}`);
                        // Record usage and persist asynchronously
                        if (Settings.data.appLauncher.sortByMostUsed) {
                          recordUsage(app);
@@ -561,7 +561,7 @@ Item {
                            Quickshell.execDetached(command);
                          }
                        } else if (Settings.data.appLauncher.useApp2Unit && app.id) {
-                         Logger.d("ApplicationsPlugin", `Using app2unit for: ${app.id}`);
+                         Logger.d("ApplicationsProvider", `Using app2unit for: ${app.id}`);
                          if (app.runInTerminal)
                          Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
                          else
@@ -570,7 +570,7 @@ Item {
                          // Fallback logic when app2unit is not used
                          if (app.runInTerminal) {
                            // If app.execute() fails for terminal apps, we handle it manually.
-                           Logger.d("ApplicationsPlugin", "Executing terminal app manually: " + app.name);
+                           Logger.d("ApplicationsProvider", "Executing terminal app manually: " + app.name);
                            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
                            const command = terminal.concat(app.command);
                            Quickshell.execDetached(command);
@@ -579,7 +579,7 @@ Item {
                          } else if (app.execute) {
                            app.execute();
                          } else {
-                           Logger.w("ApplicationsPlugin", `Could not launch: ${app.name}. No valid launch method.`);
+                           Logger.w("ApplicationsProvider", `Could not launch: ${app.name}. No valid launch method.`);
                          }
                        }
                      });

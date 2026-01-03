@@ -6,7 +6,7 @@ import qs.Commons
 // TODO: Remove this plugin in 2-3 bussiness days
 Item {
   property var launcher: null
-  property string name: I18n.tr("plugins.calculator")
+  property string name: I18n.tr("launcher.providers.calculator")
   property string iconMode: Settings.data.appLauncher.iconMode
 
   function handleCommand(query) {
@@ -18,7 +18,7 @@ Item {
     return [
           {
             "name": ">calc",
-            "description": I18n.tr("plugins.calculator-deprecated"),
+            "description": I18n.tr("launcher.providers.calculator-deprecated"),
             "icon": "alert-triangle",
             "isTablerIcon": true,
             "isImage": false,
@@ -43,8 +43,8 @@ Item {
     if (!expression) {
       return [
             {
-              "name": I18n.tr("plugins.calculator-name"),
-              "description": I18n.tr("plugins.calculator-deprecated"),
+              "name": I18n.tr("launcher.providers.calculator-name"),
+              "description": I18n.tr("launcher.providers.calculator-deprecated"),
               "icon": "alert-triangle",
               "isTablerIcon": true,
               "isImage": false,
@@ -72,7 +72,7 @@ Item {
     } catch (error) {
       return [
             {
-              "name": I18n.tr("plugins.calculator-error"),
+              "name": I18n.tr("launcher.providers.calculator-error"),
               "description": error.message || "Invalid expression",
               "icon": iconMode === "tabler" ? "circle-x" : "dialog-error",
               "isTablerIcon": true,
