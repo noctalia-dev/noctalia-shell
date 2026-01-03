@@ -612,15 +612,35 @@ SmartPanel {
     property string currentWallpaper: ""
     property list<string> filteredWallpapers: []
     property var wallpapersWithNames: [] // Cached basenames
+    
+    // Folder management
+    property var foldersList: [] // List of unique folder paths
+    property string selectedFolder: "" // Currently selected folder ("" = All)
+    property var wallpapersByFolder: ({}) // Map: folderPath -> [wallpapers]
 
     // Expose updateFiltered as a proper function property
     function updateFiltered() {
+      // First, filter by selected folder
+      var baseList = wallpapersList;
+      if (selectedFolder !== "" && wallpapersByFolder[selectedFolder]) {
+        baseList = wallpapersByFolder[selectedFolder];
+      }
+      
+      // Then apply search filter
       if (!panelContent.filterText || panelContent.filterText.trim().length === 0) {
-        filteredWallpapers = wallpapersList;
+        filteredWallpapers = baseList;
         return;
       }
 
-      const results = FuzzySort.go(panelContent.filterText.trim(), wallpapersWithNames, {
+      // Create names array for the current base list
+      var namesForSearch = baseList.map(function (p) {
+        return {
+          "path": p,
+          "name": p.split('/').pop()
+        };
+      });
+
+      const results = FuzzySort.go(panelContent.filterText.trim(), namesForSearch, {
                                      "key": 'name',
                                      "limit": 200
                                    });
@@ -628,6 +648,39 @@ SmartPanel {
       filteredWallpapers = results.map(function (r) {
         return r.obj.path;
       });
+    }
+    
+    // Extract folders from wallpaper paths
+    function extractFolders() {
+      var foldersMap = {};
+      var byFolder = {};
+      
+      for (var i = 0; i < wallpapersList.length; i++) {
+        var path = wallpapersList[i];
+        var parts = path.split('/');
+        
+        // Get the folder path (everything except the filename)
+        if (parts.length > 1) {
+          parts.pop(); // Remove filename
+          var folderPath = parts.join('/');
+          
+          foldersMap[folderPath] = true;
+          
+          if (!byFolder[folderPath]) {
+            byFolder[folderPath] = [];
+          }
+          byFolder[folderPath].push(path);
+        }
+      }
+      
+      // Convert to array and sort
+      var folders = Object.keys(foldersMap);
+      folders.sort();
+      
+      foldersList = folders;
+      wallpapersByFolder = byFolder;
+      
+      Logger.d("WallpaperPanel", "Extracted", folders.length, "folders for screen", targetScreen.name);
     }
 
     Component.onCompleted: {
@@ -668,6 +721,9 @@ SmartPanel {
         };
       });
 
+      // Extract folders from wallpaper paths
+      extractFolders();
+
       currentWallpaper = WallpaperService.getWallpaper(targetScreen.name);
       updateFiltered();
     }
@@ -675,6 +731,208 @@ SmartPanel {
     ColumnLayout {
       anchors.fill: parent
       spacing: Style.marginM
+
+      // Folder selector
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+        visible: foldersList.length > 0
+
+        NText {
+          text: I18n.tr("wallpaper.folder") || "Folder:"
+          color: Color.mOnSurface
+          pointSize: Style.fontSizeM
+          font.weight: Style.fontWeightBold
+        }
+
+        ComboBox {
+          id: folderComboBox
+          Layout.fillWidth: true
+          Layout.preferredHeight: Math.round(Style.baseWidgetSize * 1.1 * Style.uiScaleRatio)
+          
+          model: {
+            var items = [I18n.tr("wallpaper.all-folders") || "All Folders"];
+            for (var i = 0; i < foldersList.length; i++) {
+              // Extract just the folder name (last part of path)
+              var parts = foldersList[i].split('/');
+              var folderName = parts[parts.length - 1] || foldersList[i];
+              items.push(folderName);
+            }
+            return items;
+          }
+          
+          currentIndex: {
+            if (selectedFolder === "") return 0;
+            var idx = foldersList.indexOf(selectedFolder);
+            return idx >= 0 ? idx + 1 : 0;
+          }
+          
+          onActivated: index => {
+            if (index === 0) {
+              selectedFolder = "";
+            } else {
+              selectedFolder = foldersList[index - 1];
+            }
+            updateFiltered();
+            // Reset grid selection
+            wallpaperGridView.currentIndex = -1;
+          }
+          
+          background: Rectangle {
+            implicitWidth: Math.round(Style.baseWidgetSize * 3.75 * Style.uiScaleRatio)
+            implicitHeight: Math.round(Style.baseWidgetSize * 1.1 * Style.uiScaleRatio)
+            color: Color.mSurface
+            border.color: folderComboBox.activeFocus ? Color.mSecondary : Color.mOutline
+            border.width: Style.borderS
+            radius: Style.iRadiusM
+
+            Behavior on border.color {
+              ColorAnimation {
+                duration: Style.animationFast
+              }
+            }
+          }
+          
+          contentItem: NText {
+            leftPadding: Style.marginL
+            rightPadding: folderComboBox.indicator.width + Style.marginL
+            pointSize: Style.fontSizeM
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+            color: Color.mOnSurface
+            text: folderComboBox.displayText
+          }
+          
+          indicator: NIcon {
+            x: folderComboBox.width - width - Style.marginM
+            y: folderComboBox.topPadding + (folderComboBox.availableHeight - height) / 2
+            icon: "caret-down"
+            pointSize: Style.fontSizeL
+          }
+          
+          popup: Popup {
+            y: folderComboBox.height
+            implicitWidth: folderComboBox.width - Style.marginM
+            implicitHeight: Math.min(Math.round(180 * Style.uiScaleRatio), folderListView.contentHeight + Style.marginM * 2)
+            padding: Style.marginM
+
+            contentItem: ListView {
+              id: folderListView
+              clip: true
+              model: folderComboBox.popup.visible ? folderComboBox.model : null
+              boundsBehavior: Flickable.StopAtBounds
+              highlightMoveDuration: 0
+              currentIndex: folderComboBox.highlightedIndex
+
+              ScrollBar.vertical: ScrollBar {
+                policy: folderListView.contentHeight > folderListView.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+
+                contentItem: Rectangle {
+                  implicitWidth: 6
+                  implicitHeight: 100
+                  radius: Style.iRadiusM
+                  color: parent.pressed ? Qt.alpha(Color.mHover, 0.9) : parent.hovered ? Qt.alpha(Color.mHover, 0.9) : Qt.alpha(Color.mHover, 0.8)
+                  opacity: parent.active ? 1.0 : 0.0
+
+                  Behavior on opacity {
+                    NumberAnimation {
+                      duration: Style.animationFast
+                    }
+                  }
+
+                  Behavior on color {
+                    ColorAnimation {
+                      duration: Style.animationFast
+                    }
+                  }
+                }
+
+                background: Rectangle {
+                  implicitWidth: 6
+                  implicitHeight: 100
+                  color: Color.transparent
+                  opacity: parent.active ? 0.3 : 0.0
+                  radius: Style.iRadiusM / 2
+
+                  Behavior on opacity {
+                    NumberAnimation {
+                      duration: Style.animationFast
+                    }
+                  }
+                }
+              }
+
+              delegate: Rectangle {
+                id: folderDelegateRect
+                required property int index
+                required property string modelData
+                property bool isHighlighted: folderListView.currentIndex === index
+
+                width: folderListView.width
+                height: folderDelegateText.implicitHeight + Style.marginS * 2
+                radius: Style.iRadiusS
+                color: isHighlighted ? Color.mHover : Color.transparent
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+
+                NText {
+                  id: folderDelegateText
+                  anchors.fill: parent
+                  anchors.leftMargin: Style.marginM
+                  anchors.rightMargin: Style.marginM
+                  verticalAlignment: Text.AlignVCenter
+                  elide: Text.ElideRight
+                  pointSize: Style.fontSizeM
+                  color: folderDelegateRect.isHighlighted ? Color.mOnHover : Color.mOnSurface
+                  text: folderDelegateRect.modelData
+
+                  Behavior on color {
+                    ColorAnimation {
+                      duration: Style.animationFast
+                    }
+                  }
+                }
+
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onContainsMouseChanged: {
+                    if (containsMouse)
+                      folderListView.currentIndex = folderDelegateRect.index;
+                  }
+                  onClicked: {
+                    folderComboBox.currentIndex = folderDelegateRect.index;
+                    folderComboBox.activated(folderDelegateRect.index);
+                    folderComboBox.popup.close();
+                  }
+                }
+              }
+            }
+
+            background: Rectangle {
+              color: Color.mSurfaceVariant
+              border.color: Color.mOutline
+              border.width: Style.borderS
+              radius: Style.iRadiusM
+            }
+          }
+        }
+        
+        NText {
+          text: {
+            var count = (selectedFolder === "" || !wallpapersByFolder[selectedFolder]) 
+                        ? wallpapersList.length 
+                        : wallpapersByFolder[selectedFolder].length;
+            return count + " " + (I18n.tr("wallpaper.images") || "images");
+          }
+          color: Color.mOnSurfaceVariant
+          pointSize: Style.fontSizeS
+        }
+      }
 
       GridView {
         id: wallpaperGridView
