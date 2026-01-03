@@ -43,15 +43,15 @@ Singleton {
     readonly property list<DesktopEntry> list: Array.from(DesktopEntries.applications.values)
         .sort((a, b) => a.name.localeCompare(b.name))
 
-    // readonly property var preppedNames: list.map(a => ({
-    //     name: Fuzzy.prepare(`${a.name} `),
-    //     entry: a
-    // }))
+    readonly property var preppedNames: list.map(a => ({
+        name: Fuzzy.prepare(`${a.name} `),
+        entry: a
+    }))
 
-    // readonly property var preppedIcons: list.map(a => ({
-    //     name: Fuzzy.prepare(`${a.icon} `),
-    //     entry: a
-    // }))
+    readonly property var preppedIcons: list.map(a => ({
+        name: Fuzzy.prepare(`${a.icon} `),
+        entry: a
+    }))
 
     function fuzzyQuery(search: string): var { // Idk why list<DesktopEntry> doesn't work
         if (root.sloppySearch) {
