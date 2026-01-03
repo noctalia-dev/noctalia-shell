@@ -709,7 +709,8 @@ SmartPanel {
                               // Click-to-copy Ethernet interface name
                               MouseArea {
                                 anchors.fill: parent
-                                enabled: ((NetworkService.activeEthernetDetails.ifname && NetworkService.activeEthernetDetails.ifname.length > 0) || (NetworkService.activeEthernetIf && NetworkService.activeEthernetIf.length > 0))
+                                // Guard against undefined by normalizing to empty strings
+                                enabled: ((NetworkService.activeEthernetDetails.ifname || "").length > 0) || ((NetworkService.activeEthernetIf || "").length > 0)
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
@@ -730,9 +731,10 @@ SmartPanel {
                             Layout.fillWidth: true
                             spacing: Style.marginXS
                             NIcon {
-                              icon: NetworkService.internetConnectivity ? "world" : "world-off"
+                              // If the selected Ethernet interface is disconnected, show an explicit disconnected state
+                              icon: modelData.connected ? (NetworkService.internetConnectivity ? "world" : "world-off") : "world-off"
                               pointSize: Style.fontSizeXS
-                              color: NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError
+                              color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError) : Color.mError
                               Layout.alignment: Qt.AlignVCenter
                               MouseArea {
                                 anchors.fill: parent
@@ -742,9 +744,10 @@ SmartPanel {
                               }
                             }
                             NText {
-                              text: NetworkService.internetConnectivity ? I18n.tr("wifi.panel.internet-connected") : I18n.tr("wifi.panel.internet-limited")
+                              // Show "Disconnected" when the interface itself is down
+                              text: modelData.connected ? (NetworkService.internetConnectivity ? I18n.tr("wifi.panel.internet-connected") : I18n.tr("wifi.panel.internet-limited")) : I18n.tr("wifi.panel.disconnected")
                               pointSize: Style.fontSizeXS
-                              color: NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError
+                              color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError) : Color.mError
                               Layout.fillWidth: true
                               Layout.alignment: Qt.AlignVCenter
                               wrapMode: ethernetDetailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
@@ -813,7 +816,8 @@ SmartPanel {
                               // Click-to-copy Ethernet IPv4 address
                               MouseArea {
                                 anchors.fill: parent
-                                enabled: (NetworkService.activeEthernetDetails.ipv4 && NetworkService.activeEthernetDetails.ipv4.length > 0)
+                                // Normalize to string to avoid undefined -> bool assignment warnings
+                                enabled: (NetworkService.activeEthernetDetails.ipv4 || "").length > 0
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))

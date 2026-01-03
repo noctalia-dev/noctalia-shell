@@ -161,9 +161,10 @@ Singleton {
     if (ethernetDetailsLoading)
       return;
     if (!root.ethernetConnected) {
-      // Clear details when not connected
-      root.activeEthernetIf = "";
+      // Link is down: keep the selected interface so UI can still show its info as disconnected
+      // Only clear details to avoid showing stale IP/speed/etc.
       root.activeEthernetDetails = ({});
+      root.activeEthernetDetailsTimestamp = now;
       return;
     }
     // If we have fresh details for the same iface, skip
@@ -395,8 +396,9 @@ Singleton {
           }
           root.refreshActiveEthernetDetails();
         } else {
-          root.activeEthernetIf = "";
+          // Preserve the selected interface; just clear details so UI shows a disconnected state
           root.activeEthernetDetails = ({});
+          root.activeEthernetDetailsTimestamp = Date.now();
         }
       }
     }
@@ -444,8 +446,9 @@ Singleton {
           return a.ifname.localeCompare(b.ifname);
         });
         root.ethernetInterfaces = ethList;
-        root.activeEthernetIf = ifname;
         if (ifname) {
+          if (root.activeEthernetIf !== ifname)
+          root.activeEthernetIf = ifname;
           ethernetDeviceShowProcess.ifname = ifname;
           ethernetDeviceShowProcess.running = true;
         } else {
