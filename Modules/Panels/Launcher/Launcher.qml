@@ -1090,6 +1090,21 @@ SmartPanel {
                       onClicked: entry.togglePin(entry.appId)
                     }
 
+                    // open an annotation tool for images
+                    NIconButton {
+                      visible: !!modelData.clipboardId && entry.isSelected && modelData.isImage && Settings.data.appLauncher.screenshotAnnotationTool !== ""
+                      icon: "pencil"
+                      tooltipText: I18n.tr("tooltips.open-annotation-tool")
+                      z: 1
+                      onClicked: {
+                        var tool = Settings.data.appLauncher.screenshotAnnotationTool;
+                        if (modelData.clipboardId) {
+                          Quickshell.execDetached(["sh", "-c", "cliphist decode " + modelData.clipboardId + " | " + tool]);
+                          root.close();
+                        }
+                      }
+                    }
+
                     // Delete action icon button for clipboard entries
                     NIconButton {
                       visible: !!modelData.clipboardId && entry.isSelected
