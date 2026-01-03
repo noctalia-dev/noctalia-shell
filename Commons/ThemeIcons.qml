@@ -10,38 +10,51 @@ Singleton {
     const fallback = fallbackName || "application-x-executable";
     try {
       if (iconName && typeof Quickshell !== 'undefined' && Quickshell.iconPath) {
-        const p = Quickshell.iconPath(iconName, fallback);
-        if (p && p !== "")
-          return p;
+        const p = Quickshell.iconPath(iconName, "");
+        if (p && p !== "") return p;
       }
-    } catch (e)
-
-      // ignore and fall back
-    {}
+    } catch (e) {
+      // ignore
+    }
+    
     try {
-      return Quickshell.iconPath ? (Quickshell.iconPath(fallback, true) || "") : "";
+      return Quickshell.iconPath ? Quickshell.iconPath(fallback, "") : "";
     } catch (e2) {
       return "";
     }
   }
 
-  // Resolve icon path for a DesktopEntries appId - safe on missing entries
   function iconForAppId(appId, fallbackName) {
     const fallback = fallbackName || "application-x-executable";
-    if (!appId)
-      return iconFromName(fallback, fallback);
+    
+    if (!appId) return root.iconFromName(fallback, fallback);
+
     try {
-      if (typeof DesktopEntries === 'undefined' || !DesktopEntries.byId)
-        return iconFromName(fallback, fallback);
-      const entry = (DesktopEntries.heuristicLookup) ? DesktopEntries.heuristicLookup(appId) : DesktopEntries.byId(appId);
-      const name = entry && entry.icon ? entry.icon : "";
-      return iconFromName(name || fallback, fallback);
+      // 1. Use the working logic from AppSearch to guess the icon name
+      // We check if AppSearch exists to prevent crashes if the file fails to load
+      if (typeof AppSearch !== 'undefined') {
+        const guessedIconName = AppSearch.guessIcon(appId);
+        
+        // 2. Resolve that name to a path
+        const path = root.iconFromName(guessedIconName, fallback);
+        if (path && path !== "") return path;
+      }
     } catch (e) {
-      return iconFromName(fallback, fallback);
+      console.warn("ThemeIcons: Error calling AppSearch.guessIcon:", e);
     }
+
+    try {
+      if (typeof DesktopEntries !== 'undefined') {
+        const entry = DesktopEntries.heuristicLookup ? DesktopEntries.heuristicLookup(appId) : null;
+        if (entry && entry.icon) return root.iconFromName(entry.icon, fallback);
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    return root.iconFromName(fallback, fallback);
   }
 
-  // Distro logo helper (absolute path or empty string)
   function distroLogoPath() {
     try {
       return (typeof OSInfo !== 'undefined' && OSInfo.distroIconPath) ? OSInfo.distroIconPath : "";
