@@ -696,6 +696,7 @@
     "authenticating": "Uwierzytelnianie...",
     "authentication-failed": "Uwierzytelnianie nieudane",
     "password": "Wprowadź hasło...",
+    "press-to-unlock": "Naciśnij dowolny klawisz, aby odblokować",
     "restart": "Restart",
     "shut-down": "Wyłącz",
     "suspend": "Uśpij",

@@ -696,6 +696,7 @@
     "authenticating": "認証中...",
     "authentication-failed": "認証に失敗しました",
     "password": "パスワードを入力...",
+    "press-to-unlock": "キーを押してロック解除",
     "restart": "再起動",
     "shut-down": "シャットダウン",
     "suspend": "サスペンド",

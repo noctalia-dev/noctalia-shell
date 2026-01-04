@@ -696,6 +696,7 @@
     "authenticating": "Authentification...",
     "authentication-failed": "Échec de l'authentification",
     "password": "Entrez votre mot de passe...",
+    "press-to-unlock": "Appuyez sur une touche pour déverrouiller",
     "restart": "Redémarrer",
     "shut-down": "Éteindre",
     "suspend": "Mettre en veille",

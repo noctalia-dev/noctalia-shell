@@ -696,6 +696,7 @@
     "authenticating": "正在验证...",
     "authentication-failed": "验证失败",
     "password": "请输入密码...",
+    "press-to-unlock": "按任意键解锁",
     "restart": "重启",
     "shut-down": "关机",
     "suspend": "挂起",

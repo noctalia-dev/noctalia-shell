@@ -696,6 +696,7 @@
     "authenticating": "Authentifizierung...",
     "authentication-failed": "Authentifizierung fehlgeschlagen",
     "password": "Passwort eingeben...",
+    "press-to-unlock": "Beliebige Taste drücken zum Entsperren",
     "restart": "Neu starten",
     "shut-down": "Herunterfahren",
     "suspend": "Energie sparen",

@@ -75,12 +75,47 @@ Loader {
         }
       }
 
+
       WlSessionLock {
         id: lockSession
         locked: root.active
 
+        // Reset state when lock screen activates
+        onLockedChanged: {
+          if (locked) {
+            lockContext.resetForNewSession();
+            // Reset shield state - user must interact before auth starts
+            // This gives fprintd time to stabilize after suspend/resume
+            lockSurface.shieldActive = true;
+          }
+        }
+
         WlSessionLockSurface {
+          id: lockSurface
           readonly property var now: Time.now
+
+          // Shield state - shows "press any key" before starting auth
+          // This defers fingerprint/PAM initialization until user interaction,
+          // which helps fprintd stabilize after suspend/resume
+          property bool shieldActive: true
+
+          // Dismiss shield and start authentication
+          function dismissShield() {
+            if (!shieldActive) return;
+            shieldActive = false;
+            passwordInput.forceActiveFocus();
+            // Start fingerprint auth if available
+            if (FingerprintService.ready && !lockContext.pamStarted && !lockContext.unlockInProgress) {
+              lockContext.startFingerprintAuth();
+            }
+          }
+
+          // TODO: Future enhancement - add launch flags to control shield behavior:
+          //   --no-shield    Skip shield, start auth immediately (for manual lock)
+          //   --shield       Force shield (for suspend/resume)
+          // This allows different behavior for:
+          //   - Manual lock (Super+L): skip shield for instant fingerprint
+          //   - Suspend/resume: show shield to let fprintd stabilize
 
           Item {
             id: batteryIndicator
@@ -119,6 +154,7 @@ Loader {
 
           // Request preprocessed wallpaper when lock screen becomes active or dimensions change
           Component.onCompleted: {
+            Logger.i("LockScreen", "lockSurface loaded");
             if (screen) {
               Qt.callLater(requestCachedWallpaper);
             }
@@ -388,14 +424,28 @@ Loader {
 
           Item {
             anchors.fill: parent
+            focus: true
 
-            // Mouse area to trigger focus on cursor movement (workaround for Hyprland focus issues)
+            // Key handler for shield dismissal
+            Keys.onPressed: function(event) {
+              if (lockSurface.shieldActive) {
+                lockSurface.dismissShield();
+                event.accepted = true;
+              }
+            }
+
+            // Mouse area for shield dismissal and focus handling
             MouseArea {
               anchors.fill: parent
               hoverEnabled: true
-              acceptedButtons: Qt.NoButton
+              acceptedButtons: lockSurface.shieldActive ? Qt.LeftButton : Qt.NoButton
+              onClicked: {
+                if (lockSurface.shieldActive) {
+                  lockSurface.dismissShield();
+                }
+              }
               onPositionChanged: {
-                if (passwordInput) {
+                if (!lockSurface.shieldActive && passwordInput) {
                   passwordInput.forceActiveFocus();
                 }
               }
@@ -529,6 +579,135 @@ Loader {
               }
             }
 
+            // Shield prompt - shown before auth starts
+            Rectangle {
+              visible: lockSurface.shieldActive
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              anchors.bottomMargin: parent.height * 0.4
+              width: shieldText.width + 24
+              height: shieldText.height + 12
+              radius: height / 2
+              color: Qt.alpha(Color.mSurface, 0.6)
+
+              layer.enabled: true
+              layer.effect: MultiEffect {
+                shadowEnabled: true
+                shadowColor: Qt.alpha(Color.mShadow, 0.4)
+                shadowBlur: 0.3
+                shadowVerticalOffset: 2
+              }
+
+              NText {
+                id: shieldText
+                anchors.centerIn: parent
+                text: I18n.tr("lock-screen.press-to-unlock")
+                pointSize: Style.fontSizeL
+                font.weight: Font.Medium
+                color: Qt.alpha(Color.mOnSurface, 0.8)
+              }
+            }
+
+            // Delay timer for fingerprint indicator (prevents flash when lid check dismisses quickly)
+            Timer {
+              id: fingerprintShowTimer
+              interval: 300
+              repeat: false
+              property bool shouldShow: false
+              onTriggered: shouldShow = lockContext.showFingerprintIndicator
+            }
+
+            // Reset fingerprint show state when shield becomes active
+            Connections {
+              target: lockSurface
+              function onShieldActiveChanged() {
+                if (lockSurface.shieldActive) {
+                  fingerprintShowTimer.stop();
+                  fingerprintShowTimer.shouldShow = false;
+                }
+              }
+            }
+
+            // Start delay timer when fingerprint indicator should show
+            Connections {
+              target: lockContext
+              function onShowFingerprintIndicatorChanged() {
+                if (lockContext.showFingerprintIndicator && !lockSurface.shieldActive) {
+                  fingerprintShowTimer.start();
+                } else {
+                  fingerprintShowTimer.stop();
+                  fingerprintShowTimer.shouldShow = false;
+                }
+              }
+            }
+
+            // Fingerprint status indicator (icon only, with failure animation)
+            Rectangle {
+              id: fingerprintIndicator
+              width: 50
+              height: 50
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 340 : 420) * Style.uiScaleRatio
+              radius: width / 2
+              // Use hardcoded red for error to ensure visibility in all color schemes (including monochrome)
+              color: showingError ? Qt.alpha("#F44336", 0.25) : Color.mSurfaceVariant
+              border.color: showingError ? "#F44336" : Qt.alpha(Color.mPrimary, 0.3)
+              border.width: showingError ? 2 : 1
+              visible: !lockSurface.shieldActive && fingerprintShowTimer.shouldShow
+              opacity: visible ? 1.0 : 0.0
+
+              property bool showingError: false
+
+              NIcon {
+                id: fingerprintIcon
+                anchors.centerIn: parent
+                icon: "fingerprint"
+                pointSize: Style.fontSizeXXL
+                color: fingerprintIndicator.showingError ? "#F44336" : Color.mPrimary
+
+                Behavior on color {
+                  ColorAnimation { duration: 150 }
+                }
+              }
+
+              // Shake animation on error
+              SequentialAnimation {
+                id: shakeAnimation
+                NumberAnimation { target: fingerprintIndicator; property: "anchors.horizontalCenterOffset"; to: -5; duration: 50 }
+                NumberAnimation { target: fingerprintIndicator; property: "anchors.horizontalCenterOffset"; to: 5; duration: 50 }
+                NumberAnimation { target: fingerprintIndicator; property: "anchors.horizontalCenterOffset"; to: -5; duration: 50 }
+                NumberAnimation { target: fingerprintIndicator; property: "anchors.horizontalCenterOffset"; to: 5; duration: 50 }
+                NumberAnimation { target: fingerprintIndicator; property: "anchors.horizontalCenterOffset"; to: 0; duration: 50 }
+                onFinished: fingerprintIndicator.showingError = false
+              }
+
+              // Watch for fingerprint failure signal from lockContext
+              Connections {
+                target: lockContext
+                function onFingerprintFailed() {
+                  Logger.i("LockScreen", "===== SHAKE: Fingerprint failed, starting animation");
+                  fingerprintIndicator.showingError = true;
+                  shakeAnimation.restart();
+                }
+              }
+
+              Behavior on opacity {
+                NumberAnimation {
+                  duration: 300
+                  easing.type: Easing.OutCubic
+                }
+              }
+
+              Behavior on color {
+                ColorAnimation { duration: 150 }
+              }
+
+              Behavior on border.color {
+                ColorAnimation { duration: 150 }
+              }
+            }
+
             // Error notification
             Rectangle {
               width: errorRowLayout.implicitWidth + Style.marginXL * 1.5
@@ -540,7 +719,7 @@ Loader {
               color: Color.mError
               border.color: Color.mError
               border.width: 1
-              visible: lockContext.showFailure && lockContext.errorMessage
+              visible: !lockSurface.shieldActive && lockContext.showFailure && lockContext.errorMessage
               opacity: visible ? 1.0 : 0.0
 
               RowLayout {
@@ -591,7 +770,7 @@ Loader {
               topLeftRadius: Style.radiusL
               topRightRadius: Style.radiusL
               color: Color.mSurface
-              visible: Settings.data.general.compactLockScreen && ((batteryIndicator.isReady && BatteryService.hasAnyBattery()) || keyboardLayout.currentLayout !== "Unknown")
+              visible: !lockSurface.shieldActive && Settings.data.general.compactLockScreen && ((batteryIndicator.isReady && BatteryService.hasAnyBattery()) || keyboardLayout.currentLayout !== "Unknown")
 
               RowLayout {
                 anchors.centerIn: parent
@@ -655,6 +834,7 @@ Loader {
               anchors.bottomMargin: 100 + bottomContainer.deltaY
               radius: Style.radiusL
               color: Color.mSurface
+              visible: !lockSurface.shieldActive
 
               // Measure text widths to determine minimum button width (for container width calculation)
               Item {
@@ -1041,14 +1221,20 @@ Loader {
                         width: 0
                         height: 0
                         visible: false
-                        enabled: !lockContext.unlockInProgress
+                        enabled: true
                         font.pointSize: Style.fontSizeM
                         color: Color.mPrimary
                         echoMode: parent.parent.passwordVisible ? TextInput.Normal : TextInput.Password
                         passwordCharacter: "•"
                         passwordMaskDelay: 0
                         text: lockContext.currentText
-                        onTextChanged: lockContext.currentText = text
+                        onTextChanged: {
+                          lockContext.currentText = text;
+                          // Dismiss shield when user starts typing
+                          if (lockSurface.shieldActive && text.length > 0) {
+                            lockSurface.dismissShield();
+                          }
+                        }
 
                         Keys.onPressed: function (event) {
                           if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
@@ -1056,7 +1242,11 @@ Loader {
                           }
                         }
 
-                        Component.onCompleted: forceActiveFocus()
+                        Component.onCompleted: {
+                          if (!lockSurface.shieldActive) {
+                            forceActiveFocus();
+                          }
+                        }
                       }
 
                       Row {
