@@ -235,7 +235,7 @@
         },
         "show-icon": {
           "description": "キーボードレイアウトのアイコンを表示します。",
-          "label": "アイコンを表示 (Aikona o hyōji)"
+          "label": "アイコンを表示"
         }
       },
       "launcher": {
@@ -351,7 +351,7 @@
         },
         "memory-percentage": {
           "description": "メモリ使用量を絶対値ではなくパーセンテージで表示します。",
-          "label": "メモリをパーセント表示"
+          "label": "メモリをパーセントで表示"
         },
         "memory-usage": {
           "description": "現在の RAM 使用量を表示します。",
@@ -506,7 +506,7 @@
       "disconnecting": "切断中...",
       "discoverable": "発見可能",
       "enable-message": "利用可能なデバイスを表示するには Bluetooth を有効にしてください。",
-      "info": "情報 (Jōhō)",
+      "info": "情報",
       "known-devices": "登録済みデバイス",
       "no-devices": "利用可能なデバイスはありません",
       "pair": "ペア",
@@ -516,7 +516,7 @@
       "pairing-mode": "デバイスがペアリングモードになっていることを確認してください。",
       "refresh-devices": "デバイスを更新",
       "scanning": "デバイスをスキャン中...",
-      "signal": "信号 (shingō)",
+      "signal": "信号",
       "signal-text": {
         "excellent": "信号: 良好",
         "fair": "合図：可",
@@ -596,7 +596,7 @@
     "close-app": "{app} を閉じる",
     "connect-vpn": "{name} に接続",
     "cycle-visualizer": "ビジュアライザーを切り替える",
-    "delete": "削除 (Sakujo)",
+    "delete": "削除",
     "disable-bluetooth": "Bluetooth を無効化",
     "disable-dnd": "おやすみモードを無効化",
     "disable-wifi": "Wi-Fi を無効化",
@@ -741,7 +741,7 @@
       }
     },
     "colors": {
-      "error": "エラー (Error)",
+      "error": "エラー",
       "none": "なし",
       "onSurface": "文字・アイコン (On Surface)",
       "primary": "メインカラー (Primary)",
@@ -2260,7 +2260,7 @@
       "settings-saved": "プラグイン設定を保存しました",
       "source": {
         "custom": "カスタムソース",
-        "official": "公式 (kōshiki)"
+        "official": "公式"
       },
       "sources": {
         "add-custom": "カスタムリポジトリを追加",
@@ -2719,10 +2719,10 @@
     "cpu-usage": "CPU使用率",
     "disk": "ディスク",
     "download": "ダウンロード",
-    "download-speed": "ダウンロード速度 (Daunrōdo sokudo)",
+    "download-speed": "ダウンロード速度",
     "gpu-temp": "GPU温度",
     "load-average": "負荷平均",
-    "memory": "記憶",
+    "memory": "メモリ",
     "title": "システムモニター",
     "upload": "アップロード",
     "upload-speed": "アップロード速度"
@@ -2879,6 +2879,7 @@
     "move-to-center-section": "中央セクション",
     "move-to-left-section": "左セクション",
     "move-to-right-section": "右セクション",
+    "move-to-section": "{section} に移動",
     "mute": "ミュート",
     "next-media": "次のトラック",
     "next-month": "翌月",
@@ -2974,7 +2975,7 @@
       },
       "search": "検索",
       "solid-color": {
-        "tooltip": "無地 (Muji)"
+        "tooltip": "無地"
       },
       "sorting": {
         "date_added": "追加日",
@@ -3122,7 +3123,7 @@
       "forgetting": "削除中...",
       "frequency": "周波数",
       "gateway": "ゲートウェイ",
-      "info": "情報 (Jōhō)",
+      "info": "情報",
       "internet": "インターネット",
       "internet-connected": "インターネット接続",
       "internet-limited": "インターネットなし",

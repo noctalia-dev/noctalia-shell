@@ -223,7 +223,7 @@ QtObject {
   property Timer ctlPollTimer: Timer {
     interval: ctlPollMs
     repeat: true
-    running: true
+    running: root.enabled
     onTriggered: pollCtlState()
   }
 

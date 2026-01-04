@@ -15,8 +15,26 @@ NBox {
   property var widgetModel: []
   property var availableWidgets: []
   property var availableSections: ["left", "center", "right"]
+  property var sectionLabels: ({}) // Map of sectionId -> display label
+  property var sectionIcons: ({}) // Map of sectionId -> icon name
   property int maxWidgets: -1 // -1 means unlimited
   property bool draggable: true // Enable/disable drag reordering
+
+  // Get display label for a section
+  function getSectionLabel(sectionId) {
+    if (sectionLabels && sectionLabels[sectionId]) {
+      return sectionLabels[sectionId];
+    }
+    return sectionId; // Fallback to section ID
+  }
+
+  // Get icon for a section
+  function getSectionIcon(sectionId) {
+    if (sectionIcons && sectionIcons[sectionId]) {
+      return sectionIcons[sectionId];
+    }
+    return "arrow-right"; // Default fallback icon
+  }
 
   property var widgetRegistry: null
   property string settingsDialogComponent: "BarWidgetSettingsDialog.qml"
@@ -281,38 +299,40 @@ NBox {
               id: contextMenu
               parent: Overlay.overlay
               width: 240 * Style.uiScaleRatio
-              model: [
-                {
-                  "label": I18n.tr("tooltips.move-to-left-section"),
-                  "action": "left",
-                  "icon": "arrow-bar-to-left",
-                  "visible": root.availableSections.includes("left") && root.sectionId !== "left"
-                },
-                {
-                  "label": I18n.tr("tooltips.move-to-center-section"),
-                  "action": "center",
-                  "icon": "layout-columns",
-                  "visible": root.availableSections.includes("center") && root.sectionId !== "center"
-                },
-                {
-                  "label": I18n.tr("tooltips.move-to-right-section"),
-                  "action": "right",
-                  "icon": "arrow-bar-to-right",
-                  "visible": root.availableSections.includes("right") && root.sectionId !== "right"
-                },
-                {
-                  "label": I18n.tr("tooltips.remove-widget"),
-                  "action": "remove",
-                  "icon": "trash",
-                  "visible": true
+              model: {
+                var items = [];
+                // Add move options for each available section (except current)
+                for (var i = 0; i < root.availableSections.length; i++) {
+                  var section = root.availableSections[i];
+                  if (section !== root.sectionId) {
+                    var label = root.getSectionLabel(section);
+                    // Capitalize first letter
+                    var capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+                    items.push({
+                                 "label": I18n.tr("tooltips.move-to-section", {
+                                                    "section": capitalizedLabel
+                                                  }),
+                                 "action": section,
+                                 "icon": root.getSectionIcon(section),
+                                 "visible": true
+                               });
+                  }
                 }
-              ]
+                // Add remove option
+                items.push({
+                             "label": I18n.tr("tooltips.remove-widget"),
+                             "action": "remove",
+                             "icon": "trash",
+                             "visible": true
+                           });
+                return items;
+              }
 
               onTriggered: action => {
                              if (action === "remove") {
-                               root.removeWidget(root.sectionId, index);
+                               root.removeWidget(root.sectionId, widgetItem.index);
                              } else {
-                               root.moveWidget(root.sectionId, index, action);
+                               root.moveWidget(root.sectionId, widgetItem.index, action);
                              }
                            }
             }

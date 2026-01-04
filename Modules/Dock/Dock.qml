@@ -57,6 +57,14 @@ Loader {
         }
       }
 
+      // Refresh icons when DesktopEntries becomes available
+      Connections {
+        target: DesktopEntries.applications
+        function onValuesChanged() {
+          root.iconRevision++;
+        }
+      }
+
       // Shared properties between peek and dock windows
       readonly property string displayMode: Settings.data.dock.displayMode
       readonly property bool autoHide: displayMode === "auto_hide"
@@ -89,6 +97,9 @@ Loader {
 
       // Combined model of running apps and pinned apps
       property var dockApps: []
+
+      // Revision counter to force icon re-evaluation
+      property int iconRevision: 0
 
       // Function to close any open context menu
       function closeAllContextMenus() {
@@ -476,20 +487,18 @@ Loader {
                         }
                       }
 
-                      Image {
+                      IconImage {
                         id: appIcon
                         width: iconSize
                         height: iconSize
                         anchors.centerIn: parent
-                        source: dock.getAppIcon(modelData)
+                        source: {
+                          root.iconRevision; // Force re-evaluation when revision changes
+                          return dock.getAppIcon(modelData);
+                        }
                         visible: source.toString() !== ""
-                        sourceSize.width: iconSize * 2
-                        sourceSize.height: iconSize * 2
                         smooth: true
-                        mipmap: true
-                        antialiasing: true
-                        fillMode: Image.PreserveAspectFit
-                        cache: true
+                        asynchronous: true
 
                         // Dim pinned apps that aren't running
                         opacity: appButton.isRunning ? 1.0 : Settings.data.dock.deadOpacity

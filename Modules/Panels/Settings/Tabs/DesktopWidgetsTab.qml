@@ -67,6 +67,34 @@ ColumnLayout {
     Layout.fillWidth: true
   }
 
+  // Helper to get screen names array
+  function getScreenNames() {
+    var names = [];
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      names.push(Quickshell.screens[i].name);
+    }
+    return names;
+  }
+
+  // Helper to get screen labels map (just screen names, NSectionEditor adds "Move to" prefix)
+  function getScreenLabels() {
+    var labels = {};
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      var screen = Quickshell.screens[i];
+      labels[screen.name] = screen.name;
+    }
+    return labels;
+  }
+
+  // Helper to get screen icons map
+  function getScreenIcons() {
+    var icons = {};
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      icons[Quickshell.screens[i].name] = "device-desktop";
+    }
+    return icons;
+  }
+
   // One NSectionEditor per monitor
   Repeater {
     model: Settings.data.desktopWidgets.enabled ? Quickshell.screens : []
@@ -88,11 +116,14 @@ ColumnLayout {
       widgetRegistry: DesktopWidgetRegistry
       widgetModel: getWidgetsForMonitor(modelData.name)
       availableWidgets: root.availableWidgetsModel
-      availableSections: [] // No sections to move between - hides move menu items
+      availableSections: root.getScreenNames()
+      sectionLabels: root.getScreenLabels()
+      sectionIcons: root.getScreenIcons()
       draggable: false // Desktop widgets are positioned by X,Y, not list order
       maxWidgets: -1
       onAddWidget: (widgetId, section) => _addWidgetToMonitor(modelData.name, widgetId)
       onRemoveWidget: (section, index) => _removeWidgetFromMonitor(modelData.name, index)
+      onMoveWidget: (fromSection, index, toSection) => _moveWidgetToMonitor(fromSection, index, toSection)
       onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsForMonitor(modelData.name, index, settings)
       onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
     }
@@ -250,5 +281,31 @@ ColumnLayout {
       newArray[index] = Object.assign({}, newArray[index], settings);
       setWidgetsForMonitor(monitorName, newArray);
     }
+  }
+
+  function _moveWidgetToMonitor(fromMonitor, index, toMonitor) {
+    Logger.i("DesktopWidgetsTab", "Moving widget from", fromMonitor, "index", index, "to", toMonitor);
+    var sourceWidgets = getWidgetsForMonitor(fromMonitor);
+    if (index < 0 || index >= sourceWidgets.length) {
+      Logger.e("DesktopWidgetsTab", "Invalid index", index, "for monitor", fromMonitor);
+      return;
+    }
+
+    // Get the widget to move
+    var newSourceWidgets = sourceWidgets.slice();
+    var widget = Object.assign({}, newSourceWidgets.splice(index, 1)[0]);
+
+    // Reset position and scale to ensure widget is accessible on new screen
+    widget.x = 100;
+    widget.y = 100;
+    widget.scale = 1.0;
+
+    // Add to destination monitor
+    var destWidgets = getWidgetsForMonitor(toMonitor).slice();
+    destWidgets.push(widget);
+
+    // Update both monitors
+    setWidgetsForMonitor(fromMonitor, newSourceWidgets);
+    setWidgetsForMonitor(toMonitor, destWidgets);
   }
 }

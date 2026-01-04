@@ -2879,6 +2879,7 @@
     "move-to-center-section": "Центральна секція",
     "move-to-left-section": "Ліва секція",
     "move-to-right-section": "Права секція",
+    "move-to-section": "Перейти до {section}",
     "mute": "Вимкнути звук",
     "next-media": "Наступний трек",
     "next-month": "Наступний місяць",

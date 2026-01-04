@@ -2879,6 +2879,7 @@
     "move-to-center-section": "Middelste sectie",
     "move-to-left-section": "Linker sectie",
     "move-to-right-section": "Rechter sectie",
+    "move-to-section": "Ga naar {section}",
     "mute": "Dempen",
     "next-media": "Volgende track",
     "next-month": "Volgende maand",

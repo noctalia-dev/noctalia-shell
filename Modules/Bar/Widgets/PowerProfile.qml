@@ -28,4 +28,5 @@ NIconButton {
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
   onClicked: PowerProfileService.cycleProfile()
+  onRightClicked: PowerProfileService.cycleProfileReverse()
 }

@@ -2879,6 +2879,7 @@
     "move-to-center-section": "Центральная секция",
     "move-to-left-section": "Левая секция",
     "move-to-right-section": "Правая секция",
+    "move-to-section": "Перейти к {section}",
     "mute": "Отключить звук",
     "next-media": "Следующий трек",
     "next-month": "Следующий месяц",
