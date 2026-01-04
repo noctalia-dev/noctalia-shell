@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# Find qsb binary in common locations.
+QSB_PATHS=(
+    "/usr/lib/qt6/bin/qsb"
+    "/usr/lib64/qt6/bin/qsb"
+)
+
+QSB_BIN=""
+for path in "${QSB_PATHS[@]}"; do
+    if [ -x "$path" ]; then
+        QSB_BIN="$path"
+        break
+    fi
+done
+
+if [ -z "$QSB_BIN" ]; then
+    echo "Error: qsb binary not found in any of: ${QSB_PATHS[*]}"
+    exit 1
+fi
+
 # Directory containing the source shaders.
 SOURCE_DIR="Shaders/frag/"
 
@@ -64,7 +83,7 @@ for shader in "${SHADERS_TO_COMPILE[@]}"; do
     output_path="$DEST_DIR$shader_name.frag.qsb"
 
     # Construct and run the qsb command.
-    /usr/lib/qt6/bin/qsb --qt6 -o "$output_path" "$shader"
+    "$QSB_BIN" --qt6 -o "$output_path" "$shader"
 
     # Print a message to confirm compilation.
     echo "Compiled $(basename "$shader") to $output_path"

@@ -35,6 +35,15 @@ ColumnLayout {
     onToggled: checked => BluetoothService.setBluetoothEnabled(checked)
   }
 
+  // Bluetooth signal strength polling (RSSI via bluetoothctl)
+  NToggle {
+    label: I18n.tr("settings.network.bluetooth.rssi-polling.label")
+    description: I18n.tr("settings.network.bluetooth.rssi-polling.description")
+    checked: Settings.data && Settings.data.network && Settings.data.network.bluetoothRssiPollingEnabled
+    enabled: BluetoothService.enabled
+    onToggled: checked => Settings.data.network.bluetoothRssiPollingEnabled = checked
+  }
+
   NDivider {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginL

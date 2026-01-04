@@ -1,5 +1,6 @@
 pragma Singleton
 
+import QtQuick
 import Quickshell
 import qs.Commons
 
@@ -13,6 +14,10 @@ Singleton {
   property var registeredPanels: ({})
   property var openedPanel: null
   property var closingPanel: null
+  property bool closedImmediately: false
+  // Brief window after panel opens where Exclusive keyboard is allowed on Hyprland
+  // This allows text inputs to receive focus, then switches to OnDemand for click-to-close
+  property bool isInitializingKeyboard: false
   signal willOpen
   signal didClose
 
@@ -86,6 +91,16 @@ Singleton {
     return name in registeredPanels;
   }
 
+  // Timer to switch from Exclusive to OnDemand keyboard focus on Hyprland
+  Timer {
+    id: keyboardInitTimer
+    interval: 100
+    repeat: false
+    onTriggered: {
+      root.isInitializingKeyboard = false;
+    }
+  }
+
   // Helper to keep only one panel open at any time
   function willOpenPanel(panel) {
     if (openedPanel && openedPanel !== panel) {
@@ -98,6 +113,12 @@ Singleton {
     // Assign new panel to open slot
     openedPanel = panel;
     assignToSlot(0, panel);
+
+    // Start keyboard initialization period (for Hyprland workaround)
+    if (panel.exclusiveKeyboard) {
+      isInitializingKeyboard = true;
+      keyboardInitTimer.restart();
+    }
 
     // emit signal
     willOpen();
@@ -113,6 +134,10 @@ Singleton {
       closingPanel = null;
       assignToSlot(1, null);
     }
+
+    // Reset keyboard init state
+    isInitializingKeyboard = false;
+    keyboardInitTimer.stop();
 
     // emit signal
     didClose();

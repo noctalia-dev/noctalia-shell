@@ -87,7 +87,7 @@ SmartPanel {
   }
 
   panelContent: Item {
-    id: content
+    id: panelContent
 
     ColumnLayout {
       id: layout

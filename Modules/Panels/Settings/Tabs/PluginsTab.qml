@@ -144,7 +144,6 @@ ColumnLayout {
 
             NText {
               text: modelData.name
-              font.weight: Font.Medium
               color: Color.mOnSurface
               elide: Text.ElideRight
               Layout.fillWidth: true
@@ -170,7 +169,7 @@ ColumnLayout {
                                                      }) : "v" + modelData.version
                 font.pointSize: Style.fontSizeXXS
                 color: modelData.updateInfo ? Color.mPrimary : Color.mOnSurfaceVariant
-                font.weight: modelData.updateInfo ? Font.Medium : Font.Normal
+                font.weight: modelData.updateInfo ? Style.fontWeightMedium : Style.fontWeightRegular
               }
 
               NText {
@@ -288,13 +287,13 @@ ColumnLayout {
           NToggle {
             checked: modelData.enabled
             baseSize: Style.baseWidgetSize * 0.7
-            onToggled: function (checked) {
-              if (checked) {
-                PluginService.enablePlugin(modelData.compositeKey);
-              } else {
-                PluginService.disablePlugin(modelData.compositeKey);
-              }
-            }
+            onToggled: checked => {
+                         if (checked) {
+                           PluginService.enablePlugin(modelData.compositeKey);
+                         } else {
+                           PluginService.disablePlugin(modelData.compositeKey);
+                         }
+                       }
           }
         }
       }
@@ -353,7 +352,6 @@ ColumnLayout {
 
             NText {
               text: modelData.name
-              font.weight: Font.Medium
               color: Color.mOnSurface
               Layout.fillWidth: true
             }
@@ -384,11 +382,11 @@ ColumnLayout {
           NToggle {
             checked: modelData.enabled !== false // Default to true if not set
             baseSize: Style.baseWidgetSize * 0.7
-            onToggled: function (checked) {
-              PluginRegistry.setSourceEnabled(modelData.url, checked);
-              PluginService.refreshAvailablePlugins();
-              ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.refresh.refreshing"));
-            }
+            onToggled: checked => {
+                         PluginRegistry.setSourceEnabled(modelData.url, checked);
+                         PluginService.refreshAvailablePlugins();
+                         ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.refresh.refreshing"));
+                       }
           }
         }
       }

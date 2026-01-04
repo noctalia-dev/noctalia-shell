@@ -142,12 +142,20 @@
           "description": "Wenn der Ausgabetext diesem Wert entspricht, wird die Schaltfläche eingeklappt.",
           "label": "Einklappbedingung"
         },
+        "color-selection": {
+          "description": "Designfarben auf Symbol und Text anwenden.",
+          "label": "Farbe auswählen"
+        },
         "display-command-output": {
           "description": "Befehl eingeben, der in regelmäßigen Abständen ausgeführt wird. Die erste Zeile seiner Ausgabe wird als Text angezeigt.",
           "label": "Befehlsausgabe anzeigen",
           "stream-description": "Geben Sie einen Befehl ein, der kontinuierlich ausgeführt werden soll."
         },
         "dynamic-text": "Dynamischer Text",
+        "enable-colorization": {
+          "description": "Färbung für das benutzerdefinierte Schaltflächensymbol und den Text aktivieren, Designfarben anwenden.",
+          "label": "Färbung aktivieren"
+        },
         "hide-mode": {
           "alwaysExpanded": "Immer erweitert",
           "description": "Steuert die Sichtbarkeit des Widgets, wenn der Befehl keine Ausgabe hat.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Das Tastaturlayout-Symbol anzeigen.",
           "label": "Symbol anzeigen"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Wenn aktiviert, wird die Primärfarbe zur Hervorhebung verwendet.",
+          "label": "Primärfarbe verwenden"
         }
       },
       "lock-keys": {
@@ -489,6 +503,7 @@
       "device-address": "Geräteadresse",
       "disabled": "Bluetooth ist deaktiviert",
       "disconnect": "Trennen",
+      "disconnecting": "Verbindung wird getrennt...",
       "discoverable": "Sichtbar",
       "enable-message": "Aktivieren Sie Bluetooth, um verfügbare Geräte zu sehen.",
       "info": "Info",
@@ -502,6 +517,14 @@
       "refresh-devices": "Geräte aktualisieren",
       "scanning": "Scannen nach Geräten...",
       "signal": "Signal",
+      "signal-text": {
+        "excellent": "Signal: Ausgezeichnet",
+        "fair": "Signal: Schwach",
+        "good": "Signal: Gut",
+        "poor": "Signal: Schlecht",
+        "unknown": "Signal: Unbekannt",
+        "very-poor": "Signal: Sehr schlecht"
+      },
       "title": "Bluetooth",
       "trusted": "Vertrauenswürdig",
       "unpair": "Entkoppeln"
@@ -581,6 +604,7 @@
     "enable-bluetooth": "Bluetooth aktivieren",
     "enable-dnd": "'Nicht stören' aktivieren",
     "enable-wifi": "WLAN aktivieren",
+    "launcher-settings": "Launcher-Einstellungen",
     "lower-to-bottom": "Senken bis zum Anschlag / Ganz nach unten senken",
     "next": "Nächste/r/s",
     "open-calendar": "Kalender öffnen",
@@ -640,6 +664,32 @@
     },
     "delete": "Löschen",
     "pin": "Anheften",
+    "providers": {
+      "applications": "Anwendungen",
+      "calculator": "Rechner",
+      "calculator-deprecated": "Der Befehl >calc ist veraltet und wird bald entfernt. Bitte geben Sie stattdessen mathematische Ausdrücke direkt in die Suche ein.",
+      "calculator-description": "Rechner — mathematische Ausdrücke auswerten",
+      "calculator-enter-expression": "Mathematischen Ausdruck eingeben",
+      "calculator-error": "Fehler",
+      "calculator-name": "Rechner",
+      "clipboard": "Zwischenablageverlauf",
+      "clipboard-clear-description": "Gesamten Zwischenablageverlauf löschen",
+      "clipboard-clear-description-full": "Alle Elemente aus dem Zwischenablageverlauf entfernen",
+      "clipboard-clear-history": "Zwischenablageverlauf löschen",
+      "clipboard-delete": "Zwischenablageeintrag löschen",
+      "clipboard-history-disabled": "Zwischenablageverlauf deaktiviert",
+      "clipboard-history-disabled-description": "Zwischenablageverlauf in den Einstellungen aktivieren oder cliphist installieren",
+      "clipboard-loading": "Lade Zwischenablageverlauf...",
+      "clipboard-loading-description": "Bitte warten",
+      "clipboard-search-description": "Zwischenablageverlauf durchsuchen",
+      "command": "Befehl",
+      "command-description": "Shell-Befehle ausführen",
+      "command-name": "Befehl",
+      "emoji": "Emoji-Auswahl",
+      "emoji-loading": "Lade Emojis...",
+      "emoji-loading-description": "Bitte warten",
+      "emoji-search-description": "Emojis suchen und kopieren"
+    },
     "unpin": "Lösen"
   },
   "lock-screen": {
@@ -835,32 +885,6 @@
     "search-wallpapers": "Zum Filtern von Hintergrundbildern eingeben...",
     "select": "Auswählen",
     "test": "Test"
-  },
-  "plugins": {
-    "applications": "Anwendungen",
-    "calculator": "Rechner",
-    "calculator-deprecated": "Der Befehl >calc ist veraltet und wird bald entfernt. Bitte geben Sie stattdessen mathematische Ausdrücke direkt in die Suche ein.",
-    "calculator-description": "Rechner — mathematische Ausdrücke auswerten",
-    "calculator-enter-expression": "Mathematischen Ausdruck eingeben",
-    "calculator-error": "Fehler",
-    "calculator-name": "Rechner",
-    "clipboard": "Zwischenablageverlauf",
-    "clipboard-clear-description": "Gesamten Zwischenablageverlauf löschen",
-    "clipboard-clear-description-full": "Alle Elemente aus dem Zwischenablageverlauf entfernen",
-    "clipboard-clear-history": "Zwischenablageverlauf löschen",
-    "clipboard-delete": "Zwischenablageeintrag löschen",
-    "clipboard-history-disabled": "Zwischenablageverlauf deaktiviert",
-    "clipboard-history-disabled-description": "Zwischenablageverlauf in den Einstellungen aktivieren oder cliphist installieren",
-    "clipboard-loading": "Lade Zwischenablageverlauf...",
-    "clipboard-loading-description": "Bitte warten",
-    "clipboard-search-description": "Zwischenablageverlauf durchsuchen",
-    "command": "Befehl",
-    "command-description": "Shell-Befehle ausführen",
-    "command-name": "Befehl",
-    "emoji": "Emoji-Auswahl",
-    "emoji-loading": "Lade Emojis...",
-    "emoji-loading-description": "Bitte warten",
-    "emoji-search-description": "Emojis suchen und kopieren"
   },
   "quickSettings": {
     "bluetooth": {
@@ -1800,6 +1824,11 @@
     },
     "launcher": {
       "settings": {
+        "annotation-tool": {
+          "description": "Befehl, der beim Klicken auf die Schaltfläche \"Annotieren\" im Zwischenablageverlauf ausgeführt wird. Das Bild wird an diesen Befehl weitergeleitet.",
+          "label": "Annotationstool",
+          "placeholder": "gradia, satty -f -"
+        },
         "clip-preview": {
           "description": "Zeige eine Vorschau des Inhalts der Zwischenablage an, wenn der Befehl >clip verwendet wird.",
           "label": "Clip-Vorschau aktivieren"
@@ -1839,6 +1868,10 @@
         "show-categories": {
           "description": "Kategorienregisterkarten zum Filtern von Anwendungen anzeigen.",
           "label": "Kategorien anzeigen"
+        },
+        "show-icon-background": {
+          "description": "Zeige einen abgerundeten Rechteck-Hintergrund hinter Icons.",
+          "label": "Symbolhintergrund anzeigen"
         },
         "sort-by-usage": {
           "description": "Wenn aktiviert, erscheinen häufig gestartete Apps zuerst in der Liste.",
@@ -1954,7 +1987,11 @@
     "network": {
       "bluetooth": {
         "description": "Bluetooth-Verwaltung aktivieren.",
-        "label": "Bluetooth aktivieren"
+        "label": "Bluetooth aktivieren",
+        "rssi-polling": {
+          "description": "Periodisch RSSI für verbundene Geräte über bluetoothctl abfragen. Ist möglicherweise nicht für alle Geräte verfügbar; verbraucht bei Aktivierung minimale Ressourcen.",
+          "label": "Bluetooth-Signalabfrage"
+        }
       },
       "section": {
         "description": "WLAN- und Bluetooth-Verbindungen verwalten."
@@ -2470,6 +2507,10 @@
         "label": "Animationsgeschwindigkeit",
         "reset": "Animationsgeschwindigkeit zurücksetzen"
       },
+      "box-border": {
+        "description": "Zeigt eine Umrandung um Inhaltsbereiche an.",
+        "label": "Containerumriss"
+      },
       "box-border-radius": {
         "description": "Passt die Eckenrundung wichtiger Layoutbereiche an, wie z. B. Seitenleisten, Karten und Inhaltsbereiche.",
         "label": "Behälterradius",
@@ -2596,8 +2637,8 @@
           "tooltip": "Hintergrundbild-Ordner"
         },
         "hide-wallpaper-filenames": {
-          "description": "Hintergrundbilddateinamen im Auswahlmenü ausblenden.",
-          "label": "Dateinamen ausblenden"
+          "tooltip-hide": "Dateinamen ausblenden",
+          "tooltip-show": "Dateinamen anzeigen"
         },
         "monitor-specific": {
           "description": "Unterschiedlichen Hintergrundbild-Ordner für jeden Monitor festlegen.",
@@ -2697,6 +2738,7 @@
       "low-desc": "Batterie ist bei {percent}%. Bitte schließen Sie das Ladegerät an."
     },
     "bluetooth": {
+      "address-copied": "Adresse in die Zwischenablage kopiert",
       "confirm-code": "Bestätigungscode {value} auf dem anderen Gerät bestätigen.",
       "connect-failed": "Verbindung mit dem Gerät fehlgeschlagen",
       "disabled": "Deaktiviert",
@@ -2814,6 +2856,7 @@
     "close": "Schließen",
     "collapse": "Seitenleiste einklappen",
     "connect-disconnect-devices": "Bluetooth-Gerät",
+    "copy-address": "Adresse kopieren",
     "delete-notification": "Benachrichtigung löschen",
     "disable-keep-awake": "Wach halten",
     "do-not-disturb-disabled": "Nicht stören",
@@ -2836,6 +2879,7 @@
     "move-to-center-section": "Mittlere Sektion",
     "move-to-left-section": "Linke Sektion",
     "move-to-right-section": "Rechte Sektion",
+    "move-to-section": "Gehe zu {section}",
     "mute": "Stummschalten",
     "next-media": "Nächster Titel",
     "next-month": "Nächster Monat",
@@ -2845,6 +2889,7 @@
     "night-light-not-installed": "Nachtlicht (nicht verfügbar)",
     "noctalia-performance-disabled": "Noctalia-Leistungsmodus",
     "noctalia-performance-enabled": "Noctalia-Leistungsmodus",
+    "open-annotation-tool": "Mit dem Anmerkungswerkzeug öffnen",
     "open-control-center": "Kontrollzentrum",
     "open-notification-history-disable-dnd": "Benachrichtigungsverlauf",
     "open-notification-history-enable-dnd": "Benachrichtigungsverlauf",
@@ -2929,6 +2974,9 @@
         }
       },
       "search": "Suchen:",
+      "solid-color": {
+        "tooltip": "Einfarbiger Hintergrund"
+      },
       "sorting": {
         "date_added": "Hinzugefügt am",
         "favorites": "Favoriten",

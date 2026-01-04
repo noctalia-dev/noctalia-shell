@@ -161,8 +161,20 @@ Loader {
               return;
             }
 
+            // Check for solid color mode first
+            if (Settings.data.wallpaper.useSolidColor) {
+              resolvedWallpaperPath = "";
+              return;
+            }
+
             const originalPath = WallpaperService.getWallpaper(screen.name) || "";
             if (originalPath === "") {
+              resolvedWallpaperPath = "";
+              return;
+            }
+
+            // Handle solid color paths
+            if (WallpaperService.isSolidColorPath(originalPath)) {
               resolvedWallpaperPath = "";
               return;
             }
@@ -182,7 +194,7 @@ Loader {
 
             // Don't set resolvedWallpaperPath until cache is ready
             // This prevents loading the original huge image
-            ImageCacheService.getFullscreen(originalPath, screen.name, targetWidth, targetHeight, function (cachedPath, success) {
+            ImageCacheService.getLarge(originalPath, targetWidth, targetHeight, function (cachedPath, success) {
               if (success) {
                 resolvedWallpaperPath = cachedPath;
               } else {
@@ -192,15 +204,15 @@ Loader {
             });
           }
 
-          // Black backgound, in case image fails to load or takes a while
+          // Background - solid color or black fallback
           Rectangle {
             anchors.fill: parent
-            color: "#000000"
+            color: Settings.data.wallpaper.useSolidColor ? Settings.data.wallpaper.solidColor : "#000000"
           }
 
           Image {
             id: lockBgImage
-            visible: source !== ""
+            visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor
             anchors.fill: parent
             fillMode: Image.PreserveAspectCrop
             source: resolvedWallpaperPath
@@ -470,7 +482,6 @@ Loader {
                   NText {
                     text: I18n.tr("lock-screen.welcome-back") + " " + HostService.displayName + "!"
                     pointSize: Style.fontSizeXXL
-                    font.weight: Font.Medium
                     color: Color.mOnSurface
                     horizontalAlignment: Text.AlignLeft
                   }
@@ -492,7 +503,6 @@ Loader {
                       return I18n.locale.toString(Time.now, formats[lang] || "dddd, d MMMM");
                     }
                     pointSize: Style.fontSizeXL
-                    font.weight: Font.Medium
                     color: Color.mOnSurfaceVariant
                     horizontalAlignment: Text.AlignLeft
                   }
@@ -548,7 +558,6 @@ Loader {
                   text: lockContext.errorMessage || "Authentication failed"
                   color: Color.mOnError
                   pointSize: Style.fontSizeL
-                  font.weight: Font.Medium
                   horizontalAlignment: Text.AlignHCenter
                 }
               }
@@ -603,7 +612,6 @@ Loader {
                     text: Math.round(batteryIndicator.percent) + "%"
                     color: Color.mOnSurfaceVariant
                     pointSize: Style.fontSizeM
-                    font.weight: Font.Medium
                   }
                 }
 
@@ -622,7 +630,6 @@ Loader {
                     text: keyboardLayout.currentLayout
                     color: Color.mOnSurfaceVariant
                     pointSize: Style.fontSizeM
-                    font.weight: Font.Medium
                     elide: Text.ElideRight
                   }
                 }
@@ -659,35 +666,30 @@ Loader {
                 property real padding: 18 // Approximate horizontal padding per button
 
                 // Measure all button text widths
-                Text {
+                NText {
                   id: logoutText
                   text: I18n.tr("session-menu.logout")
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
-                Text {
+                NText {
                   id: suspendText
                   text: I18n.tr("session-menu.suspend")
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
-                Text {
+                NText {
                   id: hibernateText
                   text: Settings.data.general.showHibernateOnLockScreen ? I18n.tr("session-menu.hibernate") : ""
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
-                Text {
+                NText {
                   id: rebootText
                   text: I18n.tr("session-menu.reboot")
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
-                Text {
+                NText {
                   id: shutdownText
                   text: I18n.tr("session-menu.shutdown")
                   font.pointSize: buttonRowTextMeasurer.fontSize
-                  font.weight: Font.Medium
                 }
 
                 // Calculate maximum width needed
@@ -798,7 +800,6 @@ Loader {
                         NText {
                           text: MediaService.trackTitle || "No media"
                           pointSize: Style.fontSizeM
-                          font.weight: Style.fontWeightMedium
                           color: Color.mOnSurface
                           Layout.fillWidth: true
                           elide: Text.ElideRight
@@ -878,7 +879,6 @@ Loader {
                           }
                           pointSize: Style.fontSizeM
                           color: Color.mOnSurfaceVariant
-                          font.weight: Font.Normal
                         }
                       }
 
@@ -979,7 +979,6 @@ Loader {
                         text: Math.round(batteryIndicator.percent) + "%"
                         color: Color.mOnSurfaceVariant
                         pointSize: Style.fontSizeM
-                        font.weight: Font.Medium
                       }
                     }
 
@@ -998,7 +997,6 @@ Loader {
                         text: keyboardLayout.currentLayout
                         color: Color.mOnSurfaceVariant
                         pointSize: Style.fontSizeM
-                        font.weight: Font.Medium
                         elide: Text.ElideRight
                       }
                     }
@@ -1115,7 +1113,6 @@ Loader {
                           text: passwordInput.text
                           color: Color.mPrimary
                           pointSize: Style.fontSizeM
-                          font.weight: Font.Medium
                           visible: passwordInput.text.length > 0 && parent.parent.parent.passwordVisible
                           anchors.verticalCenter: parent.verticalCenter
                           elide: Text.ElideRight

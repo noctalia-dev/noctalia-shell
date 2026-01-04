@@ -17,6 +17,13 @@ Singleton {
   property string connectingTo: ""
   property string lastError: ""
   property bool ethernetConnected: false
+  // Active Ethernet connection details
+  property var activeEthernetDetails: ({})
+  property string activeEthernetIf: ""
+  property bool ethernetDetailsLoading: false
+  property double activeEthernetDetailsTimestamp: 0
+  // Keep same TTL policy for both kinds of links
+  property int activeEthernetDetailsTtlMs: 5000
   property string disconnectingFrom: ""
   property string forgettingNetwork: ""
   property string networkConnectivity: "unknown"
@@ -80,7 +87,10 @@ Singleton {
     if (ProgramCheckerService.nmcliAvailable) {
       syncWifiState();
       scan();
+      // Prime ethernet state immediately so UI can reflect wired status on startup
+      ethernetStateProcess.running = true;
       refreshActiveWifiDetails();
+      refreshActiveEthernetDetails();
     }
   }
 
@@ -91,6 +101,11 @@ Singleton {
       if (ProgramCheckerService.nmcliAvailable) {
         syncWifiState();
         scan();
+        // Refresh ethernet status as soon as nmcli becomes available
+        ethernetStateProcess.running = true;
+        // Also refresh details so panels get info without waiting for timers
+        refreshActiveWifiDetails();
+        refreshActiveEthernetDetails();
       }
     }
   }
@@ -136,6 +151,25 @@ Singleton {
     running: ProgramCheckerService.nmcliAvailable
     repeat: true
     onTriggered: ethernetStateProcess.running = true
+  }
+
+  // Refresh details for the currently active Ethernet link
+  function refreshActiveEthernetDetails() {
+    const now = Date.now();
+    if (ethernetDetailsLoading)
+      return;
+    if (!root.ethernetConnected) {
+      // Clear details when not connected
+      root.activeEthernetIf = "";
+      root.activeEthernetDetails = ({});
+      return;
+    }
+    // If we have fresh details for the same iface, skip
+    if (activeEthernetIf && activeEthernetDetails && (now - activeEthernetDetailsTimestamp) < activeEthernetDetailsTtlMs)
+      return;
+
+    ethernetDetailsLoading = true;
+    ethernetDeviceListProcess.running = true;
   }
 
   // Internet connectivity check timer
@@ -306,17 +340,30 @@ Singleton {
     stdout: StdioCollector {
       onStreamFinished: {
         var connected = false;
+        var devIf = "";
         var lines = text.split("\n");
         for (var i = 0; i < lines.length; i++) {
           var parts = lines[i].split(":");
           if (parts.length >= 3 && parts[1] === "ethernet" && parts[2] === "connected") {
             connected = true;
+            devIf = parts[0];
             break;
           }
         }
         if (root.ethernetConnected !== connected) {
           root.ethernetConnected = connected;
           Logger.d("Network", "Ethernet connected:", root.ethernetConnected);
+        }
+        if (connected) {
+          if (root.activeEthernetIf !== devIf) {
+            root.activeEthernetIf = devIf;
+            // refresh details for the new interface
+            root.activeEthernetDetailsTimestamp = 0;
+          }
+          root.refreshActiveEthernetDetails();
+        } else {
+          root.activeEthernetIf = "";
+          root.activeEthernetDetails = ({});
         }
       }
     }
@@ -327,6 +374,187 @@ Singleton {
         }
       }
     }
+  }
+
+  // Discover connected Ethernet interface and fetch details
+  Process {
+    id: ethernetDeviceListProcess
+    running: false
+    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        let ifname = "";
+        const lines = text.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const parts = lines[i].trim().split(":");
+          if (parts.length >= 3) {
+            const dev = parts[0];
+            const type = parts[1];
+            const state = parts[2];
+            if (type === "ethernet" && state === "connected") {
+              ifname = dev;
+              break;
+            }
+          }
+        }
+        root.activeEthernetIf = ifname;
+        if (ifname) {
+          ethernetDeviceShowProcess.ifname = ifname;
+          ethernetDeviceShowProcess.running = true;
+        } else {
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "nmcli device list (eth) stderr:", text.trim());
+        }
+        if (!root.activeEthernetIf) {
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
+        }
+      }
+    }
+  }
+
+  // Fetch IPv4/Gateway/DNS and Connection Name for Ethernet iface
+  Process {
+    id: ethernetDeviceShowProcess
+    property string ifname: ""
+    running: false
+    // Speed is resolved via ethtool fallback below to avoid stderr warnings
+    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS", "device", "show", ifname]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const details = root.activeEthernetDetails || ({});
+        let connName = "";
+        let ipv4 = "";
+        let gw4 = "";
+        let dnsServers = [];
+        const lines = text.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line)
+          continue;
+          const idx = line.indexOf(":");
+          if (idx === -1)
+          continue;
+          const key = line.substring(0, idx);
+          const val = line.substring(idx + 1);
+          if (key === "GENERAL.CONNECTION") {
+            connName = val;
+          } else if (key.indexOf("IP4.ADDRESS") === 0) {
+            ipv4 = val.split("/")[0];
+          } else if (key === "IP4.GATEWAY") {
+            gw4 = val;
+          } else if (key.indexOf("IP4.DNS") === 0) {
+            if (val && dnsServers.indexOf(val) === -1)
+            dnsServers.push(val);
+          }
+        }
+        details.ifname = ethernetDeviceShowProcess.ifname;
+        details.connectionName = connName;
+        // No speed from nmcli: keep empty so ethtool fallback below fills it
+        details.speed = details.speed && details.speed.length > 0 ? details.speed : "";
+        details.ipv4 = ipv4;
+        details.gateway4 = gw4;
+        details.dnsServers = dnsServers;
+        details.dns = dnsServers.join(", ");
+        root.activeEthernetDetails = details;
+        // If speed missing, try sysfs first, then fallback to ethtool
+        if (!details.speed || details.speed.length === 0) {
+          ethernetSysfsSpeedProcess.ifname = ethernetDeviceShowProcess.ifname;
+          ethernetSysfsSpeedProcess.running = true;
+        } else {
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.w("Network", "nmcli device show (eth) stderr:", text.trim());
+        }
+        root.activeEthernetDetailsTimestamp = Date.now();
+        root.ethernetDetailsLoading = false;
+      }
+    }
+  }
+
+  // Try to read Ethernet speed from sysfs first: /sys/class/net/<if>/speed (numeric Mbit/s)
+  Process {
+    id: ethernetSysfsSpeedProcess
+    property string ifname: ""
+    running: false
+    command: ["sh", "-c", "cat '/sys/class/net/" + ifname + "/speed' 2>/dev/null || true"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const details = root.activeEthernetDetails || ({});
+        let speedText = "";
+        const v = text.trim();
+        // Expect a number like 1000
+        const num = parseFloat(v);
+        if (!isNaN(num) && num > 0) {
+          details.speed = Math.round(num) + " Mbit/s";
+          details.speedMbit = num;
+          root.activeEthernetDetails = details;
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
+        } else {
+          // Fallback to ethtool if sysfs unreadable or invalid
+          ethernetEthtoolProcess.ifname = ethernetSysfsSpeedProcess.ifname;
+          ethernetEthtoolProcess.running = true;
+        }
+      }
+    }
+    stderr: StdioCollector {}
+  }
+
+  // Optional: query Ethernet speed via ethtool as a fallback
+  Process {
+    id: ethernetEthtoolProcess
+    property string ifname: ""
+    running: false
+    command: ["sh", "-c", "ethtool '" + ifname + "' 2>/dev/null || true"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const details = root.activeEthernetDetails || ({});
+        let speedText = "";
+        const lines = text.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.toLowerCase().indexOf("speed:") === 0) {
+            // Example: "Speed: 1000Mb/s"
+            const v = line.substring(6).trim();
+            if (v) {
+              // Normalize to "1000 Mbit/s"
+              const normalized = v.replace(/mb\/?s/i, "Mbit/s").replace(/\s+/g, " ");
+              speedText = normalized;
+            }
+            break;
+          }
+        }
+        if (speedText && speedText.length > 0) {
+          details.speed = speedText;
+          // Try to derive numeric value
+          const m = speedText.match(/([0-9]+(?:\.[0-9]+)?)\s*Mbit\/s/i);
+          if (m)
+          details.speedMbit = parseFloat(m[1]);
+          root.activeEthernetDetails = details;
+        }
+        root.activeEthernetDetailsTimestamp = Date.now();
+        root.ethernetDetailsLoading = false;
+      }
+    }
+    stderr: StdioCollector {}
   }
 
   // Discover connected Wi‑Fi interface

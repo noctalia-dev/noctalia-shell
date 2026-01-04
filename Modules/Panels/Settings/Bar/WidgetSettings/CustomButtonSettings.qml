@@ -20,6 +20,8 @@ ColumnLayout {
   property int valueMaxTextLengthVertical: widgetData?.maxTextLength?.vertical ?? widgetMetadata?.maxTextLength?.vertical
   property string valueHideMode: (widgetData.hideMode !== undefined) ? widgetData.hideMode : widgetMetadata.hideMode
   property bool valueShowIcon: (widgetData.showIcon !== undefined) ? widgetData.showIcon : widgetMetadata.showIcon
+  property bool valueEnableColorization: widgetData.enableColorization || false
+  property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon || "none"
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -48,6 +50,8 @@ ColumnLayout {
       "vertical": valueMaxTextLengthVertical
     };
     settings.textIntervalMs = parseInt(textIntervalInput.text || textIntervalInput.placeholderText, 10);
+    settings.enableColorization = valueEnableColorization;
+    settings.colorizeSystemIcon = valueColorizeSystemIcon;
     return settings;
   }
 
@@ -99,6 +103,43 @@ ColumnLayout {
         checked: valueShowIcon
         onToggled: checked => valueShowIcon = checked
         visible: textCommandInput.text !== ""
+      }
+
+      NToggle {
+        label: I18n.tr("bar.widget-settings.custom-button.enable-colorization.label")
+        description: I18n.tr("bar.widget-settings.custom-button.enable-colorization.description")
+        checked: valueEnableColorization
+        onToggled: checked => valueEnableColorization = checked
+      }
+
+      NComboBox {
+        visible: valueEnableColorization
+        label: I18n.tr("bar.widget-settings.custom-button.color-selection.label")
+        description: I18n.tr("bar.widget-settings.custom-button.color-selection.description")
+        model: [
+          {
+            "name": I18n.tr("options.colors.none"),
+            "key": "none"
+          },
+          {
+            "name": I18n.tr("options.colors.primary"),
+            "key": "primary"
+          },
+          {
+            "name": I18n.tr("options.colors.secondary"),
+            "key": "secondary"
+          },
+          {
+            "name": I18n.tr("options.colors.tertiary"),
+            "key": "tertiary"
+          },
+          {
+            "name": I18n.tr("options.colors.error"),
+            "key": "error"
+          }
+        ]
+        currentKey: valueColorizeSystemIcon
+        onSelected: key => valueColorizeSystemIcon = key
       }
 
       RowLayout {

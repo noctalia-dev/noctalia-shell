@@ -15,100 +15,28 @@ SmartPanel {
   // Do not give exclusive focus to the TrayDrawer or it will prevent the dropdown menu to request it.
   exclusiveKeyboard: false
 
-  // Widget info for menu functionality
+  // Widget info for menu functionality (set by Tray widget when opening)
   property string widgetSection: ""
   property int widgetIndex: -1
 
-  // Trigger refresh when settings change
-  property int settingsVersion: 0
-
-  // Read widget settings for reactivity
-  readonly property var widgetSettings: {
-    // Reference settingsVersion to force recalculation when it changes
-    var settingsVersionRef = root.settingsVersion;
-    if (widgetSection === "" || widgetIndex < 0)
-      return {};
-    var widgets = Settings.data.bar.widgets[widgetSection];
-    if (!widgets || widgetIndex >= widgets.length)
-      return {};
-    var settings = widgets[widgetIndex];
-    if (!settings || settings.id !== "Tray")
-      return {};
-    return settings;
-  }
-
-  // Read pinned list directly from settings for reactivity
-  readonly property var pinnedList: widgetSettings.pinned || []
-  readonly property bool hidePassive: widgetSettings.hidePassive !== undefined ? widgetSettings.hidePassive : true
-
-  function wildCardMatch(str, rule) {
-    if (!str || !rule)
-      return false;
-    // First, convert '*' to a placeholder to preserve it, then escape other special regex characters
-    // Use a unique placeholder that won't appear in normal strings
-    const placeholder = '\uE000'; // Private use character
-    let processedRule = rule.replace(/\*/g, placeholder);
-    // Escape all special regex characters (but placeholder won't match this)
-    let escaped = processedRule.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-    // Convert placeholder back to '.*' for wildcard matching
-    let pattern = '^' + escaped.replace(new RegExp(placeholder, 'g'), '.*') + '$';
-    try {
-      return new RegExp(pattern, 'i').test(str);
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function isPinned(item) {
-    if (!pinnedList || pinnedList.length === 0)
-      return false;
-    const title = item?.tooltipTitle || item?.name || item?.id || "";
-    for (var i = 0; i < pinnedList.length; i++) {
-      if (wildCardMatch(title, pinnedList[i]))
-        return true;
-    }
-    return false;
-  }
-
-  // Dynamic sizing based on item count
-  // Show items that are NOT pinned (unpinned items go to drawer)
-  readonly property var trayValuesAll: (SystemTray.items && SystemTray.items.values) ? SystemTray.items.values : []
-  // Explicitly reference hidePassive to ensure reactivity
-  readonly property var trayValues: {
-    // Reference hidePassive to ensure dependency tracking
-    var hidePassiveRef = root.hidePassive;
-    return trayValuesAll.filter(function (it) {
-      if (!it)
-        return false;
-      // Filter out passive items if hidePassive is enabled
-      if (root.hidePassive && it.status !== undefined && (it.status === SystemTray.Passive || it.status === 0)) {
-        return false;
-      }
-      return !root.isPinned(it);
-    });
-  }
-  readonly property int itemCount: trayValues.length
+  // Sizing properties must stay at root for preferredWidth/Height
   readonly property int maxColumns: 8
   readonly property real cellSize: Math.round(Style.capsuleHeight * 0.65)
   readonly property real outerPadding: Style.marginM
   readonly property real innerSpacing: Style.marginM
+
+  // All tray items from SystemTray
+  readonly property var trayValuesAll: (SystemTray.items && SystemTray.items.values) ? SystemTray.items.values : []
+
+  // Filtered items - computed in panelContent where isPinned is available
+  property var trayValues: []
+
+  readonly property int itemCount: trayValues.length
   readonly property int columns: Math.max(1, Math.min(maxColumns, itemCount))
   readonly property int rows: Math.max(1, Math.ceil(itemCount / Math.max(1, columns)))
 
-  // Static fallback sizes
   preferredWidth: (columns * cellSize) + ((columns - 1) * innerSpacing) + (2 * outerPadding)
   preferredHeight: (rows * cellSize) + ((rows - 1) * innerSpacing) + (2 * outerPadding)
-
-  // Positioning is handled automatically by SmartPanel when toggle(buttonItem) is called
-
-  // Watch for settings changes to refresh the dropdown
-  Connections {
-    target: Settings
-    function onSettingsSaved() {
-      // Force refresh by incrementing settingsVersion, which triggers recalculation of pinnedList
-      root.settingsVersion++;
-    }
-  }
 
   // Auto-close drawer when all items are pinned (drawer becomes empty)
   onTrayValuesChanged: {
@@ -117,42 +45,136 @@ SmartPanel {
     }
   }
 
-  // Trigger re-evaluation when window is registered
-  property int popupMenuUpdateTrigger: 0
-
-  // Get the trayMenu window and loader from PanelService (reactive to trigger changes)
-  readonly property var popupMenuWindow: {
-    // Reference trigger to force re-evaluation
-    var popupMenuUpdateTriggerRef = popupMenuUpdateTrigger;
-    return PanelService.getPopupMenuWindow(screen);
-  }
-
-  readonly property var trayMenu: popupMenuWindow ? popupMenuWindow.trayMenuLoader : null
-
-  Connections {
-    target: PanelService
-    function onPopupMenuWindowRegistered(registeredScreen) {
-      if (registeredScreen === screen) {
-        root.popupMenuUpdateTrigger++;
-      }
+  // Force refresh panelContent settings when drawer opens
+  onOpened: {
+    if (panelContent && panelContent.settingsVersion !== undefined) {
+      panelContent.settingsVersion++;
     }
   }
 
   panelContent: Item {
-    id: content
+    id: panelContent
 
-    // Dynamic content sizing that SmartPanel will watch for changes
+    // Settings state (lazy-loaded with panelContent)
+    property int settingsVersion: 0
+
+    readonly property var widgetSettings: {
+      // Reference settingsVersion to force recalculation when it changes
+      void (settingsVersion);
+      if (root.widgetSection === "" || root.widgetIndex < 0)
+        return {};
+      var widgets = Settings.data.bar.widgets[root.widgetSection];
+      if (!widgets || root.widgetIndex >= widgets.length)
+        return {};
+      var settings = widgets[root.widgetIndex];
+      if (!settings || settings.id !== "Tray")
+        return {};
+      return settings;
+    }
+
+    readonly property var pinnedList: widgetSettings.pinned || []
+    readonly property bool hidePassive: widgetSettings.hidePassive !== undefined ? widgetSettings.hidePassive : true
+
+    // Filter tray items - this runs in panelContent context where isPinned is available
+    function updateFilteredItems() {
+      var filtered = [];
+      for (var i = 0; i < root.trayValuesAll.length; i++) {
+        var item = root.trayValuesAll[i];
+        if (!item)
+          continue;
+
+        // Filter out passive items if hidePassive is enabled
+        if (hidePassive && item.status !== undefined && (item.status === SystemTray.Passive || item.status === 0)) {
+          continue;
+        }
+
+        // Filter out pinned items
+        if (isPinned(item)) {
+          continue;
+        }
+
+        filtered.push(item);
+      }
+      root.trayValues = filtered;
+    }
+
+    // Update filtered items when dependencies change
+    Component.onCompleted: updateFilteredItems()
+    onPinnedListChanged: updateFilteredItems()
+    onHidePassiveChanged: updateFilteredItems()
+
+    Connections {
+      target: root
+      function onTrayValuesAllChanged() {
+        panelContent.updateFilteredItems();
+      }
+    }
+
+    // Helper functions (lazy-loaded with panelContent)
+    function wildCardMatch(str, rule) {
+      if (!str || !rule)
+        return false;
+      const placeholder = '\uE000';
+      let processedRule = rule.replace(/\*/g, placeholder);
+      let escaped = processedRule.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+      let pattern = '^' + escaped.replace(new RegExp(placeholder, 'g'), '.*') + '$';
+      try {
+        return new RegExp(pattern, 'i').test(str);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function isPinned(item) {
+      if (!pinnedList || pinnedList.length === 0)
+        return false;
+      const title = item?.tooltipTitle || item?.name || item?.id || "";
+      for (var i = 0; i < pinnedList.length; i++) {
+        if (wildCardMatch(title, pinnedList[i]))
+          return true;
+      }
+      return false;
+    }
+
+    // Popup menu state (lazy-loaded with panelContent)
+    property int popupMenuUpdateTrigger: 0
+
+    readonly property var popupMenuWindow: {
+      void (popupMenuUpdateTrigger);
+      return PanelService.getPopupMenuWindow(screen);
+    }
+
+    readonly property var trayMenu: popupMenuWindow ? popupMenuWindow.trayMenuLoader : null
+
+    // Dynamic content sizing
     property real contentPreferredWidth: (root.columns * root.cellSize) + ((root.columns - 1) * root.innerSpacing) + (2 * root.outerPadding)
     property real contentPreferredHeight: (root.rows * root.cellSize) + ((root.rows - 1) * root.innerSpacing) + (2 * root.outerPadding)
+
+    // Connections (lazy-loaded with panelContent)
+    Connections {
+      target: Settings
+      function onSettingsSaved() {
+        panelContent.settingsVersion++;
+      }
+    }
+
+    Connections {
+      target: PanelService
+      function onPopupMenuWindowRegistered(registeredScreen) {
+        if (registeredScreen === screen) {
+          panelContent.popupMenuUpdateTrigger++;
+        }
+      }
+    }
 
     Grid {
       id: grid
       anchors.fill: parent
-      anchors.margins: outerPadding
-      spacing: innerSpacing
+      anchors.margins: root.outerPadding
+      spacing: root.innerSpacing
       columns: root.columns
-      rowSpacing: innerSpacing
-      columnSpacing: innerSpacing
+      rowSpacing: root.innerSpacing
+      columnSpacing: root.innerSpacing
 
       Repeater {
         id: repeater
@@ -181,7 +203,7 @@ SmartPanel {
               return icon;
             }
 
-            layer.enabled: root.widgetSettings.colorizeIcons !== false
+            layer.enabled: panelContent.widgetSettings.colorizeIcons !== false
             layer.effect: ShaderEffect {
               property color targetColor: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant
               property real colorizeMode: 1.0
@@ -198,7 +220,6 @@ SmartPanel {
                            if (!modelData)
                            return;
                            if (mouse.button === Qt.LeftButton) {
-                             // Left click: activate tray item
                              if (!modelData.onlyMenu) {
                                modelData.activate();
                              }
@@ -206,25 +227,21 @@ SmartPanel {
                                PanelService.openedPanel.close();
                              }
                            } else if (mouse.button === Qt.MiddleButton) {
-                             // Middle click: activate with middle button
                              modelData.secondaryActivate && modelData.secondaryActivate();
                              if ((PanelService.openedPanel !== null) && !PanelService.openedPanel.isClosing) {
                                PanelService.openedPanel.close();
                              }
                            } else if (mouse.button === Qt.RightButton) {
-                             // Right click: open context menu
                              TooltipService.hideImmediately();
 
-                             // Close menu if already visible
-                             if (popupMenuWindow && popupMenuWindow.visible) {
-                               popupMenuWindow.close();
+                             if (panelContent.popupMenuWindow && panelContent.popupMenuWindow.visible) {
+                               panelContent.popupMenuWindow.close();
                                return;
                              }
 
-                             if (modelData.hasMenu && modelData.menu && popupMenuWindow && trayMenu && trayMenu.item) {
-                               popupMenuWindow.open();
+                             if (modelData.hasMenu && modelData.menu && panelContent.popupMenuWindow && panelContent.trayMenu && panelContent.trayMenu.item) {
+                               panelContent.popupMenuWindow.open();
 
-                               // Position menu at the tray icon
                                const barPosition = Settings.data.bar.position;
                                let menuX, menuY;
 
@@ -232,18 +249,17 @@ SmartPanel {
                                  menuX = trayIcon.width + Style.marginM;
                                  menuY = 0;
                                } else if (barPosition === "right") {
-                                 menuX = -trayMenu.item.width - Style.marginM;
+                                 menuX = -panelContent.trayMenu.item.width - Style.marginM;
                                  menuY = 0;
                                } else {
-                                 // Horizontal bars
-                                 menuX = (trayIcon.width / 2) - (trayMenu.item.width / 2);
+                                 menuX = (trayIcon.width / 2) - (panelContent.trayMenu.item.width / 2);
                                  menuY = trayIcon.height + Style.marginS;
                                }
 
-                               trayMenu.item.trayItem = modelData;
-                               trayMenu.item.widgetSection = root.widgetSection;
-                               trayMenu.item.widgetIndex = root.widgetIndex;
-                               trayMenu.item.showAt(trayIcon, menuX, menuY);
+                               panelContent.trayMenu.item.trayItem = modelData;
+                               panelContent.trayMenu.item.widgetSection = root.widgetSection;
+                               panelContent.trayMenu.item.widgetIndex = root.widgetIndex;
+                               panelContent.trayMenu.item.showAt(trayIcon, menuX, menuY);
                              }
                            }
                          }
@@ -256,8 +272,8 @@ SmartPanel {
                        }
 
               onEntered: {
-                if (popupMenuWindow) {
-                  popupMenuWindow.close();
+                if (panelContent.popupMenuWindow) {
+                  panelContent.popupMenuWindow.close();
                 }
                 TooltipService.show(trayIcon, modelData.tooltipTitle || modelData.name || modelData.id || "Tray Item", BarService.getTooltipDirection());
               }

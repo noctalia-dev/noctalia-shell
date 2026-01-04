@@ -99,7 +99,11 @@ SmartPanel {
   }
 
   // Build powerOptions from settings, filtering enabled ones and adding metadata
+  // _powerOptionsVersion forces re-evaluation when settings change
+  property int _powerOptionsVersion: 0
   property var powerOptions: {
+    // Reference version to trigger re-evaluation
+    void (_powerOptionsVersion);
     var options = [];
     var settingsOptions = Settings.data.sessionMenu.powerOptions || [];
 
@@ -121,29 +125,10 @@ SmartPanel {
     return options;
   }
 
-  // Update powerOptions when settings change
   Connections {
     target: Settings.data.sessionMenu
     function onPowerOptionsChanged() {
-      var options = [];
-      var settingsOptions = Settings.data.sessionMenu.powerOptions || [];
-
-      for (var i = 0; i < settingsOptions.length; i++) {
-        var settingOption = settingsOptions[i];
-        if (settingOption.enabled && actionMetadata[settingOption.action]) {
-          var metadata = actionMetadata[settingOption.action];
-          options.push({
-                         "action": settingOption.action,
-                         "icon": metadata.icon,
-                         "title": metadata.title,
-                         "isShutdown": metadata.isShutdown,
-                         "countdownEnabled": settingOption.countdownEnabled !== undefined ? settingOption.countdownEnabled : true,
-                         "command": settingOption.command || ""
-                       });
-        }
-      }
-
-      root.powerOptions = options;
+      root._powerOptionsVersion++;
     }
   }
 
@@ -294,12 +279,13 @@ SmartPanel {
   }
 
   function getGridInfo() {
+    let columns, rows;
     if (Settings.data.sessionMenu.largeButtonsLayout === "single-row") {
-      const columns = powerOptions.length;
-      const rows = 1;
+      columns = powerOptions.length;
+      rows = 1;
     } else {
-      const columns = Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)));
-      const rows = Math.ceil(powerOptions.length / columns);
+      columns = Math.min(3, Math.ceil(Math.sqrt(powerOptions.length)));
+      rows = Math.ceil(powerOptions.length / columns);
     }
 
     return {
@@ -451,7 +437,7 @@ SmartPanel {
   }
 
   panelContent: Rectangle {
-    id: ui
+    id: panelContent
     color: Color.transparent
     focus: true
 
@@ -464,30 +450,9 @@ SmartPanel {
       target: root
       function onOpened() {
         Qt.callLater(() => {
-                       ui.forceActiveFocus();
+                       panelContent.forceActiveFocus();
                      });
       }
-    }
-
-    // Navigation functions
-    function selectFirst() {
-      root.selectFirst();
-    }
-
-    function selectLast() {
-      root.selectLast();
-    }
-
-    function selectNextWrapped() {
-      root.selectNextWrapped();
-    }
-
-    function selectPreviousWrapped() {
-      root.selectPreviousWrapped();
-    }
-
-    function activate() {
-      root.activate();
     }
 
     // Timer text for large buttons style (above buttons) - positioned absolutely with background

@@ -87,7 +87,7 @@ DraggableDesktopWidget {
     layer.effect: MultiEffect {
       maskEnabled: true
       maskThresholdMin: 0.95
-      maskSpreadAtMin: 0.0
+      maskSpreadAtMin: 0.15
       maskSource: ShaderEffectSource {
         sourceItem: Rectangle {
           width: root.width - Math.round(Style.marginXS * widgetScale) * 2
@@ -250,7 +250,13 @@ DraggableDesktopWidget {
       Layout.alignment: root.showAlbumArt ? Qt.AlignVCenter : Qt.AlignCenter
 
       NIconButton {
-        visible: showPrev
+        opacity: showPrev ? 1 : 0
+        Behavior on opacity {
+          NumberAnimation {
+            duration: Style.animationSlow
+            easing.type: Easing.InOutQuad
+          }
+        }
         baseSize: Math.round(32 * widgetScale)
         icon: "media-prev"
         enabled: hasPlayer && MediaService.canGoPrevious
@@ -280,7 +286,13 @@ DraggableDesktopWidget {
       }
 
       NIconButton {
-        visible: showNext
+        opacity: showNext ? 1 : 0
+        Behavior on opacity {
+          NumberAnimation {
+            duration: Style.animationSlow
+            easing.type: Easing.InOutQuad
+          }
+        }
         baseSize: Math.round(32 * widgetScale)
         icon: "media-next"
         enabled: hasPlayer && MediaService.canGoNext

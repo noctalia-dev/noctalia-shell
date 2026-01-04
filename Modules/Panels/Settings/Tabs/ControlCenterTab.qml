@@ -184,10 +184,10 @@ ColumnLayout {
                                     name: path
                                   }));
       }
-      currentKey: Settings.data.systemMonitor.diskPath || "/"
-      onSelected: key => Settings.data.systemMonitor.diskPath = key
+      currentKey: Settings.data.controlCenter.diskPath || "/"
+      onSelected: key => Settings.data.controlCenter.diskPath = key
       isSettings: true
-      defaultValue: Settings.getDefaultValue("systemMonitor.diskPath") || "/"
+      defaultValue: Settings.getDefaultValue("controlCenter.diskPath") || "/"
     }
   }
 

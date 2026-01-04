@@ -7,6 +7,7 @@ import qs.Widgets
 Rectangle {
   id: root
 
+  property var screen
   property color selectedColor: Color.black
 
   signal colorSelected(color color)
@@ -26,7 +27,8 @@ Rectangle {
     onClicked: {
       var dialog = Qt.createComponent("NColorPickerDialog.qml").createObject(root, {
                                                                                "selectedColor": selectedColor,
-                                                                               "parent": Overlay.overlay
+                                                                               "parent": Overlay.overlay,
+                                                                               "screen": root.screen
                                                                              });
       // Connect the dialog's signal to the picker's signal
       dialog.colorSelected.connect(function (color) {

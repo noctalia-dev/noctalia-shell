@@ -78,6 +78,18 @@ Singleton {
       setProfile(PowerProfile.Balanced);
   }
 
+  function cycleProfileReverse() {
+    if (!available)
+      return;
+    const current = powerProfiles.profile;
+    if (current === PowerProfile.Performance)
+      setProfile(PowerProfile.Balanced);
+    else if (current === PowerProfile.Balanced)
+      setProfile(PowerProfile.PowerSaver);
+    else if (current === PowerProfile.PowerSaver)
+      setProfile(PowerProfile.Performance);
+    }
+
   function isDefault() {
     if (!available)
       return true;

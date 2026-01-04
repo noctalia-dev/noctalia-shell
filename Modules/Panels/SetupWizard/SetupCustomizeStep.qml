@@ -418,9 +418,7 @@ ColumnLayout {
         }
         NToggle {
           checked: Settings.data.bar.floating
-          onToggled: function (checked) {
-            Settings.data.bar.floating = checked;
-          }
+          onToggled: checked => Settings.data.bar.floating = checked
         }
       }
 
@@ -534,9 +532,7 @@ ColumnLayout {
         }
         NToggle {
           checked: Settings.data.general.enableShadows
-          onToggled: function (checked) {
-            Settings.data.general.enableShadows = checked;
-          }
+          onToggled: checked => Settings.data.general.enableShadows = checked
         }
       }
 

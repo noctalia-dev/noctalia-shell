@@ -28,7 +28,7 @@
       "displayMode": "onhover"
     },
     "Clock": {
-      "usePrimaryColor": true,
+      "usePrimaryColor": false,
       "useCustomFont": false,
       "customFont": "",
       "formatHorizontal": "HH:mm ddd, MMM dd",
@@ -68,7 +68,9 @@
       "maxTextLength": {
         "horizontal": 10,
         "vertical": 10
-      }
+      },
+      "enableColorization": false,
+      "colorizeSystemIcon": "none"
     },
     "KeyboardLayout": {
       "displayMode": "onhover",
@@ -81,6 +83,10 @@
       "capsLockIcon": "letter-c",
       "numLockIcon": "letter-n",
       "scrollLockIcon": "letter-s"
+    },
+    "Launcher": {
+      "icon": "rocket",
+      "usePrimaryColor": false
     },
     "MediaMini": {
       "hideMode": "hidden",

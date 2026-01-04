@@ -20,7 +20,6 @@ Rectangle {
   property string section: ""
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
-  property real barScaling: 1.0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
   property var widgetSettings: {
@@ -35,8 +34,6 @@ Rectangle {
 
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
-  readonly property bool density: Settings.data.bar.density
-  readonly property bool barCompact: Settings.data.bar.density === "compact"
 
   readonly property bool compactMode: widgetSettings.compactMode !== undefined ? widgetSettings.compactMode : widgetMetadata.compactMode
   readonly property bool usePrimaryColor: widgetSettings.usePrimaryColor !== undefined ? widgetSettings.usePrimaryColor : widgetMetadata.usePrimaryColor
@@ -52,9 +49,8 @@ Rectangle {
   readonly property string diskPath: (widgetSettings.diskPath !== undefined) ? widgetSettings.diskPath : widgetMetadata.diskPath
   readonly property string fontFamily: useMonospaceFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
 
-  readonly property real iconSize: Style.toOdd(Style.capsuleHeight * root.barScaling * (root.barCompact ? 0.55 : 0.45))
+  readonly property real iconSize: Style.toOdd(Style.capsuleHeight * 0.48)
   readonly property real miniGaugeWidth: Math.max(3, Style.toOdd(root.iconSize * 0.25))
-  readonly property real textSize: Math.max(7, iconSize * barScaling * 0.6 * (isVertical ? 0.85 : 1.0))
 
   function openExternalMonitor() {
     Quickshell.execDetached(["sh", "-c", Settings.data.systemMonitor.externalMonitor]);
@@ -232,7 +228,7 @@ Rectangle {
     flow: isVertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
     rows: isVertical ? -1 : 1
     columns: isVertical ? 1 : -1
-    rowSpacing: isVertical ? (compactMode ? Style.marginL : Style.marginM) : 0
+    rowSpacing: isVertical ? Style.marginL : 0
     columnSpacing: isVertical ? 0 : (Style.marginM)
 
     // CPU Usage Component
@@ -255,18 +251,18 @@ Rectangle {
         columnSpacing: compactMode ? 3 : Style.marginXS
 
         Item {
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: compactMode ? iconSize : Style.capsuleHeight
           Layout.alignment: Qt.AlignCenter
           Layout.row: (isVertical && !compactMode) ? 1 : 0
           Layout.column: 0
-          Layout.fillWidth: isVertical
-          implicitWidth: iconSize
-          implicitHeight: iconSize
 
           NIcon {
             icon: "cpu-usage"
             pointSize: iconSize
             applyUiScale: false
-            anchors.centerIn: parent
+            x: Style.pixelAlignCenter(parent.width, width)
+            y: Style.pixelAlignCenter(parent.height, contentHeight)
             color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : Color.mOnSurface
           }
         }
@@ -283,16 +279,14 @@ Rectangle {
             }
           }
           family: fontFamily
-          pointSize: textSize
+          pointSize: Style.barFontSize
           applyUiScale: false
-          font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
-          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
         }
 
         // Compact mode
@@ -332,18 +326,18 @@ Rectangle {
         columnSpacing: compactMode ? 3 : Style.marginXS
 
         Item {
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: compactMode ? iconSize : Style.capsuleHeight
           Layout.alignment: Qt.AlignCenter
           Layout.row: (isVertical && !compactMode) ? 1 : 0
           Layout.column: 0
-          Layout.fillWidth: isVertical
-          implicitWidth: iconSize
-          implicitHeight: iconSize
 
           NIcon {
             icon: "cpu-temperature"
             pointSize: iconSize
             applyUiScale: false
-            anchors.centerIn: parent
+            x: Style.pixelAlignCenter(parent.width, width)
+            y: Style.pixelAlignCenter(parent.height, contentHeight)
             color: (tempWarning || tempCritical) ? SystemStatService.tempColor : Color.mOnSurface
           }
         }
@@ -353,16 +347,14 @@ Rectangle {
           visible: !compactMode
           text: `${Math.round(SystemStatService.cpuTemp)}°`
           family: fontFamily
-          pointSize: textSize
+          pointSize: Style.barFontSize
           applyUiScale: false
-          font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           color: (tempWarning || tempCritical) ? SystemStatService.tempColor : textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
-          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
         }
 
         // Compact mode, mini gauge (to the right of icon)
@@ -402,18 +394,18 @@ Rectangle {
         columnSpacing: compactMode ? 3 : Style.marginXS
 
         Item {
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: compactMode ? iconSize : Style.capsuleHeight
           Layout.alignment: Qt.AlignCenter
           Layout.row: (isVertical && !compactMode) ? 1 : 0
           Layout.column: 0
-          Layout.fillWidth: isVertical
-          implicitWidth: iconSize
-          implicitHeight: iconSize
 
           NIcon {
             icon: "gpu-temperature"
             pointSize: iconSize
             applyUiScale: false
-            anchors.centerIn: parent
+            x: Style.pixelAlignCenter(parent.width, width)
+            y: Style.pixelAlignCenter(parent.height, contentHeight)
             color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : Color.mOnSurface
           }
         }
@@ -423,16 +415,14 @@ Rectangle {
           visible: !compactMode
           text: `${Math.round(SystemStatService.gpuTemp)}°`
           family: fontFamily
-          pointSize: textSize
+          pointSize: Style.barFontSize
           applyUiScale: false
-          font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
-          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
         }
 
         // Compact mode
@@ -472,18 +462,18 @@ Rectangle {
         columnSpacing: compactMode ? 3 : Style.marginXS
 
         Item {
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: compactMode ? iconSize : Style.capsuleHeight
           Layout.alignment: Qt.AlignCenter
           Layout.row: (isVertical && !compactMode) ? 1 : 0
           Layout.column: 0
-          Layout.fillWidth: isVertical
-          implicitWidth: iconSize
-          implicitHeight: iconSize
 
           NIcon {
             icon: "weight"
             pointSize: iconSize
             applyUiScale: false
-            anchors.centerIn: parent
+            x: Style.pixelAlignCenter(parent.width, width)
+            y: Style.pixelAlignCenter(parent.height, contentHeight)
             color: Color.mOnSurface
           }
         }
@@ -493,16 +483,14 @@ Rectangle {
           visible: !compactMode
           text: SystemStatService.loadAvg1.toFixed(1)
           family: fontFamily
-          pointSize: textSize
+          pointSize: Style.barFontSize
           applyUiScale: false
-          font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
-          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
         }
 
         // Compact mode
@@ -542,18 +530,18 @@ Rectangle {
         columnSpacing: compactMode ? 3 : Style.marginXS
 
         Item {
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: compactMode ? iconSize : Style.capsuleHeight
           Layout.alignment: Qt.AlignCenter
           Layout.row: (isVertical && !compactMode) ? 1 : 0
           Layout.column: 0
-          Layout.fillWidth: isVertical
-          implicitWidth: iconSize
-          implicitHeight: iconSize
 
           NIcon {
             icon: "memory"
             pointSize: iconSize
             applyUiScale: false
-            anchors.centerIn: parent
+            x: Style.pixelAlignCenter(parent.width, width)
+            y: Style.pixelAlignCenter(parent.height, contentHeight)
             color: (memWarning || memCritical) ? SystemStatService.memColor : Color.mOnSurface
           }
         }
@@ -563,16 +551,14 @@ Rectangle {
           visible: !compactMode
           text: showMemoryAsPercent ? `${Math.round(SystemStatService.memPercent)}%` : SystemStatService.formatMemoryGb(SystemStatService.memGb)
           family: fontFamily
-          pointSize: textSize
+          pointSize: Style.barFontSize
           applyUiScale: false
-          font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           color: (memWarning || memCritical) ? SystemStatService.memColor : textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
-          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
         }
 
         // Compact mode
@@ -611,18 +597,18 @@ Rectangle {
         columnSpacing: compactMode ? 3 : Style.marginXS
 
         Item {
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: compactMode ? iconSize : Style.capsuleHeight
           Layout.alignment: Qt.AlignCenter
           Layout.row: (isVertical && !compactMode) ? 1 : 0
           Layout.column: 0
-          Layout.fillWidth: isVertical
-          implicitWidth: iconSize
-          implicitHeight: iconSize
 
           NIcon {
             icon: "download-speed"
             pointSize: iconSize
             applyUiScale: false
-            anchors.centerIn: parent
+            x: Style.pixelAlignCenter(parent.width, width)
+            y: Style.pixelAlignCenter(parent.height, contentHeight)
           }
         }
 
@@ -631,16 +617,14 @@ Rectangle {
           visible: !compactMode
           text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.rxSpeed) : SystemStatService.formatSpeed(SystemStatService.rxSpeed)
           family: fontFamily
-          pointSize: textSize
+          pointSize: Style.barFontSize
           applyUiScale: false
-          font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
-          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
         }
 
         // Compact mode
@@ -678,18 +662,18 @@ Rectangle {
         columnSpacing: compactMode ? 3 : Style.marginXS
 
         Item {
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: compactMode ? iconSize : Style.capsuleHeight
           Layout.alignment: Qt.AlignCenter
           Layout.row: (isVertical && !compactMode) ? 1 : 0
           Layout.column: 0
-          Layout.fillWidth: isVertical
-          implicitWidth: iconSize
-          implicitHeight: iconSize
 
           NIcon {
             icon: "upload-speed"
             pointSize: iconSize
             applyUiScale: false
-            anchors.centerIn: parent
+            x: Style.pixelAlignCenter(parent.width, width)
+            y: Style.pixelAlignCenter(parent.height, contentHeight)
           }
         }
 
@@ -698,16 +682,14 @@ Rectangle {
           visible: !compactMode
           text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.txSpeed) : SystemStatService.formatSpeed(SystemStatService.txSpeed)
           family: fontFamily
-          pointSize: textSize
+          pointSize: Style.barFontSize
           applyUiScale: false
-          font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           color: textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
-          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
         }
 
         // Compact mode
@@ -746,18 +728,18 @@ Rectangle {
         columnSpacing: compactMode ? 3 : Style.marginXS
 
         Item {
+          Layout.preferredWidth: iconSize
+          Layout.preferredHeight: compactMode ? iconSize : Style.capsuleHeight
           Layout.alignment: Qt.AlignCenter
           Layout.row: (isVertical && !compactMode) ? 1 : 0
           Layout.column: 0
-          Layout.fillWidth: isVertical
-          implicitWidth: iconSize
-          implicitHeight: iconSize
 
           NIcon {
             icon: "storage"
             pointSize: iconSize
             applyUiScale: false
-            anchors.centerIn: parent
+            x: Style.pixelAlignCenter(parent.width, width)
+            y: Style.pixelAlignCenter(parent.height, contentHeight)
             color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : Color.mOnSurface
           }
         }
@@ -767,16 +749,14 @@ Rectangle {
           visible: !compactMode
           text: SystemStatService.diskPercents[diskPath] ? `${SystemStatService.diskPercents[diskPath]}%` : "n/a"
           family: fontFamily
-          pointSize: textSize
+          pointSize: Style.barFontSize
           applyUiScale: false
-          font.weight: Style.fontWeightMedium
           Layout.alignment: Qt.AlignCenter
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : textColor
           Layout.row: isVertical ? 0 : 0
           Layout.column: isVertical ? 0 : 1
-          scale: isVertical ? Math.min(1.0, root.width / implicitWidth) : 1.0
         }
 
         // Compact mode

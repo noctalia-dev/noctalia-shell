@@ -13,7 +13,6 @@ Item {
   property string text: ""
   property string suffix: ""
   property string tooltipText: ""
-  property string density: ""
   property bool autoHide: false
   property bool forceOpen: false
   property bool forceClose: false
@@ -57,7 +56,6 @@ Item {
         forceClose: root.forceClose
         oppositeDirection: root.oppositeDirection
         hovered: root.hovered
-        density: root.density
         rotateText: root.rotateText
         customBackgroundColor: root.customBackgroundColor
         customTextIconColor: root.customTextIconColor
@@ -85,7 +83,6 @@ Item {
         forceClose: root.forceClose
         oppositeDirection: root.oppositeDirection
         hovered: root.hovered
-        density: root.density
         customBackgroundColor: root.customBackgroundColor
         customTextIconColor: root.customTextIconColor
         onShown: root.shown()

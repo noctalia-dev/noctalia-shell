@@ -142,12 +142,20 @@
           "description": "出力テキストがこの値と一致する場合、ボタンを折りたたみます。",
           "label": "折りたたみ条件"
         },
+        "color-selection": {
+          "description": "テーマカラーをアイコンとテキストに適用します。",
+          "label": "色を選択"
+        },
         "display-command-output": {
           "description": "定期的に実行するコマンドを入力します。出力の最初の行がテキストとして表示されます。",
           "label": "コマンド出力を表示",
           "stream-description": "継続的に実行するコマンドを入力します。"
         },
         "dynamic-text": "動的テキスト",
+        "enable-colorization": {
+          "description": "カスタムボタンのアイコンとテキストのカラーリングを有効にし、テーマカラーを適用します。",
+          "label": "カラーリングを有効化"
+        },
         "hide-mode": {
           "alwaysExpanded": "常に展開",
           "description": "コマンドの出力がない場合のウィジェットの表示を制御します。",
@@ -227,7 +235,13 @@
         },
         "show-icon": {
           "description": "キーボードレイアウトのアイコンを表示します。",
-          "label": "アイコンを表示 (Aikona o hyōji)"
+          "label": "アイコンを表示"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "有効にすると、強調のためにプライマリカラーが適用されます。",
+          "label": "原色を使用してください。"
         }
       },
       "lock-keys": {
@@ -337,7 +351,7 @@
         },
         "memory-percentage": {
           "description": "メモリ使用量を絶対値ではなくパーセンテージで表示します。",
-          "label": "メモリをパーセント表示"
+          "label": "メモリをパーセントで表示"
         },
         "memory-usage": {
           "description": "現在の RAM 使用量を表示します。",
@@ -489,9 +503,10 @@
       "device-address": "デバイスアドレス",
       "disabled": "Bluetooth は無効です",
       "disconnect": "切断",
+      "disconnecting": "切断中...",
       "discoverable": "発見可能",
       "enable-message": "利用可能なデバイスを表示するには Bluetooth を有効にしてください。",
-      "info": "情報 (Jōhō)",
+      "info": "情報",
       "known-devices": "登録済みデバイス",
       "no-devices": "利用可能なデバイスはありません",
       "pair": "ペア",
@@ -501,7 +516,15 @@
       "pairing-mode": "デバイスがペアリングモードになっていることを確認してください。",
       "refresh-devices": "デバイスを更新",
       "scanning": "デバイスをスキャン中...",
-      "signal": "信号 (shingō)",
+      "signal": "信号",
+      "signal-text": {
+        "excellent": "信号: 良好",
+        "fair": "合図：可",
+        "good": "信号: 良し",
+        "poor": "信号：弱い",
+        "unknown": "信号：不明",
+        "very-poor": "信号：非常に悪い"
+      },
       "title": "Bluetooth",
       "trusted": "信頼できる",
       "unpair": "ペアリング解除"
@@ -573,7 +596,7 @@
     "close-app": "{app} を閉じる",
     "connect-vpn": "{name} に接続",
     "cycle-visualizer": "ビジュアライザーを切り替える",
-    "delete": "削除 (Sakujo)",
+    "delete": "削除",
     "disable-bluetooth": "Bluetooth を無効化",
     "disable-dnd": "おやすみモードを無効化",
     "disable-wifi": "Wi-Fi を無効化",
@@ -581,6 +604,7 @@
     "enable-bluetooth": "Bluetooth を有効化",
     "enable-dnd": "おやすみモードを有効化",
     "enable-wifi": "Wi-Fi を有効化",
+    "launcher-settings": "ランチャー設定",
     "lower-to-bottom": "一番下まで下げてください。",
     "next": "次へ",
     "open-calendar": "カレンダーを開く",
@@ -640,6 +664,32 @@
     },
     "delete": "削除",
     "pin": "ピン留め",
+    "providers": {
+      "applications": "アプリケーション",
+      "calculator": "電卓",
+      "calculator-deprecated": ">calc コマンドは非推奨となり、まもなく削除されます。代わりに、検索で数式を直接入力してください。",
+      "calculator-description": "電卓 — 数式を計算します",
+      "calculator-enter-expression": "数式を入力",
+      "calculator-error": "エラー",
+      "calculator-name": "電卓",
+      "clipboard": "クリップボード履歴",
+      "clipboard-clear-description": "クリップボード履歴をすべて消去",
+      "clipboard-clear-description-full": "クリップボード履歴からすべての項目を削除します",
+      "clipboard-clear-history": "クリップボード履歴を消去",
+      "clipboard-delete": "クリップボードの項目を削除",
+      "clipboard-history-disabled": "クリップボード履歴は無効です",
+      "clipboard-history-disabled-description": "設定で履歴を有効にするか、cliphist をインストールしてください",
+      "clipboard-loading": "クリップボード履歴を読み込み中...",
+      "clipboard-loading-description": "お待ちください",
+      "clipboard-search-description": "クリップボード履歴を検索",
+      "command": "コマンド",
+      "command-description": "シェルコマンドを実行する",
+      "command-name": "コマンド",
+      "emoji": "絵文字選択",
+      "emoji-loading": "絵文字を読み込み中...",
+      "emoji-loading-description": "お待ちください",
+      "emoji-search-description": "絵文字を検索してコピー"
+    },
     "unpin": "ピン留め解除"
   },
   "lock-screen": {
@@ -691,7 +741,7 @@
       }
     },
     "colors": {
-      "error": "エラー (Error)",
+      "error": "エラー",
       "none": "なし",
       "onSurface": "文字・アイコン (On Surface)",
       "primary": "メインカラー (Primary)",
@@ -835,32 +885,6 @@
     "search-wallpapers": "壁紙を検索して絞り込む...",
     "select": "選択",
     "test": "テスト"
-  },
-  "plugins": {
-    "applications": "アプリケーション",
-    "calculator": "電卓",
-    "calculator-deprecated": ">calc コマンドは非推奨となり、まもなく削除されます。代わりに、検索で数式を直接入力してください。",
-    "calculator-description": "電卓 — 数式を計算します",
-    "calculator-enter-expression": "数式を入力",
-    "calculator-error": "エラー",
-    "calculator-name": "電卓",
-    "clipboard": "クリップボード履歴",
-    "clipboard-clear-description": "クリップボード履歴をすべて消去",
-    "clipboard-clear-description-full": "クリップボード履歴からすべての項目を削除します",
-    "clipboard-clear-history": "クリップボード履歴を消去",
-    "clipboard-delete": "クリップボードの項目を削除",
-    "clipboard-history-disabled": "クリップボード履歴は無効です",
-    "clipboard-history-disabled-description": "設定で履歴を有効にするか、cliphist をインストールしてください",
-    "clipboard-loading": "クリップボード履歴を読み込み中...",
-    "clipboard-loading-description": "お待ちください",
-    "clipboard-search-description": "クリップボード履歴を検索",
-    "command": "コマンド",
-    "command-description": "シェルコマンドを実行する",
-    "command-name": "コマンド",
-    "emoji": "絵文字選択",
-    "emoji-loading": "絵文字を読み込み中...",
-    "emoji-loading-description": "お待ちください",
-    "emoji-search-description": "絵文字を検索してコピー"
   },
   "quickSettings": {
     "bluetooth": {
@@ -1800,6 +1824,11 @@
     },
     "launcher": {
       "settings": {
+        "annotation-tool": {
+          "description": "クリップボード履歴のアノテーションボタンをクリックしたときに実行するコマンド。画像はこのコマンドにパイプされます。",
+          "label": "注釈ツール",
+          "placeholder": "グラディア、サッティ -f -"
+        },
         "clip-preview": {
           "description": ">clip コマンド使用時に、クリップボードの内容をプレビュー表示します。",
           "label": "クリップボードのプレビューを有効化"
@@ -1839,6 +1868,10 @@
         "show-categories": {
           "description": "アプリケーションを絞り込むためのカテゴリタブを表示します。",
           "label": "カテゴリを表示"
+        },
+        "show-icon-background": {
+          "description": "アイコンの背面に角丸の長方形の背景を表示する。",
+          "label": "アイコンの背景を表示"
         },
         "sort-by-usage": {
           "description": "有効にすると、よく使うアプリがリストの上位に表示されます。",
@@ -1954,7 +1987,11 @@
     "network": {
       "bluetooth": {
         "description": "Bluetooth の管理を有効にします。",
-        "label": "Bluetooth を有効化"
+        "label": "Bluetooth を有効化",
+        "rssi-polling": {
+          "description": "bluetoothctl 経由で接続されたデバイスのRSSIを定期的にサンプリングします。 すべてのデバイスで利用できるとは限りません。 有効にすると、最小限のリソースを使用します。",
+          "label": "Bluetooth信号ポーリング"
+        }
       },
       "section": {
         "description": "Wi-Fi と Bluetooth 接続を管理します。"
@@ -2223,7 +2260,7 @@
       "settings-saved": "プラグイン設定を保存しました",
       "source": {
         "custom": "カスタムソース",
-        "official": "公式 (kōshiki)"
+        "official": "公式"
       },
       "sources": {
         "add-custom": "カスタムリポジトリを追加",
@@ -2470,6 +2507,10 @@
         "label": "アニメーション速度",
         "reset": "アニメーション速度をリセット"
       },
+      "box-border": {
+        "description": "コンテンツ領域の周りにアウトラインを表示します。",
+        "label": "コンテナの輪郭"
+      },
       "box-border-radius": {
         "description": "サイドバー、カード、コンテンツパネルなど、主要なレイアウト部分の角の丸みを調整します。",
         "label": "コンテナの角の丸み",
@@ -2596,8 +2637,8 @@
           "tooltip": "壁紙フォルダ"
         },
         "hide-wallpaper-filenames": {
-          "description": "壁紙選択パネル内で、壁紙のファイル名を非表示にします。",
-          "label": "ファイル名を非表示"
+          "tooltip-hide": "ファイル名を隠す",
+          "tooltip-show": "ファイル名を表示"
         },
         "monitor-specific": {
           "description": "ディスプレイごとに異なる壁紙フォルダを設定します。",
@@ -2678,10 +2719,10 @@
     "cpu-usage": "CPU使用率",
     "disk": "ディスク",
     "download": "ダウンロード",
-    "download-speed": "ダウンロード速度 (Daunrōdo sokudo)",
+    "download-speed": "ダウンロード速度",
     "gpu-temp": "GPU温度",
     "load-average": "負荷平均",
-    "memory": "記憶",
+    "memory": "メモリ",
     "title": "システムモニター",
     "upload": "アップロード",
     "upload-speed": "アップロード速度"
@@ -2697,6 +2738,7 @@
       "low-desc": "バッテリー残量が {percent}% です。充電器を接続してください。"
     },
     "bluetooth": {
+      "address-copied": "アドレスをクリップボードにコピーしました。",
       "confirm-code": "別のデバイスでコード{value}を確認してください。",
       "connect-failed": "デバイスに接続できませんでした。",
       "disabled": "無効",
@@ -2814,6 +2856,7 @@
     "close": "閉じる",
     "collapse": "サイドバーを折りたたむ",
     "connect-disconnect-devices": "Bluetooth デバイス",
+    "copy-address": "アドレスをコピー",
     "delete-notification": "通知を削除",
     "disable-keep-awake": "スリープ防止",
     "do-not-disturb-disabled": "おやすみモード",
@@ -2836,6 +2879,7 @@
     "move-to-center-section": "中央セクション",
     "move-to-left-section": "左セクション",
     "move-to-right-section": "右セクション",
+    "move-to-section": "{section} に移動",
     "mute": "ミュート",
     "next-media": "次のトラック",
     "next-month": "翌月",
@@ -2845,6 +2889,7 @@
     "night-light-not-installed": "夜間モード（利用不可）",
     "noctalia-performance-disabled": "Noctalia パフォーマンスモード",
     "noctalia-performance-enabled": "Noctalia パフォーマンスモード",
+    "open-annotation-tool": "注釈ツールで開く",
     "open-control-center": "コントロールセンター",
     "open-notification-history-disable-dnd": "通知履歴",
     "open-notification-history-enable-dnd": "通知履歴",
@@ -2929,6 +2974,9 @@
         }
       },
       "search": "検索",
+      "solid-color": {
+        "tooltip": "無地"
+      },
       "sorting": {
         "date_added": "追加日",
         "favorites": "お気に入り数",
@@ -3075,7 +3123,7 @@
       "forgetting": "削除中...",
       "frequency": "周波数",
       "gateway": "ゲートウェイ",
-      "info": "情報 (Jōhō)",
+      "info": "情報",
       "internet": "インターネット",
       "internet-connected": "インターネット接続",
       "internet-limited": "インターネットなし",

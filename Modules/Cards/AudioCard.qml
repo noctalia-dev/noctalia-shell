@@ -166,7 +166,6 @@ NBox {
           text: AudioService.sink ? AudioService.sink.description : "No output device"
           pointSize: Style.fontSizeXS
           color: Color.mOnSurfaceVariant
-          font.weight: Style.fontWeightMedium
           elide: Text.ElideRight
           Layout.fillWidth: true
           Layout.preferredWidth: 0
@@ -235,7 +234,6 @@ NBox {
           text: AudioService.source ? AudioService.source.description : "No input device"
           pointSize: Style.fontSizeXS
           color: Color.mOnSurfaceVariant
-          font.weight: Style.fontWeightMedium
           elide: Text.ElideRight
           Layout.fillWidth: true
           Layout.preferredWidth: 0

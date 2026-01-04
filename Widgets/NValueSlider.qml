@@ -57,6 +57,7 @@ ColumnLayout {
     visible: root.label !== "" || root.description !== ""
     showIndicator: root.isSettings && root.isValueChanged
     indicatorTooltip: root.indicatorTooltip
+    opacity: root.enabled ? 1.0 : 0.6
     Layout.fillWidth: true
   }
 
@@ -83,6 +84,7 @@ ColumnLayout {
       text: root.text
       pointSize: root.textSize
       family: Settings.data.ui.fontFixed
+      opacity: root.enabled ? 1.0 : 0.6
       Layout.alignment: Qt.AlignVCenter
       Layout.preferredWidth: 45 * Style.uiScaleRatio
       horizontalAlignment: Text.AlignRight

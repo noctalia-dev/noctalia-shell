@@ -142,12 +142,20 @@
           "description": "Çıktı metni bu değerle eşleşirse düğme daralacak.",
           "label": "Daralma durumu"
         },
+        "color-selection": {
+          "description": "Tema renklerini simgeye ve metne uygula.",
+          "label": "Renk seç"
+        },
         "display-command-output": {
           "description": "Düzenli aralıklarla çalıştırılacak bir komut girin. Çıktısının ilk satırı metin olarak gösterilecektir.",
           "label": "Komut Çıktısını Göster",
           "stream-description": "Sürekli çalıştırılacak bir komut girin."
         },
         "dynamic-text": "Hareketli metin",
+        "enable-colorization": {
+          "description": "Özel düğme simgesi ve metni için renklendirmeyi etkinleştir, tema renklerini uygula.",
+          "label": "Renklendirmeyi etkinleştir"
+        },
         "hide-mode": {
           "alwaysExpanded": "Her zaman geniş",
           "description": "Komutun çıktı vermemesi durumunda gerecin görünürlüğünü kontrol eder.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Klavye düzeni simgesini görüntüle.",
           "label": "Simgeyi göster"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Etkinleştirildiğinde, vurgu için birincil rengi uygular.",
+          "label": "Ana renk kullan."
         }
       },
       "lock-keys": {
@@ -489,6 +503,7 @@
       "device-address": "Cihaz adresi",
       "disabled": "Bluetooth devre dışı",
       "disconnect": "Bağlantıyı Kes",
+      "disconnecting": "Bağlantı kesiliyor...",
       "discoverable": "Keşfedilebilir",
       "enable-message": "Mevcut cihazları görmek için Bluetooth'u etkinleştirin.",
       "info": "Bilgi",
@@ -502,6 +517,14 @@
       "refresh-devices": "Cihazları yenile",
       "scanning": "Cihazlar tarınıyor...",
       "signal": "Sinyal",
+      "signal-text": {
+        "excellent": "Sinyal: Mükemmel",
+        "fair": "Sinyal: Adil",
+        "good": "Sinyal: İyi",
+        "poor": "Sinyal: Zayıf",
+        "unknown": "Sinyal: Bilinmiyor",
+        "very-poor": "Sinyal: Çok zayıf"
+      },
       "title": "Bluetooth",
       "trusted": "Güvenilir",
       "unpair": "Eşleştirmeyi kaldır"
@@ -581,6 +604,7 @@
     "enable-bluetooth": "Bluetooth'u etkinleştir",
     "enable-dnd": "Rahatsız Etmeyin'i Etkinleştir",
     "enable-wifi": "Kablosuz Bağlantıyı etkinleştir",
+    "launcher-settings": "Başlatıcı ayarları",
     "lower-to-bottom": "Alta doğru alçalt",
     "next": "Sonraki",
     "open-calendar": "Takvimi aç",
@@ -640,6 +664,32 @@
     },
     "delete": "Sil",
     "pin": "Sabitle",
+    "providers": {
+      "applications": "Uygulamalar",
+      "calculator": "Hesap makinesi",
+      "calculator-deprecated": ">calc komutu kullanımdan kaldırılmıştır ve yakında kaldırılacaktır. Lütfen matematiksel ifadeleri doğrudan aramaya yazın.",
+      "calculator-description": "Hesap makinesi — matematiksel ifadeleri hesapla",
+      "calculator-enter-expression": "Matematiksel bir ifade girin",
+      "calculator-error": "Hata",
+      "calculator-name": "Hesap makinesi",
+      "clipboard": "Panoya geçmiş",
+      "clipboard-clear-description": "Tüm panoya geçmişini temizle",
+      "clipboard-clear-description-full": "Tüm öğeleri panoya geçmişinden kaldır",
+      "clipboard-clear-history": "Panoya geçmişini temizle",
+      "clipboard-delete": "Panodaki öğeyi sil",
+      "clipboard-history-disabled": "Panoya geçmişi devre dışı",
+      "clipboard-history-disabled-description": "Panoya geçmişini ayarlarda etkinleştir veya cliphist kur",
+      "clipboard-loading": "Panoya geçmişi yükleniyor...",
+      "clipboard-loading-description": "Lütfen bekleyin",
+      "clipboard-search-description": "Panoya geçmişini ara",
+      "command": "Komut",
+      "command-description": "Kabuk komutlarını çalıştır",
+      "command-name": "Komut",
+      "emoji": "Emoji seçici",
+      "emoji-loading": "Emojiler yükleniyor...",
+      "emoji-loading-description": "Lütfen bekleyin",
+      "emoji-search-description": "Emoji arama ve kopyalama"
+    },
     "unpin": "Sabitlemeyi kaldır"
   },
   "lock-screen": {
@@ -835,32 +885,6 @@
     "search-wallpapers": "Duvar kâğıtlarını filtrelemek için yazın...",
     "select": "Seç",
     "test": "Test"
-  },
-  "plugins": {
-    "applications": "Uygulamalar",
-    "calculator": "Hesap makinesi",
-    "calculator-deprecated": ">calc komutu kullanımdan kaldırılmıştır ve yakında kaldırılacaktır. Lütfen matematiksel ifadeleri doğrudan aramaya yazın.",
-    "calculator-description": "Hesap makinesi — matematiksel ifadeleri hesapla",
-    "calculator-enter-expression": "Matematiksel bir ifade girin",
-    "calculator-error": "Hata",
-    "calculator-name": "Hesap makinesi",
-    "clipboard": "Panoya geçmiş",
-    "clipboard-clear-description": "Tüm panoya geçmişini temizle",
-    "clipboard-clear-description-full": "Tüm öğeleri panoya geçmişinden kaldır",
-    "clipboard-clear-history": "Panoya geçmişini temizle",
-    "clipboard-delete": "Panodaki öğeyi sil",
-    "clipboard-history-disabled": "Panoya geçmişi devre dışı",
-    "clipboard-history-disabled-description": "Panoya geçmişini ayarlarda etkinleştir veya cliphist kur",
-    "clipboard-loading": "Panoya geçmişi yükleniyor...",
-    "clipboard-loading-description": "Lütfen bekleyin",
-    "clipboard-search-description": "Panoya geçmişini ara",
-    "command": "Komut",
-    "command-description": "Kabuk komutlarını çalıştır",
-    "command-name": "Komut",
-    "emoji": "Emoji seçici",
-    "emoji-loading": "Emojiler yükleniyor...",
-    "emoji-loading-description": "Lütfen bekleyin",
-    "emoji-search-description": "Emoji arama ve kopyalama"
   },
   "quickSettings": {
     "bluetooth": {
@@ -1800,6 +1824,11 @@
     },
     "launcher": {
       "settings": {
+        "annotation-tool": {
+          "description": "Panodaki geçmişte açıklama ekle düğmesine tıklandığında çalıştırılacak komut. Görüntü bu komuta yönlendirilecektir.",
+          "label": "Açıklama aracı",
+          "placeholder": "gradia, satty -f -"
+        },
         "clip-preview": {
           "description": ">clip komutu kullanılırken panodaki içeriğin önizlemesini gösterir.",
           "label": "Panoyu önizlemeyi etkinleştir"
@@ -1839,6 +1868,10 @@
         "show-categories": {
           "description": "Uygulamaları filtrelemek için kategori sekmelerini göster.",
           "label": "Kategorileri göster"
+        },
+        "show-icon-background": {
+          "description": "Simgelerin arkasında yuvarlak köşeli dikdörtgen bir arka plan göster.",
+          "label": "Simge arka planını göster"
         },
         "sort-by-usage": {
           "description": "Etkinleştirildiğinde, sıkça başlatılan uygulamalar listede ilk olarak görünür.",
@@ -1954,7 +1987,11 @@
     "network": {
       "bluetooth": {
         "description": "Bluetooth yönetimini etkinleştir.",
-        "label": "Bluetooth'u Etkinleştir"
+        "label": "Bluetooth'u Etkinleştir",
+        "rssi-polling": {
+          "description": "Bağlı cihazlar için RSSI'yı bluetoothctl aracılığıyla periyodik olarak örnekleyin. Tüm cihazlar için mevcut olmayabilir; etkinleştirildiğinde minimum kaynak kullanır.",
+          "label": "Bluetooth sinyal yoklaması"
+        }
       },
       "section": {
         "description": "Kablosuz ve Bluetooth bağlantılarını yönetin."
@@ -2470,6 +2507,10 @@
         "label": "Animasyon hızı",
         "reset": "Animasyon hızını sıfırla"
       },
+      "box-border": {
+        "description": "İçerik alanlarının etrafında bir çerçeve görüntüler.",
+        "label": "Konteyner ana hattı"
+      },
       "box-border-radius": {
         "description": "Kenar çubukları, kartlar ve içerik panelleri gibi ana düzen bölümlerinin köşe yuvarlaklığını ayarlar.",
         "label": "Konteyner Yarıçapı",
@@ -2596,8 +2637,8 @@
           "tooltip": "Duvar kâğıdı klasörü"
         },
         "hide-wallpaper-filenames": {
-          "description": "Seçicide duvar kâğıdı dosya adlarını gizle.",
-          "label": "Dosya adlarını gizle"
+          "tooltip-hide": "Dosya adlarını gizleme",
+          "tooltip-show": "Dosya Adlarını Göster"
         },
         "monitor-specific": {
           "description": "Her ekran için farklı bir duvar kâğıdı klasörü ayarlayın.",
@@ -2697,6 +2738,7 @@
       "low-desc": "Batarya % {percent}. Lütfen şarj bağlantısını yapın."
     },
     "bluetooth": {
+      "address-copied": "Adres panoya kopyalandı",
       "confirm-code": "Diğer cihazdaki {value} kodunu onayla",
       "connect-failed": "Cihaza bağlanılamadı",
       "disabled": "Devre dışı",
@@ -2814,6 +2856,7 @@
     "close": "Kapat",
     "collapse": "Kenar çubuğunu daralt",
     "connect-disconnect-devices": "Bluetooth cihazı",
+    "copy-address": "Adresi kopyala",
     "delete-notification": "Bildiriyi sil",
     "disable-keep-awake": "Uyanık kal",
     "do-not-disturb-disabled": "Rahatsız etme",
@@ -2836,6 +2879,7 @@
     "move-to-center-section": "Orta bölüm",
     "move-to-left-section": "Sol bölüm",
     "move-to-right-section": "Sağ bölüm",
+    "move-to-section": "{section} bölümüne git.",
     "mute": "Sessiz",
     "next-media": "Sonraki parça",
     "next-month": "Sonraki ay",
@@ -2845,6 +2889,7 @@
     "night-light-not-installed": "Gece ışığı (mevcut değil)",
     "noctalia-performance-disabled": "Noctalia performans modu",
     "noctalia-performance-enabled": "Noctalia performans modu",
+    "open-annotation-tool": "Açıklama aracıyla aç",
     "open-control-center": "Kontrol merkezi",
     "open-notification-history-disable-dnd": "Bildirim geçmişi",
     "open-notification-history-enable-dnd": "Bildirim geçmişi",
@@ -2929,6 +2974,9 @@
         }
       },
       "search": "Ara:",
+      "solid-color": {
+        "tooltip": "Düz renk arka plan"
+      },
       "sorting": {
         "date_added": "Eklenme tarihi",
         "favorites": "Favoriler",

@@ -11,6 +11,7 @@ import qs.Widgets
 ColumnLayout {
   id: root
 
+  property var screen
   property string specificFolderMonitorName: ""
 
   spacing: Style.marginL
@@ -97,15 +98,6 @@ ColumnLayout {
       onToggled: checked => Settings.data.wallpaper.enableMultiMonitorDirectories = checked
       isSettings: true
       defaultValue: Settings.getDefaultValue("wallpaper.enableMultiMonitorDirectories")
-    }
-    // Hide wallpaper filenames
-    NToggle {
-      label: I18n.tr("settings.wallpaper.settings.hide-wallpaper-filenames.label")
-      description: I18n.tr("settings.wallpaper.settings.hide-wallpaper-filenames.description")
-      checked: Settings.data.wallpaper.hideWallpaperFilenames
-      onToggled: checked => Settings.data.wallpaper.hideWallpaperFilenames = checked
-      isSettings: true
-      defaultValue: Settings.getDefaultValue("wallpaper.hideWallpaperFilenames")
     }
 
     NBox {
@@ -233,6 +225,7 @@ ColumnLayout {
       }
 
       NColorPicker {
+        screen: root.screen
         selectedColor: Settings.data.wallpaper.fillColor
         onColorSelected: color => Settings.data.wallpaper.fillColor = color
       }

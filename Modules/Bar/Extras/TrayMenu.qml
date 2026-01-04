@@ -424,7 +424,6 @@ PopupWindow {
             color: Color.mPrimary
             text: root.isPinned ? I18n.tr("settings.bar.tray.unpin-application") : I18n.tr("settings.bar.tray.pin-application")
             pointSize: Style.fontSizeS
-            font.weight: Font.Medium
             verticalAlignment: Text.AlignVCenter
             elide: Text.ElideRight
           }

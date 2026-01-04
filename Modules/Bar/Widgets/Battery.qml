@@ -198,7 +198,6 @@ Item {
     id: pill
 
     screen: root.screen
-    density: Settings.data.bar.density
     oppositeDirection: BarService.getPillDirection(root)
     icon: testMode ? BatteryService.getIcon(testPercent, testCharging, true) : BatteryService.getIcon(percent, charging, isReady)
     text: (isReady || testMode) ? Math.round(percent) : "-"

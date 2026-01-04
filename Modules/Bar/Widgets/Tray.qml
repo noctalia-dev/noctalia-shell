@@ -291,7 +291,6 @@ Rectangle {
       visible: root.drawerEnabled && dropdownItems.length > 0 && BarService.getPillDirection(root)
       tooltipText: I18n.tr("tooltips.open-tray-dropdown")
       tooltipDirection: BarService.getTooltipDirection()
-      density: Settings.data.bar.density
       baseSize: Style.capsuleHeight
       applyUiScale: false
       customRadius: Style.radiusL
@@ -448,7 +447,6 @@ Rectangle {
       visible: root.drawerEnabled && dropdownItems.length > 0 && !BarService.getPillDirection(root)
       tooltipText: I18n.tr("tooltips.open-tray-dropdown")
       tooltipDirection: BarService.getTooltipDirection()
-      density: Settings.data.bar.density
       baseSize: Style.capsuleHeight
       applyUiScale: false
       customRadius: Style.radiusL

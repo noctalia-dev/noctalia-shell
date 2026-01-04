@@ -397,7 +397,7 @@ Singleton {
       "cachedImage": image  // Start with original, update when cached
                      ,
       "actionsJson": JSON.stringify((n.actions || []).map(a => ({
-                                                                  "text": a.text || "Action",
+                                                                  "text": (a.text || "").trim() || "Action",
                                                                   "identifier": a.identifier || ""
                                                                 })))
     };

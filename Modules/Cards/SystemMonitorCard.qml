@@ -10,15 +10,7 @@ import qs.Widgets
 NBox {
   id: root
 
-  // Get diskPath from bar's SystemMonitor widget if available, otherwise use settings
-  readonly property string diskPath: {
-    const sysMonWidget = BarService.lookupWidget("SystemMonitor");
-    if (sysMonWidget && sysMonWidget.diskPath) {
-      return sysMonWidget.diskPath;
-    }
-    return Settings.data.systemMonitor.diskPath || "/";
-  }
-
+  readonly property string diskPath: Settings.data.controlCenter.diskPath || "/"
   readonly property real contentScale: 0.95 * Style.uiScaleRatio
 
   Item {

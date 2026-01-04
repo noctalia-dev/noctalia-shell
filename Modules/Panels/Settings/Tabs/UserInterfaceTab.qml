@@ -109,6 +109,15 @@ ColumnLayout {
     }
 
     NToggle {
+      label: I18n.tr("settings.user-interface.box-border.label")
+      description: I18n.tr("settings.user-interface.box-border.description")
+      checked: Settings.data.ui.boxBorderEnabled
+      isSettings: true
+      defaultValue: Settings.getDefaultValue("ui.boxBorderEnabled")
+      onToggled: checked => Settings.data.ui.boxBorderEnabled = checked
+    }
+
+    NToggle {
       label: I18n.tr("settings.user-interface.shadows.label")
       description: I18n.tr("settings.user-interface.shadows.description")
       checked: Settings.data.general.enableShadows

@@ -132,7 +132,6 @@ Item {
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
     icon: AudioService.getInputIcon()
-    density: Settings.data.bar.density
     autoHide: false // Important to be false so we can hover as long as we want
     text: {
       const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;

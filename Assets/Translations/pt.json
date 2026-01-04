@@ -142,12 +142,20 @@
           "description": "Se o texto de saída corresponder a este valor, o botão será recolhido.",
           "label": "Condição de recolhimento"
         },
+        "color-selection": {
+          "description": "Aplicar cores do tema ao ícone e ao texto.",
+          "label": "Selecionar cor"
+        },
         "display-command-output": {
           "description": "Digite um comando para ser executado em um intervalo regular. A primeira linha da sua saída será exibida como texto.",
           "label": "Exibir Saída de Comando",
           "stream-description": "Insira um comando para executar continuamente."
         },
         "dynamic-text": "Texto dinâmico",
+        "enable-colorization": {
+          "description": "Ativar colorização para o ícone e texto do botão personalizado, aplicando cores do tema.",
+          "label": "Ativar colorização"
+        },
         "hide-mode": {
           "alwaysExpanded": "Sempre expandido",
           "description": "Controla a visibilidade do widget quando o comando não tem saída.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Exibir o ícone do layout do teclado.",
           "label": "Mostrar ícone"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Quando ativado, aplica a cor primária para ênfase.",
+          "label": "Use cores primárias"
         }
       },
       "lock-keys": {
@@ -489,6 +503,7 @@
       "device-address": "Endereço do dispositivo",
       "disabled": "O Bluetooth está desativado",
       "disconnect": "Desconectar",
+      "disconnecting": "Desconectando...",
       "discoverable": "Visível",
       "enable-message": "Ative o Bluetooth para ver os dispositivos disponíveis.",
       "info": "Informações",
@@ -502,6 +517,14 @@
       "refresh-devices": "Atualizar dispositivos",
       "scanning": "Procurando por dispositivos...",
       "signal": "Sinal",
+      "signal-text": {
+        "excellent": "Sinal: Excelente",
+        "fair": "Sinal: Justo",
+        "good": "Sinal: Bom",
+        "poor": "Sinal: Fraco",
+        "unknown": "Sinal: Desconhecido",
+        "very-poor": "Sinal: Muito fraco"
+      },
       "title": "Bluetooth",
       "trusted": "Confiável",
       "unpair": "Desemparelhar"
@@ -581,6 +604,7 @@
     "enable-bluetooth": "Ativar Bluetooth",
     "enable-dnd": "Ativar Não Perturbe",
     "enable-wifi": "Ativar Wi-Fi",
+    "launcher-settings": "Configurações do iniciador",
     "lower-to-bottom": "Abaixar para o fundo",
     "next": "Próximo(a)",
     "open-calendar": "Abrir calendário",
@@ -640,6 +664,32 @@
     },
     "delete": "Apagar",
     "pin": "Fixar",
+    "providers": {
+      "applications": "Aplicativos",
+      "calculator": "Calculadora",
+      "calculator-deprecated": "O comando >calc está obsoleto e será removido em breve. Por favor, digite expressões matemáticas diretamente na pesquisa.",
+      "calculator-description": "Calculadora — avalie expressões matemáticas",
+      "calculator-enter-expression": "Digite uma expressão matemática",
+      "calculator-error": "Erro",
+      "calculator-name": "Calculadora",
+      "clipboard": "Histórico da área de transferência",
+      "clipboard-clear-description": "Limpar todo o histórico da área de transferência",
+      "clipboard-clear-description-full": "Remover todos os itens do histórico da área de transferência",
+      "clipboard-clear-history": "Limpar histórico da área de transferência",
+      "clipboard-delete": "Apagar entrada da área de transferência",
+      "clipboard-history-disabled": "Histórico da área de transferência desativado",
+      "clipboard-history-disabled-description": "Ative o histórico da área de transferência nas configurações ou instale o cliphist",
+      "clipboard-loading": "Carregando histórico da área de transferência...",
+      "clipboard-loading-description": "Por favor, aguarde",
+      "clipboard-search-description": "Pesquisar no histórico da área de transferência",
+      "command": "Comando",
+      "command-description": "Executar comandos shell",
+      "command-name": "Comando",
+      "emoji": "Seletor de emojis",
+      "emoji-loading": "Carregando emojis...",
+      "emoji-loading-description": "Por favor, aguarde",
+      "emoji-search-description": "Buscar e copiar emojis"
+    },
     "unpin": "Desafixar"
   },
   "lock-screen": {
@@ -835,32 +885,6 @@
     "search-wallpapers": "Digite para filtrar papéis de parede...",
     "select": "Selecionar",
     "test": "Testar"
-  },
-  "plugins": {
-    "applications": "Aplicativos",
-    "calculator": "Calculadora",
-    "calculator-deprecated": "O comando >calc está obsoleto e será removido em breve. Por favor, digite expressões matemáticas diretamente na pesquisa.",
-    "calculator-description": "Calculadora — avalie expressões matemáticas",
-    "calculator-enter-expression": "Digite uma expressão matemática",
-    "calculator-error": "Erro",
-    "calculator-name": "Calculadora",
-    "clipboard": "Histórico da área de transferência",
-    "clipboard-clear-description": "Limpar todo o histórico da área de transferência",
-    "clipboard-clear-description-full": "Remover todos os itens do histórico da área de transferência",
-    "clipboard-clear-history": "Limpar histórico da área de transferência",
-    "clipboard-delete": "Apagar entrada da área de transferência",
-    "clipboard-history-disabled": "Histórico da área de transferência desativado",
-    "clipboard-history-disabled-description": "Ative o histórico da área de transferência nas configurações ou instale o cliphist",
-    "clipboard-loading": "Carregando histórico da área de transferência...",
-    "clipboard-loading-description": "Por favor, aguarde",
-    "clipboard-search-description": "Pesquisar no histórico da área de transferência",
-    "command": "Comando",
-    "command-description": "Executar comandos shell",
-    "command-name": "Comando",
-    "emoji": "Seletor de emojis",
-    "emoji-loading": "Carregando emojis...",
-    "emoji-loading-description": "Por favor, aguarde",
-    "emoji-search-description": "Buscar e copiar emojis"
   },
   "quickSettings": {
     "bluetooth": {
@@ -1800,6 +1824,11 @@
     },
     "launcher": {
       "settings": {
+        "annotation-tool": {
+          "description": "Comando para executar ao clicar no botão de anotação no histórico da área de transferência. A imagem será enviada para este comando.",
+          "label": "Ferramenta de anotação",
+          "placeholder": "gradia, satty -f -"
+        },
         "clip-preview": {
           "description": "Mostra uma pré-visualização do conteúdo da área de transferência ao usar o comando >clip.",
           "label": "Ativar pré-visualização da área de transferência"
@@ -1839,6 +1868,10 @@
         "show-categories": {
           "description": "Mostrar abas de categorias para filtrar aplicativos.",
           "label": "Mostrar categorias"
+        },
+        "show-icon-background": {
+          "description": "Mostrar um fundo retangular arredondado atrás dos ícones.",
+          "label": "Mostrar fundo do ícone"
         },
         "sort-by-usage": {
           "description": "Quando ativado, os aplicativos mais usados aparecem primeiro na lista.",
@@ -1954,7 +1987,11 @@
     "network": {
       "bluetooth": {
         "description": "Ativar gerenciamento de Bluetooth.",
-        "label": "Ativar Bluetooth"
+        "label": "Ativar Bluetooth",
+        "rssi-polling": {
+          "description": "Amostre periodicamente o RSSI para dispositivos conectados via bluetoothctl. Pode não estar disponível para todos os dispositivos; usa recursos mínimos quando ativado.",
+          "label": "Sondagem de sinal Bluetooth"
+        }
       },
       "section": {
         "description": "Gerencie conexões Wi-Fi e Bluetooth."
@@ -2470,6 +2507,10 @@
         "label": "Velocidade da animação",
         "reset": "Redefinir velocidade da animação"
       },
+      "box-border": {
+        "description": "Exibe um contorno ao redor das áreas de conteúdo.",
+        "label": "Contorno do recipiente"
+      },
       "box-border-radius": {
         "description": "Ajusta o arredondamento dos cantos das principais seções do layout, como barras laterais, cards e painéis de conteúdo.",
         "label": "Raio do Contêiner",
@@ -2596,8 +2637,8 @@
           "tooltip": "Pasta de papéis de parede"
         },
         "hide-wallpaper-filenames": {
-          "description": "Ocultar nomes de arquivos de papel de parede no seletor.",
-          "label": "Ocultar nomes de arquivos"
+          "tooltip-hide": "Ocultar nomes de arquivo",
+          "tooltip-show": "Mostrar nomes de arquivo"
         },
         "monitor-specific": {
           "description": "Defina uma pasta de papel de parede diferente para cada monitor.",
@@ -2697,6 +2738,7 @@
       "low-desc": "A bateria está em {percent}%. Por favor, conecte o carregador."
     },
     "bluetooth": {
+      "address-copied": "Endereço copiado para a área de transferência",
       "confirm-code": "Confirme o código {value} no outro dispositivo.",
       "connect-failed": "Falha ao conectar ao dispositivo",
       "disabled": "Desativado",
@@ -2814,6 +2856,7 @@
     "close": "Fechar",
     "collapse": "Recolher barra lateral",
     "connect-disconnect-devices": "Dispositivo Bluetooth",
+    "copy-address": "Copiar endereço",
     "delete-notification": "Excluir notificação",
     "disable-keep-awake": "Manter acordado",
     "do-not-disturb-disabled": "Não perturbe",
@@ -2836,6 +2879,7 @@
     "move-to-center-section": "Seção central",
     "move-to-left-section": "Seção esquerda",
     "move-to-right-section": "Seção direita",
+    "move-to-section": "Mover para {section}",
     "mute": "Silenciar",
     "next-media": "Próxima faixa",
     "next-month": "Próximo mês",
@@ -2845,6 +2889,7 @@
     "night-light-not-installed": "Luz noturna (não disponível)",
     "noctalia-performance-disabled": "Modo de desempenho Noctalia",
     "noctalia-performance-enabled": "Modo de desempenho Noctalia",
+    "open-annotation-tool": "Abrir com ferramenta de anotação",
     "open-control-center": "Central de controle",
     "open-notification-history-disable-dnd": "Histórico de notificações",
     "open-notification-history-enable-dnd": "Histórico de notificações",
@@ -2929,6 +2974,9 @@
         }
       },
       "search": "Pesquisar:",
+      "solid-color": {
+        "tooltip": "Fundo de cor sólida"
+      },
       "sorting": {
         "date_added": "Data de adição",
         "favorites": "Favoritos",

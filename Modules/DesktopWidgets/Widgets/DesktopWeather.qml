@@ -103,7 +103,6 @@ DraggableDesktopWidget {
         NText {
           text: `${todayMax}°`
           pointSize: Math.round(Style.fontSizeXS * widgetScale)
-          font.weight: Style.fontWeightMedium
           color: Color.mOnSurface
         }
 
@@ -122,7 +121,6 @@ DraggableDesktopWidget {
         NText {
           text: `${todayMin}°`
           pointSize: Math.round(Style.fontSizeXS * widgetScale)
-          font.weight: Style.fontWeightMedium
           color: Color.mOnSurfaceVariant
         }
       }

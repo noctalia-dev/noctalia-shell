@@ -17,13 +17,10 @@
     "widgets": {
       "left": [
         {
-          "icon": "rocket",
-          "id": "CustomButton",
-          "leftClickExec": "qs -c noctalia-shell ipc call launcher toggle"
+          "id": "Launcher"
         },
         {
-          "id": "Clock",
-          "usePrimaryColor": false
+          "id": "Clock"
         },
         {
           "id": "SystemMonitor"
@@ -97,9 +94,7 @@
     "panelBackgroundOpacity": 0.93,
     "panelsAttachedToBar": true,
     "settingsPanelMode": "attached",
-    "wifiDetailsViewMode": "grid",
-    "bluetoothDetailsViewMode": "grid",
-    "bluetoothHideUnnamedDevices": false
+    "boxBorderEnabled": false
   },
   "location": {
     "name": "Tokyo",
@@ -155,6 +150,8 @@
     "setWallpaperOnAllMonitors": true,
     "fillMode": "crop",
     "fillColor": "#000000",
+    "useSolidColor": false,
+    "solidColor": "#1a1a2e",
     "randomEnabled": false,
     "wallpaperChangeMode": "random",
     "randomIntervalSec": 300,
@@ -188,10 +185,13 @@
     "viewMode": "list",
     "showCategories": true,
     "iconMode": "tabler",
-    "ignoreMouseInput": false
+    "showIconBackground": true,
+    "ignoreMouseInput": false,
+    "screenshotAnnotationTool": ""
   },
   "controlCenter": {
     "position": "close_to_bar_button",
+    "diskPath": "/",
     "shortcuts": {
       "left": [
         {
@@ -263,15 +263,14 @@
     "cpuPollingInterval": 3000,
     "tempPollingInterval": 3000,
     "gpuPollingInterval": 3000,
-    "loadAvgPollingInterval": 3000,
     "enableDgpuMonitoring": false,
     "memPollingInterval": 3000,
     "diskPollingInterval": 3000,
     "networkPollingInterval": 3000,
+    "loadAvgPollingInterval": 3000,
     "useCustomColors": false,
     "warningColor": "",
     "criticalColor": "",
-    "diskPath": "/",
     "externalMonitor": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
   },
   "dock": {
@@ -290,7 +289,12 @@
     "animationSpeed": 1
   },
   "network": {
-    "wifiEnabled": true
+    "wifiEnabled": true,
+    "bluetoothRssiPollingEnabled": false,
+    "bluetoothRssiPollIntervalMs": 10000,
+    "wifiDetailsViewMode": "grid",
+    "bluetoothDetailsViewMode": "grid",
+    "bluetoothHideUnnamedDevices": false
   },
   "sessionMenu": {
     "enableCountdown": true,
@@ -298,6 +302,7 @@
     "position": "center",
     "showHeader": true,
     "largeButtonsStyle": false,
+    "largeButtonsLayout": "grid",
     "showNumberLabels": true,
     "powerOptions": [
       {

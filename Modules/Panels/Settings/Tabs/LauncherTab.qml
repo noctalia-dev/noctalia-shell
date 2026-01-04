@@ -116,6 +116,15 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("settings.launcher.settings.show-icon-background.label")
+    description: I18n.tr("settings.launcher.settings.show-icon-background.description")
+    checked: Settings.data.appLauncher.showIconBackground
+    onToggled: checked => Settings.data.appLauncher.showIconBackground = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.showIconBackground")
+  }
+
+  NToggle {
     label: I18n.tr("settings.launcher.settings.ignore-mouse-input.label")
     description: I18n.tr("settings.launcher.settings.ignore-mouse-input.description")
     checked: Settings.data.appLauncher.ignoreMouseInput
@@ -174,6 +183,15 @@ ColumnLayout {
     enabled: Settings.data.appLauncher.customLaunchPrefixEnabled
     visible: Settings.data.appLauncher.customLaunchPrefixEnabled
     onEditingFinished: Settings.data.appLauncher.customLaunchPrefix = text
+  }
+
+  NTextInput {
+    label: I18n.tr("settings.launcher.settings.annotation-tool.label")
+    description: I18n.tr("settings.launcher.settings.annotation-tool.description")
+    Layout.fillWidth: true
+    text: Settings.data.appLauncher.screenshotAnnotationTool
+    placeholderText: I18n.tr("settings.launcher.settings.annotation-tool.placeholder")
+    onEditingFinished: Settings.data.appLauncher.screenshotAnnotationTool = text
   }
 
   NDivider {

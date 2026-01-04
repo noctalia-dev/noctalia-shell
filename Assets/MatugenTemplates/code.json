@@ -109,7 +109,7 @@
         "name": "punctuation.definition",
         "scope": "punctuation.definition.string.begin,punctuation.definition.string.end",
         "settings": {
-          "foreground": "{{colors.secondary.default.hex}}"
+          "foreground": "{{colors.primary.default.hex}}"
         }
       },
       {
@@ -1787,6 +1787,7 @@
       "editorOverviewRuler.wordHighlightForeground": "{{colors.secondary.default.hex}}",
       "editorOverviewRuler.wordHighlightStrongForeground": "{{colors.secondary.default.hex}}",
       "editorRuler.foreground": "{{colors.outline_variant.default.hex}}",
+      "editorStickyScrollHover.background": "{{colors.surface_variant.default.hex}}", 
       "editorSuggestWidget.background": "{{colors.surface.default.hex}}",
       "editorSuggestWidget.border": "{{colors.outline.default.hex}}",
       "editorSuggestWidget.foreground": "{{colors.on_surface.default.hex}}",
@@ -1983,4 +1984,4 @@
       "welcomePage.buttonHoverBackground": "{{colors.primary.default.hex}}20",
       "widget.shadow": "{{colors.background.default.hex}}5c"
     }
-  } 
+}

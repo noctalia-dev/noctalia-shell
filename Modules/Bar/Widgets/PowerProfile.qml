@@ -14,7 +14,6 @@ NIconButton {
 
   baseSize: Style.capsuleHeight
   applyUiScale: false
-  density: Settings.data.bar.density
   customRadius: Style.radiusL
   visible: PowerProfileService.available
   icon: PowerProfileService.getIcon()
@@ -29,4 +28,5 @@ NIconButton {
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
   onClicked: PowerProfileService.cycleProfile()
+  onRightClicked: PowerProfileService.cycleProfileReverse()
 }

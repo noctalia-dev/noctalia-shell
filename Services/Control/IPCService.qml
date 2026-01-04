@@ -110,36 +110,81 @@ Item {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                                              if (!launcherPanel?.isPanelOpen || (launcherPanel?.isPanelOpen && !launcherPanel?.activePlugin))
-                                              launcherPanel?.toggle();
-                                              launcherPanel?.setSearchText("");
+                                              if (!launcherPanel)
+                                              return;
+                                              var searchText = launcherPanel.searchText || "";
+                                              var isInAppMode = !searchText.startsWith(">");
+                                              if (!launcherPanel.isPanelOpen) {
+                                                // Closed -> open in app mode
+                                                launcherPanel.open();
+                                                launcherPanel.setSearchText("");
+                                              } else if (isInAppMode) {
+                                                // Already in app mode -> close
+                                                launcherPanel.close();
+                                              } else {
+                                                // In another mode -> switch to app mode
+                                                launcherPanel.setSearchText("");
+                                              }
                                             });
     }
     function clipboard() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                                              if (!launcherPanel?.isPanelOpen) {
-                                                launcherPanel?.toggle();
+                                              if (!launcherPanel)
+                                              return;
+                                              var searchText = launcherPanel.searchText || "";
+                                              var isInClipMode = searchText.startsWith(">clip");
+                                              if (!launcherPanel.isPanelOpen) {
+                                                // Closed -> open in clipboard mode
+                                                launcherPanel.open();
+                                                launcherPanel.setSearchText(">clip ");
+                                              } else if (isInClipMode) {
+                                                // Already in clipboard mode -> close
+                                                launcherPanel.close();
+                                              } else {
+                                                // In another mode -> switch to clipboard mode
+                                                launcherPanel.setSearchText(">clip ");
                                               }
-                                              launcherPanel?.setSearchText(">clip ");
                                             });
     }
     function calculator() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                                              if (!launcherPanel?.isPanelOpen) {
-                                                launcherPanel?.toggle();
+                                              if (!launcherPanel)
+                                              return;
+                                              var searchText = launcherPanel.searchText || "";
+                                              var isInCalcMode = searchText.startsWith(">calc");
+                                              if (!launcherPanel.isPanelOpen) {
+                                                // Closed -> open in calculator mode
+                                                launcherPanel.open();
+                                                launcherPanel.setSearchText(">calc ");
+                                              } else if (isInCalcMode) {
+                                                // Already in calculator mode -> close
+                                                launcherPanel.close();
+                                              } else {
+                                                // In another mode -> switch to calculator mode
+                                                launcherPanel.setSearchText(">calc ");
                                               }
-                                              launcherPanel?.setSearchText(">calc ");
                                             });
     }
     function emoji() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                                              if (!launcherPanel?.isPanelOpen) {
-                                                launcherPanel?.toggle();
+                                              if (!launcherPanel)
+                                              return;
+                                              var searchText = launcherPanel.searchText || "";
+                                              var isInEmojiMode = searchText.startsWith(">emoji");
+                                              if (!launcherPanel.isPanelOpen) {
+                                                // Closed -> open in emoji mode
+                                                launcherPanel.open();
+                                                launcherPanel.setSearchText(">emoji ");
+                                              } else if (isInEmojiMode) {
+                                                // Already in emoji mode -> close
+                                                launcherPanel.close();
+                                              } else {
+                                                // In another mode -> switch to emoji mode
+                                                launcherPanel.setSearchText(">emoji ");
                                               }
-                                              launcherPanel?.setSearchText(">emoji ");
                                             });
     }
   }
@@ -390,6 +435,10 @@ Item {
     target: "powerProfile"
     function cycle() {
       PowerProfileService.cycleProfile();
+    }
+
+    function cycleReverse() {
+      PowerProfileService.cycleProfileReverse();
     }
 
     function set(mode: string) {

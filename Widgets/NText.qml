@@ -20,7 +20,7 @@ Text {
 
   font.family: root.family
   font.weight: Style.fontWeightMedium
-  font.pointSize: root.pointSize * fontScale
+  font.pointSize: Math.max(1, root.pointSize * fontScale)
   color: Color.mOnSurface
   elide: Text.ElideRight
   wrapMode: Text.NoWrap

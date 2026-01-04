@@ -18,12 +18,10 @@ NIconButton {
   property string section: ""
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
-  property real barScaling: 1.0
 
   icon: ScreenRecorderService.isPending ? "" : "camera-video"
   tooltipText: ScreenRecorderService.isRecording ? I18n.tr("tooltips.click-to-stop-recording") : I18n.tr("tooltips.click-to-start-recording")
   tooltipDirection: BarService.getTooltipDirection()
-  density: Settings.data.bar.density
   baseSize: Style.capsuleHeight
   applyUiScale: false
   customRadius: Style.radiusL
@@ -55,8 +53,8 @@ NIconButton {
     id: pendingSpinner
     icon: "loader-2"
     visible: ScreenRecorderService.isPending
-    pointSize: Math.max(1, Style.toOdd(root.width * root.barScaling * 0.65))
-    applyUiScale: root.applyUiScale
+    pointSize: Style.barFontSize
+    applyUiScale: false
     color: root.enabled && root.hovering ? colorFgHover : colorFg
     anchors.centerIn: parent
     transformOrigin: Item.Center

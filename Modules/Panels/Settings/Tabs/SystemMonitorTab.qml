@@ -10,6 +10,8 @@ import qs.Widgets
 ColumnLayout {
   id: root
 
+  property var screen
+
   spacing: Style.marginL
 
   NHeader {
@@ -70,6 +72,7 @@ ColumnLayout {
       }
 
       NColorPicker {
+        screen: root.screen
         Layout.preferredWidth: Style.sliderWidth
         Layout.preferredHeight: Style.baseWidgetSize
         enabled: Settings.data.systemMonitor.useCustomColors
@@ -88,6 +91,7 @@ ColumnLayout {
       }
 
       NColorPicker {
+        screen: root.screen
         Layout.preferredWidth: Style.sliderWidth
         Layout.preferredHeight: Style.baseWidgetSize
         enabled: Settings.data.systemMonitor.useCustomColors

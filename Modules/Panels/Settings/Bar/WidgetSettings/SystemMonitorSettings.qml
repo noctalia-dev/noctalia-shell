@@ -150,7 +150,6 @@ ColumnLayout {
     Layout.fillWidth: true
     label: I18n.tr("bar.widget-settings.system-monitor.disk-path.label")
     description: I18n.tr("bar.widget-settings.system-monitor.disk-path.description")
-    visible: valueShowDiskUsage
     model: {
       const paths = Object.keys(SystemStatService.diskPercents).sort();
       return paths.map(path => ({

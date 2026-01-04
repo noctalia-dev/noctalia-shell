@@ -8,6 +8,6 @@ Rectangle {
 
   color: Color.mSurfaceVariant
   radius: Style.radiusM
-  border.color: Color.mOutline
+  border.color: Style.boxBorderColor
   border.width: Style.borderS
 }

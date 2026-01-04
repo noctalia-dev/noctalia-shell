@@ -142,12 +142,20 @@
           "description": "Если выходной текст соответствует этому значению, кнопка будет скрыта.",
           "label": "Условие скрытия"
         },
+        "color-selection": {
+          "description": "Применить цвета темы к значку и тексту.",
+          "label": "Выбрать цвет"
+        },
         "display-command-output": {
           "description": "Введите команду для регулярного выполнения. Первая строка ее вывода будет отображаться как текст.",
           "label": "Вывод команды",
           "stream-description": "Введите команду для непрерывного выполнения."
         },
         "dynamic-text": "Динамический текст",
+        "enable-colorization": {
+          "description": "Включить раскраску значка и текста пользовательской кнопки, применяя цвета темы.",
+          "label": "Включить раскраску"
+        },
         "hide-mode": {
           "alwaysExpanded": "Всегда раскрыт",
           "description": "Управляет видимостью виджета, когда команда не имеет вывода.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Отображать значок раскладки клавиатуры.",
           "label": "Показать значок"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Если включено, использует основной цвет для выделения.",
+          "label": "Использовать основной цвет"
         }
       },
       "lock-keys": {
@@ -489,6 +503,7 @@
       "device-address": "Адрес устройства",
       "disabled": "Bluetooth отключен",
       "disconnect": "Отключить",
+      "disconnecting": "Отключение...",
       "discoverable": "Обнаруживаемый",
       "enable-message": "Включите Bluetooth, чтобы увидеть доступные устройства.",
       "info": "Информация",
@@ -502,6 +517,14 @@
       "refresh-devices": "Обновить устройства",
       "scanning": "Поиск устройств...",
       "signal": "Сигнал",
+      "signal-text": {
+        "excellent": "Сигнал: Отличный",
+        "fair": "Сигнал: Средний",
+        "good": "Сигнал: Хороший",
+        "poor": "Сигнал: Плохой",
+        "unknown": "Сигнал: Неизвестен",
+        "very-poor": "Сигнал: Очень слабый"
+      },
       "title": "Bluetooth",
       "trusted": "Надёжный",
       "unpair": "Разорвать пару"
@@ -581,6 +604,7 @@
     "enable-bluetooth": "Включить Bluetooth",
     "enable-dnd": "Не беспокоить",
     "enable-wifi": "Включить Wi-Fi",
+    "launcher-settings": "Настройки лаунчера",
     "lower-to-bottom": "Опустить до дна",
     "next": "Следующий",
     "open-calendar": "Открыть календарь",
@@ -640,6 +664,32 @@
     },
     "delete": "Удалить",
     "pin": "Закрепить",
+    "providers": {
+      "applications": "Приложения",
+      "calculator": "Калькулятор",
+      "calculator-deprecated": "Команда >calc устарела и скоро будет удалена. Пожалуйста, вводите математические выражения прямо в поиск.",
+      "calculator-description": "Калькулятор — вычисление математических выражений",
+      "calculator-enter-expression": "Введите математическое выражение",
+      "calculator-error": "Ошибка",
+      "calculator-name": "Калькулятор",
+      "clipboard": "История буфера обмена",
+      "clipboard-clear-description": "Очистить всю историю буфера обмена",
+      "clipboard-clear-description-full": "Удалить все элементы из истории буфера обмена",
+      "clipboard-clear-history": "Очистить историю буфера обмена",
+      "clipboard-delete": "Удалить запись из буфера обмена",
+      "clipboard-history-disabled": "История буфера обмена отключена",
+      "clipboard-history-disabled-description": "Включите историю буфера обмена в настройках или установите cliphist",
+      "clipboard-loading": "Загрузка истории буфера обмена...",
+      "clipboard-loading-description": "Пожалуйста, подождите",
+      "clipboard-search-description": "Поиск в истории буфера обмена",
+      "command": "Команда",
+      "command-description": "Выполнять команды оболочки",
+      "command-name": "Команда",
+      "emoji": "Выбор эмодзи",
+      "emoji-loading": "Загрузка эмодзи...",
+      "emoji-loading-description": "Пожалуйста, подождите",
+      "emoji-search-description": "Поиск и копирование эмодзи"
+    },
     "unpin": "Открепить"
   },
   "lock-screen": {
@@ -835,32 +885,6 @@
     "search-wallpapers": "Введите для фильтрации обоев...",
     "select": "Выбрать",
     "test": "Тест"
-  },
-  "plugins": {
-    "applications": "Приложения",
-    "calculator": "Калькулятор",
-    "calculator-deprecated": "Команда >calc устарела и скоро будет удалена. Пожалуйста, вводите математические выражения прямо в поиск.",
-    "calculator-description": "Калькулятор — вычисление математических выражений",
-    "calculator-enter-expression": "Введите математическое выражение",
-    "calculator-error": "Ошибка",
-    "calculator-name": "Калькулятор",
-    "clipboard": "История буфера обмена",
-    "clipboard-clear-description": "Очистить всю историю буфера обмена",
-    "clipboard-clear-description-full": "Удалить все элементы из истории буфера обмена",
-    "clipboard-clear-history": "Очистить историю буфера обмена",
-    "clipboard-delete": "Удалить запись из буфера обмена",
-    "clipboard-history-disabled": "История буфера обмена отключена",
-    "clipboard-history-disabled-description": "Включите историю буфера обмена в настройках или установите cliphist",
-    "clipboard-loading": "Загрузка истории буфера обмена...",
-    "clipboard-loading-description": "Пожалуйста, подождите",
-    "clipboard-search-description": "Поиск в истории буфера обмена",
-    "command": "Команда",
-    "command-description": "Выполнять команды оболочки",
-    "command-name": "Команда",
-    "emoji": "Выбор эмодзи",
-    "emoji-loading": "Загрузка эмодзи...",
-    "emoji-loading-description": "Пожалуйста, подождите",
-    "emoji-search-description": "Поиск и копирование эмодзи"
   },
   "quickSettings": {
     "bluetooth": {
@@ -1800,6 +1824,11 @@
     },
     "launcher": {
       "settings": {
+        "annotation-tool": {
+          "description": "Команда для запуска при нажатии кнопки аннотирования в истории буфера обмена. Изображение будет передано в эту команду.",
+          "label": "Инструмент аннотирования",
+          "placeholder": "градия, сатти -ф -"
+        },
         "clip-preview": {
           "description": "Показывать предварительный просмотр содержимого буфера обмена при использовании команды >clip.",
           "label": "Включить предварительный просмотр буфера обмена"
@@ -1839,6 +1868,10 @@
         "show-categories": {
           "description": "Показывать вкладки категорий для фильтрации приложений.",
           "label": "Показывать категории"
+        },
+        "show-icon-background": {
+          "description": "Показывать закругленный прямоугольник в качестве фона для иконок.",
+          "label": "Показать фон значка"
         },
         "sort-by-usage": {
           "description": "Если включено, часто запускаемые приложения появляются в списке первыми.",
@@ -1954,7 +1987,11 @@
     "network": {
       "bluetooth": {
         "description": "Включить управление Bluetooth.",
-        "label": "Включить Bluetooth"
+        "label": "Включить Bluetooth",
+        "rssi-polling": {
+          "description": "Периодически опрашивать RSSI для подключенных устройств через bluetoothctl. Может быть недоступно для всех устройств; использует минимальные ресурсы при включении.",
+          "label": "Опрос сигнала Bluetooth"
+        }
       },
       "section": {
         "description": "Управление Wi-Fi и Bluetooth подключениями."
@@ -2470,6 +2507,10 @@
         "label": "Скорость анимации",
         "reset": "Сбросить скорость анимации"
       },
+      "box-border": {
+        "description": "Отображает контур вокруг областей содержимого.",
+        "label": "Контур контейнера"
+      },
       "box-border-radius": {
         "description": "Настраивает скругление углов основных разделов макета, таких как боковые панели, карточки и панели контента.",
         "label": "Радиус контейнера",
@@ -2596,8 +2637,8 @@
           "tooltip": "Папка с обоями"
         },
         "hide-wallpaper-filenames": {
-          "description": "Скрыть имена файлов обоев в селекторе.",
-          "label": "Скрыть имена файлов"
+          "tooltip-hide": "Скрыть имена файлов",
+          "tooltip-show": "Показать имена файлов"
         },
         "monitor-specific": {
           "description": "Установить отдельную папку с обоями для каждого монитора.",
@@ -2697,6 +2738,7 @@
       "low-desc": "Заряд батареи {percent}%. Пожалуйста, подключите зарядное устройство."
     },
     "bluetooth": {
+      "address-copied": "Адрес скопирован в буфер обмена",
       "confirm-code": "Подтвердите код {value} на другом устройстве.",
       "connect-failed": "Не удалось подключиться к устройству",
       "disabled": "Отключен",
@@ -2814,6 +2856,7 @@
     "close": "Закрыть",
     "collapse": "Свернуть боковую панель",
     "connect-disconnect-devices": "Устройство Bluetooth",
+    "copy-address": "Копировать адрес",
     "delete-notification": "Удалить уведомление",
     "disable-keep-awake": "Не засыпать",
     "do-not-disturb-disabled": "Не беспокоить",
@@ -2836,6 +2879,7 @@
     "move-to-center-section": "Центральная секция",
     "move-to-left-section": "Левая секция",
     "move-to-right-section": "Правая секция",
+    "move-to-section": "Перейти к {section}",
     "mute": "Отключить звук",
     "next-media": "Следующий трек",
     "next-month": "Следующий месяц",
@@ -2845,6 +2889,7 @@
     "night-light-not-installed": "Ночной свет (недоступен)",
     "noctalia-performance-disabled": "Режим производительности Noctalia",
     "noctalia-performance-enabled": "Режим производительности Noctalia",
+    "open-annotation-tool": "Открыть с помощью инструмента аннотирования",
     "open-control-center": "Центр управления",
     "open-notification-history-disable-dnd": "История уведомлений",
     "open-notification-history-enable-dnd": "История уведомлений",
@@ -2929,6 +2974,9 @@
         }
       },
       "search": "Поиск:",
+      "solid-color": {
+        "tooltip": "Однотонный фон"
+      },
       "sorting": {
         "date_added": "Дата добавления",
         "favorites": "Избранное",

@@ -223,7 +223,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -249,7 +248,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -276,7 +274,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -314,7 +311,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -342,7 +338,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,
@@ -371,7 +366,6 @@ Item {
             required property int index
 
             widgetId: modelData.id || ""
-            barDensity: Settings.data.bar.density
             widgetScreen: root.screen
             widgetProps: ({
                             "widgetId": modelData.id,

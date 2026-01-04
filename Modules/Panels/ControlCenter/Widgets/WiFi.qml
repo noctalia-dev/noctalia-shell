@@ -29,7 +29,29 @@ NIconButtonHot {
     }
   }
 
-  tooltipText: I18n.tr("quickSettings.wifi.tooltip.action")
-  onClicked: PanelService.getPanel("wifiPanel", screen)?.toggle(this)
+  tooltipText: {
+    try {
+      if (NetworkService.ethernetConnected) {
+        // Match design: fixed label when on Ethernet
+        return I18n.tr("quickSettings.wifi.label.ethernet");
+      }
+      // Wi‑Fi: SSID — link speed (if available)
+      for (const net in NetworkService.networks) {
+        if (NetworkService.networks[net].connected) {
+          const w = NetworkService.activeWifiDetails || ({});
+          const rate = (w.rateShort && w.rateShort.length > 0) ? w.rateShort : (w.rate || "");
+          return rate && rate.length > 0 ? (net + " — " + rate) : net;
+        }
+      }
+    } catch (e) {
+      // noop
+    }
+    return I18n.tr("quickSettings.wifi.tooltip.action");
+  }
+  onClicked: {
+    var panel = PanelService.getPanel("wifiPanel", screen);
+    if (panel)
+      panel.toggle(this);
+  }
   onRightClicked: NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled)
 }

@@ -98,9 +98,9 @@ Singleton {
   }
 
   // -------------------------------------------------
-  // Public API: Get Fullscreen Wallpaper
+  // Public API: Get Large Image (scaled to specified dimensions)
   // -------------------------------------------------
-  function getFullscreen(sourcePath, screenName, width, height, callback) {
+  function getLarge(sourcePath, width, height, callback) {
     if (!sourcePath || sourcePath === "") {
       callback("", false);
       return;
@@ -131,7 +131,7 @@ Singleton {
       const targetHeight = fitsScreen ? imgHeight : height;
 
       getMtime(sourcePath, function (mtime) {
-        const cacheKey = generateLargeKey(sourcePath, screenName, width, height, mtime);
+        const cacheKey = generateLargeKey(sourcePath, width, height, mtime);
         const cachedPath = wpLargeDir + cacheKey + ".jpg";
 
         processRequest(cacheKey, cachedPath, sourcePath, callback, function () {
@@ -196,8 +196,8 @@ Singleton {
     return Checksum.sha256(keyString);
   }
 
-  function generateLargeKey(sourcePath, screenName, width, height, mtime) {
-    const keyString = sourcePath + "@" + screenName + "@" + width + "x" + height + "@" + (mtime || "unknown");
+  function generateLargeKey(sourcePath, width, height, mtime) {
+    const keyString = sourcePath + "@" + width + "x" + height + "@" + (mtime || "unknown");
     return Checksum.sha256(keyString);
   }
 
@@ -607,7 +607,7 @@ Singleton {
     clearThumbnails();
   }
 
-  function invalidateLarge(sourcePath, screenName) {
+  function invalidateLarge(sourcePath) {
     Logger.i("ImageCache", "Invalidating large for:", sourcePath);
     clearLarge();
   }

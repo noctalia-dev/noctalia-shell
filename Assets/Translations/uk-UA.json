@@ -142,12 +142,20 @@
           "description": "Якщо вихідний текст збігається з цим значенням, кнопка згорнеться.",
           "label": "Умова згортання"
         },
+        "color-selection": {
+          "description": "Застосувати кольори теми до значка та тексту.",
+          "label": "Вибрати колір"
+        },
         "display-command-output": {
           "description": "Введіть команду для запуску з регулярним інтервалом. Перший рядок її виведення відображатиметься як текст.",
           "label": "Відображати виведення команди",
           "stream-description": "Введіть команду для безперервного запуску."
         },
         "dynamic-text": "Динамічний текст",
+        "enable-colorization": {
+          "description": "Увімкнути розфарбовування для значка та тексту власної кнопки, застосовуючи кольори теми.",
+          "label": "Увімкнути розфарбовування"
+        },
         "hide-mode": {
           "alwaysExpanded": "Завжди розширено",
           "description": "Контролює видимість віджета, коли команда не має виведення.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Показувати піктограму розкладки клавіатури.",
           "label": "Показати значок"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Якщо ввімкнено, це застосовує основний колір для підкреслення.",
+          "label": "Використовуйте основний колір"
         }
       },
       "lock-keys": {
@@ -489,6 +503,7 @@
       "device-address": "Адреса пристрою",
       "disabled": "Bluetooth вимкнено",
       "disconnect": "Відключити",
+      "disconnecting": "Відключення...",
       "discoverable": "Виявний",
       "enable-message": "Увімкніть Bluetooth, щоб побачити доступні пристрої.",
       "info": "Інформація",
@@ -502,6 +517,14 @@
       "refresh-devices": "Оновити пристрої",
       "scanning": "Сканування пристроїв...",
       "signal": "Сигнал",
+      "signal-text": {
+        "excellent": "Сигнал: Відмінний",
+        "fair": "Сигнал: Задовільний",
+        "good": "Сигнал: Добре",
+        "poor": "Сигнал: Поганий",
+        "unknown": "Сигнал: Невідомий",
+        "very-poor": "Сигнал: Дуже слабкий"
+      },
       "title": "Bluetooth",
       "trusted": "Надійний",
       "unpair": "Розірвати пару"
@@ -581,6 +604,7 @@
     "enable-bluetooth": "Увімкнути Bluetooth",
     "enable-dnd": "Увімкнути режим \"Не турбувати\"",
     "enable-wifi": "Увімкнути Wi-Fi",
+    "launcher-settings": "Налаштування панелі запуску",
     "lower-to-bottom": "Опустити донизу",
     "next": "Наступний",
     "open-calendar": "Відкрити календар",
@@ -640,6 +664,32 @@
     },
     "delete": "Видалити",
     "pin": "Закріпити",
+    "providers": {
+      "applications": "Застосунки",
+      "calculator": "Калькулятор",
+      "calculator-deprecated": "Команда >calc застаріла і скоро буде видалена. Будь ласка, введіть математичні вирази безпосередньо в пошуку.",
+      "calculator-description": "Калькулятор — обчислення математичних виразів",
+      "calculator-enter-expression": "Введіть математичний вираз",
+      "calculator-error": "Помилка",
+      "calculator-name": "Калькулятор",
+      "clipboard": "Історія буфера обміну",
+      "clipboard-clear-description": "Очистити всю історію буфера обміну",
+      "clipboard-clear-description-full": "Видалити всі елементи з історії буфера обміну",
+      "clipboard-clear-history": "Очистити історію буфера обміну",
+      "clipboard-delete": "Видалити запис з буфера обміну",
+      "clipboard-history-disabled": "Історія буфера обміну вимкнена",
+      "clipboard-history-disabled-description": "Увімкніть історію буфера обміну в налаштуваннях або встановіть cliphist",
+      "clipboard-loading": "Завантаження історії буфера обміну...",
+      "clipboard-loading-description": "Зачекайте, будь ласка",
+      "clipboard-search-description": "Пошук в історії буфера обміну",
+      "command": "Команда",
+      "command-description": "Виконати команди оболонки",
+      "command-name": "Команда",
+      "emoji": "Обрати емодзі",
+      "emoji-loading": "Завантаження емодзі...",
+      "emoji-loading-description": "Зачекайте, будь ласка",
+      "emoji-search-description": "Пошук і копіювання емодзі"
+    },
     "unpin": "Відкріпити"
   },
   "lock-screen": {
@@ -835,32 +885,6 @@
     "search-wallpapers": "Введіть для фільтрації шпалер...",
     "select": "Вибрати",
     "test": "Тест"
-  },
-  "plugins": {
-    "applications": "Застосунки",
-    "calculator": "Калькулятор",
-    "calculator-deprecated": "Команда >calc застаріла і скоро буде видалена. Будь ласка, введіть математичні вирази безпосередньо в пошуку.",
-    "calculator-description": "Калькулятор — обчислення математичних виразів",
-    "calculator-enter-expression": "Введіть математичний вираз",
-    "calculator-error": "Помилка",
-    "calculator-name": "Калькулятор",
-    "clipboard": "Історія буфера обміну",
-    "clipboard-clear-description": "Очистити всю історію буфера обміну",
-    "clipboard-clear-description-full": "Видалити всі елементи з історії буфера обміну",
-    "clipboard-clear-history": "Очистити історію буфера обміну",
-    "clipboard-delete": "Видалити запис з буфера обміну",
-    "clipboard-history-disabled": "Історія буфера обміну вимкнена",
-    "clipboard-history-disabled-description": "Увімкніть історію буфера обміну в налаштуваннях або встановіть cliphist",
-    "clipboard-loading": "Завантаження історії буфера обміну...",
-    "clipboard-loading-description": "Зачекайте, будь ласка",
-    "clipboard-search-description": "Пошук в історії буфера обміну",
-    "command": "Команда",
-    "command-description": "Виконати команди оболонки",
-    "command-name": "Команда",
-    "emoji": "Обрати емодзі",
-    "emoji-loading": "Завантаження емодзі...",
-    "emoji-loading-description": "Зачекайте, будь ласка",
-    "emoji-search-description": "Пошук і копіювання емодзі"
   },
   "quickSettings": {
     "bluetooth": {
@@ -1800,6 +1824,11 @@
     },
     "launcher": {
       "settings": {
+        "annotation-tool": {
+          "description": "Команда для запуску при натисканні кнопки анотування в історії буфера обміну, зображення буде передано в цю команду.",
+          "label": "Інструмент анотацій",
+          "placeholder": "градіа, сатті -ф -"
+        },
         "clip-preview": {
           "description": "Показувати попередній перегляд вмісту буфера обміну при використанні команди >clip.",
           "label": "Попередній перегляд буфера обміну"
@@ -1839,6 +1868,10 @@
         "show-categories": {
           "description": "Показувати вкладки категорій для фільтрації додатків.",
           "label": "Показувати категорії"
+        },
+        "show-icon-background": {
+          "description": "Показувати заокруглений прямокутник як фон за іконками.",
+          "label": "Показати фон іконки"
         },
         "sort-by-usage": {
           "description": "Коли увімкнено, часто використовувані застосунки з'являються першими в списку.",
@@ -1954,7 +1987,11 @@
     "network": {
       "bluetooth": {
         "description": "Активувати керування Bluetooth.",
-        "label": "Увімкнути Bluetooth"
+        "label": "Увімкнути Bluetooth",
+        "rssi-polling": {
+          "description": "Періодично збирати дані RSSI для підключених пристроїв через bluetoothctl. Може бути недоступним для всіх пристроїв; використовує мінімум ресурсів, коли ввімкнено.",
+          "label": "Опитування сигналу Bluetooth"
+        }
       },
       "section": {
         "description": "Керувати підключеннями Wi-Fi та Bluetooth."
@@ -2470,6 +2507,10 @@
         "label": "Швидкість анімації",
         "reset": "Скинути швидкість анімації"
       },
+      "box-border": {
+        "description": "Відображає контур навколо областей вмісту.",
+        "label": "Контур контейнера"
+      },
       "box-border-radius": {
         "description": "Налаштовує заокруглення кутів основних розділів макета, таких як бічні панелі, картки та панелі контенту.",
         "label": "Радіус контейнера",
@@ -2596,8 +2637,8 @@
           "tooltip": "Тека шпалер"
         },
         "hide-wallpaper-filenames": {
-          "description": "Приховати назви файлів шпалер у селекторі.",
-          "label": "Приховати назви файлів"
+          "tooltip-hide": "Приховати імена файлів",
+          "tooltip-show": "Відображати імена файлів"
         },
         "monitor-specific": {
           "description": "Встановити різні теки шпалер для кожного монітора.",
@@ -2697,6 +2738,7 @@
       "low-desc": "Рівень заряду: {percent}%. Будь ласка, підключіть зарядний пристрій."
     },
     "bluetooth": {
+      "address-copied": "Адресу скопійовано до буфера обміну",
       "confirm-code": "Підтвердьте код {value} на іншому пристрої",
       "connect-failed": "Не вдалося під'єднатися до пристрою.",
       "disabled": "Вимкнено",
@@ -2814,6 +2856,7 @@
     "close": "Закрити",
     "collapse": "Згорнути бічну панель",
     "connect-disconnect-devices": "Пристрій Bluetooth",
+    "copy-address": "Копіювати адресу",
     "delete-notification": "Видалити сповіщення",
     "disable-keep-awake": "Заборона сну",
     "do-not-disturb-disabled": "Не турбувати",
@@ -2836,6 +2879,7 @@
     "move-to-center-section": "Центральна секція",
     "move-to-left-section": "Ліва секція",
     "move-to-right-section": "Права секція",
+    "move-to-section": "Перейти до {section}",
     "mute": "Вимкнути звук",
     "next-media": "Наступний трек",
     "next-month": "Наступний місяць",
@@ -2845,6 +2889,7 @@
     "night-light-not-installed": "Нічне світло (недоступне)",
     "noctalia-performance-disabled": "Режим продуктивності Noctalia",
     "noctalia-performance-enabled": "Режим продуктивності Noctalia",
+    "open-annotation-tool": "Відкрити за допомогою інструменту анотацій",
     "open-control-center": "Центр керування",
     "open-notification-history-disable-dnd": "Історія сповіщень",
     "open-notification-history-enable-dnd": "Історія сповіщень",
@@ -2929,6 +2974,9 @@
         }
       },
       "search": "Пошук:",
+      "solid-color": {
+        "tooltip": "Однотонний фон"
+      },
       "sorting": {
         "date_added": "Дата додавання",
         "favorites": "Обране",

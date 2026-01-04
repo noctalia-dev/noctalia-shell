@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 36
+  readonly property int settingsVersion: 37
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -215,13 +215,10 @@ Singleton {
       widgets: JsonObject {
         property list<var> left: [
           {
-            "icon": "rocket",
-            "id": "CustomButton",
-            "leftClickExec": "qs -c noctalia-shell ipc call launcher toggle"
+            "id": "Launcher"
           },
           {
-            "id": "Clock",
-            "usePrimaryColor": false
+            "id": "Clock"
           },
           {
             "id": "SystemMonitor"
@@ -299,11 +296,7 @@ Singleton {
       property real panelBackgroundOpacity: 0.93
       property bool panelsAttachedToBar: true
       property string settingsPanelMode: "attached" // "centered", "attached", "window"
-      // Details view mode persistence for panels
-      property string wifiDetailsViewMode: "grid"   // "grid" or "list"
-      property string bluetoothDetailsViewMode: "grid" // "grid" or "list"
-      // Bluetooth available devices list: hide items without a name
-      property bool bluetoothHideUnnamedDevices: false
+      property bool boxBorderEnabled: false
     }
 
     // location
@@ -367,6 +360,8 @@ Singleton {
       property bool setWallpaperOnAllMonitors: true
       property string fillMode: "crop"
       property color fillColor: "#000000"
+      property bool useSolidColor: false
+      property color solidColor: "#1a1a2e"
       property bool randomEnabled: false // Deprecated: use wallpaperChangeMode instead
       property string wallpaperChangeMode: "random" // "random" or "alphabetical"
       property int randomIntervalSec: 300 // 5 min
@@ -406,13 +401,16 @@ Singleton {
       property bool showCategories: true
       // Icon mode: "tabler" or "native"
       property string iconMode: "tabler"
+      property bool showIconBackground: true
       property bool ignoreMouseInput: false
+      property string screenshotAnnotationTool: ""
     }
 
     // control center
     property JsonObject controlCenter: JsonObject {
       // Position: close_to_bar_button, center, top_left, top_right, bottom_left, bottom_right, bottom_center, top_center
       property string position: "close_to_bar_button"
+      property string diskPath: "/"
       property JsonObject shortcuts
       shortcuts: JsonObject {
         property list<var> left: [
@@ -495,7 +493,6 @@ Singleton {
       property bool useCustomColors: false
       property string warningColor: ""
       property string criticalColor: ""
-      property string diskPath: "/"
       property string externalMonitor: "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
     }
 
@@ -508,8 +505,7 @@ Singleton {
       property real size: 1
       property bool onlySameOutput: true
       property list<string> monitors: [] // holds dock visibility per monitor
-      // Desktop entry IDs pinned to the dock (e.g., "org.kde.konsole", "firefox.desktop")
-      property list<string> pinnedApps: []
+      property list<string> pinnedApps: [] // Desktop entry IDs pinned to the dock (e.g., "org.kde.konsole", "firefox.desktop")
       property bool colorizeIcons: false
 
       property bool pinnedStatic: false
@@ -521,6 +517,11 @@ Singleton {
     // network
     property JsonObject network: JsonObject {
       property bool wifiEnabled: true
+      property bool bluetoothRssiPollingEnabled: false  // Opt-in Bluetooth RSSI polling (uses bluetoothctl)
+      property int bluetoothRssiPollIntervalMs: 10000 // Polling interval in milliseconds for RSSI queries
+      property string wifiDetailsViewMode: "grid"   // "grid" or "list"
+      property string bluetoothDetailsViewMode: "grid" // "grid" or "list"
+      property bool bluetoothHideUnnamedDevices: false
     }
 
     // session menu

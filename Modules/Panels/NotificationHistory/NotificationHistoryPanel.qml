@@ -16,112 +16,109 @@ SmartPanel {
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(540 * Style.uiScaleRatio)
 
-  // 0 = All, 1 = Today, 2 = Yesterday, 3 = Earlier
-  property int currentRange: 1  // start on Today by default
-  property var rangeCounts: [0, 0, 0, 0]
-  property bool groupByDate: true
-  property var lastKnownDate: null  // Track the current date to detect day changes
-
-  function dateOnly(d) {
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  }
-
-  function getDateKey(d) {
-    // Returns a string key for the date (YYYY-MM-DD) for comparison
-    var date = dateOnly(d);
-    return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
-  }
-
-  function rangeForTimestamp(ts) {
-    var dt = new Date(ts);
-    var today = dateOnly(new Date());
-    var thatDay = dateOnly(dt);
-
-    var diffMs = today - thatDay;
-    var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0)
-      return 0;
-    if (diffDays === 1)
-      return 1;
-    return 2;
-  }
-
-  function isInCurrentRange(ts) {
-    if (currentRange === 0)
-      return true;
-    return rangeForTimestamp(ts) === (currentRange - 1);
-  }
-
-  function recalcRangeCounts() {
-    var m = NotificationService.historyList;
-    if (!m || typeof m.count === "undefined" || m.count <= 0) {
-      rangeCounts = [0, 0, 0, 0];
-      return;
-    }
-
-    var counts = [0, 0, 0, 0];
-
-    counts[0] = m.count;
-
-    for (var i = 0; i < m.count; ++i) {
-      var item = m.get(i);
-      if (!item || typeof item.timestamp === "undefined")
-        continue;
-      var r = rangeForTimestamp(item.timestamp);
-      counts[r + 1] = counts[r + 1] + 1;
-    }
-
-    rangeCounts = counts;
-  }
-
-  function countForRange(range) {
-    return rangeCounts[range] || 0;
-  }
-
-  Connections {
-    target: NotificationService.historyList
-    function onCountChanged() {
-      recalcRangeCounts();
-    }
-  }
-
-  // Timer to check for day changes at midnight
-  // Only runs when panel is open (component is only instantiated when open)
-  Timer {
-    id: dayChangeTimer
-    interval: 60000  // Check every minute
-    repeat: true
-    running: root.isPanelOpen  // Explicitly tie to panel open state
-    onTriggered: {
-      var currentDateKey = getDateKey(new Date());
-      if (lastKnownDate !== null && lastKnownDate !== currentDateKey) {
-        // Day has changed, recalculate counts
-        recalcRangeCounts();
-      }
-      lastKnownDate = currentDateKey;
-    }
-  }
-
-  Component.onCompleted: {
-    recalcRangeCounts();
-    // Initialize lastKnownDate
-    lastKnownDate = getDateKey(new Date());
-  }
-
-  onOpened: function () {
+  onOpened: {
     NotificationService.updateLastSeenTs();
-    // Check if day has changed since last check (in case panel was closed during day change)
-    var currentDateKey = getDateKey(new Date());
-    if (lastKnownDate !== null && lastKnownDate !== currentDateKey) {
-      recalcRangeCounts();
-      lastKnownDate = currentDateKey;
-    }
   }
 
   panelContent: Rectangle {
-    id: notificationRect
+    id: panelContent
     color: Color.transparent
+
+    // State (lazy-loaded with panelContent)
+    property var rangeCounts: [0, 0, 0, 0]
+    property var lastKnownDate: null  // Track the current date to detect day changes
+
+    // UI state (lazy-loaded with panelContent)
+    // 0 = All, 1 = Today, 2 = Yesterday, 3 = Earlier
+    property int currentRange: 1  // start on Today by default
+    property bool groupByDate: true
+
+    // Helper functions (lazy-loaded with panelContent)
+    function dateOnly(d) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    function getDateKey(d) {
+      // Returns a string key for the date (YYYY-MM-DD) for comparison
+      var date = dateOnly(d);
+      return date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
+    }
+
+    function rangeForTimestamp(ts) {
+      var dt = new Date(ts);
+      var today = dateOnly(new Date());
+      var thatDay = dateOnly(dt);
+
+      var diffMs = today - thatDay;
+      var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0)
+        return 0;
+      if (diffDays === 1)
+        return 1;
+      return 2;
+    }
+
+    function recalcRangeCounts() {
+      var m = NotificationService.historyList;
+      if (!m || typeof m.count === "undefined" || m.count <= 0) {
+        panelContent.rangeCounts = [0, 0, 0, 0];
+        return;
+      }
+
+      var counts = [0, 0, 0, 0];
+
+      counts[0] = m.count;
+
+      for (var i = 0; i < m.count; ++i) {
+        var item = m.get(i);
+        if (!item || typeof item.timestamp === "undefined")
+          continue;
+        var r = rangeForTimestamp(item.timestamp);
+        counts[r + 1] = counts[r + 1] + 1;
+      }
+
+      panelContent.rangeCounts = counts;
+    }
+
+    function isInCurrentRange(ts) {
+      if (currentRange === 0)
+        return true;
+      return rangeForTimestamp(ts) === (currentRange - 1);
+    }
+
+    function countForRange(range) {
+      return rangeCounts[range] || 0;
+    }
+
+    Component.onCompleted: {
+      recalcRangeCounts();
+      // Initialize lastKnownDate
+      lastKnownDate = getDateKey(new Date());
+    }
+
+    Connections {
+      target: NotificationService.historyList
+      function onCountChanged() {
+        panelContent.recalcRangeCounts();
+      }
+    }
+
+    // Timer to check for day changes at midnight
+    Timer {
+      id: dayChangeTimer
+      interval: 60000  // Check every minute
+      repeat: true
+      running: true  // Always runs when panelContent exists (panel is open)
+      onTriggered: {
+        var currentDateKey = panelContent.getDateKey(new Date());
+        if (panelContent.lastKnownDate !== null && panelContent.lastKnownDate !== currentDateKey) {
+          // Day has changed, recalculate counts
+          panelContent.recalcRangeCounts();
+        }
+        panelContent.lastKnownDate = currentDateKey;
+      }
+    }
 
     // Calculate content height based on header + tabs (if visible) + content
     property real headerHeight: headerBox.implicitHeight
@@ -136,7 +133,7 @@ SmartPanel {
       var visibleCount = 0;
       for (var i = 0; i < count; i++) {
         var item = NotificationService.historyList.get(i);
-        if (item && root.isInCurrentRange(item.timestamp)) {
+        if (item && isInCurrentRange(item.timestamp)) {
           visibleCount++;
         }
       }
@@ -220,7 +217,7 @@ SmartPanel {
         Layout.fillWidth: true
         Layout.topMargin: Style.marginS
         implicitHeight: timeTabs.implicitHeight + (Style.marginS * 2)
-        visible: NotificationService.historyList.count > 0 && root.groupByDate
+        visible: NotificationService.historyList.count > 0 && panelContent.groupByDate
 
         RowLayout {
           id: timeTabs
@@ -234,16 +231,16 @@ SmartPanel {
 
             delegate: NButton {
               readonly property int rangeId: index
-              readonly property bool isActive: root.currentRange === rangeId
+              readonly property bool isActive: panelContent.currentRange === rangeId
 
               text: {
                 if (rangeId === 0)
-                  return I18n.tr("notifications.range.all") + " (" + root.countForRange(rangeId) + ")";
+                  return I18n.tr("notifications.range.all") + " (" + panelContent.countForRange(rangeId) + ")";
                 else if (rangeId === 1)
-                  return I18n.tr("notifications.range.today") + " (" + root.countForRange(rangeId) + ")";
+                  return I18n.tr("notifications.range.today") + " (" + panelContent.countForRange(rangeId) + ")";
                 else if (rangeId === 2)
-                  return I18n.tr("notifications.range.yesterday") + " (" + root.countForRange(rangeId) + ")";
-                return I18n.tr("notifications.range.earlier") + " (" + root.countForRange(rangeId) + ")";
+                  return I18n.tr("notifications.range.yesterday") + " (" + panelContent.countForRange(rangeId) + ")";
+                return I18n.tr("notifications.range.earlier") + " (" + panelContent.countForRange(rangeId) + ")";
               }
 
               Layout.fillWidth: true
@@ -263,7 +260,7 @@ SmartPanel {
                 }
               }
 
-              onClicked: root.currentRange = rangeId
+              onClicked: panelContent.currentRange = rangeId
             }
           }
         }
@@ -339,7 +336,7 @@ SmartPanel {
               delegate: Item {
                 id: notificationDelegate
                 width: parent.width
-                visible: root.isInCurrentRange(model.timestamp)
+                visible: panelContent.isInCurrentRange(model.timestamp)
                 height: visible ? contentColumn.height + (Style.marginM * 2) : 0
 
                 property string notificationId: model.id
@@ -450,7 +447,6 @@ SmartPanel {
                         width: parent.width
                         text: model.summary || I18n.tr("general.no-summary")
                         pointSize: Style.fontSizeM
-                        font.weight: Font.Medium
                         color: Color.mOnSurface
                         textFormat: Text.PlainText
                         wrapMode: Text.Wrap
@@ -488,7 +484,6 @@ SmartPanel {
                           text: I18n.tr("notifications.panel.click-to-expand") || "Click to expand"
                           pointSize: Style.fontSizeXS
                           color: Color.mPrimary
-                          font.weight: Font.Medium
                         }
 
                         NIcon {

@@ -142,12 +142,20 @@
           "description": "Ger nivîsa derketî bi vê nirxê re têkildar be, dê bişkok hilweşe.",
           "label": "Rewşa hilweşînê"
         },
+        "color-selection": {
+          "description": "Rengên mûqeyê li îkon û nivîsê bi kar bîne.",
+          "label": "Reng hilbijêre"
+        },
         "display-command-output": {
           "description": "Fermanekê binivîse ku di navberên rêkûpêk de bixebite. Rêza yekem a derketina wê dê wekî nivîs were xuyang kirin.",
           "label": "Nîşandana derketina fermanê",
           "stream-description": "Fermanekê binivîse ku bi berdewamî bixebite."
         },
         "dynamic-text": "Teksta dînamîk",
+        "enable-colorization": {
+          "description": "Rengînkirinê ji bo îkona bişkoka xwerû û nivîsê çalak bike, rengên mûqeyê bi kar bîne.",
+          "label": "Rengînkirin çalak bike"
+        },
         "hide-mode": {
           "alwaysExpanded": "Her tim berfireh kirin",
           "description": "Kontrola xuyabûna widgetê dema ku ferman encamek tune.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Nîşana şêweya klavyeyê nîşan bide.",
           "label": "Nîşanê nîşan bide"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "Dema ku hat çalak kirin, ev rengê sereke ji bo teqezkirinê bikar tîne.",
+          "label": "Rengê bingehîn bikar bîne"
         }
       },
       "lock-keys": {
@@ -489,6 +503,7 @@
       "device-address": "Navnîşana amûrê",
       "disabled": "Bluetooth neçalak e",
       "disconnect": "Girêdanê qut bike",
+      "disconnecting": "Derdibirîna...",
       "discoverable": "Dîtbar",
       "enable-message": "Bo dîtina amûrên heyî Bluetooth çalak bike.",
       "info": "Zanyarî",
@@ -502,6 +517,14 @@
       "refresh-devices": "Nûvekirina cîhazên",
       "scanning": "Lêgerîna cîhazan...",
       "signal": "Nîşan",
+      "signal-text": {
+        "excellent": "Nîşan: Baş e gelek",
+        "fair": "Nîşan: Adil",
+        "good": "Nîşan: Baş e",
+        "poor": "Nîşan: Qels",
+        "unknown": "Nîşan: Nenas",
+        "very-poor": "Nîşan: Gelekî qels"
+      },
       "title": "Bluetooth",
       "trusted": "Pêbawer",
       "unpair": "Girêdanê qut bike"
@@ -581,6 +604,7 @@
     "enable-bluetooth": "Bluetooth çalak bike",
     "enable-dnd": "Dengê dernexîne çalak bike",
     "enable-wifi": "Wi-Fi çalak bike",
+    "launcher-settings": "Mîhengên destpêkerê",
     "lower-to-bottom": "Daxistin bo binî",
     "next": "Pêş",
     "open-calendar": "Salnameyê veke",
@@ -640,6 +664,32 @@
     },
     "delete": "Jê bibe",
     "pin": "Bi dar bixe",
+    "providers": {
+      "applications": "Serlêdan",
+      "calculator": "Hesabker",
+      "calculator-deprecated": "Fermana >calc hatiye betalkirin û dê di demeke nêz de were rakirin. Ji kerema xwe rasterast di lêgerînê de îfadeyên matematîkê binivîse.",
+      "calculator-description": "Hesabker — nirxandina îfadeyên matematîkî",
+      "calculator-enter-expression": "Têketineke matematîkî binivîse",
+      "calculator-error": "Şaşetî",
+      "calculator-name": "Hesabker",
+      "clipboard": "Dîroka clipboardê",
+      "clipboard-clear-description": "Hemû dîroka clipboardê paqij bike",
+      "clipboard-clear-description-full": "Hemû tiştan ji dîroka clipboardê rake",
+      "clipboard-clear-history": "Dîroka clipboardê paqij bike",
+      "clipboard-delete": "Jêbirina navnîşa clipboardê",
+      "clipboard-history-disabled": "Dîroka clipboardê neçalak e",
+      "clipboard-history-disabled-description": "Dîroka clipboardê di mîhengan de çalak bike an cliphist saz bike.",
+      "clipboard-loading": "Dîroka clipboardê tê barkirin...",
+      "clipboard-loading-description": "Tika raweste",
+      "clipboard-search-description": "Lêgerîna dîroka clipboardê",
+      "command": "Ferman",
+      "command-description": "Fermanên shell bixebitîne",
+      "command-name": "Ferman",
+      "emoji": "Hilbijêrê îmojî",
+      "emoji-loading": "Îmojî tên barkriin...",
+      "emoji-loading-description": "Tika raweste",
+      "emoji-search-description": "Lêgerîn û kopîkirina emojiyan"
+    },
     "unpin": "Bi dar nexe"
   },
   "lock-screen": {
@@ -835,32 +885,6 @@
     "search-wallpapers": "Binivîse da ku dîwêran parzûn bikî...",
     "select": "Hilbijêre",
     "test": "Test"
-  },
-  "plugins": {
-    "applications": "Serlêdan",
-    "calculator": "Hesabker",
-    "calculator-deprecated": "Fermana >calc hatiye betalkirin û dê di demeke nêz de were rakirin. Ji kerema xwe rasterast di lêgerînê de îfadeyên matematîkê binivîse.",
-    "calculator-description": "Hesabker — nirxandina îfadeyên matematîkî",
-    "calculator-enter-expression": "Têketineke matematîkî binivîse",
-    "calculator-error": "Şaşetî",
-    "calculator-name": "Hesabker",
-    "clipboard": "Dîroka clipboardê",
-    "clipboard-clear-description": "Hemû dîroka clipboardê paqij bike",
-    "clipboard-clear-description-full": "Hemû tiştan ji dîroka clipboardê rake",
-    "clipboard-clear-history": "Dîroka clipboardê paqij bike",
-    "clipboard-delete": "Jêbirina navnîşa clipboardê",
-    "clipboard-history-disabled": "Dîroka clipboardê neçalak e",
-    "clipboard-history-disabled-description": "Dîroka clipboardê di mîhengan de çalak bike an cliphist saz bike.",
-    "clipboard-loading": "Dîroka clipboardê tê barkirin...",
-    "clipboard-loading-description": "Tika raweste",
-    "clipboard-search-description": "Lêgerîna dîroka clipboardê",
-    "command": "Ferman",
-    "command-description": "Fermanên shell bixebitîne",
-    "command-name": "Ferman",
-    "emoji": "Hilbijêrê îmojî",
-    "emoji-loading": "Îmojî tên barkriin...",
-    "emoji-loading-description": "Tika raweste",
-    "emoji-search-description": "Lêgerîn û kopîkirina emojiyan"
   },
   "quickSettings": {
     "bluetooth": {
@@ -1800,6 +1824,11 @@
     },
     "launcher": {
       "settings": {
+        "annotation-tool": {
+          "description": "Fermana ku dema tikandina bişkoka şîrovekirinê di dîroka clipboardê de were xebitandin, Wêne dê ji vê fermanê re were şandin.",
+          "label": "Amûra şîrovekirinê",
+          "placeholder": "Ez ji te hez dikim."
+        },
         "clip-preview": {
           "description": "Dîmenek pêşdîtinê ya naveroka clipboardê nîşan bide dema ku emrê >clip tê bikaranîn.",
           "label": "Pêşdîtina klîpê çalak bike"
@@ -1839,6 +1868,10 @@
         "show-categories": {
           "description": "Tabên kategoriyê nîşan bide ji bo parzûnkirina sepanan.",
           "label": "Kategoriyan nîşan bide"
+        },
+        "show-icon-background": {
+          "description": "Li paş îkonan paşxaneyeke çargoşe ya gilover nîşan bide.",
+          "label": "Paşxaneya îkonê nîşan bide"
         },
         "sort-by-usage": {
           "description": "Dema ku çalak be, sepanên ku pir caran têne destpêkirin pêşî di lîsteyê de xuya dibin.",
@@ -1954,7 +1987,11 @@
     "network": {
       "bluetooth": {
         "description": "Rêveberiya Bluetooth çalak bike.",
-        "label": "Bluetooth çalak bike"
+        "label": "Bluetooth çalak bike",
+        "rssi-polling": {
+          "description": "Demjimêr RSSI ji bo cîhazên girêdayî bi rêya bluetoothctl nimûne bike. Dibe ku ji bo hemû cîhazên berdest nebe; dema ku çalak be çavkaniyên hindik bikar tîne.",
+          "label": "Pirsgirêka sînyala Bluetoothê"
+        }
       },
       "section": {
         "description": "Girêdanên Wi-Fi û Bluetooth bi rê ve bibe."
@@ -2470,6 +2507,10 @@
         "label": "Leza anîmasyonê",
         "reset": "Lezaaniya bilezîneka nû bike"
       },
+      "box-border": {
+        "description": "Xêzekê li dora deverên naverokê nîşan dide.",
+        "label": "Çarçoweya konteynerê"
+      },
       "box-border-radius": {
         "description": "Goşeya dorfirehiya beşên sereke yên layoutê, wekî barên kêlekê, kart, û panelên naverokê, eyar dike.",
         "label": "Radiusa Konteynirê",
@@ -2596,8 +2637,8 @@
           "tooltip": "Peldanka wêneyê dîwêr"
         },
         "hide-wallpaper-filenames": {
-          "description": "Navên pelên dîwêr di hilbijêr de veşêre.",
-          "label": "Navê pelan veşêre"
+          "tooltip-hide": "Navên pelan veşêre",
+          "tooltip-show": "Navên pelan nîşan bide"
         },
         "monitor-specific": {
           "description": "Peldankekî dîwarê cuda ji bo her monitorekî destnîşan bike.",
@@ -2697,6 +2738,7 @@
       "low-desc": "Pîl li ser %{percent} e. Ji kerema xwe şarjê girêde."
     },
     "bluetooth": {
+      "address-copied": "Navnîşan li clipboardê hate kopîkirin",
       "confirm-code": "Koda {value} li ser amûra din piştrast bike",
       "connect-failed": "Têk çû girêdan bi cîhazê re",
       "disabled": "Neçalakkirî",
@@ -2814,6 +2856,7 @@
     "close": "Bigire",
     "collapse": "Sidebarê veşêre",
     "connect-disconnect-devices": "Amûra Bluetooth",
+    "copy-address": "Navnîşana kopî bike",
     "delete-notification": "Agahdariyê jê bibe",
     "disable-keep-awake": "Hişyar be",
     "do-not-disturb-disabled": "Dengê dernexîne",
@@ -2836,6 +2879,7 @@
     "move-to-center-section": "Navenda beşê",
     "move-to-left-section": "Beşa çepê",
     "move-to-right-section": "Beşa rastê",
+    "move-to-section": "Here'ke {section} here.",
     "mute": "Bêdeng bike",
     "next-media": "Strana pêş",
     "next-month": "Meha bê",
@@ -2845,6 +2889,7 @@
     "night-light-not-installed": "Ronahiya Şevê (tune)",
     "noctalia-performance-disabled": "Moda Performansa Noctalia",
     "noctalia-performance-enabled": "Noctalia Moda Performansê",
+    "open-annotation-tool": "Bi amûra şîrovekirinê veke",
     "open-control-center": "Navenda kontrolê",
     "open-notification-history-disable-dnd": "Dîroka agahdariyê",
     "open-notification-history-enable-dnd": "Dîroka agahdariyê",
@@ -2929,6 +2974,9 @@
         }
       },
       "search": "Bigere",
+      "solid-color": {
+        "tooltip": "Zemînek bi rengê zexm"
+      },
       "sorting": {
         "date_added": "Dîroka tevlîkirinê",
         "favorites": "Bijarte",

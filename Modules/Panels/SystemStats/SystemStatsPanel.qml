@@ -15,7 +15,7 @@ SmartPanel {
   preferredHeight: Math.round(420 * Style.uiScaleRatio)
 
   panelContent: Item {
-    id: content
+    id: panelContent
     property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
 
     // Get diskPath from bar's SystemMonitor widget if available, otherwise use "/"
@@ -157,11 +157,11 @@ SmartPanel {
 
               NCircleStat {
                 anchors.centerIn: parent
-                ratio: (SystemStatService.diskPercents[content.diskPath] ?? 0) / 100
+                ratio: (SystemStatService.diskPercents[panelContent.diskPath] ?? 0) / 100
                 icon: "storage"
                 suffix: "%"
-                fillColor: SystemStatService.getDiskColor(content.diskPath)
-                tooltipText: I18n.tr("system-monitor.disk") + `: ${SystemStatService.diskPercents[content.diskPath] || 0}%\n${content.diskPath}`
+                fillColor: SystemStatService.getDiskColor(panelContent.diskPath)
+                tooltipText: I18n.tr("system-monitor.disk") + `: ${SystemStatService.diskPercents[panelContent.diskPath] || 0}%\n${panelContent.diskPath}`
               }
             }
           }
@@ -203,7 +203,7 @@ SmartPanel {
 
                 NText {
                   text: SystemStatService.formatSpeed(SystemStatService.rxSpeed) + "/s"
-                  pointSize: Style.fontSizeXS
+                  pointSize: Style.fontSizeXXS
                   color: Color.mOnSurfaceVariant
                   Layout.alignment: Qt.AlignHCenter
                 }
@@ -231,7 +231,7 @@ SmartPanel {
 
                 NText {
                   text: SystemStatService.formatSpeed(SystemStatService.txSpeed) + "/s"
-                  pointSize: Style.fontSizeXS
+                  pointSize: Style.fontSizeXXS
                   color: Color.mOnSurfaceVariant
                   Layout.alignment: Qt.AlignHCenter
                 }
@@ -321,8 +321,8 @@ SmartPanel {
 
                   NText {
                     text: {
-                      const usedGb = SystemStatService.diskUsedGb[content.diskPath] || 0;
-                      const sizeGb = SystemStatService.diskSizeGb[content.diskPath] || 0;
+                      const usedGb = SystemStatService.diskUsedGb[panelContent.diskPath] || 0;
+                      const sizeGb = SystemStatService.diskSizeGb[panelContent.diskPath] || 0;
                       return `${usedGb.toFixed(1)}G / ${sizeGb.toFixed(1)}G`;
                     }
                     pointSize: Style.fontSizeXS

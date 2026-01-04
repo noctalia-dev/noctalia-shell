@@ -12,6 +12,7 @@ Singleton {
 
   readonly property ListModel fillModeModel: ListModel {}
   readonly property string defaultDirectory: Settings.preprocessPath(Settings.data.wallpaper.directory)
+  readonly property string solidColorPrefix: "solid://"
 
   // All available wallpaper transitions
   readonly property ListModel transitionsModel: ListModel {}
@@ -90,6 +91,27 @@ Singleton {
     }
     function onRecursiveSearchChanged() {
       root.refreshWallpapersList();
+    }
+    function onUseSolidColorChanged() {
+      if (Settings.data.wallpaper.useSolidColor) {
+        var solidPath = root.createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+        for (var i = 0; i < Quickshell.screens.length; i++) {
+          root.wallpaperChanged(Quickshell.screens[i].name, solidPath);
+        }
+      } else {
+        for (var i = 0; i < Quickshell.screens.length; i++) {
+          var screenName = Quickshell.screens[i].name;
+          root.wallpaperChanged(screenName, currentWallpapers[screenName] || root.defaultWallpaper);
+        }
+      }
+    }
+    function onSolidColorChanged() {
+      if (Settings.data.wallpaper.useSolidColor) {
+        var solidPath = root.createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+        for (var i = 0; i < Quickshell.screens.length; i++) {
+          root.wallpaperChanged(Quickshell.screens[i].name, solidPath);
+        }
+      }
     }
   }
 
@@ -182,6 +204,29 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
+  // Solid color helpers
+  // -------------------------------------------------------------------
+  function isSolidColorPath(path) {
+    return path && typeof path === "string" && path.startsWith(solidColorPrefix);
+  }
+
+  function getSolidColor(path) {
+    if (!isSolidColorPath(path)) {
+      return null;
+    }
+    return path.substring(solidColorPrefix.length);
+  }
+
+  function createSolidColorPath(colorString) {
+    return solidColorPrefix + colorString;
+  }
+
+  function setSolidColor(colorString) {
+    Settings.data.wallpaper.solidColor = colorString;
+    Settings.data.wallpaper.useSolidColor = true;
+  }
+
+  // -------------------------------------------------------------------
   // Get specific monitor wallpaper data
   function getMonitorConfig(screenName) {
     var monitors = Settings.data.wallpaper.monitorDirectories;
@@ -245,11 +290,20 @@ Singleton {
   // -------------------------------------------------------------------
   // Get specific monitor wallpaper - now from cache
   function getWallpaper(screenName) {
+    // Return solid color path when in solid color mode
+    if (Settings.data.wallpaper.useSolidColor) {
+      return createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+    }
     return currentWallpapers[screenName] || root.defaultWallpaper;
   }
 
   // -------------------------------------------------------------------
   function changeWallpaper(path, screenName) {
+    // Turn off solid color mode when selecting a wallpaper
+    if (Settings.data.wallpaper.useSolidColor) {
+      Settings.data.wallpaper.useSolidColor = false;
+    }
+
     if (screenName !== undefined) {
       _setWallpaper(screenName, path);
     } else {

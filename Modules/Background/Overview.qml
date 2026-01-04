@@ -18,6 +18,8 @@ Loader {
       required property ShellScreen modelData
       property string wallpaper: ""
       property string cachedWallpaper: ""
+      property bool isSolidColor: false
+      property color solidColor: Settings.data.wallpaper.solidColor
 
       Component.onCompleted: {
         if (modelData) {
@@ -47,6 +49,14 @@ Loader {
           Qt.callLater(setWallpaperInitial);
           return;
         }
+
+        // Check if we're in solid color mode
+        if (Settings.data.wallpaper.useSolidColor) {
+          var solidPath = WallpaperService.createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
+          wallpaper = solidPath;
+          return;
+        }
+
         const wallpaperPath = WallpaperService.getWallpaper(modelData.name);
         if (wallpaperPath && wallpaperPath !== wallpaper) {
           wallpaper = wallpaperPath;
@@ -57,8 +67,19 @@ Loader {
       onWallpaperChanged: {
         if (!wallpaper)
           return;
+
+        // Check if this is a solid color path
+        if (WallpaperService.isSolidColorPath(wallpaper)) {
+          isSolidColor = true;
+          var colorStr = WallpaperService.getSolidColor(wallpaper);
+          solidColor = colorStr;
+          cachedWallpaper = "";
+          return;
+        }
+
+        isSolidColor = false;
         // Use 1280x720 for overview since it's heavily blurred anyway
-        ImageCacheService.getFullscreen(wallpaper, modelData.name, 1280, 720, function (path, success) {
+        ImageCacheService.getLarge(wallpaper, 1280, 720, function (path, success) {
           cachedWallpaper = path;
         });
       }
@@ -76,9 +97,24 @@ Loader {
         left: true
       }
 
+      // Solid color background
+      Rectangle {
+        anchors.fill: parent
+        visible: isSolidColor
+        color: solidColor
+
+        Rectangle {
+          anchors.fill: parent
+          color: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
+          opacity: 0.8
+        }
+      }
+
+      // Image background
       Image {
         id: bgImage
         anchors.fill: parent
+        visible: !isSolidColor
         fillMode: Image.PreserveAspectCrop
         source: cachedWallpaper
         smooth: true

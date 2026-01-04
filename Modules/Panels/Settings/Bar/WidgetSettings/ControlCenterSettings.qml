@@ -35,18 +35,14 @@ ColumnLayout {
     label: I18n.tr("bar.widget-settings.control-center.use-distro-logo.label")
     description: I18n.tr("bar.widget-settings.control-center.use-distro-logo.description")
     checked: valueUseDistroLogo
-    onToggled: function (checked) {
-      valueUseDistroLogo = checked;
-    }
+    onToggled: checked => valueUseDistroLogo = checked
   }
 
   NToggle {
     label: I18n.tr("bar.widget-settings.control-center.enable-colorization.label")
     description: I18n.tr("bar.widget-settings.control-center.enable-colorization.description")
     checked: valueEnableColorization
-    onToggled: function (checked) {
-      valueEnableColorization = checked;
-    }
+    onToggled: checked => valueEnableColorization = checked
   }
 
   NComboBox {

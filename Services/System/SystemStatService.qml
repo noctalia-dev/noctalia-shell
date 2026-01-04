@@ -893,23 +893,16 @@ Singleton {
   }
 
   // -------------------------------------------------------
-  // Smart formatter for memory values (GB) that prevents elision
-  // Tries to keep within 5 chars when possible, rounds if needed
+  // Smart formatter for memory values (GB) - max 4 chars
+  // Uses decimal for < 10GB, integer otherwise
   function formatMemoryGb(memGb) {
-    // memGb is already a string from toFixed(1), convert to number
     const value = parseFloat(memGb);
     if (isNaN(value))
       return "0G";
 
-    // Try with 1 decimal and "G"
-    let formatted = value.toFixed(1) + "G";
-
-    // If longer than 5 chars (e.g., "123.4G"), round to integer
-    if (formatted.length > 5) {
-      formatted = Math.round(value) + "G";
-    }
-
-    return formatted;
+    if (value < 10)
+      return value.toFixed(1) + "G"; // "0.0G" to "9.9G"
+    return Math.round(value) + "G"; // "10G" to "999G"
   }
 
   // -------------------------------------------------------

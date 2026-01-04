@@ -260,7 +260,6 @@ NBox {
               anchors.centerIn: parent
               color: Qt.alpha(Color.mPrimary, 0.7)
               pointSize: Style.fontSizeXXS
-              font.weight: Style.fontWeightMedium
               text: modelData
             }
           }

@@ -16,6 +16,7 @@ SmartPanel {
   preferredHeight: Math.round(500 * Style.uiScaleRatio)
 
   panelContent: Rectangle {
+    id: panelContent
     color: Color.transparent
 
     // Calculate content height based on header + devices list (or minimum for empty states)
@@ -75,14 +76,10 @@ SmartPanel {
 
           NIconButton {
             enabled: BluetoothService.enabled
-            icon: BluetoothService.adapter && BluetoothService.adapter.discovering ? "stop" : "refresh"
+            icon: BluetoothService.scanningActive ? "stop" : "refresh"
             tooltipText: I18n.tr("tooltips.refresh-devices")
             baseSize: Style.baseWidgetSize * 0.8
-            onClicked: {
-              if (BluetoothService.adapter) {
-                BluetoothService.adapter.discovering = !BluetoothService.adapter.discovering;
-              }
-            }
+            onClicked: BluetoothService.toggleDiscovery()
           }
 
           NIconButton {
@@ -160,9 +157,9 @@ SmartPanel {
             label: I18n.tr("bluetooth.panel.connected-devices")
             headerMode: "layout"
             property var items: {
-              if (!BluetoothService.adapter || !Bluetooth.devices)
+              if (!BluetoothService.adapter || !BluetoothService.adapter.devices)
                 return [];
-              var filtered = Bluetooth.devices.values.filter(dev => dev && !dev.blocked && dev.connected);
+              var filtered = BluetoothService.adapter.devices.values.filter(dev => dev && !dev.blocked && dev.connected);
               filtered = BluetoothService.dedupeDevices(filtered);
               return BluetoothService.sortDevices(filtered);
             }
@@ -177,9 +174,9 @@ SmartPanel {
             tooltipText: I18n.tr("tooltips.connect-disconnect-devices")
             headerMode: "layout"
             property var items: {
-              if (!BluetoothService.adapter || !Bluetooth.devices)
+              if (!BluetoothService.adapter || !BluetoothService.adapter.devices)
                 return [];
-              var filtered = Bluetooth.devices.values.filter(dev => dev && !dev.blocked && !dev.connected && (dev.paired || dev.trusted));
+              var filtered = BluetoothService.adapter.devices.values.filter(dev => dev && !dev.blocked && !dev.connected && (dev.paired || dev.trusted));
               filtered = BluetoothService.dedupeDevices(filtered);
               return BluetoothService.sortDevices(filtered);
             }
@@ -193,11 +190,11 @@ SmartPanel {
             label: I18n.tr("bluetooth.panel.available-devices")
             headerMode: "filter"
             property var items: {
-              if (!BluetoothService.adapter || !Bluetooth.devices)
+              if (!BluetoothService.adapter || !BluetoothService.adapter.devices)
                 return [];
-              var filtered = Bluetooth.devices.values.filter(dev => dev && !dev.blocked && !dev.paired && !dev.trusted);
+              var filtered = BluetoothService.adapter.devices.values.filter(dev => dev && !dev.blocked && !dev.paired && !dev.trusted);
               // Optionally hide devices without a meaningful name when the filter is enabled
-              if (Settings.data && Settings.data.ui && Settings.data.ui.bluetoothHideUnnamedDevices) {
+              if (Settings.data && Settings.data.ui && Settings.data.network.bluetoothHideUnnamedDevices) {
                 filtered = filtered.filter(function (dev) {
                   // Extract display name
                   var dn = "";
@@ -272,12 +269,12 @@ SmartPanel {
           // Empty state when no devices
           NBox {
             visible: {
-              if (!BluetoothService.adapter || BluetoothService.adapter.discovering || !Bluetooth.devices)
+              if (!(BluetoothService.adapter && BluetoothService.adapter.devices) || BluetoothService.scanningActive)
                 return false;
 
-              var availableCount = Bluetooth.devices.values.filter(dev => {
-                                                                     return dev && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
-                                                                   }).length;
+              var availableCount = BluetoothService.adapter.devices.values.filter(dev => {
+                                                                                    return dev && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
+                                                                                  }).length;
               return (availableCount === 0);
             }
             Layout.fillWidth: true
@@ -310,9 +307,7 @@ SmartPanel {
                 icon: "refresh"
                 Layout.alignment: Qt.AlignHCenter
                 onClicked: {
-                  if (BluetoothService.adapter) {
-                    BluetoothService.adapter.discovering = !BluetoothService.adapter.discovering;
-                  }
+                  BluetoothService.toggleDiscovery();
                 }
               }
 
@@ -327,13 +322,13 @@ SmartPanel {
             Layout.fillWidth: true
             Layout.preferredHeight: columnScanning.implicitHeight + Style.marginM * 2
             visible: {
-              if (!BluetoothService.adapter || !BluetoothService.adapter.discovering || !Bluetooth.devices) {
+              if (!(BluetoothService.adapter && BluetoothService.adapter.devices) || !BluetoothService.scanningActive) {
                 return false;
               }
 
-              var availableCount = Bluetooth.devices.values.filter(dev => {
-                                                                     return dev && !dev.paired && !dev.pairing && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
-                                                                   }).length;
+              var availableCount = BluetoothService.adapter.devices.values.filter(dev => {
+                                                                                    return dev && !dev.paired && !dev.pairing && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
+                                                                                  }).length;
               return (availableCount === 0);
             }
 

@@ -493,11 +493,9 @@ ColumnLayout {
 
               NToggle {
                 checked: modelData.countdownEnabled !== undefined ? modelData.countdownEnabled : true
-                onToggled: function (checked) {
-                  root.updateEntry(delegateItem.index, {
-                                     "countdownEnabled": checked
-                                   });
-                }
+                onToggled: checked => root.updateEntry(delegateItem.index, {
+                                                         "countdownEnabled": checked
+                                                       })
               }
             }
 

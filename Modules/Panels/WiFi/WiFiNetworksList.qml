@@ -21,8 +21,8 @@ NBox {
   // Currently expanded info panel for a connected SSID
   property string infoSsid: ""
   // Local layout toggle for details: true = grid (2 cols), false = rows (1 col)
-  // Persisted under Settings.data.ui.wifiDetailsViewMode
-  property bool detailsGrid: (Settings.data && Settings.data.ui && Settings.data.ui.wifiDetailsViewMode !== undefined) ? (Settings.data.ui.wifiDetailsViewMode === "grid") : true
+  // Persisted under Settings.data.network.wifiDetailsViewMode
+  property bool detailsGrid: (Settings.data && Settings.data.ui && Settings.data.network.wifiDetailsViewMode !== undefined) ? (Settings.data.network.wifiDetailsViewMode === "grid") : true
 
   signal passwordRequested(string ssid)
   signal passwordSubmitted(string ssid, string password)
@@ -75,20 +75,17 @@ NBox {
     Repeater {
       model: root.displayModel
 
-      Rectangle {
+      NBox {
         id: networkItem
 
         Layout.fillWidth: true
         Layout.leftMargin: Style.marginXS
         Layout.rightMargin: Style.marginXS
         implicitHeight: netColumn.implicitHeight + (Style.marginM * 2)
-        radius: Style.radiusM
-        border.width: Style.borderS
-        border.color: modelData.connected ? Color.mPrimary : Color.mOutline
 
         opacity: (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) ? 0.6 : 1.0
 
-        color: modelData.connected ? Qt.rgba(Color.mPrimary.r, Color.mPrimary.g, Color.mPrimary.b, 0.05) : Color.mSurface
+        color: modelData.connected ? Qt.rgba(Color.mPrimary.r, Color.mPrimary.g, Color.mPrimary.b, 0.08) : Color.mSurface
 
         Behavior on opacity {
           NumberAnimation {
@@ -325,7 +322,7 @@ NBox {
               onClicked: {
                 root.detailsGrid = !root.detailsGrid;
                 if (Settings.data && Settings.data.ui) {
-                  Settings.data.ui.wifiDetailsViewMode = root.detailsGrid ? "grid" : "list";
+                  Settings.data.network.wifiDetailsViewMode = root.detailsGrid ? "grid" : "list";
                 }
               }
               z: 1
@@ -357,6 +354,7 @@ NBox {
                   icon: NetworkService.isSecured(modelData.security) ? "lock" : "lock-open"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
+                  Layout.alignment: Qt.AlignVCenter
                   // Tooltip on hover when using icons-only mode
                   MouseArea {
                     anchors.fill: parent
@@ -370,9 +368,10 @@ NBox {
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true
-                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
-                  elide: Text.ElideNone
-                  maximumLineCount: 4
+                  Layout.alignment: Qt.AlignVCenter
+                  wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                  elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
+                  maximumLineCount: root.detailsGrid ? 1 : 6
                   clip: true
                 }
               }
@@ -382,6 +381,8 @@ NBox {
                 NIcon {
                   icon: "router"
                   pointSize: Style.fontSizeXS
+                  color: NetworkService.internetConnectivity ? Color.mOnSurface : Color.mError
+                  Layout.alignment: Qt.AlignVCenter
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
@@ -393,9 +394,10 @@ NBox {
                   text: NetworkService.activeWifiDetails.band || "-"
                   pointSize: Style.fontSizeXS
                   Layout.fillWidth: true
-                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
-                  elide: Text.ElideNone
-                  maximumLineCount: 4
+                  Layout.alignment: Qt.AlignVCenter
+                  wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                  elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
+                  maximumLineCount: root.detailsGrid ? 1 : 6
                   clip: true
                 }
               }
@@ -408,6 +410,7 @@ NBox {
                   icon: "gauge"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
+                  Layout.alignment: Qt.AlignVCenter
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
@@ -420,9 +423,10 @@ NBox {
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true
-                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
-                  elide: Text.ElideNone
-                  maximumLineCount: 4
+                  Layout.alignment: Qt.AlignVCenter
+                  wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                  elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
+                  maximumLineCount: root.detailsGrid ? 1 : 6
                   clip: true
                 }
               }
@@ -434,6 +438,7 @@ NBox {
                   icon: "network"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
+                  Layout.alignment: Qt.AlignVCenter
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
@@ -446,9 +451,10 @@ NBox {
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true
-                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
-                  elide: Text.ElideNone
-                  maximumLineCount: 4
+                  Layout.alignment: Qt.AlignVCenter
+                  wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                  elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
+                  maximumLineCount: root.detailsGrid ? 1 : 6
                   clip: true
                 }
               }
@@ -461,6 +467,7 @@ NBox {
                   icon: "router"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
+                  Layout.alignment: Qt.AlignVCenter
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
@@ -473,9 +480,10 @@ NBox {
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true
-                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
-                  elide: Text.ElideNone
-                  maximumLineCount: 4
+                  Layout.alignment: Qt.AlignVCenter
+                  wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                  elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
+                  maximumLineCount: root.detailsGrid ? 1 : 6
                   clip: true
                 }
               }
@@ -487,6 +495,7 @@ NBox {
                   icon: "world"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
+                  Layout.alignment: Qt.AlignVCenter
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
@@ -499,9 +508,10 @@ NBox {
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true
-                  wrapMode: implicitWidth > width ? Text.WrapAtWordBoundaryOrAnywhere : Text.NoWrap
-                  elide: Text.ElideNone
-                  maximumLineCount: 6
+                  Layout.alignment: Qt.AlignVCenter
+                  wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                  elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
+                  maximumLineCount: root.detailsGrid ? 1 : 6
                   clip: true
                 }
               }

@@ -14,7 +14,6 @@ Item {
   property string text: ""
   property string suffix: ""
   property string tooltipText: ""
-  property string density: ""
   property bool autoHide: false
   property bool forceOpen: false
   property bool forceClose: false
@@ -64,15 +63,6 @@ Item {
       return Math.max(1, Math.round(pillHeight * 0.65));
     default:
       return Math.max(1, Math.round(pillHeight * 0.48));
-    }
-  }
-
-  readonly property real textSize: {
-    switch (root.density) {
-    case "compact":
-      return Math.max(1, Math.round(pillHeight * 0.38));
-    default:
-      return Math.max(1, Math.round(pillHeight * 0.33));
     }
   }
 
@@ -154,9 +144,8 @@ Item {
       rotation: rotateText ? -90 : 0
       text: root.text + root.suffix
       family: Settings.data.ui.fontFixed
-      pointSize: textSize
+      pointSize: Style.barFontSize
       applyUiScale: false
-      font.weight: Style.fontWeightMedium
       horizontalAlignment: Text.AlignHCenter
       verticalAlignment: Text.AlignVCenter
       color: root.fgColor

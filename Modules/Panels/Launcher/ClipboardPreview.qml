@@ -15,7 +15,7 @@ Item {
   property bool loadingFullContent: false
   property bool isImageContent: false
 
-  implicitHeight: contentColumn.implicitHeight + Style.marginL * 2
+  implicitHeight: contentArea.implicitHeight + Style.marginL * 2
 
   Connections {
     target: previewPanel
@@ -65,64 +65,42 @@ Item {
     }
   }
 
-  Rectangle {
+  Item {
+    id: contentArea
     anchors.fill: parent
-    color: Color.mSurface || "#f5f5f5"
-    border.color: Color.mOutlineVariant || "#cccccc"
-    border.width: 1
-    radius: Style.radiusM
+    anchors.margins: Style.marginS
 
-    ColumnLayout {
-      id: contentColumn
+    BusyIndicator {
+      anchors.centerIn: parent
+      running: loadingFullContent
+      visible: loadingFullContent
+      width: Style.baseWidgetSize
+      height: width
+    }
+
+    Image {
       anchors.fill: parent
       anchors.margins: Style.marginS
-      spacing: Style.marginS
+      source: imageDataUrl
+      visible: isImageContent && !loadingFullContent && imageDataUrl !== ""
+      fillMode: Image.PreserveAspectFit
+    }
 
-      Rectangle {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        color: Color.mSurfaceVariant || "#e0e0e0"
-        border.color: Color.mOutline || "#aaaaaa"
-        border.width: 1
-        radius: Style.radiusS
+    ScrollView {
+      anchors.fill: parent
+      anchors.margins: Style.marginS
+      clip: true
+      visible: !isImageContent && !loadingFullContent
 
-        BusyIndicator {
-          anchors.centerIn: parent
-          running: loadingFullContent
-          visible: loadingFullContent
-          width: Style.baseWidgetSize
-          height: width
-        }
-
-        Item {
-          anchors.fill: parent
-          anchors.margins: Style.marginS
-
-          NImageRounded {
-            anchors.fill: parent
-            imagePath: imageDataUrl
-            visible: isImageContent && !loadingFullContent && imageDataUrl !== ""
-            radius: Style.radiusS
-            imageFillMode: Image.PreserveAspectFit
-          }
-
-          ScrollView {
-            anchors.fill: parent
-            clip: true
-            visible: !isImageContent && !loadingFullContent
-
-            TextArea {
-              text: fullContent
-              readOnly: true
-              wrapMode: Text.Wrap
-              textFormat: TextArea.RichText // Enable HTML rendering
-              font.pointSize: Style.fontSizeM // Adjust font size for readability
-              color: Color.mOnSurface // Consistent text color
-              background: Rectangle {
-                color: Color.mSurfaceVariant || "#e0e0e0"
-              }
-            }
-          }
+      TextArea {
+        text: fullContent
+        readOnly: true
+        wrapMode: Text.Wrap
+        textFormat: TextArea.RichText
+        font.pointSize: Style.fontSizeM
+        color: Color.mOnSurface
+        background: Rectangle {
+          color: Color.mSurfaceVariant || "#e0e0e0"
         }
       }
     }

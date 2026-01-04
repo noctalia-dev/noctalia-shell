@@ -69,7 +69,6 @@ Item {
     id: pill
 
     screen: root.screen
-    density: Settings.data.bar.density
     oppositeDirection: BarService.getPillDirection(root)
     icon: {
       try {
@@ -110,7 +109,11 @@ Item {
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow"
     forceClose: isBarVertical || root.displayMode === "alwaysHide" || text === ""
-    onClicked: PanelService.getPanel("wifiPanel", screen)?.toggle(this)
+    onClicked: {
+      var panel = PanelService.getPanel("wifiPanel", screen);
+      if (panel)
+        panel.toggle(this);
+    }
     onRightClicked: {
       var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
       if (popupMenuWindow) {
@@ -119,8 +122,29 @@ Item {
       }
     }
     tooltipText: {
-      if (pill.text !== "") {
-        return pill.text;
+      try {
+        if (NetworkService.ethernetConnected) {
+          const d = NetworkService.activeEthernetDetails || ({});
+          let base = "";
+          if (d.ifname && d.ifname.length > 0)
+            base = d.ifname;
+          else if (d.connectionName && d.connectionName.length > 0)
+            base = d.connectionName;
+          else if (NetworkService.activeEthernetIf && NetworkService.activeEthernetIf.length > 0)
+            base = NetworkService.activeEthernetIf;
+          else
+            base = I18n.tr("quickSettings.wifi.label.ethernet");
+          const speed = (d.speed && d.speed.length > 0) ? d.speed : "";
+          return speed ? (base + " — " + speed) : base;
+        }
+        // Wi‑Fi tooltip: SSID — link speed (if available)
+        if (pill.text !== "") {
+          const w = NetworkService.activeWifiDetails || ({});
+          const rate = (w.rateShort && w.rateShort.length > 0) ? w.rateShort : (w.rate || "");
+          return rate && rate.length > 0 ? (pill.text + " — " + rate) : pill.text;
+        }
+      } catch (e) {
+        // noop
       }
       return I18n.tr("tooltips.manage-wifi");
     }

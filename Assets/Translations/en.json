@@ -142,12 +142,20 @@
           "description": "If the output text matches this value, the button will collapse.",
           "label": "Collapse condition"
         },
+        "color-selection": {
+          "description": "Apply theme colors to icon and text.",
+          "label": "Select Color"
+        },
         "display-command-output": {
           "description": "Enter a command to run at a regular interval. The first line of its output will be displayed as text.",
           "label": "Display command output",
           "stream-description": "Enter a command to run continuously."
         },
         "dynamic-text": "Dynamic text",
+        "enable-colorization": {
+          "description": "Enable colorization for the custom button icon and text, applying theme colors.",
+          "label": "Enable Colorization"
+        },
         "hide-mode": {
           "alwaysExpanded": "Always expanded",
           "description": "Controls widget visibility when the command has no output.",
@@ -228,6 +236,12 @@
         "show-icon": {
           "description": "Display the keyboard layout icon.",
           "label": "Show icon"
+        }
+      },
+      "launcher": {
+        "use-primary-color": {
+          "description": "When enabled, this applies the primary color for emphasis.",
+          "label": "Use primary color"
         }
       },
       "lock-keys": {
@@ -489,6 +503,7 @@
       "device-address": "Device address",
       "disabled": "Bluetooth is disabled",
       "disconnect": "Disconnect",
+      "disconnecting": "Disconnecting...",
       "discoverable": "Discoverable",
       "enable-message": "Enable Bluetooth to see available devices.",
       "info": "Info",
@@ -502,6 +517,14 @@
       "refresh-devices": "Refresh devices",
       "scanning": "Scanning for devices...",
       "signal": "Signal",
+      "signal-text": {
+        "excellent": "Signal: Excellent",
+        "fair": "Signal: Fair",
+        "good": "Signal: Good",
+        "poor": "Signal: Poor",
+        "unknown": "Signal: Unknown",
+        "very-poor": "Signal: Very poor"
+      },
       "title": "Bluetooth",
       "trusted": "Trusted",
       "unpair": "Unpair"
@@ -581,6 +604,7 @@
     "enable-bluetooth": "Enable Bluetooth",
     "enable-dnd": "Enable Do Not Disturb",
     "enable-wifi": "Enable Wi-Fi",
+    "launcher-settings": "Launcher settings",
     "lower-to-bottom": "Lower to bottom",
     "next": "Next",
     "open-calendar": "Open calendar",
@@ -640,6 +664,32 @@
     },
     "delete": "Delete",
     "pin": "Pin",
+    "providers": {
+      "applications": "Applications",
+      "calculator": "Calculator",
+      "calculator-deprecated": "The >calc command is deprecated and will be removed soon. Please type math expressions directly in search instead.",
+      "calculator-description": "Calculator — evaluate mathematical expressions",
+      "calculator-enter-expression": "Enter a mathematical expression",
+      "calculator-error": "Error",
+      "calculator-name": "Calculator",
+      "clipboard": "Clipboard history",
+      "clipboard-clear-description": "Clear all clipboard history",
+      "clipboard-clear-description-full": "Remove all items from clipboard history",
+      "clipboard-clear-history": "Clear clipboard history",
+      "clipboard-delete": "Delete clipboard entry",
+      "clipboard-history-disabled": "Clipboard history disabled",
+      "clipboard-history-disabled-description": "Enable clipboard history in settings or install cliphist",
+      "clipboard-loading": "Loading clipboard history...",
+      "clipboard-loading-description": "Please wait",
+      "clipboard-search-description": "Search clipboard history",
+      "command": "Command",
+      "command-description": "Run shell commands",
+      "command-name": "Command",
+      "emoji": "Emoji picker",
+      "emoji-loading": "Loading emojis...",
+      "emoji-loading-description": "Please wait",
+      "emoji-search-description": "Search and copy emojis"
+    },
     "unpin": "Unpin"
   },
   "lock-screen": {
@@ -835,32 +885,6 @@
     "search-wallpapers": "Type to filter wallpapers...",
     "select": "Select",
     "test": "Test"
-  },
-  "plugins": {
-    "applications": "Applications",
-    "calculator": "Calculator",
-    "calculator-deprecated": "The >calc command is deprecated and will be removed soon. Please type math expressions directly in search instead.",
-    "calculator-description": "Calculator — evaluate mathematical expressions",
-    "calculator-enter-expression": "Enter a mathematical expression",
-    "calculator-error": "Error",
-    "calculator-name": "Calculator",
-    "clipboard": "Clipboard history",
-    "clipboard-clear-description": "Clear all clipboard history",
-    "clipboard-clear-description-full": "Remove all items from clipboard history",
-    "clipboard-clear-history": "Clear clipboard history",
-    "clipboard-delete": "Delete clipboard entry",
-    "clipboard-history-disabled": "Clipboard history disabled",
-    "clipboard-history-disabled-description": "Enable clipboard history in settings or install cliphist",
-    "clipboard-loading": "Loading clipboard history...",
-    "clipboard-loading-description": "Please wait",
-    "clipboard-search-description": "Search clipboard history",
-    "command": "Command",
-    "command-description": "Run shell commands",
-    "command-name": "Command",
-    "emoji": "Emoji picker",
-    "emoji-loading": "Loading emojis...",
-    "emoji-loading-description": "Please wait",
-    "emoji-search-description": "Search and copy emojis"
   },
   "quickSettings": {
     "bluetooth": {
@@ -1800,6 +1824,11 @@
     },
     "launcher": {
       "settings": {
+        "annotation-tool": {
+          "description": "Command to run when clicking the annotate button in clipboard history, The image will be piped to this command.",
+          "label": "Annotation tool",
+          "placeholder": "e.g. 'gradia', 'satty -f -'"
+        },
         "clip-preview": {
           "description": "Show a preview of the clipboard content when using the >clip command.",
           "label": "Enable clip preview"
@@ -1839,6 +1868,10 @@
         "show-categories": {
           "description": "Show category tabs for filtering applications.",
           "label": "Show categories"
+        },
+        "show-icon-background": {
+          "description": "Show a rounded rectangle background behind icons.",
+          "label": "Show icon background"
         },
         "sort-by-usage": {
           "description": "When enabled, frequently launched apps appear first in the list.",
@@ -1954,7 +1987,11 @@
     "network": {
       "bluetooth": {
         "description": "Activate Bluetooth management.",
-        "label": "Enable Bluetooth"
+        "label": "Enable Bluetooth",
+        "rssi-polling": {
+          "description": "Periodically sample RSSI for connected devices via bluetoothctl. May not be available for all devices; uses minimal resources when enabled.",
+          "label": "Bluetooth signal polling"
+        }
       },
       "section": {
         "description": "Manage Wi-Fi and Bluetooth connections."
@@ -2470,6 +2507,10 @@
         "label": "Animation speed",
         "reset": "Reset animation speed"
       },
+      "box-border": {
+        "description": "Displays an outline around content areas.",
+        "label": "Container outline"
+      },
       "box-border-radius": {
         "description": "Adjusts the corner roundness of major layout sections, such as sidebars, cards, and content panels.",
         "label": "Container Radius",
@@ -2596,8 +2637,8 @@
           "tooltip": "Wallpaper folder"
         },
         "hide-wallpaper-filenames": {
-          "description": "Hide wallpaper filenames in the selector.",
-          "label": "Hide filenames"
+          "tooltip-hide": "Hide Filenames",
+          "tooltip-show": "Show Filenames"
         },
         "monitor-specific": {
           "description": "Set a different wallpaper folder for each monitor.",
@@ -2697,20 +2738,21 @@
       "low-desc": "Battery is at {percent}%. Please connect the charger."
     },
     "bluetooth": {
-      "confirm-code": "Confirm code {value} on the other device.",
-      "connect-failed": "Failed to connect to device.",
-      "disabled": "Disabled.",
-      "disconnect-failed": "Failed to disconnect from device.",
-      "discoverable-change-failed": "Failed to change discoverable state.",
-      "discoverable-disabled": "Discoverable disabled.",
-      "discoverable-enabled": "Discoverable enabled.",
-      "display-code": "Enter code {value} on the other device.",
-      "enabled": "Enabled.",
-      "forget-failed": "Failed to forget device.",
-      "pair-failed": "Failed to pair device.",
-      "passkey-required": "Passkey required by the device.",
-      "pincode-required": "PIN code required by the device.",
-      "state-change-failed": "Failed to change Bluetooth state."
+      "address-copied": "Address copied to clipboard",
+      "confirm-code": "Confirm code {value} on the other device",
+      "connect-failed": "Failed to connect to device",
+      "disabled": "Disabled",
+      "disconnect-failed": "Failed to disconnect from device",
+      "discoverable-change-failed": "Failed to change discoverable state",
+      "discoverable-disabled": "Discoverable disabled",
+      "discoverable-enabled": "Discoverable enabled",
+      "display-code": "Enter code {value} on the other device",
+      "enabled": "Enabled",
+      "forget-failed": "Failed to forget device",
+      "pair-failed": "Failed to pair device",
+      "passkey-required": "Passkey required by the device",
+      "pincode-required": "PIN code required by the device",
+      "state-change-failed": "Failed to change Bluetooth state"
     },
     "clipboard": {
       "unavailable": "Clipboard history unavailable",
@@ -2814,6 +2856,7 @@
     "close": "Close",
     "collapse": "Collapse sidebar",
     "connect-disconnect-devices": "Bluetooth device",
+    "copy-address": "Copy address",
     "delete-notification": "Delete notification",
     "disable-keep-awake": "Keep Awake",
     "do-not-disturb-disabled": "Do Not Disturb",
@@ -2836,6 +2879,7 @@
     "move-to-center-section": "Center section",
     "move-to-left-section": "Left section",
     "move-to-right-section": "Right section",
+    "move-to-section": "Move to {section}",
     "mute": "Mute",
     "next-media": "Next track",
     "next-month": "Next month",
@@ -2845,6 +2889,7 @@
     "night-light-not-installed": "Night Light (not available)",
     "noctalia-performance-disabled": "Noctalia Performance Mode",
     "noctalia-performance-enabled": "Noctalia Performance Mode",
+    "open-annotation-tool": "Open with annotation tool",
     "open-control-center": "Control center",
     "open-notification-history-disable-dnd": "Notification history",
     "open-notification-history-enable-dnd": "Notification history",
@@ -2892,6 +2937,7 @@
       "apikey": {
         "help": "An API key is required to access NSFW content.",
         "label": "API Key",
+        "managed-by-env": "Managed via NOCTALIA_WALLHAVEN_API_KEY environment variable.",
         "placeholder": "Enter your Wallhaven API Key"
       },
       "apply-all-monitors": {
@@ -2929,6 +2975,9 @@
         }
       },
       "search": "Search",
+      "solid-color": {
+        "tooltip": "Solid color background"
+      },
       "sorting": {
         "date_added": "Date added",
         "favorites": "Favorites",

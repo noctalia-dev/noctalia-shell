@@ -14,7 +14,6 @@ NIconButton {
 
   property ShellScreen screen
 
-  density: Settings.data.bar.density
   baseSize: Style.capsuleHeight
   applyUiScale: false
   customRadius: Style.radiusL
