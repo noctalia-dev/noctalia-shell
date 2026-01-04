@@ -3,6 +3,7 @@ pragma Singleton
 // import qs.modules.common
 // import qs.modules.common.functions
 import Quickshell
+import "../Helpers/FuzzySort.js" as FuzzySort
 
 /**
  * - Eases fuzzy searching for applications by name
@@ -10,7 +11,6 @@ import Quickshell
  */
 Singleton {
     id: root
-    property bool sloppySearch: Config.options?.search.sloppy ?? false
     property real scoreThreshold: 0.2
     property var substitutions: ({
         "code-url-handler": "visual-studio-code",
@@ -44,12 +44,12 @@ Singleton {
         .sort((a, b) => a.name.localeCompare(b.name))
 
     readonly property var preppedNames: list.map(a => ({
-        name: Fuzzy.prepare(`${a.name} `),
+        name: FuzzySort.prepare(`${a.name} `),
         entry: a
     }))
 
     readonly property var preppedIcons: list.map(a => ({
-        name: Fuzzy.prepare(`${a.icon} `),
+        name: FuzzySort.prepare(`${a.icon} `),
         entry: a
     }))
 
@@ -64,7 +64,7 @@ Singleton {
                 .map(item => item.entry)
         }
 
-        return Fuzzy.go(search, preppedNames, {
+        return FuzzySort.go(search, preppedNames, {
             all: true,
             key: "name"
         }).map(r => {
@@ -126,7 +126,7 @@ Singleton {
 
 
         // Search in desktop entries
-        const iconSearchResults = Fuzzy.go(str, preppedIcons, {
+        const iconSearchResults = FuzzySort.go(str, preppedIcons, {
             all: true,
             key: "name"
         }).map(r => {
