@@ -420,6 +420,7 @@
     "mango": false,
     "zed": false,
     "helix": false,
+    "zenBrowser": false,
     "enableUserTemplates": false
   },
   "nightLight": {

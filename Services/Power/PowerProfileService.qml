@@ -88,7 +88,7 @@ Singleton {
       setProfile(PowerProfile.PowerSaver);
     else if (current === PowerProfile.PowerSaver)
       setProfile(PowerProfile.Performance);
-    }
+  }
 
   function isDefault() {
     if (!available)

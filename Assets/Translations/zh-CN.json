@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "写入 {filepath} 并重新加载"
+          },
+          "zen-browser": {
+            "description": "将 {filepath} 写入；复制到你的 Zen 配置文件的 chrome/userChrome.css 中"
           }
         },
         "section": {
@@ -2937,6 +2940,7 @@
       "apikey": {
         "help": "访问 NSFW 内容需要 API 密钥。",
         "label": "API 密钥",
+        "managed-by-env": "通过 NOCTALIA_WALLHAVEN_API_KEY 环境变量进行管理。",
         "placeholder": "输入您的Wallhaven API密钥"
       },
       "apply-all-monitors": {

@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "Записать {filepath} и перезагрузить"
+          },
+          "zen-browser": {
+            "description": "Запишите в {filepath}; скопируйте в chrome/userChrome.css вашего профиля Zen."
           }
         },
         "section": {
@@ -2937,6 +2940,7 @@
       "apikey": {
         "help": "Для доступа к контенту NSFW требуется ключ API.",
         "label": "Ключ API",
+        "managed-by-env": "Управляется через переменную окружения NOCTALIA_WALLHAVEN_API_KEY.",
         "placeholder": "Введите свой API-ключ Wallhaven"
       },
       "apply-all-monitors": {

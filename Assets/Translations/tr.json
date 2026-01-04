@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "{filepath} dosyasına yaz ve yeniden yükle"
+          },
+          "zen-browser": {
+            "description": "{dosya yolu} yazın; Zen profilinizin chrome/userChrome.css dosyasına kopyalayın."
           }
         },
         "section": {
@@ -2937,6 +2940,7 @@
       "apikey": {
         "help": "NSFW içeriğe erişmek için bir API anahtarı gereklidir.",
         "label": "API Anahtarı",
+        "managed-by-env": "NOCTALIA_WALLHAVEN_API_KEY ortam değişkeni aracılığıyla yönetilir.",
         "placeholder": "Wallhaven API Anahtarınızı girin"
       },
       "apply-all-monitors": {

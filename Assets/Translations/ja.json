@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "{filepath} を書き込み、リロードします。"
+          },
+          "zen-browser": {
+            "description": "{filepath} を記述; Zen プロファイルの chrome/userChrome.css にコピーしてください。"
           }
         },
         "section": {
@@ -2937,6 +2940,7 @@
       "apikey": {
         "help": "成人向けコンテンツにアクセスするには、APIキーが必要です。",
         "label": "APIキー",
+        "managed-by-env": "NOCTALIA_WALLHAVEN_API_KEY 環境変数経由で管理されます。",
         "placeholder": "Wallhaven APIキーを入力してください。"
       },
       "apply-all-monitors": {

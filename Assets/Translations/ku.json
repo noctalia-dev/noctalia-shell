@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "Write {filepath} and reload."
+          },
+          "zen-browser": {
+            "description": "{filepath} binivîse; kopî bike nav chrome/userChrome.css ya profîla xwe ya Zen."
           }
         },
         "section": {
@@ -2937,6 +2940,7 @@
       "apikey": {
         "help": "Pêdivî bi kilîta API heye ji bo gihîştina naveroka NSFW.",
         "label": "Kilîta API",
+        "managed-by-env": "Bi rêya guherbara hawîrdorê ya NOCTALIA_WALLHAVEN_API_KEY tê birêvebirin.",
         "placeholder": "API Key-a Wallhavenê xwe binivîse"
       },
       "apply-all-monitors": {

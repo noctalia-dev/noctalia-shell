@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "Schrijf {filepath} en herlaad"
+          },
+          "zen-browser": {
+            "description": "Schrijf {filepath}; kopieer naar het chrome/userChrome.css bestand van je Zen profiel."
           }
         },
         "section": {
@@ -2937,6 +2940,7 @@
       "apikey": {
         "help": "Een API-sleutel is vereist om toegang te krijgen tot NSFW-content.",
         "label": "API-sleutel",
+        "managed-by-env": "Beheerd via de NOCTALIA_WALLHAVEN_API_KEY omgevingsvariabele.",
         "placeholder": "Voer uw Wallhaven API-sleutel in"
       },
       "apply-all-monitors": {

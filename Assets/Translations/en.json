@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "Write {filepath} and reload"
+          },
+          "zen-browser": {
+            "description": "Write {filepath}; copy into your Zen profile's chrome/userChrome.css"
           }
         },
         "section": {

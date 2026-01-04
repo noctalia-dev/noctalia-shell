@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "{filepath} írása és újratöltés"
+          },
+          "zen-browser": {
+            "description": "Írd be ezt a fájlba: {filepath}; másold be a Zen profilod chrome/userChrome.css fájljába."
           }
         },
         "section": {
@@ -2937,6 +2940,7 @@
       "apikey": {
         "help": "NSFW tartalom eléréséhez API kulcs szükséges.",
         "label": "API kulcs",
+        "managed-by-env": "A NOCTALIA_WALLHAVEN_API_KEY környezeti változóval kezelhető.",
         "placeholder": "Add meg a Wallhaven API kulcsodat!"
       },
       "apply-all-monitors": {

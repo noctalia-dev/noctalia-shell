@@ -877,6 +877,18 @@ ColumnLayout {
       }
 
       NCheckbox {
+        label: "Zen Browser"
+        description: I18n.tr("settings.color-scheme.templates.programs.zen-browser.description", {
+                               "filepath": "~/.cache/noctalia/zen-browser/zen-userChrome.css"
+                             })
+        checked: Settings.data.templates.zenBrowser
+        onToggled: checked => {
+                     Settings.data.templates.zenBrowser = checked;
+                     AppThemeService.generate();
+                   }
+      }
+
+      NCheckbox {
         label: "Emacs"
         description: I18n.tr("settings.color-scheme.templates.programs.emacs.description")
         checked: Settings.data.templates.emacs

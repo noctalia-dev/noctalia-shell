@@ -655,6 +655,7 @@ Singleton {
       property bool mango: false
       property bool zed: false
       property bool helix: false
+      property bool zenBrowser: false
       property bool enableUserTemplates: false
     }
 

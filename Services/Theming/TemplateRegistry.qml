@@ -249,6 +249,23 @@ Singleton {
       ]
     },
     {
+      "id": "zenBrowser",
+      "name": "Zen Browser",
+      "category": "applications",
+      "input": "zen-browser/zen-userChrome.css",
+      "outputs": [
+        {
+          "path": "~/.cache/noctalia/zen-browser/zen-userChrome.css"
+        },
+        {
+          "path": "~/.cache/noctalia/zen-browser/zen-userContent.css",
+          "input": "zen-browser/zen-userContent.css"
+        }
+      ],
+      "postProcess": ()
+                     => "sh -c 'CSS_CHROME=\"$HOME/.cache/noctalia/zen-browser/zen-userChrome.css\"; CSS_CONTENT=\"$HOME/.cache/noctalia/zen-browser/zen-userContent.css\"; LINE_CHROME=\"@import \\\"$CSS_CHROME\\\";\"; LINE_CONTENT=\"@import \\\"$CSS_CONTENT\\\";\"; find \"$HOME/.zen\" -mindepth 2 -maxdepth 2 -type d -name chrome -print0 | while IFS= read -r -d \"\" dir; do USER_CHROME=\"$dir/userChrome.css\"; USER_CONTENT=\"$dir/userContent.css\"; mkdir -p \"$dir\"; touch \"$USER_CHROME\" \"$USER_CONTENT\"; sed -i \"/zen-browser\\/zen-userChrome\\.css/d\" \"$USER_CHROME\"; sed -i \"/zen-browser\\/zen-userContent\\.css/d\" \"$USER_CONTENT\"; if ! grep -Fq \"$LINE_CHROME\" \"$USER_CHROME\"; then printf \"%s\\n\" \"$LINE_CHROME\" >> \"$USER_CHROME\"; fi; if ! grep -Fq \"$LINE_CONTENT\" \"$USER_CONTENT\"; then printf \"%s\\n\" \"$LINE_CONTENT\" >> \"$USER_CONTENT\"; fi; done'"
+    },
+    {
       "id": "cava",
       "name": "Cava",
       "category": "applications",

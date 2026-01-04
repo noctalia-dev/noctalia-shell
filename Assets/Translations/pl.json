@@ -1306,6 +1306,9 @@
           },
           "zed": {
             "description": "Zapisz {filepath} i przeładuj"
+          },
+          "zen-browser": {
+            "description": "Zapisz w {filepath}; skopiuj do chrome/userChrome.css w swoim profilu Zen."
           }
         },
         "section": {
@@ -2937,6 +2940,7 @@
       "apikey": {
         "help": "Do dostępu do treści NSFW wymagany jest klucz API.",
         "label": "Klucz API",
+        "managed-by-env": "Zarządzane za pomocą zmiennej środowiskowej NOCTALIA_WALLHAVEN_API_KEY.",
         "placeholder": "Wprowadź swój klucz API Wallhaven."
       },
       "apply-all-monitors": {
