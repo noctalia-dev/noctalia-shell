@@ -170,7 +170,7 @@ SmartPanel {
       }
     }
 
-    color: Color.transparent
+    color: "transparent"
 
     // Wallhaven settings popup
     Loader {
@@ -352,13 +352,13 @@ SmartPanel {
             currentIndex: currentScreenIndex
             onCurrentIndexChanged: currentScreenIndex = currentIndex
             spacing: Style.marginM
+            distributeEvenly: true
 
             Repeater {
               model: Quickshell.screens
               NTabButton {
                 required property var modelData
                 required property int index
-                Layout.fillWidth: true
                 text: modelData.name || `Screen ${index + 1}`
                 tabIndex: index
                 checked: {
@@ -588,11 +588,11 @@ SmartPanel {
           gradient: Gradient {
             GradientStop {
               position: 0.0
-              color: Color.transparent
+              color: "transparent"
             }
             GradientStop {
               position: 0.9
-              color: Color.transparent
+              color: "transparent"
             }
             GradientStop {
               position: 1.0
@@ -786,7 +786,7 @@ SmartPanel {
           background: Rectangle {
             implicitWidth: parent.handleWidth
             implicitHeight: 100
-            color: Color.transparent
+            color: "transparent"
             opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
             radius: parent.handleRadius / 2
 
@@ -1155,7 +1155,7 @@ SmartPanel {
             background: Rectangle {
               implicitWidth: parent.handleWidth
               implicitHeight: 100
-              color: Color.transparent
+              color: "transparent"
               opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
               radius: parent.handleRadius / 2
 
@@ -1182,7 +1182,7 @@ SmartPanel {
               id: imageContainer
               Layout.fillWidth: true
               Layout.preferredHeight: Math.round(wallhavenGridView.itemSize * 0.67)
-              color: Color.transparent
+              color: "transparent"
 
               Image {
                 id: img
@@ -1198,7 +1198,7 @@ SmartPanel {
 
               Rectangle {
                 anchors.fill: parent
-                color: Color.transparent
+                color: "transparent"
                 border.color: wallhavenGridView.currentIndex === index ? Color.mHover : Color.mSurface
                 border.width: Math.max(1, Style.borderL * 1.5)
               }

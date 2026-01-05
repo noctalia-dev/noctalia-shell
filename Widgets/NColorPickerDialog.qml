@@ -11,7 +11,7 @@ Popup {
   id: root
 
   property var screen
-  property color selectedColor: Color.black
+  property color selectedColor: "black"
 
   enum EditMode {
     R,
@@ -113,7 +113,7 @@ Popup {
           family: Settings.data.ui.fontFixed
           pointSize: Style.fontSizeL
           font.weight: Style.fontWeightMedium
-          color: root.selectedColor.r + root.selectedColor.g + root.selectedColor.b > 1.5 ? Color.black : Color.white
+          color: root.selectedColor.r + root.selectedColor.g + root.selectedColor.b > 1.5 ? "black" : "white"
           Layout.alignment: Qt.AlignHCenter
         }
 
@@ -121,7 +121,7 @@ Popup {
           text: "RGB(" + Math.round(root.selectedColor.r * 255) + ", " + Math.round(root.selectedColor.g * 255) + ", " + Math.round(root.selectedColor.b * 255) + ")"
           family: Settings.data.ui.fontFixed
           pointSize: Style.fontSizeM
-          color: root.selectedColor.r + root.selectedColor.g + root.selectedColor.b > 1.5 ? Color.black : Color.white
+          color: root.selectedColor.r + root.selectedColor.g + root.selectedColor.b > 1.5 ? "black" : "white"
           Layout.alignment: Qt.AlignHCenter
         }
 

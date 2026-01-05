@@ -92,6 +92,8 @@ Rectangle {
                 return "";
               if (!root.weatherReady)
                 return I18n.tr("calendar.weather.loading");
+              if (Settings.data.location.hideWeatherCityName)
+                return "";
               const chunks = Settings.data.location.name.split(",");
               return chunks[0];
             }
@@ -102,7 +104,7 @@ Rectangle {
           }
 
           NText {
-            text: root.weatherReady ? ` (${LocationService.data.weather.timezone_abbreviation})` : ""
+            text: root.weatherReady && !Settings.data.location.hideWeatherTimezone ? ` (${LocationService.data.weather.timezone_abbreviation})` : ""
             pointSize: Style.fontSizeXS
             color: Qt.alpha(Color.mOnPrimary, 0.7)
           }

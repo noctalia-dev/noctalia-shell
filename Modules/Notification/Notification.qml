@@ -48,7 +48,7 @@ Variants {
       WlrLayershell.layer: (Settings.data.notifications?.overlayLayer) ? WlrLayer.Overlay : WlrLayer.Top
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
-      color: Color.transparent
+      color: "transparent"
 
       // Make shadow area click-through, only notification content is clickable
       mask: Region {
@@ -230,7 +230,7 @@ Variants {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 height: 2
-                color: Color.transparent
+                color: "transparent"
 
                 readonly property real availableWidth: parent.width - (2 * parent.radius)
 
@@ -422,7 +422,7 @@ Variants {
                   Layout.alignment: Qt.AlignVCenter
                   radius: Math.min(Style.radiusL, Layout.preferredWidth / 2)
                   imagePath: model.originalImage || ""
-                  borderColor: Color.transparent
+                  borderColor: "transparent"
                   borderWidth: 0
                   fallbackIcon: "bell"
                   fallbackIconSize: 24

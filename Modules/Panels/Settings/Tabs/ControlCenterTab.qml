@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import "ControlCenter"
 import qs.Commons
 import qs.Services.System
 import qs.Services.UI
@@ -9,7 +10,7 @@ import qs.Widgets
 
 ColumnLayout {
   id: root
-  spacing: Style.marginL
+  spacing: 0
 
   property list<var> cardsModel: []
   property list<var> cardsDefault: [
@@ -50,17 +51,6 @@ ColumnLayout {
       "required": false
     }
   ]
-
-  function saveCards() {
-    var toSave = [];
-    for (var i = 0; i < cardsModel.length; i++) {
-      toSave.push({
-                    "id": cardsModel[i].id,
-                    "enabled": cardsModel[i].enabled
-                  });
-    }
-    Settings.data.controlCenter.cards = toSave;
-  }
 
   Component.onCompleted: {
     // Fill out availableWidgets ListModel
@@ -111,209 +101,58 @@ ColumnLayout {
         cardsModel.push(card);
       }
     }
-
-    saveCards();
   }
 
-  ColumnLayout {
-    spacing: Style.marginL
+  NTabBar {
+    id: subTabBar
     Layout.fillWidth: true
+    distributeEvenly: true
+    currentIndex: tabView.currentIndex
 
-    NHeader {
-      label: I18n.tr("settings.control-center.section.label")
-      description: I18n.tr("settings.control-center.section.description")
+    NTabButton {
+      text: I18n.tr("settings.control-center.tabs.appearance")
+      tabIndex: 0
+      checked: subTabBar.currentIndex === 0
     }
-
-    NComboBox {
-      id: controlCenterPosition
-      label: I18n.tr("settings.control-center.position.label")
-      description: I18n.tr("settings.control-center.position.description")
-      Layout.fillWidth: true
-      model: [
-        {
-          "key": "close_to_bar_button",
-          "name": I18n.tr("options.control-center.position.close_to_bar_button")
-        },
-        {
-          "key": "center",
-          "name": I18n.tr("options.control-center.position.center")
-        },
-        {
-          "key": "top_center",
-          "name": I18n.tr("options.control-center.position.top_center")
-        },
-        {
-          "key": "top_left",
-          "name": I18n.tr("options.control-center.position.top_left")
-        },
-        {
-          "key": "top_right",
-          "name": I18n.tr("options.control-center.position.top_right")
-        },
-        {
-          "key": "bottom_center",
-          "name": I18n.tr("options.control-center.position.bottom_center")
-        },
-        {
-          "key": "bottom_left",
-          "name": I18n.tr("options.control-center.position.bottom_left")
-        },
-        {
-          "key": "bottom_right",
-          "name": I18n.tr("options.control-center.position.bottom_right")
-        }
-      ]
-      currentKey: Settings.data.controlCenter.position
-      onSelected: function (key) {
-        Settings.data.controlCenter.position = key;
-      }
-      isSettings: true
-      defaultValue: Settings.getDefaultValue("controlCenter.position")
+    NTabButton {
+      text: I18n.tr("settings.control-center.tabs.cards")
+      tabIndex: 1
+      checked: subTabBar.currentIndex === 1
     }
-
-    NComboBox {
-      id: diskPathComboBox
-      Layout.fillWidth: true
-      Layout.topMargin: Style.marginM
-      label: I18n.tr("settings.control-center.system-monitor-disk-path.label")
-      description: I18n.tr("settings.control-center.system-monitor-disk-path.description")
-      model: {
-        const paths = Object.keys(SystemStatService.diskPercents).sort();
-        return paths.map(path => ({
-                                    key: path,
-                                    name: path
-                                  }));
-      }
-      currentKey: Settings.data.controlCenter.diskPath || "/"
-      onSelected: key => Settings.data.controlCenter.diskPath = key
-      isSettings: true
-      defaultValue: Settings.getDefaultValue("controlCenter.diskPath") || "/"
+    NTabButton {
+      text: I18n.tr("settings.control-center.tabs.control-widgets")
+      tabIndex: 2
+      checked: subTabBar.currentIndex === 2
     }
   }
 
-  NDivider {
+  Item {
     Layout.fillWidth: true
-    Layout.topMargin: Style.marginL
-    Layout.bottomMargin: Style.marginL
+    Layout.preferredHeight: Style.marginL
   }
 
-  // Widgets Management Section
-  ColumnLayout {
-    spacing: Style.marginXXS
+  NTabView {
+    id: tabView
+    currentIndex: subTabBar.currentIndex
     Layout.fillWidth: true
+    Layout.fillHeight: true
 
-    NHeader {
-      label: I18n.tr("settings.control-center.cards.section.label")
-      description: I18n.tr("settings.control-center.cards.section.description")
+    AppearanceSubTab {}
+
+    CardsSubTab {
+      cardsModel: root.cardsModel
+      cardsDefault: root.cardsDefault
     }
 
-    Connections {
-      target: Settings.data.location
-      function onWeatherEnabledChanged() {
-        // Auto-disable weather card when weather is disabled
-        var newModel = cardsModel.slice();
-        for (var i = 0; i < newModel.length; i++) {
-          if (newModel[i].id === "weather-card") {
-            newModel[i] = Object.assign({}, newModel[i], {
-                                          "enabled": Settings.data.location.weatherEnabled
-                                        });
-            cardsModel = newModel;
-            saveCards();
-            break;
-          }
-        }
-      }
+    ControlWidgetsSubTab {
+      availableWidgets: availableWidgets
+      onAddWidgetToSection: (widgetId, section) => _addWidgetToSection(widgetId, section)
+      onRemoveWidgetFromSection: (section, index) => _removeWidgetFromSection(section, index)
+      onReorderWidgetInSection: (section, fromIndex, toIndex) => _reorderWidgetInSection(section, fromIndex, toIndex)
+      onUpdateWidgetSettingsInSection: (section, index, settings) => _updateWidgetSettingsInSection(section, index, settings)
+      onMoveWidgetBetweenSections: (fromSection, index, toSection) => _moveWidgetBetweenSections(fromSection, index, toSection)
+      onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
     }
-
-    NReorderCheckboxes {
-      Layout.fillWidth: true
-      model: cardsModel
-      disabledIds: Settings.data.location.weatherEnabled ? [] : ["weather-card"]
-      onItemToggled: function (index, enabled) {
-        //Logger.i("ControlCenterTab", "Item", index, "toggled to", enabled)
-        var newModel = cardsModel.slice();
-        newModel[index] = Object.assign({}, newModel[index], {
-                                          "enabled": enabled
-                                        });
-        cardsModel = newModel;
-        saveCards();
-      }
-      onItemsReordered: function (fromIndex, toIndex) {
-        //Logger.i("ControlCenterTab", "Item moved from", fromIndex, "to", toIndex)
-        var newModel = cardsModel.slice();
-        var item = newModel.splice(fromIndex, 1)[0];
-        newModel.splice(toIndex, 0, item);
-        cardsModel = newModel;
-        saveCards();
-      }
-    }
-  }
-
-  NDivider {
-    Layout.fillWidth: true
-    Layout.topMargin: Style.marginL
-    Layout.bottomMargin: Style.marginL
-  }
-
-  // Widgets Management Section
-  ColumnLayout {
-    spacing: Style.marginXXS
-    Layout.fillWidth: true
-
-    NHeader {
-      label: I18n.tr("settings.control-center.shortcuts.section.label")
-      description: I18n.tr("settings.control-center.shortcuts.section.description")
-    }
-
-    // Sections
-    ColumnLayout {
-      Layout.fillWidth: true
-      Layout.fillHeight: true
-      Layout.topMargin: Style.marginM
-      spacing: Style.marginM
-
-      // Left
-      NSectionEditor {
-        sectionName: I18n.tr("settings.control-center.shortcuts.sectionLeft")
-        sectionId: "left"
-        settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/ControlCenter/ControlCenterWidgetSettingsDialog.qml")
-        maxWidgets: Settings.data.controlCenter.shortcuts["right"].length > 5 ? 0 : (Settings.data.controlCenter.shortcuts["right"].length > 0 ? 5 : 10)
-        widgetRegistry: ControlCenterWidgetRegistry
-        widgetModel: Settings.data.controlCenter.shortcuts["left"]
-        availableWidgets: availableWidgets
-        availableSections: ["left", "right"]
-        onAddWidget: (widgetId, section) => _addWidgetToSection(widgetId, section)
-        onRemoveWidget: (section, index) => _removeWidgetFromSection(section, index)
-        onReorderWidget: (section, fromIndex, toIndex) => _reorderWidgetInSection(section, fromIndex, toIndex)
-        onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsInSection(section, index, settings)
-        onMoveWidget: (fromSection, index, toSection) => _moveWidgetBetweenSections(fromSection, index, toSection)
-        onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
-      }
-
-      // Right
-      NSectionEditor {
-        sectionName: I18n.tr("settings.control-center.shortcuts.sectionRight")
-        sectionId: "right"
-        settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/ControlCenter/ControlCenterWidgetSettingsDialog.qml")
-        maxWidgets: Settings.data.controlCenter.shortcuts["left"].length > 5 ? 0 : (Settings.data.controlCenter.shortcuts["left"].length > 0 ? 5 : 10)
-        widgetRegistry: ControlCenterWidgetRegistry
-        widgetModel: Settings.data.controlCenter.shortcuts["right"]
-        availableWidgets: availableWidgets
-        availableSections: ["left", "right"]
-        onAddWidget: (widgetId, section) => _addWidgetToSection(widgetId, section)
-        onRemoveWidget: (section, index) => _removeWidgetFromSection(section, index)
-        onReorderWidget: (section, fromIndex, toIndex) => _reorderWidgetInSection(section, fromIndex, toIndex)
-        onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsInSection(section, index, settings)
-        onMoveWidget: (fromSection, index, toSection) => _moveWidgetBetweenSections(fromSection, index, toSection)
-        onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
-      }
-    }
-  }
-
-  NDivider {
-    Layout.fillWidth: true
-    Layout.topMargin: Style.marginL
-    Layout.bottomMargin: Style.marginL
   }
 
   // ---------------------------------
@@ -371,8 +210,6 @@ ColumnLayout {
       var targetArray = Settings.data.controlCenter.shortcuts[toSection].slice();
       targetArray.push(widget);
       Settings.data.controlCenter.shortcuts[toSection] = targetArray;
-
-      //Logger.i("BarTab", `Moved widget ${widget.id} from ${fromSection} to ${toSection}`)
     }
   }
 

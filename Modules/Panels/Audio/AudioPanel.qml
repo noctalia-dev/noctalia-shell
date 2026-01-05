@@ -320,19 +320,16 @@ SmartPanel {
         id: tabBar
         Layout.fillWidth: true
         currentIndex: panelContent.currentTabIndex
+        distributeEvenly: true
         onCurrentIndexChanged: panelContent.currentTabIndex = currentIndex
 
         NTabButton {
-          Layout.fillWidth: true
-          Layout.preferredWidth: 0
           text: I18n.tr("settings.audio.panel.tabs.volumes")
           tabIndex: 0
           checked: tabBar.currentIndex === 0
         }
 
         NTabButton {
-          Layout.fillWidth: true
-          Layout.preferredWidth: 0
           text: I18n.tr("settings.audio.panel.tabs.devices")
           tabIndex: 1
           checked: tabBar.currentIndex === 1

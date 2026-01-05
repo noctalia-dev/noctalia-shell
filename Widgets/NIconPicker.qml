@@ -96,8 +96,8 @@ Popup {
         height: grid.cellHeight
         radius: Style.iRadiusS
 
-        color: (root.selectedIcon === modelData) ? Qt.alpha(Color.mPrimary, 0.15) : Color.transparent
-        border.color: (root.selectedIcon === modelData) ? Color.mPrimary : Color.transparent
+        color: (root.selectedIcon === modelData) ? Qt.alpha(Color.mPrimary, 0.15) : "transparent"
+        border.color: (root.selectedIcon === modelData) ? Color.mPrimary : "transparent"
         border.width: (root.selectedIcon === modelData) ? Style.borderS : 0
 
         MouseArea {

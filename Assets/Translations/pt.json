@@ -528,7 +528,8 @@
       "title": "Bluetooth",
       "trusted": "Confiável",
       "unpair": "Desemparelhar"
-    }
+    },
+    "title": "Bluetooth"
   },
   "calendar": {
     "panel": {
@@ -560,7 +561,8 @@
     "panel": {
       "buttons": {
         "discord": "Entre no nosso Discord",
-        "dismiss": "Ok"
+        "dismiss": "Ok",
+        "feedback": "Dar feedback"
       },
       "empty": "As notas da versão ainda não estão disponíveis.",
       "highlight-title": "Destaques",
@@ -663,6 +665,7 @@
       "webbrowser": "Navegador web"
     },
     "delete": "Apagar",
+    "no-results": "Nenhum resultado encontrado.",
     "pin": "Fixar",
     "providers": {
       "applications": "Aplicativos",
@@ -688,6 +691,7 @@
       "emoji": "Seletor de emojis",
       "emoji-loading": "Carregando emojis...",
       "emoji-loading-description": "Por favor, aguarde",
+      "emoji-no-recent": "Ainda não há emojis recentes.",
       "emoji-search-description": "Buscar e copiar emojis"
     },
     "unpin": "Desafixar"
@@ -972,6 +976,7 @@
   },
   "settings": {
     "about": {
+      "changelog": "Ver histórico de alterações",
       "contributors": {
         "section": {
           "description": "Agradecimentos ao nosso <b>incrível</b> colaborador!",
@@ -1054,6 +1059,11 @@
           "devices": "Dispositivos",
           "volumes": "Volumes"
         }
+      },
+      "tabs": {
+        "devices": "Dispositivos",
+        "media": "Mídia",
+        "volumes": "Volumes"
       },
       "title": "Áudio",
       "volumes": {
@@ -1142,6 +1152,11 @@
           "label": "Exibição nos monitores"
         }
       },
+      "tabs": {
+        "appearance": "Aparência",
+        "monitors": "Monitores",
+        "widgets": "Widgets"
+      },
       "title": "Barra",
       "tray": {
         "back": "Voltar",
@@ -1163,16 +1178,7 @@
     "color-scheme": {
       "color-source": {
         "matugen-scheme-type": {
-          "description": {
-            "scheme-content": "Deriva cores que correspondem de perto à imagem subjacente.",
-            "scheme-expressive": "Paleta vibrante com saturação divertida.",
-            "scheme-fidelity": "Paleta de alta fidelidade que preserva as tonalidades originais.",
-            "scheme-fruit-salad": "Mistura colorida de detalhes contrastantes e vibrantes.",
-            "scheme-monochrome": "Paleta minimalista construída em torno de uma única tonalidade.",
-            "scheme-neutral": "Paleta de cores neutras com tons suaves e calmantes.",
-            "scheme-rainbow": "Paleta diversificada abrangendo todo o espectro.",
-            "scheme-tonal-spot": "Paleta equilibrada com toques focais."
-          },
+          "description": "Escolha o método de geração de esquema de cores que o Matugen usará para criar cores a partir do seu papel de parede.",
           "label": "Tipo de esquema Matugen"
         },
         "section": {
@@ -1242,6 +1248,10 @@
           "label": "Esquemas de cores predefinidos"
         }
       },
+      "tabs": {
+        "colors": "Cores",
+        "templates": "Modelos"
+      },
       "templates": {
         "compositors": {
           "description": "Tematização do compositor.",
@@ -1306,6 +1316,9 @@
           },
           "zed": {
             "description": "Escrever {filepath} e recarregar"
+          },
+          "zen-browser": {
+            "description": "Escreva em {filepath}; copie para o chrome/userChrome.css do seu perfil Zen."
           }
         },
         "section": {
@@ -1427,6 +1440,11 @@
       "system-monitor-disk-path": {
         "description": "Selecione qual ponto de montagem do disco o cartão do monitor do sistema no centro de controle deve monitorar.",
         "label": "Caminho do disco do monitor do sistema"
+      },
+      "tabs": {
+        "appearance": "Aparência",
+        "cards": "Cartões",
+        "control-widgets": "Widgets de controle"
       },
       "title": "Central de Controle"
     },
@@ -1624,6 +1642,10 @@
           "night-description": "Controla a temperatura durante a noite."
         }
       },
+      "tabs": {
+        "brightness": "Brilho",
+        "night-light": "Luz Noturna"
+      },
       "title": "Tela"
     },
     "dock": {
@@ -1689,6 +1711,10 @@
           "description": "Mostrar dock em monitores específicos. O padrão é todos se nenhum for escolhido.",
           "label": "Exibição no monitor"
         }
+      },
+      "tabs": {
+        "appearance": "Aparência",
+        "monitors": "Monitores"
       },
       "title": "Dock"
     },
@@ -1829,6 +1855,10 @@
           "label": "Ferramenta de anotação",
           "placeholder": "gradia, satty -f -"
         },
+        "auto-paste": {
+          "description": "Colar automaticamente o item selecionado da área de transferência. Requer wtype.",
+          "label": "Colar automaticamente"
+        },
         "clip-preview": {
           "description": "Mostra uma pré-visualização do conteúdo da área de transferência ao usar o comando >clip.",
           "label": "Ativar pré-visualização da área de transferência"
@@ -1941,7 +1971,7 @@
           "label": "Sua localização"
         }
       },
-      "title": "Localização",
+      "title": "Região",
       "weather": {
         "enabled": {
           "description": "Mostrar informações meteorológicas em toda a interface e buscar dados do clima. Quando desativado, todos os elementos do clima serão ocultados e nenhuma solicitação de rede será feita.",
@@ -1950,6 +1980,14 @@
         "fahrenheit": {
           "description": "Exibe a temperatura em Fahrenheit em vez de Celsius.",
           "label": "Exibir temperatura em Fahrenheit (°F)"
+        },
+        "hide-city": {
+          "description": "Oculte o nome da cidade das exibições de clima em toda a interface.",
+          "label": "Ocultar nome da cidade"
+        },
+        "hide-timezone": {
+          "description": "Oculte a abreviação do fuso horário das exibições de clima em toda a interface.",
+          "label": "Ocultar fuso horário"
         },
         "section": {
           "description": "Escolha sua unidade de temperatura preferida.",
@@ -2135,6 +2173,12 @@
           "label": "Volume do som"
         }
       },
+      "tabs": {
+        "general": "Geral",
+        "history": "História",
+        "sounds": "Sons",
+        "toast": "Torrada"
+      },
       "title": "Notificações",
       "toast": {
         "keyboard": {
@@ -2239,6 +2283,7 @@
       "hot-reloaded": "Plugin recarregado: {name}",
       "install": "Instalar",
       "install-error": "Falha ao instalar: {error}",
+      "install-incompatible": "{plugin} requer Noctalia v{version} ou superior",
       "install-success": "{plugin} instalado com sucesso.",
       "installed": {
         "description": "Gerenciar e configurar todos os plugins instalados localmente.",
@@ -2296,9 +2341,13 @@
       "update-available_plural": "{count} atualizações de plugin disponíveis",
       "update-error": "Falha ao atualizar o plugin: {plugin}: {error}",
       "update-incompatible": "Requer Noctalia v{version} ou superior",
+      "update-pending": "v{atual} → v{novo} (requer Noctalia v{requerida})",
       "update-success": "{plugin} atualizado para a versão {version}",
       "update-version": "v{atual} → v{novo}",
       "updating": "Atualizando..."
+    },
+    "region": {
+      "title": "Região"
     },
     "screen-recorder": {
       "audio": {
@@ -2473,6 +2522,15 @@
       "polling-interval": {
         "label": "Intervalo de pesquisa"
       },
+      "polling-section": {
+        "description": "Configure a frequência com que cada métrica do sistema é atualizada.",
+        "label": "Intervalos de pesquisa"
+      },
+      "tabs": {
+        "general": "Geral",
+        "polling": "Pesquisa de opinião",
+        "thresholds": "Limiares"
+      },
       "temperature-section": {
         "label": "Temperatura da CPU"
       },
@@ -2506,6 +2564,12 @@
         "description": "Ajustar a velocidade global da animação.",
         "label": "Velocidade da animação",
         "reset": "Redefinir velocidade da animação"
+      },
+      "appearance": {
+        "section": {
+          "description": "Personalize elementos visuais como dicas de ferramentas, bordas e sombras.",
+          "label": "Aparência"
+        }
       },
       "box-border": {
         "description": "Exibe um contorno ao redor das áreas de conteúdo.",
@@ -2562,6 +2626,11 @@
           "label": "Direção da sombra"
         },
         "label": "Sombras projetadas"
+      },
+      "tabs": {
+        "appearance": "Aparência",
+        "panels": "Painéis",
+        "screen-corners": "Cantos da tela"
       },
       "title": "Interface do usuário",
       "tooltips": {
@@ -2664,6 +2733,11 @@
           "description": "Escolha onde o painel do seletor de papel de parede aparece.",
           "label": "Posição"
         }
+      },
+      "tabs": {
+        "automation": "Automação",
+        "look-feel": "Aparência e sensação",
+        "settings": "Configurações"
       },
       "title": "Papel de parede"
     }
@@ -2875,6 +2949,7 @@
     "list-view": "Visualização em lista",
     "manage-vpn": "Conexões VPN",
     "manage-wifi": "Wi-Fi",
+    "max-widgets-reached": "Número máximo de widgets atingido.",
     "microphone-volume-at": "Volume do microfone: {volume}%",
     "move-to-center-section": "Seção central",
     "move-to-left-section": "Seção esquerda",
@@ -2937,6 +3012,7 @@
       "apikey": {
         "help": "É necessária uma chave de API para acessar conteúdo NSFW.",
         "label": "Chave de API",
+        "managed-by-env": "Gerenciado através da variável de ambiente NOCTALIA_WALLHAVEN_API_KEY.",
         "placeholder": "Insira sua chave da API Wallhaven"
       },
       "apply-all-monitors": {
@@ -3025,6 +3101,11 @@
     "thunderstorm": "Tempestade",
     "unknown": "Desconhecido"
   },
+  "widget": {
+    "file-picker": {
+      "title": "Selecione um arquivo"
+    }
+  },
   "widgets": {
     "color-picker": {
       "apply": "Aplicar",
@@ -3109,11 +3190,13 @@
   "wifi": {
     "panel": {
       "action-required": "Ação Requerida",
+      "available-interfaces": "Interfaces disponíveis",
       "available-networks": "Redes Disponíveis",
       "connect": "Conectar",
       "connected": "Conectado",
       "disabled": "O Wi-Fi está desativado",
       "disconnect": "Desconectar",
+      "disconnected": "Desconectado(a)",
       "disconnecting": "Desconectando...",
       "dns": "DNS",
       "enable-message": "Ative o Wi-Fi para ver as redes disponíveis.",
@@ -3124,12 +3207,15 @@
       "frequency": "Frequência",
       "gateway": "Porta de entrada",
       "info": "Informação",
+      "interface": "Interface de rede",
       "internet": "Internet",
       "internet-connected": "Conectado à internet",
       "internet-limited": "Sem internet",
+      "internet-status": "Status da internet",
       "ipv4": "IPv4",
       "known-networks": "Redes Conhecidas",
       "link-speed": "Velocidade de ligação",
+      "no-ethernet-devices": "Nenhum dispositivo Ethernet detectado.",
       "no-networks": "Nenhuma rede encontrada",
       "password": "Senha",
       "saved": "Salva",

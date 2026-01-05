@@ -205,8 +205,8 @@ Item {
     autoHide: false
     forceOpen: isReady && displayMode === "alwaysShow"
     forceClose: displayMode === "alwaysHide" || (initializationComplete && !isReady)
-    customBackgroundColor: !initializationComplete ? Color.transparent : (charging ? Color.mPrimary : (isLowBattery ? Color.mError : Color.transparent))
-    customTextIconColor: !initializationComplete ? Color.transparent : (charging ? Color.mOnPrimary : (isLowBattery ? Color.mOnError : Color.transparent))
+    customBackgroundColor: !initializationComplete ? "transparent" : (charging ? Color.mPrimary : (isLowBattery ? Color.mError : "transparent"))
+    customTextIconColor: !initializationComplete ? "transparent" : (charging ? Color.mOnPrimary : (isLowBattery ? Color.mOnError : "transparent"))
 
     tooltipText: {
       let lines = [];

@@ -11,9 +11,16 @@ Item {
   property var launcher: null
   property string iconMode: Settings.data.appLauncher.iconMode
   property bool handleSearch: false
+  property string supportedLayouts: "grid" // Only grid layout for emoji
+  property int preferredGridColumns: 7 // More columns for compact emoji display
+  property real preferredGridCellRatio: 1.0 // Square cells like apps
+  property bool supportsAutoPaste: true // Emoji can be auto-pasted
 
   property string selectedCategory: "recent"
-  property bool isBrowsingMode: false
+  property bool showsCategories: true // Default to showing categories
+
+  // Empty state message for category view
+  readonly property string emptyBrowsingMessage: selectedCategory === "recent" ? I18n.tr("launcher.providers.emoji-no-recent") : ""
 
   property var categoryIcons: ({
                                  "recent": "clock",
@@ -116,11 +123,11 @@ Item {
     var query = searchText.slice(6).trim();
 
     if (query === "") {
-      isBrowsingMode = true;
+      showsCategories = true;
       var emojis = EmojiService.getEmojisByCategory(selectedCategory);
       return emojis.map(formatEmojiEntry);
     } else {
-      isBrowsingMode = false;
+      showsCategories = false;
       var emojis = EmojiService.search(query);
       return emojis.map(formatEmojiEntry);
     }
@@ -142,7 +149,12 @@ Item {
       "description": description,
       "icon": null,
       "isImage": false,
-      "emojiChar": emojiChar,
+      "displayString": emojiChar,
+      "autoPasteText": emojiChar,
+      "provider": root,
+      "onAutoPaste": function () {
+        EmojiService.recordUsage(emojiChar);
+      },
       "onActivate": function () {
         EmojiService.copy(emojiChar);
         launcher.close();

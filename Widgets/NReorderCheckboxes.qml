@@ -99,7 +99,7 @@ Item {
           Layout.preferredWidth: root.baseSize
           Layout.preferredHeight: root.baseSize
           radius: Style.iRadiusXS
-          color: dragHandleMouseArea.containsMouse ? Color.mSurfaceVariant : Color.transparent
+          color: dragHandleMouseArea.containsMouse ? Color.mSurfaceVariant : "transparent"
 
           Behavior on color {
             ColorAnimation {

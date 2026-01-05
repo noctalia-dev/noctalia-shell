@@ -152,6 +152,9 @@
     "WiFi": {
       "displayMode": "onhover"
     },
+    "Network": {
+      "displayMode": "onhover"
+    },
     "Workspace": {
       "labelMode": "index",
       "followFocusedScreen": false,

@@ -249,7 +249,7 @@ Loader {
             anchors.fill: parent
             visible: Settings.data.general.showScreenCorners
 
-            property color cornerColor: Settings.data.general.forceBlackScreenCorners ? Color.black : Color.mSurface
+            property color cornerColor: Settings.data.general.forceBlackScreenCorners ? "black" : Color.mSurface
             property real cornerRadius: Style.screenRadius
             property real cornerSize: Style.screenRadius
 
@@ -425,12 +425,12 @@ Loader {
                   Layout.preferredHeight: 70
                   Layout.alignment: Qt.AlignVCenter
                   radius: width / 2
-                  color: Color.transparent
+                  color: "transparent"
 
                   Rectangle {
                     anchors.fill: parent
                     radius: parent.radius
-                    color: Color.transparent
+                    color: "transparent"
                     border.color: Qt.alpha(Color.mPrimary, 0.8)
                     border.width: 2
 
@@ -725,7 +725,7 @@ Loader {
                     Layout.fillWidth: !(Settings.data.location.weatherEnabled && LocationService.data.weather !== null)
                     Layout.preferredHeight: 50
                     radius: Style.radiusL
-                    color: Color.transparent
+                    color: "transparent"
                     clip: true
                     visible: MediaService.currentPlayer && MediaService.canPlay
 
@@ -778,7 +778,7 @@ Loader {
                         Layout.preferredWidth: 34
                         Layout.preferredHeight: 34
                         radius: Math.min(Style.radiusL, width / 2)
-                        color: Color.transparent
+                        color: "transparent"
                         clip: true
 
                         NImageRounded {
@@ -890,6 +890,7 @@ Loader {
                           text: Settings.data.location.name.split(",")[0]
                           pointSize: Style.fontSizeM
                           color: Color.mOnSurfaceVariant
+                          visible: !Settings.data.location.hideWeatherCityName
                         }
 
                         NText {
@@ -1150,7 +1151,7 @@ Loader {
                       width: 36
                       height: 36
                       radius: Math.min(Style.iRadiusL, width / 2)
-                      color: eyeButtonArea.containsMouse ? Color.mPrimary : Color.transparent
+                      color: eyeButtonArea.containsMouse ? Color.mPrimary : "transparent"
                       visible: passwordInput.text.length > 0
                       enabled: !lockContext.unlockInProgress
 
@@ -1193,7 +1194,7 @@ Loader {
                       width: 36
                       height: 36
                       radius: Math.min(Style.iRadiusL, width / 2)
-                      color: submitButtonArea.containsMouse ? Color.mPrimary : Color.transparent
+                      color: submitButtonArea.containsMouse ? Color.mPrimary : "transparent"
                       border.color: Color.mPrimary
                       border.width: Style.borderS
                       enabled: !lockContext.unlockInProgress

@@ -614,7 +614,7 @@ Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Style.toOdd(root.itemSize * 0.25)
                 height: 4
-                color: taskbarItem.isFocused ? Color.mPrimary : Color.transparent
+                color: taskbarItem.isFocused ? Color.mPrimary : "transparent"
                 radius: Math.min(Style.radiusXXS, width / 2)
               }
             }

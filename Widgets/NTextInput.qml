@@ -213,8 +213,8 @@ ColumnLayout {
             Layout.alignment: Qt.AlignVCenter
             border.width: 0
 
-            colorBg: Color.transparent
-            colorBgHover: Color.transparent
+            colorBg: "transparent"
+            colorBgHover: "transparent"
             colorFg: Color.mOnSurface
             colorFgHover: Color.mError
 

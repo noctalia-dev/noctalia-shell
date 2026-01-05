@@ -192,8 +192,8 @@ Singleton {
         writeColorsToDisk(variant);
         Logger.i("ColorScheme", "Applying color scheme:", getBasename(path));
 
-        // Generate Matugen templates if any are enabled and setting allows it
-        if (Settings.data.colorSchemes.generateTemplatesForPredefined && hasEnabledTemplates()) {
+        // Generate templates for predefined color schemes
+        if (hasEnabledTemplates()) {
           AppThemeService.generateFromPredefinedScheme(data);
         }
       } catch (e) {

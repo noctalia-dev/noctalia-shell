@@ -1,109 +1,14 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Quickshell
 import qs.Commons
 import qs.Services.System
-import qs.Services.UI
 import qs.Widgets
 
 ColumnLayout {
   id: root
-
-  property var screen
-
   spacing: Style.marginL
-
-  NHeader {
-    Layout.fillWidth: true
-    label: I18n.tr("settings.system-monitor.general.section.label")
-    description: I18n.tr("settings.system-monitor.general.section.description")
-  }
-
-  NToggle {
-    Layout.fillWidth: true
-    Layout.topMargin: Style.marginM
-    label: I18n.tr("settings.system-monitor.enable-dgpu-monitoring.label")
-    description: I18n.tr("settings.system-monitor.enable-dgpu-monitoring.description")
-    checked: Settings.data.systemMonitor.enableDgpuMonitoring
-    isSettings: true
-    defaultValue: Settings.getDefaultValue("systemMonitor.enableDgpuMonitoring")
-    onToggled: checked => Settings.data.systemMonitor.enableDgpuMonitoring = checked
-  }
-
-  // Colors Section
-  RowLayout {
-    Layout.fillWidth: true
-    spacing: Style.marginM
-
-    NToggle {
-      label: I18n.tr("settings.system-monitor.use-custom-highlight-colors.label")
-      description: I18n.tr("settings.system-monitor.use-custom-highlight-colors.description")
-      checked: Settings.data.systemMonitor.useCustomColors
-      isSettings: true
-      defaultValue: Settings.getDefaultValue("systemMonitor.useCustomColors")
-      onToggled: checked => {
-                   // If enabling custom colors and no custom color is saved, persist current theme colors
-                   if (checked) {
-                     if (!Settings.data.systemMonitor.warningColor || Settings.data.systemMonitor.warningColor === "") {
-                       Settings.data.systemMonitor.warningColor = Color.mTertiary.toString();
-                     }
-                     if (!Settings.data.systemMonitor.criticalColor || Settings.data.systemMonitor.criticalColor === "") {
-                       Settings.data.systemMonitor.criticalColor = Color.mError.toString();
-                     }
-                   }
-                   Settings.data.systemMonitor.useCustomColors = checked;
-                 }
-    }
-  }
-
-  RowLayout {
-    Layout.fillWidth: true
-    spacing: Style.marginM
-    visible: Settings.data.systemMonitor.useCustomColors
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        text: I18n.tr("settings.system-monitor.warning-color.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NColorPicker {
-        screen: root.screen
-        Layout.preferredWidth: Style.sliderWidth
-        Layout.preferredHeight: Style.baseWidgetSize
-        enabled: Settings.data.systemMonitor.useCustomColors
-        selectedColor: Settings.data.systemMonitor.warningColor || Color.mTertiary
-        onColorSelected: color => Settings.data.systemMonitor.warningColor = color
-      }
-    }
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        text: I18n.tr("settings.system-monitor.critical-color.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NColorPicker {
-        screen: root.screen
-        Layout.preferredWidth: Style.sliderWidth
-        Layout.preferredHeight: Style.baseWidgetSize
-        enabled: Settings.data.systemMonitor.useCustomColors
-        selectedColor: Settings.data.systemMonitor.criticalColor || Color.mError
-        onColorSelected: color => Settings.data.systemMonitor.criticalColor = color
-      }
-    }
-  }
-
-  NDivider {
-    Layout.fillWidth: true
-  }
+  Layout.fillWidth: true
 
   NHeader {
     Layout.fillWidth: true
@@ -144,7 +49,6 @@ ColumnLayout {
         defaultValue: Settings.getDefaultValue("systemMonitor.cpuWarningThreshold")
         onValueChanged: {
           Settings.data.systemMonitor.cpuWarningThreshold = value;
-          // Ensure critical >= warning
           if (Settings.data.systemMonitor.cpuCriticalThreshold < value) {
             Settings.data.systemMonitor.cpuCriticalThreshold = value;
           }
@@ -174,30 +78,6 @@ ColumnLayout {
         defaultValue: Settings.getDefaultValue("systemMonitor.cpuCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.cpuCriticalThreshold = value
         suffix: "%"
-      }
-    }
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("settings.system-monitor.polling-interval.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 250
-        to: 10000
-        stepSize: 250
-        value: Settings.data.systemMonitor.cpuPollingInterval
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("systemMonitor.cpuPollingInterval")
-        onValueChanged: Settings.data.systemMonitor.cpuPollingInterval = value
-        suffix: " ms"
       }
     }
   }
@@ -264,30 +144,6 @@ ColumnLayout {
         defaultValue: Settings.getDefaultValue("systemMonitor.tempCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.tempCriticalThreshold = value
         suffix: "°C"
-      }
-    }
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("settings.system-monitor.polling-interval.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 250
-        to: 10000
-        stepSize: 250
-        value: Settings.data.systemMonitor.tempPollingInterval
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("systemMonitor.tempPollingInterval")
-        onValueChanged: Settings.data.systemMonitor.tempPollingInterval = value
-        suffix: " ms"
       }
     }
   }
@@ -358,67 +214,6 @@ ColumnLayout {
         suffix: "°C"
       }
     }
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("settings.system-monitor.polling-interval.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 250
-        to: 10000
-        stepSize: 250
-        value: Settings.data.systemMonitor.gpuPollingInterval
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("systemMonitor.gpuPollingInterval")
-        onValueChanged: Settings.data.systemMonitor.gpuPollingInterval = value
-        suffix: " ms"
-      }
-    }
-  }
-
-  // Load Average
-  NText {
-    Layout.fillWidth: true
-    Layout.topMargin: Style.marginM
-    text: I18n.tr("settings.system-monitor.load-average-section.label")
-    pointSize: Style.fontSizeM
-  }
-
-  RowLayout {
-    Layout.fillWidth: true
-    spacing: Style.marginM
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("settings.system-monitor.polling-interval.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 250
-        to: 10000
-        stepSize: 250
-        value: Settings.data.systemMonitor.loadAvgPollingInterval
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("systemMonitor.loadAvgPollingInterval")
-        onValueChanged: Settings.data.systemMonitor.loadAvgPollingInterval = value
-        suffix: " ms"
-      }
-    }
   }
 
   // Memory Usage
@@ -483,30 +278,6 @@ ColumnLayout {
         defaultValue: Settings.getDefaultValue("systemMonitor.memCriticalThreshold")
         onValueChanged: Settings.data.systemMonitor.memCriticalThreshold = value
         suffix: "%"
-      }
-    }
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("settings.system-monitor.polling-interval.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 250
-        to: 10000
-        stepSize: 250
-        value: Settings.data.systemMonitor.memPollingInterval
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("systemMonitor.memPollingInterval")
-        onValueChanged: Settings.data.systemMonitor.memPollingInterval = value
-        suffix: " ms"
       }
     }
   }
@@ -575,82 +346,5 @@ ColumnLayout {
         suffix: "%"
       }
     }
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("settings.system-monitor.polling-interval.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 250
-        to: 10000
-        stepSize: 250
-        value: Settings.data.systemMonitor.diskPollingInterval
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("systemMonitor.diskPollingInterval")
-        onValueChanged: Settings.data.systemMonitor.diskPollingInterval = value
-        suffix: " ms"
-      }
-    }
-  }
-
-  // Network
-  NText {
-    Layout.fillWidth: true
-    Layout.topMargin: Style.marginM
-    text: I18n.tr("settings.system-monitor.network-section.label")
-    pointSize: Style.fontSizeM
-  }
-
-  RowLayout {
-    Layout.fillWidth: true
-    spacing: Style.marginM
-
-    ColumnLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginM
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("settings.system-monitor.polling-interval.label")
-        pointSize: Style.fontSizeS
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 250
-        to: 10000
-        stepSize: 250
-        value: Settings.data.systemMonitor.networkPollingInterval
-        isSettings: true
-        defaultValue: Settings.getDefaultValue("systemMonitor.networkPollingInterval")
-        onValueChanged: Settings.data.systemMonitor.networkPollingInterval = value
-        suffix: " ms"
-      }
-    }
-  }
-
-  NTextInput {
-    label: I18n.tr("settings.system-monitor.external-monitor.label")
-    description: I18n.tr("settings.system-monitor.external-monitor.description")
-    placeholderText: I18n.tr("settings.system-monitor.external-monitor.placeholder")
-    text: Settings.data.systemMonitor.externalMonitor
-    isSettings: true
-    defaultValue: Settings.getDefaultValue("systemMonitor.externalMonitor")
-    onTextChanged: Settings.data.systemMonitor.externalMonitor = text
-  }
-
-  NDivider {
-    Layout.fillWidth: true
-    Layout.topMargin: Style.marginL
-    Layout.bottomMargin: Style.marginL
   }
 }

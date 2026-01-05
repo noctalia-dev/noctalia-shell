@@ -110,7 +110,7 @@ ColumnLayout {
         id: itemBackground
         anchors.fill: parent
         anchors.margins: Style.marginXS
-        color: Color.transparent // Make background transparent
+        color: "transparent" // Make background transparent
         border.color: Color.mOutline
         border.width: Style.borderS
         radius: Style.radiusS

@@ -54,7 +54,7 @@ Variants {
 
     sourceComponent: PanelWindow {
       id: window
-      color: Color.transparent
+      color: "transparent"
       screen: screenLoader.modelData
 
       WlrLayershell.layer: WlrLayer.Bottom

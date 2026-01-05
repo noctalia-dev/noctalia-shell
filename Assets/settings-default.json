@@ -83,7 +83,8 @@
     "shadowOffsetX": 2,
     "shadowOffsetY": 3,
     "language": "",
-    "allowPanelsOnScreenWithoutBar": true
+    "allowPanelsOnScreenWithoutBar": true,
+    "showChangelogOnStartup": true
   },
   "ui": {
     "fontDefault": "",
@@ -94,6 +95,10 @@
     "panelBackgroundOpacity": 0.93,
     "panelsAttachedToBar": true,
     "settingsPanelMode": "attached",
+    "wifiDetailsViewMode": "grid",
+    "bluetoothDetailsViewMode": "grid",
+    "networkPanelView": "wifi",
+    "bluetoothHideUnnamedDevices": false,
     "boxBorderEnabled": false
   },
   "location": {
@@ -174,6 +179,7 @@
   },
   "appLauncher": {
     "enableClipboardHistory": false,
+    "autoPasteClipboard": false,
     "enableClipPreview": true,
     "position": "center",
     "pinnedExecs": [],
@@ -195,7 +201,7 @@
     "shortcuts": {
       "left": [
         {
-          "id": "WiFi"
+          "id": "Network"
         },
         {
           "id": "Bluetooth"
@@ -392,8 +398,7 @@
     "schedulingMode": "off",
     "manualSunrise": "06:30",
     "manualSunset": "18:30",
-    "matugenSchemeType": "scheme-fruit-salad",
-    "generateTemplatesForPredefined": true
+    "matugenSchemeType": "scheme-fruit-salad"
   },
   "templates": {
     "gtk": false,
@@ -420,6 +425,7 @@
     "mango": false,
     "zed": false,
     "helix": false,
+    "zenBrowser": false,
     "enableUserTemplates": false
   },
   "nightLight": {

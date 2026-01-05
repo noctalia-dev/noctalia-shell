@@ -27,6 +27,12 @@ Item {
     function toggle() {
       BarService.isVisible = !BarService.isVisible;
     }
+    function hide() {
+      BarService.isVisible = false;
+    }
+    function show() {
+      BarService.isVisible = true;
+    }
   }
 
   IpcHandler {
@@ -144,26 +150,6 @@ Item {
                                               } else {
                                                 // In another mode -> switch to clipboard mode
                                                 launcherPanel.setSearchText(">clip ");
-                                              }
-                                            });
-    }
-    function calculator() {
-      root.screenDetector.withCurrentScreen(screen => {
-                                              var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                                              if (!launcherPanel)
-                                              return;
-                                              var searchText = launcherPanel.searchText || "";
-                                              var isInCalcMode = searchText.startsWith(">calc");
-                                              if (!launcherPanel.isPanelOpen) {
-                                                // Closed -> open in calculator mode
-                                                launcherPanel.open();
-                                                launcherPanel.setSearchText(">calc ");
-                                              } else if (isInCalcMode) {
-                                                // Already in calculator mode -> close
-                                                launcherPanel.close();
-                                              } else {
-                                                // In another mode -> switch to calculator mode
-                                                launcherPanel.setSearchText(">calc ");
                                               }
                                             });
     }
@@ -394,10 +380,23 @@ Item {
     function disable() {
       NetworkService.setWifiEnabled(false);
     }
+
+    // TODO REMOVE IN FEB. 2026
+    function togglePanel() {
+      ToastService.showWarning("This IPC call will be deprecated soon, use 'network togglePanel' instead.");
+      root.screenDetector.withCurrentScreen(screen => {
+                                              var networkPanel = PanelService.getPanel("networkPanel", screen);
+                                              networkPanel?.toggle(null, "WiFi");
+                                            });
+    }
+  }
+
+  IpcHandler {
+    target: "network"
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
-                                              var wifiPanel = PanelService.getPanel("wifiPanel", screen);
-                                              wifiPanel?.toggle(null, "WiFi");
+                                              var networkPanel = PanelService.getPanel("networkPanel", screen);
+                                              networkPanel?.toggle(null, "WiFi");
                                             });
     }
   }

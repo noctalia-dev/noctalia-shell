@@ -12,7 +12,7 @@ Rectangle {
     orientation: vertical ? Gradient.Vertical : Gradient.Horizontal
     GradientStop {
       position: 0.0
-      color: Color.transparent
+      color: "transparent"
     }
     GradientStop {
       position: 0.1
@@ -24,7 +24,7 @@ Rectangle {
     }
     GradientStop {
       position: 1.0
-      color: Color.transparent
+      color: "transparent"
     }
   }
 }

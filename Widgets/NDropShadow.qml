@@ -13,7 +13,7 @@ Item {
   property real shadowHorizontalOffset: Settings.data.general.shadowOffsetX
   property real shadowVerticalOffset: Settings.data.general.shadowOffsetY
   property real shadowOpacity: Style.shadowOpacity
-  property color shadowColor: Color.black
+  property color shadowColor: "black"
   property real shadowBlur: Style.shadowBlur
 
   layer.enabled: Settings.data.general.enableShadows && !PowerProfileService.noctaliaPerformanceMode

@@ -19,8 +19,8 @@ NIconButton {
   customRadius: Style.radiusL
   colorBg: PowerProfileService.noctaliaPerformanceMode ? Color.mPrimary : Style.capsuleColor
   colorFg: PowerProfileService.noctaliaPerformanceMode ? Color.mOnPrimary : Color.mOnSurface
-  colorBorder: Color.transparent
-  colorBorderHover: Color.transparent
+  colorBorder: "transparent"
+  colorBorderHover: "transparent"
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
 

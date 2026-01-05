@@ -528,7 +528,8 @@
       "title": "Bluetooth",
       "trusted": "De confiance",
       "unpair": "Désappairer"
-    }
+    },
+    "title": "Bluetooth"
   },
   "calendar": {
     "panel": {
@@ -560,7 +561,8 @@
     "panel": {
       "buttons": {
         "discord": "Rejoindre notre Discord",
-        "dismiss": "Ok"
+        "dismiss": "Ok",
+        "feedback": "Donner un avis."
       },
       "empty": "Les notes de version ne sont pas encore disponibles.",
       "highlight-title": "Points importants",
@@ -663,6 +665,7 @@
       "webbrowser": "Navigateur web"
     },
     "delete": "Supprimer",
+    "no-results": "Aucun résultat trouvé.",
     "pin": "Épingler",
     "providers": {
       "applications": "Applications",
@@ -688,6 +691,7 @@
       "emoji": "Sélecteur d'émojis",
       "emoji-loading": "Chargement des émojis...",
       "emoji-loading-description": "Veuillez patienter",
+      "emoji-no-recent": "Aucun emoji récent pour le moment.",
       "emoji-search-description": "Rechercher et copier des émojis"
     },
     "unpin": "Détacher"
@@ -972,6 +976,7 @@
   },
   "settings": {
     "about": {
+      "changelog": "Afficher le journal des modifications",
       "contributors": {
         "section": {
           "description": "Un grand merci à notre {count} <b>super</b> contributeur !",
@@ -1054,6 +1059,11 @@
           "devices": "Appareils",
           "volumes": "Volumes"
         }
+      },
+      "tabs": {
+        "devices": "Appareils",
+        "media": "Médias",
+        "volumes": "Volumes"
       },
       "title": "Audio",
       "volumes": {
@@ -1142,6 +1152,11 @@
           "label": "Affichage sur les moniteurs"
         }
       },
+      "tabs": {
+        "appearance": "Apparence",
+        "monitors": "Écrans",
+        "widgets": "Widgets"
+      },
       "title": "Barre",
       "tray": {
         "back": "Retour",
@@ -1163,16 +1178,7 @@
     "color-scheme": {
       "color-source": {
         "matugen-scheme-type": {
-          "description": {
-            "scheme-content": "Dérive des couleurs qui correspondent étroitement à l'image sous-jacente.",
-            "scheme-expressive": "Palette vibrante avec une saturation ludique.",
-            "scheme-fidelity": "Palette haute fidélité qui préserve les teintes sources.",
-            "scheme-fruit-salad": "Mélange coloré d'accents vifs et contrastés.",
-            "scheme-monochrome": "Palette minimaliste construite autour d'une seule teinte.",
-            "scheme-neutral": "Palette de couleurs atténuées aux tons doux et apaisants.",
-            "scheme-rainbow": "Palette diversifiée couvrant tout le spectre.",
-            "scheme-tonal-spot": "Palette équilibrée avec des accents ciblés."
-          },
+          "description": "Choisissez la méthode de génération de palette de couleurs que Matugen utilisera pour créer des couleurs à partir de votre fond d'écran.",
           "label": "Type de schéma Matugen"
         },
         "section": {
@@ -1242,6 +1248,10 @@
           "label": "Jeux de couleurs prédéfinis"
         }
       },
+      "tabs": {
+        "colors": "Couleurs",
+        "templates": "Modèles"
+      },
       "templates": {
         "compositors": {
           "description": "Thématisation du compositeur.",
@@ -1306,6 +1316,9 @@
           },
           "zed": {
             "description": "Écrire {filepath} — le thème Comfy doit être installé et activé manuellement"
+          },
+          "zen-browser": {
+            "description": "Écrivez dans {filepath} ; copiez dans le fichier chrome/userChrome.css de votre profil Zen."
           }
         },
         "section": {
@@ -1427,6 +1440,11 @@
       "system-monitor-disk-path": {
         "description": "Sélectionnez le point de montage du disque que la carte du moniteur système dans le centre de contrôle doit surveiller.",
         "label": "Chemin du disque du moniteur système"
+      },
+      "tabs": {
+        "appearance": "Apparence",
+        "cards": "Cartes",
+        "control-widgets": "Widgets de contrôle"
       },
       "title": "Centre de contrôle"
     },
@@ -1624,6 +1642,10 @@
           "night-description": "Contrôle la température pendant la nuit."
         }
       },
+      "tabs": {
+        "brightness": "Luminosité",
+        "night-light": "Veilleuse"
+      },
       "title": "Affichage"
     },
     "dock": {
@@ -1689,6 +1711,10 @@
           "description": "Afficher le dock sur des écrans spécifiques. Par défaut, il s'affiche sur tous les écrans si aucun n'est sélectionné.",
           "label": "Affichage sur les moniteur"
         }
+      },
+      "tabs": {
+        "appearance": "Apparence",
+        "monitors": "Écrans"
       },
       "title": "Dock"
     },
@@ -1829,6 +1855,10 @@
           "label": "Outil d'annotation",
           "placeholder": "gradia, satty -f -"
         },
+        "auto-paste": {
+          "description": "Coller automatiquement l'élément sélectionné du presse-papiers. Nécessite wtype.",
+          "label": "Collage automatique"
+        },
         "clip-preview": {
           "description": "Afficher un aperçu du contenu du presse-papiers lors de l'utilisation de la commande >clip.",
           "label": "Activer l'aperçu du presse-papiers"
@@ -1941,7 +1971,7 @@
           "label": "Votre emplacement"
         }
       },
-      "title": "Emplacement",
+      "title": "Région",
       "weather": {
         "enabled": {
           "description": "Afficher les informations météorologiques dans toute l'interface et récupérer les données météo. Lorsque désactivé, tous les éléments météo seront masqués et aucune requête réseau ne sera effectuée.",
@@ -1950,6 +1980,14 @@
         "fahrenheit": {
           "description": "Afficher la température en Fahrenheit au lieu de Celsius.",
           "label": "Afficher la température en Fahrenheit (°F)"
+        },
+        "hide-city": {
+          "description": "Masquer le nom de la ville dans les affichages météo de toute l'interface.",
+          "label": "Cacher le nom de la ville"
+        },
+        "hide-timezone": {
+          "description": "Masquer l'abréviation du fuseau horaire des affichages météorologiques dans toute l'interface.",
+          "label": "Masquer le fuseau horaire"
         },
         "section": {
           "description": "Choisissez votre unité de température préférée.",
@@ -2135,6 +2173,12 @@
           "label": "Volume sonore"
         }
       },
+      "tabs": {
+        "general": "Général",
+        "history": "Histoire",
+        "sounds": "Sons",
+        "toast": "Pain grillé"
+      },
       "title": "Notifications",
       "toast": {
         "keyboard": {
@@ -2239,6 +2283,7 @@
       "hot-reloaded": "Plugin rechargé : {name}",
       "install": "Installer",
       "install-error": "Échec de l'installation : {error}",
+      "install-incompatible": "{plugin} nécessite Noctalia v{version} ou une version ultérieure.",
       "install-success": "Installation de {plugin} réussie.",
       "installed": {
         "description": "Gérer et configurer tous les plugins installés localement.",
@@ -2296,9 +2341,13 @@
       "update-available_plural": "{count} mises à jour d'extensions disponibles",
       "update-error": "Échec de la mise à jour du plugin : {plugin} : {error}",
       "update-incompatible": "Nécessite Noctalia v{version} ou une version ultérieure.",
+      "update-pending": "v{current} → v{new} (nécessite Noctalia v{required})",
       "update-success": "Mise à jour du plugin {plugin} vers la version {version}.",
       "update-version": "v{actuel} → v{nouveau}",
       "updating": "Mise à jour..."
+    },
+    "region": {
+      "title": "Région"
     },
     "screen-recorder": {
       "audio": {
@@ -2473,6 +2522,15 @@
       "polling-interval": {
         "label": "Intervalle d'interrogation"
       },
+      "polling-section": {
+        "description": "Configurer la fréquence de mise à jour de chaque métrique système.",
+        "label": "Intervalles d'interrogation"
+      },
+      "tabs": {
+        "general": "Général",
+        "polling": "Sondage",
+        "thresholds": "Seuils"
+      },
       "temperature-section": {
         "label": "Température CPU"
       },
@@ -2506,6 +2564,12 @@
         "description": "Ajuster la vitesse globale de l'animation.",
         "label": "Vitesse d'animation",
         "reset": "Réinitialiser la vitesse de l'animation"
+      },
+      "appearance": {
+        "section": {
+          "description": "Personnaliser les éléments visuels tels que les info-bulles, les bordures et les ombres.",
+          "label": "Apparence"
+        }
       },
       "box-border": {
         "description": "Affiche un contour autour des zones de contenu.",
@@ -2562,6 +2626,11 @@
           "label": "Direction de l’ombre"
         },
         "label": "Ombres portées"
+      },
+      "tabs": {
+        "appearance": "Apparence",
+        "panels": "Panneaux",
+        "screen-corners": "Coins d'écran"
       },
       "title": "Interface utilisateur",
       "tooltips": {
@@ -2664,6 +2733,11 @@
           "description": "Choisissez l'emplacement d'affichage du panneau de sélection du fond d'écran.",
           "label": "Position"
         }
+      },
+      "tabs": {
+        "automation": "Automatisation",
+        "look-feel": "Aspect et convivialité",
+        "settings": "Paramètres"
       },
       "title": "Fond d'écran"
     }
@@ -2875,6 +2949,7 @@
     "list-view": "Vue en liste",
     "manage-vpn": "Connexions VPN",
     "manage-wifi": "Wi-Fi",
+    "max-widgets-reached": "Nombre maximal de widgets atteint.",
     "microphone-volume-at": "Volume du microphone : {volume}%",
     "move-to-center-section": "Section centrale",
     "move-to-left-section": "Section de gauche",
@@ -2937,6 +3012,7 @@
       "apikey": {
         "help": "Une clé API est requise pour accéder au contenu NSFW.",
         "label": "Clé API",
+        "managed-by-env": "Géré via la variable d'environnement NOCTALIA_WALLHAVEN_API_KEY.",
         "placeholder": "Entrez votre clé API Wallhaven"
       },
       "apply-all-monitors": {
@@ -3025,6 +3101,11 @@
     "thunderstorm": "Orage",
     "unknown": "Inconnu"
   },
+  "widget": {
+    "file-picker": {
+      "title": "Sélectionner un fichier"
+    }
+  },
   "widgets": {
     "color-picker": {
       "apply": "Appliquer",
@@ -3109,11 +3190,13 @@
   "wifi": {
     "panel": {
       "action-required": "Action requise",
+      "available-interfaces": "Interfaces disponibles",
       "available-networks": "Réseaux disponibles",
       "connect": "Connecter",
       "connected": "Connecté",
       "disabled": "Le Wi-Fi est désactivé",
       "disconnect": "Déconnecter",
+      "disconnected": "Déconnecté",
       "disconnecting": "Déconnexion en cours...",
       "dns": "DNS",
       "enable-message": "Activez le Wi-Fi pour voir les réseaux disponibles.",
@@ -3124,12 +3207,15 @@
       "frequency": "Fréquence",
       "gateway": "Passerelle",
       "info": "Info",
+      "interface": "Interface réseau",
       "internet": "Internet",
       "internet-connected": "Connecté à Internet",
       "internet-limited": "Pas d'internet",
+      "internet-status": "État de la connexion Internet",
       "ipv4": "IPv4",
       "known-networks": "Réseaux connus",
       "link-speed": "Vitesse de liaison",
+      "no-ethernet-devices": "Aucun périphérique Ethernet détecté.",
       "no-networks": "Aucun réseau trouvé",
       "password": "Mot de passe",
       "saved": "Enregistré",

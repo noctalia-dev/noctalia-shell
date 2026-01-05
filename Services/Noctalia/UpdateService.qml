@@ -111,11 +111,6 @@ Singleton {
     let from = fromVersion || changelogLastSeenVersion || "v3.0.0";
     let to = toVersion;
 
-    // Remove potential legacy -dev stuff
-    // TODO: remove in 2026!
-    from = from.replace("-dev", "");
-    to = to.replace("-dev", "");
-
     // Strip suffix from versions
     from = from.replace(root.developmentSuffix, "");
     to = to.replace(root.developmentSuffix, "");
@@ -264,7 +259,7 @@ Singleton {
       return;
     }
 
-    const targetScreen = Quickshell.screens[0];
+    const targetScreen = viewChangelogTargetScreen || Quickshell.screens[0];
     const panel = PanelService.getPanel("changelogPanel", targetScreen);
     if (!panel) {
       Qt.callLater(openWhenReady);
@@ -274,6 +269,7 @@ Singleton {
     panel.open();
     popupScheduled = false;
     lastShownVersion = changelogCurrentVersion;
+    viewChangelogTargetScreen = null;
   }
 
   function openDiscord() {
@@ -292,6 +288,10 @@ Singleton {
     if (!currentVersion)
       return;
 
+    if (!Settings.data.general.showChangelogOnStartup) {
+      return;
+    }
+
     if (!changelogStateLoaded) {
       pendingShowRequest = true;
       return;
@@ -305,6 +305,29 @@ Singleton {
     changelogToVersion = currentVersion;
     changelogPending = true;
     handleChangelogRequest();
+  }
+
+  // View changelog without checking seen state (for manual viewing)
+  property var viewChangelogTargetScreen: null
+
+  function viewChangelog(screen) {
+    if (!currentVersion)
+      return;
+
+    // Calculate one minor version back as starting point
+    const parts = parseVersionParts(currentVersion);
+    let fromVersion = "v3.0.0";
+    if (parts.length >= 2) {
+      const major = parts[0];
+      const minor = Math.max(0, parts[1] - 1);
+      fromVersion = `v${major}.${minor}.0`;
+    }
+
+    previousVersion = fromVersion;
+    changelogCurrentVersion = currentVersion;
+    viewChangelogTargetScreen = screen || null;
+    popupScheduled = true;
+    fetchUpgradeLog(fromVersion, currentVersion);
   }
 
   function clearChangelogRequest() {

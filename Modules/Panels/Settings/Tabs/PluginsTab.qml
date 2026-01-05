@@ -104,6 +104,7 @@ ColumnLayout {
             var pluginData = JSON.parse(JSON.stringify(manifest));
             pluginData.compositeKey = compositeKey;
             pluginData.updateInfo = PluginService.pluginUpdates[compositeKey];
+            pluginData.pendingUpdateInfo = PluginService.pluginUpdatesPending[compositeKey];
             pluginData.enabled = PluginRegistry.isPluginEnabled(compositeKey);
 
             // Add source info
@@ -163,13 +164,24 @@ ColumnLayout {
               spacing: Style.marginS
 
               NText {
-                text: modelData.updateInfo ? I18n.tr("settings.plugins.update-version", {
-                                                       "current": modelData.version,
-                                                       "new": modelData.updateInfo.availableVersion
-                                                     }) : "v" + modelData.version
+                text: {
+                  if (modelData.updateInfo) {
+                    return I18n.tr("settings.plugins.update-version", {
+                                     "current": modelData.version,
+                                     "new": modelData.updateInfo.availableVersion
+                                   });
+                  } else if (modelData.pendingUpdateInfo) {
+                    return I18n.tr("settings.plugins.update-pending", {
+                                     "current": modelData.version,
+                                     "new": modelData.pendingUpdateInfo.availableVersion,
+                                     "required": modelData.pendingUpdateInfo.minNoctaliaVersion
+                                   });
+                  }
+                  return "v" + modelData.version;
+                }
                 font.pointSize: Style.fontSizeXXS
-                color: modelData.updateInfo ? Color.mPrimary : Color.mOnSurfaceVariant
-                font.weight: modelData.updateInfo ? Style.fontWeightMedium : Style.fontWeightRegular
+                color: modelData.updateInfo ? Color.mPrimary : (modelData.pendingUpdateInfo ? Color.mTertiary : Color.mOnSurfaceVariant)
+                font.weight: (modelData.updateInfo || modelData.pendingUpdateInfo) ? Style.fontWeightMedium : Style.fontWeightRegular
               }
 
               NText {
@@ -599,7 +611,10 @@ ColumnLayout {
               tooltipText: modelData.downloaded ? I18n.tr("settings.plugins.uninstall") : I18n.tr("settings.plugins.install")
               onClicked: {
                 if (modelData.downloaded) {
-                  uninstallDialog.pluginToUninstall = modelData;
+                  // Construct composite key for available plugins
+                  var pluginData = Object.assign({}, modelData);
+                  pluginData.compositeKey = PluginRegistry.generateCompositeKey(modelData.id, modelData.source?.url || "");
+                  uninstallDialog.pluginToUninstall = pluginData;
                   uninstallDialog.open();
                 } else {
                   installPlugin(modelData);

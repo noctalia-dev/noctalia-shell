@@ -22,7 +22,7 @@ SmartPanel {
 
   panelContent: Rectangle {
     id: panelContent
-    color: Color.transparent
+    color: "transparent"
 
     // State (lazy-loaded with panelContent)
     property var rangeCounts: [0, 0, 0, 0]
@@ -122,7 +122,7 @@ SmartPanel {
 
     // Calculate content height based on header + tabs (if visible) + content
     property real headerHeight: headerBox.implicitHeight
-    property real tabsHeight: tabsBox.visible ? tabsBox.implicitHeight + Style.marginS : 0
+    property real tabsHeight: tabsBox.visible ? tabsBox.implicitHeight : 0
     property real contentHeight: {
       if (NotificationService.historyList.count === 0) {
         return emptyState.implicitHeight;
@@ -212,57 +212,47 @@ SmartPanel {
       }
 
       // Time range tabs ([All] / [Today] / [Yesterday] / [Earlier])
-      NBox {
+      NTabBar {
         id: tabsBox
         Layout.fillWidth: true
-        Layout.topMargin: Style.marginS
-        implicitHeight: timeTabs.implicitHeight + (Style.marginS * 2)
         visible: NotificationService.historyList.count > 0 && panelContent.groupByDate
+        currentIndex: panelContent.currentRange
+        tabHeight: Style.baseWidgetSize * 0.7
+        spacing: Style.marginXS
+        distributeEvenly: true
+        border.color: Style.boxBorderColor
+        border.width: Style.borderS
 
-        RowLayout {
-          id: timeTabs
-          spacing: Style.marginXS
-          anchors.fill: parent
-          anchors.margins: Style.marginS
-          visible: NotificationService.historyList.count > 0
+        NTabButton {
+          tabIndex: 0
+          text: I18n.tr("notifications.range.all") + " (" + panelContent.countForRange(0) + ")"
+          checked: tabsBox.currentIndex === 0
+          onClicked: panelContent.currentRange = 0
+          pointSize: Style.fontSizeXS
+        }
 
-          Repeater {
-            model: 4
+        NTabButton {
+          tabIndex: 1
+          text: I18n.tr("notifications.range.today") + " (" + panelContent.countForRange(1) + ")"
+          checked: tabsBox.currentIndex === 1
+          onClicked: panelContent.currentRange = 1
+          pointSize: Style.fontSizeXS
+        }
 
-            delegate: NButton {
-              readonly property int rangeId: index
-              readonly property bool isActive: panelContent.currentRange === rangeId
+        NTabButton {
+          tabIndex: 2
+          text: I18n.tr("notifications.range.yesterday") + " (" + panelContent.countForRange(2) + ")"
+          checked: tabsBox.currentIndex === 2
+          onClicked: panelContent.currentRange = 2
+          pointSize: Style.fontSizeXS
+        }
 
-              text: {
-                if (rangeId === 0)
-                  return I18n.tr("notifications.range.all") + " (" + panelContent.countForRange(rangeId) + ")";
-                else if (rangeId === 1)
-                  return I18n.tr("notifications.range.today") + " (" + panelContent.countForRange(rangeId) + ")";
-                else if (rangeId === 2)
-                  return I18n.tr("notifications.range.yesterday") + " (" + panelContent.countForRange(rangeId) + ")";
-                return I18n.tr("notifications.range.earlier") + " (" + panelContent.countForRange(rangeId) + ")";
-              }
-
-              Layout.fillWidth: true
-              Layout.preferredWidth: 1
-              implicitHeight: Style.baseWidgetSize * 0.7
-              fontSize: Style.fontSizeXS
-              outlined: false
-
-              backgroundColor: isActive ? Color.mPrimary : (hovered ? Color.mHover : Color.transparent)
-              textColor: isActive ? Color.mOnPrimary : (hovered ? Color.mOnHover : Color.mOnSurface)
-              hoverColor: backgroundColor
-
-              Behavior on backgroundColor {
-                enabled: !Settings.data.general.animationDisabled
-                ColorAnimation {
-                  duration: Style.animationFast
-                }
-              }
-
-              onClicked: panelContent.currentRange = rangeId
-            }
-          }
+        NTabButton {
+          tabIndex: 3
+          text: I18n.tr("notifications.range.earlier") + " (" + panelContent.countForRange(3) + ")"
+          checked: tabsBox.currentIndex === 3
+          onClicked: panelContent.currentRange = 3
+          pointSize: Style.fontSizeXS
         }
       }
 
@@ -392,7 +382,7 @@ SmartPanel {
                       height: Math.round(40 * Style.uiScaleRatio)
                       radius: Math.min(Style.radiusL, width / 2)
                       imagePath: model.cachedImage || model.originalImage || ""
-                      borderColor: Color.transparent
+                      borderColor: "transparent"
                       borderWidth: 0
                       fallbackIcon: "bell"
                       fallbackIconSize: 24
@@ -421,7 +411,7 @@ SmartPanel {
                             else if (model.urgency === 0)
                               return Color.mOnSurfaceVariant;
                             else
-                              return Color.transparent;
+                              return "transparent";
                           }
                         }
 
@@ -516,7 +506,7 @@ SmartPanel {
         // Overlay gradient to smooth the hard cut due to scrolling at the bottom (only visible when scrollable)
         Rectangle {
           anchors.fill: parent
-          color: Color.transparent
+          color: "transparent"
           visible: scrollView.ScrollBar.vertical && scrollView.ScrollBar.vertical.size < 1.0
           opacity: {
             const scrollBar = scrollView.ScrollBar.vertical;
@@ -533,11 +523,11 @@ SmartPanel {
           gradient: Gradient {
             GradientStop {
               position: 0.0
-              color: Color.transparent
+              color: "transparent"
             }
             GradientStop {
               position: 0.85
-              color: Color.transparent
+              color: "transparent"
             }
             GradientStop {
               position: 1.0

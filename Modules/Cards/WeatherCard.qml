@@ -102,7 +102,7 @@ NBox {
             }
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
-            visible: showLocation
+            visible: showLocation && !Settings.data.location.hideWeatherCityName
           }
 
           RowLayout {
@@ -129,7 +129,7 @@ NBox {
               text: weatherReady ? `(${LocationService.data.weather.timezone_abbreviation})` : ""
               pointSize: Style.fontSizeXS
               color: Color.mOnSurfaceVariant
-              visible: LocationService.data.weather && showLocation
+              visible: LocationService.data.weather && showLocation && !Settings.data.location.hideWeatherTimezone
             }
           }
         }

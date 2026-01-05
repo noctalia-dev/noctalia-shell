@@ -221,7 +221,7 @@ SmartPanel {
 
   panelContent: Rectangle {
     id: panelContent
-    color: Color.transparent
+    color: "transparent"
 
     SettingsContent {
       id: settingsContent

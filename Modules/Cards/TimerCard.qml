@@ -434,7 +434,7 @@ NBox {
         Layout.fillWidth: true
         Layout.preferredWidth: 0
         implicitHeight: startButton.implicitHeight
-        color: Color.transparent
+        color: "transparent"
 
         NButton {
           id: startButton
@@ -456,7 +456,7 @@ NBox {
         Layout.fillWidth: true
         Layout.preferredWidth: 0
         implicitHeight: resetButton.implicitHeight
-        color: Color.transparent
+        color: "transparent"
 
         NButton {
           id: resetButton
@@ -479,6 +479,7 @@ NBox {
       visible: totalSeconds === 0
       currentIndex: isStopwatchMode ? 1 : 0
       margins: 0
+      distributeEvenly: true
       onCurrentIndexChanged: {
         const newMode = currentIndex === 1;
         if (newMode !== isStopwatchMode) {
@@ -513,8 +514,6 @@ NBox {
       }
 
       NTabButton {
-        Layout.fillWidth: true
-        Layout.preferredWidth: 0
         text: I18n.tr("calendar.timer.countdown")
         tabIndex: 0
         checked: !isStopwatchMode
@@ -522,8 +521,6 @@ NBox {
       }
 
       NTabButton {
-        Layout.fillWidth: true
-        Layout.preferredWidth: 0
         text: I18n.tr("calendar.timer.stopwatch")
         tabIndex: 1
         checked: isStopwatchMode

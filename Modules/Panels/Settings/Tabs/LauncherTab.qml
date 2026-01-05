@@ -80,24 +80,6 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("settings.launcher.settings.clipboard-history.label")
-    description: I18n.tr("settings.launcher.settings.clipboard-history.description")
-    checked: Settings.data.appLauncher.enableClipboardHistory
-    onToggled: checked => Settings.data.appLauncher.enableClipboardHistory = checked
-    isSettings: true
-    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardHistory")
-  }
-
-  NToggle {
-    label: I18n.tr("settings.launcher.settings.clip-preview.label")
-    description: I18n.tr("settings.launcher.settings.clip-preview.description")
-    checked: Settings.data.appLauncher.enableClipPreview
-    onToggled: checked => Settings.data.appLauncher.enableClipPreview = checked
-    isSettings: true
-    defaultValue: Settings.getDefaultValue("appLauncher.enableClipPreview")
-  }
-
-  NToggle {
     label: I18n.tr("settings.launcher.settings.sort-by-usage.label")
     description: I18n.tr("settings.launcher.settings.sort-by-usage.description")
     checked: Settings.data.appLauncher.sortByMostUsed
@@ -132,6 +114,44 @@ ColumnLayout {
     isSettings: true
     defaultValue: Settings.getDefaultValue("appLauncher.ignoreMouseInput")
   }
+
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  NToggle {
+    label: I18n.tr("settings.launcher.settings.clipboard-history.label")
+    description: I18n.tr("settings.launcher.settings.clipboard-history.description")
+    checked: Settings.data.appLauncher.enableClipboardHistory
+    onToggled: checked => Settings.data.appLauncher.enableClipboardHistory = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardHistory")
+  }
+
+  NToggle {
+    label: I18n.tr("settings.launcher.settings.clip-preview.label")
+    description: I18n.tr("settings.launcher.settings.clip-preview.description")
+    checked: Settings.data.appLauncher.enableClipPreview
+    onToggled: checked => Settings.data.appLauncher.enableClipPreview = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipPreview")
+    visible: Settings.data.appLauncher.enableClipboardHistory
+  }
+
+  NToggle {
+    label: I18n.tr("settings.launcher.settings.auto-paste.label")
+    description: I18n.tr("settings.launcher.settings.auto-paste.description")
+    checked: Settings.data.appLauncher.autoPasteClipboard
+    onToggled: checked => Settings.data.appLauncher.autoPasteClipboard = checked
+    isSettings: true
+    defaultValue: Settings.getDefaultValue("appLauncher.autoPasteClipboard")
+    visible: Settings.data.appLauncher.enableClipboardHistory
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+  }
+
   NToggle {
     label: I18n.tr("settings.launcher.settings.use-app2unit.label")
     description: I18n.tr("settings.launcher.settings.use-app2unit.description")

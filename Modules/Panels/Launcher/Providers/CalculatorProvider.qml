@@ -1,120 +1,74 @@
 import QtQuick
+import Quickshell
 import "../../../../Helpers/AdvancedMath.js" as AdvancedMath
 import qs.Commons
+import qs.Services.Keyboard
 
-// Legacy calculator plugin for >calc command
-// TODO: Remove this plugin in 2-3 bussiness days
 Item {
-  property var launcher: null
+  id: root
+
+  // Provider metadata
   property string name: I18n.tr("launcher.providers.calculator")
+  property var launcher: null
   property string iconMode: Settings.data.appLauncher.iconMode
+  property bool handleSearch: true // Contribute to regular search
+  property string supportedLayouts: "list"
 
-  function handleCommand(query) {
-    // Handle >calc command or direct math expressions after >
-    return query.startsWith(">calc") || (query.startsWith(">") && query.length > 1 && isMathExpression(query.substring(1)));
+  // Initialize provider
+  function init() {
+    Logger.d("CalculatorProvider", "Initialized");
   }
 
-  function commands() {
-    return [
-          {
-            "name": ">calc",
-            "description": I18n.tr("launcher.providers.calculator-deprecated"),
-            "icon": "alert-triangle",
-            "isTablerIcon": true,
-            "isImage": false,
-            "onActivate": function () {
-              launcher.setSearchText(">calc ");
-            }
-          }
-        ];
-  }
-
+  // Get search results - evaluates math expressions inline
   function getResults(query) {
-    let expression = "";
-
-    if (query.startsWith(">calc")) {
-      expression = query.substring(5).trim();
-    } else if (query.startsWith(">")) {
-      expression = query.substring(1).trim();
-    } else {
+    if (!query)
       return [];
-    }
 
-    if (!expression) {
-      return [
-            {
-              "name": I18n.tr("launcher.providers.calculator-name"),
-              "description": I18n.tr("launcher.providers.calculator-deprecated"),
-              "icon": "alert-triangle",
-              "isTablerIcon": true,
-              "isImage": false,
-              "onActivate": function () {}
-            }
-          ];
-    }
+    const trimmed = query.trim();
+    if (!trimmed || !isMathExpression(trimmed))
+      return [];
 
     try {
-      let result = AdvancedMath.evaluate(expression.trim());
-
+      const result = AdvancedMath.evaluate(trimmed);
       return [
             {
               "name": AdvancedMath.formatResult(result),
-              "description": `${expression} = ${result}`,
+              "description": `${trimmed} = ${result}`,
               "icon": iconMode === "tabler" ? "calculator" : "accessories-calculator",
               "isTablerIcon": true,
               "isImage": false,
+              "provider": root,
               "onActivate": function () {
-                // TODO: copy entry to clipboard via ClipHist
-                launcher.close();
+                // Copy result to clipboard
+                ClipboardService.copyText(String(AdvancedMath.formatResult(result)));
+                if (launcher)
+                  launcher.close();
               }
             }
           ];
     } catch (error) {
-      return [
-            {
-              "name": I18n.tr("launcher.providers.calculator-error"),
-              "description": error.message || "Invalid expression",
-              "icon": iconMode === "tabler" ? "circle-x" : "dialog-error",
-              "isTablerIcon": true,
-              "isImage": false,
-              "onActivate": function () {}
-            }
-          ];
+      return [];
     }
   }
 
-  function evaluateExpression(expr) {
-    // Sanitize input - only allow safe characters
-    const sanitized = expr.replace(/[^0-9\+\-\*\/\(\)\.\s\%]/g, '');
-    if (sanitized !== expr) {
-      throw new Error("Invalid characters in expression");
-    }
-
-    // Don't allow empty expressions
-    if (!sanitized.trim()) {
-      throw new Error("Empty expression");
-    }
-
-    try {
-      // Use Function constructor for safe evaluation
-      // This is safer than eval() but still evaluate math
-      const result = Function('"use strict"; return (' + sanitized + ')')();
-
-      // Check for valid result
-      if (!isFinite(result)) {
-        throw new Error("Result is not a finite number");
-      }
-
-      // Round to reasonable precision to avoid floating point issues
-      return Math.round(result * 1000000000) / 1000000000;
-    } catch (e) {
-      throw new Error("Invalid mathematical expression");
-    }
-  }
-
+  // Check if a string is a valid math expression
   function isMathExpression(expr) {
-    // Check if string looks like a math expression
-    // Allow digits, operators, parentheses, decimal points, and whitespace
-    return /^[\d\s\+\-\*\/\(\)\.\%]+$/.test(expr);
+    // Allow: digits, operators, parentheses, decimal points, whitespace, letters (for functions), commas
+    if (!/^[\d\s\+\-\*\/\(\)\.\%\^a-zA-Z,]+$/.test(expr))
+      return false;
+
+    // Must contain at least one operator OR a function call (letter followed by parenthesis)
+    if (!/[+\-*/%\^]/.test(expr) && !/[a-zA-Z]\s*\(/.test(expr))
+      return false;
+
+    // Reject if ends with an operator (incomplete expression)
+    if (/[+\-*/%\^]\s*$/.test(expr))
+      return false;
+
+    // Reject if it's just letters (would match app names)
+    if (/^[a-zA-Z\s]+$/.test(expr))
+      return false;
+
+    return true;
   }
 }

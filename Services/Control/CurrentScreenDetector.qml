@@ -101,7 +101,7 @@ Item {
           sourceComponent: PanelWindow {
             implicitWidth: 0
             implicitHeight: 0
-            color: Color.transparent
+            color: "transparent"
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "noctalia-screen-detector"
             mask: Region {}

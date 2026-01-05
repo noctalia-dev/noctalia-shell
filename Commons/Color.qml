@@ -45,11 +45,6 @@ Singleton {
   readonly property color mHover: customColorsData.mHover
   readonly property color mOnHover: customColorsData.mOnHover
 
-  // --- Absolute Colors
-  readonly property color transparent: "transparent"
-  readonly property color black: "#000000"
-  readonly property color white: "#ffffff"
-
   // --------------------------------
   // Default colors: Rose Pine
   QtObject {

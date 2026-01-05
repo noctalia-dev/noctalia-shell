@@ -152,7 +152,7 @@ RowLayout {
           height: parent.height
           radius: Math.min(Style.iRadiusL, width / 2)
           anchors.left: parent.left
-          color: decreaseArea.containsMouse ? Color.mHover : Color.transparent
+          color: decreaseArea.containsMouse ? Color.mHover : "transparent"
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
@@ -175,7 +175,7 @@ RowLayout {
           height: 100
           radius: width / 4
 
-          color: decreaseArea.containsMouse ? Color.mHover : Color.transparent
+          color: decreaseArea.containsMouse ? Color.mHover : "transparent"
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
@@ -251,7 +251,7 @@ RowLayout {
           height: parent.height
           radius: Math.min(Style.iRadiusL, width / 2)
           anchors.right: parent.right
-          color: increaseArea.containsMouse ? Color.mHover : Color.transparent
+          color: increaseArea.containsMouse ? Color.mHover : "transparent"
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
@@ -274,7 +274,7 @@ RowLayout {
           height: 100
           radius: width / 4
 
-          color: increaseArea.containsMouse ? Color.mHover : Color.transparent
+          color: increaseArea.containsMouse ? Color.mHover : "transparent"
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
@@ -336,7 +336,7 @@ RowLayout {
       anchors.verticalCenter: parent.verticalCenter
       anchors.margins: 4
       height: parent.height
-      color: Color.transparent
+      color: "transparent"
 
       RowLayout {
         anchors.centerIn: parent

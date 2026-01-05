@@ -343,7 +343,7 @@ RowLayout {
               }
               background: Rectangle {
                 anchors.fill: parent
-                color: highlighted ? Color.mHover : Color.transparent
+                color: highlighted ? Color.mHover : "transparent"
                 radius: Style.iRadiusS
                 Behavior on color {
                   ColorAnimation {

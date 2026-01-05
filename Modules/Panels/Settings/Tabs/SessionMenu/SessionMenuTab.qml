@@ -339,8 +339,8 @@ ColumnLayout {
           Rectangle {
             anchors.fill: parent
             radius: Style.radiusM
-            color: delegateItem.dragging ? Color.mSurfaceVariant : Color.transparent
-            border.color: delegateItem.dragging ? Color.mOutline : Color.transparent
+            color: delegateItem.dragging ? Color.mSurfaceVariant : "transparent"
+            border.color: delegateItem.dragging ? Color.mOutline : "transparent"
             border.width: Style.borderS
 
             Behavior on color {
@@ -361,7 +361,7 @@ ColumnLayout {
               Layout.preferredHeight: Style.baseWidgetSize * 0.7
               Layout.alignment: Qt.AlignVCenter
               radius: Style.radiusXS
-              color: dragHandleMouseArea.containsMouse ? Color.mSurfaceVariant : Color.transparent
+              color: dragHandleMouseArea.containsMouse ? Color.mSurfaceVariant : "transparent"
 
               Behavior on color {
                 ColorAnimation {

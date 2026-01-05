@@ -110,9 +110,8 @@ Item {
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow"
     forceClose: isBarVertical || root.displayMode === "alwaysHide" || text === ""
     onClicked: {
-      var panel = PanelService.getPanel("wifiPanel", screen);
-      if (panel)
-        panel.toggle(this);
+      var panel = PanelService.getPanel("networkPanel", screen);
+      panel?.toggle(this);
     }
     onRightClicked: {
       var popupMenuWindow = PanelService.getPopupMenuWindow(screen);

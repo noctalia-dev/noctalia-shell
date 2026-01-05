@@ -528,7 +528,8 @@
       "title": "Bluetooth",
       "trusted": "Trusted",
       "unpair": "Unpair"
-    }
+    },
+    "title": "Bluetooth"
   },
   "calendar": {
     "panel": {
@@ -560,7 +561,8 @@
     "panel": {
       "buttons": {
         "discord": "Join our Discord",
-        "dismiss": "Ok"
+        "dismiss": "Ok",
+        "feedback": "Give feedback"
       },
       "empty": "Release notes are not available yet.",
       "highlight-title": "Highlights",
@@ -663,6 +665,7 @@
       "webbrowser": "Web Browser"
     },
     "delete": "Delete",
+    "no-results": "No results found",
     "pin": "Pin",
     "providers": {
       "applications": "Applications",
@@ -688,6 +691,7 @@
       "emoji": "Emoji picker",
       "emoji-loading": "Loading emojis...",
       "emoji-loading-description": "Please wait",
+      "emoji-no-recent": "No recent emojis yet",
       "emoji-search-description": "Search and copy emojis"
     },
     "unpin": "Unpin"
@@ -972,6 +976,7 @@
   },
   "settings": {
     "about": {
+      "changelog": "View changelog",
       "contributors": {
         "section": {
           "description": "Shout-out to our {count} <b>awesome</b> contributor!",
@@ -1054,6 +1059,11 @@
           "devices": "Devices",
           "volumes": "Volumes"
         }
+      },
+      "tabs": {
+        "devices": "Devices",
+        "media": "Media",
+        "volumes": "Volumes"
       },
       "title": "Audio",
       "volumes": {
@@ -1142,6 +1152,11 @@
           "label": "Monitors display"
         }
       },
+      "tabs": {
+        "appearance": "Appearance",
+        "monitors": "Monitors",
+        "widgets": "Widgets"
+      },
       "title": "Bar",
       "tray": {
         "back": "Back",
@@ -1163,16 +1178,7 @@
     "color-scheme": {
       "color-source": {
         "matugen-scheme-type": {
-          "description": {
-            "scheme-content": "Derives colors that closely match the underlying image.",
-            "scheme-expressive": "Vibrant palette with playful saturation.",
-            "scheme-fidelity": "High-fidelity palette that preserves source hues.",
-            "scheme-fruit-salad": "Colorful mix of bright contrasting accents.",
-            "scheme-monochrome": "Minimal palette built around a single hue.",
-            "scheme-neutral": "Muted palette with subdued and calming tones.",
-            "scheme-rainbow": "Diverse palette spanning the full spectrum.",
-            "scheme-tonal-spot": "Balanced palette with focused accents."
-          },
+          "description": "Choose the color scheme generation method that Matugen will use to create colors from your wallpaper.",
           "label": "Matugen scheme type"
         },
         "section": {
@@ -1242,6 +1248,10 @@
           "label": "Predefined color schemes"
         }
       },
+      "tabs": {
+        "colors": "Colors",
+        "templates": "Templates"
+      },
       "templates": {
         "compositors": {
           "description": "Compositor theming.",
@@ -1306,6 +1316,9 @@
           },
           "zed": {
             "description": "Write {filepath} and reload"
+          },
+          "zen-browser": {
+            "description": "Write {filepath}; copy into your Zen profile's chrome/userChrome.css"
           }
         },
         "section": {
@@ -1427,6 +1440,11 @@
       "system-monitor-disk-path": {
         "description": "Select which disk mount point the system monitor card in the control center should monitor.",
         "label": "System monitor disk path"
+      },
+      "tabs": {
+        "appearance": "Appearance",
+        "cards": "Cards",
+        "control-widgets": "Control Widgets"
       },
       "title": "Control Center"
     },
@@ -1624,6 +1642,10 @@
           "night-description": "Controls the temperature during nighttime."
         }
       },
+      "tabs": {
+        "brightness": "Brightness",
+        "night-light": "Night Light"
+      },
       "title": "Display"
     },
     "dock": {
@@ -1690,6 +1712,10 @@
           "label": "Monitor display"
         }
       },
+      "tabs": {
+        "appearance": "Appearance",
+        "monitors": "Monitors"
+      },
       "title": "Dock"
     },
     "general": {
@@ -1731,7 +1757,7 @@
           "label": "Application language"
         }
       },
-      "launch-setup-wizard": "Launch the setup wizard",
+      "launch-setup-wizard": "Setup wizard",
       "profile": {
         "picture": {
           "description": "Your profile picture that appears throughout the interface.",
@@ -1828,6 +1854,10 @@
           "description": "Command to run when clicking the annotate button in clipboard history, The image will be piped to this command.",
           "label": "Annotation tool",
           "placeholder": "e.g. 'gradia', 'satty -f -'"
+        },
+        "auto-paste": {
+          "description": "Automatically paste the selected clipboard item. Requires wtype.",
+          "label": "Auto paste"
         },
         "clip-preview": {
           "description": "Show a preview of the clipboard content when using the >clip command.",
@@ -1941,7 +1971,7 @@
           "label": "Your location"
         }
       },
-      "title": "Location",
+      "title": "Region",
       "weather": {
         "enabled": {
           "description": "Show weather information throughout the interface and fetch weather data. When disabled, all weather elements will be hidden and no network requests will be made.",
@@ -1950,6 +1980,14 @@
         "fahrenheit": {
           "description": "Display temperature in Fahrenheit instead of Celsius.",
           "label": "Display temperature in Fahrenheit (°F)"
+        },
+        "hide-city": {
+          "description": "Hide the city name from weather displays throughout the interface.",
+          "label": "Hide city name"
+        },
+        "hide-timezone": {
+          "description": "Hide the timezone abbreviation from weather displays throughout the interface.",
+          "label": "Hide timezone"
         },
         "section": {
           "description": "Choose your preferred temperature unit.",
@@ -2135,6 +2173,12 @@
           "label": "Sound volume"
         }
       },
+      "tabs": {
+        "general": "General",
+        "history": "History",
+        "sounds": "Sounds",
+        "toast": "Toast"
+      },
       "title": "Notifications",
       "toast": {
         "keyboard": {
@@ -2239,6 +2283,7 @@
       "hot-reloaded": "Reloaded plugin: {name}",
       "install": "Install",
       "install-error": "Failed to install: {error}",
+      "install-incompatible": "{plugin} requires Noctalia v{version} or higher",
       "install-success": "Successfully installed {plugin}",
       "installed": {
         "description": "Manage and configure all locally installed plugins.",
@@ -2296,9 +2341,25 @@
       "update-available_plural": "New plugin updates available ({count})",
       "update-error": "Failed to update plugin: {plugin}: {error}",
       "update-incompatible": "Requires Noctalia v{version} or higher",
+      "update-pending": "v{current} → v{new} (requires Noctalia v{required})",
       "update-success": "Updated {plugin} to v{version}",
       "update-version": "v{current} → v{new}",
       "updating": "Updating..."
+    },
+    "region": {
+      "clock-panel": {
+        "section": {
+          "description": "Customize the clock panel appearance.",
+          "label": "Clock panel"
+        }
+      },
+      "tabs": {
+        "clock-panel": "Clock Panel",
+        "date": "Date",
+        "language": "Language",
+        "location": "Location"
+      },
+      "title": "Region"
     },
     "screen-recorder": {
       "audio": {
@@ -2473,6 +2534,15 @@
       "polling-interval": {
         "label": "Polling interval"
       },
+      "polling-section": {
+        "description": "Configure how often each system metric is updated.",
+        "label": "Polling intervals"
+      },
+      "tabs": {
+        "general": "General",
+        "polling": "Polling",
+        "thresholds": "Thresholds"
+      },
       "temperature-section": {
         "label": "CPU temperature"
       },
@@ -2481,7 +2551,7 @@
         "warning": "Warning threshold"
       },
       "thresholds-section": {
-        "description": "Adjust warning/critical thresholds and polling intervals for each system metric.",
+        "description": "Adjust warning/critical thresholds for each system metric.",
         "label": "Thresholds"
       },
       "title": "System Monitor",
@@ -2506,6 +2576,12 @@
         "description": "Adjust global animation speed.",
         "label": "Animation speed",
         "reset": "Reset animation speed"
+      },
+      "appearance": {
+        "section": {
+          "description": "Customize visual elements like tooltips, borders, and shadows.",
+          "label": "Appearance"
+        }
       },
       "box-border": {
         "description": "Displays an outline around content areas.",
@@ -2562,6 +2638,11 @@
           "label": "Shadow direction"
         },
         "label": "Drop shadows"
+      },
+      "tabs": {
+        "appearance": "Appearance",
+        "panels": "Panels",
+        "screen-corners": "Screen Corners"
       },
       "title": "User Interface",
       "tooltips": {
@@ -2664,6 +2745,11 @@
           "description": "Choose where the wallpaper selector panel appears.",
           "label": "Position"
         }
+      },
+      "tabs": {
+        "automation": "Automation",
+        "look-feel": "Look & feel",
+        "settings": "Settings"
       },
       "title": "Wallpaper"
     }
@@ -2831,7 +2917,7 @@
     "wallpaper-colors": {
       "disabled": "Wallpaper colors disabled.",
       "enabled": "Wallpaper colors enabled.",
-      "label": "Wallpaper colors generation",
+      "label": "Wallpaper colors",
       "not-installed": "Matugen not installed — required for wallpaper color extraction."
     },
     "wifi": {
@@ -2875,6 +2961,7 @@
     "list-view": "List view",
     "manage-vpn": "VPN connections",
     "manage-wifi": "Wi-Fi",
+    "max-widgets-reached": "Maximum widgets reached",
     "microphone-volume-at": "Microphone volume: {volume}%",
     "move-to-center-section": "Center section",
     "move-to-left-section": "Left section",
@@ -3026,6 +3113,11 @@
     "thunderstorm": "Thunderstorm",
     "unknown": "Unknown"
   },
+  "widget": {
+    "file-picker": {
+      "title": "Select a file"
+    }
+  },
   "widgets": {
     "color-picker": {
       "apply": "Apply",
@@ -3110,11 +3202,13 @@
   "wifi": {
     "panel": {
       "action-required": "Action required",
+      "available-interfaces": "Available interfaces",
       "available-networks": "Available networks",
       "connect": "Connect",
       "connected": "Connected",
       "disabled": "Wi‑Fi is disabled",
       "disconnect": "Disconnect",
+      "disconnected": "Disconnected",
       "disconnecting": "Disconnecting…",
       "dns": "DNS",
       "enable-message": "Enable Wi‑Fi to see available networks.",
@@ -3125,12 +3219,15 @@
       "frequency": "Frequency",
       "gateway": "Gateway",
       "info": "Info",
+      "interface": "Network interface",
       "internet": "Internet",
       "internet-connected": "Internet connected",
       "internet-limited": "No internet",
+      "internet-status": "Internet status",
       "ipv4": "IPv4",
       "known-networks": "Known networks",
       "link-speed": "Link speed",
+      "no-ethernet-devices": "No Ethernet devices detected",
       "no-networks": "No Wi‑Fi networks found",
       "password": "Password",
       "saved": "Saved",

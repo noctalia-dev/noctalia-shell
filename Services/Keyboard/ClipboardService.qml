@@ -172,6 +172,11 @@ Singleton {
   }
 
   Process {
+    id: pasteProc
+    stdout: StdioCollector {}
+  }
+
+  Process {
     id: deleteProc
     stdout: StdioCollector {}
     onExited: (exitCode, exitStatus) => {
@@ -318,6 +323,31 @@ Singleton {
     // decode and pipe to wl-copy; implement via shell to preserve binary
     copyProc.command = ["sh", "-lc", `cliphist decode ${id} | wl-copy`];
     copyProc.running = true;
+  }
+
+  function pasteFromClipboard(id, mime) {
+    if (!root.cliphistAvailable) {
+      return;
+    }
+    // Copy to clipboard and then simulate paste using wtype
+    // For images, use Ctrl+V (Ctrl+Shift+V is "paste as text" which doesn't work for images)
+    const isImage = mime && mime.startsWith("image/");
+    const typeArg = isImage ? ` --type ${mime}` : "";
+    const pasteKeys = isImage ? "wtype -M ctrl -k v" : "wtype -M ctrl -M shift v";
+    const cmd = `cliphist decode ${id} | wl-copy${typeArg} && ${pasteKeys}`;
+    pasteProc.command = ["sh", "-lc", cmd];
+    pasteProc.running = true;
+  }
+
+  // Paste plain text: copy to clipboard and simulate Ctrl+Shift+V
+  function pasteText(text) {
+    if (!text)
+      return;
+    // Escape single quotes for shell
+    const escaped = text.replace(/'/g, "'\\''");
+    const cmd = `printf '%s' '${escaped}' | wl-copy && wtype -M ctrl -M shift v`;
+    pasteProc.command = ["sh", "-lc", cmd];
+    pasteProc.running = true;
   }
 
   function deleteById(id) {

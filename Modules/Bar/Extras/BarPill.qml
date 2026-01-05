@@ -19,8 +19,8 @@ Item {
   property bool oppositeDirection: false
   property bool hovered: false
   property bool rotateText: false
-  property color customBackgroundColor: Color.transparent
-  property color customTextIconColor: Color.transparent
+  property color customBackgroundColor: "transparent"
+  property color customTextIconColor: "transparent"
 
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"

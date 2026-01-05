@@ -109,11 +109,13 @@ Singleton {
   }
 
   // Capsule Height
+  // Note: capsule must always be smaller than barHeight to account for border rendering
+  // Qt Quick Rectangle borders are drawn centered on edges (half inside, half outside)
   readonly property real capsuleHeight: {
     let h;
     switch (Settings.data.bar.density) {
       case "mini":
-      h = Math.round(barHeight * 1.0);
+      h = Math.round(barHeight * 0.90);
       break;
       case "compact":
       h = Math.round(barHeight * 0.85);
@@ -135,12 +137,12 @@ Singleton {
   readonly property real _barBaseFontSize: Math.max(1, (Style.barHeight / Style.capsuleHeight) * Style.fontSizeXXS)
   readonly property real barFontSize: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? _barBaseFontSize * 0.9 : _barBaseFontSize
 
-  readonly property color capsuleColor: Settings.data.bar.showCapsule ? Qt.alpha(Color.mSurfaceVariant, Settings.data.bar.capsuleOpacity) : Color.transparent
+  readonly property color capsuleColor: Settings.data.bar.showCapsule ? Qt.alpha(Color.mSurfaceVariant, Settings.data.bar.capsuleOpacity) : "transparent"
 
-  readonly property color capsuleBorderColor: Settings.data.bar.showOutline ? Color.mPrimary : Color.transparent
+  readonly property color capsuleBorderColor: Settings.data.bar.showOutline ? Color.mPrimary : "transparent"
   readonly property int capsuleBorderWidth: Settings.data.bar.showOutline ? Style.borderS : 0
 
-  readonly property color boxBorderColor: Settings.data.ui.boxBorderEnabled ? Color.mOutline : Color.transparent
+  readonly property color boxBorderColor: Settings.data.ui.boxBorderEnabled ? Color.mOutline : "transparent"
 
   // Pixel-perfect utility for centering content without subpixel positioning
   function pixelAlignCenter(containerSize, contentSize) {

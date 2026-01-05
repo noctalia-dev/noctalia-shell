@@ -8,7 +8,7 @@ Rectangle {
   id: root
 
   property var screen
-  property color selectedColor: Color.black
+  property color selectedColor: "black"
 
   signal colorSelected(color color)
 

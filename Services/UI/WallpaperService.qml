@@ -619,6 +619,7 @@ Singleton {
 
       folder: "file://" + currentDirectory
       nameFilters: ImageCacheService.imageFilters
+      caseSensitive: false
       showDirs: false
       sortField: FolderListModel.Name
 

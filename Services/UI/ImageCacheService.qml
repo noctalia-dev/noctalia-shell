@@ -428,7 +428,7 @@ Singleton {
     implicitHeight: 0
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
     WlrLayershell.namespace: "noctalia-image-cache-renderer"
-    color: Color.transparent
+    color: "transparent"
     mask: Region {}
 
     Image {

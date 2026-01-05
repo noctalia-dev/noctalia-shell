@@ -523,7 +523,7 @@ Variants {
 
       implicitWidth: verticalMode ? longVWidth : (root.currentOSDType === OSD.Type.CustomText ? customTextHWidth : (isShortMode ? lockKeyHWidth : longHWidth))
       implicitHeight: verticalMode ? (root.currentOSDType === OSD.Type.CustomText ? customTextVHeight : (isShortMode ? lockKeyVHeight : longVHeight)) : longHHeight
-      color: Color.transparent
+      color: "transparent"
 
       WlrLayershell.namespace: "noctalia-osd-" + (screen?.name || "unknown")
       WlrLayershell.keyboardFocus: WlrKeyboardFocus.None

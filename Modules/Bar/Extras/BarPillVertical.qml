@@ -20,8 +20,8 @@ Item {
   property bool oppositeDirection: false
   property bool hovered: false
   property bool rotateText: false
-  property color customBackgroundColor: Color.transparent
-  property color customTextIconColor: Color.transparent
+  property color customBackgroundColor: "transparent"
+  property color customTextIconColor: "transparent"
 
   readonly property bool collapseToIcon: forceClose && !forceOpen
 
@@ -57,14 +57,7 @@ Item {
   readonly property color bgColor: hovered ? Color.mHover : (customBackgroundColor.a > 0) ? customBackgroundColor : Style.capsuleColor
   readonly property color fgColor: hovered ? Color.mOnHover : (customTextIconColor.a > 0) ? customTextIconColor : Color.mOnSurface
 
-  readonly property real iconSize: {
-    switch (root.density) {
-    case "compact":
-      return Math.max(1, Math.round(pillHeight * 0.65));
-    default:
-      return Math.max(1, Math.round(pillHeight * 0.48));
-    }
-  }
+  readonly property real iconSize: Style.toOdd(pillHeight * 0.48)
 
   // For vertical bars: width is just icon size, height includes pill space
   width: buttonSize
@@ -126,7 +119,7 @@ Item {
     }
 
     opacity: revealed ? Style.opacityFull : Style.opacityNone
-    color: Color.transparent // Make pill background transparent to avoid double opacity
+    color: "transparent" // Make pill background transparent to avoid double opacity
 
     // Radius logic for vertical expansion - rounded on the side that connects to icon
     topLeftRadius: openUpward ? Style.radiusM : 0
@@ -184,7 +177,7 @@ Item {
     width: buttonSize
     height: buttonSize
     radius: Math.min(Style.radiusL, width / 2)
-    color: Color.transparent // Make icon background transparent to avoid double opacity
+    color: "transparent" // Make icon background transparent to avoid double opacity
 
     // Icon positioning based on direction
     x: 0

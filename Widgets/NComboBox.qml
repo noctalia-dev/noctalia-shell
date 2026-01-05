@@ -225,7 +225,7 @@ RowLayout {
           background: Rectangle {
             implicitWidth: 6
             implicitHeight: 100
-            color: Color.transparent
+            color: "transparent"
             opacity: parent.active ? 0.3 : 0.0
             radius: Style.iRadiusM / 2
 
@@ -245,7 +245,7 @@ RowLayout {
           width: listView.width
           height: delegateText.implicitHeight + Style.marginS * 2
           radius: Style.iRadiusS
-          color: isHighlighted ? Color.mHover : Color.transparent
+          color: isHighlighted ? Color.mHover : "transparent"
 
           Behavior on color {
             ColorAnimation {

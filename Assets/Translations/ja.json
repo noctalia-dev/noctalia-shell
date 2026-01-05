@@ -528,7 +528,8 @@
       "title": "Bluetooth",
       "trusted": "信頼できる",
       "unpair": "ペアリング解除"
-    }
+    },
+    "title": "ブルートゥース"
   },
   "calendar": {
     "panel": {
@@ -560,7 +561,8 @@
     "panel": {
       "buttons": {
         "discord": "Discord に参加",
-        "dismiss": "OK"
+        "dismiss": "OK",
+        "feedback": "フィードバックをお願いします。"
       },
       "empty": "リリースノートはまだ利用できません。",
       "highlight-title": "ハイライト",
@@ -663,6 +665,7 @@
       "webbrowser": "ウェブブラウザ"
     },
     "delete": "削除",
+    "no-results": "結果が見つかりませんでした。",
     "pin": "ピン留め",
     "providers": {
       "applications": "アプリケーション",
@@ -688,6 +691,7 @@
       "emoji": "絵文字選択",
       "emoji-loading": "絵文字を読み込み中...",
       "emoji-loading-description": "お待ちください",
+      "emoji-no-recent": "まだ最近使った絵文字はありません。",
       "emoji-search-description": "絵文字を検索してコピー"
     },
     "unpin": "ピン留め解除"
@@ -972,6 +976,7 @@
   },
   "settings": {
     "about": {
+      "changelog": "変更履歴を見る",
       "contributors": {
         "section": {
           "description": "{count}人の<b>素晴らしい</b>コントリビューターに感謝！",
@@ -1054,6 +1059,11 @@
           "devices": "デバイス",
           "volumes": "音量"
         }
+      },
+      "tabs": {
+        "devices": "デバイス",
+        "media": "メディア",
+        "volumes": "ボリューム"
       },
       "title": "サウンド",
       "volumes": {
@@ -1142,6 +1152,11 @@
           "label": "表示するディスプレイ"
         }
       },
+      "tabs": {
+        "appearance": "外観",
+        "monitors": "モニター",
+        "widgets": "ウィジェット"
+      },
       "title": "バー",
       "tray": {
         "back": "戻る",
@@ -1163,16 +1178,7 @@
     "color-scheme": {
       "color-source": {
         "matugen-scheme-type": {
-          "description": {
-            "scheme-content": "元画像に馴染む色を抽出します。",
-            "scheme-expressive": "彩度が高く、鮮やかで遊び心のあるパレット。",
-            "scheme-fidelity": "元の色相を保持した、忠実度の高いパレット。",
-            "scheme-fruit-salad": "明るく対照的なアクセントを混ぜたカラフルなパレット。",
-            "scheme-monochrome": "単一の色相で構成されたミニマルなパレット。",
-            "scheme-neutral": "彩度を抑えた、落ち着きのあるパレット。",
-            "scheme-rainbow": "スペクトル全体をカバーする多様なパレット。",
-            "scheme-tonal-spot": "アクセントを強調したバランスの良いパレット。"
-          },
+          "description": "Matugen が壁紙から色を作成するために使用する配色生成方法を選択してください。",
           "label": "Matugen のスキームタイプ"
         },
         "section": {
@@ -1242,6 +1248,10 @@
           "label": "プリセット配色"
         }
       },
+      "tabs": {
+        "colors": "色",
+        "templates": "テンプレート"
+      },
       "templates": {
         "compositors": {
           "description": "コンポジタのテーマ設定",
@@ -1306,6 +1316,9 @@
           },
           "zed": {
             "description": "{filepath} を書き込み、リロードします。"
+          },
+          "zen-browser": {
+            "description": "{filepath} を記述; Zen プロファイルの chrome/userChrome.css にコピーしてください。"
           }
         },
         "section": {
@@ -1427,6 +1440,11 @@
       "system-monitor-disk-path": {
         "description": "コントロールセンターのシステムモニターカードが監視するディスクのマウントポイントを選択します。",
         "label": "システムモニターのディスクパス"
+      },
+      "tabs": {
+        "appearance": "外観",
+        "cards": "カード",
+        "control-widgets": "コントロールウィジェット"
       },
       "title": "コントロールセンター"
     },
@@ -1624,6 +1642,10 @@
           "night-description": "夜間の色温度を調整します。"
         }
       },
+      "tabs": {
+        "brightness": "明るさ",
+        "night-light": "ナイトライト"
+      },
       "title": "ディスプレイ"
     },
     "dock": {
@@ -1689,6 +1711,10 @@
           "description": "ドックを表示するディスプレイを選択します。未選択の場合は全てに表示されます。",
           "label": "表示するディスプレイ"
         }
+      },
+      "tabs": {
+        "appearance": "外観",
+        "monitors": "モニタ"
       },
       "title": "ドック"
     },
@@ -1829,6 +1855,10 @@
           "label": "注釈ツール",
           "placeholder": "グラディア、サッティ -f -"
         },
+        "auto-paste": {
+          "description": "選択されたクリップボードの項目を自動的に貼り付けます。wtypeが必要です。",
+          "label": "自動貼り付け"
+        },
         "clip-preview": {
           "description": ">clip コマンド使用時に、クリップボードの内容をプレビュー表示します。",
           "label": "クリップボードのプレビューを有効化"
@@ -1950,6 +1980,14 @@
         "fahrenheit": {
           "description": "気温を摂氏 (°C) ではなく華氏 (°F) で表示します。",
           "label": "華氏 (°F) で表示"
+        },
+        "hide-city": {
+          "description": "インターフェース全体の天気表示から都市名を隠してください。",
+          "label": "都市名を隠す"
+        },
+        "hide-timezone": {
+          "description": "インターフェース全体の天気表示からタイムゾーンの略称を非表示にする。",
+          "label": "タイムゾーンを隠す"
         },
         "section": {
           "description": "温度の単位などを選択します。",
@@ -2135,6 +2173,12 @@
           "label": "通知音量"
         }
       },
+      "tabs": {
+        "general": "一般",
+        "history": "歴史 (Rekishi)",
+        "sounds": "音",
+        "toast": "トースト"
+      },
       "title": "通知",
       "toast": {
         "keyboard": {
@@ -2239,6 +2283,7 @@
       "hot-reloaded": "プラグインをリロードしました: {name}",
       "install": "インストール",
       "install-error": "インストールに失敗しました: {error}",
+      "install-incompatible": "{plugin} には Noctalia v{version} 以降が必要です。",
       "install-success": "{plugin} をインストールしました。",
       "installed": {
         "description": "ローカルにインストールされたすべてのプラグインを管理・設定します。",
@@ -2296,9 +2341,13 @@
       "update-available_plural": "{count} 個のプラグインアップデートがあります",
       "update-error": "プラグインのアップデートに失敗しました: {plugin}: {error}",
       "update-incompatible": "Noctalia v{version} 以降が必要です。",
+      "update-pending": "v{current} → v{new} (Noctalia v{required} ga hitsuyou)",
       "update-success": "{plugin} を v{version} にアップデートしました。",
       "update-version": "v{current} → v{new}",
       "updating": "更新中..."
+    },
+    "region": {
+      "title": "地域"
     },
     "screen-recorder": {
       "audio": {
@@ -2473,6 +2522,15 @@
       "polling-interval": {
         "label": "ポーリング間隔"
       },
+      "polling-section": {
+        "description": "各システムメトリクスの更新頻度を設定します。",
+        "label": "ポーリング間隔"
+      },
+      "tabs": {
+        "general": "一般",
+        "polling": "ポーリング",
+        "thresholds": "閾値"
+      },
       "temperature-section": {
         "label": "CPU 温度"
       },
@@ -2506,6 +2564,12 @@
         "description": "全体のアニメーション速度を調整します。",
         "label": "アニメーション速度",
         "reset": "アニメーション速度をリセット"
+      },
+      "appearance": {
+        "section": {
+          "description": "ツールチップ、境界線、影などの視覚要素をカスタマイズします。",
+          "label": "外観"
+        }
       },
       "box-border": {
         "description": "コンテンツ領域の周りにアウトラインを表示します。",
@@ -2562,6 +2626,11 @@
           "label": "影の方向"
         },
         "label": "ドロップシャドウ"
+      },
+      "tabs": {
+        "appearance": "外観",
+        "panels": "パネル",
+        "screen-corners": "画面の隅"
       },
       "title": "ユーザーインターフェース",
       "tooltips": {
@@ -2664,6 +2733,11 @@
           "description": "壁紙選択パネルの表示位置を選択します。",
           "label": "表示位置"
         }
+      },
+      "tabs": {
+        "automation": "自動化",
+        "look-feel": "見た目と雰囲気",
+        "settings": "設定"
       },
       "title": "壁紙"
     }
@@ -2875,6 +2949,7 @@
     "list-view": "リスト表示",
     "manage-vpn": "VPN 接続",
     "manage-wifi": "Wi-Fi",
+    "max-widgets-reached": "ウィジェットの最大数に達しました",
     "microphone-volume-at": "マイク音量: {volume}%",
     "move-to-center-section": "中央セクション",
     "move-to-left-section": "左セクション",
@@ -2937,6 +3012,7 @@
       "apikey": {
         "help": "成人向けコンテンツにアクセスするには、APIキーが必要です。",
         "label": "APIキー",
+        "managed-by-env": "NOCTALIA_WALLHAVEN_API_KEY 環境変数経由で管理されます。",
         "placeholder": "Wallhaven APIキーを入力してください。"
       },
       "apply-all-monitors": {
@@ -3025,6 +3101,11 @@
     "thunderstorm": "雷雨",
     "unknown": "不明"
   },
+  "widget": {
+    "file-picker": {
+      "title": "ファイルを選択"
+    }
+  },
   "widgets": {
     "color-picker": {
       "apply": "適用",
@@ -3109,11 +3190,13 @@
   "wifi": {
     "panel": {
       "action-required": "アクションが必要",
+      "available-interfaces": "利用可能なインターフェース",
       "available-networks": "利用可能なネットワーク",
       "connect": "接続",
       "connected": "接続済み",
       "disabled": "Wi-Fi は無効です",
       "disconnect": "切断",
+      "disconnected": "切断されました",
       "disconnecting": "切断中...",
       "dns": "DNS",
       "enable-message": "利用可能なネットワークを表示するには Wi-Fi を有効にしてください。",
@@ -3124,12 +3207,15 @@
       "frequency": "周波数",
       "gateway": "ゲートウェイ",
       "info": "情報",
+      "interface": "ネットワークインターフェース",
       "internet": "インターネット",
       "internet-connected": "インターネット接続",
       "internet-limited": "インターネットなし",
+      "internet-status": "インターネット接続状況",
       "ipv4": "IPv4",
       "known-networks": "保存済みネットワーク",
       "link-speed": "リンク速度",
+      "no-ethernet-devices": "イーサネットデバイスが検出されませんでした。",
       "no-networks": "ネットワークが見つかりません",
       "password": "パスワード",
       "saved": "保存済み",

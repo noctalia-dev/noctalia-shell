@@ -19,7 +19,7 @@ SmartPanel {
   readonly property bool largeButtonsLayout: Settings.data.sessionMenu.largeButtonsLayout || "grid"
 
   // Make panel background transparent for large buttons style
-  panelBackgroundColor: largeButtonsStyle ? Color.transparent : Color.mSurface
+  panelBackgroundColor: largeButtonsStyle ? "transparent" : Color.mSurface
 
   preferredWidth: largeButtonsStyle ? 0 : Math.round(440 * Style.uiScaleRatio)
   preferredWidthRatio: largeButtonsStyle ? 1.0 : 0
@@ -438,7 +438,7 @@ SmartPanel {
 
   panelContent: Rectangle {
     id: panelContent
-    color: Color.transparent
+    color: "transparent"
     focus: true
 
     // For large buttons style, use full screen dimensions
@@ -557,7 +557,7 @@ SmartPanel {
             tooltipText: timerActive ? I18n.tr("tooltips.cancel-timer") : I18n.tr("tooltips.close")
             Layout.alignment: Qt.AlignVCenter
             baseSize: Style.baseWidgetSize * 0.7
-            colorBg: timerActive ? Qt.alpha(Color.mError, 0.08) : Color.transparent
+            colorBg: timerActive ? Qt.alpha(Color.mError, 0.08) : "transparent"
             colorFg: timerActive ? Color.mError : Color.mOnSurface
             onClicked: {
               if (timerActive) {
@@ -641,7 +641,7 @@ SmartPanel {
       if (isSelected || mouseArea.containsMouse) {
         return Color.mHover;
       }
-      return Color.transparent;
+      return "transparent";
     }
 
     border.width: pending ? Math.max(Style.borderM) : 0

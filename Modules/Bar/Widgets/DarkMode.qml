@@ -16,8 +16,8 @@ NIconButton {
   customRadius: Style.radiusL
   colorBg: Style.capsuleColor
   colorFg: Color.mOnSurface
-  colorBorder: Color.transparent
-  colorBorderHover: Color.transparent
+  colorBorder: "transparent"
+  colorBorderHover: "transparent"
   onClicked: Settings.data.colorSchemes.darkMode = !Settings.data.colorSchemes.darkMode
 
   border.color: Style.capsuleBorderColor

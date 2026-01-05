@@ -58,7 +58,7 @@ ColumnLayout {
       // Hover effect overlay
       Rectangle {
         anchors.fill: parent
-        color: headerArea.containsMouse ? Color.mOnSurface : Color.transparent
+        color: headerArea.containsMouse ? Color.mOnSurface : "transparent"
         opacity: headerArea.containsMouse ? 0.08 : 0
         radius: headerContainer.radius // Reference the container's radius directly
 

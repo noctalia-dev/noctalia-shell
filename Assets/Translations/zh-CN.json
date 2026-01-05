@@ -528,7 +528,8 @@
       "title": "蓝牙",
       "trusted": "可信赖的",
       "unpair": "取消配对"
-    }
+    },
+    "title": "蓝牙"
   },
   "calendar": {
     "panel": {
@@ -560,7 +561,8 @@
     "panel": {
       "buttons": {
         "discord": "加入我们的 Discord",
-        "dismiss": "确定"
+        "dismiss": "确定",
+        "feedback": "提供反馈"
       },
       "empty": "暂时没有可用的发行说明。",
       "highlight-title": "重点更新",
@@ -663,6 +665,7 @@
       "webbrowser": "网页浏览器"
     },
     "delete": "删除",
+    "no-results": "未找到结果",
     "pin": "固定",
     "providers": {
       "applications": "应用程序",
@@ -688,6 +691,7 @@
       "emoji": "表情符号选择器",
       "emoji-loading": "正在加载表情符号...",
       "emoji-loading-description": "请稍候",
+      "emoji-no-recent": "尚无最近使用的表情符号",
       "emoji-search-description": "搜索和复制表情符号"
     },
     "unpin": "取消固定"
@@ -972,6 +976,7 @@
   },
   "settings": {
     "about": {
+      "changelog": "查看更改日志",
       "contributors": {
         "section": {
           "description": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
@@ -1054,6 +1059,11 @@
           "devices": "设备",
           "volumes": "音量"
         }
+      },
+      "tabs": {
+        "devices": "设备",
+        "media": "媒体",
+        "volumes": "卷"
       },
       "title": "音频",
       "volumes": {
@@ -1142,6 +1152,11 @@
           "label": "显示器显示"
         }
       },
+      "tabs": {
+        "appearance": "外观",
+        "monitors": "监视器",
+        "widgets": "小部件"
+      },
       "title": "状态栏",
       "tray": {
         "back": "返回",
@@ -1163,16 +1178,7 @@
     "color-scheme": {
       "color-source": {
         "matugen-scheme-type": {
-          "description": {
-            "scheme-content": "推导出与底层图像紧密匹配的颜色。",
-            "scheme-expressive": "充满活力的调色板，色彩饱和度高。",
-            "scheme-fidelity": "保留原始色调的高保真调色板。",
-            "scheme-fruit-salad": "鲜艳对比色的缤纷组合。",
-            "scheme-monochrome": "围绕单一色调构建的极简调色板。",
-            "scheme-neutral": "柔和的色调，沉稳平静。",
-            "scheme-rainbow": "涵盖整个光谱的多元调色板。",
-            "scheme-tonal-spot": "平衡的色调，重点突出。"
-          },
+          "description": "选择Matugen将使用哪种配色方案生成方法，从您的壁纸中创建颜色。",
           "label": "Matugen 配色方案类型"
         },
         "section": {
@@ -1242,6 +1248,10 @@
           "label": "预定义配色方案"
         }
       },
+      "tabs": {
+        "colors": "颜色",
+        "templates": "模板"
+      },
       "templates": {
         "compositors": {
           "description": "合成器主题。",
@@ -1306,6 +1316,9 @@
           },
           "zed": {
             "description": "写入 {filepath} 并重新加载"
+          },
+          "zen-browser": {
+            "description": "将 {filepath} 写入；复制到你的 Zen 配置文件的 chrome/userChrome.css 中"
           }
         },
         "section": {
@@ -1427,6 +1440,11 @@
       "system-monitor-disk-path": {
         "description": "选择控制中心中的系统监视器卡片应监视的磁盘挂载点。",
         "label": "系统监视器磁盘路径"
+      },
+      "tabs": {
+        "appearance": "外观",
+        "cards": "卡片",
+        "control-widgets": "控制小组件"
       },
       "title": "控制中心"
     },
@@ -1624,6 +1642,10 @@
           "night-description": "控制夜间的色温。"
         }
       },
+      "tabs": {
+        "brightness": "亮度",
+        "night-light": "夜灯"
+      },
       "title": "显示"
     },
     "dock": {
@@ -1689,6 +1711,10 @@
           "description": "在特定显示器上显示停靠栏。如果未选择任何显示器，则默认为全部。",
           "label": "显示器显示"
         }
+      },
+      "tabs": {
+        "appearance": "外观",
+        "monitors": "显示器"
       },
       "title": "停靠栏"
     },
@@ -1829,6 +1855,10 @@
           "label": "标注工具",
           "placeholder": "格拉迪亚，萨蒂 -f -"
         },
+        "auto-paste": {
+          "description": "自动粘贴选定的剪贴板项目。需要 wtype。",
+          "label": "自动粘贴"
+        },
         "clip-preview": {
           "description": "在使用 >clip 命令时显示剪贴板内容的预览。",
           "label": "启用剪贴板预览"
@@ -1941,7 +1971,7 @@
           "label": "您的位置"
         }
       },
-      "title": "位置",
+      "title": "地区",
       "weather": {
         "enabled": {
           "description": "在整个界面中显示天气信息并获取天气数据。禁用后，所有天气元素将被隐藏，不会进行网络请求。",
@@ -1950,6 +1980,14 @@
         "fahrenheit": {
           "description": "以华氏度而非摄氏度显示温度。",
           "label": "以华氏度显示温度 (°F)"
+        },
+        "hide-city": {
+          "description": "在整个界面中隐藏天气显示中的城市名称。",
+          "label": "隐藏城市名称"
+        },
+        "hide-timezone": {
+          "description": "在整个界面中，隐藏天气显示中的时区缩写。",
+          "label": "隐藏时区"
         },
         "section": {
           "description": "选择您喜欢的温度单位。",
@@ -2135,6 +2173,12 @@
           "label": "声音音量"
         }
       },
+      "tabs": {
+        "general": "通用",
+        "history": "历史",
+        "sounds": "声音",
+        "toast": "吐司"
+      },
       "title": "通知",
       "toast": {
         "keyboard": {
@@ -2239,6 +2283,7 @@
       "hot-reloaded": "已重新加载插件：{name}",
       "install": "安装",
       "install-error": "安装失败：{error}",
+      "install-incompatible": "{插件}需要 Noctalia v{版本} 或更高版本",
       "install-success": "成功安装 {plugin}",
       "installed": {
         "description": "管理和配置所有本地安装的插件。",
@@ -2296,9 +2341,13 @@
       "update-available_plural": "{count} 个插件有可用更新",
       "update-error": "更新插件失败：{plugin}：{error}",
       "update-incompatible": "需要 Noctalia v{version} 或更高版本",
+      "update-pending": "v{当前} → v{新} (需要 Noctalia v{所需})",
       "update-success": "已将 {plugin} 更新至 v{version}",
       "update-version": "v{当前} → v{新}",
       "updating": "正在更新..."
+    },
+    "region": {
+      "title": "地区"
     },
     "screen-recorder": {
       "audio": {
@@ -2473,6 +2522,15 @@
       "polling-interval": {
         "label": "轮询间隔"
       },
+      "polling-section": {
+        "description": "配置每个系统指标的更新频率。",
+        "label": "轮询间隔"
+      },
+      "tabs": {
+        "general": "通用",
+        "polling": "民意调查",
+        "thresholds": "阈值"
+      },
       "temperature-section": {
         "label": "CPU 温度"
       },
@@ -2506,6 +2564,12 @@
         "description": "调整全局动画速度。",
         "label": "动画速度",
         "reset": "重置动画速度"
+      },
+      "appearance": {
+        "section": {
+          "description": "自定义视觉元素，如工具提示、边框和阴影。",
+          "label": "外观"
+        }
       },
       "box-border": {
         "description": "显示内容区域周围的轮廓。",
@@ -2562,6 +2626,11 @@
           "label": "阴影方向"
         },
         "label": "阴影"
+      },
+      "tabs": {
+        "appearance": "外观",
+        "panels": "面板",
+        "screen-corners": "屏幕边角"
       },
       "title": "用户界面",
       "tooltips": {
@@ -2664,6 +2733,11 @@
           "description": "选择壁纸选择面板的显示位置。",
           "label": "选择器位置"
         }
+      },
+      "tabs": {
+        "automation": "自动化",
+        "look-feel": "外观和感觉",
+        "settings": "设置"
       },
       "title": "壁纸"
     }
@@ -2875,6 +2949,7 @@
     "list-view": "列表视图",
     "manage-vpn": "VPN 连接",
     "manage-wifi": "Wi-Fi",
+    "max-widgets-reached": "已达到最大小部件数量",
     "microphone-volume-at": "麦克风音量：{volume}%",
     "move-to-center-section": "中央部分",
     "move-to-left-section": "左侧部分",
@@ -2937,6 +3012,7 @@
       "apikey": {
         "help": "访问 NSFW 内容需要 API 密钥。",
         "label": "API 密钥",
+        "managed-by-env": "通过 NOCTALIA_WALLHAVEN_API_KEY 环境变量进行管理。",
         "placeholder": "输入您的Wallhaven API密钥"
       },
       "apply-all-monitors": {
@@ -3025,6 +3101,11 @@
     "thunderstorm": "雷暴",
     "unknown": "未知"
   },
+  "widget": {
+    "file-picker": {
+      "title": "选择文件"
+    }
+  },
   "widgets": {
     "color-picker": {
       "apply": "应用",
@@ -3109,11 +3190,13 @@
   "wifi": {
     "panel": {
       "action-required": "需要动作",
+      "available-interfaces": "可用接口",
       "available-networks": "可用网络",
       "connect": "连接",
       "connected": "已连接",
       "disabled": "Wi-Fi 已禁用",
       "disconnect": "断开连接",
+      "disconnected": "已断开连接",
       "disconnecting": "正在断开连接...",
       "dns": "域名系统",
       "enable-message": "启用 Wi-Fi 以查看可用网络。",
@@ -3124,12 +3207,15 @@
       "frequency": "频率",
       "gateway": "网关",
       "info": "信息",
+      "interface": "网络接口",
       "internet": "互联网",
       "internet-connected": "已连接互联网",
       "internet-limited": "无网络",
+      "internet-status": "互联网状态",
       "ipv4": "IPv4",
       "known-networks": "已知网络",
       "link-speed": "链路速度",
+      "no-ethernet-devices": "未检测到以太网设备",
       "no-networks": "未找到网络",
       "password": "密码",
       "saved": "已保存",

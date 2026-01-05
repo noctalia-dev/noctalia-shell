@@ -477,7 +477,7 @@ NBox {
         width: 0
         height: Style.baseWidgetSize * 1.15
         radius: Style.iRadiusL
-        color: Color.transparent
+        color: "transparent"
         border.color: Color.mOutline
         border.width: Style.borderS
         opacity: 0.7

@@ -84,7 +84,7 @@ Loader {
         });
       }
 
-      color: Color.transparent
+      color: "transparent"
       screen: modelData
       WlrLayershell.layer: WlrLayer.Background
       WlrLayershell.exclusionMode: ExclusionMode.Ignore

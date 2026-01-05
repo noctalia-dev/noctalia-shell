@@ -29,7 +29,7 @@ PanelWindow {
   anchors.right: true
   anchors.bottom: true
   visible: false
-  color: Color.transparent
+  color: "transparent"
 
   // Use Top layer (same as MainScreen) for proper event handling
   WlrLayershell.layer: WlrLayer.Top

@@ -303,7 +303,7 @@ Loader {
           anchors.left: true
           anchors.right: true
           focusable: false
-          color: Color.transparent
+          color: "transparent"
 
           WlrLayershell.namespace: "noctalia-dock-peek-" + (screen?.name || "unknown")
           WlrLayershell.exclusionMode: ExclusionMode.Ignore
@@ -343,7 +343,7 @@ Loader {
           screen: modelData
 
           focusable: false
-          color: Color.transparent
+          color: "transparent"
 
           WlrLayershell.namespace: "noctalia-dock-" + (screen?.name || "unknown")
           WlrLayershell.exclusionMode: exclusive ? ExclusionMode.Auto : ExclusionMode.Ignore

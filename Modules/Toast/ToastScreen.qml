@@ -192,7 +192,7 @@ Item {
       implicitWidth: Math.round(toastItem.width)
       implicitHeight: Math.round(toastItem.height)
 
-      color: Color.transparent
+      color: "transparent"
 
       WlrLayershell.layer: (Settings.data.notifications && Settings.data.notifications.overlayLayer) ? WlrLayer.Overlay : WlrLayer.Top
       WlrLayershell.namespace: "noctalia-toast-" + (screen?.name || "unknown")

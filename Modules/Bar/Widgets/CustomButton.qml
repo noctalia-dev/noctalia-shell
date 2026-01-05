@@ -187,7 +187,7 @@ Item {
     rotateText: isVerticalBar && currentMaxTextLength > 0
     autoHide: false
     forceOpen: _pillForceOpen
-    customTextIconColor: isColorizing ? iconColor : Color.transparent
+    customTextIconColor: isColorizing ? iconColor : "transparent"
 
     tooltipText: {
       var tooltipLines = [];

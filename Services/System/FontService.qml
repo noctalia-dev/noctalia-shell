@@ -31,22 +31,35 @@ Singleton {
 
   function populateModels(allFontsText, monoFontsText) {
     // Parse monospace fonts into a lookup set
+    // fc-list returns comma-separated family names for fonts with multiple families
     var monoLookup = {};
     var monoLines = monoFontsText.split('\n');
     for (var i = 0; i < monoLines.length; i++) {
       var line = monoLines[i].trim();
-      if (line)
-        monoLookup[line] = true;
+      if (line) {
+        var monoFamilies = line.split(',');
+        for (var mi = 0; mi < monoFamilies.length; mi++) {
+          var monoName = monoFamilies[mi].trim();
+          if (monoName)
+            monoLookup[monoName] = true;
+        }
+      }
     }
 
-    // Parse all fonts
+    // Parse all fonts - split comma-separated family names
     var allLines = allFontsText.split('\n');
     var fontSet = {}; // Deduplicate font families
 
     for (var j = 0; j < allLines.length; j++) {
-      var fontName = allLines[j].trim();
-      if (fontName && !fontSet[fontName]) {
-        fontSet[fontName] = true;
+      var line = allLines[j].trim();
+      if (line) {
+        var families = line.split(',');
+        for (var fi = 0; fi < families.length; fi++) {
+          var fontName = families[fi].trim();
+          if (fontName && !fontSet[fontName]) {
+            fontSet[fontName] = true;
+          }
+        }
       }
     }
 
@@ -107,7 +120,7 @@ Singleton {
   // Process to get all font families (runs in background)
   Process {
     id: allFontsProcess
-    command: ["fc-list", "--format", "%{family[0]}\\n"]
+    command: ["fc-list", "--format", "%{family}\\n"]
     running: false
 
     stdout: StdioCollector {
@@ -138,7 +151,7 @@ Singleton {
   // Process to get monospace font families (runs in background, parallel)
   Process {
     id: monoFontsProcess
-    command: ["fc-list", ":mono", "--format", "%{family[0]}\\n"]
+    command: ["fc-list", ":mono", "--format", "%{family}\\n"]
     running: false
 
     stdout: StdioCollector {

@@ -143,7 +143,7 @@ Popup {
     id: filePickerPanel
     anchors.fill: parent
     anchors.margins: Style.marginL
-    color: Color.transparent
+    color: "transparent"
 
     property string filterText: ""
     property var currentSelection: []
@@ -428,7 +428,7 @@ Popup {
             background: Rectangle {
               implicitWidth: 6
               implicitHeight: 100
-              color: Color.transparent
+              color: "transparent"
               opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
               radius: (Style.iRadiusM) / 2
               Behavior on opacity {
@@ -472,14 +472,14 @@ Popup {
             id: gridItem
             width: gridView.itemSize
             height: gridView.cellHeight
-            color: Color.transparent
+            color: "transparent"
             radius: Style.iRadiusM
 
             property bool isSelected: filePickerPanel.currentSelection.includes(model.filePath)
 
             Rectangle {
               anchors.fill: parent
-              color: Color.transparent
+              color: "transparent"
               radius: parent.radius
               border.color: isSelected ? Color.mSecondary : Color.mSurface
               border.width: Style.borderL
@@ -492,9 +492,9 @@ Popup {
 
             Rectangle {
               anchors.fill: parent
-              color: (mouseArea.containsMouse && !isSelected) ? Color.mHover : Color.transparent
+              color: (mouseArea.containsMouse && !isSelected) ? Color.mHover : "transparent"
               radius: parent.radius
-              border.color: (mouseArea.containsMouse && !isSelected) ? Color.mHover : Color.transparent
+              border.color: (mouseArea.containsMouse && !isSelected) ? Color.mHover : "transparent"
               border.width: Style.borderS
               Behavior on color {
                 ColorAnimation {
@@ -517,7 +517,7 @@ Popup {
                 id: iconContainer
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.round(gridView.itemSize * 0.67)
-                color: Color.transparent
+                color: "transparent"
 
                 property bool isImage: {
                   if (model.fileIsDir)
@@ -671,7 +671,7 @@ Popup {
                 return Color.mSecondary;
               if (mouseArea.containsMouse)
                 return Color.mHover;
-              return Color.transparent;
+              return "transparent";
             }
             radius: Style.iRadiusS
             Behavior on color {

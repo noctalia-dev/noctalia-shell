@@ -59,6 +59,31 @@ Item {
   Component.onCompleted: {
     if (!ControlCenterWidgetRegistry.hasWidget(widgetId)) {
       Logger.w("ControlCenterWidgetLoader", "Widget not found in registry:", widgetId);
+      // Retry briefly in case the registry initializes after this component
+      retryTimer.start();
+    }
+  }
+
+  // Retry mechanism to cope with early evaluation before registry is ready
+  Timer {
+    id: retryTimer
+    interval: 150
+    repeat: true
+    running: false
+    property int attempts: 0
+    onTriggered: {
+      attempts += 1;
+      if (ControlCenterWidgetRegistry.hasWidget(widgetId)) {
+        loader.sourceComponent = ControlCenterWidgetRegistry.getWidget(widgetId);
+        stop();
+        attempts = 0;
+        return;
+      }
+      if (attempts >= 20) { // ~3s max
+        stop();
+        attempts = 0;
+        Logger.w("ControlCenterWidgetLoader", "Giving up waiting for widget:", widgetId);
+      }
     }
   }
 }

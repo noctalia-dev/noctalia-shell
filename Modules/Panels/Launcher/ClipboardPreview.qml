@@ -100,7 +100,7 @@ Item {
         font.pointSize: Style.fontSizeM
         color: Color.mOnSurface
         background: Rectangle {
-          color: Color.mSurfaceVariant || "#e0e0e0"
+          color: "transparent"
         }
       }
     }

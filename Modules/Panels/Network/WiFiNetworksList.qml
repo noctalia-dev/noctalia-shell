@@ -140,6 +140,12 @@ NBox {
                   visible: !NetworkService.isSecured(modelData.security)
                 }
 
+                NText {
+                  text: " • " + (NetworkService.isSecured(modelData.security) ? modelData.security : "Open")
+                  pointSize: Style.fontSizeXXS
+                  color: Color.mOnSurfaceVariant
+                }
+
                 Item {
                   Layout.preferredWidth: Style.marginXXS
                 }
@@ -209,7 +215,7 @@ NBox {
 
                 Rectangle {
                   visible: modelData.cached && !modelData.connected && NetworkService.forgettingNetwork !== modelData.ssid && NetworkService.disconnectingFrom !== modelData.ssid
-                  color: Color.transparent
+                  color: "transparent"
                   border.color: Color.mOutline
                   border.width: Style.borderS
                   radius: height * 0.5
@@ -346,12 +352,12 @@ NBox {
               }
 
               // Icons only; values have labels as tooltips on hover
-              // Row 1: Security | Band
+              // Row 1: Interface | Band
               RowLayout {
                 Layout.fillWidth: true
                 spacing: Style.marginXS
                 NIcon {
-                  icon: NetworkService.isSecured(modelData.security) ? "lock" : "lock-open"
+                  icon: "network"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.alignment: Qt.AlignVCenter
@@ -359,12 +365,12 @@ NBox {
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
-                    onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.security"))
+                    onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.interface"))
                     onExited: TooltipService.hide()
                   }
                 }
                 NText {
-                  text: NetworkService.isSecured(modelData.security) ? modelData.security : "Open"
+                  text: NetworkService.activeWifiIf || "-"
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true
@@ -373,6 +379,23 @@ NBox {
                   elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
                   maximumLineCount: root.detailsGrid ? 1 : 6
                   clip: true
+
+                  // Click-to-copy Wi‑Fi interface name
+                  MouseArea {
+                    anchors.fill: parent
+                    enabled: (NetworkService.activeWifiIf && NetworkService.activeWifiIf.length > 0)
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                    onExited: TooltipService.hide()
+                    onClicked: {
+                      const value = NetworkService.activeWifiIf || "";
+                      if (value.length > 0) {
+                        Quickshell.execDetached(["wl-copy", value]);
+                        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                      }
+                    }
+                  }
                 }
               }
               RowLayout {
@@ -456,6 +479,23 @@ NBox {
                   elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
                   maximumLineCount: root.detailsGrid ? 1 : 6
                   clip: true
+
+                  // Click-to-copy Wi‑Fi IPv4 address
+                  MouseArea {
+                    anchors.fill: parent
+                    enabled: (NetworkService.activeWifiDetails.ipv4 && NetworkService.activeWifiDetails.ipv4.length > 0)
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                    onExited: TooltipService.hide()
+                    onClicked: {
+                      const value = NetworkService.activeWifiDetails.ipv4 || "";
+                      if (value.length > 0) {
+                        Quickshell.execDetached(["wl-copy", value]);
+                        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                      }
+                    }
+                  }
                 }
               }
 

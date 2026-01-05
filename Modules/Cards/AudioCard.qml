@@ -152,7 +152,7 @@ NBox {
           icon: AudioService.muted ? "volume-off" : "volume-high"
           baseSize: Style.baseWidgetSize * 0.5
           colorFg: AudioService.muted ? Color.mError : Color.mOnSurface
-          colorBg: Color.transparent
+          colorBg: "transparent"
           colorBgHover: Color.mHover
           colorFgHover: Color.mOnHover
           onClicked: {
@@ -224,7 +224,7 @@ NBox {
           icon: AudioService.inputMuted ? "microphone-off" : "microphone"
           baseSize: Style.baseWidgetSize * 0.5
           colorFg: AudioService.inputMuted ? Color.mError : Color.mOnSurface
-          colorBg: Color.transparent
+          colorBg: "transparent"
           colorBgHover: Color.mHover
           colorFgHover: Color.mOnHover
           onClicked: AudioService.setInputMuted(!AudioService.inputMuted)

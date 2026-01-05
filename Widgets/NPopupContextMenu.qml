@@ -28,7 +28,7 @@ PopupWindow {
   implicitWidth: calculatedWidth
   implicitHeight: Math.min(600, flickable.contentHeight + (Style.marginS * 2))
   visible: false
-  color: Color.transparent
+  color: "transparent"
 
   NText {
     id: textMeasure
@@ -230,12 +230,12 @@ PopupWindow {
           Layout.preferredWidth: parent.width
           Layout.preferredHeight: modelData.visible !== false ? root.itemHeight : 0
           visible: modelData.visible !== false
-          color: Color.transparent
+          color: "transparent"
 
           Rectangle {
             id: innerRect
             anchors.fill: parent
-            color: mouseArea.containsMouse ? Color.mHover : Color.transparent
+            color: mouseArea.containsMouse ? Color.mHover : "transparent"
             radius: Style.iRadiusS
             opacity: modelData.enabled !== false ? 1.0 : 0.5
 

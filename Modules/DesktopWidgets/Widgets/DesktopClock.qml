@@ -42,7 +42,7 @@ DraggableDesktopWidget {
     NClock {
       now: root.now
       clockStyle: root.clockStyle
-      backgroundColor: Color.transparent
+      backgroundColor: "transparent"
       clockColor: clockTextColor
       progressColor: Color.mPrimary
       opacity: root.widgetOpacity

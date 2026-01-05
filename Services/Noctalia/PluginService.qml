@@ -36,6 +36,9 @@ Singleton {
   // Plugin updates available: { pluginId: { currentVersion, availableVersion } }
   property var pluginUpdates: ({})
 
+  // Plugin updates that require a newer Noctalia version: { pluginId: { currentVersion, availableVersion, minNoctaliaVersion } }
+  property var pluginUpdatesPending: ({})
+
   // Plugin load errors: { pluginId: { error: string, entryPoint: string, timestamp: date } }
   property var pluginErrors: ({})
   signal pluginLoadError(string pluginId, string entryPoint, string error)
@@ -349,6 +352,21 @@ Singleton {
           callback(false, collision.message);
         return;
       }
+
+      // Check Noctalia version compatibility (skip when updating - that's handled in performUpdateCheck)
+      if (pluginMetadata.minNoctaliaVersion) {
+        var noctaliaVersion = UpdateService.baseVersion;
+        if (compareVersions(pluginMetadata.minNoctaliaVersion, noctaliaVersion) > 0) {
+          var incompatibleMsg = I18n.tr("settings.plugins.install-incompatible", {
+                                          "plugin": pluginMetadata.name,
+                                          "version": pluginMetadata.minNoctaliaVersion
+                                        });
+          Logger.w("PluginService", "Plugin incompatible:", incompatibleMsg);
+          if (callback)
+            callback(false, incompatibleMsg);
+          return;
+        }
+      }
     }
 
     // Generate composite key for the plugin folder
@@ -636,6 +654,7 @@ Singleton {
       root.loadedPlugins[pluginId] = {
         barWidget: null,
         desktopWidget: null,
+        launcherProvider: null,
         mainInstance: null,
         api: pluginApi,
         manifest: manifest
@@ -710,6 +729,24 @@ Singleton {
         }
       }
 
+      // Load launcher provider component if provided (don't instantiate - Launcher will do that)
+      if (manifest.entryPoints && manifest.entryPoints.launcherProvider) {
+        var launcherProviderPath = pluginDir + "/" + manifest.entryPoints.launcherProvider;
+        var launcherProviderLoadVersion = PluginRegistry.pluginLoadVersions[pluginId] || 0;
+        var launcherProviderComponent = Qt.createComponent("file://" + launcherProviderPath + "?v=" + launcherProviderLoadVersion);
+
+        if (launcherProviderComponent.status === Component.Ready) {
+          root.loadedPlugins[pluginId].launcherProvider = launcherProviderComponent;
+          pluginApi.launcherProvider = launcherProviderComponent;
+
+          // Register with LauncherProviderRegistry
+          LauncherProviderRegistry.registerPluginProvider(pluginId, launcherProviderComponent, manifest.metadata);
+          Logger.i("PluginService", "Loaded launcher provider for plugin:", pluginId);
+        } else if (launcherProviderComponent.status === Component.Error) {
+          root.recordPluginError(pluginId, "launcherProvider", launcherProviderComponent.errorString());
+        }
+      }
+
       Logger.i("PluginService", "Plugin loaded:", pluginId);
       root.pluginLoaded(pluginId);
 
@@ -749,6 +786,11 @@ Singleton {
       DesktopWidgetRegistry.unregisterPluginWidget(pluginId);
     }
 
+    // Unregister from LauncherProviderRegistry
+    if (plugin.manifest.entryPoints && plugin.manifest.entryPoints.launcherProvider) {
+      LauncherProviderRegistry.unregisterPluginProvider(pluginId);
+    }
+
     // Destroy Main instance if any
     if (plugin.mainInstance) {
       plugin.mainInstance.destroy();
@@ -777,6 +819,7 @@ Singleton {
         property var mainInstance: null
         property var barWidget: null
         property var desktopWidget: null
+        property var launcherProvider: null
 
         // IPC handlers storage
         property var ipcHandlers: ({})
@@ -1111,6 +1154,7 @@ Singleton {
   // Perform the actual update check
   function performUpdateCheck() {
     var updates = {};
+    var pendingUpdates = {};
     var installedIds = PluginRegistry.getAllInstalledPluginIds();
 
     Logger.d("PluginService", "Checking", installedIds.length, "installed plugins against", root.availablePlugins.length, "available plugins");
@@ -1132,7 +1176,12 @@ Singleton {
           if (availablePlugin.minNoctaliaVersion) {
             var noctaliaVersion = UpdateService.baseVersion;
             if (compareVersions(availablePlugin.minNoctaliaVersion, noctaliaVersion) > 0) {
-              Logger.d("PluginService", "Skipping update for", pluginId + ": requires Noctalia v" + availablePlugin.minNoctaliaVersion + " (current: v" + noctaliaVersion + ")");
+              Logger.d("PluginService", "Pending update for", pluginId + ": requires Noctalia v" + availablePlugin.minNoctaliaVersion + " (current: v" + noctaliaVersion + ")");
+              pendingUpdates[pluginId] = {
+                currentVersion: currentVersion,
+                availableVersion: availableVersion,
+                minNoctaliaVersion: availablePlugin.minNoctaliaVersion
+              };
               continue;
             }
           }
@@ -1149,7 +1198,9 @@ Singleton {
     }
 
     root.pluginUpdates = updates;
+    root.pluginUpdatesPending = pendingUpdates;
     var updateCount = Object.keys(updates).length;
+    var pendingCount = Object.keys(pendingUpdates).length;
 
     if (updateCount > 0) {
       Logger.i("PluginService", updateCount, "plugin update(s) available");
@@ -1174,6 +1225,8 @@ Singleton {
                                                                               }
                                                                             }
                                                                           });
+    } else if (pendingCount > 0) {
+      Logger.i("PluginService", pendingCount, "plugin update(s) pending (require newer Noctalia)");
     } else {
       Logger.i("PluginService", "All plugins are up to date");
     }
@@ -1447,6 +1500,8 @@ Singleton {
       entryPointFiles.push(entryPoints.barWidget);
     if (entryPoints.desktopWidget)
       entryPointFiles.push(entryPoints.desktopWidget);
+    if (entryPoints.launcherProvider)
+      entryPointFiles.push(entryPoints.launcherProvider);
     if (entryPoints.panel)
       entryPointFiles.push(entryPoints.panel);
     if (entryPoints.settings)

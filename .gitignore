@@ -2,4 +2,5 @@
 .zed
 .idea
 .vscode
+*.code-workspace
 RELEASE.md

@@ -604,7 +604,7 @@ Item {
           width: workspacePillContainer.width + 18 * root.masterProgress * scale
           height: workspacePillContainer.height + 18 * root.masterProgress * scale
           radius: width / 2
-          color: Color.transparent
+          color: "transparent"
           border.color: root.effectColor
           border.width: Math.max(1, Math.round((2 + 6 * (1.0 - root.masterProgress))))
           opacity: root.effectsActive && model.isFocused ? (1.0 - root.masterProgress) * 0.7 : 0
@@ -752,7 +752,7 @@ Item {
           width: workspacePillContainerVertical.width + 18 * root.masterProgress * scale
           height: workspacePillContainerVertical.height + 18 * root.masterProgress * scale
           radius: width / 2
-          color: Color.transparent
+          color: "transparent"
           border.color: root.effectColor
           border.width: Math.max(1, Math.round((2 + 6 * (1.0 - root.masterProgress))))
           opacity: root.effectsActive && model.isFocused ? (1.0 - root.masterProgress) * 0.7 : 0
@@ -955,7 +955,7 @@ Item {
           width: groupedWorkspaceNumberContainer.width + 12 * root.masterProgress
           height: groupedWorkspaceNumberContainer.height + 12 * root.masterProgress
           radius: width / 2
-          color: Color.transparent
+          color: "transparent"
           border.color: root.effectColor
           border.width: Math.max(1, Math.round((2 + 4 * (1.0 - root.masterProgress))))
           opacity: root.effectsActive && groupedContainer.workspaceModel.isFocused ? (1.0 - root.masterProgress) * 0.7 : 0

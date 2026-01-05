@@ -41,7 +41,7 @@ ShapePath {
   // Effective background color: use panel's if defined, else default
   readonly property color effectiveBackgroundColor: {
     if (!assignedPanel)
-      return Color.transparent;
+      return "transparent";
     if (assignedPanel.panelBackgroundColor !== undefined) {
       return assignedPanel.panelBackgroundColor;
     }

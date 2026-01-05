@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import qs.Services.Compositor
 
 /**
 * BarExclusionZone - Invisible PanelWindow that reserves exclusive space for the bar
@@ -12,13 +13,13 @@ import qs.Commons
 PanelWindow {
   id: root
 
-  property bool exclusive: Settings.data.bar.exclusive !== undefined ? Settings.data.bar.exclusive : false
-
+  readonly property bool exclusive: Settings.data.bar.exclusive
   readonly property string barPosition: Settings.data.bar.position || "top"
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool barFloating: Settings.data.bar.floating || false
   readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
   readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0
+  readonly property real fractOffset: CompositorService.getDisplayScale(screen?.name) % 1.0
 
   // Invisible - just reserves space
   color: "transparent"
@@ -39,15 +40,10 @@ PanelWindow {
   }
 
   // Size based on bar orientation
-  // When floating, only reserve space for the bar + margin on the anchored edge
   implicitWidth: {
     if (barIsVertical) {
       // Vertical bar: reserve bar height + margin on the anchored edge only
-      if (barFloating) {
-        // For left bar, reserve left margin; for right bar, reserve right margin
-        return Style.barHeight + barMarginH;
-      }
-      return Style.barHeight;
+      return Style.barHeight + barMarginH - fractOffset;
     }
     return 0; // Auto-width when left/right anchors are true
   }
@@ -55,11 +51,7 @@ PanelWindow {
   implicitHeight: {
     if (!barIsVertical) {
       // Horizontal bar: reserve bar height + margin on the anchored edge only
-      if (barFloating) {
-        // For top bar, reserve top margin; for bottom bar, reserve bottom margin
-        return Style.barHeight + barMarginV;
-      }
-      return Style.barHeight;
+      return Style.barHeight + barMarginV - fractOffset;
     }
     return 0; // Auto-height when top/bottom anchors are true
   }

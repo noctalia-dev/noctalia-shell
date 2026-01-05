@@ -29,7 +29,7 @@ PopupWindow {
   property int screenY: 0
 
   visible: false
-  color: Color.transparent
+  color: "transparent"
 
   anchor.item: targetItem
   anchor.rect.x: anchorX

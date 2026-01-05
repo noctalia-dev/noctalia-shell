@@ -48,7 +48,7 @@ PopupWindow {
   // Use the content height of the Flickable for implicit height
   implicitHeight: Math.min(screen?.height * 0.9, flickable.contentHeight + (Style.marginS * 2))
   visible: false
-  color: Color.transparent
+  color: "transparent"
   anchor.item: anchorItem
   anchor.rect.x: {
     if (anchorItem && screen) {
@@ -249,7 +249,7 @@ PopupWindow {
             }
           }
 
-          color: Color.transparent
+          color: "transparent"
           property var subMenu: null
 
           NDivider {
@@ -261,7 +261,7 @@ PopupWindow {
           Rectangle {
             id: innerRect
             anchors.fill: parent
-            color: mouseArea.containsMouse ? Color.mHover : Color.transparent
+            color: mouseArea.containsMouse ? Color.mHover : "transparent"
             radius: Style.radiusS
             visible: !(modelData?.isSeparator ?? false)
 

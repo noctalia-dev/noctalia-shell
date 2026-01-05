@@ -294,10 +294,10 @@ Rectangle {
       baseSize: Style.capsuleHeight
       applyUiScale: false
       customRadius: Style.radiusL
-      colorBg: Color.transparent
+      colorBg: "transparent"
       colorFg: Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mOnPrimary
-      colorBorder: Color.transparent
-      colorBorderHover: Color.transparent
+      colorBorder: "transparent"
+      colorBorderHover: "transparent"
       icon: {
         switch (barPosition) {
         case "bottom":
@@ -450,10 +450,10 @@ Rectangle {
       baseSize: Style.capsuleHeight
       applyUiScale: false
       customRadius: Style.radiusL
-      colorBg: Color.transparent
+      colorBg: "transparent"
       colorFg: Color.mOnSurface
-      colorBorder: Color.transparent
-      colorBorderHover: Color.transparent
+      colorBorder: "transparent"
+      colorBorderHover: "transparent"
       icon: {
         switch (barPosition) {
         case "bottom":

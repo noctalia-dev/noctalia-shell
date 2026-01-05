@@ -89,6 +89,7 @@ DraggableDesktopWidget {
         color: Color.mOnSurfaceVariant
         elide: Text.ElideRight
         maximumLineCount: 1
+        visible: !Settings.data.location.hideWeatherCityName
       }
 
       RowLayout {

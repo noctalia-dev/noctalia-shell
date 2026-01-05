@@ -528,7 +528,8 @@
       "title": "Bluetooth",
       "trusted": "Megbízható",
       "unpair": "Párosítás megszüntetése"
-    }
+    },
+    "title": "Bluetooth"
   },
   "calendar": {
     "panel": {
@@ -560,7 +561,8 @@
     "panel": {
       "buttons": {
         "discord": "Csatlakozzon a Discordunkhoz",
-        "dismiss": "Ok"
+        "dismiss": "Ok",
+        "feedback": "Adj visszajelzést"
       },
       "empty": "A kiadási jegyzetek még nem érhetők el.",
       "highlight-title": "Főbb újdonságok",
@@ -663,6 +665,7 @@
       "webbrowser": "Webböngésző"
     },
     "delete": "Törlés",
+    "no-results": "Nincs találat",
     "pin": "Rögzítés",
     "providers": {
       "applications": "Alkalmazások",
@@ -688,6 +691,7 @@
       "emoji": "Emoji választó",
       "emoji-loading": "Emojik betöltése...",
       "emoji-loading-description": "Kérjük, várjon",
+      "emoji-no-recent": "Nincsenek még legutóbbi emojik",
       "emoji-search-description": "Emojik keresése és másolása"
     },
     "unpin": "Rögzítés feloldása"
@@ -972,6 +976,7 @@
   },
   "settings": {
     "about": {
+      "changelog": "Változások megtekintése",
       "contributors": {
         "section": {
           "description": "Köszönet a(z) {count} <b>fantasztikus</b> közreműködőnknek!",
@@ -1054,6 +1059,11 @@
           "devices": "Eszközök",
           "volumes": "Hangerők"
         }
+      },
+      "tabs": {
+        "devices": "Eszközök",
+        "media": "Média",
+        "volumes": "Kötetek"
       },
       "title": "Hang",
       "volumes": {
@@ -1142,6 +1152,11 @@
           "label": "Monitorok megjelenítése"
         }
       },
+      "tabs": {
+        "appearance": "Megjelenés",
+        "monitors": "Monitorok",
+        "widgets": "Widgetek"
+      },
       "title": "Sáv",
       "tray": {
         "back": "Vissza",
@@ -1163,16 +1178,7 @@
     "color-scheme": {
       "color-source": {
         "matugen-scheme-type": {
-          "description": {
-            "scheme-content": "Az alapul szolgáló képhez szorosan illeszkedő színeket származtat.",
-            "scheme-expressive": "Élénk paletta játékos telítettséggel.",
-            "scheme-fidelity": "Nagy pontosságú paletta, amely megőrzi a forrás színtónusait.",
-            "scheme-fruit-salad": "Színes keveréke az élénk kontrasztos ékezeteknek.",
-            "scheme-monochrome": "Minimális paletta egyetlen színárnyalat köré építve.",
-            "scheme-neutral": "Tompa paletta visszafogott és nyugtató tónusokkal.",
-            "scheme-rainbow": "Változatos paletta, amely a teljes spektrumot lefedi.",
-            "scheme-tonal-spot": "Kiegyensúlyozott paletta fókuszált hangsúlyokkal."
-          },
+          "description": "Válassza ki a színséma-generálási módszert, amellyel a Matugen színeket fog létrehozni a háttérképéből.",
           "label": "Matugen séma típusa"
         },
         "section": {
@@ -1242,6 +1248,10 @@
           "label": "Előre definiált színsémák"
         }
       },
+      "tabs": {
+        "colors": "Színek",
+        "templates": "Sablonok"
+      },
       "templates": {
         "compositors": {
           "description": "Kompozitor témázás.",
@@ -1306,6 +1316,9 @@
           },
           "zed": {
             "description": "{filepath} írása és újratöltés"
+          },
+          "zen-browser": {
+            "description": "Írd be ezt a fájlba: {filepath}; másold be a Zen profilod chrome/userChrome.css fájljába."
           }
         },
         "section": {
@@ -1427,6 +1440,11 @@
       "system-monitor-disk-path": {
         "description": "Válassza ki, hogy melyik lemez csatolási pontot kell figyelnie a rendszerfigyelő kártyának a vezérlőközpontban.",
         "label": "Rendszerfigyelő lemez elérési útja"
+      },
+      "tabs": {
+        "appearance": "Megjelenés",
+        "cards": "Kártyák",
+        "control-widgets": "Vezérlő widgetek"
       },
       "title": "Vezérlőközpont"
     },
@@ -1624,6 +1642,10 @@
           "night-description": "Szabályozza a hőmérsékletet éjszaka."
         }
       },
+      "tabs": {
+        "brightness": "Fényerő",
+        "night-light": "Éjszakai fény"
+      },
       "title": "Megjelenés"
     },
     "dock": {
@@ -1689,6 +1711,10 @@
           "description": "Dokk megjelenítése meghatározott monitorokon. Alapértelmezés szerint mindegyiken, ha nincs kiválasztva.",
           "label": "Monitor megjelenítés"
         }
+      },
+      "tabs": {
+        "appearance": "Megjelenés",
+        "monitors": "Monitorok"
       },
       "title": "Dokk"
     },
@@ -1829,6 +1855,10 @@
           "label": "Annotációs eszköz",
           "placeholder": "gradia, satty -f -"
         },
+        "auto-paste": {
+          "description": "Automatikusan beilleszti a kiválasztott vágólap elemet. Wtype szükséges hozzá.",
+          "label": "Automatikus beillesztés"
+        },
         "clip-preview": {
           "description": "Mutassa a vágólap tartalmának előnézetét a >clip parancs használatakor.",
           "label": "Vágólap előnézet engedélyezése"
@@ -1941,7 +1971,7 @@
           "label": "Az Ön helye"
         }
       },
-      "title": "Hely",
+      "title": "Régió",
       "weather": {
         "enabled": {
           "description": "Az időjárási információk mutatása a felületen, és időjárási adatok bekérése. Ha ki van kapcsolva, minden időjárási elem el lesz rejtve, és nem történik hálózati kérés.",
@@ -1950,6 +1980,14 @@
         "fahrenheit": {
           "description": "Hőmérséklet megjelenítése Fahrenheitben Celsius helyett.",
           "label": "Hőmérséklet megjelenítése Fahrenheitben (°F)"
+        },
+        "hide-city": {
+          "description": "Rejtse el a városnevet az időjárás kijelzőkről a teljes felületen.",
+          "label": "Városnév elrejtése"
+        },
+        "hide-timezone": {
+          "description": "Rejtse el az időzóna rövidítését a felületen megjelenő összes időjárás-előrejelzésből.",
+          "label": "Időzóna elrejtése"
         },
         "section": {
           "description": "A kívánt hőmérsékleti egység kiválasztása.",
@@ -2135,6 +2173,12 @@
           "label": "Hangerő"
         }
       },
+      "tabs": {
+        "general": "Általános",
+        "history": "Történelem",
+        "sounds": "Hangok",
+        "toast": "Pirítós"
+      },
       "title": "Értesítések",
       "toast": {
         "keyboard": {
@@ -2239,6 +2283,7 @@
       "hot-reloaded": "Újratöltött bővítmény: {name}",
       "install": "Telepítés",
       "install-error": "Sikertelen telepítés: {error}",
+      "install-incompatible": "A {plugin} pluginhez Noctalia v{version} vagy újabb verzió szükséges.",
       "install-success": "Sikeresen telepítve: {plugin}",
       "installed": {
         "description": "Az összes helyileg telepített bővítmény kezelése és beállítása.",
@@ -2296,9 +2341,13 @@
       "update-available_plural": "{count} bővítményfrissítés érhető el",
       "update-error": "Nem sikerült frissíteni a bővítményt: {plugin}: {error}",
       "update-incompatible": "Noctalia v{version} vagy újabb szükséges",
+      "update-pending": "v{current} → v{new} (szükséges Noctalia v{required})",
       "update-success": "A(z) {plugin} frissítve lett a v{version} verzióra",
       "update-version": "v{current} → v{new}",
       "updating": "Frissítés..."
+    },
+    "region": {
+      "title": "Régió"
     },
     "screen-recorder": {
       "audio": {
@@ -2473,6 +2522,15 @@
       "polling-interval": {
         "label": "Lekérdezési intervallum"
       },
+      "polling-section": {
+        "description": "Állítsa be, hogy milyen gyakran frissüljenek az egyes rendszer metrikák.",
+        "label": "Lekérdezési időközök"
+      },
+      "tabs": {
+        "general": "Általános",
+        "polling": "Szavazás",
+        "thresholds": "Küszöbértékek"
+      },
       "temperature-section": {
         "label": "CPU hőmérséklet"
       },
@@ -2506,6 +2564,12 @@
         "description": "Állítsa be a globális animációs sebességet.",
         "label": "Animációs sebesség",
         "reset": "Animációs sebesség visszaállítása"
+      },
+      "appearance": {
+        "section": {
+          "description": "Testreszabhatja a vizuális elemeket, például az eszköztippeket, a szegélyeket és az árnyékokat.",
+          "label": "Megjelenés"
+        }
       },
       "box-border": {
         "description": "Tartalomterületek köré vázlatot jelenít meg.",
@@ -2562,6 +2626,11 @@
           "label": "Árnyék iránya"
         },
         "label": "Árnyékok"
+      },
+      "tabs": {
+        "appearance": "Megjelenés",
+        "panels": "Panelek",
+        "screen-corners": "Képernyő sarkok"
       },
       "title": "Felhasználói felület",
       "tooltips": {
@@ -2664,6 +2733,11 @@
           "description": "Válassza ki, hol jelenjen meg a háttérkép választó panel.",
           "label": "Pozíció"
         }
+      },
+      "tabs": {
+        "automation": "Automatizálás",
+        "look-feel": "Megjelenés és érzet",
+        "settings": "Beállítások"
       },
       "title": "Háttérkép"
     }
@@ -2875,6 +2949,7 @@
     "list-view": "Lista nézet",
     "manage-vpn": "VPN-kapcsolatok",
     "manage-wifi": "Wi-Fi",
+    "max-widgets-reached": "Elérte a maximális widgetszámot.",
     "microphone-volume-at": "Mikrofon hangereje: {volume}%",
     "move-to-center-section": "Középső szakasz",
     "move-to-left-section": "Bal oldali szakasz",
@@ -2937,6 +3012,7 @@
       "apikey": {
         "help": "NSFW tartalom eléréséhez API kulcs szükséges.",
         "label": "API kulcs",
+        "managed-by-env": "A NOCTALIA_WALLHAVEN_API_KEY környezeti változóval kezelhető.",
         "placeholder": "Add meg a Wallhaven API kulcsodat!"
       },
       "apply-all-monitors": {
@@ -3025,6 +3101,11 @@
     "thunderstorm": "Zivatar",
     "unknown": "Ismeretlen"
   },
+  "widget": {
+    "file-picker": {
+      "title": "Fájl kiválasztása"
+    }
+  },
   "widgets": {
     "color-picker": {
       "apply": "Alkalmazás",
@@ -3109,11 +3190,13 @@
   "wifi": {
     "panel": {
       "action-required": "Szukseges akció",
+      "available-interfaces": "Elérhető interfészek",
       "available-networks": "Elérhető hálózatok",
       "connect": "Csatlakozás",
       "connected": "Csatlakozva",
       "disabled": "A Wi‑Fi ki van kapcsolva",
       "disconnect": "Leválasztás",
+      "disconnected": "Szétkapcsolva",
       "disconnecting": "Leválasztás…",
       "dns": "DNS",
       "enable-message": "Kapcsolja be a Wi‑Fi-t az elérhető hálózatok megtekintéséhez.",
@@ -3124,12 +3207,15 @@
       "frequency": "Frekvencia",
       "gateway": "Átjáró",
       "info": "Infó",
+      "interface": "Hálózati interfész",
       "internet": "Internet",
       "internet-connected": "Internet csatlakoztatva",
       "internet-limited": "Nincs internet",
+      "internet-status": "Internet állapota",
       "ipv4": "IPv4",
       "known-networks": "Ismert hálózatok",
       "link-speed": "Kapcsolati sebesség",
+      "no-ethernet-devices": "Nem található Ethernet eszköz.",
       "no-networks": "Nem található Wi‑Fi-hálózat",
       "password": "Jelszó",
       "saved": "Mentve",

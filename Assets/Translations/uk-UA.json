@@ -528,7 +528,8 @@
       "title": "Bluetooth",
       "trusted": "Надійний",
       "unpair": "Розірвати пару"
-    }
+    },
+    "title": "Bluetooth"
   },
   "calendar": {
     "panel": {
@@ -560,7 +561,8 @@
     "panel": {
       "buttons": {
         "discord": "Приєднатися до нашого Discord",
-        "dismiss": "Ок"
+        "dismiss": "Ок",
+        "feedback": "Надати відгук"
       },
       "empty": "Примітки до релізу ще недоступні.",
       "highlight-title": "Основні зміни",
@@ -663,6 +665,7 @@
       "webbrowser": "Веб-браузер"
     },
     "delete": "Видалити",
+    "no-results": "Результатів не знайдено",
     "pin": "Закріпити",
     "providers": {
       "applications": "Застосунки",
@@ -688,6 +691,7 @@
       "emoji": "Обрати емодзі",
       "emoji-loading": "Завантаження емодзі...",
       "emoji-loading-description": "Зачекайте, будь ласка",
+      "emoji-no-recent": "Немає нещодавніх емодзі",
       "emoji-search-description": "Пошук і копіювання емодзі"
     },
     "unpin": "Відкріпити"
@@ -972,6 +976,7 @@
   },
   "settings": {
     "about": {
+      "changelog": "Переглянути журнал змін",
       "contributors": {
         "section": {
           "description": "Подяка нашому {count} <b>чудовому</b> учаснику!",
@@ -1054,6 +1059,11 @@
           "devices": "Пристрої",
           "volumes": "Гучність"
         }
+      },
+      "tabs": {
+        "devices": "Пристрої",
+        "media": "Медіа",
+        "volumes": "Обсяги"
       },
       "title": "Аудіо",
       "volumes": {
@@ -1142,6 +1152,11 @@
           "label": "Відображення на моніторах"
         }
       },
+      "tabs": {
+        "appearance": "Зовнішній вигляд",
+        "monitors": "Монітори",
+        "widgets": "Віджети"
+      },
       "title": "Панель",
       "tray": {
         "back": "Назад",
@@ -1163,16 +1178,7 @@
     "color-scheme": {
       "color-source": {
         "matugen-scheme-type": {
-          "description": {
-            "scheme-content": "Генерує кольори, що тісно збігаються з базовим зображенням.",
-            "scheme-expressive": "Яскрава палітра з грайливою насиченістю.",
-            "scheme-fidelity": "Високоточна палітра, що зберігає вихідні відтінки.",
-            "scheme-fruit-salad": "Барвистий мікс яскравих контрастних акцентів.",
-            "scheme-monochrome": "Мінімальна палітра на основі одного відтінку.",
-            "scheme-neutral": "Приглушена палітра з стриманими та заспокійливими тонами.",
-            "scheme-rainbow": "Різноманітна палітра, що охоплює весь спектр.",
-            "scheme-tonal-spot": "Збалансована палітра з фокусованими акцентами."
-          },
+          "description": "Виберіть метод генерації колірної схеми, який Matugen використовуватиме для створення кольорів з ваших шпалер.",
           "label": "Тип схеми Matugen"
         },
         "section": {
@@ -1242,6 +1248,10 @@
           "label": "Попередньо визначені колірні схеми"
         }
       },
+      "tabs": {
+        "colors": "Кольори",
+        "templates": "Шаблони"
+      },
       "templates": {
         "compositors": {
           "description": "Оформлення композитора.",
@@ -1306,6 +1316,9 @@
           },
           "zed": {
             "description": "Записати {filepath} та перезавантажити"
+          },
+          "zen-browser": {
+            "description": "Запишіть {filepath}; скопіюйте у chrome/userChrome.css вашого профілю Zen."
           }
         },
         "section": {
@@ -1427,6 +1440,11 @@
       "system-monitor-disk-path": {
         "description": "Виберіть точку монтування диска, яку повинна відстежувати карта системного монітора в центрі керування.",
         "label": "Шлях до диска системного монітора"
+      },
+      "tabs": {
+        "appearance": "Зовнішній вигляд",
+        "cards": "Картки",
+        "control-widgets": "Віджети управління"
       },
       "title": "Центр керування"
     },
@@ -1624,6 +1642,10 @@
           "night-description": "Керує колірною температурою вночі."
         }
       },
+      "tabs": {
+        "brightness": "Яскравість",
+        "night-light": "Нічник"
+      },
       "title": "Дисплей"
     },
     "dock": {
@@ -1689,6 +1711,10 @@
           "description": "Показувати док на певних моніторах. За замовчуванням на всіх, якщо не вибрано.",
           "label": "Відображення на моніторах"
         }
+      },
+      "tabs": {
+        "appearance": "Зовнішній вигляд",
+        "monitors": "Монітори"
       },
       "title": "Док"
     },
@@ -1829,6 +1855,10 @@
           "label": "Інструмент анотацій",
           "placeholder": "градіа, сатті -ф -"
         },
+        "auto-paste": {
+          "description": "Автоматично вставити вибраний елемент з буфера обміну. Потребує wtype.",
+          "label": "Автоматична вставка"
+        },
         "clip-preview": {
           "description": "Показувати попередній перегляд вмісту буфера обміну при використанні команди >clip.",
           "label": "Попередній перегляд буфера обміну"
@@ -1941,7 +1971,7 @@
           "label": "Ваше розташування"
         }
       },
-      "title": "Розташування",
+      "title": "Регіон",
       "weather": {
         "enabled": {
           "description": "Показувати інформацію про погоду в інтерфейсі та отримувати дані про погоду. Коли вимкнено, всі елементи погоди будуть приховані та мережеві запити не виконуватимуться.",
@@ -1950,6 +1980,14 @@
         "fahrenheit": {
           "description": "Відображати температуру в Фаренгейтах замість Цельсія.",
           "label": "Відображати температуру в Фаренгейтах (°F)"
+        },
+        "hide-city": {
+          "description": "Приховати назву міста з відображення погоди в усьому інтерфейсі.",
+          "label": "Приховати назву міста"
+        },
+        "hide-timezone": {
+          "description": "Приховати абревіатуру часового поясу з відображення погоди в усьому інтерфейсі.",
+          "label": "Приховати часовий пояс"
         },
         "section": {
           "description": "Виберіть бажану одиницю температури.",
@@ -2135,6 +2173,12 @@
           "label": "Гучність звуку"
         }
       },
+      "tabs": {
+        "general": "Загальне",
+        "history": "Історія",
+        "sounds": "Звуки",
+        "toast": "Тост"
+      },
       "title": "Сповіщення",
       "toast": {
         "keyboard": {
@@ -2239,6 +2283,7 @@
       "hot-reloaded": "Перезавантажено плагін: {name}",
       "install": "Встановити",
       "install-error": "Не вдалося встановити: {error}",
+      "install-incompatible": "{plugin} вимагає Noctalia v{version} або вище",
       "install-success": "Успішно встановлено {plugin}",
       "installed": {
         "description": "Керуйте та налаштовуйте всі локально встановлені плагіни.",
@@ -2296,9 +2341,13 @@
       "update-available_plural": "Доступно {count} оновлень плагінів",
       "update-error": "Не вдалося оновити плагін: {plugin}: {error}",
       "update-incompatible": "Потрібна Noctalia v{version} або вище",
+      "update-pending": "v{current} → v{new} (потрібно Noctalia v{required})",
       "update-success": "Оновлено {plugin} до версії {version}",
       "update-version": "v{current} → v{new}",
       "updating": "Оновлення..."
+    },
+    "region": {
+      "title": "Регіон"
     },
     "screen-recorder": {
       "audio": {
@@ -2473,6 +2522,15 @@
       "polling-interval": {
         "label": "Інтервал опитування"
       },
+      "polling-section": {
+        "description": "Налаштуйте, як часто оновлюється кожна системна метрика.",
+        "label": "Інтервали опитування"
+      },
+      "tabs": {
+        "general": "Загальне",
+        "polling": "Опитування",
+        "thresholds": "Порогові значення"
+      },
       "temperature-section": {
         "label": "Температура ЦП"
       },
@@ -2506,6 +2564,12 @@
         "description": "Налаштувати глобальну швидкість анімації.",
         "label": "Швидкість анімації",
         "reset": "Скинути швидкість анімації"
+      },
+      "appearance": {
+        "section": {
+          "description": "Налаштовуйте візуальні елементи, такі як підказки, рамки та тіні.",
+          "label": "Зовнішність"
+        }
       },
       "box-border": {
         "description": "Відображає контур навколо областей вмісту.",
@@ -2562,6 +2626,11 @@
           "label": "Напрямок тіні"
         },
         "label": "Тіні"
+      },
+      "tabs": {
+        "appearance": "Зовнішній вигляд",
+        "panels": "Панелі",
+        "screen-corners": "Кути екрана"
       },
       "title": "Користувацький інтерфейс",
       "tooltips": {
@@ -2664,6 +2733,11 @@
           "description": "Виберіть, де відображатиметься панель вибору шпалер.",
           "label": "Позиція"
         }
+      },
+      "tabs": {
+        "automation": "Автоматизація",
+        "look-feel": "Зовнішній вигляд та відчуття",
+        "settings": "Налаштування"
       },
       "title": "Шпалери"
     }
@@ -2875,6 +2949,7 @@
     "list-view": "Список",
     "manage-vpn": "Підключення VPN",
     "manage-wifi": "Wi-Fi",
+    "max-widgets-reached": "Досягнуто максимальної кількості віджетів",
     "microphone-volume-at": "Гучність мікрофона: {volume}%",
     "move-to-center-section": "Центральна секція",
     "move-to-left-section": "Ліва секція",
@@ -2937,6 +3012,7 @@
       "apikey": {
         "help": "Для доступу до контенту NSFW потрібен ключ API.",
         "label": "Ключ API",
+        "managed-by-env": "Керується через змінну середовища NOCTALIA_WALLHAVEN_API_KEY.",
         "placeholder": "Введіть свій API-ключ Wallhaven"
       },
       "apply-all-monitors": {
@@ -3025,6 +3101,11 @@
     "thunderstorm": "Гроза",
     "unknown": "Невідомо"
   },
+  "widget": {
+    "file-picker": {
+      "title": "Виберіть файл"
+    }
+  },
   "widgets": {
     "color-picker": {
       "apply": "Застосувати",
@@ -3109,11 +3190,13 @@
   "wifi": {
     "panel": {
       "action-required": "Вимагається дія",
+      "available-interfaces": "Доступні інтерфейси",
       "available-networks": "Доступні мережі",
       "connect": "Підключити",
       "connected": "Підключено",
       "disabled": "Wi-Fi вимкнено",
       "disconnect": "Відключити",
+      "disconnected": "Відключено",
       "disconnecting": "Відключення...",
       "dns": "DNS",
       "enable-message": "Увімкніть Wi-Fi, щоб побачити доступні мережі.",
@@ -3124,12 +3207,15 @@
       "frequency": "Частота",
       "gateway": "Шлюз",
       "info": "Інформація",
+      "interface": "Мережевий інтерфейс",
       "internet": "Інтернет",
       "internet-connected": "Підключено до Інтернету",
       "internet-limited": "Немає інтернету",
+      "internet-status": "Статус Інтернету",
       "ipv4": "IPv4",
       "known-networks": "Відомі мережі",
       "link-speed": "Швидкість з'єднання",
+      "no-ethernet-devices": "Не виявлено Ethernet-пристроїв.",
       "no-networks": "Мереж не знайдено",
       "password": "Пароль",
       "saved": "Збережено",

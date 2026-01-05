@@ -91,7 +91,7 @@ NBox {
           }
           baseSize: Style.baseWidgetSize * 0.5
           colorFg: Color.mOnSurface
-          colorBg: Color.transparent
+          colorBg: "transparent"
           colorBgHover: Color.mHover
           colorFgHover: Color.mOnHover
         }
