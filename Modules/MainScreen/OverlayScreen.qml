@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import "Backgrounds" as Backgrounds
 import qs.Commons
 import qs.Modules.Panels.Launcher
 import qs.Services.Compositor
@@ -42,22 +43,35 @@ PanelWindow {
 
   mask: maskLoader.item
 
-  MouseArea {
+  Item {
+    id: container
     anchors.fill: parent
-    enabled: root.isOverlayPanelOpen
-    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-    onClicked: {
-      if (PanelService.openedPanel) {
-        PanelService.openedPanel.close()
-      }
-    }
-    z: 0
-  }
 
-  Launcher {
-    id: launcherPanel
-    objectName: "launcherPanel-" + (screen?.name || "unknown")
-    screen: root.screen
+    Backgrounds.AllBackgrounds {
+      id: overlayBackgrounds
+      anchors.fill: parent
+      bar: null
+      windowRoot: root
+      z: 0
+    }
+
+    MouseArea {
+      anchors.fill: parent
+      enabled: root.isOverlayPanelOpen
+      acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+      onClicked: {
+        if (PanelService.openedPanel) {
+          PanelService.openedPanel.close()
+        }
+      }
+      z: 0
+    }
+
+    Launcher {
+      id: launcherPanel
+      objectName: "launcherPanel-" + (screen?.name || "unknown")
+      screen: root.screen
+    }
   }
 
   Shortcut {
