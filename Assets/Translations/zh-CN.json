@@ -515,7 +515,6 @@
       "calculator-deprecated": ">calc 命令已弃用，即将移除。请直接在搜索中输入数学表达式。",
       "calculator-description": "计算器 — 计算数学表达式",
       "calculator-enter-expression": "输入数学表达式",
-      "calculator-press-enter-to-copy": "按 Enter 键复制结果",
       "clipboard": "剪贴板历史记录",
       "clipboard-clear-description": "清除所有剪贴板历史记录",
       "clipboard-clear-description-full": "从剪贴板历史记录中移除所有项目",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "正在验证...",
     "password": "请输入密码...",
+    "press-to-unlock": "按任意键解锁",
     "restart": "重启",
     "shut-down": "关机"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "此插件的官方版本已安装。",
       "filter-downloaded": "已下载",
       "filter-not-downloaded": "未下载",
-      "filter-tags-description": "按类别或下载状态筛选插件",
-      "filter-tags-label": "标签",
       "hot-reload-description": "当插件文件发生更改时自动重新加载插件。对插件开发很有用。",
       "hot-reload-label": "热重载（开发模式）",
       "hot-reloaded": "已重新加载插件：{name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "从下方“可用插件”部分安装插件。",
       "installed-no-plugins-label": "未安装插件",
       "installing": "正在安装 {plugin}...",
-      "open-plugin-page": "打开插件页面",
       "open-plugins-tab": "打开插件设置",
       "plugin-settings-title": "{插件} 设置",
       "refresh-refreshing": "正在刷新插件列表...",

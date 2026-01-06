@@ -936,51 +936,127 @@ Singleton {
   }
 
   // -----------------------------------------------------
-  // Ensure PAM password.conf exists in configDir (create once, never override)
+  // Ensure PAM configs exist in configDir (create once, never override)
+  // Two separate configs for two separate flows:
+  // - fingerprint-only.conf: only pam_fprintd.so (no password fallback)
+  // - password-only.conf: only pam_unix.so (no fingerprint)
   function ensurePamConfig() {
     var pamConfigDir = configDir + "pam";
-    var pamConfigFile = pamConfigDir + "/password.conf";
 
-    // Check if file already exists
-    fileCheckPamProcess.command = ["sh", "-c", `grep -q '^ID=nixos' /etc/os-release || test -f ${pamConfigFile}`];
-    fileCheckPamProcess.running = true;
+    // Check and create fingerprint-only.conf
+    fileCheckFingerprintProcess.command = ["test", "-f", pamConfigDir + "/fingerprint-only.conf"];
+    fileCheckFingerprintProcess.running = true;
+
+    // Check and create password-only.conf
+    fileCheckPasswordOnlyProcess.command = ["test", "-f", pamConfigDir + "/password-only.conf"];
+    fileCheckPasswordOnlyProcess.running = true;
+
+    // Check and create "other" fallback config (silences PAM init warning)
+    fileCheckOtherProcess.command = ["test", "-f", pamConfigDir + "/other"];
+    fileCheckOtherProcess.running = true;
   }
 
-  function doCreatePamConfig() {
+  function doCreateFingerprintOnlyConfig() {
     var pamConfigDir = configDir + "pam";
-    var pamConfigFile = pamConfigDir + "/password.conf";
+    var fingerprintOnlyFile = pamConfigDir + "/fingerprint-only.conf";
     var pamConfigDirEsc = pamConfigDir.replace(/'/g, "'\\''");
-    var pamConfigFileEsc = pamConfigFile.replace(/'/g, "'\\''");
+    var fingerprintOnlyFileEsc = fingerprintOnlyFile.replace(/'/g, "'\\''");
 
-    // Ensure directory exists
-    Quickshell.execDetached(["mkdir", "-p", pamConfigDir]);
+    // Ensure directory exists with restricted permissions
+    Quickshell.execDetached(["sh", "-c", `mkdir -p '${pamConfigDirEsc}' && chmod 700 '${pamConfigDirEsc}'`]);
 
-    // Generate the PAM config file content
-    var configContent = "#auth sufficient pam_fprintd.so max-tries=1\n";
-    configContent += "# only uncomment this if you have a fingerprint reader\n";
-    configContent += "auth required pam_unix.so\n";
+    // Fingerprint-only config
+    // sufficient: if fprintd succeeds, auth passes; followed by deny as fallback
+    var configContent = "";
+    configContent += "auth sufficient pam_fprintd.so timeout=-1 max-tries=-1\n";
+    configContent += "auth required pam_deny.so\n";
 
-    // Write the config file using heredoc to avoid escaping issues
-    var script = `cat > '${pamConfigFileEsc}' << 'EOF'\n`;
+    var script = `cat > '${fingerprintOnlyFileEsc}' << 'EOF'\n`;
     script += configContent;
-    script += "EOF\n";
+    script += `EOF\nchmod 600 '${fingerprintOnlyFileEsc}'`;
     Quickshell.execDetached(["sh", "-c", script]);
 
-    Logger.d("Settings", "PAM config file created at:", pamConfigFile);
+    Logger.d("Settings", "Fingerprint-only PAM config created at:", fingerprintOnlyFile);
   }
 
-  // Process for checking if PAM config file exists
+  function doCreatePasswordOnlyConfig() {
+    var pamConfigDir = configDir + "pam";
+    var passwordOnlyFile = pamConfigDir + "/password-only.conf";
+    var pamConfigDirEsc = pamConfigDir.replace(/'/g, "'\\''");
+    var passwordOnlyFileEsc = passwordOnlyFile.replace(/'/g, "'\\''");
+
+    // Ensure directory exists with restricted permissions
+    Quickshell.execDetached(["sh", "-c", `mkdir -p '${pamConfigDirEsc}' && chmod 700 '${pamConfigDirEsc}'`]);
+
+    // Password-only config
+    var configContent = "auth required pam_unix.so\n";
+
+    var script = `cat > '${passwordOnlyFileEsc}' << 'EOF'\n`;
+    script += configContent;
+    script += `EOF\nchmod 600 '${passwordOnlyFileEsc}'`;
+    Quickshell.execDetached(["sh", "-c", script]);
+
+    Logger.d("Settings", "Password-only PAM config created at:", passwordOnlyFile);
+  }
+
+  function doCreateOtherConfig() {
+    var pamConfigDir = configDir + "pam";
+    var otherFile = pamConfigDir + "/other";
+    var pamConfigDirEsc = pamConfigDir.replace(/'/g, "'\\''");
+    var otherFileEsc = otherFile.replace(/'/g, "'\\''");
+
+    // Ensure directory exists with restricted permissions
+    Quickshell.execDetached(["sh", "-c", `mkdir -p '${pamConfigDirEsc}' && chmod 700 '${pamConfigDirEsc}'`]);
+
+    // "other" fallback config - denies all auth (standard PAM safety fallback)
+    var configContent = "auth required pam_deny.so\n";
+
+    var script = `cat > '${otherFileEsc}' << 'EOF'\n`;
+    script += configContent;
+    script += `EOF\nchmod 600 '${otherFileEsc}'`;
+    Quickshell.execDetached(["sh", "-c", script]);
+
+    Logger.d("Settings", "PAM 'other' fallback config created at:", otherFile);
+  }
+
+  // Process for checking if fingerprint-only.conf exists
   Process {
-    id: fileCheckPamProcess
+    id: fileCheckFingerprintProcess
     running: false
 
     onExited: function (exitCode) {
       if (exitCode === 0) {
-        // File exists, skip creation
-        Logger.d("Settings", "On NixOS or PAM config file already exists, skipping creation");
+        Logger.d("Settings", "Fingerprint-only PAM config already exists");
       } else {
-        // File doesn't exist, create it
-        doCreatePamConfig();
+        doCreateFingerprintOnlyConfig();
+      }
+    }
+  }
+
+  // Process for checking if password-only.conf exists
+  Process {
+    id: fileCheckPasswordOnlyProcess
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        Logger.d("Settings", "Password-only PAM config already exists");
+      } else {
+        doCreatePasswordOnlyConfig();
+      }
+    }
+  }
+
+  // Process for checking if "other" exists
+  Process {
+    id: fileCheckOtherProcess
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        Logger.d("Settings", "PAM 'other' fallback config already exists");
+      } else {
+        doCreateOtherConfig();
       }
     }
   }

@@ -515,7 +515,6 @@
       "calculator-deprecated": ">calc komutu kullanımdan kaldırılmıştır ve yakında kaldırılacaktır. Lütfen matematiksel ifadeleri doğrudan aramaya yazın.",
       "calculator-description": "Hesap makinesi — matematiksel ifadeleri hesapla",
       "calculator-enter-expression": "Matematiksel bir ifade girin",
-      "calculator-press-enter-to-copy": "Sonucu kopyalamak için Enter'a basın",
       "clipboard": "Panoya geçmiş",
       "clipboard-clear-description": "Tüm panoya geçmişini temizle",
       "clipboard-clear-description-full": "Tüm öğeleri panoya geçmişinden kaldır",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Doğrulanıyor...",
     "password": "Parolanızı girin...",
+    "press-to-unlock": "Kilidi açmak için herhangi bir tuşa basın",
     "restart": "Yeniden başlat",
     "shut-down": "Kapat"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "Bu eklentinin resmi sürümü zaten yüklü.",
       "filter-downloaded": "İndirildi",
       "filter-not-downloaded": "İndirilmedi",
-      "filter-tags-description": "Eklentileri kategoriye veya indirme durumuna göre filtrele",
-      "filter-tags-label": "Etiketler",
       "hot-reload-description": "Eklenti dosyaları değiştiğinde eklentileri otomatik olarak yeniden yükle. Eklenti geliştirme için kullanışlıdır.",
       "hot-reload-label": "Hızlı yeniden yükleme (geliştirme modu)",
       "hot-reloaded": "Yeniden yüklenen eklenti: {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "Aşağıdaki Mevcut Eklentiler bölümünden eklentileri kurun.",
       "installed-no-plugins-label": "Eklenti kurulu değil",
       "installing": "{eklenti} kuruluyor...",
-      "open-plugin-page": "Eklenti sayfasını aç",
       "open-plugins-tab": "Eklenti ayarlarına git",
       "plugin-settings-title": "{plugin} Ayarları",
       "refresh-refreshing": "Eklenti listesi yenileniyor...",

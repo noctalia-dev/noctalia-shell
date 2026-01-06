@@ -515,7 +515,6 @@
       "calculator-deprecated": "La commande >calc est obsolète et sera bientôt supprimée. Veuillez saisir les expressions mathématiques directement dans la recherche à la place.",
       "calculator-description": "Calculatrice — évaluez des expressions mathématiques",
       "calculator-enter-expression": "Entrez une expression mathématique",
-      "calculator-press-enter-to-copy": "Appuyez sur Entrée pour copier le résultat.",
       "clipboard": "Historique du presse-papiers",
       "clipboard-clear-description": "Effacer tout l'historique du presse-papiers",
       "clipboard-clear-description-full": "Supprimer tous les éléments de l'historique du presse-papiers",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Authentification...",
     "password": "Entrez votre mot de passe...",
+    "press-to-unlock": "Appuyez sur une touche pour déverrouiller",
     "restart": "Redémarrer",
     "shut-down": "Éteindre"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "La version officielle de cette extension est déjà installée.",
       "filter-downloaded": "Téléchargé",
       "filter-not-downloaded": "Non téléchargé",
-      "filter-tags-description": "Filtrer les extensions par catégorie ou état de téléchargement.",
-      "filter-tags-label": "Mots-clés",
       "hot-reload-description": "Recharger automatiquement les plugins lorsque leurs fichiers sont modifiés. Utile pour le développement de plugins.",
       "hot-reload-label": "Rechargement à chaud (mode développement)",
       "hot-reloaded": "Plugin rechargé : {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "Installez les extensions depuis la section Extensions disponibles ci-dessous.",
       "installed-no-plugins-label": "Aucun plugin installé",
       "installing": "Installation de {plugin}...",
-      "open-plugin-page": "Ouvrir la page du plugin",
       "open-plugins-tab": "Ouvrir les paramètres des plugins",
       "plugin-settings-title": "Paramètres de {plugin}",
       "refresh-refreshing": "Actualisation de la liste des plugins...",

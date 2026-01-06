@@ -515,7 +515,6 @@
       "calculator-deprecated": "Der Befehl >calc ist veraltet und wird bald entfernt. Bitte geben Sie stattdessen mathematische Ausdrücke direkt in die Suche ein.",
       "calculator-description": "Rechner — mathematische Ausdrücke auswerten",
       "calculator-enter-expression": "Mathematischen Ausdruck eingeben",
-      "calculator-press-enter-to-copy": "Drücken Sie die Eingabetaste, um das Ergebnis zu kopieren.",
       "clipboard": "Zwischenablageverlauf",
       "clipboard-clear-description": "Gesamten Zwischenablageverlauf löschen",
       "clipboard-clear-description-full": "Alle Elemente aus dem Zwischenablageverlauf entfernen",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Authentifizierung...",
     "password": "Passwort eingeben...",
+    "press-to-unlock": "Beliebige Taste drücken zum Entsperren",
     "restart": "Neu starten",
     "shut-down": "Herunterfahren"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "Die offizielle Version dieses Plugins ist bereits installiert.",
       "filter-downloaded": "Heruntergeladen",
       "filter-not-downloaded": "Nicht heruntergeladen",
-      "filter-tags-description": "Filter-Plugins nach Kategorie oder Download-Status filtern",
-      "filter-tags-label": "Schlagwörter",
       "hot-reload-description": "Plugins automatisch neu laden, wenn sich ihre Dateien ändern. Nützlich für die Plugin-Entwicklung.",
       "hot-reload-label": "Hot Reload (Entwicklermodus)",
       "hot-reloaded": "Plugin neu geladen: {name}",

@@ -515,7 +515,6 @@
       "calculator-deprecated": "El comando >calc está obsoleto y será eliminado pronto. Por favor, escribe expresiones matemáticas directamente en la búsqueda en su lugar.",
       "calculator-description": "Calculadora — evalúa expresiones matemáticas",
       "calculator-enter-expression": "Ingresa una expresión matemática",
-      "calculator-press-enter-to-copy": "Presione Enter para copiar el resultado",
       "clipboard": "Historial del portapapeles",
       "clipboard-clear-description": "Limpiar todo el historial del portapapeles",
       "clipboard-clear-description-full": "Eliminar todos los elementos del historial del portapapeles",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Autenticando...",
     "password": "Ingresa tu contraseña...",
+    "press-to-unlock": "Presiona cualquier tecla para desbloquear",
     "restart": "Reiniciar",
     "shut-down": "Apagar"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "La versión oficial de este plugin ya está instalada.",
       "filter-downloaded": "Descargado",
       "filter-not-downloaded": "No descargado",
-      "filter-tags-description": "Filtrar plugins por categoría o estado de descarga",
-      "filter-tags-label": "Etiquetas",
       "hot-reload-description": "Recarga automáticamente los plugins cuando sus archivos cambian. Útil para el desarrollo de plugins.",
       "hot-reload-label": "Recarga en caliente (modo desarrollo)",
       "hot-reloaded": "Plugin recargado: {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "Instale los plugins de la sección Plugins disponibles que se muestra a continuación.",
       "installed-no-plugins-label": "No hay plugins instalados.",
       "installing": "Instalando {plugin}...",
-      "open-plugin-page": "Abrir página del plugin",
       "open-plugins-tab": "Abrir la configuración de los plugins",
       "plugin-settings-title": "Ajustes de {plugin}",
       "refresh-refreshing": "Actualizando la lista de plugins...",

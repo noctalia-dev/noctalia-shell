@@ -515,7 +515,6 @@
       "calculator-deprecated": "De >calc opdracht is verouderd en zal binnenkort verwijderd worden. Typ wiskundige uitdrukkingen in plaats daarvan direct in de zoekopdracht.",
       "calculator-description": "Rekenmachine — bereken wiskundige expressies",
       "calculator-enter-expression": "Voer een wiskundige expressie in",
-      "calculator-press-enter-to-copy": "Druk op Enter om het resultaat te kopiëren.",
       "clipboard": "Klembordgeschiedenis",
       "clipboard-clear-description": "Klembordgeschiedenis wissen",
       "clipboard-clear-description-full": "Alle items uit de klembordgeschiedenis verwijderen",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Bezig met verifiëren...",
     "password": "Voer je wachtwoord in...",
+    "press-to-unlock": "Druk op een toets om te ontgrendelen",
     "restart": "Opnieuw opstarten",
     "shut-down": "Uitschakelen"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "De officiële versie van deze plugin is al geïnstalleerd.",
       "filter-downloaded": "Gedownload",
       "filter-not-downloaded": "Niet gedownload",
-      "filter-tags-description": "Filter plug-ins op categorie of downloadstatus",
-      "filter-tags-label": "Tags",
       "hot-reload-description": "Laad plugins automatisch opnieuw wanneer hun bestanden veranderen. Handig voor plugin-ontwikkeling.",
       "hot-reload-label": "Hot reload (ontwikkelmodus)",
       "hot-reloaded": "Plugin opnieuw geladen: {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "Installeer plugins uit de sectie Beschikbare plugins hieronder.",
       "installed-no-plugins-label": "Geen plugins geïnstalleerd",
       "installing": "{plugin} installeren...",
-      "open-plugin-page": "Open plug-in pagina",
       "open-plugins-tab": "Open plugininstellingen",
       "plugin-settings-title": "{plugin} Instellingen",
       "refresh-refreshing": "Pluginlijst vernieuwen...",

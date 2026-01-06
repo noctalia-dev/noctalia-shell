@@ -4,3 +4,5 @@
 .vscode
 *.code-workspace
 RELEASE.md
+result
+.direnv

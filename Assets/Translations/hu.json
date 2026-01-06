@@ -515,7 +515,6 @@
       "calculator-deprecated": "A >calc parancs elavult, és hamarosan el lesz távolítva. Kérjük, a matematikai kifejezéseket közvetlenül a keresésbe írja be helyette.",
       "calculator-description": "Számológép — matematikai kifejezések kiértékelése",
       "calculator-enter-expression": "Írjon be egy matematikai kifejezést",
-      "calculator-press-enter-to-copy": "Nyomja meg az Entert az eredmény másolásához",
       "clipboard": "Vágólapelőzmények",
       "clipboard-clear-description": "Összes vágólapelőzmény törlése",
       "clipboard-clear-description-full": "Az összes elem eltávolítása a vágólapelőzményekből",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Hitelesítés...",
     "password": "Adja meg jelszavát...",
+    "press-to-unlock": "Nyomjon meg egy billentyűt a feloldáshoz",
     "restart": "Újraindítás",
     "shut-down": "Leállítás"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "A plugin hivatalos verziója már telepítve van.",
       "filter-downloaded": "Letöltött",
       "filter-not-downloaded": "Nincs letöltve",
-      "filter-tags-description": "Bővítmények szűrése kategória vagy letöltési állapot szerint",
-      "filter-tags-label": "Címkék",
       "hot-reload-description": "Automatikusan újratölti a bővítményeket, amikor a fájljaik megváltoznak. Hasznos a bővítményfejlesztéshez.",
       "hot-reload-label": "Gyors újratöltés (fejlesztői mód)",
       "hot-reloaded": "Újratöltött bővítmény: {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "Telepítsen bővítményeket az alábbi Elérhető bővítmények szakaszból.",
       "installed-no-plugins-label": "Nincs telepített bővítmény",
       "installing": "Telepítés: {plugin}...",
-      "open-plugin-page": "Plugin oldal megnyitása",
       "open-plugins-tab": "Bővítmények beállításainak megnyitása",
       "plugin-settings-title": "{plugin} beállításai",
       "refresh-refreshing": "Bővítmények listájának frissítése...",

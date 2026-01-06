@@ -515,7 +515,6 @@
       "calculator-deprecated": ">calc コマンドは非推奨となり、まもなく削除されます。代わりに、検索で数式を直接入力してください。",
       "calculator-description": "電卓 — 数式を計算します",
       "calculator-enter-expression": "数式を入力",
-      "calculator-press-enter-to-copy": "結果をコピーするにはEnterキーを押してください。",
       "clipboard": "クリップボード履歴",
       "clipboard-clear-description": "クリップボード履歴をすべて消去",
       "clipboard-clear-description-full": "クリップボード履歴からすべての項目を削除します",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "認証中...",
     "password": "パスワードを入力...",
+    "press-to-unlock": "キーを押してロック解除",
     "restart": "再起動",
     "shut-down": "シャットダウン"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "このプラグインの公式バージョンはすでにインストールされています。",
       "filter-downloaded": "ダウンロード済み",
       "filter-not-downloaded": "未ダウンロード",
-      "filter-tags-description": "カテゴリーまたはダウンロード状況でプラグインを絞り込む",
-      "filter-tags-label": "タグ",
       "hot-reload-description": "ファイルの変更時にプラグインを自動的にリロードします。プラグイン開発に便利です。",
       "hot-reload-label": "ホットリロード（開発モード）",
       "hot-reloaded": "プラグインをリロードしました: {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "下の「利用可能なプラグイン」セクションからプラグインをインストールしてください。",
       "installed-no-plugins-label": "インストールされているプラグインはありません",
       "installing": "{plugin} をインストール中...",
-      "open-plugin-page": "プラグインページを開く",
       "open-plugins-tab": "プラグイン設定を開く",
       "plugin-settings-title": "{plugin} の設定",
       "refresh-refreshing": "プラグインリストを更新中...",

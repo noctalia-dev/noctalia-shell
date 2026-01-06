@@ -515,7 +515,6 @@
       "calculator-deprecated": "The >calc command is deprecated and will be removed soon. Please type math expressions directly in search instead.",
       "calculator-description": "Calculator — evaluate mathematical expressions",
       "calculator-enter-expression": "Enter a mathematical expression",
-      "calculator-press-enter-to-copy": "Press Enter to copy result",
       "clipboard": "Clipboard history",
       "clipboard-clear-description": "Clear all clipboard history",
       "clipboard-clear-description-full": "Remove all items from clipboard history",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Authenticating...",
     "password": "Enter your password...",
+    "press-to-unlock": "Press any key to unlock",
     "restart": "Restart",
     "shut-down": "Shut down"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "The official version of this plugin is already installed",
       "filter-downloaded": "Downloaded",
       "filter-not-downloaded": "Not Downloaded",
-      "filter-tags-description": "Filter plugins by category or download status",
-      "filter-tags-label": "Tags",
       "hot-reload-description": "Automatically reload plugins when their files change. Useful for plugin development.",
       "hot-reload-label": "Hot reload (dev mode)",
       "hot-reloaded": "Reloaded plugin: {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "Install plugins from the Available Plugins section below.",
       "installed-no-plugins-label": "No plugins installed",
       "installing": "Installing {plugin}...",
-      "open-plugin-page": "Open plugin page",
       "open-plugins-tab": "Open plugins settings",
       "plugin-settings-title": "{plugin} Settings",
       "refresh-refreshing": "Refreshing plugins list...",

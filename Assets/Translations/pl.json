@@ -515,7 +515,6 @@
       "calculator-deprecated": "Polecenie >calc jest przestarzałe i wkrótce zostanie usunięte. Zamiast tego wpisuj wyrażenia matematyczne bezpośrednio w wyszukiwarce.",
       "calculator-description": "Kalkulator — obliczaj wyrażenia matematyczne",
       "calculator-enter-expression": "Wpisz wyrażenie matematyczne",
-      "calculator-press-enter-to-copy": "Naciśnij Enter, aby skopiować wynik.",
       "clipboard": "Historia schowka",
       "clipboard-clear-description": "Wyczyść całą historię schowka",
       "clipboard-clear-description-full": "Usuń wszystkie elementy z historii schowka",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Uwierzytelnianie...",
     "password": "Wprowadź hasło...",
+    "press-to-unlock": "Naciśnij dowolny klawisz, aby odblokować",
     "restart": "Restart",
     "shut-down": "Wyłącz"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "Oficjalna wersja tej wtyczki jest już zainstalowana.",
       "filter-downloaded": "Pobrane",
       "filter-not-downloaded": "Niepobrane",
-      "filter-tags-description": "Filtruj wtyczki według kategorii lub statusu pobierania.",
-      "filter-tags-label": "Tagi",
       "hot-reload-description": "Automatycznie przeładuj wtyczki przy zmianie ich plików. Przydatne przy tworzeniu wtyczek.",
       "hot-reload-label": "Gorące przeładowanie (tryb deweloperski)",
       "hot-reloaded": "Przeładowano wtyczkę: {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "Zainstaluj wtyczki z sekcji Dostępne wtyczki poniżej.",
       "installed-no-plugins-label": "Brak zainstalowanych wtyczek",
       "installing": "Instalowanie {plugin}...",
-      "open-plugin-page": "Otwórz stronę wtyczki",
       "open-plugins-tab": "Otwórz ustawienia wtyczek",
       "plugin-settings-title": "Ustawienia {plugin}",
       "refresh-refreshing": "Odświeżanie listy wtyczek...",

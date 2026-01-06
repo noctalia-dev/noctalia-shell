@@ -515,7 +515,6 @@
       "calculator-deprecated": "Команда >calc застаріла і скоро буде видалена. Будь ласка, введіть математичні вирази безпосередньо в пошуку.",
       "calculator-description": "Калькулятор — обчислення математичних виразів",
       "calculator-enter-expression": "Введіть математичний вираз",
-      "calculator-press-enter-to-copy": "Натисніть Enter, щоб скопіювати результат.",
       "clipboard": "Історія буфера обміну",
       "clipboard-clear-description": "Очистити всю історію буфера обміну",
       "clipboard-clear-description-full": "Видалити всі елементи з історії буфера обміну",
@@ -536,6 +535,7 @@
   "lock-screen": {
     "authenticating": "Автентифікація...",
     "password": "Введіть ваш пароль...",
+    "press-to-unlock": "Натисніть будь-яку клавішу для розблокування",
     "restart": "Перезапустити",
     "shut-down": "Вимкнути"
   },
@@ -1166,8 +1166,6 @@
       "collision-official-version-exists": "Офіційна версія цього плагіна вже встановлена.",
       "filter-downloaded": "Завантажено",
       "filter-not-downloaded": "Не завантажено",
-      "filter-tags-description": "Фільтрувати плагіни за категорією або статусом завантаження",
-      "filter-tags-label": "Теги",
       "hot-reload-description": "Автоматично перезавантажувати плагіни при зміні їхніх файлів. Корисно для розробки плагінів.",
       "hot-reload-label": "Гаряче перезавантаження (режим розробки)",
       "hot-reloaded": "Перезавантажено плагін: {name}",
@@ -1179,7 +1177,6 @@
       "installed-no-plugins-description": "Встановіть плагіни з розділу \"Доступні плагіни\" нижче.",
       "installed-no-plugins-label": "Немає встановлених плагінів",
       "installing": "Встановлення {plugin}...",
-      "open-plugin-page": "Відкрити сторінку плагіна",
       "open-plugins-tab": "Відкрити налаштування плагінів",
       "plugin-settings-title": "Налаштування {plugin}",
       "refresh-refreshing": "Оновлення списку плагінів...",
