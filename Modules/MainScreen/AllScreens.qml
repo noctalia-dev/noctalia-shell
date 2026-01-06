@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-
 import qs.Commons
 import qs.Modules.MainScreen
 import qs.Services.Noctalia
@@ -71,6 +70,28 @@ Variants {
 
       onLoaded: {
         Logger.d("AllScreens", "BarContentWindow created for", modelData?.name);
+      }
+    }
+
+    // Overlay
+    Loader {
+      id: overlayLoader
+      active: parent.windowLoaded && parent.shouldBeActive
+      asynchronous: false
+
+      Binding {
+        target: overlayLoader.item
+        property: "screen"
+        value: modelData
+        when: overlayLoader.item !== null
+      }
+
+      sourceComponent: OverlayScreen {
+        screen: windowLoader.loaderScreen
+      }
+
+      onLoaded: {
+        Logger.d("AllScreens", "OverlayScreen created for", modelData?.name);
       }
     }
 

@@ -17,7 +17,7 @@ import qs.Modules.Panels.Brightness
 import qs.Modules.Panels.Changelog
 import qs.Modules.Panels.Clock
 import qs.Modules.Panels.ControlCenter
-import qs.Modules.Panels.Launcher
+
 import qs.Modules.Panels.Network
 import qs.Modules.Panels.NotificationHistory
 import qs.Modules.Panels.Plugins
@@ -231,11 +231,6 @@ PanelWindow {
       screen: root.screen
     }
 
-    Launcher {
-      id: launcherPanel
-      objectName: "launcherPanel-" + (root.screen?.name || "unknown")
-      screen: root.screen
-    }
 
     NotificationHistoryPanel {
       id: notificationHistoryPanel
