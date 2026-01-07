@@ -306,7 +306,6 @@ SmartPanel {
         // Generic delete handling - ask provider if item can be deleted
         if (selectedIndex < 0 || !results || !results[selectedIndex])
             return;
-
         var item = results[selectedIndex];
         var provider = item.provider || currentProvider;
 
@@ -351,12 +350,13 @@ SmartPanel {
             var providerId = registeredIds[i];
             if (!pluginProviderInstances[providerId]) {
                 var component = LauncherProviderRegistry.getProviderComponent(providerId);
-                var pluginId = providerId.substring(7); // Remove "plugin:" prefix
+                var pluginId = providerId.substring(7);
+                // Remove "plugin:" prefix
                 var pluginApi = PluginService.getPluginAPI(pluginId);
 
                 if (component && pluginApi) {
                     var instance = component.createObject(root, {
-                        pluginApi: pluginApi
+                        "pluginApi": pluginApi
                     });
                     if (instance) {
                         pluginProviderInstances[providerId] = instance;
@@ -404,8 +404,9 @@ SmartPanel {
                     results = allCommands;
                 } else if (searchText.length > 1) {
                     // Filter commands using fuzzy search when typing partial command
-                    const query = searchText.substring(1); // Remove the ">" prefix
+                    const query = searchText.substring(1);
 
+                    // Remove the ">" prefix
                     if (typeof Fuzzysort !== 'undefined') {
                         // Use fuzzy search to filter commands
                         const fuzzyResults = Fuzzysort.go(query, allCommands, {
@@ -468,14 +469,16 @@ SmartPanel {
 
     function selectNextPage() {
         if (results.length > 0) {
-            const page = Math.max(1, Math.floor(600 / entryHeight)); // Use approximate height
+            const page = Math.max(1, Math.floor(600 / entryHeight));
+            // Use approximate height
             selectedIndex = Math.min(selectedIndex + page, results.length - 1);
         }
     }
 
     function selectPreviousPage() {
         if (results.length > 0) {
-            const page = Math.max(1, Math.floor(600 / entryHeight)); // Use approximate height
+            const page = Math.max(1, Math.floor(600 / entryHeight));
+            // Use approximate height
             selectedIndex = Math.max(selectedIndex - page, 0);
         }
     }
@@ -726,7 +729,6 @@ SmartPanel {
                 function updatePreviewItem() {
                     if (!item || selectedIndex < 0 || !results[selectedIndex])
                         return;
-
                     var provider = root.activeProvider;
                     if (provider && provider.getPreviewData) {
                         item.currentItem = provider.getPreviewData(results[selectedIndex]);
@@ -1235,7 +1237,6 @@ SmartPanel {
                         // Don't sync selectedIndex to GridView's currentIndex
                         // The visual selection is handled by the delegate based on selectedIndex
                         // We only need to position the view to show the selected item
-
                         onModelChanged: {}
 
                         // Handle scrolling to show selected item when it changes
