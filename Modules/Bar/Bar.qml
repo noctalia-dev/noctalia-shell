@@ -37,6 +37,7 @@ Item {
   readonly property string barPosition: Settings.data.bar.position || "top"
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool barFloating: Settings.data.bar.floating || false
+  readonly property int barInset: Style.pixelAlignCenter(Style.barHeight, Style.capsuleHeight)
 
   // Fill the parent (the Loader)
   anchors.fill: parent
@@ -213,7 +214,7 @@ Item {
       ColumnLayout {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.top: parent.top
-        anchors.topMargin: Style.marginM
+        anchors.topMargin: root.barInset
         spacing: Style.marginS
 
         Repeater {
@@ -264,7 +265,7 @@ Item {
       ColumnLayout {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Style.marginM
+        anchors.bottomMargin: root.barInset
         spacing: Style.marginS
 
         Repeater {
@@ -300,9 +301,9 @@ Item {
         id: leftSection
         objectName: "leftSection"
         anchors.left: parent.left
-        anchors.leftMargin: Style.marginS
+        anchors.leftMargin: root.barInset
         y: Style.pixelAlignCenter(parent.height, height)
-        spacing: Style.marginS
+        spacing: root.barInset
 
         Repeater {
           model: root.filterValidWidgets(Settings.data.bar.widgets.left)
@@ -329,7 +330,7 @@ Item {
         objectName: "centerSection"
         anchors.horizontalCenter: parent.horizontalCenter
         y: Style.pixelAlignCenter(parent.height, height)
-        spacing: Style.marginS
+        spacing: root.barInset
 
         Repeater {
           model: root.filterValidWidgets(Settings.data.bar.widgets.center)
@@ -355,9 +356,9 @@ Item {
         id: rightSection
         objectName: "rightSection"
         anchors.right: parent.right
-        anchors.rightMargin: Style.marginS
+        anchors.rightMargin: root.barInset
         y: Style.pixelAlignCenter(parent.height, height)
-        spacing: Style.marginS
+        spacing: root.barInset
 
         Repeater {
           model: root.filterValidWidgets(Settings.data.bar.widgets.right)
