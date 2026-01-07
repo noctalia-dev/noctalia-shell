@@ -113,7 +113,7 @@ SmartPanel {
 
         Rectangle {
           radius: Style.radiusS
-          color: playerSelectorMouse.containsMouse ? Color.mHover : "transparent"
+          color: playerSelectorMouse.containsMouse ? Color.mPrimary : "transparent"
           implicitWidth: playerRow.implicitWidth + Style.marginM
           implicitHeight: Style.baseWidgetSize * 0.8
           visible: MediaService.getAvailablePlayers().length > 1
@@ -126,12 +126,12 @@ SmartPanel {
             NText {
               text: MediaService.currentPlayer ? MediaService.currentPlayer.identity : "Select Player"
               pointSize: Style.fontSizeXS
-              color: Color.mOnSurfaceVariant
+              color: playerSelectorMouse.containsMouse ? Color.mOnPrimary : Color.mOnSurfaceVariant
             }
             NIcon {
               icon: "chevron-down"
               pointSize: Style.fontSizeXS
-              color: Color.mOnSurfaceVariant
+              color: playerSelectorMouse.containsMouse ? Color.mOnPrimary : Color.mOnSurfaceVariant
             }
           }
 
@@ -168,7 +168,7 @@ SmartPanel {
 
                   Rectangle {
                     anchors.fill: parent
-                    color: itemMouse.containsMouse ? Color.mHover : "transparent"
+                    color: itemMouse.containsMouse ? Color.mPrimary : "transparent"
                     radius: Style.iRadiusS
                   }
 
@@ -180,14 +180,14 @@ SmartPanel {
                     NIcon {
                       visible: MediaService.currentPlayer && MediaService.currentPlayer.identity === modelData.identity
                       icon: "check"
-                      color: Color.mPrimary
+                      color: itemMouse.containsMouse ? Color.mOnPrimary : Color.mPrimary
                       pointSize: Style.fontSizeS
                     }
 
                     NText {
                       text: modelData.identity
                       pointSize: Style.fontSizeS
-                      color: itemMouse.containsMouse ? Color.mOnHover : Color.mOnSurface
+                      color: itemMouse.containsMouse ? Color.mOnPrimary : Color.mOnSurface
                       Layout.fillWidth: true
                       elide: Text.ElideRight
                     }

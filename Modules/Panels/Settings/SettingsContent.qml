@@ -393,7 +393,7 @@ Item {
               width: Math.round(toggleRow.implicitWidth + Style.marginS * 2)
               height: parent.height
               anchors.left: parent.left
-              radius: iStyle.radiusS
+              radius: Style.radiusS
               color: toggleMouseArea.containsMouse ? Color.mHover : "transparent"
 
               Behavior on color {
