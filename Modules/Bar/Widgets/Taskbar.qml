@@ -70,6 +70,9 @@ Rectangle {
     return (widgetSettings.titleWidth !== undefined) ? widgetSettings.titleWidth : widgetMetadata.titleWidth;
   }
   readonly property bool showPinnedApps: (widgetSettings.showPinnedApps !== undefined) ? widgetSettings.showPinnedApps : widgetMetadata.showPinnedApps
+  readonly property string leftClickAction: (widgetSettings.leftClickAction !== undefined) ? widgetSettings.leftClickAction : (widgetMetadata.leftClickAction || "focus")
+  readonly property string middleClickAction: (widgetSettings.middleClickAction !== undefined) ? widgetSettings.middleClickAction : (widgetMetadata.middleClickAction || "none")
+  readonly property string rightClickAction: (widgetSettings.rightClickAction !== undefined) ? widgetSettings.rightClickAction : (widgetMetadata.rightClickAction || "context-menu")
 
   // Context menu state - store ID instead of object reference to avoid stale references
   property string selectedWindowId: ""
@@ -392,6 +395,47 @@ Rectangle {
                  }
   }
 
+  function doActivateAction(modelData) {
+    if (!modelData)
+      return;
+
+    var isRunning = modelData.window !== null;
+    var isPinned = modelData.type === "pinned" || modelData.type === "pinned-running";
+
+    if (isRunning && modelData.window) {
+      // Running app - focus it
+      try {
+        CompositorService.focusWindow(modelData.window);
+      } catch (error) {
+        Logger.e("Taskbar", "Failed to activate toplevel: " + error);
+      }
+    } else if (isPinned) {
+      // Pinned app not running - launch it
+      root.launchPinnedApp(modelData.appId);
+    }
+  }
+
+  function doContextMenuAction(modelData, item) {
+    if (!modelData)
+      return;
+    var isRunning = modelData.window !== null;
+    TooltipService.hide();
+    // Only show context menu for running apps
+    if (isRunning && modelData.window) {
+      root.selectedWindowId = modelData.id;
+      root.selectedAppId = modelData.appId;
+      root.openTaskbarContextMenu(item);
+    }
+  }
+
+  function handleAction(action, modelData, item) {
+    if (action === "focus") {
+      doActivateAction(modelData);
+    } else if (action === "context-menu") {
+      doContextMenuAction(modelData, item);
+    }
+  }
+
   function updateHasWindow() {
     // Check if we have any items in the combined model (windows or pinned apps)
     hasWindow = combinedModel.length > 0;
@@ -643,31 +687,23 @@ Rectangle {
           anchors.fill: parent
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
-          acceptedButtons: Qt.LeftButton | Qt.RightButton
+          acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
 
           onClicked: function (mouse) {
             if (!modelData)
               return;
+
+            var action;
             if (mouse.button === Qt.LeftButton) {
-              if (isRunning && modelData.window) {
-                // Running app - focus it
-                try {
-                  CompositorService.focusWindow(modelData.window);
-                } catch (error) {
-                  Logger.e("Taskbar", "Failed to activate toplevel: " + error);
-                }
-              } else if (isPinned) {
-                // Pinned app not running - launch it
-                root.launchPinnedApp(modelData.appId);
-              }
+              action = root.leftClickAction;
+            } else if (mouse.button === Qt.MiddleButton) {
+              action = root.middleClickAction;
             } else if (mouse.button === Qt.RightButton) {
-              TooltipService.hide();
-              // Only show context menu for running apps
-              if (isRunning && modelData.window) {
-                root.selectedWindowId = modelData.id;
-                root.selectedAppId = modelData.appId;
-                root.openTaskbarContextMenu(taskbarItem);
-              }
+              action = root.rightClickAction;
+            }
+
+            if (action && action !== "none") {
+              handleAction(action, taskbarItem.modelData, taskbarItem);
             }
           }
           onEntered: {
