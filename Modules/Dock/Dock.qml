@@ -42,6 +42,9 @@ Loader {
       // Update dock apps when pinned apps change
       Connections {
         target: Settings.data.dock
+        function onDisplayPinnedAppsChanged() {
+          updateDockApps();
+        }
         function onPinnedAppsChanged() {
           updateDockApps();
         }
@@ -153,7 +156,8 @@ Loader {
       // Function to update the combined dock apps model
       function updateDockApps() {
         const runningApps = ToplevelManager ? (ToplevelManager.toplevels.values || []) : [];
-        const pinnedApps = Settings.data.dock.pinnedApps || [];
+        // const pinnedApps = Settings.data.dock.pinnedApps || [];
+        const pinnedApps = Settings.data.dock.displayPinnedApps ? (Settings.data.dock.pinnedApps || []) : [];
         const combined = [];
         const processedToplevels = new Set();
         const processedPinnedAppIds = new Set();

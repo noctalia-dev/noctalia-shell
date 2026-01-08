@@ -122,6 +122,14 @@ ColumnLayout {
     }
 
     NToggle {
+      label: I18n.tr("panels.dock.appearance-display-pinned-apps-label")
+      description: I18n.tr("panels.dock.appearance-display-pinned-apps-description")
+      checked: Settings.data.dock.displayPinnedApps
+      defaultValue: Settings.getDefaultValue("dock.displayPinnedApps")
+      onToggled: checked => Settings.data.dock.displayPinnedApps = checked
+    }
+
+    NToggle {
       label: I18n.tr("panels.dock.appearance-pinned-static-label")
       description: I18n.tr("panels.dock.appearance-pinned-static-description")
       checked: Settings.data.dock.pinnedStatic

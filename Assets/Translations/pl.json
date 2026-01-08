@@ -898,6 +898,8 @@
       "appearance-hide-show-speed-label": "Prędkość ukrywania/pokazywania",
       "appearance-icon-size-description": "Dostosuj ogólny rozmiar doku.",
       "appearance-icon-size-label": "Rozmiar doku",
+      "appearance-display-pinned-apps-description": "Wyświetlaj Przypięte Aplikacje na doku.",
+      "appearance-display-pinned-apps-label": "Wyświetlaj przypięte aplikacje",
       "appearance-inactive-indicators-description": "Wyświetlaj wskaźniki dla wszystkich uruchomionych aplikacji, nie tylko dla aktywnej.",
       "appearance-inactive-indicators-label": "Wskaźniki uruchomionych",
       "appearance-pinned-static-description": "Zawsze spychaj przypięte aplikacje na lewo w stałej kolejności.",

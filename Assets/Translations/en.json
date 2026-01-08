@@ -900,6 +900,8 @@
       "appearance-icon-size-label": "Dock size",
       "appearance-inactive-indicators-description": "Display indicator pills for all apps, not just the currently active one.",
       "appearance-inactive-indicators-label": "Running Indicators",
+      "appearance-display-pinned-apps-description": "Display Pinned Apps in the dock.",
+      "appearance-display-pinned-apps-label": "Display Pinned Apps",
       "appearance-pinned-static-description": "Always push pinned app icons to the left in static order.",
       "appearance-pinned-static-label": "Static Pinned Apps",
       "enabled-description": "Show or hide the dock entirely.",
