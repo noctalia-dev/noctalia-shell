@@ -98,7 +98,9 @@ Rectangle {
   property int wheelAccumulatedDelta: 0
   property bool wheelCooldown: false
 
+  // used to track the index of the window that is being dragged over
   property int dragOverIndex: -1
+  // used to persist the custom order of the windows
   property var customOrder: []
 
   // Helper function to normalize app IDs for case-insensitive matching
