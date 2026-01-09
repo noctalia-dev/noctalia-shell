@@ -316,6 +316,7 @@ Rectangle {
     }
   }
 
+  // Function to immediately reorder the combinedModel array without persisting the change
   function reorderModel(from, to) {
     if (from === to || from < 0 || to < 0) {
       return;
@@ -334,6 +335,7 @@ Rectangle {
     combinedModel = newModel;
   }
 
+  // Function to persist the custom order
   function saveCustomOrder() {
     var order = [];
     for (var i = 0; i < combinedModel.length; i++) {
@@ -343,6 +345,7 @@ Rectangle {
     customOrder = order;
   }
 
+  // Function to rearrange the combinedModel based on customOrder array
   function applyCustomOrder() {
     if (customOrder.length === 0)
       return;
@@ -666,8 +669,6 @@ Rectangle {
           anchors.fill: parent
           keys: ["taskbar-item"]
 
-          property bool isCurrentDropTarget: false
-
           onEntered: function (drag) {
             root.dragOverIndex = taskbarItem.index;
           }
@@ -795,7 +796,8 @@ Rectangle {
 
           function performSwap(from, to) {
             if (from !== to && from >= 0 && to >= 0 && from < root.combinedModel.length && to < root.combinedModel.length) {
-              root.reorderModel(from, to);
+              taskbarItem.rootItem.reorderModel(from, to);
+              taskbarItem.rootItem.saveCustomOrder();
             }
           }
 
@@ -806,8 +808,7 @@ Rectangle {
               taskbarItem.held = false;
               taskbarItem.Drag.drop();
 
-              performSwap(taskbarItem.index, root.dragOverIndex);
-              taskbarItem.rootItem.saveCustomOrder();
+              performSwap(taskbarItem.index, taskbarItem.rootItem.dragOverIndex);
             } else if (!longPressTriggered && mouse.button === Qt.LeftButton) {
               // regular click behavior
               if (!modelData)
