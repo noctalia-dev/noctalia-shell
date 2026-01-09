@@ -592,6 +592,7 @@ Rectangle {
         id: taskbarItem
         required property var modelData
         required property int index
+        property var rootItem: root
         property ShellScreen screen: root.screen
 
         readonly property bool isRunning: modelData.window !== null
@@ -806,7 +807,7 @@ Rectangle {
               taskbarItem.Drag.drop();
 
               performSwap(taskbarItem.index, root.dragOverIndex);
-              root.saveCustomOrder();
+              taskbarItem.rootItem.saveCustomOrder();
             } else if (!longPressTriggered && mouse.button === Qt.LeftButton) {
               // regular click behavior
               if (!modelData)
@@ -864,7 +865,7 @@ Rectangle {
               }
             }
           }
-          
+
           onEntered: {
             root.hoveredWindowId = taskbarItem.modelData.id;
             if (!taskbarItem.held) {
