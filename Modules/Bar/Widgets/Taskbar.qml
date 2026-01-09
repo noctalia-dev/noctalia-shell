@@ -796,7 +796,11 @@ Rectangle {
             }
           }
 
-          function performSwap(from, to) {
+          // Helper function to reorder the combinedModel array and persist the custom order
+          function performSwap() {
+            var from = taskbarItem.index;
+            var to = taskbarItem.rootItem.dragOverIndex;
+
             if (from !== to && from >= 0 && to >= 0 && from < root.combinedModel.length && to < root.combinedModel.length) {
               taskbarItem.rootItem.reorderModel(from, to);
               taskbarItem.rootItem.saveCustomOrder();
@@ -807,10 +811,11 @@ Rectangle {
             dragTimer.stop();
 
             if (taskbarItem.held) {
+              // we were dragging the window - perform the swap
               taskbarItem.held = false;
               taskbarItem.Drag.drop();
 
-              performSwap(taskbarItem.index, taskbarItem.rootItem.dragOverIndex);
+              performSwap();
             } else if (!longPressTriggered && mouse.button === Qt.LeftButton) {
               // regular click behavior
               if (!modelData)
