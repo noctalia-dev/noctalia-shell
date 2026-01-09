@@ -222,18 +222,18 @@ Popup {
               // Save to cache
               saveSchemesToCache();
             } else {
-              downloadError = I18n.tr("settings.color-scheme.download.error.invalid-response");
+              downloadError = I18n.tr("panels.color-scheme.download-error-invalid-response");
               Logger.e("ColorSchemeDownload", downloadError);
             }
           } catch (e) {
-            downloadError = I18n.tr("settings.color-scheme.download.error.parse-failed", {
+            downloadError = I18n.tr("panels.color-scheme.download-error-parse-failed", {
                                       "error": e.toString()
                                     });
             Logger.e("ColorSchemeDownload", downloadError);
           }
         } else if (xhr.status === 403) {
           // Rate limit hit - try to use cache if available
-          downloadError = I18n.tr("settings.color-scheme.download.error.rate-limit");
+          downloadError = I18n.tr("panels.color-scheme.download-error-rate-limit");
           Logger.w("ColorSchemeDownload", downloadError);
           if (typeof ShellState !== 'undefined' && ShellState.isLoaded) {
             const cacheData = ShellState.getColorSchemesList();
@@ -256,7 +256,7 @@ Popup {
             }
           }
         } else {
-          downloadError = I18n.tr("settings.color-scheme.download.error.api-error", {
+          downloadError = I18n.tr("panels.color-scheme.download-error-api-error", {
                                     "status": xhr.status
                                   });
           Logger.e("ColorSchemeDownload", downloadError);
@@ -372,7 +372,7 @@ Popup {
               getSchemeFilesDirect(scheme);
             }
           } catch (e) {
-            downloadError = I18n.tr("settings.color-scheme.download.error.parse-failed", {
+            downloadError = I18n.tr("panels.color-scheme.download-error-parse-failed", {
                                       "error": e.toString()
                                     });
             downloading = false;
@@ -401,13 +401,13 @@ Popup {
               // Recursively get all files
               getAllFilesRecursive(scheme, response, []);
             } else {
-              downloadError = I18n.tr("settings.color-scheme.download.error.invalid-response");
+              downloadError = I18n.tr("panels.color-scheme.download-error-invalid-response");
               downloading = false;
               downloadingScheme = "";
               Logger.e("ColorSchemeDownload", downloadError);
             }
           } catch (e) {
-            downloadError = I18n.tr("settings.color-scheme.download.error.parse-failed", {
+            downloadError = I18n.tr("panels.color-scheme.download-error-parse-failed", {
                                       "error": e.toString()
                                     });
             downloading = false;
@@ -415,7 +415,7 @@ Popup {
             Logger.e("ColorSchemeDownload", downloadError);
           }
         } else {
-          downloadError = I18n.tr("settings.color-scheme.download.error.api-error", {
+          downloadError = I18n.tr("panels.color-scheme.download-error-api-error", {
                                     "status": xhr.status
                                   });
           downloading = false;
@@ -496,7 +496,7 @@ Popup {
 
   function downloadSchemeFiles(schemeName, files) {
     if (files.length === 0) {
-      downloadError = I18n.tr("settings.color-scheme.download.error.no-files");
+      downloadError = I18n.tr("panels.color-scheme.download-error-no-files");
       downloading = false;
       downloadingScheme = "";
       Logger.e("ColorSchemeDownload", downloadError);
@@ -552,9 +552,9 @@ Popup {
     downloadProcess.exited.connect(function (exitCode) {
       if (exitCode === 0) {
         Logger.i("ColorSchemeDownload", "Scheme downloaded successfully:", schemeName);
-        ToastService.showNotice(I18n.tr("settings.color-scheme.download.success.title"), I18n.tr("settings.color-scheme.download.success.description", {
-                                                                                                   "scheme": schemeName
-                                                                                                 }), "settings-color-scheme");
+        ToastService.showNotice(I18n.tr("panels.color-scheme.download-success-title"), I18n.tr("panels.color-scheme.download-success-description", {
+                                                                                                 "scheme": schemeName
+                                                                                               }), "settings-color-scheme");
         // Set pending scheme to apply after reload
         pendingApplyScheme = schemeName;
         // Reload color schemes
@@ -566,13 +566,13 @@ Popup {
         if (root.lastStderrOutput) {
           errorDetails += " - " + root.lastStderrOutput;
         }
-        downloadError = I18n.tr("settings.color-scheme.download.error.download-failed", {
+        downloadError = I18n.tr("panels.color-scheme.download-error-download-failed", {
                                   "code": exitCode
                                 }) + "\n" + errorDetails;
         Logger.e("ColorSchemeDownload", downloadError);
-        ToastService.showError(I18n.tr("settings.color-scheme.download.error.title"), I18n.tr("settings.color-scheme.download.error.description", {
-                                                                                                "scheme": schemeName
-                                                                                              }) + "\n" + errorDetails);
+        ToastService.showError(I18n.tr("panels.color-scheme.download-error-title"), I18n.tr("panels.color-scheme.download-error-description", {
+                                                                                              "scheme": schemeName
+                                                                                            }) + "\n" + errorDetails);
         // Clean up the partially downloaded directory on failure
         var cleanupScript = "rm -rf '" + targetDir + "'";
         var cleanupProcess = Qt.createQmlObject(`
@@ -654,9 +654,9 @@ Popup {
     deleteProcess.exited.connect(function (exitCode) {
       if (exitCode === 0) {
         Logger.i("ColorSchemeDownload", "Scheme deleted successfully:", schemeName);
-        ToastService.showNotice(I18n.tr("settings.color-scheme.delete.success.title"), I18n.tr("settings.color-scheme.delete.success.description", {
-                                                                                                 "scheme": schemeName
-                                                                                               }), "settings-color-scheme");
+        ToastService.showNotice(I18n.tr("panels.color-scheme.delete-success-title"), I18n.tr("panels.color-scheme.delete-success-description", {
+                                                                                               "scheme": schemeName
+                                                                                             }), "settings-color-scheme");
 
         // If the deleted scheme was the active one, reset to default BEFORE reloading
         if (needsReset) {
@@ -671,9 +671,9 @@ Popup {
         ColorSchemeService.loadColorSchemes();
       } else {
         Logger.e("ColorSchemeDownload", "Delete failed with exit code:", exitCode);
-        ToastService.showError(I18n.tr("settings.color-scheme.delete.error.title"), I18n.tr("settings.color-scheme.delete.error.description", {
-                                                                                              "scheme": schemeName
-                                                                                            }));
+        ToastService.showError(I18n.tr("panels.color-scheme.delete-error-title"), I18n.tr("panels.color-scheme.delete-error-description", {
+                                                                                            "scheme": schemeName
+                                                                                          }));
       }
       deleteProcess.destroy();
     });
@@ -754,7 +754,7 @@ Popup {
       Layout.fillWidth: true
 
       NText {
-        text: I18n.tr("settings.color-scheme.download.title")
+        text: I18n.tr("panels.color-scheme.download-title")
         pointSize: Style.fontSizeL
         font.weight: Style.fontWeightBold
         color: Color.mPrimary
@@ -763,7 +763,7 @@ Popup {
 
       NIconButton {
         icon: "refresh"
-        tooltipText: I18n.tr("settings.color-scheme.download.refresh")
+        tooltipText: I18n.tr("common.refresh")
         enabled: !fetching && !downloading
         onClicked: {
           // Force refresh by clearing cache timestamp and fetching directly from API
@@ -780,7 +780,7 @@ Popup {
 
       NIconButton {
         icon: "close"
-        tooltipText: I18n.tr("tooltips.close")
+        tooltipText: I18n.tr("common.close")
         onClicked: root.close()
       }
     }
@@ -823,7 +823,7 @@ Popup {
       }
 
       NText {
-        text: I18n.tr("settings.color-scheme.download.fetching")
+        text: I18n.tr("panels.color-scheme.download-fetching")
         pointSize: Style.fontSizeM
         color: Color.mOnSurfaceVariant
       }
@@ -934,7 +934,7 @@ Popup {
                 property bool isDownloaded: root.isSchemeDownloaded(schemeRow.schemeName)
 
                 icon: isDownloading ? "" : (isDownloaded ? "trash" : "download")
-                tooltipText: isDownloading ? I18n.tr("settings.color-scheme.download.downloading") : (isDownloaded ? I18n.tr("settings.color-scheme.download.delete") : I18n.tr("settings.color-scheme.download.download"))
+                tooltipText: isDownloading ? I18n.tr("panels.color-scheme.download-downloading") : (isDownloaded ? I18n.tr("common.delete") : I18n.tr("common.download"))
                 enabled: !downloading
                 Layout.alignment: Qt.AlignVCenter
                 visible: !isInstalled || isDownloaded // Show button only if not installed (can download) or if downloaded (can delete)
@@ -968,7 +968,7 @@ Popup {
       }
 
       NText {
-        text: I18n.tr("settings.color-scheme.download.empty")
+        text: I18n.tr("panels.color-scheme.download-empty")
         pointSize: Style.fontSizeM
         color: Color.mOnSurfaceVariant
         Layout.alignment: Qt.AlignHCenter

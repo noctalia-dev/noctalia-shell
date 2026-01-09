@@ -21,8 +21,7 @@ Item {
   readonly property int notificationWidth: Math.round(440 * Style.uiScaleRatio)
   readonly property int shadowPadding: Style.shadowBlurMax + Style.marginL
 
-  // Use exact notification width to match notifications precisely
-  width: notificationWidth
+  width: notificationWidth + shadowPadding * 2
   height: Math.round(contentLayout.implicitHeight + Style.marginM * 2 * 2 + shadowPadding * 2)
   visible: true
   opacity: 0
@@ -37,7 +36,7 @@ Item {
     color: Qt.alpha(Color.mSurface, Settings.data.notifications.backgroundOpacity || 1.0)
 
     // Colored border based on type
-    border.width: Math.max(2, Style.borderM)
+    border.width: Style.borderS
     border.color: {
       var baseColor;
       switch (root.type) {

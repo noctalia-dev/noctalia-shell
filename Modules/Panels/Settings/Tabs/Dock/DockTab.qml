@@ -8,19 +8,6 @@ ColumnLayout {
   id: root
   spacing: 0
 
-  // Helper functions to update arrays immutably
-  function addMonitor(list, name) {
-    const arr = (list || []).slice();
-    if (!arr.includes(name))
-      arr.push(name);
-    return arr;
-  }
-  function removeMonitor(list, name) {
-    return (list || []).filter(function (n) {
-      return n !== name;
-    });
-  }
-
   NTabBar {
     id: subTabBar
     Layout.fillWidth: true
@@ -28,14 +15,15 @@ ColumnLayout {
     currentIndex: tabView.currentIndex
 
     NTabButton {
-      text: I18n.tr("settings.dock.tabs.appearance")
+      text: I18n.tr("common.appearance")
       tabIndex: 0
       checked: subTabBar.currentIndex === 0
     }
     NTabButton {
-      text: I18n.tr("settings.dock.tabs.monitors")
+      text: I18n.tr("common.monitors")
       tabIndex: 1
       checked: subTabBar.currentIndex === 1
+      visible: Settings.data.dock.enabled
     }
   }
 
@@ -49,9 +37,6 @@ ColumnLayout {
     currentIndex: subTabBar.currentIndex
 
     AppearanceSubTab {}
-    MonitorsSubTab {
-      addMonitor: root.addMonitor
-      removeMonitor: root.removeMonitor
-    }
+    MonitorsSubTab {}
   }
 }

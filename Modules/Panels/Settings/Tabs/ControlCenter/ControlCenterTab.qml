@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import "ControlCenter"
 import qs.Commons
+import qs.Services.Noctalia
 import qs.Services.System
 import qs.Services.UI
 import qs.Widgets
@@ -57,9 +57,26 @@ ColumnLayout {
     availableWidgets.clear();
     var sortedEntries = ControlCenterWidgetRegistry.getAvailableWidgets().slice().sort();
     sortedEntries.forEach(entry => {
+                            const isPlugin = ControlCenterWidgetRegistry.isPluginWidget(entry);
+                            let displayName = entry;
+                            let badges = [];
+                            if (isPlugin) {
+                              const pluginId = entry.replace("plugin:", "");
+                              const manifest = PluginRegistry.getPluginManifest(pluginId);
+                              if (manifest && manifest.name) {
+                                displayName = manifest.name;
+                              } else {
+                                displayName = pluginId;
+                              }
+                              badges.push({
+                                            "icon": "plugin",
+                                            "color": Color.mSecondary
+                                          });
+                            }
                             availableWidgets.append({
                                                       "key": entry,
-                                                      "name": entry
+                                                      "name": displayName,
+                                                      "badges": badges
                                                     });
                           });
     // Starts empty
@@ -110,17 +127,17 @@ ColumnLayout {
     currentIndex: tabView.currentIndex
 
     NTabButton {
-      text: I18n.tr("settings.control-center.tabs.appearance")
+      text: I18n.tr("common.appearance")
       tabIndex: 0
       checked: subTabBar.currentIndex === 0
     }
     NTabButton {
-      text: I18n.tr("settings.control-center.tabs.cards")
+      text: I18n.tr("common.cards")
       tabIndex: 1
       checked: subTabBar.currentIndex === 1
     }
     NTabButton {
-      text: I18n.tr("settings.control-center.tabs.control-widgets")
+      text: I18n.tr("common.shortcuts")
       tabIndex: 2
       checked: subTabBar.currentIndex === 2
     }
@@ -144,7 +161,7 @@ ColumnLayout {
       cardsDefault: root.cardsDefault
     }
 
-    ControlWidgetsSubTab {
+    ShortcutsSubTab {
       availableWidgets: availableWidgets
       onAddWidgetToSection: (widgetId, section) => _addWidgetToSection(widgetId, section)
       onRemoveWidgetFromSection: (section, index) => _removeWidgetFromSection(section, index)

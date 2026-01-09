@@ -16,7 +16,7 @@ Singleton {
   readonly property alias data: adapter // Used to access via GitHubService.data.xxx.yyy
 
   // Public properties for easy access
-  property string latestVersion: I18n.tr("system.unknown-version")
+  property string latestVersion: I18n.tr("common.unknown")
   property var contributors: []
 
   // Avatar caching properties (simplified - uses ImageCacheService)
@@ -50,7 +50,7 @@ Singleton {
     JsonAdapter {
       id: adapter
 
-      property string version: I18n.tr("system.unknown-version")
+      property string version: I18n.tr("common.unknown")
       property var contributors: []
       property real timestamp: 0
     }
@@ -149,7 +149,7 @@ Singleton {
 
   // --------------------------------
   function resetCache() {
-    data.version = I18n.tr("system.unknown-version");
+    data.version = I18n.tr("common.unknown");
     data.contributors = [];
     data.timestamp = 0;
 

@@ -26,8 +26,8 @@ Singleton {
       return;
     }
 
-    // If we have a pending tooltip for a different target, cancel it
-    if (pendingTooltip && pendingTooltip.targetItem !== target) {
+    // Cancel any pending tooltip (same or different target)
+    if (pendingTooltip) {
       pendingTooltip.hideImmediately();
       pendingTooltip.destroy();
       pendingTooltip = null;

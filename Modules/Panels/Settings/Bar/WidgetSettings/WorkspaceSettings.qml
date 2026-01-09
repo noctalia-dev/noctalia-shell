@@ -44,12 +44,12 @@ ColumnLayout {
 
   NComboBox {
     id: labelModeCombo
-    label: I18n.tr("bar.widget-settings.workspace.label-mode.label")
-    description: I18n.tr("bar.widget-settings.workspace.label-mode.description")
+    label: I18n.tr("bar.workspace.label-mode-label")
+    description: I18n.tr("bar.workspace.label-mode-description")
     model: [
       {
         "key": "none",
-        "name": I18n.tr("options.workspace-labels.none")
+        "name": I18n.tr("common.none")
       },
       {
         "key": "index",
@@ -70,8 +70,8 @@ ColumnLayout {
   }
 
   NSpinBox {
-    label: I18n.tr("bar.widget-settings.workspace.character-count.label")
-    description: I18n.tr("bar.widget-settings.workspace.character-count.description")
+    label: I18n.tr("bar.workspace.character-count-label")
+    description: I18n.tr("bar.workspace.character-count-description")
     from: 1
     to: 10
     value: valueCharacterCount
@@ -80,29 +80,29 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.workspace.hide-unoccupied.label")
-    description: I18n.tr("bar.widget-settings.workspace.hide-unoccupied.description")
+    label: I18n.tr("bar.workspace.hide-unoccupied-label")
+    description: I18n.tr("bar.workspace.hide-unoccupied-description")
     checked: valueHideUnoccupied
     onToggled: checked => valueHideUnoccupied = checked
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.workspace.show-labels-only-when-occupied.label")
-    description: I18n.tr("bar.widget-settings.workspace.show-labels-only-when-occupied.description")
+    label: I18n.tr("bar.workspace.show-labels-only-when-occupied-label")
+    description: I18n.tr("bar.workspace.show-labels-only-when-occupied-description")
     checked: valueShowLabelsOnlyWhenOccupied
     onToggled: checked => valueShowLabelsOnlyWhenOccupied = checked
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.workspace.follow-focused-screen.label")
-    description: I18n.tr("bar.widget-settings.workspace.follow-focused-screen.description")
+    label: I18n.tr("bar.workspace.follow-focused-screen-label")
+    description: I18n.tr("bar.workspace.follow-focused-screen-description")
     checked: valueFollowFocusedScreen
     onToggled: checked => valueFollowFocusedScreen = checked
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.workspace.enable-scrollwheel.label")
-    description: I18n.tr("bar.widget-settings.workspace.enable-scrollwheel.description")
+    label: I18n.tr("bar.workspace.enable-scrollwheel-label")
+    description: I18n.tr("bar.workspace.enable-scrollwheel-description")
     checked: valueEnableScrollWheel
     onToggled: checked => valueEnableScrollWheel = checked
   }
@@ -112,23 +112,23 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.workspace.show-applications.label")
-    description: I18n.tr("bar.widget-settings.workspace.show-applications.description")
+    label: I18n.tr("bar.workspace.show-applications-label")
+    description: I18n.tr("bar.workspace.show-applications-description")
     checked: valueShowApplications
     onToggled: checked => valueShowApplications = checked
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.active-window.colorize-icons.label")
-    description: I18n.tr("bar.widget-settings.active-window.colorize-icons.description")
+    label: I18n.tr("bar.tray.colorize-icons-label")
+    description: I18n.tr("bar.active-window.colorize-icons-description")
     checked: valueColorizeIcons
     onToggled: checked => valueColorizeIcons = checked
     visible: valueShowApplications
   }
 
   NValueSlider {
-    label: I18n.tr("bar.widget-settings.workspace.unfocused-icons-opacity.label")
-    description: I18n.tr("bar.widget-settings.workspace.unfocused-icons-opacity.description")
+    label: I18n.tr("bar.workspace.unfocused-icons-opacity-label")
+    description: I18n.tr("bar.workspace.unfocused-icons-opacity-description")
     from: 0
     to: 1
     stepSize: 0.01
@@ -139,8 +139,8 @@ ColumnLayout {
   }
 
   NValueSlider {
-    label: I18n.tr("bar.widget-settings.workspace.grouped-border-opacity.label")
-    description: I18n.tr("bar.widget-settings.workspace.grouped-border-opacity.description")
+    label: I18n.tr("bar.workspace.grouped-border-opacity-label")
+    description: I18n.tr("bar.workspace.grouped-border-opacity-description")
     from: 0
     to: 1
     stepSize: 0.01
@@ -151,8 +151,8 @@ ColumnLayout {
   }
 
   NValueSlider {
-    label: I18n.tr("bar.widget-settings.taskbar.icon-scale.label")
-    description: I18n.tr("bar.widget-settings.taskbar.icon-scale.description")
+    label: I18n.tr("bar.taskbar.icon-scale-label")
+    description: I18n.tr("bar.taskbar.icon-scale-description")
     from: 0.5
     to: 1
     stepSize: 0.01

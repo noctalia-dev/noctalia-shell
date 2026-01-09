@@ -14,9 +14,10 @@ ColumnLayout {
   property var addMonitor
   property var removeMonitor
 
-  NHeader {
-    label: I18n.tr("settings.bar.monitors.section.label")
-    description: I18n.tr("settings.bar.monitors.section.description")
+  NText {
+    text: I18n.tr("panels.bar.monitors-desc")
+    wrapMode: Text.WordWrap
+    Layout.fillWidth: true
   }
 
   Repeater {

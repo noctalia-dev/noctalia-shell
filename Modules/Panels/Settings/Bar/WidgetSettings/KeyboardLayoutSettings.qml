@@ -25,21 +25,21 @@ ColumnLayout {
 
   NComboBox {
     visible: valueShowIcon // Hide display mode setting when icon is disabled
-    label: I18n.tr("bar.widget-settings.keyboard-layout.display-mode.label")
-    description: I18n.tr("bar.widget-settings.keyboard-layout.display-mode.description")
+    label: I18n.tr("bar.volume.display-mode-label")
+    description: I18n.tr("bar.volume.display-mode-description")
     minimumWidth: 134
     model: [
       {
         "key": "onhover",
-        "name": I18n.tr("options.display-mode.on-hover")
+        "name": I18n.tr("display-modes.on-hover")
       },
       {
         "key": "forceOpen",
-        "name": I18n.tr("options.display-mode.force-open")
+        "name": I18n.tr("display-modes.force-open")
       },
       {
         "key": "alwaysHide",
-        "name": I18n.tr("options.display-mode.always-hide")
+        "name": I18n.tr("display-modes.always-hide")
       }
     ]
     currentKey: valueDisplayMode
@@ -47,8 +47,8 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.keyboard-layout.show-icon.label")
-    description: I18n.tr("bar.widget-settings.keyboard-layout.show-icon.description")
+    label: I18n.tr("bar.custom-button.show-icon-label")
+    description: I18n.tr("bar.keyboard-layout.show-icon-description")
     checked: valueShowIcon
     onToggled: checked => valueShowIcon = checked
   }

@@ -23,8 +23,8 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.launcher.use-primary-color.label")
-    description: I18n.tr("bar.widget-settings.launcher.use-primary-color.description")
+    label: I18n.tr("bar.clock.use-primary-color-label")
+    description: I18n.tr("bar.clock.use-primary-color-description")
     checked: valueUsePrimaryColor
     onToggled: checked => valueUsePrimaryColor = checked
   }

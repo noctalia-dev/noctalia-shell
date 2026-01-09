@@ -37,14 +37,14 @@ ColumnLayout {
       spacing: Style.marginXS
 
       NText {
-        text: I18n.tr("settings.dock.title") || "Dock"
+        text: I18n.tr("panels.dock.title") || "Dock"
         pointSize: Style.fontSizeXL
         font.weight: Style.fontWeightBold
         color: Color.mPrimary
       }
 
       NText {
-        text: I18n.tr("settings.dock.monitors.section.description")
+        text: I18n.tr("panels.dock.monitors-desc")
         pointSize: Style.fontSizeM
         color: Color.mOnSurfaceVariant
       }
@@ -58,8 +58,8 @@ ColumnLayout {
 
     NToggle {
       Layout.fillWidth: true
-      label: I18n.tr("settings.dock.enabled.label")
-      description: I18n.tr("settings.dock.enabled.description")
+      label: I18n.tr("panels.dock.enabled-label")
+      description: I18n.tr("panels.dock.enabled-description")
       checked: Settings.data.dock.enabled
       onToggled: checked => Settings.data.dock.enabled = checked
     }
@@ -68,20 +68,20 @@ ColumnLayout {
     NComboBox {
       visible: Settings.data.dock.enabled
       Layout.fillWidth: true
-      label: I18n.tr("settings.dock.appearance.display.label")
-      description: I18n.tr("settings.dock.appearance.display.description")
+      label: I18n.tr("panels.display.title")
+      description: I18n.tr("panels.dock.appearance-display-description")
       model: [
         {
           "key": "always_visible",
-          "name": I18n.tr("settings.dock.appearance.display.always-visible")
+          "name": I18n.tr("hide-modes.visible")
         },
         {
           "key": "auto_hide",
-          "name": I18n.tr("settings.dock.appearance.display.auto-hide")
+          "name": I18n.tr("panels.dock.appearance-display-auto-hide")
         },
         {
           "key": "exclusive",
-          "name": I18n.tr("settings.dock.appearance.display.exclusive")
+          "name": I18n.tr("panels.dock.appearance-display-exclusive")
         }
       ]
       currentKey: Settings.data.dock.displayMode
@@ -94,8 +94,8 @@ ColumnLayout {
       spacing: Style.marginXXS
       Layout.fillWidth: true
       NLabel {
-        label: I18n.tr("settings.dock.appearance.background-opacity.label")
-        description: I18n.tr("settings.dock.appearance.background-opacity.description")
+        label: I18n.tr("panels.osd.background-opacity-label")
+        description: I18n.tr("panels.dock.appearance-background-opacity-description")
       }
       NValueSlider {
         Layout.fillWidth: true
@@ -114,8 +114,8 @@ ColumnLayout {
       spacing: Style.marginXXS
       Layout.fillWidth: true
       NLabel {
-        label: I18n.tr("settings.dock.appearance.floating-distance.label")
-        description: I18n.tr("settings.dock.appearance.floating-distance.description")
+        label: I18n.tr("panels.dock.appearance-floating-distance-label")
+        description: I18n.tr("panels.dock.appearance-floating-distance-description")
       }
       NValueSlider {
         Layout.fillWidth: true
@@ -134,8 +134,8 @@ ColumnLayout {
       spacing: Style.marginXXS
       Layout.fillWidth: true
       NLabel {
-        label: I18n.tr("settings.dock.appearance.icon-size.label")
-        description: I18n.tr("settings.dock.appearance.icon-size.description")
+        label: I18n.tr("panels.dock.appearance-icon-size-label")
+        description: I18n.tr("panels.dock.appearance-icon-size-description")
       }
       NValueSlider {
         Layout.fillWidth: true
@@ -151,8 +151,8 @@ ColumnLayout {
     NToggle {
       visible: Settings.data.dock.enabled
       Layout.fillWidth: true
-      label: I18n.tr("settings.dock.monitors.only-same-monitor.label")
-      description: I18n.tr("settings.dock.monitors.only-same-monitor.description")
+      label: I18n.tr("panels.dock.monitors-only-same-monitor-label")
+      description: I18n.tr("panels.dock.monitors-only-same-monitor-description")
       checked: Settings.data.dock.onlySameOutput
       onToggled: checked => Settings.data.dock.onlySameOutput = checked
     }
@@ -160,16 +160,16 @@ ColumnLayout {
     NToggle {
       visible: Settings.data.dock.enabled
       Layout.fillWidth: true
-      label: I18n.tr("settings.dock.appearance.colorize-icons.label")
-      description: I18n.tr("settings.dock.appearance.colorize-icons.description")
+      label: I18n.tr("panels.dock.appearance-colorize-icons-label")
+      description: I18n.tr("panels.dock.appearance-colorize-icons-description")
       checked: Settings.data.dock.colorizeIcons
       onToggled: checked => Settings.data.dock.colorizeIcons = checked
     }
 
     NHeader {
       visible: Settings.data.dock.enabled
-      label: I18n.tr("settings.dock.monitors.section.label")
-      description: I18n.tr("settings.dock.monitors.section.description")
+      label: I18n.tr("panels.dock.monitors-title")
+      description: I18n.tr("panels.dock.monitors-desc")
     }
 
     Repeater {

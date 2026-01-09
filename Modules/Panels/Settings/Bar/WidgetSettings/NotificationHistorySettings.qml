@@ -24,15 +24,15 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.notification-history.show-unread-badge.label")
-    description: I18n.tr("bar.widget-settings.notification-history.show-unread-badge.description")
+    label: I18n.tr("bar.notification-history.show-unread-badge-label")
+    description: I18n.tr("bar.notification-history.show-unread-badge-description")
     checked: valueShowUnreadBadge
     onToggled: checked => valueShowUnreadBadge = checked
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.notification-history.hide-widget-when-zero.label")
-    description: I18n.tr("bar.widget-settings.notification-history.hide-widget-when-zero.description")
+    label: I18n.tr("bar.notification-history.hide-widget-when-zero-label")
+    description: I18n.tr("bar.notification-history.hide-widget-when-zero-description")
     checked: valueHideWhenZero
     onToggled: checked => valueHideWhenZero = checked
   }

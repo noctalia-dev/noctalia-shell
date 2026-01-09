@@ -27,11 +27,6 @@ ColumnLayout {
     spacing: Style.marginXXS
     Layout.fillWidth: true
 
-    NHeader {
-      label: I18n.tr("settings.control-center.shortcuts.section.label")
-      description: I18n.tr("settings.control-center.shortcuts.section.description")
-    }
-
     // Sections
     ColumnLayout {
       Layout.fillWidth: true
@@ -41,7 +36,7 @@ ColumnLayout {
 
       // Left
       NSectionEditor {
-        sectionName: I18n.tr("settings.control-center.shortcuts.sectionLeft")
+        sectionName: I18n.tr("positions.left")
         sectionId: "left"
         settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/ControlCenter/ControlCenterWidgetSettingsDialog.qml")
         maxWidgets: Settings.data.controlCenter.shortcuts["right"].length > 5 ? 0 : (Settings.data.controlCenter.shortcuts["right"].length > 0 ? 5 : 10)
@@ -59,7 +54,7 @@ ColumnLayout {
 
       // Right
       NSectionEditor {
-        sectionName: I18n.tr("settings.control-center.shortcuts.sectionRight")
+        sectionName: I18n.tr("positions.right")
         sectionId: "right"
         settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/ControlCenter/ControlCenterWidgetSettingsDialog.qml")
         maxWidgets: Settings.data.controlCenter.shortcuts["left"].length > 5 ? 0 : (Settings.data.controlCenter.shortcuts["left"].length > 0 ? 5 : 10)

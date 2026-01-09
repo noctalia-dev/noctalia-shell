@@ -49,7 +49,7 @@ Item {
       "Education": I18n.tr("launcher.categories.education"),
       "Game": I18n.tr("launcher.categories.game"),
       "Graphics": I18n.tr("launcher.categories.graphics"),
-      "Network": I18n.tr("launcher.categories.network"),
+      "Network": I18n.tr("common.network"),
       "Office": I18n.tr("launcher.categories.office"),
       "System": I18n.tr("launcher.categories.system"),
       "Misc": I18n.tr("launcher.categories.misc"),
@@ -216,7 +216,7 @@ Item {
   function isAppPinned(app) {
     if (!app)
       return false;
-    const pinnedApps = Settings.data.dock.pinnedApps || [];
+    const pinnedApps = Settings.data.appLauncher.pinnedApps || [];
     const appId = getAppKey(app);
     const normalizedId = normalizeAppId(appId);
     return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
@@ -271,7 +271,7 @@ Item {
     let hasPinned = false;
 
     // Check if there are any pinned apps
-    const pinnedApps = Settings.data.dock.pinnedApps || [];
+    const pinnedApps = Settings.data.appLauncher.pinnedApps || [];
     if (pinnedApps.length > 0) {
       // Verify that at least one pinned app exists in entries
       for (let app of entries) {
@@ -383,7 +383,7 @@ Item {
   }
 
   Connections {
-    target: Settings.data.dock
+    target: Settings.data.appLauncher
     function onPinnedAppsChanged() {
       const wasViewingPinned = selectedCategory === "Pinned";
       updateAvailableCategories();
@@ -603,7 +603,7 @@ Item {
                                 }) ? "unpin" : "pin",
             "tooltip": isAppPinned({
                                      "id": item.appId
-                                   }) ? I18n.tr("launcher.unpin") : I18n.tr("launcher.pin"),
+                                   }) ? I18n.tr("common.unpin") : I18n.tr("common.pin"),
             "action": function () {
               togglePin(item.appId);
             }
@@ -615,13 +615,13 @@ Item {
     if (!appId)
       return;
     const normalizedId = normalizeAppId(appId);
-    let arr = (Settings.data.dock.pinnedApps || []).slice();
+    let arr = (Settings.data.appLauncher.pinnedApps || []).slice();
     const idx = arr.findIndex(pinnedId => normalizeAppId(pinnedId) === normalizedId);
     if (idx >= 0)
       arr.splice(idx, 1);
     else
       arr.push(appId);
-    Settings.data.dock.pinnedApps = arr;
+    Settings.data.appLauncher.pinnedApps = arr;
   }
 
   // -------------------------

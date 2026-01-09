@@ -60,7 +60,7 @@ SmartPanel {
 
           NIconButton {
             icon: "close"
-            tooltipText: I18n.tr("tooltips.close")
+            tooltipText: I18n.tr("common.close")
             baseSize: Style.baseWidgetSize * 0.8
             onClicked: {
               root.close();
@@ -146,7 +146,7 @@ SmartPanel {
                 icon: "memory"
                 suffix: "%"
                 fillColor: SystemStatService.memColor
-                tooltipText: I18n.tr("system-monitor.memory") + `: ${Math.round(SystemStatService.memPercent)}%`
+                tooltipText: I18n.tr("common.memory") + `: ${Math.round(SystemStatService.memPercent)}%`
               }
             }
 
@@ -197,7 +197,7 @@ SmartPanel {
                   icon: "download-speed"
                   suffix: "%"
                   fillColor: Color.mPrimary
-                  tooltipText: I18n.tr("system-monitor.download") + `: ${SystemStatService.formatSpeed(SystemStatService.rxSpeed)}`
+                  tooltipText: I18n.tr("common.download") + `: ${SystemStatService.formatSpeed(SystemStatService.rxSpeed)}`
                   Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -225,7 +225,7 @@ SmartPanel {
                   icon: "upload-speed"
                   suffix: "%"
                   fillColor: Color.mPrimary
-                  tooltipText: I18n.tr("system-monitor.upload") + `: ${SystemStatService.formatSpeed(SystemStatService.txSpeed)}`
+                  tooltipText: I18n.tr("common.upload") + `: ${SystemStatService.formatSpeed(SystemStatService.txSpeed)}`
                   Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -288,7 +288,7 @@ SmartPanel {
                   }
 
                   NText {
-                    text: I18n.tr("system-monitor.memory") + ":"
+                    text: I18n.tr("common.memory") + ":"
                     pointSize: Style.fontSizeXS
                     color: Color.mOnSurfaceVariant
                   }

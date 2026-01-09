@@ -39,7 +39,7 @@ Popup {
         Layout.fillWidth: true
 
         NText {
-          text: I18n.tr("settings.plugins.plugin-settings-title", {
+          text: I18n.tr("panels.plugins.plugin-settings-title", {
                           "plugin": root.currentPlugin?.name || ""
                         })
           pointSize: Style.fontSizeL
@@ -50,7 +50,7 @@ Popup {
 
         NIconButton {
           icon: "close"
-          tooltipText: I18n.tr("tooltips.close")
+          tooltipText: I18n.tr("common.close")
           onClicked: root.close()
         }
       }
@@ -92,7 +92,7 @@ Popup {
               settingsLoader.item.saveSettings();
               root.close();
               if (root.showToastOnSave) {
-                ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.settings-saved"));
+                ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.settings-saved"));
               }
             }
           }
@@ -110,20 +110,22 @@ Popup {
   function openPluginSettings(pluginManifest) {
     currentPlugin = pluginManifest;
 
-    // Get plugin API
-    currentPluginApi = PluginService.getPluginAPI(pluginManifest.id);
+    // Use composite key if available (for custom plugins), otherwise use manifest ID (for official plugins)
+    var pluginId = pluginManifest.compositeKey || pluginManifest.id;
+
+    currentPluginApi = PluginService.getPluginAPI(pluginId);
     if (!currentPluginApi) {
-      Logger.e("NPluginSettingsPopup", "Cannot open settings: plugin not loaded:", pluginManifest.id);
+      Logger.e("NPluginSettingsPopup", "Cannot open settings: plugin not loaded:", pluginId);
       if (showToastOnSave) {
-        ToastService.showError(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.settings-error-not-loaded"));
+        ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.settings-error-not-loaded"));
       }
       return;
     }
 
     // Get plugin directory
-    var pluginDir = PluginRegistry.getPluginDir(pluginManifest.id);
+    var pluginDir = PluginRegistry.getPluginDir(pluginId);
     var settingsPath = pluginDir + "/" + pluginManifest.entryPoints.settings;
-    var loadVersion = PluginRegistry.pluginLoadVersions[pluginManifest.id] || 0;
+    var loadVersion = PluginRegistry.pluginLoadVersions[pluginId] || 0;
 
     // Load settings component (use version counter to avoid caching)
     settingsLoader.setSource("file://" + settingsPath + "?v=" + loadVersion, {

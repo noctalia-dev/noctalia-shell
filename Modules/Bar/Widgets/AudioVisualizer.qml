@@ -130,12 +130,12 @@ Item {
 
     model: [
       {
-        "label": I18n.tr("context-menu.cycle-visualizer"),
+        "label": I18n.tr("actions.cycle-visualizer"),
         "action": "cycle-visualizer",
         "icon": "chart-column"
       },
       {
-        "label": I18n.tr("context-menu.widget-settings"),
+        "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
       },

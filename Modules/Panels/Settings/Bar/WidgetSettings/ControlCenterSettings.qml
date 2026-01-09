@@ -32,42 +32,42 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.control-center.use-distro-logo.label")
-    description: I18n.tr("bar.widget-settings.control-center.use-distro-logo.description")
+    label: I18n.tr("bar.control-center.use-distro-logo-label")
+    description: I18n.tr("bar.control-center.use-distro-logo-description")
     checked: valueUseDistroLogo
     onToggled: checked => valueUseDistroLogo = checked
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.control-center.enable-colorization.label")
-    description: I18n.tr("bar.widget-settings.control-center.enable-colorization.description")
+    label: I18n.tr("bar.custom-button.enable-colorization-label")
+    description: I18n.tr("bar.control-center.enable-colorization-description")
     checked: valueEnableColorization
     onToggled: checked => valueEnableColorization = checked
   }
 
   NComboBox {
     visible: valueEnableColorization
-    label: I18n.tr("bar.widget-settings.control-center.color-selection.label")
-    description: I18n.tr("bar.widget-settings.control-center.color-selection.description")
+    label: I18n.tr("bar.custom-button.color-selection-label")
+    description: I18n.tr("bar.control-center.color-selection-description")
     model: [
       {
-        "name": I18n.tr("options.colors.none"),
+        "name": I18n.tr("common.none"),
         "key": "none"
       },
       {
-        "name": I18n.tr("options.colors.primary"),
+        "name": I18n.tr("colors.primary"),
         "key": "primary"
       },
       {
-        "name": I18n.tr("options.colors.secondary"),
+        "name": I18n.tr("colors.secondary"),
         "key": "secondary"
       },
       {
-        "name": I18n.tr("options.colors.tertiary"),
+        "name": I18n.tr("colors.tertiary"),
         "key": "tertiary"
       },
       {
-        "name": I18n.tr("options.colors.error"),
+        "name": I18n.tr("colors.error"),
         "key": "error"
       }
     ]
@@ -81,8 +81,8 @@ ColumnLayout {
     spacing: Style.marginM
 
     NLabel {
-      label: I18n.tr("bar.widget-settings.control-center.icon.label")
-      description: I18n.tr("bar.widget-settings.control-center.icon.description")
+      label: I18n.tr("common.icon")
+      description: I18n.tr("bar.control-center.icon-description")
     }
 
     NImageRounded {
@@ -106,13 +106,13 @@ ColumnLayout {
     spacing: Style.marginM
     NButton {
       enabled: !valueUseDistroLogo
-      text: I18n.tr("bar.widget-settings.control-center.browse-library")
+      text: I18n.tr("bar.control-center.browse-library")
       onClicked: iconPicker.open()
     }
 
     NButton {
       enabled: !valueUseDistroLogo
-      text: I18n.tr("bar.widget-settings.control-center.browse-file")
+      text: I18n.tr("bar.control-center.browse-file")
       onClicked: imagePicker.openFilePicker()
     }
   }
@@ -128,9 +128,9 @@ ColumnLayout {
 
   NFilePicker {
     id: imagePicker
-    title: I18n.tr("bar.widget-settings.control-center.select-custom-icon")
+    title: I18n.tr("bar.control-center.select-custom-icon")
     selectionMode: "files"
-    nameFilters: ImageCacheService.basicImageFilters
+    nameFilters: ImageCacheService.basicImageFilters.concat(["*.svg"])
     initialPath: Quickshell.env("HOME")
     onAccepted: paths => {
                   if (paths.length > 0) {

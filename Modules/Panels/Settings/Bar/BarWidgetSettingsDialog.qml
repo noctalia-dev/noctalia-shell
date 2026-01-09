@@ -84,7 +84,7 @@ Popup {
 
         NIconButton {
           icon: "close"
-          tooltipText: I18n.tr("tooltips.close")
+          tooltipText: I18n.tr("common.close")
           onClicked: root.close()
         }
       }
@@ -163,13 +163,13 @@ Popup {
         }
 
         NButton {
-          text: I18n.tr("bar.widget-settings.dialog.cancel")
+          text: I18n.tr("common.cancel")
           outlined: true
           onClicked: root.close()
         }
 
         NButton {
-          text: I18n.tr("bar.widget-settings.dialog.apply")
+          text: I18n.tr("common.apply")
           icon: "check"
           onClicked: {
             if (settingsLoader.item && settingsLoader.item.saveSettings) {

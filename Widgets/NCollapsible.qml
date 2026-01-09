@@ -8,8 +8,8 @@ ColumnLayout {
   property string label: ""
   property string description: ""
   property bool expanded: false
-  property bool defaultExpanded: false
   property real contentSpacing: Style.marginM
+  property bool _userInteracted: false
 
   signal toggled(bool expanded)
 
@@ -31,6 +31,7 @@ ColumnLayout {
 
     // Smooth color transitions
     Behavior on color {
+      enabled: root._userInteracted
       ColorAnimation {
         duration: Style.animationNormal
         easing.type: Easing.OutCubic
@@ -38,6 +39,7 @@ ColumnLayout {
     }
 
     Behavior on border.color {
+      enabled: root._userInteracted
       ColorAnimation {
         duration: Style.animationNormal
         easing.type: Easing.OutCubic
@@ -51,6 +53,7 @@ ColumnLayout {
       hoverEnabled: true
 
       onClicked: {
+        root._userInteracted = true;
         root.expanded = !root.expanded;
         root.toggled(root.expanded);
       }
@@ -86,6 +89,7 @@ ColumnLayout {
 
         rotation: root.expanded ? 90 : 0
         Behavior on rotation {
+          enabled: root._userInteracted
           NumberAnimation {
             duration: Style.animationNormal
             easing.type: Easing.OutCubic
@@ -93,6 +97,7 @@ ColumnLayout {
         }
 
         Behavior on color {
+          enabled: root._userInteracted
           ColorAnimation {
             duration: Style.animationNormal
           }
@@ -113,6 +118,7 @@ ColumnLayout {
           wrapMode: Text.WordWrap
 
           Behavior on color {
+            enabled: root._userInteracted
             ColorAnimation {
               duration: Style.animationNormal
             }
@@ -130,6 +136,7 @@ ColumnLayout {
           opacity: 0.87
 
           Behavior on color {
+            enabled: root._userInteracted
             ColorAnimation {
               duration: Style.animationNormal
             }
@@ -152,10 +159,11 @@ ColumnLayout {
     border.width: Style.borderS
 
     // Dynamic height based on content
-    Layout.preferredHeight: visible ? contentLayout.implicitHeight + (Style.marginL * 2) : 0
+    Layout.preferredHeight: expanded ? contentLayout.implicitHeight + (Style.marginL * 2) : 0
 
     // Smooth height animation
     Behavior on Layout.preferredHeight {
+      enabled: root._userInteracted
       NumberAnimation {
         duration: Style.animationNormal
         easing.type: Easing.OutCubic
@@ -173,15 +181,11 @@ ColumnLayout {
     // Fade in animation for content
     opacity: root.expanded ? 1.0 : 0.0
     Behavior on opacity {
+      enabled: root._userInteracted
       NumberAnimation {
         duration: Style.animationNormal
         easing.type: Easing.OutCubic
       }
     }
-  }
-
-  // Initialize expanded state
-  Component.onCompleted: {
-    root.expanded = root.defaultExpanded;
   }
 }

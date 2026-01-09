@@ -15,8 +15,7 @@ RowLayout {
   property var model
   property string currentKey: ""
   property string placeholder: ""
-  property bool isSettings: false
-  property var defaultValue: ""
+  property var defaultValue: undefined
   property string settingsPath: ""
 
   readonly property real preferredHeight: Math.round(Style.baseWidgetSize * 1.1)
@@ -29,10 +28,10 @@ RowLayout {
   opacity: enabled ? 1.0 : 0.6
 
   // Less strict comparison with != (instead of !==) so it can properly compare int vs string (ex for FPS: 30 and "30")
-  readonly property bool isValueChanged: isSettings && (currentKey != defaultValue)
+  readonly property bool isValueChanged: (defaultValue !== undefined) && (currentKey != defaultValue)
 
   readonly property string indicatorTooltip: {
-    if (!isSettings)
+    if (defaultValue === undefined)
       return "";
     var displayValue = "";
     if (defaultValue === "") {
@@ -43,7 +42,7 @@ RowLayout {
           for (var i = 0; i < root.model.length; i++) {
             var item = root.model[i];
             if (item && item.key === "") {
-              displayValue = item.name || I18n.tr("settings.indicator.system-default");
+              displayValue = item.name || I18n.tr("panels.indicator.system-default");
               found = true;
               break;
             }
@@ -52,7 +51,7 @@ RowLayout {
           for (var i = 0; i < root.itemCount(); i++) {
             var item = root.getItem(i);
             if (item && item.key === "") {
-              displayValue = item.name || I18n.tr("settings.indicator.system-default");
+              displayValue = item.name || I18n.tr("panels.indicator.system-default");
               found = true;
               break;
             }
@@ -61,7 +60,7 @@ RowLayout {
       }
       // If not found in model, show "System Default" instead of "(empty)"
       if (!found) {
-        displayValue = I18n.tr("settings.indicator.system-default");
+        displayValue = I18n.tr("panels.indicator.system-default");
       }
     } else {
       // Try to find the display name for the default key in the model
@@ -91,7 +90,7 @@ RowLayout {
         displayValue = String(defaultValue);
       }
     }
-    return I18n.tr("settings.indicator.default-value", {
+    return I18n.tr("panels.indicator.default-value", {
                      "value": displayValue
                    });
   }
@@ -128,7 +127,7 @@ RowLayout {
   NLabel {
     label: root.label
     description: root.description
-    showIndicator: root.isSettings && root.isValueChanged
+    showIndicator: root.isValueChanged
     indicatorTooltip: root.indicatorTooltip
   }
 

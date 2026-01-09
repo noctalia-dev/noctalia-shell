@@ -97,7 +97,7 @@ NBox {
         }
 
         NText {
-          text: brightnessMonitor ? I18n.tr("settings.display.monitors.brightness") : "No display"
+          text: brightnessMonitor ? I18n.tr("common.brightness") : "No display"
           pointSize: Style.fontSizeXS
           color: Color.mOnSurfaceVariant
           elide: Text.ElideRight

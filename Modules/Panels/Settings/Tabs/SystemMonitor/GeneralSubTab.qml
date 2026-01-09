@@ -11,19 +11,12 @@ ColumnLayout {
 
   property var screen
 
-  NHeader {
-    Layout.fillWidth: true
-    label: I18n.tr("settings.system-monitor.general.section.label")
-    description: I18n.tr("settings.system-monitor.general.section.description")
-  }
-
   NToggle {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginM
-    label: I18n.tr("settings.system-monitor.enable-dgpu-monitoring.label")
-    description: I18n.tr("settings.system-monitor.enable-dgpu-monitoring.description")
+    label: I18n.tr("panels.system-monitor.enable-dgpu-monitoring-label")
+    description: I18n.tr("panels.system-monitor.enable-dgpu-monitoring-description")
     checked: Settings.data.systemMonitor.enableDgpuMonitoring
-    isSettings: true
     defaultValue: Settings.getDefaultValue("systemMonitor.enableDgpuMonitoring")
     onToggled: checked => Settings.data.systemMonitor.enableDgpuMonitoring = checked
   }
@@ -34,10 +27,9 @@ ColumnLayout {
     spacing: Style.marginM
 
     NToggle {
-      label: I18n.tr("settings.system-monitor.use-custom-highlight-colors.label")
-      description: I18n.tr("settings.system-monitor.use-custom-highlight-colors.description")
+      label: I18n.tr("panels.system-monitor.use-custom-highlight-colors-label")
+      description: I18n.tr("panels.system-monitor.use-custom-highlight-colors-description")
       checked: Settings.data.systemMonitor.useCustomColors
-      isSettings: true
       defaultValue: Settings.getDefaultValue("systemMonitor.useCustomColors")
       onToggled: checked => {
                    // If enabling custom colors and no custom color is saved, persist current theme colors
@@ -64,7 +56,7 @@ ColumnLayout {
       spacing: Style.marginM
 
       NText {
-        text: I18n.tr("settings.system-monitor.warning-color.label")
+        text: I18n.tr("panels.system-monitor.warning-color-label")
         pointSize: Style.fontSizeS
       }
 
@@ -83,7 +75,7 @@ ColumnLayout {
       spacing: Style.marginM
 
       NText {
-        text: I18n.tr("settings.system-monitor.critical-color.label")
+        text: I18n.tr("panels.system-monitor.critical-color-label")
         pointSize: Style.fontSizeS
       }
 
@@ -96,5 +88,18 @@ ColumnLayout {
         onColorSelected: color => Settings.data.systemMonitor.criticalColor = color
       }
     }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  NTextInput {
+    label: I18n.tr("panels.system-monitor.external-monitor-label")
+    description: I18n.tr("panels.system-monitor.external-monitor-description")
+    placeholderText: I18n.tr("panels.system-monitor.external-monitor-placeholder")
+    text: Settings.data.systemMonitor.externalMonitor
+    defaultValue: Settings.getDefaultValue("systemMonitor.externalMonitor")
+    onTextChanged: Settings.data.systemMonitor.externalMonitor = text
   }
 }

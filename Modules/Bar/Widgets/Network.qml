@@ -40,12 +40,12 @@ Item {
 
     model: [
       {
-        "label": Settings.data.network.wifiEnabled ? I18n.tr("context-menu.disable-wifi") : I18n.tr("context-menu.enable-wifi"),
+        "label": Settings.data.network.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
         "action": "toggle-wifi",
         "icon": Settings.data.network.wifiEnabled ? "wifi-off" : "wifi"
       },
       {
-        "label": I18n.tr("context-menu.widget-settings"),
+        "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
       },
@@ -132,7 +132,7 @@ Item {
           else if (NetworkService.activeEthernetIf && NetworkService.activeEthernetIf.length > 0)
             base = NetworkService.activeEthernetIf;
           else
-            base = I18n.tr("quickSettings.wifi.label.ethernet");
+            base = I18n.tr("control-center.wifi.label-ethernet");
           const speed = (d.speed && d.speed.length > 0) ? d.speed : "";
           return speed ? (base + " — " + speed) : base;
         }

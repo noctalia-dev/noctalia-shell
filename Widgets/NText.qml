@@ -7,6 +7,7 @@ Text {
   id: root
 
   property bool richTextEnabled: false
+  property bool markdownTextEnabled: false
   property string family: Settings.data.ui.fontDefault
   property real pointSize: Style.fontSizeM
   property bool applyUiScale: true
@@ -26,5 +27,12 @@ Text {
   wrapMode: Text.NoWrap
   verticalAlignment: Text.AlignVCenter
 
-  textFormat: richTextEnabled ? Text.RichText : Text.PlainText
+  textFormat: {
+    if (root.richTextEnabled) {
+      return Text.RichText;
+    } else if (root.markdownTextEnabled) {
+      return Text.MarkdownText;
+    }
+    return Text.PlainText;
+  }
 }

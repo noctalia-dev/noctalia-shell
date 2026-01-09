@@ -31,7 +31,7 @@ NIconButton {
   readonly property bool usePrimaryColor: (widgetSettings.usePrimaryColor !== undefined) ? widgetSettings.usePrimaryColor : ((widgetMetadata && widgetMetadata.usePrimaryColor !== undefined) ? widgetMetadata.usePrimaryColor : true)
 
   icon: iconName
-  tooltipText: I18n.tr("context-menu.open-launcher")
+  tooltipText: I18n.tr("actions.open-launcher")
   tooltipDirection: BarService.getTooltipDirection()
   baseSize: Style.capsuleHeight
   applyUiScale: false
@@ -48,12 +48,12 @@ NIconButton {
 
     model: [
       {
-        "label": I18n.tr("context-menu.launcher-settings"),
+        "label": I18n.tr("actions.launcher-settings"),
         "action": "launcher-settings",
         "icon": "adjustments"
       },
       {
-        "label": I18n.tr("context-menu.widget-settings"),
+        "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
       }

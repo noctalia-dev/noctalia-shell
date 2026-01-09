@@ -39,28 +39,33 @@ ColumnLayout {
   NTabBar {
     id: subTabBar
     Layout.fillWidth: true
-    distributeEvenly: true
+    distributeEvenly: false // this is too cramped on this tab to split evenly
     currentIndex: tabView.currentIndex
 
     NTabButton {
-      text: I18n.tr("settings.notifications.tabs.general")
+      text: I18n.tr("common.appearance")
       tabIndex: 0
       checked: subTabBar.currentIndex === 0
     }
     NTabButton {
-      text: I18n.tr("settings.notifications.tabs.sounds")
+      text: I18n.tr("common.duration")
       tabIndex: 1
       checked: subTabBar.currentIndex === 1
     }
     NTabButton {
-      text: I18n.tr("settings.notifications.tabs.history")
+      text: I18n.tr("common.history")
       tabIndex: 2
       checked: subTabBar.currentIndex === 2
     }
     NTabButton {
-      text: I18n.tr("settings.notifications.tabs.toast")
+      text: I18n.tr("common.sound")
       tabIndex: 3
       checked: subTabBar.currentIndex === 3
+    }
+    NTabButton {
+      text: I18n.tr("common.toast")
+      tabIndex: 4
+      checked: subTabBar.currentIndex === 4
     }
   }
 
@@ -77,20 +82,21 @@ ColumnLayout {
       addMonitor: root.addMonitor
       removeMonitor: root.removeMonitor
     }
-    SoundsSubTab {
+    DurationSubTab {}
+    HistorySubTab {}
+    SoundSubTab {
       onOpenUnifiedPicker: root.openUnifiedSoundPicker()
       onOpenLowPicker: root.openLowSoundPicker()
       onOpenNormalPicker: root.openNormalSoundPicker()
       onOpenCriticalPicker: root.openCriticalSoundPicker()
     }
-    HistorySubTab {}
     ToastSubTab {}
   }
 
   // File Pickers for Sound Files
   NFilePicker {
     id: unifiedSoundFilePicker
-    title: I18n.tr("settings.notifications.sounds.files.unified.select-title")
+    title: I18n.tr("panels.notifications.sounds-files-unified-select-title")
     selectionMode: "files"
     initialPath: Quickshell.env("HOME")
     nameFilters: ["*.wav", "*.mp3", "*.ogg", "*.flac", "*.m4a", "*.aac"]
@@ -106,7 +112,7 @@ ColumnLayout {
 
   NFilePicker {
     id: lowSoundFilePicker
-    title: I18n.tr("settings.notifications.sounds.files.low.select-title")
+    title: I18n.tr("panels.notifications.sounds-files-low-select-title")
     selectionMode: "files"
     initialPath: Quickshell.env("HOME")
     nameFilters: ["*.wav", "*.mp3", "*.ogg", "*.flac", "*.m4a", "*.aac"]
@@ -119,7 +125,7 @@ ColumnLayout {
 
   NFilePicker {
     id: normalSoundFilePicker
-    title: I18n.tr("settings.notifications.sounds.files.normal.select-title")
+    title: I18n.tr("panels.notifications.sounds-files-normal-select-title")
     selectionMode: "files"
     initialPath: Quickshell.env("HOME")
     nameFilters: ["*.wav", "*.mp3", "*.ogg", "*.flac", "*.m4a", "*.aac"]
@@ -132,7 +138,7 @@ ColumnLayout {
 
   NFilePicker {
     id: criticalSoundFilePicker
-    title: I18n.tr("settings.notifications.sounds.files.critical.select-title")
+    title: I18n.tr("panels.notifications.sounds-files-critical-select-title")
     selectionMode: "files"
     initialPath: Quickshell.env("HOME")
     nameFilters: ["*.wav", "*.mp3", "*.ogg", "*.flac", "*.m4a", "*.aac"]

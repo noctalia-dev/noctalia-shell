@@ -603,7 +603,7 @@ Popup {
         }
 
         NLabel {
-          label: I18n.tr("widgets.color-picker.palette.label")
+          label: I18n.tr("widgets.color-picker.palette-label")
           Layout.fillWidth: true
         }
 
@@ -623,7 +623,7 @@ Popup {
             NLabel {
               Layout.columnSpan: 17
               Layout.fillWidth: true
-              description: I18n.tr("widgets.color-picker.palette.theme-colors")
+              description: I18n.tr("widgets.color-picker.palette-theme-colors")
             }
 
             Repeater {
@@ -695,7 +695,7 @@ Popup {
             NLabel {
               Layout.columnSpan: 17
               Layout.fillWidth: true
-              description: I18n.tr("widgets.color-picker.palette.description")
+              description: I18n.tr("widgets.color-picker.palette-description")
             }
 
             Repeater {
@@ -744,7 +744,7 @@ Popup {
 
       NButton {
         id: cancelButton
-        text: I18n.tr("widgets.color-picker.cancel")
+        text: I18n.tr("common.cancel")
         outlined: cancelButton.hovered ? false : true
         onClicked: {
           root.close();
@@ -752,7 +752,7 @@ Popup {
       }
 
       NButton {
-        text: I18n.tr("widgets.color-picker.apply")
+        text: I18n.tr("common.apply")
         icon: "check"
         onClicked: {
           root.colorSelected(root.selectedColor);

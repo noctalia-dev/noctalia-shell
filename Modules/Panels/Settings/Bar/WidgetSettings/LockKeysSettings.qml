@@ -36,8 +36,8 @@ ColumnLayout {
     spacing: Style.marginM
 
     NToggle {
-      label: I18n.tr("bar.widget-settings.lock-keys.show-caps-lock.label")
-      description: I18n.tr("bar.widget-settings.lock-keys.show-caps-lock.description")
+      label: I18n.tr("bar.lock-keys.show-caps-lock-label")
+      description: I18n.tr("bar.lock-keys.show-caps-lock-description")
       checked: valueShowCapsLock
       onToggled: checked => valueShowCapsLock = checked
     }
@@ -50,7 +50,7 @@ ColumnLayout {
     }
 
     NButton {
-      text: I18n.tr("bar.widget-settings.lock-keys.browse")
+      text: I18n.tr("common.browse")
       onClicked: capsPicker.open()
       enabled: valueShowCapsLock
     }
@@ -69,8 +69,8 @@ ColumnLayout {
     spacing: Style.marginM
 
     NToggle {
-      label: I18n.tr("bar.widget-settings.lock-keys.show-num-lock.label")
-      description: I18n.tr("bar.widget-settings.lock-keys.show-num-lock.description")
+      label: I18n.tr("bar.lock-keys.show-num-lock-label")
+      description: I18n.tr("bar.lock-keys.show-num-lock-description")
       checked: valueShowNumLock
       onToggled: checked => valueShowNumLock = checked
     }
@@ -83,7 +83,7 @@ ColumnLayout {
     }
 
     NButton {
-      text: I18n.tr("bar.widget-settings.lock-keys.browse")
+      text: I18n.tr("common.browse")
       onClicked: numPicker.open()
       enabled: valueShowNumLock
     }
@@ -102,8 +102,8 @@ ColumnLayout {
     spacing: Style.marginM
 
     NToggle {
-      label: I18n.tr("bar.widget-settings.lock-keys.show-scroll-lock.label")
-      description: I18n.tr("bar.widget-settings.lock-keys.show-scroll-lock.description")
+      label: I18n.tr("bar.lock-keys.show-scroll-lock-label")
+      description: I18n.tr("bar.lock-keys.show-scroll-lock-description")
       checked: valueShowScrollLock
       onToggled: checked => valueShowScrollLock = checked
     }
@@ -116,7 +116,7 @@ ColumnLayout {
     }
 
     NButton {
-      text: I18n.tr("bar.widget-settings.lock-keys.browse")
+      text: I18n.tr("common.browse")
       onClicked: scrollPicker.open()
       enabled: valueShowScrollLock
     }

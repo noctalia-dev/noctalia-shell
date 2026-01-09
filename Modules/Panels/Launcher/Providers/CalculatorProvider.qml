@@ -3,6 +3,7 @@ import Quickshell
 import "../../../../Helpers/AdvancedMath.js" as AdvancedMath
 import qs.Commons
 import qs.Services.Keyboard
+import qs.Services.UI
 
 Item {
   id: root
@@ -30,17 +31,19 @@ Item {
 
     try {
       const result = AdvancedMath.evaluate(trimmed);
+      const formattedResult = AdvancedMath.formatResult(result);
       return [
             {
-              "name": AdvancedMath.formatResult(result),
-              "description": `${trimmed} = ${result}`,
+              "name": formattedResult,
+              "description": I18n.tr("launcher.providers.calculator-press-enter-to-copy"),
               "icon": iconMode === "tabler" ? "calculator" : "accessories-calculator",
               "isTablerIcon": true,
               "isImage": false,
               "provider": root,
               "onActivate": function () {
-                // Copy result to clipboard
-                ClipboardService.copyText(String(AdvancedMath.formatResult(result)));
+                // Copy result to clipboard via xclip
+                Quickshell.execDetached(["bash", "-c", "echo -n '" + formattedResult.replace(/'/g, "'\\''") + "' | wl-copy"]);
+                ToastService.showNotice("Copied", formattedResult);
                 if (launcher)
                   launcher.close();
               }

@@ -94,17 +94,17 @@ Item {
 
     model: [
       {
-        "label": I18n.tr("context-menu.toggle-mute"),
+        "label": I18n.tr("actions.toggle-mute"),
         "action": "toggle-mute",
         "icon": AudioService.inputMuted ? "microphone-off" : "microphone"
       },
       {
-        "label": I18n.tr("context-menu.open-mixer"),
+        "label": I18n.tr("actions.open-mixer"),
         "action": "open-mixer",
         "icon": "adjustments"
       },
       {
-        "label": I18n.tr("context-menu.widget-settings"),
+        "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
       },

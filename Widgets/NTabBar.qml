@@ -10,7 +10,7 @@ Rectangle {
   // Public properties
   property int currentIndex: 0
   property real spacing: Style.marginS
-  property real margins: Style.marginXS
+  property real margins: 0
   property real tabHeight: Style.baseWidgetSize
   property bool distributeEvenly: false
   default property alias content: tabRow.children
@@ -19,8 +19,14 @@ Rectangle {
   Component.onCompleted: _applyDistribution()
 
   function _applyDistribution() {
-    if (!distributeEvenly)
+    if (!distributeEvenly) {
+      for (var i = 0; i < tabRow.children.length; i++) {
+        var child = tabRow.children[i];
+        child.Layout.fillWidth = true;
+      }
       return;
+    }
+
     for (var i = 0; i < tabRow.children.length; i++) {
       var child = tabRow.children[i];
       child.Layout.fillWidth = true;

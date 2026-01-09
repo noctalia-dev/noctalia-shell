@@ -101,7 +101,7 @@ Item {
       ctx.lineCap = Settings.data.general.iRadiusRatio > 0 ? "round" : "butt";
 
       // Track uses outline for contrast against surfaceVariant backgrounds
-      ctx.strokeStyle = Color.mOutline;
+      ctx.strokeStyle = Color.mSurface;
       ctx.beginPath();
       ctx.arc(cx, cy, r, start, endBg);
       ctx.stroke();

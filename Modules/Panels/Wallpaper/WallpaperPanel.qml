@@ -284,7 +284,7 @@ SmartPanel {
 
             NIconButton {
               icon: "palette"
-              tooltipText: I18n.tr("wallpaper.panel.solid-color.tooltip")
+              tooltipText: I18n.tr("wallpaper.panel.solid-color-tooltip")
               baseSize: Style.baseWidgetSize * 0.8
               colorBg: Settings.data.wallpaper.useSolidColor ? Color.mPrimary : Color.mSurfaceVariant
               colorFg: Settings.data.wallpaper.useSolidColor ? Color.mOnPrimary : Color.mPrimary
@@ -293,7 +293,7 @@ SmartPanel {
 
             NIconButton {
               icon: "settings"
-              tooltipText: I18n.tr("settings.wallpaper.settings.section.label")
+              tooltipText: I18n.tr("panels.wallpaper.settings-title")
               baseSize: Style.baseWidgetSize * 0.8
               onClicked: {
                 var settingsPanel = PanelService.getPanel("settingsPanel", screen);
@@ -319,14 +319,14 @@ SmartPanel {
             //Hide Wallpaper Filenames
             NIconButton {
               icon: Settings.data.wallpaper.hideWallpaperFilenames ? "eye-closed" : "eye"
-              tooltipText: Settings.data.wallpaper.hideWallpaperFilenames ? I18n.tr("settings.wallpaper.settings.hide-wallpaper-filenames.tooltip-show") : I18n.tr("settings.wallpaper.settings.hide-wallpaper-filenames.tooltip-hide")
+              tooltipText: Settings.data.wallpaper.hideWallpaperFilenames ? I18n.tr("panels.wallpaper.settings-hide-wallpaper-filenames-tooltip-show") : I18n.tr("panels.wallpaper.settings-hide-wallpaper-filenames-tooltip-hide")
               baseSize: Style.baseWidgetSize * 0.8
               onClicked: Settings.data.wallpaper.hideWallpaperFilenames = !Settings.data.wallpaper.hideWallpaperFilenames
             }
 
             NIconButton {
               icon: "close"
-              tooltipText: I18n.tr("tooltips.close")
+              tooltipText: I18n.tr("common.close")
               baseSize: Style.baseWidgetSize * 0.8
               onClicked: root.close()
             }
@@ -337,8 +337,8 @@ SmartPanel {
           }
 
           NToggle {
-            label: I18n.tr("wallpaper.panel.apply-all-monitors.label")
-            description: I18n.tr("wallpaper.panel.apply-all-monitors.description")
+            label: I18n.tr("wallpaper.panel.apply-all-monitors-label")
+            description: I18n.tr("wallpaper.panel.apply-all-monitors-description")
             checked: Settings.data.wallpaper.setWallpaperOnAllMonitors
             onToggled: checked => Settings.data.wallpaper.setWallpaperOnAllMonitors = checked
             Layout.fillWidth: true
@@ -453,11 +453,11 @@ SmartPanel {
               model: [
                 {
                   "key": "local",
-                  "name": I18n.tr("wallpaper.panel.source.local")
+                  "name": I18n.tr("common.local")
                 },
                 {
                   "key": "wallhaven",
-                  "name": I18n.tr("wallpaper.panel.source.wallhaven")
+                  "name": I18n.tr("wallpaper.panel.source-wallhaven")
                 }
               ]
               currentKey: Settings.data.wallpaper.useWallhaven ? "wallhaven" : "local"
@@ -507,7 +507,7 @@ SmartPanel {
             NIconButton {
               id: wallhavenSettingsButton
               icon: "settings"
-              tooltipText: I18n.tr("wallpaper.panel.wallhaven-settings.title")
+              tooltipText: I18n.tr("wallpaper.panel.wallhaven-settings-title")
               baseSize: Style.baseWidgetSize * 0.8
               visible: Settings.data.wallpaper.useWallhaven
               onClicked: {
@@ -1227,7 +1227,7 @@ SmartPanel {
             }
 
             NText {
-              text: wallpaperId || I18n.tr("wallpaper.unknown")
+              text: wallpaperId || I18n.tr("common.unknown")
               visible: !Settings.data.wallpaper.hideWallpaperFilenames
               color: hoverHandler.hovered || wallhavenGridView.currentIndex === index ? Color.mOnSurface : Color.mOnSurfaceVariant
               pointSize: Style.fontSizeXS

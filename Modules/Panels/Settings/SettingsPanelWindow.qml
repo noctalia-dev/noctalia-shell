@@ -11,8 +11,8 @@ FloatingWindow {
   id: root
 
   title: "Noctalia"
-  minimumSize: Qt.size(820 * Style.uiScaleRatio, 910 * Style.uiScaleRatio)
-  implicitWidth: Math.round(820 * Style.uiScaleRatio)
+  minimumSize: Qt.size(840 * Style.uiScaleRatio, 910 * Style.uiScaleRatio)
+  implicitWidth: Math.round(840 * Style.uiScaleRatio)
   implicitHeight: Math.round(910 * Style.uiScaleRatio)
   color: Color.mSurface
 

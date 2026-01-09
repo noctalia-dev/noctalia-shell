@@ -27,9 +27,9 @@ SmartPanel {
     readonly property string previousVersion: UpdateService.previousVersion
     readonly property bool hasPreviousVersion: previousVersion && previousVersion.length > 0
     readonly property var releaseHighlights: UpdateService.releaseHighlights || []
-    readonly property string subtitleText: hasPreviousVersion ? I18n.tr("changelog.panel.subtitle.updated", {
+    readonly property string subtitleText: hasPreviousVersion ? I18n.tr("changelog.panel.subtitle-updated", {
                                                                           "previousVersion": previousVersion
-                                                                        }) : I18n.tr("changelog.panel.subtitle.fresh")
+                                                                        }) : I18n.tr("changelog.panel.subtitle-fresh")
 
     function headingLevel(text) {
       if (!text)
@@ -99,7 +99,7 @@ SmartPanel {
 
         NIconButton {
           icon: "close"
-          tooltipText: I18n.tr("tooltips.close")
+          tooltipText: I18n.tr("common.close")
           onClicked: root.close()
           Layout.alignment: Qt.AlignTop | Qt.AlignRight
           Layout.preferredHeight: Style.baseWidgetSize
@@ -121,7 +121,7 @@ SmartPanel {
           spacing: Style.marginS
 
           NText {
-            text: hasPreviousVersion ? previousVersion : I18n.tr("changelog.panel.version.new-user")
+            text: hasPreviousVersion ? previousVersion : I18n.tr("changelog.panel.version-new-user")
             font.weight: Style.fontWeightSemiBold
             color: Color.mPrimary
           }
@@ -211,7 +211,7 @@ SmartPanel {
         NButton {
           Layout.fillWidth: true
           icon: "brand-discord"
-          text: I18n.tr("changelog.panel.buttons.discord")
+          text: I18n.tr("changelog.panel.buttons-discord")
           outlined: true
           onClicked: UpdateService.openDiscord()
         }
@@ -220,7 +220,7 @@ SmartPanel {
           Layout.fillWidth: true
           visible: UpdateService.feedbackUrl !== ""
           icon: "forms"
-          text: I18n.tr("changelog.panel.buttons.feedback")
+          text: I18n.tr("changelog.panel.buttons-feedback")
           outlined: true
           onClicked: UpdateService.openFeedbackForm()
         }
@@ -228,7 +228,7 @@ SmartPanel {
         NButton {
           Layout.fillWidth: true
           icon: "check"
-          text: I18n.tr("changelog.panel.buttons.dismiss")
+          text: I18n.tr("changelog.panel.buttons-dismiss")
           onClicked: root.close()
         }
       }

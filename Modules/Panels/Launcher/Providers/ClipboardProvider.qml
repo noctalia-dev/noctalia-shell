@@ -146,7 +146,7 @@ Item {
       return [
             {
               "name": I18n.tr("launcher.providers.clipboard-loading"),
-              "description": I18n.tr("launcher.providers.clipboard-loading-description"),
+              "description": I18n.tr("launcher.providers.emoji-loading-description"),
               "icon": iconMode === "tabler" ? "refresh" : "view-refresh",
               "isTablerIcon": true,
               "isImage": false,
@@ -165,7 +165,7 @@ Item {
       return [
             {
               "name": I18n.tr("launcher.providers.clipboard-loading"),
-              "description": I18n.tr("launcher.providers.clipboard-loading-description"),
+              "description": I18n.tr("launcher.providers.emoji-loading-description"),
               "icon": iconMode === "tabler" ? "refresh" : "view-refresh",
               "isTablerIcon": true,
               "isImage": false,
@@ -228,7 +228,7 @@ Item {
   }
 
   function formatImageEntry(item) {
-    const meta = parseImageMeta(item.preview);
+    const meta = ClipboardService.parseImageMeta(item.preview);
 
     return {
       "name": meta ? `Image ${meta.w}×${meta.h}` : "Image",
@@ -261,9 +261,14 @@ Item {
         description = description.substring(0, 77) + "...";
       }
     } else {
-      const chars = preview.length;
-      const words = preview.split(/\s+/).length;
-      description = `${chars} characters, ${words} word${words !== 1 ? 's' : ''}`;
+      // Preview is truncated at ~100 chars, so we can't show exact count
+      if (preview.length >= 100) {
+        description = I18n.tr("toast.clipboard.long-text");
+      } else {
+        const chars = preview.length;
+        const words = preview.split(/\s+/).length;
+        description = `${chars} characters, ${words} word${words !== 1 ? 's' : ''}`;
+      }
     }
 
     return {
@@ -275,22 +280,6 @@ Item {
       "clipboardId": item.id,
       "preview": preview,
       "provider": root
-    };
-  }
-
-  function parseImageMeta(preview) {
-    const re = /\[\[\s*binary data\s+([\d\.]+\s*(?:KiB|MiB|GiB|B))\s+(\w+)\s+(\d+)x(\d+)\s*\]\]/i;
-    const match = (preview || "").match(re);
-
-    if (!match) {
-      return null;
-    }
-
-    return {
-      "size": match[1],
-      "fmt": (match[2] || "").toUpperCase(),
-      "w": Number(match[3]),
-      "h": Number(match[4])
     };
   }
 

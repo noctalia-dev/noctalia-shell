@@ -72,8 +72,8 @@ ColumnLayout {
     spacing: Style?.marginM ?? 8
 
     NLabel {
-      label: I18n.tr("settings.control-center.shortcuts.custom-button.icon.label")
-      description: I18n.tr("settings.control-center.shortcuts.custom-button.icon.description")
+      label: I18n.tr("common.icon")
+      description: I18n.tr("bar.custom-button.icon-description")
     }
 
     NIcon {
@@ -84,7 +84,7 @@ ColumnLayout {
     }
 
     NButton {
-      text: I18n.tr("settings.control-center.shortcuts.custom-button.browse")
+      text: I18n.tr("common.browse")
       onClicked: iconPicker.open()
     }
   }
@@ -99,8 +99,8 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
-    label: I18n.tr("settings.control-center.shortcuts.custom-button.general-tooltip-text.label")
-    description: I18n.tr("settings.control-center.shortcuts.custom-button.general-tooltip-text.description")
+    label: I18n.tr("panels.control-center.shortcuts-custom-button-general-tooltip-text-label")
+    description: I18n.tr("panels.control-center.shortcuts-custom-button-general-tooltip-text-description")
     placeholderText: I18n.tr("placeholders.enter-tooltip")
     text: _settings.generalTooltipText
     onTextChanged: _settings.generalTooltipText = text
@@ -108,8 +108,8 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
-    label: I18n.tr("settings.control-center.shortcuts.custom-button.on-clicked.label")
-    description: I18n.tr("settings.control-center.shortcuts.custom-button.on-clicked.description")
+    label: I18n.tr("panels.control-center.shortcuts-custom-button-on-clicked-label")
+    description: I18n.tr("bar.custom-button.left-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onClicked
     onTextChanged: _settings.onClicked = text
@@ -117,8 +117,8 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
-    label: I18n.tr("settings.control-center.shortcuts.custom-button.on-right-clicked.label")
-    description: I18n.tr("settings.control-center.shortcuts.custom-button.on-right-clicked.description")
+    label: I18n.tr("panels.control-center.shortcuts-custom-button-on-right-clicked-label")
+    description: I18n.tr("bar.custom-button.right-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onRightClicked
     onTextChanged: _settings.onRightClicked = text
@@ -126,8 +126,8 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
-    label: I18n.tr("settings.control-center.shortcuts.custom-button.on-middle-clicked.label")
-    description: I18n.tr("settings.control-center.shortcuts.custom-button.on-middle-clicked.description")
+    label: I18n.tr("panels.control-center.shortcuts-custom-button-on-middle-clicked-label")
+    description: I18n.tr("bar.custom-button.middle-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onMiddleClicked
     onTextChanged: _settings.onMiddleClicked = text
@@ -138,8 +138,8 @@ ColumnLayout {
   NToggle {
     id: enableOnStateLogicToggle
     Layout.fillWidth: true
-    label: I18n.tr("settings.control-center.shortcuts.custom-button.enable-on-state-logic.label")
-    description: I18n.tr("settings.control-center.shortcuts.custom-button.enable-on-state-logic.description")
+    label: I18n.tr("panels.control-center.shortcuts-custom-button-enable-on-state-logic-label")
+    description: I18n.tr("panels.control-center.shortcuts-custom-button-enable-on-state-logic-description")
     checked: _settings.enableOnStateLogic
     onToggled: checked => _settings.enableOnStateLogic = checked
   }
@@ -150,7 +150,7 @@ ColumnLayout {
     spacing: (Style?.marginM ?? 8) * 2
 
     NLabel {
-      label: I18n.tr("settings.control-center.shortcuts.custom-button.state-checks.label")
+      label: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-label")
     }
 
     Repeater {
@@ -168,7 +168,7 @@ ColumnLayout {
 
           NTextInput {
             Layout.fillWidth: true
-            placeholderText: I18n.tr("settings.control-center.shortcuts.custom-button.state-checks.command")
+            placeholderText: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-command")
             text: model.command
             onEditingFinished: _settings._stateChecksListModel.set(currentIndex, {
                                                                      "command": text,
@@ -188,14 +188,14 @@ ColumnLayout {
 
             NIconButton {
               icon: "folder"
-              tooltipText: I18n.tr("settings.control-center.shortcuts.custom-button.state-checks.browse-icon")
+              tooltipText: I18n.tr("common.browse")
               baseSize: Style?.buttonSizeS ?? 24
               onClicked: iconPickerDelegate.open()
             }
 
             NIconButton {
               icon: "close"
-              tooltipText: I18n.tr("settings.control-center.shortcuts.custom-button.state-checks.remove")
+              tooltipText: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-remove")
               baseSize: Style?.buttonSizeS ?? 24
               colorBorder: Qt.alpha(Color.mOutline, Style.opacityLight)
               colorBg: Color.mError
@@ -231,7 +231,7 @@ ColumnLayout {
       spacing: Style?.marginM ?? 8
 
       NButton {
-        text: I18n.tr("settings.control-center.shortcuts.custom-button.state-checks.add")
+        text: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-add")
         onClicked: _settings._stateChecksListModel.append({
                                                             "command": "",
                                                             "icon": ""

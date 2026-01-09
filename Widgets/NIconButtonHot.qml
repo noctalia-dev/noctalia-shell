@@ -65,15 +65,8 @@ Rectangle {
 
   Behavior on color {
     ColorAnimation {
-      duration: Style.animationNormal
-      easing.type: Easing.InOutQuad
-    }
-  }
-
-  Behavior on scale {
-    NumberAnimation {
       duration: Style.animationFast
-      easing.type: Easing.OutCubic
+      easing.type: Easing.InOutQuad
     }
   }
 
@@ -134,7 +127,6 @@ Rectangle {
     onPressed: function (mouse) {
       if (root.enabled) {
         root.pressed = true;
-        root.scale = 0.92;
       }
       if (tooltipText) {
         TooltipService.hide();

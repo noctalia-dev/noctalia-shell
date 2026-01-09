@@ -26,8 +26,8 @@ Singleton {
       }
       // Toast: dark/light mode switched
       const enabled = !!Settings.data.colorSchemes.darkMode;
-      const label = enabled ? I18n.tr("toast.dark-mode.dark-mode") : I18n.tr("toast.dark-mode.light-mode");
-      const description = I18n.tr("toast.dark-mode.enabled");
+      const label = enabled ? I18n.tr("tooltips.switch-to-dark-mode") : I18n.tr("tooltips.switch-to-light-mode");
+      const description = I18n.tr("toast.wifi.enabled");
       ToastService.showNotice(label, description, "dark-mode");
     }
   }
@@ -48,7 +48,7 @@ Singleton {
     // First ensure the downloaded schemes directory exists
     Quickshell.execDetached(["mkdir", "-p", downloadedSchemesDirectory]);
     // Find in both preinstalled and downloaded directories
-    findProcess.command = ["find", schemesDirectory, downloadedSchemesDirectory, "-name", "*.json", "-type", "f"];
+    findProcess.command = ["find", "-L", schemesDirectory, downloadedSchemesDirectory, "-mindepth", "2", "-name", "*.json", "-type", "f"];
     findProcess.running = true;
   }
 

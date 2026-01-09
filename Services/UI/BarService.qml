@@ -321,4 +321,60 @@ Singleton {
       });
     }
   }
+
+  // Open plugin settings dialog
+  // Parameters:
+  //   screen: The screen to show the dialog on
+  //   pluginManifest: The plugin's manifest object (must have entryPoints.settings)
+  function openPluginSettings(screen, pluginManifest) {
+    if (!pluginManifest || !pluginManifest.entryPoints || !pluginManifest.entryPoints.settings) {
+      Logger.e("BarService", "Cannot open plugin settings: no settings entry point");
+      return;
+    }
+
+    // Get the popup menu window to use as parent
+    var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
+    if (!popupMenuWindow) {
+      Logger.e("BarService", "No popup menu window found for screen");
+      return;
+    }
+
+    var component = Qt.createComponent(Quickshell.shellDir + "/Widgets/NPluginSettingsPopup.qml");
+
+    function instantiateAndOpen() {
+      var dialog = component.createObject(popupMenuWindow.dialogParent, {
+                                            "showToastOnSave": true
+                                          });
+
+      if (dialog) {
+        // Enable keyboard focus for the popup menu window when dialog is open
+        popupMenuWindow.hasDialog = true;
+        // Close the popup menu window when dialog closes
+        dialog.closed.connect(() => {
+                                popupMenuWindow.hasDialog = false;
+                                popupMenuWindow.close();
+                                dialog.destroy();
+                              });
+        // Show the popup menu window and open the dialog
+        popupMenuWindow.open();
+        dialog.openPluginSettings(pluginManifest);
+      } else {
+        Logger.e("BarService", "Failed to create plugin settings dialog");
+      }
+    }
+
+    if (component.status === Component.Ready) {
+      instantiateAndOpen();
+    } else if (component.status === Component.Error) {
+      Logger.e("BarService", "Error loading plugin settings dialog:", component.errorString());
+    } else {
+      component.statusChanged.connect(function () {
+        if (component.status === Component.Ready) {
+          instantiateAndOpen();
+        } else if (component.status === Component.Error) {
+          Logger.e("BarService", "Error loading plugin settings dialog:", component.errorString());
+        }
+      });
+    }
+  }
 }

@@ -33,26 +33,6 @@ ColumnLayout {
     }
   }
 
-  // Simple process to check if matugen exists
-  Process {
-    id: matugenCheck
-    command: ["sh", "-c", "command -v matugen"]
-    running: false
-
-    onExited: function (exitCode) {
-      if (exitCode === 0) {
-        Settings.data.colorSchemes.useWallpaperColors = true;
-        AppThemeService.generate();
-        ToastService.showNotice(I18n.tr("toast.wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.enabled"), "settings-color-scheme");
-      } else {
-        ToastService.showWarning(I18n.tr("toast.wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.not-installed"));
-      }
-    }
-
-    stdout: StdioCollector {}
-    stderr: StdioCollector {}
-  }
-
   // Download popup
   Loader {
     id: downloadPopupLoader
@@ -87,12 +67,12 @@ ColumnLayout {
     currentIndex: tabView.currentIndex
 
     NTabButton {
-      text: I18n.tr("settings.color-scheme.tabs.colors")
+      text: I18n.tr("common.colors")
       tabIndex: 0
       checked: subTabBar.currentIndex === 0
     }
     NTabButton {
-      text: I18n.tr("settings.color-scheme.tabs.templates")
+      text: I18n.tr("common.templates")
       tabIndex: 1
       checked: subTabBar.currentIndex === 1
     }
@@ -109,7 +89,6 @@ ColumnLayout {
 
     ColorsSubTab {
       timeOptions: timeOptions
-      onCheckMatugen: matugenCheck.running = true
       onOpenDownloadPopup: downloadPopupLoader.open()
     }
     TemplatesSubTab {}

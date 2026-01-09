@@ -31,7 +31,7 @@ NBox {
       }
 
       NText {
-        text: I18n.tr("calendar.timer.title")
+        text: I18n.tr("common.timer")
         pointSize: Style.fontSizeL
         font.weight: Style.fontWeightBold
         color: Color.mOnSurface
@@ -439,7 +439,7 @@ NBox {
         NButton {
           id: startButton
           anchors.fill: parent
-          text: isRunning ? I18n.tr("calendar.timer.pause") : (totalSeconds > 0 ? I18n.tr("calendar.timer.resume") : I18n.tr("calendar.timer.start"))
+          text: isRunning ? I18n.tr("common.pause") : (totalSeconds > 0 ? I18n.tr("common.resume") : I18n.tr("common.start"))
           icon: isRunning ? "player-pause" : "player-play"
           enabled: isStopwatchMode || remainingSeconds > 0
           onClicked: {
@@ -461,7 +461,7 @@ NBox {
         NButton {
           id: resetButton
           anchors.fill: parent
-          text: I18n.tr("calendar.timer.reset")
+          text: I18n.tr("common.reset")
           icon: "refresh"
           enabled: (isStopwatchMode && (elapsedSeconds > 0 || isRunning)) || (!isStopwatchMode && (remainingSeconds > 0 || isRunning || soundPlaying))
           onClicked: {
@@ -514,14 +514,14 @@ NBox {
       }
 
       NTabButton {
-        text: I18n.tr("calendar.timer.countdown")
+        text: I18n.tr("common.countdown")
         tabIndex: 0
         checked: !isStopwatchMode
         radius: Style.iRadiusS
       }
 
       NTabButton {
-        text: I18n.tr("calendar.timer.stopwatch")
+        text: I18n.tr("common.stopwatch")
         tabIndex: 1
         checked: isStopwatchMode
         radius: Style.iRadiusS

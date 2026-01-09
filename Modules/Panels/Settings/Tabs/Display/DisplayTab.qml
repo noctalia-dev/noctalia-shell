@@ -40,10 +40,10 @@ ColumnLayout {
       if (exitCode === 0) {
         Settings.data.nightLight.enabled = true;
         NightLightService.apply();
-        ToastService.showNotice(I18n.tr("settings.display.night-light.section.label"), I18n.tr("toast.night-light.enabled"), "nightlight-on");
+        ToastService.showNotice(I18n.tr("common.night-light"), I18n.tr("toast.wifi.enabled"), "nightlight-on");
       } else {
         Settings.data.nightLight.enabled = false;
-        ToastService.showWarning(I18n.tr("settings.display.night-light.section.label"), I18n.tr("toast.night-light.not-installed"));
+        ToastService.showWarning(I18n.tr("common.night-light"), I18n.tr("toast.night-light.not-installed"));
       }
     }
 
@@ -58,12 +58,12 @@ ColumnLayout {
     currentIndex: tabView.currentIndex
 
     NTabButton {
-      text: I18n.tr("settings.display.tabs.brightness")
+      text: I18n.tr("common.brightness")
       tabIndex: 0
       checked: subTabBar.currentIndex === 0
     }
     NTabButton {
-      text: I18n.tr("settings.display.tabs.night-light")
+      text: I18n.tr("common.night-light")
       tabIndex: 1
       checked: subTabBar.currentIndex === 1
     }

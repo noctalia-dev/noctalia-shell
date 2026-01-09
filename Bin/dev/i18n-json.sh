@@ -518,7 +518,7 @@ compare_language() {
                         fi
                         
                         # Small delay to avoid rate limiting
-                        sleep 0.5
+                        sleep 0.1
                     fi
                 fi
             done <<< "$missing_keys"

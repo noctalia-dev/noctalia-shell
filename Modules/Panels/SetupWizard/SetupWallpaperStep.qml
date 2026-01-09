@@ -326,11 +326,11 @@ ColumnLayout {
 
     NTextInputButton {
       id: wallpaperPathInput
-      label: I18n.tr("setup.wallpaper.dir.label")
-      description: I18n.tr("setup.wallpaper.dir.description")
+      label: I18n.tr("setup.wallpaper.dir-label")
+      description: I18n.tr("setup.wallpaper.dir-description")
       text: selectedDirectory
       buttonIcon: "folder-open"
-      buttonTooltip: I18n.tr("setup.wallpaper.dir.browse")
+      buttonTooltip: I18n.tr("setup.wallpaper.dir-browse")
       Layout.fillWidth: true
       onInputEditingFinished: {
         selectedDirectory = text;
@@ -426,7 +426,7 @@ ColumnLayout {
   NFilePicker {
     id: directoryPicker
     selectionMode: "folders"
-    title: I18n.tr("setup.wallpaper.dir.select-title")
+    title: I18n.tr("setup.wallpaper.dir-select-title")
     initialPath: selectedDirectory || Quickshell.env("HOME") + "/Pictures"
     onAccepted: paths => {
                   if (paths.length > 0) {

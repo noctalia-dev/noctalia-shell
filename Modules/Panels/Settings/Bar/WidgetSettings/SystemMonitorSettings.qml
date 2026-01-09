@@ -47,16 +47,16 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.compact-mode.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.compact-mode.description")
+    label: I18n.tr("bar.system-monitor.compact-mode-label")
+    description: I18n.tr("bar.system-monitor.compact-mode-description")
     checked: valueCompactMode
     onToggled: checked => valueCompactMode = checked
   }
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.clock.use-primary-color.label")
-    description: I18n.tr("bar.widget-settings.clock.use-primary-color.description")
+    label: I18n.tr("bar.clock.use-primary-color-label")
+    description: I18n.tr("bar.clock.use-primary-color-description")
     checked: valueUsePrimaryColor
     onToggled: checked => valueUsePrimaryColor = checked
     visible: !valueCompactMode
@@ -64,8 +64,8 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.use-monospace-font.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.use-monospace-font.description")
+    label: I18n.tr("bar.system-monitor.use-monospace-font-label")
+    description: I18n.tr("bar.system-monitor.use-monospace-font-description")
     checked: valueUseMonospaceFont
     onToggled: checked => valueUseMonospaceFont = checked
     visible: !valueCompactMode
@@ -74,8 +74,8 @@ ColumnLayout {
   NToggle {
     id: showCpuUsage
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.cpu-usage.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.cpu-usage.description")
+    label: I18n.tr("bar.system-monitor.cpu-usage-label")
+    description: I18n.tr("bar.system-monitor.cpu-usage-description")
     checked: valueShowCpuUsage
     onToggled: checked => valueShowCpuUsage = checked
   }
@@ -83,8 +83,8 @@ ColumnLayout {
   NToggle {
     id: showCpuTemp
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.cpu-temperature.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.cpu-temperature.description")
+    label: I18n.tr("bar.system-monitor.cpu-temperature-label")
+    description: I18n.tr("bar.system-monitor.cpu-temperature-description")
     checked: valueShowCpuTemp
     onToggled: checked => valueShowCpuTemp = checked
   }
@@ -92,8 +92,8 @@ ColumnLayout {
   NToggle {
     id: showGpuTemp
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.gpu-temperature.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.gpu-temperature.description")
+    label: I18n.tr("panels.system-monitor.gpu-section-label")
+    description: I18n.tr("bar.system-monitor.gpu-temperature-description")
     checked: valueShowGpuTemp
     onToggled: checked => valueShowGpuTemp = checked
     visible: SystemStatService.gpuAvailable
@@ -102,8 +102,8 @@ ColumnLayout {
   NToggle {
     id: showLoadAverage
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.load-average.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.load-average.description")
+    label: I18n.tr("bar.system-monitor.load-average-label")
+    description: I18n.tr("bar.system-monitor.load-average-description")
     checked: valueShowLoadAverage
     onToggled: checked => valueShowLoadAverage = checked
   }
@@ -111,8 +111,8 @@ ColumnLayout {
   NToggle {
     id: showMemoryUsage
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.memory-usage.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.memory-usage.description")
+    label: I18n.tr("bar.system-monitor.memory-usage-label")
+    description: I18n.tr("bar.system-monitor.memory-usage-description")
     checked: valueShowMemoryUsage
     onToggled: checked => valueShowMemoryUsage = checked
   }
@@ -120,8 +120,8 @@ ColumnLayout {
   NToggle {
     id: showMemoryAsPercent
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.memory-percentage.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.memory-percentage.description")
+    label: I18n.tr("bar.system-monitor.memory-percentage-label")
+    description: I18n.tr("bar.system-monitor.memory-percentage-description")
     checked: valueShowMemoryAsPercent
     onToggled: checked => valueShowMemoryAsPercent = checked
     visible: valueShowMemoryUsage
@@ -130,8 +130,8 @@ ColumnLayout {
   NToggle {
     id: showNetworkStats
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.network-traffic.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.network-traffic.description")
+    label: I18n.tr("bar.system-monitor.network-traffic-label")
+    description: I18n.tr("bar.system-monitor.network-traffic-description")
     checked: valueShowNetworkStats
     onToggled: checked => valueShowNetworkStats = checked
   }
@@ -139,8 +139,8 @@ ColumnLayout {
   NToggle {
     id: showDiskUsage
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.storage-usage.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.storage-usage.description")
+    label: I18n.tr("bar.system-monitor.storage-usage-label")
+    description: I18n.tr("bar.system-monitor.storage-usage-description")
     checked: valueShowDiskUsage
     onToggled: checked => valueShowDiskUsage = checked
   }
@@ -148,8 +148,8 @@ ColumnLayout {
   NComboBox {
     id: diskPathComboBox
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.system-monitor.disk-path.label")
-    description: I18n.tr("bar.widget-settings.system-monitor.disk-path.description")
+    label: I18n.tr("bar.system-monitor.disk-path-label")
+    description: I18n.tr("bar.system-monitor.disk-path-description")
     model: {
       const paths = Object.keys(SystemStatService.diskPercents).sort();
       return paths.map(path => ({

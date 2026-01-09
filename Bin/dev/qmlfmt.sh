@@ -3,6 +3,9 @@ set -euo pipefail
 
 # QML Formatter Script
 
+# Suppress Qt debug logging from qmlformat
+export QT_LOGGING_RULES="qt.qmldom.*=false"
+
 # Find qmlformat binary
 QMLFORMAT=""
 for path in "/usr/lib64/qt6/bin/qmlformat" "/usr/lib/qt6/bin/qmlformat"; do

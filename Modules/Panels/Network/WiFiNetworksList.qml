@@ -109,6 +109,12 @@ NBox {
               icon: NetworkService.signalIcon(modelData.signal, modelData.connected)
               pointSize: Style.fontSizeXXL
               color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mPrimary : Color.mError) : Color.mOnSurface
+              MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                onEntered: TooltipService.show(parent, NetworkService.getSignalStrengthLabel(modelData.signal) + " (" + modelData.signal + "%)")
+                onExited: TooltipService.hide()
+              }
             }
 
             ColumnLayout {
@@ -128,7 +134,7 @@ NBox {
                 spacing: Style.marginXS
 
                 NText {
-                  text: NetworkService.getSignalStrengthLabel(modelData.signal) + " (" + modelData.signal + "%)"
+                  text: NetworkService.isSecured(modelData.security) ? modelData.security : "Open"
                   pointSize: Style.fontSizeXXS
                   color: Color.mOnSurfaceVariant
                 }
@@ -140,11 +146,7 @@ NBox {
                   visible: !NetworkService.isSecured(modelData.security)
                 }
 
-                NText {
-                  text: " • " + (NetworkService.isSecured(modelData.security) ? modelData.security : "Open")
-                  pointSize: Style.fontSizeXXS
-                  color: Color.mOnSurfaceVariant
-                }
+                // Spacing
 
                 Item {
                   Layout.preferredWidth: Style.marginXXS
@@ -164,7 +166,7 @@ NBox {
                     text: {
                       switch (NetworkService.networkConnectivity) {
                       case "full":
-                        return I18n.tr("wifi.panel.connected");
+                        return I18n.tr("common.connected");
                       case "limited":
                         return I18n.tr("wifi.panel.internet-limited");
                       case "portal":  // Where Captive Portal is detected (User intervention needed)
@@ -248,7 +250,7 @@ NBox {
               NIconButton {
                 visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
                 icon: "info-circle"
-                tooltipText: I18n.tr("wifi.panel.info")
+                tooltipText: I18n.tr("common.info")
                 onClicked: {
                   if (root.infoSsid === modelData.ssid) {
                     root.infoSsid = "";
@@ -270,10 +272,10 @@ NBox {
                 visible: !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid && NetworkService.forgettingNetwork !== modelData.ssid && NetworkService.disconnectingFrom !== modelData.ssid
                 text: {
                   if (modelData.existing || modelData.cached)
-                    return I18n.tr("wifi.panel.connect");
+                    return I18n.tr("common.connect");
                   if (!NetworkService.isSecured(modelData.security))
-                    return I18n.tr("wifi.panel.connect");
-                  return I18n.tr("wifi.panel.password");
+                    return I18n.tr("common.connect");
+                  return I18n.tr("common.password");
                 }
                 outlined: !hovered
                 fontSize: Style.fontSizeXS
@@ -289,7 +291,7 @@ NBox {
 
               NButton {
                 visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
-                text: I18n.tr("wifi.panel.disconnect")
+                text: I18n.tr("common.disconnect")
                 outlined: !hovered
                 fontSize: Style.fontSizeXS
                 backgroundColor: Color.mError
@@ -355,6 +357,7 @@ NBox {
               // Row 1: Interface | Band
               RowLayout {
                 Layout.fillWidth: true
+                Layout.preferredWidth: 1
                 spacing: Style.marginXS
                 NIcon {
                   icon: "network"
@@ -374,6 +377,7 @@ NBox {
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   Layout.fillWidth: true
+                  Layout.preferredWidth: 1
                   Layout.alignment: Qt.AlignVCenter
                   wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
                   elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
@@ -409,7 +413,7 @@ NBox {
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
-                    onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.frequency"))
+                    onEntered: TooltipService.show(parent, I18n.tr("common.frequency"))
                     onExited: TooltipService.hide()
                   }
                 }
@@ -511,7 +515,7 @@ NBox {
                   MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
-                    onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.gateway"))
+                    onEntered: TooltipService.show(parent, I18n.tr("common.gateway"))
                     onExited: TooltipService.hide()
                   }
                 }
@@ -616,7 +620,7 @@ NBox {
               }
 
               NButton {
-                text: I18n.tr("wifi.panel.connect")
+                text: I18n.tr("common.connect")
                 fontSize: Style.fontSizeXXS
                 enabled: pwdInput.text.length > 0 && !NetworkService.connecting
                 outlined: true

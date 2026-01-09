@@ -41,6 +41,17 @@ Singleton {
   property bool pendingSave: false
   property int saveDebounceTimer: 0
 
+  Connections {
+    target: PanelService
+    function onPopupMenuWindowRegistered(screen) {
+      if (popupScheduled) {
+        if (!viewChangelogTargetScreen || viewChangelogTargetScreen.name === screen.name) {
+          openWhenReady();
+        }
+      }
+    }
+  }
+
   signal popupQueued(string fromVersion, string toVersion)
 
   function init() {
@@ -255,14 +266,28 @@ Singleton {
       return;
 
     if (!Quickshell.screens || Quickshell.screens.length === 0) {
-      Qt.callLater(openWhenReady);
       return;
     }
 
     const targetScreen = viewChangelogTargetScreen || Quickshell.screens[0];
+    const screenName = targetScreen.name || "";
+
+    // Check if this screen is configured to have a bar/panels
+    var monitors = Settings.data.bar.monitors || [];
+    var canShowPanels = Settings.data.general.allowPanelsOnScreenWithoutBar || monitors.length === 0 || monitors.includes(screenName);
+
+    if (!canShowPanels) {
+      Logger.w("UpdateService", "Changelog cannot be shown on screen without bar:", screenName);
+      popupScheduled = false;
+      viewChangelogTargetScreen = null;
+      return;
+    }
+
     const panel = PanelService.getPanel("changelogPanel", targetScreen);
     if (!panel) {
-      Qt.callLater(openWhenReady);
+      // Panel not found yet. Wait for popupMenuWindowRegistered signal.
+      // This avoids the memory leak (#1306).
+      Logger.d("UpdateService", "Waiting for changelogPanel on screen:", screenName);
       return;
     }
 

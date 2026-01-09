@@ -1,0 +1,47 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import qs.Commons
+import qs.Widgets
+
+ColumnLayout {
+  id: root
+  spacing: 0
+
+  NTabBar {
+    id: subTabBar
+    Layout.fillWidth: true
+    distributeEvenly: true
+    currentIndex: tabView.currentIndex
+
+    NTabButton {
+      text: I18n.tr("common.installed")
+      tabIndex: 0
+      checked: subTabBar.currentIndex === 0
+    }
+    NTabButton {
+      text: I18n.tr("common.available")
+      tabIndex: 1
+      checked: subTabBar.currentIndex === 1
+    }
+    NTabButton {
+      text: I18n.tr("common.sources")
+      tabIndex: 2
+      checked: subTabBar.currentIndex === 2
+    }
+  }
+
+  Item {
+    Layout.fillWidth: true
+    Layout.preferredHeight: Style.marginL
+  }
+
+  NTabView {
+    id: tabView
+    currentIndex: subTabBar.currentIndex
+
+    InstalledSubTab {}
+    AvailableSubTab {}
+    SourcesSubTab {}
+  }
+}

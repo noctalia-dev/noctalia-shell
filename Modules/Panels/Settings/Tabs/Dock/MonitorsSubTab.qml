@@ -11,12 +11,23 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-  property var addMonitor
-  property var removeMonitor
+  // Helper functions to update arrays immutably
+  function addMonitor(list, name) {
+    const arr = (list || []).slice();
+    if (!arr.includes(name))
+      arr.push(name);
+    return arr;
+  }
+  function removeMonitor(list, name) {
+    return (list || []).filter(function (n) {
+      return n !== name;
+    });
+  }
 
-  NHeader {
-    label: I18n.tr("settings.dock.monitors.section.label")
-    description: I18n.tr("settings.dock.monitors.section.description")
+  NText {
+    text: I18n.tr("panels.dock.monitors-desc")
+    wrapMode: Text.WordWrap
+    Layout.fillWidth: true
   }
 
   Repeater {
@@ -36,9 +47,9 @@ ColumnLayout {
       checked: (Settings.data.dock.monitors || []).indexOf(modelData.name) !== -1
       onToggled: checked => {
                    if (checked) {
-                     Settings.data.dock.monitors = addMonitor(Settings.data.dock.monitors, modelData.name);
+                     Settings.data.dock.monitors = root.addMonitor(Settings.data.dock.monitors, modelData.name);
                    } else {
-                     Settings.data.dock.monitors = removeMonitor(Settings.data.dock.monitors, modelData.name);
+                     Settings.data.dock.monitors = root.removeMonitor(Settings.data.dock.monitors, modelData.name);
                    }
                  }
     }

@@ -203,7 +203,7 @@ Popup {
 
         NIconButton {
           icon: "filepicker-refresh"
-          tooltipText: I18n.tr("tooltips.refresh")
+          tooltipText: I18n.tr("common.refresh")
           onClicked: {
             // Force a proper refresh by resetting the folder
             const currentFolder = folderModel.folder;
@@ -214,7 +214,7 @@ Popup {
         }
         NIconButton {
           icon: "filepicker-close"
-          tooltipText: I18n.tr("tooltips.close")
+          tooltipText: I18n.tr("common.close")
           onClicked: {
             root.cancelled();
             root.close();
@@ -268,7 +268,7 @@ Popup {
 
           NIconButton {
             icon: filePickerPanel.showSearchBar ? "filepicker-x" : "filepicker-search"
-            tooltipText: filePickerPanel.showSearchBar ? I18n.tr("tooltips.search-close") : I18n.tr("tooltips.search")
+            tooltipText: filePickerPanel.showSearchBar ? I18n.tr("tooltips.search-close") : I18n.tr("common.search")
             baseSize: Style.baseWidgetSize * 0.8
             onClicked: {
               filePickerPanel.showSearchBar = !filePickerPanel.showSearchBar;
@@ -339,7 +339,7 @@ Popup {
           }
           NIconButton {
             icon: root.showHiddenFiles ? "filepicker-eye-off" : "filepicker-eye"
-            tooltipText: root.showHiddenFiles ? I18n.tr("tooltips.hidden-files-hide") : I18n.tr("tooltips.hidden-files-show")
+            tooltipText: root.showHiddenFiles ? I18n.tr("tooltips.hidden-files-hide") : I18n.tr("tooltips.hidden-files-hide")
             baseSize: Style.baseWidgetSize * 0.8
             onClicked: {
               root.showHiddenFiles = !root.showHiddenFiles;
@@ -775,7 +775,7 @@ Popup {
         }
 
         NButton {
-          text: I18n.tr("widgets.file-picker.cancel")
+          text: I18n.tr("common.cancel")
           outlined: true
           onClicked: {
             root.cancelled();

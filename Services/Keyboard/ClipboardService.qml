@@ -6,7 +6,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Services.UI
 
-// Thin wrapper around the cliphist CLI
+// Clipboard history service using cliphist + local content cache
 Singleton {
   id: root
 
@@ -27,11 +27,20 @@ Singleton {
   property var imageDataById: ({})
   property int revision: 0
 
+  // Local content cache - stores full text content by ID
+  // This avoids relying on cliphist decode which can be unreliable
+  property var contentCache: ({})
+
+  // Track the most recent clipboard content for instant access
+  property string _latestTextContent: ""
+  property string _latestTextId: ""
+
   // Approximate first-seen timestamps for entries this session (seconds)
   property var firstSeenById: ({})
 
   // Internal: store callback for decode
   property var _decodeCallback: null
+  property int _decodeRequestId: 0
 
   // Queue for base64 decodes
   property var _b64Queue: []
@@ -83,7 +92,6 @@ Singleton {
     } else {
       stopWatchers();
       loading = false;
-      // Optional: clear items to avoid stale UI
       items = [];
     }
   }
@@ -143,20 +151,41 @@ Singleton {
                                    "mime": mime
                                  };
                                });
-      items = parsed;
+
+      // Filter out browser junk when copying images
+      const filtered = parsed.filter(item => {
+                                       if (item.isImage)
+                                       return true;
+                                       const p = item.preview;
+                                       // Skip UTF-16 encoded text (has null bytes between chars), chromium browser artifact
+                                       const nullCount = (p.match(/\x00/g) || []).length;
+                                       if (nullCount > p.length * 0.2)
+                                       return false;
+                                       // Skip browser-generated HTML wrapper, firefox
+                                       if (p.toLowerCase().startsWith("<meta http-equiv="))
+                                       return false;
+                                       return true;
+                                     });
+
+      items = filtered;
       loading = false;
 
-      // Emit the signal for subscribers
+      // Try to capture current clipboard and associate with newest item
+      if (filtered.length > 0 && !filtered[0].isImage && !root.contentCache[filtered[0].id]) {
+        root.captureCurrentClipboard();
+      }
+
       root.listCompleted();
     }
   }
 
   Process {
     id: decodeProc
+    property int requestId: 0
     stdout: StdioCollector {}
     onExited: (exitCode, exitStatus) => {
-      const out = String(stdout.text);
-      if (root._decodeCallback) {
+      if (requestId === root._decodeRequestId && root._decodeCallback) {
+        const out = String(stdout.text);
         try {
           root._decodeCallback(out);
         } finally {
@@ -181,7 +210,6 @@ Singleton {
     stdout: StdioCollector {}
     onExited: (exitCode, exitStatus) => {
       revision++;
-      // Refresh list after deletion completes
       Qt.callLater(() => list());
     }
   }
@@ -209,26 +237,51 @@ Singleton {
     }
   }
 
-  // Long-running watchers to store new clipboard contents
+  // Text watcher - stores to cliphist and triggers content capture
   Process {
     id: watchText
     stdout: StdioCollector {}
     onExited: (exitCode, exitStatus) => {
-      // Auto-restart if watcher dies
-      if (root.autoWatch)
-      Qt.callLater(() => {
-                     running = true;
-                   });
+      if (root.autoWatch && root.watchersStarted) {
+        Qt.callLater(() => {
+                       watchText.running = true;
+                     });
+      }
     }
   }
+
+  // Image watcher
   Process {
     id: watchImage
     stdout: StdioCollector {}
     onExited: (exitCode, exitStatus) => {
-      if (root.autoWatch)
-      Qt.callLater(() => {
-                     running = true;
-                   });
+      if (root.autoWatch && root.watchersStarted) {
+        Qt.callLater(() => {
+                       watchImage.running = true;
+                     });
+      }
+    }
+  }
+
+  // Capture current clipboard text when needed
+  Process {
+    id: captureTextProc
+    stdout: StdioCollector {}
+    onExited: (exitCode, exitStatus) => {
+      if (exitCode === 0) {
+        const content = String(stdout.text);
+        if (content.length > 0) {
+          root._latestTextContent = content;
+          // Associate with newest item if we have one
+          if (root.items.length > 0 && !root.items[0].isImage) {
+            const newestId = root.items[0].id;
+            if (!root.contentCache[newestId]) {
+              root.contentCache[newestId] = content;
+              root.revision++;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -236,10 +289,12 @@ Singleton {
     if (!root.active || !autoWatch || watchersStarted || !root.cliphistAvailable)
       return;
     watchersStarted = true;
-    // Start text watcher
+
+    // Text watcher
     watchText.command = ["wl-paste", "--type", "text", "--watch", "cliphist", "store"];
     watchText.running = true;
-    // Start image watcher
+
+    // Image watcher
     watchImage.command = ["wl-paste", "--type", "image", "--watch", "cliphist", "store"];
     watchImage.running = true;
   }
@@ -250,6 +305,14 @@ Singleton {
     watchText.running = false;
     watchImage.running = false;
     watchersStarted = false;
+  }
+
+  // Capture current clipboard text and cache it
+  function captureCurrentClipboard() {
+    if (captureTextProc.running)
+      return;
+    captureTextProc.command = ["wl-paste", "--no-newline"];
+    captureTextProc.running = true;
   }
 
   function list(maxPreviewWidth) {
@@ -264,14 +327,46 @@ Singleton {
     listProc.running = true;
   }
 
+  // Get content for an ID - uses cache first, falls back to cliphist decode
+  function getContent(id) {
+    if (root.contentCache[id]) {
+      return root.contentCache[id];
+    }
+    return null;
+  }
+
+  // Async decode - checks cache first, then falls back to cliphist
   function decode(id, cb) {
     if (!root.cliphistAvailable) {
       if (cb)
         cb("");
       return;
     }
-    root._decodeCallback = cb;
-    decodeProc.command = ["cliphist", "decode", id];
+
+    // Check cache first
+    const cached = root.contentCache[id];
+    if (cached) {
+      if (cb)
+        cb(cached);
+      return;
+    }
+
+    // Fall back to cliphist decode
+    if (decodeProc.running) {
+      decodeProc.running = false;
+    }
+    root._decodeRequestId++;
+    decodeProc.requestId = root._decodeRequestId;
+    root._decodeCallback = function (content) {
+      // Cache the result if successful
+      if (content && content.trim()) {
+        root.contentCache[id] = content;
+      }
+      if (cb)
+        cb(content);
+    };
+    const idStr = String(id);
+    decodeProc.command = ["cliphist", "decode", idStr];
     decodeProc.running = true;
   }
 
@@ -320,7 +415,6 @@ Singleton {
     if (!root.cliphistAvailable) {
       return;
     }
-    // decode and pipe to wl-copy; implement via shell to preserve binary
     copyProc.command = ["sh", "-lc", `cliphist decode ${id} | wl-copy`];
     copyProc.running = true;
   }
@@ -329,8 +423,6 @@ Singleton {
     if (!root.cliphistAvailable) {
       return;
     }
-    // Copy to clipboard and then simulate paste using wtype
-    // For images, use Ctrl+V (Ctrl+Shift+V is "paste as text" which doesn't work for images)
     const isImage = mime && mime.startsWith("image/");
     const typeArg = isImage ? ` --type ${mime}` : "";
     const pasteKeys = isImage ? "wtype -M ctrl -k v" : "wtype -M ctrl -M shift v";
@@ -339,11 +431,9 @@ Singleton {
     pasteProc.running = true;
   }
 
-  // Paste plain text: copy to clipboard and simulate Ctrl+Shift+V
   function pasteText(text) {
     if (!text)
       return;
-    // Escape single quotes for shell
     const escaped = text.replace(/'/g, "'\\''");
     const cmd = `printf '%s' '${escaped}' | wl-copy && wtype -M ctrl -M shift v`;
     pasteProc.command = ["sh", "-lc", cmd];
@@ -357,8 +447,9 @@ Singleton {
     if (deleteProc.running) {
       return;
     }
-    const idStr = String(id);
-    // Use Process to wait for deletion to complete before refreshing
+    const idStr = String(id).trim();
+    // Remove from cache
+    delete root.contentCache[idStr];
     deleteProc.command = ["sh", "-c", `echo ${idStr} | cliphist delete`];
     deleteProc.running = true;
   }
@@ -367,9 +458,28 @@ Singleton {
     if (!root.cliphistAvailable) {
       return;
     }
+    // Clear caches
+    root.contentCache = {};
+    root.imageDataById = {};
+    root._latestTextContent = "";
+    root._latestTextId = "";
 
     Quickshell.execDetached(["cliphist", "wipe"]);
     revision++;
     Qt.callLater(() => list());
+  }
+
+  // Parse image metadata from cliphist preview string
+  function parseImageMeta(preview) {
+    const re = /\[\[\s*binary data\s+([\d\.]+\s*(?:KiB|MiB|GiB|B))\s+(\w+)\s+(\d+)x(\d+)\s*\]\]/i;
+    const match = (preview || "").match(re);
+    if (!match)
+      return null;
+    return {
+      "size": match[1],
+      "fmt": (match[2] || "").toUpperCase(),
+      "w": Number(match[3]),
+      "h": Number(match[4])
+    };
   }
 }

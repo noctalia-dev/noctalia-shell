@@ -147,12 +147,33 @@ Singleton {
       if (manifest) {
         pluginsToLoad.push(enabledIds[i]);
       } else {
-        Logger.w("PluginService", "Plugin", enabledIds[i], "is enabled but not found on disk - cleaning up");
-        // Plugin was deleted from disk but still marked as enabled
-        // Unregister it completely and remove its widget from bar
-        var widgetId = "plugin:" + enabledIds[i];
-        removeWidgetFromBar(widgetId);
-        PluginRegistry.unregisterPlugin(enabledIds[i]);
+        Logger.w("PluginService", "Plugin", enabledIds[i], "is enabled but not found on disk - install");
+        var sourceUrl = PluginRegistry.getPluginSourceUrl(enabledIds[i]);
+        root.installPlugin({
+                             id: enabledIds[i],
+                             source: {
+                               url: sourceUrl
+                             }
+                           }, false, function (success, error, registeredKey) {
+                             if (success) {
+                               ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.install-success", {
+                                                                                                  "plugin": registeredKey
+                                                                                                }));
+                               // Load the plugin since it was already enabled (state persisted but files were missing)
+                               loadPlugin(registeredKey);
+
+                               // Add plugin widget to bar if it provides one
+                               var manifest = PluginRegistry.getPluginManifest(registeredKey);
+                               if (manifest && manifest.entryPoints && manifest.entryPoints.barWidget) {
+                                 var widgetId = "plugin:" + registeredKey;
+                                 addWidgetToBar(widgetId, "right");
+                               }
+                             } else {
+                               ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.install-error", {
+                                                                                                 "error": error || "Unknown error"
+                                                                                               }));
+                             }
+                           });
       }
     }
 
@@ -296,7 +317,7 @@ Singleton {
         collision: true,
         reason: "already_installed",
         existingKey: compositeKey,
-        message: I18n.tr("settings.plugins.collision.already-installed")
+        message: I18n.tr("panels.plugins.collision-already-installed")
       };
     }
 
@@ -306,12 +327,12 @@ Singleton {
       for (var i = 0; i < allInstalled.length; i++) {
         var parsed = PluginRegistry.parseCompositeKey(allInstalled[i]);
         if (parsed.pluginId === pluginMetadata.id && !parsed.isOfficial) {
-          var sourceName = PluginRegistry.getSourceNameByHash(parsed.sourceHash) || I18n.tr("settings.plugins.source.custom");
+          var sourceName = PluginRegistry.getSourceNameByHash(parsed.sourceHash) || I18n.tr("panels.plugins.source-custom");
           return {
             collision: true,
             reason: "custom_version_exists",
             existingKey: allInstalled[i],
-            message: I18n.tr("settings.plugins.collision.custom-version-exists", {
+            message: I18n.tr("panels.plugins.collision-custom-version-exists", {
                                source: sourceName
                              })
           };
@@ -326,7 +347,7 @@ Singleton {
           collision: true,
           reason: "official_version_exists",
           existingKey: pluginMetadata.id,
-          message: I18n.tr("settings.plugins.collision.official-version-exists")
+          message: I18n.tr("panels.plugins.collision-official-version-exists")
         };
       }
     }
@@ -347,7 +368,7 @@ Singleton {
       var collision = checkPluginCollision(pluginMetadata);
       if (collision.collision) {
         Logger.w("PluginService", "Plugin collision detected:", collision.message);
-        ToastService.showError(I18n.tr("settings.plugins.title"), collision.message);
+        ToastService.showError(I18n.tr("panels.plugins.title"), collision.message);
         if (callback)
           callback(false, collision.message);
         return;
@@ -357,7 +378,7 @@ Singleton {
       if (pluginMetadata.minNoctaliaVersion) {
         var noctaliaVersion = UpdateService.baseVersion;
         if (compareVersions(pluginMetadata.minNoctaliaVersion, noctaliaVersion) > 0) {
-          var incompatibleMsg = I18n.tr("settings.plugins.install-incompatible", {
+          var incompatibleMsg = I18n.tr("panels.plugins.install-incompatible", {
                                           "plugin": pluginMetadata.name,
                                           "version": pluginMetadata.minNoctaliaVersion
                                         });
@@ -747,6 +768,24 @@ Singleton {
         }
       }
 
+      // Load control center widget component if provided
+      if (manifest.entryPoints && manifest.entryPoints.controlCenterWidget) {
+        var ccWidgetPath = pluginDir + "/" + manifest.entryPoints.controlCenterWidget;
+        var ccWidgetLoadVersion = PluginRegistry.pluginLoadVersions[pluginId] || 0;
+        var ccWidgetComponent = Qt.createComponent("file://" + ccWidgetPath + "?v=" + ccWidgetLoadVersion);
+
+        if (ccWidgetComponent.status === Component.Ready) {
+          root.loadedPlugins[pluginId].controlCenterWidget = ccWidgetComponent;
+          pluginApi.controlCenterWidget = ccWidgetComponent;
+
+          // Register with ControlCenterWidgetRegistry
+          ControlCenterWidgetRegistry.registerPluginWidget(pluginId, ccWidgetComponent, manifest.metadata);
+          Logger.i("PluginService", "Loaded control center widget for plugin:", pluginId);
+        } else if (ccWidgetComponent.status === Component.Error) {
+          root.recordPluginError(pluginId, "controlCenterWidget", ccWidgetComponent.errorString());
+        }
+      }
+
       Logger.i("PluginService", "Plugin loaded:", pluginId);
       root.pluginLoaded(pluginId);
 
@@ -791,6 +830,11 @@ Singleton {
       LauncherProviderRegistry.unregisterPluginProvider(pluginId);
     }
 
+    // Unregister from ControlCenterWidgetRegistry
+    if (plugin.manifest.entryPoints && plugin.manifest.entryPoints.controlCenterWidget) {
+      ControlCenterWidgetRegistry.unregisterPluginWidget(pluginId);
+    }
+
     // Destroy Main instance if any
     if (plugin.mainInstance) {
       plugin.mainInstance.destroy();
@@ -820,6 +864,7 @@ Singleton {
         property var barWidget: null
         property var desktopWidget: null
         property var launcherProvider: null
+        property var controlCenterWidget: null
 
         // IPC handlers storage
         property var ipcHandlers: ({})
@@ -832,6 +877,7 @@ Singleton {
         property var saveSettings: null
         property var openPanel: null
         property var closePanel: null
+        property var togglePanel: null
         property var withCurrentScreen: null
         property var tr: null
         property var trp: null
@@ -875,13 +921,25 @@ Singleton {
     };
 
     // ----------------------------------------
-    api.openPanel = function (screen) {
+    api.togglePanel = function (screen, buttonItem) {
+      // Toggle this plugin's panel on the specified screen
+      // buttonItem: optional, if provided the panel will position near this button
+      if (!screen) {
+        Logger.w("PluginAPI", "No screen available for toggling panel");
+        return false;
+      }
+      return togglePluginPanel(pluginId, screen, buttonItem);
+    };
+
+    // ----------------------------------------
+    api.openPanel = function (screen, buttonItem) {
       // Open this plugin's panel on the specified screen
+      // buttonItem: optional, if provided the panel will position near this button
       if (!screen) {
         Logger.w("PluginAPI", "No screen available for opening panel");
         return false;
       }
-      return openPluginPanel(pluginId, screen);
+      return openPluginPanel(pluginId, screen, buttonItem);
     };
 
     // ----------------------------------------
@@ -1204,27 +1262,27 @@ Singleton {
 
     if (updateCount > 0) {
       Logger.i("PluginService", updateCount, "plugin update(s) available");
-      ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.trp("settings.plugins.update-available", updateCount, "{count} plugin update available", "{count} plugin updates available", {
-                                                                            "count": updateCount
-                                                                          }), "plugin", 5000, I18n.tr("settings.plugins.open-plugins-tab"), function () {
-                                                                            // Open settings panel to Plugins tab on the screen where the cursor is
-                                                                            if (root.screenDetector) {
-                                                                              root.screenDetector.withCurrentScreen(function (screen) {
-                                                                                var panel = PanelService.getPanel("settingsPanel", screen);
-                                                                                if (panel) {
-                                                                                  panel.requestedTab = SettingsPanel.Tab.Plugins;
-                                                                                  panel.open();
-                                                                                }
-                                                                              });
-                                                                            } else {
-                                                                              // Fallback to primary screen if screen detector is not available
-                                                                              var panel = PanelService.getPanel("settingsPanel", Quickshell.screens[0]);
+      ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.trp("panels.plugins.update-available", updateCount, "{count} plugin update available", "{count} plugin updates available", {
+                                                                          "count": updateCount
+                                                                        }), "plugin", 5000, I18n.tr("panels.plugins.open-plugins-tab"), function () {
+                                                                          // Open settings panel to Plugins tab on the screen where the cursor is
+                                                                          if (root.screenDetector) {
+                                                                            root.screenDetector.withCurrentScreen(function (screen) {
+                                                                              var panel = PanelService.getPanel("settingsPanel", screen);
                                                                               if (panel) {
                                                                                 panel.requestedTab = SettingsPanel.Tab.Plugins;
                                                                                 panel.open();
                                                                               }
+                                                                            });
+                                                                          } else {
+                                                                            // Fallback to primary screen if screen detector is not available
+                                                                            var panel = PanelService.getPanel("settingsPanel", Quickshell.screens[0]);
+                                                                            if (panel) {
+                                                                              panel.requestedTab = SettingsPanel.Tab.Plugins;
+                                                                              panel.open();
                                                                             }
-                                                                          });
+                                                                          }
+                                                                        });
     } else if (pendingCount > 0) {
       Logger.i("PluginService", pendingCount, "plugin update(s) pending (require newer Noctalia)");
     } else {
@@ -1360,7 +1418,7 @@ Singleton {
   }
 
   // Open a plugin's panel (finds a free slot and loads the panel)
-  function openPluginPanel(pluginId, screen) {
+  function openPluginPanel(pluginId, screen, buttonItem) {
     if (!isPluginLoaded(pluginId)) {
       Logger.w("PluginService", "Cannot open panel: plugin not loaded:", pluginId);
       return false;
@@ -1381,7 +1439,7 @@ Singleton {
       if (panel) {
         // If this slot is already showing this plugin's panel, toggle it
         if (panel.currentPluginId === pluginId) {
-          panel.toggle();
+          panel.toggle(buttonItem);
           return true;
         }
 
@@ -1390,7 +1448,7 @@ Singleton {
           // Set the pluginId first - when panel opens and panelContent loads,
           // Component.onCompleted will call loadPluginPanel automatically
           panel.currentPluginId = pluginId;
-          panel.open();
+          panel.open(buttonItem);
           return true;
         }
       }
@@ -1403,12 +1461,42 @@ Singleton {
       // Set the pluginId first - when panel opens and panelContent loads,
       // Component.onCompleted will call loadPluginPanel automatically
       panel1.currentPluginId = pluginId;
-      panel1.open();
+      panel1.open(buttonItem);
       return true;
     }
 
     Logger.e("PluginService", "Failed to find plugin panel slot");
     return false;
+  }
+
+  // Toggle a plugin's panel - close if open, open if closed
+  // buttonItem: optional, if provided the panel will position near this button
+  function togglePluginPanel(pluginId, screen, buttonItem) {
+    if (!isPluginLoaded(pluginId)) {
+      Logger.w("PluginService", "Cannot toggle panel: plugin not loaded:", pluginId);
+      return false;
+    }
+
+    var plugin = root.loadedPlugins[pluginId];
+    if (!plugin || !plugin.manifest || !plugin.manifest.entryPoints || !plugin.manifest.entryPoints.panel) {
+      Logger.w("PluginService", "Plugin does not provide a panel:", pluginId);
+      return false;
+    }
+
+    // Check if this plugin's panel is already open in any slot
+    for (var slotNum = 1; slotNum <= 2; slotNum++) {
+      var panelName = "pluginPanel" + slotNum;
+      var panel = PanelService.getPanel(panelName, screen);
+
+      if (panel && panel.currentPluginId === pluginId) {
+        // Panel is open for this plugin - toggle it (close)
+        panel.toggle(buttonItem);
+        return true;
+      }
+    }
+
+    // Panel is not open - open it using the existing logic
+    return openPluginPanel(pluginId, screen, buttonItem);
   }
 
   // ----- Error tracking functions -----
@@ -1506,6 +1594,8 @@ Singleton {
       entryPointFiles.push(entryPoints.panel);
     if (entryPoints.settings)
       entryPointFiles.push(entryPoints.settings);
+    if (entryPoints.controlCenterWidget)
+      entryPointFiles.push(entryPoints.controlCenterWidget);
 
     for (var i = 0; i < entryPointFiles.length; i++) {
       var entryPointFile = entryPointFiles[i];
@@ -1598,9 +1688,9 @@ Singleton {
 
       // Show toast notification
       var pluginName = manifest.name || pluginId;
-      ToastService.showNotice(I18n.tr("settings.plugins.title"), I18n.tr("settings.plugins.hot-reloaded", {
-                                                                           "name": pluginName
-                                                                         }));
+      ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.hot-reloaded", {
+                                                                         "name": pluginName
+                                                                       }));
 
       Logger.i("PluginService", "Hot reload complete for plugin:", pluginId);
     });

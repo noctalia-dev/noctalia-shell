@@ -14,7 +14,7 @@ Popup {
   // Measure the ENV placeholder text at current font settings
   TextMetrics {
     id: envPlaceholderMetrics
-    text: I18n.tr("wallpaper.panel.apikey.managed-by-env")
+    text: I18n.tr("wallpaper.panel.apikey-managed-by-env")
     font.pointSize: Style.fontSizeM
   }
 
@@ -105,7 +105,7 @@ Popup {
       }
 
       NText {
-        text: I18n.tr("wallpaper.panel.wallhaven-settings.title")
+        text: I18n.tr("wallpaper.panel.wallhaven-settings-title")
         pointSize: Style.fontSizeL
         font.weight: Style.fontWeightBold
         color: Color.mOnSurface
@@ -114,7 +114,7 @@ Popup {
 
       NIconButton {
         icon: "close"
-        tooltipText: I18n.tr("tooltips.close")
+        tooltipText: I18n.tr("common.close")
         baseSize: Style.baseWidgetSize * 0.8
         onClicked: root.hide()
       }
@@ -130,7 +130,7 @@ Popup {
       spacing: Style.marginS
 
       NText {
-        text: I18n.tr("wallpaper.panel.apikey.label")
+        text: I18n.tr("wallpaper.panel.apikey-label")
         color: Color.mOnSurface
         pointSize: Style.fontSizeM
       }
@@ -139,7 +139,7 @@ Popup {
         id: apiKeyInput
         Layout.fillWidth: true
         enabled: !WallhavenService.apiKeyManagedByEnv
-        placeholderText: WallhavenService.apiKeyManagedByEnv ? I18n.tr("wallpaper.panel.apikey.managed-by-env") : I18n.tr("wallpaper.panel.apikey.placeholder")
+        placeholderText: WallhavenService.apiKeyManagedByEnv ? I18n.tr("wallpaper.panel.apikey-managed-by-env") : I18n.tr("wallpaper.panel.apikey-placeholder")
         text: WallhavenService.apiKeyManagedByEnv ? "" : (Settings.data.wallpaper.wallhavenApiKey || "")
 
         // Fix for password echo mode
@@ -157,7 +157,7 @@ Popup {
       }
 
       NText {
-        text: I18n.tr("wallpaper.panel.apikey.help")
+        text: I18n.tr("wallpaper.panel.apikey-help")
         color: Color.mOnSurfaceVariant
         pointSize: Style.fontSizeS
         wrapMode: Text.WordWrap
@@ -175,7 +175,7 @@ Popup {
       spacing: Style.marginM
 
       NText {
-        text: I18n.tr("wallpaper.panel.sorting.label")
+        text: I18n.tr("wallpaper.panel.sorting-label")
         color: Color.mOnSurface
         pointSize: Style.fontSizeM
         Layout.preferredWidth: implicitWidth
@@ -188,27 +188,27 @@ Popup {
         model: [
           {
             "key": "date_added",
-            "name": I18n.tr("wallpaper.panel.sorting.date_added")
+            "name": I18n.tr("wallpaper.panel.sorting-date-added")
           },
           {
             "key": "relevance",
-            "name": I18n.tr("wallpaper.panel.sorting.relevance")
+            "name": I18n.tr("wallpaper.panel.sorting-relevance")
           },
           {
             "key": "random",
-            "name": I18n.tr("wallpaper.panel.sorting.random")
+            "name": I18n.tr("common.random")
           },
           {
             "key": "views",
-            "name": I18n.tr("wallpaper.panel.sorting.views")
+            "name": I18n.tr("wallpaper.panel.sorting-views")
           },
           {
             "key": "favorites",
-            "name": I18n.tr("wallpaper.panel.sorting.favorites")
+            "name": I18n.tr("wallpaper.panel.sorting-favorites")
           },
           {
             "key": "toplist",
-            "name": I18n.tr("wallpaper.panel.sorting.toplist")
+            "name": I18n.tr("wallpaper.panel.sorting-toplist")
           }
         ]
         currentKey: Settings.data.wallpaper.wallhavenSorting || "relevance"
@@ -229,7 +229,7 @@ Popup {
       visible: sortingComboBox.currentKey !== "random"
 
       NText {
-        text: I18n.tr("wallpaper.panel.order.label")
+        text: I18n.tr("wallpaper.panel.order-label")
         color: Color.mOnSurface
         pointSize: Style.fontSizeM
         Layout.preferredWidth: implicitWidth
@@ -242,11 +242,11 @@ Popup {
         model: [
           {
             "key": "desc",
-            "name": I18n.tr("wallpaper.panel.order.desc")
+            "name": I18n.tr("wallpaper.panel.order-desc")
           },
           {
             "key": "asc",
-            "name": I18n.tr("wallpaper.panel.order.asc")
+            "name": I18n.tr("wallpaper.panel.order-asc")
           }
         ]
         currentKey: Settings.data.wallpaper.wallhavenOrder || "desc"
@@ -266,7 +266,7 @@ Popup {
       spacing: Style.marginM
 
       NText {
-        text: I18n.tr("wallpaper.panel.purity.label")
+        text: I18n.tr("wallpaper.panel.purity-label")
         color: Color.mOnSurface
         pointSize: Style.fontSizeM
         Layout.preferredWidth: implicitWidth
@@ -330,7 +330,7 @@ Popup {
             spacing: Style.marginS
 
             NText {
-              text: I18n.tr("wallpaper.panel.purity.sfw")
+              text: I18n.tr("wallpaper.panel.purity-sfw")
               color: Color.mOnSurface
               pointSize: Style.fontSizeM
             }
@@ -379,7 +379,7 @@ Popup {
             spacing: Style.marginS
 
             NText {
-              text: I18n.tr("wallpaper.panel.purity.sketchy")
+              text: I18n.tr("wallpaper.panel.purity-sketchy")
               color: Color.mOnSurface
               pointSize: Style.fontSizeM
             }
@@ -429,7 +429,7 @@ Popup {
             spacing: Style.marginS
 
             NText {
-              text: I18n.tr("wallpaper.panel.purity.nsfw")
+              text: I18n.tr("wallpaper.panel.purity-nsfw")
               color: Color.mOnSurface
               pointSize: Style.fontSizeM
             }
@@ -503,7 +503,7 @@ Popup {
       spacing: Style.marginM
 
       NText {
-        text: I18n.tr("wallpaper.panel.ratios.label")
+        text: I18n.tr("wallpaper.panel.ratios-label")
         color: Color.mOnSurface
         pointSize: Style.fontSizeM
         Layout.preferredWidth: implicitWidth
@@ -516,7 +516,7 @@ Popup {
         model: [
           {
             "key": "",
-            "name": I18n.tr("wallpaper.panel.ratios.any")
+            "name": I18n.tr("wallpaper.panel.ratios-any")
           },
           {
             "key": "16x9",
@@ -584,7 +584,7 @@ Popup {
       spacing: Style.marginM
 
       NText {
-        text: I18n.tr("wallpaper.panel.categories.label")
+        text: I18n.tr("wallpaper.panel.categories-label")
         color: Color.mOnSurface
         pointSize: Style.fontSizeM
         Layout.preferredWidth: implicitWidth
@@ -642,7 +642,7 @@ Popup {
             spacing: Style.marginS
 
             NText {
-              text: I18n.tr("wallpaper.panel.categories.general")
+              text: I18n.tr("common.general")
               color: Color.mOnSurface
               pointSize: Style.fontSizeM
             }
@@ -691,7 +691,7 @@ Popup {
             spacing: Style.marginS
 
             NText {
-              text: I18n.tr("wallpaper.panel.categories.anime")
+              text: I18n.tr("wallpaper.panel.categories-anime")
               color: Color.mOnSurface
               pointSize: Style.fontSizeM
             }
@@ -740,7 +740,7 @@ Popup {
             spacing: Style.marginS
 
             NText {
-              text: I18n.tr("wallpaper.panel.categories.people")
+              text: I18n.tr("wallpaper.panel.categories-people")
               color: Color.mOnSurface
               pointSize: Style.fontSizeM
             }
@@ -814,7 +814,7 @@ Popup {
       spacing: Style.marginS
 
       NText {
-        text: I18n.tr("wallpaper.panel.resolution.label")
+        text: I18n.tr("wallpaper.panel.resolution-label")
         color: Color.mOnSurface
         pointSize: Style.fontSizeM
       }
@@ -824,7 +824,7 @@ Popup {
         spacing: Style.marginM
 
         NText {
-          text: I18n.tr("wallpaper.panel.resolution.mode.label")
+          text: I18n.tr("wallpaper.panel.resolution-mode-label")
           color: Color.mOnSurface
           pointSize: Style.fontSizeM
           Layout.preferredWidth: implicitWidth
@@ -837,11 +837,11 @@ Popup {
           model: [
             {
               "key": "atleast",
-              "name": I18n.tr("wallpaper.panel.resolution.atleast")
+              "name": I18n.tr("wallpaper.panel.resolution-atleast")
             },
             {
               "key": "exact",
-              "name": I18n.tr("wallpaper.panel.resolution.exact")
+              "name": I18n.tr("wallpaper.panel.resolution-exact")
             }
           ]
           currentKey: Settings.data.wallpaper.wallhavenResolutionMode || "atleast"
@@ -956,7 +956,7 @@ Popup {
 
     NButton {
       Layout.fillWidth: true
-      text: I18n.tr("wallpaper.panel.wallhaven-settings.apply")
+      text: I18n.tr("common.apply")
       onClicked: {
         // Ensure all settings are synced to the service
         if (typeof WallhavenService !== "undefined" && Settings.data.wallpaper.useWallhaven) {

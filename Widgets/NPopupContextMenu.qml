@@ -188,7 +188,7 @@ PopupWindow {
     color: Color.mSurface
     border.color: Color.mOutline
     border.width: Style.borderS
-    radius: Style.iRadiusM
+    radius: Style.radiusM
     opacity: root.visible ? 1.0 : 0.0
 
     Behavior on opacity {
@@ -236,7 +236,7 @@ PopupWindow {
             id: innerRect
             anchors.fill: parent
             color: mouseArea.containsMouse ? Color.mHover : "transparent"
-            radius: Style.iRadiusS
+            radius: Style.radiusS
             opacity: modelData.enabled !== false ? 1.0 : 0.5
 
             Behavior on color {

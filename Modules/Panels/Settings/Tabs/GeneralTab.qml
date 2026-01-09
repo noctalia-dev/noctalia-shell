@@ -10,11 +10,6 @@ import qs.Widgets
 ColumnLayout {
   id: root
 
-  NHeader {
-    label: I18n.tr("settings.general.profile.section.label")
-    description: I18n.tr("settings.general.profile.section.description")
-  }
-
   // Profile section
   RowLayout {
     Layout.fillWidth: true
@@ -33,14 +28,14 @@ ColumnLayout {
     }
 
     NTextInputButton {
-      label: I18n.tr("settings.general.profile.picture.label", {
+      label: I18n.tr("panels.general.profile-picture-label", {
                        "user": HostService.displayName
                      })
-      description: I18n.tr("settings.general.profile.picture.description")
+      description: I18n.tr("panels.general.profile-picture-description")
       text: Settings.data.general.avatarImage
-      placeholderText: I18n.tr("placeholders.profile-picture-path")
+      placeholderText: '~/.face' // don't translate path
       buttonIcon: "photo"
-      buttonTooltip: I18n.tr("settings.general.profile.tooltip")
+      buttonTooltip: I18n.tr("panels.general.profile-tooltip")
       onInputEditingFinished: Settings.data.general.avatarImage = text
       onButtonClicked: {
         avatarPicker.openFilePicker();
@@ -50,7 +45,7 @@ ColumnLayout {
 
   NFilePicker {
     id: avatarPicker
-    title: I18n.tr("settings.general.profile.select-avatar")
+    title: I18n.tr("panels.general.profile-select-avatar")
     selectionMode: "files"
     initialPath: Settings.preprocessPath(Settings.data.general.avatarImage).substr(0, Settings.preprocessPath(Settings.data.general.avatarImage).lastIndexOf("/")) || Quickshell.env("HOME")
     nameFilters: ImageCacheService.basicImageFilters
@@ -63,8 +58,8 @@ ColumnLayout {
 
   NDivider {
     Layout.fillWidth: true
-    Layout.topMargin: Style.marginL
-    Layout.bottomMargin: Style.marginL
+    Layout.topMargin: Style.marginM
+    Layout.bottomMargin: Style.marginM
   }
 
   // Fonts
@@ -72,39 +67,32 @@ ColumnLayout {
     spacing: Style.marginL
     Layout.fillWidth: true
 
-    NHeader {
-      label: I18n.tr("settings.general.fonts.section.label")
-      description: I18n.tr("settings.general.fonts.section.description")
-    }
-
     // Font configuration section
     ColumnLayout {
       spacing: Style.marginL
       Layout.fillWidth: true
 
       NSearchableComboBox {
-        label: I18n.tr("settings.general.fonts.default.label")
-        description: I18n.tr("settings.general.fonts.default.description")
+        label: I18n.tr("panels.general.fonts-default-label")
+        description: I18n.tr("panels.general.fonts-default-description")
         model: FontService.availableFonts
         currentKey: Settings.data.ui.fontDefault
-        placeholder: I18n.tr("settings.general.fonts.default.placeholder")
-        searchPlaceholder: I18n.tr("settings.general.fonts.default.search-placeholder")
+        placeholder: I18n.tr("panels.general.fonts-default-placeholder")
+        searchPlaceholder: I18n.tr("panels.general.fonts-default-search-placeholder")
         popupHeight: 420
-        isSettings: true
         defaultValue: Settings.getDefaultValue("ui.fontDefault")
         settingsPath: "ui.fontDefault"
         onSelected: key => Settings.data.ui.fontDefault = key
       }
 
       NSearchableComboBox {
-        label: I18n.tr("settings.general.fonts.monospace.label")
-        description: I18n.tr("settings.general.fonts.monospace.description")
+        label: I18n.tr("panels.general.fonts-monospace-label")
+        description: I18n.tr("panels.general.fonts-monospace-description")
         model: FontService.monospaceFonts
         currentKey: Settings.data.ui.fontFixed
-        placeholder: I18n.tr("settings.general.fonts.monospace.placeholder")
-        searchPlaceholder: I18n.tr("settings.general.fonts.monospace.search-placeholder")
+        placeholder: I18n.tr("panels.general.fonts-monospace-placeholder")
+        searchPlaceholder: I18n.tr("panels.general.fonts-monospace-search-placeholder")
         popupHeight: 320
-        isSettings: true
         defaultValue: Settings.getDefaultValue("ui.fontFixed")
         settingsPath: "ui.fontFixed"
         onSelected: key => Settings.data.ui.fontFixed = key
@@ -116,13 +104,12 @@ ColumnLayout {
 
         NValueSlider {
           Layout.fillWidth: true
-          label: I18n.tr("settings.general.fonts.default.scale.label")
-          description: I18n.tr("settings.general.fonts.default.scale.description")
+          label: I18n.tr("panels.general.fonts-default-scale-label")
+          description: I18n.tr("panels.general.fonts-default-scale-description")
           from: 0.75
           to: 1.25
           stepSize: 0.01
           value: Settings.data.ui.fontDefaultScale
-          isSettings: true
           defaultValue: Settings.getDefaultValue("ui.fontDefaultScale")
           onMoved: value => Settings.data.ui.fontDefaultScale = value
           text: Math.floor(Settings.data.ui.fontDefaultScale * 100) + "%"
@@ -136,7 +123,7 @@ ColumnLayout {
           NIconButton {
             icon: "restore"
             baseSize: Style.baseWidgetSize * 0.8
-            tooltipText: I18n.tr("settings.general.fonts.reset-scaling")
+            tooltipText: I18n.tr("panels.general.fonts-reset-scaling")
             onClicked: Settings.data.ui.fontDefaultScale = 1.0
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
@@ -150,13 +137,12 @@ ColumnLayout {
 
         NValueSlider {
           Layout.fillWidth: true
-          label: I18n.tr("settings.general.fonts.monospace.scale.label")
-          description: I18n.tr("settings.general.fonts.monospace.scale.description")
+          label: I18n.tr("panels.general.fonts-monospace-scale-label")
+          description: I18n.tr("panels.general.fonts-monospace-scale-description")
           from: 0.75
           to: 1.25
           stepSize: 0.01
           value: Settings.data.ui.fontFixedScale
-          isSettings: true
           defaultValue: Settings.getDefaultValue("ui.fontFixedScale")
           onMoved: value => Settings.data.ui.fontFixedScale = value
           text: Math.floor(Settings.data.ui.fontFixedScale * 100) + "%"
@@ -170,7 +156,7 @@ ColumnLayout {
           NIconButton {
             icon: "restore"
             baseSize: Style.baseWidgetSize * 0.8
-            tooltipText: I18n.tr("settings.general.fonts.reset-scaling")
+            tooltipText: I18n.tr("panels.general.fonts-reset-scaling")
             onClicked: Settings.data.ui.fontFixedScale = 1.0
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
@@ -182,7 +168,30 @@ ColumnLayout {
 
   NDivider {
     Layout.fillWidth: true
-    Layout.topMargin: Style.marginL
-    Layout.bottomMargin: Style.marginL
+    Layout.topMargin: Style.marginM
+    Layout.bottomMargin: Style.marginM
+  }
+
+  NButton {
+    visible: !HostService.isNixOS
+    icon: "wand"
+    text: I18n.tr("panels.general.launch-setup-wizard")
+    outlined: true
+    onClicked: {
+      var targetScreen = PanelService.openedPanel ? PanelService.openedPanel.screen : (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null);
+      if (!targetScreen) {
+        return;
+      }
+      var setupPanel = PanelService.getPanel("setupWizardPanel", targetScreen);
+      if (setupPanel) {
+        setupPanel.open();
+      } else {
+        Qt.callLater(() => {
+                       var sp = PanelService.getPanel("setupWizardPanel", targetScreen);
+                       if (sp)
+                       sp.open();
+                     });
+      }
+    }
   }
 }

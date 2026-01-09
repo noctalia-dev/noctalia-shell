@@ -26,7 +26,7 @@ ColumnLayout {
     var model = [
           {
             "key": "",
-            "name": I18n.tr("bar.widget-settings.battery.device.default")
+            "name": I18n.tr("bar.battery.device-default")
           }
         ];
 
@@ -101,8 +101,8 @@ ColumnLayout {
     NComboBox {
       id: deviceComboBox
       Layout.fillWidth: true
-      label: I18n.tr("bar.widget-settings.battery.device.label")
-      description: I18n.tr("bar.widget-settings.battery.device.description")
+      label: I18n.tr("bar.battery.device-label")
+      description: I18n.tr("bar.battery.device-description")
       minimumWidth: 134
       model: root.deviceModel
       currentKey: root.valueDeviceNativePath
@@ -126,21 +126,21 @@ ColumnLayout {
   }
 
   NComboBox {
-    label: I18n.tr("bar.widget-settings.battery.display-mode.label")
-    description: I18n.tr("bar.widget-settings.battery.display-mode.description")
+    label: I18n.tr("bar.volume.display-mode-label")
+    description: I18n.tr("bar.volume.display-mode-description")
     minimumWidth: 134
     model: [
       {
         "key": "onhover",
-        "name": I18n.tr("options.display-mode.on-hover")
+        "name": I18n.tr("display-modes.on-hover")
       },
       {
         "key": "alwaysShow",
-        "name": I18n.tr("options.display-mode.always-show")
+        "name": I18n.tr("display-modes.always-show")
       },
       {
         "key": "alwaysHide",
-        "name": I18n.tr("options.display-mode.always-hide")
+        "name": I18n.tr("display-modes.always-hide")
       }
     ]
     currentKey: root.valueDisplayMode
@@ -148,8 +148,8 @@ ColumnLayout {
   }
 
   NSpinBox {
-    label: I18n.tr("bar.widget-settings.battery.low-battery-threshold.label")
-    description: I18n.tr("bar.widget-settings.battery.low-battery-threshold.description")
+    label: I18n.tr("bar.battery.low-battery-threshold-label")
+    description: I18n.tr("bar.battery.low-battery-threshold-description")
     value: valueWarningThreshold
     suffix: "%"
     minimum: 5
@@ -158,22 +158,22 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.battery.show-power-profile.label")
-    description: I18n.tr("bar.widget-settings.battery.show-power-profile.description")
+    label: I18n.tr("bar.battery.show-power-profile-label")
+    description: I18n.tr("bar.battery.show-power-profile-description")
     checked: valueShowPowerProfiles
     onToggled: checked => valueShowPowerProfiles = checked
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.battery.show-noctalia-performance.label")
-    description: I18n.tr("bar.widget-settings.battery.show-noctalia-performance.description")
+    label: I18n.tr("bar.battery.show-noctalia-performance-label")
+    description: I18n.tr("bar.battery.show-noctalia-performance-description")
     checked: valueShowNoctaliaPerformance
     onToggled: checked => valueShowNoctaliaPerformance = checked
   }
 
   NToggle {
-    label: I18n.tr("bar.widget-settings.battery.hide-if-not-detected.label")
-    description: I18n.tr("bar.widget-settings.battery.hide-if-not-detected.description")
+    label: I18n.tr("bar.battery.hide-if-not-detected-label")
+    description: I18n.tr("bar.battery.hide-if-not-detected-description")
     checked: root.valueHideIfNotDetected
     onToggled: checked => root.valueHideIfNotDetected = checked
   }

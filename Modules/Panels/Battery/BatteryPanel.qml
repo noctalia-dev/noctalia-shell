@@ -131,7 +131,7 @@ SmartPanel {
     }
 
     readonly property string deviceName: getDeviceName()
-    readonly property string panelTitle: deviceName ? `${I18n.tr("battery.panel-title")} - ${deviceName}` : I18n.tr("battery.panel-title")
+    readonly property string panelTitle: deviceName ? `${I18n.tr("common.battery")} - ${deviceName}` : I18n.tr("common.battery")
 
     readonly property string timeText: {
       if (!isReady || !isDevicePresent)
@@ -146,7 +146,7 @@ SmartPanel {
                          "time": Time.formatVagueHumanReadableDuration(battery.timeToEmpty)
                        });
       }
-      return I18n.tr("battery.idle");
+      return I18n.tr("common.idle");
     }
     readonly property string iconName: BatteryService.getIcon(percent, charging, isReady)
 
@@ -243,7 +243,7 @@ SmartPanel {
 
           NIconButton {
             icon: "close"
-            tooltipText: I18n.tr("tooltips.close")
+            tooltipText: I18n.tr("common.close")
             baseSize: Style.baseWidgetSize * 0.8
             onClicked: root.close()
           }

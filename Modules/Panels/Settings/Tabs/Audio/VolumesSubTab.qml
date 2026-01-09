@@ -29,19 +29,14 @@ ColumnLayout {
     }
   }
 
-  NHeader {
-    label: I18n.tr("settings.audio.volumes.section.label")
-    description: I18n.tr("settings.audio.volumes.section.description")
-  }
-
   // Master Volume
   ColumnLayout {
     spacing: Style.marginXXS
     Layout.fillWidth: true
 
     NLabel {
-      label: I18n.tr("settings.audio.volumes.output-volume.label")
-      description: I18n.tr("settings.audio.volumes.output-volume.description")
+      label: I18n.tr("panels.osd.types-volume-label")
+      description: I18n.tr("panels.audio.volumes-output-volume-description")
     }
 
     Timer {
@@ -72,8 +67,8 @@ ColumnLayout {
     Layout.fillWidth: true
 
     NToggle {
-      label: I18n.tr("settings.audio.volumes.mute-output.label")
-      description: I18n.tr("settings.audio.volumes.mute-output.description")
+      label: I18n.tr("panels.audio.volumes-mute-output-label")
+      description: I18n.tr("panels.audio.volumes-mute-output-description")
       checked: AudioService.muted
       onToggled: checked => {
                    if (AudioService.sink && AudioService.sink.audio) {
@@ -90,8 +85,8 @@ ColumnLayout {
 
     NValueSlider {
       Layout.fillWidth: true
-      label: I18n.tr("settings.audio.volumes.input-volume.label")
-      description: I18n.tr("settings.audio.volumes.input-volume.description")
+      label: I18n.tr("panels.osd.types-input-volume-label")
+      description: I18n.tr("panels.audio.volumes-input-volume-description")
       from: 0
       to: Settings.data.audio.volumeOverdrive ? 1.5 : 1.0
       value: AudioService.inputVolume
@@ -107,8 +102,8 @@ ColumnLayout {
     Layout.fillWidth: true
 
     NToggle {
-      label: I18n.tr("settings.audio.volumes.mute-input.label")
-      description: I18n.tr("settings.audio.volumes.mute-input.description")
+      label: I18n.tr("panels.audio.volumes-mute-input-label")
+      description: I18n.tr("panels.audio.volumes-mute-input-description")
       checked: AudioService.inputMuted
       onToggled: checked => AudioService.setInputMuted(checked)
     }
@@ -121,14 +116,13 @@ ColumnLayout {
 
     NSpinBox {
       Layout.fillWidth: true
-      label: I18n.tr("settings.audio.volumes.step-size.label")
-      description: I18n.tr("settings.audio.volumes.step-size.description")
+      label: I18n.tr("panels.audio.volumes-step-size-label")
+      description: I18n.tr("panels.audio.volumes-step-size-description")
       minimum: 1
       maximum: 25
       value: Settings.data.audio.volumeStep
       stepSize: 1
       suffix: "%"
-      isSettings: true
       defaultValue: Settings.getDefaultValue("audio.volumeStep")
       onValueChanged: Settings.data.audio.volumeStep = value
     }
@@ -140,22 +134,24 @@ ColumnLayout {
     Layout.fillWidth: true
 
     NToggle {
-      label: I18n.tr("settings.audio.volumes.volume-overdrive.label")
-      description: I18n.tr("settings.audio.volumes.volume-overdrive.description")
+      label: I18n.tr("panels.audio.volumes-volume-overdrive-label")
+      description: I18n.tr("panels.audio.volumes-volume-overdrive-description")
       checked: Settings.data.audio.volumeOverdrive
-      isSettings: true
       defaultValue: Settings.getDefaultValue("audio.volumeOverdrive")
       onToggled: checked => Settings.data.audio.volumeOverdrive = checked
     }
   }
 
+  NDivider {
+    Layout.fillWidth: true
+  }
+
   // External mixer command
   NTextInput {
-    label: I18n.tr("settings.audio.external-mixer.label")
-    description: I18n.tr("settings.audio.external-mixer.description")
-    placeholderText: I18n.tr("settings.audio.external-mixer.placeholder")
+    label: I18n.tr("panels.audio.external-mixer-label")
+    description: I18n.tr("panels.audio.external-mixer-description")
+    placeholderText: I18n.tr("panels.audio.external-mixer-placeholder")
     text: Settings.data.audio.externalMixer
-    isSettings: true
     defaultValue: Settings.getDefaultValue("audio.externalMixer")
     onTextChanged: Settings.data.audio.externalMixer = text
   }

@@ -11,15 +11,10 @@ ColumnLayout {
   spacing: Style.marginL
   width: root.width
 
-  NHeader {
-    label: I18n.tr("settings.hooks.system-hooks.section.label")
-    description: I18n.tr("settings.hooks.system-hooks.section.description")
-  }
-
   // Enable/Disable Toggle
   NToggle {
-    label: I18n.tr("settings.hooks.system-hooks.enable.label")
-    description: I18n.tr("settings.hooks.system-hooks.enable.description")
+    label: I18n.tr("panels.hooks.system-hooks-enable-label")
+    description: I18n.tr("panels.hooks.system-hooks-enable-description")
     checked: Settings.data.hooks.enabled
     onToggled: checked => Settings.data.hooks.enabled = checked
   }
@@ -36,9 +31,9 @@ ColumnLayout {
     // Wallpaper Hook Section
     NInputAction {
       id: wallpaperHookInput
-      label: I18n.tr("settings.hooks.wallpaper-changed.label")
-      description: I18n.tr("settings.hooks.wallpaper-changed.description")
-      placeholderText: I18n.tr("settings.hooks.wallpaper-changed.placeholder")
+      label: I18n.tr("panels.hooks.wallpaper-changed-label")
+      description: I18n.tr("panels.hooks.wallpaper-changed-description")
+      placeholderText: I18n.tr("panels.hooks.wallpaper-changed-placeholder")
       text: Settings.data.hooks.wallpaperChange
       onEditingFinished: {
         Settings.data.hooks.wallpaperChange = wallpaperHookInput.text;
@@ -58,9 +53,9 @@ ColumnLayout {
     // Dark Mode Hook Section
     NInputAction {
       id: darkModeHookInput
-      label: I18n.tr("settings.hooks.theme-changed.label")
-      description: I18n.tr("settings.hooks.theme-changed.description")
-      placeholderText: I18n.tr("settings.hooks.theme-changed.placeholder")
+      label: I18n.tr("panels.hooks.theme-changed-label")
+      description: I18n.tr("panels.hooks.theme-changed-description")
+      placeholderText: I18n.tr("panels.hooks.theme-changed-placeholder")
       text: Settings.data.hooks.darkModeChange
       onEditingFinished: {
         Settings.data.hooks.darkModeChange = darkModeHookInput.text;
@@ -80,9 +75,9 @@ ColumnLayout {
     // Screen Lock Hook Section
     NInputAction {
       id: screenLockHookInput
-      label: I18n.tr("settings.hooks.screen-lock.label")
-      description: I18n.tr("settings.hooks.screen-lock.description")
-      placeholderText: I18n.tr("settings.hooks.screen-lock.placeholder")
+      label: I18n.tr("panels.hooks.screen-lock-label")
+      description: I18n.tr("panels.hooks.screen-lock-description")
+      placeholderText: I18n.tr("panels.hooks.screen-lock-placeholder")
       text: Settings.data.hooks.screenLock
       onEditingFinished: {
         Settings.data.hooks.screenLock = screenLockHookInput.text;
@@ -102,9 +97,9 @@ ColumnLayout {
     // Screen Unlock Hook Section
     NInputAction {
       id: screenUnlockHookInput
-      label: I18n.tr("settings.hooks.screen-unlock.label")
-      description: I18n.tr("settings.hooks.screen-unlock.description")
-      placeholderText: I18n.tr("settings.hooks.screen-unlock.placeholder")
+      label: I18n.tr("panels.hooks.screen-unlock-label")
+      description: I18n.tr("panels.hooks.screen-unlock-description")
+      placeholderText: I18n.tr("panels.hooks.screen-unlock-placeholder")
       text: Settings.data.hooks.screenUnlock
       onEditingFinished: {
         Settings.data.hooks.screenUnlock = screenUnlockHookInput.text;
@@ -124,9 +119,9 @@ ColumnLayout {
     // Performance Mode Enabled Hook Section
     NInputAction {
       id: performanceModeEnabledHookInput
-      label: I18n.tr("settings.hooks.performance-mode-enabled.label")
-      description: I18n.tr("settings.hooks.performance-mode-enabled.description")
-      placeholderText: I18n.tr("settings.hooks.performance-mode-enabled.placeholder")
+      label: I18n.tr("panels.hooks.performance-mode-enabled-label")
+      description: I18n.tr("panels.hooks.performance-mode-enabled-description")
+      placeholderText: I18n.tr("panels.hooks.performance-mode-enabled-placeholder")
       text: Settings.data.hooks.performanceModeEnabled
       onEditingFinished: {
         Settings.data.hooks.performanceModeEnabled = performanceModeEnabledHookInput.text;
@@ -146,9 +141,9 @@ ColumnLayout {
     // Performance Mode Disabled Hook Section
     NInputAction {
       id: performanceModeDisabledHookInput
-      label: I18n.tr("settings.hooks.performance-mode-disabled.label")
-      description: I18n.tr("settings.hooks.performance-mode-disabled.description")
-      placeholderText: I18n.tr("settings.hooks.performance-mode-disabled.placeholder")
+      label: I18n.tr("panels.hooks.performance-mode-disabled-label")
+      description: I18n.tr("panels.hooks.performance-mode-disabled-description")
+      placeholderText: I18n.tr("panels.hooks.performance-mode-disabled-placeholder")
       text: Settings.data.hooks.performanceModeDisabled
       onEditingFinished: {
         Settings.data.hooks.performanceModeDisabled = performanceModeDisabledHookInput.text;
@@ -171,20 +166,18 @@ ColumnLayout {
       Layout.fillWidth: true
 
       NLabel {
-        label: I18n.tr("settings.hooks.info.command-info.label")
-        description: I18n.tr("settings.hooks.info.command-info.description")
+        label: I18n.tr("panels.hooks.info-command-info-label")
+        description: I18n.tr("panels.hooks.info-command-info-description")
       }
 
       NLabel {
-        label: I18n.tr("settings.hooks.info.parameters.label")
-        description: I18n.tr("settings.hooks.info.parameters.description")
+        label: I18n.tr("panels.hooks.info-parameters-label")
+        description: I18n.tr("panels.hooks.info-parameters-description")
       }
     }
   }
 
   NDivider {
     Layout.fillWidth: true
-    Layout.topMargin: Style.marginL
-    Layout.bottomMargin: Style.marginL
   }
 }

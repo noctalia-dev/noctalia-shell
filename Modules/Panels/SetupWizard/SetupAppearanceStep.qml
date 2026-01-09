@@ -73,7 +73,7 @@ ColumnLayout {
       spacing: Style.marginXS
 
       NText {
-        text: I18n.tr("setup.appearance.header")
+        text: I18n.tr("common.appearance")
         pointSize: Style.fontSizeXL
         font.weight: Style.fontWeightBold
         color: Color.mPrimary
@@ -123,14 +123,14 @@ ColumnLayout {
           spacing: 2
 
           NText {
-            text: I18n.tr("settings.color-scheme.dark-mode.switch.label")
+            text: I18n.tr("tooltips.switch-to-dark-mode")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
           }
 
           NText {
-            text: I18n.tr("settings.color-scheme.dark-mode.switch.description")
+            text: I18n.tr("panels.color-scheme.dark-mode-switch-description")
             pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
             wrapMode: Text.WordWrap
@@ -178,14 +178,14 @@ ColumnLayout {
           spacing: 2
 
           NText {
-            text: I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label")
+            text: I18n.tr("panels.color-scheme.color-source-use-wallpaper-colors-label")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
           }
 
           NText {
-            text: I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.description")
+            text: I18n.tr("panels.color-scheme.color-source-use-wallpaper-colors-description")
             pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
             wrapMode: Text.WordWrap
@@ -241,14 +241,14 @@ ColumnLayout {
             spacing: 2
 
             NText {
-              text: I18n.tr("settings.color-scheme.color-source.matugen-scheme-type.label")
+              text: I18n.tr("panels.color-scheme.color-source-matugen-scheme-type-label")
               pointSize: Style.fontSizeL
               font.weight: Style.fontWeightBold
               color: Color.mOnSurface
             }
 
             NText {
-              text: I18n.tr("settings.color-scheme.color-source.matugen-scheme-type.description")
+              text: I18n.tr("panels.color-scheme.color-source-matugen-scheme-type-description")
               pointSize: Style.fontSizeS
               color: Color.mOnSurfaceVariant
             }
@@ -389,14 +389,14 @@ ColumnLayout {
             spacing: 2
 
             NText {
-              text: I18n.tr("settings.color-scheme.predefined.section.label")
+              text: I18n.tr("panels.color-scheme.predefined-title")
               pointSize: Style.fontSizeL
               font.weight: Style.fontWeightBold
               color: Color.mOnSurface
             }
 
             NText {
-              text: I18n.tr("settings.color-scheme.predefined.section.description")
+              text: I18n.tr("panels.color-scheme.predefined-desc")
               pointSize: Style.fontSizeS
               color: Color.mOnSurfaceVariant
             }

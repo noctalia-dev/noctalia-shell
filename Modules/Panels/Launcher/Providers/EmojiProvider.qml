@@ -13,7 +13,7 @@ Item {
   property bool handleSearch: false
   property string supportedLayouts: "grid" // Only grid layout for emoji
   property int preferredGridColumns: 7 // More columns for compact emoji display
-  property real preferredGridCellRatio: 1.0 // Square cells like apps
+  property real preferredGridCellRatio: 1.15 // Slightly taller than wide to accommodate label
   property bool supportsAutoPaste: true // Emoji can be auto-pasted
 
   property string selectedCategory: "recent"
@@ -39,16 +39,16 @@ Item {
 
   function getCategoryName(category) {
     const names = {
-      "recent": I18n.tr("launcher.categories.emoji.recent"),
-      "people": I18n.tr("launcher.categories.emoji.people"),
-      "animals": I18n.tr("launcher.categories.emoji.animals"),
-      "nature": I18n.tr("launcher.categories.emoji.nature"),
-      "food": I18n.tr("launcher.categories.emoji.food"),
-      "activity": I18n.tr("launcher.categories.emoji.activity"),
-      "travel": I18n.tr("launcher.categories.emoji.travel"),
-      "objects": I18n.tr("launcher.categories.emoji.objects"),
-      "symbols": I18n.tr("launcher.categories.emoji.symbols"),
-      "flags": I18n.tr("launcher.categories.emoji.flags")
+      "recent": I18n.tr("launcher.categories.emoji-recent"),
+      "people": I18n.tr("launcher.categories.emoji-people"),
+      "animals": I18n.tr("launcher.categories.emoji-animals"),
+      "nature": I18n.tr("launcher.categories.emoji-nature"),
+      "food": I18n.tr("launcher.categories.emoji-food"),
+      "activity": I18n.tr("launcher.categories.emoji-activity"),
+      "travel": I18n.tr("launcher.categories.emoji-travel"),
+      "objects": I18n.tr("launcher.categories.emoji-objects"),
+      "symbols": I18n.tr("launcher.categories.emoji-symbols"),
+      "flags": I18n.tr("launcher.categories.emoji-flags")
     };
     return names[category] || category;
   }

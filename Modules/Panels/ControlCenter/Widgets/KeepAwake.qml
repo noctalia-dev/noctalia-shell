@@ -9,6 +9,6 @@ NIconButtonHot {
 
   icon: IdleInhibitorService.isInhibited ? "keep-awake-on" : "keep-awake-off"
   hot: IdleInhibitorService.isInhibited
-  tooltipText: I18n.tr("quickSettings.keepAwake.tooltip.action")
+  tooltipText: I18n.tr("tooltips.keep-awake")
   onClicked: IdleInhibitorService.manualToggle()
 }

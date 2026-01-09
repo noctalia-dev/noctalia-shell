@@ -60,7 +60,7 @@ Popup {
       }
       NIconButton {
         icon: "close"
-        tooltipText: I18n.tr("tooltips.close")
+        tooltipText: I18n.tr("common.close")
         onClicked: root.close()
       }
     }
@@ -75,7 +75,7 @@ Popup {
       NTextInput {
         id: searchInput
         Layout.fillWidth: true
-        label: I18n.tr("widgets.icon-picker.search.label")
+        label: I18n.tr("common.search")
         placeholderText: I18n.tr("placeholders.search-icons")
         text: root.query
         onTextChanged: root.query = text.trim().toLowerCase()
@@ -149,12 +149,12 @@ Popup {
         Layout.fillWidth: true
       }
       NButton {
-        text: I18n.tr("widgets.icon-picker.cancel")
+        text: I18n.tr("common.cancel")
         outlined: true
         onClicked: root.close()
       }
       NButton {
-        text: I18n.tr("widgets.icon-picker.apply")
+        text: I18n.tr("common.apply")
         icon: "check"
         enabled: root.selectedIcon !== ""
         onClicked: {

@@ -10,44 +10,42 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-  NHeader {
-    label: I18n.tr("settings.wallpaper.automation.section.label")
-  }
-
   NToggle {
-    label: I18n.tr("settings.wallpaper.automation.scheduled-change.label")
-    description: I18n.tr("settings.wallpaper.automation.scheduled-change.description")
+    label: I18n.tr("panels.wallpaper.automation-scheduled-change-label")
+    description: I18n.tr("panels.wallpaper.automation-scheduled-change-description")
     checked: Settings.data.wallpaper.randomEnabled
     onToggled: checked => Settings.data.wallpaper.randomEnabled = checked
   }
 
-  NComboBox {
-    visible: Settings.data.wallpaper.randomEnabled
-    label: I18n.tr("settings.wallpaper.automation.change-mode.label")
-    description: I18n.tr("settings.wallpaper.automation.change-mode.description")
-    Layout.fillWidth: true
-    model: [
-      {
-        "key": "random",
-        "name": I18n.tr("settings.wallpaper.automation.change-mode.random")
-      },
-      {
-        "key": "alphabetical",
-        "name": I18n.tr("settings.wallpaper.automation.change-mode.alphabetical")
-      }
-    ]
-    currentKey: Settings.data.wallpaper.wallpaperChangeMode || "random"
-    onSelected: key => Settings.data.wallpaper.wallpaperChangeMode = key
-    isSettings: true
-    defaultValue: Settings.getDefaultValue("wallpaper.transitionType")
-  }
-
   ColumnLayout {
-    visible: Settings.data.wallpaper.randomEnabled
+    enabled: Settings.data.wallpaper.randomEnabled
+    spacing: Style.marginL
+    Layout.fillWidth: true
+
+    NComboBox {
+
+      label: I18n.tr("panels.wallpaper.automation-change-mode-label")
+      description: I18n.tr("panels.wallpaper.automation-change-mode-description")
+      Layout.fillWidth: true
+      model: [
+        {
+          "key": "random",
+          "name": I18n.tr("common.random")
+        },
+        {
+          "key": "alphabetical",
+          "name": I18n.tr("panels.wallpaper.automation-change-mode-alphabetical")
+        }
+      ]
+      currentKey: Settings.data.wallpaper.wallpaperChangeMode || "random"
+      onSelected: key => Settings.data.wallpaper.wallpaperChangeMode = key
+      defaultValue: Settings.getDefaultValue("wallpaper.transitionType")
+    }
+
     RowLayout {
       NLabel {
-        label: I18n.tr("settings.wallpaper.automation.interval.label")
-        description: I18n.tr("settings.wallpaper.automation.interval.description")
+        label: I18n.tr("panels.wallpaper.automation-interval-label")
+        description: I18n.tr("panels.wallpaper.automation-interval-description")
         Layout.fillWidth: true
       }
 
@@ -60,6 +58,7 @@ ColumnLayout {
     RowLayout {
       id: presetRow
       spacing: Style.marginS
+      opacity: enabled ? 1.0 : 0.6
 
       property var intervalPresets: [5 * 60, 10 * 60, 15 * 60, 30 * 60, 45 * 60, 60 * 60, 90 * 60, 120 * 60]
       property bool isCurrentPreset: {
@@ -82,7 +81,7 @@ ColumnLayout {
         delegate: IntervalPresetChip {
           seconds: modelData
           label: Time.formatVagueHumanReadableDuration(modelData)
-          selected: presetRow.isSelected(modelData)
+          selected: presetRow.isSelected(modelData) && !customRow.visible
           onClicked: presetRow.setIntervalSeconds(modelData)
         }
       }
@@ -96,13 +95,15 @@ ColumnLayout {
 
     RowLayout {
       id: customRow
+
       visible: presetRow.customForcedVisible || !presetRow.isCurrentPreset
       spacing: Style.marginS
+      opacity: enabled ? 1.0 : 0.6
       Layout.topMargin: Style.marginS
 
       NTextInput {
-        label: I18n.tr("settings.wallpaper.automation.custom-interval.label")
-        description: I18n.tr("settings.wallpaper.automation.custom-interval.description")
+        label: I18n.tr("panels.wallpaper.automation-custom-interval-label")
+        description: I18n.tr("panels.wallpaper.automation-custom-interval-description")
         text: {
           const s = Settings.data.wallpaper.randomIntervalSec;
           const h = Math.floor(s / 3600);

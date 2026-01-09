@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 37
+  readonly property int settingsVersion: 39
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -64,7 +64,6 @@ Singleton {
 
     // Patch-in the local default, resolved to user's home
     adapter.general.avatarImage = defaultAvatar;
-    adapter.screenRecorder.directory = defaultVideosDirectory;
     adapter.wallpaper.directory = defaultWallpapersDirectory;
     adapter.ui.fontDefault = Qt.application.font.family;
     adapter.ui.fontFixed = "monospace";
@@ -201,8 +200,8 @@ Singleton {
 
       // Floating bar settings
       property bool floating: false
-      property real marginVertical: 0.25
-      property real marginHorizontal: 0.25
+      property int marginVertical: 4
+      property int marginHorizontal: 4
 
       // Bar outer corners (inverted/concave corners at bar edges when not floating)
       property bool outerCorners: true
@@ -236,9 +235,6 @@ Singleton {
           }
         ]
         property list<var> right: [
-          {
-            "id": "ScreenRecorder"
-          },
           {
             "id": "Tray"
           },
@@ -345,20 +341,6 @@ Singleton {
       ]
     }
 
-    // screen recorder
-    property JsonObject screenRecorder: JsonObject {
-      property string directory: ""
-      property int frameRate: 60
-      property string audioCodec: "opus"
-      property string videoCodec: "h264"
-      property string quality: "very_high"
-      property string colorRange: "limited"
-      property bool showCursor: true
-      property bool copyToClipboard: false
-      property string audioSource: "default_output"
-      property string videoSource: "portal"
-    }
-
     // wallpaper
     property JsonObject wallpaper: JsonObject {
       property bool enabled: true
@@ -399,9 +381,9 @@ Singleton {
       property bool enableClipboardHistory: false
       property bool autoPasteClipboard: false
       property bool enableClipPreview: true
-      // Position: center, top_left, top_right, bottom_left, bottom_right, bottom_center, top_center
-      property string position: "center"
-      property list<string> pinnedExecs: []
+      property bool clipboardWrapText: true
+      property string position: "center"  // Position: center, top_left, top_right, bottom_left, bottom_right, bottom_center, top_center
+      property list<string> pinnedApps: []
       property bool useApp2Unit: false
       property bool sortByMostUsed: true
       property string terminalCommand: "xterm -e"
@@ -412,7 +394,7 @@ Singleton {
       property bool showCategories: true
       // Icon mode: "tabler" or "native"
       property string iconMode: "tabler"
-      property bool showIconBackground: true
+      property bool showIconBackground: false
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
     }
@@ -430,9 +412,6 @@ Singleton {
           },
           {
             "id": "Bluetooth"
-          },
-          {
-            "id": "ScreenRecorder"
           },
           {
             "id": "WallpaperSelector"

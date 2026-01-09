@@ -33,7 +33,7 @@ NIconButtonHot {
     try {
       if (NetworkService.ethernetConnected) {
         // Match design: fixed label when on Ethernet
-        return I18n.tr("quickSettings.wifi.label.ethernet");
+        return I18n.tr("control-center.wifi.label-ethernet");
       }
       // Wi‑Fi: SSID — link speed (if available)
       for (const net in NetworkService.networks) {
@@ -46,7 +46,7 @@ NIconButtonHot {
     } catch (e) {
       // noop
     }
-    return I18n.tr("quickSettings.wifi.tooltip.action");
+    return I18n.tr("tooltips.manage-wifi");
   }
   onClicked: {
     var panel = PanelService.getPanel("networkPanel", screen);

@@ -37,48 +37,48 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.media-player.show-background.label")
-    description: I18n.tr("settings.desktop-widgets.media-player.show-background.description")
+    label: I18n.tr("panels.desktop-widgets.clock-show-background-label")
+    description: I18n.tr("panels.desktop-widgets.media-player-show-background-description")
     checked: valueShowBackground
     onToggled: checked => valueShowBackground = checked
   }
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.media-player.rounded-corners.label")
-    description: I18n.tr("settings.desktop-widgets.media-player.rounded-corners.description")
+    label: I18n.tr("panels.desktop-widgets.clock-rounded-corners-label")
+    description: I18n.tr("panels.desktop-widgets.media-player-rounded-corners-description")
     checked: valueRoundedCorners
     onToggled: checked => valueRoundedCorners = checked
   }
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.media-player.show-album-art.label")
-    description: I18n.tr("settings.desktop-widgets.media-player.show-album-art.description")
+    label: I18n.tr("panels.desktop-widgets.media-player-show-album-art-label")
+    description: I18n.tr("panels.desktop-widgets.media-player-show-album-art-description")
     checked: valueShowAlbumArt
     onToggled: checked => valueShowAlbumArt = checked
   }
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.media-player.show-visualizer.label")
-    description: I18n.tr("settings.desktop-widgets.media-player.show-visualizer.description")
+    label: I18n.tr("bar.media-mini.show-visualizer-label")
+    description: I18n.tr("panels.desktop-widgets.media-player-show-visualizer-description")
     checked: valueShowVisualizer
     onToggled: checked => valueShowVisualizer = checked
   }
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.media-player.show-buttons.label")
-    description: I18n.tr("settings.desktop-widgets.media-player.show-buttons.description")
+    label: I18n.tr("panels.desktop-widgets.media-player-show-buttons-label")
+    description: I18n.tr("panels.desktop-widgets.media-player-show-buttons-description")
     checked: valueShowButtons
     onToggled: checked => valueShowButtons = checked
   }
 
   NComboBox {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.media-player.visualizer-type.label")
-    description: I18n.tr("settings.desktop-widgets.media-player.visualizer-type.description")
+    label: I18n.tr("panels.audio.visualizer-type-label")
+    description: I18n.tr("panels.desktop-widgets.media-player-visualizer-type-description")
     enabled: valueShowVisualizer
     model: [
       {
@@ -100,20 +100,20 @@ ColumnLayout {
 
   NComboBox {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.media-player.hide-mode.label")
-    description: I18n.tr("settings.desktop-widgets.media-player.hide-mode.description")
+    label: I18n.tr("bar.taskbar.hide-mode-label")
+    description: I18n.tr("bar.media-mini.hide-mode-description")
     model: [
       {
         "key": "hidden",
-        "name": I18n.tr("options.hide-modes.hidden")
+        "name": I18n.tr("hide-modes.hidden")
       },
       {
         "key": "idle",
-        "name": I18n.tr("options.hide-modes.idle")
+        "name": I18n.tr("hide-modes.idle")
       },
       {
         "key": "visible",
-        "name": I18n.tr("options.hide-modes.visible")
+        "name": I18n.tr("hide-modes.visible")
       }
     ]
     currentKey: valueHideMode

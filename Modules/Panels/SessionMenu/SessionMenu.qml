@@ -68,32 +68,32 @@ SmartPanel {
   readonly property var actionMetadata: {
     "lock": {
       "icon": "lock",
-      "title": I18n.tr("session-menu.lock"),
+      "title": I18n.tr("common.lock"),
       "isShutdown": false
     },
     "suspend": {
       "icon": "suspend",
-      "title": I18n.tr("session-menu.suspend"),
+      "title": I18n.tr("common.suspend"),
       "isShutdown": false
     },
     "hibernate": {
       "icon": "hibernate",
-      "title": I18n.tr("session-menu.hibernate"),
+      "title": I18n.tr("common.hibernate"),
       "isShutdown": false
     },
     "reboot": {
       "icon": "reboot",
-      "title": I18n.tr("session-menu.reboot"),
+      "title": I18n.tr("common.reboot"),
       "isShutdown": false
     },
     "logout": {
       "icon": "logout",
-      "title": I18n.tr("session-menu.logout"),
+      "title": I18n.tr("common.logout"),
       "isShutdown": false
     },
     "shutdown": {
       "icon": "shutdown",
-      "title": I18n.tr("session-menu.shutdown"),
+      "title": I18n.tr("common.shutdown"),
       "isShutdown": true
     }
   }
@@ -474,7 +474,7 @@ SmartPanel {
         id: timerText
         anchors.centerIn: parent
         text: I18n.tr("session-menu.action-in-seconds", {
-                        "action": I18n.tr("session-menu." + pendingAction),
+                        "action": I18n.tr("common." + pendingAction),
                         "seconds": Math.ceil(timeRemaining / 1000)
                       })
         font.weight: Style.fontWeightBold
@@ -538,7 +538,7 @@ SmartPanel {
 
           NText {
             text: timerActive ? I18n.tr("session-menu.action-in-seconds", {
-                                          "action": I18n.tr("session-menu." + pendingAction),
+                                          "action": I18n.tr("common." + pendingAction),
                                           "seconds": Math.ceil(timeRemaining / 1000)
                                         }) : I18n.tr("session-menu.title")
             font.weight: Style.fontWeightBold
@@ -554,7 +554,7 @@ SmartPanel {
 
           NIconButton {
             icon: timerActive ? "stop" : "close"
-            tooltipText: timerActive ? I18n.tr("tooltips.cancel-timer") : I18n.tr("tooltips.close")
+            tooltipText: timerActive ? I18n.tr("common.timer") : I18n.tr("common.close")
             Layout.alignment: Qt.AlignVCenter
             baseSize: Style.baseWidgetSize * 0.7
             colorBg: timerActive ? Qt.alpha(Color.mError, 0.08) : "transparent"
@@ -622,6 +622,57 @@ SmartPanel {
   // Custom power button component
   component PowerButton: Rectangle {
     id: buttonRoot
+    // Keybind indicator and countdown text at far right
+    Item {
+      id: indicatorGroup
+      width: (countdownText.visible ? countdownText.width + Style.marginXS : 0) + numberIndicatorRect.width
+      height: numberIndicatorRect.height
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.right: parent.right
+      anchors.rightMargin: Style.marginM
+      z: 20
+
+      // Countdown as plain text (left of keybind)
+      NText {
+        id: countdownText
+        visible: !Settings.data.sessionMenu.showHeader && buttonRoot.pending && timerActive && pendingAction === modelData.action
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        text: Math.ceil(timeRemaining / 1000)
+        pointSize: Style.fontSizeS
+        color: Color.mPrimary
+        font.weight: Style.fontWeightBold
+      }
+
+      // Number indicator (keybind)
+      Rectangle {
+        id: numberIndicatorRect
+        anchors.left: countdownText.visible ? countdownText.right : parent.left
+        anchors.leftMargin: countdownText.visible ? Style.marginXS : 0
+        anchors.verticalCenter: parent.verticalCenter
+        width: Style.marginM * 2
+        height: width
+        radius: Math.min(Style.radiusM, height / 2)
+        color: (buttonRoot.isSelected || mouseArea.containsMouse) ? Color.mPrimary : Qt.alpha(Color.mSurfaceVariant, 0.5)
+        border.width: Style.borderS
+        border.color: (buttonRoot.isSelected || mouseArea.containsMouse) ? Color.mPrimary : Color.mOutline
+        visible: Settings.data.sessionMenu.showNumberLabels && buttonRoot.number > 0
+
+        NText {
+          anchors.centerIn: parent
+          text: buttonRoot.number
+          pointSize: Style.fontSizeS
+          color: (buttonRoot.isSelected || mouseArea.containsMouse) ? Color.mOnPrimary : Color.mOnSurface
+
+          Behavior on color {
+            ColorAnimation {
+              duration: Style.animationFast
+              easing.type: Easing.OutCirc
+            }
+          }
+        }
+      }
+    }
 
     property string icon: ""
     property string title: ""

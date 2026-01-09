@@ -10,7 +10,7 @@ import qs.Widgets
 SmartPanel {
   id: root
 
-  preferredWidth: Math.round(820 * Style.uiScaleRatio)
+  preferredWidth: Math.round(840 * Style.uiScaleRatio)
   preferredHeight: Math.round(910 * Style.uiScaleRatio)
 
   // Settings panel mode: "centered", "attached", "window"
@@ -21,8 +21,8 @@ SmartPanel {
   readonly property string barDensity: Settings.data.bar.density
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool barFloating: Settings.data.bar.floating
-  readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
-  readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical * Style.marginXL) : 0
+  readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
+  readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical) : 0
 
   forceAttachToBar: attachToBar
   panelAnchorHorizontalCenter: attachToBar ? (barPosition === "top" || barPosition === "bottom") : true
@@ -87,7 +87,6 @@ SmartPanel {
     Network,
     Notifications,
     Plugins,
-    ScreenRecorder,
     SessionMenu,
     SystemMonitor,
     UserInterface,

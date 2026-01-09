@@ -43,7 +43,7 @@ Rectangle {
 
   Behavior on color {
     ColorAnimation {
-      duration: Style.animationNormal
+      duration: Style.animationFast
       easing.type: Easing.InOutQuad
     }
   }

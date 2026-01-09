@@ -83,6 +83,9 @@ Item {
   property bool isDestroying: false
   property bool hovered: false
 
+  // Revision counter to force icon re-evaluation
+  property int iconRevision: 0
+
   property ListModel localWorkspaces: ListModel {}
   property real masterProgress: 0.0
   property bool effectsActive: false
@@ -239,6 +242,14 @@ Item {
     }
   }
 
+  // Refresh icons when DesktopEntries becomes available
+  Connections {
+    target: DesktopEntries.applications
+    function onValuesChanged() {
+      root.iconRevision++;
+    }
+  }
+
   function refreshWorkspaces() {
     localWorkspaces.clear();
 
@@ -327,7 +338,7 @@ Item {
       if (root.selectedWindowId) {
         // Focus item
         items.push({
-                     "label": I18n.tr("dock.menu.focus"),
+                     "label": I18n.tr("common.focus"),
                      "action": "focus",
                      "icon": "eye"
                    });
@@ -335,14 +346,14 @@ Item {
         // Pin/Unpin item
         const isPinned = root.isAppPinned(root.selectedAppId);
         items.push({
-                     "label": !isPinned ? I18n.tr("dock.menu.pin") : I18n.tr("dock.menu.unpin"),
+                     "label": !isPinned ? I18n.tr("common.pin") : I18n.tr("common.unpin"),
                      "action": "pin",
                      "icon": !isPinned ? "pin" : "pinned-off"
                    });
 
         // Close item
         items.push({
-                     "label": I18n.tr("dock.menu.close"),
+                     "label": I18n.tr("common.close"),
                      "action": "close",
                      "icon": "x"
                    });
@@ -363,7 +374,7 @@ Item {
         }
       }
       items.push({
-                   "label": I18n.tr("context-menu.widget-settings"),
+                   "label": I18n.tr("actions.widget-settings"),
                    "action": "widget-settings",
                    "icon": "settings"
                  });
@@ -831,7 +842,10 @@ Item {
 
               width: parent.width
               height: parent.height
-              source: ThemeIcons.iconForAppId(model.appId)
+              source: {
+                root.iconRevision; // Force re-evaluation when revision changes
+                return ThemeIcons.iconForAppId(model.appId?.toLowerCase());
+              }
               smooth: true
               asynchronous: true
               opacity: model.isFocused ? Style.opacityFull : unfocusedIconsOpacity

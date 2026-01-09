@@ -4,7 +4,7 @@ import qs.Commons
 
 Item {
   property var launcher: null
-  property string name: I18n.tr("launcher.providers.command")
+  property string name: I18n.tr("common.command")
   property string iconMode: Settings.data.appLauncher.iconMode
 
   function handleCommand(query) {
@@ -33,7 +33,7 @@ Item {
     let expression = query.substring(4).trim();
     return [
           {
-            "name": I18n.tr("launcher.providers.command-name"),
+            "name": I18n.tr("common.command"),
             "description": I18n.tr("launcher.providers.command-description"),
             "icon": iconMode === "tabler" ? "terminal" : "utilities-terminal",
             "isTablerIcon": true,

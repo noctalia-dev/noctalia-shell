@@ -33,24 +33,24 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.tray.colorize-icons.label")
-    description: I18n.tr("bar.widget-settings.tray.colorize-icons.description")
+    label: I18n.tr("bar.tray.colorize-icons-label")
+    description: I18n.tr("bar.tray.colorize-icons-description")
     checked: root.valueColorizeIcons
     onToggled: checked => root.valueColorizeIcons = checked
   }
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.tray.drawer-enabled.label")
-    description: I18n.tr("bar.widget-settings.tray.drawer-enabled.description")
+    label: I18n.tr("bar.tray.drawer-enabled-label")
+    description: I18n.tr("bar.tray.drawer-enabled-description")
     checked: root.valueDrawerEnabled
     onToggled: checked => root.valueDrawerEnabled = checked
   }
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.widget-settings.tray.hide-passive.label")
-    description: I18n.tr("bar.widget-settings.tray.hide-passive.description")
+    label: I18n.tr("bar.tray.hide-passive-label")
+    description: I18n.tr("bar.tray.hide-passive-description")
     checked: root.valueHidePassive
     onToggled: checked => root.valueHidePassive = checked
   }
@@ -60,8 +60,8 @@ ColumnLayout {
     spacing: Style.marginS
 
     NLabel {
-      label: I18n.tr("settings.bar.tray.blacklist.label")
-      description: I18n.tr("settings.bar.tray.blacklist.description")
+      label: I18n.tr("panels.bar.tray-blacklist-label")
+      description: I18n.tr("panels.bar.tray-blacklist-description")
     }
 
     RowLayout {
@@ -71,7 +71,7 @@ ColumnLayout {
       NTextInputButton {
         id: newRuleInput
         Layout.fillWidth: true
-        placeholderText: I18n.tr("settings.bar.tray.blacklist.placeholder")
+        placeholderText: I18n.tr("panels.bar.tray-blacklist-placeholder")
         buttonIcon: "add"
         onButtonClicked: {
           if (newRuleInput.text.length > 0) {

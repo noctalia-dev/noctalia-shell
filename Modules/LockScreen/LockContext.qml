@@ -10,8 +10,10 @@ Scope {
   signal failed
 
   property string currentText: ""
+  property bool waitingForPassword: false
   property bool unlockInProgress: false
   property bool showFailure: false
+  property bool showInfo: false
   property string errorMessage: ""
   property string infoMessage: ""
   property bool pamAvailable: typeof PamContext !== "undefined"
@@ -53,6 +55,8 @@ Scope {
 
   onCurrentTextChanged: {
     if (currentText !== "") {
+      showInfo = false;
+      infoMessage = "";
       showFailure = false;
       errorMessage = "";
     }
@@ -62,6 +66,13 @@ Scope {
     if (!pamAvailable) {
       errorMessage = "PAM not available";
       showFailure = true;
+      return;
+    }
+
+    if (waitingForPassword) {
+      pam.respond(currentText);
+      waitingForPassword = false;
+      showInfo = false;
       return;
     }
 
@@ -98,7 +109,20 @@ Scope {
 
       if (this.responseRequired) {
         Logger.i("LockContext", "Responding to PAM with password");
-        this.respond(root.currentText);
+        if (root.currentText !== "") {
+          this.respond(root.currentText);
+        } else {
+          root.waitingForPassword = true;
+          showFailure = false;
+          infoMessage = I18n.tr("lock-screen.password");
+          showInfo = true;
+        }
+      } else if (messageIsError) {
+        showInfo = false;
+        showFailure = true;
+      } else {
+        showFailure = false;
+        showInfo = true;
       }
     }
 
@@ -110,7 +134,7 @@ Scope {
                    } else {
                      Logger.i("LockContext", "Authentication failed");
                      root.currentText = "";
-                     errorMessage = I18n.tr("lock-screen.authentication-failed");
+                     errorMessage = I18n.tr("authentication.failed");
                      showFailure = true;
                      root.failed();
                    }

@@ -239,7 +239,7 @@ SmartPanel {
                   NText {
                     anchors.centerIn: parent
                     width: parent.width - Style.marginL * 2
-                    text: I18n.tr("setup.welcome.note")
+                    text: I18n.tr("setup.welcome-note")
                     pointSize: Style.fontSizeM
                     color: Color.mOnSurfaceVariant
                     horizontalAlignment: Text.AlignHCenter

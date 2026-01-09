@@ -127,20 +127,20 @@ Singleton {
     if (diff < 60000)
       return I18n.tr("notifications.time.now");
     if (diff < 120000)
-      return I18n.tr("notifications.time.diffM");
+      return I18n.tr("notifications.time.diff-m");
     if (diff < 3600000)
-      return I18n.tr("notifications.time.diffMM", {
+      return I18n.tr("notifications.time.diff-mm", {
                        "diff": Math.floor(diff / 60000)
                      });
     if (diff < 7200000)
-      return I18n.tr("notifications.time.diffH");
+      return I18n.tr("notifications.time.diff-h");
     if (diff < 86400000)
-      return I18n.tr("notifications.time.diffHH", {
+      return I18n.tr("notifications.time.diff-hh", {
                        "diff": Math.floor(diff / 3600000)
                      });
     if (diff < 172800000)
-      return I18n.tr("notifications.time.diffD");
-    return I18n.tr("notifications.time.diffDD", {
+      return I18n.tr("notifications.time.diff-d");
+    return I18n.tr("notifications.time.diff-dd", {
                      "diff": Math.floor(diff / 86400000)
                    });
   }

@@ -9,7 +9,7 @@ NIconButtonHot {
   property ShellScreen screen
 
   icon: !BluetoothService.enabled ? "bluetooth-off" : ((BluetoothService.connectedDevices && BluetoothService.connectedDevices.length > 0) ? "bluetooth-connected" : "bluetooth")
-  tooltipText: I18n.tr("quickSettings.bluetooth.tooltip.action")
+  tooltipText: I18n.tr("common.bluetooth")
   onClicked: {
     var p = PanelService.getPanel("bluetoothPanel", screen);
     if (p)

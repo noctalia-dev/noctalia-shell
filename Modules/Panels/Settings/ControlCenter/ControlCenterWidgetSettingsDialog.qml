@@ -82,7 +82,7 @@ Popup {
 
       NIconButton {
         icon: "close"
-        tooltipText: I18n.tr("tooltips.close")
+        tooltipText: I18n.tr("common.close")
         onClicked: root.close()
       }
     }
@@ -134,13 +134,13 @@ Popup {
       }
 
       NButton {
-        text: I18n.tr("settings.control-center.shortcuts.dialog.cancel", "Cancel")
+        text: I18n.tr("common.cancel", "Cancel")
         outlined: true
         onClicked: root.close()
       }
 
       NButton {
-        text: I18n.tr("settings.control-center.shortcuts.dialog.apply", "Apply")
+        text: I18n.tr("common.apply", "Apply")
         icon: "check"
         onClicked: {
           if (settingsLoader.item && settingsLoader.item.saveSettings) {

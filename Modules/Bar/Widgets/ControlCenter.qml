@@ -101,17 +101,17 @@ NIconButton {
 
     model: [
       {
-        "label": I18n.tr("context-menu.open-launcher"),
+        "label": I18n.tr("actions.open-launcher"),
         "action": "open-launcher",
         "icon": "search"
       },
       {
-        "label": I18n.tr("context-menu.open-settings"),
+        "label": I18n.tr("actions.open-settings"),
         "action": "open-settings",
         "icon": "adjustments"
       },
       {
-        "label": I18n.tr("context-menu.widget-settings"),
+        "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
       },

@@ -19,8 +19,7 @@ RowLayout {
   property bool enabled: true
   property bool hovering: false
   property int baseSize: Style.baseWidgetSize
-  property bool isSettings: false
-  property var defaultValue: 0
+  property var defaultValue: undefined
   property string settingsPath: ""
 
   // Convenience properties for common naming
@@ -40,10 +39,10 @@ RowLayout {
 
   Layout.fillWidth: true
 
-  readonly property bool isValueChanged: isSettings && (value !== defaultValue)
-  readonly property string indicatorTooltip: isSettings ? I18n.tr("settings.indicator.default-value", {
-                                                                    "value": String(defaultValue)
-                                                                  }) : ""
+  readonly property bool isValueChanged: (defaultValue !== undefined) && (value !== defaultValue)
+  readonly property string indicatorTooltip: defaultValue !== undefined ? I18n.tr("panels.indicator.default-value", {
+                                                                                    "value": String(defaultValue)
+                                                                                  }) : ""
 
   Timer {
     id: repeatTimer
@@ -86,7 +85,7 @@ RowLayout {
   NLabel {
     label: root.label
     description: root.description
-    showIndicator: root.isSettings && root.isValueChanged
+    showIndicator: root.isValueChanged
     indicatorTooltip: root.indicatorTooltip
   }
 

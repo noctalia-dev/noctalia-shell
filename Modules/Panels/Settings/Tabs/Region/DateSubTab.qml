@@ -9,27 +9,22 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-  NHeader {
-    label: I18n.tr("settings.location.date-time.section.label")
-    description: I18n.tr("settings.location.date-time.section.description")
-  }
-
   NToggle {
-    label: I18n.tr("settings.location.date-time.12hour-format.label")
-    description: I18n.tr("settings.location.date-time.12hour-format.description")
+    label: I18n.tr("panels.location.date-time-12hour-format-label")
+    description: I18n.tr("panels.location.date-time-12hour-format-description")
     checked: Settings.data.location.use12hourFormat
     onToggled: checked => Settings.data.location.use12hourFormat = checked
   }
 
   NComboBox {
-    label: I18n.tr("settings.location.date-time.first-day-of-week.label")
-    description: I18n.tr("settings.location.date-time.first-day-of-week.description")
+    label: I18n.tr("panels.location.date-time-first-day-of-week-label")
+    description: I18n.tr("panels.location.date-time-first-day-of-week-description")
     currentKey: Settings.data.location.firstDayOfWeek.toString()
     minimumWidth: 260 * Style.uiScaleRatio
     model: [
       {
         "key": "-1",
-        "name": I18n.tr("settings.location.date-time.first-day-of-week.automatic")
+        "name": I18n.tr("panels.location.date-time-first-day-of-week-automatic")
       },
       {
         "key": "6",

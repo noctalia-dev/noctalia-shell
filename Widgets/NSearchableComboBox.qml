@@ -18,8 +18,7 @@ RowLayout {
   property string placeholder: ""
   property string searchPlaceholder: I18n.tr("placeholders.search")
   property Component delegate: null
-  property bool isSettings: false
-  property var defaultValue: ""
+  property var defaultValue: undefined
   property string settingsPath: ""
 
   readonly property real preferredHeight: Math.round(Style.baseWidgetSize * 1.1)
@@ -29,9 +28,9 @@ RowLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-  readonly property bool isValueChanged: isSettings && (currentKey !== defaultValue)
+  readonly property bool isValueChanged: (defaultValue !== undefined) && (currentKey !== defaultValue)
   readonly property string indicatorTooltip: {
-    if (!isSettings)
+    if (defaultValue === undefined)
       return "";
     var displayValue = "";
     if (defaultValue === "") {
@@ -40,16 +39,16 @@ RowLayout {
         for (var i = 0; i < model.count; i++) {
           var item = model.get(i);
           if (item && item.key === "") {
-            displayValue = item.name || I18n.tr("settings.indicator.system-default");
+            displayValue = item.name || I18n.tr("panels.indicator.system-default");
             break;
           }
         }
         // If not found in model, show "System Default" instead of "(empty)"
         if (displayValue === "") {
-          displayValue = I18n.tr("settings.indicator.system-default");
+          displayValue = I18n.tr("panels.indicator.system-default");
         }
       } else {
-        displayValue = I18n.tr("settings.indicator.system-default");
+        displayValue = I18n.tr("panels.indicator.system-default");
       }
     } else {
       // Try to find the display name for the default key in the model
@@ -68,7 +67,7 @@ RowLayout {
         displayValue = String(defaultValue);
       }
     }
-    return I18n.tr("settings.indicator.default-value", {
+    return I18n.tr("panels.indicator.default-value", {
                      "value": displayValue
                    });
   }
@@ -160,7 +159,7 @@ RowLayout {
   NLabel {
     label: root.label
     description: root.description
-    showIndicator: root.isSettings && root.isValueChanged
+    showIndicator: root.isValueChanged
     indicatorTooltip: root.indicatorTooltip
   }
 

@@ -12,23 +12,15 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-  NHeader {
-    label: I18n.tr("settings.display.monitors.section.label")
-    description: I18n.tr("settings.display.monitors.section.description")
-  }
-
   ColumnLayout {
     spacing: Style.marginL
 
     Repeater {
       model: Quickshell.screens || []
-      delegate: Rectangle {
+      delegate: NBox {
         Layout.fillWidth: true
         implicitHeight: contentCol.implicitHeight + Style.marginL * 2
-        radius: Style.radiusM
-        color: Color.mSurfaceVariant
-        border.color: Color.mOutline
-        border.width: Style.borderS
+        color: Color.mSurface
 
         property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)
 
@@ -39,16 +31,33 @@ ColumnLayout {
           y: Style.marginL
           spacing: Style.marginXXS
 
-          NLabel {
-            label: modelData.name || "Unknown"
-            description: {
-              const compositorScale = CompositorService.getDisplayScale(modelData.name);
-              I18n.tr("system.monitor-description", {
-                        "model": modelData.model,
-                        "width": modelData.width * compositorScale,
-                        "height": modelData.height * compositorScale,
-                        "scale": compositorScale
-                      });
+          RowLayout {
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignBottom
+
+            NText {
+              text: modelData.name || "Unknown"
+              pointSize: Style.fontSizeL
+              font.weight: Style.fontWeightSemiBold
+              Layout.alignment: Qt.AlignBottom
+            }
+
+            NText {
+              Layout.fillWidth: true
+              text: {
+                const compositorScale = CompositorService.getDisplayScale(modelData.name);
+                I18n.tr("system.monitor-description", {
+                          "model": modelData.model,
+                          "width": modelData.width * compositorScale,
+                          "height": modelData.height * compositorScale,
+                          "scale": compositorScale
+                        });
+              }
+              pointSize: Style.fontSizeS
+              color: Color.mOnSurfaceVariant
+              wrapMode: Text.WordWrap
+              horizontalAlignment: Text.AlignRight
+              Layout.alignment: Qt.AlignBottom
             }
           }
 
@@ -62,7 +71,7 @@ ColumnLayout {
               spacing: Style.marginL
 
               NText {
-                text: I18n.tr("settings.display.monitors.brightness")
+                text: I18n.tr("common.brightness")
                 Layout.preferredWidth: 90
                 Layout.alignment: Qt.AlignVCenter
               }
@@ -100,7 +109,8 @@ ColumnLayout {
                 Layout.fillHeight: true
                 NIcon {
                   icon: brightnessMonitor && brightnessMonitor.method == "internal" ? "device-laptop" : "device-desktop"
-                  anchors.centerIn: parent
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
                   opacity: brightnessMonitor && !brightnessMonitor.brightnessControlAvailable ? 0.5 : 1.0
                 }
               }
@@ -108,8 +118,8 @@ ColumnLayout {
 
             NText {
               visible: brightnessMonitor && !brightnessMonitor.brightnessControlAvailable
-              text: !Settings.data.brightness.enableDdcSupport ? I18n.tr("settings.display.monitors.brightness-unavailable.ddc-disabled") : I18n.tr("settings.display.monitors.brightness-unavailable.generic")
-              pointSize: Style.fontSizeS
+              text: !Settings.data.brightness.enableDdcSupport ? I18n.tr("panels.display.monitors-brightness-unavailable-ddc-disabled") : I18n.tr("panels.display.monitors-brightness-unavailable-generic")
+              pointSize: Style.fontSizeXS
               color: Color.mOnSurfaceVariant
               Layout.fillWidth: true
               wrapMode: Text.WordWrap
@@ -121,37 +131,34 @@ ColumnLayout {
 
     NSpinBox {
       Layout.fillWidth: true
-      label: I18n.tr("settings.display.monitors.brightness-step.label")
-      description: I18n.tr("settings.display.monitors.brightness-step.description")
+      label: I18n.tr("panels.display.monitors-brightness-step-label")
+      description: I18n.tr("panels.display.monitors-brightness-step-description")
       minimum: 1
       maximum: 50
       value: Settings.data.brightness.brightnessStep
       stepSize: 1
       suffix: "%"
       onValueChanged: Settings.data.brightness.brightnessStep = value
-      isSettings: true
       defaultValue: Settings.getDefaultValue("brightness.brightnessStep")
     }
 
     NToggle {
       Layout.fillWidth: true
-      label: I18n.tr("settings.display.monitors.enforce-minimum.label")
-      description: I18n.tr("settings.display.monitors.enforce-minimum.description")
+      label: I18n.tr("panels.display.monitors-enforce-minimum-label")
+      description: I18n.tr("panels.display.monitors-enforce-minimum-description")
       checked: Settings.data.brightness.enforceMinimum
       onToggled: checked => Settings.data.brightness.enforceMinimum = checked
-      isSettings: true
       defaultValue: Settings.getDefaultValue("brightness.enforceMinimum")
     }
 
     NToggle {
       Layout.fillWidth: true
-      label: I18n.tr("settings.display.monitors.external-brightness.label")
-      description: I18n.tr("settings.display.monitors.external-brightness.description")
+      label: I18n.tr("panels.display.monitors-external-brightness-label")
+      description: I18n.tr("panels.display.monitors-external-brightness-description")
       checked: Settings.data.brightness.enableDdcSupport
       onToggled: checked => {
                    Settings.data.brightness.enableDdcSupport = checked;
                  }
-      isSettings: true
       defaultValue: Settings.getDefaultValue("brightness.enableDdcSupport")
     }
   }

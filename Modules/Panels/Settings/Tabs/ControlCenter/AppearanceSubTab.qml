@@ -17,64 +17,57 @@ ColumnLayout {
     spacing: Style.marginL
     Layout.fillWidth: true
 
-    NHeader {
-      label: I18n.tr("settings.control-center.section.label")
-      description: I18n.tr("settings.control-center.section.description")
-    }
-
     NComboBox {
       id: controlCenterPosition
-      label: I18n.tr("settings.control-center.position.label")
-      description: I18n.tr("settings.control-center.position.description")
+      label: I18n.tr("common.position")
+      description: I18n.tr("panels.control-center.position-description")
       Layout.fillWidth: true
       model: [
         {
           "key": "close_to_bar_button",
-          "name": I18n.tr("options.control-center.position.close_to_bar_button")
+          "name": I18n.tr("positions.close-to-bar")
         },
         {
           "key": "center",
-          "name": I18n.tr("options.control-center.position.center")
+          "name": I18n.tr("positions.center")
         },
         {
           "key": "top_center",
-          "name": I18n.tr("options.control-center.position.top_center")
+          "name": I18n.tr("positions.top-center")
         },
         {
           "key": "top_left",
-          "name": I18n.tr("options.control-center.position.top_left")
+          "name": I18n.tr("positions.top-left")
         },
         {
           "key": "top_right",
-          "name": I18n.tr("options.control-center.position.top_right")
+          "name": I18n.tr("positions.top-right")
         },
         {
           "key": "bottom_center",
-          "name": I18n.tr("options.control-center.position.bottom_center")
+          "name": I18n.tr("positions.bottom-center")
         },
         {
           "key": "bottom_left",
-          "name": I18n.tr("options.control-center.position.bottom_left")
+          "name": I18n.tr("positions.bottom-left")
         },
         {
           "key": "bottom_right",
-          "name": I18n.tr("options.control-center.position.bottom_right")
+          "name": I18n.tr("positions.bottom-right")
         }
       ]
       currentKey: Settings.data.controlCenter.position
       onSelected: function (key) {
         Settings.data.controlCenter.position = key;
       }
-      isSettings: true
       defaultValue: Settings.getDefaultValue("controlCenter.position")
     }
 
     NComboBox {
       id: diskPathComboBox
       Layout.fillWidth: true
-      Layout.topMargin: Style.marginM
-      label: I18n.tr("settings.control-center.system-monitor-disk-path.label")
-      description: I18n.tr("settings.control-center.system-monitor-disk-path.description")
+      label: I18n.tr("panels.control-center.system-monitor-disk-path-label")
+      description: I18n.tr("panels.control-center.system-monitor-disk-path-description")
       model: {
         const paths = Object.keys(SystemStatService.diskPercents).sort();
         return paths.map(path => ({
@@ -84,7 +77,6 @@ ColumnLayout {
       }
       currentKey: Settings.data.controlCenter.diskPath || "/"
       onSelected: key => Settings.data.controlCenter.diskPath = key
-      isSettings: true
       defaultValue: Settings.getDefaultValue("controlCenter.diskPath") || "/"
     }
   }

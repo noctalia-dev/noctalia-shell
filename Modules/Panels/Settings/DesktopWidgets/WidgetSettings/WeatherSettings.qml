@@ -21,8 +21,8 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.weather.show-background.label")
-    description: I18n.tr("settings.desktop-widgets.weather.show-background.description")
+    label: I18n.tr("panels.desktop-widgets.clock-show-background-label")
+    description: I18n.tr("panels.desktop-widgets.weather-show-background-description")
     checked: valueShowBackground
     onToggled: checked => valueShowBackground = checked
   }

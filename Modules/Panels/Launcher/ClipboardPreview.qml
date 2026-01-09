@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../Helpers/TextFormatter.js" as TextFormatter
 import qs.Commons
 import qs.Services.Keyboard
 import qs.Widgets
@@ -17,6 +16,42 @@ Item {
 
   implicitHeight: contentArea.implicitHeight + Style.marginL * 2
 
+  function loadContent() {
+    if (!currentItem || !currentItem.clipboardId)
+      return;
+
+    if (isImageContent) {
+      // For images, check cache first then decode
+      imageDataUrl = ClipboardService.getImageData(currentItem.clipboardId) || "";
+      loadingFullContent = !imageDataUrl;
+      if (!imageDataUrl && currentItem.mime) {
+        ClipboardService.decodeToDataUrl(currentItem.clipboardId, currentItem.mime, null);
+      }
+    } else {
+      // For text, check sync cache first
+      const cached = ClipboardService.getContent(currentItem.clipboardId);
+      if (cached) {
+        fullContent = cached;
+        loadingFullContent = false;
+      } else {
+        // Show preview while loading full content
+        fullContent = currentItem.preview || "";
+        loadingFullContent = true;
+        // Async decode as fallback
+        var requestedId = currentItem.clipboardId;
+        ClipboardService.decode(requestedId, function (content) {
+          if (previewPanel.currentItem && previewPanel.currentItem.clipboardId === requestedId) {
+            var trimmed = content ? content.trim() : "";
+            if (trimmed !== "") {
+              previewPanel.fullContent = trimmed;
+            }
+            previewPanel.loadingFullContent = false;
+          }
+        });
+      }
+    }
+  }
+
   Connections {
     target: previewPanel
     function onCurrentItemChanged() {
@@ -26,25 +61,22 @@ Item {
       isImageContent = currentItem && currentItem.isImage;
 
       if (currentItem && currentItem.clipboardId) {
-        if (isImageContent) {
-          imageDataUrl = ClipboardService.getImageData(currentItem.clipboardId) || "";
-          loadingFullContent = !imageDataUrl;
-
-          if (!imageDataUrl && currentItem.mime) {
-            ClipboardService.decodeToDataUrl(currentItem.clipboardId, currentItem.mime, null);
-          }
-        } else {
-          loadingFullContent = true;
-          ClipboardService.decode(currentItem.clipboardId, function (content) {
-            fullContent = TextFormatter.wrapTextForDisplay(content);
-            loadingFullContent = false;
-          });
-        }
+        loadContent();
       }
     }
   }
 
   readonly property int _rev: ClipboardService.revision
+  on_RevChanged: {
+    // When cache updates, try to load content if we're still showing loading or preview
+    if (currentItem && currentItem.clipboardId && !isImageContent && loadingFullContent) {
+      const cached = ClipboardService.getContent(currentItem.clipboardId);
+      if (cached) {
+        fullContent = cached;
+        loadingFullContent = false;
+      }
+    }
+  }
 
   Timer {
     id: imageUpdateTimer
@@ -78,30 +110,82 @@ Item {
       height: width
     }
 
-    Image {
+    // Preview for image entry
+    ColumnLayout {
       anchors.fill: parent
       anchors.margins: Style.marginS
-      source: imageDataUrl
+      spacing: Style.marginS
       visible: isImageContent && !loadingFullContent && imageDataUrl !== ""
-      fillMode: Image.PreserveAspectFit
+
+      NImageRounded {
+        id: previewImage
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        radius: Style.marginS
+        imagePath: imageDataUrl
+        imageFillMode: Image.PreserveAspectFit
+      }
+
+      NDivider {
+        Layout.fillWidth: true
+        Layout.bottomMargin: Style.marginS
+      }
+
+      NText {
+        Layout.fillWidth: true
+        text: {
+          const meta = ClipboardService.parseImageMeta(currentItem?.preview);
+          if (meta)
+            return `${meta.fmt} • ${meta.w}×${meta.h} • ${meta.size}`;
+          // Fallback to basic info
+          const format = (currentItem?.mime || "image").split("/")[1]?.toUpperCase() || "Image";
+          return `${format} • ${previewImage.implicitWidth}×${previewImage.implicitHeight}`;
+        }
+        pointSize: Style.fontSizeS
+        color: Color.mOnSurfaceVariant
+      }
     }
 
-    ScrollView {
+    // Preview for text entry
+    ColumnLayout {
       anchors.fill: parent
       anchors.margins: Style.marginS
-      clip: true
+      spacing: Style.marginS
       visible: !isImageContent && !loadingFullContent
 
-      TextArea {
-        text: fullContent
-        readOnly: true
-        wrapMode: Text.Wrap
-        textFormat: TextArea.RichText
-        font.pointSize: Style.fontSizeM
-        color: Color.mOnSurface
-        background: Rectangle {
-          color: "transparent"
+      NScrollView {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        clip: true
+        horizontalPolicy: Settings.data.appLauncher.clipboardWrapText ? ScrollBar.AlwaysOff : ScrollBar.AsNeeded
+
+        NText {
+          text: fullContent
+          width: Settings.data.appLauncher.clipboardWrapText ? parent.width : implicitWidth
+          wrapMode: Settings.data.appLauncher.clipboardWrapText ? Text.Wrap : Text.NoWrap
+          textFormat: Text.PlainText
+          font.pointSize: Style.fontSizeM
+          font.family: Settings.data.ui.fontFixed
+          color: Color.mOnSurface
         }
+      }
+
+      NDivider {
+        Layout.fillWidth: true
+        Layout.bottomMargin: Style.marginS
+      }
+
+      NText {
+        Layout.fillWidth: true
+        visible: fullContent.length > 0
+        text: {
+          const chars = fullContent.length;
+          const words = fullContent.split(/\s+/).filter(w => w.length > 0).length;
+          const lines = fullContent.split('\n').length;
+          return `${chars} chars, ${words} words, ${lines} lines`;
+        }
+        pointSize: Style.fontSizeS
+        color: Color.mOnSurfaceVariant
       }
     }
   }

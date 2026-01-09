@@ -52,7 +52,7 @@ NIconButton {
   applyUiScale: false
   customRadius: Style.radiusL
   icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
-  tooltipText: NotificationService.doNotDisturb ? I18n.tr("tooltips.open-notification-history-disable-dnd") : I18n.tr("tooltips.open-notification-history-enable-dnd")
+  tooltipText: NotificationService.doNotDisturb ? I18n.tr("tooltips.open-notification-history-enable-dnd") : I18n.tr("tooltips.open-notification-history-enable-dnd")
   tooltipDirection: BarService.getTooltipDirection()
   colorBg: Style.capsuleColor
   colorFg: Color.mOnSurface
@@ -68,17 +68,17 @@ NIconButton {
 
     model: [
       {
-        "label": NotificationService.doNotDisturb ? I18n.tr("context-menu.disable-dnd") : I18n.tr("context-menu.enable-dnd"),
+        "label": NotificationService.doNotDisturb ? I18n.tr("actions.disable-dnd") : I18n.tr("actions.enable-dnd"),
         "action": "toggle-dnd",
         "icon": NotificationService.doNotDisturb ? "bell" : "bell-off"
       },
       {
-        "label": I18n.tr("context-menu.clear-history"),
+        "label": I18n.tr("actions.clear-history"),
         "action": "clear-history",
         "icon": "trash"
       },
       {
-        "label": I18n.tr("context-menu.widget-settings"),
+        "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
       },

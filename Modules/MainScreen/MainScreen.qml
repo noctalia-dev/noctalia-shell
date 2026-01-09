@@ -18,6 +18,7 @@ import qs.Modules.Panels.Changelog
 import qs.Modules.Panels.Clock
 import qs.Modules.Panels.ControlCenter
 import qs.Modules.Panels.Launcher
+import qs.Modules.Panels.Media
 import qs.Modules.Panels.Network
 import qs.Modules.Panels.NotificationHistory
 import qs.Modules.Panels.Plugins
@@ -195,6 +196,12 @@ PanelWindow {
       screen: root.screen
     }
 
+    MediaPlayerPanel {
+      id: mediaPlayerPanel
+      objectName: "mediaPlayerPanel-" + (root.screen?.name || "unknown")
+      screen: root.screen
+    }
+
     BatteryPanel {
       id: batteryPanel
       objectName: "batteryPanel-" + (root.screen?.name || "unknown")
@@ -317,8 +324,8 @@ PanelWindow {
       readonly property string barPosition: Settings.data.bar.position || "top"
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
       readonly property bool barFloating: Settings.data.bar.floating || false
-      readonly property real barMarginH: barFloating ? Math.floor(Settings.data.bar.marginHorizontal * Style.marginXL) : 0
-      readonly property real barMarginV: barFloating ? Math.floor(Settings.data.bar.marginVertical * Style.marginXL) : 0
+      readonly property real barMarginH: barFloating ? Math.floor(Settings.data.bar.marginHorizontal) : 0
+      readonly property real barMarginV: barFloating ? Math.floor(Settings.data.bar.marginVertical) : 0
 
       // Expose bar dimensions directly on this Item for BarBackground
       // Use screen dimensions directly

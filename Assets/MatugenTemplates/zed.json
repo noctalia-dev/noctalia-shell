@@ -48,7 +48,7 @@
         "title_bar.inactive_background": "{{colors.surface_dim.dark.hex}}",
         "toolbar.background": "{{colors.surface_container_low.dark.hex}}",
         "tab_bar.background": "{{colors.surface_container.dark.hex}}",
-        "tab.inactive_backgorround": "{{colors.surface_container_low.dark.hex}}",
+        "tab.inactive_background": "{{colors.surface_container_low.dark.hex}}",
         "tab.active_background": "{{colors.surface_container_high.dark.hex}}",
         "search.match_background": "{{colors.tertiary_container.dark.hex}}80",
         "panel.background": "{{colors.surface_container_low.dark.hex}}",

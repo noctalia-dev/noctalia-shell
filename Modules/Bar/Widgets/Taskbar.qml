@@ -49,7 +49,7 @@ Rectangle {
     if (!screen || isVerticalBar || !smartWidth || maxTaskbarWidthPercent <= 0)
       return 0;
     var barFloating = Settings.data.bar.floating || false;
-    var barMarginH = barFloating ? Math.ceil(Settings.data.bar.marginHorizontal * Style.marginXL) : 0;
+    var barMarginH = barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0;
     var availableWidth = screen.width - (barMarginH * 2);
     return Math.round(availableWidth * (maxTaskbarWidthPercent / 100));
   }
@@ -321,7 +321,7 @@ Rectangle {
       if (root.selectedWindowId) {
         // Focus item (for running apps)
         items.push({
-                     "label": I18n.tr("dock.menu.focus"),
+                     "label": I18n.tr("common.focus"),
                      "action": "focus",
                      "icon": "eye"
                    });
@@ -329,14 +329,14 @@ Rectangle {
         // Pin/Unpin item (always available when right-clicking an app)
         const isPinned = root.isAppPinned(root.selectedAppId);
         items.push({
-                     "label": !isPinned ? I18n.tr("dock.menu.pin") : I18n.tr("dock.menu.unpin"),
+                     "label": !isPinned ? I18n.tr("common.pin") : I18n.tr("common.unpin"),
                      "action": "pin",
                      "icon": !isPinned ? "pin" : "unpin"
                    });
 
         // Close item (for running apps)
         items.push({
-                     "label": I18n.tr("dock.menu.close"),
+                     "label": I18n.tr("common.close"),
                      "action": "close",
                      "icon": "x"
                    });
@@ -357,7 +357,7 @@ Rectangle {
         }
       }
       items.push({
-                   "label": I18n.tr("context-menu.widget-settings"),
+                   "label": I18n.tr("actions.widget-settings"),
                    "action": "widget-settings",
                    "icon": "settings"
                  });
@@ -689,7 +689,7 @@ Rectangle {
     if (root.selectedWindowId) {
       // Focus item (for running apps)
       items.push({
-                   "label": I18n.tr("dock.menu.focus"),
+                   "label": I18n.tr("common.focus"),
                    "action": "focus",
                    "icon": "eye"
                  });
@@ -697,14 +697,14 @@ Rectangle {
       // Pin/Unpin item
       const isPinned = root.isAppPinned(root.selectedAppId);
       items.push({
-                   "label": !isPinned ? I18n.tr("dock.menu.pin") : I18n.tr("dock.menu.unpin"),
+                   "label": !isPinned ? I18n.tr("common.pin") : I18n.tr("common.unpin"),
                    "action": "pin",
                    "icon": !isPinned ? "pin" : "unpin"
                  });
 
       // Close item
       items.push({
-                   "label": I18n.tr("dock.menu.close"),
+                   "label": I18n.tr("common.close"),
                    "action": "close",
                    "icon": "x"
                  });
@@ -725,7 +725,7 @@ Rectangle {
       }
     }
     items.push({
-                 "label": I18n.tr("context-menu.widget-settings"),
+                 "label": I18n.tr("actions.widget-settings"),
                  "action": "widget-settings",
                  "icon": "settings"
                });

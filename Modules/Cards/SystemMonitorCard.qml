@@ -60,7 +60,7 @@ NBox {
           icon: "memory"
           contentScale: root.contentScale
           fillColor: SystemStatService.memColor
-          tooltipText: I18n.tr("system-monitor.memory") + `: ${Math.round(SystemStatService.memPercent)}%`
+          tooltipText: I18n.tr("common.memory") + `: ${Math.round(SystemStatService.memPercent)}%`
         }
       }
 

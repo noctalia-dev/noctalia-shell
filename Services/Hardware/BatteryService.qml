@@ -17,7 +17,7 @@ Singleton {
     }
 
     if (charging) {
-      return "battery-charging";
+      return "common.charging";
     } else {
       if (percent >= 90)
         return "battery-4";

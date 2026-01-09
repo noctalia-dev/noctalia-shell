@@ -80,7 +80,7 @@ NBox {
 
       NIconButton {
         icon: "close"
-        tooltipText: I18n.tr("tooltips.close")
+        tooltipText: I18n.tr("common.close")
         onClicked: {
           PanelService.getPanel("controlCenterPanel", screen)?.close();
         }

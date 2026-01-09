@@ -38,16 +38,34 @@ Item {
 
   implicitWidth: pill.width
   implicitHeight: pill.height
-  visible: getMonitor() !== null
-  opacity: getMonitor() !== null ? 1.0 : 0.0
 
-  function getMonitor() {
-    return BrightnessService.getMonitorForScreen(screen) || null;
+  // Track the brightness monitor reactively; explicitly update on screen/monitors changes
+  property var brightnessMonitor: null
+
+  function updateMonitor() {
+    brightnessMonitor = BrightnessService.getMonitorForScreen(screen) || null;
   }
 
+  onScreenChanged: updateMonitor()
+
+  Connections {
+    target: BrightnessService
+    function onMonitorsChanged() {
+      root.updateMonitor();
+    }
+    function onDdcMonitorsChanged() {
+      root.updateMonitor();
+    }
+  }
+
+  visible: brightnessMonitor !== null
+  opacity: brightnessMonitor !== null ? 1.0 : 0.0
+
   function getIcon() {
-    var monitor = getMonitor();
-    var brightness = monitor ? monitor.brightness : 0;
+    var monitor = brightnessMonitor;
+    if (!monitor || !monitor.brightnessControlAvailable || isNaN(monitor.brightness))
+      return "sun-off";
+    var brightness = monitor.brightness;
     if (brightness <= 0.001)
       return "sun-off";
     return brightness <= 0.5 ? "brightness-low" : "brightness-high";
@@ -55,7 +73,7 @@ Item {
 
   // Connection used to open the pill when brightness changes
   Connections {
-    target: getMonitor()
+    target: brightnessMonitor
     ignoreUnknownSignals: true
     function onBrightnessUpdated() {
       // Ignore if this is the first time we receive an update.
@@ -83,12 +101,12 @@ Item {
 
     model: [
       {
-        "label": I18n.tr("context-menu.open-display-settings"),
+        "label": I18n.tr("actions.open-display-settings"),
         "action": "open-display-settings",
         "icon": "sun"
       },
       {
-        "label": I18n.tr("context-menu.widget-settings"),
+        "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
       },
@@ -118,15 +136,17 @@ Item {
     icon: getIcon()
     autoHide: false // Important to be false so we can hover as long as we want
     text: {
-      var monitor = getMonitor();
-      return monitor ? Math.round(monitor.brightness * 100) : "";
+      var monitor = brightnessMonitor;
+      if (!monitor || !monitor.brightnessControlAvailable || isNaN(monitor.brightness))
+        return "";
+      return Math.round(monitor.brightness * 100);
     }
     suffix: text.length > 0 ? "%" : "-"
     forceOpen: displayMode === "alwaysShow"
     forceClose: displayMode === "alwaysHide"
     tooltipText: {
-      var monitor = getMonitor();
-      if (!monitor)
+      var monitor = brightnessMonitor;
+      if (!monitor || !monitor.brightnessControlAvailable || isNaN(monitor.brightness))
         return "";
       return I18n.tr("tooltips.brightness-at", {
                        "brightness": Math.round(monitor.brightness * 100)
@@ -134,7 +154,7 @@ Item {
     }
 
     onWheel: function (angle) {
-      var monitor = getMonitor();
+      var monitor = brightnessMonitor;
       if (!monitor || !monitor.brightnessControlAvailable)
         return;
 

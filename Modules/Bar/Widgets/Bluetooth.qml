@@ -40,12 +40,12 @@ Item {
 
     model: [
       {
-        "label": BluetoothService.enabled ? I18n.tr("context-menu.disable-bluetooth") : I18n.tr("context-menu.enable-bluetooth"),
+        "label": BluetoothService.enabled ? I18n.tr("actions.disable-bluetooth") : I18n.tr("actions.enable-bluetooth"),
         "action": "toggle-bluetooth",
         "icon": BluetoothService.enabled ? "bluetooth-off" : "bluetooth"
       },
       {
-        "label": I18n.tr("context-menu.widget-settings"),
+        "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
       },

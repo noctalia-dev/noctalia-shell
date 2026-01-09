@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Services.Noctalia
 import qs.Services.UI
 
 Item {
@@ -41,6 +42,12 @@ Item {
       // Set screen property
       if (item.hasOwnProperty("screen")) {
         item.screen = widgetScreen;
+      }
+
+      // Pass pluginApi for plugin widgets
+      if (ControlCenterWidgetRegistry.isPluginWidget(widgetId) && item.hasOwnProperty("pluginApi")) {
+        var pluginId = widgetId.substring(7); // Remove "plugin:" prefix
+        item.pluginApi = PluginService.getPluginAPI(pluginId);
       }
 
       // Call custom onLoaded if it exists

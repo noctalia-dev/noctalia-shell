@@ -35,13 +35,6 @@ void main() {
     // Work in pixel space for accurate rounded rectangle calculation
     vec2 pixelPos = qt_TexCoord0 * itemSize;
 
-    // Calculate distance to rounded rectangle edge (in pixels)
-    vec2 centerOffset = pixelPos - itemSize * 0.5;
-    float distance = roundedBoxSDF(centerOffset, itemSize * 0.5, cornerRadius);
-
-    // Create smooth alpha mask for edge with anti-aliasing
-    float alpha = 1.0 - smoothstep(-0.5, 0.5, distance);
-
     // Calculate UV coordinates based on fill mode
     vec2 imageUV = qt_TexCoord0;
 
@@ -54,21 +47,38 @@ void main() {
     // Image.TileHorizontally = 5
     // Image.Pad = 6
 
+    // Default: rounded corners on full item
+    vec2 roundedSize = itemSize;
+    vec2 roundedCenter = itemSize * 0.5;
+
     if (fillMode == 1) { // PreserveAspectFit
         float itemAspect = itemSize.x / itemSize.y;
         float sourceAspect = sourceSize.x / sourceSize.y;
 
+        // Calculate actual displayed image size and position
+        vec2 displayedSize;
+        vec2 offset;
+
         if (sourceAspect > itemAspect) {
             // Image is wider than item, letterbox top/bottom
+            displayedSize = vec2(itemSize.x, itemSize.x / sourceAspect);
+            offset = vec2(0.0, (itemSize.y - displayedSize.y) * 0.5);
             imageUV.y = (qt_TexCoord0.y - 0.5) * (sourceAspect / itemAspect) + 0.5;
         } else {
             // Image is taller than item, letterbox left/right
+            displayedSize = vec2(itemSize.y * sourceAspect, itemSize.y);
+            offset = vec2((itemSize.x - displayedSize.x) * 0.5, 0.0);
             imageUV.x = (qt_TexCoord0.x - 0.5) * (itemAspect / sourceAspect) + 0.5;
         }
 
+        // Apply rounded corners to displayed image bounds
+        roundedSize = displayedSize;
+        roundedCenter = offset + displayedSize * 0.5;
+
         // Make letterbox area transparent
         if (imageUV.x < 0.0 || imageUV.x > 1.0 || imageUV.y < 0.0 || imageUV.y > 1.0) {
-            alpha = 0.0;
+            fragColor = vec4(0.0);
+            return;
         }
     } else if (fillMode == 2) { // PreserveAspectCrop
         float itemAspect = itemSize.x / itemSize.y;
@@ -83,6 +93,13 @@ void main() {
         }
     }
     // For Stretch (0) or other modes, use qt_TexCoord0 as-is
+
+    // Calculate distance to rounded rectangle edge using the correct bounds
+    vec2 centerOffset = pixelPos - roundedCenter;
+    float distance = roundedBoxSDF(centerOffset, roundedSize * 0.5, cornerRadius);
+
+    // Create smooth alpha mask for edge with anti-aliasing
+    float alpha = 1.0 - smoothstep(-0.5, 0.5, distance);
 
     // Sample the texture
     vec4 color = texture(source, imageUV);

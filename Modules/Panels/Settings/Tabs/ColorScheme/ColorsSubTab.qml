@@ -18,7 +18,6 @@ ColumnLayout {
   property var schemeColorsCache: ({})
   property int cacheVersion: 0
 
-  signal checkMatugen
   signal openDownloadPopup
 
   function extractSchemeName(schemePath) {
@@ -108,14 +107,9 @@ ColumnLayout {
     }
   }
 
-  NHeader {
-    label: I18n.tr("settings.color-scheme.color-source.section.label")
-    description: I18n.tr("settings.color-scheme.color-source.section.description")
-  }
-
   NToggle {
-    label: I18n.tr("settings.color-scheme.dark-mode.switch.label")
-    description: I18n.tr("settings.color-scheme.dark-mode.switch.description")
+    label: I18n.tr("tooltips.switch-to-dark-mode")
+    description: I18n.tr("panels.color-scheme.dark-mode-switch-description")
     checked: Settings.data.colorSchemes.darkMode
     onToggled: checked => {
                  Settings.data.colorSchemes.darkMode = checked;
@@ -124,20 +118,20 @@ ColumnLayout {
   }
 
   NComboBox {
-    label: I18n.tr("settings.color-scheme.dark-mode.mode.label")
-    description: I18n.tr("settings.color-scheme.dark-mode.mode.description")
+    label: I18n.tr("panels.color-scheme.dark-mode-mode-label")
+    description: I18n.tr("panels.color-scheme.dark-mode-mode-description")
 
     model: [
       {
-        "name": I18n.tr("settings.color-scheme.dark-mode.mode.off"),
+        "name": I18n.tr("panels.color-scheme.dark-mode-mode-off"),
         "key": "off"
       },
       {
-        "name": I18n.tr("settings.color-scheme.dark-mode.mode.manual"),
+        "name": I18n.tr("panels.color-scheme.dark-mode-mode-manual"),
         "key": "manual"
       },
       {
-        "name": I18n.tr("settings.color-scheme.dark-mode.mode.location"),
+        "name": I18n.tr("common.location"),
         "key": "location"
       }
     ]
@@ -155,8 +149,8 @@ ColumnLayout {
     visible: Settings.data.colorSchemes.schedulingMode === "manual"
 
     NLabel {
-      label: I18n.tr("settings.display.night-light.manual-schedule.label")
-      description: I18n.tr("settings.display.night-light.manual-schedule.description")
+      label: I18n.tr("panels.display.night-light-manual-schedule-label")
+      description: I18n.tr("panels.display.night-light-manual-schedule-description")
     }
 
     RowLayout {
@@ -164,7 +158,7 @@ ColumnLayout {
       spacing: Style.marginS
 
       NText {
-        text: I18n.tr("settings.display.night-light.manual-schedule.sunrise")
+        text: I18n.tr("panels.display.night-light-manual-schedule-sunrise")
         pointSize: Style.fontSizeM
         color: Color.mOnSurfaceVariant
       }
@@ -172,7 +166,7 @@ ColumnLayout {
       NComboBox {
         model: root.timeOptions
         currentKey: Settings.data.colorSchemes.manualSunrise
-        placeholder: I18n.tr("settings.display.night-light.manual-schedule.select-start")
+        placeholder: I18n.tr("panels.display.night-light-manual-schedule-select-start")
         onSelected: key => Settings.data.colorSchemes.manualSunrise = key
         minimumWidth: 120
       }
@@ -182,7 +176,7 @@ ColumnLayout {
       }
 
       NText {
-        text: I18n.tr("settings.display.night-light.manual-schedule.sunset")
+        text: I18n.tr("panels.display.night-light-manual-schedule-sunset")
         pointSize: Style.fontSizeM
         color: Color.mOnSurfaceVariant
       }
@@ -190,7 +184,7 @@ ColumnLayout {
       NComboBox {
         model: root.timeOptions
         currentKey: Settings.data.colorSchemes.manualSunset
-        placeholder: I18n.tr("settings.display.night-light.manual-schedule.select-stop")
+        placeholder: I18n.tr("panels.display.night-light-manual-schedule-select-stop")
         onSelected: key => Settings.data.colorSchemes.manualSunset = key
         minimumWidth: 120
       }
@@ -198,17 +192,16 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.label")
-    description: I18n.tr("settings.color-scheme.color-source.use-wallpaper-colors.description")
+    label: I18n.tr("panels.color-scheme.color-source-use-wallpaper-colors-label")
+    description: I18n.tr("panels.color-scheme.color-source-use-wallpaper-colors-description")
     enabled: ProgramCheckerService.matugenAvailable
     checked: Settings.data.colorSchemes.useWallpaperColors
     onToggled: checked => {
+                 Settings.data.colorSchemes.useWallpaperColors = checked;
                  if (checked) {
-                   root.checkMatugen();
+                   AppThemeService.generate();
                  } else {
-                   Settings.data.colorSchemes.useWallpaperColors = false;
                    ToastService.showNotice(I18n.tr("toast.wallpaper-colors.label"), I18n.tr("toast.wallpaper-colors.disabled"), "settings-color-scheme");
-
                    if (Settings.data.colorSchemes.predefinedScheme) {
                      ColorSchemeService.applyScheme(Settings.data.colorSchemes.predefinedScheme);
                    }
@@ -217,8 +210,8 @@ ColumnLayout {
   }
 
   NComboBox {
-    label: I18n.tr("settings.color-scheme.color-source.matugen-scheme-type.label")
-    description: I18n.tr("settings.color-scheme.color-source.matugen-scheme-type.description")
+    label: I18n.tr("panels.color-scheme.color-source-matugen-scheme-type-label")
+    description: I18n.tr("panels.color-scheme.color-source-matugen-scheme-type-description")
     enabled: Settings.data.colorSchemes.useWallpaperColors
     visible: Settings.data.colorSchemes.useWallpaperColors
 
@@ -264,14 +257,11 @@ ColumnLayout {
                   AppThemeService.generate();
                 }
 
-    isSettings: true
     defaultValue: Settings.getDefaultValue("colorSchemes.matugenSchemeType")
   }
 
   NDivider {
     Layout.fillWidth: true
-    Layout.topMargin: Style.marginL
-    Layout.bottomMargin: Style.marginL
     visible: !Settings.data.colorSchemes.useWallpaperColors
   }
 
@@ -281,16 +271,9 @@ ColumnLayout {
     visible: !Settings.data.colorSchemes.useWallpaperColors
 
     NHeader {
-      label: I18n.tr("settings.color-scheme.predefined.section.label")
-      description: I18n.tr("settings.color-scheme.predefined.section.description")
+      label: I18n.tr("panels.color-scheme.predefined-title")
+      description: I18n.tr("panels.color-scheme.predefined-desc")
       Layout.fillWidth: true
-    }
-
-    NButton {
-      text: I18n.tr("settings.color-scheme.download.button")
-      icon: "download"
-      onClicked: root.openDownloadPopup()
-      Layout.alignment: Qt.AlignRight
     }
 
     GridLayout {
@@ -414,6 +397,14 @@ ColumnLayout {
           }
         }
       }
+    }
+
+    NButton {
+      text: I18n.tr("panels.color-scheme.download-button")
+      icon: "download"
+      onClicked: root.openDownloadPopup()
+      Layout.alignment: Qt.AlignRight
+      Layout.topMargin: Style.marginS
     }
   }
 }

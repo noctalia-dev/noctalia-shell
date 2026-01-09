@@ -96,14 +96,14 @@ ColumnLayout {
             spacing: 2
 
             NText {
-              text: I18n.tr("settings.bar.appearance.position.label")
+              text: I18n.tr("panels.bar.appearance-position-label")
               pointSize: Style.fontSizeL
               font.weight: Style.fontWeightBold
               color: Color.mOnSurface
             }
 
             NText {
-              text: I18n.tr("settings.bar.appearance.position.description")
+              text: I18n.tr("panels.bar.appearance-position-description")
               pointSize: Style.fontSizeS
               color: Color.mOnSurfaceVariant
             }
@@ -118,22 +118,22 @@ ColumnLayout {
             model: [
               {
                 "key": "top",
-                "name": I18n.tr("options.bar.position.top"),
+                "name": I18n.tr("positions.top"),
                 "icon": "arrow-up"
               },
               {
                 "key": "bottom",
-                "name": I18n.tr("options.bar.position.bottom"),
+                "name": I18n.tr("positions.bottom"),
                 "icon": "arrow-down"
               },
               {
                 "key": "left",
-                "name": I18n.tr("options.bar.position.left"),
+                "name": I18n.tr("positions.left"),
                 "icon": "arrow-left"
               },
               {
                 "key": "right",
-                "name": I18n.tr("options.bar.position.right"),
+                "name": I18n.tr("positions.right"),
                 "icon": "arrow-right"
               }
             ]
@@ -221,13 +221,13 @@ ColumnLayout {
           Layout.fillWidth: true
           spacing: 2
           NText {
-            text: I18n.tr("settings.bar.appearance.density.label")
+            text: I18n.tr("panels.bar.appearance-density-label")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
           }
           NText {
-            text: I18n.tr("settings.bar.appearance.density.description")
+            text: I18n.tr("panels.bar.appearance-density-description")
             pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
             wrapMode: Text.WordWrap
@@ -241,23 +241,23 @@ ColumnLayout {
             model: [
               {
                 "key": "mini",
-                "name": I18n.tr("options.bar.density.mini")
+                "name": I18n.tr("options.bar.density-mini")
               },
               {
                 "key": "compact",
-                "name": I18n.tr("options.bar.density.compact")
+                "name": I18n.tr("options.bar.density-compact")
               },
               {
                 "key": "default",
-                "name": I18n.tr("options.bar.density.default")
+                "name": I18n.tr("options.bar.density-default")
               },
               {
                 "key": "comfortable",
-                "name": I18n.tr("options.bar.density.comfortable")
+                "name": I18n.tr("options.bar.density-comfortable")
               },
               {
                 "key": "spacious",
-                "name": I18n.tr("options.bar.density.spacious")
+                "name": I18n.tr("options.bar.density-spacious")
               }
             ]
             delegate: Rectangle {
@@ -346,13 +346,13 @@ ColumnLayout {
             Layout.fillWidth: true
             spacing: 2
             NText {
-              text: I18n.tr("settings.user-interface.scaling.label")
+              text: I18n.tr("panels.user-interface.scaling-label")
               pointSize: Style.fontSizeL
               font.weight: Style.fontWeightBold
               color: Color.mOnSurface
             }
             NText {
-              text: I18n.tr("settings.user-interface.scaling.description")
+              text: I18n.tr("panels.user-interface.scaling-description")
               pointSize: Style.fontSizeS
               color: Color.mOnSurfaceVariant
             }
@@ -403,13 +403,13 @@ ColumnLayout {
           Layout.fillWidth: true
           spacing: 2
           NText {
-            text: I18n.tr("settings.bar.appearance.floating.label")
+            text: I18n.tr("panels.bar.appearance-floating-label")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
           }
           NText {
-            text: I18n.tr("settings.bar.appearance.floating.description")
+            text: I18n.tr("panels.bar.appearance-floating-description")
             pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
             wrapMode: Text.WordWrap
@@ -462,13 +462,13 @@ ColumnLayout {
           Layout.fillWidth: true
           spacing: 2
           NText {
-            text: I18n.tr("settings.user-interface.dimmer-opacity.label")
+            text: I18n.tr("panels.user-interface.dimmer-opacity-label")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
           }
           NText {
-            text: I18n.tr("settings.user-interface.dimmer-opacity.description")
+            text: I18n.tr("panels.user-interface.dimmer-opacity-description")
             pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
             wrapMode: Text.WordWrap
@@ -517,13 +517,13 @@ ColumnLayout {
           Layout.fillWidth: true
           spacing: 2
           NText {
-            text: I18n.tr("settings.user-interface.shadows.label")
+            text: I18n.tr("panels.user-interface.shadows-label")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
           }
           NText {
-            text: I18n.tr("settings.user-interface.shadows.description")
+            text: I18n.tr("panels.user-interface.shadows-description")
             pointSize: Style.fontSizeS
             color: Color.mOnSurfaceVariant
             wrapMode: Text.WordWrap

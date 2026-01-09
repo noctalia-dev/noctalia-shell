@@ -85,7 +85,7 @@ Singleton {
 
     getMtime(sourcePath, function (mtime) {
       const cacheKey = generateThumbnailKey(sourcePath, mtime);
-      const cachedPath = wpThumbDir + cacheKey + ".jpg";
+      const cachedPath = wpThumbDir + cacheKey + ".png";
 
       processRequest(cacheKey, cachedPath, sourcePath, callback, function () {
         if (imageMagickAvailable) {
@@ -132,7 +132,7 @@ Singleton {
 
       getMtime(sourcePath, function (mtime) {
         const cacheKey = generateLargeKey(sourcePath, width, height, mtime);
-        const cachedPath = wpLargeDir + cacheKey + ".jpg";
+        const cachedPath = wpLargeDir + cacheKey + ".png";
 
         processRequest(cacheKey, cachedPath, sourcePath, callback, function () {
           startLargeProcessing(sourcePath, cachedPath, targetWidth, targetHeight, cacheKey);
@@ -269,7 +269,8 @@ Singleton {
     const srcEsc = sourcePath.replace(/'/g, "'\\''");
     const dstEsc = outputPath.replace(/'/g, "'\\''");
 
-    const command = `magick -define jpeg:size=768x768 '${srcEsc}' -auto-orient -thumbnail '384x384^' -gravity center -extent 384x384 -quality 85 '${dstEsc}'`;
+    // Use Lanczos filter for high-quality downscaling, subtle unsharp mask, and PNG for lossless output
+    const command = `magick '${srcEsc}' -auto-orient -filter Lanczos -resize '384x384^' -gravity center -extent 384x384 -unsharp 0x0.5 '${dstEsc}'`;
 
     runProcess(command, cacheKey, outputPath, sourcePath);
   }
@@ -280,10 +281,9 @@ Singleton {
   function startLargeProcessing(sourcePath, outputPath, width, height, cacheKey) {
     const srcEsc = sourcePath.replace(/'/g, "'\\''");
     const dstEsc = outputPath.replace(/'/g, "'\\''");
-    const doubleWidth = width * 2;
-    const doubleHeight = height * 2;
 
-    const command = `magick -define jpeg:size=${doubleWidth}x${doubleHeight} '${srcEsc}' -auto-orient -thumbnail '${width}x${height}^' -quality 95 '${dstEsc}'`;
+    // Use Lanczos filter for high-quality downscaling, subtle unsharp mask, and PNG for lossless output
+    const command = `magick '${srcEsc}' -auto-orient -filter Lanczos -resize '${width}x${height}^' -unsharp 0x0.5 '${dstEsc}'`;
 
     runProcess(command, cacheKey, outputPath, sourcePath);
   }

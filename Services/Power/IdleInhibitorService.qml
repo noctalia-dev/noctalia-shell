@@ -218,7 +218,7 @@ Singleton {
 
     if (activeInhibitors.includes("manual")) {
       removeInhibitor("manual");
-      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.keep-awake.disabled"), "keep-awake-off");
+      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.wifi.disabled"), "keep-awake-off");
       Logger.i("IdleInhibitor", "Manual inhibition disabled");
     }
   }
@@ -226,7 +226,7 @@ Singleton {
   function addManualInhibitor(timeoutSec) {
     if (!activeInhibitors.includes("manual")) {
       addInhibitor("manual", "Manually activated by user");
-      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.keep-awake.enabled"), "keep-awake-on");
+      ToastService.showNotice(I18n.tr("tooltips.keep-awake"), I18n.tr("toast.wifi.enabled"), "keep-awake-on");
     }
 
     if (timeoutSec === null && timeout === null) {

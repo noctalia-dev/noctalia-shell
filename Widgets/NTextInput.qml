@@ -17,8 +17,7 @@ ColumnLayout {
   property string fontFamily: Settings.data.ui.fontDefault
   property real fontSize: Style.fontSizeS
   property int fontWeight: Style.fontWeightRegular
-  property bool isSettings: false
-  property var defaultValue: ""
+  property var defaultValue: undefined
   property string settingsPath: ""
 
   property alias text: input.text
@@ -30,10 +29,10 @@ ColumnLayout {
 
   spacing: Style.marginS
 
-  readonly property bool isValueChanged: isSettings && (text !== defaultValue)
-  readonly property string indicatorTooltip: isSettings ? I18n.tr("settings.indicator.default-value", {
-                                                                    "value": defaultValue === "" ? "(empty)" : String(defaultValue)
-                                                                  }) : ""
+  readonly property bool isValueChanged: (defaultValue !== undefined) && (text !== defaultValue)
+  readonly property string indicatorTooltip: defaultValue !== undefined ? I18n.tr("panels.indicator.default-value", {
+                                                                                    "value": defaultValue === "" ? "(empty)" : String(defaultValue)
+                                                                                  }) : ""
 
   NLabel {
     label: root.label
@@ -42,7 +41,7 @@ ColumnLayout {
     descriptionColor: root.descriptionColor
     visible: root.label !== "" || root.description !== ""
     Layout.fillWidth: true
-    showIndicator: root.isSettings && root.isValueChanged
+    showIndicator: root.isValueChanged
     indicatorTooltip: root.indicatorTooltip
   }
 
@@ -208,7 +207,7 @@ ColumnLayout {
           NIconButton {
             id: clearButton
             icon: "x"
-            tooltipText: I18n.tr("widgets.text-input.clear")
+            tooltipText: I18n.tr("common.clear")
 
             Layout.alignment: Qt.AlignVCenter
             border.width: 0

@@ -397,28 +397,28 @@ Item {
     var items = [];
     if (hasSettings) {
       items.push({
-                   "label": I18n.tr("context-menu.widget-settings"),
+                   "label": I18n.tr("actions.widget-settings"),
                    "action": "widget-settings",
                    "icon": "settings"
                  });
     }
     items.push({
-                 "label": I18n.tr("context-menu.reset"),
+                 "label": I18n.tr("common.reset"),
                  "action": "reset",
                  "icon": "restore"
                });
     items.push({
-                 "label": I18n.tr("context-menu.raise-to-top"),
+                 "label": I18n.tr("actions.raise-to-top"),
                  "action": "raise-to-top",
                  "icon": "stack-front"
                });
     items.push({
-                 "label": I18n.tr("context-menu.lower-to-bottom"),
+                 "label": I18n.tr("actions.lower-to-bottom"),
                  "action": "lower-to-bottom",
                  "icon": "stack-back"
                });
     items.push({
-                 "label": I18n.tr("context-menu.delete"),
+                 "label": I18n.tr("common.delete"),
                  "action": "delete",
                  "icon": "trash"
                });

@@ -27,17 +27,11 @@ ColumnLayout {
     }
   }
 
-  NHeader {
-    label: I18n.tr("settings.desktop-widgets.general.section.label")
-    description: I18n.tr("settings.desktop-widgets.general.section.description")
-  }
-
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("settings.desktop-widgets.enabled.label")
-    description: I18n.tr("settings.desktop-widgets.enabled.description")
+    label: I18n.tr("panels.desktop-widgets.enabled-label")
+    description: I18n.tr("panels.desktop-widgets.enabled-description")
     checked: Settings.data.desktopWidgets.enabled
-    isSettings: true
     defaultValue: Settings.getDefaultValue("desktopWidgets.enabled")
     onToggled: checked => Settings.data.desktopWidgets.enabled = checked
   }
@@ -45,7 +39,7 @@ ColumnLayout {
   NButton {
     visible: Settings.data.desktopWidgets.enabled
     Layout.fillWidth: true
-    text: DesktopWidgetRegistry.editMode ? I18n.tr("settings.desktop-widgets.edit-mode.exit-button") : I18n.tr("settings.desktop-widgets.edit-mode.button.label")
+    text: DesktopWidgetRegistry.editMode ? I18n.tr("panels.desktop-widgets.edit-mode-exit-button") : I18n.tr("panels.desktop-widgets.edit-mode-button-label")
     icon: "edit"
     onClicked: {
       DesktopWidgetRegistry.editMode = !DesktopWidgetRegistry.editMode;
