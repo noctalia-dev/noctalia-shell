@@ -841,32 +841,6 @@ Rectangle {
             }
           }
 
-          onClicked: function (mouse) {
-            if (!modelData)
-              return;
-            if (mouse.button === Qt.LeftButton) {
-              if (isRunning && modelData.window) {
-                // Running app - focus it
-                try {
-                  CompositorService.focusWindow(modelData.window);
-                } catch (error) {
-                  Logger.e("Taskbar", "Failed to activate toplevel: " + error);
-                }
-              } else if (isPinned) {
-                // Pinned app not running - launch it
-                root.launchPinnedApp(modelData.appId);
-              }
-            } else if (mouse.button === Qt.RightButton) {
-              TooltipService.hide();
-              // Only show context menu for running apps
-              if (isRunning && modelData.window) {
-                root.selectedWindowId = modelData.id;
-                root.selectedAppId = modelData.appId;
-                root.openTaskbarContextMenu(taskbarItem);
-              }
-            }
-          }
-
           onEntered: {
             root.hoveredWindowId = taskbarItem.modelData.id;
             if (!taskbarItem.held) {
