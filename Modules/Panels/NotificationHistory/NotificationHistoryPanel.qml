@@ -484,6 +484,47 @@ SmartPanel {
                           color: Color.mPrimary
                         }
                       }
+
+                      // Action buttons
+                      Flow {
+                        width: parent.width
+                        spacing: Style.marginS
+                        topPadding: Style.marginS
+                        visible: Settings.data.notifications?.saveToHistory?.showActionsInHistory && parsedActions.length > 0 && (!notificationDelegate.canExpand || notificationDelegate.isExpanded)
+
+                        property var parsedActions: {
+                          try {
+                            return model.actionsJson ? JSON.parse(model.actionsJson) : [];
+                          } catch (e) {
+                            return [];
+                          }
+                        }
+
+                        Repeater {
+                          model: parent.parsedActions
+
+                          delegate: NButton {
+                            property var actionData: modelData
+
+                            text: {
+                              var actionText = actionData.text || "Open";
+                              if (actionText.includes(",")) {
+                                return actionText.split(",")[1] || actionText;
+                              }
+                              return actionText;
+                            }
+                            fontSize: Style.fontSizeS
+                            backgroundColor: Color.mPrimary
+                            textColor: hovered ? Color.mOnHover : Color.mOnPrimary
+                            hoverColor: Color.mHover
+                            outlined: false
+                            implicitHeight: 24
+                            onClicked: {
+                              //TODO -> no working Function
+                            }
+                          }
+                        }
+                      }
                     }
 
                     // Delete button

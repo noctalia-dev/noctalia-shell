@@ -602,7 +602,8 @@ Singleton {
                              "urgency": item.urgency < 0 || item.urgency > 2 ? 1 : item.urgency,
                              "timestamp": time,
                              "originalImage": item.originalImage || "",
-                             "cachedImage": cachedImage
+                             "cachedImage": cachedImage,
+                             "actionsJson": item.actionsJson || "[]"
                            });
       }
     } catch (e) {
