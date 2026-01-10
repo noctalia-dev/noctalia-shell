@@ -62,7 +62,7 @@ Item {
   Process {
     id: stateCheckProcessExecutor
     running: false
-    command: _currentStateCheckIndex !== -1 && _parsedStateChecks.length > _currentStateCheckIndex ? ["sh", "-c", _parsedStateChecks[_currentStateCheckIndex].command] : []
+    command: _currentStateCheckIndex !== -1 && _parsedStateChecks.length > _currentStateCheckIndex ? ["sh", "-lc", _parsedStateChecks[_currentStateCheckIndex].command] : []
     onExited: function (exitCode, stdout, stderr) {
       var currentCheckItem = _parsedStateChecks[_currentStateCheckIndex];
       var currentCommand = currentCheckItem.command;
@@ -141,19 +141,19 @@ Item {
     tooltipText: _buildTooltipText()
     onClicked: {
       if (onClickedCommand) {
-        Quickshell.execDetached(["sh", "-c", onClickedCommand]);
+        Quickshell.execDetached(["sh", "-lc", onClickedCommand]);
         updateState();
       }
     }
     onRightClicked: {
       if (onRightClickedCommand) {
-        Quickshell.execDetached(["sh", "-c", onRightClickedCommand]);
+        Quickshell.execDetached(["sh", "-lc", onRightClickedCommand]);
         updateState();
       }
     }
     onMiddleClicked: {
       if (onMiddleClickedCommand) {
-        Quickshell.execDetached(["sh", "-c", onMiddleClickedCommand]);
+        Quickshell.execDetached(["sh", "-lc", onMiddleClickedCommand]);
         updateState();
       }
     }

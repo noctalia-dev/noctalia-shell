@@ -48,7 +48,7 @@ Singleton {
     const script = buildMatugenScript(content, wp, mode);
 
     generateProcess.generator = "matugen";
-    generateProcess.command = ["bash", "-lc", script];
+    generateProcess.command = ["sh", "-lc", script];
     generateProcess.running = true;
   }
 
@@ -116,7 +116,7 @@ Singleton {
     const item = templateQueue.shift();
     currentTemplateContext = item;
 
-    templateProcess.command = ["bash", "-lc", item.script];
+    templateProcess.command = ["sh", "-lc", item.script];
     templateProcess.running = true;
   }
 
@@ -469,7 +469,7 @@ Singleton {
                                        });
 
     if (commands.length > 0) {
-      copyProcess.command = ["bash", "-lc", commands.join('; ')];
+      copyProcess.command = ["sh", "-lc", commands.join('; ')];
       copyProcess.running = true;
     }
   }

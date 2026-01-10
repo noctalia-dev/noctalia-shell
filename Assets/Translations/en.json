@@ -16,10 +16,10 @@
     "open-calendar": "Open calendar",
     "open-display-settings": "Display settings",
     "open-launcher": "Open launcher",
-    "open-mixer": "Audio mixer",
     "open-settings": "Open settings",
     "raise-to-top": "Raise to top",
     "random-wallpaper": "Random wallpaper",
+    "run-custom-command": "Run custom command",
     "toggle-mute": "Toggle mute",
     "widget-settings": "Widget settings"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "h",
-      "minutes": "m",
-      "seconds": "s"
-    },
     "weather-loading": "Loading weather…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Sources",
     "start": "Start",
     "stop": "Stop",
-    "stopwatch": "Stopwatch",
     "suspend": "Suspend",
     "templates": "Templates",
     "test": "Test",
     "thresholds": "Thresholds",
-    "timer": "Timer",
     "title": "Title",
     "toast": "Toast",
     "trusted": "Trusted",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Index",
-      "index+name": "Index and name",
+      "index-and-name": "Index and name",
       "name": "Name"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Enable continuous scrolling for long media titles.",
       "media-scrolling-title-label": "Scrolling title",
       "media-title": "Media players",
+      "on-middle-clicked-description": "Command to execute when the button is middle-clicked.",
       "panel-applications-empty": "No applications are currently playing audio",
       "title": "Audio",
       "visualizer-type-description": "Choose a visualization type for media playback.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Screen corners"
     },
     "hooks": {
-      "info-command-info-description": "• Commands are executed via shell (sh -c)<br>• Commands run in background (detached)<br>• Test buttons execute with current values",
+      "info-command-info-description": "• Commands are executed via shell (sh -lc)<br>• Commands run in background (detached)<br>• Test buttons execute with current values",
       "info-command-info-label": "Hook command information",
       "info-parameters-description": "• Wallpaper hook: $1 = wallpaper path, $2 = screen name<br>• Theme toggle hook: $1 = true/false (Dark Mode state)<br>• Screen lock/unlock hooks: No parameters<br>• Performance mode hooks: No parameters",
       "info-parameters-label": "Available parameters",
@@ -1193,8 +1187,7 @@
       "update-all": "Update All ({count})",
       "update-all-success": "All plugins updated successfully.",
       "update-available": "New plugin update available",
-      "update-available-plural": "New plugin updates available ({count})",
-      "update-available_plural": "Plugin updates available ({count})",
+      "update-available-plural": "Plugin updates available ({count})",
       "update-error": "Failed to update plugin: {plugin}: {error}",
       "update-incompatible": "Requires Noctalia v{version} or higher",
       "update-pending": "v{current} → v{new} (requires Noctalia v{required})",

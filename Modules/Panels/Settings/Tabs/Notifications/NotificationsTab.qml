@@ -39,6 +39,7 @@ ColumnLayout {
   NTabBar {
     id: subTabBar
     Layout.fillWidth: true
+    Layout.bottomMargin: Style.marginM
     distributeEvenly: false // this is too cramped on this tab to split evenly
     currentIndex: tabView.currentIndex
 

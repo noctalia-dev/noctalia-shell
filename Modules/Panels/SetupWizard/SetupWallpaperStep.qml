@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import "../../../Helpers/FuzzySort.js" as FuzzySort
 import qs.Commons
 import qs.Services.UI
 import qs.Widgets

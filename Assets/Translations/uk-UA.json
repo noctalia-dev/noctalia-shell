@@ -16,10 +16,10 @@
     "open-calendar": "Відкрити календар",
     "open-display-settings": "Параметри дисплея",
     "open-launcher": "Відкрити панель запуску",
-    "open-mixer": "Аудіомікшер",
     "open-settings": "Відкрити налаштування",
     "raise-to-top": "Підняти вгору",
     "random-wallpaper": "Випадкові шпалери",
+    "run-custom-command": "Виконати власну команду",
     "toggle-mute": "Увімкнути/вимкнути звук",
     "widget-settings": "Налаштування віджета"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "г",
-      "minutes": "м",
-      "seconds": "с"
-    },
     "weather-loading": "Завантаження погоди…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Джерела",
     "start": "Почати",
     "stop": "Зупиніться",
-    "stopwatch": "Секундомір",
     "suspend": "Призупинити",
     "templates": "Шаблони",
     "test": "Тест",
     "thresholds": "Порогові значення",
-    "timer": "Таймер",
     "title": "Назва",
     "toast": "Тост",
     "trusted": "Надійний",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Індекс",
-      "index+name": "Індекс та назва",
+      "index-and-name": "Індекс та назва",
       "name": "Назва"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Увімкнути безперервну прокрутку для довгих назв медіа",
       "media-scrolling-title-label": "Прокрутка назви",
       "media-title": "Медіаплеєри",
+      "on-middle-clicked-description": "Команда для виконання при натисканні середньою кнопкою миші.",
       "panel-applications-empty": "Зараз жоден додаток не відтворює аудіо.",
       "title": "Аудіо",
       "visualizer-type-description": "Виберіть тип візуалізації для відтворення медіа.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Кути екрана"
     },
     "hooks": {
-      "info-command-info-description": "• Команди виконуються через оболонку (sh -c)<br>• Команди запускаються у фоні (відокремлено)<br>• Кнопки тестування виконують команди з поточними значеннями",
+      "info-command-info-description": "• Команди виконуються через оболонку (sh -lc)<br>• Команди запускаються у фоні (відокремлено)<br>• Кнопки тестування виконують команди з поточними значеннями",
       "info-command-info-label": "Інформація про команди хуків",
       "info-parameters-description": "• Хук шпалер: $1 = шлях до шпалер, $2 = назва екрана<br>• Хук перемикання теми: $1 = true/false (стан темного режиму)",
       "info-parameters-label": "Доступні параметри",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Усі плагіни успішно оновлено.",
       "update-available": "Доступне нове оновлення плагіна",
       "update-available-plural": "Доступні нові оновлення плагінів ({count})",
-      "update-available_plural": "Доступні оновлення плагінів ({count})",
       "update-error": "Не вдалося оновити плагін: {plugin}: {error}",
       "update-incompatible": "Потрібна Noctalia v{version} або вище",
       "update-pending": "v{current} → v{new} (потрібно Noctalia v{required})",

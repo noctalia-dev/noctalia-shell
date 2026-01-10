@@ -41,7 +41,7 @@ Item {
             "onActivate": function () {
               launcher.closeImmediately();
               Qt.callLater(() => {
-                             Quickshell.execDetached(["sh", "-c", expression]);
+                             Quickshell.execDetached(["sh", "-lc", expression]);
                            });
             }
           }

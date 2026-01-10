@@ -16,10 +16,10 @@
     "open-calendar": "Takvimi aç",
     "open-display-settings": "Ekran ayarları",
     "open-launcher": "Başlatıcıyı aç",
-    "open-mixer": "Ses Karıştırıcısı",
     "open-settings": "Ayarları aç",
     "raise-to-top": "En üste taşı",
     "random-wallpaper": "Rastgele duvar kâğıdı",
+    "run-custom-command": "Özel komut çalıştır",
     "toggle-mute": "Sesi kapat/aç",
     "widget-settings": "Araç takımı ayarları"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "S",
-      "minutes": "d",
-      "seconds": "s"
-    },
     "weather-loading": "Hava durumu yükleniyor..."
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Kaynaklar",
     "start": "Başlat",
     "stop": "Dur",
-    "stopwatch": "Kronometre",
     "suspend": "Askıya almak",
     "templates": "Şablonlar",
     "test": "Test",
     "thresholds": "Eşikler",
-    "timer": "Zamanlayıcı",
     "title": "Başlık",
     "toast": "Tost",
     "trusted": "Güvenilir",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "İndeks",
-      "index+name": "Dizin ve Ad",
+      "index-and-name": "Dizin ve Ad",
       "name": "İsim"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Uzun ortam başlıkları için sürekli kaydırmayı etkinleştirin",
       "media-scrolling-title-label": "Kayan başlık",
       "media-title": "Ortam oynatıcıları",
+      "on-middle-clicked-description": "Düğmeye orta tıklama yapıldığında yürütülecek komut.",
       "panel-applications-empty": "Şu anda ses çalan uygulama yok.",
       "title": "Ses",
       "visualizer-type-description": "Medya oynatma için bir görselleştirme türü seçin.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Ekran köşeleri"
     },
     "hooks": {
-      "info-command-info-description": "• Komutlar kabuk (sh -c) ile yürütülür<br>• Komutlar arka planda yürütülür (ayrık)<br>• Test düğmeleri mevcut değerlerle yürütülür",
+      "info-command-info-description": "• Komutlar kabuk (sh -lc) ile yürütülür<br>• Komutlar arka planda yürütülür (ayrık)<br>• Test düğmeleri mevcut değerlerle yürütülür",
       "info-command-info-label": "Komut Bilgisi",
       "info-parameters-description": "• Duvar Kâğıdı Kancası: $1 = duvar kâğıdı yolu, $2 = ekran adı<br>• Tema Geçiş Kancası: $1 = true/false (koyu mod durumu)",
       "info-parameters-label": "Kullanılabilir Parametreler",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Tüm eklentiler başarıyla güncellendi.",
       "update-available": "Yeni eklenti güncellemesi mevcut",
       "update-available-plural": "Yeni eklenti güncellemeleri mevcut ({count})",
-      "update-available_plural": "Eklenti güncellemeleri mevcut ({count})",
       "update-error": "Eklenti güncellenemedi: {plugin}: {error}",
       "update-incompatible": "Noctalia v{version} veya üzeri gerektirir.",
       "update-pending": "v{mevcut} → v{yeni} (Noctalia v{gerekli} gerektirir)",

@@ -16,10 +16,10 @@
     "open-calendar": "Naptár megnyitása",
     "open-display-settings": "Kijelzőbeállítások",
     "open-launcher": "Indító megnyitása",
-    "open-mixer": "Hangkeverő",
     "open-settings": "Beállítások megnyitása",
     "raise-to-top": "Felülre emelés",
     "random-wallpaper": "Véletlenszerű háttérkép",
+    "run-custom-command": "Egyéni parancs futtatása",
     "toggle-mute": "Némítás kapcsolása",
     "widget-settings": "Widget beállítások"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "ó",
-      "minutes": "p",
-      "seconds": "mp"
-    },
     "weather-loading": "Időjárás betöltése…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Források",
     "start": "Kezdés",
     "stop": "Állj",
-    "stopwatch": "Stopperóra",
     "suspend": "Felfüggesztés",
     "templates": "Sablonok",
     "test": "Teszt",
     "thresholds": "Küszöbértékek",
-    "timer": "Időzítő",
     "title": "Cím",
     "toast": "Pirítós",
     "trusted": "Megbízható",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Index",
-      "index+name": "Index és név",
+      "index-and-name": "Index és név",
       "name": "Név"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Kapcsolja be a folyamatos görgetést a hosszú média címekhez.",
       "media-scrolling-title-label": "Görgető cím",
       "media-title": "Médialejátszók",
+      "on-middle-clicked-description": "A gomb középső kattintásakor végrehajtandó parancs.",
       "panel-applications-empty": "Jelenleg egyetlen alkalmazás sem játszik le hangot",
       "title": "Hang",
       "visualizer-type-description": "Válasszon egy vizualizációs típust a média lejátszásához.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Képernyősarkok"
     },
     "hooks": {
-      "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -c)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
+      "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -lc)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
       "info-command-info-label": "Horog parancsinformációk",
       "info-parameters-description": "• Háttérkép horog: $1 = háttérkép elérési útja, $2 = képernyő neve<br>• Témaváltó horog: $1 = igaz/hamis (sötét mód állapota)<br>• Képernyőzár/feloldás horgok: Nincsenek paraméterek<br>• Teljesítmény mód horgok: Nincsenek paraméterek",
       "info-parameters-label": "Elérhető paraméterek",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Minden bővítmény sikeresen frissítve.",
       "update-available": "Új bővítményfrissítés elérhető",
       "update-available-plural": "Új bővítményfrissítések elérhetők ({count})",
-      "update-available_plural": "Bővítményfrissítések érhetők el ({count})",
       "update-error": "Nem sikerült frissíteni a bővítményt: {plugin}: {error}",
       "update-incompatible": "Noctalia v{version} vagy újabb szükséges",
       "update-pending": "v{current} → v{new} (szükséges Noctalia v{required})",

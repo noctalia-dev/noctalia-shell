@@ -40,8 +40,6 @@ SmartPanel {
               return calendarHeaderCard;
             case "calendar-month-card":
               return calendarMonthCard;
-            case "timer-card":
-              return timerCard;
             case "weather-card":
               return weatherCard;
             default:
@@ -63,13 +61,6 @@ SmartPanel {
   Component {
     id: calendarMonthCard
     CalendarMonthCard {
-      Layout.fillWidth: true
-    }
-  }
-
-  Component {
-    id: timerCard
-    TimerCard {
       Layout.fillWidth: true
     }
   }

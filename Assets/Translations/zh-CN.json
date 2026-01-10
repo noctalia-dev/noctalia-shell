@@ -16,10 +16,10 @@
     "open-calendar": "打开日历",
     "open-display-settings": "显示设置",
     "open-launcher": "打开启动器",
-    "open-mixer": "音频混音器",
     "open-settings": "打开设置",
     "raise-to-top": "置顶",
     "random-wallpaper": "随机壁纸",
+    "run-custom-command": "运行自定义命令",
     "toggle-mute": "切换静音",
     "widget-settings": "小部件设置"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "h",
-      "minutes": "m",
-      "seconds": "s"
-    },
     "weather-loading": "正在加载天气…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "来源",
     "start": "开始",
     "stop": "停止",
-    "stopwatch": "秒表",
     "suspend": "暂停",
     "templates": "模板",
     "test": "测试",
     "thresholds": "阈值",
-    "timer": "计时器",
     "title": "标题",
     "toast": "吐司",
     "trusted": "可信赖的",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "索引",
-      "index+name": "索引和名称",
+      "index-and-name": "索引和名称",
       "name": "名称"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "为长媒体标题启用连续滚动",
       "media-scrolling-title-label": "标题滚动",
       "media-title": "媒体播放器",
+      "on-middle-clicked-description": "鼠标中键点击时执行的命令。",
       "panel-applications-empty": "目前没有应用程序正在播放音频。",
       "title": "音频",
       "visualizer-type-description": "选择媒体播放的可视化类型。",
@@ -926,7 +920,7 @@
       "screen-corners-title": "屏幕边角"
     },
     "hooks": {
-      "info-command-info-description": "• 命令通过 shell 执行（sh -c）<br>• 命令在后台运行（分离）<br>• 测试按钮使用当前值执行",
+      "info-command-info-description": "• 命令通过 shell 执行（sh -lc）<br>• 命令在后台运行（分离）<br>• 测试按钮使用当前值执行",
       "info-command-info-label": "钩子命令信息",
       "info-parameters-description": "• 壁纸钩子：$1 = 壁纸路径, $2 = 屏幕名称<br>• 主题切换钩子：$1 = true/false（深色模式状态）<br>• 屏幕锁定/解锁钩子：无参数<br>• 性能模式钩子：无参数",
       "info-parameters-label": "可用参数",
@@ -1194,7 +1188,6 @@
       "update-all-success": "所有插件已成功更新。",
       "update-available": "新插件更新可用",
       "update-available-plural": "新插件更新可用（{count}个）",
-      "update-available_plural": "有插件更新可用 ({count})",
       "update-error": "更新插件失败：{plugin}：{error}",
       "update-incompatible": "需要 Noctalia v{version} 或更高版本",
       "update-pending": "v{当前} → v{新} (需要 Noctalia v{所需})",

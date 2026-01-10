@@ -86,7 +86,7 @@ Singleton {
     try {
       let command = script.replace(/\$1/g, wallpaperPath);
       command = command.replace(/\$2/g, screenName || "");
-      Quickshell.execDetached(["sh", "-c", command]);
+      Quickshell.execDetached(["sh", "-lc", command]);
       Logger.d("HooksService", `Executed wallpaper hook: ${command}`);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute wallpaper hook: ${e}`);
@@ -106,7 +106,7 @@ Singleton {
 
     try {
       const command = script.replace(/\$1/g, isDarkMode ? "true" : "false");
-      Quickshell.execDetached(["sh", "-c", command]);
+      Quickshell.execDetached(["sh", "-lc", command]);
       Logger.d("HooksService", `Executed dark mode hook: ${command}`);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute dark mode hook: ${e}`);
@@ -125,7 +125,7 @@ Singleton {
     }
 
     try {
-      Quickshell.execDetached(["sh", "-c", script]);
+      Quickshell.execDetached(["sh", "-lc", script]);
       Logger.d("HooksService", `Executed screen lock hook: ${script}`);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute screen lock hook: ${e}`);
@@ -144,7 +144,7 @@ Singleton {
     }
 
     try {
-      Quickshell.execDetached(["sh", "-c", script]);
+      Quickshell.execDetached(["sh", "-lc", script]);
       Logger.d("HooksService", `Executed screen unlock hook: ${script}`);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute screen unlock hook: ${e}`);
@@ -163,7 +163,7 @@ Singleton {
     }
 
     try {
-      Quickshell.execDetached(["sh", "-c", script]);
+      Quickshell.execDetached(["sh", "-lc", script]);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute performance mode enabled hook: ${e}`);
     }
@@ -181,7 +181,7 @@ Singleton {
     }
 
     try {
-      Quickshell.execDetached(["sh", "-c", script]);
+      Quickshell.execDetached(["sh", "-lc", script]);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute performance mode disabled hook: ${e}`);
     }

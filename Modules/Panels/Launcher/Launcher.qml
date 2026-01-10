@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
-import "../../../Helpers/FuzzySort.js" as Fuzzysort
 
 import "Providers"
 import qs.Commons
@@ -420,9 +419,9 @@ SmartPanel {
           // Filter commands using fuzzy search when typing partial command
           const query = searchText.substring(1); // Remove the ">" prefix
 
-          if (typeof Fuzzysort !== 'undefined') {
+          if (typeof FuzzySort !== 'undefined') {
             // Use fuzzy search to filter commands
-            const fuzzyResults = Fuzzysort.go(query, allCommands, {
+            const fuzzyResults = FuzzySort.go(query, allCommands, {
                                                 "keys": ["name"],
                                                 "threshold": -1000,
                                                 "limit": 50

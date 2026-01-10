@@ -61,7 +61,7 @@ ColumnLayout {
       },
       {
         "key": "index+name",
-        "name": I18n.tr("options.workspace-labels.index+name")
+        "name": I18n.tr("options.workspace-labels.index-and-name")
       }
     ]
     currentKey: widgetData.labelMode || widgetMetadata.labelMode

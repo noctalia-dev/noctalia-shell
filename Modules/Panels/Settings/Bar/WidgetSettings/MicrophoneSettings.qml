@@ -14,10 +14,12 @@ ColumnLayout {
 
   // Local state
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
+  property string valueMiddleClickCommand: widgetData.middleClickCommand !== undefined ? widgetData.middleClickCommand : widgetMetadata.middleClickCommand
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.displayMode = valueDisplayMode;
+    settings.middleClickCommand = valueMiddleClickCommand;
     return settings;
   }
 
@@ -41,5 +43,14 @@ ColumnLayout {
     ]
     currentKey: valueDisplayMode
     onSelected: key => valueDisplayMode = key
+  }
+
+  // Middle click command
+  NTextInput {
+    label: I18n.tr("panels.control-center.shortcuts-custom-button-on-middle-clicked-label")
+    description: I18n.tr("panels.audio.on-middle-clicked-description")
+    placeholderText: I18n.tr("panels.audio.external-mixer-placeholder")
+    text: valueMiddleClickCommand
+    onTextChanged: valueMiddleClickCommand = text
   }
 }

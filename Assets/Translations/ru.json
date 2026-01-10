@@ -16,10 +16,10 @@
     "open-calendar": "Открыть календарь",
     "open-display-settings": "Настройки экрана",
     "open-launcher": "Открыть лаунчер",
-    "open-mixer": "Аудиомикшер",
     "open-settings": "Открыть настройки",
     "raise-to-top": "Поднять наверх",
     "random-wallpaper": "Случайные обои",
+    "run-custom-command": "Выполнить пользовательскую команду",
     "toggle-mute": "Включить/выключить звук",
     "widget-settings": "Настройки виджета"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "ч",
-      "minutes": "м",
-      "seconds": "с"
-    },
     "weather-loading": "Загрузка погоды…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Источники",
     "start": "Начать",
     "stop": "Стоп",
-    "stopwatch": "Секундомер",
     "suspend": "Приостановить",
     "templates": "Шаблоны",
     "test": "Тест",
     "thresholds": "Пороги",
-    "timer": "Таймер",
     "title": "Название",
     "toast": "Тост",
     "trusted": "Надёжный",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Индекс",
-      "index+name": "Индекс и название",
+      "index-and-name": "Индекс и название",
       "name": "Имя"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Включить непрерывную прокрутку для длинных названий медиа.",
       "media-scrolling-title-label": "Прокрутка названия",
       "media-title": "Медиаплееры",
+      "on-middle-clicked-description": "Команда для выполнения при нажатии средней кнопки мыши.",
       "panel-applications-empty": "В данный момент нет приложений, воспроизводящих звук.",
       "title": "Аудио",
       "visualizer-type-description": "Выберите тип визуализации для воспроизведения медиа.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Углы экрана"
     },
     "hooks": {
-      "info-command-info-description": "• Команды выполняются через shell (sh -c)<br>• Команды выполняются в фоновом режиме (отдельно)<br>• Кнопки 'Тест' выполняются с текущими значениями",
+      "info-command-info-description": "• Команды выполняются через shell (sh -lc)<br>• Команды выполняются в фоновом режиме (отдельно)<br>• Кнопки 'Тест' выполняются с текущими значениями",
       "info-command-info-label": "Информация о команде хука",
       "info-parameters-description": "• Хук обоев: $1 = путь к обоям, $2 = имя экрана<br>• Хук переключения темы: $1 = true/false (состояние темного режима)",
       "info-parameters-label": "Доступные параметры",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Все плагины успешно обновлены.",
       "update-available": "Доступно новое обновление плагина",
       "update-available-plural": "Доступны новые обновления плагинов ({count})",
-      "update-available_plural": "Доступны обновления плагинов ({count})",
       "update-error": "Не удалось обновить плагин: {plugin}: {error}",
       "update-incompatible": "Требуется Noctalia v{version} или выше",
       "update-pending": "v{current} → v{new} (требуется Noctalia v{required})",

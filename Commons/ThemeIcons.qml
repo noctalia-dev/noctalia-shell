@@ -2,7 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import "../Helpers/FuzzySort.js" as FuzzySort
+import qs.Commons
 
 Singleton {
   id: root

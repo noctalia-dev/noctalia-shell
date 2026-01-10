@@ -15,7 +15,6 @@
   wl-clipboard,
   imagemagick,
   wget,
-  gpu-screen-recorder, # optional
   # calendar support
   calendarSupport ? false,
   python3,
@@ -58,9 +57,6 @@ let
     wl-clipboard
     imagemagick
     wget
-  ]
-  ++ lib.optionals (stdenvNoCC.hostPlatform.system == "x86_64-linux") [
-    gpu-screen-recorder
   ]
   ++ lib.optional calendarSupport (python3.withPackages (pp: [ pp.pygobject3 ]));
 

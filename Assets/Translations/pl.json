@@ -16,10 +16,10 @@
     "open-calendar": "Otwórz kalendarz",
     "open-display-settings": "Ustawienia ekranu",
     "open-launcher": "Otwórz launcher",
-    "open-mixer": "Mikser dźwięku",
     "open-settings": "Otwórz ustawienia",
     "raise-to-top": "Przenieś na górę",
     "random-wallpaper": "Losowa tapeta",
+    "run-custom-command": "Uruchom własne polecenie",
     "toggle-mute": "Przełącz wyciszenie",
     "widget-settings": "Ustawienia widżetu"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "g",
-      "minutes": "m",
-      "seconds": "s"
-    },
     "weather-loading": "Ładowanie pogody…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Źródła",
     "start": "Start.",
     "stop": "Stop.",
-    "stopwatch": "Stoper",
     "suspend": "Zawiesić",
     "templates": "Szablony",
     "test": "Test",
     "thresholds": "Progi",
-    "timer": "Stoper",
     "title": "Tytuł",
     "toast": "Tost",
     "trusted": "Zaufany",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Indeks",
-      "index+name": "Indeks i nazwa",
+      "index-and-name": "Indeks i nazwa",
       "name": "Nazwa"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Włącz ciągłe przewijanie długich tytułów mediów.",
       "media-scrolling-title-label": "Przewijany tytuł",
       "media-title": "Odtwarzacze mediów",
+      "on-middle-clicked-description": "Komenda do wykonania po kliknięciu środkowym przyciskiem myszy.",
       "panel-applications-empty": "Żadna aplikacja nie odtwarza obecnie dźwięku",
       "title": "Audio",
       "visualizer-type-description": "Wybierz typ wizualizacji odtwarzania multimediów.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Narożniki ekranu"
     },
     "hooks": {
-      "info-command-info-description": "• Polecenia są wykonywane przez powłokę (sh -c)<br>• Polecenia działają w tle (detached)<br>• Przyciski testowe wykonują się z aktualnymi wartościami",
+      "info-command-info-description": "• Polecenia są wykonywane przez powłokę (sh -lc)<br>• Polecenia działają w tle (detached)<br>• Przyciski testowe wykonują się z aktualnymi wartościami",
       "info-command-info-label": "Informacje o poleceniach Hook",
       "info-parameters-description": "• Hook tapety: $1 = ścieżka tapety, $2 = nazwa ekranu<br>• Hook zmiany motywu: $1 = true/false (stan trybu ciemnego)<br>• Hooki blokady: Brak parametrów",
       "info-parameters-label": "Dostępne parametry",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Wszystkie wtyczki zaktualizowane pomyślnie.",
       "update-available": "Dostępna nowa aktualizacja wtyczki",
       "update-available-plural": "Dostępne nowe aktualizacje wtyczek ({count})",
-      "update-available_plural": "Dostępne aktualizacje wtyczek ({count})",
       "update-error": "Błąd aktualizacji wtyczki {plugin}: {error}",
       "update-incompatible": "Wymaga Noctalia v{version} lub nowszej",
       "update-pending": "v{bieżąca} → v{nowa} (wymaga Noctalii v{wymagana})",

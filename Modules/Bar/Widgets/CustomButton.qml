@@ -455,7 +455,7 @@ Item {
 
   function onClicked() {
     if (leftClickExec) {
-      Quickshell.execDetached(["sh", "-c", leftClickExec]);
+      Quickshell.execDetached(["sh", "-lc", leftClickExec]);
       Logger.i("CustomButton", `Executing command: ${leftClickExec}`);
     } else if (!leftClickUpdateText) {
       // No left click script was defined, open settings
@@ -470,7 +470,7 @@ Item {
 
   function onRightClicked() {
     if (rightClickExec) {
-      Quickshell.execDetached(["sh", "-c", rightClickExec]);
+      Quickshell.execDetached(["sh", "-lc", rightClickExec]);
       Logger.i("CustomButton", `Executing command: ${rightClickExec}`);
     }
     if (!textStream && rightClickUpdateText) {
@@ -480,7 +480,7 @@ Item {
 
   function onMiddleClicked() {
     if (middleClickExec) {
-      Quickshell.execDetached(["sh", "-c", middleClickExec]);
+      Quickshell.execDetached(["sh", "-lc", middleClickExec]);
       Logger.i("CustomButton", `Executing command: ${middleClickExec}`);
     }
     if (!textStream && middleClickUpdateText) {
@@ -551,7 +551,7 @@ Item {
         }
       });
 
-      Quickshell.execDetached(["sh", "-c", command]);
+      Quickshell.execDetached(["sh", "-lc", command]);
       Logger.i("CustomButton", `Executing command: ${command}`);
     } else if (wheelMode === "separate") {
       if ((delta > 0 && wheelUpExec) || (delta < 0 && wheelDownExec)) {
@@ -592,7 +592,7 @@ Item {
           }
         });
 
-        Quickshell.execDetached(["sh", "-c", command]);
+        Quickshell.execDetached(["sh", "-lc", command]);
         Logger.i("CustomButton", `Executing command: ${command}`);
       }
     }

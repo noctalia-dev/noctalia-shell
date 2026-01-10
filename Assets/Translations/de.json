@@ -16,10 +16,10 @@
     "open-calendar": "Kalender öffnen",
     "open-display-settings": "Anzeigeeinstellungen",
     "open-launcher": "Launcher öffnen",
-    "open-mixer": "Audiomischer",
     "open-settings": "Einstellungen öffnen",
     "raise-to-top": "Nach oben verschieben",
     "random-wallpaper": "Zufälliges Hintergrundbild",
+    "run-custom-command": "Benutzerdefinierten Befehl ausführen",
     "toggle-mute": "Stummschaltung umschalten",
     "widget-settings": "Widget-Einstellungen"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "h",
-      "minutes": "m",
-      "seconds": "s"
-    },
     "weather-loading": "Wetter wird geladen…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Quellen",
     "start": "Start",
     "stop": "Stopp",
-    "stopwatch": "Stoppuhr",
     "suspend": "Energie sparen",
     "templates": "Vorlagen",
     "test": "Test",
     "thresholds": "Schwellenwerte",
-    "timer": "Zeitmesser",
     "title": "Titel",
     "toast": "Toast",
     "trusted": "Vertrauenswürdig",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Index",
-      "index+name": "Index und Name",
+      "index-and-name": "Index und Name",
       "name": "Name"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Kontinuierliches Scrollen für lange Medientitel aktivieren.",
       "media-scrolling-title-label": "Scrollender Titel",
       "media-title": "Medienplayer",
+      "on-middle-clicked-description": "Befehl, der ausgeführt wird, wenn die Schaltfläche mit der mittleren Maustaste angeklickt wird.",
       "panel-applications-empty": "Derzeit geben keine Anwendungen Audio wieder.",
       "title": "Audio",
       "visualizer-type-description": "Wählen Sie einen Visualisierungstyp für die Medienwiedergabe.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Bildschirmecken"
     },
     "hooks": {
-      "info-command-info-description": "• Befehle werden über Shell ausgeführt (sh -c)<br>• Befehle laufen im Hintergrund (getrennt)<br>• Test-Buttons führen mit aktuellen Werten aus",
+      "info-command-info-description": "• Befehle werden über Shell ausgeführt (sh -lc)<br>• Befehle laufen im Hintergrund (getrennt)<br>• Test-Buttons führen mit aktuellen Werten aus",
       "info-command-info-label": "Hook-Befehl-Informationen",
       "info-parameters-description": "• Hintergrundbild-Hook: $1 = Hintergrundbild-Pfad, $2 = Bildschirmname<br>• Theme-Wechsel-Hook: $1 = true/false (Dunkelmodus-Status)",
       "info-parameters-label": "Verfügbare Parameter",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Alle Plugins wurden erfolgreich aktualisiert.",
       "update-available": "Neues Plugin-Update verfügbar",
       "update-available-plural": "Neue Plugin-Updates verfügbar ({count})",
-      "update-available_plural": "Plugin-Updates verfügbar ({count})",
       "update-error": "Fehler beim Aktualisieren des Plugins: {plugin}: {error}",
       "update-incompatible": "Benötigt Noctalia v{version} oder höher",
       "update-pending": "v{aktuell} → v{neu} (benötigt Noctalia v{erforderlich})",

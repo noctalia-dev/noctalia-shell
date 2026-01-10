@@ -200,7 +200,7 @@ SmartPanel {
     // If custom command is defined, execute it
     if (option && option.command && option.command.trim() !== "") {
       Logger.i("SessionMenu", "Executing custom command for action:", action, "Command:", option.command);
-      Quickshell.execDetached(["sh", "-c", option.command]);
+      Quickshell.execDetached(["sh", "-lc", option.command]);
       cancelTimer();
       root.close();
       return;

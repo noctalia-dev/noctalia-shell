@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import "../../../../Helpers/FuzzySort.js" as Fuzzysort
 import qs.Commons
 
 Item {
@@ -475,8 +474,8 @@ Item {
     }
 
     // Use fuzzy search if available, fallback to simple search
-    if (typeof Fuzzysort !== 'undefined') {
-      const fuzzyResults = Fuzzysort.go(query, filteredEntries, {
+    if (typeof FuzzySort !== 'undefined') {
+      const fuzzyResults = FuzzySort.go(query, filteredEntries, {
                                           "keys": ["name", "comment", "genericName", "executableName"],
                                           "threshold": -1000,
                                           "limit": 20

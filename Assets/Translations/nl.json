@@ -16,10 +16,10 @@
     "open-calendar": "Open agenda",
     "open-display-settings": "Beeldscherminstellingen",
     "open-launcher": "Launcher openen",
-    "open-mixer": "Audiomixer",
     "open-settings": "Instellingen openen",
     "raise-to-top": "Naar boven halen",
     "random-wallpaper": "Willekeurige achtergrond",
+    "run-custom-command": "Aangepast commando uitvoeren",
     "toggle-mute": "Dempen aan/uit",
     "widget-settings": "Widgetinstellingen"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "h",
-      "minutes": "m",
-      "seconds": "s"
-    },
     "weather-loading": "Weer laden…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Bronnen",
     "start": "Begin",
     "stop": "Stop.",
-    "stopwatch": "Stopwatch",
     "suspend": "Opschorten",
     "templates": "Sjablonen",
     "test": "Test",
     "thresholds": "Drempels",
-    "timer": "Timer",
     "title": "Titel",
     "toast": "Toast",
     "trusted": "Vertrouwd",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Index",
-      "index+name": "Index en Naam",
+      "index-and-name": "Index en Naam",
       "name": "Naam"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Schakel continu scrollen in voor lange mediatitels.",
       "media-scrolling-title-label": "Scrollende titel",
       "media-title": "Mediaplayers",
+      "on-middle-clicked-description": "Commando dat moet worden uitgevoerd wanneer er met de middelste muisknop op de knop wordt geklikt.",
       "panel-applications-empty": "Er spelen momenteel geen applicaties audio af.",
       "title": "Audio",
       "visualizer-type-description": "Kies een visualisatietype voor mediaweergave.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Schermhoeken"
     },
     "hooks": {
-      "info-command-info-description": "• Commando's worden uitgevoerd via shell (sh -c)<br>• Commando's draaien op de achtergrond (losgekoppeld)<br>• Testknoppen worden uitgevoerd met de huidige waarden",
+      "info-command-info-description": "• Commando's worden uitgevoerd via shell (sh -lc)<br>• Commando's draaien op de achtergrond (losgekoppeld)<br>• Testknoppen worden uitgevoerd met de huidige waarden",
       "info-command-info-label": "Informatie over hook-commando's",
       "info-parameters-description": "• Wallpaper-hook: $1 = pad naar achtergrond, $2 = schermnaam<br>• Theme Toggle-hook: $1 = true/false (status donkere modus)",
       "info-parameters-label": "Beschikbare parameters",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Alle plugins succesvol bijgewerkt.",
       "update-available": "Nieuwe plugin update beschikbaar",
       "update-available-plural": "Nieuwe plugin updates beschikbaar ({count})",
-      "update-available_plural": "Plugin updates beschikbaar ({count})",
       "update-error": "Plugin bijwerken mislukt: {plugin}: {error}",
       "update-incompatible": "Vereist Noctalia v{version} of hoger",
       "update-pending": "v{current} → v{new} (vereist Noctalia v{required})",

@@ -49,6 +49,7 @@ Item {
   readonly property int artSize: Style.toOdd(Style.capsuleHeight * 0.75)
   readonly property int iconSize: Style.toOdd(Style.capsuleHeight * 0.75)
   readonly property int verticalSize: Style.toOdd(Style.capsuleHeight * 0.85)
+  readonly property int progressWidth: 2
 
   // State
   readonly property bool hasPlayer: MediaService.currentPlayer !== null
@@ -281,17 +282,6 @@ Item {
         visible: !isVertical
         z: 1
 
-        // Icon (when no player or features disabled)
-        NIcon {
-          visible: !hasPlayer || (!showAlbumArt && !showProgressRing)
-          icon: hasPlayer ? (MediaService.isPlaying ? "media-pause" : "media-play") : "disc"
-          color: hasPlayer ? Color.mOnSurface : Color.mOnSurfaceVariant
-          pointSize: iconSize * 0.85
-          Layout.preferredWidth: iconSize
-          Layout.preferredHeight: iconSize
-          Layout.alignment: Qt.AlignVCenter
-        }
-
         // Album art / Progress ring
         Item {
           visible: hasPlayer && (showAlbumArt || showProgressRing)
@@ -304,32 +294,17 @@ Item {
             anchors.fill: parent
             visible: showProgressRing
             progress: MediaService.trackLength > 0 ? MediaService.currentPosition / MediaService.trackLength : 0
-            lineWidth: 2
+            lineWidth: root.progressWidth
           }
 
-          Item {
+          NImageRounded {
+            visible: showAlbumArt && hasPlayer
             anchors.fill: parent
-            anchors.margins: showProgressRing ? (3) : 0.5
-
-            NImageRounded {
-              visible: showAlbumArt && hasPlayer
-              anchors.fill: parent
-              anchors.margins: showProgressRing ? 0 : -1
-              radius: width / 2
-              imagePath: MediaService.trackArtUrl
-              fallbackIcon: MediaService.isPlaying ? "media-pause" : "media-play"
-              fallbackIconSize: showProgressRing ? 10 : 12
-              borderWidth: 0
-            }
-
-            NIcon {
-              visible: !showAlbumArt && showProgressRing && hasPlayer
-              x: Style.pixelAlignCenter(parent.width, width)
-              y: Style.pixelAlignCenter(parent.height, contentHeight)
-              icon: MediaService.isPlaying ? "media-pause" : "media-play"
-              color: Color.mOnSurface
-              pointSize: Style.barFontSize
-            }
+            anchors.margins: showProgressRing ? root.progressWidth * 2 : 0
+            radius: width / 2
+            imagePath: MediaService.trackArtUrl
+            borderWidth: 0
+            imageFillMode: Image.PreserveAspectCrop
           }
         }
 
@@ -373,27 +348,17 @@ Item {
           anchors.fill: parent
           visible: showProgressRing
           progress: MediaService.trackLength > 0 ? MediaService.currentPosition / MediaService.trackLength : 0
-          lineWidth: Style.toOdd(2)
+          lineWidth: root.progressWidth
         }
 
         NImageRounded {
           visible: showAlbumArt && hasPlayer
           anchors.fill: parent
-          anchors.margins: showProgressRing ? Style.toOdd(verticalSize * 0.2) : 0
+          anchors.margins: showProgressRing ? root.progressWidth * 2 : 0
           radius: width / 2
           imagePath: MediaService.trackArtUrl
-          fallbackIcon: MediaService.isPlaying ? "media-pause" : "media-play"
-          fallbackIconSize: Style.toOdd(verticalSize * 0.65)
           borderWidth: 0
-        }
-
-        NIcon {
-          visible: !showAlbumArt || !hasPlayer
-          x: Style.pixelAlignCenter(parent.width, contentWidth)
-          y: Style.pixelAlignCenter(parent.height, contentHeight)
-          icon: hasPlayer ? (MediaService.isPlaying ? "media-pause" : "media-play") : "disc"
-          color: hasPlayer ? Color.mOnSurface : Color.mOnSurfaceVariant
-          pointSize: Style.toOdd(verticalSize * 0.5)
+          imageFillMode: Image.PreserveAspectCrop
         }
       }
 
@@ -414,8 +379,8 @@ Item {
                          popupWindow.showContextMenu(contextMenu);
                          contextMenu.openAtItem(container, screen);
                        }
-                     } else if (mouse.button === Qt.MiddleButton && hasPlayer && MediaService.canGoPrevious) {
-                       MediaService.previous();
+                     } else if (mouse.button === Qt.MiddleButton && hasPlayer) {
+                       MediaService.playPause();
                        TooltipService.hide();
                      }
                    }
@@ -468,7 +433,7 @@ Item {
   // Progress Ring Component
   component ProgressRing: Canvas {
     property real progress: 0
-    property real lineWidth: 2.5
+    property real lineWidth: 2
 
     onProgressChanged: requestPaint()
     Component.onCompleted: requestPaint()

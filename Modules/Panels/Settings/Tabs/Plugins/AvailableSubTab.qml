@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../../../Helpers/FuzzySort.js" as Fuzzysort
 import qs.Commons
 import qs.Services.Noctalia
 import qs.Services.UI
@@ -189,7 +188,7 @@ ColumnLayout {
         // Then apply fuzzy search if there's search text
         var query = root.pluginSearchText.trim();
         if (query !== "") {
-          var results = Fuzzysort.go(query, filtered, {
+          var results = FuzzySort.go(query, filtered, {
                                        "keys": ["name", "description"],
                                        "threshold": 0.35,
                                        "limit": 50

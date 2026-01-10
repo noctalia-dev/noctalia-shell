@@ -16,10 +16,10 @@
     "open-calendar": "Salnameyê veke",
     "open-display-settings": "Sazkariyên dîmenderê",
     "open-launcher": "Destpêkarê veke",
-    "open-mixer": "Têkelkerê deng",
     "open-settings": "Sazkariyan veke",
     "raise-to-top": "Serê jorîn bilind bike",
     "random-wallpaper": "Wêneyê dîwarê rasthatî",
+    "run-custom-command": "Fermana xwerû bimeşîne",
     "toggle-mute": "Guherandin bêdeng bike",
     "widget-settings": "Sazkariyên alavê"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "d",
-      "minutes": "x",
-      "seconds": "ç"
-    },
     "weather-loading": "Rewşa bayê tê barkirin…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Çavkanî",
     "start": "Destpêkirin",
     "stop": "Raweste.",
-    "stopwatch": "Demjimêra rawestandinê",
     "suspend": "Rawestîne",
     "templates": "Şablonan",
     "test": "Test",
     "thresholds": "Asteyan",
-    "timer": "Demjimêr",
     "title": "Sernav",
     "toast": "Tost",
     "trusted": "Bawerîpêkirî",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Naverok",
-      "index+name": "Naverok û nav",
+      "index-and-name": "Naverok û nav",
       "name": "Nav"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Çalak bike geroka domdar ji bo sernavên medyayê yên dirêj.",
       "media-scrolling-title-label": "Navnîşana ku digere",
       "media-title": "Lîstikvanên medyayê",
+      "on-middle-clicked-description": "Fermana ku dema bişkok bi mişkê navîn tê tikandin, bê rêvebirin.",
       "panel-applications-empty": "Ni sepanên ku niha deng lêdixin tune ne.",
       "title": "Deng",
       "visualizer-type-description": "Cureyeke cureyek dîtbarîkirinê ji bo lêdana medyayê.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Quncikên dîmenderê"
     },
     "hooks": {
-      "info-command-info-description": "• Ferman bi rêya shellê (sh -c) tên meşandin<br>• Ferman di paşperdeyê de dimeşin (veqetandî)<br>• Bişkokên ceribandinê bi nirxên heyî dimeşin",
+      "info-command-info-description": "• Ferman bi rêya shellê (sh -lc) tên meşandin<br>• Ferman di paşperdeyê de dimeşin (veqetandî)<br>• Bişkokên ceribandinê bi nirxên heyî dimeşin",
       "info-command-info-label": "Agahiyên fermana hookê",
       "info-parameters-description": "• Hookê dîwarê: $1 = riya dîwarê, $2 = navê ekranê<br>• Hookê guhertina mijarê: $1 = rast/derew (Rewşa Moda Tarî)<br>• Hookên kilîtkirin/vekirina ekranê: Parametre tune<br>• Hookên moda performansê: Parametre tune",
       "info-parameters-label": "Parametreyên berdest",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Hemû pêvek bi serkeftî hatin nûkirin.",
       "update-available": "Rojanekirina pêveka nû heye",
       "update-available-plural": "Rojanekirinên pêvekên nû hene ({count})",
-      "update-available_plural": "Nûvekirinên pluginê hene ({count})",
       "update-error": "ڕێ ل نوو کرنەیا پلاکینێ هاتە گرتن: {plugin}: {error}",
       "update-incompatible": "Pêdivî ye Noctalia v{version} an bilindtir",
       "update-pending": "v{niha} → v{nu} (hewce dike Noctalia v{pêwîst})",

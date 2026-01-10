@@ -16,10 +16,10 @@
     "open-calendar": "カレンダーを開く",
     "open-display-settings": "ディスプレイ設定",
     "open-launcher": "ランチャーを開く",
-    "open-mixer": "オーディオミキサー",
     "open-settings": "設定を開く",
     "raise-to-top": "一番上に移動",
     "random-wallpaper": "壁紙をランダムに変更",
+    "run-custom-command": "カスタムコマンドを実行",
     "toggle-mute": "ミュート切り替え",
     "widget-settings": "ウィジェット設定"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "時間",
-      "minutes": "分",
-      "seconds": "秒"
-    },
     "weather-loading": "天気を読み込み中…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "ソース",
     "start": "開始",
     "stop": "止まれ",
-    "stopwatch": "ストップウォッチ",
     "suspend": "中断 (chūdan)",
     "templates": "テンプレート",
     "test": "テスト",
     "thresholds": "閾値",
-    "timer": "タイマー",
     "title": "タイトル",
     "toast": "トースト",
     "trusted": "信頼できる",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "番号",
-      "index+name": "番号 + 名前",
+      "index-and-name": "番号 + 名前",
       "name": "名前"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "長いメディアタイトルを連続スクロールさせます。",
       "media-scrolling-title-label": "タイトルのスクロール",
       "media-title": "メディアプレーヤー",
+      "on-middle-clicked-description": "ボタンを中クリックしたときに実行するコマンド。",
       "panel-applications-empty": "現在音声を再生中のアプリケーションはありません",
       "title": "サウンド",
       "visualizer-type-description": "メディア再生の可視化タイプを選択してください。",
@@ -926,7 +920,7 @@
       "screen-corners-title": "画面の角"
     },
     "hooks": {
-      "info-command-info-description": "• コマンドはシェル (sh -c) 経由で実行されます<br>• コマンドはバックグラウンドで実行されます<br>• テストボタンは現在の設定値を使って実行されます",
+      "info-command-info-description": "• コマンドはシェル (sh -lc) 経由で実行されます<br>• コマンドはバックグラウンドで実行されます<br>• テストボタンは現在の設定値を使って実行されます",
       "info-command-info-label": "コマンド実行に関する情報",
       "info-parameters-description": "• 壁紙フック: $1 = 壁紙のパス, $2 = 画面名<br>• テーマ切替フック: $1 = true/false（ダークモードの状態）",
       "info-parameters-label": "利用可能なパラメータ（引数）",
@@ -1194,7 +1188,6 @@
       "update-all-success": "すべてのプラグインをアップデートしました。",
       "update-available": "新しいプラグインアップデートがあります",
       "update-available-plural": "新しいプラグインアップデートがあります（{count}個）",
-      "update-available_plural": "利用可能なプラグインの更新 ({count})",
       "update-error": "プラグインのアップデートに失敗しました: {plugin}: {error}",
       "update-incompatible": "Noctalia v{version} 以降が必要です。",
       "update-pending": "v{current} → v{new} (Noctalia v{required} ga hitsuyou)",

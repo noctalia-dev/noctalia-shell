@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../Helpers/FuzzySort.js" as Fuzzysort
 import qs.Commons
 import qs.Widgets
 
@@ -131,8 +130,8 @@ RowLayout {
     }
 
     // Use fuzzy search if available, fallback to simple search
-    if (typeof Fuzzysort !== 'undefined') {
-      var fuzzyResults = Fuzzysort.go(query, items, {
+    if (typeof FuzzySort !== 'undefined') {
+      var fuzzyResults = FuzzySort.go(query, items, {
                                         "key": "name",
                                         "threshold": -1000,
                                         "limit": 50

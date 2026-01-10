@@ -104,17 +104,20 @@ Singleton {
 
       // Reload translations for all loaded plugins
       for (var pluginId in root.loadedPlugins) {
-        var plugin = root.loadedPlugins[pluginId];
-        if (plugin && plugin.api && plugin.manifest) {
-          // Update current language
-          plugin.api.currentLanguage = I18n.langCode;
+        // Use IIFE to capture current loop values (avoid closure bug)
+        (function (id, plugin) {
+          if (plugin && plugin.api && plugin.manifest) {
+            // Update current language
+            plugin.api.currentLanguage = I18n.langCode;
 
-          // Reload translations
-          loadPluginTranslationsAsync(pluginId, plugin.manifest, I18n.langCode, function (translations) {
-            plugin.api.pluginTranslations = translations;
-            Logger.d("PluginService", "Reloaded translations for plugin:", pluginId);
-          });
-        }
+            // Reload translations
+            loadPluginTranslationsAsync(id, plugin.manifest, I18n.langCode, function (translations) {
+              plugin.api.pluginTranslations = translations;
+              plugin.api.translationVersion++;
+              Logger.d("PluginService", "Reloaded translations for plugin:", id);
+            });
+          }
+        })(pluginId, root.loadedPlugins[pluginId]);
       }
     }
   }
@@ -872,6 +875,7 @@ Singleton {
         // Translation storage
         property var pluginTranslations: ({})
         property string currentLanguage: ""
+        property int translationVersion: 0  // Increments when translations change - plugins should depend on this
 
         // Functions will be bound below
         property var saveSettings: null
@@ -1010,7 +1014,7 @@ Singleton {
       }
 
       // Use key for singular, key_plural for plural
-      var pluralKey = count === 1 ? key : key + '_plural';
+      var pluralKey = count === 1 ? key : key + '-plural';
 
       // Merge interpolations with count
       var finalInterpolations = {

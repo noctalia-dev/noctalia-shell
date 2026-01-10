@@ -24,12 +24,6 @@ ColumnLayout {
       "required": false
     },
     {
-      "id": "timer-card",
-      "text": I18n.tr("common.timer"),
-      "enabled": true,
-      "required": false
-    },
-    {
       "id": "weather-card",
       "text": I18n.tr("common.weather"),
       "enabled": true,

@@ -16,10 +16,10 @@
     "open-calendar": "Abrir calendário",
     "open-display-settings": "Configurações de exibição",
     "open-launcher": "Abrir iniciador",
-    "open-mixer": "Mesa de som",
     "open-settings": "Abrir configurações",
     "raise-to-top": "Elevar ao topo",
     "random-wallpaper": "Papel de parede aleatório",
+    "run-custom-command": "Executar comando personalizado",
     "toggle-mute": "Alternar mudo",
     "widget-settings": "Configurações do widget"
   },
@@ -295,11 +295,6 @@
     }
   },
   "calendar": {
-    "timer": {
-      "hours": "h",
-      "minutes": "m",
-      "seconds": "s"
-    },
     "weather-loading": "Carregando o clima…"
   },
   "changelog": {
@@ -433,12 +428,10 @@
     "sources": "Fontes",
     "start": "Começar",
     "stop": "Pare",
-    "stopwatch": "Cronômetro",
     "suspend": "Suspender",
     "templates": "Modelos",
     "test": "Teste",
     "thresholds": "Limiares",
-    "timer": "Temporizador",
     "title": "Título",
     "toast": "Torrada",
     "trusted": "Confiável",
@@ -594,7 +587,7 @@
     },
     "workspace-labels": {
       "index": "Índice",
-      "index+name": "Índice e Nome",
+      "index-and-name": "Índice e Nome",
       "name": "Nome"
     }
   },
@@ -635,6 +628,7 @@
       "media-scrolling-title-description": "Ativar rolagem contínua para títulos de mídia longos",
       "media-scrolling-title-label": "Título com rolagem",
       "media-title": "Reprodutores de mídia",
+      "on-middle-clicked-description": "Comando a ser executado quando o botão do meio é clicado.",
       "panel-applications-empty": "Nenhum aplicativo está reproduzindo áudio no momento.",
       "title": "Áudio",
       "visualizer-type-description": "Escolha um tipo de visualização para reprodução de mídia.",
@@ -926,7 +920,7 @@
       "screen-corners-title": "Cantos da tela"
     },
     "hooks": {
-      "info-command-info-description": "• Comandos são executados via shell (sh -c)<br>• Comandos rodam em segundo plano (desanexados)<br>• Botões de teste executam com os valores atuais",
+      "info-command-info-description": "• Comandos são executados via shell (sh -lc)<br>• Comandos rodam em segundo plano (desanexados)<br>• Botões de teste executam com os valores atuais",
       "info-command-info-label": "Informações de Comando do Hook",
       "info-parameters-description": "• Hook de Papel de Parede: $1 = caminho do papel de parede, $2 = nome da tela<br>• Hook de Alternância de Tema: $1 = true/false (estado do modo escuro)",
       "info-parameters-label": "Parâmetros Disponíveis",
@@ -1194,7 +1188,6 @@
       "update-all-success": "Todos os plugins foram atualizados com sucesso.",
       "update-available": "Nova atualização de plugin disponível",
       "update-available-plural": "Novas atualizações de plugin disponíveis ({count})",
-      "update-available_plural": "Atualizações de plugin disponíveis ({count})",
       "update-error": "Falha ao atualizar o plugin: {plugin}: {error}",
       "update-incompatible": "Requer Noctalia v{version} ou superior",
       "update-pending": "v{atual} → v{novo} (requer Noctalia v{requerida})",

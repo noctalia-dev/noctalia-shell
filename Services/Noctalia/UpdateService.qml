@@ -269,25 +269,45 @@ Singleton {
       return;
     }
 
-    const targetScreen = viewChangelogTargetScreen || Quickshell.screens[0];
-    const screenName = targetScreen.name || "";
+    const monitors = Settings.data.bar.monitors || [];
+    const allowPanelsOnScreenWithoutBar = Settings.data.general.allowPanelsOnScreenWithoutBar;
 
-    // Check if this screen is configured to have a bar/panels
-    var monitors = Settings.data.bar.monitors || [];
-    var canShowPanels = Settings.data.general.allowPanelsOnScreenWithoutBar || monitors.length === 0 || monitors.includes(screenName);
+    function canShowPanelsOnScreen(screen) {
+      const name = screen?.name || "";
+      return allowPanelsOnScreenWithoutBar || monitors.length === 0 || monitors.includes(name);
+    }
 
-    if (!canShowPanels) {
-      Logger.w("UpdateService", "Changelog cannot be shown on screen without bar:", screenName);
-      popupScheduled = false;
-      viewChangelogTargetScreen = null;
-      return;
+    let targetScreen = viewChangelogTargetScreen;
+
+    if (targetScreen) {
+      // Explicit screen requested - validate it
+      if (!canShowPanelsOnScreen(targetScreen)) {
+        Logger.w("UpdateService", "Changelog cannot be shown on screen without bar:", targetScreen.name);
+        popupScheduled = false;
+        viewChangelogTargetScreen = null;
+        return;
+      }
+    } else {
+      // No explicit screen - find one that can show panels
+      for (let i = 0; i < Quickshell.screens.length; i++) {
+        if (canShowPanelsOnScreen(Quickshell.screens[i])) {
+          targetScreen = Quickshell.screens[i];
+          break;
+        }
+      }
+
+      if (!targetScreen) {
+        Logger.w("UpdateService", "No screen available to show changelog");
+        popupScheduled = false;
+        return;
+      }
     }
 
     const panel = PanelService.getPanel("changelogPanel", targetScreen);
     if (!panel) {
       // Panel not found yet. Wait for popupMenuWindowRegistered signal.
       // This avoids the memory leak (#1306).
-      Logger.d("UpdateService", "Waiting for changelogPanel on screen:", screenName);
+      Logger.d("UpdateService", "Waiting for changelogPanel on screen:", targetScreen.name);
       return;
     }
 

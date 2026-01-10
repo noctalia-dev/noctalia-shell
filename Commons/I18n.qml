@@ -354,7 +354,7 @@ Singleton {
     if (typeof interpolations === "undefined")
       interpolations = {};
 
-    const pluralKey = count === 1 ? key : `${key}_plural`;
+    const pluralKey = count === 1 ? key : `${key}-plural`;
     const defaultValue = count === 1 ? defaultSingular : defaultPlural;
 
     // Merge interpolations with count (QML doesn't support spread operator)

@@ -166,7 +166,7 @@ Singleton {
                                     "maxWidth": 145,
                                     "useFixedWidth": false,
                                     "hideWhenIdle": false,
-                                    "showAlbumArt": false,
+                                    "showAlbumArt": true,
                                     "showArtistFirst": true,
                                     "showVisualizer": false,
                                     "showProgressRing": true,
@@ -178,7 +178,8 @@ Singleton {
                                     "compactShowVisualizer": false
                                   },
                                   "Microphone": {
-                                    "displayMode": "onhover"
+                                    "displayMode": "onhover",
+                                    "middleClickCommand": "pwvucontrol || pavucontrol"
                                   },
                                   "NotificationHistory": {
                                     "showUnreadBadge": true,
@@ -246,7 +247,8 @@ Singleton {
                                     "iconScale": 0.8
                                   },
                                   "Volume": {
-                                    "displayMode": "onhover"
+                                    "displayMode": "onhover",
+                                    "middleClickCommand": "pwvucontrol || pavucontrol"
                                   }
                                 })
 

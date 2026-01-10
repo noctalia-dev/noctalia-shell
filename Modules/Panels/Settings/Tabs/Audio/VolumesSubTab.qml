@@ -145,14 +145,4 @@ ColumnLayout {
   NDivider {
     Layout.fillWidth: true
   }
-
-  // External mixer command
-  NTextInput {
-    label: I18n.tr("panels.audio.external-mixer-label")
-    description: I18n.tr("panels.audio.external-mixer-description")
-    placeholderText: I18n.tr("panels.audio.external-mixer-placeholder")
-    text: Settings.data.audio.externalMixer
-    defaultValue: Settings.getDefaultValue("audio.externalMixer")
-    onTextChanged: Settings.data.audio.externalMixer = text
-  }
 }

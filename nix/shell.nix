@@ -1,6 +1,6 @@
 {
   quickshell,
-  alejandra,
+  nixfmt,
   statix,
   deadnix,
   shfmt,
@@ -16,7 +16,7 @@ mkShellNoCC {
     quickshell
 
     # nix
-    alejandra # formatter
+    nixfmt # formatter
     statix # linter
     deadnix # linter
 

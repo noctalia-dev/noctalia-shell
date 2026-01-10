@@ -303,7 +303,7 @@ Singleton {
       import QtQuick
       import Quickshell.Io
       Process {
-        command: ["bash", "-c", ""]
+        command: ["sh", "-c", ""]
         stdout: StdioCollector {}
         stderr: StdioCollector {}
       }
@@ -311,7 +311,7 @@ Singleton {
 
     try {
       const downloadProcess = Qt.createQmlObject(processString, root, "DownloadProcess_" + cacheKey);
-      downloadProcess.command = ["bash", "-c", downloadCmd];
+      downloadProcess.command = ["sh", "-c", downloadCmd];
 
       downloadProcess.exited.connect(function (exitCode) {
         downloadProcess.destroy();
@@ -344,7 +344,7 @@ Singleton {
       import QtQuick
       import Quickshell.Io
       Process {
-        command: ["bash", "-c", ""]
+        command: ["sh", "-c", ""]
         stdout: StdioCollector {}
         stderr: StdioCollector {}
       }
@@ -352,7 +352,7 @@ Singleton {
 
     try {
       const processObj = Qt.createQmlObject(processString, root, "CircularProcess_" + cacheKey);
-      processObj.command = ["bash", "-c", command];
+      processObj.command = ["sh", "-c", command];
 
       processObj.exited.connect(function (exitCode) {
         // Clean up temp file
@@ -387,7 +387,7 @@ Singleton {
       Process {
         property string cacheKey: ""
         property string cachedPath: ""
-        command: ["bash", "-c", ""]
+        command: ["sh", "-c", ""]
         stdout: StdioCollector {}
         stderr: StdioCollector {}
       }
@@ -397,7 +397,7 @@ Singleton {
       const processObj = Qt.createQmlObject(processString, root, "ImageProcess_" + cacheKey);
       processObj.cacheKey = cacheKey;
       processObj.cachedPath = outputPath;
-      processObj.command = ["bash", "-c", command];
+      processObj.command = ["sh", "-c", command];
 
       processObj.exited.connect(function (exitCode) {
         if (exitCode !== 0) {
