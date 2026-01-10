@@ -32,4 +32,12 @@ ColumnLayout {
     onToggled: checked => Settings.data.notifications.saveToHistory.critical = checked
     defaultValue: Settings.getDefaultValue("notifications.saveToHistory.critical")
   }
+
+  NToggle {
+    label: I18n.tr("panels.notifications.show-actions-in-history-label")
+    description: I18n.tr("panels.notifications.show-actions-in-history-description")
+    checked: Settings.data.notifications?.saveToHistory?.showActionsInHistory ?? false
+    onToggled: checked => Settings.data.notifications.saveToHistory.showActionsInHistory = checked
+    defaultValue: Settings.getDefaultValue("notifications.saveToHistory. showActionsInHistory")
+  }
 }

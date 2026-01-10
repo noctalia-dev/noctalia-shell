@@ -563,6 +563,7 @@ Singleton {
         property bool low: true
         property bool normal: true
         property bool critical: true
+        property bool showActionsInHistory: false
       }
       property JsonObject sounds: JsonObject {
         property bool enabled: false

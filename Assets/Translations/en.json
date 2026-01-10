@@ -1103,7 +1103,10 @@
       "sounds-volume-label": "Sound volume",
       "toast-desc": "Configure toast appearance and behavior.",
       "toast-keyboard-description": "Show a toast when the keyboard layout changes.",
-      "toast-keyboard-label": "Keyboard layout"
+      "toast-keyboard-label": "Keyboard layout",
+      "show-actions-in-history-label": "Show action buttons in history",
+      "show-actions-in-history-description": "Display notification action buttons in the notification history panel."
+
     },
     "osd": {
       "always-on-top-description": "Display OSD above fullscreen windows and other layers.",
