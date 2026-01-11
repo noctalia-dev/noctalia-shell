@@ -289,7 +289,7 @@ ColumnLayout {
 
   Process {
     id: fastfetchProcess
-    command: ["fastfetch", "--json"]
+    command: ["fastfetch", "--json", "--config", "none"]
     running: false
 
     onExited: function (exitCode) {
