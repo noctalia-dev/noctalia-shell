@@ -2104,7 +2104,7 @@ Singleton {
     "cloud-snow": "\u{ea73}",
     "cloud-star": "\u{f85b}",
     "cloud-storm": "\u{ea74}",
-    "cloud-sun": "\u{ea7a}",
+    "cloud-sun": "\u{ec6d}",
     "cloud-up": "\u{f85c}",
     "cloud-upload": "\u{ea75}",
     "cloud-x": "\u{f85d}",

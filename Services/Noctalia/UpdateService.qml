@@ -11,7 +11,7 @@ Singleton {
   id: root
 
   // Version properties
-  readonly property string baseVersion: "3.8.2"
+  readonly property string baseVersion: "4.0.0"
   readonly property bool isDevelopment: true
   readonly property string developmentSuffix: "-git"
   readonly property string currentVersion: `v${!isDevelopment ? baseVersion : baseVersion + developmentSuffix}`
@@ -218,47 +218,6 @@ Singleton {
     }
 
     return entries;
-  }
-
-  function isVersionLine(text) {
-    return /^v?\d/i.test(text);
-  }
-
-  function cleanEntry(text) {
-    if (!text)
-      return "";
-
-    var cleaned = text;
-
-    // Strip markdown links [label](url)
-    cleaned = cleaned.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1").trim();
-
-    // Drop bare URLs or parentheses wrapping URLs
-    cleaned = cleaned.replace(/\((https?:\/\/[^)]+)\)/gi, "").trim();
-
-    cleaned = cleaned.replace(/\([0-9a-f]{7,}\)/gi, "").trim();
-    cleaned = cleaned.replace(/\s+by\s+[A-Za-z0-9_-]+$/i, "").trim();
-    cleaned = cleaned.replace(/\s{2,}/g, " ");
-
-    if (cleaned.toLowerCase().startsWith("merge branch")) {
-      const ofIndex = cleaned.indexOf(" of ");
-      if (ofIndex > -1) {
-        cleaned = cleaned.substring(0, ofIndex).trim();
-      }
-    }
-
-    return cleaned;
-  }
-
-  function isIgnoredEntry(text) {
-    const lower = text.toLowerCase();
-    if (lower.startsWith("release v"))
-      return true;
-    if (lower.includes("autoformat") || lower.includes("auto-formatting"))
-      return true;
-    if (lower.includes("qmlfmt"))
-      return true;
-    return false;
   }
 
   function openWhenReady() {

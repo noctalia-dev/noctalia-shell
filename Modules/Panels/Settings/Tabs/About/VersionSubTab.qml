@@ -18,9 +18,77 @@ ColumnLayout {
 
   readonly property bool isGitVersion: root.currentVersion.endsWith("-git")
 
+  // Update status: compare versions (strip -git suffix for comparison)
+  readonly property string installedBase: root.currentVersion.replace("-git", "")
+  readonly property bool updateAvailable: {
+    if (!root.latestVersion || !root.installedBase)
+      return false;
+    return root.latestVersion !== root.installedBase && !root.isGitVersion;
+  }
+  readonly property bool isUpToDate: {
+    if (!root.latestVersion || !root.installedBase)
+      return false;
+    return root.latestVersion === root.installedBase;
+  }
+
+  // System info properties
+  property var systemInfo: null
+  property bool systemInfoLoading: true
+  property bool systemInfoAvailable: true
+
   spacing: Style.marginL
 
+  function getModule(type) {
+    if (!root.systemInfo)
+      return null;
+    return root.systemInfo.find(m => m.type === type);
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined)
+      return "N/A";
+    const gb = bytes / (1024 * 1024 * 1024);
+    return gb.toFixed(1) + " GB";
+  }
+
+  function copyInfoToClipboard() {
+    let info = "Noctalia Shell\n";
+    info += "==============\n";
+    info += "Latest version: " + root.latestVersion + "\n";
+    info += "Installed version: " + root.currentVersion + "\n";
+    if (root.isGitVersion && root.commitInfo) {
+      info += "Git commit: " + root.commitInfo + "\n";
+    }
+    info += "\nSystem Information\n";
+    info += "==================\n";
+    if (root.systemInfo) {
+      const os = root.getModule("OS");
+      const kernel = root.getModule("Kernel");
+      const title = root.getModule("Title");
+      const cpu = root.getModule("CPU");
+      const gpu = root.getModule("GPU");
+      const mem = root.getModule("Memory");
+      const wm = root.getModule("WM");
+      info += "OS: " + (os?.result?.prettyName || "N/A") + "\n";
+      info += "Kernel: " + (kernel?.result?.release || "N/A") + "\n";
+      info += "Host: " + (title?.result?.hostName || "N/A") + "\n";
+      info += "CPU: " + (cpu?.result?.cpu || "N/A") + "\n";
+      if (gpu?.result && Array.isArray(gpu.result) && gpu.result.length > 0) {
+        info += "GPU: " + gpu.result.map(g => g.name || "Unknown").join(", ") + "\n";
+      }
+      if (mem?.result) {
+        info += "Memory: " + root.formatBytes(mem.result.total) + "\n";
+      }
+      if (wm?.result) {
+        info += "WM: " + (wm.result.prettyName || wm.result.processName || "N/A") + "\n";
+      }
+    }
+    Quickshell.execDetached(["wl-copy", info]);
+    ToastService.showNotice(I18n.tr("panels.about.title"), I18n.tr("panels.about.info-copied"));
+  }
+
   Component.onCompleted: {
+    fastfetchProcess.running = true;
     Logger.d("VersionSubTab", "Current version:", root.currentVersion);
     Logger.d("VersionSubTab", "Is git version:", root.isGitVersion);
     // Only fetch commit info for -git versions
@@ -161,6 +229,30 @@ ColumnLayout {
     stderr: StdioCollector {}
   }
 
+  Process {
+    id: fastfetchProcess
+    command: ["fastfetch", "--json"]
+    running: false
+
+    onExited: function (exitCode) {
+      root.systemInfoLoading = false;
+      if (exitCode === 0) {
+        try {
+          root.systemInfo = JSON.parse(stdout.text);
+          root.systemInfoAvailable = true;
+        } catch (e) {
+          Logger.w("VersionSubTab", "Failed to parse fastfetch JSON: " + e);
+          root.systemInfoAvailable = false;
+        }
+      } else {
+        root.systemInfoAvailable = false;
+      }
+    }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
   NHeader {
     label: I18n.tr("panels.about.noctalia-title")
     description: I18n.tr("panels.about.noctalia-desc")
@@ -173,7 +265,7 @@ ColumnLayout {
     // Noctalia logo
     Image {
       source: "../../../../../Assets/noctalia.svg"
-      width: Style.fontSizeXXXL * 2.5 * Style.uiScaleRatio
+      width: 96 * Style.uiScaleRatio
       height: width
       fillMode: Image.PreserveAspectFit
       sourceSize.width: width
@@ -187,11 +279,12 @@ ColumnLayout {
     GridLayout {
       columns: 2
       rowSpacing: Style.marginXS
-      columnSpacing: Style.marginS
+      columnSpacing: Style.marginM
 
       NText {
         text: I18n.tr("panels.about.noctalia-latest-version")
-        color: Color.mOnSurface
+        color: Color.mOnSurfaceVariant
+        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
       }
 
       NText {
@@ -202,28 +295,84 @@ ColumnLayout {
 
       NText {
         text: I18n.tr("panels.about.noctalia-installed-version")
-        color: Color.mOnSurface
+        color: Color.mOnSurfaceVariant
+        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
       }
 
-      NText {
-        text: root.currentVersion
-        color: Color.mOnSurface
-        font.weight: Style.fontWeightBold
+      RowLayout {
+        spacing: Style.marginS
+
+        NText {
+          text: root.currentVersion
+          color: Color.mOnSurface
+          font.weight: Style.fontWeightBold
+        }
+
+        // Update status indicator
+        NIcon {
+          id: upToDateIcon
+          visible: root.isUpToDate
+          icon: "circle-check"
+          pointSize: Style.fontSizeM
+          color: Color.mPrimary
+
+          MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: TooltipService.show(upToDateIcon, I18n.tr("panels.about.up-to-date"))
+            onExited: TooltipService.hide()
+          }
+        }
+
+        NIcon {
+          id: updateAvailableIcon
+          visible: root.updateAvailable
+          icon: "arrow-up-circle"
+          pointSize: Style.fontSizeS
+          color: Color.mPrimary
+
+          MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: TooltipService.show(updateAvailableIcon, I18n.tr("panels.about.update-available"))
+            onExited: TooltipService.hide()
+          }
+        }
       }
 
       NText {
         visible: root.isGitVersion
         text: I18n.tr("panels.about.noctalia-git-commit")
-        color: Color.mOnSurface
+        color: Color.mOnSurfaceVariant
+        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
       }
 
+      // Clickable git commit
       NText {
+        id: commitText
         visible: root.isGitVersion
         text: root.commitInfo || I18n.tr("common.loading")
-        color: Color.mOnSurface
-        font.weight: Style.fontWeightBold
-        font.family: root.commitInfo ? "monospace" : ""
+        color: root.commitInfo ? Color.mPrimary : Color.mOnSurface
         pointSize: Style.fontSizeXS
+        font.underline: commitMouseArea.containsMouse && root.commitInfo
+
+        MouseArea {
+          id: commitMouseArea
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: root.commitInfo ? Qt.PointingHandCursor : Qt.ArrowCursor
+          onEntered: {
+            if (root.commitInfo) {
+              TooltipService.show(commitText, I18n.tr("panels.about.view-commit"));
+            }
+          }
+          onExited: TooltipService.hide()
+          onClicked: {
+            if (root.commitInfo) {
+              Quickshell.execDetached(["xdg-open", "https://github.com/noctalia-dev/noctalia-shell/commit/" + root.commitInfo]);
+            }
+          }
+        }
       }
     }
   }
@@ -253,6 +402,271 @@ ColumnLayout {
         Quickshell.execDetached(["xdg-open", "https://ko-fi.com/lysec"]);
         ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.kofi-opened"));
       }
+    }
+
+    NButton {
+      icon: "copy"
+      text: I18n.tr("panels.about.copy-info")
+      outlined: true
+      onClicked: root.copyInfoToClipboard()
+    }
+  }
+
+  // System Information Section
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginM
+  }
+
+  NHeader {
+    label: I18n.tr("panels.about.system-title")
+    Layout.topMargin: Style.marginM
+  }
+
+  // Loading state
+  RowLayout {
+    visible: root.systemInfoLoading
+    Layout.fillWidth: true
+    spacing: Style.marginS
+
+    NBusyIndicator {
+      running: root.systemInfoLoading
+    }
+
+    NText {
+      text: I18n.tr("panels.about.system-loading")
+      color: Color.mOnSurfaceVariant
+    }
+  }
+
+  // Error state (fastfetch not installed)
+  ColumnLayout {
+    visible: !root.systemInfoLoading && !root.systemInfoAvailable
+    Layout.fillWidth: true
+    spacing: Style.marginS
+
+    NText {
+      text: I18n.tr("panels.about.system-not-installed")
+      color: Color.mOnSurfaceVariant
+    }
+
+    NText {
+      text: I18n.tr("panels.about.system-install-hint")
+      color: Color.mOnSurfaceVariant
+      font.pointSize: Style.fontSizeXS
+    }
+  }
+
+  // System info grid
+  GridLayout {
+    visible: !root.systemInfoLoading && root.systemInfoAvailable && root.systemInfo
+    Layout.fillWidth: true
+    columns: 2
+    rowSpacing: Style.marginXS
+    columnSpacing: Style.marginM
+
+    // OS
+    NText {
+      text: I18n.tr("panels.about.system-os")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const os = root.getModule("OS");
+        return os?.result?.prettyName || "N/A";
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // Kernel
+    NText {
+      text: I18n.tr("panels.about.system-kernel")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const kernel = root.getModule("Kernel");
+        return kernel?.result?.release || "N/A";
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // Host
+    NText {
+      text: I18n.tr("panels.about.system-host")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const title = root.getModule("Title");
+        return title?.result?.hostName || "N/A";
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // Uptime
+    NText {
+      text: I18n.tr("panels.about.system-uptime")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const cmd = root.getModule("Command");
+        return cmd?.result || "N/A";
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // CPU
+    NText {
+      text: I18n.tr("panels.about.system-cpu")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const cpu = root.getModule("CPU");
+        if (!cpu?.result)
+          return "N/A";
+        let cpuText = cpu.result.cpu || "N/A";
+        const cores = cpu.result.cores;
+        if (cores?.logical) {
+          cpuText += " (" + cores.logical + " threads)";
+        }
+        return cpuText;
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // GPU
+    NText {
+      text: I18n.tr("panels.about.system-gpu")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const gpu = root.getModule("GPU");
+        if (!gpu?.result || !Array.isArray(gpu.result) || gpu.result.length === 0)
+          return "N/A";
+        return gpu.result.map(g => g.name || "Unknown").join(", ");
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // Memory
+    NText {
+      text: I18n.tr("panels.about.system-memory")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const mem = root.getModule("Memory");
+        if (!mem?.result)
+          return "N/A";
+        const used = root.formatBytes(mem.result.used);
+        const total = root.formatBytes(mem.result.total);
+        return used + " / " + total;
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // Disk
+    NText {
+      text: I18n.tr("panels.about.system-disk")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const disk = root.getModule("Disk");
+        if (!disk?.result || !Array.isArray(disk.result) || disk.result.length === 0)
+          return "N/A";
+        const rootDisk = disk.result.find(d => d.mountpoint === "/");
+        if (!rootDisk?.bytes)
+          return "N/A";
+        const used = root.formatBytes(rootDisk.bytes.used);
+        const total = root.formatBytes(rootDisk.bytes.total);
+        return used + " / " + total + " (" + rootDisk.filesystem + ")";
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // WM
+    NText {
+      text: I18n.tr("panels.about.system-wm")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const wm = root.getModule("WM");
+        if (!wm?.result)
+          return "N/A";
+        let wmText = wm.result.prettyName || wm.result.processName || "N/A";
+        if (wm.result.protocolName) {
+          wmText += " (" + wm.result.protocolName + ")";
+        }
+        return wmText;
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // Packages
+    NText {
+      text: I18n.tr("panels.about.system-packages")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const pkg = root.getModule("Packages");
+        if (!pkg?.result)
+          return "N/A";
+        const result = pkg.result;
+        if (result.all) {
+          const managers = [];
+          if (result.rpm > 0)
+            managers.push("rpm: " + result.rpm);
+          if (result.pacman > 0)
+            managers.push("pacman: " + result.pacman);
+          if (result.dpkg > 0)
+            managers.push("dpkg: " + result.dpkg);
+          if (result.flatpakSystem > 0 || result.flatpakUser > 0) {
+            const flatpak = (result.flatpakSystem || 0) + (result.flatpakUser || 0);
+            managers.push("flatpak: " + flatpak);
+          }
+          if (result.snap > 0)
+            managers.push("snap: " + result.snap);
+          if (result.nixSystem > 0 || result.nixUser > 0 || result.nixDefault > 0) {
+            const nix = (result.nixSystem || 0) + (result.nixUser || 0) + (result.nixDefault || 0);
+            managers.push("nix: " + nix);
+          }
+          if (result.brew > 0)
+            managers.push("brew: " + result.brew);
+          if (managers.length > 0) {
+            return result.all + " (" + managers.join(", ") + ")";
+          }
+          return result.all.toString();
+        }
+        return "N/A";
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
     }
   }
 }

@@ -270,14 +270,7 @@ Rectangle {
         // Text mode
         NText {
           visible: !compactMode
-          text: {
-            let usage = Math.round(SystemStatService.cpuUsage);
-            if (usage < 100) {
-              return `${usage}%`;
-            } else {
-              return usage;
-            }
-          }
+          text: `${Math.round(SystemStatService.cpuUsage)}%`
           family: fontFamily
           pointSize: Style.barFontSize
           applyUiScale: false

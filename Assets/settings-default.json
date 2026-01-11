@@ -262,6 +262,7 @@
   },
   "dock": {
     "enabled": true,
+    "position": "bottom",
     "displayMode": "auto_hide",
     "backgroundOpacity": 1,
     "floatingRatio": 1,

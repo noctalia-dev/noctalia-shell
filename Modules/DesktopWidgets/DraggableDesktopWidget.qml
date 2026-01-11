@@ -354,7 +354,7 @@ Item {
     id: container
     anchors.fill: parent
     radius: root.roundedCorners ? Math.round(Style.radiusL * root.widgetScale) : 0
-    color: Color.mSurface
+    color: Qt.alpha(Color.mSurface, Settings.data.ui.panelBackgroundOpacity)
     border {
       width: 1
       color: Qt.alpha(Color.mOutline, 0.12)

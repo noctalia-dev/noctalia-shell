@@ -238,6 +238,14 @@ ColumnLayout {
           }
 
           NIconButton {
+            icon: "external-link"
+            tooltipText: I18n.tr("panels.plugins.open-plugin-page")
+            baseSize: Style.baseWidgetSize * 0.7
+            visible: modelData.isOfficial
+            onClicked: Qt.openUrlExternally("https://noctalia.dev/plugins/" + modelData.id)
+          }
+
+          NIconButton {
             icon: "trash"
             tooltipText: I18n.tr("common.uninstall")
             baseSize: Style.baseWidgetSize * 0.7

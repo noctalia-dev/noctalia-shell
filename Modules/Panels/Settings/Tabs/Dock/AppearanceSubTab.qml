@@ -24,6 +24,33 @@ ColumnLayout {
 
     NComboBox {
       Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-position-label")
+      description: I18n.tr("panels.dock.appearance-position-description")
+      model: [
+        {
+          "key": "top",
+          "name": I18n.tr("positions.top")
+        },
+        {
+          "key": "bottom",
+          "name": I18n.tr("positions.bottom")
+        },
+        {
+          "key": "left",
+          "name": I18n.tr("positions.left")
+        },
+        {
+          "key": "right",
+          "name": I18n.tr("positions.right")
+        }
+      ]
+      currentKey: Settings.data.dock.position
+      defaultValue: Settings.getDefaultValue("dock.position")
+      onSelected: key => Settings.data.dock.position = key
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
       label: I18n.tr("panels.display.title")
       description: I18n.tr("panels.dock.appearance-display-description")
       model: [

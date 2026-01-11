@@ -51,70 +51,32 @@ ColumnLayout {
     expanded: true
     contentSpacing: Style.marginXS
 
-    Repeater {
-      id: tagRowsRepeater
-      model: {
-        // Combine pseudo tags with actual tags
-        var allTags = root.pseudoTags.concat(root.availableTags);
-        var rows = [];
-        var currentRow = [];
-        var currentWidth = 0;
-        var availableWidth = root.width - Style.marginL * 6;
-        var spacingWidth = Style.marginXS;
+    Flow {
+      Layout.fillWidth: true
+      spacing: Style.marginXS
+      flow: Flow.LeftToRight
 
-        for (var i = 0; i < allTags.length; i++) {
-          var tag = allTags[i];
-          // Estimate button width based on tag
-          var buttonWidth;
-          if (tag === "")
-            buttonWidth = 40;
-          else if (tag === "downloaded")
-            buttonWidth = 90;
-          else if (tag === "notDownloaded")
-            buttonWidth = 110;
-          else
-            buttonWidth = tag.length * 7 + 24;
+      Repeater {
+        id: tagRepeater
+        model: root.pseudoTags.concat(root.availableTags)
 
-          if (currentRow.length > 0 && currentWidth + spacingWidth + buttonWidth > availableWidth) {
-            rows.push(currentRow);
-            currentRow = [tag];
-            currentWidth = buttonWidth;
-          } else {
-            currentRow.push(tag);
-            currentWidth += (currentRow.length > 1 ? spacingWidth : 0) + buttonWidth;
+        delegate: NButton {
+          text: {
+            if (modelData === "")
+              return I18n.tr("launcher.categories.all");
+            if (modelData === "downloaded")
+              return I18n.tr("panels.plugins.filter-downloaded");
+            if (modelData === "notDownloaded")
+              return I18n.tr("panels.plugins.filter-not-downloaded");
+            return modelData;
           }
-        }
-        if (currentRow.length > 0) {
-          rows.push(currentRow);
-        }
-        return rows;
-      }
-
-      delegate: Row {
-        Layout.alignment: Qt.AlignHCenter
-        spacing: Style.marginXS
-
-        Repeater {
-          model: modelData
-
-          delegate: NButton {
-            text: {
-              if (modelData === "")
-                return I18n.tr("launcher.categories.all");
-              if (modelData === "downloaded")
-                return I18n.tr("panels.plugins.filter-downloaded");
-              if (modelData === "notDownloaded")
-                return I18n.tr("panels.plugins.filter-not-downloaded");
-              return modelData;
-            }
-            backgroundColor: root.selectedTag === modelData ? Color.mPrimary : Color.mSurfaceVariant
-            textColor: root.selectedTag === modelData ? Color.mOnPrimary : Color.mOnSurfaceVariant
-            onClicked: root.selectedTag = modelData
-            fontSize: Style.fontSizeS
-            iconSize: Style.fontSizeS
-            fontWeight: Style.fontWeightSemiBold
-            buttonRadius: Style.iRadiusM
-          }
+          backgroundColor: root.selectedTag === modelData ? Color.mPrimary : Color.mSurfaceVariant
+          textColor: root.selectedTag === modelData ? Color.mOnPrimary : Color.mOnSurfaceVariant
+          onClicked: root.selectedTag = modelData
+          fontSize: Style.fontSizeS
+          iconSize: Style.fontSizeS
+          fontWeight: Style.fontWeightSemiBold
+          buttonRadius: Style.iRadiusM
         }
       }
     }
@@ -300,6 +262,8 @@ ColumnLayout {
             font.pointSize: Style.fontSizeXS
             color: Color.mOnSurface
             wrapMode: Text.WordWrap
+            maximumLineCount: 2
+            elide: Text.ElideRight
             Layout.fillWidth: true
           }
 

@@ -209,6 +209,10 @@
    `(helm-ff-directory ((t (:foreground ,primary :weight bold))))
    `(helm-ff-file ((t (:foreground ,on-surface))))
    `(helm-ff-executable ((t (:foreground ,tertiary))))
+
+   ;; corfu
+   `(corfu-default ((t (:background ,surface-container :foreground ,on-surface))))
+   `(corfu-current ((t (:background ,primary-container :foreground ,on-primary-container))))
    
    ;; Which-key
    `(which-key-key-face ((t (:foreground ,primary :weight bold))))
