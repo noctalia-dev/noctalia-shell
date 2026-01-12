@@ -223,27 +223,30 @@ ColumnLayout {
   }
 
   Process {
-    id: fastfetchProcess
-    command: ["fastfetch", "--format", "json"]
-    running: false
+      id: fastfetchProcess
 
-    onExited: function (exitCode) {
-      root.systemInfoLoading = false;
-      if (exitCode === 0) {
-        try {
-          root.systemInfo = JSON.parse(stdout.text);
-          root.systemInfoAvailable = true;
-        } catch (e) {
-          Logger.w("VersionSubTab", "Failed to parse fastfetch JSON: " + e);
-          root.systemInfoAvailable = false;
-        }
-      } else {
-        root.systemInfoAvailable = false;
+      command: root.fastfetchSupportsJsonFlag
+          ? ["fastfetch", "--json"]           // flag in newer versions
+          : ["fastfetch", "--format", "json"] // older flag for compatibility
+
+      stdout: StdioCollector {}
+      stderr: StdioCollector {}
+
+      onExited: function (exitCode) {
+          root.systemInfoLoading = false;
+
+          if (exitCode === 0) {
+              try {
+                  root.systemInfo = JSON.parse(stdout.text);
+                  root.systemInfoAvailable = true;
+              } catch (e) {
+                  Logger.w("VersionSubTab", "Failed to parse fastfetch JSON: " + e);
+                  root.systemInfoAvailable = false;
+              }
+          } else {
+              root.systemInfoAvailable = false;
+          }
       }
-    }
-
-    stdout: StdioCollector {}
-    stderr: StdioCollector {}
   }
 
   NHeader {
