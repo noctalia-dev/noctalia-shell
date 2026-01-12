@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Wayland
 import qs.Commons
+import qs.Services.Hardware
 import qs.Services.Networking
 import qs.Services.UI
 import qs.Widgets
@@ -161,7 +162,10 @@ NBox {
                 spacing: Style.marginXS
 
                 NIcon {
-                  icon: "battery"
+                  icon: {
+                    var b = BluetoothService.getBatteryPercent(modelData);
+                    return BatteryService.getIcon(b !== null ? b : 0, false, b !== null);
+                  }
                   pointSize: Style.fontSizeXS
                   color: getContentColor(Color.mOnSurface)
                 }
@@ -341,7 +345,10 @@ NBox {
                 Layout.preferredWidth: 1
                 spacing: Style.marginXS
                 NIcon {
-                  icon: "battery"
+                  icon: {
+                    var b = BluetoothService.getBatteryPercent(modelData);
+                    return BatteryService.getIcon(b !== null ? b : 0, false, b !== null);
+                  }
                   pointSize: Style.fontSizeXS
                   color: Color.mOnSurface
                   MouseArea {

@@ -47,10 +47,10 @@
       "device-description": "Wählen Sie das anzuzeigende Batteriegerät aus.",
       "device-label": "Batteriebetriebenes Gerät",
       "hide-if-not-detected-description": "Verberge das Widget, wenn keine Batterie im System erkannt wird.",
-      "hide-if-not-detected-label": "Ausblenden, wenn nicht erkannt.",
+      "hide-if-not-detected-label": "Ausblenden, wenn nicht erkannt",
       "low-battery-threshold-description": "Warnung anzeigen, wenn Batterie unter diesen Prozentsatz fällt.",
       "low-battery-threshold-label": "Schwellenwert für niedrigen Batteriestand",
-      "show-noctalia-performance-description": "Zeige den Noctalia-Leistungsmodus-Schalter im Batterie-Panel an.",
+      "show-noctalia-performance-description": "Zeige den Noctalia-Leistungsmodus-Schalter im Batterie-Panel an.<br>Deaktiviert Schatten und Animationen in Noctalia, um Ressourcen zu sparen.",
       "show-noctalia-performance-label": "Noctalia-Performance-Schalter anzeigen",
       "show-power-profile-description": "Zeige die Auswahl des Energieprofils im Batterie-Panel an.",
       "show-power-profile-label": "Energieprofil-Steuerung anzeigen"
@@ -152,7 +152,7 @@
       "max-width-description": "Stellt die maximale Horizontalgröße des Widgets ein. Das Widget wird sich an kürzere Inhalte anpassen.",
       "no-active-player": "Kein aktiver Player",
       "panel-section-description": "Konfigurieren Sie das Aussehen und Verhalten des Medienplayer-Panels.",
-      "panel-section-label": "Medienlayer-Panel",
+      "panel-section-label": "Medienplayer-Panel",
       "scrolling-mode-description": "Steuern, wann Textscrolling für lange Track-Titel aktiviert ist.",
       "scrolling-mode-label": "Scrollmodus",
       "show-album-art-description": "Albumcover des aktuell abgespielten Tracks anzeigen.",
@@ -232,7 +232,7 @@
       "colorize-icons-label": "Symbole einfärben",
       "drawer-enabled-description": "Wenn aktiviert, werden nicht angeheftete Tray-Elemente in einem Drawer-Panel angezeigt.<br>Wenn deaktiviert, werden alle Tray-Elemente inline angezeigt.",
       "drawer-enabled-label": "Drawer aktivieren",
-      "hide-passive-description": "Wenn aktiviert, werden Tray-Elemente mit dem Status \"Passiv\" ausgeblendet.",
+      "hide-passive-description": "Wenn aktiviert, werden Tray-Elemente mit dem Status 'Passiv' ausgeblendet.",
       "hide-passive-label": "Passive Elemente ausblenden"
     },
     "volume": {
@@ -246,7 +246,7 @@
       "enable-scrollwheel-label": "Zum Wechseln der Arbeitsbereiche scrollen",
       "follow-focused-screen-description": "Zeige Arbeitsbereiche vom aktuell fokussierten Bildschirm an, statt vom Bildschirm, auf dem sich die Leiste befindet.",
       "follow-focused-screen-label": "Fokussiertem Bildschirm folgen",
-      "grouped-border-opacity-description": "Lege die Deckkraft für Workspace-Container-Rahmen fest.",
+      "grouped-border-opacity-description": "Legen Sie die Deckkraft für Workspace-Container-Rahmen fest.",
       "grouped-border-opacity-label": "Rahmen-Deckkraft",
       "hide-unoccupied-description": "Arbeitsbereiche ohne Fenster nicht anzeigen.",
       "hide-unoccupied-label": "Unbesetzte ausblenden",
@@ -256,7 +256,7 @@
       "show-applications-label": "Anwendungen anzeigen",
       "show-labels-only-when-occupied-description": "Arbeitsbereichsbezeichnungen nur anzeigen, wenn sie Fenster enthalten.",
       "show-labels-only-when-occupied-label": "Beschriftungen nur anzeigen, wenn belegt",
-      "unfocused-icons-opacity-description": "Transparenzgrad für nicht fokussierte App-Symbole festlegen",
+      "unfocused-icons-opacity-description": "Transparenzgrad für nicht fokussierte App-Symbole festlegen.",
       "unfocused-icons-opacity-label": "Deckkraft unscharfer Symbole"
     }
   },
@@ -293,9 +293,6 @@
       "signal-text-unknown": "Signal: Unbekannt",
       "signal-text-very-poor": "Signal: Sehr schlecht"
     }
-  },
-  "calendar": {
-    "weather-loading": "Wetter wird geladen…"
   },
   "changelog": {
     "error": {
@@ -340,7 +337,6 @@
     "cancel": "Abbrechen",
     "cards": "Karten",
     "charging": "Laden",
-    "check-settings": "Überprüfen Sie die Einstellungen für Details.",
     "clear": "Löschen",
     "clipboard": "Zwischenablage",
     "close": "Schließen",
@@ -381,7 +377,7 @@
     "language": "Sprache",
     "loading": "Wird geladen...",
     "local": "Lokal",
-    "location": "Ort",
+    "location": "Position",
     "lock": "Sperren",
     "logout": "Abmelden",
     "look": "Aussehen",
@@ -400,7 +396,7 @@
     "official": "Offiziell",
     "output": "Ausgabe",
     "pair": "Koppeln",
-    "paired": "Gepaart",
+    "paired": "Gekoppelt",
     "pairing": "Koppeln...",
     "panels": "Panels",
     "password": "Passwort",
@@ -447,6 +443,7 @@
     "volumes": "Lautstärken",
     "wallpaper": "Hintergrundbild",
     "weather": "Wetter",
+    "weather-loading": "Wetter wird geladen...",
     "week": "Woche",
     "widgets": "Widgets",
     "width": "Breite",
@@ -455,7 +452,7 @@
   "control-center": {
     "power-profile": {
       "tooltip-action": "Energieprofil",
-      "tooltip-disabled": "Installiere power-profiles-daemon, um Energieprofile zu verwenden"
+      "tooltip-disabled": "Installieren Sie power-profiles-daemon, um Energieprofile zu verwenden"
     },
     "wifi": {
       "label-disconnected": "WLAN getrennt",
@@ -466,7 +463,7 @@
     "always-hide": "Immer verstecken",
     "always-show": "Immer anzeigen",
     "force-open": "Aufbrechen",
-    "on-hover": "Beim Überfahren mit der Maus"
+    "on-hover": "Beim Hover"
   },
   "hide-modes": {
     "hidden": "Ausblenden, wenn leer",
@@ -505,7 +502,7 @@
       "calculator-deprecated": "Der Befehl >calc ist veraltet und wird bald entfernt. Bitte geben Sie stattdessen mathematische Ausdrücke direkt in die Suche ein.",
       "calculator-description": "Rechner — mathematische Ausdrücke auswerten",
       "calculator-enter-expression": "Mathematischen Ausdruck eingeben",
-      "calculator-press-enter-to-copy": "Drücken Sie die Eingabetaste, um das Ergebnis zu kopieren.",
+      "calculator-press-enter-to-copy": "Drücken Sie die Eingabetaste, um das Ergebnis zu kopieren",
       "clipboard": "Zwischenablageverlauf",
       "clipboard-clear-description": "Gesamten Zwischenablageverlauf löschen",
       "clipboard-clear-description-full": "Alle Elemente aus dem Zwischenablageverlauf entfernen",
@@ -519,7 +516,7 @@
       "emoji": "Emoji-Auswahl",
       "emoji-loading": "Lade Emojis...",
       "emoji-loading-description": "Bitte warten",
-      "emoji-no-recent": "Noch keine kürzlich verwendeten Emojis.",
+      "emoji-no-recent": "Noch keine kürzlich verwendeten Emojis",
       "emoji-search-description": "Emojis suchen und kopieren"
     }
   },
@@ -608,7 +605,7 @@
       "system-disk": "Festplatte:",
       "system-gpu": "GPU:",
       "system-host": "Gastgeber:",
-      "system-install-hint": "Installiere fastfetch, um Systeminformationen anzuzeigen.",
+      "system-install-hint": "Installieren Sie fastfetch, um Systeminformationen anzuzeigen",
       "system-kernel": "Kernel:",
       "system-loading": "Systeminformationen werden geladen...",
       "system-memory": "Speicher",
@@ -619,7 +616,7 @@
       "system-uptime": "Betriebszeit:",
       "system-wm": "WM:",
       "title": "Über",
-      "up-to-date": "Du bist auf dem neuesten Stand!",
+      "up-to-date": "Auf dem neuesten Stand!",
       "update-available": "Update verfügbar",
       "view-commit": "Commit auf GitHub ansehen"
     },
@@ -648,7 +645,7 @@
       "media-scrolling-title-label": "Scrollender Titel",
       "media-title": "Medienplayer",
       "on-middle-clicked-description": "Befehl, der ausgeführt wird, wenn die Schaltfläche mit der mittleren Maustaste angeklickt wird.",
-      "panel-applications-empty": "Derzeit geben keine Anwendungen Audio wieder.",
+      "panel-applications-empty": "Derzeit geben keine Anwendungen Audio wieder",
       "title": "Audio",
       "visualizer-type-description": "Wählen Sie einen Visualisierungstyp für die Medienwiedergabe.",
       "visualizer-type-label": "Visualisierungsart",
@@ -665,7 +662,7 @@
       "volumes-volume-overdrive-label": "Lautstärke-Übersteuerung erlauben"
     },
     "bar": {
-      "appearance-background-opacity-description": "Lege die Hintergrundtransparenz speziell für die Leiste fest.",
+      "appearance-background-opacity-description": "Legen Sie die Hintergrundtransparenz speziell für die Leiste fest.",
       "appearance-background-opacity-label": "Leisten-Hintergrundtransparenz",
       "appearance-capsule-opacity-description": "Deckkraft der Widget-Hintergründe festlegen, wenn Kapsel angezeigt wird.",
       "appearance-capsule-opacity-label": "Kapsel-Deckkraft",
@@ -711,15 +708,15 @@
       "dark-mode-mode-manual": "Manuell",
       "dark-mode-mode-off": "Aus",
       "dark-mode-switch-description": "Wechselt zu einem dunkleren Theme für einfachere Betrachtung bei Nacht.",
-      "delete-error-description": "Fehler beim Löschen von {scheme}",
+      "delete-error-description": "Fehler beim Löschen von {scheme}.",
       "delete-error-title": "Löschen fehlgeschlagen",
-      "delete-success-description": "{scheme} wurde erfolgreich gelöscht",
+      "delete-success-description": "{scheme} wurde erfolgreich gelöscht.",
       "delete-success-title": "Farbschema gelöscht",
       "download-button": "Mehr herunterladen",
       "download-downloading": "Wird heruntergeladen...",
       "download-empty": "Keine Farbschemata verfügbar",
       "download-error-api-error": "API-Fehler: {status}",
-      "download-error-description": "Fehler beim Herunterladen von {scheme}",
+      "download-error-description": "Fehler beim Herunterladen von {scheme}.",
       "download-error-download-failed": "Download fehlgeschlagen mit Exit-Code: {code}",
       "download-error-invalid-response": "Ungültiges API-Antwortformat",
       "download-error-no-files": "Keine Dateien für Schema gefunden",
@@ -727,11 +724,11 @@
       "download-error-rate-limit": "GitHub API-Ratenlimit überschritten",
       "download-error-title": "Download fehlgeschlagen",
       "download-fetching": "Verfügbare Farbschemata werden abgerufen...",
-      "download-success-description": "{scheme} wurde erfolgreich heruntergeladen",
+      "download-success-description": "{scheme} wurde erfolgreich heruntergeladen.",
       "download-success-title": "Farbschema heruntergeladen",
       "download-title": "Farbschemata herunterladen",
       "predefined-desc": "Wählen Sie aus einer Sammlung vordefinierter Farbschemata.",
-      "predefined-generate-templates-description": "Generiert Matugen-Templates (GTK, Terminal-Themes, etc.) bei der Verwendung vordefinierter Farbschemata.",
+      "predefined-generate-templates-description": "Generiert Matugen-Templates (GTK, Terminal-Themen, etc.) bei der Verwendung vordefinierter Farbschemata.",
       "predefined-generate-templates-label": "Templates für vordefinierte Schemata generieren",
       "predefined-title": "Vordefinierte Farbschemata",
       "templates-compositors-description": "Compositor-Theming.",
@@ -739,21 +736,21 @@
       "templates-compositors-mango-description": "Schreibe {filepath} — benötigt Mango",
       "templates-compositors-niri-description": "Schreibe {filepath} — benötigt Niri v25.11+",
       "templates-desc": "Farben auf externe Anwendungen anwenden.",
-      "templates-misc-description": "Erstellen Sie Ihre eigenen Vorlagen",
+      "templates-misc-description": "Erstellen Sie Ihre eigenen Vorlagen.",
       "templates-misc-label": "Erweitert",
       "templates-misc-user-templates-description": "Nur aktivieren, wenn Sie wissen, was Sie tun — weitere Informationen finden Sie in unserer Online-Dokumentation",
       "templates-misc-user-templates-label": "Benutzer-Vorlagen aktivieren",
       "templates-programs-code-description-detected": "Auf Standardprofil angewendet — erkannt: {clients}",
       "templates-programs-code-description-missing": "Kein Code-Editor erkannt (VSCode oder VSCodium)",
       "templates-programs-description": "Anwendungsspezifisches Theming.",
-      "templates-programs-discord-description": "Schreibe {filepath} für {client} — das Theme muss manuell aktiviert werden",
+      "templates-programs-discord-description": "Schreibe {filepath} für {client} — das Thema muss manuell aktiviert werden",
       "templates-programs-discord-description-detected": "Erkannt: {clients}",
       "templates-programs-discord-description-missing": "Kein Discord-Client erkannt",
       "templates-programs-emacs-description": "Doom: ~/.config/doom/themes/noctalia.el<br>Standard: ~/.emacs.d/themes/noctalia.el",
       "templates-programs-label": "Programme",
       "templates-programs-pywalfox-description": "Schreibe {filepath} und führe 'pywalfox update' aus",
-      "templates-programs-spicetify-description": "Schreibe {filepath} — das Comfy-Theme muss manuell installiert und aktiviert werden",
-      "templates-programs-walker-description": "Schreibe {filepath} und setzt das Theme auf noctalia",
+      "templates-programs-spicetify-description": "Schreibe {filepath} — das Comfy-Thema muss manuell installiert und aktiviert werden",
+      "templates-programs-walker-description": "Schreibe {filepath} und setzt das Thema auf noctalia",
       "templates-programs-yazi-description": "Schreibe {filepath} — Flavor muss manuell aktiviert werden",
       "templates-programs-zed-description": "Schreibe {filepath} und lade neu",
       "templates-programs-zen-browser-description": "Schreibe {filepath} — kopieren Sie in die Datei chrome/userChrome.css Ihres Zen-Profils",
@@ -943,7 +940,7 @@
     "hooks": {
       "info-command-info-description": "• Befehle werden über Shell ausgeführt (sh -lc)<br>• Befehle laufen im Hintergrund (getrennt)<br>• Test-Buttons führen mit aktuellen Werten aus",
       "info-command-info-label": "Hook-Befehl-Informationen",
-      "info-parameters-description": "• Hintergrundbild-Hook: $1 = Hintergrundbild-Pfad, $2 = Bildschirmname<br>• Theme-Wechsel-Hook: $1 = true/false (Dunkelmodus-Status)",
+      "info-parameters-description": "• Wallpaper-Hook: $1 = Wallpaper-Pfad, $2 = Bildschirmname<br>• Theme-Umschalt-Hook: $1 = true/false (Dark-Mode-Status)<br>• Bildschirm-Sperr-/Entsperr-Hooks: Keine Parameter<br>• Performance-Modus-Hooks: Keine Parameter<br>• Session-Hook: $1 = Aktion (Herunterfahren/Neustart)",
       "info-parameters-label": "Verfügbare Parameter",
       "performance-mode-disabled-description": "Befehl, der ausgeführt wird, wenn der Noctalia-Leistungsmodus deaktiviert wird.",
       "performance-mode-disabled-label": "Leistungsmodus deaktiviert",
@@ -957,13 +954,16 @@
       "screen-unlock-description": "Befehl, der ausgeführt wird, wenn der Bildschirm entsperrt wird.",
       "screen-unlock-label": "Bildschirm entsperrt",
       "screen-unlock-placeholder": "z.B. notify-send \"Bildschirm\" \"Entsperrt\"",
+      "session-description": "Befehl, der vor dem Herunterfahren oder Neustart ausgeführt werden soll. Empfängt den Aktionstyp als $1 (Shutdown/Neustart).",
+      "session-label": "Sitzungsende",
+      "session-placeholder": "z.B. notify-send \"Session\" \"$1\"",
       "system-hooks-desc": "Befehle konfigurieren, die bei Systemereignissen ausgeführt werden.",
       "system-hooks-enable-description": "Alle Hook-Befehle aktivieren oder deaktivieren.",
       "system-hooks-enable-label": "Hooks aktivieren",
       "system-hooks-title": "System-Hooks",
-      "theme-changed-description": "Befehl, der ausgeführt wird, wenn das Theme zwischen dunklem und hellem Modus wechselt.",
-      "theme-changed-label": "Theme geändert",
-      "theme-changed-placeholder": "z.B. notify-send \"Theme\" \"Gewechselt\"",
+      "theme-changed-description": "Befehl, der ausgeführt wird, wenn das Thema zwischen dunklem und hellem Modus wechselt.",
+      "theme-changed-label": "Thema geändert",
+      "theme-changed-placeholder": "z.B. notify-send \"Thema\" \"Gewechselt\"",
       "title": "Hooks",
       "wallpaper-changed-description": "Befehl, der ausgeführt wird, wenn sich das Hintergrundbild ändert.",
       "wallpaper-changed-label": "Hintergrundbild geändert",
@@ -977,9 +977,9 @@
       "clipboard-desc": "Greifen Sie über den Launcher auf Ihren Zwischenablageverlauf zu und verwalten Sie ihn.",
       "execute-desc": "Konfigurieren Sie, wie Anwendungen gestartet werden.",
       "execute-title": "Ausführung",
-      "settings-annotation-tool-description": "Befehl, der beim Klicken auf die Schaltfläche \"Annotieren\" im Zwischenablageverlauf ausgeführt wird. Das Bild wird an diesen Befehl weitergeleitet.",
+      "settings-annotation-tool-description": "Befehl, der beim Klicken auf die Annotieren-Schaltfläche im Zwischenablageverlauf ausgeführt wird. Das Bild wird an diesen Befehl weitergeleitet.",
       "settings-annotation-tool-label": "Annotationstool",
-      "settings-annotation-tool-placeholder": "gradia, satty -f -",
+      "settings-annotation-tool-placeholder": "z.B. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Automatisches Einfügen des ausgewählten Zwischenablageinhalts. Benötigt wtype.",
       "settings-auto-paste-label": "Automatisches Einfügen",
       "settings-clip-preview-description": "Zeige eine Vorschau des Inhalts der Zwischenablage an, wenn der Befehl >clip verwendet wird.",
@@ -1171,12 +1171,12 @@
       "hot-reload-description": "Plugins automatisch neu laden, wenn sich ihre Dateien ändern. Nützlich für die Plugin-Entwicklung.",
       "hot-reload-label": "Hot Reload (Entwicklermodus)",
       "hot-reloaded": "Plugin neu geladen: {name}",
-      "install-error": "Installation fehlgeschlagen: {error}",
-      "install-incompatible": "{plugin} benötigt Noctalia v{version} oder höher.",
-      "install-success": "{plugin} erfolgreich installiert",
+      "install-error": "Installation fehlgeschlagen: {error}.",
+      "install-incompatible": "{plugin} benötigt Noctalia v{version} oder höher",
+      "install-success": "{plugin} erfolgreich installiert.",
       "installed-description": "Alle lokal installierten Plugins verwalten und konfigurieren.",
       "installed-label": "Installierte Plugins",
-      "installed-no-plugins-description": "Installieren Sie Plugins aus dem Abschnitt \"Verfügbare Plugins\" unten.",
+      "installed-no-plugins-description": "Installieren Sie Plugins aus dem Abschnitt \"Verfügbar\".",
       "installed-no-plugins-label": "Keine Plugins installiert",
       "installing": "{plugin} wird installiert...",
       "open-plugin-page": "Plugin-Seite öffnen",
@@ -1202,17 +1202,16 @@
       "title": "Plugins",
       "uninstall-dialog-description": "Sind Sie sicher, dass Sie {plugin} deinstallieren möchten? Dadurch werden alle Plugin-Daten entfernt.",
       "uninstall-dialog-title": "Plugin deinstallieren",
-      "uninstall-error": "Deinstallation fehlgeschlagen: {error}",
+      "uninstall-error": "Deinstallation fehlgeschlagen: {error}.",
       "uninstall-success": "{plugin} wurde erfolgreich deinstalliert.",
       "uninstalling": "{Plugin} wird deinstalliert...",
       "update-all": "Alle aktualisieren ({count})",
       "update-all-success": "Alle Plugins wurden erfolgreich aktualisiert.",
       "update-available": "Neues Plugin-Update verfügbar",
       "update-available-plural": "Neue Plugin-Updates verfügbar ({count})",
-      "update-error": "Fehler beim Aktualisieren des Plugins: {plugin}: {error}",
-      "update-incompatible": "Benötigt Noctalia v{version} oder höher",
+      "update-error": "Fehler beim Aktualisieren des Plugins: {plugin}: {error}.",
       "update-pending": "v{aktuell} → v{neu} (benötigt Noctalia v{erforderlich})",
-      "update-success": "{plugin} wurde auf v{version} aktualisiert",
+      "update-success": "{plugin} wurde auf v{version} aktualisiert.",
       "update-version": "v{aktuell} → v{neu}",
       "updating": "Aktualisierung läuft..."
     },
@@ -1290,7 +1289,7 @@
       "dimmer-opacity-description": "Deckkraft für das Abdunkeln des Desktops festlegen.",
       "dimmer-opacity-label": "Deckkraft des gedimmten Desktops",
       "dimmer-opacity-reset": "Deckkraft des gedimmten Desktops zurücksetzen",
-      "panel-background-opacity-description": "Lege die Hintergrundtransparenz für alle Panels fest (Leiste, Starter, Einstellungen, usw.).",
+      "panel-background-opacity-description": "Legen Sie die Hintergrundtransparenz für alle Panels fest (Leiste, Starter, Einstellungen, usw.).",
       "panel-background-opacity-label": "Panel-Hintergrunddeckkraft",
       "panels-attached-to-bar-description": "Die Panels rasten an der Stange und den Bildschirmrändern ein und sorgen so für ein nahtloses Erscheinungsbild mit stilvollen, umgekehrten Ecken.",
       "panels-attached-to-bar-label": "Panels an Kanten ausrichten",
@@ -1381,7 +1380,6 @@
   },
   "session-menu": {
     "action-in-seconds": "{action} in {seconds} Sekunden...",
-    "lock-and-suspend": "Sperren und Energie sparen",
     "title": "Sitzungsmenü"
   },
   "setup": {
@@ -1395,7 +1393,7 @@
     "wallpaper": {
       "choose-dir": "Wählen Sie ein Verzeichnis mit Ihren Hintergrundbildern",
       "dir-browse": "Ordner auswählen",
-      "dir-description": "Wählen Sie den Ordner mit Ihren Hintergrundbildern",
+      "dir-description": "Wählen Sie den Ordner mit Ihren Hintergrundbildern.",
       "dir-label": "Hintergrundbild-Verzeichnis",
       "dir-select-title": "Hintergrundbild-Ordner wählen",
       "header": "Wählen Sie Ihr Hintergrundbild",
@@ -1426,11 +1424,11 @@
     "cpu-temp": "CPU-Temperatur",
     "cpu-usage": "CPU-Auslastung",
     "disk": "Festplatte",
-    "download-speed": "Download-Geschwindigkeit",
+    "download-speed": "Download-Speed",
     "gpu-temp": "GPU-Temperatur",
-    "load-average": "Lastdurchschnitt",
-    "title": "Systemüberwachung",
-    "upload-speed": "Upload-Geschwindigkeit"
+    "load-average": "Last-Ø",
+    "title": "Systemmonitor",
+    "upload-speed": "Upload-Speed"
   },
   "toast": {
     "airplane-mode": {
@@ -1493,18 +1491,6 @@
     "power-profile": {
       "changed": "Energieprofil geändert.",
       "profile-name": "{profile}"
-    },
-    "recording": {
-      "failed-general": "Rekorder wurde mit einem Fehler beendet.",
-      "failed-gpu": "gpu-screen-recorder wurde unerwartet beendet.",
-      "failed-start": "Aufnahme konnte nicht gestartet werden",
-      "no-portals": "Desktop-Portale laufen nicht",
-      "no-portals-desc": "Starten Sie xdg-desktop-portal und ein Compositor-Portal (wlr/hyprland/gnome/kde).",
-      "not-installed": "gpu-screen-recorder nicht installiert",
-      "not-installed-desc": "Bitte installieren Sie gpu-screen-recorder, um Bildschirmaufnahme-Funktionen zu nutzen.",
-      "saved": "Aufnahme gespeichert.",
-      "started": "Aufnahme gestartet.",
-      "stopping": "Aufnahme wird gestoppt…"
     },
     "theming-processor-failed": {
       "desc-generic": "Beim Verarbeiten von Vorlagen ist ein Fehler aufgetreten.",
@@ -1611,7 +1597,7 @@
       "order-desc": "Absteigend",
       "order-label": "Reihenfolge",
       "purity-label": "Inhaltsfilter",
-      "purity-nsfw": "Nicht jugendfrei",
+      "purity-nsfw": "NSFW",
       "purity-sfw": "SFW",
       "purity-sketchy": "Sketchy",
       "ratios-any": "Irgendetwas",
@@ -1736,9 +1722,7 @@
       "excellent": "Ausgezeichnet",
       "fair": "Mäßig",
       "good": "Gut",
-      "poor": "Schlecht",
-      "very-good": "Sehr gut",
-      "weak": "Schwach"
+      "poor": "Schwach"
     }
   }
 }

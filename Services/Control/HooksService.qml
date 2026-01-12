@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Services.Power
 import qs.Services.UI
@@ -185,6 +186,48 @@ Singleton {
     } catch (e) {
       Logger.e("HooksService", `Failed to execute performance mode disabled hook: ${e}`);
     }
+  }
+
+  // Blocking power hook infrastructure
+  property var pendingPowerCallback: null
+
+  Process {
+    id: powerHookProcess
+    onExited: (exitCode, exitStatus) => {
+      if (exitCode !== 0) {
+        Logger.w("HooksService", `Power hook failed with exit code ${exitCode}`);
+      }
+
+      if (pendingPowerCallback !== null) {
+        const callback = pendingPowerCallback;
+        pendingPowerCallback = null;
+        callback();
+      }
+    }
+  }
+
+  function runPowerHook(script, callback) {
+    pendingPowerCallback = callback;
+    powerHookProcess.command = ["sh", "-c", script];
+    powerHookProcess.running = true;
+  }
+
+  function executeSessionHook(action, callback) {
+    if (!Settings.data.hooks?.enabled) {
+      callback();
+
+      return;
+    }
+
+    const script = Settings.data.hooks?.session;
+    if (!script) {
+      callback();
+
+      return;
+    }
+
+    Logger.i("HooksService", `Executing session hook for ${action}`);
+    runPowerHook(`${script} ${action}`, callback);
   }
 
   // Initialize the service

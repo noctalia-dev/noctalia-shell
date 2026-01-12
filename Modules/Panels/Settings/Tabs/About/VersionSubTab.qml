@@ -44,13 +44,6 @@ ColumnLayout {
     return root.systemInfo.find(m => m.type === type);
   }
 
-  function formatBytes(bytes) {
-    if (bytes === null || bytes === undefined)
-      return "N/A";
-    const gb = bytes / (1024 * 1024 * 1024);
-    return gb.toFixed(1) + " GB";
-  }
-
   function copyInfoToClipboard() {
     let info = "Noctalia Shell\n";
     info += "==============\n";
@@ -231,7 +224,7 @@ ColumnLayout {
 
   Process {
     id: fastfetchProcess
-    command: ["fastfetch", "--json"]
+    command: ["fastfetch", "--format", "json", "--config", "none"]
     running: false
 
     onExited: function (exitCode) {
@@ -517,8 +510,8 @@ ColumnLayout {
     }
     NText {
       text: {
-        const cmd = root.getModule("Command");
-        return cmd?.result || "N/A";
+        const value = root.getModule("Uptime")?.result?.uptime;
+        return value ? Time.formatVagueHumanReadableDuration(value / 1000) : "-";
       }
       color: Color.mOnSurface
       Layout.fillWidth: true
@@ -574,8 +567,9 @@ ColumnLayout {
         const mem = root.getModule("Memory");
         if (!mem?.result)
           return "N/A";
-        const used = root.formatBytes(mem.result.used);
-        const total = root.formatBytes(mem.result.total);
+        const giga = (1024 * 1024 * 1024);
+        const used = SystemStatService.formatMemoryGb(mem.result.used / giga);
+        const total = SystemStatService.formatMemoryGb(mem.result.total / giga);
         return used + " / " + total;
       }
       color: Color.mOnSurface
@@ -596,8 +590,9 @@ ColumnLayout {
         const rootDisk = disk.result.find(d => d.mountpoint === "/");
         if (!rootDisk?.bytes)
           return "N/A";
-        const used = root.formatBytes(rootDisk.bytes.used);
-        const total = root.formatBytes(rootDisk.bytes.total);
+        const giga = (1024 * 1024 * 1024);
+        const used = SystemStatService.formatMemoryGb(rootDisk.bytes.used / giga);
+        const total = SystemStatService.formatMemoryGb(rootDisk.bytes.total / giga);
         return used + " / " + total + " (" + rootDisk.filesystem + ")";
       }
       color: Color.mOnSurface

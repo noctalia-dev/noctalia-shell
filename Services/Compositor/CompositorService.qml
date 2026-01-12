@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Control
 import qs.Services.UI
 
 Singleton {
@@ -395,12 +396,16 @@ Singleton {
 
   function shutdown() {
     Logger.i("Compositor", "Shutdown requested");
-    Quickshell.execDetached(["sh", "-c", "systemctl poweroff || loginctl poweroff"]);
+    HooksService.executeSessionHook("shutdown", () => {
+                                      Quickshell.execDetached(["sh", "-c", "systemctl poweroff || loginctl poweroff"]);
+                                    });
   }
 
   function reboot() {
     Logger.i("Compositor", "Reboot requested");
-    Quickshell.execDetached(["sh", "-c", "systemctl reboot || loginctl reboot"]);
+    HooksService.executeSessionHook("reboot", () => {
+                                      Quickshell.execDetached(["sh", "-c", "systemctl reboot || loginctl reboot"]);
+                                    });
   }
 
   function suspend() {

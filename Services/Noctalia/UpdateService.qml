@@ -11,7 +11,7 @@ Singleton {
   id: root
 
   // Version properties
-  readonly property string baseVersion: "4.0.0"
+  readonly property string baseVersion: "4.0.1"
   readonly property bool isDevelopment: true
   readonly property string developmentSuffix: "-git"
   readonly property string currentVersion: `v${!isDevelopment ? baseVersion : baseVersion + developmentSuffix}`
@@ -118,23 +118,21 @@ Singleton {
   }
 
   function fetchUpgradeLog(fromVersion, toVersion) {
-    // Use the last seen version, or default to v3.0.0 if this is a fresh install
-    let from = fromVersion || changelogLastSeenVersion || "v3.0.0";
-    let to = toVersion;
+    // Normalize and ensure "v" prefix for consistent URL format
+    let from = ensureVersionPrefix(fromVersion || changelogLastSeenVersion || "3.0.0");
+    let to = ensureVersionPrefix(toVersion);
 
-    // Strip suffix from versions
+    // Strip -git suffix
     from = from.replace(root.developmentSuffix, "");
     to = to.replace(root.developmentSuffix, "");
 
-    // 'from' always need to be before 'to'
-    // handle edge case that will show up as we changed -dev to -git
-    if (from >= to) {
+    // 'from' always needs to be before 'to' (use semantic comparison)
+    if (compareVersions(from, to) >= 0) {
       from = "v3.0.0";
     }
 
-    Logger.d("UpdateService", "Fetching upgrade log", "from:", from, "to:", to);
-
     const url = `${upgradeLogBaseUrl}/${from}/${to}`;
+    Logger.i("UpdateService", "Fetching upgrade log:", url);
     const request = new XMLHttpRequest();
     request.onreadystatechange = function () {
       if (request.readyState === XMLHttpRequest.DONE) {
@@ -156,13 +154,20 @@ Singleton {
           fetchError = "";
           openWhenReady();
         } else {
-          Logger.e("UpdateService", "Failed to fetch upgrade log");
-          Logger.e("UpdateService", "Status:", request.status);
-          Logger.e("UpdateService", "Status text:", request.statusText);
-          Logger.e("UpdateService", "Response:", request.responseText);
-          fetchError = I18n.tr("changelog.error.fetch-failed");
+          Logger.w("UpdateService", "Failed to fetch upgrade log, status:", request.status);
           releaseHighlights = [];
-          openWhenReady();
+
+          if (request.status === 404) {
+            // Changelog not available for this version range - skip silently
+            Logger.w("UpdateService", "Changelog not found, skipping display");
+            fetchError = "";
+            popupScheduled = false;
+            markChangelogSeen(toVersion);
+          } else {
+            // Network error or server issue - show error to user
+            fetchError = I18n.tr("changelog.error.fetch-failed");
+            openWhenReady();
+          }
         }
       }
     };
@@ -174,6 +179,12 @@ Singleton {
     if (!version)
       return "";
     return version.startsWith("v") ? version.substring(1) : version;
+  }
+
+  function ensureVersionPrefix(version) {
+    if (!version)
+      return "";
+    return version.startsWith("v") ? version : "v" + version;
   }
 
   function parseVersionParts(version) {
@@ -301,37 +312,35 @@ Singleton {
       return;
     }
 
-    const lastSeen = changelogLastSeenVersion || "";
-    if (lastSeen === currentVersion)
+    // Normalize versions for comparison (strip -git, ensure v prefix)
+    const lastSeen = ensureVersionPrefix(changelogLastSeenVersion.replace(developmentSuffix, ""));
+    const target = ensureVersionPrefix(currentVersion.replace(developmentSuffix, ""));
+
+    if (lastSeen === target)
       return;
 
     changelogFromVersion = lastSeen;
-    changelogToVersion = currentVersion;
+    changelogToVersion = target;
     changelogPending = true;
     handleChangelogRequest();
   }
 
-  // View changelog without checking seen state (for manual viewing)
+  // Manual changelog viewing (e.g., from Settings > About > View Changelog)
+  // Shows all changes since v3.0.0, unlike showLatestChangelog() which uses lastSeenVersion
   property var viewChangelogTargetScreen: null
 
   function viewChangelog(screen) {
     if (!currentVersion)
       return;
 
-    // Calculate one minor version back as starting point
-    const parts = parseVersionParts(currentVersion);
-    let fromVersion = "v3.0.0";
-    if (parts.length >= 2) {
-      const major = parts[0];
-      const minor = Math.max(0, parts[1] - 1);
-      fromVersion = `v${major}.${minor}.0`;
-    }
+    const target = ensureVersionPrefix(currentVersion.replace(developmentSuffix, ""));
+    const fromVersion = "v3.0.0";
 
     previousVersion = fromVersion;
-    changelogCurrentVersion = currentVersion;
+    changelogCurrentVersion = target;
     viewChangelogTargetScreen = screen || null;
     popupScheduled = true;
-    fetchUpgradeLog(fromVersion, currentVersion);
+    fetchUpgradeLog(fromVersion, target);
   }
 
   function clearChangelogRequest() {

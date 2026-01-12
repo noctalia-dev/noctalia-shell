@@ -14,7 +14,7 @@ SmartPanel {
   id: root
 
   preferredWidth: Math.round((root.isSideBySide ? 480 : 400) * Style.uiScaleRatio)
-  preferredHeight: Math.round((root.compactMode ? 220 : (root.showAlbumArt ? 520 : 260)) * Style.uiScaleRatio)
+  preferredHeight: Math.round((root.compactMode ? 240 : (root.showAlbumArt ? 560 : 300)) * Style.uiScaleRatio)
 
   readonly property var mediaMiniSettings: {
     try {
@@ -67,7 +67,7 @@ SmartPanel {
     id: playerContent
     anchors.fill: parent
 
-    readonly property real contentPreferredHeight: (root.compactMode ? 220 : (root.showAlbumArt ? 520 : 260)) * Style.uiScaleRatio
+    readonly property real contentPreferredHeight: (root.compactMode ? 240 : (root.showAlbumArt ? 560 : 300)) * Style.uiScaleRatio
 
     Loader {
       id: visualizerLoaderCompact

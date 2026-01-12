@@ -16,7 +16,6 @@ T.ScrollView {
   property int horizontalPolicy: ScrollBar.AsNeeded
   property bool preventHorizontalScroll: horizontalPolicy === ScrollBar.AlwaysOff
   property int boundsBehavior: Flickable.StopAtBounds
-  property int flickableDirection: Flickable.VerticalFlick
   readonly property bool verticalScrollable: contentItem.contentHeight > contentItem.height
   readonly property bool horizontalScrollable: contentItem.contentWidth > contentItem.width
 
@@ -40,8 +39,6 @@ T.ScrollView {
         if (root.preventHorizontalScroll) {
           child.flickableDirection = Flickable.VerticalFlick;
           child.contentWidth = Qt.binding(() => child.width);
-        } else {
-          child.flickableDirection = root.flickableDirection;
         }
         break;
       }

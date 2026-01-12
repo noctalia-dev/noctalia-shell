@@ -23,7 +23,7 @@ SmartPanel {
     border.color: Color.mOutline
     border.width: Style.borderS
 
-    readonly property string currentVersion: UpdateService.changelogCurrentVersion || UpdateService.currentVersion
+    readonly property string currentVersion: UpdateService.currentVersion
     readonly property string previousVersion: UpdateService.previousVersion
     readonly property bool hasPreviousVersion: previousVersion && previousVersion.length > 0
     readonly property var releaseHighlights: UpdateService.releaseHighlights || []

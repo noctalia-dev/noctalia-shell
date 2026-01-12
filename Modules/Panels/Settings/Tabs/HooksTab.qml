@@ -160,6 +160,28 @@ ColumnLayout {
       Layout.fillWidth: true
     }
 
+    // Session Hook Section
+    NInputAction {
+      id: sessionHookInput
+      label: I18n.tr("panels.hooks.session-label")
+      description: I18n.tr("panels.hooks.session-description")
+      placeholderText: I18n.tr("panels.hooks.session-placeholder")
+      text: Settings.data.hooks.session
+      onEditingFinished: {
+        Settings.data.hooks.session = sessionHookInput.text;
+      }
+      onActionClicked: {
+        if (sessionHookInput.text) {
+          Quickshell.execDetached(["sh", "-c", sessionHookInput.text + " test"]);
+        }
+      }
+      Layout.fillWidth: true
+    }
+
+    NDivider {
+      Layout.fillWidth: true
+    }
+
     // Info section
     ColumnLayout {
       spacing: Style.marginM

@@ -1,15 +1,29 @@
 #!/bin/bash
 
 # Push translations to Noctalia Translate API
-# Usage: TRANSLATION_PUSH_SECRET=your_secret ./push-translations.sh /path/to/Assets/Translations
+# Usage: TRANSLATION_PUSH_SECRET=your_secret ./push-translations.sh [--overwrite] [/path/to/Assets/Translations]
 # Or set the secret in environment and pass the path as argument
 
 set -e
 
+# Parse arguments
+OVERWRITE=false
+TRANSLATIONS_DIR="Assets/Translations"
+
+for arg in "$@"; do
+    case $arg in
+        --overwrite)
+            OVERWRITE=true
+            ;;
+        *)
+            TRANSLATIONS_DIR="$arg"
+            ;;
+    esac
+done
+
 # Configuration
 API_URL="${TRANSLATION_API_URL:-https://i18n.noctalia.dev}"
 PROJECT_SLUG="${TRANSLATION_PROJECT:-noctalia-shell}"
-TRANSLATIONS_DIR="${1:-Assets/Translations}"
 
 # Check for secret
 if [ -z "$NOCTALIA_SHELL_TRANSLATION_PUSH_SECRET" ]; then
@@ -73,10 +87,17 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
+# Build URL with optional overwrite parameter
+PUSH_URL="$API_URL/api/projects/$PROJECT_SLUG/push"
+if [ "$OVERWRITE" = true ]; then
+    PUSH_URL="$PUSH_URL?overwrite=true"
+    echo "Overwrite mode enabled"
+fi
+
 # Push to API
 echo "Pushing to API..."
 RESPONSE=$(echo "$COMBINED_JSON" | curl -s -w "\n%{http_code}" -X POST \
-    "$API_URL/api/projects/$PROJECT_SLUG/push" \
+    "$PUSH_URL" \
     -H "Authorization: Bearer $NOCTALIA_SHELL_TRANSLATION_PUSH_SECRET" \
     -H "Content-Type: application/json" \
     -d @-)

@@ -134,7 +134,7 @@ Singleton {
       return brightnessPath !== "";
     }
 
-    property real brightness: NaN
+    property real brightness
     property real lastBrightness: 0
     property real queuedBrightness: NaN
     property bool commandRunning: false
@@ -158,50 +158,42 @@ Singleton {
             return;
           }
 
+          var newBrightness = NaN;
+
           if (monitor.isAppleDisplay) {
-            var aval = parseInt(dataText);
-            if (!isNaN(aval)) {
-              var newAppleBrightness = aval / 101;
-              if (isNaN(monitor.brightness) || Math.abs(newAppleBrightness - monitor.brightness) > 0.01) {
-                monitor.brightness = newAppleBrightness;
-                monitor.brightnessUpdated(monitor.brightness);
-                root.monitorBrightnessChanged(monitor, monitor.brightness);
-              }
+            // Apple display format: single integer (0-101)
+            var val = parseInt(dataText);
+            if (!isNaN(val)) {
+              newBrightness = val / 101;
             }
-            return;
-          }
-
-          if (monitor.isDdc) {
-            // ddcutil --brief output varies; extract last two integers as current/max
-            var nums = dataText.match(/\d+/g);
-            if (nums && nums.length >= 2) {
-              var current = parseInt(nums[nums.length - 2]);
-              var max = parseInt(nums[nums.length - 1]);
+          } else if (monitor.isDdc) {
+            // DDC format: "VCP 10 C 100 100" (space-separated)
+            var parts = dataText.split(" ");
+            if (parts.length >= 4) {
+              var current = parseInt(parts[3]);
+              var max = parseInt(parts[4]);
               if (!isNaN(current) && !isNaN(max) && max > 0) {
-                var newDdcBrightness = current / max;
-                if (isNaN(monitor.brightness) || Math.abs(newDdcBrightness - monitor.brightness) > 0.01) {
-                  monitor.brightness = newDdcBrightness;
-                  monitor.brightnessUpdated(monitor.brightness);
-                  root.monitorBrightnessChanged(monitor, monitor.brightness);
-                }
+                newBrightness = current / max;
               }
             }
-            return;
+          } else {
+            // Internal display format: two lines (current\nmax)
+            var lines = dataText.split("\n");
+            if (lines.length >= 2) {
+              var current = parseInt(lines[0].trim());
+              var max = parseInt(lines[1].trim());
+              if (!isNaN(current) && !isNaN(max) && max > 0) {
+                newBrightness = current / max;
+              }
+            }
           }
 
-          // Internal backlight: expects two lines: current and max
-          var lines = dataText.split("\n");
-          if (lines.length >= 2) {
-            var current = parseInt(lines[0].trim());
-            var max = parseInt(lines[1].trim());
-            if (!isNaN(current) && !isNaN(max) && max > 0) {
-              var newBrightness = current / max;
-              if (isNaN(monitor.brightness) || Math.abs(newBrightness - monitor.brightness) > 0.01) {
-                monitor.brightness = newBrightness;
-                monitor.brightnessUpdated(monitor.brightness);
-                root.monitorBrightnessChanged(monitor, monitor.brightness);
-              }
-            }
+          // Update if we got a valid brightness value and it's different
+          if (!isNaN(newBrightness) && Math.abs(newBrightness - monitor.brightness) > 0.01) {
+            monitor.brightness = newBrightness;
+            monitor.brightnessUpdated(monitor.brightness);
+            root.monitorBrightnessChanged(monitor, monitor.brightness);
+            Logger.d("Brightness", "Refreshed brightness from system:", monitor.modelData.name, monitor.brightness);
           }
         }
       }
@@ -270,11 +262,10 @@ Singleton {
               Logger.d("Brightness", "Apple display brightness:", monitor.brightness);
             }
           } else if (monitor.isDdc) {
-            // Be robust to different ddcutil outputs; capture last two integers
-            var nums = dataText.match(/\d+/g);
-            if (nums && nums.length >= 2) {
-              var current = parseInt(nums[nums.length - 2]);
-              var max = parseInt(nums[nums.length - 1]);
+            var parts = dataText.split(" ");
+            if (parts.length >= 4) {
+              var current = parseInt(parts[3]);
+              var max = parseInt(parts[4]);
               if (!isNaN(current) && !isNaN(max) && max > 0) {
                 monitor.brightness = current / max;
                 Logger.d("Brightness", "DDC brightness:", current + "/" + max + " =", monitor.brightness);
@@ -320,25 +311,39 @@ Singleton {
       }
     }
 
+    // Timer for polling DDC monitor brightness (every 30 seconds)
+    readonly property Timer pollTimer: Timer {
+      interval: 30000
+      repeat: true
+      running: monitor.isDdc
+      triggeredOnStart: true
+      onTriggered: {
+        // Only refresh if not currently setting brightness
+        if (!monitor.commandRunning && isNaN(monitor.queuedBrightness)) {
+          monitor.refreshBrightnessFromSystem();
+        }
+      }
+    }
+
     function setBrightnessDebounced(value: real): void {
       monitor.queuedBrightness = value;
       timer.start();
     }
 
     function increaseBrightness(): void {
-      const baseValue = !isNaN(monitor.queuedBrightness) ? monitor.queuedBrightness : (isNaN(monitor.brightness) ? 0.5 : monitor.brightness);
+      const value = !isNaN(monitor.queuedBrightness) ? monitor.queuedBrightness : monitor.brightness;
       // Enforce minimum brightness if enabled
-      if (Settings.data.brightness.enforceMinimum && baseValue < minBrightnessValue) {
+      if (Settings.data.brightness.enforceMinimum && value < minBrightnessValue) {
         setBrightnessDebounced(Math.max(stepSize, minBrightnessValue));
       } else {
         // Normal brightness increase
-        setBrightnessDebounced(baseValue + stepSize);
+        setBrightnessDebounced(value + stepSize);
       }
     }
 
     function decreaseBrightness(): void {
-      const baseValue = !isNaN(monitor.queuedBrightness) ? monitor.queuedBrightness : (isNaN(monitor.brightness) ? 0.5 : monitor.brightness);
-      setBrightnessDebounced(baseValue - stepSize);
+      const value = !isNaN(monitor.queuedBrightness) ? monitor.queuedBrightness : monitor.brightness;
+      setBrightnessDebounced(value - stepSize);
     }
 
     function setBrightness(value: real): void {

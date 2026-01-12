@@ -8,7 +8,6 @@
 // Qt & Quickshell Core
 import QtQuick
 import Quickshell
-import Quickshell.Services.SystemTray
 
 // Commons & Services
 import qs.Commons

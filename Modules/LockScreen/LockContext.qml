@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Pam
 import qs.Commons
 import qs.Services.System
@@ -59,6 +60,9 @@ Scope {
       infoMessage = "";
       showFailure = false;
       errorMessage = "";
+      occupyFingerprintSensorProc.running = true;
+    } else {
+      occupyFingerprintSensorProc.running = false;
     }
   }
 
@@ -87,6 +91,11 @@ Scope {
 
     Logger.i("LockContext", "Starting PAM authentication for user:", pam.user);
     pam.start();
+  }
+
+  Process {
+    id: occupyFingerprintSensorProc
+    command: ["fprintd-verify"]
   }
 
   PamContext {
