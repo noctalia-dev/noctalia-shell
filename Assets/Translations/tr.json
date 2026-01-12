@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "Algılanmazsa gizle",
       "low-battery-threshold-description": "Batarya bu yüzdeye düştüğünde uyarı göster.",
       "low-battery-threshold-label": "Düşük batarya eşiği",
-      "show-noctalia-performance-description": "Pil panelinde Noctalia performans modu anahtarını göster.",
+      "show-noctalia-performance-description": "Pil panelinde Noctalia performans modu anahtarını göster.<br>Kaynak kullanımını azaltmak için Noctalia'da gölgeleri ve animasyonları devre dışı bırakır.",
       "show-noctalia-performance-label": "Noctalia Performans anahtarını göster",
       "show-power-profile-description": "Pil panelinde güç profili seçimlerini göster.",
       "show-power-profile-label": "Güç profili denetimlerini göster"

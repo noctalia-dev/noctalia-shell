@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "Ukryj się, jeśli nie wykryto.",
       "low-battery-threshold-description": "Pokaż ostrzeżenie, gdy poziom baterii spadnie poniżej tego procentu.",
       "low-battery-threshold-label": "Próg ostrzegania o niskim poziomie baterii",
-      "show-noctalia-performance-description": "Wyświetl przełącznik trybu wydajności Noctalia w panelu baterii.",
+      "show-noctalia-performance-description": "Wyświetl przełącznik trybu wydajności Noctalia w panelu baterii.<br>Wyłącza cienie i animacje w Noctalia, aby zmniejszyć zużycie zasobów.",
       "show-noctalia-performance-label": "Pokaż przełącznik wydajności Noctalia",
       "show-power-profile-description": "Wyświetl wybór profilu zasilania w panelu baterii.",
       "show-power-profile-label": "Pokaż kontrolki profilu zasilania"

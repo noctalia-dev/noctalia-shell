@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "Hide if not detected",
       "low-battery-threshold-description": "Show a warning when battery falls below this percentage.",
       "low-battery-threshold-label": "Low battery warning threshold",
-      "show-noctalia-performance-description": "Display the Noctalia Performance Mode toggle inside the battery panel.",
+      "show-noctalia-performance-description": "Display the Noctalia Performance Mode toggle inside the battery panel.<br>Disables shadows and animations in Noctalia to reduce resource usage.",
       "show-noctalia-performance-label": "Show Noctalia Performance toggle",
       "show-power-profile-description": "Display the power profile selection inside the battery panel.",
       "show-power-profile-label": "Show power profile controls"

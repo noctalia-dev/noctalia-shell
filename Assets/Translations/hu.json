@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "Rejtőzz, ha nem észleltek.",
       "low-battery-threshold-description": "Figyelmeztetés megjelenítése, ha az akkumulátor töltöttsége e százalék alá esik.",
       "low-battery-threshold-label": "Alacsony akkumulátor töltöttségi figyelmeztetési küszöb",
-      "show-noctalia-performance-description": "A Noctalia teljesítménymód kapcsoló megjelenítése az akkumulátor panelen belül.",
+      "show-noctalia-performance-description": "A Noctalia teljesítménymód kapcsoló megjelenítése az akkumulátor panelen belül.<br>Kikapcsolja az árnyékokat és animációkat a Noctalia-ban az erőforrás-felhasználás csökkentése érdekében.",
       "show-noctalia-performance-label": "Noctalia teljesítménymód kapcsoló",
       "show-power-profile-description": "Az energiaprofil kiválasztásának megjelenítése az akkumulátor panelen belül.",
       "show-power-profile-label": "Energiaprofil vezérlők"

@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "Ausblenden, wenn nicht erkannt.",
       "low-battery-threshold-description": "Warnung anzeigen, wenn Batterie unter diesen Prozentsatz fällt.",
       "low-battery-threshold-label": "Schwellenwert für niedrigen Batteriestand",
-      "show-noctalia-performance-description": "Zeige den Noctalia-Leistungsmodus-Schalter im Batterie-Panel an.",
+      "show-noctalia-performance-description": "Zeige den Noctalia-Leistungsmodus-Schalter im Batterie-Panel an.<br>Deaktiviert Schatten und Animationen in Noctalia, um Ressourcen zu sparen.",
       "show-noctalia-performance-label": "Noctalia-Performance-Schalter anzeigen",
       "show-power-profile-description": "Zeige die Auswahl des Energieprofils im Batterie-Panel an.",
       "show-power-profile-label": "Energieprofil-Steuerung anzeigen"

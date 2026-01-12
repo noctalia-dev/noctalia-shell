@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "如果未被发现，则隐藏。",
       "low-battery-threshold-description": "当电量低于此百分比时显示警告。",
       "low-battery-threshold-label": "低电量警告阈值",
-      "show-noctalia-performance-description": "在电池面板中显示 Noctalia 性能模式切换。",
+      "show-noctalia-performance-description": "在电池面板中显示 Noctalia 性能模式切换。<br>禁用 Noctalia 中的阴影和动画以减少资源使用。",
       "show-noctalia-performance-label": "显示 Noctalia 性能切换",
       "show-power-profile-description": "在电池面板中显示电源配置文件选择。",
       "show-power-profile-label": "显示电源配置文件控件"

@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "Verbergen indien niet gedetecteerd.",
       "low-battery-threshold-description": "Toon een waarschuwing wanneer de batterij onder dit percentage komt.",
       "low-battery-threshold-label": "Waarschuwingsdrempel voor lage batterij",
-      "show-noctalia-performance-description": "Toon de Noctalia-prestatiemodus-schakelaar in het batterijpaneel.",
+      "show-noctalia-performance-description": "Toon de Noctalia-prestatiemodus-schakelaar in het batterijpaneel.<br>Schakelt schaduwen en animaties in Noctalia uit om het resourcegebruik te verminderen.",
       "show-noctalia-performance-label": "Noctalia-Performance-schakelaar tonen",
       "show-power-profile-description": "Toon de keuze van het stroomprofiel in het batterijpaneel.",
       "show-power-profile-label": "Stroomprofielbediening tonen"

@@ -44,71 +44,6 @@ ColumnLayout {
     return root.systemInfo.find(m => m.type === type);
   }
 
-  function formatBytes(bytes) {
-    if (bytes === null || bytes === undefined)
-      return "N/A";
-    const gb = bytes / (1024 * 1024 * 1024);
-    return gb.toFixed(1) + " GB";
-  }
-
-  function formatUptime(uptimeValue) {
-    if (!uptimeValue)
-      return "N/A";
-
-    // If it's a number (seconds or milliseconds), convert to human-readable format
-    if (typeof uptimeValue === "number") {
-      // Fastfetch returns uptime in milliseconds, convert to seconds
-      const totalSeconds = Math.floor(uptimeValue / 1000);
-      const days = Math.floor(totalSeconds / 86400);
-      const hours = Math.floor((totalSeconds % 86400) / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-
-      const parts = [];
-      if (days > 0)
-        parts.push(days + (days === 1 ? " day" : " days"));
-      if (hours > 0)
-        parts.push(hours + (hours === 1 ? " hour" : " hours"));
-      if (minutes > 0)
-        parts.push(minutes + (minutes === 1 ? " minute" : " minutes"));
-
-      return parts.length > 0 ? parts.join(", ") : "Less than a minute";
-    }
-
-    // If it's a string, parse fastfetch format (e.g., "2 days 5 hours 30 mins")
-    const uptimeStr = String(uptimeValue);
-    const parts = [];
-
-    // Match days
-    const daysMatch = uptimeStr.match(/(\d+)\s*days?/);
-    if (daysMatch) {
-      const days = parseInt(daysMatch[1]);
-      if (days > 0)
-        parts.push(days + (days === 1 ? " day" : " days"));
-    }
-
-    // Match hours
-    const hoursMatch = uptimeStr.match(/(\d+)\s*hours?/);
-    if (hoursMatch) {
-      const hours = parseInt(hoursMatch[1]);
-      if (hours > 0)
-        parts.push(hours + (hours === 1 ? " hour" : " hours"));
-    }
-
-    // Match minutes
-    const minsMatch = uptimeStr.match(/(\d+)\s*mins?/);
-    if (minsMatch) {
-      const mins = parseInt(minsMatch[1]);
-      if (mins > 0)
-        parts.push(mins + (mins === 1 ? " minute" : " minutes"));
-    }
-
-    // If no parts were found, return the original string
-    if (parts.length === 0)
-      return uptimeStr;
-
-    return parts.join(", ");
-  }
-
   function copyInfoToClipboard() {
     let info = "Noctalia Shell\n";
     info += "==============\n";
@@ -575,8 +510,8 @@ ColumnLayout {
     }
     NText {
       text: {
-        const uptime = root.getModule("Uptime");
-        return root.formatUptime(uptime?.result?.uptime);
+        const value = root.getModule("Uptime")?.result?.uptime;
+        return value ? Time.formatVagueHumanReadableDuration(value / 1000) : "-";
       }
       color: Color.mOnSurface
       Layout.fillWidth: true
@@ -632,8 +567,9 @@ ColumnLayout {
         const mem = root.getModule("Memory");
         if (!mem?.result)
           return "N/A";
-        const used = root.formatBytes(mem.result.used);
-        const total = root.formatBytes(mem.result.total);
+        const giga = (1024 * 1024 * 1024);
+        const used = SystemStatService.formatMemoryGb(mem.result.used / giga);
+        const total = SystemStatService.formatMemoryGb(mem.result.total / giga);
         return used + " / " + total;
       }
       color: Color.mOnSurface
@@ -654,8 +590,9 @@ ColumnLayout {
         const rootDisk = disk.result.find(d => d.mountpoint === "/");
         if (!rootDisk?.bytes)
           return "N/A";
-        const used = root.formatBytes(rootDisk.bytes.used);
-        const total = root.formatBytes(rootDisk.bytes.total);
+        const giga = (1024 * 1024 * 1024);
+        const used = SystemStatService.formatMemoryGb(rootDisk.bytes.used / giga);
+        const total = SystemStatService.formatMemoryGb(rootDisk.bytes.total / giga);
         return used + " / " + total + " (" + rootDisk.filesystem + ")";
       }
       color: Color.mOnSurface

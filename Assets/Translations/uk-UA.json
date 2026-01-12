@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "Приховати, якщо не виявлено",
       "low-battery-threshold-description": "Показувати попередження, коли батарея падає нижче цього відсотка.",
       "low-battery-threshold-label": "Поріг попередження про низький заряд батареї",
-      "show-noctalia-performance-description": "Відображати перемикач режиму продуктивності Noctalia в панелі батареї.",
+      "show-noctalia-performance-description": "Відображати перемикач режиму продуктивності Noctalia в панелі батареї.<br>Вимикає тіні та анімації в Noctalia для зменшення використання ресурсів.",
       "show-noctalia-performance-label": "Показувати перемикач Продуктивність Noctalia",
       "show-power-profile-description": "Відображати вибір профілю живлення в панелі батареї.",
       "show-power-profile-label": "Показувати елементи керування профілем живлення"

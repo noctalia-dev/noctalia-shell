@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "検出されなければ隠れる",
       "low-battery-threshold-description": "バッテリー残量がこのパーセンテージを下回ると警告を表示します。",
       "low-battery-threshold-label": "低バッテリー警告の閾値",
-      "show-noctalia-performance-description": "バッテリーパネルに Noctalia パフォーマンスモードのトグルを表示します。",
+      "show-noctalia-performance-description": "バッテリーパネルに Noctalia パフォーマンスモードのトグルを表示します。<br>Noctalia のシャドウとアニメーションを無効にしてリソース使用量を削減します。",
       "show-noctalia-performance-label": "Noctalia パフォーマンストグルを表示",
       "show-power-profile-description": "バッテリーパネルに電源プロファイルの選択項目を表示します。",
       "show-power-profile-label": "電源プロファイルコントロールを表示"

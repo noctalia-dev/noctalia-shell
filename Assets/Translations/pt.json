@@ -50,7 +50,7 @@
       "hide-if-not-detected-label": "Ocultar se não detectado.",
       "low-battery-threshold-description": "Mostrar um aviso quando a bateria cair abaixo desta porcentagem.",
       "low-battery-threshold-label": "Limite de aviso de bateria fraca",
-      "show-noctalia-performance-description": "Exibir o interruptor do modo de desempenho Noctalia no painel da bateria.",
+      "show-noctalia-performance-description": "Exibir o interruptor do modo de desempenho Noctalia no painel da bateria.<br>Desativa sombras e animações no Noctalia para reduzir o uso de recursos.",
       "show-noctalia-performance-label": "Mostrar alternância de Noctalia Desempenho",
       "show-power-profile-description": "Exibir a seleção de perfil de energia no painel da bateria.",
       "show-power-profile-label": "Mostrar controles de perfil de energia"
