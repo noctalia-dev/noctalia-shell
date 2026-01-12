@@ -660,6 +660,14 @@ SmartPanel {
     }
   }
 
+  UnicodeProvider {
+    id: unicodeProvider
+    Component.onCompleted: {
+      registerProvider(this);
+      Logger.d("Launcher", "Registered: UnicodeProvider");
+    }
+  }
+
   CalculatorProvider {
     id: calcProvider
     Component.onCompleted: {
