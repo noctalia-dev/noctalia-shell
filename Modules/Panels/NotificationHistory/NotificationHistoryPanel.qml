@@ -281,19 +281,20 @@ SmartPanel {
 
                 NIcon {
                   icon: "bell-off"
-                  pointSize: 48
+                  pointSize: (NotificationService.historyList.count === 0) ? 48 : Style.baseWidgetSize
                   color: Color.mOnSurfaceVariant
                   Layout.alignment: Qt.AlignHCenter
                 }
 
                 NText {
                   text: I18n.tr("notifications.panel.no-notifications")
-                  pointSize: Style.fontSizeL
+                  pointSize: (NotificationService.historyList.count === 0) ? Style.fontSizeL : Style.fontSizeM
                   color: Color.mOnSurfaceVariant
                   Layout.alignment: Qt.AlignHCenter
                 }
 
                 NText {
+                  visible: NotificationService.historyList.count === 0
                   text: I18n.tr("notifications.panel.description")
                   pointSize: Style.fontSizeS
                   color: Color.mOnSurfaceVariant
