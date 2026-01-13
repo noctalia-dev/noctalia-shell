@@ -281,6 +281,7 @@ Singleton {
       property string language: ""
       property bool allowPanelsOnScreenWithoutBar: true
       property bool showChangelogOnStartup: true
+      property bool telemetryEnabled: true
     }
 
     // ui

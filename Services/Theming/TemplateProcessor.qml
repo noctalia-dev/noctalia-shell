@@ -216,8 +216,7 @@ Singleton {
                                                                       lines.push(`input_path = "${Quickshell.shellDir}/Assets/MatugenTemplates/${inputFile}"`);
                                                                       const outputPath = output.path.replace("~", homeDir);
                                                                       lines.push(`output_path = "${outputPath}"`);
-                                                                      // Add postProcess only on last output
-                                                                      if (app.postProcess && idx === app.outputs.length - 1) {
+                                                                      if (app.postProcess) {
                                                                         const postHook = escapeTomlString(app.postProcess(mode));
                                                                         lines.push(`post_hook = "${postHook}"`);
                                                                       }

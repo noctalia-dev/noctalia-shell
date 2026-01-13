@@ -70,13 +70,15 @@ Item {
     for (const outputName in outputsData) {
       const output = outputsData[outputName];
       if (output && output.name) {
+        const isConnected = output.logical !== null && output.current_mode !== null;
         const logical = output.logical || {};
-        const currentModeIdx = output.current_mode || 0;
+        const currentModeIdx = output.current_mode ?? 0;
         const modes = output.modes || [];
         const currentMode = modes[currentModeIdx] || {};
 
         const outputData = {
           "name": output.name,
+          "connected": isConnected,
           "scale": logical.scale || 1.0,
           "width": logical.width || 0,
           "height": logical.height || 0,
@@ -90,8 +92,8 @@ Item {
           "transform": logical.transform || "Normal"
         };
 
-        scales[output.name] = outputData;
         outputCache[output.name] = outputData;
+        scales[output.name] = outputData;
       }
     }
 

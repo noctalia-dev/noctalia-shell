@@ -85,26 +85,8 @@ Singleton {
       "outputs": [
         {
           "path": "~/.local/share/color-schemes/noctalia.colors"
-        },
-        {
-          "path": "~/.local/share/color-schemes/noctalia-alt.colors"
         }
-      ],
-      "postProcess": function (mode) {
-        // Apply KDE color scheme with workaround for plasma-apply-colorscheme bug
-        // KDE requires different name to trigger refresh, so we alternate between two files
-        const stateFile = "~/.cache/noctalia/kde-colorscheme-state";
-        return `if command -v plasma-apply-colorscheme >/dev/null 2>&1; then
-  mkdir -p ~/.cache/noctalia
-  if [ -f "${stateFile}" ] && [ "$(cat ${stateFile})" = "alt" ]; then
-    plasma-apply-colorscheme noctalia >/dev/null 2>&1
-    echo "main" > ${stateFile}
-  else
-    plasma-apply-colorscheme noctalia-alt >/dev/null 2>&1
-    echo "alt" > ${stateFile}
-  fi
-fi`;
-      }
+      ]
     },
     {
       "id": "fuzzel",
@@ -175,11 +157,6 @@ fi`;
         {
           "name": "armcord",
           "path": "~/.config/armcord",
-          "requiresThemesFolder": false
-        },
-        {
-          "name": "legcord",
-          "path": "~/.config/legcord",
           "requiresThemesFolder": false
         },
         {

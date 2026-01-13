@@ -141,6 +141,8 @@ While all donations are greatly appreciated, they are completely voluntary.
 * llego
 * Grune
 * Maitreya (Max)
+* sheast
+* Radu
 
 ---
 

@@ -246,6 +246,16 @@ SmartPanel {
                     wrapMode: Text.WordWrap
                   }
                 }
+
+                // Telemetry toggle
+                NToggle {
+                  Layout.fillWidth: true
+                  Layout.topMargin: Style.marginM
+                  label: I18n.tr("panels.about.telemetry-enabled")
+                  description: I18n.tr("panels.about.telemetry-desc")
+                  checked: Settings.data.general.telemetryEnabled
+                  onToggled: checked => Settings.data.general.telemetryEnabled = checked
+                }
               }
             }
           }

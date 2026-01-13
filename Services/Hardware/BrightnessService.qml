@@ -173,6 +173,7 @@ Singleton {
               var current = parseInt(parts[3]);
               var max = parseInt(parts[4]);
               if (!isNaN(current) && !isNaN(max) && max > 0) {
+                monitor.maxBrightness = max;
                 newBrightness = current / max;
               }
             }
@@ -267,6 +268,7 @@ Singleton {
               var current = parseInt(parts[3]);
               var max = parseInt(parts[4]);
               if (!isNaN(current) && !isNaN(max) && max > 0) {
+                monitor.maxBrightness = max;
                 monitor.brightness = current / max;
                 Logger.d("Brightness", "DDC brightness:", current + "/" + max + " =", monitor.brightness);
               }
@@ -374,7 +376,8 @@ Singleton {
         setBrightnessProc.command = ["asdbctl", "set", rounded];
         setBrightnessProc.running = true;
       } else if (isDdc) {
-        setBrightnessProc.command = ["ddcutil", "-b", busNum, "--sleep-multiplier=0.05", "setvcp", "10", rounded];
+        var ddcValue = Math.round(value * monitor.maxBrightness);
+        setBrightnessProc.command = ["ddcutil", "-b", busNum, "--sleep-multiplier=0.05", "setvcp", "10", ddcValue];
         setBrightnessProc.running = true;
       } else {
         setBrightnessProc.command = ["brightnessctl", "s", rounded + "%"];

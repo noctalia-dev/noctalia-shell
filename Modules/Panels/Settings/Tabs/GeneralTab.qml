@@ -173,7 +173,6 @@ ColumnLayout {
   }
 
   NButton {
-    visible: !HostService.isNixOS
     icon: "wand"
     text: I18n.tr("panels.general.launch-setup-wizard")
     outlined: true

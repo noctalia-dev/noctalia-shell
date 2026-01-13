@@ -102,6 +102,7 @@ ShellRoot {
         PowerProfileService.init();
         HostService.init();
         GitHubService.init();
+        TelemetryService.init();
 
         delayedInitTimer.running = true;
         checkSetupWizard();
@@ -174,17 +175,6 @@ ShellRoot {
   function checkSetupWizard() {
     // Only open the setup wizard for new users
     if (!Settings.shouldOpenSetupWizard) {
-      return;
-    }
-
-    // Wait for HostService to be fully ready
-    if (!HostService.isReady) {
-      Qt.callLater(checkSetupWizard);
-      return;
-    }
-
-    // No setup wizard on NixOS
-    if (HostService.isNixOS) {
       return;
     }
 

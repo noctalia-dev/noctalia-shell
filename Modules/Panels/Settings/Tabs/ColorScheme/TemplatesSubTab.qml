@@ -365,6 +365,18 @@ ColumnLayout {
                    AppThemeService.generate();
                  }
     }
+
+    NCheckbox {
+      label: "Helix"
+      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
+                             "filepath": "~/.config/helix/themes/noctalia.toml"
+                           })
+      checked: Settings.data.templates.helix
+      onToggled: checked => {
+                   Settings.data.templates.helix = checked;
+                   AppThemeService.generate();
+                 }
+    }
   }
 
   NCollapsible {

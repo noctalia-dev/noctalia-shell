@@ -191,4 +191,25 @@ SmartPanel {
   Component.onCompleted: {
     PanelService.registerPanel(root);
   }
+
+  // Update plugin's panelOpenScreen when this panel opens/closes
+  onOpened: {
+    if (root.currentPluginId !== "") {
+      var api = PluginService.getPluginAPI(root.currentPluginId);
+      if (api) {
+        api.panelOpenScreen = root.screen;
+        Logger.d("PluginPanelSlot", "Set panelOpenScreen for", root.currentPluginId, "to", root.screen?.name);
+      }
+    }
+  }
+
+  onClosed: {
+    if (root.currentPluginId !== "") {
+      var api = PluginService.getPluginAPI(root.currentPluginId);
+      if (api) {
+        api.panelOpenScreen = null;
+        Logger.d("PluginPanelSlot", "Cleared panelOpenScreen for", root.currentPluginId);
+      }
+    }
+  }
 }

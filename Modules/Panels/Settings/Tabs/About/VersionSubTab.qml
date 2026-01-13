@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.Noctalia
 import qs.Services.System
 import qs.Services.UI
@@ -17,6 +18,7 @@ ColumnLayout {
   property string commitInfo: ""
 
   readonly property bool isGitVersion: root.currentVersion.endsWith("-git")
+  readonly property int giga: (1024 * 1024 * 1024)
 
   // Update status: compare versions (strip -git suffix for comparison)
   readonly property string installedBase: root.currentVersion.replace("-git", "")
@@ -44,10 +46,63 @@ ColumnLayout {
     return root.systemInfo.find(m => m.type === type);
   }
 
+  function getMonitorsText(separator) {
+    const sep = separator || "\n";
+    const screens = Quickshell.screens || [];
+    const scales = CompositorService.displayScales || {};
+    let lines = [];
+    for (let i = 0; i < screens.length; i++) {
+      const screen = screens[i];
+      const name = screen.name || "Unknown";
+      const scaleData = scales[name];
+      const scaleValue = (typeof scaleData === "object" && scaleData !== null) ? (scaleData.scale || 1.0) : (scaleData || 1.0);
+      lines.push(name + ": " + screen.width + "x" + screen.height + " @ " + scaleValue + "x");
+    }
+    return lines.join(sep);
+  }
+
+  function getTelemetryPayload() {
+    const screens = Quickshell.screens || [];
+    const scales = CompositorService.displayScales || {};
+    const monitors = [];
+    for (let i = 0; i < screens.length; i++) {
+      const screen = screens[i];
+      const name = screen.name || "Unknown";
+      const scaleData = scales[name];
+      const scaleValue = (typeof scaleData === "object" && scaleData !== null) ? (scaleData.scale || 1.0) : (scaleData || 1.0);
+      monitors.push({
+                      width: screen.width || 0,
+                      height: screen.height || 0,
+                      scale: scaleValue
+                    });
+    }
+    return {
+      instanceId: TelemetryService.getInstanceId(),
+      version: UpdateService.currentVersion,
+      compositor: CompositorService.isHyprland ? "Hyprland" : CompositorService.isNiri ? "Niri" : CompositorService.isSway ? "Sway" : CompositorService.isMango ? "MangoWC" : CompositorService.isLabwc ? "LabWC" : "Unknown",
+      os: HostService.osPretty || "Unknown",
+      ramGb: Math.round((root.getModule("Memory")?.result?.total || 0) / root.giga),
+      monitors: monitors,
+      ui: {
+        scaleRatio: Settings.data.general.scaleRatio,
+        fontDefault: Settings.data.ui.fontDefault || "default",
+        fontDefaultScale: Settings.data.ui.fontDefaultScale,
+        fontFixed: Settings.data.ui.fontFixed || "default",
+        fontFixedScale: Settings.data.ui.fontFixedScale
+      }
+    };
+  }
+
+  function copyTelemetryData() {
+    const payload = getTelemetryPayload();
+    const json = JSON.stringify(payload, null, 2);
+    Quickshell.execDetached(["wl-copy", json]);
+    ToastService.showNotice(I18n.tr("panels.about.telemetry-title"), I18n.tr("panels.about.telemetry-data-copied"));
+  }
+
   function copyInfoToClipboard() {
     let info = "Noctalia Shell\n";
     info += "==============\n";
-    info += "Latest version: " + root.latestVersion + "\n";
     info += "Installed version: " + root.currentVersion + "\n";
     if (root.isGitVersion && root.commitInfo) {
       info += "Git commit: " + root.commitInfo + "\n";
@@ -70,12 +125,21 @@ ColumnLayout {
         info += "GPU: " + gpu.result.map(g => g.name || "Unknown").join(", ") + "\n";
       }
       if (mem?.result) {
-        info += "Memory: " + root.formatBytes(mem.result.total) + "\n";
+        info += "Memory: " + SystemStatService.formatMemoryGb(mem.result.total / root.giga) + "\n";
       }
       if (wm?.result) {
         info += "WM: " + (wm.result.prettyName || wm.result.processName || "N/A") + "\n";
       }
     }
+    const monitors = getMonitorsText("\n").split("\n");
+    for (const mon of monitors) {
+      info += "Monitor: " + mon + "\n";
+    }
+    info += "\nSettings\n";
+    info += "========\n";
+    info += "UI Scale: " + Settings.data.general.scaleRatio + "\n";
+    info += "Default Font: " + (Settings.data.ui.fontDefault || "default") + " @ " + Settings.data.ui.fontDefaultScale + "x\n";
+    info += "Fixed Font: " + (Settings.data.ui.fontFixed || "default") + " @ " + Settings.data.ui.fontFixedScale + "x\n";
     Quickshell.execDetached(["wl-copy", info]);
     ToastService.showNotice(I18n.tr("panels.about.title"), I18n.tr("panels.about.info-copied"));
   }
@@ -567,9 +631,8 @@ ColumnLayout {
         const mem = root.getModule("Memory");
         if (!mem?.result)
           return "N/A";
-        const giga = (1024 * 1024 * 1024);
-        const used = SystemStatService.formatMemoryGb(mem.result.used / giga);
-        const total = SystemStatService.formatMemoryGb(mem.result.total / giga);
+        const used = SystemStatService.formatMemoryGb(mem.result.used / root.giga);
+        const total = SystemStatService.formatMemoryGb(mem.result.total / root.giga);
         return used + " / " + total;
       }
       color: Color.mOnSurface
@@ -590,9 +653,8 @@ ColumnLayout {
         const rootDisk = disk.result.find(d => d.mountpoint === "/");
         if (!rootDisk?.bytes)
           return "N/A";
-        const giga = (1024 * 1024 * 1024);
-        const used = SystemStatService.formatMemoryGb(rootDisk.bytes.used / giga);
-        const total = SystemStatService.formatMemoryGb(rootDisk.bytes.total / giga);
+        const used = SystemStatService.formatMemoryGb(rootDisk.bytes.used / root.giga);
+        const total = SystemStatService.formatMemoryGb(rootDisk.bytes.total / root.giga);
         return used + " / " + total + " (" + rootDisk.filesystem + ")";
       }
       color: Color.mOnSurface
@@ -663,5 +725,54 @@ ColumnLayout {
       Layout.fillWidth: true
       wrapMode: Text.Wrap
     }
+
+    // Monitors (2 items per screen: label + value)
+    Repeater {
+      model: Quickshell.screens.length * 2
+
+      NText {
+        readonly property int screenIndex: Math.floor(index / 2)
+        readonly property bool isLabel: index % 2 === 0
+        readonly property var screen: Quickshell.screens[screenIndex]
+
+        text: {
+          if (isLabel)
+            return I18n.tr("panels.about.system-monitor");
+          const name = screen?.name || "Unknown";
+          const scales = CompositorService.displayScales || {};
+          const scaleData = scales[name];
+          const scaleValue = (typeof scaleData === "object" && scaleData !== null) ? (scaleData.scale || 1.0) : (scaleData || 1.0);
+          return name + ": " + (screen?.width || 0) + "x" + (screen?.height || 0) + " @ " + scaleValue + "x";
+        }
+        color: isLabel ? Color.mOnSurfaceVariant : Color.mOnSurface
+        Layout.fillWidth: !isLabel
+        wrapMode: Text.Wrap
+      }
+    }
+  }
+
+  // Telemetry Section
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginL
+  }
+
+  NHeader {
+    label: I18n.tr("panels.about.telemetry-title")
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.about.telemetry-enabled")
+    description: I18n.tr("panels.about.telemetry-desc")
+    checked: Settings.data.general.telemetryEnabled
+    onToggled: checked => Settings.data.general.telemetryEnabled = checked
+  }
+
+  NButton {
+    icon: "eye"
+    text: I18n.tr("panels.about.telemetry-show-data")
+    outlined: true
+    onClicked: root.copyTelemetryData()
   }
 }

@@ -81,7 +81,8 @@
     "shadowOffsetY": 3,
     "language": "",
     "allowPanelsOnScreenWithoutBar": true,
-    "showChangelogOnStartup": true
+    "showChangelogOnStartup": true,
+    "telemetryEnabled": true
   },
   "ui": {
     "fontDefault": "",
@@ -424,8 +425,7 @@
     "screenLock": "",
     "screenUnlock": "",
     "performanceModeEnabled": "",
-    "performanceModeDisabled": "",
-    "session": ""
+    "performanceModeDisabled": ""
   },
   "desktopWidgets": {
     "enabled": false,

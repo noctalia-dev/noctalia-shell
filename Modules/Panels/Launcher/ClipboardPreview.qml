@@ -40,7 +40,10 @@ Item {
         // Async decode as fallback
         var requestedId = currentItem.clipboardId;
         ClipboardService.decode(requestedId, function (content) {
-          if (previewPanel.currentItem && previewPanel.currentItem.clipboardId === requestedId) {
+          if (!previewPanel || !previewPanel.currentItem) {
+            return;
+          }
+          if (previewPanel.currentItem.clipboardId === requestedId) {
             var trimmed = content ? content.trim() : "";
             if (trimmed !== "") {
               previewPanel.fullContent = trimmed;

@@ -142,6 +142,7 @@ Rectangle {
   MouseArea {
     id: tooltipArea
     anchors.fill: parent
+    cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
     hoverEnabled: true
     onClicked: mouse => {
