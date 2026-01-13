@@ -24,6 +24,15 @@ SmartPanel {
     id: panelContent
     color: "transparent"
 
+    // Calculate content height based on header + tabs (if visible) + content
+    property real calculatedHeight: {
+      if (NotificationService.historyList.count === 0) {
+        return headerBox.implicitHeight + scrollView.implicitHeight + (Style.marginL * 2) + Style.marginM;
+      }
+      return headerBox.implicitHeight + tabsBox.implicitHeight + scrollView.implicitHeight + (Style.marginL * 2) + (Style.marginM * 2);
+    }
+    property real contentPreferredHeight: Math.min(root.preferredHeight, Math.ceil(calculatedHeight))
+
     // State (lazy-loaded with panelContent)
     property var rangeCounts: [0, 0, 0, 0]
     property var lastKnownDate: null  // Track the current date to detect day changes
@@ -90,6 +99,19 @@ SmartPanel {
     function countForRange(range) {
       return rangeCounts[range] || 0;
     }
+    
+    function hasNotificationsInCurrentRange() {
+      var m = NotificationService.historyList;
+      if (!m || m.count === 0) {
+        return false;
+      }
+      for (var i = 0; i < m.count; ++i) {
+        var item = m.get(i);
+        if (item && isInCurrentRange(item.timestamp))
+          return true;
+      }
+      return false;
+    }
 
     Component.onCompleted: {
       recalcRangeCounts();
@@ -118,38 +140,6 @@ SmartPanel {
         }
         panelContent.lastKnownDate = currentDateKey;
       }
-    }
-
-    // Calculate content height based on header + tabs (if visible) + content
-    property real headerHeight: headerBox.implicitHeight
-    property real tabsHeight: tabsBox.visible ? tabsBox.implicitHeight : 0
-    property real contentHeight: {
-      if (NotificationService.historyList.count === 0) {
-        return emptyState.implicitHeight;
-      }
-      // Calculate actual height of visible notifications
-      var totalHeight = 0;
-      var count = NotificationService.historyList.count;
-      var visibleCount = 0;
-      for (var i = 0; i < count; i++) {
-        var item = NotificationService.historyList.get(i);
-        if (item && isInCurrentRange(item.timestamp)) {
-          visibleCount++;
-        }
-      }
-      // Estimate: each notification is roughly 100-150px, use conservative estimate
-      var avgNotificationHeight = 120 * Style.uiScaleRatio;
-      totalHeight = visibleCount * avgNotificationHeight + (visibleCount - 1) * Style.marginM;
-      return totalHeight;
-    }
-    property real calculatedHeight: headerHeight + tabsHeight + contentHeight + (Style.marginL * 2) + (Style.marginM * 2)
-    property real contentPreferredHeight: {
-      if (NotificationService.historyList.count === 0) {
-        // Empty state: smaller height
-        return Math.min(root.preferredHeight, 280 * Style.uiScaleRatio);
-      }
-      // Clamp between minimum (280) and maximum (540)
-      return Math.max(280 * Style.uiScaleRatio, Math.min(root.preferredHeight, calculatedHeight));
     }
 
     ColumnLayout {
@@ -257,53 +247,10 @@ SmartPanel {
         }
       }
 
-      // Empty state when no notifications
-      ColumnLayout {
-        id: emptyState
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        Layout.alignment: Qt.AlignHCenter
-        visible: NotificationService.historyList.count === 0
-        spacing: Style.marginL
-
-        Item {
-          Layout.fillHeight: true
-        }
-
-        NIcon {
-          icon: "bell-off"
-          pointSize: 48
-          color: Color.mOnSurfaceVariant
-          Layout.alignment: Qt.AlignHCenter
-        }
-
-        NText {
-          text: I18n.tr("notifications.panel.no-notifications")
-          pointSize: Style.fontSizeL
-          color: Color.mOnSurfaceVariant
-          Layout.alignment: Qt.AlignHCenter
-        }
-
-        NText {
-          text: I18n.tr("notifications.panel.description")
-          pointSize: Style.fontSizeS
-          color: Color.mOnSurfaceVariant
-          Layout.alignment: Qt.AlignHCenter
-          Layout.fillWidth: true
-          wrapMode: Text.Wrap
-          horizontalAlignment: Text.AlignHCenter
-        }
-
-        Item {
-          Layout.fillHeight: true
-        }
-      }
-
       // Notification list container with gradient overlay
       Item {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        visible: NotificationService.historyList.count > 0
 
         NScrollView {
           id: scrollView
@@ -312,226 +259,280 @@ SmartPanel {
           ScrollBar.vertical.policy: ScrollBar.AsNeeded
           clip: true
 
-          // Track which notification is expanded
-          property string expandedId: ""
-
-          contentWidth: availableWidth
-
-          Column {
-            width: scrollView.width
+          ColumnLayout {
+            width: parent.width
             spacing: Style.marginM
 
-            Repeater {
-              model: NotificationService.historyList
+            NBox {
+              visible: !panelContent.hasNotificationsInCurrentRange()
+              Layout.fillWidth: true
+              Layout.preferredHeight: emptyState.implicitHeight + Style.marginM * 2
 
-              delegate: Item {
-                id: notificationDelegate
-                width: parent.width
-                visible: panelContent.isInCurrentRange(model.timestamp)
-                height: visible ? contentColumn.height + (Style.marginM * 2) : 0
+              // Empty state when no notifications
+              ColumnLayout {
+                id: emptyState
+                anchors.fill: parent
+                anchors.margins: Style.marginM
+                spacing: Style.marginL
 
-                property string notificationId: model.id
-                property bool isExpanded: scrollView.expandedId === notificationId
-                property bool canExpand: summaryText.truncated || bodyText.truncated || (actionsList.length > 0) // Explicitly allow expand if actions exist
-
-                // Parse actions safely
-                property var actionsList: {
-                  try {
-                    return JSON.parse(model.actionsJson || "[]");
-                  } catch (e) {
-                    return [];
-                  }
+                Item {
+                  Layout.fillHeight: true
                 }
 
-                Rectangle {
-                  anchors.fill: parent
-                  radius: Style.radiusM
-                  color: Color.mSurfaceVariant
-                  border.color: Qt.alpha(Color.mOutline, Style.opacityMedium)
-                  border.width: Style.borderS
-
-                  Behavior on color {
-                    enabled: !Settings.data.general.animationDisabled
-                    ColorAnimation {
-                      duration: Style.animationFast
-                    }
-                  }
+                NIcon {
+                  icon: "bell-off"
+                  pointSize: 48
+                  color: Color.mOnSurfaceVariant
+                  Layout.alignment: Qt.AlignHCenter
                 }
 
-                // Click to expand/collapse
-                MouseArea {
-                  anchors.fill: parent
-                  anchors.rightMargin: Style.baseWidgetSize
-                  enabled: notificationDelegate.canExpand
-                  cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                  onClicked: {
-                    if (scrollView.expandedId === notificationId) {
-                      scrollView.expandedId = "";
-                    } else {
-                      scrollView.expandedId = notificationId;
-                    }
-                  }
+                NText {
+                  text: I18n.tr("notifications.panel.no-notifications")
+                  pointSize: Style.fontSizeL
+                  color: Color.mOnSurfaceVariant
+                  Layout.alignment: Qt.AlignHCenter
                 }
 
-                Column {
-                  id: contentColumn
-                  anchors.left: parent.left
-                  anchors.right: parent.right
-                  anchors.top: parent.top
-                  anchors.margins: Style.marginM
-                  spacing: Style.marginM
+                NText {
+                  text: I18n.tr("notifications.panel.description")
+                  pointSize: Style.fontSizeS
+                  color: Color.mOnSurfaceVariant
+                  horizontalAlignment: Text.AlignHCenter
+                  Layout.fillWidth: true
+                  wrapMode: Text.WordWrap
+                }
 
-                  Row {
+                Item {
+                  Layout.fillHeight: true
+                }
+              }
+            }
+
+            // Track which notification is expanded
+            property string expandedId: ""
+
+            // Notification list container
+            Item {
+              visible: panelContent.hasNotificationsInCurrentRange()
+              Layout.fillWidth: true
+              Layout.preferredHeight: notificationColumn.implicitHeight
+
+              Column {
+                id: notificationColumn
+                width: scrollView.width
+                spacing: Style.marginM
+
+                Repeater {
+                  model: NotificationService.historyList
+
+                  delegate: Item {
+                    id: notificationDelegate
                     width: parent.width
-                    spacing: Style.marginM
+                    visible: panelContent.isInCurrentRange(model.timestamp)
+                    height: visible ? contentColumn.height + (Style.marginM * 2) : 0
 
-                    // Icon
-                    NImageRounded {
-                      anchors.verticalCenter: parent.verticalCenter
-                      width: Math.round(40 * Style.uiScaleRatio)
-                      height: Math.round(40 * Style.uiScaleRatio)
-                      radius: Math.min(Style.radiusL, width / 2)
-                      imagePath: model.cachedImage || model.originalImage || ""
-                      borderColor: "transparent"
-                      borderWidth: 0
-                      fallbackIcon: "bell"
-                      fallbackIconSize: 24
+                    property string notificationId: model.id
+                    property bool isExpanded: scrollView.expandedId === notificationId
+                    property bool canExpand: summaryText.truncated || bodyText.truncated || (actionsList.length > 0) // Explicitly allow expand if actions exist
+
+                    // Parse actions safely
+                    property var actionsList: {
+                      try {
+                        return JSON.parse(model.actionsJson || "[]");
+                      } catch (e) {
+                        return [];
+                      }
                     }
 
-                    // Content
-                    Column {
-                      width: parent.width - Math.round(40 * Style.uiScaleRatio) - Style.marginM - Style.baseWidgetSize
-                      spacing: Style.marginXS
+                    Rectangle {
+                      anchors.fill: parent
+                      radius: Style.radiusM
+                      color: Color.mSurfaceVariant
 
-                      // Header row with app name and timestamp
+                      Behavior on color {
+                        enabled: !Settings.data.general.animationDisabled
+                        ColorAnimation {
+                          duration: Style.animationFast
+                        }
+                      }
+                    }
+
+                    // Click to expand/collapse
+                    MouseArea {
+                      anchors.fill: parent
+                      anchors.rightMargin: Style.baseWidgetSize
+                      enabled: notificationDelegate.canExpand
+                      cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                      onClicked: {
+                        if (scrollView.expandedId === notificationId) {
+                          scrollView.expandedId = "";
+                        } else {
+                          scrollView.expandedId = notificationId;
+                        }
+                      }
+                    }
+
+                    Column {
+                      id: contentColumn
+                      anchors.left: parent.left
+                      anchors.right: parent.right
+                      anchors.top: parent.top
+                      anchors.margins: Style.marginM
+                      spacing: Style.marginM
+
                       Row {
                         width: parent.width
-                        spacing: Style.marginS
+                        spacing: Style.marginM
 
-                        // Urgency indicator
-                        Rectangle {
-                          width: 6
-                          height: 6
+                        // Icon
+                        NImageRounded {
                           anchors.verticalCenter: parent.verticalCenter
-                          radius: 3
-                          visible: model.urgency !== 1
-                          color: {
-                            if (model.urgency === 2)
-                              return Color.mError;
-                            else if (model.urgency === 0)
-                              return Color.mOnSurfaceVariant;
-                            else
-                              return "transparent";
+                          width: Math.round(40 * Style.uiScaleRatio)
+                          height: Math.round(40 * Style.uiScaleRatio)
+                          radius: Math.min(Style.radiusL, width / 2)
+                          imagePath: model.cachedImage || model.originalImage || ""
+                          borderColor: "transparent"
+                          borderWidth: 0
+                          fallbackIcon: "bell"
+                          fallbackIconSize: 24
+                        }
+
+                        // Content
+                        Column {
+                          width: parent.width - Math.round(40 * Style.uiScaleRatio) - Style.marginM - Style.baseWidgetSize
+                          spacing: Style.marginXS
+
+                          // Header row with app name and timestamp
+                          Row {
+                            width: parent.width
+                            spacing: Style.marginS
+
+                            // Urgency indicator
+                            Rectangle {
+                              width: 6
+                              height: 6
+                              anchors.verticalCenter: parent.verticalCenter
+                              radius: 3
+                              visible: model.urgency !== 1
+                              color: {
+                                if (model.urgency === 2)
+                                  return Color.mError;
+                                else if (model.urgency === 0)
+                                  return Color.mOnSurfaceVariant;
+                                else
+                                  return "transparent";
+                              }
+                            }
+
+                            NText {
+                              text: model.appName || "Unknown App"
+                              pointSize: Style.fontSizeXS
+                              font.weight: Style.fontWeightBold
+                              color: Color.mSecondary
+                            }
+
+                            NText {
+                              textFormat: Text.PlainText
+                              text: " " + Time.formatRelativeTime(model.timestamp)
+                              pointSize: Style.fontSizeXXS
+                              color: Color.mOnSurfaceVariant
+                              anchors.bottom: parent.bottom
+                            }
                           }
-                        }
 
-                        NText {
-                          text: model.appName || "Unknown App"
-                          pointSize: Style.fontSizeXS
-                          font.weight: Style.fontWeightBold
-                          color: Color.mSecondary
-                        }
+                          // Summary
+                          NText {
+                            id: summaryText
+                            width: parent.width
+                            text: model.summary || I18n.tr("common.no-summary")
+                            pointSize: Style.fontSizeM
+                            color: Color.mOnSurface
+                            textFormat: Text.PlainText
+                            wrapMode: Text.Wrap
+                            maximumLineCount: notificationDelegate.isExpanded ? 999 : 2
+                            elide: Text.ElideRight
+                          }
 
-                        NText {
-                          textFormat: Text.PlainText
-                          text: " " + Time.formatRelativeTime(model.timestamp)
-                          pointSize: Style.fontSizeXXS
-                          color: Color.mOnSurfaceVariant
-                          anchors.bottom: parent.bottom
-                        }
-                      }
+                          // Body
+                          NText {
+                            id: bodyText
+                            width: parent.width
+                            text: model.body || ""
+                            pointSize: Style.fontSizeS
+                            color: Color.mOnSurfaceVariant
+                            textFormat: Text.PlainText
+                            wrapMode: Text.Wrap
+                            maximumLineCount: notificationDelegate.isExpanded ? 999 : 3
+                            elide: Text.ElideRight
+                            visible: text.length > 0
+                          }
 
-                      // Summary
-                      NText {
-                        id: summaryText
-                        width: parent.width
-                        text: model.summary || I18n.tr("common.no-summary")
-                        pointSize: Style.fontSizeM
-                        color: Color.mOnSurface
-                        textFormat: Text.PlainText
-                        wrapMode: Text.Wrap
-                        maximumLineCount: notificationDelegate.isExpanded ? 999 : 2
-                        elide: Text.ElideRight
-                      }
+                          // Actions Flow
+                          Flow {
+                            width: parent.width
+                            spacing: Style.marginS
+                            visible: notificationDelegate.actionsList.length > 0
 
-                      // Body
-                      NText {
-                        id: bodyText
-                        width: parent.width
-                        text: model.body || ""
-                        pointSize: Style.fontSizeS
-                        color: Color.mOnSurfaceVariant
-                        textFormat: Text.PlainText
-                        wrapMode: Text.Wrap
-                        maximumLineCount: notificationDelegate.isExpanded ? 999 : 3
-                        elide: Text.ElideRight
-                        visible: text.length > 0
-                      }
+                            Repeater {
+                              model: notificationDelegate.actionsList
+                              delegate: NButton {
+                                text: modelData.text
+                                // Explicitly set primary colors
+                                backgroundColor: Color.mPrimary
+                                textColor: Color.mOnPrimary
+                                outlined: false
+                                implicitHeight: 24
 
-                      // Actions Flow
-                      Flow {
-                        width: parent.width
-                        spacing: Style.marginS
-                        visible: notificationDelegate.actionsList.length > 0
+                                // Capture modelData in a property to avoid reference errors
+                                property var actionData: modelData
 
-                        Repeater {
-                          model: notificationDelegate.actionsList
-                          delegate: NButton {
-                            text: modelData.text
-                            // Explicitly set primary colors
-                            backgroundColor: Color.mPrimary
-                            textColor: Color.mOnPrimary
-                            outlined: false
-                            implicitHeight: 24
+                                fontWeight: Style.fontWeightRegular // Use regular font weight
 
-                            // Capture modelData in a property to avoid reference errors
-                            property var actionData: modelData
+                                onClicked: {
+                                  NotificationService.invokeAction(notificationDelegate.notificationId, actionData.identifier);
+                                }
+                              }
+                            }
+                          }
 
-                            fontWeight: Style.fontWeightRegular // Use regular font weight
+                          // Expand indicator
+                          Row {
+                            width: parent.width
+                            visible: !notificationDelegate.isExpanded && notificationDelegate.canExpand
+                            spacing: Style.marginXS
 
-                            onClicked: {
-                              NotificationService.invokeAction(notificationDelegate.notificationId, actionData.identifier);
+                            Item {
+                              width: parent.width - expandText.width - expandIcon.width - Style.marginXS
+                              height: 1
+                            }
+
+                            NText {
+                              id: expandText
+                              text: I18n.tr("notifications.panel.click-to-expand") || "Click to expand"
+                              pointSize: Style.fontSizeXS
+                              color: Color.mPrimary
+                            }
+
+                            NIcon {
+                              id: expandIcon
+                              icon: "chevron-down"
+                              pointSize: Style.fontSizeS
+                              color: Color.mPrimary
                             }
                           }
                         }
-                      }
 
-                      // Expand indicator
-                      Row {
-                        width: parent.width
-                        visible: !notificationDelegate.isExpanded && notificationDelegate.canExpand
-                        spacing: Style.marginXS
+                        // Delete button
+                        NIconButton {
+                          icon: "trash"
+                          tooltipText: I18n.tr("tooltips.delete-notification")
+                          baseSize: Style.baseWidgetSize * 0.7
+                          anchors.verticalCenter: parent.verticalCenter
 
-                        Item {
-                          width: parent.width - expandText.width - expandIcon.width - Style.marginXS
-                          height: 1
+                          onClicked: {
+                            NotificationService.removeFromHistory(notificationId);
+                          }
                         }
-
-                        NText {
-                          id: expandText
-                          text: I18n.tr("notifications.panel.click-to-expand") || "Click to expand"
-                          pointSize: Style.fontSizeXS
-                          color: Color.mPrimary
-                        }
-
-                        NIcon {
-                          id: expandIcon
-                          icon: "chevron-down"
-                          pointSize: Style.fontSizeS
-                          color: Color.mPrimary
-                        }
-                      }
-                    }
-
-                    // Delete button
-                    NIconButton {
-                      icon: "trash"
-                      tooltipText: I18n.tr("tooltips.delete-notification")
-                      baseSize: Style.baseWidgetSize * 0.7
-                      anchors.verticalCenter: parent.verticalCenter
-
-                      onClicked: {
-                        NotificationService.removeFromHistory(notificationId);
                       }
                     }
                   }
