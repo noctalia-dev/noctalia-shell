@@ -263,12 +263,12 @@ SmartPanel {
             width: parent.width
             spacing: Style.marginM
 
+            // Empty state when no notifications
             NBox {
               visible: !panelContent.hasNotificationsInCurrentRange()
               Layout.fillWidth: true
               Layout.preferredHeight: emptyState.implicitHeight + Style.marginM * 2
 
-              // Empty state when no notifications
               ColumnLayout {
                 id: emptyState
                 anchors.fill: parent
