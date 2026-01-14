@@ -139,7 +139,7 @@ Item {
         var q = query ? query.trim() : "";
 
         // If command mode (">search" or ">web")
-        if (q.startsWith(">search") || q.startsWith(">web")) {
+        if (q.startsWith(">web")) {
             var expression = q.indexOf(" ") >= 0 ? q.substring(q.indexOf(" ")).trim() : "";
             if (!expression) {
                 // Prompt entry telling user to type query
