@@ -349,6 +349,8 @@ SmartPanel {
                       anchors.fill: parent
                       radius: Style.radiusM
                       color: Color.mSurfaceVariant
+                      border.color: Settings.data.ui.boxBorderEnabled ? Qt.alpha(Color.mOutline, Style.opacityMedium) : "transparent"
+                      border.width: Style.borderS
 
                       Behavior on color {
                         enabled: !Settings.data.general.animationDisabled
