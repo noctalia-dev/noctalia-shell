@@ -112,21 +112,11 @@ Item {
     }
 
     function handleCommand(query) {
-        return query.startsWith(">search") || query.startsWith(">web");
+        return query.startsWith(">web");
     }
 
     function commands() {
         return [
-            {
-                "name": ">search",
-                "description": I18n.tr("launcher.providers.websearch-description"),
-                "icon": iconMode === "tabler" ? "search" : "system-search",
-                "isTablerIcon": true,
-                "isImage": false,
-                "onActivate": function () {
-                    launcher.setSearchText(">search ");
-                }
-            },
             {
                 "name": ">web",
                 "description": I18n.tr("launcher.providers.websearch-description-alt"),
