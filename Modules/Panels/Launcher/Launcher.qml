@@ -1030,7 +1030,7 @@ SmartPanel {
                     NImageRounded {
                       id: imagePreview
                       anchors.fill: parent
-                      visible: modelData.isImage && !modelData.displayString
+                      visible: !!modelData.isImage && !modelData.displayString
                       radius: Style.radiusXS
                       borderColor: Color.mOnSurface
                       borderWidth: Style.borderM
@@ -1075,7 +1075,7 @@ SmartPanel {
                       anchors.fill: parent
                       anchors.margins: Style.marginXS
 
-                      visible: (!modelData.isImage && !modelData.displayString) || (modelData.isImage && imagePreview.status === Image.Error)
+                      visible: (!modelData.isImage && !modelData.displayString) || (!!modelData.isImage && imagePreview.status === Image.Error)
                       active: visible
 
                       sourceComponent: Component {
@@ -1091,7 +1091,7 @@ SmartPanel {
                           icon: modelData.icon
                           pointSize: Style.fontSizeXXXL
                           visible: modelData.icon && !modelData.displayString
-                          color: entry.isSelected ? Color.mOnHover : Color.mOnSurface
+                          color: (entry.isSelected && !Settings.data.appLauncher.showIconBackground) ? Color.mOnHover : Color.mOnSurface
                         }
                       }
 
@@ -1110,7 +1110,7 @@ SmartPanel {
                     NText {
                       id: stringDisplay
                       anchors.centerIn: parent
-                      visible: modelData.displayString || (!imagePreview.visible && !iconLoader.visible)
+                      visible: !!modelData.displayString || (!imagePreview.visible && !iconLoader.visible)
                       text: modelData.displayString ? modelData.displayString : modelData.name.charAt(0).toUpperCase()
                       pointSize: modelData.displayString ? (modelData.displayStringSize || Style.fontSizeXXXL) : Style.fontSizeXXL
                       font.weight: Style.fontWeightBold
@@ -1119,7 +1119,7 @@ SmartPanel {
 
                     // Image type indicator overlay
                     Rectangle {
-                      visible: modelData.isImage && imagePreview.visible
+                      visible: !!modelData.isImage && imagePreview.visible
                       anchors.bottom: parent.bottom
                       anchors.right: parent.right
                       anchors.margins: 2
@@ -1414,7 +1414,7 @@ SmartPanel {
                     NImageRounded {
                       id: gridImagePreview
                       anchors.fill: parent
-                      visible: modelData.isImage && !modelData.displayString
+                      visible: !!modelData.isImage && !modelData.displayString
                       radius: Style.radiusM
 
                       // Use provider's image revision for reactive updates
@@ -1456,7 +1456,7 @@ SmartPanel {
                       anchors.fill: parent
                       anchors.margins: Style.marginXS
 
-                      visible: (!modelData.isImage && !modelData.displayString) || (modelData.isImage && gridImagePreview.status === Image.Error)
+                      visible: (!modelData.isImage && !modelData.displayString) || (!!modelData.isImage && gridImagePreview.status === Image.Error)
                       active: visible
 
                       sourceComponent: Settings.data.appLauncher.iconMode === "tabler" && modelData.isTablerIcon ? gridTablerIconComponent : gridSystemIconComponent
@@ -1467,7 +1467,7 @@ SmartPanel {
                           icon: modelData.icon
                           pointSize: Style.fontSizeXXXL
                           visible: modelData.icon && !modelData.displayString
-                          color: entry.isSelected ? Color.mOnHover : Color.mOnSurface
+                          color: (entry.isSelected && !Settings.data.appLauncher.showIconBackground) ? Color.mOnHover : Color.mOnSurface
                         }
                       }
 
@@ -1486,7 +1486,7 @@ SmartPanel {
                     NText {
                       id: gridStringDisplay
                       anchors.centerIn: parent
-                      visible: modelData.displayString || (!gridImagePreview.visible && !gridIconLoader.visible)
+                      visible: !!modelData.displayString || (!gridImagePreview.visible && !gridIconLoader.visible)
                       text: modelData.displayString ? modelData.displayString : modelData.name.charAt(0).toUpperCase()
                       pointSize: {
                         if (modelData.displayString) {

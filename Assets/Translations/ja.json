@@ -103,6 +103,8 @@
       "hide-mode-label": "非表示モード",
       "hide-mode-max-transparent": "最大展開（透明）",
       "icon-description": "ライブラリからアイコンを選択します。",
+      "ipc-identifier-description": "IPCコマンドの一意の識別子。この識別子を「qs -c noctalia-shell ipc call cb [アクション] [識別子]」で使用して、IPC経由でこのボタンを制御します。",
+      "ipc-identifier-label": "IPC識別子",
       "left-click-description": "ボタンを左クリックした際に実行するコマンド。",
       "left-click-label": "左クリック",
       "left-click-update-text": "左クリック時に表示テキストを更新",
@@ -138,6 +140,8 @@
       "show-icon-description": "キーボードレイアウトのアイコンを表示します。"
     },
     "lock-keys": {
+      "hide-when-off-description": "キーがアクティブでないときインジケーターを非表示にします。",
+      "hide-when-off-label": "オフの時に非表示",
       "show-caps-lock-description": "Caps Lock の状態を表示します。",
       "show-caps-lock-label": "Caps Lock",
       "show-num-lock-description": "Num Lock の状態を表示します。",
@@ -677,6 +681,8 @@
       "appearance-desc": "バーの外観や位置をカスタマイズします。",
       "appearance-floating-description": "バーを浮かせて、カプセル型で表示します。",
       "appearance-floating-label": "フローティングバー",
+      "appearance-hide-on-overview-description": "コンポジタの概要がアクティブなときは、バーを非表示にしてパネルを閉じます。",
+      "appearance-hide-on-overview-label": "概要のバーを非表示にする",
       "appearance-margins-description": "フローティングバーの周囲の余白を調整します。",
       "appearance-margins-horizontal": "水平方向",
       "appearance-margins-label": "余白",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Hello World\"",
     "enter-command": "実行するコマンドを入力（アプリまたはスクリプト）",
+    "enter-ipc-identifier": "IPCコマンドの一意の識別子を入力してください",
     "enter-text-to-collapse": "例: 'nothing is playing'。正規表現 (/.../) も使用できます。",
     "enter-tooltip": "ツールチップを入力",
     "enter-width-pixels": "幅を入力（ピクセル）",

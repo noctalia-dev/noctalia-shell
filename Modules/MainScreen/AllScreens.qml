@@ -56,7 +56,7 @@ Variants {
     // Bar content in separate windows to prevent fullscreen redraws
     Loader {
       active: {
-        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.isVisible)
+        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.effectivelyVisible)
           return false;
 
         // Check if bar is configured for this screen
@@ -78,7 +78,7 @@ Variants {
     // Disabled when bar is hidden or not configured for this screen
     Loader {
       active: {
-        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.isVisible)
+        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.effectivelyVisible)
           return false;
 
         // Check if bar is configured for this screen
@@ -100,7 +100,7 @@ Variants {
     // Disabled when bar is hidden or not configured for this screen
     Loader {
       active: {
-        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.isVisible)
+        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.effectivelyVisible)
           return false;
 
         // Check if bar is configured for this screen

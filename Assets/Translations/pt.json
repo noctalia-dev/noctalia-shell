@@ -103,6 +103,8 @@
       "hide-mode-label": "Modo de ocultação",
       "hide-mode-max-transparent": "Totalmente expandido mas transparente",
       "icon-description": "Selecione um ícone da biblioteca.",
+      "ipc-identifier-description": "Identificador exclusivo para comandos IPC. Use este identificador com 'qs -c noctalia-shell ipc call cb [ação] [identificador]' para controlar este botão via IPC.",
+      "ipc-identifier-label": "Identificador IPC",
       "left-click-description": "Comando a executar quando o botão é clicado com o botão esquerdo.",
       "left-click-label": "Clique esquerdo",
       "left-click-update-text": "Atualizar texto exibido ao clicar com o botão esquerdo",
@@ -138,6 +140,8 @@
       "show-icon-description": "Exibir o ícone do layout do teclado."
     },
     "lock-keys": {
+      "hide-when-off-description": "Ocultar o indicador quando a tecla não está ativa.",
+      "hide-when-off-label": "Ocultar quando desativado",
       "show-caps-lock-description": "Exibir o status do Bloq Caps.",
       "show-caps-lock-label": "Bloq Caps",
       "show-num-lock-description": "Exibir o status do Bloq Num.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Personalize a aparência e a posição da barra.",
       "appearance-floating-description": "Exibe a barra como uma 'pílula' flutuante.",
       "appearance-floating-label": "Barra flutuante",
+      "appearance-hide-on-overview-description": "Ocultar a barra e fechar os painéis quando a visão geral do compositor estiver ativa.",
+      "appearance-hide-on-overview-label": "Ocultar barra na visão geral",
       "appearance-margins-description": "Ajuste as margens ao redor da barra flutuante.",
       "appearance-margins-horizontal": "Horizontal",
       "appearance-margins-label": "Margens",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Olá, mundo\"",
     "enter-command": "Digite o comando para executar (app ou script personalizado)",
+    "enter-ipc-identifier": "Introduza um identificador exclusivo para comandos IPC",
     "enter-text-to-collapse": "por exemplo, 'nada está sendo reproduzido'. Use /regex/ para padrões.",
     "enter-tooltip": "Inserir dica de ferramenta",
     "enter-width-pixels": "Digite a largura em pixels",

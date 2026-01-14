@@ -122,7 +122,7 @@ A heartfelt thank you to our incredible community of [**contributors**](https://
 
 While all donations are greatly appreciated, they are completely voluntary.
 
-<a href="https://ko-fi.com/lysec">
+<a href="https://ko-fi.com/">
   <img src="https://img.shields.io/badge/donate-ko--fi-A8AEFF?style=for-the-badge&logo=kofi&logoColor=FFFFFF&labelColor=0C0D11" alt="Ko-Fi" />
 </a>
 

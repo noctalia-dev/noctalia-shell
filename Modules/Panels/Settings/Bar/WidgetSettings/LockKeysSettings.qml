@@ -21,6 +21,8 @@ ColumnLayout {
   property string numIcon: widgetData.numLockIcon !== undefined ? widgetData.numLockIcon : widgetMetadata.numLockIcon
   property string scrollIcon: widgetData.scrollLockIcon !== undefined ? widgetData.scrollLockIcon : widgetMetadata.scrollLockIcon
 
+  property bool valueHideWhenOff: widgetData.hideWhenOff !== undefined ? widgetData.hideWhenOff : (widgetMetadata.hideWhenOff !== undefined ? widgetMetadata.hideWhenOff : false)
+
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showCapsLock = valueShowCapsLock;
@@ -29,6 +31,7 @@ ColumnLayout {
     settings.capsLockIcon = capsIcon;
     settings.numLockIcon = numIcon;
     settings.scrollLockIcon = scrollIcon;
+    settings.hideWhenOff = valueHideWhenOff;
     return settings;
   }
 
@@ -129,5 +132,17 @@ ColumnLayout {
     onIconSelected: function (iconName) {
       scrollIcon = iconName;
     }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.lock-keys.hide-when-off-label")
+    description: I18n.tr("bar.lock-keys.hide-when-off-description")
+    checked: valueHideWhenOff
+    onToggled: checked => valueHideWhenOff = checked
   }
 }

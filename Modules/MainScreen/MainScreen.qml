@@ -102,8 +102,8 @@ PanelWindow {
 
   // Check if bar should be visible on this screen
   readonly property bool barShouldShow: {
-    // Check global bar visibility
-    if (!BarService.isVisible)
+    // Check global bar visibility (includes overview state)
+    if (!BarService.effectivelyVisible)
       return false;
 
     // Check screen-specific configuration

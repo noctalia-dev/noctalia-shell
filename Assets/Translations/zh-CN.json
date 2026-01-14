@@ -103,6 +103,8 @@
       "hide-mode-label": "隐藏模式",
       "hide-mode-max-transparent": "最大展开但透明",
       "icon-description": "从库中选择图标。",
+      "ipc-identifier-description": "IPC 命令的唯一标识符。使用此标识符以及“qs -c noctalia-shell ipc call cb [操作] [标识符]”通过 IPC 控制此按钮。",
+      "ipc-identifier-label": "IPC标识符",
       "left-click-description": "左键点击按钮时执行的命令。",
       "left-click-label": "左键点击",
       "left-click-update-text": "左键单击时更新显示的文本",
@@ -138,6 +140,8 @@
       "show-icon-description": "显示键盘布局图标。"
     },
     "lock-keys": {
+      "hide-when-off-description": "当按键不活跃时隐藏指示器。",
+      "hide-when-off-label": "关闭时隐藏",
       "show-caps-lock-description": "显示大写锁定状态。",
       "show-caps-lock-label": "大写锁定",
       "show-num-lock-description": "显示数字锁定键状态。",
@@ -677,6 +681,8 @@
       "appearance-desc": "自定义状态栏的外观和位置。",
       "appearance-floating-description": "将状态栏显示为浮动的“药丸”形状。",
       "appearance-floating-label": "浮动状态栏",
+      "appearance-hide-on-overview-description": "当合成器概览处于活动状态时，隐藏栏并关闭面板。",
+      "appearance-hide-on-overview-label": "在概览中隐藏栏",
       "appearance-margins-description": "调整浮动状态栏周围的边距。",
       "appearance-margins-horizontal": "水平",
       "appearance-margins-label": "边距",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Hello World\"",
     "enter-command": "输入要执行的命令（应用程序或自定义脚本）",
+    "enter-ipc-identifier": "输入 IPC 命令的唯一标识符",
     "enter-text-to-collapse": "例如，“nothing is playing”。使用 /regex/ 表示匹配模式。",
     "enter-tooltip": "输入工具提示",
     "enter-width-pixels": "输入宽度（像素）",

@@ -103,6 +103,8 @@
       "hide-mode-label": "Tryb ukrywania",
       "hide-mode-max-transparent": "Rozwinięty, ale przezroczysty",
       "icon-description": "Wybierz ikonę z biblioteki.",
+      "ipc-identifier-description": "Unikalny identyfikator dla poleceń IPC. Użyj tego identyfikatora z 'qs -c noctalia-shell ipc call cb [akcja] [identyfikator]', aby sterować tym przyciskiem za pomocą IPC.",
+      "ipc-identifier-label": "Identyfikator IPC",
       "left-click-description": "Polecenie do wykonania po kliknięciu lewym przyciskiem myszy.",
       "left-click-label": "Lewy przycisk",
       "left-click-update-text": "Aktualizuj tekst po kliknięciu lewym przyciskiem",
@@ -138,6 +140,8 @@
       "show-icon-description": "Wyświetl ikonę układu klawiatury."
     },
     "lock-keys": {
+      "hide-when-off-description": "Ukryj wskaźnik, gdy klawisz jest nieaktywny.",
+      "hide-when-off-label": "Ukryj gdy wyłączony",
       "show-caps-lock-description": "Wyświetl status Caps Lock.",
       "show-caps-lock-label": "Caps Lock",
       "show-num-lock-description": "Wyświetl status Num Lock.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Dostosuj wygląd i pozycję paska.",
       "appearance-floating-description": "Wyświetl pasek jako pływającą 'pigułkę'.",
       "appearance-floating-label": "Pływający pasek",
+      "appearance-hide-on-overview-description": "Ukryj pasek i zamknij panele, gdy aktywny jest przegląd kompozytora.",
+      "appearance-hide-on-overview-label": "Ukryj pasek w przeglądzie",
       "appearance-margins-description": "Dostosuj marginesy wokół pływającego paska.",
       "appearance-margins-horizontal": "Poziome",
       "appearance-margins-label": "Marginesy",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Witaj świecie\"",
     "enter-command": "Wpisz polecenie do wykonania (aplikacja lub skrypt)",
+    "enter-ipc-identifier": "Wprowadź unikalny identyfikator dla poleceń IPC",
     "enter-text-to-collapse": "np. 'nic nie jest odtwarzane'. Użyj /regex/ dla wzorców.",
     "enter-tooltip": "Wpisz tekst podpowiedzi",
     "enter-width-pixels": "Wpisz szerokość w pikselach",

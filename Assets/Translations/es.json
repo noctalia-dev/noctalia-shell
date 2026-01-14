@@ -103,6 +103,8 @@
       "hide-mode-label": "Modo de ocultar",
       "hide-mode-max-transparent": "Máximo expandido pero transparente",
       "icon-description": "Selecciona un icono de la biblioteca.",
+      "ipc-identifier-description": "Identificador único para comandos IPC. Utilice este identificador con 'qs -c noctalia-shell ipc call cb [acción] [identificador]' para controlar este botón a través de IPC.",
+      "ipc-identifier-label": "Identificador IPC",
       "left-click-description": "Comando a ejecutar cuando se hace clic izquierdo en el botón.",
       "left-click-label": "Clic izquierdo",
       "left-click-update-text": "Actualizar el texto mostrado al hacer clic izquierdo",
@@ -138,6 +140,8 @@
       "show-icon-description": "Mostrar el icono de la distribución del teclado."
     },
     "lock-keys": {
+      "hide-when-off-description": "Ocultar el indicador cuando la tecla no está activa.",
+      "hide-when-off-label": "Ocultar cuando está desactivado",
       "show-caps-lock-description": "Mostrar el estado de Bloq Mayús.",
       "show-caps-lock-label": "Bloq Mayús",
       "show-num-lock-description": "Mostrar el estado de Bloq Num.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Personaliza la apariencia y posición de la barra.",
       "appearance-floating-description": "Muestra la barra como una 'píldora' flotante.",
       "appearance-floating-label": "Barra flotante",
+      "appearance-hide-on-overview-description": "Ocultar la barra y cerrar los paneles cuando la vista general del compositor esté activa.",
+      "appearance-hide-on-overview-label": "Ocultar barra en la vista general",
       "appearance-margins-description": "Ajusta los márgenes alrededor de la barra flotante.",
       "appearance-margins-horizontal": "Horizontal",
       "appearance-margins-label": "Márgenes",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Hola, mundo\"",
     "enter-command": "Ingresa el comando a ejecutar (aplicación o script personalizado)",
+    "enter-ipc-identifier": "Introduzca un identificador único para los comandos IPC",
     "enter-text-to-collapse": "por ejemplo, 'no se está reproduciendo nada'. Usa /regex/ para patrones.",
     "enter-tooltip": "Introducir información sobre herramientas",
     "enter-width-pixels": "Ingresa el ancho en píxeles",

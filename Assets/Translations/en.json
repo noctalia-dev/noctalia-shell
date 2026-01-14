@@ -103,6 +103,8 @@
       "hide-mode-label": "Hide mode",
       "hide-mode-max-transparent": "Max expanded but transparent",
       "icon-description": "Select an icon from the library.",
+      "ipc-identifier-description": "Unique identifier for IPC commands. Use this identifier with 'qs -c noctalia-shell ipc call cb [action] [identifier]' to control this button via IPC.",
+      "ipc-identifier-label": "IPC Identifier",
       "left-click-description": "Command to execute when the button is left-clicked.",
       "left-click-label": "Left click",
       "left-click-update-text": "Update displayed text on left-click",
@@ -138,6 +140,8 @@
       "show-icon-description": "Display the keyboard layout icon."
     },
     "lock-keys": {
+      "hide-when-off-description": "Hide the indicator when the key is not active.",
+      "hide-when-off-label": "Hide when off",
       "show-caps-lock-description": "Display Caps Lock status.",
       "show-caps-lock-label": "Caps Lock",
       "show-num-lock-description": "Display Num Lock status.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Customize the bar's appearance and position.",
       "appearance-floating-description": "Display the bar as a floating 'pill'.",
       "appearance-floating-label": "Floating bar",
+      "appearance-hide-on-overview-description": "Hide the bar and close panels when the compositor overview is active.",
+      "appearance-hide-on-overview-label": "Hide bar on overview",
       "appearance-margins-description": "Adjust the margins around the floating bar.",
       "appearance-margins-horizontal": "Horizontal",
       "appearance-margins-label": "Margins",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Hello World\"",
     "enter-command": "Enter command to execute (app or custom script)",
+    "enter-ipc-identifier": "Enter unique identifier for IPC commands",
     "enter-text-to-collapse": "e.g., 'nothing is playing'. Use /regex/ for patterns.",
     "enter-tooltip": "Enter tooltip",
     "enter-width-pixels": "Enter width in pixels",

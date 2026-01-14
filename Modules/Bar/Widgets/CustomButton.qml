@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Modules.Bar.Extras
 import qs.Modules.Panels.Settings
+import qs.Services.Control
 import qs.Services.UI
 import qs.Widgets
 
@@ -39,6 +40,7 @@ Item {
   readonly property bool rightClickUpdateText: widgetSettings.rightClickUpdateText ?? widgetMetadata.rightClickUpdateText
   readonly property string middleClickExec: widgetSettings.middleClickExec || widgetMetadata.middleClickExec
   readonly property bool middleClickUpdateText: widgetSettings.middleClickUpdateText ?? widgetMetadata.middleClickUpdateText
+  readonly property string ipcIdentifier: widgetSettings.ipcIdentifier !== undefined ? widgetSettings.ipcIdentifier : (widgetMetadata.ipcIdentifier || "")
   readonly property string wheelExec: widgetSettings.wheelExec || widgetMetadata.wheelExec
   readonly property string wheelUpExec: widgetSettings.wheelUpExec || widgetMetadata.wheelUpExec
   readonly property string wheelDownExec: widgetSettings.wheelDownExec || widgetMetadata.wheelDownExec
@@ -604,6 +606,63 @@ Item {
         if ((delta > 0 && wheelUpUpdateText) || (delta < 0 && wheelDownUpdateText)) {
           runTextCommand();
         }
+      }
+    }
+  }
+
+  // Timer to handle registration attempts
+  Timer {
+    id: registrationTimer
+    interval: 1500
+    repeat: false
+    onTriggered: {
+      // Only register if ipcIdentifier is set
+      if (ipcIdentifier && ipcIdentifier.trim() !== "") {
+        // Try to access the service through the global application object
+        try {
+          if (typeof Qt !== 'undefined' && Qt.application && Qt.application.customButtonIPCService) {
+            var service = Qt.application.customButtonIPCService;
+            var success = service.registerButton(root);
+            if (success) {
+              Logger.i("CustomButton", `Successfully registered button with identifier: '${ipcIdentifier}'`);
+            } else {
+              Logger.w("CustomButton", `Failed to register button with identifier: '${ipcIdentifier}'`);
+            }
+          } else {
+            Logger.w("CustomButton", `Service not available for button with identifier '${ipcIdentifier}'`);
+          }
+        } catch (e) {
+          Logger.w("CustomButton", `Error during registration of button with identifier '${ipcIdentifier}': ${e.message}`);
+        }
+      } else {
+        Logger.d("CustomButton", `No IPC identifier set for button, skipping registration`);
+      }
+    }
+  }
+
+  // Register this button with the IPC service when component is completed
+  Component.onCompleted: {
+    registrationTimer.start();
+  }
+
+  // Unregister this button when component is destroyed
+  Component.onDestruction: {
+    if (ipcIdentifier && ipcIdentifier.trim() !== "") {
+      // Try to access the service through the global application object for unregistration
+      try {
+        if (typeof Qt !== 'undefined' && Qt.application && Qt.application.customButtonIPCService) {
+          var service = Qt.application.customButtonIPCService;
+          var success = service.unregisterButton(root);
+          if (success) {
+            Logger.i("CustomButton", `Successfully unregistered button with identifier: '${ipcIdentifier}'`);
+          } else {
+            Logger.w("CustomButton", `Failed to unregister button with identifier: '${ipcIdentifier}'`);
+          }
+        } else {
+          Logger.w("CustomButton", `Service not available for unregistration of button with identifier '${ipcIdentifier}'`);
+        }
+      } catch (e) {
+        Logger.w("CustomButton", `Error during unregistration of button with identifier '${ipcIdentifier}': ${e.message}`);
       }
     }
   }

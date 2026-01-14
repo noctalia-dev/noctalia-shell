@@ -42,6 +42,8 @@ Rectangle {
   readonly property string numIcon: widgetSettings.numLockIcon !== undefined ? widgetSettings.numLockIcon : widgetMetadata.numLockIcon
   readonly property string scrollIcon: widgetSettings.scrollLockIcon !== undefined ? widgetSettings.scrollLockIcon : widgetMetadata.scrollLockIcon
 
+  readonly property bool hideWhenOff: (widgetSettings.hideWhenOff !== undefined) ? widgetSettings.hideWhenOff : (widgetMetadata.hideWhenOff !== undefined ? widgetMetadata.hideWhenOff : false)
+
   implicitWidth: isVertical ? Style.capsuleHeight : Math.round(layout.implicitWidth + Style.marginM * 2)
   implicitHeight: isVertical ? Math.round(layout.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
 
@@ -103,17 +105,17 @@ Rectangle {
       spacing: 0
 
       NIcon {
-        visible: root.showCaps
+        visible: root.showCaps && (!root.hideWhenOff || LockKeysService.capsLockOn)
         icon: root.capsIcon
         color: LockKeysService.capsLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
       }
       NIcon {
-        visible: root.showNum
+        visible: root.showNum && (!root.hideWhenOff || LockKeysService.numLockOn)
         icon: root.numIcon
         color: LockKeysService.numLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
       }
       NIcon {
-        visible: root.showScroll
+        visible: root.showScroll && (!root.hideWhenOff || LockKeysService.scrollLockOn)
         icon: root.scrollIcon
         color: LockKeysService.scrollLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
       }
@@ -125,17 +127,17 @@ Rectangle {
       spacing: 0
 
       NIcon {
-        visible: root.showCaps
+        visible: root.showCaps && (!root.hideWhenOff || LockKeysService.capsLockOn)
         icon: root.capsIcon
         color: LockKeysService.capsLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
       }
       NIcon {
-        visible: root.showNum
+        visible: root.showNum && (!root.hideWhenOff || LockKeysService.numLockOn)
         icon: root.numIcon
         color: LockKeysService.numLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
       }
       NIcon {
-        visible: root.showScroll
+        visible: root.showScroll && (!root.hideWhenOff || LockKeysService.scrollLockOn)
         icon: root.scrollIcon
         color: LockKeysService.scrollLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
       }

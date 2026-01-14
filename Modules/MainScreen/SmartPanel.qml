@@ -97,7 +97,7 @@ Item {
 
   // Check if bar should be visible on this screen
   readonly property bool barShouldShow: {
-    if (!BarService.isVisible)
+    if (!BarService.effectivelyVisible)
       return false;
     var monitors = Settings.data.bar.monitors || [];
     var screenName = screen?.name || "";

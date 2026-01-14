@@ -91,21 +91,9 @@ Loader {
               onTriggered: batteryIndicator.initializationComplete = true
             }
 
-            readonly property var bluetoothDevice: BatteryService.findBluetoothBatteryDevice()
-            readonly property bool hasBluetoothBattery: bluetoothDevice && bluetoothDevice.batteryAvailable && bluetoothDevice.battery !== undefined
-            readonly property var battery: BatteryService.findLaptopBattery()
-            readonly property bool isDevicePresent: {
-              if (hasBluetoothBattery) {
-                return bluetoothDevice.connected === true;
-              }
-              if (battery) {
-                return (battery.type === UPowerDeviceType.Battery && battery.isPresent !== undefined) ? battery.isPresent : (battery.ready && battery.percentage !== undefined);
-              }
-              return false;
-            }
-            property bool isReady: initializationComplete && isDevicePresent && (hasBluetoothBattery || (battery && battery.ready && battery.percentage !== undefined))
-            property real percent: isReady ? (hasBluetoothBattery ? (bluetoothDevice.battery * 100) : (battery.percentage * 100)) : 0
-            property bool charging: isReady ? (hasBluetoothBattery ? false : (battery ? battery.state === UPowerDeviceState.Charging : false)) : false
+            property bool isReady: initializationComplete && BatteryService.batteryReady
+            property real percent: BatteryService.batteryPercentage
+            property bool charging: BatteryService.batteryCharging
             property bool batteryVisible: isReady && percent > 0 && BatteryService.hasAnyBattery()
           }
 

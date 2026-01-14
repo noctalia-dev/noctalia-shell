@@ -103,6 +103,8 @@
       "hide-mode-label": "Ausblendmodus",
       "hide-mode-max-transparent": "Maximal erweitert aber transparent",
       "icon-description": "Symbol aus der Bibliothek auswählen.",
+      "ipc-identifier-description": "Eindeutige Kennung für IPC-Befehle. Verwenden Sie diese Kennung mit 'qs -c noctalia-shell ipc call cb [Aktion] [Kennung]', um diese Schaltfläche über IPC zu steuern.",
+      "ipc-identifier-label": "IPC-Kennung",
       "left-click-description": "Befehl, der ausgeführt wird, wenn die Schaltfläche links angeklickt wird.",
       "left-click-label": "Linksklick",
       "left-click-update-text": "Text auf Linksklick aktualisieren",
@@ -138,6 +140,8 @@
       "show-icon-description": "Das Tastaturlayout-Symbol anzeigen."
     },
     "lock-keys": {
+      "hide-when-off-description": "Verstecke die Anzeige, wenn die Taste nicht aktiv ist.",
+      "hide-when-off-label": "Ausblenden, wenn deaktiviert",
       "show-caps-lock-description": "Caps-Lock-Status anzeigen.",
       "show-caps-lock-label": "Feststelltaste",
       "show-num-lock-description": "Num-Lock-Status anzeigen.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Erscheinungsbild und Position der Statusleiste anpassen.",
       "appearance-floating-description": "Statusleiste als schwebende 'Pille' anzeigen.",
       "appearance-floating-label": "Schwebende Statusleiste",
+      "appearance-hide-on-overview-description": "Die Leiste ausblenden und Panels schließen, wenn die Compositor-Übersicht aktiv ist.",
+      "appearance-hide-on-overview-label": "Leiste in der Übersicht ausblenden",
       "appearance-margins-description": "Ränder um die schwebende Statusleiste anpassen.",
       "appearance-margins-horizontal": "Horizontal",
       "appearance-margins-label": "Ränder",
@@ -1062,7 +1068,7 @@
       "show-hibernate-description": "Die Option 'Ruhezustand' in den Energieaktionen anzeigen.",
       "show-hibernate-label": "Ruhezustand anzeigen",
       "show-session-buttons-description": "Zugriff auf die Energieeinstellungen vom Sperrbildschirm aus erlauben.",
-      "show-session-buttons-label": "Leistungsregler",
+      "show-session-buttons-label": "Energieoptionen",
       "title": "Sperrbildschirm"
     },
     "network": {
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Hallo Welt\"",
     "enter-command": "Befehl eingeben (App oder benutzerdefiniertes Skript)",
+    "enter-ipc-identifier": "Geben Sie eine eindeutige Kennung für IPC-Befehle ein",
     "enter-text-to-collapse": "z.B. 'nothing is playing'. Verwenden Sie /regex/ für Muster.",
     "enter-tooltip": "Tooltip eingeben",
     "enter-width-pixels": "Breite in Pixeln eingeben",

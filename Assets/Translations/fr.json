@@ -103,6 +103,8 @@
       "hide-mode-label": "Mode masqué",
       "hide-mode-max-transparent": "Étendu au maximum mais transparent",
       "icon-description": "Sélectionnez une icône dans la bibliothèque.",
+      "ipc-identifier-description": "Identifiant unique pour les commandes IPC. Utilisez cet identifiant avec 'qs -c noctalia-shell ipc call cb [action] [identifiant]' pour contrôler ce bouton via IPC.",
+      "ipc-identifier-label": "Identifiant IPC",
       "left-click-description": "Commande à exécuter quand le bouton est cliqué à gauche.",
       "left-click-label": "Clic gauche",
       "left-click-update-text": "Mettre à jour le texte affiché au clic gauche",
@@ -138,6 +140,8 @@
       "show-icon-description": "Afficher l'icône de disposition du clavier."
     },
     "lock-keys": {
+      "hide-when-off-description": "Masquer l'indicateur lorsque la touche n'est pas active.",
+      "hide-when-off-label": "Masquer lorsque désactivé",
       "show-caps-lock-description": "Afficher l'état du verrouillage majuscule.",
       "show-caps-lock-label": "Verr Maj",
       "show-num-lock-description": "Afficher l'état du verrouillage numérique.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Personnalisez l'apparence et la position de la barre.",
       "appearance-floating-description": "Afficher la barre sous forme de 'pilule' flottante.",
       "appearance-floating-label": "Barre flottante",
+      "appearance-hide-on-overview-description": "Masquer la barre et fermer les panneaux lorsque l'aperçu du compositeur est actif.",
+      "appearance-hide-on-overview-label": "Masquer la barre dans l'aperçu",
       "appearance-margins-description": "Ajustez les marges autour de la barre flottante.",
       "appearance-margins-horizontal": "Horizontale",
       "appearance-margins-label": "Marges",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Bonjour le monde\"",
     "enter-command": "Entrez la commande à exécuter (application ou script personnalisé)",
+    "enter-ipc-identifier": "Entrez un identifiant unique pour les commandes IPC",
     "enter-text-to-collapse": "par ex., 'rien n’est en lecture'. Utilisez /regex/ pour les modèles.",
     "enter-tooltip": "Entrer l'infobulle",
     "enter-width-pixels": "Entrez la largeur en pixels",

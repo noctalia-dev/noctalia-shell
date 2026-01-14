@@ -103,6 +103,8 @@
       "hide-mode-label": "Режим приховування",
       "hide-mode-max-transparent": "Максимально розширено, але прозоро",
       "icon-description": "Вибрати значок з бібліотеки.",
+      "ipc-identifier-description": "Унікальний ідентифікатор для команд IPC. Використовуйте цей ідентифікатор з 'qs -c noctalia-shell ipc call cb [дія] [ідентифікатор]', щоб керувати цією кнопкою через IPC.",
+      "ipc-identifier-label": "Ідентифікатор IPC",
       "left-click-description": "Команда для виконання при лівому кліку на кнопку.",
       "left-click-label": "Лівий клік",
       "left-click-update-text": "Оновити текст, що відображається, при натисканні лівою кнопкою миші",
@@ -138,6 +140,8 @@
       "show-icon-description": "Показувати піктограму розкладки клавіатури."
     },
     "lock-keys": {
+      "hide-when-off-description": "Приховувати індикатор, коли клавіша неактивна.",
+      "hide-when-off-label": "Приховувати коли вимкнено",
       "show-caps-lock-description": "Відображати стан caps lock.",
       "show-caps-lock-label": "Caps Lock",
       "show-num-lock-description": "Відображати стан num lock.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Налаштуйте зовнішній вигляд та положення панелі.",
       "appearance-floating-description": "Відображати панель як плаваючу 'капсулу'. Примітка: Це перемістить кути екрана до країв.",
       "appearance-floating-label": "Плаваюча панель (Острівець)",
+      "appearance-hide-on-overview-description": "Приховати панель і закрити панелі, коли активний огляд компонувальника.",
+      "appearance-hide-on-overview-label": "Приховати панель на огляді",
       "appearance-margins-description": "Налаштуйте поля навколо плаваючої панелі.",
       "appearance-margins-horizontal": "Горизонтальні",
       "appearance-margins-label": "Поля",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Привіт, Світ\"",
     "enter-command": "Введіть команду для виконання (застосунок або власний скрипт)",
+    "enter-ipc-identifier": "Введіть унікальний ідентифікатор для команд IPC",
     "enter-text-to-collapse": "напр., 'нічого не відтворюється'. Використовуйте /regex/ для шаблонів.",
     "enter-tooltip": "Введіть підказку",
     "enter-width-pixels": "Введіть ширину в пікселях",

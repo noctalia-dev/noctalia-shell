@@ -22,6 +22,7 @@ ColumnLayout {
   property bool valueShowIcon: (widgetData.showIcon !== undefined) ? widgetData.showIcon : widgetMetadata.showIcon
   property bool valueEnableColorization: widgetData.enableColorization || false
   property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon || "none"
+  property string valueIpcIdentifier: widgetData.ipcIdentifier !== undefined ? widgetData.ipcIdentifier : widgetMetadata.ipcIdentifier || ""
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -52,6 +53,7 @@ ColumnLayout {
     settings.textIntervalMs = parseInt(textIntervalInput.text || textIntervalInput.placeholderText, 10);
     settings.enableColorization = valueEnableColorization;
     settings.colorizeSystemIcon = valueColorizeSystemIcon;
+    settings.ipcIdentifier = valueIpcIdentifier;
     return settings;
   }
 
@@ -140,6 +142,15 @@ ColumnLayout {
         ]
         currentKey: valueColorizeSystemIcon
         onSelected: key => valueColorizeSystemIcon = key
+      }
+
+      NTextInput {
+        Layout.fillWidth: true
+        label: I18n.tr("bar.custom-button.ipc-identifier-label")
+        description: I18n.tr("bar.custom-button.ipc-identifier-description")
+        placeholderText: I18n.tr("placeholders.enter-ipc-identifier")
+        text: valueIpcIdentifier
+        onTextChanged: valueIpcIdentifier = text
       }
 
       RowLayout {

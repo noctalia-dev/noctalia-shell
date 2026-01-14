@@ -103,6 +103,8 @@
       "hide-mode-label": "Hêşartin modê",
       "hide-mode-max-transparent": "Herî zêde berfirehkirî lê şefaf",
       "icon-description": "Îkonekê ji pirtûkxaneyê hilbijêre.",
+      "ipc-identifier-description": "Nasnameya yekta ji bo fermanên IPC. Vê nasnameyê bi 'qs -c noctalia-shell ipc call cb [çalakî] [nasname]' bikar bînin da ku vê bişkokê bi rêya IPC kontrol bikin.",
+      "ipc-identifier-label": "Nasnameya IPC",
       "left-click-description": "Fermana ku dema bişkok li ser çepê tê klîkkirin tê meşandin.",
       "left-click-label": "Klîka çepê",
       "left-click-update-text": "Nûvekirina nivîsa ku li ser klîka çepê tê nîşandan",
@@ -138,6 +140,8 @@
       "show-icon-description": "Nîşana şêweya klavyeyê nîşan bide."
     },
     "lock-keys": {
+      "hide-when-off-description": "Eger nexwan çalak nabe nîşanek veşêre.",
+      "hide-when-off-label": "Veşêre gava ku ne çalak e",
       "show-caps-lock-description": "Rewşa Caps Lock nîşan bide.",
       "show-caps-lock-label": "Girtina hûrfên mezîn",
       "show-num-lock-description": "Rewşa Num Lock nîşan bide.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Xuyakirina xuyabûn û pozîsyona bar.",
       "appearance-floating-description": "Bariş wekî 'heb'eke herikbar nîşan bide.",
       "appearance-floating-label": "Barê avjen",
+      "appearance-hide-on-overview-description": "Dema ku pêşdîtina berhevker çalak be, bar veşêre û panelan bigire.",
+      "appearance-hide-on-overview-label": "Li ser dîtinê bar veşêre",
       "appearance-margins-description": "Marginên dora bara herikbar eyar bike.",
       "appearance-margins-horizontal": "Asoyî",
       "appearance-margins-label": "Qirax",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Silav cîhan\"",
     "enter-command": "Fermana ku bê tetbîqkirin binivîse (sepan an nivîsara taybet)",
+    "enter-ipc-identifier": "Ji bo fermanên IPC nasnameyek yekta binivîse",
     "enter-text-to-collapse": "e.g., 'tiştek nayê lîstin'. Use /regex/ for patterns.",
     "enter-tooltip": "Têketina sernavê amûrê",
     "enter-width-pixels": "Firehiya bi pîxel binivîse",

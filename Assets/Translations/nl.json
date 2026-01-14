@@ -103,6 +103,8 @@
       "hide-mode-label": "Verbergmodus",
       "hide-mode-max-transparent": "Maximaal uitgeklapt maar transparant",
       "icon-description": "Selecteer een pictogram uit de bibliotheek.",
+      "ipc-identifier-description": "Unieke identificatie voor IPC-opdrachten. Gebruik deze identificatie met 'qs -c noctalia-shell ipc call cb [actie] [identificatie]' om deze knop via IPC te bedienen.",
+      "ipc-identifier-label": "IPC-identificatie",
       "left-click-description": "Commando dat wordt uitgevoerd wanneer met de linkermuisknop op de knop wordt geklikt.",
       "left-click-label": "Linkermuisklik",
       "left-click-update-text": "Tekst bijwerken bij linksklik",
@@ -138,6 +140,8 @@
       "show-icon-description": "Toon het toetsenbordindeling-icoon."
     },
     "lock-keys": {
+      "hide-when-off-description": "Verberg de indicator wanneer de toets niet actief is.",
+      "hide-when-off-label": "Verbergen wanneer uitgeschakeld",
       "show-caps-lock-description": "Toon de status van caps lock.",
       "show-caps-lock-label": "Caps Lock",
       "show-num-lock-description": "Toon de status van num lock.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Pas de uitstraling en positie van de balk aan.",
       "appearance-floating-description": "Toon de balk weer als een zwevende 'pil'.",
       "appearance-floating-label": "Zwevende balk",
+      "appearance-hide-on-overview-description": "Verberg de balk en sluit panelen wanneer het compositoroverzicht actief is.",
+      "appearance-hide-on-overview-label": "Balk verbergen in overzicht",
       "appearance-margins-description": "Pas de marges rond de zwevende balk aan.",
       "appearance-margins-horizontal": "Horizontaal",
       "appearance-margins-label": "Marges",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Hello World\"",
     "enter-command": "Voer het uit te voeren commando in (app of aangepast script)",
+    "enter-ipc-identifier": "Voer een unieke identificatie in voor IPC-opdrachten",
     "enter-text-to-collapse": "bijv. 'er wordt niets afgespeeld'. Gebruik /regex/ voor patronen.",
     "enter-tooltip": "Voer tooltip in",
     "enter-width-pixels": "Voer breedte in pixels in",

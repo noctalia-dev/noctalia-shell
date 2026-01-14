@@ -209,6 +209,9 @@ Singleton {
       // Reserves space with compositor
       property bool exclusive: true
 
+      // Hide bar/panels when compositor overview is active
+      property bool hideOnOverview: false
+
       // Widget configuration for modular bar system
       property JsonObject widgets
       widgets: JsonObject {

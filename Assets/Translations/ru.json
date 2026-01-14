@@ -103,6 +103,8 @@
       "hide-mode-label": "Режим скрытия",
       "hide-mode-max-transparent": "Максимально раскрыт, но прозрачный",
       "icon-description": "Выберите иконку из библиотеки.",
+      "ipc-identifier-description": "Уникальный идентификатор для команд IPC. Используйте этот идентификатор с 'qs -c noctalia-shell ipc call cb [действие] [идентификатор]', чтобы управлять этой кнопкой через IPC.",
+      "ipc-identifier-label": "Идентификатор IPC",
       "left-click-description": "Команда для выполнения при нажатии левой кнопкой мыши.",
       "left-click-label": "Клик левой кнопкой",
       "left-click-update-text": "Обновить отображаемый текст по левому клику",
@@ -138,6 +140,8 @@
       "show-icon-description": "Отображать значок раскладки клавиатуры."
     },
     "lock-keys": {
+      "hide-when-off-description": "Скрыть индикатор, когда клавиша неактивна.",
+      "hide-when-off-label": "Скрывать, когда отключено",
       "show-caps-lock-description": "Отображать статус Caps Lock.",
       "show-caps-lock-label": "Caps Lock",
       "show-num-lock-description": "Отображать статус Num Lock.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Настройка внешнего вида и положения панели.",
       "appearance-floating-description": "Отображает панель как плавающую 'таблетку'.",
       "appearance-floating-label": "Плавающая панель",
+      "appearance-hide-on-overview-description": "Скрыть панель и закрыть панели, когда активен обзор компоновщика.",
+      "appearance-hide-on-overview-label": "Скрыть панель в обзоре",
       "appearance-margins-description": "Настройка отступов вокруг плавающей панели.",
       "appearance-margins-horizontal": "Горизонтальный",
       "appearance-margins-label": "Отступы",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "например, echo \"Hello World\"",
     "enter-command": "Введите команду для выполнения (приложение или пользовательский скрипт)",
+    "enter-ipc-identifier": "Введите уникальный идентификатор для команд IPC",
     "enter-text-to-collapse": "например, 'ничего не играет'. Используйте /regex/ для шаблонов.",
     "enter-tooltip": "Введите подсказку",
     "enter-width-pixels": "Введите ширину в пикселях",

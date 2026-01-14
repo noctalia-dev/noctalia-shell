@@ -103,6 +103,8 @@
       "hide-mode-label": "Gizleme modu",
       "hide-mode-max-transparent": "En büyük genişlik ama saydam",
       "icon-description": "Kütüphaneden bir simge seçin.",
+      "ipc-identifier-description": "IPC komutları için benzersiz tanımlayıcı. Bu tanımlayıcıyı 'qs -c noctalia-shell ipc call cb [eylem] [tanımlayıcı]' ile kullanarak bu düğmeyi IPC aracılığıyla kontrol edin.",
+      "ipc-identifier-label": "IPC Tanımlayıcısı",
       "left-click-description": "Düğmeye sol tıklandığında yürütülecek komut.",
       "left-click-label": "Sol tıklama",
       "left-click-update-text": "Sol tıklamayla görüntülenen metni güncelle",
@@ -138,6 +140,8 @@
       "show-icon-description": "Klavye düzeni simgesini görüntüle."
     },
     "lock-keys": {
+      "hide-when-off-description": "Tuş etkin olmadığında göstergeyi gizle.",
+      "hide-when-off-label": "Kapatıldığında gizle",
       "show-caps-lock-description": "Büyük Harf Kilidi düğmesi durumunu göster.",
       "show-caps-lock-label": "Büyük Harf Kilidi",
       "show-num-lock-description": "Sayı Kilidi durumunu göster.",
@@ -677,6 +681,8 @@
       "appearance-desc": "Araç çubuğunun görünümünü ve konumunu özelleştirin.",
       "appearance-floating-description": "Araç çubuğunu yüzen bir 'kapsül' olarak görüntüler. Not: Bu, ekran köşelerini kenarlara taşıyacaktır.",
       "appearance-floating-label": "Yüzen araç çubuğu",
+      "appearance-hide-on-overview-description": "Kompozitör önizlemesi aktif olduğunda çubuğu gizle ve panelleri kapat.",
+      "appearance-hide-on-overview-label": "Genel bakışta çubuğu gizle",
       "appearance-margins-description": "Yüzen araç çubuğunun etrafındaki kenar boşluklarını ayarlayın.",
       "appearance-margins-horizontal": "Yatay",
       "appearance-margins-label": "Kenar boşlukları",
@@ -1358,6 +1364,7 @@
   "placeholders": {
     "command-example": "echo \"Hello World\"",
     "enter-command": "Çalıştırılacak komutu girin (uygulama veya özel komut)",
+    "enter-ipc-identifier": "IPC komutları için benzersiz bir tanımlayıcı girin",
     "enter-text-to-collapse": "örn., 'nothing is playing'. Desenler için /regex/ kullanın.",
     "enter-tooltip": "Araç ipucunu girin",
     "enter-width-pixels": "Genişliği piksel olarak girin",
