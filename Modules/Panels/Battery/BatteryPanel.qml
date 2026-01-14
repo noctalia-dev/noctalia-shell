@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.UPower
 import qs.Commons
 import qs.Modules.MainScreen
@@ -20,6 +21,74 @@ SmartPanel {
   panelContent: Item {
     id: panelContent
     property real contentPreferredHeight: mainLayout.implicitHeight + Style.marginL * 2
+
+    // Charging Threshold Logic
+    property int chargeThreshold: -1
+    property bool thresholdSupported: false
+    property bool thresholdWritable: false
+    property bool showPasswordInput: false
+
+    Process {
+        id: checkThresholdProcess
+        command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "check"]
+        stdout: StdioCollector {
+            onTextChanged: {
+                 var parts = text.trim().split(":");
+                 if (parts[0] === "supported") {
+                     thresholdSupported = true;
+                     thresholdWritable = (parts[1] === "writable");
+                     if (thresholdSupported) {
+                        getThresholdProcess.running = true;
+                     }
+                 }
+            }
+        }
+    }
+
+    Process {
+        id: getThresholdProcess
+        command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "get"]
+        stdout: StdioCollector {
+            onTextChanged: {
+                var val = parseInt(text.trim())
+                if (!isNaN(val)) {
+                    chargeThreshold = val
+                }
+            }
+        }
+    }
+
+    Process {
+        id: setThresholdProcess
+        property int nextValue: -1
+        command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "set", String(nextValue)]
+        onExited: {
+             getThresholdProcess.running = true
+        }
+    }
+
+    Process {
+        id: setupPermissionsProcess
+        stdinEnabled: true
+        command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "setup-permissions-stdin"]
+        onStarted: {
+             write(passwordInput.text + "\n");
+        }
+        onExited: {
+             if (exitCode === 0) {
+                 checkThresholdProcess.running = true;
+                 showPasswordInput = false;
+                 passwordInput.text = "";
+             } else {
+                 passwordInput.text = "";
+                 passwordInput.placeholderText = I18n.tr("authentication.failed");
+             }
+        }
+    }
+
+    Component.onCompleted: {
+        checkThresholdProcess.running = true
+    }
 
     // Get device selection from Battery widget settings (check right section first, then any Battery widget)
     function getBatteryDevicePath() {
@@ -417,6 +486,99 @@ SmartPanel {
               onToggled: checked => PowerProfileService.noctaliaPerformanceMode = checked
             }
           }
+        }
+      }
+
+      NBox {
+        Layout.fillWidth: true
+        height: thresholdLayout.implicitHeight + Style.marginL * 2
+        visible: thresholdSupported
+
+        ColumnLayout {
+          id: thresholdLayout
+          anchors.fill: parent
+          anchors.margins: Style.marginL
+          spacing: Style.marginM
+
+          RowLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginS
+
+            NText {
+              text: I18n.tr("battery.charge-threshold")
+              font.weight: Style.fontWeightBold
+              color: Color.mOnSurface
+              Layout.fillWidth: true
+            }
+            NText {
+              text: chargeThreshold >= 0 ? chargeThreshold + "%" : "--"
+              color: Color.mOnSurfaceVariant
+            }
+          }
+
+          NValueSlider {
+            Layout.fillWidth: true
+            from: 60
+            to: 100
+            stepSize: 1
+            snapAlways: true
+            heightRatio: 0.5
+            value: chargeThreshold
+            visible: thresholdWritable
+            onPressedChanged: (pressed, v) => {
+                                if (!pressed) {
+                                  setThresholdProcess.nextValue = v;
+                                  setThresholdProcess.running = true;
+                                }
+                              }
+            onMoved: v => {
+                       chargeThreshold = v;
+                     }
+          }
+
+          NButton {
+            Layout.fillWidth: true
+            text: I18n.tr("battery.enable-threshold-control")
+            icon: "lock"
+            visible: !thresholdWritable && !showPasswordInput
+            onClicked: showPasswordInput = true
+          }
+
+          ColumnLayout {
+              Layout.fillWidth: true
+              visible: !thresholdWritable && showPasswordInput
+              spacing: Style.marginS
+
+              NTextInput {
+                  id: passwordInput
+                  Layout.fillWidth: true
+                  inputItem.echoMode: TextInput.Password
+                  placeholderText: I18n.tr("authentication.password-placeholder")
+                  inputItem.onAccepted: setupPermissionsProcess.running = true
+              }
+
+              RowLayout {
+                  Layout.fillWidth: true
+                  spacing: Style.marginS
+                  NButton {
+                      Layout.fillWidth: true
+                      text: I18n.tr("common.cancel")
+                      onClicked: {
+                          showPasswordInput = false;
+                          passwordInput.text = "";
+                      }
+                  }
+                  NButton {
+                      Layout.fillWidth: true
+                      text: I18n.tr("common.confirm")
+                      backgroundColor: Color.mPrimary
+                      textColor: Color.mOnPrimary
+                      onClicked: setupPermissionsProcess.running = true
+                  }
+              }
+          }
+
+
         }
       }
     }

@@ -27,7 +27,8 @@
   },
   "authentication": {
     "error": "Authentication error",
-    "failed": "Authentication failed"
+    "failed": "Authentication failed",
+    "password-placeholder": "Enter sudo password"
   },
   "bar": {
     "active-window": {
@@ -268,6 +269,9 @@
   },
   "battery": {
     "battery-level": "Battery level",
+    "charge-threshold": "Charging Limit",
+    "charge-threshold-desc": "Limits the maximum battery charge.",
+    "enable-threshold-control": "Enable Threshold Control",
     "charging-rate": "Charging rate: {rate} W",
     "discharging-rate": "Discharging rate: {rate} W",
     "health": "Health: {percent}%",

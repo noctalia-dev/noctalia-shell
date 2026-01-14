@@ -105,4 +105,10 @@ Singleton {
   function hasAnyBattery() {
     return primaryDevice !== null;
   }
+
+  // Restore battery threshold on startup
+  Process {
+    command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "apply"]
+    running: true
+  }
 }
