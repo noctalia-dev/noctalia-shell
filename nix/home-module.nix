@@ -28,7 +28,13 @@ in
       mutableRuntimeSettings = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Whether noctalia-shell creates a gui-settings.json to store setting changes made within the GUI at runtime.";
+        description = ''
+          When enabled, noctalia-shell creates a copy of settings.json named gui-settings.json.
+          gui-settings.json is updated with changes made within the GUI, and can be diff-ed against settings.json, which you can read more about here: https://docs.noctalia.dev/getting-started/nixos/#noctalia-settings.
+          NOTE: gui-settings.json is not persistent and resets to the value of settings.json when noctalia (re)starts.
+
+          Disable this option if you are NOT managing noctalia settings with nix, so that noctalia-shell would then write to settings.json mutably like in other distros.
+        '';
       };
     };
 
