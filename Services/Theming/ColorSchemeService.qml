@@ -204,9 +204,12 @@ Singleton {
 
   // Check if any templates are enabled
   function hasEnabledTemplates() {
-    const templates = Settings.data.templates;
-    for (const key in templates) {
-      if (templates[key]) {
+    const activeTemplates = Settings.data.templates.activeTemplates;
+    if (!activeTemplates || activeTemplates.length === 0) {
+      return false;
+    }
+    for (let i = 0; i < activeTemplates.length; i++) {
+      if (activeTemplates[i].enabled) {
         return true;
       }
     }

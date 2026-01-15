@@ -3,11 +3,24 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Services.Compositor
 
 Singleton {
   id: root
 
   property bool isVisible: true
+
+  // Computed visibility that factors in compositor overview state
+  readonly property bool effectivelyVisible: {
+    if (!isVisible) {
+      return false;
+    }
+    if (Settings.data.bar.hideOnOverview && CompositorService.overviewActive) {
+      return false;
+    }
+    return true;
+  }
+
   property var readyBars: ({})
 
   // Registry to store actual widget instances

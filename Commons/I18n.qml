@@ -318,15 +318,12 @@ Singleton {
           value = value[keys[i]];
         } else {
           // Indicate this key does not even exists in the english fallback
-          return `## ${key} ##`;
+          return `!!${key}!!`;
         }
       }
-
-      // Make untranslated string easy to spot
-      value = `<i>${value}</i>`;
     } else if (notFound) {
       // No fallback available
-      return `## ${key} ##`;
+      return `!!${key}!!`;
     }
 
     if (typeof value !== "string") {

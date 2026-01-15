@@ -9,6 +9,7 @@ ColumnLayout {
   property string description: ""
   property bool enableDescriptionRichText: false
 
+  opacity: enabled ? 1.0 : 0.6
   spacing: Style.marginXXS
   Layout.fillWidth: true
   Layout.bottomMargin: Style.marginM

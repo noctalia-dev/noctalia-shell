@@ -8,6 +8,7 @@ import qs.Widgets
 
 ColumnLayout {
   id: root
+  enabled: Settings.data.dock.enabled
   spacing: Style.marginL
   Layout.fillWidth: true
 

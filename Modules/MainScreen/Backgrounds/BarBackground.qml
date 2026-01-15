@@ -32,8 +32,8 @@ ShapePath {
 
   // Check if bar should be visible on this screen
   readonly property bool shouldShow: {
-    // Check global bar visibility
-    if (!BarService.isVisible)
+    // Check global bar visibility (includes overview state)
+    if (!BarService.effectivelyVisible)
       return false;
 
     // Check screen-specific configuration

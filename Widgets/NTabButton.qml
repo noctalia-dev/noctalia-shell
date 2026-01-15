@@ -12,6 +12,8 @@ Rectangle {
   property bool checked: false
   property int tabIndex: 0
   property real pointSize: Style.fontSizeM
+  property bool isFirst: false
+  property bool isLast: false
 
   // Internal state
   property bool isHovered: false
@@ -22,9 +24,14 @@ Rectangle {
   Layout.fillHeight: true
   implicitWidth: tabText.implicitWidth + Style.marginM * 2
 
-  // Styling
-  radius: Style.iRadiusM
+  topLeftRadius: isFirst ? Style.iRadiusM : Style.iRadiusXXS
+  bottomLeftRadius: isFirst ? Style.iRadiusM : Style.iRadiusXXS
+  topRightRadius: isLast ? Style.iRadiusM : Style.iRadiusXXS
+  bottomRightRadius: isLast ? Style.iRadiusM : Style.iRadiusXXS
+
   color: root.isHovered ? Color.mHover : (root.checked ? Color.mPrimary : Color.mSurface)
+  border.color: Color.mOutline
+  border.width: Style.borderS
 
   Behavior on color {
     ColorAnimation {
@@ -35,10 +42,10 @@ Rectangle {
 
   NText {
     id: tabText
+    y: Style.pixelAlignCenter(parent.height, height)
     anchors {
       left: parent.left
       right: parent.right
-      verticalCenter: parent.verticalCenter
       leftMargin: Style.marginS
       rightMargin: Style.marginS
     }

@@ -24,7 +24,6 @@ ColumnLayout {
       text: I18n.tr("common.monitors")
       tabIndex: 1
       checked: subTabBar.currentIndex === 1
-      visible: Settings.data.dock.enabled
     }
   }
 

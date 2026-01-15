@@ -5,6 +5,7 @@ import Quickshell
 import qs.Commons
 import qs.Services.System
 import qs.Services.Theming
+import qs.Services.UI
 import qs.Widgets
 
 ColumnLayout {
@@ -12,390 +13,257 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
+  // Build a combined list of all available templates from TemplateRegistry, sorted alphabetically
+  readonly property var allTemplates: {
+    var templates = [];
+
+    // Helper to format path description
+    function getDesc(fallbackPath) {
+      return I18n.tr("panels.color-scheme.templates-write-path", {
+                       "filepath": fallbackPath
+                     });
+    }
+
+    // Add terminals
+    for (var i = 0; i < TemplateRegistry.terminals.length; i++) {
+      var t = TemplateRegistry.terminals[i];
+      templates.push({
+                       "id": t.id,
+                       "name": t.name,
+                       "category": "terminal",
+                       "tooltip": getDesc(t.outputPath)
+                     });
+    }
+
+    // Add applications
+    for (var j = 0; j < TemplateRegistry.applications.length; j++) {
+      var app = TemplateRegistry.applications[j];
+      var path = "";
+
+      // Determine path to show
+      if (app.outputs && app.outputs.length > 0) {
+        var paths = [];
+        for (var k = 0; k < app.outputs.length; k++) {
+          paths.push(app.outputs[k].path);
+        }
+        path = paths.join("\n");
+      } else if (app.clients && app.clients.length > 0) {
+        var validClients = [];
+        for (var k = 0; k < app.clients.length; k++) {
+          var client = app.clients[k];
+          var include = true;
+
+          if (app.id === "discord") {
+            include = TemplateProcessor.isDiscordClientEnabled(client.name);
+          } else if (app.id === "code") {
+            include = TemplateProcessor.isCodeClientEnabled(client.name);
+          }
+
+          if (include) {
+            validClients.push(client.path);
+          }
+        }
+
+        if (validClients.length > 0) {
+          path = validClients.join("\n");
+        } else {
+          path = I18n.tr("panels.color-scheme.templates-none-detected");
+        }
+      }
+
+      templates.push({
+                       "id": app.id,
+                       "name": app.name,
+                       "category": app.category || "applications",
+                       "tooltip": getDesc(path)
+                     });
+    }
+
+    // Sort alphabetically by name
+    templates.sort((a, b) => a.name.localeCompare(b.name));
+
+    return templates;
+  }
+
+  // Filter toggle
+  property bool showOnlyActive: false
+
+  // Filtered templates based on search and toggle
+  property string searchText: ""
+  readonly property var filteredTemplates: {
+    // Search overrides toggle
+    if (searchText.trim() !== "") {
+      var query = searchText.toLowerCase().trim();
+      return allTemplates.filter(t => t.name.toLowerCase().includes(query));
+    }
+
+    // Filter by active if enabled
+    if (showOnlyActive) {
+      return allTemplates.filter(t => isTemplateActive(t.id));
+    }
+
+    return allTemplates;
+  }
+
+  // Check if a template is active
+  function isTemplateActive(templateId) {
+    for (var i = 0; i < Settings.data.templates.activeTemplates.length; i++) {
+      if (Settings.data.templates.activeTemplates[i].id === templateId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Toggle a template on/off
+  function toggleTemplate(templateId) {
+    var current = Settings.data.templates.activeTemplates.slice();
+    var existingIndex = -1;
+
+    for (var i = 0; i < current.length; i++) {
+      if (current[i].id === templateId) {
+        existingIndex = i;
+        break;
+      }
+    }
+
+    if (existingIndex >= 0) {
+      // Remove it
+      current.splice(existingIndex, 1);
+    } else {
+      // Add it
+      current.push({
+                     "id": templateId,
+                     "enabled": true
+                   });
+    }
+
+    Settings.data.templates.activeTemplates = current;
+    AppThemeService.generate();
+
+    // Clear search context on interaction to return to filtered view
+    if (searchText !== "") {
+      searchText = "";
+    }
+  }
+
   NText {
     text: I18n.tr("panels.color-scheme.templates-desc")
     wrapMode: Text.WordWrap
     Layout.fillWidth: true
   }
 
-  NCollapsible {
+  // Search/filter input row
+  RowLayout {
     Layout.fillWidth: true
-    label: I18n.tr("panels.color-scheme.templates-ui-label")
-    description: I18n.tr("panels.color-scheme.templates-ui-description")
-    expanded: true
+    spacing: Style.marginS
 
-    NCheckbox {
-      label: "GTK"
-      description: I18n.tr("panels.color-scheme.templates-ui-qt-description", {
-                             "filepath": "~/.config/gtk-3.0/gtk.css & ~/.config/gtk-4.0/gtk.css"
-                           })
-      checked: Settings.data.templates.gtk
-      onToggled: checked => {
-                   Settings.data.templates.gtk = checked;
-                   AppThemeService.generate();
-                 }
+    NTextInput {
+      Layout.fillWidth: true
+      placeholderText: I18n.tr("placeholders.search")
+      text: root.searchText
+      onTextChanged: root.searchText = text
     }
 
-    NCheckbox {
-      label: "Qt"
-      description: I18n.tr("panels.color-scheme.templates-ui-qt-description", {
-                             "filepath": "~/.config/qt5ct/colors/noctalia.conf & ~/.config/qt6ct/colors/noctalia.conf"
-                           })
-      checked: Settings.data.templates.qt
-      onToggled: checked => {
-                   Settings.data.templates.qt = checked;
-                   AppThemeService.generate();
-                 }
-    }
+    NIconButton {
+      icon: "filter"
+      tooltipText: root.showOnlyActive ? I18n.tr("actions.show-all") : I18n.tr("actions.show-active-only")
 
-    NCheckbox {
-      label: "KColorScheme"
-      description: I18n.tr("panels.color-scheme.templates-ui-qt-description", {
-                             "filepath": "~/.local/share/color-schemes/noctalia.colors"
-                           })
-      checked: Settings.data.templates.kcolorscheme
-      onToggled: checked => {
-                   Settings.data.templates.kcolorscheme = checked;
-                   AppThemeService.generate();
-                 }
+      colorBg: root.showOnlyActive ? Color.mPrimary : Color.mSurface
+      colorFg: root.showOnlyActive ? Color.mOnPrimary : Color.mOnSurface
+
+      onClicked: root.showOnlyActive = !root.showOnlyActive
     }
   }
 
-  NCollapsible {
+  // Chip grid - uniform columns
+  GridLayout {
     Layout.fillWidth: true
-    label: I18n.tr("panels.color-scheme.templates-compositors-label")
-    description: I18n.tr("panels.color-scheme.templates-compositors-description")
-    expanded: true
+    columns: 4
+    columnSpacing: Style.marginS
+    rowSpacing: Style.marginS
 
-    NCheckbox {
-      label: "Niri"
-      description: I18n.tr("panels.color-scheme.templates-compositors-niri-description", {
-                             "filepath": "~/.config/niri/noctalia.kdl"
-                           })
-      checked: Settings.data.templates.niri
-      onToggled: checked => {
-                   Settings.data.templates.niri = checked;
-                   AppThemeService.generate();
-                 }
-    }
+    Repeater {
+      model: filteredTemplates
 
-    NCheckbox {
-      label: "Hyprland"
-      description: I18n.tr("panels.color-scheme.templates-ui-qt-description", {
-                             "filepath": "~/.config/hypr/noctalia/noctalia-colors.conf"
-                           })
-      checked: Settings.data.templates.hyprland
-      onToggled: checked => {
-                   Settings.data.templates.hyprland = checked;
-                   AppThemeService.generate();
-                 }
-    }
+      Rectangle {
+        id: chip
+        Layout.fillWidth: true
+        Layout.preferredHeight: Math.round(Style.baseWidgetSize * 0.9)
+        radius: height / 2
+        color: isActive ? Color.mPrimary : (chipMouse.containsMouse ? Color.mHover : Color.mSurface)
+        border.color: isActive ? Color.mPrimary : Color.mOutline
+        border.width: Style.borderS
 
-    NCheckbox {
-      label: "Mango"
-      description: I18n.tr("panels.color-scheme.templates-compositors-mango-description", {
-                             "filepath": "~/.config/mango/noctalia.conf"
-                           })
-      checked: Settings.data.templates.mango
-      onToggled: checked => {
-                   Settings.data.templates.mango = checked;
-                   AppThemeService.generate();
-                 }
-    }
-  }
+        required property int index
+        required property var modelData
+        readonly property bool isActive: root.isTemplateActive(modelData.id)
 
-  NCollapsible {
-    Layout.fillWidth: true
-    label: I18n.tr("panels.color-scheme.templates-terminal-label")
-    description: I18n.tr("panels.color-scheme.templates-terminal-description")
-    expanded: false
-
-    NCheckbox {
-      label: "Alacritty"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.config/alacritty/themes/noctalia"
-                           })
-      checked: Settings.data.templates.alacritty
-      onToggled: checked => {
-                   Settings.data.templates.alacritty = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Kitty"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.config/kitty/themes/noctalia.conf"
-                           })
-      checked: Settings.data.templates.kitty
-      onToggled: checked => {
-                   Settings.data.templates.kitty = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Ghostty"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.config/ghostty/themes/noctalia"
-                           })
-      checked: Settings.data.templates.ghostty
-      onToggled: checked => {
-                   Settings.data.templates.ghostty = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Foot"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.config/foot/themes/noctalia"
-                           })
-      checked: Settings.data.templates.foot
-      onToggled: checked => {
-                   Settings.data.templates.foot = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Wezterm"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.config/wezterm/colors/Noctalia.toml"
-                           })
-      checked: Settings.data.templates.wezterm
-      onToggled: checked => {
-                   Settings.data.templates.wezterm = checked;
-                   AppThemeService.generate();
-                 }
-    }
-  }
-
-  NCollapsible {
-    Layout.fillWidth: true
-    label: I18n.tr("panels.color-scheme.templates-programs-label")
-    description: I18n.tr("panels.color-scheme.templates-programs-description")
-    expanded: false
-
-    NCheckbox {
-      label: "Fuzzel"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.config/fuzzel/themes/noctalia"
-                           })
-      checked: Settings.data.templates.fuzzel
-      onToggled: checked => {
-                   Settings.data.templates.fuzzel = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      id: discordToggle
-      label: "Discord"
-      description: {
-        if (ProgramCheckerService.availableDiscordClients.length === 0) {
-          return I18n.tr("panels.color-scheme.templates-programs-discord-description-missing");
-        } else {
-          var clientInfo = [];
-          for (var i = 0; i < ProgramCheckerService.availableDiscordClients.length; i++) {
-            var client = ProgramCheckerService.availableDiscordClients[i];
-            clientInfo.push(client.name.charAt(0).toUpperCase() + client.name.slice(1));
+        Behavior on color {
+          ColorAnimation {
+            duration: Style.animationFast
           }
-          return I18n.tr("panels.color-scheme.templates-programs-discord-description-detected", {
-                           "clients": clientInfo.join(", ")
-                         });
+        }
+
+        NText {
+          id: chipText
+          anchors.centerIn: parent
+          width: parent.width - Style.marginL * 2
+          text: chip.modelData.name
+          pointSize: Style.fontSizeS
+          color: chip.isActive ? Color.mOnPrimary : (chipMouse.containsMouse ? Color.mOnSecondary : Color.mOnSurface)
+          horizontalAlignment: Text.AlignHCenter
+          elide: Text.ElideRight
+
+          Behavior on color {
+            ColorAnimation {
+              duration: Style.animationFast
+            }
+          }
+        }
+
+        MouseArea {
+          id: chipMouse
+          anchors.fill: parent
+          cursorShape: Qt.PointingHandCursor
+          hoverEnabled: true
+          onClicked: root.toggleTemplate(chip.modelData.id)
+          onEntered: {
+            if (chip.modelData.tooltip) {
+              TooltipService.show(chip, chip.modelData.tooltip, "auto");
+            }
+          }
+          onExited: {
+            TooltipService.hide();
+          }
         }
       }
-      Layout.fillWidth: true
-      Layout.preferredWidth: -1
-      checked: Settings.data.templates.discord
-      enabled: ProgramCheckerService.availableDiscordClients.length > 0
-      onToggled: checked => {
-                   Settings.data.templates.discord = checked;
-                   if (ProgramCheckerService.availableDiscordClients.length > 0) {
-                     AppThemeService.generate();
-                   }
-                 }
-    }
-
-    NCheckbox {
-      label: "Pywalfox"
-      description: I18n.tr("panels.color-scheme.templates-programs-pywalfox-description", {
-                             "filepath": "~/.cache/wal/colors.json"
-                           })
-      checked: Settings.data.templates.pywalfox
-      onToggled: checked => {
-                   Settings.data.templates.pywalfox = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Vicinae"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.local/share/vicinae/themes/matugen.toml"
-                           })
-      checked: Settings.data.templates.vicinae
-      onToggled: checked => {
-                   Settings.data.templates.vicinae = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Walker"
-      description: I18n.tr("panels.color-scheme.templates-programs-walker-description", {
-                             "filepath": "~/.config/walker/style.css"
-                           })
-      checked: Settings.data.templates.walker
-      onToggled: checked => {
-                   Settings.data.templates.walker = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      id: codeToggle
-      label: "Code"
-      description: {
-        if (ProgramCheckerService.availableCodeClients.length === 0) {
-          return I18n.tr("panels.color-scheme.templates-programs-code-description-missing");
-        } else {
-          var clientInfo = [];
-          for (var i = 0; i < ProgramCheckerService.availableCodeClients.length; i++) {
-            var client = ProgramCheckerService.availableCodeClients[i];
-            var clientName = client.name === "code" ? "VSCode" : "VSCodium";
-            clientInfo.push(clientName);
-          }
-          return I18n.tr("panels.color-scheme.templates-programs-code-description-detected", {
-                           "clients": clientInfo.join(", ")
-                         });
-        }
-      }
-      Layout.fillWidth: true
-      Layout.preferredWidth: -1
-      checked: Settings.data.templates.code
-      enabled: ProgramCheckerService.availableCodeClients.length > 0
-      onToggled: checked => {
-                   Settings.data.templates.code = checked;
-                   if (ProgramCheckerService.availableCodeClients.length > 0) {
-                     AppThemeService.generate();
-                   }
-                 }
-    }
-
-    NCheckbox {
-      label: "Spicetify"
-      description: I18n.tr("panels.color-scheme.templates-programs-spicetify-description", {
-                             "filepath": "~/.config/spicetify/Themes/Comfy/color.ini"
-                           })
-      checked: Settings.data.templates.spicetify
-      onToggled: checked => {
-                   Settings.data.templates.spicetify = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Telegram"
-      description: I18n.tr("panels.color-scheme.templates-ui-qt-description", {
-                             "filepath": "~/.config/telegram-desktop/themes/noctalia.tdesktop-theme"
-                           })
-      checked: Settings.data.templates.telegram
-      onToggled: checked => {
-                   Settings.data.templates.telegram = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Cava"
-      description: I18n.tr("panels.color-scheme.templates-ui-qt-description", {
-                             "filepath": "~/.config/cava/themes/noctalia"
-                           })
-      checked: Settings.data.templates.cava
-      onToggled: checked => {
-                   Settings.data.templates.cava = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Yazi"
-      description: I18n.tr("panels.color-scheme.templates-programs-yazi-description", {
-                             "filepath": "~/.config/yazi/flavors/noctalia.yazi/flavor.toml"
-                           })
-      checked: Settings.data.templates.yazi
-      onToggled: checked => {
-                   Settings.data.templates.yazi = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Zed"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.config/zed/themes/noctalia.json"
-                           })
-      checked: Settings.data.templates.zed
-      onToggled: checked => {
-                   Settings.data.templates.zed = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Zen Browser"
-      description: I18n.tr("panels.color-scheme.templates-programs-zen-browser-description", {
-                             "filepath": "~/.cache/noctalia/zen-browser/zen-userChrome.css"
-                           })
-      checked: Settings.data.templates.zenBrowser
-      onToggled: checked => {
-                   Settings.data.templates.zenBrowser = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Emacs"
-      description: I18n.tr("panels.color-scheme.templates-programs-emacs-description")
-      checked: Settings.data.templates.emacs
-      onToggled: checked => {
-                   Settings.data.templates.emacs = checked;
-                   AppThemeService.generate();
-                 }
-    }
-
-    NCheckbox {
-      label: "Helix"
-      description: I18n.tr("panels.color-scheme.templates-programs-zed-description", {
-                             "filepath": "~/.config/helix/themes/noctalia.toml"
-                           })
-      checked: Settings.data.templates.helix
-      onToggled: checked => {
-                   Settings.data.templates.helix = checked;
-                   AppThemeService.generate();
-                 }
     }
   }
 
-  NCollapsible {
-    Layout.fillWidth: true
-    label: I18n.tr("panels.color-scheme.templates-misc-label")
-    description: I18n.tr("panels.color-scheme.templates-misc-description")
-    expanded: false
+  // No results message
+  NText {
+    visible: filteredTemplates.length === 0 && searchText.trim() !== ""
+    text: I18n.tr("common.no-results")
+    color: Color.mOnSurfaceVariant
+  }
 
-    NCheckbox {
-      label: I18n.tr("panels.color-scheme.templates-misc-user-templates-label")
-      description: I18n.tr("panels.color-scheme.templates-misc-user-templates-description")
-      checked: Settings.data.templates.enableUserTemplates
-      onToggled: checked => {
-                   Settings.data.templates.enableUserTemplates = checked;
-                   if (checked) {
-                     TemplateRegistry.writeUserTemplatesToml();
-                   }
-                   AppThemeService.generate();
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginM
+  }
+
+  // User templates checkbox
+  NCheckbox {
+    label: I18n.tr("panels.color-scheme.templates-misc-user-templates-label")
+    description: I18n.tr("panels.color-scheme.templates-misc-user-templates-description")
+    checked: Settings.data.templates.enableUserTemplates
+    onToggled: checked => {
+                 Settings.data.templates.enableUserTemplates = checked;
+                 if (checked) {
+                   TemplateRegistry.writeUserTemplatesToml();
                  }
-    }
+                 AppThemeService.generate();
+               }
   }
 }

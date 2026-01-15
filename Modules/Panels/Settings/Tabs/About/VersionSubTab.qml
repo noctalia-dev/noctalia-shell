@@ -451,15 +451,15 @@ ColumnLayout {
       }
     }
 
-    NButton {
-      icon: "heart"
-      text: I18n.tr("panels.about.support")
-      outlined: true
-      onClicked: {
-        Quickshell.execDetached(["xdg-open", "https://ko-fi.com/lysec"]);
-        ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.kofi-opened"));
-      }
-    }
+    // NButton {
+    //   icon: "heart"
+    //   text: I18n.tr("panels.about.support")
+    //   outlined: true
+    //   onClicked: {
+    //     Quickshell.execDetached(["xdg-open", "https://ko-fi.com/lysec"]);
+    //     ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.kofi-opened"));
+    //   }
+    // }
 
     NButton {
       icon: "copy"

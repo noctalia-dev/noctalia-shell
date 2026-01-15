@@ -985,12 +985,12 @@ Singleton {
 
       // Return formatted key if translation not found
       if (translation === undefined || translation === null) {
-        return '## ' + key + ' ##';
+        return `!!${key}!!`;
       }
 
       // Ensure translation is a string
       if (typeof translation !== 'string') {
-        return '## ' + key + ' ##';
+        return `!!${key}!!`;
       }
 
       // Handle interpolations (e.g., "Hello {name}!")

@@ -4,7 +4,7 @@
 if [ "$#" -ne 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|niri}" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|niri|hyprland|mango}" >&2
     exit 1
 fi
 
@@ -272,7 +272,7 @@ niri)
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "Config file not found, creating $CONFIG_FILE..."
         mkdir -p "$(dirname "$CONFIG_FILE")"
-        echo "$INCLUDE_LINE" >"$CONFIG_FILE"
+        echo -e "\n$INCLUDE_LINE\n" >"$CONFIG_FILE"
         echo "Created new config file with noctalia theme."
     else
         # Check if include line already exists
@@ -280,7 +280,7 @@ niri)
             echo "Theme already included, skipping modification."
         else
             # Add the include line to the end of the file
-            echo "$INCLUDE_LINE" >>"$CONFIG_FILE"
+            echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
             echo "✅ Added noctalia theme include to config."
         fi
     fi
@@ -295,7 +295,7 @@ hyprland)
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "Config file not found, creating $CONFIG_FILE..."
         mkdir -p "$(dirname "$CONFIG_FILE")"
-        echo "$INCLUDE_LINE" >"$CONFIG_FILE"
+        echo -e "\n$INCLUDE_LINE\n" >"$CONFIG_FILE"
         echo "Created new config file with noctalia theme."
     else
         # Check if include line already exists
@@ -303,7 +303,7 @@ hyprland)
             echo "Theme already included, skipping modification."
         else
             # Add the include line to the end of the file
-            echo "$INCLUDE_LINE" >>"$CONFIG_FILE"
+            echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
             echo "✅ Added noctalia theme include to config."
         fi
     fi
@@ -363,10 +363,10 @@ mango)
         if [ -f "$MAIN_CONFIG" ]; then
             echo "" >>"$MAIN_CONFIG"
             echo "# This sources the noctalia theme" >>"$MAIN_CONFIG"
-            echo "$SOURCE_LINE" >>"$MAIN_CONFIG"
+            echo -e "\n$SOURCE_LINE\n" >>"$MAIN_CONFIG"
         else
             echo "# This sources the noctalia theme" >"$MAIN_CONFIG"
-            echo "$SOURCE_LINE" >>"$MAIN_CONFIG"
+            echo -e "\n$SOURCE_LINE\n" >>"$MAIN_CONFIG"
         fi
 
         echo "✅ Added noctalia theme to config."

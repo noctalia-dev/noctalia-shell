@@ -282,62 +282,63 @@ SmartPanel {
       // HEADER
       NBox {
         Layout.fillWidth: true
-        implicitHeight: headerRow.implicitHeight + (Style.marginM * 2)
+        implicitHeight: header.implicitHeight + (Style.marginM * 2)
 
-        RowLayout {
-          id: headerRow
+        ColumnLayout {
+          id: header
           anchors.fill: parent
           anchors.margins: Style.marginM
           spacing: Style.marginM
 
-          NIcon {
-            icon: "settings-audio"
-            pointSize: Style.fontSizeXXL
-            color: Color.mPrimary
+          RowLayout {
+            NIcon {
+              icon: "settings-audio"
+              pointSize: Style.fontSizeXXL
+              color: Color.mPrimary
+            }
+
+            NText {
+              text: I18n.tr("panels.audio.title")
+              pointSize: Style.fontSizeL
+              font.weight: Style.fontWeightBold
+              color: Color.mOnSurface
+              Layout.fillWidth: true
+            }
+
+            NIconButton {
+              icon: "close"
+              tooltipText: I18n.tr("common.close")
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: {
+                root.close();
+              }
+            }
           }
 
-          NText {
-            text: I18n.tr("panels.audio.title")
-            pointSize: Style.fontSizeL
-            font.weight: Style.fontWeightBold
-            color: Color.mOnSurface
+          NTabBar {
+            id: tabBar
             Layout.fillWidth: true
-          }
+            margins: Style.marginS
+            currentIndex: panelContent.currentTabIndex
+            distributeEvenly: true
+            onCurrentIndexChanged: panelContent.currentTabIndex = currentIndex
 
-          NIconButton {
-            icon: "close"
-            tooltipText: I18n.tr("common.close")
-            baseSize: Style.baseWidgetSize * 0.8
-            onClicked: {
-              root.close();
+            NTabButton {
+              text: I18n.tr("common.volumes")
+              tabIndex: 0
+              checked: tabBar.currentIndex === 0
+            }
+
+            NTabButton {
+              text: I18n.tr("common.devices")
+              tabIndex: 1
+              checked: tabBar.currentIndex === 1
             }
           }
         }
       }
 
       // Tab Bar
-      NTabBar {
-        id: tabBar
-        Layout.fillWidth: true
-        border.color: Style.boxBorderColor
-        border.width: Style.borderS
-        margins: Style.marginS
-        currentIndex: panelContent.currentTabIndex
-        distributeEvenly: true
-        onCurrentIndexChanged: panelContent.currentTabIndex = currentIndex
-
-        NTabButton {
-          text: I18n.tr("common.volumes")
-          tabIndex: 0
-          checked: tabBar.currentIndex === 0
-        }
-
-        NTabButton {
-          text: I18n.tr("common.devices")
-          tabIndex: 1
-          checked: tabBar.currentIndex === 1
-        }
-      }
 
       // Content Stack
       StackLayout {

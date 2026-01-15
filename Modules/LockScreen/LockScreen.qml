@@ -3,11 +3,9 @@ import QtQuick.Controls
 import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Pam
 import Quickshell.Services.UPower
 import Quickshell.Wayland
-import Quickshell.Widgets
 import qs.Commons
 import qs.Services.Compositor
 import qs.Services.Hardware
@@ -80,8 +78,6 @@ Loader {
         locked: root.active
 
         WlSessionLockSurface {
-          readonly property var now: Time.now
-
           Item {
             id: batteryIndicator
             property bool initializationComplete: false
@@ -91,21 +87,9 @@ Loader {
               onTriggered: batteryIndicator.initializationComplete = true
             }
 
-            readonly property var bluetoothDevice: BatteryService.findBluetoothBatteryDevice()
-            readonly property bool hasBluetoothBattery: bluetoothDevice && bluetoothDevice.batteryAvailable && bluetoothDevice.battery !== undefined
-            readonly property var battery: BatteryService.findLaptopBattery()
-            readonly property bool isDevicePresent: {
-              if (hasBluetoothBattery) {
-                return bluetoothDevice.connected === true;
-              }
-              if (battery) {
-                return (battery.type === UPowerDeviceType.Battery && battery.isPresent !== undefined) ? battery.isPresent : (battery.ready && battery.percentage !== undefined);
-              }
-              return false;
-            }
-            property bool isReady: initializationComplete && isDevicePresent && (hasBluetoothBattery || (battery && battery.ready && battery.percentage !== undefined))
-            property real percent: isReady ? (hasBluetoothBattery ? (bluetoothDevice.battery * 100) : (battery.percentage * 100)) : 0
-            property bool charging: isReady ? (hasBluetoothBattery ? false : (battery ? battery.state === UPowerDeviceState.Charging : false)) : false
+            property bool isReady: initializationComplete && BatteryService.batteryReady
+            property real percent: BatteryService.batteryPercentage
+            property bool charging: BatteryService.batteryCharging
             property bool batteryVisible: isReady && percent > 0 && BatteryService.hasAnyBattery()
           }
 
@@ -495,12 +479,15 @@ Loader {
                         "en": "dddd, MMMM d",
                         "es": "dddd, d 'de' MMMM",
                         "fr": "dddd d MMMM",
+                        "hu": "dddd, MMMM d.",
                         "ja": "yyyy年M月d日 dddd",
+                        "ku": "dddd, dê MMMM",
                         "nl": "dddd d MMMM",
                         "pt": "dddd, d 'de' MMMM",
                         "zh": "yyyy年M月d日 dddd"
                       };
-                      return I18n.locale.toString(Time.now, formats[lang] || "dddd, d MMMM");
+                      var dateString = I18n.locale.toString(Time.now, formats[lang] || "dddd, d MMMM");
+                      return dateString.charAt(0).toUpperCase() + dateString.slice(1);
                     }
                     pointSize: Style.fontSizeXL
                     color: Color.mOnSurfaceVariant
@@ -697,55 +684,7 @@ Loader {
               radius: Style.radiusL
               color: Color.mSurface
 
-              // Measure text widths to determine minimum button width (for container width calculation)
-              Item {
-                id: buttonRowTextMeasurer
-                visible: false
-                property real iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                property real fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
-                property real spacing: 6
-                property real padding: 18 // Approximate horizontal padding per button
-
-                // Measure all button text widths
-                NText {
-                  id: logoutText
-                  text: I18n.tr("common.logout")
-                  font.pointSize: buttonRowTextMeasurer.fontSize
-                }
-                NText {
-                  id: suspendText
-                  text: I18n.tr("common.suspend")
-                  font.pointSize: buttonRowTextMeasurer.fontSize
-                }
-                NText {
-                  id: hibernateText
-                  text: Settings.data.general.showHibernateOnLockScreen ? I18n.tr("common.hibernate") : ""
-                  font.pointSize: buttonRowTextMeasurer.fontSize
-                }
-                NText {
-                  id: rebootText
-                  text: I18n.tr("common.reboot")
-                  font.pointSize: buttonRowTextMeasurer.fontSize
-                }
-                NText {
-                  id: shutdownText
-                  text: I18n.tr("common.shutdown")
-                  font.pointSize: buttonRowTextMeasurer.fontSize
-                }
-
-                // Calculate maximum width needed
-                property real maxTextWidth: Math.max(logoutText.implicitWidth, Math.max(suspendText.implicitWidth, Math.max(hibernateText.implicitWidth, Math.max(rebootText.implicitWidth, shutdownText.implicitWidth))))
-                property real minButtonWidth: maxTextWidth + iconSize + spacing + padding
-              }
-
-              // Calculate minimum width based on button requirements
-              // Button row needs: margins + buttons (4 or 5 depending on hibernate visibility) + spacings + margins
-              // Plus ColumnLayout margins (14 on each side = 28 total)
-              // Add extra buffer to ensure password input has proper padding
-              property int buttonCount: Settings.data.general.showHibernateOnLockScreen ? 5 : 4
-              property int spacingCount: buttonCount - 1
-              property real minButtonRowWidth: buttonRowTextMeasurer.minButtonWidth > 0 ? (buttonCount * buttonRowTextMeasurer.minButtonWidth) + (spacingCount * 10) + 40 + (2 * Style.marginM) + 28 + (2 * Style.marginM) : 750
-              width: Math.max(750, minButtonRowWidth)
+              width: 750
 
               ColumnLayout {
                 anchors.fill: parent
@@ -1043,6 +982,10 @@ Loader {
                       }
                     }
                   }
+
+                  Item {
+                    Layout.preferredWidth: Style.marginM
+                  }
                 }
 
                 // Password input
@@ -1285,120 +1228,117 @@ Loader {
 
                 // Session control buttons
                 RowLayout {
+                  id: sessionButtonRow
                   Layout.fillWidth: true
                   Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
-                  spacing: 0
+                  Layout.alignment: Qt.AlignHCenter
+                  spacing: 10
                   visible: Settings.data.general.showSessionButtonsOnLockScreen
 
-                  Item {
-                    Layout.preferredWidth: Style.marginM
-                  }
-
-                  NButton {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
-                    icon: "logout"
-                    text: I18n.tr("common.logout")
-                    outlined: true
-                    backgroundColor: Color.mOnSurfaceVariant
-                    textColor: Color.mOnPrimary
-                    hoverColor: Color.mPrimary
-                    fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
-                    iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                    fontWeight: Style.fontWeightMedium
-                    horizontalAlignment: Qt.AlignHCenter
-                    buttonRadius: Style.radiusL
-                    onClicked: CompositorService.logout()
-                  }
+                  readonly property int buttonCount: Settings.data.general.showHibernateOnLockScreen ? 5 : 4
+                  readonly property real availableWidth: bottomContainer.width - 48
+                  readonly property real buttonWidth: (availableWidth - (buttonCount - 1) * spacing) / buttonCount
+                  readonly property real buttonHeight: sessionButtonRow.height
 
                   Item {
-                    Layout.preferredWidth: 10
-                  }
+                    Layout.preferredWidth: sessionButtonRow.buttonWidth
+                    Layout.preferredHeight: sessionButtonRow.buttonHeight
 
-                  NButton {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
-                    icon: "suspend"
-                    text: I18n.tr("common.suspend")
-                    outlined: true
-                    backgroundColor: Color.mOnSurfaceVariant
-                    textColor: Color.mOnPrimary
-                    hoverColor: Color.mPrimary
-                    fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
-                    iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                    fontWeight: Style.fontWeightMedium
-                    horizontalAlignment: Qt.AlignHCenter
-                    buttonRadius: Style.radiusL
-                    onClicked: CompositorService.suspend()
+                    NButton {
+                      anchors.fill: parent
+                      icon: "logout"
+                      text: I18n.tr("common.logout")
+                      outlined: true
+                      backgroundColor: Color.mOnSurfaceVariant
+                      textColor: Color.mOnPrimary
+                      hoverColor: Color.mPrimary
+                      fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                      iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+                      horizontalAlignment: Qt.AlignHCenter
+                      buttonRadius: Style.radiusL
+                      onClicked: CompositorService.logout()
+                    }
                   }
 
                   Item {
-                    Layout.preferredWidth: 10
+                    Layout.preferredWidth: sessionButtonRow.buttonWidth
+                    Layout.preferredHeight: sessionButtonRow.buttonHeight
+
+                    NButton {
+                      anchors.fill: parent
+                      icon: "suspend"
+                      text: I18n.tr("common.suspend")
+                      outlined: true
+                      backgroundColor: Color.mOnSurfaceVariant
+                      textColor: Color.mOnPrimary
+                      hoverColor: Color.mPrimary
+                      fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                      iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+                      horizontalAlignment: Qt.AlignHCenter
+                      buttonRadius: Style.radiusL
+                      onClicked: CompositorService.suspend()
+                    }
+                  }
+
+                  Item {
+                    Layout.preferredWidth: sessionButtonRow.buttonWidth
+                    Layout.preferredHeight: sessionButtonRow.buttonHeight
                     visible: Settings.data.general.showHibernateOnLockScreen
-                  }
 
-                  NButton {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
-                    icon: "hibernate"
-                    text: I18n.tr("common.hibernate")
-                    outlined: true
-                    backgroundColor: Color.mOnSurfaceVariant
-                    textColor: Color.mOnPrimary
-                    hoverColor: Color.mPrimary
-                    fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
-                    iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                    fontWeight: Style.fontWeightMedium
-                    horizontalAlignment: Qt.AlignHCenter
-                    buttonRadius: Style.radiusL
-                    visible: Settings.data.general.showHibernateOnLockScreen
-                    onClicked: CompositorService.hibernate()
+                    NButton {
+                      anchors.fill: parent
+                      icon: "hibernate"
+                      text: I18n.tr("common.hibernate")
+                      outlined: true
+                      backgroundColor: Color.mOnSurfaceVariant
+                      textColor: Color.mOnPrimary
+                      hoverColor: Color.mPrimary
+                      fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                      iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+                      horizontalAlignment: Qt.AlignHCenter
+                      buttonRadius: Style.radiusL
+                      onClicked: CompositorService.hibernate()
+                    }
                   }
 
                   Item {
-                    Layout.preferredWidth: 10
-                  }
+                    Layout.preferredWidth: sessionButtonRow.buttonWidth
+                    Layout.preferredHeight: sessionButtonRow.buttonHeight
 
-                  NButton {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
-                    icon: "reboot"
-                    text: I18n.tr("common.reboot")
-                    outlined: true
-                    backgroundColor: Color.mOnSurfaceVariant
-                    textColor: Color.mOnPrimary
-                    hoverColor: Color.mPrimary
-                    fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
-                    iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                    fontWeight: Style.fontWeightMedium
-                    horizontalAlignment: Qt.AlignHCenter
-                    buttonRadius: Style.radiusL
-                    onClicked: CompositorService.reboot()
-                  }
-
-                  Item {
-                    Layout.preferredWidth: 10
-                  }
-
-                  NButton {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: Settings.data.general.compactLockScreen ? 36 : 48
-                    icon: "shutdown"
-                    text: I18n.tr("common.shutdown")
-                    outlined: true
-                    backgroundColor: Color.mError
-                    textColor: Color.mOnError
-                    hoverColor: Color.mError
-                    fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
-                    iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
-                    fontWeight: Style.fontWeightMedium
-                    horizontalAlignment: Qt.AlignHCenter
-                    buttonRadius: Style.radiusL
-                    onClicked: CompositorService.shutdown()
+                    NButton {
+                      anchors.fill: parent
+                      icon: "reboot"
+                      text: I18n.tr("common.reboot")
+                      outlined: true
+                      backgroundColor: Color.mOnSurfaceVariant
+                      textColor: Color.mOnPrimary
+                      hoverColor: Color.mPrimary
+                      fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                      iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+                      horizontalAlignment: Qt.AlignHCenter
+                      buttonRadius: Style.radiusL
+                      onClicked: CompositorService.reboot()
+                    }
                   }
 
                   Item {
-                    Layout.preferredWidth: Style.marginM
+                    Layout.preferredWidth: sessionButtonRow.buttonWidth
+                    Layout.preferredHeight: sessionButtonRow.buttonHeight
+
+                    NButton {
+                      anchors.fill: parent
+                      icon: "shutdown"
+                      text: I18n.tr("common.shutdown")
+                      outlined: true
+                      backgroundColor: Color.mError
+                      textColor: Color.mOnError
+                      hoverColor: Color.mError
+                      fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+                      iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+                      horizontalAlignment: Qt.AlignHCenter
+                      buttonRadius: Style.radiusL
+                      onClicked: CompositorService.shutdown()
+                    }
                   }
                 }
               }

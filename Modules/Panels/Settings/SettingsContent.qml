@@ -627,10 +627,6 @@ Item {
             }
           }
 
-          NDivider {
-            Layout.fillWidth: true
-          }
-
           // Tab content area
           Rectangle {
             Layout.fillWidth: true
