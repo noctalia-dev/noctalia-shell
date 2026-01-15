@@ -4,13 +4,17 @@ import os
 import glob
 import subprocess
 import configparser
-from pathlib import Path
+
 
 # Constants
 CONFIG_DIR = os.path.expanduser("~/.config/noctalia")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "battery_threshold")
 BATTERY_GLOB = "/sys/class/power_supply/BAT*"
 THRESHOLD_FILE_NAME = "charge_control_end_threshold"
+
+# Udev rules for different permission setups
+UDEV_RULE_GROUP = 'ACTION=="add", SUBSYSTEM=="power_supply", ATTR{type}=="Battery", RUN+="/bin/sh -c \'chgrp noctalia-battery /sys/class/power_supply/%k/charge_control_end_threshold && chmod 660 /sys/class/power_supply/%k/charge_control_end_threshold\'"'
+UDEV_RULE_WORLD = 'ACTION=="add", SUBSYSTEM=="power_supply", ATTR{type}=="Battery", RUN+="/bin/sh -c \'chmod 666 /sys/class/power_supply/%k/charge_control_end_threshold\'"'
 
 def get_battery_path():
     # Find the first battery that supports threshold
@@ -47,7 +51,7 @@ def load_config():
     try:
         with open(CONFIG_FILE, 'r') as f:
             return int(f.read().strip())
-    except:
+    except (ValueError, IOError, OSError):
         return None
 
 def save_config(value):
@@ -60,10 +64,17 @@ def save_config(value):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: battery-threshold.py [get|set <val>|apply|check]")
+        print("Usage: battery-threshold.py [get|set <val>|apply|check|setup-permissions|setup-permissions-stdin]", file=sys.stderr)
         sys.exit(1)
 
     command = sys.argv[1]
+    
+    # Validate command
+    valid_commands = ["get", "set", "apply", "check", "setup-permissions", "setup-permissions-stdin"]
+    if command not in valid_commands:
+        print(f"Invalid command: {command}", file=sys.stderr)
+        print("Usage: battery-threshold.py [get|set <val>|apply|check|setup-permissions|setup-permissions-stdin]", file=sys.stderr)
+        sys.exit(1)
     bat_path = get_battery_path()
 
     if command == "check":
@@ -80,13 +91,14 @@ def main():
         sys.exit(1)
 
     if command == "setup-permissions":
-        # Create a udev rule to make the file writable by everyone (simplest for single-user desktop)
-        udev_rule = 'ACTION=="add", SUBSYSTEM=="power_supply", ATTR{type}=="Battery", RUN+="/bin/sh -c \'chmod 666 /sys/class/power_supply/%k/charge_control_end_threshold\'"'
+        # Create a udev rule to make the file writable by members of the 'noctalia-battery' group
+        udev_rule = UDEV_RULE_GROUP
         
         # 1. Apply immediate permission fix
         try:
             path = os.path.join(bat_path, THRESHOLD_FILE_NAME)
-            subprocess.check_call(["pkexec", "chmod", "666", path])
+            subprocess.check_call(["pkexec", "chgrp", "noctalia-battery", path])
+            subprocess.check_call(["pkexec", "chmod", "660", path])
         except subprocess.CalledProcessError:
              print("Failed to set immediate permissions", file=sys.stderr)
              sys.exit(1)
@@ -107,10 +119,16 @@ def main():
             sys.exit(1)
         sys.exit(0)
 
-    if command == "setup-permissions-stdin":
+    elif command == "setup-permissions-stdin":
         # Read password from stdin
         password = sys.stdin.read().strip()
-        udev_rule = 'ACTION=="add", SUBSYSTEM=="power_supply", ATTR{type}=="Battery", RUN+="/bin/sh -c \'chmod 666 /sys/class/power_supply/%k/charge_control_end_threshold\'"'
+        
+        # Validate password is not empty
+        if not password:
+            print("Error: Empty password provided", file=sys.stderr)
+            sys.exit(1)
+        
+        udev_rule = UDEV_RULE_WORLD
         
         def run_sudo(cmd_list):
             proc = subprocess.Popen(
@@ -120,24 +138,48 @@ def main():
                 stderr=subprocess.PIPE,
                 text=True
             )
-            out, err = proc.communicate(input=password + "\n")
+            try:
+                # Add timeout to prevent hanging
+                _, err = proc.communicate(input=password + "\n", timeout=30)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                raise Exception("Command timed out")
+            
             if proc.returncode != 0:
-                raise Exception(f"Command failed: {err}")
+                # Don't expose the full error message which might contain sensitive info
+                if "incorrect password" in err.lower() or "authentication failure" in err.lower():
+                    raise Exception("Authentication failed")
+                raise Exception("Command failed")
 
         try:
             # 1. Apply immediate permission fix
             path = os.path.join(bat_path, THRESHOLD_FILE_NAME)
+            
+            # Validate the path to prevent command injection
+            if not os.path.exists(bat_path) or ".." in path:
+                raise Exception("Invalid battery path")
+            
             run_sudo(["chmod", "666", path])
 
             # 2. Install persistent udev rule
-            tmp_rule = "/tmp/90-noctalia-battery.rules"
-            with open(tmp_rule, "w") as f:
+            # Use a more secure temporary file location
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode="w", delete=False, prefix="noctalia-battery-", suffix=".rules") as f:
+                tmp_rule = f.name
                 f.write(udev_rule + "\n")
             
-            run_sudo(["mv",(tmp_rule), "/etc/udev/rules.d/90-noctalia-battery.rules"])
-            run_sudo(["udevadm", "control", "--reload-rules"])
-            run_sudo(["udevadm", "trigger"])
-            print("Permissions setup complete")
+            try:
+                run_sudo(["mv", tmp_rule, "/etc/udev/rules.d/90-noctalia-battery.rules"])
+                run_sudo(["udevadm", "control", "--reload-rules"])
+                run_sudo(["udevadm", "trigger"])
+                print("Permissions setup complete")
+            finally:
+                # Clean up temp file if move failed
+                if os.path.exists(tmp_rule):
+                    try:
+                        os.unlink(tmp_rule)
+                    except:
+                        pass
         except Exception as e:
             print(f"Failed: {e}", file=sys.stderr)
             sys.exit(1)
@@ -149,14 +191,22 @@ def main():
 
     elif command == "set":
         if len(sys.argv) < 3:
+            print("Missing threshold value", file=sys.stderr)
             sys.exit(1)
-        value = int(sys.argv[2])
-        if 0 <= value <= 100:
+        try:
+            value = int(sys.argv[2])
+        except ValueError:
+            print("Invalid threshold value: must be an integer between 60 and 100.", file=sys.stderr)
+            sys.exit(1)
+        if 60 <= value <= 100:
             if write_sysfs_threshold(bat_path, value):
                 save_config(value)
                 print(value)
             else:
                 sys.exit(1)
+        else:
+            print("Threshold value out of range: must be between 60 and 100.", file=sys.stderr)
+            sys.exit(1)
 
     elif command == "apply":
         # Apply stored config to sysfs

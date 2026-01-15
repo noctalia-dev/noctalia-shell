@@ -33,13 +33,11 @@ SmartPanel {
         command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "check"]
         stdout: StdioCollector {
             onTextChanged: {
-                 var parts = text.trim().split(":");
-                 if (parts[0] === "supported") {
+                 const responseParts = text.trim().split(":");
+                 if (responseParts[0] === "supported") {
                      thresholdSupported = true;
-                     thresholdWritable = (parts[1] === "writable");
-                     if (thresholdSupported) {
-                        getThresholdProcess.running = true;
-                     }
+                     thresholdWritable = (responseParts[1] === "writable");
+                     getThresholdProcess.running = true;
                  }
             }
         }
@@ -50,9 +48,9 @@ SmartPanel {
         command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "get"]
         stdout: StdioCollector {
             onTextChanged: {
-                var val = parseInt(text.trim())
-                if (!isNaN(val)) {
-                    chargeThreshold = val
+                const parsedThreshold = parseInt(text.trim())
+                if (!isNaN(parsedThreshold)) {
+                    chargeThreshold = parsedThreshold
                 }
             }
         }
@@ -72,7 +70,15 @@ SmartPanel {
         stdinEnabled: true
         command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "setup-permissions-stdin"]
         onStarted: {
-             write(passwordInput.text + "\n");
+             var pwd = passwordInput.text;
+             passwordInput.text = "";
+             if (!pwd || pwd.trim().length === 0) {
+                 passwordInput.placeholderText = I18n.tr("password.required");
+                 pwd = "";
+                 return;
+             }
+             write(pwd + "\n");
+             pwd = "";
         }
         onExited: {
              if (exitCode === 0) {
@@ -92,7 +98,7 @@ SmartPanel {
 
     // Get device selection from Battery widget settings (check right section first, then any Battery widget)
     function getBatteryDevicePath() {
-      var widget = BarService.lookupWidget("Battery");
+      const widget = BarService.lookupWidget("Battery");
       if (widget !== undefined && widget.deviceNativePath !== undefined) {
         return widget.deviceNativePath;
       }
@@ -109,9 +115,9 @@ SmartPanel {
         return UPower.displayDevice;
       }
 
-      var deviceArray = UPower.devices.values || [];
-      for (var i = 0; i < deviceArray.length; i++) {
-        var device = deviceArray[i];
+      const deviceArray = UPower.devices.values || [];
+      for (let i = 0; i < deviceArray.length; i++) {
+        const device = deviceArray[i];
         if (device && device.nativePath === nativePath) {
           if (device.type === UPowerDeviceType.LinePower) {
             continue;
@@ -130,16 +136,16 @@ SmartPanel {
         return null;
       }
 
-      var macMatch = nativePath.match(/([0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})/);
+      const macMatch = nativePath.match(/([0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})/);
       if (!macMatch) {
         return null;
       }
 
-      var macAddress = macMatch[1].toUpperCase();
-      var deviceArray = BluetoothService.devices.values || [];
+      const macAddress = macMatch[1].toUpperCase();
+      const deviceArray = BluetoothService.devices.values || [];
 
-      for (var i = 0; i < deviceArray.length; i++) {
-        var device = deviceArray[i];
+      for (let i = 0; i < deviceArray.length; i++) {
+        const device = deviceArray[i];
         if (device && device.address && device.address.toUpperCase() === macAddress) {
           return device;
         }
@@ -238,7 +244,7 @@ SmartPanel {
     }
 
     function setProfileByIndex(idx) {
-      var prof = indexToProfile(idx);
+      const prof = indexToProfile(idx);
       profileIndex = idx;
       PowerProfileService.setProfile(prof);
     }
@@ -353,7 +359,7 @@ SmartPanel {
                   height: parent.height
                   radius: parent.radius
                   width: {
-                    var ratio = Math.max(0, Math.min(1, percent / 100));
+                    const ratio = Math.max(0, Math.min(1, percent / 100));
                     return parent.width * ratio;
                   }
                   color: Color.mPrimary
@@ -530,9 +536,7 @@ SmartPanel {
                                   setThresholdProcess.nextValue = v;
                                   setThresholdProcess.running = true;
                                 }
-                              }
-            onMoved: v => {
-                       chargeThreshold = v;
+
                      }
           }
 

@@ -110,5 +110,12 @@ Singleton {
   Process {
     command: [Quickshell.shellDir + "/Bin/battery-threshold.py", "apply"]
     running: true
+    onExited: {
+      if (exitCode !== 0) {
+        // Exit code 1 typically means no battery with threshold support (normal on many systems)
+        // Only log as warning, not error
+        Logger.w("BatteryService", "Failed to restore battery threshold (exit code: " + exitCode + "). This is normal if your system doesn't support battery charge limits.");
+      }
+    }
   }
 }
