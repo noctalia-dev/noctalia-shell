@@ -455,19 +455,86 @@ Item {
     }
   }
 
+  Timer {
+    id: subTabSwitchTimer
+    interval: 200
+    repeat: true
+    running: false
+    property int attempts: 0
+    property int maxAttempts: 3
+
+    function getAllChildren(item) {
+      var children = [item];
+      if (item.children) {
+        for (var i = 0; i < item.children.length; i++) {
+          children = children.concat(getAllChildren(item.children[i]));
+        }
+      }
+      return children;
+    }
+
+    onTriggered: {
+      attempts++;
+      var panel = PanelService.getPanel("settingsPanel", root.screen);
+
+      if (!panel?._settingsContent) {
+        if (attempts >= maxAttempts) {
+          Logger.w("CustomButton", "Timeout: settings panel not available");
+          stop();
+        }
+        return;
+      }
+
+      var allChildren = getAllChildren(panel._settingsContent);
+      for (var i = 0; i < allChildren.length; i++) {
+        var child = allChildren[i];
+
+        if (child && child.hasOwnProperty('currentIndex') &&
+            child.toString && child.toString().toLowerCase().indexOf('tabview') !== -1) {
+          var siblings = child.parent ? child.parent.children : [];
+          for (var j = 0; j < siblings.length; j++) {
+            var sibling = siblings[j];
+            if (sibling !== child &&
+                (sibling.objectName === "subTabBar" ||
+                 (sibling.toString && sibling.toString().toLowerCase().indexOf('tabbar') !== -1))) {
+              child.currentIndex = 1;
+              sibling.currentIndex = 1;
+              Logger.i("CustomButton", "Successfully switched to widgets tab");
+              stop();
+              return;
+            }
+          }
+        }
+      }
+
+      if (attempts >= maxAttempts) {
+        Logger.w("CustomButton", "Timeout: could not find tabView");
+        stop();
+      }
+    }
+  }
+
   function onClicked() {
     if (leftClickExec) {
       Quickshell.execDetached(["sh", "-lc", leftClickExec]);
       Logger.i("CustomButton", `Executing command: ${leftClickExec}`);
     } else if (!leftClickUpdateText) {
-      // No left click script was defined, open settings
-      var settingsPanel = PanelService.getPanel("settingsPanel", screen);
-      settingsPanel.requestedTab = SettingsPanel.Tab.Bar;
-      settingsPanel.open();
+      openBarSettings();
     }
     if (!textStream && leftClickUpdateText) {
       runTextCommand();
     }
+  }
+
+  function openBarSettings() {
+    var settingsPanel = PanelService.getPanel("settingsPanel", screen);
+    settingsPanel.requestedTab = SettingsPanel.Tab.Bar;
+    settingsPanel.open();
+    subTabSwitchTimer.start();
+  }
+
+  function openWidgetSettings() {
+    BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
   }
 
   function onRightClicked() {
