@@ -16,19 +16,44 @@ Singleton {
   property string downloadedSchemesDirectory: Settings.configDir + "colorschemes"
   property string colorsJsonFilePath: Settings.configDir + "colors.json"
 
+  Process {
+    id: kdeThemeProcess
+    command: []
+    stdout: StdioCollector { onTextChanged: if(text.trim()) Logger.d("ColorScheme", "KDE Output:", text.trim()) }
+    stderr: StdioCollector { onTextChanged: if(text.trim()) Logger.w("ColorScheme", "KDE Error:", text.trim()) }
+  }
+
   Connections {
     target: Settings.data.colorSchemes
     function onDarkModeChanged() {
       Logger.d("ColorScheme", "Detected dark mode change");
+
+      // 1. Update Internal Quickshell Colors
       if (!Settings.data.colorSchemes.useWallpaperColors && Settings.data.colorSchemes.predefinedScheme) {
-        // Re-apply current scheme to pick the right variant
         applyScheme(Settings.data.colorSchemes.predefinedScheme);
       }
-      // Toast: dark/light mode switched
+
+      // 2. Show Toast Notification
       const enabled = !!Settings.data.colorSchemes.darkMode;
       const label = enabled ? I18n.tr("tooltips.switch-to-dark-mode") : I18n.tr("tooltips.switch-to-light-mode");
       const description = I18n.tr("toast.wifi.enabled");
       ToastService.showNotice(label, description, "dark-mode");
+
+      // -------------------------------------------------------------------
+      // 3. EXECUTE KDE PLASMA COMMANDS
+      // -------------------------------------------------------------------
+      // If Dark Mode (enabled) -> BreezeDark. If Light Mode -> BreezeLight.
+      // We use 'sleep 0.5' to prevent config file locking before applying noctalia.
+
+      var kdeCommand = enabled
+      ? "plasma-apply-colorscheme BreezeDark; sleep 0.5; plasma-apply-colorscheme noctalia"
+      : "plasma-apply-colorscheme BreezeLight; sleep 0.5; plasma-apply-colorscheme noctalia";
+
+      if (!kdeThemeProcess.running) {
+        Logger.i("ColorScheme", "Syncing KDE Plasma Theme...");
+        kdeThemeProcess.command = ["sh", "-c", kdeCommand];
+        kdeThemeProcess.running = true;
+      }
     }
   }
 
@@ -111,7 +136,6 @@ Singleton {
 
   function setPredefinedScheme(schemeName) {
     Logger.i("ColorScheme", "Attempting to set predefined scheme to:", schemeName);
-
     var resolvedPath = resolveSchemePath(schemeName);
     var basename = getBasename(schemeName);
 
@@ -204,12 +228,9 @@ Singleton {
 
   // Check if any templates are enabled
   function hasEnabledTemplates() {
-    const activeTemplates = Settings.data.templates.activeTemplates;
-    if (!activeTemplates || activeTemplates.length === 0) {
-      return false;
-    }
-    for (let i = 0; i < activeTemplates.length; i++) {
-      if (activeTemplates[i].enabled) {
+    const templates = Settings.data.templates;
+    for (const key in templates) {
+      if (templates[key]) {
         return true;
       }
     }
@@ -266,7 +287,6 @@ Singleton {
     out.mShadow = pick(obj, "mShadow", "shadow", out.mShadow);
     out.mHover = pick(obj, "mHover", "hover", out.mHover);
     out.mOnHover = pick(obj, "mOnHover", "onHover", out.mOnHover);
-
     // Force a rewrite by updating the path
     colorsWriter.path = "";
     colorsWriter.path = colorsJsonFilePath;
