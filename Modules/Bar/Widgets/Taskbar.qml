@@ -98,6 +98,11 @@ Rectangle {
   property int wheelAccumulatedDelta: 0
   property bool wheelCooldown: false
 
+  // used to track the index of the window that is being dragged over
+  property int dragOverIndex: -1
+  // used to persist the custom order of the windows
+  property var customOrder: []
+
   // Helper function to normalize app IDs for case-insensitive matching
   function normalizeAppId(appId) {
     if (!appId || typeof appId !== 'string')
@@ -262,6 +267,8 @@ Rectangle {
     }
 
     combinedModel = runningWindows;
+
+    applyCustomOrder();
     updateHasWindow();
   }
 
@@ -309,6 +316,60 @@ Rectangle {
     } catch (e) {
       Logger.e("Taskbar", "Failed to launch app: " + e);
     }
+  }
+
+  // Function to immediately reorder the combinedModel array without persisting the change
+  function reorderModel(from, to) {
+    if (from === to || from < 0 || to < 0) {
+      return;
+    }
+    if (from >= combinedModel.length || to >= combinedModel.length) {
+      return;
+    }
+
+    var newModel = [];
+    for (var i = 0; i < combinedModel.length; i++) {
+      newModel.push(combinedModel[i]);
+    }
+
+    var item = newModel.splice(from, 1)[0];
+    newModel.splice(to, 0, item);
+    combinedModel = newModel;
+  }
+
+  // Function to persist the custom order
+  function saveCustomOrder() {
+    var order = [];
+    for (var i = 0; i < combinedModel.length; i++) {
+      order.push(combinedModel[i].id);
+    }
+
+    customOrder = order;
+  }
+
+  // Function to rearrange the combinedModel based on customOrder array
+  function applyCustomOrder() {
+    if (customOrder.length === 0)
+      return;
+
+    var orderedModel = [];
+    var unorderedItems = combinedModel.slice();
+
+    for (var i = 0; i < customOrder.length; i++) {
+      var orderId = customOrder[i];
+      var foundIndex = unorderedItems.findIndex(function (item) {
+        return item.id === orderId;
+      });
+
+      if (foundIndex !== -1) {
+        orderedModel.push(unorderedItems[foundIndex]);
+        unorderedItems.splice(foundIndex, 1);
+      }
+    }
+
+    orderedModel = orderedModel.concat(unorderedItems);
+
+    combinedModel = orderedModel;
   }
 
   NPopupContextMenu {
@@ -535,6 +596,8 @@ Rectangle {
       delegate: Item {
         id: taskbarItem
         required property var modelData
+        required property int index
+        property var rootItem: root
         property ShellScreen screen: root.screen
 
         readonly property bool isRunning: modelData.window !== null
@@ -551,9 +614,67 @@ Rectangle {
         readonly property color titleBgColor: (isHovered || isFocused) ? Color.mHover : Style.capsuleColor
         readonly property color titleFgColor: (isHovered || isFocused) ? Color.mOnHover : Color.mOnSurface
 
+        property bool held: false
+
+        Drag.active: held && mouseArea.drag.active
+        Drag.source: taskbarItem
+        Drag.hotSpot.x: width / 2
+        Drag.hotSpot.y: height / 2
+        Drag.keys: ["taskbar-item"]
+
         Layout.preferredWidth: root.showTitle ? Math.round(contentWidth + Style.marginM * 2) : Math.round(contentWidth) // Add margins for both pinned and running apps
         Layout.preferredHeight: root.itemSize
         Layout.alignment: Qt.AlignCenter
+
+        Behavior on x {
+          enabled: !taskbarItem.held
+          NumberAnimation {
+            duration: Style.animationNormal
+            easing.type: Easing.OutCubic
+          }
+        }
+
+        Behavior on y {
+          enabled: !taskbarItem.held
+          NumberAnimation {
+            duration: Style.animationNormal
+            easing.type: Easing.OutCubic
+          }
+        }
+
+        states: State {
+          when: taskbarItem.held
+
+          ParentChange {
+            target: taskbarItem
+            parent: taskbarLayout
+          }
+
+          PropertyChanges {
+            target: taskbarItem
+            opacity: 0.6
+            z: 999
+            Layout.preferredWidth: shouldShowTitle ? Math.round(contentWidth + Style.marginM * 2) : Math.round(contentWidth)
+            Layout.preferredHeight: root.itemSize
+          }
+        }
+
+        transitions: Transition {
+          NumberAnimation {
+            properties: "opacity"
+            duration: Style.animationFast
+          }
+        }
+
+        DropArea {
+          id: dropArea
+          anchors.fill: parent
+          keys: ["taskbar-item"]
+
+          onEntered: function (drag) {
+            root.dragOverIndex = taskbarItem.index;
+          }
+        }
 
         Rectangle {
           id: titleBackground
@@ -640,15 +761,66 @@ Rectangle {
         }
 
         MouseArea {
+          id: mouseArea
           anchors.fill: parent
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
           acceptedButtons: Qt.LeftButton | Qt.RightButton
 
-          onClicked: function (mouse) {
-            if (!modelData)
-              return;
+          drag.target: taskbarItem.held ? taskbarItem : undefined
+          drag.axis: root.isVerticalBar ? Drag.YAxis : Drag.XAxis
+
+          property point pressPos: Qt.point(0, 0)
+          property bool longPressTriggered: false
+
+          onPressed: function (mouse) {
+            pressPos = Qt.point(mouse.x, mouse.y);
+            longPressTriggered = false;
+
             if (mouse.button === Qt.LeftButton) {
+              dragTimer.start();
+            }
+          }
+
+          onPositionChanged: function (mouse) {
+            if (!taskbarItem.held && !longPressTriggered && mouse.buttons & Qt.LeftButton) {
+              var dx = Math.abs(mouse.x - pressPos.x);
+              var dy = Math.abs(mouse.y - pressPos.y);
+
+              // a change in the x-y axes must be greater than 5 pixels to start dragging
+              if (dx > 5 || dy > 5) {
+                dragTimer.stop();
+                taskbarItem.held = true;
+                TooltipService.hide();
+              }
+            }
+          }
+
+          // Helper function to reorder the combinedModel array and persist the custom order
+          function performSwap() {
+            var from = taskbarItem.index;
+            var to = taskbarItem.rootItem.dragOverIndex;
+
+            if (from !== to && from >= 0 && to >= 0 && from < root.combinedModel.length && to < root.combinedModel.length) {
+              taskbarItem.rootItem.reorderModel(from, to);
+              taskbarItem.rootItem.saveCustomOrder();
+            }
+          }
+
+          onReleased: function (mouse) {
+            dragTimer.stop();
+
+            if (taskbarItem.held) {
+              // we were dragging the window - perform the swap
+              taskbarItem.held = false;
+              taskbarItem.Drag.drop();
+
+              performSwap();
+            } else if (!longPressTriggered && mouse.button === Qt.LeftButton) {
+              // regular click behavior
+              if (!modelData)
+                return;
+
               if (isRunning && modelData.window) {
                 // Running app - focus it
                 try {
@@ -670,9 +842,20 @@ Rectangle {
               }
             }
           }
+
+          Timer {
+            id: dragTimer
+            interval: 200
+            onTriggered: {
+              longPressTriggered = true;
+            }
+          }
+
           onEntered: {
             root.hoveredWindowId = taskbarItem.modelData.id;
-            TooltipService.show(taskbarItem, taskbarItem.title, BarService.getTooltipDirection());
+            if (!taskbarItem.held) {
+              TooltipService.show(taskbarItem, taskbarItem.title, BarService.getTooltipDirection());
+            }
           }
           onExited: {
             root.hoveredWindowId = "";
