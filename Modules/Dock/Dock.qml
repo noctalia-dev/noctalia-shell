@@ -264,7 +264,10 @@ Loader {
              const w = CompositorService.windows.get(i);
              if (w) {
                 const passOutput = (!Settings.data.dock.onlySameOutput) || (w.output == modelData?.name);
-                const passWorkspace = (!Settings.data.dock.onlyCurrentWorkspace) || (activeIds.length === 0) || (w.workspaceId !== undefined && w.workspaceId !== null && activeIds.includes(w.workspaceId));
+                let passWorkspace = true;
+                if (Settings.data.dock.onlyCurrentWorkspace && activeIds.length > 0) {
+                  passWorkspace = w.workspaceId !== undefined && w.workspaceId !== null && activeIds.includes(w.workspaceId);
+                }
                if (passOutput && passWorkspace) {
                  runningWindows.push(w);
                }
