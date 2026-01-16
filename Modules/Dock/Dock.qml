@@ -193,11 +193,7 @@ Loader {
                 const passOutput = (!Settings.data.dock.onlySameOutput) || (w.output == modelData?.name);
                 let passWorkspace = true;
                 if (Settings.data.dock.onlyCurrentWorkspace && activeIds.length > 0) {
-                  if (w.workspaceId === undefined || w.workspaceId === null) {
-                    passWorkspace = true;
-                  } else {
-                    passWorkspace = activeIds.includes(w.workspaceId);
-                  }
+                  passWorkspace = w.workspaceId !== undefined && w.workspaceId !== null && activeIds.includes(w.workspaceId);
                 }
                if (passOutput && passWorkspace) {
                  runningWindows.push(w);
