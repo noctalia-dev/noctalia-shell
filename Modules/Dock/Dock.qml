@@ -173,10 +173,10 @@ Loader {
         function updateDockApps() {
           let activeIds = [];
           try {
-            const activeWorkspaces = CompositorService.getActiveWorkspaces() || [];
+            const activeWorkspaces = CompositorService.getActiveWorkspaces();
             activeIds = activeWorkspaces.map(function (ws) {
-              return ws?.id;
-            }).filter(id => id !== undefined && id !== null);
+              return ws.id;
+            });
           } catch (e) {
             console.warn("Could not get active workspaces:", e);
             activeIds = [];
@@ -191,10 +191,7 @@ Loader {
              const w = CompositorService.windows.get(i);
              if (w) {
                 const passOutput = (!Settings.data.dock.onlySameOutput) || (w.output == modelData?.name);
-                let passWorkspace = true;
-                if (Settings.data.dock.onlyCurrentWorkspace && activeIds.length > 0) {
-                  passWorkspace = w.workspaceId !== undefined && w.workspaceId !== null && activeIds.includes(w.workspaceId);
-                }
+                const passWorkspace = (!Settings.data.dock.onlyCurrentWorkspace) || (activeIds.length === 0) || (w.workspaceId !== undefined && w.workspaceId !== null && activeIds.includes(w.workspaceId));
                if (passOutput && passWorkspace) {
                  runningWindows.push(w);
                }
