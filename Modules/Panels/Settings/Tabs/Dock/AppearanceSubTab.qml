@@ -165,6 +165,14 @@ ColumnLayout {
     }
 
     NToggle {
+      label: I18n.tr("panels.dock.appearance-only-active-workspaces-label")
+      description: I18n.tr("panels.dock.appearance-only-active-workspaces-description")
+      checked: Settings.data.dock.onlyCurrentWorkspace
+      defaultValue: Settings.getDefaultValue("dock.onlyCurrentWorkspace")
+      onToggled: checked => Settings.data.dock.onlyCurrentWorkspace = checked
+    }
+
+    NToggle {
       Layout.fillWidth: true
       label: I18n.tr("panels.dock.appearance-colorize-icons-label")
       description: I18n.tr("panels.dock.appearance-colorize-icons-description")
