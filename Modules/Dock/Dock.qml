@@ -71,9 +71,7 @@ Loader {
 
       // Initial update when component is ready
       Component.onCompleted: {
-        if (ToplevelManager) {
-          updateDockApps();
-        }
+        updateDockApps();
       }
 
       // Refresh icons when DesktopEntries becomes available
@@ -233,7 +231,6 @@ Loader {
              }
              combined.push({
                              "type": appType,
-                             "toplevel": null,
                              "window": null,
                              "appId": appId,
                              "title": title
