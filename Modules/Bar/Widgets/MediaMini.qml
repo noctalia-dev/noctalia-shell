@@ -121,7 +121,7 @@ Item {
     var textWidth = 0;
     if (titleContainer.measuredWidth > 0) {
       margins += Style.marginS;
-      textWidth = titleContainer.measuredWidth + Style.marginXXS * 2;
+      textWidth = titleContainer.measuredWidth + Style.marginXS;
     }
 
     var total = iconWidth + textWidth + margins;

@@ -122,7 +122,7 @@ Popup {
         // Default command display
         Rectangle {
           Layout.fillWidth: true
-          Layout.preferredHeight: defaultCommandText.implicitHeight + Style.marginM * 2
+          Layout.preferredHeight: defaultCommandText.implicitHeight + Style.marginXL
           radius: Style.radiusM
           color: Color.mSurfaceVariant
           border.color: Color.mOutline

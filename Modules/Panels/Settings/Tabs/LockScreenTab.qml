@@ -41,8 +41,4 @@ ColumnLayout {
     visible: Settings.data.general.showSessionButtonsOnLockScreen
     defaultValue: Settings.getDefaultValue("general.showSessionButtonsOnLockScreen")
   }
-
-  NDivider {
-    Layout.fillWidth: true
-  }
 }

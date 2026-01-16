@@ -19,6 +19,7 @@ Text {
     return fontScale;
   }
 
+  opacity: enabled ? 1.0 : 0.6
   font.family: root.family
   font.weight: Style.fontWeightMedium
   font.pointSize: Math.max(1, root.pointSize * fontScale)

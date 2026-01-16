@@ -109,8 +109,8 @@ Rectangle {
   readonly property bool diskCritical: showDiskUsage && SystemStatService.isDiskCritical(diskPath)
 
   anchors.centerIn: parent
-  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(mainGrid.implicitWidth + Style.marginM * 2)
-  implicitHeight: isVertical ? Math.round(mainGrid.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
+  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(mainGrid.implicitWidth + Style.marginXL)
+  implicitHeight: isVertical ? Math.round(mainGrid.implicitHeight + Style.marginXL) : Style.capsuleHeight
   radius: Style.radiusM
   color: Style.capsuleColor
   border.color: Style.capsuleBorderColor

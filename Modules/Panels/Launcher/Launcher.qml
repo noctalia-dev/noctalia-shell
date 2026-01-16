@@ -86,7 +86,7 @@ SmartPanel {
   readonly property var currentProvider: activeProvider || defaultProvider
 
   readonly property int badgeSize: Math.round(Style.baseWidgetSize * 1.6 * Style.uiScaleRatio)
-  readonly property int entryHeight: Math.round(badgeSize + Style.marginM * 2)
+  readonly property int entryHeight: Math.round(badgeSize + Style.marginXL)
   // Whether current provider is showing categorized view (vs filtered search results)
   readonly property bool providerShowsCategories: {
     return currentProvider.showsCategories === true;
@@ -1123,7 +1123,7 @@ SmartPanel {
                       anchors.bottom: parent.bottom
                       anchors.right: parent.right
                       anchors.margins: 2
-                      width: formatLabel.width + Style.marginXXS * 2
+                      width: formatLabel.width + Style.marginXS
                       height: formatLabel.height + Style.marginXXS
                       color: Color.mSurfaceVariant
                       radius: Style.radiusXXS

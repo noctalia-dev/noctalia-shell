@@ -1,14 +1,15 @@
 #!/usr/bin/env -S bash
 
-# Ensure exactly one argument is provided.
-if [ "$#" -ne 1 ]; then
+# Ensure at least one argument is provided.
+if [ "$#" -lt 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|niri|hyprland|mango}" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|niri|hyprland|mango} [dark|light]" >&2
     exit 1
 fi
 
 APP_NAME="$1"
+MODE="${2:-}"  # Optional second argument for dark/light mode
 
 # --- Apply theme based on the application name ---
 case "$APP_NAME" in
@@ -202,6 +203,16 @@ vicinae)
 
 pywalfox)
     echo "🎨 Updating pywalfox themes..."
+    # Set dark/light mode first if MODE is specified
+    if [ -n "$MODE" ]; then
+        if [ "$MODE" = "dark" ] || [ "$MODE" = "light" ]; then
+            echo "Setting pywalfox to $MODE mode..."
+            pywalfox "$MODE"
+        else
+            echo "Warning: Invalid mode '$MODE'. Expected 'dark' or 'light'. Skipping mode switch." >&2
+        fi
+    fi
+    # Update the theme
     pywalfox update
     ;;
 

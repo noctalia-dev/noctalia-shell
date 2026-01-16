@@ -26,8 +26,8 @@ PopupWindow {
 
   property real menuContentWidth: 160
 
-  implicitWidth: menuContentWidth + (Style.marginM * 2)
-  implicitHeight: contextMenuColumn.implicitHeight + (Style.marginM * 2)
+  implicitWidth: menuContentWidth + (Style.marginXL)
+  implicitHeight: contextMenuColumn.implicitHeight + (Style.marginXL)
   color: "transparent"
   visible: false
 

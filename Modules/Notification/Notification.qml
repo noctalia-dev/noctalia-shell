@@ -197,7 +197,7 @@ Variants {
             readonly property int slideDistance: 300
 
             Layout.preferredWidth: notifWidth + notifWindow.shadowPadding * 2
-            Layout.preferredHeight: notificationContent.implicitHeight + Style.marginM * 2 + notifWindow.shadowPadding * 2
+            Layout.preferredHeight: notificationContent.implicitHeight + Style.marginXL + notifWindow.shadowPadding * 2
             Layout.maximumHeight: Layout.preferredHeight
 
             // Animation properties

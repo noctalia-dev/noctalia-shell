@@ -396,7 +396,7 @@ Popup {
             NColorSlider {
               id: selectedSlider
               Layout.fillHeight: true
-              rainbowMode: root.editMode === "h"
+              rainbowMode: root.editMode === NColorPickerDialog.EditMode.H
               topColor: {
                 if (rainbowMode)
                   return "transparent";

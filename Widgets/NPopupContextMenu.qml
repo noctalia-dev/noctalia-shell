@@ -67,7 +67,7 @@ PopupWindow {
             itemWidth += iconMeasure.width + Style.marginS;
           }
 
-          itemWidth += Style.marginM * 2;
+          itemWidth += Style.marginXL;
 
           if (itemWidth > maxWidth) {
             maxWidth = itemWidth;

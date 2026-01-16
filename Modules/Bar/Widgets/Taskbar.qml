@@ -61,7 +61,7 @@ Rectangle {
       var calculatedWidth = baseWidth / Math.sqrt(entriesCount);
 
       if (maxTaskbarWidth > 0) {
-        var maxWidthPerEntry = (maxTaskbarWidth / entriesCount) - itemSize - Style.marginS - Style.marginM * 2;
+        var maxWidthPerEntry = (maxTaskbarWidth / entriesCount) - itemSize - Style.marginS - Style.marginXL;
         calculatedWidth = Math.min(calculatedWidth, maxWidthPerEntry);
       }
 
@@ -501,7 +501,7 @@ Rectangle {
     if (isVerticalBar)
       return Style.capsuleHeight;
 
-    var calculatedWidth = showTitle ? taskbarLayout.implicitWidth : taskbarLayout.implicitWidth + Style.marginM * 2;
+    var calculatedWidth = showTitle ? taskbarLayout.implicitWidth : taskbarLayout.implicitWidth + Style.marginXL;
 
     // Apply maximum width constraint when smartWidth is enabled
     if (smartWidth && maxTaskbarWidth > 0) {
@@ -510,7 +510,7 @@ Rectangle {
 
     return Math.round(calculatedWidth);
   }
-  implicitHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginM * 2) : Style.capsuleHeight) : 0
+  implicitHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginXL) : Style.capsuleHeight) : 0
   radius: Style.radiusM
   color: Style.capsuleColor
   border.color: Style.capsuleBorderColor
@@ -551,7 +551,7 @@ Rectangle {
         readonly property color titleBgColor: (isHovered || isFocused) ? Color.mHover : Style.capsuleColor
         readonly property color titleFgColor: (isHovered || isFocused) ? Color.mOnHover : Color.mOnSurface
 
-        Layout.preferredWidth: root.showTitle ? Math.round(contentWidth + Style.marginM * 2) : Math.round(contentWidth) // Add margins for both pinned and running apps
+        Layout.preferredWidth: root.showTitle ? Math.round(contentWidth + Style.marginXL) : Math.round(contentWidth) // Add margins for both pinned and running apps
         Layout.preferredHeight: root.itemSize
         Layout.alignment: Qt.AlignCenter
 

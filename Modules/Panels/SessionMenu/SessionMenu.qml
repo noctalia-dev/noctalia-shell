@@ -650,7 +650,7 @@ SmartPanel {
         anchors.left: countdownText.visible ? countdownText.right : parent.left
         anchors.leftMargin: countdownText.visible ? Style.marginXS : 0
         anchors.verticalCenter: parent.verticalCenter
-        width: Style.marginM * 2
+        width: Style.marginXL
         height: width
         radius: Math.min(Style.radiusM, height / 2)
         color: (buttonRoot.isSelected || mouseArea.containsMouse) ? Color.mPrimary : Qt.alpha(Color.mSurfaceVariant, 0.5)
@@ -774,7 +774,7 @@ SmartPanel {
         id: numberIndicator
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        width: Style.marginM * 2
+        width: Style.marginXL
         height: width
         radius: Math.min(Style.radiusM, height / 2)
         color: Qt.alpha(Color.mSurfaceVariant, 0.5)

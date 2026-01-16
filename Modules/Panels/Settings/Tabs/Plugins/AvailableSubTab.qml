@@ -17,7 +17,7 @@ ColumnLayout {
   property int availablePluginsRefreshCounter: 0
 
   // Pseudo tags for filtering by download status
-  readonly property var pseudoTags: ["", "downloaded", "notDownloaded"]
+  readonly property var pseudoTags: ["downloaded", "notDownloaded"]
 
   readonly property var availableTags: {
     // Reference counter to force re-evaluation
@@ -44,41 +44,22 @@ ColumnLayout {
   }
 
   // Tag filter chips in collapsible
-  NCollapsible {
-    Layout.fillWidth: true
+  NTagFilter {
+    tags: root.pseudoTags.concat(root.availableTags)
+    selectedTag: root.selectedTag
+    onSelectedTagChanged: root.selectedTag = selectedTag
     label: I18n.tr("panels.plugins.filter-tags-label")
     description: I18n.tr("panels.plugins.filter-tags-description")
     expanded: true
-    contentSpacing: Style.marginXS
 
-    Flow {
-      Layout.fillWidth: true
-      spacing: Style.marginXS
-      flow: Flow.LeftToRight
-
-      Repeater {
-        id: tagRepeater
-        model: root.pseudoTags.concat(root.availableTags)
-
-        delegate: NButton {
-          text: {
-            if (modelData === "")
-              return I18n.tr("launcher.categories.all");
-            if (modelData === "downloaded")
-              return I18n.tr("panels.plugins.filter-downloaded");
-            if (modelData === "notDownloaded")
-              return I18n.tr("panels.plugins.filter-not-downloaded");
-            return modelData;
-          }
-          backgroundColor: root.selectedTag === modelData ? Color.mPrimary : Color.mSurfaceVariant
-          textColor: root.selectedTag === modelData ? Color.mOnPrimary : Color.mOnSurfaceVariant
-          onClicked: root.selectedTag = modelData
-          fontSize: Style.fontSizeS
-          iconSize: Style.fontSizeS
-          fontWeight: Style.fontWeightSemiBold
-          buttonRadius: Style.iRadiusM
-        }
-      }
+    formatTag: function (tag) {
+      if (tag === "")
+        return I18n.tr("launcher.categories.all");
+      if (tag === "downloaded")
+        return I18n.tr("panels.plugins.filter-downloaded");
+      if (tag === "notDownloaded")
+        return I18n.tr("panels.plugins.filter-not-downloaded");
+      return tag;
     }
   }
 

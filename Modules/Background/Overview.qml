@@ -18,8 +18,12 @@ Loader {
       required property ShellScreen modelData
       property string wallpaper: ""
       property string cachedWallpaper: ""
+      property string pendingWallpaper: ""
       property bool isSolidColor: false
+      property bool useQtBlur: false // Fallback when ImageMagick not available
       property color solidColor: Settings.data.wallpaper.solidColor
+      // Watch the actual tint color value, not just darkMode setting, since colors reload asynchronously
+      property color tintColor: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
 
       Component.onCompleted: {
         if (modelData) {
@@ -29,8 +33,6 @@ Loader {
       }
 
       Component.onDestruction: {
-        // Clean up resources to prevent memory leak when overviewEnabled is toggled off
-        bgImage.layer.enabled = false;
         bgImage.source = "";
       }
 
@@ -63,6 +65,43 @@ Loader {
         }
       }
 
+      function requestBlurredOverview() {
+        requestBlurredOverviewWithTint(tintColor.toString(), Settings.data.colorSchemes.darkMode);
+      }
+
+      function requestBlurredOverviewWithTint(tint, isDarkMode) {
+        if (!wallpaper || isSolidColor)
+          return;
+
+        const compositorScale = CompositorService.getDisplayScale(modelData.name);
+        const targetWidth = Math.round(modelData.width * compositorScale);
+        const targetHeight = Math.round(modelData.height * compositorScale);
+
+        // Start fade out, then request new image
+        if (cachedWallpaper) {
+          fadeOutAnim.start();
+        }
+
+        ImageCacheService.getBlurredOverview(wallpaper, targetWidth, targetHeight, tint, isDarkMode, function (path, success) {
+          if (path) {
+            useQtBlur = !success; // Use Qt blur fallback if ImageMagick failed
+            pendingWallpaper = path;
+            // If fade out is done or wasn't needed, apply immediately
+            if (!fadeOutAnim.running) {
+              applyPendingWallpaper();
+            }
+          }
+        });
+      }
+
+      function applyPendingWallpaper() {
+        if (pendingWallpaper) {
+          cachedWallpaper = pendingWallpaper;
+          pendingWallpaper = "";
+          fadeInAnim.start();
+        }
+      }
+
       // Request cached wallpaper when source changes
       onWallpaperChanged: {
         if (!wallpaper)
@@ -78,10 +117,22 @@ Loader {
         }
 
         isSolidColor = false;
-        // Use 1280x720 for overview since it's heavily blurred anyway
-        ImageCacheService.getLarge(wallpaper, 1280, 720, function (path, success) {
-          cachedWallpaper = path;
-        });
+        requestBlurredOverview();
+      }
+
+      // Watch for color reloads - use the actual Color properties directly to avoid stale values
+      Connections {
+        target: Color
+        function onMSurfaceChanged() {
+          if (!isSolidColor && wallpaper && Settings.data.colorSchemes.darkMode) {
+            requestBlurredOverviewWithTint(Color.mSurface.toString(), true);
+          }
+        }
+        function onMOnSurfaceChanged() {
+          if (!isSolidColor && wallpaper && !Settings.data.colorSchemes.darkMode) {
+            requestBlurredOverviewWithTint(Color.mOnSurface.toString(), false);
+          }
+        }
       }
 
       color: "transparent"
@@ -105,12 +156,11 @@ Loader {
 
         Rectangle {
           anchors.fill: parent
-          color: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
-          opacity: 0.8
+          color: tintColor
         }
       }
 
-      // Image background
+      // Image background (pre-blurred and tinted by ImageMagick, or Qt fallback)
       Image {
         id: bgImage
         anchors.fill: parent
@@ -122,7 +172,8 @@ Loader {
         cache: false
         asynchronous: true
 
-        layer.enabled: true
+        // Qt blur fallback when ImageMagick not available
+        layer.enabled: useQtBlur
         layer.smooth: false
         layer.effect: MultiEffect {
           blurEnabled: true
@@ -130,10 +181,31 @@ Loader {
           blurMax: 32
         }
 
+        // Tint overlay for Qt blur fallback
         Rectangle {
           anchors.fill: parent
-          color: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
-          opacity: 0.8
+          visible: useQtBlur
+          color: tintColor
+          opacity: 0.6
+        }
+
+        NumberAnimation on opacity {
+          id: fadeOutAnim
+          running: false
+          from: 1
+          to: 0
+          duration: 200
+          easing.type: Easing.OutQuad
+          onFinished: applyPendingWallpaper()
+        }
+
+        NumberAnimation on opacity {
+          id: fadeInAnim
+          running: false
+          from: 0
+          to: 1
+          duration: 200
+          easing.type: Easing.InQuad
         }
       }
     }

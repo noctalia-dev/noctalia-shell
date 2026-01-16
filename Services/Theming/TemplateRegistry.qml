@@ -51,7 +51,7 @@ Singleton {
     {
       "id": "gtk",
       "name": "GTK",
-      "category": "ui",
+      "category": "system",
       "input": "gtk.css",
       "outputs": [
         {
@@ -66,7 +66,7 @@ Singleton {
     {
       "id": "qt",
       "name": "Qt",
-      "category": "ui",
+      "category": "system",
       "input": "qtct.conf",
       "outputs": [
         {
@@ -80,7 +80,7 @@ Singleton {
     {
       "id": "kcolorscheme",
       "name": "KColorScheme",
-      "category": "ui",
+      "category": "system",
       "input": "kcolorscheme.colors",
       "outputs": [
         {
@@ -91,7 +91,7 @@ Singleton {
     {
       "id": "fuzzel",
       "name": "Fuzzel",
-      "category": "launchers",
+      "category": "launcher",
       "input": "fuzzel.conf",
       "outputs": [
         {
@@ -103,7 +103,7 @@ Singleton {
     {
       "id": "vicinae",
       "name": "Vicinae",
-      "category": "launchers",
+      "category": "launcher",
       "input": "vicinae.toml",
       "outputs": [
         {
@@ -115,7 +115,7 @@ Singleton {
     {
       "id": "walker",
       "name": "Walker",
-      "category": "launchers",
+      "category": "launcher",
       "input": "walker.css",
       "outputs": [
         {
@@ -128,20 +128,20 @@ Singleton {
     {
       "id": "pywalfox",
       "name": "Pywalfox",
-      "category": "applications",
+      "category": "browser",
       "input": "pywalfox.json",
       "outputs": [
         {
           "path": "~/.cache/wal/colors.json"
         }
       ],
-      "postProcess": () => `${colorsApplyScript} pywalfox`
+      "postProcess": mode => `${colorsApplyScript} pywalfox ${mode}`
     } // CONSOLIDATED DISCORD CLIENTS
     ,
     {
       "id": "discord",
       "name": "Discord",
-      "category": "applications",
+      "category": "misc",
       "input": "vesktop.css",
       "clients": [
         {
@@ -183,13 +183,18 @@ Singleton {
           "name": "vencord",
           "path": "~/.config/Vencord",
           "requiresThemesFolder": false
+        },
+        {
+          "name": "betterdiscord",
+          "path": "~/.config/BetterDiscord",
+          "requiresThemesFolder": false
         }
       ]
     },
     {
       "id": "code",
       "name": "VSCode",
-      "category": "applications",
+      "category": "editor",
       "input": "code.json",
       "clients": [
         {
@@ -205,7 +210,7 @@ Singleton {
     {
       "id": "zed",
       "name": "Zed",
-      "category": "applications",
+      "category": "editor",
       "input": "zed.json",
       "outputs": [
         {
@@ -217,7 +222,7 @@ Singleton {
     {
       "id": "helix",
       "name": "Helix",
-      "category": "applications",
+      "category": "editor",
       "input": "helix.toml",
       "outputs": [
         {
@@ -228,7 +233,7 @@ Singleton {
     {
       "id": "spicetify",
       "name": "Spicetify",
-      "category": "applications",
+      "category": "audio",
       "input": "spicetify.ini",
       "outputs": [
         {
@@ -240,7 +245,7 @@ Singleton {
     {
       "id": "telegram",
       "name": "Telegram",
-      "category": "applications",
+      "category": "misc",
       "input": "telegram.tdesktop-theme",
       "outputs": [
         {
@@ -251,7 +256,7 @@ Singleton {
     {
       "id": "zenBrowser",
       "name": "Zen Browser",
-      "category": "applications",
+      "category": "browser",
       "input": "zen-browser/zen-userChrome.css",
       "outputs": [
         {
@@ -268,7 +273,7 @@ Singleton {
     {
       "id": "cava",
       "name": "Cava",
-      "category": "applications",
+      "category": "audio",
       "input": "cava.ini",
       "outputs": [
         {
@@ -280,7 +285,7 @@ Singleton {
     {
       "id": "yazi",
       "name": "Yazi",
-      "category": "applications",
+      "category": "misc",
       "input": "yazi.toml",
       "outputs": [
         {
@@ -291,7 +296,7 @@ Singleton {
     {
       "id": "emacs",
       "name": "Emacs",
-      "category": "applications",
+      "category": "editor",
       "input": "emacs.el",
       "outputs": [
         {
@@ -306,7 +311,7 @@ Singleton {
     {
       "id": "niri",
       "name": "Niri",
-      "category": "compositors",
+      "category": "compositor",
       "input": "niri.kdl",
       "outputs": [
         {
@@ -318,7 +323,7 @@ Singleton {
     {
       "id": "hyprland",
       "name": "Hyprland",
-      "category": "compositors",
+      "category": "compositor",
       "input": "hyprland.conf",
       "outputs": [
         {
@@ -330,7 +335,7 @@ Singleton {
     {
       "id": "mango",
       "name": "Mango",
-      "category": "compositors",
+      "category": "compositor",
       "input": "mango.conf",
       "outputs": [
         {

@@ -44,8 +44,8 @@ Rectangle {
 
   readonly property bool hideWhenOff: (widgetSettings.hideWhenOff !== undefined) ? widgetSettings.hideWhenOff : (widgetMetadata.hideWhenOff !== undefined ? widgetMetadata.hideWhenOff : false)
 
-  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(layout.implicitWidth + Style.marginM * 2)
-  implicitHeight: isVertical ? Math.round(layout.implicitHeight + Style.marginM * 2) : Style.capsuleHeight
+  implicitWidth: isVertical ? Style.capsuleHeight : Math.round(layout.implicitWidth + Style.marginXL)
+  implicitHeight: isVertical ? Math.round(layout.implicitHeight + Style.marginXL) : Style.capsuleHeight
 
   Layout.alignment: Qt.AlignVCenter
 

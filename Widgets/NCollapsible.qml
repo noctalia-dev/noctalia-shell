@@ -23,7 +23,7 @@ ColumnLayout {
   Rectangle {
     id: headerContainer
     Layout.fillWidth: true
-    Layout.preferredHeight: headerContent.implicitHeight + (Style.marginM * 2)
+    Layout.preferredHeight: headerContent.implicitHeight + (Style.marginXL)
     color: root.expanded ? Color.mSecondary : Color.mPrimary
     radius: Style.iRadiusM
     border.color: root.expanded ? Color.mOnSecondary : Color.mOutline

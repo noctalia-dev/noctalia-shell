@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 39
+  readonly property int settingsVersion: 40
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -620,31 +620,8 @@ Singleton {
 
     // templates toggles
     property JsonObject templates: JsonObject {
-      property bool gtk: false
-      property bool qt: false
-      property bool kcolorscheme: false
-      property bool alacritty: false
-      property bool kitty: false
-      property bool ghostty: false
-      property bool foot: false
-      property bool wezterm: false
-      property bool fuzzel: false
-      property bool discord: false
-      property bool pywalfox: false
-      property bool vicinae: false
-      property bool walker: false
-      property bool code: false
-      property bool spicetify: false
-      property bool telegram: false
-      property bool cava: false
-      property bool yazi: false
-      property bool emacs: false
-      property bool niri: false
-      property bool hyprland: false
-      property bool mango: false
-      property bool zed: false
-      property bool helix: false
-      property bool zenBrowser: false
+      property list<var> activeTemplates: []
+      // Format: [{ "id": "gtk", "enabled": true }, { "id": "qt", "enabled": true }, ...]
       property bool enableUserTemplates: false
     }
 
@@ -668,6 +645,7 @@ Singleton {
       property string screenUnlock: ""
       property string performanceModeEnabled: ""
       property string performanceModeDisabled: ""
+      property string session: ""
     }
 
     // desktop widgets

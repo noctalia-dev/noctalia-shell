@@ -351,7 +351,7 @@ Item {
         readonly property bool panelVeryTransparent: Settings.data.ui.panelBackgroundOpacity <= 0.75
 
         clip: true
-        Layout.preferredWidth: Math.round(root.sidebarExpanded ? 200 * Style.uiScaleRatio : sidebarToggle.width + (panelVeryTransparent ? Style.marginM * 2 : 0) + (sidebarList.verticalScrollBarActive ? Style.marginM : 0))
+        Layout.preferredWidth: Math.round(root.sidebarExpanded ? 200 * Style.uiScaleRatio : sidebarToggle.width + (panelVeryTransparent ? Style.marginXL : 0) + (sidebarList.verticalScrollBarActive ? Style.marginM : 0))
         Layout.fillHeight: true
         Layout.alignment: Qt.AlignTop
 
@@ -625,10 +625,6 @@ Item {
               Layout.alignment: Qt.AlignVCenter
               onClicked: root.closeRequested()
             }
-          }
-
-          NDivider {
-            Layout.fillWidth: true
           }
 
           // Tab content area

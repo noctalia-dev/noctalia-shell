@@ -93,7 +93,7 @@ Item {
     contentWidth += titleContainer.measuredWidth;
 
     // Additional small margin for text
-    contentWidth += Style.marginXXS * 2;
+    contentWidth += Style.marginXS;
 
     // Add container margins
     contentWidth += margins;
@@ -249,7 +249,7 @@ Item {
           maxWidth: {
             // Calculate available width based on other elements
             var iconWidth = (showIcon && windowIcon.visible ? (iconSize + Style.marginS) : 0);
-            var totalMargins = Style.marginXXS * 2;
+            var totalMargins = Style.marginXS;
             var availableWidth = mainContainer.width - iconWidth - totalMargins;
             return Math.max(20, availableWidth);
           }
@@ -273,8 +273,8 @@ Item {
       // Vertical layout for left/right bars - icon only
       Item {
         id: verticalLayout
-        width: parent.width - Style.marginM * 2
-        height: parent.height - Style.marginM * 2
+        width: parent.width - Style.marginXL
+        height: parent.height - Style.marginXL
         x: Style.pixelAlignCenter(parent.width, width)
         y: Style.pixelAlignCenter(parent.height, height)
         visible: isVerticalBar

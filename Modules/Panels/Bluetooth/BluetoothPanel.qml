@@ -30,7 +30,7 @@ SmartPanel {
       // Header
       NBox {
         Layout.fillWidth: true
-        Layout.preferredHeight: headerRow.implicitHeight + Style.marginM * 2
+        Layout.preferredHeight: headerRow.implicitHeight + Style.marginXL
 
         RowLayout {
           id: headerRow
@@ -94,7 +94,7 @@ SmartPanel {
         id: disabledBox
         visible: !(BluetoothService.adapter && BluetoothService.adapter.enabled)
         Layout.fillWidth: true
-        Layout.preferredHeight: disabledColumn.implicitHeight + Style.marginM * 2
+        Layout.preferredHeight: disabledColumn.implicitHeight + Style.marginXL
 
         // Center the content within this rectangle
         ColumnLayout {
@@ -275,7 +275,7 @@ SmartPanel {
               return (availableCount === 0);
             }
             Layout.fillWidth: true
-            Layout.preferredHeight: emptyColumn.implicitHeight + Style.marginM * 2
+            Layout.preferredHeight: emptyColumn.implicitHeight + Style.marginXL
 
             ColumnLayout {
               id: emptyColumn
@@ -319,7 +319,7 @@ SmartPanel {
           // Fallback - No devices, scanning
           NBox {
             Layout.fillWidth: true
-            Layout.preferredHeight: scanningColumn.implicitHeight + Style.marginM * 2
+            Layout.preferredHeight: scanningColumn.implicitHeight + Style.marginXL
             visible: {
               if (!(BluetoothService.adapter && BluetoothService.adapter.devices) || !BluetoothService.scanningActive) {
                 return false;

@@ -25,7 +25,7 @@ NBox {
   property bool detailsGrid: (Settings.data && Settings.data.ui && Settings.data.network.bluetoothDetailsViewMode !== undefined) ? (Settings.data.network.bluetoothDetailsViewMode === "grid") : true
 
   Layout.fillWidth: true
-  Layout.preferredHeight: column.implicitHeight + Style.marginM * 2
+  Layout.preferredHeight: column.implicitHeight + Style.marginXL
 
   ColumnLayout {
     id: column
@@ -89,7 +89,7 @@ NBox {
         }
 
         Layout.fillWidth: true
-        Layout.preferredHeight: deviceColumn.implicitHeight + (Style.marginM * 2)
+        Layout.preferredHeight: deviceColumn.implicitHeight + (Style.marginXL)
         radius: Style.radiusM
         clip: true
 

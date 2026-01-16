@@ -44,8 +44,8 @@ DraggableDesktopWidget {
     return chunks[0];
   }
 
-  implicitWidth: Math.round(Math.max(240 * widgetScale, contentLayout.implicitWidth + Style.marginM * widgetScale * 2))
-  implicitHeight: Math.round(64 * widgetScale + Style.marginM * widgetScale * 2)
+  implicitWidth: Math.round(Math.max(240 * widgetScale, contentLayout.implicitWidth + Style.marginXL * widgetScale))
+  implicitHeight: Math.round(64 * widgetScale + Style.marginXL * widgetScale)
   width: implicitWidth
   height: implicitHeight
 

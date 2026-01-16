@@ -48,7 +48,7 @@ NBox {
   }
 
   Layout.fillWidth: true
-  Layout.preferredHeight: column.implicitHeight + Style.marginM * 2
+  Layout.preferredHeight: column.implicitHeight + Style.marginXL
   visible: root.model.length > 0
 
   ColumnLayout {
@@ -81,7 +81,7 @@ NBox {
         Layout.fillWidth: true
         Layout.leftMargin: Style.marginXS
         Layout.rightMargin: Style.marginXS
-        implicitHeight: netColumn.implicitHeight + (Style.marginM * 2)
+        implicitHeight: netColumn.implicitHeight + (Style.marginXL)
 
         opacity: (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) ? 0.6 : 1.0
 
@@ -95,7 +95,7 @@ NBox {
 
         ColumnLayout {
           id: netColumn
-          width: parent.width - (Style.marginM * 2)
+          width: parent.width - (Style.marginXL)
           x: Style.marginM
           y: Style.marginM
           spacing: Style.marginS
@@ -158,7 +158,7 @@ NBox {
                   color: NetworkService.internetConnectivity ? Color.mPrimary : Color.mError
                   radius: height * 0.5
                   width: connectedText.implicitWidth + (Style.marginS * 2)
-                  height: connectedText.implicitHeight + (Style.marginXXS * 2)
+                  height: connectedText.implicitHeight + (Style.marginXS)
 
                   NText {
                     id: connectedText
@@ -188,7 +188,7 @@ NBox {
                   color: Color.mError
                   radius: height * 0.5
                   width: disconnectingText.implicitWidth + (Style.marginS * 2)
-                  height: disconnectingText.implicitHeight + (Style.marginXXS * 2)
+                  height: disconnectingText.implicitHeight + (Style.marginXS)
 
                   NText {
                     id: disconnectingText
@@ -204,7 +204,7 @@ NBox {
                   color: Color.mError
                   radius: height * 0.5
                   width: forgettingText.implicitWidth + (Style.marginS * 2)
-                  height: forgettingText.implicitHeight + (Style.marginXXS * 2)
+                  height: forgettingText.implicitHeight + (Style.marginXS)
 
                   NText {
                     id: forgettingText
@@ -222,7 +222,7 @@ NBox {
                   border.width: Style.borderS
                   radius: height * 0.5
                   width: savedText.implicitWidth + (Style.marginS * 2)
-                  height: savedText.implicitHeight + (Style.marginXXS * 2)
+                  height: savedText.implicitHeight + (Style.marginXS)
 
                   NText {
                     id: savedText

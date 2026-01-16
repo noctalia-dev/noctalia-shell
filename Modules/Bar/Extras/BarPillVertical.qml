@@ -42,8 +42,8 @@ Item {
   readonly property int buttonSize: Style.capsuleHeight
   readonly property int pillHeight: buttonSize
   readonly property int pillOverlap: Math.round(buttonSize * 0.5)
-  readonly property int maxPillWidth: rotateText ? Math.max(buttonSize, Math.round(textItem.implicitHeight + Style.marginM * 2)) : buttonSize
-  readonly property int maxPillHeight: rotateText ? Math.max(1, Math.round(textItem.implicitWidth + Style.marginM * 2 + Math.round(iconCircle.height / 4))) : Math.max(1, Math.round(textItem.implicitHeight + Style.marginM * 2))
+  readonly property int maxPillWidth: rotateText ? Math.max(buttonSize, Math.round(textItem.implicitHeight + Style.marginXL)) : buttonSize
+  readonly property int maxPillHeight: rotateText ? Math.max(1, Math.round(textItem.implicitWidth + Style.marginXL + Math.round(iconCircle.height / 4))) : Math.max(1, Math.round(textItem.implicitHeight + Style.marginXL))
 
   // Determine pill direction based on section position
   readonly property bool openDownward: oppositeDirection

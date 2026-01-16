@@ -141,8 +141,4 @@ ColumnLayout {
       onToggled: checked => Settings.data.audio.volumeOverdrive = checked
     }
   }
-
-  NDivider {
-    Layout.fillWidth: true
-  }
 }

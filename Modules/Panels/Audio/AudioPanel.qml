@@ -282,62 +282,63 @@ SmartPanel {
       // HEADER
       NBox {
         Layout.fillWidth: true
-        implicitHeight: headerRow.implicitHeight + (Style.marginM * 2)
+        implicitHeight: header.implicitHeight + (Style.marginXL)
 
-        RowLayout {
-          id: headerRow
+        ColumnLayout {
+          id: header
           anchors.fill: parent
           anchors.margins: Style.marginM
           spacing: Style.marginM
 
-          NIcon {
-            icon: "settings-audio"
-            pointSize: Style.fontSizeXXL
-            color: Color.mPrimary
+          RowLayout {
+            NIcon {
+              icon: "settings-audio"
+              pointSize: Style.fontSizeXXL
+              color: Color.mPrimary
+            }
+
+            NText {
+              text: I18n.tr("panels.audio.title")
+              pointSize: Style.fontSizeL
+              font.weight: Style.fontWeightBold
+              color: Color.mOnSurface
+              Layout.fillWidth: true
+            }
+
+            NIconButton {
+              icon: "close"
+              tooltipText: I18n.tr("common.close")
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: {
+                root.close();
+              }
+            }
           }
 
-          NText {
-            text: I18n.tr("panels.audio.title")
-            pointSize: Style.fontSizeL
-            font.weight: Style.fontWeightBold
-            color: Color.mOnSurface
+          NTabBar {
+            id: tabBar
             Layout.fillWidth: true
-          }
+            margins: Style.marginS
+            currentIndex: panelContent.currentTabIndex
+            distributeEvenly: true
+            onCurrentIndexChanged: panelContent.currentTabIndex = currentIndex
 
-          NIconButton {
-            icon: "close"
-            tooltipText: I18n.tr("common.close")
-            baseSize: Style.baseWidgetSize * 0.8
-            onClicked: {
-              root.close();
+            NTabButton {
+              text: I18n.tr("common.volumes")
+              tabIndex: 0
+              checked: tabBar.currentIndex === 0
+            }
+
+            NTabButton {
+              text: I18n.tr("common.devices")
+              tabIndex: 1
+              checked: tabBar.currentIndex === 1
             }
           }
         }
       }
 
       // Tab Bar
-      NTabBar {
-        id: tabBar
-        Layout.fillWidth: true
-        border.color: Style.boxBorderColor
-        border.width: Style.borderS
-        margins: Style.marginS
-        currentIndex: panelContent.currentTabIndex
-        distributeEvenly: true
-        onCurrentIndexChanged: panelContent.currentTabIndex = currentIndex
-
-        NTabButton {
-          text: I18n.tr("common.volumes")
-          tabIndex: 0
-          checked: tabBar.currentIndex === 0
-        }
-
-        NTabButton {
-          text: I18n.tr("common.devices")
-          tabIndex: 1
-          checked: tabBar.currentIndex === 1
-        }
-      }
 
       // Content Stack
       StackLayout {
@@ -359,7 +360,7 @@ SmartPanel {
             // Output Volume
             NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: outputVolumeColumn.implicitHeight + (Style.marginM * 2)
+              Layout.preferredHeight: outputVolumeColumn.implicitHeight + (Style.marginXL)
 
               RowLayout {
                 id: outputVolumeColumn
@@ -424,7 +425,7 @@ SmartPanel {
             // Input Volume
             NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: inputVolumeColumn.implicitHeight + (Style.marginM * 2)
+              Layout.preferredHeight: inputVolumeColumn.implicitHeight + (Style.marginXL)
 
               RowLayout {
                 id: inputVolumeColumn
@@ -499,7 +500,7 @@ SmartPanel {
                 id: appBox
                 required property PwNode modelData
                 Layout.fillWidth: true
-                Layout.preferredHeight: appRow.implicitHeight + (Style.marginM * 2)
+                Layout.preferredHeight: appRow.implicitHeight + (Style.marginXL)
                 visible: !isCaptureStream
 
                 // Track individual node to ensure properties are bound
@@ -801,7 +802,7 @@ SmartPanel {
 
             NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: outputColumn.implicitHeight + (Style.marginM * 2)
+              Layout.preferredHeight: outputColumn.implicitHeight + (Style.marginXL)
 
               ColumnLayout {
                 id: outputColumn
@@ -843,7 +844,7 @@ SmartPanel {
 
             NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: inputColumn.implicitHeight + (Style.marginM * 2)
+              Layout.preferredHeight: inputColumn.implicitHeight + (Style.marginXL)
 
               ColumnLayout {
                 id: inputColumn

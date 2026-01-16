@@ -142,7 +142,7 @@ SmartPanel {
       totalHeight = visibleCount * avgNotificationHeight + (visibleCount - 1) * Style.marginM;
       return totalHeight;
     }
-    property real calculatedHeight: headerHeight + tabsHeight + contentHeight + (Style.marginL * 2) + (Style.marginM * 2)
+    property real calculatedHeight: headerHeight + tabsHeight + contentHeight + (Style.marginL * 2) + (Style.marginXL)
     property real contentPreferredHeight: {
       if (NotificationService.historyList.count === 0) {
         // Empty state: smaller height
@@ -162,98 +162,98 @@ SmartPanel {
       NBox {
         id: headerBox
         Layout.fillWidth: true
-        implicitHeight: headerRow.implicitHeight + (Style.marginM * 2)
+        implicitHeight: header.implicitHeight + (Style.marginXL)
 
-        RowLayout {
-          id: headerRow
+        ColumnLayout {
+          id: header
           anchors.fill: parent
           anchors.margins: Style.marginM
           spacing: Style.marginM
 
-          NIcon {
-            icon: "bell"
-            pointSize: Style.fontSizeXXL
-            color: Color.mPrimary
-          }
+          RowLayout {
+            id: headerRow
+            NIcon {
+              icon: "bell"
+              pointSize: Style.fontSizeXXL
+              color: Color.mPrimary
+            }
 
-          NText {
-            text: I18n.tr("common.notifications")
-            pointSize: Style.fontSizeL
-            font.weight: Style.fontWeightBold
-            color: Color.mOnSurface
-            Layout.fillWidth: true
-          }
+            NText {
+              text: I18n.tr("common.notifications")
+              pointSize: Style.fontSizeL
+              font.weight: Style.fontWeightBold
+              color: Color.mOnSurface
+              Layout.fillWidth: true
+            }
 
-          NIconButton {
-            icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
-            tooltipText: NotificationService.doNotDisturb ? I18n.tr("tooltips.do-not-disturb-enabled") : I18n.tr("tooltips.do-not-disturb-enabled")
-            baseSize: Style.baseWidgetSize * 0.8
-            onClicked: NotificationService.doNotDisturb = !NotificationService.doNotDisturb
-          }
+            NIconButton {
+              icon: NotificationService.doNotDisturb ? "bell-off" : "bell"
+              tooltipText: NotificationService.doNotDisturb ? I18n.tr("tooltips.do-not-disturb-enabled") : I18n.tr("tooltips.do-not-disturb-enabled")
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: NotificationService.doNotDisturb = !NotificationService.doNotDisturb
+            }
 
-          NIconButton {
-            icon: "trash"
-            tooltipText: I18n.tr("actions.clear-history")
-            baseSize: Style.baseWidgetSize * 0.8
-            onClicked: {
-              NotificationService.clearHistory();
-              // Close panel as there is nothing more to see.
-              root.close();
+            NIconButton {
+              icon: "trash"
+              tooltipText: I18n.tr("actions.clear-history")
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: {
+                NotificationService.clearHistory();
+                // Close panel as there is nothing more to see.
+                root.close();
+              }
+            }
+
+            NIconButton {
+              icon: "close"
+              tooltipText: I18n.tr("common.close")
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: root.close()
             }
           }
 
-          NIconButton {
-            icon: "close"
-            tooltipText: I18n.tr("common.close")
-            baseSize: Style.baseWidgetSize * 0.8
-            onClicked: root.close()
+          // Time range tabs ([All] / [Today] / [Yesterday] / [Earlier])
+          NTabBar {
+            id: tabsBox
+            Layout.fillWidth: true
+            visible: NotificationService.historyList.count > 0 && panelContent.groupByDate
+            currentIndex: panelContent.currentRange
+            tabHeight: Style.toOdd(Style.baseWidgetSize * 0.8)
+            spacing: Style.marginXS
+            distributeEvenly: true
+
+            NTabButton {
+              tabIndex: 0
+              text: I18n.tr("launcher.categories.all") + " (" + panelContent.countForRange(0) + ")"
+              checked: tabsBox.currentIndex === 0
+              onClicked: panelContent.currentRange = 0
+              pointSize: Style.fontSizeXS
+            }
+
+            NTabButton {
+              tabIndex: 1
+              text: I18n.tr("notifications.range.today") + " (" + panelContent.countForRange(1) + ")"
+              checked: tabsBox.currentIndex === 1
+              onClicked: panelContent.currentRange = 1
+              pointSize: Style.fontSizeXS
+            }
+
+            NTabButton {
+              tabIndex: 2
+              text: I18n.tr("notifications.range.yesterday") + " (" + panelContent.countForRange(2) + ")"
+              checked: tabsBox.currentIndex === 2
+              onClicked: panelContent.currentRange = 2
+              pointSize: Style.fontSizeXS
+            }
+
+            NTabButton {
+              tabIndex: 3
+              text: I18n.tr("notifications.range.earlier") + " (" + panelContent.countForRange(3) + ")"
+              checked: tabsBox.currentIndex === 3
+              onClicked: panelContent.currentRange = 3
+              pointSize: Style.fontSizeXS
+            }
           }
-        }
-      }
-
-      // Time range tabs ([All] / [Today] / [Yesterday] / [Earlier])
-      NTabBar {
-        id: tabsBox
-        Layout.fillWidth: true
-        margins: Style.marginS
-        visible: NotificationService.historyList.count > 0 && panelContent.groupByDate
-        currentIndex: panelContent.currentRange
-        tabHeight: Style.baseWidgetSize * 0.7
-        spacing: Style.marginXS
-        distributeEvenly: true
-        border.color: Style.boxBorderColor
-        border.width: Style.borderS
-
-        NTabButton {
-          tabIndex: 0
-          text: I18n.tr("launcher.categories.all") + " (" + panelContent.countForRange(0) + ")"
-          checked: tabsBox.currentIndex === 0
-          onClicked: panelContent.currentRange = 0
-          pointSize: Style.fontSizeXS
-        }
-
-        NTabButton {
-          tabIndex: 1
-          text: I18n.tr("notifications.range.today") + " (" + panelContent.countForRange(1) + ")"
-          checked: tabsBox.currentIndex === 1
-          onClicked: panelContent.currentRange = 1
-          pointSize: Style.fontSizeXS
-        }
-
-        NTabButton {
-          tabIndex: 2
-          text: I18n.tr("notifications.range.yesterday") + " (" + panelContent.countForRange(2) + ")"
-          checked: tabsBox.currentIndex === 2
-          onClicked: panelContent.currentRange = 2
-          pointSize: Style.fontSizeXS
-        }
-
-        NTabButton {
-          tabIndex: 3
-          text: I18n.tr("notifications.range.earlier") + " (" + panelContent.countForRange(3) + ")"
-          checked: tabsBox.currentIndex === 3
-          onClicked: panelContent.currentRange = 3
-          pointSize: Style.fontSizeXS
         }
       }
 
@@ -328,7 +328,7 @@ SmartPanel {
                 id: notificationDelegate
                 width: parent.width
                 visible: panelContent.isInCurrentRange(model.timestamp)
-                height: visible ? contentColumn.height + (Style.marginM * 2) : 0
+                height: visible ? contentColumn.height + (Style.marginXL) : 0
 
                 property string notificationId: model.id
                 property bool isExpanded: scrollView.expandedId === notificationId
@@ -478,7 +478,7 @@ SmartPanel {
                           model: notificationDelegate.actionsList
                           delegate: NButton {
                             text: modelData.text
-                            // Explicitly set primary colors
+                            fontSize: Style.fontSizeS
                             backgroundColor: Color.mPrimary
                             textColor: Color.mOnPrimary
                             outlined: false
@@ -486,9 +486,6 @@ SmartPanel {
 
                             // Capture modelData in a property to avoid reference errors
                             property var actionData: modelData
-
-                            fontWeight: Style.fontWeightRegular // Use regular font weight
-
                             onClicked: {
                               NotificationService.invokeAction(notificationDelegate.notificationId, actionData.identifier);
                             }

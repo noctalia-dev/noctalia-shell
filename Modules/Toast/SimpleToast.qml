@@ -22,7 +22,7 @@ Item {
   readonly property int shadowPadding: Style.shadowBlurMax + Style.marginL
 
   width: notificationWidth + shadowPadding * 2
-  height: Math.round(contentLayout.implicitHeight + Style.marginM * 2 * 2 + shadowPadding * 2)
+  height: Math.round(contentLayout.implicitHeight + Style.marginXL * 2 + shadowPadding * 2)
   visible: true
   opacity: 0
   scale: initialScale
@@ -99,6 +99,9 @@ Item {
   MouseArea {
     anchors.fill: background
     acceptedButtons: Qt.LeftButton
+    hoverEnabled: true
+    onEntered: hideTimer.stop()
+    onExited: hideTimer.restart()
     onClicked: root.hide()
     cursorShape: Qt.PointingHandCursor
   }
@@ -108,8 +111,8 @@ Item {
     anchors.fill: background
     anchors.topMargin: Style.marginM
     anchors.bottomMargin: Style.marginM
-    anchors.leftMargin: Style.marginM * 2
-    anchors.rightMargin: Style.marginM * 2
+    anchors.leftMargin: Style.marginXL
+    anchors.rightMargin: Style.marginXL
     spacing: Style.marginL
 
     // Icon

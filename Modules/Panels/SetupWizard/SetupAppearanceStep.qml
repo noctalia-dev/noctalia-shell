@@ -406,7 +406,7 @@ ColumnLayout {
         // Predefined schemes Grid (matches ColorSchemeTab)
         GridLayout {
           id: schemesGrid
-          columns: Math.max(2, Math.floor((parent.width - Style.marginM * 2) / 180))
+          columns: Math.max(2, Math.floor((parent.width - Style.marginXL) / 180))
           rowSpacing: Style.marginM
           columnSpacing: Style.marginM
           Layout.fillWidth: true

@@ -134,6 +134,9 @@ SmartPanel {
       return false;
     }
 
+    // Clear any stale pluginInstance before loading new content
+    root.pluginInstance = null;
+
     var pluginDir = PluginRegistry.getPluginDir(pluginId);
     var panelPath = pluginDir + "/" + plugin.manifest.entryPoints.panel;
 
@@ -144,31 +147,53 @@ SmartPanel {
     var component = Qt.createComponent("file://" + panelPath + "?v=" + loadVersion);
 
     if (component.status === Component.Ready) {
-      // Get plugin API
-      var api = PluginService.getPluginAPI(pluginId);
-
-      // Activate loader and set component simultaneously
-      root.contentLoader.active = true;
-      root.contentLoader.sourceComponent = component;
-
-      // Immediately inject API (before any bindings evaluate)
-      if (root.contentLoader.item) {
-        if (root.contentLoader.item.hasOwnProperty("pluginApi")) {
-          root.contentLoader.item.pluginApi = api;
+      finalizePluginLoad(pluginId, component);
+      return true;
+    } else if (component.status === Component.Loading) {
+      // Handle async component loading - wait for it to be ready
+      Logger.d("PluginPanelSlot", "Component loading asynchronously for:", pluginId);
+      component.statusChanged.connect(function () {
+        if (component.status === Component.Ready) {
+          finalizePluginLoad(pluginId, component);
+          // Force SmartPanel to recalculate position now that content is ready
+          if (root.isPanelVisible) {
+            root.setPosition();
+          }
+        } else if (component.status === Component.Error) {
+          PluginService.recordPluginError(pluginId, "panel", component.errorString());
         }
-
-        root.pluginInstance = root.contentLoader.item;
-        root.currentPluginId = pluginId;
-
-        Logger.i("PluginPanelSlot", "Panel loaded for:", pluginId);
-        return true;
-      }
+      });
+      return true; // Will be loaded asynchronously
     } else if (component.status === Component.Error) {
       PluginService.recordPluginError(pluginId, "panel", component.errorString());
       return false;
     }
 
     return false;
+  }
+
+  // Helper function to finalize plugin content loading
+  function finalizePluginLoad(pluginId, component) {
+    // Get plugin API
+    var api = PluginService.getPluginAPI(pluginId);
+
+    // Activate loader and set component simultaneously
+    root.contentLoader.active = true;
+    root.contentLoader.sourceComponent = component;
+
+    // Immediately inject API (before any bindings evaluate)
+    if (root.contentLoader.item) {
+      if (root.contentLoader.item.hasOwnProperty("pluginApi")) {
+        root.contentLoader.item.pluginApi = api;
+      }
+
+      root.pluginInstance = root.contentLoader.item;
+      root.currentPluginId = pluginId;
+
+      Logger.i("PluginPanelSlot", "Panel loaded for:", pluginId);
+    } else {
+      Logger.e("PluginPanelSlot", "Failed to get loader item for:", pluginId);
+    }
   }
 
   // Unload current plugin panel
@@ -211,5 +236,8 @@ SmartPanel {
         Logger.d("PluginPanelSlot", "Cleared panelOpenScreen for", root.currentPluginId);
       }
     }
+    // Clear stale references when panel closes (content is destroyed by SmartPanel)
+    root.pluginInstance = null;
+    root.contentLoader = null;
   }
 }

@@ -444,8 +444,8 @@ Loader {
             Rectangle {
               id: dockContainer
               // For vertical dock, swap width and height logic
-              width: isVertical ? Math.round(iconSize * 1.5) : dockLayout.implicitWidth + Style.marginM * 2
-              height: isVertical ? dockLayout.implicitHeight + Style.marginM * 2 : Math.round(iconSize * 1.5)
+              width: isVertical ? Math.round(iconSize * 1.5) : dockLayout.implicitWidth + Style.marginXL
+              height: isVertical ? dockLayout.implicitHeight + Style.marginXL : Math.round(iconSize * 1.5)
               color: Qt.alpha(Color.mSurface, Settings.data.dock.backgroundOpacity)
 
               // Anchor based on padding to achieve centering shift
@@ -494,8 +494,8 @@ Loader {
               Item {
                 id: dock
                 // Swap dimensions based on orientation
-                width: isVertical ? parent.width - (Style.marginM * 2) : dockLayout.implicitWidth
-                height: isVertical ? dockLayout.implicitHeight : parent.height - (Style.marginM * 2)
+                width: isVertical ? parent.width - (Style.marginXL) : dockLayout.implicitWidth
+                height: isVertical ? dockLayout.implicitHeight : parent.height - (Style.marginXL)
                 anchors.centerIn: parent
 
                 function getAppIcon(appData): string {
