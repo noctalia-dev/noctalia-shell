@@ -15,10 +15,16 @@ Item {
   id: root
   anchors.fill: parent
 
-  required property var lockContext
+  required property var lockControl
   required property var batteryIndicator
   required property var keyboardLayout
   required property TextInput passwordInput
+
+  function doUnlock() {
+    if (lockControl) {
+      lockControl.tryUnlock();
+    }
+  }
 
   // Compact status indicators container (compact mode only)
   Rectangle {
@@ -425,6 +431,7 @@ Item {
         }
 
         Rectangle {
+          id: passwordInputContainer
           Layout.fillWidth: true
           Layout.preferredHeight: 48
           radius: Style.iRadiusL
@@ -584,7 +591,7 @@ Item {
             color: submitButtonArea.containsMouse ? Color.mPrimary : "transparent"
             border.color: Color.mPrimary
             border.width: Style.borderS
-            enabled: !lockContext || !lockContext.unlockInProgress || lockContext.waitingForPassword
+            enabled: !lockControl || !lockControl.unlockInProgress || lockControl.waitingForPassword
 
             NIcon {
               anchors.centerIn: parent
@@ -605,8 +612,7 @@ Item {
               anchors.fill: parent
               hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
-              onClicked: if (lockContext)
-                           lockContext.tryUnlock()
+              onClicked: root.doUnlock()
             }
 
             Behavior on color {
