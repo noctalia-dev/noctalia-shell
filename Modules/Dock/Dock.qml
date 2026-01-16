@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.UI
 import qs.Widgets
 
@@ -31,30 +32,39 @@ Loader {
         }
       }
 
-      // Update dock apps when toplevels change
-      Connections {
-        target: ToplevelManager ? ToplevelManager.toplevels : null
-        function onValuesChanged() {
-          updateDockApps();
-        }
-      }
+      // Update dock apps when windows change
+       Connections {
+         target: CompositorService
+         function onWindowListChanged() {
+           updateDockApps();
+         }
+       }
+
+       // Additional connection for workspace changes
+       Connections {
+         target: CompositorService
+         function onWorkspaceChanged() {
+           updateDockApps();
+         }
+       }
 
       // Update dock apps when pinned apps change
-      Connections {
-        target: Settings.data.dock
-        function onPinnedAppsChanged() {
-          updateDockApps();
-        }
-        function onOnlySameOutputChanged() {
-          updateDockApps();
-        }
-      }
+       Connections {
+         target: Settings.data.dock
+         function onPinnedAppsChanged() {
+           updateDockApps();
+         }
+         function onOnlySameOutputChanged() {
+           updateDockApps();
+         }
+         function onOnlyCurrentWorkspaceChanged() {
+           updateDockApps();
+         }
+       }
 
       // Initial update when component is ready
       Component.onCompleted: {
-        if (ToplevelManager) {
-          updateDockApps();
-        }
+        updateDockApps();
       }
 
       // Refresh icons when DesktopEntries becomes available
@@ -118,9 +128,9 @@ Loader {
       function getAppKey(appData) {
         if (!appData)
           return null;
-        // prefer toplevel object identity for running apps to distinguish instances
-        if (appData.toplevel)
-          return appData.toplevel;
+        // prefer window object identity for running apps to distinguish instances
+        if (appData.window)
+          return appData.window;
         // fallback to appId for pinned-only apps
         return appData.appId;
       }
@@ -229,100 +239,119 @@ Loader {
         } catch (e)
           // Fall through to return original appId
         {}
-
-        // Return original appId if we can't find a desktop entry
         return appId;
       }
 
       // Function to update the combined dock apps model
-      function updateDockApps() {
-        const runningApps = ToplevelManager ? (ToplevelManager.toplevels.values || []) : [];
-        const pinnedApps = Settings.data.dock.pinnedApps || [];
-        const combined = [];
-        const processedToplevels = new Set();
-        const processedPinnedAppIds = new Set();
-
-        //push an app onto combined with the given appType
-        function pushApp(appType, toplevel, appId, title) {
-          // For running apps, track by toplevel object to allow multiple instances
-          if (toplevel) {
-            if (processedToplevels.has(toplevel)) {
-              return; // Already processed this toplevel instance
-            }
-            if (Settings.data.dock.onlySameOutput && toplevel.screens && !toplevel.screens.includes(modelData)) {
-              return; // Filtered out by onlySameOutput setting
-            }
-            combined.push({
-                            "type": appType,
-                            "toplevel": toplevel,
-                            "appId": appId,
-                            "title": title
-                          });
-            processedToplevels.add(toplevel);
-          } else {
-            // For pinned apps that aren't running, track by appId to avoid duplicates
-            if (processedPinnedAppIds.has(appId)) {
-              return; // Already processed this pinned app
-            }
-            combined.push({
-                            "type": appType,
-                            "toplevel": toplevel,
-                            "appId": appId,
-                            "title": title
-                          });
-            processedPinnedAppIds.add(appId);
+        function updateDockApps() {
+          let activeIds = [];
+          try {
+            const activeWorkspaces = CompositorService.getActiveWorkspaces();
+            activeIds = activeWorkspaces.map(function (ws) {
+              return ws.id;
+            });
+          } catch (e) {
+            console.warn("Could not get active workspaces:", e);
+            activeIds = [];
           }
-        }
 
-        function pushRunning(first) {
-          runningApps.forEach(toplevel => {
-                                if (toplevel) {
-                                  // Skip pinned apps if they were already processed (when pinnedStatic is true)
-                                  const isPinned = pinnedApps.includes(toplevel.appId);
-                                  if (!first && isPinned && processedToplevels.has(toplevel)) {
-                                    return; // Already added by pushPinned()
-                                  }
-                                  pushApp((first && isPinned) ? "pinned-running" : "running", toplevel, toplevel.appId, toplevel.title);
+
+         // Use CompositorService.windows like Taskbar does for consistency
+         const runningWindows = [];
+         if (CompositorService.windows) {
+           const total = CompositorService.windows.count || 0;
+           for (let i = 0; i < total; i++) {
+             const w = CompositorService.windows.get(i);
+             if (w) {
+                const passOutput = (!Settings.data.dock.onlySameOutput) || (w.output == modelData?.name);
+                const passWorkspace = (!Settings.data.dock.onlyCurrentWorkspace) || (activeIds.length === 0) || (w.workspaceId !== undefined && w.workspaceId !== null && activeIds.includes(w.workspaceId));
+               if (passOutput && passWorkspace) {
+                 runningWindows.push(w);
+               }
+             }
+           }
+         }
+
+         const pinnedApps = Settings.data.dock.pinnedApps || [];
+         const combined = [];
+         const processedWindows = new Set();
+         const processedPinnedAppIds = new Set();
+
+         //push an app onto combined with the given appType
+         function pushApp(appType, window, appId, title) {
+           if (window) {
+             if (processedWindows.has(window)) {
+               return;
+             }
+              combined.push({
+                              "type": appType,
+                              "window": window,
+                              "appId": appId,
+                              "title": title
+                            });
+             processedWindows.add(window);
+           } else {
+             // For pinned apps that aren't running, track by appId to avoid duplicates
+             if (processedPinnedAppIds.has(appId)) {
+               return;
+             }
+             combined.push({
+                             "type": appType,
+                             "window": null,
+                             "appId": appId,
+                             "title": title
+                           });
+             processedPinnedAppIds.add(appId);
+           }
+         }
+
+         function pushRunning(first) {
+           runningWindows.forEach(window => {
+                                 if (window) {
+                                   // Skip pinned apps if they were already processed (when pinnedStatic is true)
+                                   const isPinned = pinnedApps.includes(window.appId);
+                                   if (!first && isPinned && processedWindows.has(window)) {
+                                     return;
+                                   }
+                                   pushApp((first && isPinned) ? "pinned-running" : "running", window, window.appId, window.title);
+                                 }
+                               });
+         }
+
+         function pushPinned() {
+           pinnedApps.forEach(pinnedAppId => {
+                                // Find all running instances of this pinned app
+                                const matchingWindows = runningWindows.filter(app => app && app.appId === pinnedAppId);
+
+                                if (matchingWindows.length > 0) {
+                                  matchingWindows.forEach(window => {
+                                                              pushApp("pinned-running", window, pinnedAppId, window.title);
+                                                            });
+                                } else {
+                                  pushApp("pinned", null, pinnedAppId, pinnedAppId);
                                 }
                               });
-        }
+         }
 
-        function pushPinned() {
-          pinnedApps.forEach(pinnedAppId => {
-                               // Find all running instances of this pinned app
-                               const matchingToplevels = runningApps.filter(app => app && app.appId === pinnedAppId);
+         //if pinnedStatic then push all pinned and then all remaining running apps
+         if (Settings.data.dock.pinnedStatic) {
+           pushPinned();
+           pushRunning(false);
 
-                               if (matchingToplevels.length > 0) {
-                                 // Add all running instances as pinned-running
-                                 matchingToplevels.forEach(toplevel => {
-                                                             pushApp("pinned-running", toplevel, pinnedAppId, toplevel.title);
-                                                           });
-                               } else {
-                                 // App is pinned but not running - add once
-                                 pushApp("pinned", null, pinnedAppId, pinnedAppId);
-                               }
-                             });
-        }
+           //else add all running apps and then remaining pinned apps
+         } else {
+           pushRunning(true);
+           pushPinned();
+         }
 
-        //if pinnedStatic then push all pinned and then all remaining running apps
-        if (Settings.data.dock.pinnedStatic) {
-          pushPinned();
-          pushRunning(false);
+         dockApps = sortDockApps(combined);
+         // Sync session order if needed (e.g. first run or new apps added)
+         if (!sessionAppOrder || sessionAppOrder.length === 0 || sessionAppOrder.length !== dockApps.length) {
+           sessionAppOrder = dockApps.map(getAppKey);
+         }
+       }
 
-          //else add all running apps and then remaining pinned apps
-        } else {
-          pushRunning(true);
-          pushPinned();
-        }
-
-        dockApps = sortDockApps(combined);
-        // Sync session order if needed (e.g. first run or new apps added)
-        if (!sessionAppOrder || sessionAppOrder.length === 0 || sessionAppOrder.length !== dockApps.length) {
-          sessionAppOrder = dockApps.map(getAppKey);
-        }
-      }
-
-      // Timer to unload dock after hide animation completes
+       // Timer to unload dock after hide animation completes
       Timer {
         id: unloadTimer
         interval: hideAnimationDuration + 50 // Add small buffer
@@ -452,7 +481,7 @@ Loader {
 
       Loader {
         id: dockWindowLoader
-        active: Settings.data.dock.enabled && (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && dockLoaded && ToplevelManager && (dockApps.length > 0)
+         active: Settings.data.dock.enabled && (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && dockLoaded && CompositorService && (dockApps.length > 0)
 
         sourceComponent: PanelWindow {
           id: dockWindow
@@ -607,25 +636,25 @@ Loader {
                       Layout.preferredHeight: iconSize
                       Layout.alignment: Qt.AlignCenter
 
-                      property bool isActive: modelData.toplevel && ToplevelManager.activeToplevel && ToplevelManager.activeToplevel === modelData.toplevel
-                      property bool hovered: appMouseArea.containsMouse
-                      property string appId: modelData ? modelData.appId : ""
-                      property string appTitle: {
-                        if (!modelData)
-                          return "";
-                        // For running apps, use the toplevel title directly (reactive)
-                        if (modelData.toplevel) {
-                          const toplevelTitle = modelData.toplevel.title || "";
-                          // If title is "Loading..." or empty, use desktop entry name
-                          if (!toplevelTitle || toplevelTitle === "Loading..." || toplevelTitle.trim() === "") {
-                            return root.getAppNameFromDesktopEntry(modelData.appId) || modelData.appId;
-                          }
-                          return toplevelTitle;
-                        }
-                        // For pinned apps that aren't running, use the stored title
-                        return modelData.title || modelData.appId || "";
-                      }
-                      property bool isRunning: modelData && (modelData.type === "running" || modelData.type === "pinned-running")
+                       property bool isActive: modelData.window && modelData.window.isFocused
+                       property bool hovered: appMouseArea.containsMouse
+                       property string appId: modelData ? modelData.appId : ""
+                         property string appTitle: {
+                           if (!modelData)
+                             return "";
+                           // For running apps, use the window title directly (reactive)
+                           if (modelData.window) {
+                             const windowTitle = modelData.window.title || "";
+                             // If title is "Loading..." or empty, use desktop entry name
+                             if (!windowTitle || windowTitle === "Loading..." || windowTitle.trim() === "") {
+                               return root.getAppNameFromDesktopEntry(modelData.appId) || modelData.appId;
+                             }
+                             return windowTitle;
+                           }
+                           // For pinned apps that aren't running, use the stored title
+                           return modelData.title || modelData.appId || "";
+                         }
+                        property bool isRunning: modelData && (modelData.type === "running" || modelData.type === "pinned-running")
 
                       // Store index for drag-and-drop
                       property int modelIndex: index
@@ -638,14 +667,6 @@ Loader {
                           if (drop.source && drop.source.objectName === "dockAppButton" && drop.source !== appButton) {
                             root.reorderApps(drop.source.modelIndex, appButton.modelIndex);
                           }
-                        }
-                      }
-
-                      // Listen for the toplevel being closed
-                      Connections {
-                        target: modelData?.toplevel
-                        function onClosed() {
-                          Qt.callLater(root.updateDockApps);
                         }
                       }
 
@@ -832,23 +853,23 @@ Loader {
                             root.closeAllContextMenus();
                             // Hide tooltip when showing context menu
                             TooltipService.hideImmediately();
-                            contextMenu.show(appButton, modelData.toplevel || modelData);
+                            contextMenu.show(appButton, modelData.window || modelData);
                             return;
                           }
 
-                          // Close any existing context menu for non-right-click actions
+                           // Close any existing context menu for non-right-click actions
                           root.closeAllContextMenus();
 
-                          // Check if toplevel is still valid (not a stale reference)
-                          const isValidToplevel = modelData?.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(modelData.toplevel);
+                          // Check if window is valid
+                          const isValidWindow = modelData?.window;
 
-                          if (mouse.button === Qt.MiddleButton && isValidToplevel && modelData.toplevel.close) {
-                            modelData.toplevel.close();
+                          if (mouse.button === Qt.MiddleButton && isValidWindow) {
+                            CompositorService.closeWindow(modelData.window);
                             Qt.callLater(root.updateDockApps); // Force immediate dock update
                           } else if (mouse.button === Qt.LeftButton) {
-                            if (isValidToplevel && modelData.toplevel.activate) {
-                              // Running app - activate it
-                              modelData.toplevel.activate();
+                            if (isValidWindow) {
+                              // Running app - focus it
+                              CompositorService.focusWindow(modelData.window);
                             } else if (modelData?.appId) {
                               // Pinned app not running - launch it
                               // Use ThemeIcons to robustly find the desktop entry

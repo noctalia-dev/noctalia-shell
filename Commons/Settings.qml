@@ -494,6 +494,7 @@ Singleton {
       property real floatingRatio: 1.0
       property real size: 1
       property bool onlySameOutput: true
+      property bool onlyCurrentWorkspace: false
       property list<string> monitors: [] // holds dock visibility per monitor
       property list<string> pinnedApps: [] // Desktop entry IDs pinned to the dock (e.g., "org.kde.konsole", "firefox.desktop")
       property bool colorizeIcons: false

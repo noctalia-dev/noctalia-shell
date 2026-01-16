@@ -904,6 +904,8 @@
       "appearance-icon-size-label": "Dock size",
       "appearance-inactive-indicators-description": "Display indicator pills for all apps, not just the currently active one.",
       "appearance-inactive-indicators-label": "Running Indicators",
+      "appearance-only-active-workspaces-description": "Show only apps from active workspaces.",
+      "appearance-only-active-workspaces-label": "Only from active workspaces",
       "appearance-pinned-static-description": "Always push pinned app icons to the left in static order.",
       "appearance-pinned-static-label": "Static pinned apps",
       "appearance-position-description": "Choose where the dock appears on screen.",
