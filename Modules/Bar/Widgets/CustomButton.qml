@@ -519,7 +519,7 @@ Item {
       Quickshell.execDetached(["sh", "-lc", leftClickExec]);
       Logger.i("CustomButton", `Executing command: ${leftClickExec}`);
     } else if (!leftClickUpdateText) {
-      openBarSettings();
+      openWidgetSettings();
     }
     if (!textStream && leftClickUpdateText) {
       runTextCommand();
