@@ -785,6 +785,7 @@ Variants {
               text: root.getDisplayPercentage()
               color: Color.mOnSurface
               pointSize: Style.fontSizeXS
+              family: Settings.data.ui.fontFixed
               font.weight: Style.fontWeightRegular
               horizontalAlignment: Text.AlignLeft
               verticalAlignment: Text.AlignVCenter
