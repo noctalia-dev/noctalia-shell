@@ -175,8 +175,10 @@
       "visualizer-type-label": "Type de visualiseur"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Masquer l'icône de notification quand il n'y a pas de notifications non lues.",
-      "hide-widget-when-zero-label": "Masquer l'icône quand zéro",
+      "hide-widget-when-zero-description": "Masquer l’icône de notification lorsqu’il n’y a aucune notification.",
+      "hide-widget-when-zero-label": "Masquer l’icône sans notifications",
+      "hide-widget-when-zero-unread-description": "Masquer l’icône de notification lorsqu’il n’y a aucune notification non lue.",
+      "hide-widget-when-zero-unread-label": "Masquer l’icône sans notifications non lues",
       "show-unread-badge-description": "Afficher un badge montrant le nombre de notifications non lues.",
       "show-unread-badge-label": "Afficher le badge non lu"
     },
@@ -351,6 +353,7 @@
     "connect": "Connecter",
     "connected": "Connecté",
     "connecting": "Connexion en cours...",
+    "continue": "Continuer",
     "contributors": "Contributeurs",
     "countdown": "Compte à rebours",
     "date": "Date",
@@ -361,7 +364,7 @@
     "disconnect": "Déconnecter",
     "disconnected": "Déconnecté",
     "disconnecting": "Déconnexion...",
-    "download": "Téléchargement",
+    "download": "Télécharger",
     "duration": "Durée",
     "enabled": "Activé",
     "events": "Événements",
@@ -425,7 +428,7 @@
     "security": "Sécurité",
     "select": "Sélectionner",
     "shortcuts": "Raccourcis",
-    "shutdown": "Arrêt",
+    "shutdown": "Éteindre",
     "signal": "Signal",
     "sound": "Son",
     "sources": "Sources",
@@ -443,7 +446,7 @@
     "unpair": "Déjumeler",
     "unpin": "Détacher",
     "update": "Mise à jour",
-    "upload": "Envio",
+    "upload": "Téléverser",
     "version": "Version",
     "visualizer": "Visualiseur",
     "volume": "Volume",
@@ -475,7 +478,7 @@
   "hide-modes": {
     "hidden": "Masquer quand vide",
     "idle": "Masquer quand inactif",
-    "transparent": "Transparent lorsqu'il est vide",
+    "transparent": "Transparent quand vide",
     "visible": "Toujours visible"
   },
   "launcher": {
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Veuillez patienter",
       "emoji-no-recent": "Aucun emoji récent pour le moment",
       "emoji-search-description": "Rechercher et copier des émojis"
-    }
+    },
+    "result": "résultat",
+    "results": "résultats"
   },
   "lock-screen": {
-    "authenticating": "Authentification...",
-    "password": "Entrez votre mot de passe...",
-    "restart": "Redémarrer",
-    "shut-down": "Éteindre"
+    "password": "Entrez votre mot de passe..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Filtrer par catégorie",
       "templates-misc-description": "Créez vos propres modèles.",
       "templates-misc-label": "Avancé",
-      "templates-misc-user-templates-description": "N'activez que si vous savez ce que vous faites — consultez notre documentation en ligne",
+      "templates-misc-user-templates-description": "N'activez que si vous savez ce que vous faites — consultez notre documentation en ligne.",
       "templates-misc-user-templates-label": "Activer les modèles utilisateur",
       "templates-none-detected": "Aucun détecté",
       "templates-write-path": "Écrit : {filepath}",
@@ -938,7 +940,7 @@
       "info-command-info-label": "Informations sur la commande de hook",
       "info-parameters-description": "• Crochet de fond d'écran : $1 = chemin d'accès au fond d'écran, $2 = nom de l'écran<br>• Crochet de bascule de thème : $1 = vrai/faux (état du mode sombre)<br>• Crochets de verrouillage/déverrouillage d'écran : Aucun paramètre<br>• Crochets de mode de performance : Aucun paramètre<br>• Crochet de session : $1 = action (arrêt/redémarrage)",
       "info-parameters-label": "Paramètres disponibles",
-      "performance-mode-disabled-description": "Commande à exécuter lorsque le mode performance noctalia est désactivé.",
+      "performance-mode-disabled-description": "Commande à exécuter lorsque le mode performance Noctalia est désactivé.",
       "performance-mode-disabled-label": "mode performance désactivé",
       "performance-mode-disabled-placeholder": "ex: notify-send \"Performance\" \"Mode désactivé\"",
       "performance-mode-enabled-description": "Commande à exécuter lorsque le mode performance Noctalia est activé.",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Écran de verrouillage compact",
       "lock-on-suspend-description": "Verrouiller automatiquement l'écran lors de la mise en veille du système.",
       "lock-on-suspend-label": "Verrouiller à la suspension",
-      "show-hibernate-description": "Afficher l’option 'hiberner' dans les actions d’énergie.",
+      "show-hibernate-description": "Afficher l’option 'hiberner' dans les commandes d'alimentation.",
       "show-hibernate-label": "Afficher l’hibernation",
       "show-session-buttons-description": "Autoriser l'accès aux paramètres d'alimentation depuis l'écran de verrouillage.",
       "show-session-buttons-label": "Commandes d'alimentation",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Bonjour le monde\"",
     "enter-command": "Entrez la commande à exécuter (application ou script personnalisé)",
     "enter-ipc-identifier": "Entrez un identifiant unique pour les commandes IPC",
+    "enter-path": "Entrez le chemin...",
     "enter-text-to-collapse": "par ex., 'rien n’est en lecture'. Utilisez /regex/ pour les modèles.",
     "enter-tooltip": "Entrer l'infobulle",
     "enter-width-pixels": "Entrez la largeur en pixels",
@@ -1380,6 +1383,7 @@
     "title": "Menu de session"
   },
   "setup": {
+    "all-done": "Terminé !",
     "appearance": {
       "subheader": "Choisissez le mode sombre et la source des couleurs (Matugen ou prédéfinie)."
     },
@@ -1387,6 +1391,11 @@
       "header": "Personnaliser votre expérience",
       "subheader": "Ajustez la position de la barre, la densité, l'échelle et plus encore."
     },
+    "skip-setup": "Ignorer la configuration",
+    "telemetry-wizard-done": "Bien reçu !",
+    "telemetry-wizard-note": "Vous avez le contrôle : activez ou désactivez cette option à tout moment dans les Paramètres",
+    "telemetry-wizard-subtitle": "Nous avons ajouté des analyses anonymes pour aider à améliorer Noctalia",
+    "telemetry-wizard-title": "Mise à jour de la confidentialité",
     "wallpaper": {
       "choose-dir": "Choisissez un répertoire contenant vos fonds d'écran",
       "dir-browse": "Parcourir le dossier",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Sélectionnez un fond ci-dessous",
       "subheader": "Définissez l'ambiance avec un joli fond."
     },
-    "welcome-note": "Quelques réglages de base pour démarrer — toutes les options sont dans paramètres"
+    "welcome-note": "Quelques réglages de base pour démarrer — toutes les options sont dans paramètres",
+    "welcome-subtitle": "Personnalisons votre bureau pour qu'il soit unique",
+    "welcome-title": "Bienvenue dans Noctalia !"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "Année sur deux chiffres (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Rechercher des fichiers et des dossiers...",
+      "item": "élément",
+      "items": "éléments",
       "select-current": "Sélectionner Actuel",
       "select-file": "Sélectionner un fichier",
       "select-folder": "Sélectionner un dossier",
+      "selected:": "Sélectionné :",
       "title": "Sélecteur de fichiers"
     },
     "file-picker-title": "Sélectionner un fichier",

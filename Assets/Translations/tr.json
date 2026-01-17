@@ -175,8 +175,10 @@
       "visualizer-type-label": "Görselleştirici türü"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Okunmamış bildirim olmadığında bildirim simgesini gizle.",
-      "hide-widget-when-zero-label": "Sıfırken simgeyi gizle",
+      "hide-widget-when-zero-description": "Bildirim yokken bildirim simgesini gizle.",
+      "hide-widget-when-zero-label": "Bildirim yokken simgeyi gizle",
+      "hide-widget-when-zero-unread-description": "Okunmamış bildirim yokken bildirim simgesini gizle.",
+      "hide-widget-when-zero-unread-label": "Okunmamış yokken simgeyi gizle",
       "show-unread-badge-description": "Okunmamış bildirim sayısını gösteren bir rozet göster.",
       "show-unread-badge-label": "Okunmamış bildirimleri göster"
     },
@@ -351,6 +353,7 @@
     "connect": "Bağlan",
     "connected": "Bağlı",
     "connecting": "Bağlanıyor...",
+    "continue": "Devam Et",
     "contributors": "Katkıda bulunanlar",
     "countdown": "Geri sayım",
     "date": "Tarih",
@@ -361,7 +364,7 @@
     "disconnect": "Bağlantıyı kes",
     "disconnected": "Bağlantı kesildi",
     "disconnecting": "Bağlantı kesiliyor...",
-    "download": "İndirme",
+    "download": "İndir",
     "duration": "Süre",
     "enabled": "Etkinleştirildi",
     "events": "Etkinlikler",
@@ -425,7 +428,7 @@
     "security": "Güvenlik",
     "select": "Seç",
     "shortcuts": "Kısayollar",
-    "shutdown": "Kapatma",
+    "shutdown": "Kapat",
     "signal": "Sinyal",
     "sound": "Ses",
     "sources": "Kaynaklar",
@@ -443,7 +446,7 @@
     "unpair": "Eşleştirmeyi kaldır",
     "unpin": "Sabitlemeyi kaldır",
     "update": "Güncelleme",
-    "upload": "Yükleme",
+    "upload": "Yükle",
     "version": "Sürüm",
     "visualizer": "Görselleştirici",
     "volume": "Hacim",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Lütfen bekleyin",
       "emoji-no-recent": "Henüz yeni emoji yok",
       "emoji-search-description": "Emoji arama ve kopyalama"
-    }
+    },
+    "result": "sonuç",
+    "results": "sonuçlar"
   },
   "lock-screen": {
-    "authenticating": "Doğrulanıyor...",
-    "password": "Parolanızı girin...",
-    "restart": "Yeniden başlat",
-    "shut-down": "Kapat"
+    "password": "Parolanızı girin..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Kategoriye göre filtrele",
       "templates-misc-description": "Kendi şablonlarınızı oluşturun.",
       "templates-misc-label": "Gelişmiş",
-      "templates-misc-user-templates-description": "Yalnızca ne yaptığınızı biliyorsanız etkinleştirin — çevrimiçi belgelerimize bakın",
+      "templates-misc-user-templates-description": "Yalnızca ne yaptığınızı biliyorsanız etkinleştirin — çevrimiçi belgelerimize bakın.",
       "templates-misc-user-templates-label": "Kullanıcı şablonlarını etkinleştir",
       "templates-none-detected": "Hiçbiri algılanmadı",
       "templates-write-path": "Yazıyor: {filepath}",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Kompakt ekran kilidi",
       "lock-on-suspend-description": "Sistemi askıya alırken otomatik olarak ekranı kilitler.",
       "lock-on-suspend-label": "Askıya alırken kilitle",
-      "show-hibernate-description": "Güç işlemlerinde 'hazırda beklet' seçeneğini göster.",
+      "show-hibernate-description": "Güç kontrollerinde 'hazırda beklet' seçeneğini göster.",
       "show-hibernate-label": "Hazırda beklet seçeneğini göster",
       "show-session-buttons-description": "Kilit ekranından güç ayarlarına erişime izin ver.",
       "show-session-buttons-label": "Güç kontrolleri",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "Çalıştırılacak komutu girin (uygulama veya özel komut)",
     "enter-ipc-identifier": "IPC komutları için benzersiz bir tanımlayıcı girin",
+    "enter-path": "Yolu girin...",
     "enter-text-to-collapse": "örn., 'nothing is playing'. Desenler için /regex/ kullanın.",
     "enter-tooltip": "Araç ipucunu girin",
     "enter-width-pixels": "Genişliği piksel olarak girin",
@@ -1380,6 +1383,7 @@
     "title": "Oturum menüsü"
   },
   "setup": {
+    "all-done": "Tamamlandı!",
     "appearance": {
       "subheader": "Karanlık modu ve renk kaynaklarını seçin (Matugen veya önceden tanımlanmış)."
     },
@@ -1387,6 +1391,11 @@
       "header": "Deneyiminizi özelleştirin",
       "subheader": "Araç çubuğu konumunu, yoğunluğunu, ölçeğini ve daha fazlasını ayarlayın."
     },
+    "skip-setup": "Kurulumu Atla",
+    "telemetry-wizard-done": "Anlaşıldı!",
+    "telemetry-wizard-note": "Kontrol sizde — istediğiniz zaman Ayarlar'dan etkinleştirebilir veya devre dışı bırakabilirsiniz",
+    "telemetry-wizard-subtitle": "Noctalia'yı geliştirmeye yardımcı olmak için anonim analizler ekledik",
+    "telemetry-wizard-title": "Gizlilik Güncellemesi",
     "wallpaper": {
       "choose-dir": "Duvar kâğıdı görüntülerinizi içeren bir dizin seçin",
       "dir-browse": "Duvar kâğıdı klasörüne göz at",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Aşağıdan bir duvar kâğıdı seçin",
       "subheader": "Güzel bir arka planla ortamı ayarlayın."
     },
-    "welcome-note": "Başlamanız için birkaç temel ayar — tam seçenekler ayarlar'da"
+    "welcome-note": "Başlamanız için birkaç temel ayar — tam seçenekler ayarlar'da",
+    "welcome-subtitle": "Masaüstünüzü size özel yapalım",
+    "welcome-title": "Noctalia'ya hoş geldiniz!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "İki haneli sayı olarak yıl (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Dosya ve klasörlerde ara...",
+      "item": "öğe",
+      "items": "öğeler",
       "select-current": "Mevcudu seç",
       "select-file": "Dosya seç",
       "select-folder": "Klasör seç",
+      "selected:": "Seçilen:",
       "title": "Dosya seçici"
     },
     "file-picker-title": "Bir dosya seçin",

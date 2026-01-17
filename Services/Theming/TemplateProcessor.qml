@@ -417,8 +417,9 @@ Singleton {
     let expressions = [];
 
     Object.keys(colors).forEach(colorKey => {
-                                  const hexValue = colors[colorKey].default.hex;
-                                  const hexStrippedValue = colors[colorKey].default.hex_stripped;
+                                  const colorData = colors[colorKey].default;
+                                  const hexValue = colorData.hex;
+                                  const hexStrippedValue = colorData.hex_stripped;
 
                                   const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                   const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -426,6 +427,11 @@ Singleton {
                                   // Batch all replacements into a single sed command to avoid ARG_MAX limits
                                   expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hex_stripped}}/${escapedHexStripped}/g'`);
                                   expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hex}}/${escapedHex}/g'`);
+
+                                  // HSL components
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hue}}/${colorData.hue}/g'`);
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.saturation}}/${colorData.saturation}/g'`);
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.lightness}}/${colorData.lightness}/g'`);
                                 });
     return `sed -i ${expressions.join(' ')} '${filePath}'\n`;
   }
@@ -435,24 +441,28 @@ Singleton {
 
     // Replace dark mode patterns
     Object.keys(darkColors).forEach(colorKey => {
-                                      const hexValue = darkColors[colorKey].default.hex;
-                                      const hexStrippedValue = darkColors[colorKey].default.hex_stripped;
-                                      const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                      const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                      const colorData = darkColors[colorKey].default;
+                                      const escapedHex = colorData.hex.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                      const escapedHexStripped = colorData.hex_stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hex_stripped}}/${escapedHexStripped}/g'`);
                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hex}}/${escapedHex}/g'`);
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hue}}/${colorData.hue}/g'`);
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.saturation}}/${colorData.saturation}/g'`);
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.lightness}}/${colorData.lightness}/g'`);
                                     });
 
     // Replace light mode patterns
     Object.keys(lightColors).forEach(colorKey => {
-                                       const hexValue = lightColors[colorKey].default.hex;
-                                       const hexStrippedValue = lightColors[colorKey].default.hex_stripped;
-                                       const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                       const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                       const colorData = lightColors[colorKey].default;
+                                       const escapedHex = colorData.hex.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                       const escapedHexStripped = colorData.hex_stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
                                        expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hex_stripped}}/${escapedHexStripped}/g'`);
                                        expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hex}}/${escapedHex}/g'`);
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hue}}/${colorData.hue}/g'`);
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.saturation}}/${colorData.saturation}/g'`);
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.lightness}}/${colorData.lightness}/g'`);
                                      });
 
     // Batch all replacements into a single sed command to avoid ARG_MAX limits

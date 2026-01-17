@@ -1620,7 +1620,7 @@ SmartPanel {
               return "";
             }
             var prefix = activeProvider && activeProvider.name ? activeProvider.name + ": " : "";
-            return prefix + results.length + " result" + (results.length !== 1 ? 's' : '');
+            return prefix + results.length + " " + (results.length === 1 ? I18n.tr("launcher.result") : I18n.tr("launcher.results"));
           }
           pointSize: Style.fontSizeXS
           color: Color.mOnSurfaceVariant

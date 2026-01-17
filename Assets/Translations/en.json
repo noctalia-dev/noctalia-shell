@@ -175,8 +175,10 @@
       "visualizer-type-label": "Visualizer type"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Hide the notification icon when there are no unread notifications.",
-      "hide-widget-when-zero-label": "Hide icon when zero",
+      "hide-widget-when-zero-description": "Hide the notification icon when there are no notifications.",
+      "hide-widget-when-zero-label": "Hide icon when no notifications",
+      "hide-widget-when-zero-unread-description": "Hide the notification icon when there are no unread notifications.",
+      "hide-widget-when-zero-unread-label": "Hide icon when no unread notifications",
       "show-unread-badge-description": "Display a badge showing the number of unread notifications.",
       "show-unread-badge-label": "Show unread badge"
     },
@@ -351,6 +353,7 @@
     "connect": "Connect",
     "connected": "Connected",
     "connecting": "Connecting...",
+    "continue": "Continue",
     "contributors": "Contributors",
     "countdown": "Countdown",
     "date": "Date",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Please wait",
       "emoji-no-recent": "No recent emojis yet",
       "emoji-search-description": "Search and copy emojis"
-    }
+    },
+    "result": "result",
+    "results": "results"
   },
   "lock-screen": {
-    "authenticating": "Authenticating...",
-    "password": "Enter your password...",
-    "restart": "Restart",
-    "shut-down": "Shut down"
+    "password": "Enter your password..."
   },
   "notifications": {
     "panel": {
@@ -719,7 +721,7 @@
       "color-source-use-wallpaper-colors-description": "Generate color schemes from your wallpaper using Matugen. Automatically extracts colors to create a cohesive theme.",
       "color-source-use-wallpaper-colors-label": "Use wallpaper colors",
       "dark-mode-mode-description": "Enables automatic switching between Light and Dark Mode.",
-      "dark-mode-mode-label": "Dark mode schedule",
+      "dark-mode-mode-label": "Dark Mode schedule",
       "dark-mode-mode-manual": "Manual",
       "dark-mode-mode-off": "Off",
       "dark-mode-switch-description": "Switches to a darker theme for easier viewing at night.",
@@ -751,7 +753,7 @@
       "templates-filter-label": "Filter by category",
       "templates-misc-description": "Create your own templates.",
       "templates-misc-label": "Advanced",
-      "templates-misc-user-templates-description": "Only enable if you know what you are doing — refer to our online documentation",
+      "templates-misc-user-templates-description": "Only enable if you know what you are doing — refer to our online documentation.",
       "templates-misc-user-templates-label": "Enable user templates",
       "templates-none-detected": "None detected",
       "templates-write-path": "Writes: {filepath}",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Compact lock screen",
       "lock-on-suspend-description": "Automatically lock the screen when suspending the system.",
       "lock-on-suspend-label": "Lock on suspend",
-      "show-hibernate-description": "Show the option 'hibernate' in the energy actions.",
+      "show-hibernate-description": "Show the option 'hibernate' in the power controls.",
       "show-hibernate-label": "Show hibernate",
       "show-session-buttons-description": "Allow access to power settings from the lock screen.",
       "show-session-buttons-label": "Power controls",
@@ -1150,7 +1152,9 @@
       "types-lockkey-label": "Lock keys",
       "types-title": "OSD trigger events",
       "types-volume-description": "Show OSD when audio output volume changes.",
-      "types-volume-label": "Output volume"
+      "types-volume-label": "Output volume",
+      "types-media-description": "Show OSD when media playback state changes (play, pause, skip).",
+      "types-media-label": "Media playback"
     },
     "plugins": {
       "available-description": "Browse and install plugins from configured sources.",
@@ -1349,6 +1353,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "Enter command to execute (app or custom script)",
     "enter-ipc-identifier": "Enter unique identifier for IPC commands",
+    "enter-path": "Enter path...",
     "enter-text-to-collapse": "e.g., 'nothing is playing'. Use /regex/ for patterns.",
     "enter-tooltip": "Enter tooltip",
     "enter-width-pixels": "Enter width in pixels",
@@ -1380,6 +1385,7 @@
     "title": "Session Menu"
   },
   "setup": {
+    "all-done": "All Done!",
     "appearance": {
       "subheader": "Choose Dark Mode and color sources (Matugen or predefined)."
     },
@@ -1387,6 +1393,11 @@
       "header": "Customize your experience",
       "subheader": "Adjust bar position, density, scaling and more."
     },
+    "skip-setup": "Skip Setup",
+    "telemetry-wizard-done": "Got it!",
+    "telemetry-wizard-note": "You're in control — enable or disable this anytime in Settings",
+    "telemetry-wizard-subtitle": "We've added anonymous analytics to help improve Noctalia",
+    "telemetry-wizard-title": "Privacy Update",
     "wallpaper": {
       "choose-dir": "Choose a directory containing your wallpaper images",
       "dir-browse": "Browse for wallpaper folder",
@@ -1401,7 +1412,9 @@
       "select-prompt": "Select a wallpaper below",
       "subheader": "Set the mood with a beautiful background."
     },
-    "welcome-note": "Just a few basics to get you started — full options are in the settings"
+    "welcome-note": "Just a few basics to get you started — full options are in the settings",
+    "welcome-subtitle": "Let's make your desktop uniquely yours",
+    "welcome-title": "Welcome to Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1564,7 +1577,7 @@
     "search-close": "Close search",
     "session-menu": "Session menu",
     "show-all-devices": "Show all devices",
-    "switch-to-dark-mode": "Dark mode",
+    "switch-to-dark-mode": "Dark Mode",
     "switch-to-light-mode": "Light Mode",
     "unmute": "Unmute",
     "up": "Parent directory",
@@ -1676,10 +1689,12 @@
       "year-two-digit": "Year as two-digit number (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Search files and folders...",
+      "item": "item",
+      "items": "items",
       "select-current": "Select Current",
       "select-file": "Select File",
       "select-folder": "Select Folder",
+      "selected": "Selected:",
       "title": "File Picker"
     },
     "file-picker-title": "Select a file",

@@ -175,8 +175,10 @@
       "visualizer-type-label": "Tipo de visualizador"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Ocultar o ícone de notificação quando não há notificações não lidas.",
-      "hide-widget-when-zero-label": "Ocultar ícone quando zero",
+      "hide-widget-when-zero-description": "Ocultar o ícone de notificações quando não houver notificações.",
+      "hide-widget-when-zero-label": "Ocultar ícone sem notificações",
+      "hide-widget-when-zero-unread-description": "Ocultar o ícone de notificações quando não houver notificações não lidas.",
+      "hide-widget-when-zero-unread-label": "Ocultar ícone sem notificações não lidas",
       "show-unread-badge-description": "Exibir um distintivo mostrando o número de notificações não lidas.",
       "show-unread-badge-label": "Mostrar distintivo de não lidos"
     },
@@ -351,6 +353,7 @@
     "connect": "Conectar",
     "connected": "Conectado(a)",
     "connecting": "Conectando...",
+    "continue": "Continuar",
     "contributors": "Colaboradores",
     "countdown": "Contagem regressiva",
     "date": "Data",
@@ -361,7 +364,7 @@
     "disconnect": "Desconectar",
     "disconnected": "Desconectado(a)",
     "disconnecting": "Desconectando...",
-    "download": "Download",
+    "download": "Baixar",
     "duration": "Duração",
     "enabled": "Ativado",
     "events": "Eventos",
@@ -443,7 +446,7 @@
     "unpair": "Desemparelhar",
     "unpin": "Desafixar",
     "update": "Atualização",
-    "upload": "Envio",
+    "upload": "Enviar",
     "version": "Versão",
     "visualizer": "Visualizador",
     "volume": "Volume",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Por favor, aguarde",
       "emoji-no-recent": "Ainda não há emojis recentes",
       "emoji-search-description": "Buscar e copiar emojis"
-    }
+    },
+    "result": "resultado",
+    "results": "resultados"
   },
   "lock-screen": {
-    "authenticating": "Autenticando...",
-    "password": "Digite sua senha...",
-    "restart": "Reiniciar",
-    "shut-down": "Desligar"
+    "password": "Digite sua senha..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Filtrar por categoria",
       "templates-misc-description": "Crie seus próprios modelos.",
       "templates-misc-label": "Avançado",
-      "templates-misc-user-templates-description": "Ative apenas se souber o que está fazendo — consulte nossa documentação online",
+      "templates-misc-user-templates-description": "Ative apenas se souber o que está fazendo — consulte nossa documentação online.",
       "templates-misc-user-templates-label": "Ativar modelos do usuário",
       "templates-none-detected": "Nenhum detectado",
       "templates-write-path": "Escreve: {filepath}",
@@ -936,12 +938,12 @@
     "hooks": {
       "info-command-info-description": "• Comandos são executados via shell (sh -lc)<br>• Comandos rodam em segundo plano (desanexados)<br>• Botões de teste executam com os valores atuais",
       "info-command-info-label": "Informações de comando do hook",
-      "info-parameters-description": "• Hook de papel de parede: $1 = caminho do papel de parede, $2 = nome da tela<br>• Hook de alternância de tema: $1 = verdadeiro/falso (estado do modo escuro)<br>• Hooks de bloqueio/desbloqueio de tela: Sem parâmetros<br>• Hooks de modo de desempenho: Sem parâmetros<br>• Hook de sessão: $1 = ação (desligar/reiniciar)",
+      "info-parameters-description": "• Hook de papel de parede: $1 = caminho do papel de parede, $2 = nome da tela<br>• Hook de alternância de tema: $1 = verdadeiro/falso (estado do modo escuro)<br>• Hooks de bloqueio/desbloqueio de tela: Sem parâmetros<br>• Hooks de modo de desempenho: Sem parâmetros<br>• Hook de sessão: $1 = ação (desligamento/reinicialização)",
       "info-parameters-label": "Parâmetros disponíveis",
-      "performance-mode-disabled-description": "Comando a ser executado quando o modo de desempenho noctalia é desabilitado.",
+      "performance-mode-disabled-description": "Comando a ser executado quando o modo de desempenho Noctalia é desabilitado.",
       "performance-mode-disabled-label": "Modo de desempenho desabilitado",
       "performance-mode-disabled-placeholder": "ex., notify-send \"Desempenho\" \"Modo desabilitado\"",
-      "performance-mode-enabled-description": "Comando a ser executado quando o modo de desempenho noctalia é habilitado.",
+      "performance-mode-enabled-description": "Comando a ser executado quando o modo de desempenho Noctalia é habilitado.",
       "performance-mode-enabled-label": "Modo de desempenho habilitado",
       "performance-mode-enabled-placeholder": "ex., notify-send \"Desempenho\" \"Modo habilitado\"",
       "screen-lock-description": "Comando a ser executado quando a tela é bloqueada.",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Tela de bloqueio compacta",
       "lock-on-suspend-description": "Bloquear a tela automaticamente ao suspender o sistema.",
       "lock-on-suspend-label": "Bloquear ao suspender",
-      "show-hibernate-description": "Mostrar a opção 'hibernar' nas ações de energia.",
+      "show-hibernate-description": "Mostrar a opção 'hibernar' nos controles de energia.",
       "show-hibernate-label": "Mostrar hibernar",
       "show-session-buttons-description": "Permitir acesso às configurações de energia a partir da tela de bloqueio.",
       "show-session-buttons-label": "Controles de energia",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Olá, mundo\"",
     "enter-command": "Digite o comando para executar (app ou script personalizado)",
     "enter-ipc-identifier": "Introduza um identificador exclusivo para comandos IPC",
+    "enter-path": "Digite o caminho...",
     "enter-text-to-collapse": "por exemplo, 'nada está sendo reproduzido'. Use /regex/ para padrões.",
     "enter-tooltip": "Inserir dica de ferramenta",
     "enter-width-pixels": "Digite a largura em pixels",
@@ -1380,6 +1383,7 @@
     "title": "Menu da sessão"
   },
   "setup": {
+    "all-done": "Concluído!",
     "appearance": {
       "subheader": "Escolha o modo escuro e as fontes de cores (Matugen ou predefinidas)."
     },
@@ -1387,6 +1391,11 @@
       "header": "Personalizar a sua experiência",
       "subheader": "Ajuste a posição da barra, densidade, escala e mais."
     },
+    "skip-setup": "Ignorar configuração",
+    "telemetry-wizard-done": "Entendi!",
+    "telemetry-wizard-note": "Você está no controle — ative ou desative isso a qualquer momento nas Configurações",
+    "telemetry-wizard-subtitle": "Adicionámos análises anónimas para ajudar a melhorar o Noctalia",
+    "telemetry-wizard-title": "Atualização de privacidade",
     "wallpaper": {
       "choose-dir": "Escolha um diretório contendo seus papéis de parede",
       "dir-browse": "Procurar pasta",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Selecione um papel de parede abaixo",
       "subheader": "Defina o ambiente com um belo fundo."
     },
-    "welcome-note": "Apenas alguns ajustes básicos para começar - o restante está em configurações"
+    "welcome-note": "Apenas alguns ajustes básicos para começar - o restante está em configurações",
+    "welcome-subtitle": "Vamos tornar o seu ambiente de trabalho único",
+    "welcome-title": "Bem-vindo ao Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "Ano com dois dígitos (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Pesquisar arquivos e pastas...",
+      "item": "item",
+      "items": "itens",
       "select-current": "Selecionar atual",
       "select-file": "Selecionar arquivo",
       "select-folder": "Selecionar pasta",
+      "selected:": "Selecionado:",
       "title": "Seletor de arquivos"
     },
     "file-picker-title": "Selecione um arquivo",

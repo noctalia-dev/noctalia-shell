@@ -175,8 +175,10 @@
       "visualizer-type-label": "ビジュアライザーの種類"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "未読通知がない場合、通知アイコンを非表示にします。",
-      "hide-widget-when-zero-label": "ゼロのときはアイコンを隠す",
+      "hide-widget-when-zero-description": "通知がない場合に通知アイコンを非表示にします。",
+      "hide-widget-when-zero-label": "通知なしでアイコンを非表示",
+      "hide-widget-when-zero-unread-description": "未読の通知がない場合に通知アイコンを非表示にします。",
+      "hide-widget-when-zero-unread-label": "未読なしでアイコンを非表示",
       "show-unread-badge-description": "未読通知の数を表示するバッジを表示します。",
       "show-unread-badge-label": "未読バッジを表示"
     },
@@ -351,6 +353,7 @@
     "connect": "接続",
     "connected": "接続済み",
     "connecting": "接続中...",
+    "continue": "続ける",
     "contributors": "貢献者",
     "countdown": "カウントダウン",
     "date": "日付",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "お待ちください",
       "emoji-no-recent": "まだ最近使った絵文字はありません",
       "emoji-search-description": "絵文字を検索してコピー"
-    }
+    },
+    "result": "結果",
+    "results": "結果"
   },
   "lock-screen": {
-    "authenticating": "認証中...",
-    "password": "パスワードを入力...",
-    "restart": "再起動",
-    "shut-down": "シャットダウン"
+    "password": "パスワードを入力..."
   },
   "notifications": {
     "panel": {
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "コンパクトなロック画面",
       "lock-on-suspend-description": "システムのサスペンド時に、自動的に画面をロックします。",
       "lock-on-suspend-label": "サスペンド時にロック",
-      "show-hibernate-description": "電源メニューのオプションに「ハイバネート（休止状態）」を表示します。",
+      "show-hibernate-description": "電源操作に「ハイバネート（休止状態）」のオプションを表示します。",
       "show-hibernate-label": "ハイバネートを表示",
       "show-session-buttons-description": "ロック画面から電源操作を行えるようにします。",
       "show-session-buttons-label": "電源操作",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "実行するコマンドを入力（アプリまたはスクリプト）",
     "enter-ipc-identifier": "IPCコマンドの一意の識別子を入力してください",
+    "enter-path": "パスを入力してください...",
     "enter-text-to-collapse": "例: 'nothing is playing'。正規表現 (/.../) も使用できます。",
     "enter-tooltip": "ツールチップを入力",
     "enter-width-pixels": "幅を入力（ピクセル）",
@@ -1380,6 +1383,7 @@
     "title": "セッションメニュー"
   },
   "setup": {
+    "all-done": "完了！",
     "appearance": {
       "subheader": "ダークモードとカラースキーム（Matugen またはプリセット）を選択します。"
     },
@@ -1387,6 +1391,11 @@
       "header": "自分好みにカスタマイズ",
       "subheader": "バーの位置や密度、インターフェースのスケールなどを調整します。"
     },
+    "skip-setup": "セットアップをスキップ",
+    "telemetry-wizard-done": "了解しました！",
+    "telemetry-wizard-note": "設定でいつでも有効または無効にできます。",
+    "telemetry-wizard-subtitle": "Noctaliaの改善に役立つ匿名分析を追加しました",
+    "telemetry-wizard-title": "プライバシーアップデート",
     "wallpaper": {
       "choose-dir": "壁紙画像が含まれているフォルダを選択します",
       "dir-browse": "壁紙フォルダを参照",
@@ -1401,7 +1410,9 @@
       "select-prompt": "以下から壁紙を選択します",
       "subheader": "美しい背景で雰囲気を演出しましょう。"
     },
-    "welcome-note": "まずは基本設定から始めましょう。詳細なオプションは「設定」にあります。"
+    "welcome-note": "まずは基本設定から始めましょう。詳細なオプションは「設定」にあります。",
+    "welcome-subtitle": "デスクトップをあなただけのものにしましょう",
+    "welcome-title": "Noctaliaへようこそ！"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "2桁の西暦 (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "ファイルとフォルダを検索...",
+      "item": "項目",
+      "items": "項目",
       "select-current": "現在のフォルダを選択する",
       "select-file": "ファイルを選択する",
       "select-folder": "フォルダを選択する",
+      "selected:": "選択済み:",
       "title": "ファイル選択"
     },
     "file-picker-title": "ファイルを選択してください",

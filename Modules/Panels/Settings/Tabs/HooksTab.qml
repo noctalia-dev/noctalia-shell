@@ -20,7 +20,7 @@ ColumnLayout {
   }
 
   ColumnLayout {
-    visible: Settings.data.hooks.enabled
+    enabled: Settings.data.hooks.enabled
     spacing: Style.marginL
     Layout.fillWidth: true
 

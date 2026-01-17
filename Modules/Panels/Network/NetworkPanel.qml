@@ -788,6 +788,35 @@ SmartPanel {
                             }
                           }
 
+                          // Gateway
+                          RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Style.marginXS
+                            NIcon {
+                              icon: "router"
+                              pointSize: Style.fontSizeXS
+                              color: Color.mOnSurface
+                              Layout.alignment: Qt.AlignVCenter
+                              MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onEntered: TooltipService.show(parent, I18n.tr("common.gateway"))
+                                onExited: TooltipService.hide()
+                              }
+                            }
+                            NText {
+                              text: NetworkService.activeEthernetDetails.gateway4 || "-"
+                              pointSize: Style.fontSizeXS
+                              color: Color.mOnSurface
+                              Layout.fillWidth: true
+                              Layout.alignment: Qt.AlignVCenter
+                              wrapMode: ethernetDetailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                              elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
+                              maximumLineCount: ethernetDetailsGrid ? 1 : 6
+                              clip: true
+                            }
+                          }
+
                           // IPv4 address
                           RowLayout {
                             Layout.fillWidth: true
@@ -832,35 +861,6 @@ SmartPanel {
                                   }
                                 }
                               }
-                            }
-                          }
-
-                          // Gateway
-                          RowLayout {
-                            Layout.fillWidth: true
-                            spacing: Style.marginXS
-                            NIcon {
-                              icon: "router"
-                              pointSize: Style.fontSizeXS
-                              color: Color.mOnSurface
-                              Layout.alignment: Qt.AlignVCenter
-                              MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onEntered: TooltipService.show(parent, I18n.tr("common.gateway"))
-                                onExited: TooltipService.hide()
-                              }
-                            }
-                            NText {
-                              text: NetworkService.activeEthernetDetails.gateway4 || "-"
-                              pointSize: Style.fontSizeXS
-                              color: Color.mOnSurface
-                              Layout.fillWidth: true
-                              Layout.alignment: Qt.AlignVCenter
-                              wrapMode: ethernetDetailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
-                              elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
-                              maximumLineCount: ethernetDetailsGrid ? 1 : 6
-                              clip: true
                             }
                           }
 

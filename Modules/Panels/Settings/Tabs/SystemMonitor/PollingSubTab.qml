@@ -10,6 +10,10 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
+  NLabel {
+    Layout.fillWidth: true
+    description: I18n.tr("panels.system-monitor.polling-section-description")
+  }
   // CPU Polling
   RowLayout {
     Layout.fillWidth: true
@@ -165,8 +169,4 @@ ColumnLayout {
     }
   }
 
-  NLabel {
-    Layout.fillWidth: true
-    description: I18n.tr("panels.system-monitor.polling-section-description")
-  }
 }

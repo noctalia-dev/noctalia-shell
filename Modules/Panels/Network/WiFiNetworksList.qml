@@ -429,7 +429,7 @@ NBox {
                 }
               }
 
-              // Row 2: Link Speed | IPv4
+              // Row 2: Link Speed | Gateway
               RowLayout {
                 Layout.fillWidth: true
                 spacing: Style.marginXS
@@ -457,6 +457,35 @@ NBox {
                   clip: true
                 }
               }
+              RowLayout {
+                Layout.fillWidth: true
+                spacing: Style.marginXS
+                NIcon {
+                  icon: "router"
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  Layout.alignment: Qt.AlignVCenter
+                  MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: TooltipService.show(parent, I18n.tr("common.gateway"))
+                    onExited: TooltipService.hide()
+                  }
+                }
+                NText {
+                  text: NetworkService.activeWifiDetails.gateway4 || "-"
+                  pointSize: Style.fontSizeXS
+                  color: Color.mOnSurface
+                  Layout.fillWidth: true
+                  Layout.alignment: Qt.AlignVCenter
+                  wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                  elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
+                  maximumLineCount: root.detailsGrid ? 1 : 6
+                  clip: true
+                }
+              }
+
+              // Row 3: IPv4 | DNS
               RowLayout {
                 Layout.fillWidth: true
                 spacing: Style.marginXS
@@ -500,35 +529,6 @@ NBox {
                       }
                     }
                   }
-                }
-              }
-
-              // Row 3: Gateway | DNS
-              RowLayout {
-                Layout.fillWidth: true
-                spacing: Style.marginXS
-                NIcon {
-                  icon: "router"
-                  pointSize: Style.fontSizeXS
-                  color: Color.mOnSurface
-                  Layout.alignment: Qt.AlignVCenter
-                  MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onEntered: TooltipService.show(parent, I18n.tr("common.gateway"))
-                    onExited: TooltipService.hide()
-                  }
-                }
-                NText {
-                  text: NetworkService.activeWifiDetails.gateway4 || "-"
-                  pointSize: Style.fontSizeXS
-                  color: Color.mOnSurface
-                  Layout.fillWidth: true
-                  Layout.alignment: Qt.AlignVCenter
-                  wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
-                  elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
-                  maximumLineCount: root.detailsGrid ? 1 : 6
-                  clip: true
                 }
               }
               RowLayout {

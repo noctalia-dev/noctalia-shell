@@ -97,6 +97,7 @@
       "enable-colorization-description": "替自訂按鈕的圖示及文字啟用上色, 套用主題用色",
       "enable-colorization-label": "啟用上色",
       "hide-mode-always-expanded": "總是展開",
+      "hide-mode-expand-with-output": "有訊息輸出時展開",
       "icon-description": "從圖示庫選取一個圖示",
       "ipc-identifier-description": "IPC 指令的唯一識別碼, 在使用 'qs -c noctalia-shell ipc call cb [動作] [識別碼]' 時利用此識別碼可透過 IPC 控制此按鈕。",
       "ipc-identifier-label": "IPC 識別碼",
@@ -164,8 +165,10 @@
       "visualizer-type-label": "視覺效果樣式"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "如果沒有未讀通知就隱藏通知圖示",
-      "hide-widget-when-zero-label": "零通知時隱藏圖示",
+      "hide-widget-when-zero-description": "沒有通知時隱藏通知圖示。",
+      "hide-widget-when-zero-label": "無通知時隱藏圖示",
+      "hide-widget-when-zero-unread-description": "沒有未讀通知時隱藏通知圖示。",
+      "hide-widget-when-zero-unread-label": "無未讀時隱藏圖示",
       "show-unread-badge-description": "顯示帶有數量的未讀標記",
       "show-unread-badge-label": "顯示未讀標記"
     },
@@ -336,6 +339,7 @@
     "connect": "連接",
     "connected": "已連接",
     "connecting": "正在連線...",
+    "continue": "繼續",
     "contributors": "貢獻者",
     "date": "日期",
     "delete": "刪除",
@@ -397,7 +401,7 @@
     "random": "隨機",
     "reboot": "重新啟動",
     "refresh": "重新整理",
-    "required": "(必填)",
+    "required": "(必要)",
     "reset": "重設",
     "resume": "繼續",
     "save": "儲存",
@@ -502,13 +506,12 @@
       "emoji-loading-description": "請稍候",
       "emoji-no-recent": "還沒有最近使用的表情符號",
       "emoji-search-description": "搜尋和複製表情符號"
-    }
+    },
+    "result": "結果",
+    "results": "結果"
   },
   "lock-screen": {
-    "authenticating": "驗證中...",
-    "password": "請輸入你的密碼...",
-    "restart": "重新啟動",
-    "shut-down": "關機"
+    "password": "請輸入你的密碼..."
   },
   "notifications": {
     "panel": {
@@ -886,7 +889,7 @@
     "hooks": {
       "info-command-info-description": "• 指令將透過 shell (sh -lc) 執行<br>• 指令會在背景 (detached 狀態) 執行<br>• 測試按鈕會以當下填寫的內容執行",
       "info-command-info-label": "hook 指令的說明",
-      "info-parameters-description": "• 桌布的 hook: $1 = 桌布路徑, $2 = 螢幕名稱<br>• 主題切換的 hook: $1 = true/false (深色模式啟用或否)<br>• 畫面鎖定/解鎖的 hook: 沒有參數<br>• 效能模式的 hook: 沒有參數<br>• 工作階段的 hook: $1 = 執行動作 (shutdown/reboot)",
+      "info-parameters-description": "• 桌布的 hook: $1 = 桌布路徑, $2 = 螢幕名稱<br>• 主題切換的 hook: $1 = true/false (深色模式啟用或否)<br>• 畫面鎖定/解鎖的 hook: 沒有參數<br>• 效能模式的 hook: 沒有參數<br>• 工作階段的 hook: $1 = 執行動作 (關機/重新啟動)",
       "info-parameters-label": "可用參數",
       "performance-mode-disabled-description": "Noctalia 效能模式停用時要執行的指令",
       "performance-mode-disabled-label": "效能模式停用時",
@@ -900,7 +903,7 @@
       "screen-unlock-description": "在鎖定畫面解鎖時要執行的指令",
       "screen-unlock-label": "畫面解鎖時",
       "screen-unlock-placeholder": "例如: notify-send \"Screen\" \"Unlocked\"",
-      "session-description": "在關機或重新啟動前要執行的指令, 接收到的執行動作會視為 $1 (shutdown/reboot)",
+      "session-description": "在關機或重新啟動前要執行的指令, 接收到的執行動作會視為 $1 (關機/重新啟動)",
       "session-label": "工作階段結束時",
       "session-placeholder": "例如: notify-send \"Session\" \"$1\"",
       "system-hooks-enable-description": "啟用或停用所有的 hook 指令",
@@ -1020,7 +1023,7 @@
       "history-normal-urgency-label": "儲存普通急迫到歷史通知",
       "monitors-desc": "只在特定的顯示器顯示通知, 如果全部取消勾選則會顯示在所有顯示器",
       "settings-background-opacity-description": "調整通知背景的不透明度",
-      "settings-desc": "設定通知的行為和外觀",
+      "settings-desc": "設定通知的外觀及行為",
       "settings-do-not-disturb-description": "當啟用時, 停止彈出所有通知",
       "settings-enabled-label": "啟用通知",
       "settings-location-description": "通知該在畫面的哪裡出現",
@@ -1053,20 +1056,52 @@
       "types-volume-label": "輸出音量"
     },
     "plugins": {
+      "available-description": "從設定的來源檢視及安裝外掛模組",
+      "available-label": "可用的外掛模組",
+      "available-no-plugins-description": "檢查你的模組來源或者重新整理列表",
+      "available-no-plugins-label": "沒有可用的外掛模組",
+      "collision-already-installed": "這個模組已經安裝過了",
       "collision-custom-version-exists": "已經安裝了來自 \"{source}\" 的自訂版本",
+      "collision-official-version-exists": "已經安裝了這個模組的官方版本",
       "filter-downloaded": "已下載",
       "filter-not-downloaded": "未下載",
+      "filter-tags-description": "以分類或下載狀態篩選外掛模組",
       "filter-tags-label": "標籤",
+      "hot-reloaded": "重新載入模組: {name}",
       "install-error": "安裝失敗: {error}",
       "install-incompatible": "{plugin} 需要 Noctalia v{version} 或以上",
       "install-success": "成功安裝 {plugin}",
+      "installed-description": "設定及管理所有本機已安裝的外掛模組",
+      "installed-label": "已安裝的外掛模組",
+      "installed-no-plugins-label": "沒有安裝外掛模組",
       "installing": "正在安裝 {plugin}...",
+      "open-plugin-page": "打開模組頁面",
+      "open-plugins-tab": "開啟外掛模組設定",
       "plugin-settings-title": "{plugin} 設定",
+      "refresh-refreshing": "正在重新整理模組清單...",
+      "refresh-tooltip": "重新整理可用的外掛模組",
+      "settings-error-not-loaded": "沒有載入外掛模組",
+      "settings-saved": "已儲存模組設定",
+      "settings-tooltip": "外掛模組設定",
       "source-custom": "自訂來源",
+      "sources-add-dialog-description": "新增一個 GitHub 儲存庫作為模組來源",
+      "sources-add-dialog-error": "新增模組來源失敗",
+      "sources-add-dialog-name": "儲存庫名稱",
+      "sources-add-dialog-name-placeholder": "我的自訂外掛模組",
+      "sources-add-dialog-title": "新增外掛模組來源",
+      "sources-add-dialog-url": "儲存庫 URL",
+      "sources-remove-tooltip": "移除外掛模組來源",
+      "title": "外掛模組 (Plugins)",
+      "uninstall-dialog-description": "你確定想要移除 {plugin}? 這樣會移除所有模組的資料",
+      "uninstall-dialog-title": "移除外掛模組",
       "uninstall-error": "移除失敗: {error}",
       "uninstall-success": "成功移除 {plugin}...",
       "uninstalling": "正在移除 {plugin}...",
       "update-all": "將全部 {count} 個都更新",
+      "update-all-success": "已成功更新所有的外掛模組",
+      "update-available": "有新的外掛模組更新",
+      "update-available-plural": "有外掛模組可更新 ({count}個)",
+      "update-error": "更新模組失敗: {plugin}: {error}",
       "update-pending": "v{current} → v{new} (需要 Noctalia v{required})",
       "update-success": "已更新 {plugin} 至 v{version}",
       "update-version": "v{current} → v{new}",
@@ -1108,7 +1143,7 @@
       "enable-dgpu-monitoring-label": "啟用監視獨立 GPU",
       "external-monitor-label": "外部系統監視器指令",
       "external-monitor-placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor",
-      "general-desc": "設定系統監視器的行為和外觀",
+      "general-desc": "設定系統監視器的外觀及行為",
       "gpu-section-label": "GPU 溫度",
       "polling-interval-label": "輪詢間隔",
       "polling-section-description": "設定該多久更新一次各項系統計量值",
@@ -1126,6 +1161,7 @@
       "animation-speed-label": "動畫速度",
       "animation-speed-reset": "重設動畫速度",
       "appearance-desc": "自訂視覺元素, 如提示框, 邊框及陰影",
+      "desc": "自訂介面顯示的行為, 外觀及風格",
       "dim-desktop-description": "當功能表或面板打開時調暗桌布",
       "dim-desktop-label": "調暗桌布",
       "dimmer-opacity-description": "設定調暗桌布所使用的不透明度",
@@ -1163,6 +1199,8 @@
       "look-feel-fill-color-description": "挑選一個桌布底下可能會顯示的填充實色",
       "look-feel-fill-mode-description": "選擇圖像該以什麼方式縮放來符合顯示器的解析度",
       "look-feel-fill-mode-label": "填充模式",
+      "look-feel-title": "外觀及風格",
+      "look-feel-transition-duration-description": "設定轉場動畫使用的秒數",
       "look-feel-transition-type-description": "切換桌布時的轉場樣式",
       "look-feel-transition-type-label": "轉場樣式",
       "settings-desc": "控制桌布的顯示和管理",
@@ -1178,6 +1216,7 @@
       "settings-monitor-specific-tooltip": "螢幕桌布文件夾",
       "settings-recursive-search-description": "也同時搜尋桌布目錄底下的子文件夾",
       "settings-recursive-search-label": "搜尋子文件夾",
+      "settings-select-monitor-folder": "選擇顯示器所使用的桌布文件夾",
       "settings-selector-description": "選擇你的桌布",
       "settings-selector-position-description": "選擇挑選桌布面板要在哪裡出現",
       "settings-title": "桌布設定"
@@ -1187,11 +1226,13 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "輸入要執行的指令 (程式或自訂腳本)",
     "enter-ipc-identifier": "輸入 IPC 命令的唯一識別碼",
+    "enter-path": "輸入路徑...",
     "enter-text-to-collapse": "例如: 'nothing is playing'. 也可用正規表示式 /regex/ 指定格式",
     "enter-tooltip": "輸入提示框文字",
     "enter-width-pixels": "以像素 (px) 輸入寬度",
     "search": "在這裡搜尋...",
     "search-icons": "例如: noctalia, niri, battery, cloud",
+    "search-launcher": "搜尋所有項目... 或輸入 > 使用指令",
     "search-wallhaven": "搜尋 Wallhaven..."
   },
   "positions": {
@@ -1216,6 +1257,7 @@
     "title": "工作階段選單"
   },
   "setup": {
+    "all-done": "完成！",
     "appearance": {
       "subheader": "選擇深色模式及顏色來源 (Matugen 或現有設計)"
     },
@@ -1223,6 +1265,11 @@
       "header": "客製你的使用體驗",
       "subheader": "調整工具列的位置, 密度, 比例等等"
     },
+    "skip-setup": "跳過設定",
+    "telemetry-wizard-done": "了解！",
+    "telemetry-wizard-note": "您有控制權 — 隨時可以在「設定」中啟用或停用此功能",
+    "telemetry-wizard-subtitle": "我們新增了匿名分析功能，以協助改善 Noctalia",
+    "telemetry-wizard-title": "隱私權更新",
     "wallpaper": {
       "choose-dir": "選擇一個存放你桌布的目錄",
       "dir-browse": "瀏覽桌布文件夾",
@@ -1237,7 +1284,9 @@
       "select-prompt": "在下面選擇一個桌布",
       "subheader": "用一個漂亮的背景營造氛圍"
     },
-    "welcome-note": "幾個基本的設定讓你簡單上手 — 所有的選項可以在設定裡調整"
+    "welcome-note": "幾個基本的設定讓你簡單上手 — 所有的選項可以在設定裡調整",
+    "welcome-subtitle": "讓我們一起打造獨一無二的桌面",
+    "welcome-title": "歡迎來到 Noctalia！"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1498,9 +1547,11 @@
       "year-two-digit": "二位數的西曆年份 (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "選擇檔案及文件夾...",
+      "item": "項目",
+      "items": "項目",
       "select-file": "選擇檔案",
-      "select-folder": "選擇文件夾"
+      "select-folder": "選擇文件夾",
+      "selected:": "已選取:"
     },
     "file-picker-title": "選擇一個檔案",
     "tooltip-placeholder": "暫用文字"

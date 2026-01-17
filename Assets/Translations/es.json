@@ -175,8 +175,10 @@
       "visualizer-type-label": "Tipo de visualizador"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Ocultar el icono de notificaciones cuando no hay notificaciones no leídas.",
-      "hide-widget-when-zero-label": "Ocultar icono cuando es cero",
+      "hide-widget-when-zero-description": "Ocultar el icono de notificaciones cuando no haya notificaciones.",
+      "hide-widget-when-zero-label": "Ocultar icono sin notificaciones",
+      "hide-widget-when-zero-unread-description": "Ocultar el icono de notificaciones cuando no haya notificaciones sin leer.",
+      "hide-widget-when-zero-unread-label": "Ocultar icono sin notificaciones sin leer",
       "show-unread-badge-description": "Mostrar una insignia con el número de notificaciones no leídas.",
       "show-unread-badge-label": "Mostrar insignia de no leídos"
     },
@@ -351,6 +353,7 @@
     "connect": "Conectar",
     "connected": "Conectado",
     "connecting": "Conectando...",
+    "continue": "Continuar",
     "contributors": "Colaboradores",
     "countdown": "Cuenta regresiva",
     "date": "Fecha",
@@ -361,7 +364,7 @@
     "disconnect": "Desconectar",
     "disconnected": "Desconectado",
     "disconnecting": "Desconectando...",
-    "download": "Descarga",
+    "download": "Descargar",
     "duration": "Duración",
     "enabled": "Activado",
     "events": "Eventos",
@@ -443,7 +446,7 @@
     "unpair": "Desvincular",
     "unpin": "Desanclar",
     "update": "Actualizar",
-    "upload": "Subida",
+    "upload": "Subir",
     "version": "Versión",
     "visualizer": "Visualizador",
     "volume": "Volumen",
@@ -475,7 +478,7 @@
   "hide-modes": {
     "hidden": "Ocultar cuando esté vacío",
     "idle": "Ocultar cuando esté inactivo",
-    "transparent": "Transparente cuando está vacío",
+    "transparent": "Transparente cuando esté vacío",
     "visible": "Siempre visible"
   },
   "launcher": {
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Por favor espera",
       "emoji-no-recent": "Aún no hay emojis recientes",
       "emoji-search-description": "Buscar y copiar emojis"
-    }
+    },
+    "result": "resultado",
+    "results": "resultados"
   },
   "lock-screen": {
-    "authenticating": "Autenticando...",
-    "password": "Ingresa tu contraseña...",
-    "restart": "Reiniciar",
-    "shut-down": "Apagar"
+    "password": "Ingresa tu contraseña..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Filtrar por categoría",
       "templates-misc-description": "Crea tus propias plantillas.",
       "templates-misc-label": "Avanzado",
-      "templates-misc-user-templates-description": "Solo habilita si sabes lo que estás haciendo — consulta nuestra documentación en línea",
+      "templates-misc-user-templates-description": "Solo habilita si sabes lo que estás haciendo — consulta nuestra documentación en línea.",
       "templates-misc-user-templates-label": "Habilitar plantillas de usuario",
       "templates-none-detected": "Ninguno detectado",
       "templates-write-path": "Escribe: {filepath}",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Pantalla de bloqueo compacta",
       "lock-on-suspend-description": "Bloquear la pantalla automáticamente al suspender el sistema.",
       "lock-on-suspend-label": "Bloquear al suspender",
-      "show-hibernate-description": "Mostrar la opción 'hibernar' en las acciones de energía.",
+      "show-hibernate-description": "Mostrar la opción 'hibernar' en los controles de energía.",
       "show-hibernate-label": "Mostrar hibernar",
       "show-session-buttons-description": "Permitir el acceso a la configuración de energía desde la pantalla de bloqueo.",
       "show-session-buttons-label": "Controles de energía",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Hola, mundo\"",
     "enter-command": "Ingresa el comando a ejecutar (aplicación o script personalizado)",
     "enter-ipc-identifier": "Introduzca un identificador único para los comandos IPC",
+    "enter-path": "Ingrese la ruta...",
     "enter-text-to-collapse": "por ejemplo, 'no se está reproduciendo nada'. Usa /regex/ para patrones.",
     "enter-tooltip": "Introducir información sobre herramientas",
     "enter-width-pixels": "Ingresa el ancho en píxeles",
@@ -1380,6 +1383,7 @@
     "title": "Menú de sesión"
   },
   "setup": {
+    "all-done": "¡Listo!",
     "appearance": {
       "subheader": "Elige modo oscuro y fuentes de color (Matugen o predefinido)."
     },
@@ -1387,6 +1391,11 @@
       "header": "Personaliza tu experiencia",
       "subheader": "Ajusta la posición de la barra, densidad, escala y más."
     },
+    "skip-setup": "Omitir la configuración",
+    "telemetry-wizard-done": "¡Entendido!",
+    "telemetry-wizard-note": "Tienes el control: activa o desactiva esto cuando quieras en los Ajustes",
+    "telemetry-wizard-subtitle": "Hemos añadido analíticas anónimas para ayudar a mejorar Noctalia",
+    "telemetry-wizard-title": "Actualización de privacidad",
     "wallpaper": {
       "choose-dir": "Elige un directorio que contenga tus fondos",
       "dir-browse": "Seleccionar carpeta",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Selecciona un fondo abajo",
       "subheader": "Define el ambiente con un bonito fondo."
     },
-    "welcome-note": "Solo algunos conceptos básicos para empezar: todas las opciones están en configuración"
+    "welcome-note": "Solo algunos conceptos básicos para empezar: todas las opciones están en configuración",
+    "welcome-subtitle": "Hagamos que tu escritorio sea único",
+    "welcome-title": "¡Bienvenido a Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "Año como número de dos dígitos (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Buscar archivos y carpetas...",
+      "item": "elemento",
+      "items": "elementos",
       "select-current": "Seleccionar actual",
       "select-file": "Seleccionar archivo",
       "select-folder": "Seleccionar carpeta",
+      "selected:": "Seleccionado:",
       "title": "Selector de archivos"
     },
     "file-picker-title": "Seleccionar un archivo",

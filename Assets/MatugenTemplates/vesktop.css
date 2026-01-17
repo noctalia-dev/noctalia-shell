@@ -89,8 +89,8 @@ body {
 --bg-3: {{colors.surface_container.default.hex}}; /* spacing, secondary elements */
 --bg-4: {{colors.surface.default.hex}}; /* main background color */
 --hover: {{colors.on_surface.default.hex}}15; /* channels and buttons when hovered */
---active: {{colors.surface_container_highest.default.hex}}40; /* channels and buttons when clicked or selected */
---active-2: {{colors.surface.default.hex}}30; /* extra state for transparent buttons */
+--active: {{colors.surface_container_highest.default.hex}}; /* channels and buttons when clicked or selected */
+--active-2: {{colors.surface.default.hex}}; /* extra state for transparent buttons */
 --message-hover: {{colors.surface_variant.default.hex}}40; /* messages when hovered */
 
 /* accent colors */

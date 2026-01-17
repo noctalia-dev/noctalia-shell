@@ -15,7 +15,7 @@ ColumnLayout {
   property var removeMonitor
 
   NComboBox {
-    label: I18n.tr("common.location")
+    label: I18n.tr("common.position")
     description: I18n.tr("panels.osd.location-description")
     model: [
       {

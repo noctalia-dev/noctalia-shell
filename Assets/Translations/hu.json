@@ -175,8 +175,10 @@
       "visualizer-type-label": "Megjelenítő típusa"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Rejtse el az értesítési ikont, ha nincsenek olvasatlan értesítések.",
-      "hide-widget-when-zero-label": "Ikon elrejtése nullánál",
+      "hide-widget-when-zero-description": "Az értesítési ikon elrejtése, ha nincs értesítés.",
+      "hide-widget-when-zero-label": "Ikon elrejtése értesítések nélkül",
+      "hide-widget-when-zero-unread-description": "Az értesítési ikon elrejtése, ha nincs olvasatlan értesítés.",
+      "hide-widget-when-zero-unread-label": "Ikon elrejtése olvasatlan nélkül",
       "show-unread-badge-description": "Jelenítsen meg egy jelvényt, amely mutatja az olvasatlan értesítések számát.",
       "show-unread-badge-label": "Olvasatlan jelvény megjelenítése"
     },
@@ -351,6 +353,7 @@
     "connect": "Csatlakozás",
     "connected": "Csatlakoztatva",
     "connecting": "Csatlakozás...",
+    "continue": "Folytatás",
     "contributors": "Közreműködők",
     "countdown": "Visszaszámlálás",
     "date": "Dátum",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Kérjük, várjon",
       "emoji-no-recent": "Nincsenek még legutóbbi emojik",
       "emoji-search-description": "Emojik keresése és másolása"
-    }
+    },
+    "result": "eredmény",
+    "results": "eredmények"
   },
   "lock-screen": {
-    "authenticating": "Hitelesítés...",
-    "password": "Adja meg jelszavát...",
-    "restart": "Újraindítás",
-    "shut-down": "Leállítás"
+    "password": "Adja meg jelszavát..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Szűrés kategória szerint",
       "templates-misc-description": "Hozzon létre saját sablonokat.",
       "templates-misc-label": "Haladó",
-      "templates-misc-user-templates-description": "Csak akkor engedélyezze, ha tudja, mit csinál — lásd az online dokumentációt",
+      "templates-misc-user-templates-description": "Csak akkor engedélyezze, ha tudja, mit csinál — lásd az online dokumentációt.",
       "templates-misc-user-templates-label": "Felhasználói sablonok engedélyezése",
       "templates-none-detected": "Nem észlelt semmit",
       "templates-write-path": "Írja: {filepath}",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Kompakt zárolási képernyő",
       "lock-on-suspend-description": "A képernyő automatikus zárolása a rendszer felfüggesztésekor.",
       "lock-on-suspend-label": "Zárolás felfüggesztéskor",
-      "show-hibernate-description": "A 'hibernálás' lehetőség megjelenítése az energiagazdálkodási műveletek között.",
+      "show-hibernate-description": "A 'hibernálás' lehetőség megjelenítése az energiakezelési műveletek között.",
       "show-hibernate-label": "Hibernálás megjelenítése",
       "show-session-buttons-description": "Engedélyezi a hozzáférést az energiabeállításokhoz a zárolási képernyőről.",
       "show-session-buttons-label": "Energiakezelés",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "Adja meg a végrehajtandó parancsot (alkalmazás vagy egyéni parancsfájl)",
     "enter-ipc-identifier": "Adja meg az IPC parancsok egyedi azonosítóját",
+    "enter-path": "Útvonal megadása...",
     "enter-text-to-collapse": "pl. 'semmi sem játszik'. Használjon /regex/-et mintákhoz.",
     "enter-tooltip": "Adja meg a buboréksúgót",
     "enter-width-pixels": "Adja meg a szélességet képpontban",
@@ -1380,6 +1383,7 @@
     "title": "Munkamenet menü"
   },
   "setup": {
+    "all-done": "Kész!",
     "appearance": {
       "subheader": "Válasszon sötét módot és színes forrásokat (Matugen vagy előre meghatározott)."
     },
@@ -1387,6 +1391,11 @@
       "header": "Tapasztalat testreszabása",
       "subheader": "Állítsa be a sáv pozícióját, sűrűségét, méretezését és egyebeket."
     },
+    "skip-setup": "Beállítás kihagyása",
+    "telemetry-wizard-done": "Értettem!",
+    "telemetry-wizard-note": "Te irányítasz – bármikor engedélyezheted vagy letilthatod a Beállításokban",
+    "telemetry-wizard-subtitle": "Anonim analitikát adtunk hozzá, hogy segítsük a Noctalia fejlesztését",
+    "telemetry-wizard-title": "Adatvédelmi frissítés",
     "wallpaper": {
       "choose-dir": "Válassza ki a könyvtárat, amely tartalmazza a háttérképeit",
       "dir-browse": "Háttérkép mappa böngészése",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Válasszon egy háttérképet alább",
       "subheader": "Teremtsen hangulatot egy gyönyörű háttérrel."
     },
-    "welcome-note": "Csak néhány alapvető dolog az induláshoz – a teljes beállítási lehetőség a beállításokban található"
+    "welcome-note": "Csak néhány alapvető dolog az induláshoz – a teljes beállítási lehetőség a beállításokban található",
+    "welcome-subtitle": "Tegyük egyedivé az asztalod",
+    "welcome-title": "Üdvözöl a Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "Év két számjeggyel (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Fájlok és mappák keresése...",
+      "item": "elem",
+      "items": "elemek",
       "select-current": "Aktuális kijelölése",
       "select-file": "Fájl kijelölése",
       "select-folder": "Mappa kiválasztása",
+      "selected:": "Kiválasztva:",
       "title": "Fájlválasztó"
     },
     "file-picker-title": "Fájl kiválasztása",

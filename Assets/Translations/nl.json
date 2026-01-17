@@ -175,8 +175,10 @@
       "visualizer-type-label": "Type visualizer"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Verberg het meldingspictogram wanneer er geen ongelezen meldingen zijn.",
-      "hide-widget-when-zero-label": "Pictogram verbergen bij nul",
+      "hide-widget-when-zero-description": "Het meldingspictogram verbergen wanneer er geen meldingen zijn.",
+      "hide-widget-when-zero-label": "Pictogram verbergen zonder meldingen",
+      "hide-widget-when-zero-unread-description": "Het meldingspictogram verbergen wanneer er geen ongelezen meldingen zijn.",
+      "hide-widget-when-zero-unread-label": "Pictogram verbergen zonder ongelezen meldingen",
       "show-unread-badge-description": "Toon een badge met het aantal ongelezen meldingen.",
       "show-unread-badge-label": "Ongelezen-badge tonen"
     },
@@ -351,6 +353,7 @@
     "connect": "Verbinden",
     "connected": "Verbonden",
     "connecting": "Verbinden...",
+    "continue": "Doorgaan",
     "contributors": "Medewerkers",
     "countdown": "Aftellen",
     "date": "Datum",
@@ -361,7 +364,7 @@
     "disconnect": "Verbreek de verbinding",
     "disconnected": "Verbinding verbroken",
     "disconnecting": "Verbinding verbroken...",
-    "download": "Download",
+    "download": "Downloaden",
     "duration": "Duur",
     "enabled": "Ingeschakeld",
     "events": "Evenementen",
@@ -443,7 +446,7 @@
     "unpair": "Ontkoppelen",
     "unpin": "Losmaken",
     "update": "Update",
-    "upload": "Upload",
+    "upload": "Uploaden",
     "version": "Versie",
     "visualizer": "Visualiseerder",
     "volume": "Volume",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Even geduld",
       "emoji-no-recent": "Nog geen recente emoji's",
       "emoji-search-description": "Zoek en kopieer emoji's"
-    }
+    },
+    "result": "resultaat",
+    "results": "resultaten"
   },
   "lock-screen": {
-    "authenticating": "Bezig met verifiëren...",
-    "password": "Voer je wachtwoord in...",
-    "restart": "Opnieuw opstarten",
-    "shut-down": "Uitschakelen"
+    "password": "Voer je wachtwoord in..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Filteren op categorie",
       "templates-misc-description": "Maak uw eigen sjablonen.",
       "templates-misc-label": "Geavanceerd",
-      "templates-misc-user-templates-description": "Alleen inschakelen als u weet wat u doet — raadpleeg onze online documentatie",
+      "templates-misc-user-templates-description": "Alleen inschakelen als u weet wat u doet — raadpleeg onze online documentatie.",
       "templates-misc-user-templates-label": "Gebruikerssjablonen inschakelen",
       "templates-none-detected": "Geen gedetecteerd",
       "templates-write-path": "Schrijft: {filepath}",
@@ -936,7 +938,7 @@
     "hooks": {
       "info-command-info-description": "• Commando's worden uitgevoerd via shell (sh -lc)<br>• Commando's draaien op de achtergrond (losgekoppeld)<br>• Testknoppen worden uitgevoerd met de huidige waarden",
       "info-command-info-label": "Informatie over hook-commando's",
-      "info-parameters-description": "• Achtergrond-hook: $1 = pad naar achtergrond, $2 = schermnaam<br>• Thema-schakel-hook: $1 = true/false (Dark Mode-status)<br>• Schermvergrendeling/ontgrendeling-hooks: Geen parameters<br>• Prestatiemodus-hooks: Geen parameters<br>• Sessie-hook: $1 = actie (afsluiten/herstarten)",
+      "info-parameters-description": "• Achtergrond-hook: $1 = pad naar achtergrond, $2 = schermnaam<br>• Thema-schakel-hook: $1 = true/false (Dark Mode-status)<br>• Schermvergrendeling/ontgrendeling-hooks: Geen parameters<br>• Prestatiemodus-hooks: Geen parameters<br>• Sessie-hook: $1 = actie (afsluiten/opnieuw opstarten)",
       "info-parameters-label": "Beschikbare parameters",
       "performance-mode-disabled-description": "Commando dat wordt uitgevoerd wanneer de Noctalia prestatiemodus wordt uitgeschakeld.",
       "performance-mode-disabled-label": "Prestatiemodus uitgeschakeld",
@@ -1049,10 +1051,10 @@
       "compact-lockscreen-label": "Compact vergrendelscherm",
       "lock-on-suspend-description": "Vergrendel het scherm automatisch wanneer het systeem wordt onderbroken.",
       "lock-on-suspend-label": "Vergrendelen bij onderbreken",
-      "show-hibernate-description": "De optie 'sluimerstand' tonen in de energieacties.",
+      "show-hibernate-description": "De optie 'sluimerstand' tonen in de energieopties.",
       "show-hibernate-label": "Sluimerstand tonen",
       "show-session-buttons-description": "Toegang tot energie-instellingen toestaan vanaf het vergrendelscherm.",
-      "show-session-buttons-label": "Stroombediening",
+      "show-session-buttons-label": "Energieopties",
       "title": "Vergrendelscherm"
     },
     "network": {
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "Voer het uit te voeren commando in (app of aangepast script)",
     "enter-ipc-identifier": "Voer een unieke identificatie in voor IPC-opdrachten",
+    "enter-path": "Pad invoeren...",
     "enter-text-to-collapse": "bijv. 'er wordt niets afgespeeld'. Gebruik /regex/ voor patronen.",
     "enter-tooltip": "Voer tooltip in",
     "enter-width-pixels": "Voer breedte in pixels in",
@@ -1380,6 +1383,7 @@
     "title": "Sessie-menu"
   },
   "setup": {
+    "all-done": "Klaar!",
     "appearance": {
       "subheader": "Kies donkere modus en kleurbronnen (Matugen of vooraf gedefinieerd)."
     },
@@ -1387,6 +1391,11 @@
       "header": "Pas je ervaring aan",
       "subheader": "Pas balkpositie, dichtheid, schaal en meer aan."
     },
+    "skip-setup": "Setup overslaan",
+    "telemetry-wizard-done": "Begrepen!",
+    "telemetry-wizard-note": "Je hebt de controle - schakel dit op elk moment in of uit in de Instellingen",
+    "telemetry-wizard-subtitle": "We hebben anonieme analyses toegevoegd om Noctalia te helpen verbeteren",
+    "telemetry-wizard-title": "Privacy-update",
     "wallpaper": {
       "choose-dir": "Kies een map met je achtergrondafbeeldingen",
       "dir-browse": "Bladeren naar achtergrondmap",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Selecteer hieronder een achtergrond",
       "subheader": "Zet de toon met een mooie achtergrond."
     },
-    "welcome-note": "Een paar basisinstellingen om je op weg te helpen – alle opties vind je in instellingen"
+    "welcome-note": "Een paar basisinstellingen om je op weg te helpen – alle opties vind je in instellingen",
+    "welcome-subtitle": "Laten we uw bureaublad uniek maken",
+    "welcome-title": "Welkom bij Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "Jaar als tweecijferig getal (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Zoek bestanden en mappen...",
+      "item": "item",
+      "items": "items",
       "select-current": "Huidige selecteren",
       "select-file": "Bestand selecteren",
       "select-folder": "Map selecteren",
+      "selected:": "Geselecteerd:",
       "title": "Bestandskiezer"
     },
     "file-picker-title": "Selecteer een bestand",

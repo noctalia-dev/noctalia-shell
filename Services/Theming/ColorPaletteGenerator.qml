@@ -15,12 +15,18 @@ Singleton {
   * @returns Object with all MD3 color roles in matugen format
   */
   function generatePalette(colors, isDarkMode, isStrict) {
-    const c = hex => ({
-                        "default": {
-                          "hex": hex,
-                          "hex_stripped": hex.replace(/^#/, "")
-                        }
-                      });
+    const c = hex => {
+      const hsl = ColorsConvert.hexToHSL(hex);
+      return {
+        "default": {
+          "hex": hex,
+          "hex_stripped": hex.replace(/^#/, ""),
+          "hue": hsl.h,
+          "saturation": hsl.s,
+          "lightness": hsl.l
+        }
+      };
+    };
 
     // Generate container colors
     const primaryContainer = ColorsConvert.generateContainerColor(colors.mPrimary, isDarkMode);

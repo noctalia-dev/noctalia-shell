@@ -175,8 +175,10 @@
       "visualizer-type-label": "Тип візуалізатора"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Приховувати значок сповіщень, коли немає непрочитаних сповіщень.",
-      "hide-widget-when-zero-label": "Приховувати значок при нулі",
+      "hide-widget-when-zero-description": "Приховувати значок сповіщень, якщо сповіщень немає.",
+      "hide-widget-when-zero-label": "Приховувати значок без сповіщень",
+      "hide-widget-when-zero-unread-description": "Приховувати значок сповіщень, якщо немає непрочитаних.",
+      "hide-widget-when-zero-unread-label": "Приховувати значок без непрочитаних",
       "show-unread-badge-description": "Відображати значок з кількістю непрочитаних сповіщень.",
       "show-unread-badge-label": "Показувати значок непрочитаних"
     },
@@ -351,6 +353,7 @@
     "connect": "Підключити",
     "connected": "Підключено",
     "connecting": "Підключення...",
+    "continue": "Продовжити",
     "contributors": "Учасники",
     "countdown": "Зворотний відлік",
     "date": "Дата",
@@ -361,7 +364,7 @@
     "disconnect": "Від'єднати",
     "disconnected": "Від'єднано",
     "disconnecting": "Від'єднання...",
-    "download": "Завантаження",
+    "download": "Завантажити",
     "duration": "Тривалість",
     "enabled": "Увімкнено",
     "events": "Події",
@@ -413,7 +416,7 @@
     "position": "Позиція",
     "previous": "Попередній",
     "random": "Випадковий",
-    "reboot": "Перезавантаження",
+    "reboot": "Перезапустити",
     "refresh": "Оновити",
     "required": "(обов'язково)",
     "reset": "Скинути",
@@ -425,7 +428,7 @@
     "security": "Безпека",
     "select": "Вибрати",
     "shortcuts": "Ярлики",
-    "shutdown": "Вимкнення",
+    "shutdown": "Вимкнути",
     "signal": "Сигнал",
     "sound": "Звук",
     "sources": "Джерела",
@@ -443,7 +446,7 @@
     "unpair": "Розірвати пару",
     "unpin": "Відкріпити",
     "update": "Оновлення",
-    "upload": "Відправка",
+    "upload": "Вивантажити",
     "version": "Версія",
     "visualizer": "Візуалізатор",
     "volume": "Об'єм",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Зачекайте, будь ласка",
       "emoji-no-recent": "Немає нещодавніх емодзі",
       "emoji-search-description": "Пошук і копіювання емодзі"
-    }
+    },
+    "result": "результат",
+    "results": "результати"
   },
   "lock-screen": {
-    "authenticating": "Автентифікація...",
-    "password": "Введіть ваш пароль...",
-    "restart": "Перезапустити",
-    "shut-down": "Вимкнути"
+    "password": "Введіть ваш пароль..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Фільтрувати за категорією",
       "templates-misc-description": "Створіть власні шаблони.",
       "templates-misc-label": "Розширено",
-      "templates-misc-user-templates-description": "Увімкніть лише якщо ви знаєте, що робите — зверніться до нашої онлайн-документації",
+      "templates-misc-user-templates-description": "Увімкніть лише якщо ви знаєте, що робите — зверніться до нашої онлайн-документації.",
       "templates-misc-user-templates-label": "Увімкнути користувацькі шаблони",
       "templates-none-detected": "Не виявлено",
       "templates-write-path": "Записує: {filepath}",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Компактний екран блокування",
       "lock-on-suspend-description": "Автоматично блокувати екран при призупиненні системи.",
       "lock-on-suspend-label": "Блокувати при призупиненні",
-      "show-hibernate-description": "Показувати опцію 'сплячий режим' у діях живлення.",
+      "show-hibernate-description": "Показувати опцію 'сплячий режим' в елементах керування живленням.",
       "show-hibernate-label": "Показувати сплячий режим",
       "show-session-buttons-description": "Дозволити доступ до налаштувань живлення з екрана блокування.",
       "show-session-buttons-label": "Елементи керування живленням",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Привіт, Світ\"",
     "enter-command": "Введіть команду для виконання (застосунок або власний скрипт)",
     "enter-ipc-identifier": "Введіть унікальний ідентифікатор для команд IPC",
+    "enter-path": "Введіть шлях...",
     "enter-text-to-collapse": "напр., 'нічого не відтворюється'. Використовуйте /regex/ для шаблонів.",
     "enter-tooltip": "Введіть підказку",
     "enter-width-pixels": "Введіть ширину в пікселях",
@@ -1380,6 +1383,7 @@
     "title": "Меню сеансу"
   },
   "setup": {
+    "all-done": "Готово!",
     "appearance": {
       "subheader": "Виберіть темний режим та джерела кольорів (Matugen або попередньо визначені)."
     },
@@ -1387,6 +1391,11 @@
       "header": "Налаштуйте ваш досвід",
       "subheader": "Налаштуйте положення панелі, щільність, масштабування та інше."
     },
+    "skip-setup": "Пропустити налаштування",
+    "telemetry-wizard-done": "Зрозуміло!",
+    "telemetry-wizard-note": "Ви все контролюєте — увімкніть або вимкніть це будь-коли в налаштуваннях",
+    "telemetry-wizard-subtitle": "Ми додали анонімну аналітику, щоб допомогти покращити Noctalia",
+    "telemetry-wizard-title": "Оновлення конфіденційності",
     "wallpaper": {
       "choose-dir": "Виберіть теку, що містить ваші зображення шпалер",
       "dir-browse": "Огляд теки шпалер",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Виберіть шпалери нижче",
       "subheader": "Створіть настрій за допомогою красивого фону."
     },
-    "welcome-note": "Лише кілька основних речей для початку — повні опції в налаштуваннях"
+    "welcome-note": "Лише кілька основних речей для початку — повні опції в налаштуваннях",
+    "welcome-subtitle": "Зробімо ваш робочий стіл унікальним",
+    "welcome-title": "Вітаємо в Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "Рік як двозначне число (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Пошук файлів та тек...",
+      "item": "елемент",
+      "items": "елементи",
       "select-current": "Вибрати поточне",
       "select-file": "Вибрати файл",
       "select-folder": "Вибрати теку",
+      "selected:": "Вибрано:",
       "title": "Вибір файлу"
     },
     "file-picker-title": "Виберіть файл",

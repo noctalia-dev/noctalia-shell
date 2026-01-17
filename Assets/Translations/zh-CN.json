@@ -175,8 +175,10 @@
       "visualizer-type-label": "可视化器类型"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "当没有未读通知时隐藏通知图标。",
-      "hide-widget-when-zero-label": "空时隐藏图标",
+      "hide-widget-when-zero-description": "没有通知时隐藏通知图标。",
+      "hide-widget-when-zero-label": "无通知时隐藏图标",
+      "hide-widget-when-zero-unread-description": "没有未读通知时隐藏通知图标。",
+      "hide-widget-when-zero-unread-label": "无未读时隐藏图标",
       "show-unread-badge-description": "显示一个用于展示未读通知数量的徽章。",
       "show-unread-badge-label": "显示未读徽章"
     },
@@ -351,6 +353,7 @@
     "connect": "连接",
     "connected": "已连接",
     "connecting": "正在连接...",
+    "continue": "继续",
     "contributors": "贡献者",
     "countdown": "倒计时",
     "date": "日期",
@@ -415,7 +418,7 @@
     "random": "随机",
     "reboot": "重启",
     "refresh": "刷新",
-    "required": "(必需的)",
+    "required": "(必要)",
     "reset": "重置",
     "resume": "继续",
     "save": "保存",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "请稍候",
       "emoji-no-recent": "尚无最近使用的表情符号",
       "emoji-search-description": "搜索和复制表情符号"
-    }
+    },
+    "result": "结果",
+    "results": "结果"
   },
   "lock-screen": {
-    "authenticating": "正在验证...",
-    "password": "请输入密码...",
-    "restart": "重启",
-    "shut-down": "关机"
+    "password": "请输入密码..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "按类别筛选",
       "templates-misc-description": "创建您自己的模板。",
       "templates-misc-label": "高级",
-      "templates-misc-user-templates-description": "仅在您知道自己在做什么时启用，请参阅我们的在线文档",
+      "templates-misc-user-templates-description": "仅在您知道自己在做什么时启用，请参阅我们的在线文档。",
       "templates-misc-user-templates-label": "启用用户模板",
       "templates-none-detected": "未检测到",
       "templates-write-path": "写入：{filepath}",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "紧凑型锁屏",
       "lock-on-suspend-description": "系统挂起时自动锁定屏幕。",
       "lock-on-suspend-label": "挂起时锁定",
-      "show-hibernate-description": "在电源操作中显示'休眠'选项。",
+      "show-hibernate-description": "在电源控制中显示'休眠'选项。",
       "show-hibernate-label": "显示休眠",
       "show-session-buttons-description": "允许从锁屏访问电源设置。",
       "show-session-buttons-label": "电源控制",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "输入要执行的命令（应用程序或自定义脚本）",
     "enter-ipc-identifier": "输入 IPC 命令的唯一标识符",
+    "enter-path": "输入路径...",
     "enter-text-to-collapse": "例如，“nothing is playing”。使用 /regex/ 表示匹配模式。",
     "enter-tooltip": "输入工具提示",
     "enter-width-pixels": "输入宽度（像素）",
@@ -1380,6 +1383,7 @@
     "title": "会话菜单"
   },
   "setup": {
+    "all-done": "完成！",
     "appearance": {
       "subheader": "选择深色模式与配色来源（Matugen 或预设）。"
     },
@@ -1387,6 +1391,11 @@
       "header": "自定义体验",
       "subheader": "调整状态栏位置、密度、缩放等。"
     },
+    "skip-setup": "跳过设置",
+    "telemetry-wizard-done": "明白了！",
+    "telemetry-wizard-note": "您拥有控制权 — 随时可以在“设置”中启用或禁用此功能",
+    "telemetry-wizard-subtitle": "我们添加了匿名分析功能，以帮助改进 Noctalia",
+    "telemetry-wizard-title": "隐私更新",
     "wallpaper": {
       "choose-dir": "选择包含壁纸图片的目录",
       "dir-browse": "浏览文件夹",
@@ -1401,7 +1410,9 @@
       "select-prompt": "在下方选择一张壁纸",
       "subheader": "用精美壁纸营造氛围。"
     },
-    "welcome-note": "先进行一些基础设置——更多选项可在“设置”中找到"
+    "welcome-note": "先进行一些基础设置——更多选项可在“设置”中找到",
+    "welcome-subtitle": "让我们一起打造独一无二的桌面",
+    "welcome-title": "欢迎来到 Noctalia！"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "年份为两位数 (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "搜索文件和文件夹...",
+      "item": "项目",
+      "items": "项目",
       "select-current": "选择当前",
       "select-file": "选择文件",
       "select-folder": "选择文件夹",
+      "selected:": "已选择:",
       "title": "文件选择器"
     },
     "file-picker-title": "选择文件",

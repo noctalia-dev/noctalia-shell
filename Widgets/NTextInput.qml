@@ -27,6 +27,7 @@ ColumnLayout {
 
   signal editingFinished
 
+  opacity: enabled ? 1.0 : 0.6
   spacing: Style.marginS
 
   readonly property bool isValueChanged: (defaultValue !== undefined) && (text !== defaultValue)
@@ -145,8 +146,6 @@ ColumnLayout {
 
             echoMode: TextInput.Normal
             readOnly: root.readOnly
-            enabled: root.enabled
-            color: Color.mOnSurface
             placeholderTextColor: Qt.alpha(Color.mOnSurfaceVariant, 0.6)
 
             selectByMouse: true

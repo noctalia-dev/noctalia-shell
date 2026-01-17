@@ -175,8 +175,10 @@
       "visualizer-type-label": "Visualizer-Typ"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Benachrichtigungssymbol ausblenden, wenn keine ungelesenen Benachrichtigungen vorhanden sind.",
-      "hide-widget-when-zero-label": "Symbol ausblenden, wenn null",
+      "hide-widget-when-zero-description": "Benachrichtigungssymbol ausblenden, wenn keine Benachrichtigungen vorhanden sind.",
+      "hide-widget-when-zero-label": "Symbol bei keinen Benachrichtigungen ausblenden",
+      "hide-widget-when-zero-unread-description": "Benachrichtigungssymbol ausblenden, wenn keine ungelesenen Benachrichtigungen vorhanden sind.",
+      "hide-widget-when-zero-unread-label": "Symbol bei keinen ungelesenen Benachrichtigungen ausblenden",
       "show-unread-badge-description": "Badge mit der Anzahl ungelesener Benachrichtigungen anzeigen.",
       "show-unread-badge-label": "Badge für ungelesene Nachrichten anzeigen"
     },
@@ -351,20 +353,21 @@
     "connect": "Verbinden",
     "connected": "Verbunden",
     "connecting": "Verbinden...",
+    "continue": "Fortsetzen",
     "contributors": "Mitwirkende",
     "countdown": "Countdown",
     "date": "Datum",
     "delete": "Löschen",
     "devices": "Geräte",
-    "disabled": "Behindert",
-    "discharging": "Entladung",
+    "disabled": "Deaktiviert",
+    "discharging": "Entladen",
     "disconnect": "Trennen",
     "disconnected": "Getrennt",
     "disconnecting": "Verbindung wird getrennt...",
     "download": "Herunterladen",
     "duration": "Dauer",
     "enabled": "Aktiviert",
-    "events": "Veranstaltungen",
+    "events": "Ereignisse",
     "execute": "Ausführen",
     "focus": "Fokus",
     "frequency": "Frequenz",
@@ -383,7 +386,7 @@
     "language": "Sprache",
     "loading": "Wird geladen...",
     "local": "Lokal",
-    "location": "Position",
+    "location": "Standort",
     "lock": "Sperren",
     "logout": "Abmelden",
     "look": "Aussehen",
@@ -413,7 +416,7 @@
     "position": "Position",
     "previous": "Zurück",
     "random": "Zufällig",
-    "reboot": "Neustart",
+    "reboot": "Neu starten",
     "refresh": "Aktualisieren",
     "required": "(erforderlich)",
     "reset": "Zurücksetzen",
@@ -441,7 +444,7 @@
     "uninstall": "Deinstallieren",
     "unknown": "Unbekannt",
     "unpair": "Entkoppeln",
-    "unpin": "Anheften lösen",
+    "unpin": "Loslösen",
     "update": "Aktualisieren",
     "upload": "Hochladen",
     "version": "Version",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Bitte warten",
       "emoji-no-recent": "Noch keine kürzlich verwendeten Emojis",
       "emoji-search-description": "Emojis suchen und kopieren"
-    }
+    },
+    "result": "Ergebnis",
+    "results": "Ergebnisse"
   },
   "lock-screen": {
-    "authenticating": "Authentifizierung...",
-    "password": "Passwort eingeben...",
-    "restart": "Neu starten",
-    "shut-down": "Herunterfahren"
+    "password": "Passwort eingeben..."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Nach Kategorie filtern",
       "templates-misc-description": "Erstellen Sie Ihre eigenen Vorlagen.",
       "templates-misc-label": "Erweitert",
-      "templates-misc-user-templates-description": "Nur aktivieren, wenn Sie wissen, was Sie tun — weitere Informationen finden Sie in unserer Online-Dokumentation",
+      "templates-misc-user-templates-description": "Nur aktivieren, wenn Sie wissen, was Sie tun — weitere Informationen finden Sie in unserer Online-Dokumentation.",
       "templates-misc-user-templates-label": "Benutzer-Vorlagen aktivieren",
       "templates-none-detected": "Keine erkannt",
       "templates-write-path": "Schreibt: {filepath}",
@@ -936,7 +938,7 @@
     "hooks": {
       "info-command-info-description": "• Befehle werden über Shell ausgeführt (sh -lc)<br>• Befehle laufen im Hintergrund (getrennt)<br>• Test-Buttons führen mit aktuellen Werten aus",
       "info-command-info-label": "Hook-Befehl-Informationen",
-      "info-parameters-description": "• Wallpaper-Hook: $1 = Wallpaper-Pfad, $2 = Bildschirmname<br>• Theme-Umschalt-Hook: $1 = true/false (Dark-Mode-Status)<br>• Bildschirm-Sperr-/Entsperr-Hooks: Keine Parameter<br>• Performance-Modus-Hooks: Keine Parameter<br>• Session-Hook: $1 = Aktion (Herunterfahren/Neustart)",
+      "info-parameters-description": "• Wallpaper-Hook: $1 = Wallpaper-Pfad, $2 = Bildschirmname<br>• Themenwechsel-Hook: $1 = true/false (Dunkelmodus-Status)<br>• Bildschirm-Sperr-/Entsperr-Hooks: Keine Parameter<br>• Leistungsmodus-Hooks: Keine Parameter<br>• Session-Hook: $1 = Aktion (Herunterfahren/Neustart)",
       "info-parameters-label": "Verfügbare Parameter",
       "performance-mode-disabled-description": "Befehl, der ausgeführt wird, wenn der Noctalia-Leistungsmodus deaktiviert wird.",
       "performance-mode-disabled-label": "Leistungsmodus deaktiviert",
@@ -950,7 +952,7 @@
       "screen-unlock-description": "Befehl, der ausgeführt wird, wenn der Bildschirm entsperrt wird.",
       "screen-unlock-label": "Bildschirm entsperrt",
       "screen-unlock-placeholder": "z.B. notify-send \"Bildschirm\" \"Entsperrt\"",
-      "session-description": "Befehl, der vor dem Herunterfahren oder Neustart ausgeführt werden soll. Empfängt den Aktionstyp als $1 (Shutdown/Neustart).",
+      "session-description": "Befehl, der vor dem Herunterfahren oder Neustart ausgeführt werden soll. Empfängt den Aktionstyp als $1 (Herunterfahren/Neustart).",
       "session-label": "Sitzungsende",
       "session-placeholder": "z.B. notify-send \"Session\" \"$1\"",
       "system-hooks-desc": "Befehle konfigurieren, die bei Systemereignissen ausgeführt werden.",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Kompakter Sperrbildschirm",
       "lock-on-suspend-description": "Den Bildschirm beim Energiesparen automatisch sperren.",
       "lock-on-suspend-label": "Sperren beim Energiesparen",
-      "show-hibernate-description": "Die Option 'Ruhezustand' in den Energieaktionen anzeigen.",
+      "show-hibernate-description": "Die Option 'Ruhezustand' in den Energieoptionen anzeigen.",
       "show-hibernate-label": "Ruhezustand anzeigen",
       "show-session-buttons-description": "Zugriff auf die Energieeinstellungen vom Sperrbildschirm aus erlauben.",
       "show-session-buttons-label": "Energieoptionen",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Hallo Welt\"",
     "enter-command": "Befehl eingeben (App oder benutzerdefiniertes Skript)",
     "enter-ipc-identifier": "Geben Sie eine eindeutige Kennung für IPC-Befehle ein",
+    "enter-path": "Pfad eingeben...",
     "enter-text-to-collapse": "z.B. 'nothing is playing'. Verwenden Sie /regex/ für Muster.",
     "enter-tooltip": "Tooltip eingeben",
     "enter-width-pixels": "Breite in Pixeln eingeben",
@@ -1380,6 +1383,7 @@
     "title": "Sitzungsmenü"
   },
   "setup": {
+    "all-done": "Fertig!",
     "appearance": {
       "subheader": "Dunkelmodus und Farbquellen wählen (Matugen oder vordefiniert)."
     },
@@ -1387,6 +1391,11 @@
       "header": "Erlebnis anpassen",
       "subheader": "Leistenposition, Dichte, Skalierung und mehr einstellen."
     },
+    "skip-setup": "Einrichtung überspringen",
+    "telemetry-wizard-done": "Verstanden!",
+    "telemetry-wizard-note": "Sie haben die Kontrolle – aktivieren oder deaktivieren Sie dies jederzeit in den Einstellungen",
+    "telemetry-wizard-subtitle": "Wir haben anonyme Analysen hinzugefügt, um Noctalia zu verbessern",
+    "telemetry-wizard-title": "Datenschutz-Update",
     "wallpaper": {
       "choose-dir": "Wählen Sie ein Verzeichnis mit Ihren Hintergrundbildern",
       "dir-browse": "Ordner auswählen",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Wählen Sie unten ein Hintergrundbild",
       "subheader": "Bestimmen Sie die Stimmung mit einem schönen Hintergrund."
     },
-    "welcome-note": "Nur ein paar Grundeinstellungen – alle Optionen befinden sich in den Einstellungen"
+    "welcome-note": "Nur ein paar Grundeinstellungen – alle Optionen befinden sich in den Einstellungen",
+    "welcome-subtitle": "Gestalten wir Ihren Desktop einzigartig",
+    "welcome-title": "Willkommen bei Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "Jahr als zweistellige Zahl (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Dateien und Ordner suchen...",
+      "item": "Element",
+      "items": "Elemente",
       "select-current": "Aktuelles Objekt auswählen",
       "select-file": "Datei auswählen",
       "select-folder": "Ordner auswählen",
+      "selected:": "Ausgewählt:",
       "title": "Dateiauswahl"
     },
     "file-picker-title": "Datei auswählen",

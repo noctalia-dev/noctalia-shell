@@ -175,8 +175,10 @@
       "visualizer-type-label": "Cureyê dîtbarîker"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Îkona agahdarkirinê veşêre dema ku agahdarkirinên nexwendî tune bin.",
-      "hide-widget-when-zero-label": "Îkona veşêre dema ku sifir be",
+      "hide-widget-when-zero-description": "Dema ku ti agahdarî tune be, îkona agahdarîyê veşêre.",
+      "hide-widget-when-zero-label": "Îkonê bê agahdarî veşêre",
+      "hide-widget-when-zero-unread-description": "Dema ku ti agahdarîya nexwendî tune be, îkona agahdarîyê veşêre.",
+      "hide-widget-when-zero-unread-label": "Îkonê bê nexwendî veşêre",
       "show-unread-badge-description": "Nîşaneyekê nîşan bide ku hejmara agahiyên nehatine xwendin nîşan dide.",
       "show-unread-badge-label": "Nîşana ne xwendî nîşan bide"
     },
@@ -351,6 +353,7 @@
     "connect": "Girêdan",
     "connected": "Girêdayî",
     "connecting": "Tê girêdan...",
+    "continue": "Berdewam",
     "contributors": "Beşdar",
     "countdown": "Jimartin",
     "date": "Dîrok",
@@ -385,7 +388,7 @@
     "local": "Herêmî",
     "location": "Cih",
     "lock": "Giredan",
-    "logout": "Derketina ji sîstemê",
+    "logout": "Derkeve",
     "look": "Xuyanî",
     "media": "Medya",
     "media-player": "Lîstikvanê medyayê",
@@ -413,7 +416,7 @@
     "position": "Helwest",
     "previous": "Berê",
     "random": "Bêserûber",
-    "reboot": "Ji nû ve dest pê bike",
+    "reboot": "Restart",
     "refresh": "Nûkirin",
     "required": "(pêwîst)",
     "reset": "Vegerandin",
@@ -425,7 +428,7 @@
     "security": "Ewlehî",
     "select": "Hilbijêre",
     "shortcuts": "Kurterê",
-    "shutdown": "Vemirandin",
+    "shutdown": "Vemrîne",
     "signal": "Sînyal",
     "sound": "Deng",
     "sources": "Çavkanî",
@@ -525,13 +528,12 @@
       "emoji-loading-description": "Tika raweste",
       "emoji-no-recent": "Hîna emojiyên dawî tune ne",
       "emoji-search-description": "Lêgerîn û kopîkirina emojiyan"
-    }
+    },
+    "result": "encam",
+    "results": "encaman"
   },
   "lock-screen": {
-    "authenticating": "Rastkirin...",
-    "password": "Borînpeyva xwe têxîne..",
-    "restart": "Ji nû ve dest pê bike",
-    "shut-down": "Vemrîne"
+    "password": "Borînpeyva xwe têxîne.."
   },
   "notifications": {
     "panel": {
@@ -751,7 +753,7 @@
       "templates-filter-label": "Li gorî kategoriyê parzûn bike",
       "templates-misc-description": "Şablonên xwe biafirîne.",
       "templates-misc-label": "Pêşketî",
-      "templates-misc-user-templates-description": "Tenê eger tu dizanî çi dikî çalak bike — serî li belgekirina me ya serhêl bide",
+      "templates-misc-user-templates-description": "Tenê eger tu dizanî çi dikî çalak bike — serî li belgekirina me ya serhêl bide.",
       "templates-misc-user-templates-label": "Şablonên bikarhêner çalak bike",
       "templates-none-detected": "Tiştek nehat dîtin",
       "templates-write-path": "Dinivîse: {filepath}",
@@ -1049,7 +1051,7 @@
       "compact-lockscreen-label": "Kilîta ekrana berhevkirî",
       "lock-on-suspend-description": "Dema ku pergal tê rawestandin, ekranê bixweber kilît bike.",
       "lock-on-suspend-label": "Li ser rawestandinê kilît bike",
-      "show-hibernate-description": "Vebijêrka 'Xewnê' di kiryarên enerjiyê de nîşan bide.",
+      "show-hibernate-description": "Vebijêrka 'Xewnê' di kontrolên hêzê de nîşan bide.",
       "show-hibernate-label": "Nîşan bide xewnê",
       "show-session-buttons-description": "Destûra gihîştina mîhengên hêzê ji ekrana kilîtkirî re bide.",
       "show-session-buttons-label": "Kontrolên hêzê",
@@ -1349,6 +1351,7 @@
     "command-example": "echo \"Silav cîhan\"",
     "enter-command": "Fermana ku bê tetbîqkirin binivîse (sepan an nivîsara taybet)",
     "enter-ipc-identifier": "Ji bo fermanên IPC nasnameyek yekta binivîse",
+    "enter-path": "Rêya binivîse...",
     "enter-text-to-collapse": "e.g., 'tiştek nayê lîstin'. Use /regex/ for patterns.",
     "enter-tooltip": "Têketina sernavê amûrê",
     "enter-width-pixels": "Firehiya bi pîxel binivîse",
@@ -1380,6 +1383,7 @@
     "title": "Menuya danişînê"
   },
   "setup": {
+    "all-done": "Hemû Temam!",
     "appearance": {
       "subheader": "Moda tarî hilbijêre û çavkaniyên rengan (Matugen an pêşdiyarkirî) hilbijêre."
     },
@@ -1387,6 +1391,11 @@
       "header": "Xweserkirina ezmûna xwe bike",
       "subheader": "Rewşa bar, dendikbûn, pîvan û hwd. eyar bike."
     },
+    "skip-setup": "Sazkirinê Derbas Bike",
+    "telemetry-wizard-done": "Gihîşt!",
+    "telemetry-wizard-note": "Hûn di kontrolê de ne - hûn dikarin vê yekê di Mîhengan de her dem çalak an neçalak bikin",
+    "telemetry-wizard-subtitle": "Me analîtîkên anonîm zêde kirin da ku alîkariya başkirina Noctalia bikin",
+    "telemetry-wizard-title": "Nûkirina Nepenîtiyê",
     "wallpaper": {
       "choose-dir": "Dîrekteriyek ku wêneyên dîwarê te tê de hilbijêre",
       "dir-browse": "Geroka peldanka dîwêr",
@@ -1401,7 +1410,9 @@
       "select-prompt": "Wêneyekî dîwarê jêrîn hilbijêre",
       "subheader": "Bi dîmenek xweşik hestê saz bike."
     },
-    "welcome-note": "Tenê çend bingehîn ji bo ku hûn dest pê bikin — vebijarkên tevahî di mîhengan de ne"
+    "welcome-note": "Tenê çend bingehîn ji bo ku hûn dest pê bikin — vebijarkên tevahî di mîhengan de ne",
+    "welcome-subtitle": "Werin em sermaseya we bêhempa bikin",
+    "welcome-title": "Bi xêr hatî Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1676,10 +1687,12 @@
       "year-two-digit": "Sal wekî du-jimar (00-99)"
     },
     "file-picker": {
-      "search-placeholder": "Li pel û peldankan bigere...",
+      "item": "babet",
+      "items": "babetên",
       "select-current": "A heyî hilbijêre",
       "select-file": "Pelê hilbijêre",
       "select-folder": "Peldankê hilbijêre",
+      "selected:": "Bijartî:",
       "title": "Hilbijêrê pelê"
     },
     "file-picker-title": "Pelê hilbijêre",

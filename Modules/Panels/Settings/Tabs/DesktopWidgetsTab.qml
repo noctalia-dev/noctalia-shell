@@ -37,7 +37,7 @@ ColumnLayout {
   }
 
   NButton {
-    visible: Settings.data.desktopWidgets.enabled
+    enabled: Settings.data.desktopWidgets.enabled
     Layout.fillWidth: true
     text: DesktopWidgetRegistry.editMode ? I18n.tr("panels.desktop-widgets.edit-mode-exit-button") : I18n.tr("panels.desktop-widgets.edit-mode-button-label")
     icon: "edit"
@@ -91,9 +91,10 @@ ColumnLayout {
 
   // One NSectionEditor per monitor
   Repeater {
-    model: Settings.data.desktopWidgets.enabled ? Quickshell.screens : []
+    model: Quickshell.screens
 
     NSectionEditor {
+      enabled: Settings.data.desktopWidgets.enabled
       required property var modelData
 
       Layout.fillWidth: true

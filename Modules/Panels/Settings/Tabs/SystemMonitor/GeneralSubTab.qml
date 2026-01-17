@@ -48,7 +48,7 @@ ColumnLayout {
 
   RowLayout {
     Layout.fillWidth: true
-    spacing: Style.marginM
+    spacing: Style.marginXL
     visible: Settings.data.systemMonitor.useCustomColors
 
     ColumnLayout {
@@ -57,7 +57,7 @@ ColumnLayout {
 
       NText {
         text: I18n.tr("panels.system-monitor.warning-color-label")
-        pointSize: Style.fontSizeS
+        pointSize: Style.fontSizeM
       }
 
       NColorPicker {
@@ -76,7 +76,7 @@ ColumnLayout {
 
       NText {
         text: I18n.tr("panels.system-monitor.critical-color-label")
-        pointSize: Style.fontSizeS
+        pointSize: Style.fontSizeM
       }
 
       NColorPicker {

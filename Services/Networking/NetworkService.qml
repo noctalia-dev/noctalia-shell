@@ -870,31 +870,22 @@ Singleton {
         if (!result) {
           return;
         }
-
-        if (result === "none" && root.networkConnectivity !== result) {
-          root.networkConnectivity = result;
-          connectivityCheckProcess.failedChecks = 0;
-          root.scan();
+        if (result === "full" || result === "none" || result === "unknown") {
+          if (connectivityCheckProcess.failedChecks !== 0) {
+            connectivityCheckProcess.failedChecks = 0;
+          }
+          if (result !== root.networkConnectivity) {
+            root.networkConnectivity = result;
+            root.scan();
+          }
+          return;
         }
-
-        if (result === "full" && root.networkConnectivity !== result) {
-          root.networkConnectivity = result;
-          root.internetConnectivity = true;
-          connectivityCheckProcess.failedChecks = 0;
-          root.scan();
-        }
-
-        if ((result === "limited" || result === "portal") && root.networkConnectivity !== result) {
+        if ((result === "limited" || result === "portal") && result !== root.networkConnectivity) {
           connectivityCheckProcess.failedChecks++;
           if (connectivityCheckProcess.failedChecks === 3) {
             root.networkConnectivity = result;
             pingCheckProcess.running = true;
           }
-        }
-
-        if (result === "unknown" && root.networkConnectivity !== result) {
-          root.networkConnectivity = result;
-          connectivityCheckProcess.failedChecks = 0;
         }
       }
     }
