@@ -11,6 +11,7 @@ Singleton {
   id: root
 
   // Core state
+  property bool wifiEnabled: false
   property var networks: ({})
   property bool scanning: false
   property bool connecting: false
@@ -61,26 +62,6 @@ Singleton {
     onLoadFailed: {
       cacheAdapter.knownNetworks = ({});
       cacheAdapter.lastConnected = "";
-    }
-  }
-
-  Connections {
-    target: Settings.data.network
-    function onWifiEnabledChanged() {
-      if (Settings.data.network.wifiEnabled) {
-        if (!BluetoothService.airplaneModeToggled) {
-          ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.enabled"), "wifi");
-        }
-        // Perform a scan to update the UI
-        delayedScanTimer.interval = 3000;
-        delayedScanTimer.restart();
-      } else {
-        if (!BluetoothService.airplaneModeToggled) {
-          ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.disabled"), "wifi-off");
-        }
-        // Clear networks so the widget icon changes
-        root.networks = ({});
-      }
     }
   }
 
@@ -195,12 +176,26 @@ Singleton {
   function setWifiEnabled(enabled) {
     if (!ProgramCheckerService.nmcliAvailable)
       return;
-    Settings.data.network.wifiEnabled = enabled;
+    wifiEnabled = enabled;
     wifiStateEnableProcess.running = true;
+    if (wifiEnabled) {
+      if (!BluetoothService.airplaneModeToggled) {
+        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.enabled"), "wifi");
+      }
+      // Perform a scan to update the UI
+      delayedScanTimer.interval = 3000;
+      delayedScanTimer.restart();
+    } else {
+      if (!BluetoothService.airplaneModeToggled) {
+        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.disabled"), "wifi-off");
+      }
+      // Clear networks so the widget icon changes
+      root.networks = ({});
+    }
   }
 
   function scan() {
-    if (!ProgramCheckerService.nmcliAvailable || !Settings.data.network.wifiEnabled)
+    if (!ProgramCheckerService.nmcliAvailable || !wifiEnabled)
       return;
     if (scanning) {
       // Mark current scan results to be ignored and schedule a new scan
@@ -819,8 +814,8 @@ Singleton {
       onStreamFinished: {
         const enabled = text.trim() === "enabled";
         Logger.d("Network", "Wi-Fi adapter was detect as enabled:", enabled);
-        if (Settings.data.network.wifiEnabled !== enabled) {
-          Settings.data.network.wifiEnabled = enabled;
+        if (wifiEnabled !== enabled) {
+          setWifiEnabled(enabled);
         }
       }
     }
@@ -837,7 +832,7 @@ Singleton {
   Process {
     id: wifiStateEnableProcess
     running: false
-    command: ["nmcli", "radio", "wifi", Settings.data.network.wifiEnabled ? "on" : "off"]
+    command: ["nmcli", "radio", "wifi", wifiEnabled ? "on" : "off"]
 
     stdout: StdioCollector {
       onStreamFinished: {

@@ -40,9 +40,9 @@ Item {
 
     model: [
       {
-        "label": Settings.data.network.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
+        "label": NetworkService.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
         "action": "toggle-wifi",
-        "icon": Settings.data.network.wifiEnabled ? "wifi-off" : "wifi"
+        "icon": NetworkService.wifiEnabled ? "wifi-off" : "wifi"
       },
       {
         "label": I18n.tr("actions.widget-settings"),
@@ -58,7 +58,7 @@ Item {
                    }
 
                    if (action === "toggle-wifi") {
-                     NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
+                     NetworkService.setWifiEnabled(!NetworkService.wifiEnabled);
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }

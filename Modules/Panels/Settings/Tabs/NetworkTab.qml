@@ -14,7 +14,7 @@ ColumnLayout {
   NToggle {
     label: I18n.tr("actions.enable-wifi")
     description: I18n.tr("panels.network.wifi-description")
-    checked: ProgramCheckerService.nmcliAvailable && Settings.data.network.wifiEnabled
+    checked: ProgramCheckerService.nmcliAvailable && NetworkService.wifiEnabled
     onToggled: checked => NetworkService.setWifiEnabled(checked)
     enabled: ProgramCheckerService.nmcliAvailable
   }
