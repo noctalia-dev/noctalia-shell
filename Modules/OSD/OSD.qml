@@ -641,13 +641,15 @@ Variants {
               visible: root.currentOSDType === OSD.Type.Media
               text: root.getDisplayPercentage()
               color: Color.mOnSurface
-              pointSize: Style.fontSizeS
-              font.weight: Style.fontWeightRegular
+              pointSize: Style.fontSizeM
+              family: Settings.data.ui.fontFixed
+              font.weight: Style.fontWeightMedium
               horizontalAlignment: Text.AlignLeft
               elide: Text.ElideRight
               Layout.fillWidth: true
               Layout.alignment: Qt.AlignVCenter
             }
+
 
             // Progress Bar for Volume/Brightness
             Rectangle {
