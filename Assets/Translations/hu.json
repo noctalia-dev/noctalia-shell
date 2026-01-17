@@ -533,7 +533,10 @@
     "results": "eredmények"
   },
   "lock-screen": {
-    "password": "Adja meg jelszavát..."
+    "authenticating": "Hitelesítés...",
+    "password": "Adja meg jelszavát...",
+    "restart": "Újraindítás",
+    "shut-down": "Leállítás"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Telepített verzió:",
       "noctalia-latest-version": "Legújabb verzió:",
       "noctalia-title": "Noctalia shell",
+      "privacy-policy": "Adatvédelmi irányelvek",
       "support": "Támogasson minket",
       "system-cpu": "CPU:",
       "system-disk": "Lemez:",
@@ -899,6 +903,7 @@
       "title": "Dokk"
     },
     "general": {
+      "copy-settings": "Beállítások másolása",
       "fonts-default-description": "Az interfészben használt fő betűtípus.",
       "fonts-default-label": "Alapértelmezett betűtípus",
       "fonts-default-placeholder": "Alapértelmezett betűtípus kiválasztása...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Képernyősarkok megjelenítése",
       "screen-corners-solid-black-description": "Használjon egyszínű feketét a sáv háttérszíne helyett.",
       "screen-corners-solid-black-label": "Tömör fekete sarkok",
-      "screen-corners-title": "Képernyősarkok"
+      "screen-corners-title": "Képernyősarkok",
+      "settings-copied": "Beállítások a vágólapra másolva"
     },
     "hooks": {
       "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -lc)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Alacsony sürgősség mentése az előzményekbe",
       "history-normal-urgency-description": "Normál prioritású értesítések mentése az előzményekbe.",
       "history-normal-urgency-label": "Normál sürgősség mentése az előzményekbe",
+      "media-toast-description": "Toast üzenet megjelenítése a média lejátszási állapotának változásakor.",
+      "media-toast-label": "Média",
       "monitors-desc": "Értesítés megjelenítése meghatározott monitorokon. Alapértelmezetten mindegyiken, ha nincs kiválasztva.",
       "settings-always-on-top-description": "Értesítések megjelenítése teljes képernyős ablakok és más rétegek felett.",
       "settings-background-opacity-description": "Az értesítési hátterek átlátszóságának beállítása.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Bemeneti hangerő",
       "types-lockkey-description": "OSD megjelenítése a Caps Lock, Num Lock vagy Scroll Lock váltásakor.",
       "types-lockkey-label": "Zárolási gombok",
+      "types-media-description": "OSD megjelenítése a média lejátszási állapotának változásakor (lejátszás, szünet, ugrás).",
+      "types-media-label": "Média lejátszás",
       "types-title": "OSD kiváltó események",
       "types-volume-description": "OSD megjelenítése a hangkimenet hangerejének változásakor.",
       "types-volume-label": "Kimeneti hangerő"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "elem",
       "items": "elemek",
+      "search-placeholder": "Fájlok és mappák keresése...",
       "select-current": "Aktuális kijelölése",
       "select-file": "Fájl kijelölése",
       "select-folder": "Mappa kiválasztása",
-      "selected:": "Kiválasztva:",
+      "selected": "Kiválasztva:",
       "title": "Fájlválasztó"
     },
     "file-picker-title": "Fájl kiválasztása",

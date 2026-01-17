@@ -533,7 +533,10 @@
     "results": "resultaten"
   },
   "lock-screen": {
-    "password": "Voer je wachtwoord in..."
+    "authenticating": "Bezig met verifiëren...",
+    "password": "Voer je wachtwoord in...",
+    "restart": "Opnieuw opstarten",
+    "shut-down": "Uitschakelen"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Geïnstalleerde versie:",
       "noctalia-latest-version": "Nieuwste versie:",
       "noctalia-title": "Noctalia-shell",
+      "privacy-policy": "Privacybeleid",
       "support": "Steun ons",
       "system-cpu": "CPU:",
       "system-disk": "Schijf:",
@@ -899,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Instellingen kopiëren",
       "fonts-default-description": "Hoofdlettertype dat in de hele interface wordt gebruikt.",
       "fonts-default-label": "Standaardlettertype",
       "fonts-default-placeholder": "Selecteer standaardlettertype...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Schermhoeken tonen",
       "screen-corners-solid-black-description": "Gebruik effen zwart in plaats van de achtergrondkleur van de balk.",
       "screen-corners-solid-black-label": "Effen zwarte hoeken",
-      "screen-corners-title": "Schermhoeken"
+      "screen-corners-title": "Schermhoeken",
+      "settings-copied": "Instellingen gekopieerd naar klembord"
     },
     "hooks": {
       "info-command-info-description": "• Commando's worden uitgevoerd via shell (sh -lc)<br>• Commando's draaien op de achtergrond (losgekoppeld)<br>• Testknoppen worden uitgevoerd met de huidige waarden",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Lage urgentie opslaan in geschiedenis",
       "history-normal-urgency-description": "Meldingen met normale prioriteit opslaan in de geschiedenis.",
       "history-normal-urgency-label": "Normale urgentie opslaan in geschiedenis",
+      "media-toast-description": "Een toast weergeven wanneer de afspeelstatus van media verandert.",
+      "media-toast-label": "Media",
       "monitors-desc": "Meldingen op specifieke monitoren tonen. Standaard op alle als er geen zijn gekozen.",
       "settings-always-on-top-description": "Toon meldingen boven fullscreen-vensters en andere lagen.",
       "settings-background-opacity-description": "Pas de dekking van meldingsachtergronden aan.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Invoervolume",
       "types-lockkey-description": "Toon het OSD wanneer Caps Lock, Num Lock of Scroll Lock wordt omgeschakeld.",
       "types-lockkey-label": "Vergrendeltoetsen",
+      "types-media-description": "OSD weergeven wanneer de afspeelstatus van media verandert (afspelen, pauzeren, overslaan).",
+      "types-media-label": "Media afspelen",
       "types-title": "OSD triggergebeurtenissen",
       "types-volume-description": "Toon het OSD wanneer het uitvoervolume verandert.",
       "types-volume-label": "Uitvoervolume"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "item",
       "items": "items",
+      "search-placeholder": "Zoek bestanden en mappen...",
       "select-current": "Huidige selecteren",
       "select-file": "Bestand selecteren",
       "select-folder": "Map selecteren",
-      "selected:": "Geselecteerd:",
+      "selected": "Geselecteerd:",
       "title": "Bestandskiezer"
     },
     "file-picker-title": "Selecteer een bestand",

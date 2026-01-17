@@ -533,7 +533,10 @@
     "results": "résultats"
   },
   "lock-screen": {
-    "password": "Entrez votre mot de passe..."
+    "authenticating": "Authentification...",
+    "password": "Entrez votre mot de passe...",
+    "restart": "Redémarrer",
+    "shut-down": "Éteindre"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Version installée :",
       "noctalia-latest-version": "Dernière version :",
       "noctalia-title": "Shell Noctalia",
+      "privacy-policy": "Politique de confidentialité",
       "support": "Soutenez-nous",
       "system-cpu": "Processeur :",
       "system-disk": "Disque :",
@@ -899,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Copier les paramètres",
       "fonts-default-description": "Police principale utilisée dans toute l'interface.",
       "fonts-default-label": "Police par défaut",
       "fonts-default-placeholder": "Sélectionner la police par défaut...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Afficher les coins de l'écran",
       "screen-corners-solid-black-description": "Utilisez du noir uni au lieu de la couleur de fond de la barre.",
       "screen-corners-solid-black-label": "Coins noirs unis",
-      "screen-corners-title": "Coins de l'écran"
+      "screen-corners-title": "Coins de l'écran",
+      "settings-copied": "Paramètres copiés dans le presse-papier"
     },
     "hooks": {
       "info-command-info-description": "• Les commandes sont exécutées via le shell (sh -lc)<br>• Les commandes s'exécutent en arrière-plan (détachées)<br>• Les boutons de test s'exécutent avec les valeurs actuelles",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Enregistrer l'urgence faible dans l'historique",
       "history-normal-urgency-description": "Enregistrer les notifications de priorité normale dans l'historique.",
       "history-normal-urgency-label": "Enregistrer l'urgence normale dans l'historique",
+      "media-toast-description": "Afficher une notification toast lorsque l'état de lecture du média change.",
+      "media-toast-label": "Média",
       "monitors-desc": "Afficher les notifications sur des moniteurs spécifiques. Par défaut, sur tous si aucun n'est choisi.",
       "settings-always-on-top-description": "Afficher les notifications au-dessus des fenêtres en plein écran et des autres applications.",
       "settings-background-opacity-description": "Ajuster l'opacité des arrière-plans de notifications.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Volume d'entrée",
       "types-lockkey-description": "Afficher l'OSD lorsque Verr Maj, Verr Num ou Arrêt défil est activée ou désactivée.",
       "types-lockkey-label": "Touches de verrouillage",
+      "types-media-description": "Afficher l'OSD lorsque l'état de lecture multimédia change (lecture, pause, saut).",
+      "types-media-label": "Lecture de média",
       "types-title": "Événements de déclenchement OSD",
       "types-volume-description": "Afficher l'OSD lorsque le volume de sortie audio change.",
       "types-volume-label": "Volume de sortie"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "élément",
       "items": "éléments",
+      "search-placeholder": "Rechercher des fichiers et des dossiers...",
       "select-current": "Sélectionner Actuel",
       "select-file": "Sélectionner un fichier",
       "select-folder": "Sélectionner un dossier",
-      "selected:": "Sélectionné :",
+      "selected": "Sélectionné:",
       "title": "Sélecteur de fichiers"
     },
     "file-picker-title": "Sélectionner un fichier",

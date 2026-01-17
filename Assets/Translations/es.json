@@ -533,7 +533,10 @@
     "results": "resultados"
   },
   "lock-screen": {
-    "password": "Ingresa tu contraseña..."
+    "authenticating": "Autenticando...",
+    "password": "Ingresa tu contraseña...",
+    "restart": "Reiniciar",
+    "shut-down": "Apagar"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Versión instalada:",
       "noctalia-latest-version": "Última versión:",
       "noctalia-title": "Shell Noctalia",
+      "privacy-policy": "Política de privacidad",
       "support": "Apóyanos",
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
@@ -899,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Copiar ajustes",
       "fonts-default-description": "Fuente principal utilizada en toda la interfaz.",
       "fonts-default-label": "Fuente predeterminada",
       "fonts-default-placeholder": "Seleccionar fuente predeterminada...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Mostrar esquinas de la pantalla",
       "screen-corners-solid-black-description": "Usa negro sólido en lugar del color de fondo de la barra.",
       "screen-corners-solid-black-label": "Esquinas negras sólidas",
-      "screen-corners-title": "Esquinas de la pantalla"
+      "screen-corners-title": "Esquinas de la pantalla",
+      "settings-copied": "Ajustes copiados al portapapeles"
     },
     "hooks": {
       "info-command-info-description": "• Los comandos se ejecutan a través de shell (sh -lc)<br>• Los comandos se ejecutan en segundo plano (desvinculados)<br>• Los botones de prueba se ejecutan con los valores actuales",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Guardar urgencia baja en el historial",
       "history-normal-urgency-description": "Guardar notificaciones de prioridad normal en el historial.",
       "history-normal-urgency-label": "Guardar urgencia normal en el historial",
+      "media-toast-description": "Mostrar un toast cuando cambie el estado de reproducción multimedia.",
+      "media-toast-label": "Multimedia",
       "monitors-desc": "Muestra notificaciones en monitores específicos. Por defecto, se muestra en todos si no se elige ninguno.",
       "settings-always-on-top-description": "Muestra las notificaciones sobre ventanas a pantalla completa y otras capas.",
       "settings-background-opacity-description": "Ajustar la opacidad de los fondos de las notificaciones.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Volumen de entrada",
       "types-lockkey-description": "Mostrar el OSD cuando se activen o desactiven Bloq Mayús, Bloq Num o Bloq Despl.",
       "types-lockkey-label": "Teclas de bloqueo",
+      "types-media-description": "Mostrar OSD cuando cambie el estado de reproducción multimedia (reproducir, pausar, saltar).",
+      "types-media-label": "Reproducción de medios",
       "types-title": "Eventos de activación OSD",
       "types-volume-description": "Mostrar el OSD cuando cambie el volumen de salida de audio.",
       "types-volume-label": "Volumen de salida"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "elemento",
       "items": "elementos",
+      "search-placeholder": "Buscar archivos y carpetas...",
       "select-current": "Seleccionar actual",
       "select-file": "Seleccionar archivo",
       "select-folder": "Seleccionar carpeta",
-      "selected:": "Seleccionado:",
+      "selected": "Seleccionado:",
       "title": "Selector de archivos"
     },
     "file-picker-title": "Seleccionar un archivo",

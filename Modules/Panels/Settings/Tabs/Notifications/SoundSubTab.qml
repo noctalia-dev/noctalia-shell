@@ -96,6 +96,7 @@ ColumnLayout {
     }
 
     NTextInputButton {
+      enabled: parent.enabled
       Layout.fillWidth: true
       placeholderText: I18n.tr("panels.notifications.sounds-files-placeholder")
       text: Settings.data.notifications?.sounds?.normalSoundFile ?? ""
@@ -128,6 +129,7 @@ ColumnLayout {
       }
 
       NTextInputButton {
+        enabled: parent.enabled
         Layout.fillWidth: true
         placeholderText: I18n.tr("panels.notifications.sounds-files-placeholder")
         text: Settings.data.notifications?.sounds?.lowSoundFile ?? ""
@@ -149,6 +151,7 @@ ColumnLayout {
       }
 
       NTextInputButton {
+        enabled: parent.enabled
         Layout.fillWidth: true
         placeholderText: I18n.tr("panels.notifications.sounds-files-placeholder")
         text: Settings.data.notifications?.sounds?.normalSoundFile ?? ""
@@ -170,6 +173,7 @@ ColumnLayout {
       }
 
       NTextInputButton {
+        enabled: parent.enabled
         Layout.fillWidth: true
         placeholderText: I18n.tr("panels.notifications.sounds-files-placeholder")
         text: Settings.data.notifications?.sounds?.criticalSoundFile ?? ""
@@ -193,6 +197,7 @@ ColumnLayout {
     }
 
     NTextInput {
+      enabled: parent.enabled
       Layout.fillWidth: true
       placeholderText: I18n.tr("panels.notifications.sounds-excluded-apps-placeholder")
       text: Settings.data.notifications?.sounds?.excludedApps ?? ""

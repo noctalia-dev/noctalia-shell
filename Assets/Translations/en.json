@@ -533,7 +533,10 @@
     "results": "results"
   },
   "lock-screen": {
-    "password": "Enter your password..."
+    "authenticating": "Authenticating...",
+    "password": "Enter your password...",
+    "restart": "Restart",
+    "shut-down": "Shut down"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Installed version:",
       "noctalia-latest-version": "Latest version:",
       "noctalia-title": "Noctalia shell",
+      "privacy-policy": "Privacy policy",
       "support": "Support us",
       "system-cpu": "CPU:",
       "system-disk": "Disk:",
@@ -899,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Copy settings",
       "fonts-default-description": "Main font used throughout the interface.",
       "fonts-default-label": "Default font",
       "fonts-default-placeholder": "Select default font...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Show screen corners",
       "screen-corners-solid-black-description": "Use solid black instead of the bar background color.",
       "screen-corners-solid-black-label": "Solid black corners",
-      "screen-corners-title": "Screen corners"
+      "screen-corners-title": "Screen corners",
+      "settings-copied": "Settings copied to clipboard"
     },
     "hooks": {
       "info-command-info-description": "• Commands are executed via shell (sh -lc)<br>• Commands run in background (detached)<br>• Test buttons execute with current values",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Save low urgency to history",
       "history-normal-urgency-description": "Save normal priority notifications to history.",
       "history-normal-urgency-label": "Save normal urgency to history",
+      "media-toast-description": "Show a toast when media playback state changes.",
+      "media-toast-label": "Media",
       "monitors-desc": "Show notification on specific monitors. Defaults to all if none are chosen.",
       "settings-always-on-top-description": "Display notifications above fullscreen windows and other layers.",
       "settings-background-opacity-description": "Adjust the opacity of notification backgrounds.",
@@ -1150,11 +1158,11 @@
       "types-input-volume-label": "Input volume",
       "types-lockkey-description": "Show OSD when Caps Lock, Num Lock, or Scroll Lock are toggled.",
       "types-lockkey-label": "Lock keys",
+      "types-media-description": "Show OSD when media playback state changes (play, pause, skip).",
+      "types-media-label": "Media playback",
       "types-title": "OSD trigger events",
       "types-volume-description": "Show OSD when audio output volume changes.",
-      "types-volume-label": "Output volume",
-      "types-media-description": "Show OSD when media playback state changes (play, pause, skip).",
-      "types-media-label": "Media playback"
+      "types-volume-label": "Output volume"
     },
     "plugins": {
       "available-description": "Browse and install plugins from configured sources.",
@@ -1691,6 +1699,7 @@
     "file-picker": {
       "item": "item",
       "items": "items",
+      "search-placeholder": "Search files and folders...",
       "select-current": "Select Current",
       "select-file": "Select File",
       "select-folder": "Select Folder",

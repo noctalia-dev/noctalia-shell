@@ -200,6 +200,20 @@ Item {
     function decrease() {
       BrightnessService.decreaseBrightness();
     }
+    function set(value: string) {
+      var val = parseFloat(value);
+      if (isNaN(val))
+        return;
+
+      // Normalize logic: heuristic handling of 0-100 vs 0-1
+      if (val > 1.0)
+        val = val / 100.0;
+
+      // Clamp
+      val = Math.max(0.0, Math.min(1.0, val));
+
+      BrightnessService.setBrightness(val);
+    }
   }
 
   IpcHandler {

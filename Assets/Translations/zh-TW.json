@@ -7,7 +7,7 @@
     "disable-bluetooth": "關閉藍牙",
     "disable-dnd": "停用勿擾模式",
     "disable-wifi": "關閉 Wi-Fi",
-    "disconnect-vpn": "自 {name} 斷開連線",
+    "disconnect-vpn": "自 {name} 中斷連線",
     "enable-bluetooth": "啟用藍牙",
     "enable-dnd": "啟用勿擾模式",
     "enable-wifi": "啟用 Wi-Fi",
@@ -89,22 +89,29 @@
       "use-distro-logo-label": "使用發行版圖示"
     },
     "custom-button": {
+      "collapse-condition-description": "若輸出文字符合此值，按鈕將會摺疊。",
+      "collapse-condition-label": "摺疊條件",
       "color-selection-description": "將主題用色套用至圖示及文字上",
       "color-selection-label": "選取顏色",
+      "display-command-output-description": "輸入一個想要定時重複執行的指令, 指令的第一行輸出將會作為顯示的文字",
       "display-command-output-label": "顯示指令的輸出",
       "display-command-output-stream-description": "輸入一個要持續執行的指令",
       "dynamic-text": "動態文字",
       "enable-colorization-description": "替自訂按鈕的圖示及文字啟用上色, 套用主題用色",
       "enable-colorization-label": "啟用上色",
       "hide-mode-always-expanded": "總是展開",
+      "hide-mode-description": "控制當指令沒有輸出時，元件之可見性",
       "hide-mode-expand-with-output": "有訊息輸出時展開",
+      "hide-mode-label": "隱藏模式",
       "icon-description": "從圖示庫選取一個圖示",
       "ipc-identifier-description": "IPC 指令的唯一識別碼, 在使用 'qs -c noctalia-shell ipc call cb [動作] [識別碼]' 時利用此識別碼可透過 IPC 控制此按鈕。",
       "ipc-identifier-label": "IPC 識別碼",
       "left-click-description": "在點擊左鍵時要執行的指令",
       "left-click-label": "點擊左鍵",
       "left-click-update-text": "在點擊左鍵時更新顯示文字",
+      "max-text-length-horizontal-description": "在水平列所顯示的最大字元數量 (0為隱藏)",
       "max-text-length-horizontal-label": "最大文字長度 (水平列)",
+      "max-text-length-vertical-description": "在垂直列所顯示的最大字元數量 (0為隱藏)",
       "max-text-length-vertical-label": "最大文字長度 (垂直列)",
       "middle-click-description": "在點擊中鍵時要執行的指令",
       "middle-click-label": "點擊中鍵",
@@ -165,10 +172,10 @@
       "visualizer-type-label": "視覺效果樣式"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "沒有通知時隱藏通知圖示。",
-      "hide-widget-when-zero-label": "無通知時隱藏圖示",
+      "hide-widget-when-zero-description": "如果沒有未讀通知就隱藏通知圖示",
+      "hide-widget-when-zero-label": "沒有通知時隱藏圖示",
       "hide-widget-when-zero-unread-description": "沒有未讀通知時隱藏通知圖示。",
-      "hide-widget-when-zero-unread-label": "無未讀時隱藏圖示",
+      "hide-widget-when-zero-unread-label": "沒有未讀通知時隱藏圖示",
       "show-unread-badge-description": "顯示帶有數量的未讀標記",
       "show-unread-badge-label": "顯示未讀標記"
     },
@@ -242,6 +249,8 @@
       "character-count-label": "字元上限",
       "enable-scrollwheel-description": "利用滑鼠滾輪在工作區間切換",
       "enable-scrollwheel-label": "捲輪切換工作區",
+      "follow-focused-screen-description": "顯示正在聚焦的螢幕所擁有的工作區, 而不是工具列所在的螢幕擁有的工作區",
+      "follow-focused-screen-label": "跟隨焦點所在的螢幕",
       "grouped-border-opacity-description": "設定工作區邊框的不透明度",
       "grouped-border-opacity-label": "邊框不透明度",
       "hide-unoccupied-description": "如果工作區沒有任何視窗則不要顯示",
@@ -251,7 +260,8 @@
       "show-applications-description": "顯示各個工作區的程式圖示",
       "show-applications-label": "顯示應用程式",
       "show-labels-only-when-occupied-description": "只在工作區有視窗時顯示工作區標籤",
-      "show-labels-only-when-occupied-label": "佔用時顯示標籤"
+      "show-labels-only-when-occupied-label": "佔用時顯示標籤",
+      "unfocused-icons-opacity-label": "非焦點圖示的不透明度"
     }
   },
   "battery": {
@@ -341,6 +351,7 @@
     "connecting": "正在連線...",
     "continue": "繼續",
     "contributors": "貢獻者",
+    "countdown": "倒數",
     "date": "日期",
     "delete": "刪除",
     "devices": "裝置",
@@ -409,6 +420,7 @@
     "screen-corners": "畫面邊角",
     "search": "搜尋",
     "select": "選取",
+    "shortcuts": "快捷鍵",
     "shutdown": "關機",
     "signal": "訊號",
     "sound": "音效",
@@ -451,6 +463,7 @@
   "display-modes": {
     "always-hide": "總是隱藏",
     "always-show": "總是顯示",
+    "force-open": "強制開啟",
     "on-hover": "游標移過時"
   },
   "hide-modes": {
@@ -507,11 +520,14 @@
       "emoji-no-recent": "還沒有最近使用的表情符號",
       "emoji-search-description": "搜尋和複製表情符號"
     },
-    "result": "結果",
-    "results": "結果"
+    "result": "筆結果",
+    "results": "筆結果"
   },
   "lock-screen": {
-    "password": "請輸入你的密碼..."
+    "authenticating": "驗證中...",
+    "password": "請輸入你的密碼...",
+    "restart": "重新啟動",
+    "shut-down": "關機"
   },
   "notifications": {
     "panel": {
@@ -549,7 +565,7 @@
     "frame-rates-fps": "{fps} FPS",
     "scrolling-modes": {
       "always": "總是捲動",
-      "hover": "移過時捲動",
+      "hover": "游標移過時捲動",
       "never": "從不捲動"
     },
     "session-menu-grid-layout": {
@@ -565,6 +581,9 @@
       "linear": "線條",
       "mirrored": "鏡像",
       "wave": "波形"
+    },
+    "visualizer-visibility": {
+      "with-background": "只在有背景時"
     },
     "workspace-labels": {
       "index": "編號",
@@ -584,6 +603,7 @@
       "noctalia-installed-version": "安裝版本:",
       "noctalia-latest-version": "最新版本:",
       "noctalia-title": "Noctalia Shell",
+      "privacy-policy": "隱私權政策",
       "support": "支持我們",
       "system-cpu": "CPU:",
       "system-disk": "磁碟:",
@@ -591,7 +611,7 @@
       "system-host": "主機名稱:",
       "system-install-hint": "安裝 fastfetch 套件即可檢視系統資訊",
       "system-kernel": "核心:",
-      "system-loading": "載入系統資訊...",
+      "system-loading": "正在載入系統資訊...",
       "system-memory": "記憶體:",
       "system-monitor": "顯示器:",
       "system-not-installed": "尚未安裝 fastfetch",
@@ -717,6 +737,7 @@
       "download-success-title": "配色已下載",
       "download-title": "下載配色",
       "predefined-desc": "從一批預先設計好的配色中選擇",
+      "predefined-generate-templates-description": "使用預定義配色方案時，產生 Matugen 範本（GTK、終端機主題等）。",
       "predefined-generate-templates-label": "為預先設計的配色建立模板",
       "predefined-title": "預先設計的配色",
       "templates-desc": "套用顏色至外部應用程式",
@@ -740,11 +761,13 @@
       "shortcuts-custom-button-on-clicked-label": "左鍵指令",
       "shortcuts-custom-button-on-middle-clicked-label": "中鍵指令",
       "shortcuts-custom-button-on-right-clicked-label": "右鍵指令",
+      "shortcuts-custom-button-on-state-command-description": "用來檢查按鈕是否應處於「開啟」狀態的指令。傳回 0 表示應開啟，非 0 表示應關閉。",
       "shortcuts-custom-button-state-checks-add": "新增狀態確認",
       "shortcuts-custom-button-state-checks-label": "狀態確認",
       "shortcuts-custom-button-state-checks-remove": "移除",
       "shortcuts-custom-button-tooltip-description": "當游標移過按鈕時要顯示的提示框文字",
       "shortcuts-custom-button-tooltip-label": "提示框文字",
+      "shortcuts-title": "快捷小工具",
       "system-monitor-disk-path-description": "選擇控制中心裡的系統監視器卡片該監視哪一個磁碟掛載點",
       "system-monitor-disk-path-label": "磁碟監視路徑",
       "title": "控制中心"
@@ -831,9 +854,12 @@
     },
     "dock": {
       "appearance-background-opacity-description": "調整 Dock 的背景不透明度",
+      "appearance-border-radius-description": "調整 Dock 的邊框圓角。",
       "appearance-colorize-icons-label": "為圖示上色",
       "appearance-desc": "自訂 Dock 的外觀及行為",
       "appearance-display-auto-hide": "自動隱藏",
+      "appearance-display-description": "選擇 Dock 的行為",
+      "appearance-floating-distance-description": "設定 Dock 與螢幕邊緣相隔的距離",
       "appearance-floating-distance-label": "Dock 懸浮間距",
       "appearance-hide-show-speed-description": "調整 Dock 隱藏及浮出的動畫速度",
       "appearance-hide-show-speed-label": "隱藏/浮出速度",
@@ -851,6 +877,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "複製設定",
       "fonts-default-description": "套用在整個介面的主要字型",
       "fonts-default-label": "預設字型",
       "fonts-default-placeholder": "選擇預設字型",
@@ -884,12 +911,13 @@
       "screen-corners-show-corners-label": "顯示畫面邊角",
       "screen-corners-solid-black-description": "使用黑色而不是工具列背景色",
       "screen-corners-solid-black-label": "黑色邊角",
-      "screen-corners-title": "畫面邊角"
+      "screen-corners-title": "畫面邊角",
+      "settings-copied": "設定已複製到剪貼簿"
     },
     "hooks": {
       "info-command-info-description": "• 指令將透過 shell (sh -lc) 執行<br>• 指令會在背景 (detached 狀態) 執行<br>• 測試按鈕會以當下填寫的內容執行",
       "info-command-info-label": "hook 指令的說明",
-      "info-parameters-description": "• 桌布的 hook: $1 = 桌布路徑, $2 = 螢幕名稱<br>• 主題切換的 hook: $1 = true/false (深色模式啟用或否)<br>• 畫面鎖定/解鎖的 hook: 沒有參數<br>• 效能模式的 hook: 沒有參數<br>• 工作階段的 hook: $1 = 執行動作 (關機/重新啟動)",
+      "info-parameters-description": "• 桌布的 hook: $1 = 桌布路徑, $2 = 螢幕名稱<br>• 主題切換的 hook: $1 = true/false (深色模式啟用或否)<br>• 畫面鎖定/解鎖的 hook: 沒有參數<br>• 效能模式的 hook: 沒有參數<br>• 工作階段的 hook: $1 = 執行動作 (shutdown/reboot)",
       "info-parameters-label": "可用參數",
       "performance-mode-disabled-description": "Noctalia 效能模式停用時要執行的指令",
       "performance-mode-disabled-label": "效能模式停用時",
@@ -903,7 +931,7 @@
       "screen-unlock-description": "在鎖定畫面解鎖時要執行的指令",
       "screen-unlock-label": "畫面解鎖時",
       "screen-unlock-placeholder": "例如: notify-send \"Screen\" \"Unlocked\"",
-      "session-description": "在關機或重新啟動前要執行的指令, 接收到的執行動作會視為 $1 (關機/重新啟動)",
+      "session-description": "在關機或重新啟動前要執行的指令, 接收到的執行動作會視為 $1 (shutdown/reboot)",
       "session-label": "工作階段結束時",
       "session-placeholder": "例如: notify-send \"Session\" \"$1\"",
       "system-hooks-enable-description": "啟用或停用所有的 hook 指令",
@@ -1015,18 +1043,24 @@
       "duration-low-urgency-label": "低急迫性",
       "duration-normal-urgency-description": "設定普通急迫的通知該顯示多久",
       "duration-normal-urgency-label": "普通急迫",
+      "duration-title": "通知顯示時長",
       "history-critical-urgency-description": "將非常危急的通知存放到歷史通知",
       "history-critical-urgency-label": "儲存非常危急到歷史通知",
+      "history-desc": "根據通知的緊急程度，控制要將哪些通知儲存至紀錄。",
       "history-low-urgency-description": "將低急迫性的通知存放到歷史通知",
       "history-low-urgency-label": "儲存低急迫性到歷史通知",
       "history-normal-urgency-description": "將普通急迫的通知存放到歷史通知",
       "history-normal-urgency-label": "儲存普通急迫到歷史通知",
+      "media-toast-description": "媒體播放狀態變更時顯示 Toast 訊息。",
+      "media-toast-label": "媒體",
       "monitors-desc": "只在特定的顯示器顯示通知, 如果全部取消勾選則會顯示在所有顯示器",
+      "settings-always-on-top-description": "在全螢幕視窗與其他層級上方顯示通知。",
       "settings-background-opacity-description": "調整通知背景的不透明度",
       "settings-desc": "設定通知的外觀及行為",
       "settings-do-not-disturb-description": "當啟用時, 停止彈出所有通知",
       "settings-enabled-label": "啟用通知",
       "settings-location-description": "通知該在畫面的哪裡出現",
+      "sounds-desc": "設定通知所使用的音效及音量",
       "sounds-enabled-description": "在有新通知時啟用音效",
       "sounds-enabled-label": "啟用通知音效",
       "sounds-excluded-apps-label": "排除的應用程式",
@@ -1043,16 +1077,21 @@
       "sounds-title": "音效設定",
       "sounds-unavailable-description": "安裝 qt6 multimedia 套件以啟用通知音效",
       "sounds-unavailable-label": "通知音效無法使用",
+      "sounds-volume-description": "調整通知音效的音量大小",
+      "sounds-volume-label": "音效音量",
       "toast-keyboard-label": "鍵盤佈局"
     },
     "osd": {
       "always-on-top-label": "總是置頂",
       "background-opacity-label": "背景不透明度",
       "duration-auto-hide-label": "在時間後隱藏",
+      "enabled-description": "音量及亮度改變時即時顯示",
       "types-brightness-label": "亮度",
       "types-custom-text-label": "自訂文字",
       "types-input-volume-label": "輸入音量",
       "types-lockkey-label": "Lock 鍵",
+      "types-media-description": "媒體播放狀態變更時顯示 OSD（播放、暫停、跳過）。",
+      "types-media-label": "媒體播放",
       "types-volume-label": "輸出音量"
     },
     "plugins": {
@@ -1067,12 +1106,15 @@
       "filter-not-downloaded": "未下載",
       "filter-tags-description": "以分類或下載狀態篩選外掛模組",
       "filter-tags-label": "標籤",
+      "hot-reload-description": "當模組使用的檔案變動時自動重新載入, 在模組開發時特別有用",
+      "hot-reload-label": "熱重載 (開發模式)",
       "hot-reloaded": "重新載入模組: {name}",
       "install-error": "安裝失敗: {error}",
       "install-incompatible": "{plugin} 需要 Noctalia v{version} 或以上",
       "install-success": "成功安裝 {plugin}",
       "installed-description": "設定及管理所有本機已安裝的外掛模組",
       "installed-label": "已安裝的外掛模組",
+      "installed-no-plugins-description": "從 \"可用\"頁面來安裝外掛模組",
       "installed-no-plugins-label": "沒有安裝外掛模組",
       "installing": "正在安裝 {plugin}...",
       "open-plugin-page": "打開模組頁面",
@@ -1138,6 +1180,7 @@
     },
     "system-monitor": {
       "critical-color-label": "危急顏色",
+      "custom-highlight-colors-title-label": "自訂突出色",
       "disk-section-label": "磁碟使用量",
       "enable-dgpu-monitoring-description": "注意: 這個選項會喚醒你的 GPU (NVIDIA/AMD), 在混合顯卡的筆電上可能會嚴重影響電池續航力",
       "enable-dgpu-monitoring-label": "啟用監視獨立 GPU",
@@ -1145,12 +1188,15 @@
       "external-monitor-placeholder": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor",
       "general-desc": "設定系統監視器的外觀及行為",
       "gpu-section-label": "GPU 溫度",
+      "highlight-colors-section-label": "突出色",
       "polling-interval-label": "輪詢間隔",
-      "polling-section-description": "設定該多久更新一次各項系統計量值",
+      "polling-section-description": "設定該多久更新一次系統計量值",
       "polling-section-label": "輪詢間隔",
       "threshold-critical": "危急門檻",
       "threshold-warning": "警告門檻",
       "thresholds-section-description": "調整每個系統量測值的警告/危急門檻",
+      "use-custom-highlight-colors-description": "當停用時, 將會使用主題預設的突出色",
+      "use-custom-highlight-colors-label": "使用自訂的突出色",
       "warning-color-label": "警告顏色"
     },
     "user-interface": {
@@ -1169,6 +1215,7 @@
       "dimmer-opacity-reset": "重設調暗桌面不透明度",
       "panel-background-opacity-description": "設定所有面板的背景不透明度 (工具列, 啟動器, 設定等...)",
       "panel-background-opacity-label": "面板背景不透明度",
+      "panels-attached-to-bar-description": "將面板鎖定在工具列及畫面邊緣, 配合倒角可做出更一致的效果",
       "panels-attached-to-bar-label": "面板貼齊邊緣",
       "panels-overlay-description": "確保工具列及面板始終可見, 甚至疊過全螢幕的程式",
       "panels-overlay-label": "維持工具列及面板在最上層",
@@ -1201,6 +1248,7 @@
       "look-feel-fill-mode-label": "填充模式",
       "look-feel-title": "外觀及風格",
       "look-feel-transition-duration-description": "設定轉場動畫使用的秒數",
+      "look-feel-transition-duration-label": "轉場長度",
       "look-feel-transition-type-description": "切換桌布時的轉場樣式",
       "look-feel-transition-type-label": "轉場樣式",
       "settings-desc": "控制桌布的顯示和管理",
@@ -1212,8 +1260,9 @@
       "settings-folder-label": "桌布文件夾",
       "settings-hide-wallpaper-filenames-tooltip-hide": "隱藏檔案名稱",
       "settings-hide-wallpaper-filenames-tooltip-show": "顯示檔案名稱",
-      "settings-monitor-specific-description": "替個別螢幕設定不同的桌布文件夾",
-      "settings-monitor-specific-tooltip": "螢幕桌布文件夾",
+      "settings-monitor-specific-description": "替個別顯示器設定不同的桌布文件夾",
+      "settings-monitor-specific-label": "給特定顯示器所使用的文件夾",
+      "settings-monitor-specific-tooltip": "顯示器桌布文件夾",
       "settings-recursive-search-description": "也同時搜尋桌布目錄底下的子文件夾",
       "settings-recursive-search-label": "搜尋子文件夾",
       "settings-select-monitor-folder": "選擇顯示器所使用的桌布文件夾",
@@ -1257,7 +1306,7 @@
     "title": "工作階段選單"
   },
   "setup": {
-    "all-done": "完成！",
+    "all-done": "完成!",
     "appearance": {
       "subheader": "選擇深色模式及顏色來源 (Matugen 或現有設計)"
     },
@@ -1266,9 +1315,9 @@
       "subheader": "調整工具列的位置, 密度, 比例等等"
     },
     "skip-setup": "跳過設定",
-    "telemetry-wizard-done": "了解！",
-    "telemetry-wizard-note": "您有控制權 — 隨時可以在「設定」中啟用或停用此功能",
-    "telemetry-wizard-subtitle": "我們新增了匿名分析功能，以協助改善 Noctalia",
+    "telemetry-wizard-done": "了解!",
+    "telemetry-wizard-note": "你隨時可以在 \"設定\" 中啟用或停用此功能",
+    "telemetry-wizard-subtitle": "我們新增了匿名分析功能以協助改善 Noctalia",
     "telemetry-wizard-title": "隱私權更新",
     "wallpaper": {
       "choose-dir": "選擇一個存放你桌布的目錄",
@@ -1285,7 +1334,7 @@
       "subheader": "用一個漂亮的背景營造氛圍"
     },
     "welcome-note": "幾個基本的設定讓你簡單上手 — 所有的選項可以在設定裡調整",
-    "welcome-subtitle": "讓我們一起打造獨一無二的桌面",
+    "welcome-subtitle": "讓你的桌面獨一無二",
     "welcome-title": "歡迎來到 Noctalia！"
   },
   "system": {
@@ -1406,6 +1455,7 @@
     "delete-notification": "刪除通知",
     "do-not-disturb-enabled": "勿擾模式",
     "expand": "展開側邊欄",
+    "forget-network": "忘記網路設定",
     "grid-view": "方格檢視",
     "hidden-files-hide": "隱藏檔案",
     "hide-unnamed-devices": "隱藏不具名裝置",
@@ -1492,6 +1542,12 @@
       "title": "挑選桌布",
       "wallhaven-settings-title": "Wallhaven 設定"
     },
+    "transitions": {
+      "disc": "圓盤",
+      "fade": "淡入",
+      "stripes": "條紋",
+      "wipe": "擦除"
+    },
     "try-different-search": "試著用不同的搜尋字串",
     "wallhaven": {
       "loading": "正在載入桌布...",
@@ -1549,11 +1605,16 @@
     "file-picker": {
       "item": "項目",
       "items": "項目",
+      "search-placeholder": "選擇檔案及文件夾...",
       "select-file": "選擇檔案",
       "select-folder": "選擇文件夾",
-      "selected:": "已選取:"
+      "selected": "已選取：",
+      "title": "檔案選取器"
     },
     "file-picker-title": "選擇一個檔案",
+    "icon-picker": {
+      "title": "圖示選取器"
+    },
     "tooltip-placeholder": "暫用文字"
   },
   "wifi": {

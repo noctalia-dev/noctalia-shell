@@ -23,7 +23,9 @@ ColumnLayout {
     rowSpacing: Style.marginM
 
     // Header row
-    Item { Layout.fillWidth: true }
+    Item {
+      Layout.fillWidth: true
+    }
 
     NText {
       Layout.alignment: Qt.AlignHCenter
@@ -209,5 +211,4 @@ ColumnLayout {
       onValueChanged: Settings.data.systemMonitor.diskCriticalThreshold = value
     }
   }
-
 }

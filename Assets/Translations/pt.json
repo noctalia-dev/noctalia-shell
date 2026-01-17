@@ -533,7 +533,10 @@
     "results": "resultados"
   },
   "lock-screen": {
-    "password": "Digite sua senha..."
+    "authenticating": "Autenticando...",
+    "password": "Digite sua senha...",
+    "restart": "Reiniciar",
+    "shut-down": "Desligar"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Versão instalada:",
       "noctalia-latest-version": "Última versão:",
       "noctalia-title": "Shell Noctalia",
+      "privacy-policy": "Política de privacidade",
       "support": "Apoie-nos",
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
@@ -899,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Copiar configurações",
       "fonts-default-description": "Fonte principal usada em toda a interface.",
       "fonts-default-label": "Fonte padrão",
       "fonts-default-placeholder": "Selecione a fonte padrão...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Mostrar cantos da tela",
       "screen-corners-solid-black-description": "Use preto sólido em vez da cor de fundo da barra.",
       "screen-corners-solid-black-label": "Cantos pretos sólidos",
-      "screen-corners-title": "Cantos da tela"
+      "screen-corners-title": "Cantos da tela",
+      "settings-copied": "Configurações copiadas para a área de transferência"
     },
     "hooks": {
       "info-command-info-description": "• Comandos são executados via shell (sh -lc)<br>• Comandos rodam em segundo plano (desanexados)<br>• Botões de teste executam com os valores atuais",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Salvar urgência baixa no histórico",
       "history-normal-urgency-description": "Salvar notificações de prioridade normal no histórico.",
       "history-normal-urgency-label": "Salvar urgência normal no histórico",
+      "media-toast-description": "Mostrar um toast quando o estado de reprodução de mídia mudar.",
+      "media-toast-label": "Multimédia",
       "monitors-desc": "Mostra a notificação em monitores específicos. O padrão é todos, se nenhum for escolhido.",
       "settings-always-on-top-description": "Exibe notificações acima de janelas em tela cheia e outras camadas.",
       "settings-background-opacity-description": "Ajustar a opacidade dos fundos das notificações.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Volume de entrada",
       "types-lockkey-description": "Mostrar o OSD quando Bloq Caps, Bloq Num ou Bloq Rol forem alternadas.",
       "types-lockkey-label": "Teclas de bloqueio",
+      "types-media-description": "Mostrar OSD quando o estado de reprodução de mídia mudar (reproduzir, pausar, pular).",
+      "types-media-label": "Reprodução de mídia",
       "types-title": "Eventos de disparo OSD",
       "types-volume-description": "Mostrar o OSD quando o volume de saída de áudio mudar.",
       "types-volume-label": "Volume de saída"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "item",
       "items": "itens",
+      "search-placeholder": "Pesquisar arquivos e pastas...",
       "select-current": "Selecionar atual",
       "select-file": "Selecionar arquivo",
       "select-folder": "Selecionar pasta",
-      "selected:": "Selecionado:",
+      "selected": "Selecionado:",
       "title": "Seletor de arquivos"
     },
     "file-picker-title": "Selecione um arquivo",

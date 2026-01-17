@@ -168,5 +168,4 @@ ColumnLayout {
       suffix: " ms"
     }
   }
-
 }

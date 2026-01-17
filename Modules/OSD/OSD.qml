@@ -19,8 +19,7 @@ Variants {
     Volume,
     InputVolume,
     Brightness,
-    LockKey,
-    Media
+    LockKey
   }
 
   model: Quickshell.screens.filter(screen => (Settings.data.osd.monitors.includes(screen.name) || Settings.data.osd.monitors.length === 0) && Settings.data.osd.enabled)
@@ -39,11 +38,6 @@ Variants {
 
     // Lock Key States
     property string lastLockKeyChanged: ""  // "caps", "num", "scroll", or ""
-
-    // Media States
-    property string mediaAction: "" // "play", "pause", or ""
-    property string mediaTrackTitle: ""
-    property string mediaTrackArtist: ""
 
     // Current values (computed properties)
     readonly property real currentVolume: AudioService.volume
@@ -84,12 +78,6 @@ Variants {
         return currentBrightness <= 0.5 ? "brightness-low" : "brightness-high";
       case OSD.Type.LockKey:
         return "keyboard";
-      case OSD.Type.Media:
-        if (root.mediaAction === "pause")
-          return "media-pause";
-        if (root.mediaAction === "play")
-          return "media-play";
-        return "music";
       default:
         return "";
       }
@@ -105,8 +93,7 @@ Variants {
         return currentBrightness;
       case OSD.Type.LockKey:
         return 1.0; // Always show 100% when showing lock key status
-      case OSD.Type.Media:
-        return 1.0; // Always show full for media
+
       default:
         return 0;
       }
@@ -123,21 +110,6 @@ Variants {
       if (currentOSDType === OSD.Type.LockKey) {
         // For lock keys, return the pre-determined status text
         return lastLockKeyChanged;
-      }
-
-      if (currentOSDType === OSD.Type.Media) {
-        // For media, show the action or track info
-        if (root.mediaTrackTitle) {
-          return root.mediaTrackTitle;
-        }
-        switch (root.mediaAction) {
-        case "play":
-          return "Playing";
-        case "pause":
-          return "Paused";
-        default:
-          return "Media";
-        }
       }
 
       const value = getCurrentValue();
@@ -173,10 +145,6 @@ Variants {
           return LockKeysService.scrollLockOn ? Color.mPrimary : Color.mOnSurfaceVariant;
         }
       }
-      // For media, use primary color
-      if (currentOSDType === OSD.Type.Media) {
-        return Color.mPrimary;
-      }
       return Color.mPrimary;
     }
 
@@ -194,10 +162,6 @@ Variants {
         } else if (lastLockKeyChanged.startsWith("SCROLL")) {
           return LockKeysService.scrollLockOn ? Color.mPrimary : Color.mOnSurfaceVariant;
         }
-      }
-
-      if (currentOSDType === OSD.Type.Media) {
-        return Color.mPrimary;
       }
 
       return Color.mOnSurface;
@@ -220,14 +184,6 @@ Variants {
         return;
       }
       showOSD(OSD.Type.Brightness);
-    }
-
-    // Media Control handling
-    function triggerMediaAction(action) {
-      root.mediaAction = action;
-      root.mediaTrackTitle = MediaService.trackTitle;
-      root.mediaTrackArtist = MediaService.trackArtist;
-      showOSD(OSD.Type.Media);
     }
 
     // Check if a specific OSD type is enabled
@@ -328,48 +284,6 @@ Variants {
       }
     }
 
-    // Media playback monitoring
-    Connections {
-      target: MediaService
-
-      function onIsPlayingChanged() {
-        if (MediaService.isPlaying) {
-          root.mediaAction = "play";
-          root.mediaTrackTitle = MediaService.trackTitle;
-          root.mediaTrackArtist = MediaService.trackArtist;
-          showOSD(OSD.Type.Media);
-        } else {
-          // Show OSD when track is paused
-          root.mediaAction = "pause";
-          root.mediaTrackTitle = MediaService.trackTitle;
-          root.mediaTrackArtist = MediaService.trackArtist;
-          showOSD(OSD.Type.Media);
-        }
-      }
-
-      function onCurrentPlayerChanged() {
-        // Show OSD when a new player takes over
-        if (MediaService.currentPlayer) {
-          root.mediaTrackTitle = MediaService.trackTitle;
-          root.mediaTrackArtist = MediaService.trackArtist;
-          if (MediaService.isPlaying) {
-            root.mediaAction = "play";
-            showOSD(OSD.Type.Media);
-          }
-        }
-      }
-
-      function onTrackTitleChanged() {
-        // Show OSD when track changes
-        root.mediaTrackTitle = MediaService.trackTitle;
-        root.mediaTrackArtist = MediaService.trackArtist;
-        root.mediaAction = "play";
-        if (MediaService.isPlaying) {
-          showOSD(OSD.Type.Media);
-        }
-      }
-    }
-
     // LockKeys monitoring with a cleaner approach
     // Only connect when LockKey OSD is enabled to avoid starting the service unnecessarily
     Connections {
@@ -420,9 +334,8 @@ Variants {
         id: lockKeyTextMetrics
         visible: false
         text: root.getDisplayPercentage()
-        pointSize: Style.fontSizeM
+        pointSize: Style.fontSizeS
         family: Settings.data.ui.fontFixed
-        font.weight: Style.fontWeightMedium
         elide: Text.ElideNone
         wrapMode: Text.NoWrap
       }
@@ -450,7 +363,7 @@ Variants {
         const textWidth = Math.ceil(lockKeyTextMetrics.contentWidth || 0);
         if (textWidth === 0) {
           // Fallback: estimate based on text length if measurement not ready
-          const fontSize = Style.fontSizeM * Settings.data.ui.fontFixedScale * Style.uiScaleRatio;
+          const fontSize = Style.fontSizeS * Settings.data.ui.fontFixedScale * Style.uiScaleRatio;
           const estimatedWidth = text.length * fontSize * 0.6;
           const iconWidth = Style.fontSizeXL * Style.uiScaleRatio;
           const margins = Style.marginL * 2;
@@ -479,7 +392,7 @@ Variants {
         }
         // Calculate height: font size * char count + margins + icon space
         // Font size M (11pt) scaled, plus some spacing between chars
-        const fontSize = Style.fontSizeM * Settings.data.ui.fontFixedScale * Style.uiScaleRatio;
+        const fontSize = Style.fontSizeS * Settings.data.ui.fontFixedScale * Style.uiScaleRatio;
         const charHeight = fontSize * 1.3; // Add 30% for line height (matches Layout.preferredHeight)
         const textHeight = charCount * charHeight;
         // Background margins (Style.marginM * 1.5 * 2 for top and bottom)
@@ -610,7 +523,6 @@ Variants {
             TextMetrics {
               id: percentageMetrics
               font.family: Settings.data.ui.fontFixed
-              font.weight: Style.fontWeightMedium
               font.pointSize: Style.fontSizeS * (Settings.data.ui.fontFixedScale * Style.uiScaleRatio)
               text: "150%"
             }
@@ -635,31 +547,16 @@ Variants {
               visible: root.currentOSDType === OSD.Type.LockKey
               text: root.getDisplayPercentage()
               color: root.getProgressColor()
-              pointSize: Style.fontSizeM
-              family: Settings.data.ui.fontFixed
-              font.weight: Style.fontWeightMedium
+              pointSize: Style.fontSizeS
               elide: Text.ElideNone
               Layout.fillWidth: true
               horizontalAlignment: Text.AlignHCenter
               Layout.alignment: Qt.AlignVCenter
             }
 
-            // Media Information Text (replaces progress bar)
-            NText {
-              visible: root.currentOSDType === OSD.Type.Media
-              text: root.getDisplayPercentage()
-              color: Color.mOnSurface
-              pointSize: Style.fontSizeS
-              font.weight: Style.fontWeightRegular
-              horizontalAlignment: Text.AlignLeft
-              elide: Text.ElideRight
-              Layout.fillWidth: true
-              Layout.alignment: Qt.AlignVCenter
-            }
-
             // Progress Bar for Volume/Brightness
             Rectangle {
-              visible: root.currentOSDType !== OSD.Type.LockKey && root.currentOSDType !== OSD.Type.Media
+              visible: root.currentOSDType !== OSD.Type.LockKey
               Layout.fillWidth: true
               Layout.alignment: Qt.AlignVCenter
               height: panel.barThickness
@@ -691,7 +588,7 @@ Variants {
 
             // Percentage Text for Volume/Brightness
             NText {
-              visible: root.currentOSDType !== OSD.Type.LockKey && root.currentOSDType !== OSD.Type.Media
+              visible: root.currentOSDType !== OSD.Type.LockKey
               text: root.getDisplayPercentage()
               color: Color.mOnSurface
               pointSize: Style.fontSizeS
@@ -713,8 +610,8 @@ Variants {
             anchors.fill: parent
             anchors.topMargin: Style.marginL
             anchors.bottomMargin: Style.marginL
-            spacing: root.currentOSDType === OSD.Type.LockKey || root.currentOSDType === OSD.Type.Media ? Style.marginM : Style.marginS
-            clip: root.currentOSDType !== OSD.Type.LockKey && root.currentOSDType !== OSD.Type.Media
+            spacing: root.currentOSDType === OSD.Type.LockKey ? Style.marginM : Style.marginS
+            clip: root.currentOSDType !== OSD.Type.LockKey
 
             ColumnLayout {
               id: textVerticalLayout
@@ -757,12 +654,11 @@ Variants {
                 NText {
                   text: modelData || ""
                   color: root.getProgressColor()
-                  pointSize: Style.fontSizeM
+                  pointSize: Style.fontSizeS
                   family: Settings.data.ui.fontFixed
-                  font.weight: Style.fontWeightMedium
                   Layout.fillWidth: true
                   Layout.preferredHeight: {
-                    const fontSize = Style.fontSizeM * Settings.data.ui.fontFixedScale * Style.uiScaleRatio;
+                    const fontSize = Style.fontSizeS * Settings.data.ui.fontFixedScale * Style.uiScaleRatio;
                     return Math.round(fontSize * 1.3);
                   }
                   Layout.alignment: Qt.AlignHCenter
@@ -773,12 +669,11 @@ Variants {
             }
 
             NText {
-              visible: root.currentOSDType !== OSD.Type.LockKey && root.currentOSDType !== OSD.Type.Media
+              visible: root.currentOSDType !== OSD.Type.LockKey
               text: root.getDisplayPercentage()
               color: Color.mOnSurface
               pointSize: Style.fontSizeS
               family: Settings.data.ui.fontFixed
-              font.weight: Style.fontWeightRegular
               Layout.fillWidth: true
               Layout.alignment: Qt.AlignHCenter
               horizontalAlignment: Text.AlignHCenter
@@ -786,25 +681,10 @@ Variants {
               Layout.preferredHeight: Math.round(20 * Style.uiScaleRatio)
             }
 
-            NText {
-              visible: root.currentOSDType === OSD.Type.Media
-              text: root.getDisplayPercentage()
-              color: Color.mOnSurface
-              pointSize: Style.fontSizeXS
-              font.weight: Style.fontWeightRegular
-              horizontalAlignment: Text.AlignLeft
-              verticalAlignment: Text.AlignVCenter
-              elide: Text.ElideRight
-              wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-              Layout.fillWidth: true
-              Layout.alignment: Qt.AlignHCenter
-              Layout.preferredHeight: Math.round(20 * Style.uiScaleRatio)
-            }
-
             Item {
-              visible: root.currentOSDType !== OSD.Type.LockKey && root.currentOSDType !== OSD.Type.Media
+              visible: root.currentOSDType !== OSD.Type.LockKey
               Layout.fillWidth: true
-              Layout.fillHeight: root.currentOSDType !== OSD.Type.LockKey && root.currentOSDType !== OSD.Type.Media
+              Layout.fillHeight: root.currentOSDType !== OSD.Type.LockKey
 
               Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter

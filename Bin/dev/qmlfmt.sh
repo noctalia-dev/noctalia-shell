@@ -15,8 +15,13 @@ for path in "/usr/lib64/qt6/bin/qmlformat" "/usr/lib/qt6/bin/qmlformat"; do
     fi
 done
 
+# Fallback to PATH
+if [ -z "$QMLFORMAT" ] && command -v qmlformat &>/dev/null; then
+    QMLFORMAT="qmlformat"
+fi
+
 if [ -z "$QMLFORMAT" ]; then
-    echo "No 'qmlformat' found in standard locations." >&2
+    echo "No 'qmlformat' found in standard locations or PATH." >&2
     echo "To proceed, install it via 'qt6-tools', 'qt6-declarative-tools' or 'qt6-qtdeclarative-devel'" >&2
     exit 1
 fi

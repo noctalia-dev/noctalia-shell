@@ -533,7 +533,10 @@
     "results": "sonuçlar"
   },
   "lock-screen": {
-    "password": "Parolanızı girin..."
+    "authenticating": "Doğrulanıyor...",
+    "password": "Parolanızı girin...",
+    "restart": "Yeniden başlat",
+    "shut-down": "Kapat"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Yüklü sürüm:",
       "noctalia-latest-version": "En son sürüm:",
       "noctalia-title": "Noctalia kabuğu",
+      "privacy-policy": "Gizlilik politikası",
       "support": "Bizi destekleyin",
       "system-cpu": "İşlemci:",
       "system-disk": "Disk:",
@@ -899,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Ayarları kopyala",
       "fonts-default-description": "Arayüz boyunca kullanılan ana yazı tipi.",
       "fonts-default-label": "Varsayılan yazı tipi",
       "fonts-default-placeholder": "Varsayılan yazı tipi seçin...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Ekran köşelerini göster",
       "screen-corners-solid-black-description": "Araç çubuğu arka plan rengi yerine tam siyah kullan.",
       "screen-corners-solid-black-label": "Siyah köşeler",
-      "screen-corners-title": "Ekran köşeleri"
+      "screen-corners-title": "Ekran köşeleri",
+      "settings-copied": "Ayarlar panoya kopyalandı"
     },
     "hooks": {
       "info-command-info-description": "• Komutlar kabuk (sh -lc) ile yürütülür<br>• Komutlar arka planda yürütülür (ayrık)<br>• Test düğmeleri mevcut değerlerle yürütülür",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Düşük aciliyeti geçmişe kaydet",
       "history-normal-urgency-description": "Normal öncelikli bildirimleri geçmişe kaydet.",
       "history-normal-urgency-label": "Normal aciliyeti geçmişe kaydet",
+      "media-toast-description": "Medya oynatma durumu değiştiğinde bir bildirim göster.",
+      "media-toast-label": "Medya",
       "monitors-desc": "Bildirimleri belirli ekranlarda gösterin. Hiçbiri seçilmezse varsayılan olarak tümünde gösterilir.",
       "settings-always-on-top-description": "Bildirimleri tam ekran pencerelerinin ve diğer katmanların üzerinde görüntüle.",
       "settings-background-opacity-description": "Bildirim arka planlarının opaklığını ayarlayın.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Giriş sesi",
       "types-lockkey-description": "Büyük Harf Kilidi, Sayı Kilidi veya Kaydırma Kilidi değiştirildiğinde OSD'yi göster.",
       "types-lockkey-label": "Kilit tuşları",
+      "types-media-description": "Medya oynatma durumu değiştiğinde OSD'yi göster (oynat, duraklat, atla).",
+      "types-media-label": "Medya oynatma",
       "types-title": "OSD tetikleme olayları",
       "types-volume-description": "Ses çıkış düzeyi değiştiğinde OSD'yi göster.",
       "types-volume-label": "Çıkış sesi"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "öğe",
       "items": "öğeler",
+      "search-placeholder": "Dosya ve klasörlerde ara...",
       "select-current": "Mevcudu seç",
       "select-file": "Dosya seç",
       "select-folder": "Klasör seç",
-      "selected:": "Seçilen:",
+      "selected": "Seçilen:",
       "title": "Dosya seçici"
     },
     "file-picker-title": "Bir dosya seçin",

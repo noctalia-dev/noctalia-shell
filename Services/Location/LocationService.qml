@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Commons
 
-// Weather logic and caching with stable UI properties
+// Location and weather service with decoupled geocoding and weather fetching.
 Singleton {
   id: root
 
@@ -13,9 +13,9 @@ Singleton {
   property int weatherUpdateFrequency: 30 * 60 // 30 minutes expressed in seconds
   property bool isFetchingWeather: false
 
-  readonly property alias data: adapter // Used to access via LocationService.data.xxx from outside, best to use "adapter" inside the service.
+  readonly property alias data: adapter
 
-  // Stable UI properties - only updated when location is fully resolved
+  // Stable UI properties - only updated when location is successfully geocoded
   property bool coordinatesReady: false
   property string stableLatitude: ""
   property string stableLongitude: ""
@@ -28,7 +28,6 @@ Singleton {
     onAdapterUpdated: saveTimer.start()
     onLoaded: {
       Logger.d("Location", "Loaded cached data");
-      // Initialize stable properties on load
       if (adapter.latitude !== "" && adapter.longitude !== "" && adapter.weatherLastFetch > 0) {
         root.stableLatitude = adapter.latitude;
         root.stableLongitude = adapter.longitude;
@@ -36,16 +35,14 @@ Singleton {
         root.coordinatesReady = true;
         Logger.i("Location", "Coordinates ready");
       }
-      updateWeather();
+      update();
     }
     onLoadFailed: function (error) {
-      updateWeather();
+      update();
     }
 
     JsonAdapter {
       id: adapter
-
-      // Core data properties
       property string latitude: ""
       property string longitude: ""
       property string name: ""
@@ -54,7 +51,7 @@ Singleton {
     }
   }
 
-  // Helper property for UI components (outside JsonAdapter to avoid binding loops)
+  // Formatted coordinates for UI display
   readonly property string displayCoordinates: {
     if (!root.coordinatesReady || root.stableLatitude === "" || root.stableLongitude === "") {
       return "";
@@ -64,14 +61,14 @@ Singleton {
     return `${lat}, ${lon}`;
   }
 
-  // Every 20s check if we need to fetch new weather
+  // Update timer runs when weather is enabled or location-based scheduling is active
   Timer {
     id: updateTimer
     interval: 20 * 1000
     running: Settings.data.location.weatherEnabled || Settings.data.colorSchemes.schedulingMode == "location"
     repeat: true
     onTriggered: {
-      updateWeather();
+      update();
     }
   }
 
@@ -82,37 +79,74 @@ Singleton {
     onTriggered: locationFileView.writeAdapter()
   }
 
-  // --------------------------------
   function init() {
-    // does nothing but ensure the singleton is created
-    // do not remove
     Logger.i("Location", "Service started");
   }
 
-  // --------------------------------
   function resetWeather() {
-    Logger.i("Location", "Resetting weather data");
+    Logger.i("Location", "Resetting location and weather data");
 
-    // Mark as changing to prevent UI updates
     root.coordinatesReady = false;
-    // Reset stable properties
     root.stableLatitude = "";
     root.stableLongitude = "";
     root.stableName = "";
 
-    // Reset core data
     adapter.latitude = "";
     adapter.longitude = "";
     adapter.name = "";
     adapter.weatherLastFetch = 0;
     adapter.weather = null;
-
-    // Try to fetch immediately
-    updateWeather();
+    update();
   }
 
-  // --------------------------------
-  function updateWeather() {
+  // Main update function - geocodes location if needed, then fetches weather if enabled
+  function update() {
+    updateLocation();
+
+    if (Settings.data.location.weatherEnabled) {
+      updateWeatherData();
+    }
+  }
+
+  // Runs independently of weather toggle
+  function updateLocation() {
+    const locationChanged = adapter.name !== Settings.data.location.name;
+    const needsGeocoding = (adapter.latitude === "") || (adapter.longitude === "") || locationChanged;
+
+    if (!needsGeocoding) {
+      return;
+    }
+
+    if (isFetchingWeather) {
+      Logger.w("Location", "Location update already in progress");
+      return;
+    }
+
+    isFetchingWeather = true;
+
+    if (locationChanged) {
+      root.coordinatesReady = false;
+      Logger.d("Location", "Location changed from", adapter.name, "to", Settings.data.location.name);
+    }
+
+    geocodeLocation(Settings.data.location.name, function (latitude, longitude, name, country) {
+      Logger.d("Location", "Geocoded", Settings.data.location.name, "to:", latitude, "/", longitude);
+
+      adapter.name = Settings.data.location.name;
+      adapter.latitude = latitude.toString();
+      adapter.longitude = longitude.toString();
+      root.stableLatitude = adapter.latitude;
+      root.stableLongitude = adapter.longitude;
+      root.stableName = `${name}, ${country}`;
+      root.coordinatesReady = true;
+
+      isFetchingWeather = false;
+      Logger.i("Location", "Coordinates ready");
+    }, errorCallback);
+  }
+
+  // Fetch weather data if enabled and coordinates are available
+  function updateWeatherData() {
     if (!Settings.data.location.weatherEnabled) {
       return;
     }
@@ -122,46 +156,22 @@ Singleton {
       return;
     }
 
-    if ((adapter.weatherLastFetch === "") || (adapter.weather === null) || (adapter.latitude === "") || (adapter.longitude === "") || (adapter.name !== Settings.data.location.name) || (Time.timestamp >= adapter.weatherLastFetch + weatherUpdateFrequency)) {
-      getFreshWeather();
+    if (adapter.latitude === "" || adapter.longitude === "") {
+      Logger.w("Location", "Cannot fetch weather without coordinates");
+      return;
+    }
+    const needsWeatherUpdate = (adapter.weatherLastFetch === "") || (adapter.weather === null) || (Time.timestamp >= adapter.weatherLastFetch + weatherUpdateFrequency);
+
+    if (needsWeatherUpdate) {
+      isFetchingWeather = true;
+      fetchWeatherData(adapter.latitude, adapter.longitude, errorCallback);
     }
   }
 
-  // --------------------------------
-  function getFreshWeather() {
-    isFetchingWeather = true;
-
-    // Check if location name has changed
-    const locationChanged = data.name !== Settings.data.location.name;
-    if (locationChanged) {
-      root.coordinatesReady = false;
-      Logger.d("Location", "Location changed from", adapter.name, "to", Settings.data.location.name);
-    }
-
-    if ((adapter.latitude === "") || (adapter.longitude === "") || locationChanged) {
-      _geocodeLocation(Settings.data.location.name, function (latitude, longitude, name, country) {
-        Logger.d("Location", "Geocoded", Settings.data.location.name, "to:", latitude, "/", longitude);
-
-        // Save location name
-        adapter.name = Settings.data.location.name;
-
-        // Save GPS coordinates
-        adapter.latitude = latitude.toString();
-        adapter.longitude = longitude.toString();
-
-        root.stableName = `${name}, ${country}`;
-
-        _fetchWeather(latitude, longitude, errorCallback);
-      }, errorCallback);
-    } else {
-      _fetchWeather(adapter.latitude, adapter.longitude, errorCallback);
-    }
-  }
-
-  // --------------------------------
-  function _geocodeLocation(locationName, callback, errorCallback) {
+  // Query geocoding API to convert location name to coordinates
+  function geocodeLocation(locationName, callback, errorCallback) {
     Logger.d("Location", "Geocoding location name");
-    var geoUrl = "https://assets.noctalia.dev/geocode.php?city=" + encodeURIComponent(locationName) + "&language=en&format=json";
+    var geoUrl = "https://noctalia.dev:7777/geocode?city=" + encodeURIComponent(locationName);
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
       if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -185,8 +195,8 @@ Singleton {
     xhr.send();
   }
 
-  // --------------------------------
-  function _fetchWeather(latitude, longitude, errorCallback) {
+  // Fetch weather data from Open-Meteo API
+  function fetchWeatherData(latitude, longitude, errorCallback) {
     Logger.d("Location", "Fetching weather from api.open-meteo.com");
     var url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude + "&longitude=" + longitude + "&current_weather=true&current=relativehumidity_2m,surface_pressure&daily=temperature_2m_max,temperature_2m_min,weathercode,sunset,sunrise&timezone=auto";
     var xhr = new XMLHttpRequest();

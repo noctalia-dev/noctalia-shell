@@ -42,6 +42,7 @@ ColumnLayout {
       inputIconName: root.inputIconName
       Layout.fillWidth: true
       Layout.alignment: Qt.AlignVCenter
+      enabled: root.enabled
       onTextChanged: root.inputTextChanged(text)
       onEditingFinished: root.inputEditingFinished()
     }

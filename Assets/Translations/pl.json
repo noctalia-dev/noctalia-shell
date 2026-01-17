@@ -533,7 +533,10 @@
     "results": "wyniki"
   },
   "lock-screen": {
-    "password": "Wprowadź hasło..."
+    "authenticating": "Uwierzytelnianie...",
+    "password": "Wprowadź hasło...",
+    "restart": "Restart",
+    "shut-down": "Wyłącz"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Zainstalowana wersja:",
       "noctalia-latest-version": "Najnowsza wersja:",
       "noctalia-title": "Noctalia shell",
+      "privacy-policy": "Polityka prywatności",
       "support": "Wesprzyj nas",
       "system-cpu": "Procesor:",
       "system-disk": "Dysk:",
@@ -899,6 +903,7 @@
       "title": "Dok"
     },
     "general": {
+      "copy-settings": "Kopiuj ustawienia",
       "fonts-default-description": "Główna czcionka używana w całym interfejsie.",
       "fonts-default-label": "Czcionka domyślna",
       "fonts-default-placeholder": "Wybierz czcionkę domyślną...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Pokaż narożniki ekranu",
       "screen-corners-solid-black-description": "Użyj jednolitej czerni zamiast koloru tła paska.",
       "screen-corners-solid-black-label": "Jednolicie czarne narożniki",
-      "screen-corners-title": "Narożniki ekranu"
+      "screen-corners-title": "Narożniki ekranu",
+      "settings-copied": "Ustawienia skopiowane do schowka"
     },
     "hooks": {
       "info-command-info-description": "• Polecenia są wykonywane przez powłokę (sh -lc)<br>• Polecenia działają w tle (detached)<br>• Przyciski testowe wykonują się z aktualnymi wartościami",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Odeślij niską pilność do historii",
       "history-normal-urgency-description": "Zapisuj powiadomienia o normalnym priorytecie w historii.",
       "history-normal-urgency-label": "Zapisz normalny priorytet do historii",
+      "media-toast-description": "Wyświetl toast, gdy zmieni się stan odtwarzania multimediów.",
+      "media-toast-label": "Media",
       "monitors-desc": "Pokazuj powiadomienia na konkretnych monitorach. Domyślnie na wszystkich.",
       "settings-always-on-top-description": "Wyświetlaj powiadomienia nad oknami pełnoekranowymi i innymi warstwami.",
       "settings-background-opacity-description": "Dostosuj przezroczystość tła powiadomień.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Głośność wejściowa",
       "types-lockkey-description": "Pokazuj OSD podczas przełączania Caps Lock, Num Lock lub Scroll Lock.",
       "types-lockkey-label": "Klawisze blokady",
+      "types-media-description": "Wyświetlaj OSD, gdy zmieni się stan odtwarzania multimediów (odtwarzanie, pauza, pomijanie).",
+      "types-media-label": "Odtwarzanie multimediów",
       "types-title": "Zdarzenia wyzwalające OSD",
       "types-volume-description": "Pokazuj OSD podczas zmiany głośności wyjścia audio.",
       "types-volume-label": "Głośność wyjściowa"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "element",
       "items": "elementy",
+      "search-placeholder": "Szukaj plików i folderów...",
       "select-current": "Wybierz bieżący",
       "select-file": "Wybierz plik",
       "select-folder": "Wybierz folder",
-      "selected:": "Zaznaczone:",
+      "selected": "Wybrano:",
       "title": "Wybór plików"
     },
     "file-picker-title": "Wybierz plik",

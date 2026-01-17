@@ -145,7 +145,9 @@ ColumnLayout {
   }
 
   Component.onCompleted: {
-    fastfetchProcess.running = true;
+    // Check if fastfetch is available before trying to run it
+    checkFastfetchProcess.running = true;
+
     Logger.d("VersionSubTab", "Current version:", root.currentVersion);
     Logger.d("VersionSubTab", "Is git version:", root.isGitVersion);
     // Only fetch commit info for -git versions
@@ -279,6 +281,29 @@ ColumnLayout {
         }
       } else {
         Logger.d("VersionSubTab", "gitProcess - Git command failed. Exit code:", exitCode);
+      }
+    }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
+  // Check if fastfetch is available before attempting to run it
+  Process {
+    id: checkFastfetchProcess
+    command: ["sh", "-c", "command -v fastfetch"]
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        // fastfetch is available, run it
+        Logger.d("VersionSubTab", "fastfetch found, running it");
+        fastfetchProcess.running = true;
+      } else {
+        // fastfetch not found, show error state immediately
+        Logger.w("VersionSubTab", "fastfetch not found");
+        root.systemInfoLoading = false;
+        root.systemInfoAvailable = false;
       }
     }
 
@@ -769,10 +794,21 @@ ColumnLayout {
     onToggled: checked => Settings.data.general.telemetryEnabled = checked
   }
 
-  NButton {
-    icon: "eye"
-    text: I18n.tr("panels.about.telemetry-show-data")
-    outlined: true
-    onClicked: root.copyTelemetryData()
+  RowLayout {
+    spacing: Style.marginM
+
+    NButton {
+      icon: "eye"
+      text: I18n.tr("panels.about.telemetry-show-data")
+      outlined: true
+      onClicked: root.copyTelemetryData()
+    }
+
+    NButton {
+      icon: "shield-lock"
+      text: I18n.tr("panels.about.privacy-policy")
+      outlined: true
+      onClicked: Quickshell.execDetached(["xdg-open", "https://noctalia.dev/privacy"])
+    }
   }
 }

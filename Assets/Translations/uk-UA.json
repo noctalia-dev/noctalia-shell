@@ -533,7 +533,10 @@
     "results": "результати"
   },
   "lock-screen": {
-    "password": "Введіть ваш пароль..."
+    "authenticating": "Автентифікація...",
+    "password": "Введіть ваш пароль...",
+    "restart": "Перезапустити",
+    "shut-down": "Вимкнути"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Встановлена версія:",
       "noctalia-latest-version": "Остання версія:",
       "noctalia-title": "Оболонка Noctalia",
+      "privacy-policy": "Політика конфіденційності",
       "support": "Підтримати нас",
       "system-cpu": "ЦП:",
       "system-disk": "Диск:",
@@ -899,6 +903,7 @@
       "title": "Док"
     },
     "general": {
+      "copy-settings": "Копіювати налаштування",
       "fonts-default-description": "Основний шрифт, що використовується в інтерфейсі.",
       "fonts-default-label": "Стандартний шрифт",
       "fonts-default-placeholder": "Виберіть стандартний шрифт...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Показувати кути екрана",
       "screen-corners-solid-black-description": "Використовувати суцільний чорний колір замість кольору фону панелі.",
       "screen-corners-solid-black-label": "Суцільні чорні кути",
-      "screen-corners-title": "Кути екрана"
+      "screen-corners-title": "Кути екрана",
+      "settings-copied": "Налаштування скопійовано до буфера обміну"
     },
     "hooks": {
       "info-command-info-description": "• Команди виконуються через оболонку (sh -lc)<br>• Команди запускаються у фоні (відокремлено)<br>• Кнопки тестування виконують команди з поточними значеннями",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Зберігати низьку терміновість в історії",
       "history-normal-urgency-description": "Зберігати сповіщення з нормальним пріоритетом в історії.",
       "history-normal-urgency-label": "Зберігати нормальну терміновість в історії",
+      "media-toast-description": "Показувати спливаюче повідомлення, коли змінюється стан відтворення медіа.",
+      "media-toast-label": "Медіа",
       "monitors-desc": "Показувати сповіщення на певних моніторах. За замовчуванням на всіх, якщо не вибрано.",
       "settings-always-on-top-description": "Відображати сповіщення поверх повноекранних вікон та інших шарів.",
       "settings-background-opacity-description": "Налаштуйте непрозорість фону сповіщень.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Вхідна гучність",
       "types-lockkey-description": "Показувати OSD, коли перемикаються Caps Lock, Num Lock або Scroll Lock.",
       "types-lockkey-label": "Клавіші блокування",
+      "types-media-description": "Показувати Екранне меню (OSD) при зміні стану відтворення медіа (відтворення, пауза, пропуск).",
+      "types-media-label": "Відтворення медіа",
       "types-title": "Події, що запускають OSD",
       "types-volume-description": "Показувати OSD, коли змінюється гучність аудіовиходу.",
       "types-volume-label": "Вихідна гучність"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "елемент",
       "items": "елементи",
+      "search-placeholder": "Пошук файлів та тек...",
       "select-current": "Вибрати поточне",
       "select-file": "Вибрати файл",
       "select-folder": "Вибрати теку",
-      "selected:": "Вибрано:",
+      "selected": "Вибрано:",
       "title": "Вибір файлу"
     },
     "file-picker-title": "Виберіть файл",

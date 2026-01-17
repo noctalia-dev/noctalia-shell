@@ -533,7 +533,10 @@
     "results": "encaman"
   },
   "lock-screen": {
-    "password": "Borînpeyva xwe têxîne.."
+    "authenticating": "Rastkirin...",
+    "password": "Borînpeyva xwe têxîne..",
+    "restart": "Ji nû ve dest pê bike",
+    "shut-down": "Vemrîne"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Guhertoya sazkirî:",
       "noctalia-latest-version": "Guhertoya herî dawî:",
       "noctalia-title": "Noctalia qalik",
+      "privacy-policy": "Siyaseta nepenîtiyê",
       "support": "Piştgiriya me bike",
       "system-cpu": "CPU:",
       "system-disk": "Dîsk:",
@@ -899,6 +903,7 @@
       "title": "Dok"
     },
     "general": {
+      "copy-settings": "Mîhengan kopî bike",
       "fonts-default-description": "Cûrenivîsa sereke ku li seranserê navrûyê tê bikaranîn.",
       "fonts-default-label": "Cûrenivîsa berdest",
       "fonts-default-placeholder": "Cûrenivîsa berdest hilbijêre...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Nîşandan quncikên ekranê",
       "screen-corners-solid-black-description": "Reşekî zexm bikar bîne li şûna rengê paşnavê bar.",
       "screen-corners-solid-black-label": "Goşeyên reş ên zexm",
-      "screen-corners-title": "Quncikên dîmenderê"
+      "screen-corners-title": "Quncikên dîmenderê",
+      "settings-copied": "Mîheng hatin kopîkirin bo clipboardê"
     },
     "hooks": {
       "info-command-info-description": "• Ferman bi rêya shellê (sh -lc) tên meşandin<br>• Ferman di paşperdeyê de dimeşin (veqetandî)<br>• Bişkokên ceribandinê bi nirxên heyî dimeşin",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Dîroka lezgîniya kêm tomar bike",
       "history-normal-urgency-description": "Agahiyên pêşîniya normal di dîrokê de tomar bike.",
       "history-normal-urgency-label": "Dîroka lezgîniya normal tomar bike",
+      "media-toast-description": "Dema rewşa lêdana medyayê biguhere, toastekê nîşan bide.",
+      "media-toast-label": "Medya",
       "monitors-desc": "Nîşandana agahdarkirinê li ser çavdêrên taybet. Heke neyên hilbijartin, bi awayekî xwerû hemûyan nîşan dide.",
       "settings-always-on-top-description": "Nîşandanên li ser pencereyên tev-ekran û qatên din nîşan bide.",
       "settings-background-opacity-description": "Guhertina zelaliya paşxaneyên agahdariyan.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Hêjmara têketinê",
       "types-lockkey-description": "Dema Caps Lock, Num Lock, an Scroll Lock hatin guhertin, OSD nîşan bide.",
       "types-lockkey-label": "Kilîtên qeflê",
+      "types-media-description": "Dema rewşa lêdana medyayê biguhere OSD nîşan bide (lêdan, rawestandin, derbasbûn).",
+      "types-media-label": "Lîstina medyayê",
       "types-title": "Bûyerên destpêker ên OSD",
       "types-volume-description": "Dema ku asta dengê derketina bihîstwerê diguhere, OSD nîşan bide.",
       "types-volume-label": "Hêjmara derketinê"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "babet",
       "items": "babetên",
+      "search-placeholder": "Li pel û peldankan bigere...",
       "select-current": "A heyî hilbijêre",
       "select-file": "Pelê hilbijêre",
       "select-folder": "Peldankê hilbijêre",
-      "selected:": "Bijartî:",
+      "selected": "Hûn bijartî:",
       "title": "Hilbijêrê pelê"
     },
     "file-picker-title": "Pelê hilbijêre",

@@ -427,7 +427,7 @@
     "search": "Suche",
     "security": "Sicherheit",
     "select": "Auswählen",
-    "shortcuts": "Tastenkombinationen",
+    "shortcuts": "Kurzbefehle",
     "shutdown": "Herunterfahren",
     "signal": "Signal",
     "sound": "Ton",
@@ -533,7 +533,10 @@
     "results": "Ergebnisse"
   },
   "lock-screen": {
-    "password": "Passwort eingeben..."
+    "authenticating": "Authentifizierung...",
+    "password": "Passwort eingeben...",
+    "restart": "Neu starten",
+    "shut-down": "Herunterfahren"
   },
   "notifications": {
     "panel": {
@@ -609,6 +612,7 @@
       "noctalia-installed-version": "Installierte Version:",
       "noctalia-latest-version": "Neueste Version:",
       "noctalia-title": "Noctalia Shell",
+      "privacy-policy": "Datenschutzbestimmungen",
       "support": "Unterstütze uns",
       "system-cpu": "CPU:",
       "system-disk": "Festplatte:",
@@ -671,7 +675,7 @@
       "volumes-mute-output-description": "Die Haupt-Audio-Ausgabe des Systems stummschalten.",
       "volumes-mute-output-label": "Audio-Ausgabe stummschalten",
       "volumes-output-volume-description": "Systemweite Lautstärke.",
-      "volumes-step-size-description": "Schrittgröße für Lautstärkeänderungen anpassen (Mausrad, Tastenkombinationen).",
+      "volumes-step-size-description": "Schrittgröße für Lautstärkeänderungen anpassen (Mausrad, Tastenkürzel).",
       "volumes-step-size-label": "Lautstärke-Schrittgröße",
       "volumes-volume-overdrive-description": "Erlaubt das Anheben der Lautstärke über 100%. Wird möglicherweise nicht von aller Hardware unterstützt.",
       "volumes-volume-overdrive-label": "Lautstärke-Übersteuerung erlauben"
@@ -835,7 +839,7 @@
       "weather-show-background-description": "Zeige den Hintergrundcontainer für das Wetter-Widget an."
     },
     "display": {
-      "monitors-brightness-step-description": "Schrittgröße für Helligkeitsänderungen anpassen (Mausrad und Tastenkombinationen).",
+      "monitors-brightness-step-description": "Schrittgröße für Helligkeitsänderungen anpassen (Mausrad und Tastenkürzel).",
       "monitors-brightness-step-label": "Helligkeits-Schrittgröße",
       "monitors-brightness-unavailable-ddc-disabled": "Helligkeitssteuerung nicht verfügbar. Aktivieren Sie \"Externe Helligkeitsunterstützung\", um die Helligkeit dieses Displays zu steuern.",
       "monitors-brightness-unavailable-generic": "Die Helligkeitssteuerung ist für dieses Display nicht verfügbar.",
@@ -899,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Einstellungen kopieren",
       "fonts-default-description": "Hauptschriftart für die gesamte Benutzeroberfläche.",
       "fonts-default-label": "Standard-Schriftart",
       "fonts-default-placeholder": "Standard-Schriftart auswählen...",
@@ -933,7 +938,8 @@
       "screen-corners-show-corners-label": "Bildschirmecken anzeigen",
       "screen-corners-solid-black-description": "Schwarze Ecken anstelle der Statusleisten-Hintergrundfarbe verwenden.",
       "screen-corners-solid-black-label": "Schwarze Ecken",
-      "screen-corners-title": "Bildschirmecken"
+      "screen-corners-title": "Bildschirmecken",
+      "settings-copied": "Einstellungen in die Zwischenablage kopiert"
     },
     "hooks": {
       "info-command-info-description": "• Befehle werden über Shell ausgeführt (sh -lc)<br>• Befehle laufen im Hintergrund (getrennt)<br>• Test-Buttons führen mit aktuellen Werten aus",
@@ -1083,6 +1089,8 @@
       "history-low-urgency-label": "Niedrige Dringlichkeit im Verlauf speichern",
       "history-normal-urgency-description": "Normale Prioritätsbenachrichtigungen im Verlauf speichern.",
       "history-normal-urgency-label": "Normale Dringlichkeit im Verlauf speichern",
+      "media-toast-description": "Eine Toast-Benachrichtigung anzeigen, wenn sich der Wiedergabestatus von Medien ändert.",
+      "media-toast-label": "Medien",
       "monitors-desc": "Benachrichtigungen auf bestimmten Monitoren anzeigen. Standardmäßig werden sie auf allen Monitoren angezeigt.",
       "settings-always-on-top-description": "Benachrichtigungen über Vollbildfenstern und anderen Ebenen anzeigen.",
       "settings-background-opacity-description": "Transparenz der Benachrichtigungshintergründe anpassen.",
@@ -1150,6 +1158,8 @@
       "types-input-volume-label": "Eingangslautstärke",
       "types-lockkey-description": "OSD anzeigen, wenn Feststelltaste, Num-Taste oder Rollen-Taste umgeschaltet werden.",
       "types-lockkey-label": "Feststelltasten",
+      "types-media-description": "OSD anzeigen, wenn sich der Medienwiedergabestatus ändert (Wiedergabe, Pause, Überspringen).",
+      "types-media-label": "Medienwiedergabe",
       "types-title": "OSD-Auslöseereignisse",
       "types-volume-description": "OSD anzeigen, wenn sich die Ausgabelautstärke ändert.",
       "types-volume-label": "Ausgangslautstärke"
@@ -1689,10 +1699,11 @@
     "file-picker": {
       "item": "Element",
       "items": "Elemente",
+      "search-placeholder": "Dateien und Ordner suchen...",
       "select-current": "Aktuelles Objekt auswählen",
       "select-file": "Datei auswählen",
       "select-folder": "Ordner auswählen",
-      "selected:": "Ausgewählt:",
+      "selected": "Ausgewählt:",
       "title": "Dateiauswahl"
     },
     "file-picker-title": "Datei auswählen",

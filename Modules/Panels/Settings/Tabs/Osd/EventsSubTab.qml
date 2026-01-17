@@ -30,10 +30,6 @@ ColumnLayout {
       {
         type: OSD.Type.LockKey,
         key: "types-lockkey"
-      },
-      {
-        type: OSD.Type.Media,
-        key: "types-media"
       }
     ]
     delegate: NCheckbox {

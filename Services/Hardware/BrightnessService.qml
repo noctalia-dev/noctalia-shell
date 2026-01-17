@@ -39,6 +39,10 @@ Singleton {
     monitors.forEach(m => m.decreaseBrightness());
   }
 
+  function setBrightness(value: real): void {
+    monitors.forEach(m => m.setBrightnessDebounced(value));
+  }
+
   function getDetectedDisplays(): list<var> {
     return detectedDisplays;
   }
@@ -100,13 +104,16 @@ Singleton {
                                              var ddcModelMatch = d.match(/(This monitor does not support DDC\/CI|Invalid display)/);
                                              var modelMatch = d.match(/Model:\s*(.*)/);
                                              var busMatch = d.match(/I2C bus:[ ]*\/dev\/i2c-([0-9]+)/);
+                                             var connectorMatch = d.match(/DRM[_ ]connector:\s*card\d+-(.+)/);
                                              var ddcModel = ddcModelMatch ? ddcModelMatch.length > 0 : false;
                                              var model = modelMatch ? modelMatch[1] : "Unknown";
                                              var bus = busMatch ? busMatch[1] : "Unknown";
-                                             Logger.i("Brightness", "Detected DDC Monitor:", model, "on bus", bus, "is DDC:", !ddcModel);
+                                             var connector = connectorMatch ? connectorMatch[1].trim() : "";
+                                             Logger.i("Brightness", "Detected DDC Monitor:", model, "connector:", connector, "bus:", bus, "is DDC:", !ddcModel);
                                              return {
                                                "model": model,
                                                "busNum": bus,
+                                               "connector": connector,
                                                "isDdc": !ddcModel
                                              };
                                            });
@@ -119,8 +126,8 @@ Singleton {
     id: monitor
 
     required property ShellScreen modelData
-    readonly property bool isDdc: Settings.data.brightness.enableDdcSupport && root.ddcMonitors.some(m => m.model === modelData.model)
-    readonly property string busNum: root.ddcMonitors.find(m => m.model === modelData.model)?.busNum ?? ""
+    readonly property bool isDdc: Settings.data.brightness.enableDdcSupport && root.ddcMonitors.some(m => m.connector === modelData.name)
+    readonly property string busNum: root.ddcMonitors.find(m => m.connector === modelData.name)?.busNum ?? ""
     readonly property bool isAppleDisplay: root.appleDisplayPresent && modelData.model.startsWith("StudioDisplay")
     readonly property string method: isAppleDisplay ? "apple" : (isDdc ? "ddcutil" : "internal")
 

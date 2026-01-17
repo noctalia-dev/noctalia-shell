@@ -934,4 +934,81 @@ Singleton {
   onDoNotDisturbChanged: {
     ToastService.showNotice(doNotDisturb ? I18n.tr("toast.do-not-disturb.enabled") : I18n.tr("toast.do-not-disturb.disabled"), doNotDisturb ? I18n.tr("toast.do-not-disturb.enabled-desc") : I18n.tr("toast.do-not-disturb.disabled-desc"), doNotDisturb ? "bell-off" : "bell");
   }
+
+  // Media toast functionality
+  property string previousMediaTitle: ""
+  property string previousMediaArtist: ""
+  property bool previousMediaIsPlaying: false
+  property bool mediaToastInitialized: false
+
+  Timer {
+    id: mediaToastInitTimer
+    interval: 3000 // Wait 3 seconds after startup to avoid initial toast
+    running: true
+    onTriggered: {
+      root.mediaToastInitialized = true;
+      root.previousMediaTitle = MediaService.trackTitle;
+      root.previousMediaArtist = MediaService.trackArtist;
+      root.previousMediaIsPlaying = MediaService.isPlaying;
+    }
+  }
+
+  Timer {
+    id: mediaToastDebounce
+    interval: 300 // Debounce rapid changes
+    onTriggered: {
+      if (!Settings.data.notifications.enableMediaToast || !mediaToastInitialized)
+      return;
+
+      if (doNotDisturb || PowerProfileService.noctaliaPerformanceMode)
+      return;
+
+      const title = MediaService.trackTitle || "";
+      const artist = MediaService.trackArtist || "";
+      const isPlaying = MediaService.isPlaying;
+
+      // Only show toast if something meaningful changed
+      const titleChanged = title !== previousMediaTitle && title !== "";
+      const playStateChanged = isPlaying !== previousMediaIsPlaying;
+      const hasMedia = title !== "" || artist !== "";
+
+      if (hasMedia && (titleChanged || playStateChanged)) {
+        const icon = isPlaying ? "media-play" : "media-pause";
+        let message = "";
+
+        if (artist && title) {
+          message = artist + " — " + title;
+        } else if (title) {
+          message = title;
+        } else if (artist) {
+          message = artist;
+        }
+
+        if (message !== "") {
+          const toastTitle = isPlaying ? I18n.tr("common.play") : I18n.tr("common.pause");
+          ToastService.showNotice(toastTitle, message, icon, 3000);
+        }
+      }
+
+      previousMediaTitle = title;
+      previousMediaArtist = artist;
+      previousMediaIsPlaying = isPlaying;
+    }
+  }
+
+  Connections {
+    target: MediaService
+
+    function onTrackTitleChanged() {
+      mediaToastDebounce.restart();
+    }
+
+    function onTrackArtistChanged() {
+      mediaToastDebounce.restart();
+    }
+
+    function onIsPlayingChanged() {
+      mediaToastDebounce.restart();
+    }
+  }
 }

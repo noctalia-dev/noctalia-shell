@@ -282,7 +282,7 @@ Popup {
           NTextInput {
             id: locationInput
             text: root.currentPath
-            placeholderText: I18n.tr("widgets.file-picker.enter-path")
+            placeholderText: I18n.tr("placeholders.enter-path")
             Layout.fillWidth: true
 
             visible: !filePickerPanel.showSearchBar
