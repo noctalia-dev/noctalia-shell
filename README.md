@@ -98,6 +98,56 @@ Noctalia provides native support for **Niri**, **Hyprland** and **Sway**. Other 
 
 ---
 
+## 🔔 Notification Rules
+
+Noctalia supports file-based notification filtering via `~/.config/noctalia/notification-rules.json`. Copy the example config to get started:
+
+```bash
+cp /path/to/noctalia-shell/Assets/notification-rules-default.json ~/.config/noctalia/notification-rules.json
+```
+
+### Actions
+
+| Action | Description |
+|--------|-------------|
+| `show` | Display normally (default) |
+| `block` | Suppress completely (saved to history with filtered flag) |
+| `mute` | Show popup but no sound |
+| `notoast` | Add to history/notification center, skip popup |
+| `snooze` | Delay display (requires `snooze_minutes`) |
+| `modify` | Rewrite notification (requires `modify` object) |
+
+### Match Conditions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `app_name` | string | Exact match (case-insensitive) |
+| `app_pattern` | regex | Regex match against app name |
+| `summary_pattern` | regex | Regex match against title |
+| `body_pattern` | regex | Regex match against body |
+| `body_contains` | string[] | Any word matches (case-insensitive) |
+| `urgency` | object | Comparison: `eq`, `lt`, `gt`, `lte`, `gte`, `in` |
+| `category` | string | Exact match on notification category |
+
+### Rule Evaluation
+
+- All conditions within a rule must match (AND logic)
+- Rules are evaluated by priority (higher first)
+- First matching rule wins
+- If no rule matches, `defaultAction` is used
+
+### Urgency Values
+
+| Value | Level |
+|-------|-------|
+| 0 | Low |
+| 1 | Normal |
+| 2 | Critical |
+
+See `Assets/notification-rules-default.json` for comprehensive examples.
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions of any size - bug fixes, new features, documentation improvements, or custom themes and configs.

@@ -10,6 +10,7 @@ import "../../Helpers/sha256.js" as Checksum
 import qs.Commons
 import qs.Services.Media
 import qs.Services.Power
+import qs.Services.System
 import qs.Services.UI
 
 Singleton {
@@ -97,6 +98,9 @@ Singleton {
       updateNotificationServer();
     }
 
+    // Force early initialization of NotificationRulesService
+    NotificationRulesService.isLoaded;
+
     // Load state from ShellState
     Qt.callLater(() => {
                    if (typeof ShellState !== 'undefined' && ShellState.isLoaded) {
@@ -137,6 +141,39 @@ Singleton {
   function handleNotification(notification) {
     const quickshellId = notification.id;
     const data = createData(notification);
+
+    // Evaluate notification rules
+    let ruleResult;
+    try {
+      ruleResult = NotificationRulesService.evaluate({
+                                                       appName: data.appName,
+                                                       appNameRaw: notification.appName || "",
+                                                       summary: data.summary,
+                                                       body: data.body,
+                                                       urgency: data.urgency,
+                                                       category: notification.category || ""
+                                                     });
+    } catch (e) {
+      Logger.e("NotificationService", "Error evaluating rules:", e);
+      ruleResult = {
+        action: "show"
+      };
+    }
+
+    // Handle block action - add to history as filtered, skip display
+    if (ruleResult.action === "block") {
+      data.filtered = true;
+      addToHistory(data);
+      return;
+    }
+
+    // Handle mute action - will skip sound later
+    const isMuted = ruleResult.action === "mute";
+
+    // Log unimplemented actions
+    if (ruleResult.action === "notoast" || ruleResult.action === "snooze" || ruleResult.action === "modify") {
+      Logger.w("NotificationService", "Action not yet implemented:", ruleResult.action);
+    }
 
     // Check if we should save to history based on urgency
     const saveToHistorySettings = Settings.data.notifications?.saveToHistory;
@@ -179,7 +216,9 @@ Singleton {
 
     // Add new notification
     addNewNotification(quickshellId, notification, data);
-    playNotificationSound(data.urgency, notification.appName);
+    if (!isMuted) {
+      playNotificationSound(data.urgency, notification.appName);
+    }
   }
 
   function playNotificationSound(urgency, appName) {
@@ -644,7 +683,8 @@ Singleton {
                              "urgency": item.urgency < 0 || item.urgency > 2 ? 1 : item.urgency,
                              "timestamp": time,
                              "originalImage": item.originalImage || "",
-                             "cachedImage": cachedImage
+                             "cachedImage": cachedImage,
+                             "filtered": item.filtered || false
                            });
       }
     } catch (e) {

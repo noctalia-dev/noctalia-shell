@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "defaultAction": "show",
+  "rules": [
+    {
+      "id": "example-block-app-exact",
+      "name": "Block notifications from specific app (exact match)",
+      "enabled": false,
+      "priority": 100,
+      "match": {
+        "app_name": "Slack"
+      },
+      "action": "block"
+    },
+    {
+      "id": "example-block-app-pattern",
+      "name": "Block notifications from apps matching pattern",
+      "enabled": false,
+      "priority": 90,
+      "match": {
+        "app_pattern": "^(Slack|Discord|Teams)$"
+      },
+      "action": "block"
+    },
+    {
+      "id": "example-mute-low-urgency",
+      "name": "Mute all low urgency notifications (no sound)",
+      "enabled": false,
+      "priority": 80,
+      "match": {
+        "urgency": {
+          "eq": 0
+        }
+      },
+      "action": "mute"
+    },
+    {
+      "id": "example-notoast-email",
+      "name": "Email: add to history but no popup toast",
+      "enabled": false,
+      "priority": 70,
+      "match": {
+        "category": "email.arrived"
+      },
+      "action": "notoast"
+    },
+    {
+      "id": "example-block-low-urgency-bots",
+      "name": "Block low urgency bot notifications",
+      "enabled": false,
+      "priority": 60,
+      "match": {
+        "summary_pattern": ".*[Bb]ot.*",
+        "urgency": {
+          "lt": 2
+        }
+      },
+      "action": "block"
+    },
+    {
+      "id": "example-block-spam-keywords",
+      "name": "Block notifications containing spam keywords",
+      "enabled": false,
+      "priority": 50,
+      "match": {
+        "body_contains": ["unsubscribe", "tracking", "advertisement"]
+      },
+      "action": "block"
+    },
+    {
+      "id": "example-snooze-updates",
+      "name": "Snooze software update notifications for 30 minutes",
+      "enabled": false,
+      "priority": 40,
+      "match": {
+        "summary_pattern": ".*(update|upgrade).*",
+        "urgency": {
+          "in": [0, 1]
+        }
+      },
+      "action": "snooze",
+      "snooze_minutes": 30
+    },
+    {
+      "id": "example-modify-urgency",
+      "name": "Downgrade chat app urgency to low",
+      "enabled": false,
+      "priority": 30,
+      "match": {
+        "app_pattern": "^(Telegram|Signal|WhatsApp)$",
+        "urgency": {
+          "gte": 1
+        }
+      },
+      "action": "modify",
+      "modify": {
+        "urgency": 0
+      }
+    },
+    {
+      "id": "example-modify-rewrite",
+      "name": "Rewrite notification content",
+      "enabled": false,
+      "priority": 20,
+      "match": {
+        "app_name": "ExampleApp",
+        "body_pattern": ".*sensitive.*"
+      },
+      "action": "modify",
+      "modify": {
+        "body": "[Content hidden]"
+      }
+    },
+    {
+      "id": "example-allow-critical",
+      "name": "Always show critical notifications (override other rules)",
+      "enabled": false,
+      "priority": 1000,
+      "match": {
+        "urgency": {
+          "eq": 2
+        }
+      },
+      "action": "show"
+    }
+  ]
+}
