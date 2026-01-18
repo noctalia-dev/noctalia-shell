@@ -626,6 +626,7 @@
       "system-not-installed": "A fastfetch nincs telepítve",
       "system-os": "Operációs rendszer:",
       "system-packages": "Csomagok:",
+      "system-product": "Termék:",
       "system-title": "Rendszerinformációk",
       "system-uptime": "Üzemidő:",
       "system-wm": "WM:",

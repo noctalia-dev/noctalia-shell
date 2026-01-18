@@ -626,6 +626,7 @@
       "system-not-installed": "fastfetch не встановлено",
       "system-os": "ОС:",
       "system-packages": "Пакунки:",
+      "system-product": "Продукт:",
       "system-title": "Інформація про систему",
       "system-uptime": "Час безперебійної роботи:",
       "system-wm": "WM:\nВМ:",

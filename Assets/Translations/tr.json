@@ -626,6 +626,7 @@
       "system-not-installed": "fastfetch kurulu değil",
       "system-os": "İşletim sistemi:",
       "system-packages": "Paketler:",
+      "system-product": "Ürün:",
       "system-title": "Sistem Bilgisi",
       "system-uptime": "Çalışma süresi:",
       "system-wm": "WM:",

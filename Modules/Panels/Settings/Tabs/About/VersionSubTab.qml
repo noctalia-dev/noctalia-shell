@@ -113,6 +113,7 @@ ColumnLayout {
       const os = root.getModule("OS");
       const kernel = root.getModule("Kernel");
       const title = root.getModule("Title");
+      const product = root.getModule("Host");
       const cpu = root.getModule("CPU");
       const gpu = root.getModule("GPU");
       const mem = root.getModule("Memory");
@@ -120,6 +121,7 @@ ColumnLayout {
       info += "OS: " + (os?.result?.prettyName || "N/A") + "\n";
       info += "Kernel: " + (kernel?.result?.release || "N/A") + "\n";
       info += "Host: " + (title?.result?.hostName || "N/A") + "\n";
+      info += "Product: " + (product?.result?.name || "N/A") + "\n";
       info += "CPU: " + (cpu?.result?.cpu || "N/A") + "\n";
       if (gpu?.result && Array.isArray(gpu.result) && gpu.result.length > 0) {
         info += "GPU: " + gpu.result.map(g => g.name || "Unknown").join(", ") + "\n";
@@ -586,6 +588,21 @@ ColumnLayout {
       text: {
         const title = root.getModule("Title");
         return title?.result?.hostName || "N/A";
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // Product name
+    NText {
+      text: I18n.tr("panels.about.system-product")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const title = root.getModule("Host");
+        return title?.result?.name || "N/A";
       }
       color: Color.mOnSurface
       Layout.fillWidth: true

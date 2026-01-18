@@ -413,6 +413,31 @@ zathura)
     done
     ;;
 
+btop)
+    echo "🎨 Applying 'noctalia' theme to btop..."
+    CONFIG_FILE="$HOME/.config/btop/btop.conf"
+    
+    if [ -f "$CONFIG_FILE" ]; then
+        if grep -q '^color_theme = "noctalia"' "$CONFIG_FILE"; then
+            echo "Theme already set to noctalia, skipping modification."
+        else
+            if grep -q '^color_theme = ' "$CONFIG_FILE"; then
+                sed -i 's/^color_theme = .*/color_theme = "noctalia"/' "$CONFIG_FILE"
+            else
+                echo 'color_theme = "noctalia"' >>"$CONFIG_FILE"
+            fi
+            echo "✅ Updated btop config to use noctalia theme."
+        fi
+        
+        if pgrep -x btop >/dev/null; then
+            echo "Reloading btop..."
+            pkill -SIGUSR2 -x btop
+        fi
+    else
+        echo "Warning: btop config file not found at $CONFIG_FILE" >&2
+    fi
+    ;;
+    
 *)
     # Handle unknown application names.
     echo "Error: Unknown application '$APP_NAME'." >&2

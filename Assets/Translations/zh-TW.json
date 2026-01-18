@@ -617,6 +617,7 @@
       "system-not-installed": "尚未安裝 fastfetch",
       "system-os": "作業系統:",
       "system-packages": "套件數量:",
+      "system-product": "產品:",
       "system-title": "系統資訊:",
       "system-uptime": "開機時間:",
       "system-wm": "視窗管理器:",

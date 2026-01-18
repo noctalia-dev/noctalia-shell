@@ -626,6 +626,7 @@
       "system-not-installed": "fastfetch n'est pas installé",
       "system-os": "Système d'exploitation :",
       "system-packages": "Paquets :",
+      "system-product": "Produit :",
       "system-title": "Informations système",
       "system-uptime": "Temps de disponibilité :",
       "system-wm": "WM :",

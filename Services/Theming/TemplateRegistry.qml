@@ -333,6 +333,17 @@ Singleton {
       "postProcess": () => `${colorsApplyScript} hyprland`
     },
     {
+      "id": "hyprtoolkit",
+      "name": "Hyprtoolkit",
+      "category": "system",
+      "input": "hyprtoolkit.conf",
+      "outputs": [
+        {
+          "path": "~/.config/hypr/hyprtoolkit.conf"
+        }
+      ]
+    },
+    {
       "id": "mango",
       "name": "Mango",
       "category": "compositor",
@@ -355,6 +366,18 @@ Singleton {
         }
       ],
       "postProcess": () => `${colorsApplyScript} zathura`
+    },
+    {
+      "id": "btop",
+      "name": "btop",
+      "category": "misc",
+      "input": "btop.theme",
+      "outputs": [
+        {
+          "path": "~/.config/btop/themes/noctalia.theme"
+        }
+      ],
+      "postProcess": () => `${colorsApplyScript} btop`
     }
   ]
 
