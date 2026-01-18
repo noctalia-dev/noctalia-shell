@@ -96,9 +96,8 @@ Singleton {
     "united states": "us",
     "us english": "us",
     "british": "gb",
-    "uk": "ua",
-    "united kingdom"// FIXED: Ukrainian language code should map to Ukraine
-    : "gb",
+    "uk": "gb",
+    "united kingdom": "gb",
     "english (uk)": "gb",
     "canadian": "ca",
     "canada": "ca",
@@ -175,7 +174,6 @@ Singleton {
     "slovak": "sk",
     "slovenčina": "sk",
     "slovakia": "sk",
-    "uk": "ua",
     "ukrainian"// Ukrainian language code
     : "ua",
     "українська": "ua",
