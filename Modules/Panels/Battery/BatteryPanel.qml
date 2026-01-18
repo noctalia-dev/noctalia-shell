@@ -110,8 +110,9 @@ SmartPanel {
     readonly property bool isReady: battery && battery.ready && isDevicePresent && (battery.percentage !== undefined || hasBluetoothBattery)
     readonly property int percent: isReady ? Math.round(hasBluetoothBattery ? (bluetoothDevice.battery * 100) : (battery.percentage * 100)) : -1
     readonly property bool charging: isReady ? battery.state === UPowerDeviceState.Charging : false
-    readonly property bool healthAvailable: isReady && battery.healthSupported
-    readonly property int healthPercent: healthAvailable ? Math.round(battery.healthPercentage) : -1
+    readonly property bool healthAvailable: BatteryService.healthAvailable
+    readonly property int healthPercent: BatteryService.healthPercent
+    readonly property string capacityLevel: BatteryService.capacityLevel
 
     function getDeviceName() {
       if (!isReady) {
@@ -302,17 +303,61 @@ SmartPanel {
 
           RowLayout {
             Layout.fillWidth: true
-            spacing: Style.marginL
+            spacing: Style.marginS
             visible: healthAvailable
 
+            ColumnLayout {
+              RowLayout {
+                spacing: Style.marginXS
+
+                NText {
+                  text: I18n.tr("battery.battery-health") + ":"
+                  color: Color.mOnSurface
+                  pointSize: Style.fontSizeS
+                }
+
+                NText {
+                  text: capacityLevel !== "" ? capacityLevel : ""
+                  visible: capacityLevel !== ""
+                  color: {
+                    var level = capacityLevel.toLowerCase();
+                    if (level === "normal" || level === "full" || level === "good" || level === "high") {
+                      return Color.mPrimary;
+                    } else if (level === "low" || level === "critical") {
+                      return Color.mError;
+                    } else {
+                      return Color.mTertiary;
+                    }
+                  }
+                  pointSize: Style.fontSizeS
+                  font.weight: Style.fontWeightBold
+                }
+              }
+
+              Rectangle {
+                Layout.fillWidth: true
+                height: Math.round(8 * Style.uiScaleRatio)
+                radius: Math.min(Style.radiusL, height / 2)
+                color: Color.mSurfaceVariant
+
+                Rectangle {
+                  anchors.verticalCenter: parent.verticalCenter
+                  height: parent.height
+                  radius: parent.radius
+                  width: {
+                    var ratio = Math.max(0, Math.min(1, healthPercent / 100));
+                    return parent.width * ratio;
+                  }
+                  color: healthPercent >= 80 ? Color.mPrimary : (healthPercent >= 50 ? Color.mTertiary : Color.mError)
+                }
+              }
+            }
+
             NText {
-              text: I18n.tr("battery.health", {
-                              "percent": healthPercent
-                            })
+              text: healthPercent >= 0 ? `${healthPercent}%` : "--"
               color: Color.mOnSurface
               pointSize: Style.fontSizeS
-              font.weight: Style.fontWeightMedium
-              Layout.fillWidth: true
+              font.weight: Style.fontWeightBold
             }
           }
         }

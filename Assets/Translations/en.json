@@ -271,7 +271,9 @@
     }
   },
   "battery": {
+    "battery-health": "Battery health",
     "battery-level": "Battery level",
+    "capacity-level": "Capacity: {level}",
     "charging-rate": "Charging rate: {rate} W",
     "discharging-rate": "Discharging rate: {rate} W",
     "health": "Health: {percent}%",
