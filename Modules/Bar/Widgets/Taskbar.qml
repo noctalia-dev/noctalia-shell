@@ -55,19 +55,21 @@ Rectangle {
   }
 
   readonly property int titleWidth: {
-    if (smartWidth && showTitle && !isVerticalBar && combinedModel.length > 0) {
-      var entriesCount = combinedModel.length;
-      var baseWidth = 140;
-      var calculatedWidth = baseWidth / Math.sqrt(entriesCount);
+    // First, use user-defined title width if set
+    var calculatedWidth = (widgetSettings.titleWidth !== undefined) ? widgetSettings.titleWidth : widgetMetadata.titleWidth;
 
+    // Second, shrink title width if it exceeds maxTaskbarWidth when smartWidth is enabled
+    if (smartWidth && combinedModel.length > 0) {
       if (maxTaskbarWidth > 0) {
+        var entriesCount = combinedModel.length;
         var maxWidthPerEntry = (maxTaskbarWidth / entriesCount) - itemSize - Style.marginS - Style.marginXL;
         calculatedWidth = Math.min(calculatedWidth, maxWidthPerEntry);
       }
 
-      return Math.max(Math.round(calculatedWidth), 20);
+      calculatedWidth = Math.max(Math.round(calculatedWidth), 20);
     }
-    return (widgetSettings.titleWidth !== undefined) ? widgetSettings.titleWidth : widgetMetadata.titleWidth;
+
+    return calculatedWidth;
   }
   readonly property bool showPinnedApps: (widgetSettings.showPinnedApps !== undefined) ? widgetSettings.showPinnedApps : widgetMetadata.showPinnedApps
 
