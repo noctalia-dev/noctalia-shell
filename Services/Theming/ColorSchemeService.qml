@@ -30,10 +30,10 @@ Singleton {
 
       // 1. Update Internal Quickshell Colors
       if (!Settings.data.colorSchemes.useWallpaperColors && Settings.data.colorSchemes.predefinedScheme) {
+        // Re-apply current scheme to pick the right variant
         applyScheme(Settings.data.colorSchemes.predefinedScheme);
       }
-
-      // 2. Show Toast Notification
+      // Toast: dark/light mode switched
       const enabled = !!Settings.data.colorSchemes.darkMode;
       const label = enabled ? I18n.tr("tooltips.switch-to-dark-mode") : I18n.tr("tooltips.switch-to-light-mode");
       const description = I18n.tr("toast.wifi.enabled");
@@ -136,6 +136,7 @@ Singleton {
 
   function setPredefinedScheme(schemeName) {
     Logger.i("ColorScheme", "Attempting to set predefined scheme to:", schemeName);
+
     var resolvedPath = resolveSchemePath(schemeName);
     var basename = getBasename(schemeName);
 
@@ -228,9 +229,12 @@ Singleton {
 
   // Check if any templates are enabled
   function hasEnabledTemplates() {
-    const templates = Settings.data.templates;
-    for (const key in templates) {
-      if (templates[key]) {
+    const activeTemplates = Settings.data.templates.activeTemplates;
+    if (!activeTemplates || activeTemplates.length === 0) {
+      return false;
+    }
+    for (let i = 0; i < activeTemplates.length; i++) {
+      if (activeTemplates[i].enabled) {
         return true;
       }
     }
@@ -287,6 +291,7 @@ Singleton {
     out.mShadow = pick(obj, "mShadow", "shadow", out.mShadow);
     out.mHover = pick(obj, "mHover", "hover", out.mHover);
     out.mOnHover = pick(obj, "mOnHover", "onHover", out.mOnHover);
+
     // Force a rewrite by updating the path
     colorsWriter.path = "";
     colorsWriter.path = colorsJsonFilePath;
