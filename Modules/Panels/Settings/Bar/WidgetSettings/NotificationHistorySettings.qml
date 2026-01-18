@@ -15,11 +15,13 @@ ColumnLayout {
   // Local state
   property bool valueShowUnreadBadge: widgetData.showUnreadBadge !== undefined ? widgetData.showUnreadBadge : widgetMetadata.showUnreadBadge
   property bool valueHideWhenZero: widgetData.hideWhenZero !== undefined ? widgetData.hideWhenZero : widgetMetadata.hideWhenZero
+  property bool valueHideWhenZeroUnread: widgetData.hideWhenZeroUnread !== undefined ? widgetData.hideWhenZeroUnread : widgetMetadata.hideWhenZeroUnread
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showUnreadBadge = valueShowUnreadBadge;
     settings.hideWhenZero = valueHideWhenZero;
+    settings.hideWhenZeroUnread = valueHideWhenZeroUnread;
     return settings;
   }
 
@@ -35,5 +37,13 @@ ColumnLayout {
     description: I18n.tr("bar.notification-history.hide-widget-when-zero-description")
     checked: valueHideWhenZero
     onToggled: checked => valueHideWhenZero = checked
+    visible: !valueHideWhenZeroUnread
+  }
+
+  NToggle {
+    label: I18n.tr("bar.notification-history.hide-widget-when-zero-unread-label")
+    description: I18n.tr("bar.notification-history.hide-widget-when-zero-unread-description")
+    checked: valueHideWhenZeroUnread
+    onToggled: checked => valueHideWhenZeroUnread = checked
   }
 }

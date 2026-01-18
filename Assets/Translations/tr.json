@@ -175,8 +175,10 @@
       "visualizer-type-label": "Görselleştirici türü"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Okunmamış bildirim olmadığında bildirim simgesini gizle.",
-      "hide-widget-when-zero-label": "Sıfırken simgeyi gizle",
+      "hide-widget-when-zero-description": "Bildirim yokken bildirim simgesini gizle.",
+      "hide-widget-when-zero-label": "Bildirim yokken simgeyi gizle",
+      "hide-widget-when-zero-unread-description": "Okunmamış bildirim yokken bildirim simgesini gizle.",
+      "hide-widget-when-zero-unread-label": "Okunmamış yokken simgeyi gizle",
       "show-unread-badge-description": "Okunmamış bildirim sayısını gösteren bir rozet göster.",
       "show-unread-badge-label": "Okunmamış bildirimleri göster"
     },
@@ -351,9 +353,11 @@
     "connect": "Bağlan",
     "connected": "Bağlı",
     "connecting": "Bağlanıyor...",
+    "continue": "Devam Et",
     "contributors": "Katkıda bulunanlar",
     "countdown": "Geri sayım",
     "date": "Tarih",
+    "default": "Varsayılan",
     "delete": "Sil",
     "devices": "Cihazlar",
     "disabled": "Devre dışı",
@@ -361,7 +365,7 @@
     "disconnect": "Bağlantıyı kes",
     "disconnected": "Bağlantı kesildi",
     "disconnecting": "Bağlantı kesiliyor...",
-    "download": "İndirme",
+    "download": "İndir",
     "duration": "Süre",
     "enabled": "Etkinleştirildi",
     "events": "Etkinlikler",
@@ -425,7 +429,7 @@
     "security": "Güvenlik",
     "select": "Seç",
     "shortcuts": "Kısayollar",
-    "shutdown": "Kapatma",
+    "shutdown": "Kapat",
     "signal": "Sinyal",
     "sound": "Ses",
     "sources": "Kaynaklar",
@@ -443,7 +447,7 @@
     "unpair": "Eşleştirmeyi kaldır",
     "unpin": "Sabitlemeyi kaldır",
     "update": "Güncelleme",
-    "upload": "Yükleme",
+    "upload": "Yükle",
     "version": "Sürüm",
     "visualizer": "Görselleştirici",
     "volume": "Hacim",
@@ -525,7 +529,9 @@
       "emoji-loading-description": "Lütfen bekleyin",
       "emoji-no-recent": "Henüz yeni emoji yok",
       "emoji-search-description": "Emoji arama ve kopyalama"
-    }
+    },
+    "result": "sonuç",
+    "results": "sonuçlar"
   },
   "lock-screen": {
     "authenticating": "Doğrulanıyor...",
@@ -607,6 +613,7 @@
       "noctalia-installed-version": "Yüklü sürüm:",
       "noctalia-latest-version": "En son sürüm:",
       "noctalia-title": "Noctalia kabuğu",
+      "privacy-policy": "Gizlilik politikası",
       "support": "Bizi destekleyin",
       "system-cpu": "İşlemci:",
       "system-disk": "Disk:",
@@ -620,6 +627,7 @@
       "system-not-installed": "fastfetch kurulu değil",
       "system-os": "İşletim sistemi:",
       "system-packages": "Paketler:",
+      "system-product": "Ürün:",
       "system-title": "Sistem Bilgisi",
       "system-uptime": "Çalışma süresi:",
       "system-wm": "WM:",
@@ -712,11 +720,7 @@
       "widgets-title": "Araç takımlarını konumlandırma"
     },
     "color-scheme": {
-      "color-source-desc": "Noctalia'nın renkleri için ana ayarlar.",
-      "color-source-matugen-scheme-type-description": "Matugen'in duvar kağıdınızdan renkler oluşturmak için kullanacağı renk şeması oluşturma yöntemini seçin.",
-      "color-source-matugen-scheme-type-label": "Matugen şema türü",
-      "color-source-title": "Renk kaynağı",
-      "color-source-use-wallpaper-colors-description": "Matugen kullanarak duvar kâğıdınızdan renk şemaları oluşturun. Bütünleşik bir tema oluşturmak için renkleri otomatik olarak çıkarır.",
+      "color-source-use-wallpaper-colors-description": "Duvar kağıdınızdan renk şemaları oluşturun. Uyumlu bir tema oluşturmak için renkleri otomatik olarak çıkarır.",
       "color-source-use-wallpaper-colors-label": "Duvar kâğıdı renklerini kullan",
       "dark-mode-mode-description": "Işık ve koyu mod arasında otomatik geçişi etkinleştirir.",
       "dark-mode-mode-label": "Koyu mod zamanlaması",
@@ -751,11 +755,13 @@
       "templates-filter-label": "Kategoriye göre filtrele",
       "templates-misc-description": "Kendi şablonlarınızı oluşturun.",
       "templates-misc-label": "Gelişmiş",
-      "templates-misc-user-templates-description": "Yalnızca ne yaptığınızı biliyorsanız etkinleştirin — çevrimiçi belgelerimize bakın",
+      "templates-misc-user-templates-description": "Yalnızca ne yaptığınızı biliyorsanız etkinleştirin — çevrimiçi belgelerimize bakın.",
       "templates-misc-user-templates-label": "Kullanıcı şablonlarını etkinleştir",
       "templates-none-detected": "Hiçbiri algılanmadı",
       "templates-write-path": "Yazıyor: {filepath}",
-      "title": "Renk şeması"
+      "title": "Renk şeması",
+      "wallpaper-method-description": "Favori renk çıkarma yönteminizi seçin.",
+      "wallpaper-method-label": "Renk çıkarma yöntemi"
     },
     "control-center": {
       "cards-desc": "Kontrol merkezinde hangi kontrollerin ve hangi sırada görüneceğini özelleştirin.",
@@ -897,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Ayarları kopyala",
       "fonts-default-description": "Arayüz boyunca kullanılan ana yazı tipi.",
       "fonts-default-label": "Varsayılan yazı tipi",
       "fonts-default-placeholder": "Varsayılan yazı tipi seçin...",
@@ -931,7 +938,8 @@
       "screen-corners-show-corners-label": "Ekran köşelerini göster",
       "screen-corners-solid-black-description": "Araç çubuğu arka plan rengi yerine tam siyah kullan.",
       "screen-corners-solid-black-label": "Siyah köşeler",
-      "screen-corners-title": "Ekran köşeleri"
+      "screen-corners-title": "Ekran köşeleri",
+      "settings-copied": "Ayarlar panoya kopyalandı"
     },
     "hooks": {
       "info-command-info-description": "• Komutlar kabuk (sh -lc) ile yürütülür<br>• Komutlar arka planda yürütülür (ayrık)<br>• Test düğmeleri mevcut değerlerle yürütülür",
@@ -1049,7 +1057,7 @@
       "compact-lockscreen-label": "Kompakt ekran kilidi",
       "lock-on-suspend-description": "Sistemi askıya alırken otomatik olarak ekranı kilitler.",
       "lock-on-suspend-label": "Askıya alırken kilitle",
-      "show-hibernate-description": "Güç işlemlerinde 'hazırda beklet' seçeneğini göster.",
+      "show-hibernate-description": "Güç kontrollerinde 'hazırda beklet' seçeneğini göster.",
       "show-hibernate-label": "Hazırda beklet seçeneğini göster",
       "show-session-buttons-description": "Kilit ekranından güç ayarlarına erişime izin ver.",
       "show-session-buttons-label": "Güç kontrolleri",
@@ -1081,6 +1089,8 @@
       "history-low-urgency-label": "Düşük aciliyeti geçmişe kaydet",
       "history-normal-urgency-description": "Normal öncelikli bildirimleri geçmişe kaydet.",
       "history-normal-urgency-label": "Normal aciliyeti geçmişe kaydet",
+      "media-toast-description": "Medya oynatma durumu değiştiğinde bir bildirim göster.",
+      "media-toast-label": "Medya",
       "monitors-desc": "Bildirimleri belirli ekranlarda gösterin. Hiçbiri seçilmezse varsayılan olarak tümünde gösterilir.",
       "settings-always-on-top-description": "Bildirimleri tam ekran pencerelerinin ve diğer katmanların üzerinde görüntüle.",
       "settings-background-opacity-description": "Bildirim arka planlarının opaklığını ayarlayın.",
@@ -1148,6 +1158,8 @@
       "types-input-volume-label": "Giriş sesi",
       "types-lockkey-description": "Büyük Harf Kilidi, Sayı Kilidi veya Kaydırma Kilidi değiştirildiğinde OSD'yi göster.",
       "types-lockkey-label": "Kilit tuşları",
+      "types-media-description": "Medya oynatma durumu değiştiğinde OSD'yi göster (oynat, duraklat, atla).",
+      "types-media-label": "Medya oynatma",
       "types-title": "OSD tetikleme olayları",
       "types-volume-description": "Ses çıkış düzeyi değiştiğinde OSD'yi göster.",
       "types-volume-label": "Çıkış sesi"
@@ -1349,6 +1361,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "Çalıştırılacak komutu girin (uygulama veya özel komut)",
     "enter-ipc-identifier": "IPC komutları için benzersiz bir tanımlayıcı girin",
+    "enter-path": "Yolu girin...",
     "enter-text-to-collapse": "örn., 'nothing is playing'. Desenler için /regex/ kullanın.",
     "enter-tooltip": "Araç ipucunu girin",
     "enter-width-pixels": "Genişliği piksel olarak girin",
@@ -1380,6 +1393,7 @@
     "title": "Oturum menüsü"
   },
   "setup": {
+    "all-done": "Tamamlandı!",
     "appearance": {
       "subheader": "Karanlık modu ve renk kaynaklarını seçin (Matugen veya önceden tanımlanmış)."
     },
@@ -1387,6 +1401,11 @@
       "header": "Deneyiminizi özelleştirin",
       "subheader": "Araç çubuğu konumunu, yoğunluğunu, ölçeğini ve daha fazlasını ayarlayın."
     },
+    "skip-setup": "Kurulumu Atla",
+    "telemetry-wizard-done": "Anlaşıldı!",
+    "telemetry-wizard-note": "Kontrol sizde — istediğiniz zaman Ayarlar'dan etkinleştirebilir veya devre dışı bırakabilirsiniz",
+    "telemetry-wizard-subtitle": "Noctalia'yı geliştirmeye yardımcı olmak için anonim analizler ekledik",
+    "telemetry-wizard-title": "Gizlilik Güncellemesi",
     "wallpaper": {
       "choose-dir": "Duvar kâğıdı görüntülerinizi içeren bir dizin seçin",
       "dir-browse": "Duvar kâğıdı klasörüne göz at",
@@ -1401,7 +1420,9 @@
       "select-prompt": "Aşağıdan bir duvar kâğıdı seçin",
       "subheader": "Güzel bir arka planla ortamı ayarlayın."
     },
-    "welcome-note": "Başlamanız için birkaç temel ayar — tam seçenekler ayarlar'da"
+    "welcome-note": "Başlamanız için birkaç temel ayar — tam seçenekler ayarlar'da",
+    "welcome-subtitle": "Masaüstünüzü size özel yapalım",
+    "welcome-title": "Noctalia'ya hoş geldiniz!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1433,39 +1454,35 @@
     },
     "battery": {
       "low": "Düşük batarya",
-      "low-desc": "Batarya % {percent}. Lütfen şarj bağlantısını yapın."
+      "low-desc": "Batarya % {percent}. Lütfen şarj bağlantısını yapın"
     },
     "bluetooth": {
-      "address-copied": "Adres panoya kopyalandı.",
+      "address-copied": "Adres panoya kopyalandı",
       "confirm-code": "Diğer cihazdaki {value} kodunu onayla.",
-      "connect-failed": "Cihaza bağlanılamadı.",
-      "disconnect-failed": "Cihazla bağlantı kesilemedi.",
-      "discoverable-change-failed": "Keşfedilebilir durum değiştirilemedi.",
-      "discoverable-disabled": "Keşfedilebilir devre dışı.",
-      "discoverable-enabled": "Keşfedilebilir etkinleştirildi.",
+      "connect-failed": "Cihaza bağlanılamadı",
+      "disconnect-failed": "Cihazla bağlantı kesilemedi",
+      "discoverable-change-failed": "Keşfedilebilir durum değiştirilemedi",
+      "discoverable-disabled": "Keşfedilebilir devre dışı",
+      "discoverable-enabled": "Keşfedilebilir etkinleştirildi",
       "display-code": "Diğer cihazda {value} kodunu girin.",
-      "forget-failed": "Cihazı unutma başarısız oldu.",
-      "pair-failed": "Cihaz eşleştirilemedi.",
+      "forget-failed": "Cihazı unutma başarısız oldu",
+      "pair-failed": "Cihaz eşleştirilemedi",
       "passkey-required": "Cihaz tarafından istenen geçiş anahtarı.",
       "pincode-required": "Cihaz tarafından PIN kodu gerekiyor.",
-      "state-change-failed": "Bluetooth durumu değiştirilemedi."
+      "state-change-failed": "Bluetooth durumu değiştirilemedi"
     },
     "clipboard": {
       "long-text": "Uzun metin",
       "unavailable": "Panoya geçmişi kullanılamıyor",
-      "unavailable-desc": "'cliphist' uygulaması kurulu değil. Lütfen panoya geçmişi özelliklerini kullanmak için kurun."
+      "unavailable-desc": "'cliphist' uygulaması kurulu değil. Lütfen panoya geçmişi özelliklerini kullanmak için kurun"
     },
     "do-not-disturb": {
       "disabled": "'Rahatsız etme' devre dışı",
-      "disabled-desc": "Tüm bildirimler gösteriliyor.",
+      "disabled-desc": "Tüm bildirimler gösteriliyor",
       "enabled": "'Rahatsız etme' etin",
-      "enabled-desc": "Bu bildirimleri geçmişinizde bulacaksınız."
+      "enabled-desc": "Bu bildirimleri geçmişinizde bulacaksınız"
     },
-    "internet-limited": "İnternetsiz bağlandı.",
-    "ipc": {
-      "powerpanel-deprecated": "PowerPanel artık SessionMenu olarak adlandırılıyor, bu IPC çağrısı yakında kullanımdan kaldırılacak. Lütfen \"ipc call sessionMenu toggle\" kullanın.",
-      "sidepanel-deprecated": "SidePanel artık ControlCenter olarak adlandırılıyor, bu IPC çağrısı yakında kullanımdan kaldırılacak. Lütfen \"ipc call controlCenter toggle\" kullanın."
-    },
+    "internet-limited": "İnternetsiz bağlandı",
     "keyboard-layout": {
       "changed": "Klavye düzeni {layout} olarak değiştirildi.",
       "title": "Klavye"
@@ -1476,13 +1493,13 @@
       "label": "Son kontrol merkezi araç takımı kaldırıldı"
     },
     "night-light": {
-      "forced": "Zorla etkinleştirme.",
-      "normal": "Normal mod.",
-      "not-installed": "wlsunset kurulu değil."
+      "forced": "Zorla etkinleştirme",
+      "normal": "Normal mod",
+      "not-installed": "wlsunset kurulu değil"
     },
     "noctalia-performance": {
-      "disabled": "Performans modu devre dışı bırakıldı.",
-      "enabled": "Performans modu etkinleştirildi.",
+      "disabled": "Performans modu devre dışı bırakıldı",
+      "enabled": "Performans modu etkinleştirildi",
       "label": "Noctalia Performans"
     },
     "power-profile": {
@@ -1495,22 +1512,22 @@
       "title-predefined": "Önceden tanımlanmış renk şeması işleme başarısız oldu"
     },
     "vpn": {
-      "connected": "'{name}' ile bağlantı kuruldu.",
-      "disconnected": "'{name}' bağlantısı kesildi."
+      "connected": "'{name}' ile bağlantı kuruldu",
+      "disconnected": "'{name}' bağlantısı kesildi"
     },
     "wallpaper-colors": {
-      "disabled": "Duvar kâğıdı renkleri devre dışı.",
-      "enabled": "Duvar kâğıdı renkleri etkin.",
+      "disabled": "Duvar kâğıdı renkleri devre dışı",
+      "enabled": "Duvar kâğıdı renkleri etkin",
       "label": "Duvar kâğıdı renkleri oluşturma",
-      "not-installed": "Matugen kurulu değil — duvar kâğıdı renk çıkarmak için gerekli."
+      "not-installed": "Matugen kurulu değil — duvar kâğıdı renk çıkarmak için gerekli"
     },
     "wifi": {
-      "connected": "'{ssid}' ile bağlandı.",
-      "connection-failed": "Bağlantı başarısız.",
-      "connection-timeout": "Bağlantı zaman aşımı.",
-      "disabled": "Devre dışı.",
-      "disconnected": "'{ssid}' bağlantısı kesildi.",
-      "enabled": "Etkin.",
+      "connected": "'{ssid}' ile bağlandı",
+      "connection-failed": "Bağlantı başarısız",
+      "connection-timeout": "Bağlantı zaman aşımı",
+      "disabled": "Devre dışı",
+      "disconnected": "'{ssid}' bağlantısı kesildi",
+      "enabled": "Etkin",
       "incorrect-password": "Yanlış şifre.",
       "network-not-found": "Ağ bulunamadı."
     }
@@ -1576,6 +1593,7 @@
     "fill-modes": {
       "crop": "Kırp (Doldur)",
       "fit": "Sığ (İçer)",
+      "repeat": "Tekrarla (Döşe)",
       "stretch": "Ger"
     },
     "no-match": "Eşleşme bulunamadı.",
@@ -1676,10 +1694,13 @@
       "year-two-digit": "İki haneli sayı olarak yıl (00-99)"
     },
     "file-picker": {
+      "item": "öğe",
+      "items": "öğeler",
       "search-placeholder": "Dosya ve klasörlerde ara...",
       "select-current": "Mevcudu seç",
       "select-file": "Dosya seç",
       "select-folder": "Klasör seç",
+      "selected": "Seçilen:",
       "title": "Dosya seçici"
     },
     "file-picker-title": "Bir dosya seçin",

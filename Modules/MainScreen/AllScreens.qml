@@ -78,7 +78,7 @@ Variants {
     // Disabled when bar is hidden or not configured for this screen
     Loader {
       active: {
-        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.effectivelyVisible)
+        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.isVisible)
           return false;
 
         // Check if bar is configured for this screen

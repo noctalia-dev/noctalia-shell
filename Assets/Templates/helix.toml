@@ -113,14 +113,14 @@ hint = "hint"
 "diagnostic.unnecessary" = { modifiers = ["dim"] }
 
 [palette]
-# Constants to be used in syntax highlighting, not meant for matugen.
+# Constants to be used in syntax highlighting, not meant for template processor.
 warning = "#f9e2af"
 info = "#89dceb"
 hint = "#94e2d5"
 plus = "#a6e3a1"
 delta = "#89b4fa"
 
-# Matugen colors
+# Template colors
 primary = "{{colors.primary.default.hex}}"
 surfaceTint = "{{colors.primary.default.hex}}"
 onPrimary = "{{colors.on_primary.default.hex}}"

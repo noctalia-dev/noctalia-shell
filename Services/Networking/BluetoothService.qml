@@ -540,7 +540,7 @@ Singleton {
     _pauseDiscoveryFor(totalPauseMs);
 
     // Prefer external dev script for pairing/connecting; executed detached
-    const scriptPath = Quickshell.shellDir + "/Bin/bluetooth-connect.sh";
+    const scriptPath = Quickshell.shellDir + "/Scripts/network/bluetooth-connect.sh";
     // Use bash explicitly to avoid relying on executable bit in all environments
     btExec(["bash", scriptPath, String(addr), String(pairWait), String(attempts), String(intervalSec)]);
   }

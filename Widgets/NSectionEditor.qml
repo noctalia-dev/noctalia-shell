@@ -54,6 +54,7 @@ NBox {
   signal openPluginSettingsRequested(var pluginManifest)
 
   color: Color.mSurface
+  opacity: enabled ? 1.0 : 0.6
   Layout.fillWidth: true
 
   // Calculate width to fit gridColumns widgets with spacing
@@ -405,7 +406,7 @@ NBox {
                 Layout.preferredHeight: parent.height
 
                 Loader {
-                  active: root.widgetHasSettings(modelData.id)
+                  active: root.widgetHasSettings(modelData.id) && root.enabled
                   sourceComponent: NIconButton {
                     icon: "settings"
                     tooltipText: I18n.tr("actions.widget-settings")

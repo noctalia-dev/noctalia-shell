@@ -175,8 +175,10 @@
       "visualizer-type-label": "Tipo de visualizador"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Ocultar el icono de notificaciones cuando no hay notificaciones no leídas.",
-      "hide-widget-when-zero-label": "Ocultar icono cuando es cero",
+      "hide-widget-when-zero-description": "Ocultar el icono de notificaciones cuando no haya notificaciones.",
+      "hide-widget-when-zero-label": "Ocultar icono sin notificaciones",
+      "hide-widget-when-zero-unread-description": "Ocultar el icono de notificaciones cuando no haya notificaciones sin leer.",
+      "hide-widget-when-zero-unread-label": "Ocultar icono sin notificaciones sin leer",
       "show-unread-badge-description": "Mostrar una insignia con el número de notificaciones no leídas.",
       "show-unread-badge-label": "Mostrar insignia de no leídos"
     },
@@ -351,9 +353,11 @@
     "connect": "Conectar",
     "connected": "Conectado",
     "connecting": "Conectando...",
+    "continue": "Continuar",
     "contributors": "Colaboradores",
     "countdown": "Cuenta regresiva",
     "date": "Fecha",
+    "default": "Predeterminado",
     "delete": "Borrar",
     "devices": "Dispositivos",
     "disabled": "Desactivado",
@@ -361,7 +365,7 @@
     "disconnect": "Desconectar",
     "disconnected": "Desconectado",
     "disconnecting": "Desconectando...",
-    "download": "Descarga",
+    "download": "Descargar",
     "duration": "Duración",
     "enabled": "Activado",
     "events": "Eventos",
@@ -443,7 +447,7 @@
     "unpair": "Desvincular",
     "unpin": "Desanclar",
     "update": "Actualizar",
-    "upload": "Subida",
+    "upload": "Subir",
     "version": "Versión",
     "visualizer": "Visualizador",
     "volume": "Volumen",
@@ -475,7 +479,7 @@
   "hide-modes": {
     "hidden": "Ocultar cuando esté vacío",
     "idle": "Ocultar cuando esté inactivo",
-    "transparent": "Transparente cuando está vacío",
+    "transparent": "Transparente cuando esté vacío",
     "visible": "Siempre visible"
   },
   "launcher": {
@@ -525,7 +529,9 @@
       "emoji-loading-description": "Por favor espera",
       "emoji-no-recent": "Aún no hay emojis recientes",
       "emoji-search-description": "Buscar y copiar emojis"
-    }
+    },
+    "result": "resultado",
+    "results": "resultados"
   },
   "lock-screen": {
     "authenticating": "Autenticando...",
@@ -607,6 +613,7 @@
       "noctalia-installed-version": "Versión instalada:",
       "noctalia-latest-version": "Última versión:",
       "noctalia-title": "Shell Noctalia",
+      "privacy-policy": "Política de privacidad",
       "support": "Apóyanos",
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
@@ -620,6 +627,7 @@
       "system-not-installed": "fastfetch no está instalado",
       "system-os": "SO:",
       "system-packages": "Paquetes:",
+      "system-product": "Producto:",
       "system-title": "Información del sistema",
       "system-uptime": "Tiempo de actividad:",
       "system-wm": "WM:",
@@ -712,11 +720,7 @@
       "widgets-title": "Posicionamiento de widgets"
     },
     "color-scheme": {
-      "color-source-desc": "Configuración principal de los colores de Noctalia.",
-      "color-source-matugen-scheme-type-description": "Elige el método de generación de esquemas de color que Matugen usará para crear colores a partir de tu fondo de pantalla.",
-      "color-source-matugen-scheme-type-label": "Tipo de esquema Matugen",
-      "color-source-title": "Fuente de color",
-      "color-source-use-wallpaper-colors-description": "Generar esquemas de color desde tu fondo de pantalla usando Matugen. Extrae automáticamente colores para crear un tema cohesivo.",
+      "color-source-use-wallpaper-colors-description": "Genera esquemas de color a partir de tu fondo de pantalla. Extrae automáticamente los colores para crear un tema cohesivo.",
       "color-source-use-wallpaper-colors-label": "Usar colores del fondo de pantalla",
       "dark-mode-mode-description": "Permite el cambio automático entre el modo claro y el modo oscuro.",
       "dark-mode-mode-label": "Programación del modo oscuro",
@@ -751,11 +755,13 @@
       "templates-filter-label": "Filtrar por categoría",
       "templates-misc-description": "Crea tus propias plantillas.",
       "templates-misc-label": "Avanzado",
-      "templates-misc-user-templates-description": "Solo habilita si sabes lo que estás haciendo — consulta nuestra documentación en línea",
+      "templates-misc-user-templates-description": "Solo habilita si sabes lo que estás haciendo — consulta nuestra documentación en línea.",
       "templates-misc-user-templates-label": "Habilitar plantillas de usuario",
       "templates-none-detected": "Ninguno detectado",
       "templates-write-path": "Escribe: {filepath}",
-      "title": "Esquema de colores"
+      "title": "Esquema de colores",
+      "wallpaper-method-description": "Elige tu método de extracción de color favorito.",
+      "wallpaper-method-label": "Método de extracción de color"
     },
     "control-center": {
       "cards-desc": "Personaliza qué controles aparecen en el centro de control y en qué orden.",
@@ -897,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Copiar ajustes",
       "fonts-default-description": "Fuente principal utilizada en toda la interfaz.",
       "fonts-default-label": "Fuente predeterminada",
       "fonts-default-placeholder": "Seleccionar fuente predeterminada...",
@@ -931,7 +938,8 @@
       "screen-corners-show-corners-label": "Mostrar esquinas de la pantalla",
       "screen-corners-solid-black-description": "Usa negro sólido en lugar del color de fondo de la barra.",
       "screen-corners-solid-black-label": "Esquinas negras sólidas",
-      "screen-corners-title": "Esquinas de la pantalla"
+      "screen-corners-title": "Esquinas de la pantalla",
+      "settings-copied": "Ajustes copiados al portapapeles"
     },
     "hooks": {
       "info-command-info-description": "• Los comandos se ejecutan a través de shell (sh -lc)<br>• Los comandos se ejecutan en segundo plano (desvinculados)<br>• Los botones de prueba se ejecutan con los valores actuales",
@@ -1049,7 +1057,7 @@
       "compact-lockscreen-label": "Pantalla de bloqueo compacta",
       "lock-on-suspend-description": "Bloquear la pantalla automáticamente al suspender el sistema.",
       "lock-on-suspend-label": "Bloquear al suspender",
-      "show-hibernate-description": "Mostrar la opción 'hibernar' en las acciones de energía.",
+      "show-hibernate-description": "Mostrar la opción 'hibernar' en los controles de energía.",
       "show-hibernate-label": "Mostrar hibernar",
       "show-session-buttons-description": "Permitir el acceso a la configuración de energía desde la pantalla de bloqueo.",
       "show-session-buttons-label": "Controles de energía",
@@ -1081,6 +1089,8 @@
       "history-low-urgency-label": "Guardar urgencia baja en el historial",
       "history-normal-urgency-description": "Guardar notificaciones de prioridad normal en el historial.",
       "history-normal-urgency-label": "Guardar urgencia normal en el historial",
+      "media-toast-description": "Mostrar un toast cuando cambie el estado de reproducción multimedia.",
+      "media-toast-label": "Multimedia",
       "monitors-desc": "Muestra notificaciones en monitores específicos. Por defecto, se muestra en todos si no se elige ninguno.",
       "settings-always-on-top-description": "Muestra las notificaciones sobre ventanas a pantalla completa y otras capas.",
       "settings-background-opacity-description": "Ajustar la opacidad de los fondos de las notificaciones.",
@@ -1148,6 +1158,8 @@
       "types-input-volume-label": "Volumen de entrada",
       "types-lockkey-description": "Mostrar el OSD cuando se activen o desactiven Bloq Mayús, Bloq Num o Bloq Despl.",
       "types-lockkey-label": "Teclas de bloqueo",
+      "types-media-description": "Mostrar OSD cuando cambie el estado de reproducción multimedia (reproducir, pausar, saltar).",
+      "types-media-label": "Reproducción de medios",
       "types-title": "Eventos de activación OSD",
       "types-volume-description": "Mostrar el OSD cuando cambie el volumen de salida de audio.",
       "types-volume-label": "Volumen de salida"
@@ -1349,6 +1361,7 @@
     "command-example": "echo \"Hola, mundo\"",
     "enter-command": "Ingresa el comando a ejecutar (aplicación o script personalizado)",
     "enter-ipc-identifier": "Introduzca un identificador único para los comandos IPC",
+    "enter-path": "Ingrese la ruta...",
     "enter-text-to-collapse": "por ejemplo, 'no se está reproduciendo nada'. Usa /regex/ para patrones.",
     "enter-tooltip": "Introducir información sobre herramientas",
     "enter-width-pixels": "Ingresa el ancho en píxeles",
@@ -1380,6 +1393,7 @@
     "title": "Menú de sesión"
   },
   "setup": {
+    "all-done": "¡Listo!",
     "appearance": {
       "subheader": "Elige modo oscuro y fuentes de color (Matugen o predefinido)."
     },
@@ -1387,6 +1401,11 @@
       "header": "Personaliza tu experiencia",
       "subheader": "Ajusta la posición de la barra, densidad, escala y más."
     },
+    "skip-setup": "Omitir la configuración",
+    "telemetry-wizard-done": "¡Entendido!",
+    "telemetry-wizard-note": "Tienes el control: activa o desactiva esto cuando quieras en los Ajustes",
+    "telemetry-wizard-subtitle": "Hemos añadido analíticas anónimas para ayudar a mejorar Noctalia",
+    "telemetry-wizard-title": "Actualización de privacidad",
     "wallpaper": {
       "choose-dir": "Elige un directorio que contenga tus fondos",
       "dir-browse": "Seleccionar carpeta",
@@ -1401,7 +1420,9 @@
       "select-prompt": "Selecciona un fondo abajo",
       "subheader": "Define el ambiente con un bonito fondo."
     },
-    "welcome-note": "Solo algunos conceptos básicos para empezar: todas las opciones están en configuración"
+    "welcome-note": "Solo algunos conceptos básicos para empezar: todas las opciones están en configuración",
+    "welcome-subtitle": "Hagamos que tu escritorio sea único",
+    "welcome-title": "¡Bienvenido a Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1433,39 +1454,35 @@
     },
     "battery": {
       "low": "Batería baja",
-      "low-desc": "La batería está al {percent}%. Por favor, conecta el cargador."
+      "low-desc": "La batería está al {percent}%. Por favor, conecta el cargador"
     },
     "bluetooth": {
-      "address-copied": "Dirección copiada al portapapeles.",
+      "address-copied": "Dirección copiada al portapapeles",
       "confirm-code": "Confirma el código {value} en el otro dispositivo.",
-      "connect-failed": "Error al conectar con el dispositivo.",
-      "disconnect-failed": "Error al desconectar del dispositivo.",
-      "discoverable-change-failed": "Error al cambiar el estado de visibilidad.",
-      "discoverable-disabled": "Visible desactivado.",
-      "discoverable-enabled": "Visible activado.",
+      "connect-failed": "Error al conectar con el dispositivo",
+      "disconnect-failed": "Error al desconectar del dispositivo",
+      "discoverable-change-failed": "Error al cambiar el estado de visibilidad",
+      "discoverable-disabled": "Visible desactivado",
+      "discoverable-enabled": "Visible activado",
       "display-code": "Introduce el código {value} en el otro dispositivo.",
-      "forget-failed": "Error al olvidar el dispositivo.",
-      "pair-failed": "Error al emparejar el dispositivo.",
+      "forget-failed": "Error al olvidar el dispositivo",
+      "pair-failed": "Error al emparejar el dispositivo",
       "passkey-required": "Se requiere una clave de acceso del dispositivo.",
       "pincode-required": "Se requiere el código PIN del dispositivo.",
-      "state-change-failed": "Error al cambiar el estado de Bluetooth."
+      "state-change-failed": "Error al cambiar el estado de Bluetooth"
     },
     "clipboard": {
       "long-text": "Texto largo",
       "unavailable": "Historial del portapapeles no disponible",
-      "unavailable-desc": "La aplicación 'cliphist' no está instalada. Por favor, instálala para usar las funciones de historial del portapapeles."
+      "unavailable-desc": "La aplicación 'cliphist' no está instalada. Por favor, instálala para usar las funciones de historial del portapapeles"
     },
     "do-not-disturb": {
       "disabled": "'No molestar' desactivado",
-      "disabled-desc": "Mostrando todas las notificaciones.",
+      "disabled-desc": "Mostrando todas las notificaciones",
       "enabled": "'No molestar' activado",
-      "enabled-desc": "Encontrarás estas notificaciones en tu historial."
+      "enabled-desc": "Encontrarás estas notificaciones en tu historial"
     },
-    "internet-limited": "Conectado sin Internet.",
-    "ipc": {
-      "powerpanel-deprecated": "PowerPanel ha sido renombrado a SessionMenu, esta llamada IPC será obsoleta pronto. Por favor, usa \"ipc call sessionMenu toggle\" en su lugar.",
-      "sidepanel-deprecated": "SidePanel ha sido renombrado a ControlCenter, esta llamada IPC será obsoleta pronto. Por favor, usa \"ipc call controlCenter toggle\" en su lugar."
-    },
+    "internet-limited": "Conectado sin Internet",
     "keyboard-layout": {
       "changed": "Distribución de teclado cambiada a {layout}.",
       "title": "Teclado"
@@ -1476,13 +1493,13 @@
       "label": "Se eliminó el último widget del centro de control"
     },
     "night-light": {
-      "forced": "Activación forzada.",
-      "normal": "Modo normal.",
-      "not-installed": "wlsunset no está instalado."
+      "forced": "Activación forzada",
+      "normal": "Modo normal",
+      "not-installed": "wlsunset no está instalado"
     },
     "noctalia-performance": {
-      "disabled": "Modo de rendimiento desactivado.",
-      "enabled": "Modo de rendimiento activado.",
+      "disabled": "Modo de rendimiento desactivado",
+      "enabled": "Modo de rendimiento activado",
       "label": "Noctalia Rendimiento"
     },
     "power-profile": {
@@ -1495,22 +1512,22 @@
       "title-predefined": "Falló el procesamiento del esquema de color predefinido"
     },
     "vpn": {
-      "connected": "Conectado a '{name}'.",
-      "disconnected": "Desconectado de '{name}'."
+      "connected": "Conectado a '{name}'",
+      "disconnected": "Desconectado de '{name}'"
     },
     "wallpaper-colors": {
-      "disabled": "Colores del fondo de pantalla desactivados.",
-      "enabled": "Colores del fondo de pantalla activados.",
+      "disabled": "Colores del fondo de pantalla desactivados",
+      "enabled": "Colores del fondo de pantalla activados",
       "label": "Generación de colores para fondos de pantalla",
-      "not-installed": "Matugen no instalado — requerido para extraer colores del fondo de pantalla."
+      "not-installed": "Matugen no instalado — requerido para extraer colores del fondo de pantalla"
     },
     "wifi": {
-      "connected": "Conectado a '{ssid}'.",
-      "connection-failed": "Error de conexión.",
-      "connection-timeout": "Tiempo de conexión agotado.",
-      "disabled": "Desactivado.",
-      "disconnected": "Desconectado de '{ssid}'.",
-      "enabled": "Activado.",
+      "connected": "Conectado a '{ssid}'",
+      "connection-failed": "Error de conexión",
+      "connection-timeout": "Tiempo de conexión agotado",
+      "disabled": "Desactivado",
+      "disconnected": "Desconectado de '{ssid}'",
+      "enabled": "Activado",
       "incorrect-password": "Contraseña incorrecta.",
       "network-not-found": "Red no encontrada."
     }
@@ -1576,6 +1593,7 @@
     "fill-modes": {
       "crop": "Recortar (Rellenar)",
       "fit": "Ajustar (Contener)",
+      "repeat": "Repetir (Mosaico)",
       "stretch": "Estirar"
     },
     "no-match": "No se encontraron coincidencias.",
@@ -1676,10 +1694,13 @@
       "year-two-digit": "Año como número de dos dígitos (00-99)"
     },
     "file-picker": {
+      "item": "elemento",
+      "items": "elementos",
       "search-placeholder": "Buscar archivos y carpetas...",
       "select-current": "Seleccionar actual",
       "select-file": "Seleccionar archivo",
       "select-folder": "Seleccionar carpeta",
+      "selected": "Seleccionado:",
       "title": "Selector de archivos"
     },
     "file-picker-title": "Seleccionar un archivo",

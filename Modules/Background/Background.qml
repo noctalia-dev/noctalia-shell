@@ -123,7 +123,7 @@ Variants {
         smooth: true
         mipmap: false
         visible: false
-        cache: false
+        cache: true // Cached so Overview can share the same texture
         asynchronous: true
         onStatusChanged: {
           if (status === Image.Error) {
@@ -141,7 +141,7 @@ Variants {
         smooth: true
         mipmap: false
         visible: false
-        cache: false
+        cache: false // Not cached - temporary during transitions
         asynchronous: true
         onStatusChanged: {
           if (status === Image.Error) {
@@ -361,6 +361,7 @@ Variants {
           var solidPath = WallpaperService.createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
           futureWallpaper = solidPath;
           performStartupTransition();
+          WallpaperService.wallpaperProcessingComplete(modelData.name, solidPath, "");
           return;
         }
 
@@ -370,6 +371,7 @@ Variants {
         if (WallpaperService.isSolidColorPath(wallpaperPath)) {
           futureWallpaper = wallpaperPath;
           performStartupTransition();
+          WallpaperService.wallpaperProcessingComplete(modelData.name, wallpaperPath, "");
           return;
         }
 
@@ -385,6 +387,8 @@ Variants {
             futureWallpaper = wallpaperPath;
           }
           performStartupTransition();
+          // Pass cached path for blur optimization (already resized)
+          WallpaperService.wallpaperProcessingComplete(modelData.name, wallpaperPath, success ? cachedPath : "");
         });
       }
 
@@ -402,6 +406,7 @@ Variants {
         if (WallpaperService.isSolidColorPath(originalPath)) {
           futureWallpaper = originalPath;
           debounceTimer.restart();
+          WallpaperService.wallpaperProcessingComplete(modelData.name, originalPath, "");
           return;
         }
 
@@ -410,12 +415,18 @@ Variants {
         const targetHeight = Math.round(modelData.height * compositorScale);
 
         ImageCacheService.getLarge(originalPath, targetWidth, targetHeight, function (cachedPath, success) {
+          // Ignore stale callback if we've moved on to a different wallpaper
+          if (originalPath !== transitioningToOriginalPath) {
+            return;
+          }
           if (success) {
             futureWallpaper = cachedPath;
           } else {
             futureWallpaper = originalPath;
           }
           debounceTimer.restart();
+          // Pass cached path for blur optimization (already resized)
+          WallpaperService.wallpaperProcessingComplete(modelData.name, originalPath, success ? cachedPath : "");
         });
       }
 

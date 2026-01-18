@@ -175,8 +175,10 @@
       "visualizer-type-label": "Tipo de visualizador"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Ocultar o ícone de notificação quando não há notificações não lidas.",
-      "hide-widget-when-zero-label": "Ocultar ícone quando zero",
+      "hide-widget-when-zero-description": "Ocultar o ícone de notificações quando não houver notificações.",
+      "hide-widget-when-zero-label": "Ocultar ícone sem notificações",
+      "hide-widget-when-zero-unread-description": "Ocultar o ícone de notificações quando não houver notificações não lidas.",
+      "hide-widget-when-zero-unread-label": "Ocultar ícone sem notificações não lidas",
       "show-unread-badge-description": "Exibir um distintivo mostrando o número de notificações não lidas.",
       "show-unread-badge-label": "Mostrar distintivo de não lidos"
     },
@@ -351,9 +353,11 @@
     "connect": "Conectar",
     "connected": "Conectado(a)",
     "connecting": "Conectando...",
+    "continue": "Continuar",
     "contributors": "Colaboradores",
     "countdown": "Contagem regressiva",
     "date": "Data",
+    "default": "Padrão",
     "delete": "Apagar",
     "devices": "Dispositivos",
     "disabled": "Desativado",
@@ -361,7 +365,7 @@
     "disconnect": "Desconectar",
     "disconnected": "Desconectado(a)",
     "disconnecting": "Desconectando...",
-    "download": "Download",
+    "download": "Baixar",
     "duration": "Duração",
     "enabled": "Ativado",
     "events": "Eventos",
@@ -443,7 +447,7 @@
     "unpair": "Desemparelhar",
     "unpin": "Desafixar",
     "update": "Atualização",
-    "upload": "Envio",
+    "upload": "Enviar",
     "version": "Versão",
     "visualizer": "Visualizador",
     "volume": "Volume",
@@ -525,7 +529,9 @@
       "emoji-loading-description": "Por favor, aguarde",
       "emoji-no-recent": "Ainda não há emojis recentes",
       "emoji-search-description": "Buscar e copiar emojis"
-    }
+    },
+    "result": "resultado",
+    "results": "resultados"
   },
   "lock-screen": {
     "authenticating": "Autenticando...",
@@ -607,6 +613,7 @@
       "noctalia-installed-version": "Versão instalada:",
       "noctalia-latest-version": "Última versão:",
       "noctalia-title": "Shell Noctalia",
+      "privacy-policy": "Política de privacidade",
       "support": "Apoie-nos",
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
@@ -620,6 +627,7 @@
       "system-not-installed": "fastfetch não está instalado",
       "system-os": "SO:",
       "system-packages": "Pacotes:",
+      "system-product": "Produto:",
       "system-title": "Informações do Sistema",
       "system-uptime": "Tempo de atividade:",
       "system-wm": "WM:",
@@ -712,11 +720,7 @@
       "widgets-title": "Posicionamento dos widgets"
     },
     "color-scheme": {
-      "color-source-desc": "Configurações principais para as cores do Noctalia.",
-      "color-source-matugen-scheme-type-description": "Escolha o método de geração de esquema de cores que o Matugen usará para criar cores a partir do seu papel de parede.",
-      "color-source-matugen-scheme-type-label": "Tipo de esquema Matugen",
-      "color-source-title": "Fonte de cor",
-      "color-source-use-wallpaper-colors-description": "Gerar esquemas de cores do seu papel de parede usando Matugen. Extrai automaticamente cores para criar um tema coeso.",
+      "color-source-use-wallpaper-colors-description": "Gere esquemas de cores a partir do seu papel de parede. Extrai automaticamente as cores para criar um tema coeso.",
       "color-source-use-wallpaper-colors-label": "Usar cores do papel de parede",
       "dark-mode-mode-description": "Ativa a mudança automática entre o modo claro e o modo escuro.",
       "dark-mode-mode-label": "Agendamento do modo escuro",
@@ -751,11 +755,13 @@
       "templates-filter-label": "Filtrar por categoria",
       "templates-misc-description": "Crie seus próprios modelos.",
       "templates-misc-label": "Avançado",
-      "templates-misc-user-templates-description": "Ative apenas se souber o que está fazendo — consulte nossa documentação online",
+      "templates-misc-user-templates-description": "Ative apenas se souber o que está fazendo — consulte nossa documentação online.",
       "templates-misc-user-templates-label": "Ativar modelos do usuário",
       "templates-none-detected": "Nenhum detectado",
       "templates-write-path": "Escreve: {filepath}",
-      "title": "Esquema de cores"
+      "title": "Esquema de cores",
+      "wallpaper-method-description": "Escolha o seu método de extração de cores favorito.",
+      "wallpaper-method-label": "Método de extração de cor"
     },
     "control-center": {
       "cards-desc": "Personalize quais controles aparecem na central de controle e em que ordem.",
@@ -897,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Copiar configurações",
       "fonts-default-description": "Fonte principal usada em toda a interface.",
       "fonts-default-label": "Fonte padrão",
       "fonts-default-placeholder": "Selecione a fonte padrão...",
@@ -931,17 +938,18 @@
       "screen-corners-show-corners-label": "Mostrar cantos da tela",
       "screen-corners-solid-black-description": "Use preto sólido em vez da cor de fundo da barra.",
       "screen-corners-solid-black-label": "Cantos pretos sólidos",
-      "screen-corners-title": "Cantos da tela"
+      "screen-corners-title": "Cantos da tela",
+      "settings-copied": "Configurações copiadas para a área de transferência"
     },
     "hooks": {
       "info-command-info-description": "• Comandos são executados via shell (sh -lc)<br>• Comandos rodam em segundo plano (desanexados)<br>• Botões de teste executam com os valores atuais",
       "info-command-info-label": "Informações de comando do hook",
-      "info-parameters-description": "• Hook de papel de parede: $1 = caminho do papel de parede, $2 = nome da tela<br>• Hook de alternância de tema: $1 = verdadeiro/falso (estado do modo escuro)<br>• Hooks de bloqueio/desbloqueio de tela: Sem parâmetros<br>• Hooks de modo de desempenho: Sem parâmetros<br>• Hook de sessão: $1 = ação (desligar/reiniciar)",
+      "info-parameters-description": "• Hook de papel de parede: $1 = caminho do papel de parede, $2 = nome da tela<br>• Hook de alternância de tema: $1 = verdadeiro/falso (estado do modo escuro)<br>• Hooks de bloqueio/desbloqueio de tela: Sem parâmetros<br>• Hooks de modo de desempenho: Sem parâmetros<br>• Hook de sessão: $1 = ação (desligamento/reinicialização)",
       "info-parameters-label": "Parâmetros disponíveis",
-      "performance-mode-disabled-description": "Comando a ser executado quando o modo de desempenho noctalia é desabilitado.",
+      "performance-mode-disabled-description": "Comando a ser executado quando o modo de desempenho Noctalia é desabilitado.",
       "performance-mode-disabled-label": "Modo de desempenho desabilitado",
       "performance-mode-disabled-placeholder": "ex., notify-send \"Desempenho\" \"Modo desabilitado\"",
-      "performance-mode-enabled-description": "Comando a ser executado quando o modo de desempenho noctalia é habilitado.",
+      "performance-mode-enabled-description": "Comando a ser executado quando o modo de desempenho Noctalia é habilitado.",
       "performance-mode-enabled-label": "Modo de desempenho habilitado",
       "performance-mode-enabled-placeholder": "ex., notify-send \"Desempenho\" \"Modo habilitado\"",
       "screen-lock-description": "Comando a ser executado quando a tela é bloqueada.",
@@ -1049,7 +1057,7 @@
       "compact-lockscreen-label": "Tela de bloqueio compacta",
       "lock-on-suspend-description": "Bloquear a tela automaticamente ao suspender o sistema.",
       "lock-on-suspend-label": "Bloquear ao suspender",
-      "show-hibernate-description": "Mostrar a opção 'hibernar' nas ações de energia.",
+      "show-hibernate-description": "Mostrar a opção 'hibernar' nos controles de energia.",
       "show-hibernate-label": "Mostrar hibernar",
       "show-session-buttons-description": "Permitir acesso às configurações de energia a partir da tela de bloqueio.",
       "show-session-buttons-label": "Controles de energia",
@@ -1081,6 +1089,8 @@
       "history-low-urgency-label": "Salvar urgência baixa no histórico",
       "history-normal-urgency-description": "Salvar notificações de prioridade normal no histórico.",
       "history-normal-urgency-label": "Salvar urgência normal no histórico",
+      "media-toast-description": "Mostrar um toast quando o estado de reprodução de mídia mudar.",
+      "media-toast-label": "Multimédia",
       "monitors-desc": "Mostra a notificação em monitores específicos. O padrão é todos, se nenhum for escolhido.",
       "settings-always-on-top-description": "Exibe notificações acima de janelas em tela cheia e outras camadas.",
       "settings-background-opacity-description": "Ajustar a opacidade dos fundos das notificações.",
@@ -1148,6 +1158,8 @@
       "types-input-volume-label": "Volume de entrada",
       "types-lockkey-description": "Mostrar o OSD quando Bloq Caps, Bloq Num ou Bloq Rol forem alternadas.",
       "types-lockkey-label": "Teclas de bloqueio",
+      "types-media-description": "Mostrar OSD quando o estado de reprodução de mídia mudar (reproduzir, pausar, pular).",
+      "types-media-label": "Reprodução de mídia",
       "types-title": "Eventos de disparo OSD",
       "types-volume-description": "Mostrar o OSD quando o volume de saída de áudio mudar.",
       "types-volume-label": "Volume de saída"
@@ -1349,6 +1361,7 @@
     "command-example": "echo \"Olá, mundo\"",
     "enter-command": "Digite o comando para executar (app ou script personalizado)",
     "enter-ipc-identifier": "Introduza um identificador exclusivo para comandos IPC",
+    "enter-path": "Digite o caminho...",
     "enter-text-to-collapse": "por exemplo, 'nada está sendo reproduzido'. Use /regex/ para padrões.",
     "enter-tooltip": "Inserir dica de ferramenta",
     "enter-width-pixels": "Digite a largura em pixels",
@@ -1380,6 +1393,7 @@
     "title": "Menu da sessão"
   },
   "setup": {
+    "all-done": "Concluído!",
     "appearance": {
       "subheader": "Escolha o modo escuro e as fontes de cores (Matugen ou predefinidas)."
     },
@@ -1387,6 +1401,11 @@
       "header": "Personalizar a sua experiência",
       "subheader": "Ajuste a posição da barra, densidade, escala e mais."
     },
+    "skip-setup": "Ignorar configuração",
+    "telemetry-wizard-done": "Entendi!",
+    "telemetry-wizard-note": "Você está no controle — ative ou desative isso a qualquer momento nas Configurações",
+    "telemetry-wizard-subtitle": "Adicionámos análises anónimas para ajudar a melhorar o Noctalia",
+    "telemetry-wizard-title": "Atualização de privacidade",
     "wallpaper": {
       "choose-dir": "Escolha um diretório contendo seus papéis de parede",
       "dir-browse": "Procurar pasta",
@@ -1401,7 +1420,9 @@
       "select-prompt": "Selecione um papel de parede abaixo",
       "subheader": "Defina o ambiente com um belo fundo."
     },
-    "welcome-note": "Apenas alguns ajustes básicos para começar - o restante está em configurações"
+    "welcome-note": "Apenas alguns ajustes básicos para começar - o restante está em configurações",
+    "welcome-subtitle": "Vamos tornar o seu ambiente de trabalho único",
+    "welcome-title": "Bem-vindo ao Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1433,39 +1454,35 @@
     },
     "battery": {
       "low": "Bateria fraca",
-      "low-desc": "A bateria está em {percent}%. Por favor, conecte o carregador."
+      "low-desc": "A bateria está em {percent}%. Por favor, conecte o carregador"
     },
     "bluetooth": {
-      "address-copied": "Endereço copiado para a área de transferência.",
+      "address-copied": "Endereço copiado para a área de transferência",
       "confirm-code": "Confirme o código {value} no outro dispositivo.",
-      "connect-failed": "Falha ao conectar ao dispositivo.",
-      "disconnect-failed": "Falha ao desconectar do dispositivo.",
-      "discoverable-change-failed": "Falha ao alterar o estado de visibilidade.",
-      "discoverable-disabled": "Visível desativado.",
-      "discoverable-enabled": "Visível ativado.",
+      "connect-failed": "Falha ao conectar ao dispositivo",
+      "disconnect-failed": "Falha ao desconectar do dispositivo",
+      "discoverable-change-failed": "Falha ao alterar o estado de visibilidade",
+      "discoverable-disabled": "Visível desativado",
+      "discoverable-enabled": "Visível ativado",
       "display-code": "Insira o código {value} no outro dispositivo.",
-      "forget-failed": "Falha ao esquecer o dispositivo.",
-      "pair-failed": "Falha ao emparelhar o dispositivo.",
+      "forget-failed": "Falha ao esquecer o dispositivo",
+      "pair-failed": "Falha ao emparelhar o dispositivo",
       "passkey-required": "Senha necessária pelo dispositivo.",
       "pincode-required": "Código PIN exigido pelo dispositivo.",
-      "state-change-failed": "Falha ao alterar o estado do Bluetooth."
+      "state-change-failed": "Falha ao alterar o estado do Bluetooth"
     },
     "clipboard": {
       "long-text": "Texto longo",
       "unavailable": "Histórico da área de transferência indisponível",
-      "unavailable-desc": "O aplicativo 'cliphist' não está instalado. Por favor, instale-o para usar os recursos do histórico da área de transferência."
+      "unavailable-desc": "O aplicativo 'cliphist' não está instalado. Por favor, instale-o para usar os recursos do histórico da área de transferência"
     },
     "do-not-disturb": {
       "disabled": "'Não perturbe' desativado",
-      "disabled-desc": "Mostrando todas as notificações.",
+      "disabled-desc": "Mostrando todas as notificações",
       "enabled": "'Não perturbe' ativado",
-      "enabled-desc": "Você encontrará essas notificações no seu histórico."
+      "enabled-desc": "Você encontrará essas notificações no seu histórico"
     },
-    "internet-limited": "Conectado sem Internet.",
-    "ipc": {
-      "powerpanel-deprecated": "PowerPanel foi renomeado para SessionMenu, esta chamada de IPC será descontinuada em breve. Por favor, use \"ipc call sessionMenu toggle\".",
-      "sidepanel-deprecated": "SidePanel foi renomeado para ControlCenter, esta chamada de IPC será descontinuada em breve. Por favor, use \"ipc call controlCenter toggle\"."
-    },
+    "internet-limited": "Conectado sem Internet",
     "keyboard-layout": {
       "changed": "Layout de teclado alterado para {layout}.",
       "title": "Teclado"
@@ -1476,13 +1493,13 @@
       "label": "Último widget da central de controle removido"
     },
     "night-light": {
-      "forced": "Ativação forçada.",
-      "normal": "Modo normal.",
-      "not-installed": "wlsunset não está instalado."
+      "forced": "Ativação forçada",
+      "normal": "Modo normal",
+      "not-installed": "wlsunset não está instalado"
     },
     "noctalia-performance": {
-      "disabled": "Modo de desempenho desativado.",
-      "enabled": "Modo de desempenho ativado.",
+      "disabled": "Modo de desempenho desativado",
+      "enabled": "Modo de desempenho ativado",
       "label": "Noctalia Desempenho"
     },
     "power-profile": {
@@ -1495,22 +1512,22 @@
       "title-predefined": "O processamento do esquema de cores predefinido falhou"
     },
     "vpn": {
-      "connected": "Conectado a '{name}'.",
-      "disconnected": "Desconectado de '{name}'."
+      "connected": "Conectado a '{name}'",
+      "disconnected": "Desconectado de '{name}'"
     },
     "wallpaper-colors": {
-      "disabled": "Cores do papel de parede desativadas.",
-      "enabled": "Cores do papel de parede ativadas.",
+      "disabled": "Cores do papel de parede desativadas",
+      "enabled": "Cores do papel de parede ativadas",
       "label": "Geração de cores para papel de parede",
-      "not-installed": "Matugen não instalado — necessário para extração de cores do papel de parede."
+      "not-installed": "Matugen não instalado — necessário para extração de cores do papel de parede"
     },
     "wifi": {
-      "connected": "Conectado a '{ssid}'.",
-      "connection-failed": "Falha na conexão.",
-      "connection-timeout": "Tempo de conexão esgotado.",
-      "disabled": "Desativado.",
-      "disconnected": "Desconectado de '{ssid}'.",
-      "enabled": "Ativado.",
+      "connected": "Conectado a '{ssid}'",
+      "connection-failed": "Falha na conexão",
+      "connection-timeout": "Tempo de conexão esgotado",
+      "disabled": "Desativado",
+      "disconnected": "Desconectado de '{ssid}'",
+      "enabled": "Ativado",
       "incorrect-password": "Senha incorreta.",
       "network-not-found": "Rede não encontrada."
     }
@@ -1576,6 +1593,7 @@
     "fill-modes": {
       "crop": "Cortar (Preencher)",
       "fit": "Ajustar (Conter)",
+      "repeat": "Repetir (Mosaico)",
       "stretch": "Esticar"
     },
     "no-match": "Nenhuma correspondência encontrada.",
@@ -1676,10 +1694,13 @@
       "year-two-digit": "Ano com dois dígitos (00-99)"
     },
     "file-picker": {
+      "item": "item",
+      "items": "itens",
       "search-placeholder": "Pesquisar arquivos e pastas...",
       "select-current": "Selecionar atual",
       "select-file": "Selecionar arquivo",
       "select-folder": "Selecionar pasta",
+      "selected": "Selecionado:",
       "title": "Seletor de arquivos"
     },
     "file-picker-title": "Selecione um arquivo",

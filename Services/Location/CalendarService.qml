@@ -19,9 +19,9 @@ Singleton {
   property string cacheFile: Settings.cacheDir + "calendar.json"
 
   // Python scripts
-  readonly property string checkCalendarAvailableScript: Quickshell.shellDir + '/Bin/check-calendar.py'
-  readonly property string listCalendarsScript: Quickshell.shellDir + '/Bin/list-calendars.py'
-  readonly property string calendarEventsScript: Quickshell.shellDir + '/Bin/calendar-events.py'
+  readonly property string checkCalendarAvailableScript: Quickshell.shellDir + '/Scripts/calendar/check-calendar.py'
+  readonly property string listCalendarsScript: Quickshell.shellDir + '/Scripts/calendar/list-calendars.py'
+  readonly property string calendarEventsScript: Quickshell.shellDir + '/Scripts/calendar/calendar-events.py'
 
   // Cache file handling
   FileView {

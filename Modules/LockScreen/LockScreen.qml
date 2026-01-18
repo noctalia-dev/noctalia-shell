@@ -230,7 +230,7 @@ Loader {
             // Main panel with password, weather, media, session controls
             LockScreenPanel {
               id: panelComponent
-              lockContext: lockContext
+              lockControl: lockContext
               batteryIndicator: batteryIndicator
               keyboardLayout: keyboardLayout
               passwordInput: passwordInput

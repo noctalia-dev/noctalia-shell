@@ -10,6 +10,10 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
+  NLabel {
+    Layout.fillWidth: true
+    description: I18n.tr("panels.system-monitor.polling-section-description")
+  }
   // CPU Polling
   RowLayout {
     Layout.fillWidth: true
@@ -163,10 +167,5 @@ ColumnLayout {
       onValueChanged: Settings.data.systemMonitor.networkPollingInterval = value
       suffix: " ms"
     }
-  }
-
-  NLabel {
-    Layout.fillWidth: true
-    description: I18n.tr("panels.system-monitor.polling-section-description")
   }
 }

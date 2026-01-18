@@ -220,7 +220,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredHeight: Math.round(Style.baseWidgetSize * 0.9)
         radius: height / 2
-        color: isActive ? Color.mPrimary : (chipMouse.containsMouse ? Color.mHover : Color.mSurface)
+        color: chipMouse.containsMouse ? Color.mHover : (isActive ? Color.mPrimary : Color.mSurface)
         border.color: isActive ? Color.mPrimary : Color.mOutline
         border.width: Style.borderS
 
@@ -240,7 +240,7 @@ ColumnLayout {
           width: parent.width - Style.marginL * 2
           text: chip.modelData.name
           pointSize: Style.fontSizeS
-          color: chip.isActive ? Color.mOnPrimary : (chipMouse.containsMouse ? Color.mOnSecondary : Color.mOnSurface)
+          color: chipMouse.containsMouse ? Color.mOnHover : (isActive ? Color.mOnPrimary : Color.mOnSurface)
           horizontalAlignment: Text.AlignHCenter
           elide: Text.ElideRight
 
@@ -286,9 +286,9 @@ ColumnLayout {
   NCheckbox {
     label: I18n.tr("panels.color-scheme.templates-misc-user-templates-label")
     description: I18n.tr("panels.color-scheme.templates-misc-user-templates-description")
-    checked: Settings.data.templates.enableUserTemplates
+    checked: Settings.data.templates.enableUserTheming
     onToggled: checked => {
-                 Settings.data.templates.enableUserTemplates = checked;
+                 Settings.data.templates.enableUserTheming = checked;
                  if (checked) {
                    TemplateRegistry.writeUserTemplatesToml();
                  }

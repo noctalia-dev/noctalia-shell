@@ -166,7 +166,7 @@ ColumnLayout {
           color: Color.mSurface
 
           NIcon {
-            icon: ProgramCheckerService.matugenAvailable ? "color-picker" : "alert-triangle"
+            icon: "color-picker"
             pointSize: Style.fontSizeL
             color: Color.mPrimary
             anchors.centerIn: parent
@@ -194,11 +194,8 @@ ColumnLayout {
         }
 
         NToggle {
-          enabled: ProgramCheckerService.matugenAvailable
-          checked: Settings.data.colorSchemes.useWallpaperColors && ProgramCheckerService.matugenAvailable
+          checked: Settings.data.colorSchemes.useWallpaperColors
           onToggled: checked => {
-                       if (!ProgramCheckerService.matugenAvailable)
-                       return;
                        if (checked) {
                          Settings.data.colorSchemes.useWallpaperColors = true;
                          AppThemeService.generate();
@@ -209,143 +206,6 @@ ColumnLayout {
                          }
                        }
                      }
-        }
-      }
-
-      // Matugen scheme type (visible when wallpaper colors enabled and matugen available)
-      ColumnLayout {
-        Layout.fillWidth: true
-        spacing: Style.marginM
-        visible: Settings.data.colorSchemes.useWallpaperColors && ProgramCheckerService.matugenAvailable
-
-        RowLayout {
-          Layout.fillWidth: true
-          spacing: Style.marginS
-
-          Rectangle {
-            width: 28
-            height: 28
-            radius: Style.radiusM
-            color: Color.mSurface
-
-            NIcon {
-              icon: "wand"
-              pointSize: Style.fontSizeL
-              color: Color.mPrimary
-              anchors.centerIn: parent
-            }
-          }
-
-          ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 2
-
-            NText {
-              text: I18n.tr("panels.color-scheme.color-source-matugen-scheme-type-label")
-              pointSize: Style.fontSizeL
-              font.weight: Style.fontWeightBold
-              color: Color.mOnSurface
-            }
-
-            NText {
-              text: I18n.tr("panels.color-scheme.color-source-matugen-scheme-type-description")
-              pointSize: Style.fontSizeS
-              color: Color.mOnSurfaceVariant
-            }
-          }
-        }
-
-        // Matugen scheme options styled like bar position buttons
-        GridLayout {
-          Layout.fillWidth: true
-          columns: 2
-          rowSpacing: Style.marginS
-          columnSpacing: Style.marginS
-
-          Repeater {
-            model: [
-              {
-                "key": "scheme-content",
-                "name": "Content"
-              },
-              {
-                "key": "scheme-expressive",
-                "name": "Expressive"
-              },
-              {
-                "key": "scheme-fidelity",
-                "name": "Fidelity"
-              },
-              {
-                "key": "scheme-fruit-salad",
-                "name": "Fruit Salad"
-              },
-              {
-                "key": "scheme-monochrome",
-                "name": "Monochrome"
-              },
-              {
-                "key": "scheme-neutral",
-                "name": "Neutral"
-              },
-              {
-                "key": "scheme-rainbow",
-                "name": "Rainbow"
-              },
-              {
-                "key": "scheme-tonal-spot",
-                "name": "Tonal Spot"
-              }
-            ]
-            delegate: Rectangle {
-              Layout.fillWidth: true
-              Layout.preferredHeight: 48
-              radius: Style.radiusM
-              border.width: Style.borderS
-
-              property bool isActive: Settings.data.colorSchemes.matugenSchemeType === modelData.key
-
-              color: (hoverHandler.hovered || isActive) ? Color.mPrimary : Color.mSurfaceVariant
-              border.color: (hoverHandler.hovered || isActive) ? Color.mPrimary : Color.mOutline
-              opacity: (hoverHandler.hovered || isActive) ? 1.0 : 0.8
-
-              NText {
-                text: modelData.name
-                pointSize: Style.fontSizeM
-                font.weight: (hoverHandler.hovered || parent.isActive) ? Style.fontWeightBold : Style.fontWeightMedium
-                color: (hoverHandler.hovered || parent.isActive) ? Color.mOnPrimary : Color.mOnSurface
-                anchors.centerIn: parent
-              }
-
-              HoverHandler {
-                id: hoverHandler
-              }
-              MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                  Settings.data.colorSchemes.matugenSchemeType = modelData.key;
-                  AppThemeService.generate();
-                }
-              }
-
-              Behavior on color {
-                ColorAnimation {
-                  duration: Style.animationFast
-                }
-              }
-              Behavior on border.color {
-                ColorAnimation {
-                  duration: Style.animationFast
-                }
-              }
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: Style.animationFast
-                }
-              }
-            }
-          }
         }
       }
 

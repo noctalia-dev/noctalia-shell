@@ -12,15 +12,21 @@ Singleton {
   * @param colors - Object with mPrimary, mSecondary, mTertiary, mError, mSurface, etc.
   * @param isDarkMode - Boolean indicating dark or light mode
   * @param isStrict - Boolean; if true, use mSurfaceVariant/mOnSurfaceVariant/mOutline directly
-  * @returns Object with all MD3 color roles in matugen format
+  * @returns Object with all MD3 color roles
   */
   function generatePalette(colors, isDarkMode, isStrict) {
-    const c = hex => ({
-                        "default": {
-                          "hex": hex,
-                          "hex_stripped": hex.replace(/^#/, "")
-                        }
-                      });
+    const c = hex => {
+      const hsl = ColorsConvert.hexToHSL(hex);
+      return {
+        "default": {
+          "hex": hex,
+          "hex_stripped": hex.replace(/^#/, ""),
+          "hue": hsl.h,
+          "saturation": hsl.s,
+          "lightness": hsl.l
+        }
+      };
+    };
 
     // Generate container colors
     const primaryContainer = ColorsConvert.generateContainerColor(colors.mPrimary, isDarkMode);

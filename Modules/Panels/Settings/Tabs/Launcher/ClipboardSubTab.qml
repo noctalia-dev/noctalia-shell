@@ -24,7 +24,7 @@ ColumnLayout {
     checked: Settings.data.appLauncher.enableClipPreview
     onToggled: checked => Settings.data.appLauncher.enableClipPreview = checked
     defaultValue: Settings.getDefaultValue("appLauncher.enableClipPreview")
-    visible: Settings.data.appLauncher.enableClipboardHistory
+    enabled: Settings.data.appLauncher.enableClipboardHistory
   }
 
   NToggle {
@@ -33,7 +33,7 @@ ColumnLayout {
     checked: Settings.data.appLauncher.clipboardWrapText
     onToggled: checked => Settings.data.appLauncher.clipboardWrapText = checked
     defaultValue: Settings.getDefaultValue("appLauncher.clipboardWrapText")
-    visible: Settings.data.appLauncher.enableClipboardHistory
+    enabled: Settings.data.appLauncher.enableClipboardHistory
   }
 
   NToggle {
@@ -42,7 +42,6 @@ ColumnLayout {
     checked: Settings.data.appLauncher.autoPasteClipboard
     onToggled: checked => Settings.data.appLauncher.autoPasteClipboard = checked
     defaultValue: Settings.getDefaultValue("appLauncher.autoPasteClipboard")
-    visible: Settings.data.appLauncher.enableClipboardHistory
-    enabled: ProgramCheckerService.wtypeAvailable
+    enabled: Settings.data.appLauncher.enableClipboardHistory && ProgramCheckerService.wtypeAvailable
   }
 }

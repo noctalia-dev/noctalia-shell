@@ -27,6 +27,7 @@ ColumnLayout {
 
   signal editingFinished
 
+  opacity: enabled ? 1.0 : 0.3
   spacing: Style.marginS
 
   readonly property bool isValueChanged: (defaultValue !== undefined) && (text !== defaultValue)
@@ -145,9 +146,8 @@ ColumnLayout {
 
             echoMode: TextInput.Normal
             readOnly: root.readOnly
-            enabled: root.enabled
-            color: Color.mOnSurface
             placeholderTextColor: Qt.alpha(Color.mOnSurfaceVariant, 0.6)
+            color: enabled ? Color.mOnSurface : Qt.alpha(Color.mOnSurface, 0.4)
 
             selectByMouse: true
 
@@ -207,7 +207,7 @@ ColumnLayout {
           NIconButton {
             id: clearButton
             icon: "x"
-            tooltipText: I18n.tr("common.clear")
+            tooltipText: (input.text.length > 0 && !root.readOnly && root.enabled) ? I18n.tr("common.clear") : ""
 
             Layout.alignment: Qt.AlignVCenter
             border.width: 0
@@ -218,7 +218,7 @@ ColumnLayout {
             colorFgHover: Color.mError
 
             visible: input.text.length > 0 && !root.readOnly
-            enabled: input.text.length > 0 && !root.readOnly
+            enabled: input.text.length > 0 && !root.readOnly && root.enabled
 
             onClicked: {
               input.clear();

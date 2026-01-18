@@ -61,6 +61,20 @@ ColumnLayout {
     }
   }
 
+  // Volume Feedback sound Toggle
+  ColumnLayout {
+    spacing: Style.marginS
+    Layout.fillWidth: true
+
+    NToggle {
+      label: I18n.tr("panels.audio.volumes-volume-feedback-label")
+      description: I18n.tr("panels.audio.volumes-volume-feedback-description")
+      checked: Settings.data.audio.volumeFeedback
+      defaultValue: Settings.getDefaultValue("audio.volumeFeedback")
+      onToggled: checked => Settings.data.audio.volumeFeedback = checked
+    }
+  }
+
   // Mute Toggle
   ColumnLayout {
     spacing: Style.marginS

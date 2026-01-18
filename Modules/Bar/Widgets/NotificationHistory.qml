@@ -32,6 +32,7 @@ NIconButton {
   }
   readonly property bool showUnreadBadge: (widgetSettings.showUnreadBadge !== undefined) ? widgetSettings.showUnreadBadge : widgetMetadata.showUnreadBadge
   readonly property bool hideWhenZero: (widgetSettings.hideWhenZero !== undefined) ? widgetSettings.hideWhenZero : widgetMetadata.hideWhenZero
+  readonly property bool hideWhenZeroUnread: (widgetSettings.hideWhenZeroUnread !== undefined) ? widgetSettings.hideWhenZeroUnread : widgetMetadata.hideWhenZeroUnread
 
   function computeUnreadCount() {
     var since = NotificationService.lastSeenTs;
@@ -60,8 +61,8 @@ NIconButton {
   colorBorderHover: "transparent"
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
-  visible: count > 0 || !hideWhenZero
-  opacity: (count > 0 || !hideWhenZero) ? 1.0 : 0.0
+  visible: !((hideWhenZero && NotificationService.historyList.count === 0) || (hideWhenZeroUnread && count === 0))
+  opacity: !((hideWhenZero && NotificationService.historyList.count === 0) || (hideWhenZeroUnread && count === 0)) ? 1.0 : 0.0
 
   NPopupContextMenu {
     id: contextMenu

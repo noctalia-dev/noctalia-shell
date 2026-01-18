@@ -107,7 +107,7 @@ Item {
         if (battery.type === UPowerDeviceType.Battery && battery.isPresent !== undefined) {
           return battery.isPresent;
         }
-        return battery.ready && battery.percentage !== undefined && (battery.percentage > 0 || battery.state === UPowerDeviceState.Charging);
+        return battery.ready && battery.percentage !== undefined && (battery.percentage > 0 || chargingStatus(battery.state));
       }
       return false;
     }
@@ -124,11 +124,26 @@ Item {
 
   readonly property bool isReady: testMode ? true : (initializationComplete && battery && battery.ready && isDevicePresent && (battery.percentage !== undefined || hasBluetoothBattery))
   readonly property real percent: testMode ? testPercent : (isReady ? (hasBluetoothBattery ? (bluetoothDevice.battery * 100) : (battery.percentage * 100)) : 0)
-  readonly property bool charging: testMode ? testCharging : (isReady ? battery.state === UPowerDeviceState.Charging : false)
+  readonly property bool charging: testMode ? testCharging : (isReady ? chargingStatus(battery.state) : false)  // Assuming not charging if battery is not ready
   property bool hasNotifiedLowBattery: false
 
   implicitWidth: pill.width
   implicitHeight: pill.height
+  // http://upower.freedesktop.org/docs/Device.html#Device.properties
+  function chargingStatus(state) {
+    switch (state) {
+    case UPowerDeviceState.Charging: // 1
+    case UPowerDeviceState.FullyCharged: // 4
+    case UPowerDeviceState.PendingCharge: // 5
+      return true;
+    case UPowerDeviceState.Discharging: // 2
+    case UPowerDeviceState.Empty: // 3
+    case UPowerDeviceState.PendingDischarge: // 6
+      return false;
+    default:
+      return true; // unknown state 0 Fix #1417
+    }
+  }
 
   function maybeNotify(currentPercent, isCharging) {
     if (!isCharging && !hasNotifiedLowBattery && currentPercent <= warningThreshold) {
@@ -136,6 +151,7 @@ Item {
       ToastService.showWarning(I18n.tr("toast.battery.low"), I18n.tr("toast.battery.low-desc", {
                                                                        "percent": Math.round(currentPercent)
                                                                      }));
+      // Logger.e("Battery", "Low battery at " + currentPercent + "%", "isCharging: " + isCharging); // debug
     } else if (hasNotifiedLowBattery && (isCharging || currentPercent > warningThreshold + 5)) {
       hasNotifiedLowBattery = false;
     }
@@ -149,15 +165,15 @@ Item {
     target: battery
     function onPercentageChanged() {
       if (battery) {
-        maybeNotify(getCurrentPercent(), battery.state === UPowerDeviceState.Charging);
+        maybeNotify(getCurrentPercent(), chargingStatus(battery.state));
       }
     }
     function onStateChanged() {
       if (battery) {
-        if (battery.state === UPowerDeviceState.Charging) {
+        if (chargingStatus(battery.state)) {
           hasNotifiedLowBattery = false;
         }
-        maybeNotify(getCurrentPercent(), battery.state === UPowerDeviceState.Charging);
+        maybeNotify(getCurrentPercent(), chargingStatus(battery.state));
       }
     }
   }
@@ -166,7 +182,7 @@ Item {
     target: bluetoothDevice
     function onBatteryChanged() {
       if (bluetoothDevice && hasBluetoothBattery) {
-        maybeNotify(bluetoothDevice.battery * 100, battery ? battery.state === UPowerDeviceState.Charging : false);
+        maybeNotify(bluetoothDevice.battery * 100, battery ? chargingStatus(battery.state) : false);
       }
     }
   }

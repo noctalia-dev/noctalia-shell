@@ -22,15 +22,7 @@ in
   options.programs.noctalia-shell = {
     enable = lib.mkEnableOption "Noctalia shell configuration";
 
-    systemd = {
-      enable = lib.mkEnableOption "Noctalia shell systemd integration";
-
-      mutableRuntimeSettings = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Whether noctalia-shell creates a gui-settings.json to store setting changes made within the GUI at runtime.";
-      };
-    };
+    systemd.enable = lib.mkEnableOption "Noctalia shell systemd integration";
 
     package = lib.mkOption {
       type = lib.types.nullOr lib.types.package;
@@ -115,7 +107,7 @@ in
         {
           templates = {
             neovim = {
-              input_path = "~/.config/matugen/templates/template.lua";
+              input_path = "~/.config/noctalia/templates/template.lua";
               output_path = "~/.config/nvim/generated.lua";
               post_hook = "pkill -SIGUSR1 nvim";
             };
@@ -123,7 +115,7 @@ in
         }
       '';
       description = ''
-        Template definitions for Matugen, to be written to ~/.config/noctalia/user-templates.toml.
+        Template definitions for Noctalia, to be written to ~/.config/noctalia/user-templates.toml.
 
         This option accepts:
         - a Nix attrset (converted to TOML automatically)
@@ -223,9 +215,6 @@ in
         Service = {
           ExecStart = lib.getExe cfg.package;
           Restart = "on-failure";
-          Environment = lib.mkIf cfg.systemd.mutableRuntimeSettings [
-            "NOCTALIA_SETTINGS_FALLBACK=%h/.config/noctalia/gui-settings.json"
-          ];
         };
 
         Install.WantedBy = [ config.wayland.systemd.target ];

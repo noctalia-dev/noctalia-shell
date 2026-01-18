@@ -175,8 +175,10 @@
       "visualizer-type-label": "Visualizer-Typ"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Benachrichtigungssymbol ausblenden, wenn keine ungelesenen Benachrichtigungen vorhanden sind.",
-      "hide-widget-when-zero-label": "Symbol ausblenden, wenn null",
+      "hide-widget-when-zero-description": "Benachrichtigungssymbol ausblenden, wenn keine Benachrichtigungen vorhanden sind.",
+      "hide-widget-when-zero-label": "Symbol bei keinen Benachrichtigungen ausblenden",
+      "hide-widget-when-zero-unread-description": "Benachrichtigungssymbol ausblenden, wenn keine ungelesenen Benachrichtigungen vorhanden sind.",
+      "hide-widget-when-zero-unread-label": "Symbol bei keinen ungelesenen Benachrichtigungen ausblenden",
       "show-unread-badge-description": "Badge mit der Anzahl ungelesener Benachrichtigungen anzeigen.",
       "show-unread-badge-label": "Badge für ungelesene Nachrichten anzeigen"
     },
@@ -351,20 +353,22 @@
     "connect": "Verbinden",
     "connected": "Verbunden",
     "connecting": "Verbinden...",
+    "continue": "Fortsetzen",
     "contributors": "Mitwirkende",
     "countdown": "Countdown",
     "date": "Datum",
+    "default": "Standard",
     "delete": "Löschen",
     "devices": "Geräte",
-    "disabled": "Behindert",
-    "discharging": "Entladung",
+    "disabled": "Deaktiviert",
+    "discharging": "Entladen",
     "disconnect": "Trennen",
     "disconnected": "Getrennt",
     "disconnecting": "Verbindung wird getrennt...",
     "download": "Herunterladen",
     "duration": "Dauer",
     "enabled": "Aktiviert",
-    "events": "Veranstaltungen",
+    "events": "Ereignisse",
     "execute": "Ausführen",
     "focus": "Fokus",
     "frequency": "Frequenz",
@@ -383,7 +387,7 @@
     "language": "Sprache",
     "loading": "Wird geladen...",
     "local": "Lokal",
-    "location": "Position",
+    "location": "Standort",
     "lock": "Sperren",
     "logout": "Abmelden",
     "look": "Aussehen",
@@ -413,7 +417,7 @@
     "position": "Position",
     "previous": "Zurück",
     "random": "Zufällig",
-    "reboot": "Neustart",
+    "reboot": "Neu starten",
     "refresh": "Aktualisieren",
     "required": "(erforderlich)",
     "reset": "Zurücksetzen",
@@ -424,7 +428,7 @@
     "search": "Suche",
     "security": "Sicherheit",
     "select": "Auswählen",
-    "shortcuts": "Tastenkombinationen",
+    "shortcuts": "Kurzbefehle",
     "shutdown": "Herunterfahren",
     "signal": "Signal",
     "sound": "Ton",
@@ -441,7 +445,7 @@
     "uninstall": "Deinstallieren",
     "unknown": "Unbekannt",
     "unpair": "Entkoppeln",
-    "unpin": "Anheften lösen",
+    "unpin": "Loslösen",
     "update": "Aktualisieren",
     "upload": "Hochladen",
     "version": "Version",
@@ -525,7 +529,9 @@
       "emoji-loading-description": "Bitte warten",
       "emoji-no-recent": "Noch keine kürzlich verwendeten Emojis",
       "emoji-search-description": "Emojis suchen und kopieren"
-    }
+    },
+    "result": "Ergebnis",
+    "results": "Ergebnisse"
   },
   "lock-screen": {
     "authenticating": "Authentifizierung...",
@@ -607,6 +613,7 @@
       "noctalia-installed-version": "Installierte Version:",
       "noctalia-latest-version": "Neueste Version:",
       "noctalia-title": "Noctalia Shell",
+      "privacy-policy": "Datenschutzbestimmungen",
       "support": "Unterstütze uns",
       "system-cpu": "CPU:",
       "system-disk": "Festplatte:",
@@ -620,6 +627,7 @@
       "system-not-installed": "fastfetch ist nicht installiert",
       "system-os": "Betriebssystem:",
       "system-packages": "Pakete:",
+      "system-product": "Produkt:",
       "system-title": "Systeminformationen",
       "system-uptime": "Betriebszeit:",
       "system-wm": "WM:",
@@ -669,7 +677,7 @@
       "volumes-mute-output-description": "Die Haupt-Audio-Ausgabe des Systems stummschalten.",
       "volumes-mute-output-label": "Audio-Ausgabe stummschalten",
       "volumes-output-volume-description": "Systemweite Lautstärke.",
-      "volumes-step-size-description": "Schrittgröße für Lautstärkeänderungen anpassen (Mausrad, Tastenkombinationen).",
+      "volumes-step-size-description": "Schrittgröße für Lautstärkeänderungen anpassen (Mausrad, Tastenkürzel).",
       "volumes-step-size-label": "Lautstärke-Schrittgröße",
       "volumes-volume-overdrive-description": "Erlaubt das Anheben der Lautstärke über 100%. Wird möglicherweise nicht von aller Hardware unterstützt.",
       "volumes-volume-overdrive-label": "Lautstärke-Übersteuerung erlauben"
@@ -712,11 +720,7 @@
       "widgets-title": "Widget-Positionierung"
     },
     "color-scheme": {
-      "color-source-desc": "Haupteinstellungen für Noctalias Farben.",
-      "color-source-matugen-scheme-type-description": "Wählen Sie die Farbschema-Generierungsmethode, die Matugen verwenden soll, um Farben aus Ihrem Hintergrundbild zu erstellen.",
-      "color-source-matugen-scheme-type-label": "Matugen-Schema-Typ",
-      "color-source-title": "Farbquelle",
-      "color-source-use-wallpaper-colors-description": "Farbschemata aus Ihrem Hintergrundbild mit Matugen generieren. Extrahiert automatisch Farben für ein kohärentes Design.",
+      "color-source-use-wallpaper-colors-description": "Generiere Farbschemata aus deinem Hintergrundbild. Extrahiert automatisch Farben, um ein stimmiges Theme zu erstellen.",
       "color-source-use-wallpaper-colors-label": "Hintergrundbild-Farben verwenden",
       "dark-mode-mode-description": "Ermöglicht einen automatischen Wechsel zwischem hellen und dunklen Modus.",
       "dark-mode-mode-label": "Automatischer Dunkelmodus",
@@ -751,11 +755,13 @@
       "templates-filter-label": "Nach Kategorie filtern",
       "templates-misc-description": "Erstellen Sie Ihre eigenen Vorlagen.",
       "templates-misc-label": "Erweitert",
-      "templates-misc-user-templates-description": "Nur aktivieren, wenn Sie wissen, was Sie tun — weitere Informationen finden Sie in unserer Online-Dokumentation",
+      "templates-misc-user-templates-description": "Nur aktivieren, wenn Sie wissen, was Sie tun — weitere Informationen finden Sie in unserer Online-Dokumentation.",
       "templates-misc-user-templates-label": "Benutzer-Vorlagen aktivieren",
       "templates-none-detected": "Keine erkannt",
       "templates-write-path": "Schreibt: {filepath}",
-      "title": "Farbschema"
+      "title": "Farbschema",
+      "wallpaper-method-description": "Wähle deine bevorzugte Farbgewinnungsmethode.",
+      "wallpaper-method-label": "Farbgewinnungsmethode"
     },
     "control-center": {
       "cards-desc": "Passen Sie an, welche Steuerelemente im Kontrollzentrum angezeigt werden und in welcher Reihenfolge.",
@@ -833,7 +839,7 @@
       "weather-show-background-description": "Zeige den Hintergrundcontainer für das Wetter-Widget an."
     },
     "display": {
-      "monitors-brightness-step-description": "Schrittgröße für Helligkeitsänderungen anpassen (Mausrad und Tastenkombinationen).",
+      "monitors-brightness-step-description": "Schrittgröße für Helligkeitsänderungen anpassen (Mausrad und Tastenkürzel).",
       "monitors-brightness-step-label": "Helligkeits-Schrittgröße",
       "monitors-brightness-unavailable-ddc-disabled": "Helligkeitssteuerung nicht verfügbar. Aktivieren Sie \"Externe Helligkeitsunterstützung\", um die Helligkeit dieses Displays zu steuern.",
       "monitors-brightness-unavailable-generic": "Die Helligkeitssteuerung ist für dieses Display nicht verfügbar.",
@@ -897,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Einstellungen kopieren",
       "fonts-default-description": "Hauptschriftart für die gesamte Benutzeroberfläche.",
       "fonts-default-label": "Standard-Schriftart",
       "fonts-default-placeholder": "Standard-Schriftart auswählen...",
@@ -931,12 +938,13 @@
       "screen-corners-show-corners-label": "Bildschirmecken anzeigen",
       "screen-corners-solid-black-description": "Schwarze Ecken anstelle der Statusleisten-Hintergrundfarbe verwenden.",
       "screen-corners-solid-black-label": "Schwarze Ecken",
-      "screen-corners-title": "Bildschirmecken"
+      "screen-corners-title": "Bildschirmecken",
+      "settings-copied": "Einstellungen in die Zwischenablage kopiert"
     },
     "hooks": {
       "info-command-info-description": "• Befehle werden über Shell ausgeführt (sh -lc)<br>• Befehle laufen im Hintergrund (getrennt)<br>• Test-Buttons führen mit aktuellen Werten aus",
       "info-command-info-label": "Hook-Befehl-Informationen",
-      "info-parameters-description": "• Wallpaper-Hook: $1 = Wallpaper-Pfad, $2 = Bildschirmname<br>• Theme-Umschalt-Hook: $1 = true/false (Dark-Mode-Status)<br>• Bildschirm-Sperr-/Entsperr-Hooks: Keine Parameter<br>• Performance-Modus-Hooks: Keine Parameter<br>• Session-Hook: $1 = Aktion (Herunterfahren/Neustart)",
+      "info-parameters-description": "• Wallpaper-Hook: $1 = Wallpaper-Pfad, $2 = Bildschirmname<br>• Themenwechsel-Hook: $1 = true/false (Dunkelmodus-Status)<br>• Bildschirm-Sperr-/Entsperr-Hooks: Keine Parameter<br>• Leistungsmodus-Hooks: Keine Parameter<br>• Session-Hook: $1 = Aktion (Herunterfahren/Neustart)",
       "info-parameters-label": "Verfügbare Parameter",
       "performance-mode-disabled-description": "Befehl, der ausgeführt wird, wenn der Noctalia-Leistungsmodus deaktiviert wird.",
       "performance-mode-disabled-label": "Leistungsmodus deaktiviert",
@@ -950,7 +958,7 @@
       "screen-unlock-description": "Befehl, der ausgeführt wird, wenn der Bildschirm entsperrt wird.",
       "screen-unlock-label": "Bildschirm entsperrt",
       "screen-unlock-placeholder": "z.B. notify-send \"Bildschirm\" \"Entsperrt\"",
-      "session-description": "Befehl, der vor dem Herunterfahren oder Neustart ausgeführt werden soll. Empfängt den Aktionstyp als $1 (Shutdown/Neustart).",
+      "session-description": "Befehl, der vor dem Herunterfahren oder Neustart ausgeführt werden soll. Empfängt den Aktionstyp als $1 (Herunterfahren/Neustart).",
       "session-label": "Sitzungsende",
       "session-placeholder": "z.B. notify-send \"Session\" \"$1\"",
       "system-hooks-desc": "Befehle konfigurieren, die bei Systemereignissen ausgeführt werden.",
@@ -1049,7 +1057,7 @@
       "compact-lockscreen-label": "Kompakter Sperrbildschirm",
       "lock-on-suspend-description": "Den Bildschirm beim Energiesparen automatisch sperren.",
       "lock-on-suspend-label": "Sperren beim Energiesparen",
-      "show-hibernate-description": "Die Option 'Ruhezustand' in den Energieaktionen anzeigen.",
+      "show-hibernate-description": "Die Option 'Ruhezustand' in den Energieoptionen anzeigen.",
       "show-hibernate-label": "Ruhezustand anzeigen",
       "show-session-buttons-description": "Zugriff auf die Energieeinstellungen vom Sperrbildschirm aus erlauben.",
       "show-session-buttons-label": "Energieoptionen",
@@ -1081,6 +1089,8 @@
       "history-low-urgency-label": "Niedrige Dringlichkeit im Verlauf speichern",
       "history-normal-urgency-description": "Normale Prioritätsbenachrichtigungen im Verlauf speichern.",
       "history-normal-urgency-label": "Normale Dringlichkeit im Verlauf speichern",
+      "media-toast-description": "Eine Toast-Benachrichtigung anzeigen, wenn sich der Wiedergabestatus von Medien ändert.",
+      "media-toast-label": "Medien",
       "monitors-desc": "Benachrichtigungen auf bestimmten Monitoren anzeigen. Standardmäßig werden sie auf allen Monitoren angezeigt.",
       "settings-always-on-top-description": "Benachrichtigungen über Vollbildfenstern und anderen Ebenen anzeigen.",
       "settings-background-opacity-description": "Transparenz der Benachrichtigungshintergründe anpassen.",
@@ -1148,6 +1158,8 @@
       "types-input-volume-label": "Eingangslautstärke",
       "types-lockkey-description": "OSD anzeigen, wenn Feststelltaste, Num-Taste oder Rollen-Taste umgeschaltet werden.",
       "types-lockkey-label": "Feststelltasten",
+      "types-media-description": "OSD anzeigen, wenn sich der Medienwiedergabestatus ändert (Wiedergabe, Pause, Überspringen).",
+      "types-media-label": "Medienwiedergabe",
       "types-title": "OSD-Auslöseereignisse",
       "types-volume-description": "OSD anzeigen, wenn sich die Ausgabelautstärke ändert.",
       "types-volume-label": "Ausgangslautstärke"
@@ -1349,6 +1361,7 @@
     "command-example": "echo \"Hallo Welt\"",
     "enter-command": "Befehl eingeben (App oder benutzerdefiniertes Skript)",
     "enter-ipc-identifier": "Geben Sie eine eindeutige Kennung für IPC-Befehle ein",
+    "enter-path": "Pfad eingeben...",
     "enter-text-to-collapse": "z.B. 'nothing is playing'. Verwenden Sie /regex/ für Muster.",
     "enter-tooltip": "Tooltip eingeben",
     "enter-width-pixels": "Breite in Pixeln eingeben",
@@ -1380,6 +1393,7 @@
     "title": "Sitzungsmenü"
   },
   "setup": {
+    "all-done": "Fertig!",
     "appearance": {
       "subheader": "Dunkelmodus und Farbquellen wählen (Matugen oder vordefiniert)."
     },
@@ -1387,6 +1401,11 @@
       "header": "Erlebnis anpassen",
       "subheader": "Leistenposition, Dichte, Skalierung und mehr einstellen."
     },
+    "skip-setup": "Einrichtung überspringen",
+    "telemetry-wizard-done": "Verstanden!",
+    "telemetry-wizard-note": "Sie haben die Kontrolle – aktivieren oder deaktivieren Sie dies jederzeit in den Einstellungen",
+    "telemetry-wizard-subtitle": "Wir haben anonyme Analysen hinzugefügt, um Noctalia zu verbessern",
+    "telemetry-wizard-title": "Datenschutz-Update",
     "wallpaper": {
       "choose-dir": "Wählen Sie ein Verzeichnis mit Ihren Hintergrundbildern",
       "dir-browse": "Ordner auswählen",
@@ -1401,7 +1420,9 @@
       "select-prompt": "Wählen Sie unten ein Hintergrundbild",
       "subheader": "Bestimmen Sie die Stimmung mit einem schönen Hintergrund."
     },
-    "welcome-note": "Nur ein paar Grundeinstellungen – alle Optionen befinden sich in den Einstellungen"
+    "welcome-note": "Nur ein paar Grundeinstellungen – alle Optionen befinden sich in den Einstellungen",
+    "welcome-subtitle": "Gestalten wir Ihren Desktop einzigartig",
+    "welcome-title": "Willkommen bei Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1433,39 +1454,35 @@
     },
     "battery": {
       "low": "Niedriger Batteriestand",
-      "low-desc": "Batterie ist bei {percent}%. Bitte schließen Sie das Ladegerät an."
+      "low-desc": "Batterie ist bei {percent}%. Bitte schließen Sie das Ladegerät an"
     },
     "bluetooth": {
-      "address-copied": "Adresse in die Zwischenablage kopiert.",
+      "address-copied": "Adresse in die Zwischenablage kopiert",
       "confirm-code": "Bestätigungscode {value} auf dem anderen Gerät bestätigen.",
-      "connect-failed": "Verbindung mit dem Gerät fehlgeschlagen.",
-      "disconnect-failed": "Trennen vom Gerät fehlgeschlagen.",
-      "discoverable-change-failed": "Ändern des Sichtbarkeitsstatus fehlgeschlagen.",
-      "discoverable-disabled": "Sichtbar deaktiviert.",
-      "discoverable-enabled": "Sichtbar aktiviert.",
+      "connect-failed": "Verbindung mit dem Gerät fehlgeschlagen",
+      "disconnect-failed": "Trennen vom Gerät fehlgeschlagen",
+      "discoverable-change-failed": "Ändern des Sichtbarkeitsstatus fehlgeschlagen",
+      "discoverable-disabled": "Sichtbar deaktiviert",
+      "discoverable-enabled": "Sichtbar aktiviert",
       "display-code": "Geben Sie den Code {value} auf dem anderen Gerät ein.",
-      "forget-failed": "Entfernen des Geräts fehlgeschlagen.",
-      "pair-failed": "Koppeln des Geräts fehlgeschlagen.",
+      "forget-failed": "Entfernen des Geräts fehlgeschlagen",
+      "pair-failed": "Koppeln des Geräts fehlgeschlagen",
       "passkey-required": "Passwortschlüssel vom Gerät erforderlich.",
       "pincode-required": "PIN-Code vom Gerät erforderlich.",
-      "state-change-failed": "Ändern des Bluetooth-Status fehlgeschlagen."
+      "state-change-failed": "Ändern des Bluetooth-Status fehlgeschlagen"
     },
     "clipboard": {
       "long-text": "Langer Text",
       "unavailable": "Zwischenablageverlauf nicht verfügbar",
-      "unavailable-desc": "Die 'cliphist' Anwendung ist nicht installiert. Bitte installieren Sie sie, um Zwischenablageverlauf-Features zu nutzen."
+      "unavailable-desc": "Die 'cliphist' Anwendung ist nicht installiert. Bitte installieren Sie sie, um Zwischenablageverlauf-Features zu nutzen"
     },
     "do-not-disturb": {
       "disabled": "'Nicht stören' deaktiviert",
-      "disabled-desc": "Alle Benachrichtigungen werden angezeigt.",
+      "disabled-desc": "Alle Benachrichtigungen werden angezeigt",
       "enabled": "'Nicht stören' aktiviert",
-      "enabled-desc": "Sie finden diese Benachrichtigungen in Ihrem Verlauf."
+      "enabled-desc": "Sie finden diese Benachrichtigungen in Ihrem Verlauf"
     },
-    "internet-limited": "Verbunden ohne Internet.",
-    "ipc": {
-      "powerpanel-deprecated": "PowerPanel wurde in SessionMenu umbenannt, dieser IPC-Aufruf wird bald veraltet sein. Bitte verwenden Sie stattdessen \"ipc call sessionMenu toggle\".",
-      "sidepanel-deprecated": "SidePanel wurde in ControlCenter umbenannt, dieser IPC-Aufruf wird bald veraltet sein. Bitte verwenden Sie stattdessen \"ipc call controlCenter toggle\"."
-    },
+    "internet-limited": "Verbunden ohne Internet",
     "keyboard-layout": {
       "changed": "Tastaturlayout geändert zu {layout}.",
       "title": "Tastatur"
@@ -1476,13 +1493,13 @@
       "label": "Letztes Kontrollzentrum-Widget entfernt"
     },
     "night-light": {
-      "forced": "Aktivierung erzwungen.",
-      "normal": "Normaler Modus.",
-      "not-installed": "wlsunset nicht installiert."
+      "forced": "Aktivierung erzwungen",
+      "normal": "Normaler Modus",
+      "not-installed": "wlsunset nicht installiert"
     },
     "noctalia-performance": {
-      "disabled": "Leistungsmodus deaktiviert.",
-      "enabled": "Leistungsmodus aktiviert.",
+      "disabled": "Leistungsmodus deaktiviert",
+      "enabled": "Leistungsmodus aktiviert",
       "label": "Noctalia-Performance"
     },
     "power-profile": {
@@ -1495,22 +1512,22 @@
       "title-predefined": "Verarbeitung des vordefinierten Farbschemas ist fehlgeschlagen"
     },
     "vpn": {
-      "connected": "Verbunden mit '{name}'.",
-      "disconnected": "Verbindung zu '{name}' getrennt."
+      "connected": "Verbunden mit '{name}'",
+      "disconnected": "Verbindung zu '{name}' getrennt"
     },
     "wallpaper-colors": {
-      "disabled": "Hintergrundbild-Farben deaktiviert.",
-      "enabled": "Hintergrundbild-Farben aktiviert.",
+      "disabled": "Hintergrundbild-Farben deaktiviert",
+      "enabled": "Hintergrundbild-Farben aktiviert",
       "label": "Hintergrundfarbengenerierung",
-      "not-installed": "Matugen nicht installiert — erforderlich für Hintergrundbild-Farbextraktion."
+      "not-installed": "Matugen nicht installiert — erforderlich für Hintergrundbild-Farbextraktion"
     },
     "wifi": {
-      "connected": "Verbunden mit '{ssid}'.",
-      "connection-failed": "Verbindung fehlgeschlagen.",
-      "connection-timeout": "Zeitüberschreitung bei der Verbindung.",
-      "disabled": "Deaktiviert.",
-      "disconnected": "Getrennt von '{ssid}'.",
-      "enabled": "Aktiviert.",
+      "connected": "Verbunden mit '{ssid}'",
+      "connection-failed": "Verbindung fehlgeschlagen",
+      "connection-timeout": "Zeitüberschreitung bei der Verbindung",
+      "disabled": "Deaktiviert",
+      "disconnected": "Getrennt von '{ssid}'",
+      "enabled": "Aktiviert",
       "incorrect-password": "Falsches Passwort.",
       "network-not-found": "Netzwerk nicht gefunden."
     }
@@ -1576,6 +1593,7 @@
     "fill-modes": {
       "crop": "Zuschneiden (Füllen)",
       "fit": "Einpassen (Beibehalten)",
+      "repeat": "Wiederholen (Kachel)",
       "stretch": "Strecken"
     },
     "no-match": "Keine Übereinstimmung gefunden.",
@@ -1676,10 +1694,13 @@
       "year-two-digit": "Jahr als zweistellige Zahl (00-99)"
     },
     "file-picker": {
+      "item": "Element",
+      "items": "Elemente",
       "search-placeholder": "Dateien und Ordner suchen...",
       "select-current": "Aktuelles Objekt auswählen",
       "select-file": "Datei auswählen",
       "select-folder": "Ordner auswählen",
+      "selected": "Ausgewählt:",
       "title": "Dateiauswahl"
     },
     "file-picker-title": "Datei auswählen",

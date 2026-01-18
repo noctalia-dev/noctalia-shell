@@ -175,8 +175,10 @@
       "visualizer-type-label": "ビジュアライザーの種類"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "未読通知がない場合、通知アイコンを非表示にします。",
-      "hide-widget-when-zero-label": "ゼロのときはアイコンを隠す",
+      "hide-widget-when-zero-description": "通知がない場合に通知アイコンを非表示にします。",
+      "hide-widget-when-zero-label": "通知なしでアイコンを非表示",
+      "hide-widget-when-zero-unread-description": "未読の通知がない場合に通知アイコンを非表示にします。",
+      "hide-widget-when-zero-unread-label": "未読なしでアイコンを非表示",
       "show-unread-badge-description": "未読通知の数を表示するバッジを表示します。",
       "show-unread-badge-label": "未読バッジを表示"
     },
@@ -351,9 +353,11 @@
     "connect": "接続",
     "connected": "接続済み",
     "connecting": "接続中...",
+    "continue": "続ける",
     "contributors": "貢献者",
     "countdown": "カウントダウン",
     "date": "日付",
+    "default": "デフォルト",
     "delete": "削除",
     "devices": "デバイス",
     "disabled": "無効",
@@ -525,7 +529,9 @@
       "emoji-loading-description": "お待ちください",
       "emoji-no-recent": "まだ最近使った絵文字はありません",
       "emoji-search-description": "絵文字を検索してコピー"
-    }
+    },
+    "result": "結果",
+    "results": "結果"
   },
   "lock-screen": {
     "authenticating": "認証中...",
@@ -607,6 +613,7 @@
       "noctalia-installed-version": "現在のバージョン:",
       "noctalia-latest-version": "最新のバージョン:",
       "noctalia-title": "Noctalia shell",
+      "privacy-policy": "プライバシーポリシー",
       "support": "支援する",
       "system-cpu": "CPU:",
       "system-disk": "ディスク",
@@ -620,6 +627,7 @@
       "system-not-installed": "fastfetch がインストールされていません",
       "system-os": "OS:",
       "system-packages": "パッケージ：",
+      "system-product": "製品:",
       "system-title": "システム情報",
       "system-uptime": "稼働時間:",
       "system-wm": "WM:",
@@ -712,11 +720,7 @@
       "widgets-title": "ウィジェットの配置"
     },
     "color-scheme": {
-      "color-source-desc": "Noctalia のメインカラーを設定します。",
-      "color-source-matugen-scheme-type-description": "Matugen が壁紙から色を作成するために使用する配色生成方法を選択してください。",
-      "color-source-matugen-scheme-type-label": "Matugen のスキームタイプ",
-      "color-source-title": "配色のソース",
-      "color-source-use-wallpaper-colors-description": "Matugen を使用して壁紙から配色を生成します。色を自動抽出して統一感のあるテーマを作成します。",
+      "color-source-use-wallpaper-colors-description": "壁紙から配色を生成します。色を自動的に抽出し、まとまりのあるテーマを作成します。",
       "color-source-use-wallpaper-colors-label": "壁紙の色を使用",
       "dark-mode-mode-description": "ライトモードとダークモードの自動切り替えを有効にします。",
       "dark-mode-mode-label": "ダークモードのスケジュール",
@@ -755,7 +759,9 @@
       "templates-misc-user-templates-label": "ユーザーテンプレートを有効化",
       "templates-none-detected": "検出されませんでした",
       "templates-write-path": "書き込み先: {filepath}",
-      "title": "配色"
+      "title": "配色",
+      "wallpaper-method-description": "お好みの色の抽出方法を選択してください。",
+      "wallpaper-method-label": "色の抽出方法"
     },
     "control-center": {
       "cards-desc": "コントロールセンターに表示する項目と、その順序をカスタマイズします。",
@@ -897,6 +903,7 @@
       "title": "ドック"
     },
     "general": {
+      "copy-settings": "設定をコピー",
       "fonts-default-description": "インターフェース全体で使用されるメインフォント。",
       "fonts-default-label": "メインフォント",
       "fonts-default-placeholder": "フォントを選択...",
@@ -931,7 +938,8 @@
       "screen-corners-show-corners-label": "画面の角を表示する",
       "screen-corners-solid-black-description": "バーの背景色の代わりに、黒一色を使用します。",
       "screen-corners-solid-black-label": "角を黒く塗りつぶす",
-      "screen-corners-title": "画面の角"
+      "screen-corners-title": "画面の角",
+      "settings-copied": "設定をクリップボードにコピーしました"
     },
     "hooks": {
       "info-command-info-description": "• コマンドはシェル (sh -lc) 経由で実行されます<br>• コマンドはバックグラウンドで実行されます<br>• テストボタンは現在の設定値を使って実行されます",
@@ -1049,7 +1057,7 @@
       "compact-lockscreen-label": "コンパクトなロック画面",
       "lock-on-suspend-description": "システムのサスペンド時に、自動的に画面をロックします。",
       "lock-on-suspend-label": "サスペンド時にロック",
-      "show-hibernate-description": "電源メニューのオプションに「ハイバネート（休止状態）」を表示します。",
+      "show-hibernate-description": "電源操作に「ハイバネート（休止状態）」のオプションを表示します。",
       "show-hibernate-label": "ハイバネートを表示",
       "show-session-buttons-description": "ロック画面から電源操作を行えるようにします。",
       "show-session-buttons-label": "電源操作",
@@ -1081,6 +1089,8 @@
       "history-low-urgency-label": "低緊急度を履歴に保存",
       "history-normal-urgency-description": "通常優先度の通知を履歴に保存します。",
       "history-normal-urgency-label": "通常緊急度を履歴に保存",
+      "media-toast-description": "メディアの再生状態が変化したときにトーストを表示します。",
+      "media-toast-label": "メディア",
       "monitors-desc": "通知を表示するディスプレイを選択します。未選択の場合は全てに表示されます。",
       "settings-always-on-top-description": "全画面ウィンドウや他のレイヤーよりも手前に通知を表示します。",
       "settings-background-opacity-description": "通知の背景の不透明度を調整します。",
@@ -1148,6 +1158,8 @@
       "types-input-volume-label": "入力音量",
       "types-lockkey-description": "Caps Lock、Num Lock、Scroll Lock の切り替え時に OSD を表示します。",
       "types-lockkey-label": "ロックキー",
+      "types-media-description": "メディア再生状態（再生、一時停止、スキップ）が変化したときにOSDを表示します。",
+      "types-media-label": "メディア再生",
       "types-title": "OSD のトリガーイベント",
       "types-volume-description": "出力音量が変更された時に OSD を表示します。",
       "types-volume-label": "出力音量"
@@ -1349,6 +1361,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "実行するコマンドを入力（アプリまたはスクリプト）",
     "enter-ipc-identifier": "IPCコマンドの一意の識別子を入力してください",
+    "enter-path": "パスを入力してください...",
     "enter-text-to-collapse": "例: 'nothing is playing'。正規表現 (/.../) も使用できます。",
     "enter-tooltip": "ツールチップを入力",
     "enter-width-pixels": "幅を入力（ピクセル）",
@@ -1380,6 +1393,7 @@
     "title": "セッションメニュー"
   },
   "setup": {
+    "all-done": "完了！",
     "appearance": {
       "subheader": "ダークモードとカラースキーム（Matugen またはプリセット）を選択します。"
     },
@@ -1387,6 +1401,11 @@
       "header": "自分好みにカスタマイズ",
       "subheader": "バーの位置や密度、インターフェースのスケールなどを調整します。"
     },
+    "skip-setup": "セットアップをスキップ",
+    "telemetry-wizard-done": "了解しました！",
+    "telemetry-wizard-note": "設定でいつでも有効または無効にできます。",
+    "telemetry-wizard-subtitle": "Noctaliaの改善に役立つ匿名分析を追加しました",
+    "telemetry-wizard-title": "プライバシーアップデート",
     "wallpaper": {
       "choose-dir": "壁紙画像が含まれているフォルダを選択します",
       "dir-browse": "壁紙フォルダを参照",
@@ -1401,7 +1420,9 @@
       "select-prompt": "以下から壁紙を選択します",
       "subheader": "美しい背景で雰囲気を演出しましょう。"
     },
-    "welcome-note": "まずは基本設定から始めましょう。詳細なオプションは「設定」にあります。"
+    "welcome-note": "まずは基本設定から始めましょう。詳細なオプションは「設定」にあります。",
+    "welcome-subtitle": "デスクトップをあなただけのものにしましょう",
+    "welcome-title": "Noctaliaへようこそ！"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1433,39 +1454,35 @@
     },
     "battery": {
       "low": "バッテリー残量低下",
-      "low-desc": "バッテリー残量が {percent}% です。充電器を接続してください。"
+      "low-desc": "バッテリー残量が {percent}% です。充電器を接続してください"
     },
     "bluetooth": {
-      "address-copied": "アドレスをクリップボードにコピーしました。",
+      "address-copied": "アドレスをクリップボードにコピーしました",
       "confirm-code": "別のデバイスでコード{value}を確認してください。",
-      "connect-failed": "デバイスに接続できませんでした。",
-      "disconnect-failed": "デバイスから切断できませんでした。",
-      "discoverable-change-failed": "検出可能な状態の変更に失敗しました。",
-      "discoverable-disabled": "検出不能を無効にしました。",
-      "discoverable-enabled": "検出可能が有効。",
+      "connect-failed": "デバイスに接続できませんでした",
+      "disconnect-failed": "デバイスから切断できませんでした",
+      "discoverable-change-failed": "検出可能な状態の変更に失敗しました",
+      "discoverable-disabled": "検出不能を無効にしました",
+      "discoverable-enabled": "検出可能が有効",
       "display-code": "別のデバイスに{value}のコードを入力してください。",
-      "forget-failed": "デバイスの削除に失敗しました。",
-      "pair-failed": "デバイスのペアリングに失敗しました。",
+      "forget-failed": "デバイスの削除に失敗しました",
+      "pair-failed": "デバイスのペアリングに失敗しました",
       "passkey-required": "デバイスでパスキーが必要です。",
       "pincode-required": "デバイスがPINコードを要求しています。",
-      "state-change-failed": "Bluetoothの状態変更に失敗しました。"
+      "state-change-failed": "Bluetoothの状態変更に失敗しました"
     },
     "clipboard": {
       "long-text": "長いテキスト",
       "unavailable": "クリップボード履歴を利用できません",
-      "unavailable-desc": "cliphist がインストールされていません。クリップボード履歴機能を使用するにはインストールしてください。"
+      "unavailable-desc": "cliphist がインストールされていません。クリップボード履歴機能を使用するにはインストールしてください"
     },
     "do-not-disturb": {
       "disabled": "おやすみモードを無効化",
-      "disabled-desc": "すべての通知を表示します。",
+      "disabled-desc": "すべての通知を表示します",
       "enabled": "おやすみモードを有効化",
-      "enabled-desc": "通知は履歴に保存されます。"
+      "enabled-desc": "通知は履歴に保存されます"
     },
-    "internet-limited": "インターネット未接続。",
-    "ipc": {
-      "powerpanel-deprecated": "PowerPanel は SessionMenu に名称変更されました。この IPC コールはまもなく廃止されます。代わりに \"ipc call sessionMenu toggle\" を使用してください。",
-      "sidepanel-deprecated": "SidePanel は ControlCenter に名称変更されました。この IPC コールはまもなく廃止されます。代わりに \"ipc call controlCenter toggle\" を使用してください。"
-    },
+    "internet-limited": "インターネット未接続",
     "keyboard-layout": {
       "changed": "キーボードレイアウトを {layout} に変更しました。",
       "title": "キーボード"
@@ -1476,13 +1493,13 @@
       "label": "最後のコントロールセンターが削除されました"
     },
     "night-light": {
-      "forced": "強制的に有効化。",
-      "normal": "通常モード。",
-      "not-installed": "wlsunset がインストールされていません。"
+      "forced": "強制的に有効化",
+      "normal": "通常モード",
+      "not-installed": "wlsunset がインストールされていません"
     },
     "noctalia-performance": {
-      "disabled": "パフォーマンスモード: 無効。",
-      "enabled": "パフォーマンスモード: 有効。",
+      "disabled": "パフォーマンスモード: 無効",
+      "enabled": "パフォーマンスモード: 有効",
       "label": "Noctalia パフォーマンス"
     },
     "power-profile": {
@@ -1495,22 +1512,22 @@
       "title-predefined": "プリセット配色の処理に失敗しました"
     },
     "vpn": {
-      "connected": "{name} に接続しました。",
-      "disconnected": "{name} から切断しました。"
+      "connected": "{name} に接続しました",
+      "disconnected": "{name} から切断しました"
     },
     "wallpaper-colors": {
-      "disabled": "壁紙配色の生成: 無効。",
-      "enabled": "壁紙配色の生成: 有効。",
+      "disabled": "壁紙配色の生成: 無効",
+      "enabled": "壁紙配色の生成: 有効",
       "label": "壁紙配色の生成",
       "not-installed": "Matugen がインストールされていません（壁紙からの色抽出に必要です）。"
     },
     "wifi": {
-      "connected": "{ssid} に接続しました。",
-      "connection-failed": "接続に失敗しました。",
-      "connection-timeout": "接続タイムアウト。",
-      "disabled": "無効。",
-      "disconnected": "{ssid} から切断しました。",
-      "enabled": "有効。",
+      "connected": "{ssid} に接続しました",
+      "connection-failed": "接続に失敗しました",
+      "connection-timeout": "接続タイムアウト",
+      "disabled": "無効",
+      "disconnected": "{ssid} から切断しました",
+      "enabled": "有効",
       "incorrect-password": "パスワードが違います。",
       "network-not-found": "ネットワークが見つかりません。"
     }
@@ -1576,6 +1593,7 @@
     "fill-modes": {
       "crop": "拡大する",
       "fit": "画面に合わせる",
+      "repeat": "繰り返し（タイル）",
       "stretch": "引き伸ばして表示"
     },
     "no-match": "一致する項目がありません。",
@@ -1676,10 +1694,13 @@
       "year-two-digit": "2桁の西暦 (00-99)"
     },
     "file-picker": {
+      "item": "項目",
+      "items": "項目",
       "search-placeholder": "ファイルとフォルダを検索...",
       "select-current": "現在のフォルダを選択する",
       "select-file": "ファイルを選択する",
       "select-folder": "フォルダを選択する",
+      "selected": "選択済み:",
       "title": "ファイル選択"
     },
     "file-picker-title": "ファイルを選択してください",

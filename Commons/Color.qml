@@ -7,7 +7,7 @@ import qs.Commons
 
 /*
 Noctalia is not strictly a Material Design project, it supports both some predefined
-color schemes and dynamic color generation from the wallpaper (using Matugen).
+color schemes and dynamic color generation from the wallpaper.
 
 We ultimately decided to use a restricted set of colors that follows the
 Material Design 3 naming convention.

@@ -11,10 +11,13 @@ Singleton {
   id: root
 
   // Version properties
-  readonly property string baseVersion: "4.0.1"
+  readonly property string baseVersion: "4.1.2"
   readonly property bool isDevelopment: true
   readonly property string developmentSuffix: "-git"
   readonly property string currentVersion: `v${!isDevelopment ? baseVersion : baseVersion + developmentSuffix}`
+
+  // Telemetry was introduced in this version - users upgrading from earlier need to see the wizard
+  readonly property string telemetryIntroVersion: "4.0.2"
 
   // URLs
   readonly property string discordUrl: "https://discord.noctalia.dev"
@@ -28,13 +31,14 @@ Singleton {
   property string changelogToVersion: ""
   property string previousVersion: ""
   property string changelogCurrentVersion: ""
-  property var releaseHighlights: []
+  property string releaseContent: ""
   property string lastShownVersion: ""
   property bool popupScheduled: false
   property string fetchError: ""
   property string changelogLastSeenVersion: ""
   property bool changelogStateLoaded: false
   property bool pendingShowRequest: false
+  property bool pendingTelemetryWizardCheck: false
 
   // Fix for FileView race condition
   property bool saveInProgress: false
@@ -53,6 +57,7 @@ Singleton {
   }
 
   signal popupQueued(string fromVersion, string toVersion)
+  signal telemetryWizardNeeded
 
   function init() {
     if (initialized)
@@ -140,22 +145,13 @@ Singleton {
         Logger.d("UpdateService", "Response text length:", request.responseText ? request.responseText.length : 0);
 
         if (request.status >= 200 && request.status < 300) {
-          const content = request.responseText || "";
-          Logger.d("UpdateService", "Successfully fetched upgrade log, parsing...");
-          const entries = parseReleaseNotes(content);
-          Logger.d("UpdateService", "Parsed entries count:", entries.length);
-          releaseHighlights = [
-                {
-                  "version": toVersion,
-                  "date": "",
-                  "entries": entries
-                }
-              ];
+          releaseContent = request.responseText || "";
+          Logger.d("UpdateService", "Successfully fetched upgrade log");
           fetchError = "";
           openWhenReady();
         } else {
           Logger.w("UpdateService", "Failed to fetch upgrade log, status:", request.status);
-          releaseHighlights = [];
+          releaseContent = "";
 
           if (request.status === 404) {
             // Changelog not available for this version range - skip silently
@@ -211,24 +207,45 @@ Singleton {
     return 0;
   }
 
-  function parseReleaseNotes(body) {
-    if (!body)
-      return [];
+  // Check if user is upgrading from a version before telemetry was introduced
+  function shouldShowTelemetryWizard() {
+    if (!changelogStateLoaded)
+      return false;
+    if (Settings.isFreshInstall)
+      return false;
+    if (Settings.shouldOpenSetupWizard)
+      return false;
 
-    const lines = body.split(/\r?\n/);
-    var entries = [];
+    // No previous version recorded but settings exist - assume upgrading from old version
+    // (e.g., user deleted shell-state.json but has existing settings)
+    if (!changelogLastSeenVersion || changelogLastSeenVersion === "")
+      return true;
 
-    for (var i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      entries.push(line);
+    // Check if last seen version is before telemetry introduction
+    return compareVersions(changelogLastSeenVersion, telemetryIntroVersion) < 0;
+  }
+
+  // Called by shell.qml to check for telemetry wizard after init
+  // If state isn't loaded yet, sets a pending flag and emits telemetryWizardNeeded later
+  function checkTelemetryWizardOrChangelog() {
+    Logger.d("UpdateService", "checkTelemetryWizardOrChangelog called, stateLoaded:", changelogStateLoaded);
+    if (!changelogStateLoaded) {
+      // State not loaded yet, set pending flags
+      Logger.d("UpdateService", "State not loaded yet, setting pending flags");
+      pendingTelemetryWizardCheck = true;
+      pendingShowRequest = true;
+      return;
     }
 
-    // Remove trailing blank lines
-    while (entries.length > 0 && entries[entries.length - 1].trim().length === 0) {
-      entries.pop();
+    // State is already loaded, check immediately
+    const needsTelemetryWizard = shouldShowTelemetryWizard();
+    Logger.d("UpdateService", "shouldShowTelemetryWizard:", needsTelemetryWizard, "lastSeenVersion:", changelogLastSeenVersion);
+    if (needsTelemetryWizard) {
+      Logger.i("UpdateService", "Emitting telemetryWizardNeeded signal");
+      root.telemetryWizardNeeded();
+    } else {
+      showLatestChangelog();
     }
-
-    return entries;
   }
 
   function openWhenReady() {
@@ -239,19 +256,11 @@ Singleton {
       return;
     }
 
-    const monitors = Settings.data.bar.monitors || [];
-    const allowPanelsOnScreenWithoutBar = Settings.data.general.allowPanelsOnScreenWithoutBar;
-
-    function canShowPanelsOnScreen(screen) {
-      const name = screen?.name || "";
-      return allowPanelsOnScreenWithoutBar || monitors.length === 0 || monitors.includes(name);
-    }
-
     let targetScreen = viewChangelogTargetScreen;
 
     if (targetScreen) {
       // Explicit screen requested - validate it
-      if (!canShowPanelsOnScreen(targetScreen)) {
+      if (!PanelService.canShowPanelsOnScreen(targetScreen)) {
         Logger.w("UpdateService", "Changelog cannot be shown on screen without bar:", targetScreen.name);
         popupScheduled = false;
         viewChangelogTargetScreen = null;
@@ -259,13 +268,7 @@ Singleton {
       }
     } else {
       // No explicit screen - find one that can show panels
-      for (let i = 0; i < Quickshell.screens.length; i++) {
-        if (canShowPanelsOnScreen(Quickshell.screens[i])) {
-          targetScreen = Quickshell.screens[i];
-          break;
-        }
-      }
-
+      targetScreen = PanelService.findScreenForPanels();
       if (!targetScreen) {
         Logger.w("UpdateService", "No screen available to show changelog");
         popupScheduled = false;
@@ -334,7 +337,7 @@ Singleton {
       return;
 
     const target = ensureVersionPrefix(currentVersion.replace(developmentSuffix, ""));
-    const fromVersion = "v3.0.0";
+    const fromVersion = "v3.7.2";
 
     previousVersion = fromVersion;
     changelogCurrentVersion = target;
@@ -367,6 +370,19 @@ Singleton {
       Logger.e("UpdateService", "Failed to load changelog state:", error);
     }
     changelogStateLoaded = true;
+
+    // Handle pending telemetry wizard check first
+    if (pendingTelemetryWizardCheck) {
+      pendingTelemetryWizardCheck = false;
+      if (shouldShowTelemetryWizard()) {
+        root.telemetryWizardNeeded();
+      } else if (pendingShowRequest) {
+        pendingShowRequest = false;
+        Qt.callLater(root.showLatestChangelog);
+      }
+      return;
+    }
+
     if (pendingShowRequest) {
       pendingShowRequest = false;
       Qt.callLater(root.showLatestChangelog);

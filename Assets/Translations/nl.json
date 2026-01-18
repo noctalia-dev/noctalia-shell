@@ -175,8 +175,10 @@
       "visualizer-type-label": "Type visualizer"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Verberg het meldingspictogram wanneer er geen ongelezen meldingen zijn.",
-      "hide-widget-when-zero-label": "Pictogram verbergen bij nul",
+      "hide-widget-when-zero-description": "Het meldingspictogram verbergen wanneer er geen meldingen zijn.",
+      "hide-widget-when-zero-label": "Pictogram verbergen zonder meldingen",
+      "hide-widget-when-zero-unread-description": "Het meldingspictogram verbergen wanneer er geen ongelezen meldingen zijn.",
+      "hide-widget-when-zero-unread-label": "Pictogram verbergen zonder ongelezen meldingen",
       "show-unread-badge-description": "Toon een badge met het aantal ongelezen meldingen.",
       "show-unread-badge-label": "Ongelezen-badge tonen"
     },
@@ -351,9 +353,11 @@
     "connect": "Verbinden",
     "connected": "Verbonden",
     "connecting": "Verbinden...",
+    "continue": "Doorgaan",
     "contributors": "Medewerkers",
     "countdown": "Aftellen",
     "date": "Datum",
+    "default": "Standaard",
     "delete": "Verwijderen",
     "devices": "Apparaten",
     "disabled": "Uitgeschakeld",
@@ -361,7 +365,7 @@
     "disconnect": "Verbreek de verbinding",
     "disconnected": "Verbinding verbroken",
     "disconnecting": "Verbinding verbroken...",
-    "download": "Download",
+    "download": "Downloaden",
     "duration": "Duur",
     "enabled": "Ingeschakeld",
     "events": "Evenementen",
@@ -443,7 +447,7 @@
     "unpair": "Ontkoppelen",
     "unpin": "Losmaken",
     "update": "Update",
-    "upload": "Upload",
+    "upload": "Uploaden",
     "version": "Versie",
     "visualizer": "Visualiseerder",
     "volume": "Volume",
@@ -525,7 +529,9 @@
       "emoji-loading-description": "Even geduld",
       "emoji-no-recent": "Nog geen recente emoji's",
       "emoji-search-description": "Zoek en kopieer emoji's"
-    }
+    },
+    "result": "resultaat",
+    "results": "resultaten"
   },
   "lock-screen": {
     "authenticating": "Bezig met verifiëren...",
@@ -607,6 +613,7 @@
       "noctalia-installed-version": "Geïnstalleerde versie:",
       "noctalia-latest-version": "Nieuwste versie:",
       "noctalia-title": "Noctalia-shell",
+      "privacy-policy": "Privacybeleid",
       "support": "Steun ons",
       "system-cpu": "CPU:",
       "system-disk": "Schijf:",
@@ -620,6 +627,7 @@
       "system-not-installed": "fastfetch is niet geïnstalleerd",
       "system-os": "Besturingssysteem:",
       "system-packages": "Pakketten:",
+      "system-product": "Product:",
       "system-title": "Systeeminformatie",
       "system-uptime": "Uptime:",
       "system-wm": "WM:",
@@ -712,11 +720,7 @@
       "widgets-title": "Widgetpositionering"
     },
     "color-scheme": {
-      "color-source-desc": "Hoofdinstellingen voor Noctalia's kleuren.",
-      "color-source-matugen-scheme-type-description": "Kies de methode voor het genereren van kleurenschema's die Matugen zal gebruiken om kleuren te maken van je achtergrond.",
-      "color-source-matugen-scheme-type-label": "Matugen-schema type",
-      "color-source-title": "Kleurbron",
-      "color-source-use-wallpaper-colors-description": "Genereer kleurenschema's uit je achtergrond met Matugen. Kleuren worden automatisch geëxtraheerd om een samenhangend thema te maken.",
+      "color-source-use-wallpaper-colors-description": "Genereer kleurenschema's van je achtergrond. Extraheert automatisch kleuren om een samenhangend thema te creëren.",
       "color-source-use-wallpaper-colors-label": "Achtergrondkleuren gebruiken",
       "dark-mode-mode-description": "Schakelt automatisch tussen lichte en donkere modus.",
       "dark-mode-mode-label": "Schema voor donkere modus",
@@ -751,11 +755,13 @@
       "templates-filter-label": "Filteren op categorie",
       "templates-misc-description": "Maak uw eigen sjablonen.",
       "templates-misc-label": "Geavanceerd",
-      "templates-misc-user-templates-description": "Alleen inschakelen als u weet wat u doet — raadpleeg onze online documentatie",
+      "templates-misc-user-templates-description": "Alleen inschakelen als u weet wat u doet — raadpleeg onze online documentatie.",
       "templates-misc-user-templates-label": "Gebruikerssjablonen inschakelen",
       "templates-none-detected": "Geen gedetecteerd",
       "templates-write-path": "Schrijft: {filepath}",
-      "title": "Kleurschema"
+      "title": "Kleurschema",
+      "wallpaper-method-description": "Kies je favoriete methode voor kleur extractie.",
+      "wallpaper-method-label": "Kleurextractiemethode"
     },
     "control-center": {
       "cards-desc": "Pas aan welke bedieningselementen in het bedieningscentrum verschijnen en in welke volgorde.",
@@ -897,6 +903,7 @@
       "title": "Dock"
     },
     "general": {
+      "copy-settings": "Instellingen kopiëren",
       "fonts-default-description": "Hoofdlettertype dat in de hele interface wordt gebruikt.",
       "fonts-default-label": "Standaardlettertype",
       "fonts-default-placeholder": "Selecteer standaardlettertype...",
@@ -931,12 +938,13 @@
       "screen-corners-show-corners-label": "Schermhoeken tonen",
       "screen-corners-solid-black-description": "Gebruik effen zwart in plaats van de achtergrondkleur van de balk.",
       "screen-corners-solid-black-label": "Effen zwarte hoeken",
-      "screen-corners-title": "Schermhoeken"
+      "screen-corners-title": "Schermhoeken",
+      "settings-copied": "Instellingen gekopieerd naar klembord"
     },
     "hooks": {
       "info-command-info-description": "• Commando's worden uitgevoerd via shell (sh -lc)<br>• Commando's draaien op de achtergrond (losgekoppeld)<br>• Testknoppen worden uitgevoerd met de huidige waarden",
       "info-command-info-label": "Informatie over hook-commando's",
-      "info-parameters-description": "• Achtergrond-hook: $1 = pad naar achtergrond, $2 = schermnaam<br>• Thema-schakel-hook: $1 = true/false (Dark Mode-status)<br>• Schermvergrendeling/ontgrendeling-hooks: Geen parameters<br>• Prestatiemodus-hooks: Geen parameters<br>• Sessie-hook: $1 = actie (afsluiten/herstarten)",
+      "info-parameters-description": "• Achtergrond-hook: $1 = pad naar achtergrond, $2 = schermnaam<br>• Thema-schakel-hook: $1 = true/false (Dark Mode-status)<br>• Schermvergrendeling/ontgrendeling-hooks: Geen parameters<br>• Prestatiemodus-hooks: Geen parameters<br>• Sessie-hook: $1 = actie (afsluiten/opnieuw opstarten)",
       "info-parameters-label": "Beschikbare parameters",
       "performance-mode-disabled-description": "Commando dat wordt uitgevoerd wanneer de Noctalia prestatiemodus wordt uitgeschakeld.",
       "performance-mode-disabled-label": "Prestatiemodus uitgeschakeld",
@@ -1049,10 +1057,10 @@
       "compact-lockscreen-label": "Compact vergrendelscherm",
       "lock-on-suspend-description": "Vergrendel het scherm automatisch wanneer het systeem wordt onderbroken.",
       "lock-on-suspend-label": "Vergrendelen bij onderbreken",
-      "show-hibernate-description": "De optie 'sluimerstand' tonen in de energieacties.",
+      "show-hibernate-description": "De optie 'sluimerstand' tonen in de energieopties.",
       "show-hibernate-label": "Sluimerstand tonen",
       "show-session-buttons-description": "Toegang tot energie-instellingen toestaan vanaf het vergrendelscherm.",
-      "show-session-buttons-label": "Stroombediening",
+      "show-session-buttons-label": "Energieopties",
       "title": "Vergrendelscherm"
     },
     "network": {
@@ -1081,6 +1089,8 @@
       "history-low-urgency-label": "Lage urgentie opslaan in geschiedenis",
       "history-normal-urgency-description": "Meldingen met normale prioriteit opslaan in de geschiedenis.",
       "history-normal-urgency-label": "Normale urgentie opslaan in geschiedenis",
+      "media-toast-description": "Een toast weergeven wanneer de afspeelstatus van media verandert.",
+      "media-toast-label": "Media",
       "monitors-desc": "Meldingen op specifieke monitoren tonen. Standaard op alle als er geen zijn gekozen.",
       "settings-always-on-top-description": "Toon meldingen boven fullscreen-vensters en andere lagen.",
       "settings-background-opacity-description": "Pas de dekking van meldingsachtergronden aan.",
@@ -1148,6 +1158,8 @@
       "types-input-volume-label": "Invoervolume",
       "types-lockkey-description": "Toon het OSD wanneer Caps Lock, Num Lock of Scroll Lock wordt omgeschakeld.",
       "types-lockkey-label": "Vergrendeltoetsen",
+      "types-media-description": "OSD weergeven wanneer de afspeelstatus van media verandert (afspelen, pauzeren, overslaan).",
+      "types-media-label": "Media afspelen",
       "types-title": "OSD triggergebeurtenissen",
       "types-volume-description": "Toon het OSD wanneer het uitvoervolume verandert.",
       "types-volume-label": "Uitvoervolume"
@@ -1349,6 +1361,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "Voer het uit te voeren commando in (app of aangepast script)",
     "enter-ipc-identifier": "Voer een unieke identificatie in voor IPC-opdrachten",
+    "enter-path": "Pad invoeren...",
     "enter-text-to-collapse": "bijv. 'er wordt niets afgespeeld'. Gebruik /regex/ voor patronen.",
     "enter-tooltip": "Voer tooltip in",
     "enter-width-pixels": "Voer breedte in pixels in",
@@ -1380,6 +1393,7 @@
     "title": "Sessie-menu"
   },
   "setup": {
+    "all-done": "Klaar!",
     "appearance": {
       "subheader": "Kies donkere modus en kleurbronnen (Matugen of vooraf gedefinieerd)."
     },
@@ -1387,6 +1401,11 @@
       "header": "Pas je ervaring aan",
       "subheader": "Pas balkpositie, dichtheid, schaal en meer aan."
     },
+    "skip-setup": "Setup overslaan",
+    "telemetry-wizard-done": "Begrepen!",
+    "telemetry-wizard-note": "Je hebt de controle - schakel dit op elk moment in of uit in de Instellingen",
+    "telemetry-wizard-subtitle": "We hebben anonieme analyses toegevoegd om Noctalia te helpen verbeteren",
+    "telemetry-wizard-title": "Privacy-update",
     "wallpaper": {
       "choose-dir": "Kies een map met je achtergrondafbeeldingen",
       "dir-browse": "Bladeren naar achtergrondmap",
@@ -1401,7 +1420,9 @@
       "select-prompt": "Selecteer hieronder een achtergrond",
       "subheader": "Zet de toon met een mooie achtergrond."
     },
-    "welcome-note": "Een paar basisinstellingen om je op weg te helpen – alle opties vind je in instellingen"
+    "welcome-note": "Een paar basisinstellingen om je op weg te helpen – alle opties vind je in instellingen",
+    "welcome-subtitle": "Laten we uw bureaublad uniek maken",
+    "welcome-title": "Welkom bij Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1433,39 +1454,35 @@
     },
     "battery": {
       "low": "Batterij bijna leeg",
-      "low-desc": "De batterij is op {percent}%. Sluit de oplader aan."
+      "low-desc": "De batterij is op {percent}%. Sluit de oplader aan"
     },
     "bluetooth": {
-      "address-copied": "Adres gekopieerd naar klembord.",
+      "address-copied": "Adres gekopieerd naar klembord",
       "confirm-code": "Bevestig code {value} op het andere apparaat.",
-      "connect-failed": "Verbinding met apparaat mislukt.",
-      "disconnect-failed": "Verbinding verbreken met apparaat mislukt.",
-      "discoverable-change-failed": "Zichtbaarheidsstatus wijzigen mislukt.",
-      "discoverable-disabled": "Zichtbaar uitgeschakeld.",
-      "discoverable-enabled": "Zichtbaar ingeschakeld.",
+      "connect-failed": "Verbinding met apparaat mislukt",
+      "disconnect-failed": "Verbinding verbreken met apparaat mislukt",
+      "discoverable-change-failed": "Zichtbaarheidsstatus wijzigen mislukt",
+      "discoverable-disabled": "Zichtbaar uitgeschakeld",
+      "discoverable-enabled": "Zichtbaar ingeschakeld",
       "display-code": "Voer code {value} in op het andere apparaat.",
-      "forget-failed": "Apparaat vergeten mislukt.",
-      "pair-failed": "Apparaat koppelen mislukt.",
+      "forget-failed": "Apparaat vergeten mislukt",
+      "pair-failed": "Apparaat koppelen mislukt",
       "passkey-required": "Passkey vereist door het apparaat.",
       "pincode-required": "PIN-code vereist door het apparaat.",
-      "state-change-failed": "Bluetooth‑status wijzigen mislukt."
+      "state-change-failed": "Bluetooth‑status wijzigen mislukt"
     },
     "clipboard": {
       "long-text": "Lange tekst",
       "unavailable": "Klembordgeschiedenis niet beschikbaar",
-      "unavailable-desc": "De toepassing 'cliphist' is niet geïnstalleerd. Installeer deze om functies voor klembordgeschiedenis te gebruiken."
+      "unavailable-desc": "De toepassing 'cliphist' is niet geïnstalleerd. Installeer deze om functies voor klembordgeschiedenis te gebruiken"
     },
     "do-not-disturb": {
       "disabled": "'Niet storen' uitgeschakeld",
-      "disabled-desc": "Alle meldingen worden weergegeven.",
+      "disabled-desc": "Alle meldingen worden weergegeven",
       "enabled": "'Niet storen' ingeschakeld",
-      "enabled-desc": "Je vindt deze meldingen terug in je geschiedenis."
+      "enabled-desc": "Je vindt deze meldingen terug in je geschiedenis"
     },
-    "internet-limited": "Verbonden zonder internet.",
-    "ipc": {
-      "powerpanel-deprecated": "PowerPanel is hernoemd naar SessionMenu, deze IPC-aanroep wordt binnenkort verouderd. Gebruik in plaats daarvan \"ipc call sessionMenu toggle\".",
-      "sidepanel-deprecated": "SidePanel is hernoemd naar ControlCenter, deze IPC-aanroep wordt binnenkort verouderd. Gebruik in plaats daarvan \"ipc call controlCenter toggle\"."
-    },
+    "internet-limited": "Verbonden zonder internet",
     "keyboard-layout": {
       "changed": "Toetsenbordindeling gewijzigd naar {layout}.",
       "title": "Toetsenbord"
@@ -1476,13 +1493,13 @@
       "label": "Laatste bedieningscentrumwidget verwijderd"
     },
     "night-light": {
-      "forced": "Geforceerde activatie.",
-      "normal": "Normale modus.",
-      "not-installed": "wlsunset niet geïnstalleerd."
+      "forced": "Geforceerde activatie",
+      "normal": "Normale modus",
+      "not-installed": "wlsunset niet geïnstalleerd"
     },
     "noctalia-performance": {
-      "disabled": "Prestatiemodus uitgeschakeld.",
-      "enabled": "Prestatiemodus ingeschakeld.",
+      "disabled": "Prestatiemodus uitgeschakeld",
+      "enabled": "Prestatiemodus ingeschakeld",
       "label": "Noctalia Performance"
     },
     "power-profile": {
@@ -1495,22 +1512,22 @@
       "title-predefined": "Verwerken van vooraf gedefinieerd kleurenschema mislukt"
     },
     "vpn": {
-      "connected": "Verbonden met '{name}'.",
-      "disconnected": "Verbinding met '{name}' verbroken."
+      "connected": "Verbonden met '{name}'",
+      "disconnected": "Verbinding met '{name}' verbroken"
     },
     "wallpaper-colors": {
-      "disabled": "Achtergrondkleuren uitgeschakeld.",
-      "enabled": "Achtergrondkleuren ingeschakeld.",
+      "disabled": "Achtergrondkleuren uitgeschakeld",
+      "enabled": "Achtergrondkleuren ingeschakeld",
       "label": "Achtergrondkleuren genereren",
-      "not-installed": "Matugen niet geïnstalleerd — vereist voor het extraheren van achtergrondkleuren."
+      "not-installed": "Matugen niet geïnstalleerd — vereist voor het extraheren van achtergrondkleuren"
     },
     "wifi": {
-      "connected": "Verbonden met '{ssid}'.",
-      "connection-failed": "Verbinding mislukt.",
-      "connection-timeout": "Time-out bij verbinding.",
-      "disabled": "Wi-Fi uitgeschakeld.",
-      "disconnected": "Verbinding met '{ssid}' verbroken.",
-      "enabled": "Wi-Fi ingeschakeld.",
+      "connected": "Verbonden met '{ssid}'",
+      "connection-failed": "Verbinding mislukt",
+      "connection-timeout": "Time-out bij verbinding",
+      "disabled": "Wi-Fi uitgeschakeld",
+      "disconnected": "Verbinding met '{ssid}' verbroken",
+      "enabled": "Wi-Fi ingeschakeld",
       "incorrect-password": "Onjuist wachtwoord.",
       "network-not-found": "Netwerk niet gevonden."
     }
@@ -1576,6 +1593,7 @@
     "fill-modes": {
       "crop": "Bijsnijden (vullend)",
       "fit": "Passend (volledig zichtbaar)",
+      "repeat": "Herhalen (Tegel)",
       "stretch": "Uitrekken"
     },
     "no-match": "Geen resultaten gevonden.",
@@ -1676,10 +1694,13 @@
       "year-two-digit": "Jaar als tweecijferig getal (00-99)"
     },
     "file-picker": {
+      "item": "item",
+      "items": "items",
       "search-placeholder": "Zoek bestanden en mappen...",
       "select-current": "Huidige selecteren",
       "select-file": "Bestand selecteren",
       "select-folder": "Map selecteren",
+      "selected": "Geselecteerd:",
       "title": "Bestandskiezer"
     },
     "file-picker-title": "Selecteer een bestand",

@@ -10,7 +10,6 @@
   cava,
   cliphist,
   ddcutil,
-  matugen,
   wlsunset,
   wl-clipboard,
   imagemagick,
@@ -34,7 +33,7 @@ let
         /.github
         /.gitignore
         /Assets/Screenshots
-        /Bin/dev
+        /Scripts/dev
         /nix
         /LICENSE
         /README.md
@@ -52,7 +51,6 @@ let
     cava
     cliphist
     ddcutil
-    matugen
     wlsunset
     wl-clipboard
     imagemagick

@@ -282,7 +282,7 @@ Popup {
           NTextInput {
             id: locationInput
             text: root.currentPath
-            placeholderText: "Enter path..."
+            placeholderText: I18n.tr("placeholders.enter-path")
             Layout.fillWidth: true
 
             visible: !filePickerPanel.showSearchBar
@@ -763,9 +763,9 @@ Popup {
               return "Searching for: \"" + filePickerPanel.searchText + "\" (" + filteredModel.count + " matches)";
             } else if (filePickerPanel.currentSelection.length > 0) {
               const selectedName = filePickerPanel.currentSelection[0].split('/').pop();
-              return "Selected: " + selectedName;
+              return I18n.tr("widgets.file-picker.selected") + " " + selectedName;
             } else {
-              return filteredModel.count + " items";
+              return filteredModel.count + " " + (filteredModel.count === 1 ? I18n.tr("widgets.file-picker.item") : I18n.tr("widgets.file-picker.items"));
             }
           }
           color: filePickerPanel.searchText.length > 0 ? Color.mPrimary : Color.mOnSurfaceVariant

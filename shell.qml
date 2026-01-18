@@ -102,10 +102,8 @@ ShellRoot {
         PowerProfileService.init();
         HostService.init();
         GitHubService.init();
-        TelemetryService.init();
 
         delayedInitTimer.running = true;
-        checkSetupWizard();
       }
 
       Overview {}
@@ -152,7 +150,7 @@ ShellRoot {
   }
 
   // ---------------------------------------------
-  // Delayed timer
+  // Delayed initialization and wizard/changelog
   // ---------------------------------------------
   Timer {
     id: delayedInitTimer
@@ -161,42 +159,81 @@ ShellRoot {
     onTriggered: {
       FontService.init();
       UpdateService.init();
-      UpdateService.showLatestChangelog();
+      showWizardOrChangelog();
     }
   }
 
-  // ---------------------------------------------
-  // Setup Wizard
-  // ---------------------------------------------
+  // Retry timer for when panel isn't ready yet
   Timer {
-    id: setupWizardTimer
+    id: wizardRetryTimer
     running: false
-    interval: 2000
-    onTriggered: {
-      showSetupWizard();
+    interval: 500
+    property string pendingWizardType: "" // "setup", "telemetry", or ""
+    onTriggered: showWizardOrChangelog()
+  }
+
+  // Connect to telemetry wizard signal from UpdateService (for async state loading)
+  Connections {
+    target: UpdateService
+    function onTelemetryWizardNeeded() {
+      wizardRetryTimer.pendingWizardType = "telemetry";
+      showWizardOrChangelog();
     }
   }
 
-  function checkSetupWizard() {
-    // Only open the setup wizard for new users
-    if (!Settings.shouldOpenSetupWizard) {
+  property var telemetryWizardConnection: null
+
+  function showWizardOrChangelog() {
+    // Determine what to show: setup wizard > telemetry wizard > changelog
+    var wizardType = wizardRetryTimer.pendingWizardType;
+
+    if (wizardType === "") {
+      // First call - determine wizard type
+      if (Settings.shouldOpenSetupWizard) {
+        wizardType = "setup";
+      } else if (UpdateService.shouldShowTelemetryWizard()) {
+        wizardType = "telemetry";
+      } else {
+        // No wizard needed - init telemetry and show changelog
+        TelemetryService.init();
+        UpdateService.checkTelemetryWizardOrChangelog();
+        return;
+      }
+    }
+
+    var targetScreen = PanelService.findScreenForPanels();
+    if (!targetScreen) {
+      Logger.w("Shell", "No screen available to show wizard");
+      wizardRetryTimer.pendingWizardType = "";
       return;
     }
 
-    setupWizardTimer.start();
-  }
-
-  function showSetupWizard() {
-    // Open Setup Wizard as a panel in the same windowing system as Settings/ControlCenter
-    if (Quickshell.screens.length > 0) {
-      var targetScreen = Quickshell.screens[0];
-      var setupPanel = PanelService.getPanel("setupWizardPanel", targetScreen);
-      if (setupPanel) {
-        setupPanel.open();
-      } else {
-        // If not yet loaded, ensure it loads and try again shortly
-        setupWizardTimer.restart();
-      }
+    var setupPanel = PanelService.getPanel("setupWizardPanel", targetScreen);
+    if (!setupPanel) {
+      // Panel not ready, retry
+      wizardRetryTimer.pendingWizardType = wizardType;
+      wizardRetryTimer.restart();
+      return;
     }
+
+    // Panel is ready, show it
+    wizardRetryTimer.pendingWizardType = "";
+
+    if (wizardType === "telemetry") {
+      setupPanel.telemetryOnlyMode = true;
+
+      // Connect to completion signal to show changelog afterward
+      if (telemetryWizardConnection) {
+        setupPanel.telemetryWizardCompleted.disconnect(telemetryWizardConnection);
+      }
+      telemetryWizardConnection = function () {
+        UpdateService.showLatestChangelog();
+      };
+      setupPanel.telemetryWizardCompleted.connect(telemetryWizardConnection);
+    } else {
+      setupPanel.telemetryOnlyMode = false;
+    }
+
+    setupPanel.open();
   }
 }

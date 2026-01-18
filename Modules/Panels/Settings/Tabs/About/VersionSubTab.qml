@@ -85,9 +85,7 @@ ColumnLayout {
       monitors: monitors,
       ui: {
         scaleRatio: Settings.data.general.scaleRatio,
-        fontDefault: Settings.data.ui.fontDefault || "default",
         fontDefaultScale: Settings.data.ui.fontDefaultScale,
-        fontFixed: Settings.data.ui.fontFixed || "default",
         fontFixedScale: Settings.data.ui.fontFixedScale
       }
     };
@@ -113,6 +111,7 @@ ColumnLayout {
       const os = root.getModule("OS");
       const kernel = root.getModule("Kernel");
       const title = root.getModule("Title");
+      const product = root.getModule("Host");
       const cpu = root.getModule("CPU");
       const gpu = root.getModule("GPU");
       const mem = root.getModule("Memory");
@@ -120,6 +119,7 @@ ColumnLayout {
       info += "OS: " + (os?.result?.prettyName || "N/A") + "\n";
       info += "Kernel: " + (kernel?.result?.release || "N/A") + "\n";
       info += "Host: " + (title?.result?.hostName || "N/A") + "\n";
+      info += "Product: " + (product?.result?.name || "N/A") + "\n";
       info += "CPU: " + (cpu?.result?.cpu || "N/A") + "\n";
       if (gpu?.result && Array.isArray(gpu.result) && gpu.result.length > 0) {
         info += "GPU: " + gpu.result.map(g => g.name || "Unknown").join(", ") + "\n";
@@ -145,7 +145,9 @@ ColumnLayout {
   }
 
   Component.onCompleted: {
-    fastfetchProcess.running = true;
+    // Check if fastfetch is available before trying to run it
+    checkFastfetchProcess.running = true;
+
     Logger.d("VersionSubTab", "Current version:", root.currentVersion);
     Logger.d("VersionSubTab", "Is git version:", root.isGitVersion);
     // Only fetch commit info for -git versions
@@ -279,6 +281,29 @@ ColumnLayout {
         }
       } else {
         Logger.d("VersionSubTab", "gitProcess - Git command failed. Exit code:", exitCode);
+      }
+    }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
+  // Check if fastfetch is available before attempting to run it
+  Process {
+    id: checkFastfetchProcess
+    command: ["sh", "-c", "command -v fastfetch"]
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        // fastfetch is available, run it
+        Logger.d("VersionSubTab", "fastfetch found, running it");
+        fastfetchProcess.running = true;
+      } else {
+        // fastfetch not found, show error state immediately
+        Logger.w("VersionSubTab", "fastfetch not found");
+        root.systemInfoLoading = false;
+        root.systemInfoAvailable = false;
       }
     }
 
@@ -567,6 +592,21 @@ ColumnLayout {
       wrapMode: Text.Wrap
     }
 
+    // Product name
+    NText {
+      text: I18n.tr("panels.about.system-product")
+      color: Color.mOnSurfaceVariant
+    }
+    NText {
+      text: {
+        const title = root.getModule("Host");
+        return title?.result?.name || "N/A";
+      }
+      color: Color.mOnSurface
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
     // Uptime
     NText {
       text: I18n.tr("panels.about.system-uptime")
@@ -769,10 +809,21 @@ ColumnLayout {
     onToggled: checked => Settings.data.general.telemetryEnabled = checked
   }
 
-  NButton {
-    icon: "eye"
-    text: I18n.tr("panels.about.telemetry-show-data")
-    outlined: true
-    onClicked: root.copyTelemetryData()
+  RowLayout {
+    spacing: Style.marginM
+
+    NButton {
+      icon: "eye"
+      text: I18n.tr("panels.about.telemetry-show-data")
+      outlined: true
+      onClicked: root.copyTelemetryData()
+    }
+
+    NButton {
+      icon: "shield-lock"
+      text: I18n.tr("panels.about.privacy-policy")
+      outlined: true
+      onClicked: Quickshell.execDetached(["xdg-open", "https://noctalia.dev/privacy"])
+    }
   }
 }

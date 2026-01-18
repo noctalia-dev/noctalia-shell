@@ -41,6 +41,8 @@ Singleton {
   // Signals for reactive UI updates
   signal wallpaperChanged(string screenName, string path)
   // Emitted when a wallpaper changes
+  signal wallpaperProcessingComplete(string screenName, string path, string cachedPath)
+  // Emitted when wallpaper processing (resize/cache) is complete. cachedPath is the resized version.
   signal wallpaperDirectoryChanged(string screenName, string directory)
   // Emitted when a monitor's directory changes
   signal wallpaperListChanged(string screenName, int count)
@@ -166,10 +168,15 @@ Singleton {
                          "uniform": 2.0
     });
     fillModeModel.append({
-      "key": "stretch",
-      "name": I18n.tr("wallpaper.fill-modes.stretch"),
-                         "uniform": 3.0
-    });
+                           "key": "stretch",
+                           "name": I18n.tr("wallpaper.fill-modes.stretch"),
+                           "uniform": 3.0
+                         });
+    fillModeModel.append({
+                           "key": "repeat",
+                           "name": I18n.tr("wallpaper.fill-modes.repeat"),
+                           "uniform": 4.0
+                         });
 
     // Populate transitionsModel with translated names
     transitionsModel.append({

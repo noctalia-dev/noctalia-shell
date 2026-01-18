@@ -17,7 +17,6 @@ Singleton {
   property string instanceId: ""
 
   readonly property string telemetryEndpoint: Quickshell.env("NOCTALIA_TELEMETRY_ENDPOINT") || "https://noctalia.dev:7777/ping"
-  readonly property string instanceIdSalt: "noctalia-telemetry-2025"
 
   function init() {
     if (initialized)
@@ -30,52 +29,18 @@ Singleton {
       return;
     }
 
-    // Read machine-id to generate instance ID, then read RAM, then send ping
-    machineIdProcess.running = true;
-  }
-
-  Process {
-    id: machineIdProcess
-    command: ["cat", "/etc/machine-id"]
-    running: false
-
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const machineId = text.trim();
-        if (machineId && machineId.length > 0) {
-          root.instanceId = root.hashString(machineId + root.instanceIdSalt);
-          Logger.d("Telemetry", "Generated instance ID from machine-id");
-        } else {
-          root.instanceId = root.generateRandomId();
-          Logger.d("Telemetry", "Using random instance ID (machine-id unavailable)");
-        }
-        memInfoProcess.running = true;
-      }
+    // Get or generate instance ID from ShellState
+    instanceId = ShellState.getTelemetryInstanceId();
+    if (!instanceId) {
+      instanceId = generateRandomId();
+      ShellState.setTelemetryInstanceId(instanceId);
+      Logger.d("Telemetry", "Generated new random instance ID");
+    } else {
+      Logger.d("Telemetry", "Using stored instance ID");
     }
 
-    onExited: function (exitCode) {
-      if (exitCode !== 0) {
-        root.instanceId = root.generateRandomId();
-        Logger.d("Telemetry", "Using random instance ID (machine-id read failed)");
-        memInfoProcess.running = true;
-      }
-    }
-  }
-
-  function hashString(str) {
-    // Simple hash function that produces a UUID-like string
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const c = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + c;
-      hash = hash & hash;
-    }
-    // Convert to hex and pad to create UUID-like format
-    const hex = Math.abs(hash).toString(16).padStart(8, '0');
-    const hex2 = Math.abs(hash * 31).toString(16).padStart(8, '0');
-    const hex3 = Math.abs(hash * 37).toString(16).padStart(8, '0');
-    const hex4 = Math.abs(hash * 41).toString(16).padStart(8, '0');
-    return `${hex.slice(0, 8)}-${hex2.slice(0, 4)}-${hex2.slice(4, 8)}-${hex3.slice(0, 4)}-${hex3.slice(4, 8)}${hex4.slice(0, 4)}`;
+    // Read RAM info, then send ping
+    memInfoProcess.running = true;
   }
 
   function generateRandomId() {
@@ -126,9 +91,7 @@ Singleton {
       monitors: getMonitorInfo(),
       ui: {
         scaleRatio: Settings.data.general.scaleRatio,
-        fontDefault: Settings.data.ui.fontDefault || "default",
         fontDefaultScale: Settings.data.ui.fontDefaultScale,
-        fontFixed: Settings.data.ui.fontFixed || "default",
         fontFixedScale: Settings.data.ui.fontFixedScale
       }
     };

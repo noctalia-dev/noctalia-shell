@@ -681,10 +681,14 @@ SmartPanel {
                             }
                           }
 
-                          // Interface name
+                          // --- Item 1: Interface ---
+                          // Grid: Row 0, Col 0 | List: Row 0
                           RowLayout {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
                             spacing: Style.marginXS
+                            Layout.row: 0
+                            Layout.column: 0
                             NIcon {
                               icon: "ethernet"
                               pointSize: Style.fontSizeXS
@@ -728,9 +732,13 @@ SmartPanel {
                             }
                           }
 
-                          // Internet connectivity
+                          // --- Item 2: Internet connectivity --
+                          // Grid: Row 1, Col 0 | List: Row 1
                           RowLayout {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            Layout.row: 1
+                            Layout.column: 0
                             spacing: Style.marginXS
                             NIcon {
                               // If the selected Ethernet interface is disconnected, show an explicit disconnected state
@@ -759,9 +767,13 @@ SmartPanel {
                             }
                           }
 
-                          // Link speed
+                          // --- Iterm 3: Link speed ---
+                          // Grid: Row 2, Col 0 | List: Row 2
                           RowLayout {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            Layout.row: 2
+                            Layout.column: 0
                             spacing: Style.marginXS
                             NIcon {
                               icon: "gauge"
@@ -788,9 +800,46 @@ SmartPanel {
                             }
                           }
 
-                          // IPv4 address
+                          // --- Item 4: Gateway ---
+                          // Grid: Row 2, Col 1 | List: Row 5 (Last)
                           RowLayout {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            Layout.row: ethernetDetailsGrid ? 2 : 5
+                            Layout.column: ethernetDetailsGrid ? 1 : 0
+                            spacing: Style.marginXS
+                            NIcon {
+                              icon: "router"
+                              pointSize: Style.fontSizeXS
+                              color: Color.mOnSurface
+                              Layout.alignment: Qt.AlignVCenter
+                              MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onEntered: TooltipService.show(parent, I18n.tr("common.gateway"))
+                                onExited: TooltipService.hide()
+                              }
+                            }
+                            NText {
+                              text: NetworkService.activeEthernetDetails.gateway4 || "-"
+                              pointSize: Style.fontSizeXS
+                              color: Color.mOnSurface
+                              Layout.fillWidth: true
+                              Layout.alignment: Qt.AlignVCenter
+                              wrapMode: ethernetDetailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                              elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
+                              maximumLineCount: ethernetDetailsGrid ? 1 : 6
+                              clip: true
+                            }
+                          }
+
+                          // --- Item 5: IPv4 ---
+                          // Grid: Row 0, Col 1 | List: Row 3
+                          RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            Layout.row: ethernetDetailsGrid ? 0 : 3
+                            Layout.column: ethernetDetailsGrid ? 1 : 0
                             spacing: Style.marginXS
                             NIcon {
                               icon: "network"
@@ -835,38 +884,13 @@ SmartPanel {
                             }
                           }
 
-                          // Gateway
+                          // --- Item 6: DNS ---
+                          // Grid: Row 1, Col 1 | List: Row 4
                           RowLayout {
                             Layout.fillWidth: true
-                            spacing: Style.marginXS
-                            NIcon {
-                              icon: "router"
-                              pointSize: Style.fontSizeXS
-                              color: Color.mOnSurface
-                              Layout.alignment: Qt.AlignVCenter
-                              MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onEntered: TooltipService.show(parent, I18n.tr("common.gateway"))
-                                onExited: TooltipService.hide()
-                              }
-                            }
-                            NText {
-                              text: NetworkService.activeEthernetDetails.gateway4 || "-"
-                              pointSize: Style.fontSizeXS
-                              color: Color.mOnSurface
-                              Layout.fillWidth: true
-                              Layout.alignment: Qt.AlignVCenter
-                              wrapMode: ethernetDetailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
-                              elide: ethernetDetailsGrid ? Text.ElideRight : Text.ElideNone
-                              maximumLineCount: ethernetDetailsGrid ? 1 : 6
-                              clip: true
-                            }
-                          }
-
-                          // DNS
-                          RowLayout {
-                            Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            Layout.row: ethernetDetailsGrid ? 1 : 4
+                            Layout.column: ethernetDetailsGrid ? 1 : 0
                             spacing: Style.marginXS
                             NIcon {
                               icon: "world"

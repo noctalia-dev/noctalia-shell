@@ -1,4 +1,4 @@
-;;; noctalia-theme.el --- Theme using Matugen SCSS variables
+;;; noctalia-theme.el --- Theme using Template SCSS variables
 
 ;; Copyright (C) 2025 
 
@@ -9,7 +9,7 @@
 
 ;;; Commentary:
 
-;; A theme using Matugen SCSS variables with quality of life improvements:
+;; A theme using Template SCSS variables with quality of life improvements:
 ;; - Better source block distinction
 ;; - Improved text visibility when selected
 ;; - Refined org-mode styling with hidden asterisks
@@ -18,7 +18,7 @@
 
 ;;; Code:
 
-(deftheme noctalia "Theme using Matugen variables with quality of life improvements.")
+(deftheme noctalia "Theme using Template variables with quality of life improvements.")
 
 ;; Define all the color variables (replaced by template processor)
 (let* ((bg "{{colors.background.default.hex}}")

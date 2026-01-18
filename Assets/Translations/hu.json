@@ -175,8 +175,10 @@
       "visualizer-type-label": "Megjelenítő típusa"
     },
     "notification-history": {
-      "hide-widget-when-zero-description": "Rejtse el az értesítési ikont, ha nincsenek olvasatlan értesítések.",
-      "hide-widget-when-zero-label": "Ikon elrejtése nullánál",
+      "hide-widget-when-zero-description": "Az értesítési ikon elrejtése, ha nincs értesítés.",
+      "hide-widget-when-zero-label": "Ikon elrejtése értesítések nélkül",
+      "hide-widget-when-zero-unread-description": "Az értesítési ikon elrejtése, ha nincs olvasatlan értesítés.",
+      "hide-widget-when-zero-unread-label": "Ikon elrejtése olvasatlan nélkül",
       "show-unread-badge-description": "Jelenítsen meg egy jelvényt, amely mutatja az olvasatlan értesítések számát.",
       "show-unread-badge-label": "Olvasatlan jelvény megjelenítése"
     },
@@ -351,9 +353,11 @@
     "connect": "Csatlakozás",
     "connected": "Csatlakoztatva",
     "connecting": "Csatlakozás...",
+    "continue": "Folytatás",
     "contributors": "Közreműködők",
     "countdown": "Visszaszámlálás",
     "date": "Dátum",
+    "default": "Alapértelmezett",
     "delete": "Törlés",
     "devices": "Eszközök",
     "disabled": "Letiltva",
@@ -525,7 +529,9 @@
       "emoji-loading-description": "Kérjük, várjon",
       "emoji-no-recent": "Nincsenek még legutóbbi emojik",
       "emoji-search-description": "Emojik keresése és másolása"
-    }
+    },
+    "result": "eredmény",
+    "results": "eredmények"
   },
   "lock-screen": {
     "authenticating": "Hitelesítés...",
@@ -607,6 +613,7 @@
       "noctalia-installed-version": "Telepített verzió:",
       "noctalia-latest-version": "Legújabb verzió:",
       "noctalia-title": "Noctalia shell",
+      "privacy-policy": "Adatvédelmi irányelvek",
       "support": "Támogasson minket",
       "system-cpu": "CPU:",
       "system-disk": "Lemez:",
@@ -620,6 +627,7 @@
       "system-not-installed": "A fastfetch nincs telepítve",
       "system-os": "Operációs rendszer:",
       "system-packages": "Csomagok:",
+      "system-product": "Termék:",
       "system-title": "Rendszerinformációk",
       "system-uptime": "Üzemidő:",
       "system-wm": "WM:",
@@ -712,11 +720,7 @@
       "widgets-title": "Widgetek elhelyezése"
     },
     "color-scheme": {
-      "color-source-desc": "A Noctalia színeinek fő beállításai.",
-      "color-source-matugen-scheme-type-description": "Válassza ki a színséma-generálási módszert, amellyel a Matugen színeket fog létrehozni a háttérképéből.",
-      "color-source-matugen-scheme-type-label": "Matugen séma típusa",
-      "color-source-title": "Színforrás",
-      "color-source-use-wallpaper-colors-description": "Színsémák generálása a háttérképedből a Matugen használatával. Automatikusan kinyeri a színeket egy egységes téma létrehozásához.",
+      "color-source-use-wallpaper-colors-description": "Színsémák generálása a háttérképedből. Automatikusan kinyeri a színeket, hogy egy egységes témát hozzon létre.",
       "color-source-use-wallpaper-colors-label": "Háttérkép színeinek használata",
       "dark-mode-mode-description": "Engedélyezi az automatikus váltást a világos és sötét mód között.",
       "dark-mode-mode-label": "Sötét mód ütemezése",
@@ -751,11 +755,13 @@
       "templates-filter-label": "Szűrés kategória szerint",
       "templates-misc-description": "Hozzon létre saját sablonokat.",
       "templates-misc-label": "Haladó",
-      "templates-misc-user-templates-description": "Csak akkor engedélyezze, ha tudja, mit csinál — lásd az online dokumentációt",
+      "templates-misc-user-templates-description": "Csak akkor engedélyezze, ha tudja, mit csinál — lásd az online dokumentációt.",
       "templates-misc-user-templates-label": "Felhasználói sablonok engedélyezése",
       "templates-none-detected": "Nem észlelt semmit",
       "templates-write-path": "Írja: {filepath}",
-      "title": "Színséma"
+      "title": "Színséma",
+      "wallpaper-method-description": "Válaszd ki a kedvenc színkinyerési módszeredet.",
+      "wallpaper-method-label": "Színkivonási módszer"
     },
     "control-center": {
       "cards-desc": "Személyre szabhatja, hogy mely vezérlők jelenjenek meg a vezérlőközpontban és milyen sorrendben.",
@@ -897,6 +903,7 @@
       "title": "Dokk"
     },
     "general": {
+      "copy-settings": "Beállítások másolása",
       "fonts-default-description": "Az interfészben használt fő betűtípus.",
       "fonts-default-label": "Alapértelmezett betűtípus",
       "fonts-default-placeholder": "Alapértelmezett betűtípus kiválasztása...",
@@ -931,7 +938,8 @@
       "screen-corners-show-corners-label": "Képernyősarkok megjelenítése",
       "screen-corners-solid-black-description": "Használjon egyszínű feketét a sáv háttérszíne helyett.",
       "screen-corners-solid-black-label": "Tömör fekete sarkok",
-      "screen-corners-title": "Képernyősarkok"
+      "screen-corners-title": "Képernyősarkok",
+      "settings-copied": "Beállítások a vágólapra másolva"
     },
     "hooks": {
       "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -lc)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
@@ -1049,7 +1057,7 @@
       "compact-lockscreen-label": "Kompakt zárolási képernyő",
       "lock-on-suspend-description": "A képernyő automatikus zárolása a rendszer felfüggesztésekor.",
       "lock-on-suspend-label": "Zárolás felfüggesztéskor",
-      "show-hibernate-description": "A 'hibernálás' lehetőség megjelenítése az energiagazdálkodási műveletek között.",
+      "show-hibernate-description": "A 'hibernálás' lehetőség megjelenítése az energiakezelési műveletek között.",
       "show-hibernate-label": "Hibernálás megjelenítése",
       "show-session-buttons-description": "Engedélyezi a hozzáférést az energiabeállításokhoz a zárolási képernyőről.",
       "show-session-buttons-label": "Energiakezelés",
@@ -1081,6 +1089,8 @@
       "history-low-urgency-label": "Alacsony sürgősség mentése az előzményekbe",
       "history-normal-urgency-description": "Normál prioritású értesítések mentése az előzményekbe.",
       "history-normal-urgency-label": "Normál sürgősség mentése az előzményekbe",
+      "media-toast-description": "Toast üzenet megjelenítése a média lejátszási állapotának változásakor.",
+      "media-toast-label": "Média",
       "monitors-desc": "Értesítés megjelenítése meghatározott monitorokon. Alapértelmezetten mindegyiken, ha nincs kiválasztva.",
       "settings-always-on-top-description": "Értesítések megjelenítése teljes képernyős ablakok és más rétegek felett.",
       "settings-background-opacity-description": "Az értesítési hátterek átlátszóságának beállítása.",
@@ -1148,6 +1158,8 @@
       "types-input-volume-label": "Bemeneti hangerő",
       "types-lockkey-description": "OSD megjelenítése a Caps Lock, Num Lock vagy Scroll Lock váltásakor.",
       "types-lockkey-label": "Zárolási gombok",
+      "types-media-description": "OSD megjelenítése a média lejátszási állapotának változásakor (lejátszás, szünet, ugrás).",
+      "types-media-label": "Média lejátszás",
       "types-title": "OSD kiváltó események",
       "types-volume-description": "OSD megjelenítése a hangkimenet hangerejének változásakor.",
       "types-volume-label": "Kimeneti hangerő"
@@ -1349,6 +1361,7 @@
     "command-example": "echo \"Hello World\"",
     "enter-command": "Adja meg a végrehajtandó parancsot (alkalmazás vagy egyéni parancsfájl)",
     "enter-ipc-identifier": "Adja meg az IPC parancsok egyedi azonosítóját",
+    "enter-path": "Útvonal megadása...",
     "enter-text-to-collapse": "pl. 'semmi sem játszik'. Használjon /regex/-et mintákhoz.",
     "enter-tooltip": "Adja meg a buboréksúgót",
     "enter-width-pixels": "Adja meg a szélességet képpontban",
@@ -1380,6 +1393,7 @@
     "title": "Munkamenet menü"
   },
   "setup": {
+    "all-done": "Kész!",
     "appearance": {
       "subheader": "Válasszon sötét módot és színes forrásokat (Matugen vagy előre meghatározott)."
     },
@@ -1387,6 +1401,11 @@
       "header": "Tapasztalat testreszabása",
       "subheader": "Állítsa be a sáv pozícióját, sűrűségét, méretezését és egyebeket."
     },
+    "skip-setup": "Beállítás kihagyása",
+    "telemetry-wizard-done": "Értettem!",
+    "telemetry-wizard-note": "Te irányítasz – bármikor engedélyezheted vagy letilthatod a Beállításokban",
+    "telemetry-wizard-subtitle": "Anonim analitikát adtunk hozzá, hogy segítsük a Noctalia fejlesztését",
+    "telemetry-wizard-title": "Adatvédelmi frissítés",
     "wallpaper": {
       "choose-dir": "Válassza ki a könyvtárat, amely tartalmazza a háttérképeit",
       "dir-browse": "Háttérkép mappa böngészése",
@@ -1401,7 +1420,9 @@
       "select-prompt": "Válasszon egy háttérképet alább",
       "subheader": "Teremtsen hangulatot egy gyönyörű háttérrel."
     },
-    "welcome-note": "Csak néhány alapvető dolog az induláshoz – a teljes beállítási lehetőség a beállításokban található"
+    "welcome-note": "Csak néhány alapvető dolog az induláshoz – a teljes beállítási lehetőség a beállításokban található",
+    "welcome-subtitle": "Tegyük egyedivé az asztalod",
+    "welcome-title": "Üdvözöl a Noctalia!"
   },
   "system": {
     "cpu-temperature": "{temp}°C",
@@ -1433,39 +1454,35 @@
     },
     "battery": {
       "low": "Alacsony akkumulátor",
-      "low-desc": "Az akkumulátor {percent}%-on van. Kérjük, csatlakoztassa a töltőt."
+      "low-desc": "Az akkumulátor {percent}%-on van. Kérjük, csatlakoztassa a töltőt"
     },
     "bluetooth": {
-      "address-copied": "Cím a vágólapra másolva.",
+      "address-copied": "Cím a vágólapra másolva",
       "confirm-code": "Erősítse meg a {value} kódot a másik eszközön.",
-      "connect-failed": "Nem sikerült csatlakozni az eszközhöz.",
-      "disconnect-failed": "Nem sikerült leválasztani az eszközről.",
-      "discoverable-change-failed": "Nem sikerült megváltoztatni a felfedezhetőság állapotát.",
-      "discoverable-disabled": "Felfedezhetőség kikapcsolva.",
-      "discoverable-enabled": "Felfedezhetőség bekapcsolva.",
+      "connect-failed": "Nem sikerült csatlakozni az eszközhöz",
+      "disconnect-failed": "Nem sikerült leválasztani az eszközről",
+      "discoverable-change-failed": "Nem sikerült megváltoztatni a felfedezhetőság állapotát",
+      "discoverable-disabled": "Felfedezhetőség kikapcsolva",
+      "discoverable-enabled": "Felfedezhetőség bekapcsolva",
       "display-code": "Adja meg a {value} kódot a másik eszközön.",
-      "forget-failed": "Nem sikerült elfelejteni az eszközt.",
-      "pair-failed": "Nem sikerült párosítani az eszközt.",
+      "forget-failed": "Nem sikerült elfelejteni az eszközt",
+      "pair-failed": "Nem sikerült párosítani az eszközt",
       "passkey-required": "Az eszköz által megkövetelt jelszó.",
       "pincode-required": "Az eszköz által megkövetelt PIN.",
-      "state-change-failed": "Nem sikerült megváltoztatni a Bluetooth állapotot."
+      "state-change-failed": "Nem sikerült megváltoztatni a Bluetooth állapotot"
     },
     "clipboard": {
       "long-text": "Hosszú szöveg",
       "unavailable": "A vágólapelőzmények nem elérhetők",
-      "unavailable-desc": "A 'cliphist' alkalmazás nincs telepítve. Telepítse a vágólapelőzmények funkcióinak használatához."
+      "unavailable-desc": "A 'cliphist' alkalmazás nincs telepítve. Telepítse a vágólapelőzmények funkcióinak használatához"
     },
     "do-not-disturb": {
       "disabled": "Ne zavarjanak kikapcsolása",
-      "disabled-desc": "Minden értesítés megjelenítése.",
+      "disabled-desc": "Minden értesítés megjelenítése",
       "enabled": "Ne zavarjanak bekapcsolva",
-      "enabled-desc": "Ezeket az értesítéseket az előzményekben találja."
+      "enabled-desc": "Ezeket az értesítéseket az előzményekben találja"
     },
-    "internet-limited": "Csatlakoztatva internet nélkül.",
-    "ipc": {
-      "powerpanel-deprecated": "A PowerPanel átnevezésre került SessionMenu-re, ez az IPC-hívás hamarosan elavul. Kérjük, használja helyette az \"ipc call sessionMenu toggle\" parancsot.",
-      "sidepanel-deprecated": "A SidePanel átnevezésre került ControlCenter-re, ez az IPC-hívás hamarosan elavul. Kérjük, használja helyette az \"ipc call controlCenter toggle\" parancsot."
-    },
+    "internet-limited": "Csatlakoztatva internet nélkül",
     "keyboard-layout": {
       "changed": "Billentyűzetkiosztás megváltozott: {layout}.",
       "title": "Billentyűzet"
@@ -1476,13 +1493,13 @@
       "label": "Utolsó vezérlőközpont widget eltávolítva"
     },
     "night-light": {
-      "forced": "Kényszerített aktiválás.",
-      "normal": "Normál mód.",
-      "not-installed": "wlsunset nincs telepítve."
+      "forced": "Kényszerített aktiválás",
+      "normal": "Normál mód",
+      "not-installed": "wlsunset nincs telepítve"
     },
     "noctalia-performance": {
-      "disabled": "Teljesítmény mód kikapcsolva.",
-      "enabled": "Teljesítmény mód bekapcsolva.",
+      "disabled": "Teljesítmény mód kikapcsolva",
+      "enabled": "Teljesítmény mód bekapcsolva",
       "label": "Noctalia Teljesítmény"
     },
     "power-profile": {
@@ -1495,22 +1512,22 @@
       "title-predefined": "Előre definiált színséma feldolgozása sikertelen"
     },
     "vpn": {
-      "connected": "Csatlakozva a(z) „{name}” hálózathoz.",
-      "disconnected": "Kapcsolat megszakadt a(z) „{name}” hálózattal."
+      "connected": "Csatlakozva a(z) „{name}” hálózathoz",
+      "disconnected": "Kapcsolat megszakadt a(z) „{name}” hálózattal"
     },
     "wallpaper-colors": {
-      "disabled": "Háttérkép színek kikapcsolva.",
-      "enabled": "Háttérkép színek bekapcsolva.",
+      "disabled": "Háttérkép színek kikapcsolva",
+      "enabled": "Háttérkép színek bekapcsolva",
       "label": "Háttérkép színek generálása",
-      "not-installed": "Matugen nincs telepítve – szükséges a háttérkép színeinek kinyeréséhez."
+      "not-installed": "Matugen nincs telepítve – szükséges a háttérkép színeinek kinyeréséhez"
     },
     "wifi": {
-      "connected": "Csatlakozva a(z) „{ssid}” hálózathoz.",
-      "connection-failed": "Csatlakozás sikertelen.",
-      "connection-timeout": "Csatlakozási időtúllépés.",
-      "disabled": "Kikapcsolva.",
-      "disconnected": "Kapcsolat megszakadt a(z) „{ssid}” hálózattal.",
-      "enabled": "Bekapcsolva.",
+      "connected": "Csatlakozva a(z) „{ssid}” hálózathoz",
+      "connection-failed": "Csatlakozás sikertelen",
+      "connection-timeout": "Csatlakozási időtúllépés",
+      "disabled": "Kikapcsolva",
+      "disconnected": "Kapcsolat megszakadt a(z) „{ssid}” hálózattal",
+      "enabled": "Bekapcsolva",
       "incorrect-password": "Helytelen jelszó.",
       "network-not-found": "Hálózat nem található."
     }
@@ -1576,6 +1593,7 @@
     "fill-modes": {
       "crop": "Vágás (Kitöltés)",
       "fit": "Illesztés (Tartalmazás)",
+      "repeat": "Ismétlés (Mozaik)",
       "stretch": "Nyújtás"
     },
     "no-match": "Nincs találat.",
@@ -1676,10 +1694,13 @@
       "year-two-digit": "Év két számjeggyel (00-99)"
     },
     "file-picker": {
+      "item": "elem",
+      "items": "elemek",
       "search-placeholder": "Fájlok és mappák keresése...",
       "select-current": "Aktuális kijelölése",
       "select-file": "Fájl kijelölése",
       "select-folder": "Mappa kiválasztása",
+      "selected": "Kiválasztva:",
       "title": "Fájlválasztó"
     },
     "file-picker-title": "Fájl kiválasztása",

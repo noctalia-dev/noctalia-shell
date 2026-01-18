@@ -13,7 +13,8 @@ import qs.Services.UI
 Singleton {
   id: root
 
-  readonly property string dynamicConfigPath: Settings.cacheDir + "matugen.dynamic.toml"
+  readonly property string dynamicConfigPath: Settings.cacheDir + "theming.dynamic.toml"
+  readonly property string templateProcessorScript: Quickshell.shellDir + "/Scripts/theming/template-processor.py"
 
   readonly property var schemeNameMap: ({
                                           "Noctalia (default)": "Noctalia-default",
@@ -50,17 +51,17 @@ Singleton {
   }
 
   /**
-  * Process wallpaper colors using matugen CLI
-  * Dual-path architecture (wallpaper uses matugen CLI)
+  * Process wallpaper colors using internal themer
+  * Dual-path architecture (wallpaper generation)
   */
   function processWallpaperColors(wallpaperPath, mode) {
-    const content = buildMatugenConfig();
+    const content = buildThemeConfig();
     if (!content)
       return;
     const wp = wallpaperPath.replace(/'/g, "'\\''");
-    const script = buildMatugenScript(content, wp, mode);
 
-    generateProcess.generator = "matugen";
+    const script = buildGenerationScript(content, wp, mode);
+
     generateProcess.command = ["sh", "-lc", script];
     generateProcess.running = true;
   }
@@ -134,17 +135,17 @@ Singleton {
   }
 
   // ================================================================================
-  // WALLPAPER-BASED GENERATION (matugen CLI)
+  // WALLPAPER-BASED GENERATION (internal python)
   // ================================================================================
-  function buildMatugenConfig() {
+  function buildThemeConfig() {
     var lines = [];
     var mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
 
     if (Settings.data.colorSchemes.useWallpaperColors) {
-      addWallpaperTemplates(lines, mode);
+      addWallpaperTheming(lines, mode);
     }
 
-    addApplicationTemplates(lines, mode);
+    addApplicationTheming(lines, mode);
 
     if (lines.length > 0) {
       return ["[config]"].concat(lines).join("\n") + "\n";
@@ -152,18 +153,18 @@ Singleton {
     return "";
   }
 
-  function addWallpaperTemplates(lines, mode) {
+  function addWallpaperTheming(lines, mode) {
     const homeDir = Quickshell.env("HOME");
     // Noctalia colors JSON
     lines.push("[templates.noctalia]");
-    lines.push('input_path = "' + Quickshell.shellDir + '/Assets/MatugenTemplates/noctalia.json"');
+    lines.push('input_path = "' + Quickshell.shellDir + '/Assets/Templates/noctalia.json"');
     lines.push('output_path = "' + Settings.configDir + 'colors.json"');
 
     // Terminal templates
     TemplateRegistry.terminals.forEach(terminal => {
                                          if (isTemplateEnabled(terminal.id)) {
                                            lines.push(`\n[templates.${terminal.id}]`);
-                                           lines.push(`input_path = "${Quickshell.shellDir}/Assets/MatugenTemplates/${terminal.matugenPath}"`);
+                                           lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${terminal.templatePath}"`);
                                            const outputPath = terminal.outputPath.replace("~", homeDir);
                                            lines.push(`output_path = "${outputPath}"`);
                                            const postHook = terminal.postHook || `${TemplateRegistry.colorsApplyScript} ${terminal.id}`;
@@ -173,7 +174,7 @@ Singleton {
                                        });
   }
 
-  function addApplicationTemplates(lines, mode) {
+  function addApplicationTheming(lines, mode) {
     const homeDir = Quickshell.env("HOME");
     TemplateRegistry.applications.forEach(app => {
                                             if (app.id === "discord") {
@@ -183,7 +184,7 @@ Singleton {
                                                                       // Check if this specific client is detected
                                                                       if (isDiscordClientEnabled(client.name)) {
                                                                         lines.push(`\n[templates.discord_${client.name}]`);
-                                                                        lines.push(`input_path = "${Quickshell.shellDir}/Assets/MatugenTemplates/${app.input}"`);
+                                                                        lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
                                                                         const outputPath = client.path.replace("~", homeDir) + "/themes/noctalia.theme.css";
                                                                         lines.push(`output_path = "${outputPath}"`);
                                                                       }
@@ -196,7 +197,7 @@ Singleton {
                                                                       // Check if this specific client is detected
                                                                       if (isCodeClientEnabled(client.name)) {
                                                                         lines.push(`\n[templates.code_${client.name}]`);
-                                                                        lines.push(`input_path = "${Quickshell.shellDir}/Assets/MatugenTemplates/${app.input}"`);
+                                                                        lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
                                                                         const expandedPath = client.path.replace("~", homeDir);
                                                                         lines.push(`output_path = "${expandedPath}"`);
                                                                       }
@@ -212,7 +213,7 @@ Singleton {
                                                 const doomDir = doomPath.substring(0, doomPath.lastIndexOf('/'));
 
                                                 lines.push(`\n[templates.emacs]`);
-                                                lines.push(`input_path = "${Quickshell.shellDir}/Assets/MatugenTemplates/${app.input}"`);
+                                                lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
                                                 lines.push(`output_path = "${standardPath}"`);
                                                 // Move to doom if doom exists, then remove empty .emacs.d/themes and .emacs.d directories
                                                 // Check directories are empty before removing
@@ -226,7 +227,7 @@ Singleton {
                                                 app.outputs.forEach((output, idx) => {
                                                                       lines.push(`\n[templates.${app.id}_${idx}]`);
                                                                       const inputFile = output.input || app.input;
-                                                                      lines.push(`input_path = "${Quickshell.shellDir}/Assets/MatugenTemplates/${inputFile}"`);
+                                                                      lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${inputFile}"`);
                                                                       const outputPath = output.path.replace("~", homeDir);
                                                                       lines.push(`output_path = "${outputPath}"`);
                                                                       if (app.postProcess) {
@@ -259,20 +260,20 @@ Singleton {
     return false;
   }
 
-  function buildMatugenScript(content, wallpaper, mode) {
-    const delimiter = "MATUGEN_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
+  function buildGenerationScript(content, wallpaper, mode) {
+    const delimiter = "THEME_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
     const pathEsc = dynamicConfigPath.replace(/'/g, "'\\''");
     const wpDelimiter = "WALLPAPER_PATH_EOF_" + Math.random().toString(36).substr(2, 9);
 
     // Use heredoc for wallpaper path to avoid all escaping issues
     let script = `cat > '${pathEsc}' << '${delimiter}'\n${content}\n${delimiter}\n`;
     script += `NOCTALIA_WP_PATH=$(cat << '${wpDelimiter}'\n${wallpaper}\n${wpDelimiter}\n)\n`;
-    script += 'matugen ';
-    if (ProgramCheckerService.matugenVersion >= "3.1.0") {
-      // Matugen 3.1.0+ supports --continue-on-error to process all templates even if some fail
-      script += '--continue-on-error ';
-    }
-    script += `image "$NOCTALIA_WP_PATH" --config '${pathEsc}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}`;
+
+    // Use template-processor.py (Python implementation)
+    const styleFlag = (Settings.data.colorSchemes.extractionMethod === "default") ? "--default" : "--material";
+    // We pass --type for compatibility but it is ignored by internal logic unless needed
+    script += `python3 "${templateProcessorScript}" "$NOCTALIA_WP_PATH" ${styleFlag} --config '${pathEsc}' --mode ${mode} `;
+
     script += buildUserTemplateCommand("$NOCTALIA_WP_PATH", mode);
 
     return script + "\n";
@@ -289,7 +290,7 @@ Singleton {
                                  if (!isDiscordClientEnabled(client.name))
                                  return;
 
-                                 const templatePath = `${Quickshell.shellDir}/Assets/MatugenTemplates/${discordApp.input}`;
+                                 const templatePath = `${Quickshell.shellDir}/Assets/Templates/${discordApp.input}`;
                                  const outputPath = `${client.path}/themes/noctalia.theme.css`.replace("~", homeDir);
                                  const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
                                  const baseConfigDir = outputDir.replace("/themes", "");
@@ -319,7 +320,7 @@ Singleton {
                               if (!isCodeClientEnabled(client.name))
                               return;
 
-                              const templatePath = `${Quickshell.shellDir}/Assets/MatugenTemplates/${codeApp.input}`;
+                              const templatePath = `${Quickshell.shellDir}/Assets/Templates/${codeApp.input}`;
                               const outputPath = client.path.replace("~", homeDir);
                               const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
 
@@ -364,7 +365,7 @@ Singleton {
       const doomConfigDir = doomDir.substring(0, doomDir.lastIndexOf('/'));
       const standardPath = app.outputs[1].path.replace("~", homeDir);
       const standardDir = standardPath.substring(0, standardPath.lastIndexOf('/'));
-      const templatePath = `${Quickshell.shellDir}/Assets/MatugenTemplates/${app.input}`;
+      const templatePath = `${Quickshell.shellDir}/Assets/Templates/${app.input}`;
 
       let script = "";
       script += `if [ -d "${doomConfigDir}" ]; then\n`;
@@ -384,13 +385,13 @@ Singleton {
                  });
     } else {
       app.outputs.forEach((output, idx) => {
-                            const templatePath = `${Quickshell.shellDir}/Assets/MatugenTemplates/${app.input}`;
+                            const templatePath = `${Quickshell.shellDir}/Assets/Templates/${app.input}`;
                             const outputPath = output.path.replace("~", homeDir);
                             const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
 
                             let script = "";
                             script += `mkdir -p ${outputDir}\n`;
-                            const templateFile = output.input ? `${Quickshell.shellDir}/Assets/MatugenTemplates/${output.input}` : templatePath;
+                            const templateFile = output.input ? `${Quickshell.shellDir}/Assets/Templates/${output.input}` : templatePath;
                             script += `cp '${templateFile}' '${outputPath}'\n`;
                             script += replaceColorsInFile(outputPath, palette);
                             if (hasDualModePatterns && darkPalette && lightPalette) {
@@ -417,8 +418,9 @@ Singleton {
     let expressions = [];
 
     Object.keys(colors).forEach(colorKey => {
-                                  const hexValue = colors[colorKey].default.hex;
-                                  const hexStrippedValue = colors[colorKey].default.hex_stripped;
+                                  const colorData = colors[colorKey].default;
+                                  const hexValue = colorData.hex;
+                                  const hexStrippedValue = colorData.hex_stripped;
 
                                   const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                   const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -426,6 +428,11 @@ Singleton {
                                   // Batch all replacements into a single sed command to avoid ARG_MAX limits
                                   expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hex_stripped}}/${escapedHexStripped}/g'`);
                                   expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hex}}/${escapedHex}/g'`);
+
+                                  // HSL components
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.hue}}/${colorData.hue}/g'`);
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.saturation}}/${colorData.saturation}/g'`);
+                                  expressions.push(`-e 's/{{colors\\.${colorKey}\\.default\\.lightness}}/${colorData.lightness}/g'`);
                                 });
     return `sed -i ${expressions.join(' ')} '${filePath}'\n`;
   }
@@ -435,24 +442,28 @@ Singleton {
 
     // Replace dark mode patterns
     Object.keys(darkColors).forEach(colorKey => {
-                                      const hexValue = darkColors[colorKey].default.hex;
-                                      const hexStrippedValue = darkColors[colorKey].default.hex_stripped;
-                                      const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                      const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                      const colorData = darkColors[colorKey].default;
+                                      const escapedHex = colorData.hex.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                      const escapedHexStripped = colorData.hex_stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hex_stripped}}/${escapedHexStripped}/g'`);
                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hex}}/${escapedHex}/g'`);
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.hue}}/${colorData.hue}/g'`);
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.saturation}}/${colorData.saturation}/g'`);
+                                      expressions.push(`-e 's/{{colors\\.${colorKey}\\.dark\\.lightness}}/${colorData.lightness}/g'`);
                                     });
 
     // Replace light mode patterns
     Object.keys(lightColors).forEach(colorKey => {
-                                       const hexValue = lightColors[colorKey].default.hex;
-                                       const hexStrippedValue = lightColors[colorKey].default.hex_stripped;
-                                       const escapedHex = hexValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                       const escapedHexStripped = hexStrippedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                       const colorData = lightColors[colorKey].default;
+                                       const escapedHex = colorData.hex.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                       const escapedHexStripped = colorData.hex_stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
                                        expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hex_stripped}}/${escapedHexStripped}/g'`);
                                        expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hex}}/${escapedHex}/g'`);
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.hue}}/${colorData.hue}/g'`);
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.saturation}}/${colorData.saturation}/g'`);
+                                       expressions.push(`-e 's/{{colors\\.${colorKey}\\.light\\.lightness}}/${colorData.lightness}/g'`);
                                      });
 
     // Batch all replacements into a single sed command to avoid ARG_MAX limits
@@ -541,7 +552,7 @@ Singleton {
   // USER TEMPLATES, advanced usage
   // ================================================================================
   function buildUserTemplateCommand(input, mode) {
-    if (!Settings.data.templates.enableUserTemplates)
+    if (!Settings.data.templates.enableUserTheming)
       return "";
 
     const userConfigPath = getUserConfigPath();
@@ -550,14 +561,16 @@ Singleton {
     // If input is a shell variable (starts with $), use double quotes to allow expansion
     // Otherwise, use single quotes for safety with file paths
     const inputQuoted = input.startsWith("$") ? `"${input}"` : `'${input.replace(/'/g, "'\\''")}'`;
-    script += `  matugen image ${inputQuoted} --config '${userConfigPath}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}\n`;
+
+    const styleFlag = (Settings.data.colorSchemes.extractionMethod === "default") ? "--default" : "--material";
+    script += `  python3 "${templateProcessorScript}" ${inputQuoted} ${styleFlag} --config '${userConfigPath}' --mode ${mode}\n`;
     script += "fi";
 
     return script;
   }
 
   function buildUserTemplateCommandForPredefined(schemeData, mode) {
-    if (!Settings.data.templates.enableUserTemplates)
+    if (!Settings.data.templates.enableUserTheming)
       return "";
 
     const userConfigPath = getUserConfigPath();
@@ -574,7 +587,11 @@ Singleton {
                                "colors": palette
                              }, null, 2) + "\n";
     script += "EOF\n";
-    script += `  matugen json '${tempJsonPathEsc}' --config '${userConfigPath}' --mode ${mode} --type ${Settings.data.colorSchemes.matugenSchemeType}\n`;
+
+    script += "EOF\n";
+
+    // Call template-processor.py with JSON file as first arg (it will detect extension)
+    script += `  python3 "${templateProcessorScript}" '${tempJsonPathEsc}' --config '${userConfigPath}' --mode ${mode}\n`;
     script += "fi";
 
     return script;
