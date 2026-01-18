@@ -633,6 +633,11 @@ Singleton {
       showDirs: false
       sortField: FolderListModel.Name
 
+    //newest wallpaper first
+      sortReversed: true
+      
+
+
       // Watch for directory changes via property binding
       onCurrentDirectoryChanged: {
         folder = "file://" + currentDirectory;
