@@ -25,6 +25,9 @@ ColumnLayout {
   property int valueTitleWidth: widgetData.titleWidth !== undefined ? widgetData.titleWidth : widgetMetadata.titleWidth
   property bool valueShowPinnedApps: widgetData.showPinnedApps !== undefined ? widgetData.showPinnedApps : widgetMetadata.showPinnedApps
   property real valueIconScale: widgetData.iconScale !== undefined ? widgetData.iconScale : widgetMetadata.iconScale
+  property string valueLeftClickAction: widgetData.leftClickAction !== undefined ? widgetData.leftClickAction : (widgetMetadata.leftClickAction || "focus")
+  property string valueMiddleClickAction: widgetData.middleClickAction !== undefined ? widgetData.middleClickAction : (widgetMetadata.middleClickAction || "none")
+  property string valueRightClickAction: widgetData.rightClickAction !== undefined ? widgetData.rightClickAction : (widgetMetadata.rightClickAction || "context-menu")
 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
@@ -46,6 +49,9 @@ ColumnLayout {
     settings.titleWidth = parseInt(titleWidthInput.text) || widgetMetadata.titleWidth;
     settings.showPinnedApps = valueShowPinnedApps;
     settings.iconScale = valueIconScale;
+    settings.leftClickAction = valueLeftClickAction;
+    settings.middleClickAction = valueMiddleClickAction;
+    settings.rightClickAction = valueRightClickAction;
     return settings;
   }
 
@@ -101,6 +107,59 @@ ColumnLayout {
     description: I18n.tr("bar.taskbar.show-pinned-apps-description")
     checked: root.valueShowPinnedApps
     onToggled: checked => root.valueShowPinnedApps = checked
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  ColumnLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginS
+
+    property var clickActionModel: [
+      {
+        "key": "none",
+        "name": I18n.tr("common.none")
+      },
+      {
+        "key": "focus",
+        "name": I18n.tr("actions.focus-activate-window")
+      },
+      {
+        "key": "context-menu",
+        "name": I18n.tr("actions.open-context-menu")
+      }
+    ]
+
+    NComboBox {
+      Layout.fillWidth: true
+      label: I18n.tr("bar.taskbar.left-click-action-label")
+      description: I18n.tr("bar.taskbar.click-action-description")
+      model: parent.clickActionModel
+      currentKey: root.valueLeftClickAction
+      onSelected: key => root.valueLeftClickAction = key
+    }
+    NComboBox {
+      Layout.fillWidth: true
+      label: I18n.tr("bar.taskbar.middle-click-action-label")
+      description: I18n.tr("bar.taskbar.click-action-description")
+      model: parent.clickActionModel
+      currentKey: root.valueMiddleClickAction
+      onSelected: key => root.valueMiddleClickAction = key
+    }
+    NComboBox {
+      Layout.fillWidth: true
+      label: I18n.tr("bar.taskbar.right-click-action-label")
+      description: I18n.tr("bar.taskbar.click-action-description")
+      model: parent.clickActionModel
+      currentKey: root.valueRightClickAction
+      onSelected: key => root.valueRightClickAction = key
+    }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
   }
 
   ColumnLayout {
