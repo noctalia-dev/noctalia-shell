@@ -19,6 +19,7 @@ RowLayout {
   property Component delegate: null
   property var defaultValue: undefined
   property string settingsPath: ""
+  property bool useFontPreview: false
 
   readonly property real preferredHeight: Math.round(Style.baseWidgetSize * 1.1)
 
@@ -278,6 +279,7 @@ RowLayout {
 
                 NText {
                   text: name
+                  font.family: root.useFontPreview ? name : undefined
                   pointSize: Style.fontSizeM
                   color: highlighted ? Color.mOnHover : Color.mOnSurface
                   verticalAlignment: Text.AlignVCenter
