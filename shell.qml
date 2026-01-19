@@ -106,6 +106,12 @@ ShellRoot {
         delayedInitTimer.running = true;
       }
 
+     // ---KdeThemeSync------
+      KdeThemeSync {
+        id: kdeThemeSync
+      }
+      // --------------------------
+
       Overview {}
       Background {}
       DesktopWidgets {}
