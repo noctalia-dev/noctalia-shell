@@ -83,6 +83,7 @@ ColumnLayout {
         popupHeight: 420
         defaultValue: Settings.getDefaultValue("ui.fontDefault")
         settingsPath: "ui.fontDefault"
+        useFontPreview: true
         onSelected: key => Settings.data.ui.fontDefault = key
       }
 
@@ -96,6 +97,7 @@ ColumnLayout {
         popupHeight: 320
         defaultValue: Settings.getDefaultValue("ui.fontFixed")
         settingsPath: "ui.fontFixed"
+        useFontPreview: true
         onSelected: key => Settings.data.ui.fontFixed = key
       }
 
