@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Pipewire
 import qs.Commons
 import qs.Services.System
@@ -17,6 +18,11 @@ Singleton {
   readonly property PwNode sink: Pipewire.ready ? Pipewire.defaultAudioSink : null
   readonly property PwNode source: validatedSource
   readonly property bool hasInput: !!source
+  
+  // Track unavailable devices
+  property var unavailableSinkNames: []
+  property var unavailableSourceNames: []
+
   readonly property list<PwNode> sinks: deviceNodes.sinks
   readonly property list<PwNode> sources: deviceNodes.sources
 
@@ -74,22 +80,32 @@ Singleton {
   readonly property real stepVolume: Settings.data.audio.volumeStep / 100.0
 
   // Filtered device nodes (non-stream sinks and sources)
-  readonly property var deviceNodes: Pipewire.ready ? Pipewire.nodes.values.reduce((acc, node) => {
-                                                                                     if (!node.isStream) {
-                                                                                       if (node.isSink) {
-                                                                                         acc.sinks.push(node);
-                                                                                       } else if (node.audio) {
-                                                                                         acc.sources.push(node);
-                                                                                       }
-                                                                                     }
-                                                                                     return acc;
-                                                                                   }, {
-                                                                                     "sources": [],
-                                                                                     "sinks": []
-                                                                                   }) : {
-                                                        "sources": [],
-                                                        "sinks": []
-                                                      }
+  readonly property var deviceNodes: {
+     // trigger binding on availability changes
+     const unavailableSinks = root.unavailableSinkNames;
+     const unavailableSources = root.unavailableSourceNames;
+     
+     return Pipewire.ready ? Pipewire.nodes.values.reduce((acc, node) => {
+       if (!node.isStream) {
+         if (node.isSink) {
+           if (!unavailableSinks.includes(node.name)) {
+             acc.sinks.push(node);
+           }
+         } else if (node.audio) {
+           if (!unavailableSources.includes(node.name)) {
+             acc.sources.push(node);
+           }
+         }
+       }
+       return acc;
+     }, {
+       "sources": [],
+       "sinks": []
+     }) : {
+       "sources": [],
+       "sinks": []
+     }
+  }
 
   // Validated source (ensures it's a proper audio source, not a sink)
   readonly property PwNode validatedSource: {
@@ -366,5 +382,74 @@ Singleton {
       return;
     }
     Pipewire.preferredDefaultAudioSource = newSource;
+  }
+
+  // Device availability checking
+  Timer {
+    interval: 5000  // 5s might be too short?? I hate polling.
+    running: true
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: {
+      checkSinksProcess.running = true;
+      checkSourcesProcess.running = true;
+    }
+  }
+
+  Process {
+    id: checkSinksProcess
+    command: ["pactl", "-f", "json", "list", "sinks"]
+    stdout: StdioCollector {
+      onDataChanged: {
+        try {
+          if (!checkSinksProcess.running && data) {
+            const sinks = JSON.parse(data);
+            const unavailable = [];
+            for (const sink of sinks) {
+              if (sink.ports && sink.active_port) {
+                const active = sink.ports.find(p => p.name === sink.active_port);
+                if (active && active.availability === "not available") {
+                  unavailable.push(sink.name);
+                }
+              }
+            }
+            // Only update if changed to avoid unnecessary re-evaluations
+            if (JSON.stringify(root.unavailableSinkNames) !== JSON.stringify(unavailable)) {
+              root.unavailableSinkNames = unavailable;
+            }
+          }
+        } catch (e) {
+          Logger.e("AudioService", "Failed to parse sinks JSON: " + e);
+        }
+      }
+    }
+  }
+
+  Process {
+    id: checkSourcesProcess
+    command: ["pactl", "-f", "json", "list", "sources"]
+    stdout: StdioCollector {
+      onDataChanged: {
+        try {
+          if (!checkSourcesProcess.running && data) {
+            const sources = JSON.parse(data);
+            const unavailable = [];
+            for (const source of sources) {
+              if (source.ports && source.active_port) {
+                const active = source.ports.find(p => p.name === source.active_port);
+                if (active && active.availability === "not available") {
+                  unavailable.push(source.name);
+                }
+              }
+            }
+            if (JSON.stringify(root.unavailableSourceNames) !== JSON.stringify(unavailable)) {
+              root.unavailableSourceNames = unavailable;
+            }
+          }
+        } catch (e) {
+          Logger.e("AudioService", "Failed to parse sources JSON: " + e);
+        }
+      }
+    }
   }
 }
