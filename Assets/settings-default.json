@@ -278,6 +278,7 @@
     "floatingRatio": 1,
     "size": 1,
     "onlySameOutput": true,
+    "onlyCurrentWorkspace": false,
     "monitors": [],
     "pinnedApps": [],
     "colorizeIcons": false,
