@@ -365,6 +365,13 @@ Loader {
         }
       }
 
+      // Close context menu when dock becomes hidden
+      onHiddenChanged: {
+        if (hidden) {
+          closeAllContextMenus();
+        }
+      }
+
       // Watch for autoHide setting changes
       onAutoHideChanged: {
         if (!autoHide) {
