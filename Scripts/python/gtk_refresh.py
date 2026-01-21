@@ -59,9 +59,9 @@ async def apply_gtk4_colors(config_dir: Path):
 async def refresh_theme():
     """
     Trigger GTK theme refresh.
-    1️⃣ Prefer gsettings if available and schema exists
-    2️⃣ Fallback to dconf if gsettings not available or schema missing
-    3️⃣ Skip entirely if neither backend is available
+    1. Prefer gsettings if available and schema exists
+    2. Fallback to dconf if gsettings not available or schema missing
+    3. Skip entirely if neither backend is available
     """
 
     has_gsettings = await run_command("which", "gsettings")
