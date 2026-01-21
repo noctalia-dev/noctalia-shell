@@ -33,34 +33,34 @@ Loader {
       }
 
       // Update dock apps when windows change
-       Connections {
-         target: CompositorService
-         function onWindowListChanged() {
-           updateDockApps();
-         }
-       }
+      Connections {
+        target: CompositorService
+        function onWindowListChanged() {
+          updateDockApps();
+        }
+      }
 
-       // Additional connection for workspace changes
-       Connections {
-         target: CompositorService
-         function onWorkspaceChanged() {
-           updateDockApps();
-         }
-       }
+      // Additional connection for workspace changes
+      Connections {
+        target: CompositorService
+        function onWorkspaceChanged() {
+          updateDockApps();
+        }
+      }
 
       // Update dock apps when pinned apps change
-       Connections {
-         target: Settings.data.dock
-         function onPinnedAppsChanged() {
-           updateDockApps();
-         }
-         function onOnlySameOutputChanged() {
-           updateDockApps();
-         }
-         function onOnlyCurrentWorkspaceChanged() {
-           updateDockApps();
-         }
-       }
+      Connections {
+        target: Settings.data.dock
+        function onPinnedAppsChanged() {
+          updateDockApps();
+        }
+        function onOnlySameOutputChanged() {
+          updateDockApps();
+        }
+        function onOnlyCurrentWorkspaceChanged() {
+          updateDockApps();
+        }
+      }
 
       // Initial update when component is ready
       Component.onCompleted: {
@@ -243,115 +243,114 @@ Loader {
       }
 
       // Function to update the combined dock apps model
-        function updateDockApps() {
-          let activeIds = [];
-          try {
-            const activeWorkspaces = CompositorService.getActiveWorkspaces();
-            activeIds = activeWorkspaces.map(function (ws) {
-              return ws.id;
-            });
-          } catch (e) {
-            console.warn("Could not get active workspaces:", e);
-            activeIds = [];
+      function updateDockApps() {
+        let activeIds = [];
+        try {
+          const activeWorkspaces = CompositorService.getActiveWorkspaces();
+          activeIds = activeWorkspaces.map(function (ws) {
+            return ws.id;
+          });
+        } catch (e) {
+          console.warn("Could not get active workspaces:", e);
+          activeIds = [];
+        }
+
+        // Use CompositorService.windows like Taskbar does for consistency
+        const runningWindows = [];
+        if (CompositorService.windows) {
+          const total = CompositorService.windows.count || 0;
+          for (let i = 0; i < total; i++) {
+            const w = CompositorService.windows.get(i);
+            if (w) {
+              const passOutput = (!Settings.data.dock.onlySameOutput) || (w.output == modelData?.name);
+              const passWorkspace = (!Settings.data.dock.onlyCurrentWorkspace) || (activeIds.length === 0) || (w.workspaceId !== undefined && w.workspaceId !== null && activeIds.includes(w.workspaceId));
+              if (passOutput && passWorkspace) {
+                runningWindows.push(w);
+              }
+            }
           }
+        }
 
+        const pinnedApps = Settings.data.dock.pinnedApps || [];
+        const combined = [];
+        const processedWindows = new Set();
+        const processedPinnedAppIds = new Set();
 
-         // Use CompositorService.windows like Taskbar does for consistency
-         const runningWindows = [];
-         if (CompositorService.windows) {
-           const total = CompositorService.windows.count || 0;
-           for (let i = 0; i < total; i++) {
-             const w = CompositorService.windows.get(i);
-             if (w) {
-                const passOutput = (!Settings.data.dock.onlySameOutput) || (w.output == modelData?.name);
-                const passWorkspace = (!Settings.data.dock.onlyCurrentWorkspace) || (activeIds.length === 0) || (w.workspaceId !== undefined && w.workspaceId !== null && activeIds.includes(w.workspaceId));
-               if (passOutput && passWorkspace) {
-                 runningWindows.push(w);
-               }
-             }
-           }
-         }
+        //push an app onto combined with the given appType
+        function pushApp(appType, window, appId, title) {
+          if (window) {
+            if (processedWindows.has(window)) {
+              return;
+            }
+            combined.push({
+                            "type": appType,
+                            "window": window,
+                            "appId": appId,
+                            "title": title
+                          });
+            processedWindows.add(window);
+          } else {
+            // For pinned apps that aren't running, track by appId to avoid duplicates
+            if (processedPinnedAppIds.has(appId)) {
+              return;
+            }
+            combined.push({
+                            "type": appType,
+                            "window": null,
+                            "appId": appId,
+                            "title": title
+                          });
+            processedPinnedAppIds.add(appId);
+          }
+        }
 
-         const pinnedApps = Settings.data.dock.pinnedApps || [];
-         const combined = [];
-         const processedWindows = new Set();
-         const processedPinnedAppIds = new Set();
-
-         //push an app onto combined with the given appType
-         function pushApp(appType, window, appId, title) {
-           if (window) {
-             if (processedWindows.has(window)) {
-               return;
-             }
-              combined.push({
-                              "type": appType,
-                              "window": window,
-                              "appId": appId,
-                              "title": title
-                            });
-             processedWindows.add(window);
-           } else {
-             // For pinned apps that aren't running, track by appId to avoid duplicates
-             if (processedPinnedAppIds.has(appId)) {
-               return;
-             }
-             combined.push({
-                             "type": appType,
-                             "window": null,
-                             "appId": appId,
-                             "title": title
-                           });
-             processedPinnedAppIds.add(appId);
-           }
-         }
-
-         function pushRunning(first) {
-           runningWindows.forEach(window => {
-                                 if (window) {
-                                   // Skip pinned apps if they were already processed (when pinnedStatic is true)
-                                   const isPinned = pinnedApps.includes(window.appId);
-                                   if (!first && isPinned && processedWindows.has(window)) {
-                                     return;
+        function pushRunning(first) {
+          runningWindows.forEach(window => {
+                                   if (window) {
+                                     // Skip pinned apps if they were already processed (when pinnedStatic is true)
+                                     const isPinned = pinnedApps.includes(window.appId);
+                                     if (!first && isPinned && processedWindows.has(window)) {
+                                       return;
+                                     }
+                                     pushApp((first && isPinned) ? "pinned-running" : "running", window, window.appId, window.title);
                                    }
-                                   pushApp((first && isPinned) ? "pinned-running" : "running", window, window.appId, window.title);
-                                 }
-                               });
-         }
+                                 });
+        }
 
-         function pushPinned() {
-           pinnedApps.forEach(pinnedAppId => {
-                                // Find all running instances of this pinned app
-                                const matchingWindows = runningWindows.filter(app => app && app.appId === pinnedAppId);
+        function pushPinned() {
+          pinnedApps.forEach(pinnedAppId => {
+                               // Find all running instances of this pinned app
+                               const matchingWindows = runningWindows.filter(app => app && app.appId === pinnedAppId);
 
-                                if (matchingWindows.length > 0) {
-                                  matchingWindows.forEach(window => {
-                                                              pushApp("pinned-running", window, pinnedAppId, window.title);
-                                                            });
-                                } else {
-                                  pushApp("pinned", null, pinnedAppId, pinnedAppId);
-                                }
-                              });
-         }
+                               if (matchingWindows.length > 0) {
+                                 matchingWindows.forEach(window => {
+                                                           pushApp("pinned-running", window, pinnedAppId, window.title);
+                                                         });
+                               } else {
+                                 pushApp("pinned", null, pinnedAppId, pinnedAppId);
+                               }
+                             });
+        }
 
-         //if pinnedStatic then push all pinned and then all remaining running apps
-         if (Settings.data.dock.pinnedStatic) {
-           pushPinned();
-           pushRunning(false);
+        //if pinnedStatic then push all pinned and then all remaining running apps
+        if (Settings.data.dock.pinnedStatic) {
+          pushPinned();
+          pushRunning(false);
 
-           //else add all running apps and then remaining pinned apps
-         } else {
-           pushRunning(true);
-           pushPinned();
-         }
+          //else add all running apps and then remaining pinned apps
+        } else {
+          pushRunning(true);
+          pushPinned();
+        }
 
-         dockApps = sortDockApps(combined);
-         // Sync session order if needed (e.g. first run or new apps added)
-         if (!sessionAppOrder || sessionAppOrder.length === 0 || sessionAppOrder.length !== dockApps.length) {
-           sessionAppOrder = dockApps.map(getAppKey);
-         }
-       }
+        dockApps = sortDockApps(combined);
+        // Sync session order if needed (e.g. first run or new apps added)
+        if (!sessionAppOrder || sessionAppOrder.length === 0 || sessionAppOrder.length !== dockApps.length) {
+          sessionAppOrder = dockApps.map(getAppKey);
+        }
+      }
 
-       // Timer to unload dock after hide animation completes
+      // Timer to unload dock after hide animation completes
       Timer {
         id: unloadTimer
         interval: hideAnimationDuration + 50 // Add small buffer
@@ -481,7 +480,7 @@ Loader {
 
       Loader {
         id: dockWindowLoader
-         active: Settings.data.dock.enabled && (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && dockLoaded && CompositorService && (dockApps.length > 0)
+        active: Settings.data.dock.enabled && (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && dockLoaded && CompositorService && (dockApps.length > 0)
 
         sourceComponent: PanelWindow {
           id: dockWindow
@@ -636,25 +635,25 @@ Loader {
                       Layout.preferredHeight: iconSize
                       Layout.alignment: Qt.AlignCenter
 
-                       property bool isActive: modelData.window && modelData.window.isFocused
-                       property bool hovered: appMouseArea.containsMouse
-                       property string appId: modelData ? modelData.appId : ""
-                         property string appTitle: {
-                           if (!modelData)
-                             return "";
-                           // For running apps, use the window title directly (reactive)
-                           if (modelData.window) {
-                             const windowTitle = modelData.window.title || "";
-                             // If title is "Loading..." or empty, use desktop entry name
-                             if (!windowTitle || windowTitle === "Loading..." || windowTitle.trim() === "") {
-                               return root.getAppNameFromDesktopEntry(modelData.appId) || modelData.appId;
-                             }
-                             return windowTitle;
-                           }
-                           // For pinned apps that aren't running, use the stored title
-                           return modelData.title || modelData.appId || "";
-                         }
-                        property bool isRunning: modelData && (modelData.type === "running" || modelData.type === "pinned-running")
+                      property bool isActive: modelData.window && modelData.window.isFocused
+                      property bool hovered: appMouseArea.containsMouse
+                      property string appId: modelData ? modelData.appId : ""
+                      property string appTitle: {
+                        if (!modelData)
+                          return "";
+                        // For running apps, use the window title directly (reactive)
+                        if (modelData.window) {
+                          const windowTitle = modelData.window.title || "";
+                          // If title is "Loading..." or empty, use desktop entry name
+                          if (!windowTitle || windowTitle === "Loading..." || windowTitle.trim() === "") {
+                            return root.getAppNameFromDesktopEntry(modelData.appId) || modelData.appId;
+                          }
+                          return windowTitle;
+                        }
+                        // For pinned apps that aren't running, use the stored title
+                        return modelData.title || modelData.appId || "";
+                      }
+                      property bool isRunning: modelData && (modelData.type === "running" || modelData.type === "pinned-running")
 
                       // Store index for drag-and-drop
                       property int modelIndex: index
@@ -857,7 +856,7 @@ Loader {
                             return;
                           }
 
-                           // Close any existing context menu for non-right-click actions
+                          // Close any existing context menu for non-right-click actions
                           root.closeAllContextMenus();
 
                           // Check if window is valid
