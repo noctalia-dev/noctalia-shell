@@ -18,7 +18,7 @@ Singleton {
   readonly property PwNode sink: Pipewire.ready ? Pipewire.defaultAudioSink : null
   readonly property PwNode source: validatedSource
   readonly property bool hasInput: !!source
-  
+
   // Track unavailable devices
   property var unavailableSinkNames: []
   property var unavailableSourceNames: []
@@ -81,30 +81,30 @@ Singleton {
 
   // Filtered device nodes (non-stream sinks and sources)
   readonly property var deviceNodes: {
-     // trigger binding on availability changes
-     const unavailableSinks = root.unavailableSinkNames;
-     const unavailableSources = root.unavailableSourceNames;
-     
-     return Pipewire.ready ? Pipewire.nodes.values.reduce((acc, node) => {
-       if (!node.isStream) {
-         if (node.isSink) {
-           if (!unavailableSinks.includes(node.name)) {
-             acc.sinks.push(node);
-           }
-         } else if (node.audio) {
-           if (!unavailableSources.includes(node.name)) {
-             acc.sources.push(node);
-           }
-         }
-       }
-       return acc;
-     }, {
-       "sources": [],
-       "sinks": []
-     }) : {
-       "sources": [],
-       "sinks": []
-     }
+    // trigger binding on availability changes
+    const unavailableSinks = root.unavailableSinkNames;
+    const unavailableSources = root.unavailableSourceNames;
+
+    return Pipewire.ready ? Pipewire.nodes.values.reduce((acc, node) => {
+                                                           if (!node.isStream) {
+                                                             if (node.isSink) {
+                                                               if (!unavailableSinks.includes(node.name)) {
+                                                                 acc.sinks.push(node);
+                                                               }
+                                                             } else if (node.audio) {
+                                                               if (!unavailableSources.includes(node.name)) {
+                                                                 acc.sources.push(node);
+                                                               }
+                                                             }
+                                                           }
+                                                           return acc;
+                                                         }, {
+                                                           "sources": [],
+                                                           "sinks": []
+                                                         }) : {
+                              "sources": [],
+                              "sinks": []
+                            };
   }
 
   // Validated source (ensures it's a proper audio source, not a sink)
@@ -386,68 +386,79 @@ Singleton {
 
   // Device availability checking
   Timer {
-    interval: 5000  // 5s might be too short?? I hate polling.
+    id: checkTimer
+    interval: 5000 // 5s might be too short?? I hate polling.
     running: true
     repeat: true
     triggeredOnStart: true
     onTriggered: {
-      checkSinksProcess.running = true;
-      checkSourcesProcess.running = true;
+      checkProcess.running = true;
     }
   }
 
   Process {
-    id: checkSinksProcess
-    command: ["pactl", "-f", "json", "list", "sinks"]
+    id: checkProcess
+    command: ["pw-dump"]
     stdout: StdioCollector {
       onDataChanged: {
         try {
-          if (!checkSinksProcess.running && data) {
-            const sinks = JSON.parse(data);
-            const unavailable = [];
-            for (const sink of sinks) {
-              if (sink.ports && sink.active_port) {
-                const active = sink.ports.find(p => p.name === sink.active_port);
-                if (active && active.availability === "not available") {
-                  unavailable.push(sink.name);
-                }
+          if (!checkProcess.running && data) {
+            const dump = JSON.parse(data);
+            const devices = {};
+            for (const obj of dump) {
+              if (obj.type === "PipeWire:Interface:Device") {
+                devices[obj.id] = obj;
               }
             }
-            // Only update if changed to avoid unnecessary re-evaluations
-            if (JSON.stringify(root.unavailableSinkNames) !== JSON.stringify(unavailable)) {
-              root.unavailableSinkNames = unavailable;
-            }
-          }
-        } catch (e) {
-          Logger.e("AudioService", "Failed to parse sinks JSON: " + e);
-        }
-      }
-    }
-  }
 
-  Process {
-    id: checkSourcesProcess
-    command: ["pactl", "-f", "json", "list", "sources"]
-    stdout: StdioCollector {
-      onDataChanged: {
-        try {
-          if (!checkSourcesProcess.running && data) {
-            const sources = JSON.parse(data);
-            const unavailable = [];
-            for (const source of sources) {
-              if (source.ports && source.active_port) {
-                const active = source.ports.find(p => p.name === source.active_port);
-                if (active && active.availability === "not available") {
-                  unavailable.push(source.name);
-                }
-              }
+                        const unavailableSinks = [];
+                        const unavailableSources = [];
+                        
+                        const currentSinkName = root.sink ? root.sink.name : "";
+                        const currentSourceName = root.source ? root.source.name : "";
+            
+                        for (const obj of dump) {
+                          if (obj.type === "PipeWire:Interface:Node" && obj.info && obj.info.props) {
+                            const props = obj.info.props;
+                            const mediaClass = props["media.class"];
+                            const name = props["node.name"];
+                            const deviceId = props["device.id"];
+                            const cardProfileDevice = props["card.profile.device"];
+            
+                            if ((mediaClass === "Audio/Sink" || mediaClass === "Audio/Source") && deviceId !== undefined && cardProfileDevice !== undefined) {
+                              // Skip availability check if this is the currently active device
+                              if (mediaClass === "Audio/Sink" && name === currentSinkName) continue;
+                              if (mediaClass === "Audio/Source" && name === currentSourceName) continue;
+            
+                              const device = devices[deviceId];
+                              if (device && device.info && device.info.params && device.info.params.EnumRoute) {
+                                 const routes = device.info.params.EnumRoute;
+                                 // cardProfileDevice is int, devices array contains ints
+                                 const route = routes.find(r => r.devices && r.devices.includes(cardProfileDevice));
+                                 
+                                 // Only mark as unavailable if explicitly "no". "unknown" is considered available.
+                                 if (route && route.available === "no") {
+                                   if (mediaClass === "Audio/Sink") {
+                                     unavailableSinks.push(name);
+                                   } else {
+                                     unavailableSources.push(name);
+                                   }
+                                 }
+                              }
+                            }
+                          }
+                        }
+            if (JSON.stringify(root.unavailableSinkNames) !== JSON.stringify(unavailableSinks)) {
+              root.unavailableSinkNames = unavailableSinks;
+              Logger.i("AudioService", "Updated unavailable sink names:", unavailableSinks);
             }
-            if (JSON.stringify(root.unavailableSourceNames) !== JSON.stringify(unavailable)) {
-              root.unavailableSourceNames = unavailable;
+            if (JSON.stringify(root.unavailableSourceNames) !== JSON.stringify(unavailableSources)) {
+              root.unavailableSourceNames = unavailableSources;
+              Logger.i("AudioService", "Updated unavailable sink names:", unavailableSinks);
             }
           }
         } catch (e) {
-          Logger.e("AudioService", "Failed to parse sources JSON: " + e);
+          Logger.e("AudioService", "Failed to parse pw-dump JSON: " + e);
         }
       }
     }
