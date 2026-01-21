@@ -388,7 +388,7 @@ Singleton {
   Timer {
     id: checkTimer
     interval: 5000 // 5s might be too short?? I hate polling.
-    running: true
+    running: Pipewire.ready
     repeat: true
     triggeredOnStart: true
     onTriggered: {
@@ -400,66 +400,75 @@ Singleton {
     id: checkProcess
     command: ["pw-dump"]
     stdout: StdioCollector {
-      onDataChanged: {
-        try {
-          if (!checkProcess.running && data) {
-            const dump = JSON.parse(data);
-            const devices = {};
-            for (const obj of dump) {
-              if (obj.type === "PipeWire:Interface:Device") {
-                devices[obj.id] = obj;
+      id: pwDumpOutput
+    }
+    onExited: code => {
+      if (code !== 0) {
+        Logger.e("AudioService", "pw-dump failed with code: " + code);
+        return;
+      }
+
+      const data = pwDumpOutput.data;
+      if (!data)
+      return;
+
+      try {
+        const dump = JSON.parse(data);
+        const devices = {};
+        for (const obj of dump) {
+          if (obj.type === "PipeWire:Interface:Device") {
+            devices[obj.id] = obj;
+          }
+        }
+
+        const unavailableSinks = [];
+        const unavailableSources = [];
+
+        for (const obj of dump) {
+          if (obj.type === "PipeWire:Interface:Node" && obj.info && obj.info.props) {
+            const props = obj.info.props;
+            const mediaClass = props["media.class"];
+            const name = props["node.name"];
+            const deviceId = props["device.id"];
+            const cardProfileDevice = props["card.profile.device"];
+
+            if ((mediaClass === "Audio/Sink" || mediaClass === "Audio/Source") && deviceId !== undefined && cardProfileDevice !== undefined) {
+
+              // Explicitly ignore HDMI devices from unavailability checks to prevent auto-switching/hiding
+              if (name && name.toLowerCase().includes("hdmi"))
+              continue;
+
+              const device = devices[deviceId];
+              if (device && device.info && device.info.params && device.info.params.EnumRoute) {
+                const routes = device.info.params.EnumRoute;
+                const route = routes.find(r => r.devices && r.devices.includes(cardProfileDevice));
+
+                if (route && route.available === "no") {
+                  // Secondary check for HDMI in route details if not caught by node name
+                  if (route.name && route.name.toLowerCase().includes("hdmi"))
+                  continue;
+                  if (route.description && route.description.toLowerCase().includes("hdmi"))
+                  continue;
+
+                  if (mediaClass === "Audio/Sink") {
+                    unavailableSinks.push(name);
+                  } else {
+                    unavailableSources.push(name);
+                  }
+                }
               }
             }
-
-                        const unavailableSinks = [];
-                        const unavailableSources = [];
-                        
-                        const currentSinkName = root.sink ? root.sink.name : "";
-                        const currentSourceName = root.source ? root.source.name : "";
-            
-                        for (const obj of dump) {
-                          if (obj.type === "PipeWire:Interface:Node" && obj.info && obj.info.props) {
-                            const props = obj.info.props;
-                            const mediaClass = props["media.class"];
-                            const name = props["node.name"];
-                            const deviceId = props["device.id"];
-                            const cardProfileDevice = props["card.profile.device"];
-            
-                            if ((mediaClass === "Audio/Sink" || mediaClass === "Audio/Source") && deviceId !== undefined && cardProfileDevice !== undefined) {
-                              // Skip availability check if this is the currently active device
-                              if (mediaClass === "Audio/Sink" && name === currentSinkName) continue;
-                              if (mediaClass === "Audio/Source" && name === currentSourceName) continue;
-            
-                              const device = devices[deviceId];
-                              if (device && device.info && device.info.params && device.info.params.EnumRoute) {
-                                 const routes = device.info.params.EnumRoute;
-                                 // cardProfileDevice is int, devices array contains ints
-                                 const route = routes.find(r => r.devices && r.devices.includes(cardProfileDevice));
-                                 
-                                 // Only mark as unavailable if explicitly "no". "unknown" is considered available.
-                                 if (route && route.available === "no") {
-                                   if (mediaClass === "Audio/Sink") {
-                                     unavailableSinks.push(name);
-                                   } else {
-                                     unavailableSources.push(name);
-                                   }
-                                 }
-                              }
-                            }
-                          }
-                        }
-            if (JSON.stringify(root.unavailableSinkNames) !== JSON.stringify(unavailableSinks)) {
-              root.unavailableSinkNames = unavailableSinks;
-              Logger.i("AudioService", "Updated unavailable sink names:", unavailableSinks);
-            }
-            if (JSON.stringify(root.unavailableSourceNames) !== JSON.stringify(unavailableSources)) {
-              root.unavailableSourceNames = unavailableSources;
-              Logger.i("AudioService", "Updated unavailable sink names:", unavailableSinks);
-            }
           }
-        } catch (e) {
-          Logger.e("AudioService", "Failed to parse pw-dump JSON: " + e);
         }
+
+        if (JSON.stringify(root.unavailableSinkNames) !== JSON.stringify(unavailableSinks)) {
+          root.unavailableSinkNames = unavailableSinks;
+        }
+        if (JSON.stringify(root.unavailableSourceNames) !== JSON.stringify(unavailableSources)) {
+          root.unavailableSourceNames = unavailableSources;
+        }
+      } catch (err) {
+        Logger.e("AudioService", "Failed to parse pw-dump JSON: " + err);
       }
     }
   }
