@@ -62,7 +62,7 @@ Singleton {
           "path": "~/.config/gtk-4.0/noctalia.css"
         }
       ],
-      "postProcess": mode => `gsettings set org.gnome.desktop.interface color-scheme prefer-${mode} && python3 ${gtkRefreshScript}`
+      "postProcess": mode => `python3 ${gtkRefreshScript} ${mode}`
     },
     {
       "id": "qt",
