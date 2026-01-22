@@ -38,6 +38,9 @@ Item {
   // Use the shared service for keyboard layout
   property string currentLayout: KeyboardLayoutService.currentLayout
 
+  readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
+  readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
+
   implicitWidth: pill.width
   implicitHeight: pill.height
 
@@ -71,7 +74,13 @@ Item {
     oppositeDirection: BarService.getPillDirection(root)
     icon: root.showIcon ? "keyboard" : ""
     autoHide: false // Important to be false so we can hover as long as we want
-    text: currentLayout.toUpperCase()
+    text: { // Prevent text from exceeding the widget when bar is vertical
+      let txt = currentLayout.toUpperCase();
+      if (root.isBarVertical) {
+        return txt.replace("(", "\n").replace(")", "");
+      }
+      return txt;
+    }
     tooltipText: I18n.tr("tooltips.keyboard-layout", {
                            "layout": currentLayout.toUpperCase()
                          })
