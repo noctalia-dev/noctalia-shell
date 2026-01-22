@@ -38,10 +38,14 @@ Singleton {
 
     // Check for exact matches or partial matches in language map from Commons
     const entries = Object.entries(languageMap);
-    for (var i = 0; i < entries.length; i++) {
+    for (let i = 0; i < entries.length; i++) {
       const lang = entries[i][0];
       const code = entries[i][1];
       if (str.includes(lang)) {
+        let variantMatch = str.match(/\((.+)\)/);
+        if (variantMatch) {
+          return code + "(" + variantMatch[1].substring(0, 3) + ")";
+        }
         return code;
       }
     }
