@@ -53,7 +53,7 @@ Item {
   readonly property int progressWidth: 2
 
   // State
-  readonly property bool hasPlayer: MediaService.currentPlayer !== null
+  readonly property bool hasPlayer: !MediaService.currentPlayer
   readonly property bool shouldHideIdle: (hideMode === "idle" || hideWhenIdle) && !MediaService.isPlaying
   readonly property bool shouldHideEmpty: !hasPlayer && hideMode === "hidden"
   readonly property bool isHidden: shouldHideIdle || shouldHideEmpty
