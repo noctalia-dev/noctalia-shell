@@ -191,6 +191,9 @@ Singleton {
       property int marginVertical: 4
       property int marginHorizontal: 4
 
+      // Island mode (Dynamic Island style - attached to edge with bottom rounded corners and side margins)
+      property bool island: false
+
       // Bar outer corners (inverted/concave corners at bar edges when not floating)
       property bool outerCorners: true
 

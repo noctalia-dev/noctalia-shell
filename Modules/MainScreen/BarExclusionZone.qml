@@ -18,8 +18,11 @@ PanelWindow {
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
   readonly property bool barFloating: Settings.data.bar.floating || false
-  readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
-  readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical) : 0
+  readonly property bool barIsland: Settings.data.bar.island || false
+  readonly property real barMarginH: (barFloating || barIsland) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
+  readonly property real barMarginV: (barFloating || barIsland) ? Math.ceil(Settings.data.bar.marginVertical) : 0
+  readonly property real edgeMarginH: (barIsland && (barPosition === "left" || barPosition === "right")) ? 0 : barMarginH
+  readonly property real edgeMarginV: (barIsland && (barPosition === "top" || barPosition === "bottom")) ? 0 : barMarginV
   readonly property real fractOffset: CompositorService.getDisplayScale(screen?.name) % 1.0
 
   // Invisible - just reserves space
@@ -44,7 +47,7 @@ PanelWindow {
   implicitWidth: {
     if (barIsVertical) {
       // Vertical bar: reserve bar height + margin on the anchored edge only
-      return barHeight + barMarginH - fractOffset;
+      return barHeight + edgeMarginH - fractOffset;
     }
     return 0; // Auto-width when left/right anchors are true
   }
@@ -52,7 +55,7 @@ PanelWindow {
   implicitHeight: {
     if (!barIsVertical) {
       // Horizontal bar: reserve bar height + margin on the anchored edge only
-      return barHeight + barMarginV - fractOffset;
+      return barHeight + edgeMarginV - fractOffset;
     }
     return 0; // Auto-height when top/bottom anchors are true
   }

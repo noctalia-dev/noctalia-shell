@@ -707,6 +707,8 @@
       "appearance-desc": "Personnalisez l'apparence et la position de la barre.",
       "appearance-floating-description": "Afficher la barre sous forme de 'pilule' flottante.",
       "appearance-floating-label": "Barre flottante",
+      "appearance-island-description": "Colle la barre au bord de l'écran avec des coins arrondis côté opposé et des marges latérales (style Dynamic Island).",
+      "appearance-island-label": "Mode island",
       "appearance-hide-on-overview-description": "Masquer la barre et fermer les panneaux lorsque l'aperçu du compositeur est actif.",
       "appearance-hide-on-overview-label": "Masquer la barre dans l'aperçu",
       "appearance-margins-description": "Ajustez les marges autour de la barre flottante.",

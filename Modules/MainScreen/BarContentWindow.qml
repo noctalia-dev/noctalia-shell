@@ -33,8 +33,9 @@ PanelWindow {
   readonly property string barPosition: Settings.getBarPositionForScreen(barWindow.screen?.name)
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool barFloating: Settings.data.bar.floating || false
-  readonly property real barMarginH: Math.ceil(barFloating ? Settings.data.bar.marginHorizontal : 0)
-  readonly property real barMarginV: Math.ceil(barFloating ? Settings.data.bar.marginVertical : 0)
+  readonly property bool barIsland: Settings.data.bar.island || false
+  readonly property real barMarginH: Math.ceil((barFloating || barIsland) ? Settings.data.bar.marginHorizontal : 0)
+  readonly property real barMarginV: Math.ceil((barFloating || barIsland) ? Settings.data.bar.marginVertical : 0)
   readonly property real barHeight: Style.getBarHeightForScreen(barWindow.screen?.name)
 
   // Anchor to the bar's edge
@@ -45,12 +46,32 @@ PanelWindow {
     right: barPosition === "right" || !barIsVertical
   }
 
-  // Handle floating margins
+  // Handle floating/island margins
   margins {
-    top: barPosition === "top" || barIsVertical ? barMarginV : 0
-    bottom: barPosition === "bottom" || barIsVertical ? barMarginV : 0
-    left: barPosition === "left" || !barIsVertical ? barMarginH : 0
-    right: barPosition === "right" || !barIsVertical ? barMarginH : 0
+    top: {
+      if (barIsland) {
+        return barPosition === "top" ? 0 : (barIsVertical ? barMarginV : 0);
+      }
+      return barPosition === "top" || barIsVertical ? barMarginV : 0;
+    }
+    bottom: {
+      if (barIsland) {
+        return barPosition === "bottom" ? 0 : (barIsVertical ? barMarginV : 0);
+      }
+      return barPosition === "bottom" || barIsVertical ? barMarginV : 0;
+    }
+    left: {
+      if (barIsland) {
+        return barPosition === "left" ? 0 : (!barIsVertical ? barMarginH : 0);
+      }
+      return barPosition === "left" || !barIsVertical ? barMarginH : 0;
+    }
+    right: {
+      if (barIsland) {
+        return barPosition === "right" ? 0 : (!barIsVertical ? barMarginH : 0);
+      }
+      return barPosition === "right" || !barIsVertical ? barMarginH : 0;
+    }
   }
 
   // Set a tight window size

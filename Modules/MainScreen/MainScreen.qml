@@ -324,21 +324,25 @@ PanelWindow {
       readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
       readonly property bool barFloating: Settings.data.bar.floating || false
-      readonly property real barMarginH: barFloating ? Math.floor(Settings.data.bar.marginHorizontal) : 0
-      readonly property real barMarginV: barFloating ? Math.floor(Settings.data.bar.marginVertical) : 0
+      readonly property bool barIsland: Settings.data.bar.island || false
+      readonly property real barMarginH: (barFloating || barIsland) ? Math.floor(Settings.data.bar.marginHorizontal) : 0
+      readonly property real barMarginV: (barFloating || barIsland) ? Math.floor(Settings.data.bar.marginVertical) : 0
       readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
 
+      // Effective edge margin: 0 in island mode on attached edge, else barMarginH/V
+      readonly property real edgeMarginH: (barIsland && (barPosition === "left" || barPosition === "right")) ? 0 : barMarginH
+      readonly property real edgeMarginV: (barIsland && (barPosition === "top" || barPosition === "bottom")) ? 0 : barMarginV
+
       // Expose bar dimensions directly on this Item for BarBackground
-      // Use screen dimensions directly
       x: {
         if (barPosition === "right")
-          return screen.width - barHeight - barMarginH;
-        return barMarginH;
+          return screen.width - barHeight - edgeMarginH;
+        return edgeMarginH;
       }
       y: {
         if (barPosition === "bottom")
-          return screen.height - barHeight - barMarginV;
-        return barMarginV;
+          return screen.height - barHeight - edgeMarginV;
+        return edgeMarginV;
       }
       width: {
         if (barIsVertical) {
@@ -357,6 +361,11 @@ PanelWindow {
       readonly property int topLeftCornerState: {
         if (barFloating)
           return 0;
+        if (barIsland) {
+          if (barPosition === "top" || barPosition === "left")
+            return -1;
+          return 0;
+        }
         if (barPosition === "top")
           return -1;
         if (barPosition === "left")
@@ -370,6 +379,11 @@ PanelWindow {
       readonly property int topRightCornerState: {
         if (barFloating)
           return 0;
+        if (barIsland) {
+          if (barPosition === "top" || barPosition === "right")
+            return -1;
+          return 0;
+        }
         if (barPosition === "top")
           return -1;
         if (barPosition === "right")
@@ -383,6 +397,11 @@ PanelWindow {
       readonly property int bottomLeftCornerState: {
         if (barFloating)
           return 0;
+        if (barIsland) {
+          if (barPosition === "bottom" || barPosition === "left")
+            return -1;
+          return 0;
+        }
         if (barPosition === "bottom")
           return -1;
         if (barPosition === "left")
@@ -396,6 +415,11 @@ PanelWindow {
       readonly property int bottomRightCornerState: {
         if (barFloating)
           return 0;
+        if (barIsland) {
+          if (barPosition === "bottom" || barPosition === "right")
+            return -1;
+          return 0;
+        }
         if (barPosition === "bottom")
           return -1;
         if (barPosition === "right")

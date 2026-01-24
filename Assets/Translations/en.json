@@ -707,6 +707,8 @@
       "appearance-desc": "Customize the bar's appearance and position.",
       "appearance-floating-description": "Display the bar as a floating 'pill'.",
       "appearance-floating-label": "Floating bar",
+      "appearance-island-description": "Attach the bar to the screen edge with rounded corners on the opposite side and side margins (Dynamic Island style).",
+      "appearance-island-label": "Island mode",
       "appearance-hide-on-overview-description": "Hide the bar and close panels when the compositor overview is active.",
       "appearance-hide-on-overview-label": "Hide bar on overview",
       "appearance-margins-description": "Adjust the margins around the floating bar.",

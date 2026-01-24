@@ -21,8 +21,9 @@ SmartPanel {
   readonly property string barDensity: Settings.data.bar.density
   readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
   readonly property bool barFloating: Settings.data.bar.floating
-  readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
-  readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical) : 0
+  readonly property bool barIsland: Settings.data.bar.island || false
+  readonly property real barMarginH: (barFloating || barIsland) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
+  readonly property real barMarginV: (barFloating || barIsland) ? Math.ceil(Settings.data.bar.marginVertical) : 0
 
   forceAttachToBar: attachToBar
   panelAnchorHorizontalCenter: attachToBar ? (barPosition === "top" || barPosition === "bottom") : true
@@ -51,6 +52,12 @@ SmartPanel {
   }
 
   onBarFloatingChanged: {
+    if (isPanelOpen) {
+      Qt.callLater(root.setPosition);
+    }
+  }
+
+  onBarIslandChanged: {
     if (isPanelOpen) {
       Qt.callLater(root.setPosition);
     }

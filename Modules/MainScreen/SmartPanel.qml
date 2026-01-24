@@ -92,8 +92,11 @@ Item {
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
   readonly property bool barFloating: Settings.data.bar.floating
-  readonly property real barMarginH: barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
-  readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical) : 0
+  readonly property bool barIsland: Settings.data.bar.island || false
+  readonly property real barMarginH: (barFloating || barIsland) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
+  readonly property real barMarginV: (barFloating || barIsland) ? Math.ceil(Settings.data.bar.marginVertical) : 0
+  readonly property real edgeMarginH: (barIsland && (barPosition === "left" || barPosition === "right")) ? 0 : barMarginH
+  readonly property real edgeMarginV: (barIsland && (barPosition === "top" || barPosition === "bottom")) ? 0 : barMarginV
   readonly property real attachmentOverlap: 1 // Panel extends into bar area to fix hairline gap with fractional scaling
 
   // Check if bar should be visible on this screen
@@ -169,16 +172,16 @@ Item {
         var screenHeight = root.screen?.height || 0;
 
         if (root.barPosition === "right") {
-          barWindowX = screenWidth - root.barMarginH - root.barHeight;
+          barWindowX = screenWidth - root.edgeMarginH - root.barHeight;
         } else if (root.barPosition === "left") {
-          barWindowX = root.barMarginH;
+          barWindowX = root.edgeMarginH;
         }
         // For top/bottom bars, barWindowX stays 0 (full width window)
 
         if (root.barPosition === "bottom") {
-          barWindowY = screenHeight - root.barMarginV - root.barHeight;
+          barWindowY = screenHeight - root.edgeMarginV - root.barHeight;
         } else if (root.barPosition === "top") {
-          barWindowY = root.barMarginV;
+          barWindowY = root.edgeMarginV;
         }
         // For left/right bars, barWindowY stays 0 (full height window)
 
@@ -332,10 +335,10 @@ Item {
     // Pre-compute bar edge positions with overlap (used multiple times below)
     // For attached panels, we extend slightly into the bar area to prevent hairline gaps
     var overlap = root.attachmentOverlap;
-    var leftBarEdgeWithOverlap = root.barMarginH + root.barHeight - overlap;
-    var rightBarEdgeWithOverlap = root.width - root.barMarginH - root.barHeight + overlap;
-    var topBarEdgeWithOverlap = root.barMarginV + root.barHeight - overlap;
-    var bottomBarEdgeWithOverlap = root.height - root.barMarginV - root.barHeight + overlap;
+    var leftBarEdgeWithOverlap = root.edgeMarginH + root.barHeight - overlap;
+    var rightBarEdgeWithOverlap = root.width - root.edgeMarginH - root.barHeight + overlap;
+    var topBarEdgeWithOverlap = root.edgeMarginV + root.barHeight - overlap;
+    var bottomBarEdgeWithOverlap = root.height - root.edgeMarginV - root.barHeight + overlap;
 
     // Calculate position
     var calculatedX;
@@ -360,9 +363,9 @@ Item {
 
           // Account for vertical bar taking up space
           if (root.barPosition === "left") {
-            minX = root.barMarginH + root.barHeight + Style.marginL;
+            minX = root.edgeMarginH + root.barHeight + Style.marginL;
           } else if (root.barPosition === "right") {
-            maxX = root.width - root.barMarginH - root.barHeight - panelWidth - Style.marginL;
+            maxX = root.width - root.edgeMarginH - root.barHeight - panelWidth - Style.marginL;
           }
 
           panelX = Math.max(minX, Math.min(panelX, maxX));
@@ -372,7 +375,7 @@ Item {
         // For horizontal bars, center panel on button X position
         var panelX = root.buttonPosition.x + root.buttonWidth / 2 - panelWidth / 2;
         if (panelContent.allowAttach) {
-          var cornerInset = root.barFloating ? Style.radiusL * 2 : 0;
+          var cornerInset = (root.barFloating || root.barIsland) ? Style.radiusL * 2 : 0;
           var barLeftEdge = root.barMarginH + cornerInset;
           var barRightEdge = root.width - root.barMarginH - cornerInset;
           panelX = Math.max(barLeftEdge, Math.min(panelX, barRightEdge - panelWidth));
@@ -386,11 +389,11 @@ Item {
       if (root.panelAnchorHorizontalCenter) {
         if (root.barIsVertical) {
           if (root.barPosition === "left") {
-            var availableStart = root.barMarginH + root.barHeight;
+            var availableStart = root.edgeMarginH + root.barHeight;
             var availableWidth = root.width - availableStart;
             calculatedX = availableStart + (availableWidth - panelWidth) / 2;
           } else if (root.barPosition === "right") {
-            var availableWidth = root.width - root.barMarginH - root.barHeight;
+            var availableWidth = root.width - root.edgeMarginH - root.barHeight;
             calculatedX = (availableWidth - panelWidth) / 2;
           } else {
             calculatedX = (root.width - panelWidth) / 2;
@@ -406,7 +409,7 @@ Item {
             calculatedX = rightBarEdgeWithOverlap - panelWidth;
           } else {
             var panelOnSameEdgeAsBar = (root.barPosition === "top" && root.effectivePanelAnchorTop) || (root.barPosition === "bottom" && root.effectivePanelAnchorBottom);
-            if (!root.barIsVertical && root.barFloating && panelOnSameEdgeAsBar) {
+            if (!root.barIsVertical && (root.barFloating || root.barIsland) && panelOnSameEdgeAsBar) {
               var rightCornerInset = Style.radiusL * 2;
               calculatedX = root.width - root.barMarginH - rightCornerInset - panelWidth;
             } else {
@@ -425,7 +428,7 @@ Item {
             calculatedX = leftBarEdgeWithOverlap;
           } else {
             var panelOnSameEdgeAsBar = (root.barPosition === "top" && root.effectivePanelAnchorTop) || (root.barPosition === "bottom" && root.effectivePanelAnchorBottom);
-            if (!root.barIsVertical && root.barFloating && panelOnSameEdgeAsBar) {
+            if (!root.barIsVertical && (root.barFloating || root.barIsland) && panelOnSameEdgeAsBar) {
               var leftCornerInset = Style.radiusL * 2;
               calculatedX = root.barMarginH + leftCornerInset;
             } else {
@@ -449,17 +452,17 @@ Item {
           } else {
             // Not attached: center in available space
             if (root.barPosition === "left") {
-              var availableStart = root.barMarginH + root.barHeight;
+              var availableStart = root.edgeMarginH + root.barHeight;
               var availableWidth = root.width - availableStart - Style.marginL;
               calculatedX = availableStart + (availableWidth - panelWidth) / 2;
             } else {
-              var availableWidth = root.width - root.barMarginH - root.barHeight - Style.marginL;
+              var availableWidth = root.width - root.edgeMarginH - root.barHeight - Style.marginL;
               calculatedX = Style.marginL + (availableWidth - panelWidth) / 2;
             }
           }
         } else {
           if (panelContent.allowAttach) {
-            var cornerInset = Style.radiusL + (root.barFloating ? Style.radiusL : 0);
+            var cornerInset = Style.radiusL + ((root.barFloating || root.barIsland) ? Style.radiusL : 0);
             var barLeftEdge = root.barMarginH + cornerInset;
             var barRightEdge = root.width - root.barMarginH - cornerInset;
             var centeredX = (root.width - panelWidth) / 2;
@@ -471,8 +474,8 @@ Item {
       }
     }
 
-    // Edge snapping for X
-    if (panelContent.allowAttach && !root.barFloating && root.width > 0 && panelWidth > 0) {
+    // Edge snapping for X (skip when floating/island: panels constrained to bar zone)
+    if (panelContent.allowAttach && !root.barFloating && !root.barIsland && root.width > 0 && panelWidth > 0) {
       var leftEdgePos = root.barPosition === "left" ? leftBarEdgeWithOverlap : root.barMarginH;
       var rightEdgePos = root.barPosition === "right" ? rightBarEdgeWithOverlap - panelWidth : root.width - root.barMarginH - panelWidth;
 
@@ -494,19 +497,19 @@ Item {
         if (panelContent.allowAttach) {
           calculatedY = topBarEdgeWithOverlap;
         } else {
-          calculatedY = root.barMarginV + root.barHeight + Style.marginM;
+          calculatedY = root.edgeMarginV + root.barHeight + Style.marginM;
         }
       } else if (root.barPosition === "bottom") {
         if (panelContent.allowAttach) {
           calculatedY = bottomBarEdgeWithOverlap - panelHeight;
         } else {
-          calculatedY = root.height - root.barMarginV - root.barHeight - panelHeight - Style.marginM;
+          calculatedY = root.height - root.edgeMarginV - root.barHeight - panelHeight - Style.marginM;
         }
       } else if (root.barIsVertical) {
         var panelY = root.buttonPosition.y + root.buttonHeight / 2 - panelHeight / 2;
-        var extraPadding = (panelContent.allowAttach && root.barFloating) ? Style.radiusL : 0;
+        var extraPadding = (panelContent.allowAttach && (root.barFloating || root.barIsland)) ? Style.radiusL : 0;
         if (panelContent.allowAttach) {
-          var cornerInset = extraPadding + (root.barFloating ? Style.radiusL : 0);
+          var cornerInset = extraPadding + ((root.barFloating || root.barIsland) ? Style.radiusL : 0);
           var barTopEdge = root.barMarginV + cornerInset;
           var barBottomEdge = root.height - root.barMarginV - cornerInset;
           panelY = Math.max(barTopEdge, Math.min(panelY, barBottomEdge - panelHeight));
@@ -517,7 +520,7 @@ Item {
       }
     } else {
       // Standard anchor positioning
-      var barOffset = !panelContent.allowAttach && (root.barPosition === "top" || root.barPosition === "bottom") ? root.barMarginV + root.barHeight + Style.marginM : 0;
+      var barOffset = !panelContent.allowAttach && (root.barPosition === "top" || root.barPosition === "bottom") ? root.edgeMarginV + root.barHeight + Style.marginM : 0;
 
       if (panelContent.allowAttach && !root.barIsVertical) {
         // Attached to horizontal bar: position with overlap
@@ -532,11 +535,11 @@ Item {
         if (root.panelAnchorVerticalCenter) {
           if (!root.barIsVertical) {
             if (root.barPosition === "top") {
-              var availableStart = root.barMarginV + root.barHeight;
+              var availableStart = root.edgeMarginV + root.barHeight;
               var availableHeight = root.height - availableStart;
               calculatedY = availableStart + (availableHeight - panelHeight) / 2;
             } else if (root.barPosition === "bottom") {
-              var availableHeight = root.height - root.barMarginV - root.barHeight;
+              var availableHeight = root.height - root.edgeMarginV - root.barHeight;
               calculatedY = (availableHeight - panelHeight) / 2;
             } else {
               calculatedY = (root.height - panelHeight) / 2;
@@ -562,7 +565,7 @@ Item {
           // No explicit vertical anchor
           if (root.barIsVertical) {
             if (panelContent.allowAttach) {
-              var cornerInset = root.barFloating ? Style.radiusL * 2 : 0;
+              var cornerInset = (root.barFloating || root.barIsland) ? Style.radiusL * 2 : 0;
               var barTopEdge = root.barMarginV + cornerInset;
               var barBottomEdge = root.height - root.barMarginV - cornerInset;
               var centeredY = (root.height - panelHeight) / 2;
@@ -584,8 +587,8 @@ Item {
       }
     }
 
-    // Edge snapping for Y
-    if (panelContent.allowAttach && !root.barFloating && root.height > 0 && panelHeight > 0) {
+    // Edge snapping for Y (skip when floating/island: panels constrained to bar zone)
+    if (panelContent.allowAttach && !root.barFloating && !root.barIsland && root.height > 0 && panelHeight > 0) {
       var topEdgePos = root.barPosition === "top" ? topBarEdgeWithOverlap : root.barMarginV;
       var bottomEdgePos = root.barPosition === "bottom" ? bottomBarEdgeWithOverlap - panelHeight : root.height - root.barMarginV - panelHeight;
 
@@ -761,10 +764,10 @@ Item {
     readonly property bool touchingBottomEdge: allowAttach && (panelBackground.y + panelBackground.height) >= (root.height - 1)
 
     // Bar edge detection - detect if panel is touching bar edges (for cases where centered panels snap to bar due to height constraints)
-    readonly property bool touchingTopBar: allowAttachToBar && root.barPosition === "top" && !root.barIsVertical && Math.abs(panelBackground.y - (root.barMarginV + root.barHeight)) <= 1
-    readonly property bool touchingBottomBar: allowAttachToBar && root.barPosition === "bottom" && !root.barIsVertical && Math.abs((panelBackground.y + panelBackground.height) - (root.height - root.barMarginV - root.barHeight)) <= 1
-    readonly property bool touchingLeftBar: allowAttachToBar && root.barPosition === "left" && root.barIsVertical && Math.abs(panelBackground.x - (root.barMarginH + root.barHeight)) <= 1
-    readonly property bool touchingRightBar: allowAttachToBar && root.barPosition === "right" && root.barIsVertical && Math.abs((panelBackground.x + panelBackground.width) - (root.width - root.barMarginH - root.barHeight)) <= 1
+    readonly property bool touchingTopBar: allowAttachToBar && root.barPosition === "top" && !root.barIsVertical && Math.abs(panelBackground.y - (root.edgeMarginV + root.barHeight)) <= 1
+    readonly property bool touchingBottomBar: allowAttachToBar && root.barPosition === "bottom" && !root.barIsVertical && Math.abs((panelBackground.y + panelBackground.height) - (root.height - root.edgeMarginV - root.barHeight)) <= 1
+    readonly property bool touchingLeftBar: allowAttachToBar && root.barPosition === "left" && root.barIsVertical && Math.abs(panelBackground.x - (root.edgeMarginH + root.barHeight)) <= 1
+    readonly property bool touchingRightBar: allowAttachToBar && root.barPosition === "right" && root.barIsVertical && Math.abs((panelBackground.x + panelBackground.width) - (root.width - root.edgeMarginH - root.barHeight)) <= 1
 
     // Expose panelBackground for geometry placeholder
     property alias geometryPlaceholder: panelBackground
@@ -792,25 +795,25 @@ Item {
       readonly property bool willTouchTopBar: {
         if (!panelContent.allowAttachToBar || root.barPosition !== "top" || root.barIsVertical)
           return false;
-        var targetTopBarY = root.barMarginV + root.barHeight;
+        var targetTopBarY = root.edgeMarginV + root.barHeight;
         return Math.abs(panelBackground.targetY - targetTopBarY) <= 1;
       }
       readonly property bool willTouchBottomBar: {
         if (!panelContent.allowAttachToBar || root.barPosition !== "bottom" || root.barIsVertical)
           return false;
-        var targetBottomBarY = root.height - root.barMarginV - root.barHeight - panelBackground.targetHeight;
+        var targetBottomBarY = root.height - root.edgeMarginV - root.barHeight - panelBackground.targetHeight;
         return Math.abs(panelBackground.targetY - targetBottomBarY) <= 1;
       }
       readonly property bool willTouchLeftBar: {
         if (!panelContent.allowAttachToBar || root.barPosition !== "left" || !root.barIsVertical)
           return false;
-        var targetLeftBarX = root.barMarginH + root.barHeight;
+        var targetLeftBarX = root.edgeMarginH + root.barHeight;
         return Math.abs(panelBackground.targetX - targetLeftBarX) <= 1;
       }
       readonly property bool willTouchRightBar: {
         if (!panelContent.allowAttachToBar || root.barPosition !== "right" || !root.barIsVertical)
           return false;
-        var targetRightBarX = root.width - root.barMarginH - root.barHeight - panelBackground.targetWidth;
+        var targetRightBarX = root.width - root.edgeMarginH - root.barHeight - panelBackground.targetWidth;
         return Math.abs(panelBackground.targetX - targetRightBarX) <= 1;
       }
       readonly property bool willTouchTopEdge: panelContent.allowAttach && panelBackground.targetY <= 1
