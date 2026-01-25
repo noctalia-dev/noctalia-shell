@@ -253,23 +253,14 @@ Singleton {
                                                                       }
                                                                     });
                                               }
-                                            } else if (app.id === "emacs" && app.checkDoomFirst) {
+                                            } else if (app.id === "emacs") {
                                               if (isTemplateEnabled("emacs")) {
-                                                const doomPathTemplate = app.outputs[0].path; // ~/.config/doom/themes/noctalia-theme.el
-                                                const standardPathTemplate = app.outputs[1].path; // ~/.emacs.d/themes/noctalia-theme.el
-                                                const doomPath = doomPathTemplate.replace("~", homeDir);
-                                                const standardPath = standardPathTemplate.replace("~", homeDir);
-                                                const doomConfigDir = `${homeDir}/.config/doom`;
-                                                const doomDir = doomPath.substring(0, doomPath.lastIndexOf('/'));
-
-                                                lines.push(`\n[templates.emacs]`);
-                                                lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
-                                                lines.push(`output_path = "${standardPath}"`);
-                                                // Move to doom if doom exists, then remove empty .emacs.d/themes and .emacs.d directories
-                                                // Check directories are empty before removing
-                                                const postHook = `sh -c 'if [ -d "${doomConfigDir}" ] && [ -f "${standardPath}" ]; then mkdir -p "${doomDir}" && mv "${standardPath}" "${doomPath}" && rmdir "${homeDir}/.emacs.d/themes" 2>/dev/null && rmdir "${homeDir}/.emacs.d" 2>/dev/null || true; fi'`;
-                                                const postHookEsc = escapeTomlString(postHook);
-                                                lines.push(`post_hook = "${postHookEsc}"`);
+                                                ProgramCheckerService.availableEmacsClients.forEach(client => {
+                                                                                                      lines.push(`\n[templates.emacs_${client.name}]`);
+                                                                                                      lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
+                                                                                                      const expandedPath = client.path.replace("~", homeDir) + "/themes/noctalia-theme.el";
+                                                                                                      lines.push(`output_path = "${expandedPath}"`);
+                                                                                                    });
                                               }
                                             } else {
                                               // Handle regular apps

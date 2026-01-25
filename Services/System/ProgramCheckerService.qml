@@ -34,6 +34,9 @@ Singleton {
   // Code client auto-detection
   property var availableCodeClients: []
 
+  // Emacs client auto-detection
+  property var availableEmacsClients: []
+
   // Signal emitted when all checks are complete
   signal checksCompleted
 
@@ -181,6 +184,66 @@ Singleton {
     stderr: StdioCollector {}
   }
 
+  // Function to detect Emacs client by checking config directories
+  function detectEmacsClient() {
+    // Build shell script to check each client
+    var scriptParts = ["available_clients=\"\";"];
+
+    for (var i = 0; i < TemplateRegistry.emacsClients.length; i++) {
+      var client = TemplateRegistry.emacsClients[i];
+      var clientName = client.name;
+      var configPath = client.path;
+
+      // Check if the config directory exists
+      scriptParts.push("if [ -d \"$HOME" + configPath.substring(1) + "\" ]; then available_clients=\"$available_clients " + clientName + "\"; fi;");
+    }
+
+    scriptParts.push("echo \"$available_clients\"");
+
+    // Use a Process to check directory existence for all clients
+    emacsDetector.command = ["sh", "-c", scriptParts.join(" ")];
+    emacsDetector.running = true;
+  }
+
+  // Process to detect Emacs client directories
+  Process {
+    id: emacsDetector
+    running: false
+
+    onExited: function (exitCode) {
+      availableEmacsClients = [];
+
+      if (exitCode === 0) {
+        var detectedClients = stdout.text.trim().split(/\s+/).filter(function (client) {
+          return client.length > 0;
+        });
+
+        if (detectedClients.length > 0) {
+          // Build list of available clients
+          for (var i = 0; i < detectedClients.length; i++) {
+            var clientName = detectedClients[i];
+            for (var j = 0; j < TemplateRegistry.emacsClients.length; j++) {
+              var client = TemplateRegistry.emacsClients[j];
+              if (client.name === clientName) {
+                availableEmacsClients.push(client);
+                break;
+              }
+            }
+          }
+
+          Logger.d("ProgramChecker", "Detected Emacs clients:", detectedClients.join(", "));
+        }
+      }
+
+      if (availableEmacsClients.length === 0) {
+        Logger.d("ProgramChecker", "No Emacs clients detected");
+      }
+    }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
   // Internal tracking
   property int completedChecks: 0
   property int totalChecks: Object.keys(programsToCheck).length
@@ -204,9 +267,10 @@ Singleton {
 
       // Check next program or emit completion signal
       if (root.completedChecks >= root.totalChecks) {
-        // Run Discord and Code client detection after all checks are complete
+        // Run Discord, Code and Emacs client detection after all checks are complete
         root.detectDiscordClient();
         root.detectCodeClient();
+        root.detectEmacsClient();
         root.checksCompleted();
       } else {
         root.checkNextProgram();

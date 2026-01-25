@@ -294,16 +294,7 @@ Singleton {
       "id": "emacs",
       "name": "Emacs",
       "category": "editor",
-      "input": "emacs.el",
-      "outputs": [
-        {
-          "path": "~/.config/doom/themes/noctalia-theme.el"
-        },
-        {
-          "path": "~/.emacs.d/themes/noctalia-theme.el"
-        }
-      ],
-      "checkDoomFirst": true
+      "input": "emacs.el"
     },
     {
       "id": "niri",
@@ -469,6 +460,22 @@ Singleton {
 
     Logger.d("TemplateRegistry", "User templates config written to:", userConfigPath);
   }
+
+  // Extract Emacs clients for ProgramCheckerService compatibility
+  readonly property var emacsClients: [
+    {
+      "name": "doom",
+      "path": "~/.config/doom"
+    },
+    {
+      "name": "modern",
+      "path": "~/.config/emacs"
+    },
+    {
+      "name": "traditional",
+      "path": "~/.emacs.d"
+    }
+  ]
 
   // Process for checking if user templates file exists
   Process {

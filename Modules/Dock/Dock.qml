@@ -377,11 +377,9 @@ Loader {
                     hidden = false;
                     dockLoaded = true;
                     hideTimer.stop();
-                    showTimer.stop();
-                    unloadTimer.stop();
-                } else {
-                    hidden = true;
-                    unloadTimer.restart(); // Schedule unload after animation
+                    unloadTimer.stop(); // Cancel unload if hovering
+                    hidden = false; // Make sure dock is visible
+                  }
                 }
             }
 
@@ -524,50 +522,45 @@ Loader {
                             }
                         }
 
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: hidden ? hideAnimationDuration : showAnimationDuration
-                                easing.type: hidden ? Easing.InQuad : Easing.OutBack
-                                easing.overshoot: hidden ? 0 : 1.05
+                        Connections {
+                          target: contextMenu
+                          function onRequestClose() {
+                            // Clear current menu immediately to prevent hover updates
+                            root.currentContextMenu = null;
+                            hideTimer.stop();
+                            contextMenu.hide();
+                            menuHovered = false;
+                            anyAppHovered = false;
+                          }
+                        }
+                        onAppClosed: root.updateDockApps // Force immediate dock update when app is closed
+                        onVisibleChanged: {
+                          if (visible) {
+                            root.currentContextMenu = contextMenu;
+                          } else if (root.currentContextMenu === contextMenu) {
+                            root.currentContextMenu = null;
+                            hideTimer.stop();
+                            menuHovered = false;
+                            // Restart hide timer after menu closes
+                            if (autoHide && !dockHovered && !anyAppHovered && !peekHovered && !menuHovered) {
+                              hideTimer.restart();
                             }
                         }
 
-                        Rectangle {
-                            id: dockContainer
-                            // For vertical dock, swap width and height logic
-                            width: isVertical ? Math.round(iconSize * 1.5) : dockLayout.implicitWidth + Style.marginXL
-                            height: isVertical ? dockLayout.implicitHeight + Style.marginXL : Math.round(iconSize * 1.5)
-                            color: Qt.alpha(Color.mSurface, Settings.data.dock.backgroundOpacity)
-
-                            // Anchor based on padding to achieve centering shift
-                            anchors.horizontalCenter: parent.extraLeft > 0 || parent.extraRight > 0 ? undefined : parent.horizontalCenter
-                            anchors.right: parent.extraLeft > 0 ? parent.right : undefined
-                            anchors.left: parent.extraRight > 0 ? parent.left : undefined
-
-                            anchors.verticalCenter: parent.extraTop > 0 || parent.extraBottom > 0 ? undefined : parent.verticalCenter
-                            anchors.bottom: parent.extraTop > 0 ? parent.bottom : undefined
-                            anchors.top: parent.extraBottom > 0 ? parent.top : undefined
-
-                            radius: Style.radiusL
-                            border.width: Style.borderS
-                            border.color: Qt.alpha(Color.mOutline, Settings.data.dock.backgroundOpacity)
-
-                            // Enable layer caching to reduce GPU usage from continuous animations
-                            layer.enabled: true
-
-                            MouseArea {
-                                id: dockMouseArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-
-                                onEntered: {
-                                    dockHovered = true;
-                                    if (autoHide) {
-                                        showTimer.stop();
-                                        hideTimer.stop();
-                                        unloadTimer.stop(); // Cancel unload if hovering
-                                    }
-                                }
+                        onEntered: {
+                          anyAppHovered = true;
+                          const appName = appButton.appTitle || appButton.appId || "Unknown";
+                          const tooltipText = appName.length > 40 ? appName.substring(0, 37) + "..." : appName;
+                          if (!contextMenu.visible) {
+                            TooltipService.show(appButton, tooltipText, "top");
+                          }
+                          if (autoHide) {
+                            showTimer.stop();
+                            hideTimer.stop();
+                            unloadTimer.stop(); // Cancel unload if hovering app
+                            hidden = false; // Make sure dock is visible
+                          }
+                        }
 
                                 onExited: {
                                     dockHovered = false;
