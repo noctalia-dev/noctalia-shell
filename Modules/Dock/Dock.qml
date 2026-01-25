@@ -246,22 +246,17 @@ Loader {
                 const combined = [];
                 const processedToplevels = new Set();
                 const processedPinnedAppIds = new Set();
-                const processedAppIds = new Set(); // NEW: track normalized appIds we've already added
+                const processedAppIds = new Set();
 
-        //push an app onto combined with the given appType
-        function pushApp(appType, toplevel, appId, title) {
-          const normalizedId = normalizeAppId(appId);
-
-          // Prevent adding multiple icons for the same appId
-          if (normalizedId) {
-            if (processedAppIds.has(normalizedId)) {
-              return; // Already added an app for this appId
+            // Helper to push an app onto combined with the given appType
+            function pushApp(appType, toplevel, appId, title) {
+                 const normalizedId = appId ? normalizeAppId(appId) : null;
+ 
+            // If this appId was already added, skip (prevents multiple icons for same appId)
+            if (normalizedId && processedAppIds.has(normalizedId)) {
+                return;
             }
-            processedAppIds.add(normalizedId);
-          }
-
-                //push an app onto combined with the given appType
-                function pushApp(appType, toplevel, appId, title) {
+    
                     // For running apps, track by toplevel object to allow multiple instances
                     if (toplevel) {
                         if (processedToplevels.has(toplevel)) {
