@@ -375,7 +375,19 @@ Singleton {
         }
       ],
       "postProcess": () => `${templateApplyScript} zathura`
+    },
+    {
+      "id": "quickshell-overview",
+      "name": "qs-overview",
+      "category": "misc",
+      "input": "quickshell-overview.qml",
+      "outputs":[
+        {
+          "path": "~/.config/quickshell/overview/common/Appearance.colors.qml"
+        }
+      ],
     }
+
   ]
 
   // Extract Discord clients for ProgramCheckerService compatibility
