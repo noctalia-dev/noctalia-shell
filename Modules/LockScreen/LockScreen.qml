@@ -77,10 +77,11 @@ Loader {
 
           Item {
             id: batteryIndicator
-            property bool initializationComplete: false
+            property bool initializationComplete: BatteryService.isLaptopBattery ? true : false
             Timer {
               interval: 500
-              running: true
+              repeat: false
+              running: !BatteryService.isLaptopBattery
               onTriggered: batteryIndicator.initializationComplete = true
             }
 
