@@ -122,7 +122,7 @@ ColumnLayout {
 
     NIconButton {
       icon: "refresh"
-      tooltipText: "Refresh device list"
+      tooltipText: I18n.tr("tooltips.refresh-devices")
       onClicked: deviceModel = buildDeviceModel()
     }
   }
