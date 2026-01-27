@@ -90,7 +90,7 @@
     "telemetryEnabled": false,
     "enableLockScreenCountdown": true,
     "lockScreenCountdownDuration": 10000,
-    "autoStartAuth": false
+    "autoStartAuth": false,
     "allowPasswordWithFprintd": false
   },
   "ui": {

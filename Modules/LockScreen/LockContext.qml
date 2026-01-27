@@ -24,7 +24,7 @@ Scope {
   // Fingerprint retry logic (from your branch)
   property bool fprintdAvailable: false
   property int pamRetryCount: 0
-  readonly property int pamMaxRetries: 8
+  readonly property int pamMaxRetries: 20
 
   signal unlocked
   signal failed
@@ -46,6 +46,7 @@ Scope {
   Process {
     id: detectPamServiceProc
     command: ["sh", "-c", "
+      if [ -f /etc/pam.d/noctalialock ]; then echo 'noctalialock'; exit 0; fi;
       if [ -f /etc/pam.d/login ]; then echo 'login'; exit 0; fi;
       if [ -f /etc/pam.d/system-auth ]; then echo 'system-auth'; exit 0; fi;
       if [ -f /etc/pam.d/common-auth ]; then echo 'common-auth'; exit 0; fi;
@@ -171,8 +172,8 @@ Scope {
           this.respond(root.currentText);
           unlockInProgress = true;
         } else {
-          // Retry if password prompt came before fingerprint
-          if (root.pamRetryCount < root.pamMaxRetries && !root.waitingForPassword) {
+          // Retry if password prompt came before fingerprint (only if fprintd is available)
+          if (root.fprintdAvailable && root.pamRetryCount < root.pamMaxRetries && !root.waitingForPassword) {
             Logger.i("LockContext", "Got password prompt early, aborting to retry fingerprint (attempt", root.pamRetryCount + 1, "of", root.pamMaxRetries + ")");
             showInfo = false;
             showFailure = false;
@@ -203,7 +204,7 @@ Scope {
                      root.unlocked();
                    } else {
                      Logger.i("LockContext", "Authentication failed");
-                     if (root.currentText === "" && !root.waitingForPassword && root.pamRetryCount < root.pamMaxRetries) {
+                     if (root.fprintdAvailable && root.currentText === "" && !root.waitingForPassword && root.pamRetryCount < root.pamMaxRetries) {
                        Logger.i("LockContext", "Will retry PAM (attempt", root.pamRetryCount + 1, "of", root.pamMaxRetries + ")");
                        pamRetryTimer.start();
                      } else {
@@ -217,7 +218,7 @@ Scope {
                  }
     onError: {
       Logger.i("LockContext", "PAM error:", error, "message:", message);
-      if (root.currentText === "" && !root.waitingForPassword && root.pamRetryCount < root.pamMaxRetries) {
+      if (root.fprintdAvailable && root.currentText === "" && !root.waitingForPassword && root.pamRetryCount < root.pamMaxRetries) {
         Logger.i("LockContext", "PAM error, will retry (attempt", root.pamRetryCount + 1, "of", root.pamMaxRetries + ")");
         pamRetryTimer.start();
       } else {
