@@ -26,9 +26,14 @@ ColumnLayout {
       checked: subTabBar.currentIndex === 1
     }
     NTabButton {
-      text: I18n.tr("common.execute")
+      text: I18n.tr("common.bookmarks")
       tabIndex: 2
       checked: subTabBar.currentIndex === 2
+    }
+    NTabButton {
+      text: I18n.tr("common.execute")
+      tabIndex: 3
+      checked: subTabBar.currentIndex === 3
     }
   }
 
@@ -43,6 +48,7 @@ ColumnLayout {
 
     GeneralSubTab {}
     ClipboardSubTab {}
+    BookmarksSubTab {}
     ExecuteSubTab {}
   }
 }

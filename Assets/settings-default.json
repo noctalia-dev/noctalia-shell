@@ -191,7 +191,9 @@
     "showIconBackground": false,
     "enableSettingsSearch": true,
     "ignoreMouseInput": false,
-    "screenshotAnnotationTool": ""
+    "screenshotAnnotationTool": "",
+    "enableBookmarks": false,
+    "bookmarksBrowsers": ["chrome", "chromium", "brave", "edge", "vivaldi", "opera", "firefox", "firefox-dev", "librewolf", "zen"]
   },
   "controlCenter": {
     "position": "close_to_bar_button",

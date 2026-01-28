@@ -354,6 +354,7 @@
     "back": "Back",
     "battery": "Battery",
     "bluetooth": "Bluetooth",
+    "bookmarks": "Bookmarks",
     "brightness": "Brightness",
     "browse": "Browse",
     "calendar": "Calendar",
@@ -557,7 +558,12 @@
       "emoji-loading": "Loading emojis...",
       "emoji-loading-description": "Please wait",
       "emoji-no-recent": "No recent emojis yet",
-      "emoji-search-description": "Search and copy emojis"
+      "emoji-search-description": "Search and copy emojis",
+      "bookmarks": "Browser Bookmarks",
+      "bookmarks-search-description": "Search browser bookmarks",
+      "bookmarks-loading": "Loading bookmarks...",
+      "bookmarks-empty": "No bookmarks found",
+      "bookmarks-empty-description": "No browser bookmarks were detected"
     }
   },
   "lock-screen": {
@@ -1077,6 +1083,11 @@
       "settings-terminal-command-label": "Terminal command",
       "settings-use-app2unit-description": "Uses an alternative launch method to better manage app processes and prevent issues.",
       "settings-use-app2unit-label": "Use App2Unit to launch applications",
+      "settings-enable-bookmarks-label": "Enable browser bookmarks",
+      "settings-enable-bookmarks-description": "Access browser bookmarks from the launcher using the >bm command.",
+      "settings-bookmarks-browsers-label": "Browsers to index",
+      "settings-bookmarks-browsers-description": "Select which browsers to scan for bookmarks.",
+      "settings-bookmarks-hint": "Tip: Use >bm to search your browser bookmarks.",
       "title": "Launcher"
     },
     "location": {

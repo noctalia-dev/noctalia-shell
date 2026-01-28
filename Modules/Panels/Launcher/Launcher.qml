@@ -763,6 +763,16 @@ SmartPanel {
     }
   }
 
+  BookmarksProvider {
+    id: bookmarksProvider
+    Component.onCompleted: {
+      if (Settings.data.appLauncher.enableBookmarks) {
+        registerProvider(this);
+        Logger.d("Launcher", "Registered: BookmarksProvider");
+      }
+    }
+  }
+
   // ---------------------------------------------------
   panelContent: Rectangle {
     id: ui

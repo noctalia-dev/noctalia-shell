@@ -397,6 +397,8 @@ Singleton {
       property bool enableSettingsSearch: true
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
+      property bool enableBookmarks: false
+      property list<string> bookmarksBrowsers: ["chrome", "chromium", "brave", "edge", "vivaldi", "opera", "firefox", "firefox-dev", "librewolf", "zen"]
     }
 
     // control center
