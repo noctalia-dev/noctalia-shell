@@ -266,12 +266,12 @@ Singleton {
     printErrors: false
     watchChanges: true
     onFileChanged: {
-      Logger.i("Color", "Reloading colors from disk");
+      Logger.d("Color", "Reloading colors from disk");
       reloadColors = true;
       reload();
     }
     onAdapterUpdated: {
-      Logger.i("Color", "Writing colors to disk");
+      Logger.d("Color", "Writing colors to disk");
       writeAdapter();
     }
 

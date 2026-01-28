@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Ocultar o ícone de notificações quando não houver notificações não lidas.",
       "hide-widget-when-zero-unread-label": "Ocultar ícone sem notificações não lidas",
       "show-unread-badge-description": "Exibir um distintivo mostrando o número de notificações não lidas.",
-      "show-unread-badge-label": "Mostrar distintivo de não lidos"
+      "show-unread-badge-label": "Mostrar distintivo de não lidos",
+      "unread-badge-color-description": "Selecione a cor para o emblema de notificação não lida.",
+      "unread-badge-color-label": "Cor do distintivo de não lido"
     },
     "section-editor": {
       "placeholder": "Selecione um widget para adicionar...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "Número de caracteres a exibir dos nomes de espaços de trabalho (1-10).",
       "character-count-label": "Número de caracteres",
+      "empty-color-description": "Definir a cor de fundo para Workspaces vazios.",
+      "empty-color-label": "Cor do espaço de trabalho vazio",
       "enable-scrollwheel-description": "Alternar entre áreas de trabalho usando a roda do mouse.",
       "enable-scrollwheel-label": "Role para alternar entre áreas de trabalho",
+      "focused-color-description": "Definir a cor de fundo para o Workspace focado.",
+      "focused-color-label": "Cor do workspace focado",
       "follow-focused-screen-description": "Exibir áreas de trabalho da tela atualmente em foco, em vez da tela onde a barra está localizada.",
       "follow-focused-screen-label": "Seguir tela em foco",
       "grouped-border-opacity-description": "Definir o nível de opacidade para as bordas do contêiner do espaço de trabalho.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Ocultar desocupados",
       "label-mode-description": "Escolher como os rótulos de espaço de trabalho são exibidos.",
       "label-mode-label": "Modo de rótulo",
+      "occupied-color-description": "Definir a cor de fundo para Workspaces ocupados.",
+      "occupied-color-label": "Cor do espaço de trabalho ocupado",
+      "reverse-scrolling-description": "Inverter a direção da troca de áreas de trabalho ao rolar.",
+      "reverse-scrolling-label": "Rolagem invertida",
       "show-applications-description": "Exibir ícones de aplicativos dentro de cada espaço de trabalho.",
       "show-applications-label": "Mostrar aplicativos",
+      "show-badge-description": "Mostrar o selo do número da área de trabalho no modo agrupado.",
+      "show-badge-label": "Mostrar selo da área de trabalho",
       "show-labels-only-when-occupied-description": "Mostrar rótulos de área de trabalho apenas quando contiverem janelas.",
       "show-labels-only-when-occupied-label": "Mostrar rótulos apenas quando ocupado",
       "unfocused-icons-opacity-description": "Definir o nível de opacidade para ícones de aplicativos não focados.",
@@ -416,6 +428,7 @@
     "not-found": "Não encontrado",
     "notifications": "Notificações",
     "official": "Oficial",
+    "on-surface": "Na Superfície",
     "output": "Saída",
     "pair": "Emparelhar",
     "paired": "Emparelhado",
@@ -428,6 +441,7 @@
     "polling": "Sondagem",
     "position": "Posição",
     "previous": "Anterior",
+    "primary": "Primário",
     "random": "Aleatório",
     "reboot": "Reiniciar",
     "refresh": "Atualizar",
@@ -440,6 +454,7 @@
     "scanning": "A digitalização está em andamento...",
     "screen-corners": "Cantos da tela",
     "search": "Pesquisar",
+    "secondary": "Secundário",
     "security": "Segurança",
     "select": "Selecionar",
     "shortcuts": "Atalhos",
@@ -451,6 +466,7 @@
     "stop": "Pare",
     "suspend": "Suspender",
     "templates": "Modelos",
+    "tertiary": "Terciário",
     "test": "Teste",
     "thresholds": "Limiares",
     "title": "Título",
@@ -579,7 +595,10 @@
       "density-compact": "Compacta",
       "density-default": "Padrão",
       "density-mini": "Mini",
-      "density-spacious": "Espaçoso(a)"
+      "density-spacious": "Espaçoso(a)",
+      "type-floating": "Flutuante",
+      "type-framed": "Emoldurada",
+      "type-simple": "Simples"
     },
     "control-center": {
       "quick-settings-style-classic": "Clássico",
@@ -707,6 +726,10 @@
       "appearance-desc": "Personalize a aparência e a posição da barra.",
       "appearance-floating-description": "Exibe a barra como uma 'pílula' flutuante.",
       "appearance-floating-label": "Barra flutuante",
+      "appearance-frame-radius": "Raio Interno",
+      "appearance-frame-settings-description": "Ajuste a espessura da moldura e o raio interno",
+      "appearance-frame-settings-label": "Configurações da Moldura",
+      "appearance-frame-thickness": "Espessura",
       "appearance-hide-on-overview-description": "Ocultar a barra e fechar os painéis quando a visão geral do compositor estiver ativa.",
       "appearance-hide-on-overview-label": "Ocultar barra na visão geral",
       "appearance-margins-description": "Ajuste as margens ao redor da barra flutuante.",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "Mostrar cápsula",
       "appearance-show-outline-description": "Exibe uma borda visível ao redor de cada widget.",
       "appearance-show-outline-label": "Mostrar contornos do widget",
+      "appearance-type-description": "Escolha o estilo da barra: Simples, Flutuante ou Emoldurada",
+      "appearance-type-label": "Tipo de Barra",
       "appearance-use-separate-opacity-description": "Permitir usar um valor de opacidade separado para o fundo da barra.",
       "appearance-use-separate-opacity-label": "Usar opacidade separada para as barras",
       "monitor-configure-widgets": "Configurar widgets",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "Quebrar texto da área de transferência",
       "settings-clipboard-history-description": "Acesse itens copiados anteriormente a partir do lançador.",
       "settings-clipboard-history-label": "Ativar histórico da área de transferência",
+      "settings-clipboard-watch-image-description": "String de comando completa passada para wl-paste para alterações de imagem. (requer reinício)",
+      "settings-clipboard-watch-image-label": "Comando de Vigilância de Imagens",
+      "settings-clipboard-watch-text-description": "Cadeia de comando completa passada para wl-paste para alterações de texto. (requer reinício)",
+      "settings-clipboard-watch-text-label": "Comando de observação de texto",
       "settings-custom-launch-prefix-description": "Prefixar comandos com um inicializador personalizado (ex. 'runapp' para integração systemd).",
       "settings-custom-launch-prefix-enabled-description": "Usar um prefixo personalizado para inicializar aplicativos em vez do método padrão.",
       "settings-custom-launch-prefix-enabled-label": "Habilitar prefixo de inicialização personalizado",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "Exibir clima no calendário"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "Quando o fprintd (autenticação por impressão digital) está ativo, esta opção permite-lhe iniciar sessão com a sua palavra-passe em vez de uma impressão digital.",
+      "allow-password-with-fprintd-label": "Permitir login por senha com fprintd",
+      "auto-start-auth-description": "p. ex., inicia automaticamente a autenticação de impressão digital sem exigir uma pressão de tecla ou um clique de botão.",
+      "auto-start-auth-label": "Autenticação de início automático",
       "compact-lockscreen-description": "Mostrar apenas a entrada de login e os controles do sistema, ocultando os widgets de clima e mídia.",
       "compact-lockscreen-label": "Tela de bloqueio compacta",
       "lock-on-suspend-description": "Bloquear a tela automaticamente ao suspender o sistema.",
@@ -1528,12 +1561,12 @@
       "enabled": "'Não perturbe' ativado",
       "enabled-desc": "Você encontrará essas notificações no seu histórico"
     },
+    "donation-opened": "Página de doação aberta no seu navegador",
     "internet-limited": "Conectado sem Internet",
     "keyboard-layout": {
       "changed": "Layout de teclado alterado para {layout}",
       "title": "Teclado"
     },
-    "kofi-opened": "Página do Ko-fi aberta no seu navegador",
     "missing-control-center": {
       "description": "O widget da central de controle foi removido da barra. Para acessá-lo novamente pela barra, adicione o widget novamente. Você também pode abri-lo clicando com o botão direito na barra",
       "label": "Último widget da central de controle removido"

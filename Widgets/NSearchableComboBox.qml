@@ -251,7 +251,7 @@ RowLayout {
             id: defaultDelegate
             ItemDelegate {
               id: delegateRoot
-              width: listView.width
+              width: listView.availableWidth
               leftPadding: Style.marginM
               rightPadding: Style.marginM
               topPadding: Style.marginS

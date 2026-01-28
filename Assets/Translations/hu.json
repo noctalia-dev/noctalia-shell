@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Az értesítési ikon elrejtése, ha nincs olvasatlan értesítés.",
       "hide-widget-when-zero-unread-label": "Ikon elrejtése, amikor nincs olvasatlan értesítés",
       "show-unread-badge-description": "Jelenítsen meg egy jelvényt, amely mutatja az olvasatlan értesítések számát.",
-      "show-unread-badge-label": "Olvasatlan jelvény megjelenítése"
+      "show-unread-badge-label": "Olvasatlan jelvény megjelenítése",
+      "unread-badge-color-description": "Válaszd ki az olvasatlan értesítési jelvény színét.",
+      "unread-badge-color-label": "Olvasatlan jelvény színe"
     },
     "section-editor": {
       "placeholder": "Válasszon hozzáadandó widgetet...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "A munkaterületnevekből megjelenítendő karakterek száma (1-10).",
       "character-count-label": "Karakterek száma",
+      "empty-color-description": "Üres Workspaces háttérszínének beállítása.",
+      "empty-color-label": "Üres munkafelület színe",
       "enable-scrollwheel-description": "Váltás a munkaterületek között az egérgörgővel.",
       "enable-scrollwheel-label": "Görgetés a munkaterületek váltásához",
+      "focused-color-description": "Állítsd be a fókuszált Workspace háttérszínét.",
+      "focused-color-label": "Fókuszált munkaterület színe",
       "follow-focused-screen-description": "Munkaterületek megjelenítése az aktuálisan fókuszált képernyőről, nem arról a képernyőről, ahol a sáv található.",
       "follow-focused-screen-label": "Fókuszált képernyő követése",
       "grouped-border-opacity-description": "A munkaterület-konténerek szegélyeinek átlátszósági szintjének beállítása.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Foglalatlan elrejtése",
       "label-mode-description": "Válassza ki, hogyan jelenjenek meg a munkaterület címkéi.",
       "label-mode-label": "Címke mód",
+      "occupied-color-description": "A foglalt Workspaces háttérszínének beállítása.",
+      "occupied-color-label": "Foglalt munkaterület színe",
+      "reverse-scrolling-description": "Görgetéskor fordított irányba váltson a munkaterületek között.",
+      "reverse-scrolling-label": "Görgetés megfordítása",
       "show-applications-description": "Alkalmazásikonok megjelenítése minden munkaterületen belül.",
       "show-applications-label": "Alkalmazások megjelenítése",
+      "show-badge-description": "Munkaterület számának jelzése csoportosított módban.",
+      "show-badge-label": "Munkafelület jelvény megjelenítése",
       "show-labels-only-when-occupied-description": "Csak akkor jelenítse meg a munkaterület címkéket, ha azok tartalmaznak ablakokat.",
       "show-labels-only-when-occupied-label": "Címkék megjelenítése csak foglalt állapotban",
       "unfocused-icons-opacity-description": "Állítsa be a nem fókuszált alkalmazásikonok átlátszóságának szintjét.",
@@ -416,6 +428,7 @@
     "not-found": "Nem található",
     "notifications": "Értesítések",
     "official": "Hivatalos",
+    "on-surface": "Felületen",
     "output": "Kimenet",
     "pair": "Párosítás",
     "paired": "Párosítva",
@@ -428,6 +441,7 @@
     "polling": "Lekérdezés",
     "position": "Pozíció",
     "previous": "Előző",
+    "primary": "Elsődleges",
     "random": "Véletlen",
     "reboot": "Újraindítás",
     "refresh": "Frissítés",
@@ -440,6 +454,7 @@
     "scanning": "Szkennelés...",
     "screen-corners": "Képernyő sarkok",
     "search": "Keresés",
+    "secondary": "Másodlagos",
     "security": "Biztonság",
     "select": "Kiválasztás",
     "shortcuts": "Gyorsbillentyűk",
@@ -451,6 +466,7 @@
     "stop": "Állj",
     "suspend": "Felfüggesztés",
     "templates": "Sablonok",
+    "tertiary": "Harmadlagos",
     "test": "Teszt",
     "thresholds": "Küszöbértékek",
     "title": "Cím",
@@ -579,7 +595,10 @@
       "density-compact": "Kompakt",
       "density-default": "Alapértelmezett",
       "density-mini": "Mini",
-      "density-spacious": "Tágas"
+      "density-spacious": "Tágas",
+      "type-floating": "Lebegő",
+      "type-framed": "Keretes",
+      "type-simple": "Egyszerű"
     },
     "control-center": {
       "quick-settings-style-classic": "Klasszikus",
@@ -707,6 +726,10 @@
       "appearance-desc": "A sáv megjelenésének és pozíciójának testreszabása.",
       "appearance-floating-description": "Megjeleníti a sávot lebegő „pirulaként”.",
       "appearance-floating-label": "Lebegő sáv",
+      "appearance-frame-radius": "Belső sugár",
+      "appearance-frame-settings-description": "Állítsa be a keret vastagságát és a belső sarok sugarát",
+      "appearance-frame-settings-label": "Keret beállításai",
+      "appearance-frame-thickness": "Vastagság",
       "appearance-hide-on-overview-description": "A sáv elrejtése és a panelek bezárása, amikor a kompozitor áttekintése aktív.",
       "appearance-hide-on-overview-label": "Sáv elrejtése az áttekintésben",
       "appearance-margins-description": "Beállítja a lebegő sáv körüli margókat.",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "Kapszula megjelenítése",
       "appearance-show-outline-description": "Látható szegély megjelenítése minden widget körül.",
       "appearance-show-outline-label": "Widget körvonalak megjelenítése",
+      "appearance-type-description": "Válassza ki a sáv stílusát: Egyszerű, Lebegő vagy Keretes",
+      "appearance-type-label": "Sáv típusa",
       "appearance-use-separate-opacity-description": "Lehetővé teszi egy külön átlátszatlansági érték használatát a sáv hátteréhez.",
       "appearance-use-separate-opacity-label": "Külön oszlop átlátszóság használata",
       "monitor-configure-widgets": "Widgetek konfigurálása",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "Clipboard szöveg becsomagolása",
       "settings-clipboard-history-description": "Hozzáférés a korábban másolt elemekhez az indítóból.",
       "settings-clipboard-history-label": "Vágólapelőzmények engedélyezése",
+      "settings-clipboard-watch-image-description": "Teljes parancssor, ami a wl-paste-nek kerül átadásra a képváltozásokhoz. (újraindítás szükséges)",
+      "settings-clipboard-watch-image-label": "Képfigyelő Parancs",
+      "settings-clipboard-watch-text-description": "A wl-paste-nek átadott teljes parancssor a szövegváltozásokhoz. (újraindítást igényel)",
+      "settings-clipboard-watch-text-label": "Szövegfigyelő parancs",
       "settings-custom-launch-prefix-description": "Előtagolja a parancsokat egyéni indítóval (pl. 'runapp' a systemd integrációhoz).",
       "settings-custom-launch-prefix-enabled-description": "Használjon egyéni előtagot az alkalmazások indításához az alapértelmezett módszer helyett.",
       "settings-custom-launch-prefix-enabled-label": "Egyéni indítási előtag engedélyezése",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "Időjárás megjelenítése a naptárban"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "Ha az fprintd (ujjlenyomat-hitelesítés) aktív, ez az opció lehetővé teszi, hogy továbbra is jelszóval jelentkezzen be ujjlenyomat helyett.",
+      "allow-password-with-fprintd-label": "Jelszavas bejelentkezés engedélyezése fprintd-vel",
+      "auto-start-auth-description": "pl. automatikusan elindítja az ujjlenyomat-hitelesítést anélkül, hogy billentyűt kellene megnyomni vagy gombra kellene kattintani.",
+      "auto-start-auth-label": "Automatikus hitelesítés indításkor",
       "compact-lockscreen-description": "Csak a bejelentkezési beviteli mező és a rendszervezérlők megjelenítése, elrejtve az időjárás és média widgeteket.",
       "compact-lockscreen-label": "Kompakt zárolási képernyő",
       "lock-on-suspend-description": "A képernyő automatikus zárolása a rendszer felfüggesztésekor.",
@@ -1528,12 +1561,12 @@
       "enabled": "Ne zavarjanak bekapcsolva",
       "enabled-desc": "Ezeket az értesítéseket az előzményekben találja"
     },
+    "donation-opened": "Az adományozási oldal megnyílt a böngésződben",
     "internet-limited": "Csatlakoztatva internet nélkül",
     "keyboard-layout": {
       "changed": "Billentyűzetkiosztás megváltozott: {layout}",
       "title": "Billentyűzet"
     },
-    "kofi-opened": "A Ko-fi oldal megnyílt a böngészőjében",
     "missing-control-center": {
       "description": "A vezérlőközpont widget eltávolításra került a sávról. A sávról való újbóli eléréshez újra hozzá kell adnia a widgetet. Jobb kattintással is megnyithatja a sávon",
       "label": "Utolsó vezérlőközpont widget eltávolítva"

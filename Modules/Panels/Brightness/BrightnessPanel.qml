@@ -15,6 +15,15 @@ SmartPanel {
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(420 * Style.uiScaleRatio)
 
+  onOpened: {
+    // Refresh DDC brightness from monitors (one-time on panel open)
+    BrightnessService.monitors.forEach(m => {
+                                         if (m.isDdc) {
+                                           m.refreshBrightnessFromSystem();
+                                         }
+                                       });
+  }
+
   panelContent: Item {
     id: panelContent
     property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
@@ -66,17 +75,19 @@ SmartPanel {
       }
 
       NScrollView {
+        id: brightnessScrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AsNeeded
-        clip: true
         contentWidth: availableWidth
+        reserveScrollbarSpace: false
+        gradientColor: Color.mSurface
 
         // AudioService Devices
         ColumnLayout {
           spacing: Style.marginM
-          width: parent.width
+          width: brightnessScrollView.availableWidth
 
           Repeater {
             model: Quickshell.screens || []

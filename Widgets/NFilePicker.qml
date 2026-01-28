@@ -402,70 +402,26 @@ Popup {
           id: filteredModel
         }
 
-        // Common scroll bar component
-        Component {
-          id: scrollBarComponent
-          ScrollBar {
-            policy: ScrollBar.AsNeeded
-            contentItem: Rectangle {
-              implicitWidth: 6
-              implicitHeight: 100
-              radius: Style.iRadiusM
-              color: Qt.alpha(Color.mHover, 0.8)
-              opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 1.0 : 0.0
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: Style.animationFast
-                }
-              }
-              Behavior on color {
-                ColorAnimation {
-                  duration: Style.animationFast
-                }
-              }
-            }
-            background: Rectangle {
-              implicitWidth: 6
-              implicitHeight: 100
-              color: "transparent"
-              opacity: parent.policy === ScrollBar.AlwaysOn || parent.active ? 0.3 : 0.0
-              radius: (Style.iRadiusM) / 2
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: Style.animationFast
-                }
-              }
-            }
-          }
-        }
-
         // Grid view
-        GridView {
+        NGridView {
           id: gridView
           anchors.fill: parent
           anchors.margins: Style.marginM
           model: filteredModel
           visible: filePickerPanel.viewMode
-          clip: true
           reuseItems: true
+          gradientColor: Color.mSurface
 
-          property int columns: Math.max(1, Math.floor(width / (120)))
-          property int itemSize: Math.floor((width - leftMargin - rightMargin - (columns * Style.marginS)) / columns)
+          property int columns: Math.max(1, Math.floor(availableWidth / 120))
+          property int itemSize: Math.floor((availableWidth - leftMargin - rightMargin - (columns * Style.marginS)) / columns)
 
-          cellWidth: Math.floor((width - leftMargin - rightMargin) / columns)
+          cellWidth: Math.floor((availableWidth - leftMargin - rightMargin) / columns)
           cellHeight: Math.floor(itemSize * 0.8) + Style.marginXS + Style.fontSizeS + Style.marginM
 
           leftMargin: Style.marginS
           rightMargin: Style.marginS
           topMargin: Style.marginS
           bottomMargin: Style.marginS
-
-          ScrollBar.vertical: scrollBarComponent.createObject(gridView, {
-                                                                "parent": gridView,
-                                                                "x": gridView.mirrored ? 0 : gridView.width - width,
-                                                                "y": 0,
-                                                                "height": gridView.height
-                                                              })
 
           delegate: Rectangle {
             id: gridItem
@@ -660,6 +616,7 @@ Popup {
           anchors.margins: Style.marginS
           model: filteredModel
           visible: !filePickerPanel.viewMode
+          gradientColor: Color.mSurface
 
           delegate: Rectangle {
             id: listItem

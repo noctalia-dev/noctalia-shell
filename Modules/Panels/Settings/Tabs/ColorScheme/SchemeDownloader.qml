@@ -837,16 +837,10 @@ Popup {
       visible: hasInitialData && availableSchemes.length > 0
       verticalPolicy: ScrollBar.AsNeeded
       horizontalPolicy: ScrollBar.AlwaysOff
-
-      // Only show scrollbar when content actually overflows (size < 1.0 means content is larger than viewport)
-      ScrollBar.vertical.visible: schemesScrollView.ScrollBar.vertical.size < 1.0
+      gradientColor: Color.mSurface
 
       ColumnLayout {
-        width: {
-          // Always account for scrollbar width when it's visible (for testing with visible: true)
-          var scrollbarWidth = schemesScrollView.ScrollBar.vertical.visible ? (schemesScrollView.handleWidth + Style.marginS) : 0;
-          return parent.width - scrollbarWidth;
-        }
+        width: schemesScrollView.availableWidth
         spacing: Style.marginS
 
         Repeater {

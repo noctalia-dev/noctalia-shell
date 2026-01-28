@@ -222,17 +222,23 @@ Singleton {
     const homeDir = Quickshell.env("HOME");
     TemplateRegistry.applications.forEach(app => {
                                             if (app.id === "discord") {
-                                              // Handle Discord clients specially
+                                              // Handle Discord clients specially - multiple CSS themes
                                               if (isTemplateEnabled("discord")) {
-                                                app.clients.forEach(client => {
-                                                                      // Check if this specific client is detected
-                                                                      if (isDiscordClientEnabled(client.name)) {
-                                                                        lines.push(`\n[templates.discord_${client.name}]`);
-                                                                        lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
-                                                                        const outputPath = client.path.replace("~", homeDir) + "/themes/noctalia.theme.css";
-                                                                        lines.push(`output_path = "${outputPath}"`);
-                                                                      }
-                                                                    });
+                                                const inputs = Array.isArray(app.input) ? app.input : [app.input];
+                                                inputs.forEach((inputFile, idx) => {
+                                                                 // Derive theme suffix from input filename: discord-midnight.css → midnight
+                                                                 const themeSuffix = inputFile.replace(/^discord-/, "").replace(/\.css$/, "");
+                                                                 app.clients.forEach(client => {
+                                                                                       if (isDiscordClientEnabled(client.name)) {
+                                                                                         lines.push(`\n[templates.discord_${themeSuffix}_${client.name}]`);
+                                                                                         lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${inputFile}"`);
+                                                                                         // First input uses legacy name for backward compatibility
+                                                                                         const outputFile = idx === 0 ? "noctalia.theme.css" : `noctalia-${themeSuffix}.theme.css`;
+                                                                                         const outputPath = client.path.replace("~", homeDir) + `/themes/${outputFile}`;
+                                                                                         lines.push(`output_path = "${outputPath}"`);
+                                                                                       }
+                                                                                     });
+                                                               });
                                               }
                                             } else if (app.id === "code") {
                                               // Handle Code clients specially
@@ -247,23 +253,14 @@ Singleton {
                                                                       }
                                                                     });
                                               }
-                                            } else if (app.id === "emacs" && app.checkDoomFirst) {
+                                            } else if (app.id === "emacs") {
                                               if (isTemplateEnabled("emacs")) {
-                                                const doomPathTemplate = app.outputs[0].path; // ~/.config/doom/themes/noctalia-theme.el
-                                                const standardPathTemplate = app.outputs[1].path; // ~/.emacs.d/themes/noctalia-theme.el
-                                                const doomPath = doomPathTemplate.replace("~", homeDir);
-                                                const standardPath = standardPathTemplate.replace("~", homeDir);
-                                                const doomConfigDir = `${homeDir}/.config/doom`;
-                                                const doomDir = doomPath.substring(0, doomPath.lastIndexOf('/'));
-
-                                                lines.push(`\n[templates.emacs]`);
-                                                lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
-                                                lines.push(`output_path = "${standardPath}"`);
-                                                // Move to doom if doom exists, then remove empty .emacs.d/themes and .emacs.d directories
-                                                // Check directories are empty before removing
-                                                const postHook = `sh -c 'if [ -d "${doomConfigDir}" ] && [ -f "${standardPath}" ]; then mkdir -p "${doomDir}" && mv "${standardPath}" "${doomPath}" && rmdir "${homeDir}/.emacs.d/themes" 2>/dev/null && rmdir "${homeDir}/.emacs.d" 2>/dev/null || true; fi'`;
-                                                const postHookEsc = escapeTomlString(postHook);
-                                                lines.push(`post_hook = "${postHookEsc}"`);
+                                                ProgramCheckerService.availableEmacsClients.forEach(client => {
+                                                                                                      lines.push(`\n[templates.emacs_${client.name}]`);
+                                                                                                      lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
+                                                                                                      const expandedPath = client.path.replace("~", homeDir) + "/themes/noctalia-theme.el";
+                                                                                                      lines.push(`output_path = "${expandedPath}"`);
+                                                                                                    });
                                               }
                                             } else {
                                               // Handle regular apps
@@ -578,22 +575,8 @@ Singleton {
     workingDirectory: Quickshell.shellDir
     running: false
 
-    // Error reporting helpers
-    function buildErrorMessage() {
-      const title = I18n.tr(`toast.theming-processor-failed.title`);
-      const description = (stderr.text && stderr.text.trim() !== "") ? stderr.text.trim() : ((stdout.text && stdout.text.trim() !== "") ? stdout.text.trim() : I18n.tr("toast.theming-processor-failed.desc-generic"));
-      return description;
-    }
-
-    onExited: function (exitCode) {
-      Logger.d("TemplateProcessor", `generateProcess exited: exitCode=${exitCode}`);
-      // Only log errors for non-killed processes (exitCode 0 = success, negative = signal/killed)
-      if (exitCode > 0) {
-        const description = generateProcess.buildErrorMessage();
-        Logger.e("TemplateProcessor", `Process failed with exit code`, exitCode, description);
-        Logger.d("TemplateProcessor", "Failed command:", command.join(" ").substring(0, 500));
-      }
-      // Execute any pending request (handles both kill case and 400ms interval case)
+    onExited: function (exitCode, exitStatus) {
+      // Execute any pending request (handles both kill case and debounce timer interval case)
       if (pendingWallpaperRequest || pendingPredefinedRequest) {
         Logger.d("TemplateProcessor", "generateProcess onExited: has pending request, executing");
         executePendingRequest();
@@ -603,18 +586,14 @@ Singleton {
       }
     }
 
-    stdout: StdioCollector {
-      onStreamFinished: {
-        if (this.text)
-        Logger.d("TemplateProcessor", "stdout:", this.text);
-      }
-    }
-
     stderr: StdioCollector {
       onStreamFinished: {
-        if (this.text && this.text.trim() !== "") {
-          // Log template errors/warnings from Python script
-          Logger.e("TemplateProcessor", this.text.trim());
+        const text = this.text.trim();
+        if (text && text.includes("Template error:")) {
+          const errorLines = text.split("\n").filter(l => l.includes("Template error:"));
+          const errors = errorLines.slice(0, 3).join("\n") + (errorLines.length > 3 ? `\n... (+${errorLines.length - 3} more)` : "");
+          Logger.w("TemplateProcessor", errors);
+          ToastService.showWarning(I18n.tr("toast.theming-processor-failed.title"), errors);
         }
       }
     }

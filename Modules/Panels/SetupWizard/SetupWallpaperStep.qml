@@ -135,15 +135,16 @@ ColumnLayout {
   // Wallpaper gallery strip
   Item {
     Layout.fillWidth: true
-    Layout.preferredHeight: 88
+    Layout.preferredHeight: 92
     visible: filteredWallpapers.length > 0
 
-    ScrollView {
+    NScrollView {
       id: galleryScroll
       anchors.fill: parent
-      clip: true
-      ScrollBar.horizontal.policy: ScrollBar.AsNeeded
-      ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+      horizontalPolicy: ScrollBar.AsNeeded
+      verticalPolicy: ScrollBar.AlwaysOff
+      showGradientMasks: false
+      reserveScrollbarSpace: false
 
       // Enable vertical mouse wheel to scroll the horizontal strip by moving contentX
       WheelHandler {

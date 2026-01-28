@@ -27,7 +27,7 @@ PopupWindow {
   property real menuContentWidth: 160
 
   implicitWidth: menuContentWidth + (Style.marginXL)
-  implicitHeight: contextMenuColumn.implicitHeight + (Style.marginXL)
+  implicitHeight: (root.items.length * 32) + (Style.marginXL)
   color: "transparent"
   visible: false
 
@@ -256,14 +256,9 @@ PopupWindow {
     toplevel = toplevelData;
     initItems();
 
-    // Force a complete re-evaluation by waiting for the next frame
-    Qt.callLater(() => {
-                   Qt.callLater(() => {
-                                  visible = true;
-                                  canAutoClose = false;
-                                  gracePeriodTimer.restart();
-                                });
-                 });
+    visible = true;
+    canAutoClose = false;
+    gracePeriodTimer.restart();
   }
 
   function hide() {

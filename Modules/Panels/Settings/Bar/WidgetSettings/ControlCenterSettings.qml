@@ -14,6 +14,8 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   // Local state
   property string valueIcon: widgetData.icon !== undefined ? widgetData.icon : widgetMetadata.icon
   property bool valueUseDistroLogo: widgetData.useDistroLogo !== undefined ? widgetData.useDistroLogo : widgetMetadata.useDistroLogo
@@ -35,14 +37,20 @@ ColumnLayout {
     label: I18n.tr("bar.control-center.use-distro-logo-label")
     description: I18n.tr("bar.control-center.use-distro-logo-description")
     checked: valueUseDistroLogo
-    onToggled: checked => valueUseDistroLogo = checked
+    onToggled: checked => {
+                 valueUseDistroLogo = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
     label: I18n.tr("bar.custom-button.enable-colorization-label")
     description: I18n.tr("bar.control-center.enable-colorization-description")
     checked: valueEnableColorization
-    onToggled: checked => valueEnableColorization = checked
+    onToggled: checked => {
+                 valueEnableColorization = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NComboBox {
@@ -74,6 +82,7 @@ ColumnLayout {
     currentKey: valueColorizeSystemIcon
     onSelected: function (key) {
       valueColorizeSystemIcon = key;
+      settingsChanged(saveSettings());
     }
   }
 
@@ -123,6 +132,7 @@ ColumnLayout {
     onIconSelected: iconName => {
                       valueIcon = iconName;
                       valueCustomIconPath = "";
+                      settingsChanged(saveSettings());
                     }
   }
 
@@ -135,6 +145,7 @@ ColumnLayout {
     onAccepted: paths => {
                   if (paths.length > 0) {
                     valueCustomIconPath = paths[0]; // Use first selected file
+                    settingsChanged(saveSettings());
                   }
                 }
   }

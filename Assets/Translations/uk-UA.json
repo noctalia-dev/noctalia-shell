@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Приховувати значок сповіщень, якщо немає непрочитаних.",
       "hide-widget-when-zero-unread-label": "Приховувати значок без непрочитаних",
       "show-unread-badge-description": "Відображати значок з кількістю непрочитаних сповіщень.",
-      "show-unread-badge-label": "Показувати значок непрочитаних"
+      "show-unread-badge-label": "Показувати значок непрочитаних",
+      "unread-badge-color-description": "Виберіть колір для значка непрочитаних сповіщень.",
+      "unread-badge-color-label": "Колір значка непрочитаних"
     },
     "section-editor": {
       "placeholder": "Виберіть віджет для додавання...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "Кількість символів для відображення з назв робочих просторів (1-10).",
       "character-count-label": "Кількість символів",
+      "empty-color-description": "Встановити колір фону для порожніх Workspace.",
+      "empty-color-label": "Колір порожнього робочого столу",
       "enable-scrollwheel-description": "Перемикайтеся між робочими столами за допомогою коліщатка миші.",
       "enable-scrollwheel-label": "Прокрутіть, щоб перемикати робочі простори",
+      "focused-color-description": "Встановити колір тла для сфокусованого Workspace.",
+      "focused-color-label": "Колір сфокусованого робочого столу",
       "follow-focused-screen-description": "Відображати робочі простори з поточного активного екрана, а не з екрана, на якому розташована панель.",
       "follow-focused-screen-label": "Слідувати за активним eкраном",
       "grouped-border-opacity-description": "Встановити рівень непрозорості для меж контейнерів робочої області.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Приховати незайняті",
       "label-mode-description": "Виберіть, як відображаються мітки робочих просторів.",
       "label-mode-label": "Режим міток",
+      "occupied-color-description": "Встановити колір фону для зайнятих Workspace.",
+      "occupied-color-label": "Колір зайнятого робочого столу",
+      "reverse-scrolling-description": "Змінити напрямок перемикання робочих просторів під час прокручування.",
+      "reverse-scrolling-label": "Зворотне прокручування",
       "show-applications-description": "Відображати значки програм у кожному робочому просторі.",
       "show-applications-label": "Показати застосунки",
+      "show-badge-description": "Показувати значок номера робочого столу в згрупованому режимі.",
+      "show-badge-label": "Показати значок робочого столу",
       "show-labels-only-when-occupied-description": "Показувати мітки робочих просторів лише тоді, коли вони містять вікна.",
       "show-labels-only-when-occupied-label": "Показувати мітки лише коли поле заповнене",
       "unfocused-icons-opacity-description": "Встановити рівень непрозорості для неактивних іконок застосунків.",
@@ -416,6 +428,7 @@
     "not-found": "Не знайдено",
     "notifications": "Сповіщення",
     "official": "Офіційний",
+    "on-surface": "На поверхні",
     "output": "Вихід",
     "pair": "Спарувати",
     "paired": "Спаровано",
@@ -428,6 +441,7 @@
     "polling": "Опитування",
     "position": "Позиція",
     "previous": "Попередній",
+    "primary": "Основний",
     "random": "Випадковий",
     "reboot": "Перезапустити",
     "refresh": "Оновити",
@@ -440,6 +454,7 @@
     "scanning": "Сканування...",
     "screen-corners": "Кути екрана",
     "search": "Пошук",
+    "secondary": "Вторинний",
     "security": "Безпека",
     "select": "Вибрати",
     "shortcuts": "Ярлики",
@@ -451,6 +466,7 @@
     "stop": "Зупиніться",
     "suspend": "Призупинити",
     "templates": "Шаблони",
+    "tertiary": "Третинний",
     "test": "Тест",
     "thresholds": "Порогові значення",
     "title": "Назва",
@@ -579,7 +595,10 @@
       "density-compact": "Компактний",
       "density-default": "Стандартний",
       "density-mini": "Міні",
-      "density-spacious": "Просторий"
+      "density-spacious": "Просторий",
+      "type-floating": "Плаваючий",
+      "type-framed": "У рамці",
+      "type-simple": "Простий"
     },
     "control-center": {
       "quick-settings-style-classic": "Класичний",
@@ -707,6 +726,10 @@
       "appearance-desc": "Налаштуйте зовнішній вигляд та положення панелі.",
       "appearance-floating-description": "Відображати панель як плаваючу 'капсулу'. Примітка: Це перемістить кути екрана до країв.",
       "appearance-floating-label": "Плаваюча панель (Острівець)",
+      "appearance-frame-radius": "Внутрішній радіус",
+      "appearance-frame-settings-description": "Налаштуйте товщину рамки та внутрішній радіус кутів",
+      "appearance-frame-settings-label": "Налаштування рамки",
+      "appearance-frame-thickness": "Товщина",
       "appearance-hide-on-overview-description": "Приховати панель і закрити панелі, коли активний огляд компонувальника.",
       "appearance-hide-on-overview-label": "Приховати панель на огляді",
       "appearance-margins-description": "Налаштуйте поля навколо плаваючої панелі.",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "Показувати капсулу",
       "appearance-show-outline-description": "Відображає видиму рамку навколо кожного віджета.",
       "appearance-show-outline-label": "Показувати контури віджетів",
+      "appearance-type-description": "Виберіть стиль панелі: Простий, Плаваючий або У рамці",
+      "appearance-type-label": "Тип панелі",
       "appearance-use-separate-opacity-description": "Увімкнути використання окремого значення прозорості для фону панелі.",
       "appearance-use-separate-opacity-label": "Використовувати окрему прозорість стовпців",
       "monitor-configure-widgets": "Налаштувати віджети",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "Загорнути текст з буфера обміну",
       "settings-clipboard-history-description": "Отримати доступ до раніше скопійованих елементів із лаунчера.",
       "settings-clipboard-history-label": "Увімкнути історію буфера обміну",
+      "settings-clipboard-watch-image-description": "Повний рядок команди, переданий до wl-paste для зміни зображень. (потрібен перезапуск)",
+      "settings-clipboard-watch-image-label": "Команда Спостереження за Зображеннями",
+      "settings-clipboard-watch-text-description": "Повний рядок команди, переданий до wl-paste для змін тексту. (потребує перезапуску)",
+      "settings-clipboard-watch-text-label": "Команда спостереження за текстом",
       "settings-custom-launch-prefix-description": "Додати префікс до команд запуску лаунчером (напр., 'runapp' для інтеграції з systemd).",
       "settings-custom-launch-prefix-enabled-description": "Використовувати власний префікс для запуску застосунків замість стандартного методу.",
       "settings-custom-launch-prefix-enabled-label": "Увімкнути користувацький префікс запуску",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "Відображати погоду в календарі"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "Коли fprintd (автентифікація за відбитком пальця) активний, ця опція дозволяє входити в систему за допомогою пароля замість відбитка пальця.",
+      "allow-password-with-fprintd-label": "Дозволити вхід за паролем за допомогою fprintd",
+      "auto-start-auth-description": "наприклад, автоматично запускає автентифікацію за відбитком пальця без необхідності натискання клавіші або клацання кнопки.",
+      "auto-start-auth-label": "Автоматичний запуск автентифікації",
       "compact-lockscreen-description": "Показувати тільки поле входу та системні елементи керування, приховуючи віджети погоди та медіа.",
       "compact-lockscreen-label": "Компактний екран блокування",
       "lock-on-suspend-description": "Автоматично блокувати екран при призупиненні системи.",
@@ -1528,12 +1561,12 @@
       "enabled": "'Не турбувати' увімкнено",
       "enabled-desc": "Ви знайдете ці сповіщення в своїй історії"
     },
+    "donation-opened": "Сторінка пожертв відкрито у вашому браузері",
     "internet-limited": "Підключено без інтернету",
     "keyboard-layout": {
       "changed": "Розкладка клавіатури змінена на {layout}",
       "title": "Клавіатура"
     },
-    "kofi-opened": "Сторінка Ko-fi відкрита у вашому браузері",
     "missing-control-center": {
       "description": "Віджет центру керування видалено з панелі. Щоб знову отримати до нього доступ з панелі, вам потрібно повторно додати віджет. Ви також можете відкрити його, клацнувши правою кнопкою миші на панелі",
       "label": "Останній віджет центру керування видалено"

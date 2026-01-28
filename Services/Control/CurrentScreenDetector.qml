@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import qs.Services.Compositor
 
 /**
 * Detects which screen the cursor is currently on by creating a temporary
@@ -49,64 +50,82 @@ Item {
     // Single monitor setup can execute immediately
     if (Quickshell.screens.length === 1) {
       callback(Quickshell.screens[0]);
-    } else {
-        // Multi-monitor setup needs async detection
-        root.detectedScreen = null;
-        root.pendingCallback = callback;
-        screenDetectorLoader.active = true;
-      }
-      }
+      return;
+    }
 
-        Timer {
-          id: screenDetectorDebounce
-          running: false
-          interval: 40
-          onTriggered: {
-            Logger.d("CurrentScreenDetector", "Screen debounced to:", root.detectedScreen?.name || "null");
+      // Try compositor-specific focused monitor detection first
+      let screen = CompositorService.getFocusedScreen();
 
-            // Execute pending callback if any
-            if (root.pendingCallback) {
-              if (!Settings.data.general.allowPanelsOnScreenWithoutBar) {
-                // If we explicitly disabled panels on screen without bar, check if bar is configured
-                // for this screen, and fallback to primary screen if necessary
-                var monitors = Settings.data.bar.monitors || [];
-                const hasBar = monitors.length === 0 || monitors.includes(root.detectedScreen?.name);
-                if (!hasBar) {
-                  root.detectedScreen = Quickshell.screens[0];
+      if (screen) {
+        // Apply the bar check if configured
+        if (!Settings.data.general.allowPanelsOnScreenWithoutBar) {
+          const monitors = Settings.data.bar.monitors || [];
+          const hasBar = monitors.length === 0 || monitors.includes(screen.name);
+          if (!hasBar) {
+            screen = Quickshell.screens[0];
+          }
+          }
+            Logger.d("CurrentScreenDetector", "Using compositor-detected screen:", screen.name);
+            callback(screen);
+            return;
+          }
+
+            // Fallback: Multi-monitor setup needs async detection via invisible PanelWindow
+            root.detectedScreen = null;
+            root.pendingCallback = callback;
+            screenDetectorLoader.active = true;
+          }
+
+            Timer {
+              id: screenDetectorDebounce
+              running: false
+              interval: 40
+              onTriggered: {
+                Logger.d("CurrentScreenDetector", "Screen debounced to:", root.detectedScreen?.name || "null");
+
+                // Execute pending callback if any
+                if (root.pendingCallback) {
+                  if (!Settings.data.general.allowPanelsOnScreenWithoutBar) {
+                    // If we explicitly disabled panels on screen without bar, check if bar is configured
+                    // for this screen, and fallback to primary screen if necessary
+                    var monitors = Settings.data.bar.monitors || [];
+                    const hasBar = monitors.length === 0 || monitors.includes(root.detectedScreen?.name);
+                    if (!hasBar) {
+                      root.detectedScreen = Quickshell.screens[0];
+                    }
+                  }
+
+                  Logger.d("CurrentScreenDetector", "Executing callback on screen:", root.detectedScreen.name);
+                  // Store callback locally and clear pendingCallback first to prevent deadlock
+                  // if the callback throws an error
+                  var callback = root.pendingCallback;
+                  root.pendingCallback = null;
+                  try {
+                    callback(root.detectedScreen);
+                  } catch (e) {
+                    Logger.e("CurrentScreenDetector", "Callback failed:", e);
+                  }
                 }
-              }
 
-              Logger.d("CurrentScreenDetector", "Executing callback on screen:", root.detectedScreen.name);
-              // Store callback locally and clear pendingCallback first to prevent deadlock
-              // if the callback throws an error
-              var callback = root.pendingCallback;
-              root.pendingCallback = null;
-              try {
-                callback(root.detectedScreen);
-              } catch (e) {
-                Logger.e("CurrentScreenDetector", "Callback failed:", e);
+                // Clean up
+                screenDetectorLoader.active = false;
               }
             }
 
-            // Clean up
-            screenDetectorLoader.active = false;
+            // Invisible dummy PanelWindow to detect which screen should receive the action
+            Loader {
+              id: screenDetectorLoader
+              active: false
+
+              sourceComponent: PanelWindow {
+                implicitWidth: 0
+                implicitHeight: 0
+                color: "transparent"
+                WlrLayershell.exclusionMode: ExclusionMode.Ignore
+                WlrLayershell.namespace: "noctalia-screen-detector"
+                mask: Region {}
+
+                onScreenChanged: root.screenDetected(screen)
+              }
+            }
           }
-        }
-
-        // Invisible dummy PanelWindow to detect which screen should receive the action
-        Loader {
-          id: screenDetectorLoader
-          active: false
-
-          sourceComponent: PanelWindow {
-            implicitWidth: 0
-            implicitHeight: 0
-            color: "transparent"
-            WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.namespace: "noctalia-screen-detector"
-            mask: Region {}
-
-            onScreenChanged: root.screenDetected(screen)
-          }
-        }
-      }

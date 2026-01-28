@@ -14,6 +14,8 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   // Local state
   property bool valueUsePrimaryColor: widgetData.usePrimaryColor !== undefined ? widgetData.usePrimaryColor : widgetMetadata.usePrimaryColor
   property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
@@ -71,7 +73,10 @@ ColumnLayout {
     label: I18n.tr("bar.clock.use-primary-color-label")
     description: I18n.tr("bar.clock.use-primary-color-description")
     checked: valueUsePrimaryColor
-    onToggled: checked => valueUsePrimaryColor = checked
+    onToggled: checked => {
+                 valueUsePrimaryColor = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -79,7 +84,10 @@ ColumnLayout {
     label: I18n.tr("bar.clock.use-custom-font-label")
     description: I18n.tr("bar.clock.use-custom-font-description")
     checked: valueUseCustomFont
-    onToggled: checked => valueUseCustomFont = checked
+    onToggled: checked => {
+                 valueUseCustomFont = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NSearchableComboBox {
@@ -95,6 +103,7 @@ ColumnLayout {
     minimumWidth: 300
     onSelected: function (key) {
       valueCustomFont = key;
+      settingsChanged(saveSettings());
     }
   }
 
@@ -129,6 +138,7 @@ ColumnLayout {
         placeholderText: "HH:mm ddd, MMM dd"
         text: valueFormatHorizontal
         onTextChanged: valueFormatHorizontal = text
+        onEditingFinished: settingsChanged(saveSettings())
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {
@@ -153,6 +163,7 @@ ColumnLayout {
         placeholderText: "HH mm dd MM"
         text: valueFormatVertical
         onTextChanged: valueFormatVertical = text
+        onEditingFinished: settingsChanged(saveSettings())
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {
@@ -172,6 +183,7 @@ ColumnLayout {
         placeholderText: "HH:mm, ddd MMM dd"
         text: valueTooltipFormat
         onTextChanged: valueTooltipFormat = text
+        onEditingFinished: settingsChanged(saveSettings())
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {
@@ -283,7 +295,7 @@ ColumnLayout {
 
   NDateTimeTokens {
     Layout.fillWidth: true
-    height: 200
+    Layout.preferredHeight: 300
 
     // Connect to token clicked signal if NDateTimeTokens provides it
     onTokenClicked: token => root.insertToken(token)

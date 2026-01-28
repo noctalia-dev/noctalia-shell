@@ -11,6 +11,10 @@ import qs.Widgets.AudioSpectrum
 
 Item {
   id: root
+  Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
+  Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
+  Layout.fillHeight: false
+  Layout.fillWidth: false
 
   property ShellScreen screen
   property string widgetId: ""
@@ -20,9 +24,11 @@ Item {
 
   // Settings
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  // Explicit screenName property ensures reactive binding when screen changes
+  readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
-    if (section && sectionWidgetIndex >= 0) {
-      var widgets = Settings.getBarWidgetsForScreen(screen?.name)[section];
+    if (section && sectionWidgetIndex >= 0 && screenName) {
+      var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
       if (widgets && sectionWidgetIndex < widgets.length) {
         return widgets[sectionWidgetIndex];
       }
@@ -31,10 +37,10 @@ Item {
   }
 
   // Bar orientation (per-screen)
-  readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
-  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screen?.name)
-  readonly property real barFontSize: Style.getBarFontSizeForScreen(screen?.name)
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+  readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
   // Widget settings
   readonly property string hideMode: (widgetSettings.hideMode !== undefined) ? widgetSettings.hideMode : "hidden"
@@ -205,9 +211,8 @@ Item {
     }
 
     onTriggered: action => {
-                   var popupWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupWindow)
-                   popupWindow.close();
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
 
                    if (action === "play-pause")
                    MediaService.playPause();
@@ -226,11 +231,11 @@ Item {
                  }
   }
 
-  // Main container
+  // Main container - stays at content size, pixel-perfect centered in parent
   Rectangle {
     id: container
-    anchors.left: parent.left
-    anchors.verticalCenter: parent.verticalCenter
+    x: Style.pixelAlignCenter(parent.width, width)
+    y: Style.pixelAlignCenter(parent.height, height)
     width: isVertical ? (isHidden ? 0 : verticalSize) : (isHidden ? 0 : contentWidth)
     height: isVertical ? (isHidden ? 0 : verticalSize) : capsuleHeight
     radius: Style.radiusM
@@ -329,6 +334,7 @@ Item {
           }
           cursorShape: hasPlayer ? Qt.PointingHandCursor : Qt.ArrowCursor
           maxWidth: root.maxWidth - root.mainContentWidth
+          forcedHover: mainMouseArea.containsMouse
           NText {
             // anchors.fill: parent
             color: hasPlayer ? Color.mOnSurface : Color.mOnSurfaceVariant
@@ -365,37 +371,43 @@ Item {
         }
       }
 
-      // Mouse interaction
-      MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+      // Mouse interaction moved to root
+    }
+  }
 
-        onClicked: mouse => {
-                     if (mouse.button === Qt.LeftButton) {
-                       PanelService.getPanel("mediaPlayerPanel", screen)?.toggle(container);
-                     } else if (mouse.button === Qt.RightButton) {
-                       TooltipService.hide();
-                       var popupWindow = PanelService.getPopupMenuWindow(screen);
-                       if (popupWindow) {
-                         popupWindow.showContextMenu(contextMenu);
-                         contextMenu.openAtItem(container, screen);
-                       }
-                     } else if (mouse.button === Qt.MiddleButton && hasPlayer) {
-                       MediaService.playPause();
-                       TooltipService.hide();
-                     }
-                   }
+  // Mouse interaction
+  MouseArea {
+    id: mainMouseArea
+    anchors.fill: parent
 
-        onEntered: {
-          if (isVertical || scrollingMode === "never") {
-            TooltipService.show(root, title, BarService.getTooltipDirection(root.screen?.name));
-          }
-        }
-        onExited: TooltipService.hide()
+    // Extend click area to screen edge if widget is at the start/end
+    anchors.leftMargin: (!isVertical && section === "left" && sectionWidgetIndex === 0) ? -Style.marginS : 0
+    anchors.rightMargin: (!isVertical && section === "right" && sectionWidgetIndex === sectionWidgetsCount - 1) ? -Style.marginS : 0
+    anchors.topMargin: (isVertical && section === "left" && sectionWidgetIndex === 0) ? -Style.marginM : 0
+    anchors.bottomMargin: (isVertical && section === "right" && sectionWidgetIndex === sectionWidgetsCount - 1) ? -Style.marginM : 0
+
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+
+    onClicked: mouse => {
+                 if (mouse.button === Qt.LeftButton) {
+                   PanelService.getPanel("mediaPlayerPanel", screen)?.toggle(container);
+                 } else if (mouse.button === Qt.RightButton) {
+                   TooltipService.hide();
+                   PanelService.showContextMenu(contextMenu, container, screen);
+                 } else if (mouse.button === Qt.MiddleButton && hasPlayer) {
+                   MediaService.playPause();
+                   TooltipService.hide();
+                 }
+               }
+
+    onEntered: {
+      if (isVertical || scrollingMode === "never") {
+        TooltipService.show(root, title, BarService.getTooltipDirection(root.screen?.name));
       }
     }
+    onExited: TooltipService.hide()
   }
 
   // Components

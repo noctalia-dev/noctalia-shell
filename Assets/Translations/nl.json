@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Het meldingspictogram verbergen wanneer er geen ongelezen meldingen zijn.",
       "hide-widget-when-zero-unread-label": "Pictogram verbergen zonder ongelezen meldingen",
       "show-unread-badge-description": "Toon een badge met het aantal ongelezen meldingen.",
-      "show-unread-badge-label": "Ongelezen-badge tonen"
+      "show-unread-badge-label": "Ongelezen-badge tonen",
+      "unread-badge-color-description": "Selecteer de kleur voor de badge van ongelezen meldingen.",
+      "unread-badge-color-label": "Kleur van de ongelezen badge"
     },
     "section-editor": {
       "placeholder": "Selecteer een widget om toe te voegen...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "Aantal tekens dat wordt weergegeven van werkruimtenamen (1-10).",
       "character-count-label": "Aantal tekens",
+      "empty-color-description": "Stel de achtergrondkleur in voor lege Workspaces.",
+      "empty-color-label": "Kleur van lege Workspace",
       "enable-scrollwheel-description": "Schakel tussen werkruimtes met het muiswiel.",
       "enable-scrollwheel-label": "Scroll om tussen werkruimtes te schakelen",
+      "focused-color-description": "Stel de achtergrondkleur in voor de gefocuste Workspace.",
+      "focused-color-label": "Kleur van de gefocuste Workspace",
       "follow-focused-screen-description": "Werkruimten weergeven van het momenteel gefocuste scherm, in plaats van het scherm waar de balk zich bevindt.",
       "follow-focused-screen-label": "Gefocust scherm volgen",
       "grouped-border-opacity-description": "Stel het dekkingsniveau in voor de randen van de werkruimtecontainer.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Ongebruikte verbergen",
       "label-mode-description": "Kies hoe labels van werkruimten worden weergegeven.",
       "label-mode-label": "Labelmodus",
+      "occupied-color-description": "Stel de achtergrondkleur in voor bezette Workspaces.",
+      "occupied-color-label": "Kleur van bezette workspace",
+      "reverse-scrolling-description": "Keer de richting van het wisselen van werkruimtes om bij het scrollen.",
+      "reverse-scrolling-label": "Omgekeerd scrollen",
       "show-applications-description": "Toon applicatiepictogrammen in elke werkruimte.",
       "show-applications-label": "Toon applicaties",
+      "show-badge-description": "Toon de werkomgevingnummerbadge in gegroepeerde modus.",
+      "show-badge-label": "Werkruimtebadge weergeven",
       "show-labels-only-when-occupied-description": "Toon alleen werkruimtelabels wanneer ze vensters bevatten.",
       "show-labels-only-when-occupied-label": "Toon labels alleen wanneer bezet",
       "unfocused-icons-opacity-description": "Stel het dekkingsniveau in voor app-pictogrammen die niet in focus zijn.",
@@ -416,6 +428,7 @@
     "not-found": "Niet gevonden",
     "notifications": "Meldingen",
     "official": "Officieel",
+    "on-surface": "Op oppervlak",
     "output": "Uitvoer",
     "pair": "Koppelen",
     "paired": "Gekoppeld",
@@ -428,6 +441,7 @@
     "polling": "Polling",
     "position": "Positie",
     "previous": "Vorige",
+    "primary": "Primair",
     "random": "Willekeurig",
     "reboot": "Herstarten",
     "refresh": "Vernieuwen",
@@ -440,6 +454,7 @@
     "scanning": "Scannen...",
     "screen-corners": "Schermhoeken",
     "search": "Zoeken",
+    "secondary": "Secundair",
     "security": "Beveiliging",
     "select": "Selecteer",
     "shortcuts": "Snelkoppelingen",
@@ -451,6 +466,7 @@
     "stop": "Stop",
     "suspend": "Onderbreken",
     "templates": "Sjablonen",
+    "tertiary": "Tertiair",
     "test": "Test",
     "thresholds": "Drempels",
     "title": "Titel",
@@ -579,7 +595,10 @@
       "density-compact": "Compact",
       "density-default": "Standaard",
       "density-mini": "Mini",
-      "density-spacious": "Ruim"
+      "density-spacious": "Ruim",
+      "type-floating": "Zwevend",
+      "type-framed": "Omkaderd",
+      "type-simple": "Eenvoudig"
     },
     "control-center": {
       "quick-settings-style-classic": "Klassiek",
@@ -707,6 +726,10 @@
       "appearance-desc": "Pas de uitstraling en positie van de balk aan.",
       "appearance-floating-description": "Toon de balk weer als een zwevende 'pil'.",
       "appearance-floating-label": "Zwevende balk",
+      "appearance-frame-radius": "Binnenradius",
+      "appearance-frame-settings-description": "Pas de kaderdikte en binnenste hoekradius aan",
+      "appearance-frame-settings-label": "Kaderinstellingen",
+      "appearance-frame-thickness": "Dikte",
       "appearance-hide-on-overview-description": "Verberg de balk en sluit panelen wanneer het compositoroverzicht actief is.",
       "appearance-hide-on-overview-label": "Balk verbergen in overzicht",
       "appearance-margins-description": "Pas de marges rond de zwevende balk aan.",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "Capsules tonen",
       "appearance-show-outline-description": "Toon een zichtbare rand rondom elke widget.",
       "appearance-show-outline-label": "Toon widget-omtrekken",
+      "appearance-type-description": "Kies de stijl van de balk: Eenvoudig, Zwevend of Omkaderd",
+      "appearance-type-label": "Balktype",
       "appearance-use-separate-opacity-description": "Maak het mogelijk om een aparte dekkingswaarde te gebruiken voor de achtergrond van de balk.",
       "appearance-use-separate-opacity-label": "Gebruik afzonderlijke balkdekking",
       "monitor-configure-widgets": "Widgets configureren",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "Klembordtekst omwikkelen",
       "settings-clipboard-history-description": "Toegang tot eerder gekopieerde items vanuit de launcher.",
       "settings-clipboard-history-label": "Klembordgeschiedenis inschakelen",
+      "settings-clipboard-watch-image-description": "Volledige commandoreeks die aan wl-paste wordt doorgegeven voor afbeeldingswijzigingen. (herstart vereist)",
+      "settings-clipboard-watch-image-label": "Afbeelding Bewakingscommando",
+      "settings-clipboard-watch-text-description": "Volledige commandoreeks die aan wl-paste wordt doorgegeven voor tekstwijzigingen. (vereist herstart)",
+      "settings-clipboard-watch-text-label": "Tekst volgcommando",
       "settings-custom-launch-prefix-description": "Voorzie commando's van een aangepaste launcher-prefix (bijv. 'runapp' voor systemd-integratie).",
       "settings-custom-launch-prefix-enabled-description": "Gebruik een aangepaste prefix om applicaties te starten in plaats van de standaardmethode.",
       "settings-custom-launch-prefix-enabled-label": "Aangepaste startprefix inschakelen",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "Weer in kalender weergeven"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "Wanneer fprintd (vingerafdrukauthenticatie) actief is, kunt u met deze optie nog steeds inloggen met uw wachtwoord in plaats van een vingerafdruk.",
+      "allow-password-with-fprintd-label": "Wachtwoordlogin toestaan met fprintd",
+      "auto-start-auth-description": "start bijvoorbeeld automatisch de vingerafdrukauthenticatie zonder dat er een toetsaanslag of klik nodig is.",
+      "auto-start-auth-label": "Automatische authenticatie bij opstarten",
       "compact-lockscreen-description": "Toon alleen de logininvoer en systeemknoppen, verberg weer- en mediawidgets.",
       "compact-lockscreen-label": "Compact vergrendelscherm",
       "lock-on-suspend-description": "Vergrendel het scherm automatisch wanneer het systeem wordt onderbroken.",
@@ -1528,12 +1561,12 @@
       "enabled": "'Niet storen' ingeschakeld",
       "enabled-desc": "Je vindt deze meldingen terug in je geschiedenis"
     },
+    "donation-opened": "Donatiepagina geopend in uw browser",
     "internet-limited": "Verbonden zonder internet",
     "keyboard-layout": {
       "changed": "Toetsenbordindeling gewijzigd naar {layout}",
       "title": "Toetsenbord"
     },
-    "kofi-opened": "Ko-fi-pagina geopend in je browser",
     "missing-control-center": {
       "description": "De bedieningscentrumwidget is uit de balk verwijderd. Om er vanuit de balk weer toegang toe te krijgen, moet je de widget opnieuw toevoegen. Je kunt het ook openen door met de rechtermuisknop op de balk te klikken",
       "label": "Laatste bedieningscentrumwidget verwijderd"

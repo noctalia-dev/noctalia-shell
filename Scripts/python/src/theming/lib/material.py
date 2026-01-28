@@ -167,6 +167,9 @@ class _BaseScheme:
             'primary_container': self.primary_palette.get_hex(tones['primary_container']),
             'on_primary_container': self.primary_palette.get_hex(tones['on_primary_container']),
 
+            # Surface tint (same as primary, used for M3 elevation tinting)
+            'surface_tint': self.primary_palette.get_hex(tones['primary']),
+
             # Secondary colors
             'secondary': self.secondary_palette.get_hex(tones['secondary']),
             'on_secondary': self.secondary_palette.get_hex(tones['on_secondary']),
@@ -419,6 +422,9 @@ class SchemeMonochrome(_BaseScheme):
             'on_primary': self.primary_palette.get_hex(tones['on_primary']),
             'primary_container': self.primary_palette.get_hex(tones['primary_container']),
             'on_primary_container': self.primary_palette.get_hex(tones['on_primary_container']),
+
+            # Surface tint (same as primary, used for M3 elevation tinting)
+            'surface_tint': self.primary_palette.get_hex(tones['primary']),
 
             # Secondary colors
             'secondary': self.secondary_palette.get_hex(tones['secondary']),

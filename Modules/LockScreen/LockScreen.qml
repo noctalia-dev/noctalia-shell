@@ -77,18 +77,12 @@ Loader {
 
           Item {
             id: batteryIndicator
-            property bool initializationComplete: false
-            Timer {
-              interval: 500
-              running: true
-              onTriggered: batteryIndicator.initializationComplete = true
-            }
 
-            property bool isReady: initializationComplete && BatteryService.batteryReady
+            property bool isReady: BatteryService.ready && BatteryService.batteryReady
             property real percent: BatteryService.batteryPercentage
             property bool charging: BatteryService.batteryCharging
             property bool pluggedIn: BatteryService.batteryPluggedIn
-            property bool batteryVisible: isReady && percent > 0 && BatteryService.hasAnyBattery()
+            property bool batteryVisible: isReady && percent >= 0 && BatteryService.hasAnyBattery()
           }
 
           Item {
@@ -131,9 +125,7 @@ Loader {
               anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 280 : 360) * Style.uiScaleRatio
               radius: Style.radiusL
               color: Color.mTertiary
-              border.color: Color.mTertiary
-              border.width: Style.borderS
-              visible: lockContext.showInfo && lockContext.infoMessage
+              visible: lockContext.showInfo && lockContext.infoMessage && !panelComponent.timerActive
               opacity: visible ? 1.0 : 0.0
 
               RowLayout {
@@ -172,9 +164,7 @@ Loader {
               anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 280 : 360) * Style.uiScaleRatio
               radius: Style.radiusL
               color: Color.mError
-              border.color: Color.mError
-              border.width: Style.borderS
-              visible: lockContext.showFailure && lockContext.errorMessage
+              visible: lockContext.showFailure && lockContext.errorMessage && !panelComponent.timerActive
               opacity: visible ? 1.0 : 0.0
 
               RowLayout {

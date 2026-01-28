@@ -472,4 +472,17 @@ Item {
       Logger.e("HyprlandService", "Failed to cycle keyboard layout:", e);
     }
   }
+
+  function getFocusedScreen() {
+    const hyprMon = Hyprland.focusedMonitor;
+    if (hyprMon) {
+      const monitorName = hyprMon.name;
+      for (let i = 0; i < Quickshell.screens.length; i++) {
+        if (Quickshell.screens[i].name === monitorName) {
+          return Quickshell.screens[i];
+        }
+      }
+    }
+    return null;
+  }
 }

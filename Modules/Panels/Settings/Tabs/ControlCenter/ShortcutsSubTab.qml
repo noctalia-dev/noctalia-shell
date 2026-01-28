@@ -22,6 +22,13 @@ ColumnLayout {
   signal moveWidgetBetweenSections(string fromSection, int index, string toSection)
   signal openPluginSettingsRequested(var manifest)
 
+  function getSectionIcons() {
+    return {
+      "left": "arrow-bar-to-up",
+      "right": "arrow-bar-to-down"
+    };
+  }
+
   // Widgets Management Section
   ColumnLayout {
     spacing: Style.marginXXS
@@ -42,6 +49,7 @@ ColumnLayout {
         maxWidgets: Settings.data.controlCenter.shortcuts["right"].length > 5 ? 0 : (Settings.data.controlCenter.shortcuts["right"].length > 0 ? 5 : 10)
         widgetRegistry: ControlCenterWidgetRegistry
         widgetModel: Settings.data.controlCenter.shortcuts["left"]
+        sectionIcons: root.getSectionIcons()
         availableWidgets: root.availableWidgets
         availableSections: ["left", "right"]
         onAddWidget: (widgetId, section) => root.addWidgetToSection(widgetId, section)
@@ -60,6 +68,7 @@ ColumnLayout {
         maxWidgets: Settings.data.controlCenter.shortcuts["left"].length > 5 ? 0 : (Settings.data.controlCenter.shortcuts["left"].length > 0 ? 5 : 10)
         widgetRegistry: ControlCenterWidgetRegistry
         widgetModel: Settings.data.controlCenter.shortcuts["right"]
+        sectionIcons: root.getSectionIcons()
         availableWidgets: root.availableWidgets
         availableSections: ["left", "right"]
         onAddWidget: (widgetId, section) => root.addWidgetToSection(widgetId, section)

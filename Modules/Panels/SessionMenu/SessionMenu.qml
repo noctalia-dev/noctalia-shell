@@ -416,6 +416,10 @@ SmartPanel {
     activate();
   }
 
+  function onEnterPressed() {
+    activate();
+  }
+
   function onHomePressed() {
     selectFirst();
   }
@@ -549,8 +553,8 @@ SmartPanel {
         Repeater {
           model: powerOptions
           delegate: LargeButton {
-            Layout.preferredWidth: 200 * Style.uiScaleRatio
-            Layout.preferredHeight: 200 * Style.uiScaleRatio
+            Layout.preferredWidth: Math.round(200 * Style.uiScaleRatio)
+            Layout.preferredHeight: Math.round(200 * Style.uiScaleRatio)
             icon: modelData.icon
             title: modelData.title
             isShutdown: modelData.isShutdown || false
@@ -905,6 +909,9 @@ SmartPanel {
     border.width: Style.borderS
     border.color: Color.mOutline
 
+    layer.enabled: hoverScale !== 1.0
+    layer.smooth: true
+
     // Scale transform for hover effect
     transform: Scale {
       origin.x: largeButtonRoot.width / 2
@@ -954,13 +961,16 @@ SmartPanel {
             return Color.mOnPrimary;
           return Color.mOnSurface;
         }
-        pointSize: Style.fontSizeXXXL * 2
-        width: 80 * Style.uiScaleRatio
-        height: 80 * Style.uiScaleRatio
+        pointSize: Style.fontSizeXXXL * 2.25
+        width: 90 * Style.uiScaleRatio
+        height: 90 * Style.uiScaleRatio
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
 
-        property real iconScale: (largeButtonRoot.isSelected || largeButtonRoot.effectiveHover) ? 1.1 : 1.0
+        property real iconScale: (largeButtonRoot.isSelected || largeButtonRoot.effectiveHover) ? 1.15 : 1.0
+
+        layer.enabled: iconScale !== 1.0
+        layer.smooth: true
 
         transform: Scale {
           origin.x: iconElement.width / 2

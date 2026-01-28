@@ -258,11 +258,14 @@ Item {
       }
 
       if (Settings.data.nightLight.forced) {
-        Settings.data.nightLight.enabled = false;
         Settings.data.nightLight.forced = false;
       } else {
-        Settings.data.nightLight.enabled = true;
-        Settings.data.nightLight.forced = true;
+        if (Settings.data.nightLight.enabled) {
+          Settings.data.nightLight.enabled = false;
+        } else {
+          Settings.data.nightLight.forced = true;
+          Settings.data.nightLight.enabled = true;
+        }
       }
     }
   }
@@ -549,6 +552,14 @@ Item {
 
   IpcHandler {
     target: "media"
+
+    function toggle() {
+      root.screenDetector.withCurrentScreen(screen => {
+                                              var panel = PanelService.getPanel("mediaPlayerPanel", screen);
+                                              panel?.toggle(null, "MediaMini");
+                                            });
+    }
+
     function playPause() {
       MediaService.playPause();
     }
@@ -644,6 +655,72 @@ Item {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("systemStatsPanel", screen);
                                               panel?.toggle(null, "SystemMonitor");
+                                            });
+    }
+  }
+
+  IpcHandler {
+    target: "plugin"
+    function openSettings(key: string) {
+      var manifest = PluginRegistry.getPluginManifest(key);
+      if (!manifest) {
+        Logger.w("IPC", "Plugin not found:", key);
+        return;
+      }
+      if (!manifest.entryPoints?.settings) {
+        Logger.w("IPC", "Plugin has no settings entry point:", key);
+        return;
+      }
+      root.screenDetector.withCurrentScreen(screen => {
+                                              BarService.openPluginSettings(screen, manifest);
+                                            });
+    }
+
+    function openPanel(key: string) {
+      var manifest = PluginRegistry.getPluginManifest(key);
+      if (!manifest) {
+        Logger.w("IPC", "Plugin not found:", key);
+        return;
+      }
+      if (!manifest.entryPoints?.panel) {
+        Logger.w("IPC", "Plugin has no panel entry point:", key);
+        return;
+      }
+      root.screenDetector.withCurrentScreen(screen => {
+                                              PluginService.openPluginPanel(key, screen, null);
+                                            });
+    }
+
+    function closePanel(key: string) {
+      var manifest = PluginRegistry.getPluginManifest(key);
+      if (!manifest) {
+        Logger.w("IPC", "Plugin not found:", key);
+        return;
+      }
+      if (!manifest.entryPoints?.panel) {
+        Logger.w("IPC", "Plugin has no panel entry point:", key);
+        return;
+      }
+      root.screenDetector.withCurrentScreen(screen => {
+                                              var api = PluginService.getPluginAPI(key);
+                                              if (api) {
+                                                api.closePanel(screen);
+                                              }
+                                            });
+    }
+
+    function togglePanel(key: string) {
+      var manifest = PluginRegistry.getPluginManifest(key);
+      if (!manifest) {
+        Logger.w("IPC", "Plugin not found:", key);
+        return;
+      }
+      if (!manifest.entryPoints?.panel) {
+        Logger.w("IPC", "Plugin has no panel entry point:", key);
+        return;
+      }
+      root.screenDetector.withCurrentScreen(screen => {
+                                              PluginService.togglePluginPanel(key, screen, null);
                                             });
     }
   }

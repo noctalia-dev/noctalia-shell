@@ -53,7 +53,8 @@ Item {
 
   readonly property real iconSize: Style.toOdd(pillHeight * 0.48)
 
-  width: {
+  // Content width calculation (for implicit sizing)
+  readonly property real contentWidth: {
     if (collapseToIcon) {
       return hasIcon ? pillHeight : 0;
     }
@@ -61,7 +62,12 @@ Item {
     var baseWidth = hasIcon ? pillHeight : 0;
     return baseWidth + Math.max(0, pill.width - overlap);
   }
-  height: pillHeight
+
+  // Fill parent to extend click area to full bar height
+  // Visual content is centered vertically within
+  anchors.fill: parent
+  implicitWidth: contentWidth
+  implicitHeight: pillHeight
 
   Connections {
     target: root

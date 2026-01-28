@@ -19,6 +19,15 @@ Item {
       return false;
     return listView.contentHeight > listView.height;
   }
+  readonly property bool contentOverflows: listView.contentHeight > listView.height
+
+  property bool showGradientMasks: true
+  property color gradientColor: Color.mSurfaceVariant
+  property int gradientHeight: 16
+  property bool reserveScrollbarSpace: true
+
+  // Available width for content (excludes scrollbar space when reserveScrollbarSpace is true)
+  readonly property real availableWidth: width - (reserveScrollbarSpace ? handleWidth + Style.marginXS : 0)
 
   // Forward ListView properties
   property alias model: listView.model
@@ -58,6 +67,9 @@ Item {
   property alias dragging: listView.dragging
   property alias horizontalVelocity: listView.horizontalVelocity
   property alias verticalVelocity: listView.verticalVelocity
+
+  // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
+  property real wheelScrollMultiplier: 2.0
 
   // Forward ListView methods
   function positionViewAtIndex(index, mode) {
@@ -108,18 +120,91 @@ Item {
   implicitWidth: 200
   implicitHeight: 200
 
+  Component.onCompleted: {
+    createGradients();
+  }
+
+  // Dynamically create gradient overlays
+  function createGradients() {
+    if (!showGradientMasks)
+      return;
+
+    Qt.createQmlObject(`
+      import QtQuick
+      import qs.Commons
+      Rectangle {
+        x: 0
+        y: 0
+        width: root.availableWidth
+        height: root.gradientHeight
+        z: 1
+        visible: root.showGradientMasks && root.contentOverflows
+        opacity: {
+          if (listView.contentY <= 1) return 0;
+          if (listView.currentItem && listView.currentItem.y - listView.contentY < root.gradientHeight) return 0;
+          return 1;
+        }
+        Behavior on opacity {
+          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+        }
+        gradient: Gradient {
+          GradientStop { position: 0.0; color: root.gradientColor }
+          GradientStop { position: 1.0; color: "transparent" }
+        }
+      }
+    `, root, "topGradient");
+
+    Qt.createQmlObject(`
+      import QtQuick
+      import qs.Commons
+      Rectangle {
+        x: 0
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: -1
+        width: root.availableWidth
+        height: root.gradientHeight + 1
+        z: 1
+        visible: root.showGradientMasks && root.contentOverflows
+        opacity: {
+          if (listView.contentY + listView.height >= listView.contentHeight - 1) return 0;
+          if (listView.currentItem && listView.currentItem.y + listView.currentItem.height > listView.contentY + listView.height - root.gradientHeight) return 0;
+          return 1;
+        }
+        Behavior on opacity {
+          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+        }
+        gradient: Gradient {
+          GradientStop { position: 0.0; color: "transparent" }
+          GradientStop { position: 1.0; color: root.gradientColor }
+        }
+      }
+    `, root, "bottomGradient");
+  }
+
   ListView {
     id: listView
     anchors.fill: parent
+    anchors.rightMargin: root.reserveScrollbarSpace ? root.handleWidth + Style.marginXS : 0
 
     clip: true
     boundsBehavior: Flickable.StopAtBounds
 
+    WheelHandler {
+      enabled: root.wheelScrollMultiplier !== 1.0
+      acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+      onWheel: event => {
+                 const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 8;
+                 const newY = listView.contentY - (delta * root.wheelScrollMultiplier);
+                 listView.contentY = Math.max(0, Math.min(newY, listView.contentHeight - listView.height));
+                 event.accepted = true;
+               }
+    }
+
     ScrollBar.vertical: ScrollBar {
-      parent: listView
-      x: listView.mirrored ? 0 : listView.width - width
+      parent: root
+      x: root.mirrored ? 0 : root.width - width
       y: 0
-      height: listView.height
+      height: root.height
       policy: root.verticalPolicy
 
       contentItem: Rectangle {

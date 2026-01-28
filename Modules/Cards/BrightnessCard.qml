@@ -50,11 +50,12 @@ NBox {
     }
   }
 
-  // Timer to debounce brightness changes
+  // Timer to debounce brightness changes - only runs when user is changing slider
   Timer {
+    id: debounceTimer
     interval: 100
-    running: true
-    repeat: true
+    running: false
+    repeat: false
     onTriggered: {
       if (brightnessMonitor && Math.abs(localBrightness - brightnessMonitor.brightness) >= 0.01) {
         brightnessMonitor.setBrightness(localBrightness);
@@ -122,7 +123,10 @@ NBox {
         value: localBrightness
         stepSize: 0.01
         heightRatio: 0.5
-        onMoved: localBrightness = value
+        onMoved: {
+          localBrightness = value;
+          debounceTimer.restart();
+        }
         onPressedChanged: localBrightnessChanging = pressed
         tooltipText: `${Math.round(localBrightness * 100)}%`
         tooltipDirection: "bottom"
@@ -141,6 +145,7 @@ NBox {
                        const increment = delta > 0 ? step : -step;
                        const newValue = Math.max(0, Math.min(1, localBrightness + increment));
                        localBrightness = newValue;
+                       debounceTimer.restart();
                      }
                    }
         }

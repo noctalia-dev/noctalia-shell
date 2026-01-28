@@ -339,8 +339,6 @@ SmartPanel {
         }
       }
 
-      // Tab Bar
-
       // Content Stack
       StackLayout {
         Layout.fillWidth: true
@@ -349,14 +347,16 @@ SmartPanel {
 
         // Applications Tab (Volume)
         NScrollView {
+          id: volumeScrollView
           horizontalPolicy: ScrollBar.AlwaysOff
           verticalPolicy: ScrollBar.AsNeeded
-          clip: true
           contentWidth: availableWidth
+          reserveScrollbarSpace: false
+          gradientColor: Color.mSurface
 
           ColumnLayout {
             spacing: Style.marginM
-            width: parent.width
+            width: volumeScrollView.availableWidth
 
             // Output Volume
             NBox {
@@ -801,15 +801,17 @@ SmartPanel {
 
         // Devices Tab
         NScrollView {
+          id: devicesScrollView
           horizontalPolicy: ScrollBar.AlwaysOff
           verticalPolicy: ScrollBar.AsNeeded
-          clip: true
           contentWidth: availableWidth
+          reserveScrollbarSpace: false
+          gradientColor: Color.mSurface
 
           // AudioService Devices
           ColumnLayout {
             spacing: Style.marginM
-            width: parent.width
+            width: devicesScrollView.availableWidth
 
             // -------------------------------
             // Output Devices

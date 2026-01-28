@@ -43,7 +43,15 @@ Singleton {
   Connections {
     target: Settings.data.colorSchemes
     function onSchedulingModeChanged() {
-      root.init();
+      root.update();
+    }
+  }
+
+  Connections {
+    target: Time
+    function onResumed() {
+      Logger.i("DarkModeService", "System resumed - re-evaluating dark mode");
+      root.update();
     }
   }
 
@@ -51,24 +59,22 @@ Singleton {
     id: timer
     onTriggered: {
       Settings.data.colorSchemes.darkMode = root.nextDarkModeState;
-      if (LocationService.data.weather !== null) {
-        const changes = root.collectWeatherChanges(LocationService.data.weather);
-        root.scheduleNextMode(changes);
-      }
+      root.update();
     }
   }
 
   function init() {
     Logger.i("DarkModeService", "Service started");
+    root.update();
+  }
 
+  function update() {
     if (Settings.data.colorSchemes.schedulingMode == "manual") {
       const changes = collectManualChanges();
       initComplete = true;
       applyCurrentMode(changes);
       scheduleNextMode(changes);
-    }
-
-    if (Settings.data.colorSchemes.schedulingMode == "location" && LocationService.data.weather) {
+    } else if (Settings.data.colorSchemes.schedulingMode == "location" && LocationService.data.weather) {
       const changes = collectWeatherChanges(LocationService.data.weather);
       initComplete = true;
       applyCurrentMode(changes);

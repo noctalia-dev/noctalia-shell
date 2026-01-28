@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Hide the notification icon when there are no unread notifications.",
       "hide-widget-when-zero-unread-label": "Hide icon when no unread notifications",
       "show-unread-badge-description": "Display a badge showing the number of unread notifications.",
-      "show-unread-badge-label": "Show unread badge"
+      "show-unread-badge-label": "Show unread badge",
+      "unread-badge-color-description": "Select the color for the unread notification badge.",
+      "unread-badge-color-label": "Unread badge color"
     },
     "section-editor": {
       "placeholder": "Select a widget to add...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "Number of characters to display from workspace names (1-10).",
       "character-count-label": "Character count",
+      "empty-color-description": "Set the background color for empty workspaces.",
+      "empty-color-label": "Empty workspace color",
       "enable-scrollwheel-description": "Switch between workspaces using the mouse scroll wheel.",
       "enable-scrollwheel-label": "Scroll to switch workspaces",
+      "focused-color-description": "Set the background color for the focused workspace.",
+      "focused-color-label": "Focused workspace color",
       "follow-focused-screen-description": "Display workspaces from the currently focused screen, rather than the screen where the bar is located.",
       "follow-focused-screen-label": "Follow focused screen",
       "grouped-border-opacity-description": "Set the opacity level for workspace container borders.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Hide unoccupied",
       "label-mode-description": "Choose how workspace labels are displayed.",
       "label-mode-label": "Label mode",
+      "occupied-color-description": "Set the background color for occupied workspaces.",
+      "occupied-color-label": "Occupied workspace color",
+      "reverse-scrolling-description": "Reverse the direction of workspace switching when scrolling.",
+      "reverse-scrolling-label": "Reverse scrolling",
       "show-applications-description": "Display application icons inside each workspace.",
       "show-applications-label": "Show applications",
+      "show-badge-description": "Show the workspace number badge in grouped mode.",
+      "show-badge-label": "Show workspace badge",
       "show-labels-only-when-occupied-description": "Only show workspace labels when they contain windows.",
       "show-labels-only-when-occupied-label": "Show labels only when occupied",
       "unfocused-icons-opacity-description": "Set the opacity level for unfocused app icons.",
@@ -416,6 +428,7 @@
     "not-found": "Not found",
     "notifications": "Notifications",
     "official": "Official",
+    "on-surface": "On Surface",
     "output": "Output",
     "pair": "Pair",
     "paired": "Paired",
@@ -428,6 +441,7 @@
     "polling": "Polling",
     "position": "Position",
     "previous": "Previous",
+    "primary": "Primary",
     "random": "Random",
     "reboot": "Reboot",
     "refresh": "Refresh",
@@ -440,6 +454,7 @@
     "scanning": "Scanning...",
     "screen-corners": "Screen Corners",
     "search": "Search",
+    "secondary": "Secondary",
     "security": "Security",
     "select": "Select",
     "shortcuts": "Shortcuts",
@@ -451,6 +466,7 @@
     "stop": "Stop",
     "suspend": "Suspend",
     "templates": "Templates",
+    "tertiary": "Tertiary",
     "test": "Test",
     "thresholds": "Thresholds",
     "title": "Title",
@@ -579,7 +595,10 @@
       "density-compact": "Compact",
       "density-default": "Default",
       "density-mini": "Mini",
-      "density-spacious": "Spacious"
+      "density-spacious": "Spacious",
+      "type-floating": "Floating",
+      "type-framed": "Framed",
+      "type-simple": "Simple"
     },
     "control-center": {
       "quick-settings-style-classic": "Classic",
@@ -709,6 +728,10 @@
       "appearance-floating-label": "Floating bar",
       "appearance-island-description": "Attach the bar to the screen edge with rounded corners on the opposite side and side margins (Dynamic Island style).",
       "appearance-island-label": "Island mode",
+      "appearance-frame-radius": "Inner Radius",
+      "appearance-frame-settings-description": "Adjust frame thickness and inner corner radius",
+      "appearance-frame-settings-label": "Frame Settings",
+      "appearance-frame-thickness": "Thickness",
       "appearance-hide-on-overview-description": "Hide the bar and close panels when the compositor overview is active.",
       "appearance-hide-on-overview-label": "Hide bar on overview",
       "appearance-margins-description": "Adjust the margins around the floating bar.",
@@ -723,6 +746,8 @@
       "appearance-show-capsule-label": "Show capsule",
       "appearance-show-outline-description": "Displays a visible border around every widget.",
       "appearance-show-outline-label": "Show widget outlines",
+      "appearance-type-description": "Choose the style of the bar: Simple, Floating or Framed",
+      "appearance-type-label": "Bar Type",
       "appearance-use-separate-opacity-description": "Enable to use a separate opacity value for the bar background.",
       "appearance-use-separate-opacity-label": "Use separate bar opacity",
       "monitor-configure-widgets": "Configure widgets",
@@ -1029,6 +1054,10 @@
       "settings-clip-wrap-text-label": "Wrap clipboard text",
       "settings-clipboard-history-description": "Access previously copied items from the launcher.",
       "settings-clipboard-history-label": "Enable clipboard history",
+      "settings-clipboard-watch-image-description": "Full command string passed to wl-paste for image changes. (requires restart)",
+      "settings-clipboard-watch-image-label": "Image watch command",
+      "settings-clipboard-watch-text-description": "Full command string passed to wl-paste for text changes. (requires restart)",
+      "settings-clipboard-watch-text-label": "Text watch command",
       "settings-custom-launch-prefix-description": "Prefix commands with a custom launcher (e.g., 'runapp' for systemd integration).",
       "settings-custom-launch-prefix-enabled-description": "Use a custom prefix for launching applications instead of the default method.",
       "settings-custom-launch-prefix-enabled-label": "Enable custom launch prefix",
@@ -1092,6 +1121,10 @@
       "weather-show-in-calendar-label": "Display weather in calendar"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "When fprintd (fingerprint authentication) is active, this option lets you still login using your password instead of a fingerprint",
+      "allow-password-with-fprintd-label": "Allow password login with fprintd",
+      "auto-start-auth-description": "e.g., automatically starts fingerprint authentication without requiring a key press or button click.",
+      "auto-start-auth-label": "Auto-start authentication",
       "compact-lockscreen-description": "Show only the login input and system controls, hiding weather and media widgets.",
       "compact-lockscreen-label": "Compact lock screen",
       "lock-on-suspend-description": "Automatically lock the screen when suspending the system.",
@@ -1530,12 +1563,12 @@
       "enabled": "Do Not Disturb enabled",
       "enabled-desc": "You'll find these notifications in your history"
     },
+    "donation-opened": "Donation page opened in your browser",
     "internet-limited": "Connected without internet",
     "keyboard-layout": {
       "changed": "Keyboard layout changed to {layout}",
       "title": "Keyboard"
     },
-    "kofi-opened": "Ko-fi page opened in your browser",
     "missing-control-center": {
       "description": "The control center widget has been removed from the bar. To access it from the bar again, you will need to re-add the widget. You can open it with right clicking on the bar too",
       "label": "Last control center widget removed"

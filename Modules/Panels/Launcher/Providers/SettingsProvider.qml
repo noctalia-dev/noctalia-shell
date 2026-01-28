@@ -85,7 +85,7 @@ Item {
                            "icon": "settings",
                            "isTablerIcon": true,
                            "isImage": false,
-                           "_score": score,
+                           "_score": score - 2,
                            "provider": root,
                            "onActivate": createActivateHandler(entry)
                          });

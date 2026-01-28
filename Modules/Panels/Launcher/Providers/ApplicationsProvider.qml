@@ -97,8 +97,12 @@ Item {
   function onOpened() {
     // Refresh apps when launcher opens
     loadApplications();
-    // Reset to "all" category when opening
-    selectedCategory = "all";
+    // Default to Pinned if there are pinned apps, otherwise all
+    if (availableCategories.includes("Pinned")) {
+      selectedCategory = "Pinned";
+    } else {
+      selectedCategory = "all";
+    }
     // Set category mode initially (will be updated when getResults is called)
     showsCategories = true;
   }
@@ -297,12 +301,14 @@ Item {
       }
     }
 
-    const result = ["all"];
+    const result = [];
 
     // Add Pinned category first if there are pinned apps
     if (hasPinned) {
       result.push("Pinned");
     }
+
+    result.push("all");
 
     if (hasAudioVideo) {
       categorySet.add("AudioVideo");
@@ -437,11 +443,12 @@ Item {
       return [];
 
     // Set category mode based on whether there's a query
-    showsCategories = !query || query.trim() === "";
+    const isSearching = !!(query && query.trim() !== "");
+    showsCategories = !isSearching;
 
-    // Filter by category first
+    // Filter by category only when NOT searching
     let filteredEntries = entries;
-    if (selectedCategory && selectedCategory !== "all") {
+    if (!isSearching && selectedCategory && selectedCategory !== "all") {
       filteredEntries = entries.filter(app => appMatchesCategory(app, selectedCategory));
     }
 
@@ -537,7 +544,7 @@ Item {
       "description": app.genericName || app.comment || "",
       "icon": app.icon || "application-x-executable",
       "isImage": false,
-      "_score": (score !== undefined ? score : 0) + 1,
+      "_score": (score !== undefined ? score : 0),
       "provider": root,
       "onActivate": function () {
         // Close the launcher/SmartPanel immediately without any animations.

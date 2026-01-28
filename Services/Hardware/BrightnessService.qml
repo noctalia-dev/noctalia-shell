@@ -196,8 +196,8 @@ Singleton {
             }
           }
 
-          // Update if we got a valid brightness value and it's different
-          if (!isNaN(newBrightness) && Math.abs(newBrightness - monitor.brightness) > 0.01) {
+          // Update if we got a valid brightness value
+          if (!isNaN(newBrightness) && (Math.abs(newBrightness - monitor.brightness) > 0.001 || monitor.brightness === 0)) {
             monitor.brightness = newBrightness;
             monitor.brightnessUpdated(monitor.brightness);
             root.monitorBrightnessChanged(monitor, monitor.brightness);
@@ -407,6 +407,8 @@ Singleton {
     }
 
     onBusNumChanged: initBrightness()
+    onIsDdcChanged: if (isDdc)
+    initBrightness()
     Component.onCompleted: initBrightness()
   }
 }

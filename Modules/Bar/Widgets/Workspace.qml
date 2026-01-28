@@ -24,9 +24,11 @@ Item {
   property int sectionWidgetsCount: 0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  // Explicit screenName property ensures reactive binding when screen changes
+  readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
-    if (section && sectionWidgetIndex >= 0) {
-      var widgets = Settings.getBarWidgetsForScreen(screen?.name)[section];
+    if (section && sectionWidgetIndex >= 0 && screenName) {
+      var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
       if (widgets && sectionWidgetIndex < widgets.length) {
         return widgets[sectionWidgetIndex];
       }
@@ -34,12 +36,12 @@ Item {
     return {};
   }
 
-  readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
-  readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
-  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screen?.name)
-  readonly property real barFontSize: Style.getBarFontSizeForScreen(screen?.name)
-  readonly property real baseDimensionRatio: 0.65 * (widgetSettings.labelMode === "none" ? 0.75 : 1)
+  readonly property real barHeight: Style.getBarHeightForScreen(screenName)
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+  readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
+  readonly property real baseDimensionRatio: 0.65
 
   readonly property string labelMode: (widgetSettings.labelMode !== undefined) ? widgetSettings.labelMode : widgetMetadata.labelMode
   readonly property bool hasLabel: (labelMode !== "none")
@@ -54,7 +56,29 @@ Item {
   readonly property real unfocusedIconsOpacity: (widgetSettings.unfocusedIconsOpacity !== undefined) ? widgetSettings.unfocusedIconsOpacity : widgetMetadata.unfocusedIconsOpacity
   readonly property real groupedBorderOpacity: (widgetSettings.groupedBorderOpacity !== undefined) ? widgetSettings.groupedBorderOpacity : widgetMetadata.groupedBorderOpacity
   readonly property bool enableScrollWheel: (widgetSettings.enableScrollWheel !== undefined) ? widgetSettings.enableScrollWheel : widgetMetadata.enableScrollWheel
+  readonly property bool reverseScroll: (widgetSettings.reverseScroll !== undefined) ? widgetSettings.reverseScroll : (widgetMetadata.reverseScroll || false)
   readonly property real iconScale: (widgetSettings.iconScale !== undefined) ? widgetSettings.iconScale : widgetMetadata.iconScale
+  readonly property string focusedColor: (widgetSettings.focusedColor !== undefined) ? widgetSettings.focusedColor : widgetMetadata.focusedColor
+  readonly property string occupiedColor: (widgetSettings.occupiedColor !== undefined) ? widgetSettings.occupiedColor : widgetMetadata.occupiedColor
+  readonly property string emptyColor: (widgetSettings.emptyColor !== undefined) ? widgetSettings.emptyColor : widgetMetadata.emptyColor
+  readonly property bool showBadge: (widgetSettings.showBadge !== undefined) ? widgetSettings.showBadge : widgetMetadata.showBadge
+
+  // Helper to safely get colors with proper reactivity
+  // Accesses Color singleton directly to ensure fresh values
+  function getColorPair(colorKey) {
+    switch (colorKey) {
+    case "primary":
+      return [Color.mPrimary, Color.mOnPrimary];
+    case "secondary":
+      return [Color.mSecondary, Color.mOnSecondary];
+    case "tertiary":
+      return [Color.mTertiary, Color.mOnTertiary];
+    case "onSurface":
+      return [Color.mOnSurface, Color.mSurface];
+    default:
+      return [Color.mPrimary, Color.mOnPrimary];
+    }
+  }
 
   // Only for grouped mode / show apps
   readonly property int baseItemSize: Style.toOdd(capsuleHeight * 0.8)
@@ -69,16 +93,12 @@ Item {
   function getSelectedWindow() {
     if (!selectedWindowId)
       return null;
-    for (var i = 0; i < localWorkspaces.count; i++) {
-      var ws = localWorkspaces.get(i);
-      if (ws && ws.windows) {
-        for (var j = 0; j < ws.windows.count; j++) {
-          var win = ws.windows.get(j);
-          // Using loose equality on purpose (==)
-          if (win && (win.id == selectedWindowId || win.address == selectedWindowId)) {
-            return win;
-          }
-        }
+    // Search directly in CompositorService to get the live window object
+    for (var i = 0; i < CompositorService.windows.count; i++) {
+      var win = CompositorService.windows.get(i);
+      // Using loose equality on purpose (==)
+      if (win && (win.id == selectedWindowId || win.address == selectedWindowId)) {
+        return win;
       }
     }
     return null;
@@ -89,6 +109,8 @@ Item {
 
   // Revision counter to force icon re-evaluation
   property int iconRevision: 0
+  // Revision counter to force window list re-evaluation (for liveWindows binding in grouped mode)
+  property int windowRevision: 0
 
   property ListModel localWorkspaces: ListModel {}
   property int lastFocusedWorkspaceId: -1
@@ -115,7 +137,7 @@ Item {
 
     // Don't calculate text width if labels are off
     if (labelMode === "none") {
-      return Math.round(d * factor);
+      return Style.toOdd(d * factor);
     }
 
     var displayText = ws.idx.toString();
@@ -229,7 +251,9 @@ Item {
   }
 
   onScreenChanged: refreshWorkspaces()
+  onScreenNameChanged: refreshWorkspaces()
   onHideUnoccupiedChanged: refreshWorkspaces()
+  onShowApplicationsChanged: refreshWorkspaces()
 
   Connections {
     target: CompositorService
@@ -238,11 +262,13 @@ Item {
     }
     function onWindowListChanged() {
       if (showApplications || showLabelsOnlyWhenOccupied) {
+        root.windowRevision++;
         refreshWorkspaces();
       }
     }
     function onActiveWindowChanged() {
       if (showApplications) {
+        root.windowRevision++;
         refreshWorkspaces();
       }
     }
@@ -290,9 +316,12 @@ Item {
           isOccupied: ws.isOccupied
         };
 
-        if (showApplications) {
-          workspaceData.windows = CompositorService.getWindowsForWorkspace(ws.id);
+        if (ws.handle !== null && ws.handle !== undefined) {
+          workspaceData.handle = ws.handle;
         }
+
+        // Windows are fetched live via liveWindows property in grouped mode
+        // to avoid Qt 6.9 ListModel nested array serialization issues
 
         targetList.push(workspaceData);
       }
@@ -424,10 +453,8 @@ Item {
     }
 
     onTriggered: (action, item) => {
-                   var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupMenuWindow) {
-                     popupMenuWindow.close();
-                   }
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
 
                    const selectedWindow = root.getSelectedWindow();
 
@@ -469,11 +496,7 @@ Item {
       acceptedButtons: Qt.RightButton
       onClicked: mouse => {
                    if (mouse.button === Qt.RightButton) {
-                     var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                     if (popupMenuWindow) {
-                       popupMenuWindow.showContextMenu(contextMenu);
-                       contextMenu.openAtItem(workspaceBackground, screen);
-                     }
+                     PanelService.showContextMenu(contextMenu, workspaceBackground, screen);
                    }
                  }
     }
@@ -509,6 +532,8 @@ Item {
       var step = 120;
       if (Math.abs(root.wheelAccumulatedDelta) >= step) {
         var direction = root.wheelAccumulatedDelta > 0 ? -1 : 1;
+        if (root.reverseScroll)
+          direction *= -1;
         // For vertical layout, natural mapping: wheel up -> previous, down -> next (already handled by sign)
         // For horizontal layout, same mapping using vertical wheel
         root.switchByOffset(direction);
@@ -525,173 +550,31 @@ Item {
     id: pillRow
     spacing: spacingBetweenPills
     x: horizontalPadding
-    y: workspaceBackground.y + Style.pixelAlignCenter(workspaceBackground.height, height)
+    y: 0
     visible: !isVertical && !showApplications
 
     Repeater {
       id: workspaceRepeaterHorizontal
       model: localWorkspaces
-      Item {
-        id: workspacePillContainer
-        height: Style.toOdd(capsuleHeight * root.baseDimensionRatio)
-
-        states: [
-          State {
-            name: "active"
-            when: model.isActive
-            PropertyChanges {
-              target: workspacePillContainer
-              width: root.getWorkspaceWidth(model, true)
-            }
-          },
-          State {
-            name: "inactive"
-            when: !model.isActive
-            PropertyChanges {
-              target: workspacePillContainer
-              width: root.getWorkspaceWidth(model, false)
-            }
-          }
-        ]
-
-        transitions: [
-          Transition {
-            from: "inactive"
-            to: "active"
-            NumberAnimation {
-              property: "width"
-              duration: Style.animationNormal
-              easing.type: Easing.OutBack
-            }
-          },
-          Transition {
-            from: "active"
-            to: "inactive"
-            NumberAnimation {
-              property: "width"
-              duration: Style.animationNormal
-              easing.type: Easing.OutBack
-            }
-          }
-        ]
-
-        Rectangle {
-          id: pill
-          anchors.fill: parent
-
-          Loader {
-            active: (labelMode !== "none") && (!root.showLabelsOnlyWhenOccupied || model.isOccupied || model.isFocused)
-            sourceComponent: Component {
-              NText {
-                x: Style.pixelAlignCenter(pill.width, width)
-                y: Style.pixelAlignCenter(pill.height, height)
-                text: {
-                  if (model.name && model.name.length > 0) {
-                    if (root.labelMode === "name") {
-                      return model.name.substring(0, characterCount);
-                    }
-                    if (root.labelMode === "index+name") {
-                      return (model.idx.toString() + " " + model.name.substring(0, characterCount));
-                    }
-                  }
-                  return model.idx.toString();
-                }
-                family: Settings.data.ui.fontFixed
-                pointSize: workspacePillContainer.height * root.textRatio
-                applyUiScale: false
-                font.capitalization: Font.AllUppercase
-                font.weight: Style.fontWeightBold
-                wrapMode: Text.Wrap
-                color: {
-                  if (model.isFocused)
-                    return Color.mOnPrimary;
-                  if (model.isUrgent)
-                    return Color.mOnError;
-                  if (model.isOccupied)
-                    return Color.mOnSecondary;
-
-                  return Color.mOnSecondary;
-                }
-              }
-            }
-          }
-
-          radius: Style.radiusM
-          color: {
-            if (model.isFocused)
-              return Color.mPrimary;
-            if (model.isUrgent)
-              return Color.mError;
-            if (model.isOccupied)
-              return Color.mSecondary;
-
-            return Qt.alpha(Color.mSecondary, 0.3);
-          }
-          z: 0
-
-          MouseArea {
-            id: pillMouseArea
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-              CompositorService.switchToWorkspace(model);
-            }
-            hoverEnabled: true
-          }
-          // Material 3-inspired smooth animation for scale, color, opacity, and radius
-          Behavior on scale {
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.OutBack
-            }
-          }
-          Behavior on color {
-            enabled: !Color.isTransitioning
-            ColorAnimation {
-              duration: Style.animationFast
-              easing.type: Easing.InOutCubic
-            }
-          }
-          Behavior on opacity {
-            NumberAnimation {
-              duration: Style.animationFast
-              easing.type: Easing.InOutCubic
-            }
-          }
-          Behavior on radius {
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.OutBack
-            }
-          }
-        }
-
-        Behavior on width {
-          NumberAnimation {
-            duration: Style.animationNormal
-            easing.type: Easing.OutBack
-          }
-        }
-        Behavior on height {
-          NumberAnimation {
-            duration: Style.animationNormal
-            easing.type: Easing.OutBack
-          }
-        }
-        // Burst effect overlay for focused pill (smaller outline)
-        Rectangle {
-          id: pillBurst
-          anchors.centerIn: workspacePillContainer
-          width: workspacePillContainer.width + 18 * root.masterProgress * scale
-          height: workspacePillContainer.height + 18 * root.masterProgress * scale
-          radius: width / 2
-          color: "transparent"
-          border.color: root.effectColor
-          border.width: Math.max(1, Math.round((2 + 6 * (1.0 - root.masterProgress))))
-          opacity: root.effectsActive && model.isFocused ? (1.0 - root.masterProgress) * 0.7 : 0
-          visible: root.effectsActive && model.isFocused
-          z: 1
-        }
+      delegate: WorkspacePill {
+        required property var model
+        workspace: model
+        isVertical: false
+        baseDimensionRatio: root.baseDimensionRatio
+        capsuleHeight: root.capsuleHeight
+        barHeight: root.barHeight
+        labelMode: root.labelMode
+        characterCount: root.characterCount
+        textRatio: root.textRatio
+        showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
+        focusedColor: root.focusedColor
+        occupiedColor: root.occupiedColor
+        emptyColor: root.emptyColor
+        masterProgress: root.masterProgress
+        effectsActive: root.effectsActive
+        effectColor: root.effectColor
+        getWorkspaceWidth: root.getWorkspaceWidth
+        getWorkspaceHeight: root.getWorkspaceHeight
       }
     }
   }
@@ -700,174 +583,32 @@ Item {
   Column {
     id: pillColumn
     spacing: spacingBetweenPills
-    x: workspaceBackground.x + Style.pixelAlignCenter(workspaceBackground.width, width)
+    x: 0
     y: horizontalPadding
     visible: isVertical && !showApplications
 
     Repeater {
       id: workspaceRepeaterVertical
       model: localWorkspaces
-      Item {
-        id: workspacePillContainerVertical
-        width: Style.toOdd(capsuleHeight * root.baseDimensionRatio)
-
-        states: [
-          State {
-            name: "active"
-            when: model.isActive
-            PropertyChanges {
-              target: workspacePillContainerVertical
-              height: root.getWorkspaceHeight(model, true)
-            }
-          },
-          State {
-            name: "inactive"
-            when: !model.isActive
-            PropertyChanges {
-              target: workspacePillContainerVertical
-              height: root.getWorkspaceHeight(model, false)
-            }
-          }
-        ]
-
-        transitions: [
-          Transition {
-            from: "inactive"
-            to: "active"
-            NumberAnimation {
-              property: "height"
-              duration: Style.animationNormal
-              easing.type: Easing.OutBack
-            }
-          },
-          Transition {
-            from: "active"
-            to: "inactive"
-            NumberAnimation {
-              property: "height"
-              duration: Style.animationNormal
-              easing.type: Easing.OutBack
-            }
-          }
-        ]
-
-        Rectangle {
-          id: pillVertical
-          anchors.fill: parent
-
-          Loader {
-            active: (labelMode !== "none") && (!root.showLabelsOnlyWhenOccupied || model.isOccupied || model.isFocused)
-            sourceComponent: Component {
-              NText {
-                x: Style.pixelAlignCenter(pillVertical.width, width)
-                y: Style.pixelAlignCenter(pillVertical.height, height)
-                text: {
-                  if (model.name && model.name.length > 0) {
-                    if (root.labelMode === "name") {
-                      return model.name.substring(0, characterCount);
-                    }
-                    if (root.labelMode === "index+name") {
-                      return (model.idx.toString() + model.name.substring(0, 1));
-                    }
-                  }
-                  return model.idx.toString();
-                }
-                family: Settings.data.ui.fontFixed
-                pointSize: workspacePillContainerVertical.width * root.textRatio
-                applyUiScale: false
-                font.capitalization: Font.AllUppercase
-                font.weight: Style.fontWeightBold
-                wrapMode: Text.Wrap
-                color: {
-                  if (model.isFocused)
-                    return Color.mOnPrimary;
-                  if (model.isUrgent)
-                    return Color.mOnError;
-                  if (model.isOccupied)
-                    return Color.mOnSecondary;
-
-                  return Color.mOnSecondary;
-                }
-              }
-            }
-          }
-
-          radius: Style.radiusM
-          color: {
-            if (model.isFocused)
-              return Color.mPrimary;
-            if (model.isUrgent)
-              return Color.mError;
-            if (model.isOccupied)
-              return Color.mSecondary;
-
-            return Qt.alpha(Color.mSecondary, 0.3);
-          }
-          z: 0
-
-          MouseArea {
-            id: pillMouseAreaVertical
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-              CompositorService.switchToWorkspace(model);
-            }
-            hoverEnabled: true
-          }
-          // Material 3-inspired smooth animation for scale, color, opacity, and radius
-          Behavior on scale {
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.OutBack
-            }
-          }
-          Behavior on color {
-            enabled: !Color.isTransitioning
-            ColorAnimation {
-              duration: Style.animationFast
-              easing.type: Easing.InOutCubic
-            }
-          }
-          Behavior on opacity {
-            NumberAnimation {
-              duration: Style.animationFast
-              easing.type: Easing.InOutCubic
-            }
-          }
-          Behavior on radius {
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.OutBack
-            }
-          }
-        }
-
-        Behavior on width {
-          NumberAnimation {
-            duration: Style.animationNormal
-            easing.type: Easing.OutBack
-          }
-        }
-        Behavior on height {
-          NumberAnimation {
-            duration: Style.animationNormal
-            easing.type: Easing.OutBack
-          }
-        }
-        // Burst effect overlay for focused pill (smaller outline)
-        Rectangle {
-          id: pillBurstVertical
-          anchors.centerIn: workspacePillContainerVertical
-          width: workspacePillContainerVertical.width + 18 * root.masterProgress * scale
-          height: workspacePillContainerVertical.height + 18 * root.masterProgress * scale
-          radius: width / 2
-          color: "transparent"
-          border.color: root.effectColor
-          border.width: Math.max(1, Math.round((2 + 6 * (1.0 - root.masterProgress))))
-          opacity: root.effectsActive && model.isFocused ? (1.0 - root.masterProgress) * 0.7 : 0
-          visible: root.effectsActive && model.isFocused
-          z: 1
-        }
+      delegate: WorkspacePill {
+        required property var model
+        workspace: model
+        isVertical: true
+        baseDimensionRatio: root.baseDimensionRatio
+        capsuleHeight: root.capsuleHeight
+        barHeight: root.barHeight
+        labelMode: root.labelMode
+        characterCount: root.characterCount
+        textRatio: root.textRatio
+        showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
+        focusedColor: root.focusedColor
+        occupiedColor: root.occupiedColor
+        emptyColor: root.emptyColor
+        masterProgress: root.masterProgress
+        effectsActive: root.effectsActive
+        effectColor: root.effectColor
+        getWorkspaceWidth: root.getWorkspaceWidth
+        getWorkspaceHeight: root.getWorkspaceHeight
       }
     }
   }
@@ -875,7 +616,6 @@ Item {
   // ========================================
   // Grouped mode (showApplications = true)
   // ========================================
-
   Component {
     id: groupedWorkspaceDelegate
 
@@ -884,7 +624,28 @@ Item {
 
       required property var model
       property var workspaceModel: model
-      property bool hasWindows: (workspaceModel?.windows?.length > 0 || workspaceModel?.windows?.count > 0)
+      // Fetch windows directly from service to avoid Qt 6.9 ListModel nested array issues
+      property var liveWindows: []
+      property bool hasWindows: liveWindows.length > 0
+
+      function updateWindows() {
+        var wsId = workspaceModel?.id;
+        if (wsId !== undefined && wsId !== null) {
+          liveWindows = CompositorService.getWindowsForWorkspace(wsId);
+        } else {
+          liveWindows = [];
+        }
+      }
+
+      Component.onCompleted: updateWindows()
+      onWorkspaceModelChanged: updateWindows()
+
+      Connections {
+        target: root
+        function onWindowRevisionChanged() {
+          groupedContainer.updateWindows();
+        }
+      }
 
       width: Style.toOdd((hasWindows ? groupedIconsFlow.implicitWidth : root.iconSize) + (root.isVertical ? (root.baseItemSize - root.iconSize + Style.marginXS) : Style.marginXL))
       height: Style.toOdd((hasWindows ? groupedIconsFlow.implicitHeight : root.iconSize) + (root.isVertical ? Style.marginL : (root.baseItemSize - root.iconSize + Style.marginXS)))
@@ -938,7 +699,7 @@ Item {
         flow: root.isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
         Repeater {
-          model: groupedContainer.workspaceModel.windows
+          model: groupedContainer.liveWindows
 
           delegate: Item {
             id: groupedTaskbarItem
@@ -955,17 +716,16 @@ Item {
               height: parent.height
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
-                const win = (typeof modelData !== "undefined") ? modelData : model;
-                return ThemeIcons.iconForAppId(win.appId?.toLowerCase());
+                return ThemeIcons.iconForAppId(modelData.appId?.toLowerCase());
               }
               smooth: true
               asynchronous: true
-              opacity: (typeof modelData !== "undefined" ? modelData.isFocused : model.isFocused) ? Style.opacityFull : unfocusedIconsOpacity
-              layer.enabled: root.colorizeIcons && !(typeof modelData !== "undefined" ? modelData.isFocused : model.isFocused)
+              opacity: modelData.isFocused ? Style.opacityFull : unfocusedIconsOpacity
+              layer.enabled: root.colorizeIcons && !modelData.isFocused
 
               Rectangle {
                 id: groupedFocusIndicator
-                visible: (typeof modelData !== "undefined" ? modelData.isFocused : model.isFocused)
+                visible: modelData.isFocused
                 anchors.bottomMargin: -2
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -990,30 +750,23 @@ Item {
               preventStealing: true
 
               onPressed: mouse => {
-                           const win = (typeof modelData !== "undefined") ? modelData : model;
-                           if (!win)
-                           return;
                            if (mouse.button === Qt.LeftButton) {
-                             CompositorService.focusWindow(win);
+                             CompositorService.focusWindow(modelData);
                            }
                          }
 
               onReleased: mouse => {
-                            const win = (typeof modelData !== "undefined") ? modelData : model;
-                            if (!win)
-                            return;
                             if (mouse.button === Qt.RightButton) {
                               mouse.accepted = true;
                               TooltipService.hide();
-                              root.selectedWindowId = win.id || win.address || "";
-                              root.selectedAppId = win.appId;
+                              root.selectedWindowId = modelData.id || modelData.address || "";
+                              root.selectedAppId = modelData.appId;
                               openGroupedContextMenu(groupedTaskbarItem);
                             }
                           }
               onEntered: {
-                const win = (typeof modelData !== "undefined") ? modelData : model;
                 groupedTaskbarItem.itemHovered = true;
-                TooltipService.show(groupedTaskbarItem, win.title || win.appId || "Unknown app.", BarService.getTooltipDirection(root.screen?.name));
+                TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
               }
               onExited: {
                 groupedTaskbarItem.itemHovered = false;
@@ -1027,7 +780,7 @@ Item {
       Item {
         id: groupedWorkspaceNumberContainer
 
-        visible: root.labelMode !== "none" && (!root.showLabelsOnlyWhenOccupied || groupedContainer.hasWindows || groupedContainer.workspaceModel.isFocused)
+        visible: root.labelMode !== "none" && root.showBadge && (!root.showLabelsOnlyWhenOccupied || groupedContainer.hasWindows || groupedContainer.workspaceModel.isFocused)
 
         anchors {
           left: parent.left
@@ -1047,17 +800,13 @@ Item {
 
           color: {
             if (groupedContainer.workspaceModel.isFocused)
-              return Color.mPrimary;
+              return root.getColorPair(root.focusedColor)[0];
             if (groupedContainer.workspaceModel.isUrgent)
               return Color.mError;
             if (groupedContainer.hasWindows)
-              return Color.mSecondary;
+              return root.getColorPair(root.occupiedColor)[0];
 
-            if (Settings.data.colorSchemes.darkMode) {
-              return Qt.darker(Color.mSecondary, 1.5);
-            } else {
-              return Qt.lighter(Color.mSecondary, 1.5);
-            }
+            return root.getColorPair(root.emptyColor)[0];
           }
 
           scale: groupedContainer.workspaceModel.isActive ? 1.0 : 0.8
@@ -1120,11 +869,13 @@ Item {
 
           color: {
             if (groupedContainer.workspaceModel.isFocused)
-              return Color.mOnPrimary;
+              return root.getColorPair(root.focusedColor)[1];
             if (groupedContainer.workspaceModel.isUrgent)
               return Color.mOnError;
+            if (groupedContainer.hasWindows)
+              return root.getColorPair(root.occupiedColor)[1];
 
-            return Color.mOnSecondary;
+            return root.getColorPair(root.emptyColor)[1];
           }
 
           Behavior on opacity {
@@ -1162,10 +913,6 @@ Item {
   }
 
   function openGroupedContextMenu(item) {
-    var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-    if (popupMenuWindow) {
-      popupMenuWindow.showContextMenu(contextMenu);
-      contextMenu.openAtItem(item, screen);
-    }
+    PanelService.showContextMenu(contextMenu, item, screen);
   }
 }

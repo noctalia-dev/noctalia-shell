@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import qs.Commons
 import qs.Services.Compositor
+import qs.Services.UI
 
 Singleton {
   id: root
@@ -151,7 +152,7 @@ Singleton {
 
   // Get all widgets in a specific section
   function getWidgetsBySection(section, screenName = null) {
-    var widgets = [];
+    var widgetEntries = [];
 
     for (var key in widgetInstances) {
       var widget = widgetInstances[key];
@@ -159,19 +160,20 @@ Singleton {
         continue;
       if (widget.section === section) {
         if (!screenName || widget.screenName === screenName) {
-          widgets.push(widget.instance);
+          widgetEntries.push(widget);
         }
       }
     }
 
     // Sort by index to maintain order
-    widgets.sort(function (a, b) {
-      var aWidget = getWidgetWithMetadata(a.widgetId, a.screen?.name, a.section);
-      var bWidget = getWidgetWithMetadata(b.widgetId, b.screen?.name, b.section);
-      return (aWidget?.index || 0) - (bWidget?.index || 0);
+    widgetEntries.sort(function (a, b) {
+      return (a.index || 0) - (b.index || 0);
     });
 
-    return widgets;
+    // Return just the instances
+    return widgetEntries.map(function (w) {
+      return w.instance;
+    });
   }
 
   // Get all registered widgets (for debugging)
@@ -239,21 +241,21 @@ Singleton {
   function getPillDirection(widgetInstance) {
     try {
       if (widgetInstance.section === "left") {
-        return true;
-      } else if (widgetInstance.section === "right") {
         return false;
+      } else if (widgetInstance.section === "right") {
+        return true;
       } else {
         // middle section
         if (widgetInstance.sectionWidgetIndex < widgetInstance.sectionWidgetsCount / 2) {
-          return false;
-        } else {
           return true;
+        } else {
+          return false;
         }
       }
     } catch (e) {
       Logger.e(e);
     }
-    return false;
+    return true;
   }
 
   function getTooltipDirection(screenName) {
@@ -270,6 +272,21 @@ Singleton {
     }
   }
 
+  // Helper to close any existing dialogs in a popup menu window
+  function closeExistingDialogs(popupMenuWindow) {
+    if (!popupMenuWindow || !popupMenuWindow.dialogParent)
+      return;
+
+    var dialogParent = popupMenuWindow.dialogParent;
+    for (var i = dialogParent.children.length - 1; i >= 0; i--) {
+      var child = dialogParent.children[i];
+      if (child && typeof child.close === "function") {
+        child.close();
+      }
+    }
+    popupMenuWindow.hasDialog = false;
+  }
+
   // Open widget settings dialog for a bar widget
   // Parameters:
   //   screen: The screen to show the dialog on
@@ -283,6 +300,13 @@ Singleton {
     if (!popupMenuWindow) {
       Logger.e("BarService", "No popup menu window found for screen");
       return;
+    }
+
+    // Close any existing dialogs first to prevent stacking
+    closeExistingDialogs(popupMenuWindow);
+
+    if (PanelService.openedPanel) {
+      PanelService.openedPanel.close();
     }
 
     var component = Qt.createComponent(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml");
@@ -362,6 +386,9 @@ Singleton {
       Logger.e("BarService", "No popup menu window found for screen");
       return;
     }
+
+    // Close any existing dialogs first to prevent stacking
+    closeExistingDialogs(popupMenuWindow);
 
     var component = Qt.createComponent(Quickshell.shellDir + "/Widgets/NPluginSettingsPopup.qml");
 

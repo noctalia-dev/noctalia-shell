@@ -148,6 +148,48 @@ RowLayout {
         root.selected(item.key);
     }
 
+    Keys.onUpPressed: event => {
+                        if (combo.popup.visible) {
+                          if (listView.currentIndex > 0) {
+                            listView.currentIndex--;
+                            listView.positionViewAtIndex(listView.currentIndex, ListView.Contain);
+                          }
+                          event.accepted = true;
+                        } else {
+                          event.accepted = false;
+                        }
+                      }
+
+    Keys.onDownPressed: event => {
+                          if (combo.popup.visible) {
+                            if (listView.currentIndex < root.itemCount() - 1) {
+                              listView.currentIndex++;
+                              listView.positionViewAtIndex(listView.currentIndex, ListView.Contain);
+                            }
+                            event.accepted = true;
+                          } else {
+                            event.accepted = false;
+                          }
+                        }
+
+    Keys.onReturnPressed: event => {
+                            if (combo.popup.visible) {
+                              var item = root.getItem(listView.currentIndex);
+                              if (item && item.key !== undefined) {
+                                root.selected(item.key);
+                                combo.currentIndex = listView.currentIndex;
+                                combo.popup.close();
+                              }
+                              event.accepted = true;
+                            } else {
+                              event.accepted = false;
+                            }
+                          }
+
+    Keys.onEnterPressed: event => {
+                           combo.Keys.returnPressed(event);
+                         }
+
     background: Rectangle {
       implicitWidth: Math.round(Style.baseWidgetSize * 3.75 * Style.uiScaleRatio)
       implicitHeight: Math.round(root.preferredHeight * Style.uiScaleRatio)
@@ -213,58 +255,19 @@ RowLayout {
         listView.positionViewAtIndex(combo.currentIndex, ListView.Beginning);
       }
 
-      contentItem: ListView {
+      contentItem: NListView {
         id: listView
         property var comboBox: combo
-        clip: true
         model: combo.popup.visible ? root.model : null
-        boundsBehavior: Flickable.StopAtBounds
         highlightMoveDuration: 0
-
-        ScrollBar.vertical: ScrollBar {
-          policy: listView.contentHeight > listView.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-
-          contentItem: Rectangle {
-            implicitWidth: 6
-            implicitHeight: 100
-            radius: Style.iRadiusM
-            color: parent.pressed ? Qt.alpha(Color.mHover, 0.9) : parent.hovered ? Qt.alpha(Color.mHover, 0.9) : Qt.alpha(Color.mHover, 0.8)
-            opacity: parent.active ? 1.0 : 0.0
-
-            Behavior on opacity {
-              NumberAnimation {
-                duration: Style.animationFast
-              }
-            }
-
-            Behavior on color {
-              ColorAnimation {
-                duration: Style.animationFast
-              }
-            }
-          }
-
-          background: Rectangle {
-            implicitWidth: 6
-            implicitHeight: 100
-            color: "transparent"
-            opacity: parent.active ? 0.3 : 0.0
-            radius: Style.iRadiusXS
-
-            Behavior on opacity {
-              NumberAnimation {
-                duration: Style.animationFast
-              }
-            }
-          }
-        }
+        //showGradientMasks: false
 
         delegate: Rectangle {
           id: delegateRect
           required property int index
           property bool isHighlighted: listView.currentIndex === index
 
-          width: listView.width
+          width: listView.availableWidth
           height: delegateText.implicitHeight + Style.marginS * 2
           radius: Style.iRadiusS
           color: isHighlighted ? Color.mHover : "transparent"
@@ -327,6 +330,9 @@ RowLayout {
     Connections {
       target: root
       function onCurrentKeyChanged() {
+        combo.currentIndex = root.findIndexByKey(root.currentKey);
+      }
+      function onModelChanged() {
         combo.currentIndex = root.findIndexByKey(root.currentKey);
       }
     }

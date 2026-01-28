@@ -19,14 +19,16 @@ Item {
   property int sectionWidgetIndex: -1
   property int sectionWidgetsCount: 0
 
-  readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
+  // Explicit screenName property ensures reactive binding when screen changes
+  readonly property string screenName: screen ? screen.name : ""
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
-  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screen?.name)
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
   property var widgetSettings: {
-    if (section && sectionWidgetIndex >= 0) {
-      var widgets = Settings.getBarWidgetsForScreen(screen?.name)[section];
+    if (section && sectionWidgetIndex >= 0 && screenName) {
+      var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
       if (widgets && sectionWidgetIndex < widgets.length) {
         return widgets[sectionWidgetIndex];
       }
@@ -74,8 +76,12 @@ Item {
     }
   }
 
-  implicitWidth: !shouldShow ? 0 : isVerticalBar ? capsuleHeight : visualizerWidth
-  implicitHeight: !shouldShow ? 0 : isVerticalBar ? visualizerWidth : capsuleHeight
+  // Content dimensions for implicit sizing
+  readonly property real contentWidth: !shouldShow ? 0 : isVerticalBar ? capsuleHeight : visualizerWidth
+  readonly property real contentHeight: !shouldShow ? 0 : isVerticalBar ? visualizerWidth : capsuleHeight
+
+  implicitWidth: contentWidth
+  implicitHeight: contentHeight
   visible: shouldShow
   opacity: shouldShow ? 1.0 : 0.0
 
@@ -92,37 +98,40 @@ Item {
     }
   }
 
+  // Store visualizer type to force re-evaluation
+  readonly property string currentVisualizerType: Settings.data.audio.visualizerType
+
+  // Visual capsule centered in parent
   Rectangle {
     id: background
-    anchors.fill: parent
+    width: root.contentWidth
+    height: root.contentHeight
+    anchors.centerIn: parent
     radius: Style.radiusS
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
-  }
 
-  // Store visualizer type to force re-evaluation
-  readonly property string currentVisualizerType: Settings.data.audio.visualizerType
+    // When visualizer type or playback changes, shouldShow updates automatically
+    // The Loader dynamically loads the appropriate visualizer based on settings
+    Loader {
+      id: visualizerLoader
+      anchors.fill: parent
+      anchors.margins: Style.marginS
+      active: shouldShow
+      asynchronous: true
 
-  // When visualizer type or playback changes, shouldShow updates automatically
-  // The Loader dynamically loads the appropriate visualizer based on settings
-  Loader {
-    id: visualizerLoader
-    anchors.fill: parent
-    anchors.margins: Style.marginS
-    active: shouldShow
-    asynchronous: true
-
-    sourceComponent: {
-      switch (currentVisualizerType) {
-      case "linear":
-        return linearComponent;
-      case "mirrored":
-        return mirroredComponent;
-      case "wave":
-        return waveComponent;
-      default:
-        return null;
+      sourceComponent: {
+        switch (currentVisualizerType) {
+        case "linear":
+          return linearComponent;
+        case "mirrored":
+          return mirroredComponent;
+        case "wave":
+          return waveComponent;
+        default:
+          return null;
+        }
       }
     }
   }
@@ -144,10 +153,8 @@ Item {
     ]
 
     onTriggered: action => {
-                   var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupMenuWindow) {
-                     popupMenuWindow.close();
-                   }
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
 
                    if (action === "cycle-visualizer") {
                      const types = ["linear", "mirrored", "wave"];
@@ -170,11 +177,7 @@ Item {
 
     onClicked: mouse => {
                  if (mouse.button === Qt.RightButton) {
-                   var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupMenuWindow) {
-                     popupMenuWindow.showContextMenu(contextMenu);
-                     contextMenu.openAtItem(root, screen);
-                   }
+                   PanelService.showContextMenu(contextMenu, root, screen);
                  } else {
                    const types = ["linear", "mirrored", "wave"];
                    const currentIndex = types.indexOf(currentVisualizerType);

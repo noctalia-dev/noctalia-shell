@@ -34,13 +34,18 @@ Item {
   signal middleClicked
   signal wheel(int delta)
 
-  // Dynamic sizing based on loaded component
-  width: pillLoader.item ? pillLoader.item.width : 0
-  height: pillLoader.item ? pillLoader.item.height : 0
+  // Size based on content for the content dimension, fill parent for the extended dimension
+  // Horizontal bars: width = content, height = fill parent (for extended click area)
+  // Vertical bars: width = fill parent, height = content
+  width: isVerticalBar ? parent.width : (pillLoader.item ? pillLoader.item.implicitWidth : 0)
+  height: isVerticalBar ? (pillLoader.item ? pillLoader.item.implicitHeight : 0) : parent.height
+  implicitWidth: pillLoader.item ? pillLoader.item.implicitWidth : 0
+  implicitHeight: pillLoader.item ? pillLoader.item.implicitHeight : 0
 
-  // Loader to switch between vertical and horizontal pill implementations
+  // Loader fills BarPill so child components can extend to full bar dimension
   Loader {
     id: pillLoader
+    anchors.fill: parent
     sourceComponent: isVerticalBar ? verticalPillComponent : horizontalPillComponent
 
     Component {

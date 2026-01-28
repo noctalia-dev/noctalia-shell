@@ -157,14 +157,14 @@ Item {
       visible: !isImageContent && !loadingFullContent
 
       NScrollView {
+        id: clipboardScrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
-        clip: true
         horizontalPolicy: Settings.data.appLauncher.clipboardWrapText ? ScrollBar.AlwaysOff : ScrollBar.AsNeeded
 
         NText {
           text: fullContent
-          width: Settings.data.appLauncher.clipboardWrapText ? parent.width : implicitWidth
+          width: Settings.data.appLauncher.clipboardWrapText ? clipboardScrollView.availableWidth : implicitWidth
           wrapMode: Settings.data.appLauncher.clipboardWrapText ? Text.Wrap : Text.NoWrap
           textFormat: Text.PlainText
           font.pointSize: Style.fontSizeM

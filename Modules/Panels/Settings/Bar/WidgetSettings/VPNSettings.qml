@@ -10,6 +10,8 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
 
   function saveSettings() {
@@ -37,6 +39,9 @@ ColumnLayout {
       }
     ]
     currentKey: root.valueDisplayMode
-    onSelected: key => root.valueDisplayMode = key
+    onSelected: key => {
+                  root.valueDisplayMode = key;
+                  settingsChanged(saveSettings());
+                }
   }
 }

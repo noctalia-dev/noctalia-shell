@@ -63,6 +63,61 @@ Singleton {
     return popupMenuWindows[screen.name] || null;
   }
 
+  // Show a context menu with proper handling for all compositors
+  function showContextMenu(contextMenu, anchorItem, screen) {
+    if (!contextMenu || !anchorItem)
+      return;
+
+    // Close any previously opened context menu first
+    closeContextMenu(screen);
+
+    var popupMenuWindow = getPopupMenuWindow(screen);
+    if (popupMenuWindow) {
+      popupMenuWindow.showContextMenu(contextMenu);
+      contextMenu.openAtItem(anchorItem, screen);
+    }
+  }
+
+  // Close any open context menu or popup menu window
+  function closeContextMenu(screen) {
+    var popupMenuWindow = getPopupMenuWindow(screen);
+    if (popupMenuWindow && popupMenuWindow.visible) {
+      popupMenuWindow.close();
+    }
+  }
+
+  // Show a tray menu with proper handling for all compositors
+  // Returns true if menu was shown successfully
+  function showTrayMenu(screen, trayItem, trayMenu, anchorItem, menuX, menuY, widgetSection, widgetIndex) {
+    if (!trayItem || !trayMenu || !anchorItem)
+      return false;
+
+    // Close any previously opened menu first
+    closeContextMenu(screen);
+
+    trayMenu.trayItem = trayItem;
+    trayMenu.widgetSection = widgetSection;
+    trayMenu.widgetIndex = widgetIndex;
+
+    var popupMenuWindow = getPopupMenuWindow(screen);
+    if (popupMenuWindow) {
+      popupMenuWindow.open();
+      trayMenu.showAt(anchorItem, menuX, menuY);
+    } else {
+      return false;
+    }
+    return true;
+  }
+
+  // Close tray menu
+  function closeTrayMenu(screen) {
+    var popupMenuWindow = getPopupMenuWindow(screen);
+    if (popupMenuWindow) {
+      // This closes both the window and calls hideMenu on the tray menu
+      popupMenuWindow.close();
+    }
+  }
+
   // Returns a panel (loads it on-demand if not yet loaded)
   function getPanel(name, screen) {
     if (!screen) {

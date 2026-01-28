@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Dema ku ti agahdarîya nexwendî tune be, îkona agahdarîyê veşêre.",
       "hide-widget-when-zero-unread-label": "Îkonê bê nexwendî veşêre",
       "show-unread-badge-description": "Nîşaneyekê nîşan bide ku hejmara agahiyên nehatine xwendin nîşan dide.",
-      "show-unread-badge-label": "Nîşana ne xwendî nîşan bide"
+      "show-unread-badge-label": "Nîşana ne xwendî nîşan bide",
+      "unread-badge-color-description": "Rengê nîşana agahdariya nexwendî hilbijêre.",
+      "unread-badge-color-label": "Rengê nîşana nexwendî"
     },
     "section-editor": {
       "placeholder": "Widgetekek hilbijêre ku lê zêde bike...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "Hejmara tîpên ku ji navên qada xebatê bên nîşandan (1-10).",
       "character-count-label": "Hejmara tîpan",
+      "empty-color-description": "Rengê paşxaneya ji bo Workspaceyên val destnîşan bike.",
+      "empty-color-label": "Rengê cîhê kar ê vala",
       "enable-scrollwheel-description": "Bi tekerê mişkê di navbera cîhên xebatê de biguhere.",
       "enable-scrollwheel-label": "Bişkoka gerokê bizivirîne da ku cîhên kar biguherî",
+      "focused-color-description": "Rengê paşperdeyê ji bo cîhê karê ku hatiye fokus kirin destnîşan bike.",
+      "focused-color-label": "Rengê cîhê kar ê fokusdayî",
       "follow-focused-screen-description": "Dîmên xebatê ji dîmendera niha ya ku balê dikişîne, ne ji dîmendera ku bar lê ye, nîşan bide.",
       "follow-focused-screen-label": "Şopandina ekrana fokusê",
       "grouped-border-opacity-description": "Ayarê asta zelalbûna sînorên konteynerê cîhê kar.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Veşartî ne dagirkirî",
       "label-mode-description": "Çawa nîşaneyên cîhê kar têne nîşandan hilbijêre.",
       "label-mode-label": "Moda labelê",
+      "occupied-color-description": "Rengê paşxaneyê ji bo Workspaceên dagirkirî destnîşan bike.",
+      "occupied-color-label": "Rengê qada xebatê ya dagirkirî",
+      "reverse-scrolling-description": "Dema ku hûn digerînin, rêgeha guhertina cîhê kar berevajî bike.",
+      "reverse-scrolling-label": "گەڕاندنەوەی گەڕان",
       "show-applications-description": "Nîşaneyên sepanan di hundirê her cîhê xebatê de nîşan bide.",
       "show-applications-label": "Nîşan sepanan bide",
+      "show-badge-description": "Di moda komkirî de nîşana jimareya cîhê kar nîşan bide.",
+      "show-badge-label": "Nîşana qada xebatê nîşan bide",
       "show-labels-only-when-occupied-description": "Tenê etîketên cîhê xebatê nîşan bide dema ku ew pencereyan dihewînin.",
       "show-labels-only-when-occupied-label": "Tenê dema dagirkirî etîketan nîşan bide",
       "unfocused-icons-opacity-description": "Ayarê asta zelalbûna îkonên sepanên ne di fokusê de bike.",
@@ -416,6 +428,7 @@
     "not-found": "Nehat dîtin",
     "notifications": "Agahdarî",
     "official": "Fermî",
+    "on-surface": "Li ser rûyê erdê",
     "output": "Derket",
     "pair": "Hevpar",
     "paired": "Hevpar bûyî",
@@ -428,6 +441,7 @@
     "polling": "Lêpirsîn",
     "position": "Helwest",
     "previous": "Berê",
+    "primary": "Serekî",
     "random": "Bêserûber",
     "reboot": "Restart",
     "refresh": "Nûkirin",
@@ -440,6 +454,7 @@
     "scanning": "Lêgerîn...",
     "screen-corners": "Kişekanên dîmenderê",
     "search": "Lêgerîn",
+    "secondary": "Duyemîn",
     "security": "Ewlehî",
     "select": "Hilbijêre",
     "shortcuts": "Kurterê",
@@ -451,6 +466,7 @@
     "stop": "Raweste",
     "suspend": "Rawestîne",
     "templates": "Şablonan",
+    "tertiary": "Sêyemîn",
     "test": "Test",
     "thresholds": "Asteyan",
     "title": "Sernav",
@@ -579,7 +595,10 @@
       "density-compact": "Kompakt",
       "density-default": "Berdest",
       "density-mini": "Piçûk",
-      "density-spacious": "Berfireh"
+      "density-spacious": "Berfireh",
+      "type-floating": "Herikbar",
+      "type-framed": "Çarçovekirî",
+      "type-simple": "Sade"
     },
     "control-center": {
       "quick-settings-style-classic": "Klasîk",
@@ -707,6 +726,10 @@
       "appearance-desc": "Xuyakirina xuyabûn û pozîsyona bar.",
       "appearance-floating-description": "Bariş wekî 'heb'eke herikbar nîşan bide.",
       "appearance-floating-label": "Barê avjen",
+      "appearance-frame-radius": "Nîvçapa Hundirîn",
+      "appearance-frame-settings-description": "Stûrahiya çarçoveyê û nîvçapa goşeyê hundirîn sererast bike",
+      "appearance-frame-settings-label": "Mîhengên Çarçoveyê",
+      "appearance-frame-thickness": "Stûrahî",
       "appearance-hide-on-overview-description": "Dema ku pêşdîtina berhevker çalak be, bar veşêre û panelan bigire.",
       "appearance-hide-on-overview-label": "Li ser dîtinê bar veşêre",
       "appearance-margins-description": "Marginên dora bara herikbar eyar bike.",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "Pêşkêşkirina kapsulê",
       "appearance-show-outline-description": "Dîwarê xuya li dora her widgetê nîşan dide.",
       "appearance-show-outline-label": "Nîşandan xêzên widgetê",
+      "appearance-type-description": "Stîla darikê hilbijêre: Sade, Herikbar an Çarçovekirî",
+      "appearance-type-label": "Cureyê Darikê",
       "appearance-use-separate-opacity-description": "Destûrê bide ku ji bo paşxaneya bar nirxek opakbûna cuda were bikaranîn.",
       "appearance-use-separate-opacity-label": "Şefafiya bara cuda bikar bîne",
       "monitor-configure-widgets": "Widgetan saz bike",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "Pêça nivîsa clipboardê",
       "settings-clipboard-history-description": "Gihîştina tiştên ku berê hatine kopîkirin ji destpêkerê.",
       "settings-clipboard-history-label": "Dîroka clipboardê çalak bike",
+      "settings-clipboard-watch-image-description": "ڕستەی فەرمانی تەواو کە بۆ wl-paste تێدەپەڕێنرێت بۆ گۆڕانکارییەکانی وێنە. (پێویستی بە دووبارە دەستپێکردنەوە هەیە)",
+      "settings-clipboard-watch-image-label": "فەرمانی چاودێریکردنی وێنە",
+      "settings-clipboard-watch-text-description": "تەواوی زنجیرەی فەرمان کە بۆ wl-paste تێپەڕێنراوە بۆ گۆڕانکارییەکانی دەق. (پێویستی بە دووبارە دەستپێکردنەوە هەیە)",
+      "settings-clipboard-watch-text-label": "فەرمانی چاودێری دەق",
       "settings-custom-launch-prefix-description": "Fermanên pêşgiran bi destpêkerek xwerû pêşda bikin (mînak, 'runapp' ji bo entegrasyona systemd).",
       "settings-custom-launch-prefix-enabled-description": "Bi awayekî xwerû destpêkê ji bo destpêkirina sepanan bikar bîne li şûna rêbaza standard.",
       "settings-custom-launch-prefix-enabled-label": "Pêşgira destpêkirinê ya xwerû çalak bike",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "Nîşandanîna hewayê di salnameyê de"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "Dema ku fprintd (nasnameya tiliyan) çalak e, ev vebijêrk dihêle hûn bi şîfreya xwe têkevin, ne bi tiliya xwe.",
+      "allow-password-with-fprintd-label": "Rêdan bi têketina şîfreyê bi fprintd",
+      "auto-start-auth-description": "mînak, otomatîkî dest bi rastkirina tiliyê dike bêyî ku pêdivî bi pêlkeyek an klîkek hebe.",
+      "auto-start-auth-label": "Destpêkirina otomatîkî ya rastkirinê",
       "compact-lockscreen-description": "Tenê inputa têketinê û kontrolên pergalê nîşan bide, widgetên hewayê û medyayê veşêre.",
       "compact-lockscreen-label": "Kilîta ekrana berhevkirî",
       "lock-on-suspend-description": "Dema ku pergal tê rawestandin, ekranê bixweber kilît bike.",
@@ -1528,12 +1561,12 @@
       "enabled": "Dengê dernexîne çalak e",
       "enabled-desc": "Hûn ê van agahdariyan di dîroka xwe de bibînin"
     },
+    "donation-opened": "Rûpela bexşînê di geroka we de vebû",
     "internet-limited": "Pêwendîdar bê înternetê",
     "keyboard-layout": {
       "changed": "Şêwaza kilîtdankê bo {layout} hat guhertin",
       "title": "Klavyeya"
     },
-    "kofi-opened": "Rûpela Ko-fi di geroka te de vebû",
     "missing-control-center": {
       "description": "Kurteya kontrolê ji barê hatiye rakirin. Ji bo ku hûn dîsa ji barê bigihîjinê, hûn ê hewce ne ku kurteyê ji nû ve zêde bikin. Her weha hûn dikarin bi rast-klîkkirina li ser barê jî vekin",
       "label": "Amûra dawî ya navenda kontrolê hate rakirin"

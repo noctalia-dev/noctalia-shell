@@ -12,8 +12,8 @@ Singleton {
   readonly property string pluginsDir: Settings.configDir + "plugins"
   readonly property string pluginsFile: Settings.configDir + "plugins.json"
 
-  // Official source URL - plugins from this source keep plain IDs
-  readonly property string officialSourceUrl: "https://github.com/noctalia-dev/noctalia-plugins"
+  // Main source URL - plugins from this source keep plain IDs
+  readonly property string mainSourceUrl: "https://github.com/noctalia-dev/noctalia-plugins"
 
   Component.onCompleted: {
     ensurePluginsDirectory();
@@ -26,14 +26,14 @@ Singleton {
     return hash.substring(0, 6);
   }
 
-  // Check if a source is the official Noctalia source
-  function isOfficialSource(sourceUrl) {
-    return sourceUrl === root.officialSourceUrl;
+  // Check if a source is the main Noctalia plugins repository
+  function isMainSource(sourceUrl) {
+    return sourceUrl === root.mainSourceUrl;
   }
 
   // Generate composite key: plain ID for official, "hash:id" for custom
   function generateCompositeKey(pluginId, sourceUrl) {
-    if (!sourceUrl || isOfficialSource(sourceUrl)) {
+    if (!sourceUrl || isMainSource(sourceUrl)) {
       return pluginId;
     }
     var hash = generateSourceHash(sourceUrl);
@@ -82,7 +82,7 @@ Singleton {
   // Get source URL from plugin state
   function getPluginSourceUrl(compositeKey) {
     var state = root.pluginStates[compositeKey];
-    return state?.sourceUrl || root.officialSourceUrl;
+    return state?.sourceUrl || root.mainSourceUrl;
   }
 
   // Signals
@@ -114,11 +114,11 @@ Singleton {
       root.pluginStates = adapter.states || {};
       root.pluginSources = adapter.sources || [];
 
-      // Ensure official repo is in sources
+      // Ensure default repo is in sources
       if (root.pluginSources.length === 0) {
         root.pluginSources = [
           {
-            "name": "Official Noctalia Plugins",
+            "name": "Noctalia Plugins",
             "url": "https://github.com/noctalia-dev/noctalia-plugins",
             "enabled": true
           }
@@ -139,7 +139,7 @@ Singleton {
       root.pluginStates = {};
       root.pluginSources = [
             {
-              "name": "Official Noctalia Plugins",
+              "name": "Noctalia Plugins",
               "url": "https://github.com/noctalia-dev/noctalia-plugins",
               "enabled": true
             }
@@ -157,30 +157,52 @@ Singleton {
 
   // Migrate plugin data from older versions
   function migratePluginData() {
-    // Check if states need migration (v1 -> v2: add sourceUrl)
-    var needsMigration = false;
+    var needsSave = false;
+
+    // Migration v1 -> v2: add sourceUrl to states
     for (var pluginId in root.pluginStates) {
       if (root.pluginStates[pluginId].sourceUrl === undefined) {
-        needsMigration = true;
+        Logger.i("PluginRegistry", "Migrating plugin data to v2 (adding sourceUrl)");
+
+        var newStates = {};
+        for (var id in root.pluginStates) {
+          // For v1 -> v2 migration, we assume plugins are from main source
+          // Custom plugins installed before this feature need to be reinstalled
+          newStates[id] = {
+            enabled: root.pluginStates[id].enabled,
+            sourceUrl: root.mainSourceUrl
+          };
+        }
+        root.pluginStates = newStates;
+        needsSave = true;
         break;
       }
     }
 
-    if (needsMigration) {
-      Logger.i("PluginRegistry", "Migrating plugin data to v2 (adding sourceUrl)");
-
-      var newStates = {};
-      for (var id in root.pluginStates) {
-        // For v1 -> v2 migration, we assume plugins are from official source
-        // Custom plugins installed before this feature need to be reinstalled
-        newStates[id] = {
-          enabled: root.pluginStates[id].enabled,
-          sourceUrl: root.officialSourceUrl
-        };
+    // Migration: rename "Official Noctalia Plugins" -> "Noctalia Plugins"
+    var newSources = [];
+    var sourcesChanged = false;
+    for (var i = 0; i < root.pluginSources.length; i++) {
+      var source = root.pluginSources[i];
+      if (source.name === "Official Noctalia Plugins") {
+        newSources.push({
+                          name: "Noctalia Plugins",
+                          url: source.url,
+                          enabled: source.enabled
+                        });
+        sourcesChanged = true;
+        Logger.i("PluginRegistry", "Migrating source name: 'Official Noctalia Plugins' -> 'Noctalia Plugins'");
+      } else {
+        newSources.push(source);
       }
-      root.pluginStates = newStates;
-      root.save();
+    }
+    if (sourcesChanged) {
+      root.pluginSources = newSources;
+      needsSave = true;
+    }
 
+    if (needsSave) {
+      root.save();
       Logger.i("PluginRegistry", "Migration complete");
     }
   }
@@ -392,11 +414,11 @@ Singleton {
     if (!root.pluginStates[compositeKey]) {
       root.pluginStates[compositeKey] = {
         enabled: false,
-        sourceUrl: sourceUrl || root.officialSourceUrl
+        sourceUrl: sourceUrl || root.mainSourceUrl
       };
     } else {
       // Preserve enabled state but update sourceUrl
-      root.pluginStates[compositeKey].sourceUrl = sourceUrl || root.officialSourceUrl;
+      root.pluginStates[compositeKey].sourceUrl = sourceUrl || root.mainSourceUrl;
     }
 
     save();

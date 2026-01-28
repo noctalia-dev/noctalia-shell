@@ -27,6 +27,34 @@ Item {
     });
   }
 
+  // Hot corner: trigger click on first widget in a section
+  function triggerFirstWidgetInSection(sectionName: string) {
+    var widgets = BarService.getWidgetsBySection(sectionName, screen?.name);
+    for (var i = 0; i < widgets.length; i++) {
+      var widget = widgets[i];
+      if (widget && widget.visible && widget.widgetId !== "Spacer") {
+        if (typeof widget.clicked === "function") {
+          widget.clicked();
+        }
+        return;
+      }
+    }
+  }
+
+  // Hot corner: trigger click on last widget in a section
+  function triggerLastWidgetInSection(sectionName: string) {
+    var widgets = BarService.getWidgetsBySection(sectionName, screen?.name);
+    for (var i = widgets.length - 1; i >= 0; i--) {
+      var widget = widgets[i];
+      if (widget && widget.visible && widget.widgetId !== "Spacer") {
+        if (typeof widget.clicked === "function") {
+          widget.clicked();
+        }
+        return;
+      }
+    }
+  }
+
   // Expose bar region for click-through mask
   readonly property var barRegion: barContentLoader.item?.children[0] || null
 
@@ -253,11 +281,29 @@ Item {
       anchors.fill: parent
       clip: true
 
+      // Top edge hot corner - triggers first widget in left (top) section
+      MouseArea {
+        width: parent.width
+        height: Style.marginS
+        x: 0
+        y: 0
+        onClicked: root.triggerFirstWidgetInSection("left")
+      }
+
+      // Bottom edge hot corner - triggers last widget in right (bottom) section
+      MouseArea {
+        width: parent.width
+        height: Style.marginS
+        x: 0
+        anchors.bottom: parent.bottom
+        onClicked: root.triggerLastWidgetInSection("right")
+      }
+
       // Top section (left widgets)
       ColumnLayout {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.top: parent.top
-        anchors.topMargin: Style.marginM
+        anchors.topMargin: Style.marginS
         spacing: Style.marginS
 
         Repeater {
@@ -308,7 +354,7 @@ Item {
       ColumnLayout {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Style.marginM
+        anchors.bottomMargin: Style.marginS
         spacing: Style.marginS
 
         Repeater {
@@ -338,6 +384,24 @@ Item {
     Item {
       anchors.fill: parent
       clip: true
+
+      // Left edge hot corner - triggers first widget in left section
+      MouseArea {
+        width: Style.marginS
+        height: parent.height
+        x: 0
+        y: 0
+        onClicked: root.triggerFirstWidgetInSection("left")
+      }
+
+      // Right edge hot corner - triggers last widget in right section
+      MouseArea {
+        width: Style.marginS
+        height: parent.height
+        anchors.right: parent.right
+        y: 0
+        onClicked: root.triggerLastWidgetInSection("right")
+      }
 
       // Left Section
       RowLayout {

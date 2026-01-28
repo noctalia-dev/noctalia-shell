@@ -116,12 +116,6 @@ def kmeans_cluster(
     return results
 
 
-def _hue_distance(h1: float, h2: float) -> float:
-    """Calculate circular distance between two hues (0-360)."""
-    diff = abs(h1 - h2)
-    return min(diff, 360.0 - diff)
-
-
 def _score_colors_chroma(
     colors_with_counts: list[tuple[RGB, int]],
 ) -> list[tuple[Color, float]]:
@@ -403,7 +397,7 @@ def _score_colors_population(
             is_far_enough = True
             for chosen_color, _ in chosen_colors:
                 chosen_hct = chosen_color.to_hct()
-                if _hue_distance(hct.hue, chosen_hct.hue) < min_hue_diff:
+                if hue_distance(hct.hue, chosen_hct.hue) < min_hue_diff:
                     is_far_enough = False
                     break
 
@@ -544,27 +538,3 @@ def find_error_color(palette: list[Color]) -> Color:
     return Color.from_hex("#FD4663")
 
 
-def derive_harmonious_colors(primary: Color) -> tuple[Color, Color, Color]:
-    """
-    Derive secondary and tertiary colors as harmonious complements to primary.
-
-    Uses hue shifts for visual distinction (matugen-compatible):
-    - Secondary: 30° hue shift (analogous, slightly cooler/warmer)
-    - Tertiary: 60° hue shift (distinct accent color)
-    - Quaternary: 180° hue shift (complementary)
-
-    Returns:
-        Tuple of (secondary, tertiary, quaternary) colors
-    """
-    h, s, l = primary.to_hsl()
-
-    # Secondary: 30° analogous hue shift with slightly lower saturation
-    secondary = Color.from_hsl((h + 30) % 360, s * 0.8, l)
-
-    # Tertiary: complementary (180° shift) for strong contrast
-    tertiary = Color.from_hsl((h + 180) % 360, s * 0.9, l)
-
-    # Quaternary: complementary - opposite on color wheel
-    quaternary = Color.from_hsl((h + 180) % 360, s, l)
-
-    return secondary, tertiary, quaternary

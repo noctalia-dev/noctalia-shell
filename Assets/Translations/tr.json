@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Okunmamış bildirim yokken bildirim simgesini gizle.",
       "hide-widget-when-zero-unread-label": "Okunmamış yokken simgeyi gizle",
       "show-unread-badge-description": "Okunmamış bildirim sayısını gösteren bir rozet göster.",
-      "show-unread-badge-label": "Okunmamış bildirimleri göster"
+      "show-unread-badge-label": "Okunmamış bildirimleri göster",
+      "unread-badge-color-description": "Okunmamış bildirim rozeti için rengi seçin.",
+      "unread-badge-color-label": "Okunmamış rozet rengi"
     },
     "section-editor": {
       "placeholder": "Eklenecek bir araç takımı seçin...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "Çalışma alanı adlarından gösterilecek karakter sayısı (1-10).",
       "character-count-label": "Karakter sayısı",
+      "empty-color-description": "Boş Workspace'ler için arka plan rengini ayarla.",
+      "empty-color-label": "Boş çalışma alanı rengi",
       "enable-scrollwheel-description": "Fare tekerleği ile çalışma alanları arasında geçiş yapın.",
       "enable-scrollwheel-label": "Çalışma alanları arasında geçiş yapmak için kaydırın",
+      "focused-color-description": "Odaklanılan Workspace için arka plan rengini ayarla.",
+      "focused-color-label": "Odaklanılan çalışma alanı rengi",
       "follow-focused-screen-description": "Çubuğun bulunduğu ekran yerine, şu anda odaklanmış ekrandaki çalışma alanlarını göster.",
       "follow-focused-screen-label": "Odaklanmış ekranı takip et",
       "grouped-border-opacity-description": "Çalışma alanı kapsayıcı kenarlıklarının opaklık düzeyini ayarlayın.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Dolu olmayanları gizle",
       "label-mode-description": "Çalışma alanı etiketlerinin nasıl gösterileceğini seçin.",
       "label-mode-label": "Etiket Modu",
+      "occupied-color-description": "Dolu Workspaces için arka plan rengini ayarla.",
+      "occupied-color-label": "Dolu çalışma alanı rengi",
+      "reverse-scrolling-description": "Kaydırırken çalışma alanı geçiş yönünü tersine çevir.",
+      "reverse-scrolling-label": "Ters kaydırma",
       "show-applications-description": "Her çalışma alanının içinde uygulama simgelerini görüntüle.",
       "show-applications-label": "Uygulamaları göster",
+      "show-badge-description": "Gruplandırılmış modda çalışma alanı numarası işaretini göster.",
+      "show-badge-label": "Çalışma alanı rozetini göster",
       "show-labels-only-when-occupied-description": "Yalnızca pencere içeren çalışma alanı etiketlerini göster.",
       "show-labels-only-when-occupied-label": "Yalnızca dolu olduğunda etiketleri göster",
       "unfocused-icons-opacity-description": "Odaklanılmamış uygulama simgelerinin opaklık düzeyini ayarlayın.",
@@ -416,6 +428,7 @@
     "not-found": "Bulunamadı",
     "notifications": "Bildirimler",
     "official": "Resmi",
+    "on-surface": "Yüzeyde",
     "output": "Çıktı",
     "pair": "Eşleştir",
     "paired": "Eşleştirildi",
@@ -428,6 +441,7 @@
     "polling": "Yoklama",
     "position": "Pozisyon",
     "previous": "Önceki",
+    "primary": "Birincil",
     "random": "Rastgele",
     "reboot": "Yeniden başlat",
     "refresh": "Yenile",
@@ -440,6 +454,7 @@
     "scanning": "Taranıyor...",
     "screen-corners": "Ekran köşeleri",
     "search": "Arama",
+    "secondary": "İkincil",
     "security": "Güvenlik",
     "select": "Seç",
     "shortcuts": "Kısayollar",
@@ -451,6 +466,7 @@
     "stop": "Dur",
     "suspend": "Askıya al",
     "templates": "Şablonlar",
+    "tertiary": "Üçüncül",
     "test": "Test",
     "thresholds": "Eşikler",
     "title": "Başlık",
@@ -579,7 +595,10 @@
       "density-compact": "Sıkı",
       "density-default": "Varsayılan",
       "density-mini": "Ufak",
-      "density-spacious": "Geniş"
+      "density-spacious": "Geniş",
+      "type-floating": "Yüzen",
+      "type-framed": "Çerçeveli",
+      "type-simple": "Basit"
     },
     "control-center": {
       "quick-settings-style-classic": "Klasik",
@@ -707,6 +726,10 @@
       "appearance-desc": "Araç çubuğunun görünümünü ve konumunu özelleştirin.",
       "appearance-floating-description": "Araç çubuğunu yüzen bir 'kapsül' olarak görüntüler. Not: Bu, ekran köşelerini kenarlara taşıyacaktır.",
       "appearance-floating-label": "Yüzen araç çubuğu",
+      "appearance-frame-radius": "İç Yarıçap",
+      "appearance-frame-settings-description": "Çerçeve kalınlığını ve iç köşe yarıçapını ayarlayın",
+      "appearance-frame-settings-label": "Çerçeve Ayarları",
+      "appearance-frame-thickness": "Kalınlık",
       "appearance-hide-on-overview-description": "Kompozitör önizlemesi aktif olduğunda çubuğu gizle ve panelleri kapat.",
       "appearance-hide-on-overview-label": "Genel bakışta çubuğu gizle",
       "appearance-margins-description": "Yüzen araç çubuğunun etrafındaki kenar boşluklarını ayarlayın.",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "Kapsülü göster",
       "appearance-show-outline-description": "Her widget'ın etrafında görünür bir kenarlık görüntüler.",
       "appearance-show-outline-label": "Araç kutusu ana hatlarını göster",
+      "appearance-type-description": "Çubuk stilini seçin: Basit, Yüzen veya Çerçeveli",
+      "appearance-type-label": "Çubuk Türü",
       "appearance-use-separate-opacity-description": "Çubuk arka planı için ayrı bir opaklık değeri kullanmayı etkinleştir.",
       "appearance-use-separate-opacity-label": "Ayrı çubuk opaklığı kullan",
       "monitor-configure-widgets": "Araçları yapılandır",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "Panoyu metni kaydır",
       "settings-clipboard-history-description": "Başlatıcıdan daha önce kopyalanan öğelere erişin.",
       "settings-clipboard-history-label": "Pano geçmişini etkinleştir",
+      "settings-clipboard-watch-image-description": "Görüntü değişiklikleri için wl-paste'e iletilen tam komut dizesi. (yeniden başlatma gerektirir)",
+      "settings-clipboard-watch-image-label": "Görüntü İzleme Komutu",
+      "settings-clipboard-watch-text-description": "Metin değişiklikleri için wl-paste'e iletilen tam komut dizesi. (yeniden başlatma gerektirir)",
+      "settings-clipboard-watch-text-label": "Metin izleme komutu",
       "settings-custom-launch-prefix-description": "Komutlara özel bir başlatıcı ile ön ek ekleyin (örn., systemd entegrasyonu için 'runapp').",
       "settings-custom-launch-prefix-enabled-description": "Uygulamaları başlatmak için varsayılan yöntem yerine özel bir ön ek kullanın.",
       "settings-custom-launch-prefix-enabled-label": "Özel başlatma ön ekini etkinleştir",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "Takvimde hava durumunu göster"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "fprintd (parmak izi kimlik doğrulaması) etkin olduğunda, bu seçenek parmak izi yerine parolanızı kullanarak oturum açmanızı sağlar.",
+      "allow-password-with-fprintd-label": "fprintd ile parola girişine izin ver",
+      "auto-start-auth-description": "örneğin, bir tuşa basmaya veya düğmeye tıklamaya gerek kalmadan parmak izi kimlik doğrulamasını otomatik olarak başlatır.",
+      "auto-start-auth-label": "Otomatik kimlik doğrulama başlatma",
       "compact-lockscreen-description": "Sadece giriş girdisini ve sistem kontrollerini göster, hava durumu ve ortam araç takımlarını gizle.",
       "compact-lockscreen-label": "Kompakt ekran kilidi",
       "lock-on-suspend-description": "Sistemi askıya alırken otomatik olarak ekranı kilitler.",
@@ -1528,12 +1561,12 @@
       "enabled": "'Rahatsız etme' etin",
       "enabled-desc": "Bu bildirimleri geçmişinizde bulacaksınız"
     },
+    "donation-opened": "Bağış sayfası tarayıcınızda açıldı",
     "internet-limited": "İnternetsiz bağlandı",
     "keyboard-layout": {
       "changed": "Klavye düzeni {layout} olarak değiştirildi",
       "title": "Klavye"
     },
-    "kofi-opened": "Ko-fi sayfası tarayıcınızda açıldı",
     "missing-control-center": {
       "description": "Kontrol merkezi araç takımı araç çubuğundan kaldırıldı. Araç çubuğundan tekrar erişmek için araç takımını yeniden eklemeniz gerekecek. Araç çubuğuna sağ tıklayarak da açabilirsiniz",
       "label": "Son kontrol merkezi araç takımı kaldırıldı"

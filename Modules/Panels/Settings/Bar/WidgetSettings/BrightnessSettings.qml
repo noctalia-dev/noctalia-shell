@@ -12,6 +12,8 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   // Local state
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
 
@@ -40,6 +42,9 @@ ColumnLayout {
       }
     ]
     currentKey: valueDisplayMode
-    onSelected: key => valueDisplayMode = key
+    onSelected: key => {
+                  valueDisplayMode = key;
+                  settingsChanged(saveSettings());
+                }
   }
 }

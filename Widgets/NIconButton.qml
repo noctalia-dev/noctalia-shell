@@ -4,7 +4,7 @@ import Quickshell.Widgets
 import qs.Commons
 import qs.Services.UI
 
-Rectangle {
+Item {
   id: root
 
   property real baseSize: Style.baseWidgetSize
@@ -24,6 +24,11 @@ Rectangle {
   property color colorBorderHover: Color.mOutline
   property real customRadius: -1 // -1 means use default (iRadiusL), otherwise use this value
 
+  // Expose border properties for backwards compatibility (aliases to visualButton)
+  property alias border: visualButton.border
+  property alias radius: visualButton.radius
+  property alias color: visualButton.color
+
   signal entered
   signal exited
   signal clicked
@@ -31,31 +36,27 @@ Rectangle {
   signal middleClicked
   signal wheel(int angleDelta)
 
-  implicitWidth: applyUiScale ? Style.toOdd(baseSize * Style.uiScaleRatio) : Style.toOdd(baseSize)
-  implicitHeight: applyUiScale ? Style.toOdd(baseSize * Style.uiScaleRatio) : Style.toOdd(baseSize)
+  // Calculate button size based on settings
+  readonly property real buttonSize: applyUiScale ? Style.toOdd(baseSize * Style.uiScaleRatio) : Style.toOdd(baseSize)
+
+  // Size: use implicit width/height which layout can override
+  // BarWidgetLoader sets explicit width/height to extend click area
+  implicitWidth: buttonSize
+  implicitHeight: buttonSize
 
   opacity: root.enabled ? Style.opacityFull : Style.opacityMedium
-  color: root.enabled && root.hovering ? colorBgHover : colorBg
-  radius: Math.min((customRadius >= 0 ? customRadius : Style.iRadiusL), width / 2)
-  border.color: root.enabled && root.hovering ? colorBorderHover : colorBorder
-  border.width: Style.borderS
 
-  Behavior on color {
-    enabled: !Color.isTransitioning
-    ColorAnimation {
-      duration: Style.animationFast
-      easing.type: Easing.InOutQuad
-    }
-  }
+  // Visual button - stays at buttonSize, centered in parent
+  Rectangle {
+    id: visualButton
+    width: root.buttonSize
+    height: root.buttonSize
+    anchors.centerIn: parent
 
-  NIcon {
-    icon: root.icon
-    pointSize: Style.toOdd(root.width * 0.48)
-    applyUiScale: root.applyUiScale
-    color: root.enabled && root.hovering ? colorFgHover : colorFg
-    // Pixel-perfect centering
-    x: Style.pixelAlignCenter(root.width, width)
-    y: Style.pixelAlignCenter(root.height, contentHeight)
+    color: root.enabled && root.hovering ? colorBgHover : colorBg
+    radius: Math.min((customRadius >= 0 ? customRadius : Style.iRadiusL), width / 2)
+    border.color: root.enabled && root.hovering ? colorBorderHover : colorBorder
+    border.width: Style.borderS
 
     Behavior on color {
       enabled: !Color.isTransitioning
@@ -64,8 +65,27 @@ Rectangle {
         easing.type: Easing.InOutQuad
       }
     }
+
+    NIcon {
+      icon: root.icon
+      pointSize: Style.toOdd(visualButton.width * 0.48)
+      applyUiScale: root.applyUiScale
+      color: root.enabled && root.hovering ? colorFgHover : colorFg
+      // Pixel-perfect centering
+      x: Style.pixelAlignCenter(visualButton.width, width)
+      y: Style.pixelAlignCenter(visualButton.height, contentHeight)
+
+      Behavior on color {
+        enabled: !Color.isTransitioning
+        ColorAnimation {
+          duration: Style.animationFast
+          easing.type: Easing.InOutQuad
+        }
+      }
+    }
   }
 
+  // MouseArea fills root (extends beyond visual button for bar click area)
   MouseArea {
     // Always enabled to allow hover/tooltip even when the button is disabled
     enabled: true
@@ -76,7 +96,7 @@ Rectangle {
     onEntered: {
       hovering = root.enabled ? true : false;
       if (tooltipText) {
-        TooltipService.show(parent, tooltipText, tooltipDirection);
+        TooltipService.show(root, tooltipText, tooltipDirection);
       }
       root.entered();
     }

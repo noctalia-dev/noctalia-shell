@@ -86,7 +86,7 @@
         "terminal.ansi.dim_red": "{{colors.on_error_container.dark.hex}}",
         "terminal.ansi.green": "{{colors.tertiary.dark.hex}}",
         "terminal.ansi.bright_green": "{{colors.tertiary.dark.hex}}",
-        "terminal.ansi.dim_green": "{{colors.on_tertiary_container.dark.hex}}",
+        "terminal.ansi.dim_green": "{{colors.tertiary_fixed_dim.dark.hex}}",
         "terminal.ansi.yellow": "{{colors.tertiary_fixed_dim.dark.hex}}",
         "terminal.ansi.bright_yellow": "{{colors.tertiary_fixed.dark.hex}}",
         "terminal.ansi.dim_yellow": "{{colors.on_tertiary_fixed.dark.hex}}",
@@ -258,7 +258,7 @@
             "font_weight": null
           },
           "string.special": {
-            "color": "{{colors.on_tertiary_container.dark.hex}}",
+            "color": "{{colors.secondary.dark.hex}}",
             "font_style": null,
             "font_weight": null
           },
@@ -378,7 +378,7 @@
         "terminal.ansi.dim_red": "{{colors.on_error_container.light.hex}}",
         "terminal.ansi.green": "{{colors.tertiary.light.hex}}",
         "terminal.ansi.bright_green": "{{colors.tertiary.light.hex}}",
-        "terminal.ansi.dim_green": "{{colors.on_tertiary_container.light.hex}}",
+        "terminal.ansi.dim_green": "{{colors.tertiary_fixed_dim.light.hex}}",
         "terminal.ansi.yellow": "{{colors.tertiary_fixed_dim.light.hex}}",
         "terminal.ansi.bright_yellow": "{{colors.tertiary_fixed.light.hex}}",
         "terminal.ansi.dim_yellow": "{{colors.on_tertiary_fixed.light.hex}}",
@@ -550,7 +550,7 @@
             "font_weight": null
           },
           "string.special": {
-            "color": "{{colors.on_tertiary_container.light.hex}}",
+            "color": "{{colors.secondary.light.hex}}",
             "font_style": null,
             "font_weight": null
           },
@@ -670,7 +670,7 @@
         "terminal.ansi.dim_red": "{{colors.on_error_container.dark.hex}}",
         "terminal.ansi.green": "{{colors.tertiary.dark.hex}}",
         "terminal.ansi.bright_green": "{{colors.tertiary.dark.hex}}",
-        "terminal.ansi.dim_green": "{{colors.on_tertiary_container.dark.hex}}",
+        "terminal.ansi.dim_green": "{{colors.tertiary_fixed_dim.dark.hex}}",
         "terminal.ansi.yellow": "{{colors.tertiary_fixed_dim.dark.hex}}",
         "terminal.ansi.bright_yellow": "{{colors.tertiary_fixed.dark.hex}}",
         "terminal.ansi.dim_yellow": "{{colors.on_tertiary_fixed.dark.hex}}",
@@ -842,7 +842,7 @@
             "font_weight": null
           },
           "string.special": {
-            "color": "{{colors.on_tertiary_container.dark.hex}}",
+            "color": "{{colors.secondary.dark.hex}}",
             "font_style": null,
             "font_weight": null
           },
@@ -962,7 +962,7 @@
         "terminal.ansi.dim_red": "{{colors.on_error_container.light.hex}}",
         "terminal.ansi.green": "{{colors.tertiary.light.hex}}",
         "terminal.ansi.bright_green": "{{colors.tertiary.light.hex}}",
-        "terminal.ansi.dim_green": "{{colors.on_tertiary_container.light.hex}}",
+        "terminal.ansi.dim_green": "{{colors.tertiary_fixed_dim.light.hex}}",
         "terminal.ansi.yellow": "{{colors.tertiary_fixed_dim.light.hex}}",
         "terminal.ansi.bright_yellow": "{{colors.tertiary_fixed.light.hex}}",
         "terminal.ansi.dim_yellow": "{{colors.on_tertiary_fixed.light.hex}}",
@@ -1134,7 +1134,7 @@
             "font_weight": null
           },
           "string.special": {
-            "color": "{{colors.on_tertiary_container.light.hex}}",
+            "color": "{{colors.secondary.light.hex}}",
             "font_style": null,
             "font_weight": null
           },

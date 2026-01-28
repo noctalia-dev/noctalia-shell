@@ -85,8 +85,16 @@ Singleton {
     target: LocationService
     function onCoordinatesReadyChanged() {
       if (LocationService.coordinatesReady) {
-        apply();
+        root.apply();
       }
+    }
+  }
+
+  Connections {
+    target: Time
+    function onResumed() {
+      Logger.i("NightLight", "System resumed - re-applying night light");
+      root.apply();
     }
   }
 

@@ -257,16 +257,42 @@ ColumnLayout {
   NBox {
     visible: Settings.data.colorSchemes.useWallpaperColors
     Layout.fillWidth: true
-    implicitHeight: description.implicitHeight + Style.marginL * 2
+    implicitHeight: descriptionColumn.implicitHeight + Style.marginL * 2
     color: Color.mSurface
-    NText {
-      id: description
-      anchors.fill: parent
+
+    Column {
+      id: descriptionColumn
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
       anchors.margins: Style.marginL
-      wrapMode: Text.WordWrap
-      text: I18n.tr("panels.color-scheme.method-description." + Settings.data.colorSchemes.generationMethod)
-      pointSize: Style.fontSizeS
-      color: Color.mOnSurfaceVariant
+      spacing: Style.marginM
+
+      NText {
+        width: parent.width
+        wrapMode: Text.WordWrap
+        text: I18n.tr("panels.color-scheme.method-description." + Settings.data.colorSchemes.generationMethod)
+        pointSize: Style.fontSizeS
+        color: Color.mOnSurfaceVariant
+      }
+
+      Row {
+        id: colorPreviewRow
+        spacing: Style.marginS
+
+        property int diameter: 16 * Style.uiScaleRatio
+
+        Repeater {
+          model: [Color.mPrimary, Color.mSecondary, Color.mTertiary, Color.mError]
+
+          Rectangle {
+            width: colorPreviewRow.diameter
+            height: colorPreviewRow.diameter
+            radius: width * 0.5
+            color: modelData
+          }
+        }
+      }
     }
   }
 

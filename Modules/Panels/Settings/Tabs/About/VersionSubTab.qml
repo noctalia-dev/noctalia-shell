@@ -493,21 +493,21 @@ ColumnLayout {
       }
     }
 
-    // NButton {
-    //   icon: "heart"
-    //   text: I18n.tr("panels.about.support")
-    //   outlined: true
-    //   onClicked: {
-    //     Quickshell.execDetached(["xdg-open", "https://ko-fi.com/lysec"]);
-    //     ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.kofi-opened"));
-    //   }
-    // }
-
     NButton {
       icon: "copy"
       text: I18n.tr("panels.about.copy-info")
       outlined: true
       onClicked: root.copyInfoToClipboard()
+    }
+
+    NButton {
+      icon: "heart"
+      text: I18n.tr("panels.about.support")
+      outlined: true
+      onClicked: {
+        Quickshell.execDetached(["xdg-open", "https://buymeacoffee.com/noctalia"]);
+        ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.kofi-opened"));
+      }
     }
   }
 

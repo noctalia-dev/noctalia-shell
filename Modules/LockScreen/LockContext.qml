@@ -17,44 +17,85 @@ Scope {
   property bool showInfo: false
   property string errorMessage: ""
   property string infoMessage: ""
-  property bool pamAvailable: typeof PamContext !== "undefined"
-  property bool fprintdAvailable: false
 
-  readonly property string pamConfigDirectory: Quickshell.env("NOCTALIA_PAM_CONFIG") ? "/etc/pam.d" : Settings.configDir + "pam"
-  readonly property string pamConfig: Quickshell.env("NOCTALIA_PAM_CONFIG") || "password.conf"
+  readonly property string pamConfigDirectory: "/etc/pam.d"
+  property string pamConfig: Quickshell.env("NOCTALIA_PAM_SERVICE") || "login"
+  property bool pamReady: false
 
   Component.onCompleted: {
-    checkFprintdProc.running = true;
-
-    if (Quickshell.env("NOCTALIA_PAM_CONFIG")) {
-      Logger.i("LockContext", "NOCTALIA_PAM_CONFIG is set, using system PAM config: /etc/pam.d/" + pamConfig);
+    if (Quickshell.env("NOCTALIA_PAM_SERVICE")) {
+      Logger.i("LockContext", "NOCTALIA_PAM_SERVICE is set, using system PAM config: /etc/pam.d/" + pamConfig);
+      pamReady = true;
     } else {
-      Logger.i("LockContext", "Using generated PAM config:", pamConfigDirectory + "/" + pamConfig);
+      Logger.i("LockContext", "Probing for best PAM service...");
+      detectPamServiceProc.running = true;
+    }
+  }
+
+  Process {
+    id: detectPamServiceProc
+    command: ["sh", "-c", "
+      if [ -f /etc/pam.d/login ]; then echo 'login'; exit 0; fi;
+      if [ -f /etc/pam.d/system-auth ]; then echo 'system-auth'; exit 0; fi;
+      if [ -f /etc/pam.d/common-auth ]; then echo 'common-auth'; exit 0; fi;
+      echo 'login';
+    "]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const service = String(text || "").trim();
+        if (service.length > 0) {
+          root.pamConfig = service;
+          Logger.i("LockContext", "Detected PAM service: " + service);
+        } else {
+          Logger.w("LockContext", "Failed to detect PAM service, defaulting to login");
+        }
+        root.pamReady = true;
+      }
+    }
+    stderr: StdioCollector {}
+  }
+
+  onPamReadyChanged: {
+    if (pamReady) {
+      if (Settings.data.general.autoStartAuth && currentText === "") {
+        pam.start();
+      }
+    }
+  }
+
+  onShowInfoChanged: {
+    if (showInfo) {
+      showFailure = false;
+    }
+  }
+
+  onShowFailureChanged: {
+    if (showFailure) {
+      showInfo = false;
     }
   }
 
   onCurrentTextChanged: {
     if (currentText !== "") {
       showInfo = false;
-      infoMessage = "";
       showFailure = false;
-      errorMessage = "";
       if (!waitingForPassword) {
         pam.abort();
       }
-      if (fprintdAvailable) {
+      if (Settings.data.general.allowPasswordWithFprintd) {
         occupyFingerprintSensorProc.running = true;
       }
     } else {
       occupyFingerprintSensorProc.running = false;
-      pam.start();
+      if (pamReady && Settings.data.general.autoStartAuth) {
+        pam.start();
+      }
     }
   }
 
   function tryUnlock() {
-    if (!pamAvailable) {
-      errorMessage = "PAM not available";
-      showFailure = true;
+    if (!pamReady) {
+      Logger.w("LockContext", "PAM not ready yet, ignoring unlock attempt");
       return;
     }
 
@@ -66,19 +107,8 @@ Scope {
       return;
     }
 
-    errorMessage = "";
-    showFailure = false;
-
     Logger.i("LockContext", "Starting PAM authentication for user:", pam.user);
     pam.start();
-  }
-
-  Process {
-    id: checkFprintdProc
-    command: ["sh", "-c", "command -v fprintd-verify"]
-    onExited: function (exitCode) {
-      fprintdAvailable = (exitCode === 0);
-    }
   }
 
   Process {
@@ -95,27 +125,21 @@ Scope {
     onPamMessage: {
       Logger.i("LockContext", "PAM message:", message, "isError:", messageIsError, "responseRequired:", responseRequired);
 
-      if (messageIsError) {
-        errorMessage = message;
-      } else {
-        infoMessage = message;
-      }
-
       if (this.responseRequired) {
         Logger.i("LockContext", "Responding to PAM with password");
         if (root.currentText !== "") {
           this.respond(root.currentText);
+          unlockInProgress = true;
         } else {
           root.waitingForPassword = true;
-          showFailure = false;
           infoMessage = I18n.tr("lock-screen.password");
           showInfo = true;
         }
       } else if (messageIsError) {
-        showInfo = false;
+        errorMessage = message;
         showFailure = true;
       } else {
-        showFailure = false;
+        infoMessage = message;
         showInfo = true;
       }
     }

@@ -21,7 +21,9 @@ Item {
   required property TextInput passwordInput
 
   Component.onCompleted: {
-    doUnlock();
+    if (Settings.data.general.autoStartAuth) {
+      doUnlock();
+    }
   }
 
   function doUnlock() {

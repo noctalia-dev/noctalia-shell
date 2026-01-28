@@ -26,8 +26,8 @@
     "widget-settings": "Configuración del widget"
   },
   "authentication": {
-    "error": "Error de autenticación",
-    "failed": "Autenticación fallida"
+    "error": "Error de autentificación",
+    "failed": "Autentificación fallida"
   },
   "bar": {
     "active-window": {
@@ -60,7 +60,7 @@
       "show-power-profile-label": "Mostrar controles de perfil de energía"
     },
     "clock": {
-      "clock-display-description": "Personaliza la visualización de tu reloj añadiendo tokens de la lista de abajo. Para usar el formato de 12 horas, debes incluir el token 'AP'.",
+      "clock-display-description": "Personaliza la visualización del reloj añadiendo tokens de la lista de abajo. Para usar el formato de 12 horas, debes incluir el token 'AP'.",
       "clock-display-label": "Visualización del reloj",
       "custom-font-description": "Seleccionar una fuente personalizada para la visualización del reloj.",
       "custom-font-label": "Fuente personalizada",
@@ -69,13 +69,13 @@
       "horizontal-bar-description": "Consejo: Usa \\n para crear un salto de línea.",
       "horizontal-bar-label": "Barra horizontal",
       "preview": "Vista previa",
-      "tooltip-format-description": "Cadena de formato para la información sobre herramientas que se muestra al pasar el cursor sobre el reloj. Déjelo vacío para usar la información sobre herramientas predeterminada.",
-      "tooltip-format-label": "Formato de información sobre herramientas",
-      "use-custom-font-description": "Anular la selección de fuente predeterminada con una fuente personalizada para el reloj.",
+      "tooltip-format-description": "Formato de la información mostrada al pasar el cursor sobre el reloj. Déjalo vacío para usar el formato por defecto.",
+      "tooltip-format-label": "Formato del emergente",
+      "use-custom-font-description": "Anular la fuente predeterminada del sistema con una fuente específica para el reloj.",
       "use-custom-font-label": "Usar fuente personalizada",
-      "use-monospaced-font-description": "Cuando está activado, el reloj usará la fuente monoespaciada.",
+      "use-monospaced-font-description": "Cuando está activada, el reloj usará la fuente monoespaciada.",
       "use-monospaced-font-label": "Usar fuente monoespaciada",
-      "use-primary-color-description": "Cuando está activado, se aplica el color primario para dar énfasis.",
+      "use-primary-color-description": "Cuando está activado, se aplicará el color primario para dar énfasis.",
       "use-primary-color-label": "Usar color primario",
       "vertical-bar-description": "Usa un espacio para separar cada parte en una nueva línea.",
       "vertical-bar-label": "Barra vertical"
@@ -83,8 +83,8 @@
     "control-center": {
       "browse-file": "Explorar archivo",
       "browse-library": "Explorar biblioteca",
-      "color-selection-description": "Aplica colores del tema a los íconos.",
-      "enable-colorization-description": "Habilita la coloración para el ícono del centro de control, aplicando los colores del tema.",
+      "color-selection-description": "Aplica colores del tema a los iconos.",
+      "enable-colorization-description": "Habilita el coloreado del icono del centro de control, aplicando los colores del tema.",
       "icon-description": "Selecciona un icono de la biblioteca o un archivo personalizado.",
       "select-custom-icon": "Seleccionar un icono personalizado",
       "use-distro-logo-description": "Usar el logo de tu distribución en lugar de un icono personalizado.",
@@ -95,19 +95,19 @@
       "collapse-condition-label": "Condición de colapso",
       "color-selection-description": "Aplicar colores del tema al icono y al texto.",
       "color-selection-label": "Seleccionar color",
-      "display-command-output-description": "Ingresa un comando para ejecutar a intervalos regulares. La primera línea de su salida se mostrará como texto.",
-      "display-command-output-label": "Mostrar salida de comando",
+      "display-command-output-description": "Introduce un comando para ejecutar a intervalos regulares. La primera línea de su salida se mostrará como texto.",
+      "display-command-output-label": "Mostrar salida del comando",
       "display-command-output-stream-description": "Introduce un comando para ejecutar continuamente.",
       "dynamic-text": "Texto dinámico",
-      "enable-colorization-description": "Habilitar la coloración para el icono y el texto del botón personalizado, aplicando los colores del tema.",
-      "enable-colorization-label": "Habilitar coloración",
+      "enable-colorization-description": "Habilitar el coloreado para el icono y el texto del botón personalizado, aplicando los colores del tema.",
+      "enable-colorization-label": "Habilitar coloreado",
       "hide-mode-always-expanded": "Siempre expandido",
       "hide-mode-description": "Controla la visibilidad del widget cuando el comando no tiene salida.",
       "hide-mode-expand-with-output": "Expandir cuando tiene salida",
-      "hide-mode-label": "Modo de ocultar",
+      "hide-mode-label": "Modo de ocultación",
       "hide-mode-max-transparent": "Máximo expandido pero transparente",
       "icon-description": "Selecciona un icono de la biblioteca.",
-      "ipc-identifier-description": "Identificador único para comandos IPC. Utilice este identificador con 'qs -c noctalia-shell ipc call cb [acción] [identificador]' para controlar este botón a través de IPC.",
+      "ipc-identifier-description": "Identificador único para comandos IPC. Utiliza este identificador con 'qs -c noctalia-shell ipc call cb [acción] [identificador]' para controlar este botón a través de IPC.",
       "ipc-identifier-label": "Identificador IPC",
       "left-click-description": "Comando a ejecutar cuando se hace clic izquierdo en el botón.",
       "left-click-label": "Clic izquierdo",
@@ -116,11 +116,11 @@
       "max-text-length-horizontal-label": "Longitud máxima de texto (horizontal)",
       "max-text-length-vertical-description": "Número máximo de caracteres a mostrar en la barra vertical (0 para ocultar el texto).",
       "max-text-length-vertical-label": "Longitud máxima de texto (vertical)",
-      "middle-click-description": "Comando a ejecutar cuando se hace clic medio en el botón.",
-      "middle-click-label": "Clic medio",
+      "middle-click-description": "Comando a ejecutar cuando se hace clic central en el botón.",
+      "middle-click-label": "Clic central",
       "middle-click-update-text": "Actualizar el texto mostrado al hacer clic con el botón central",
       "parse-json-description": "Analizar la salida del comando como un objeto JSON para establecer dinámicamente el texto y el ícono.",
-      "parse-json-label": "Analizar salida como JSON",
+      "parse-json-label": "Interpretar salida como JSON",
       "refresh-interval-description": "Intervalo en milisegundos.",
       "refresh-interval-label": "Intervalo de actualización",
       "right-click-description": "Comando a ejecutar cuando se hace clic derecho en el botón.",
@@ -129,7 +129,7 @@
       "show-icon-description": "Alterna la visibilidad del icono del widget.",
       "show-icon-label": "Mostrar icono",
       "text-stream-description": "Las líneas transmitidas desde el comando se mostrarán como texto en el botón.",
-      "text-stream-label": "Transmisión",
+      "text-stream-label": "Salida del comando",
       "wheel-description": "Comando a ejecutar cuando se usa la rueda de desplazamiento.<br>Usa $delta para el delta de la rueda de desplazamiento en el comando.",
       "wheel-down-description": "Comando a ejecutar cuando la rueda de desplazamiento se desplaza hacia abajo.",
       "wheel-down-label": "Comando de rueda hacia abajo",
@@ -154,19 +154,19 @@
       "show-scroll-lock-label": "Bloq Despl"
     },
     "media-mini": {
-      "compact-mode-description": "Habilitar un diseño que ahorre espacio para el panel del reproductor multimedia.",
+      "compact-mode-description": "Habilitar un diseño compacto para el panel del reproductor multimedia.",
       "compact-mode-label": "Modo compacto",
       "hide-mode-description": "Controla el comportamiento del widget cuando no se está reproduciendo ningún medio.",
       "max-width-description": "Establece el tamaño horizontal máximo del widget. El widget se reducirá para adaptarse a contenido más corto.",
       "no-active-player": "Sin reproductor activo",
       "panel-section-description": "Configurar la apariencia y el comportamiento del panel del reproductor multimedia.",
       "panel-section-label": "Panel del reproductor multimedia",
-      "scrolling-mode-description": "Controlar cuándo está habilitado el desplazamiento de texto para títulos de pista largos.",
+      "scrolling-mode-description": "Controla cuándo está habilitado el desplazamiento de texto para títulos de pista largos.",
       "scrolling-mode-label": "Modo de desplazamiento",
-      "show-album-art-description": "Mostrar la portada del álbum de la pista que se está reproduciendo actualmente.",
+      "show-album-art-description": "Mostrar la portada del álbum de la pista que se está reproduciendo.",
       "show-album-art-label": "Mostrar arte del álbum",
-      "show-artist-first-description": "Mostrar artista - título en lugar de título - artista.",
-      "show-artist-first-label": "Mostrar primero al artista",
+      "show-artist-first-description": "Mostrar 'artista - título' en lugar de 'título - artista'.",
+      "show-artist-first-label": "Mostrar primero el artista",
       "show-progress-ring-description": "Mostrar un indicador de progreso circular que muestre el progreso de la pista.",
       "show-progress-ring-label": "Mostrar anillo de progreso",
       "show-visualizer-description": "Mostrar un visualizador de audio cuando se reproduce música.",
@@ -179,10 +179,12 @@
     "notification-history": {
       "hide-widget-when-zero-description": "Ocultar el icono de notificaciones cuando no haya notificaciones.",
       "hide-widget-when-zero-label": "Ocultar icono sin notificaciones",
-      "hide-widget-when-zero-unread-description": "Ocultar el icono de notificaciones cuando no haya notificaciones sin leer.",
-      "hide-widget-when-zero-unread-label": "Ocultar icono sin notificaciones sin leer",
+      "hide-widget-when-zero-unread-description": "Ocultar el icono de notificaciones cuando no haya notificaciones pendientes de leer.",
+      "hide-widget-when-zero-unread-label": "Ocultar icono sin notificaciones pendientes",
       "show-unread-badge-description": "Mostrar una insignia con el número de notificaciones no leídas.",
-      "show-unread-badge-label": "Mostrar insignia de no leídos"
+      "show-unread-badge-label": "Mostrar insignia de no leídos",
+      "unread-badge-color-description": "Selecciona el color para la insignia de notificación no leída.",
+      "unread-badge-color-label": "Color de la insignia de no leídos"
     },
     "section-editor": {
       "placeholder": "Selecciona un widget para añadir...",
@@ -254,9 +256,13 @@
     "workspace": {
       "character-count-description": "Número de caracteres a mostrar de los nombres de espacios de trabajo (1-10).",
       "character-count-label": "Número de caracteres",
+      "empty-color-description": "Establecer el color de fondo para los Workspaces vacíos.",
+      "empty-color-label": "Color de espacio de trabajo vacío",
       "enable-scrollwheel-description": "Cambia entre espacios de trabajo usando la rueda de desplazamiento del ratón.",
       "enable-scrollwheel-label": "Desplázate para cambiar de espacio de trabajo",
-      "follow-focused-screen-description": "Mostrar espacios de trabajo de la pantalla actualmente enfocada, en lugar de la pantalla donde se encuentra la barra.",
+      "focused-color-description": "Establece el color de fondo para el Workspace enfocado.",
+      "focused-color-label": "Color del espacio de trabajo enfocado",
+      "follow-focused-screen-description": "Mostrar espacios de trabajo de la pantalla enfocada, en lugar de la pantalla donde se encuentra la barra.",
       "follow-focused-screen-label": "Seguir pantalla enfocada",
       "grouped-border-opacity-description": "Establecer el nivel de opacidad para los bordes del contenedor del espacio de trabajo.",
       "grouped-border-opacity-label": "Opacidad del borde",
@@ -264,12 +270,18 @@
       "hide-unoccupied-label": "Ocultar desocupados",
       "label-mode-description": "Elegir cómo se muestran las etiquetas de los espacios de trabajo.",
       "label-mode-label": "Modo de etiqueta",
+      "occupied-color-description": "Establecer el color de fondo para los Workspaces ocupados.",
+      "occupied-color-label": "Color del espacio de trabajo ocupado",
+      "reverse-scrolling-description": "Invertir la dirección del cambio de espacios de trabajo al desplazarse.",
+      "reverse-scrolling-label": "Desplazamiento inverso",
       "show-applications-description": "Mostrar los iconos de las aplicaciones dentro de cada espacio de trabajo.",
       "show-applications-label": "Mostrar aplicaciones",
+      "show-badge-description": "Mostrar la insignia del número de espacio de trabajo en modo agrupado.",
+      "show-badge-label": "Mostrar insignia del espacio de trabajo",
       "show-labels-only-when-occupied-description": "Mostrar solo las etiquetas del espacio de trabajo cuando contengan ventanas.",
-      "show-labels-only-when-occupied-label": "Mostrar etiquetas solo cuando esté ocupado",
+      "show-labels-only-when-occupied-label": "Mostrar etiquetas solo cuando haya contenido",
       "unfocused-icons-opacity-description": "Establecer el nivel de opacidad para los iconos de aplicaciones no enfocadas.",
-      "unfocused-icons-opacity-label": "Opacidad de iconos desenfocados"
+      "unfocused-icons-opacity-label": "Opacidad de iconos de aplicaciones no enfocadas"
     }
   },
   "battery": {
@@ -301,7 +313,7 @@
       "pairing-mode": "Asegúrate de que tu dispositivo esté en modo de emparejamiento.",
       "scanning": "Buscando dispositivos...",
       "signal-text-excellent": "Señal: Excelente",
-      "signal-text-fair": "Señal: Regular",
+      "signal-text-fair": "Señal: Razonable",
       "signal-text-good": "Señal: Buena",
       "signal-text-poor": "Señal: Débil",
       "signal-text-unknown": "Señal: Desconocida",
@@ -316,11 +328,11 @@
     "panel": {
       "buttons-discord": "Únete a nuestro Discord",
       "buttons-dismiss": "OK",
-      "buttons-feedback": "Dar retroalimentación",
+      "buttons-feedback": "Dejar comentario",
       "empty": "Las notas de la versión aún no están disponibles.",
       "highlight-title": "Cambios destacados",
       "released": "Publicado el {date}",
-      "subtitle-fresh": "Gracias por instalar Noctalia. Esto es lo que incluye esta compilación.",
+      "subtitle-fresh": "¡Gracias por instalar Noctalia! Esto es lo que incluye esta compilación.",
       "subtitle-updated": "Actualizado desde {previousVersion}",
       "title": "Novedades en {version}",
       "version": "Versión {version}",
@@ -329,7 +341,7 @@
   },
   "colors": {
     "error": "Error",
-    "on-surface": "En la superficie",
+    "on-surface": "Sobre la superficie",
     "primary": "Primario",
     "secondary": "Secundario",
     "tertiary": "Terciario"
@@ -408,7 +420,7 @@
     "monitors": "Monitores",
     "network": "Red",
     "next": "Siguiente",
-    "night-light": "Luz de noche",
+    "night-light": "Luz nocturna",
     "no": "No",
     "no-results": "Sin resultados",
     "no-summary": "Sin resumen",
@@ -416,6 +428,7 @@
     "not-found": "No encontrado",
     "notifications": "Notificaciones",
     "official": "Oficial",
+    "on-surface": "En superficie",
     "output": "Salida",
     "pair": "Emparejar",
     "paired": "Emparejado",
@@ -428,6 +441,7 @@
     "polling": "Sondeo",
     "position": "Posición",
     "previous": "Anterior",
+    "primary": "Primario",
     "random": "Aleatorio",
     "reboot": "Reiniciar",
     "refresh": "Refrescar",
@@ -440,6 +454,7 @@
     "scanning": "Escaneando...",
     "screen-corners": "Esquinas de la pantalla",
     "search": "Buscar",
+    "secondary": "Secundario",
     "security": "Seguridad",
     "select": "Seleccionar",
     "shortcuts": "Atajos",
@@ -448,13 +463,14 @@
     "sound": "Sonido",
     "sources": "Fuentes",
     "start": "Comienzo",
-    "stop": "Pare",
+    "stop": "Parar",
     "suspend": "Suspender",
     "templates": "Plantillas",
+    "tertiary": "Terciario",
     "test": "Prueba",
     "thresholds": "Umbrales",
     "title": "Título",
-    "toast": "Toast",
+    "toast": "Emergente",
     "trusted": "De confianza",
     "uninstall": "Desinstalar",
     "unknown": "Desconocido",
@@ -486,16 +502,16 @@
     }
   },
   "display-modes": {
-    "always-hide": "Siempre esconderse",
-    "always-show": "Siempre mostrar",
-    "force-open": "Forzar la apertura",
-    "on-hover": "Al pasar"
+    "always-hide": "Ocultar siempre",
+    "always-show": "Mostrar siempre",
+    "force-open": "Forzar abierto",
+    "on-hover": "Al pasar por encima"
   },
   "hide-modes": {
     "hidden": "Ocultar cuando esté vacío",
     "idle": "Ocultar cuando esté inactivo",
     "transparent": "Transparente cuando esté vacío",
-    "visible": "Siempre visible"
+    "visible": "Mostrar siempre"
   },
   "launcher": {
     "categories": {
@@ -525,10 +541,10 @@
     "providers": {
       "applications": "Aplicaciones",
       "calculator": "Calculadora",
-      "calculator-deprecated": "El comando >calc está obsoleto y será eliminado pronto. Por favor, escribe expresiones matemáticas directamente en la búsqueda en su lugar.",
+      "calculator-deprecated": "El comando >calc está obsoleto y será eliminado pronto. Por favor, en su lugar escribe expresiones matemáticas directamente en la búsqueda.",
       "calculator-description": "Calculadora — evalúa expresiones matemáticas",
-      "calculator-enter-expression": "Ingresa una expresión matemática",
-      "calculator-press-enter-to-copy": "Presione Enter para copiar el resultado",
+      "calculator-enter-expression": "Introduce una expresión matemática",
+      "calculator-press-enter-to-copy": "Pulsa Enter para copiar el resultado",
       "clipboard": "Historial del portapapeles",
       "clipboard-clear-description": "Limpiar todo el historial del portapapeles",
       "clipboard-clear-description-full": "Eliminar todos los elementos del historial del portapapeles",
@@ -542,12 +558,12 @@
       "emoji": "Selector de emojis",
       "emoji-loading": "Cargando emojis...",
       "emoji-loading-description": "Por favor espera",
-      "emoji-no-recent": "Aún no hay emojis recientes",
+      "emoji-no-recent": "No hay emojis recientes",
       "emoji-search-description": "Buscar y copiar emojis"
     }
   },
   "lock-screen": {
-    "authenticating": "Autenticando...",
+    "authenticating": "Autentificando...",
     "password": "Ingresa tu contraseña...",
     "restart": "Reiniciar",
     "shut-down": "Apagar"
@@ -579,7 +595,10 @@
       "density-compact": "Compacta",
       "density-default": "Predeterminada",
       "density-mini": "Mini",
-      "density-spacious": "Espacioso/a"
+      "density-spacious": "Espaciosa",
+      "type-floating": "Flotante",
+      "type-framed": "Con marco",
+      "type-simple": "Simple"
     },
     "control-center": {
       "quick-settings-style-classic": "Clásico",
@@ -589,7 +608,7 @@
     "scrolling-modes": {
       "always": "Desplazar siempre",
       "hover": "Desplazar al pasar",
-      "never": "Nunca desplazar"
+      "never": "No desplazar nunca"
     },
     "session-menu-grid-layout": {
       "grid": "Cuadrícula",
@@ -656,9 +675,9 @@
     },
     "audio": {
       "devices-desc": "Configura los dispositivos de entrada y salida de audio disponibles.",
-      "devices-input-device-description": "Selecciona el dispositivo de entrada de audio deseado.",
+      "devices-input-device-description": "Selecciona el dispositivo preferido de entrada de audio.",
       "devices-input-device-label": "Dispositivo de entrada",
-      "devices-output-device-description": "Selecciona el dispositivo de salida de audio deseado.",
+      "devices-output-device-description": "Selecciona el dispositivo preferido de salida de audio.",
       "devices-output-device-label": "Dispositivo de salida",
       "devices-title": "Dispositivos de audio",
       "external-mixer-description": "Ingrese el comando o la ruta de la aplicación para ejecutar al activar la función de mezclador de audio externo.",
@@ -670,7 +689,7 @@
       "media-excluded-player-placeholder": "escribe una subcadena y presiona +",
       "media-frame-rate-description": "Tasas más altas son más fluidas pero usan más recursos.",
       "media-frame-rate-label": "Tasa de fotogramas",
-      "media-primary-player-description": "Ingresa una palabra clave para identificar tu reproductor principal.",
+      "media-primary-player-description": "Introduce una palabra clave para identificar tu reproductor principal.",
       "media-primary-player-label": "Reproductor principal",
       "media-primary-player-placeholder": "ej. spotify, vlc, mpv",
       "media-scrolling-speed-description": "Tiempo en segundos para que el título se desplace del inicio al final.",
@@ -690,10 +709,10 @@
       "volumes-mute-output-description": "Silencia la salida de audio principal del sistema.",
       "volumes-mute-output-label": "Silenciar salida de audio",
       "volumes-output-volume-description": "Nivel de volumen de todo el sistema.",
-      "volumes-step-size-description": "Ajusta el tamaño del paso para los cambios de volumen (rueda de desplazamiento, atajos de teclado).",
+      "volumes-step-size-description": "Ajusta el tamaño del paso para los cambios de volumen (rueda del ratón, atajos de teclado).",
       "volumes-step-size-label": "Tamaño del paso de volumen",
-      "volumes-volume-feedback-description": "Reproducir un sonido de retroalimentación al ajustar el volumen",
-      "volumes-volume-feedback-label": "Reproducir sonido de retroalimentación de volumen",
+      "volumes-volume-feedback-description": "Reproducir un sonido cuando se ajusta el volumen",
+      "volumes-volume-feedback-label": "Reproducir sonido de cambio de volumen",
       "volumes-volume-overdrive-description": "Permite subir el volumen por encima del 100 %. Es posible que no sea compatible con todo el hardware.",
       "volumes-volume-overdrive-label": "Permitir sobreamplificación de volumen"
     },
@@ -707,6 +726,10 @@
       "appearance-desc": "Personaliza la apariencia y posición de la barra.",
       "appearance-floating-description": "Muestra la barra como una 'píldora' flotante.",
       "appearance-floating-label": "Barra flotante",
+      "appearance-frame-radius": "Radio interno",
+      "appearance-frame-settings-description": "Ajustar el grosor del marco y el radio de la esquina interior",
+      "appearance-frame-settings-label": "Ajustes del marco",
+      "appearance-frame-thickness": "Grosor",
       "appearance-hide-on-overview-description": "Ocultar la barra y cerrar los paneles cuando la vista general del compositor esté activa.",
       "appearance-hide-on-overview-label": "Ocultar barra en la vista general",
       "appearance-margins-description": "Ajusta los márgenes alrededor de la barra flotante.",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "Mostrar cápsula",
       "appearance-show-outline-description": "Muestra un borde visible alrededor de cada widget.",
       "appearance-show-outline-label": "Mostrar contornos de widgets",
+      "appearance-type-description": "Elige el estilo de la barra: Simple, Flotante o Con marco",
+      "appearance-type-label": "Tipo de barra",
       "appearance-use-separate-opacity-description": "Permitir usar un valor de opacidad separado para el fondo de la barra.",
       "appearance-use-separate-opacity-label": "Usar opacidad de barra separada",
       "monitor-configure-widgets": "Configurar widgets",
@@ -786,7 +811,7 @@
       "templates-filter-label": "Filtrar por categoría",
       "templates-misc-description": "Crea tus propias plantillas.",
       "templates-misc-label": "Avanzado",
-      "templates-misc-user-templates-description": "Solo habilita si sabes lo que estás haciendo — consulta nuestra documentación en línea.",
+      "templates-misc-user-templates-description": "Habilita sólamente si sabes lo que estás haciendo — consulta nuestra documentación en línea.",
       "templates-misc-user-templates-label": "Habilitar plantillas de usuario",
       "templates-none-detected": "Ninguno detectado",
       "templates-write-path": "Escribe: {filepath}",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "Ajustar texto del portapapeles",
       "settings-clipboard-history-description": "Accede a los elementos copiados anteriormente desde el lanzador.",
       "settings-clipboard-history-label": "Activar historial del portapapeles",
+      "settings-clipboard-watch-image-description": "Cadena de comando completa pasada a wl-paste para cambios de imagen. (requiere reinicio)",
+      "settings-clipboard-watch-image-label": "Comando de Vigilancia de Imágenes",
+      "settings-clipboard-watch-text-description": "Cadena de comando completa pasada a wl-paste para cambios de texto. (requiere reinicio)",
+      "settings-clipboard-watch-text-label": "Comando de vigilancia de texto",
       "settings-custom-launch-prefix-description": "Prefijar comandos con un lanzador personalizado (ej. 'runapp' para integración con systemd).",
       "settings-custom-launch-prefix-enabled-description": "Usar un prefijo personalizado para lanzar aplicaciones en lugar del método predeterminado.",
       "settings-custom-launch-prefix-enabled-label": "Habilitar prefijo de lanzamiento personalizado",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "Mostrar el clima en el calendario"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "Cuando fprintd (autenticación por huella dactilar) está activo, esta opción te permite iniciar sesión con tu contraseña en lugar de una huella dactilar.",
+      "allow-password-with-fprintd-label": "Permitir inicio de sesión con contraseña usando fprintd",
+      "auto-start-auth-description": "p. ej., inicia automáticamente la autenticación de huellas dactilares sin requerir una pulsación de tecla o un clic de botón.",
+      "auto-start-auth-label": "Autentificación de inicio automática",
       "compact-lockscreen-description": "Mostrar solo el campo de inicio de sesión y los controles del sistema, ocultando los widgets del clima y multimedia.",
       "compact-lockscreen-label": "Pantalla de bloqueo compacta",
       "lock-on-suspend-description": "Bloquear la pantalla automáticamente al suspender el sistema.",
@@ -1528,12 +1561,12 @@
       "enabled": "'No molestar' activado",
       "enabled-desc": "Encontrarás estas notificaciones en tu historial"
     },
+    "donation-opened": "Página de donación abierta en tu navegador",
     "internet-limited": "Conectado sin Internet",
     "keyboard-layout": {
       "changed": "Distribución de teclado cambiada a {layout}",
       "title": "Teclado"
     },
-    "kofi-opened": "Página de Ko-fi abierta en tu navegador",
     "missing-control-center": {
       "description": "El widget del centro de control se eliminó de la barra. Para acceder a él nuevamente desde la barra, debes volver a añadir el widget. También puedes abrirlo haciendo clic derecho en la barra",
       "label": "Se eliminó el último widget del centro de control"

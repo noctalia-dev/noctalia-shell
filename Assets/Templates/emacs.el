@@ -1,4 +1,4 @@
-;;; noctalia-theme.el --- Theme using Template SCSS variables
+;;; noctalia-theme.el --- Theme using Template SCSS variables -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2025 
 

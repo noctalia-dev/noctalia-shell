@@ -58,7 +58,7 @@ class TerminalColors:
         # Base colors
         foreground = data["foreground"]
         background = data["background"]
-        cursor = data["cursor"]
+        cursor = data.get("cursor", foreground)
         cursor_text = data.get("cursorText", background)
         selection_fg = data.get("selectionFg", foreground)
         selection_bg = data.get("selectionBg", "#585b70")

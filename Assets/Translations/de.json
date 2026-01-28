@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Benachrichtigungssymbol ausblenden, wenn keine ungelesenen Benachrichtigungen vorhanden sind.",
       "hide-widget-when-zero-unread-label": "Symbol bei keinen ungelesenen Benachrichtigungen ausblenden",
       "show-unread-badge-description": "Badge mit der Anzahl ungelesener Benachrichtigungen anzeigen.",
-      "show-unread-badge-label": "Badge für ungelesene Nachrichten anzeigen"
+      "show-unread-badge-label": "Badge für ungelesene Nachrichten anzeigen",
+      "unread-badge-color-description": "Wähle die Farbe für das Abzeichen ungelesener Benachrichtigungen.",
+      "unread-badge-color-label": "Farbe des ungelesenen Abzeichens"
     },
     "section-editor": {
       "placeholder": "Widget auswählen...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "Anzahl der Zeichen, die von Arbeitsbereichsnamen angezeigt werden (1-10).",
       "character-count-label": "Zeichenanzahl",
+      "empty-color-description": "Lege die Hintergrundfarbe für leere Workspaces fest.",
+      "empty-color-label": "Farbe für leere Workspace",
       "enable-scrollwheel-description": "Zwischen Arbeitsbereichen mit dem Mausrad wechseln.",
       "enable-scrollwheel-label": "Zum Wechseln der Arbeitsbereiche scrollen",
+      "focused-color-description": "Lege die Hintergrundfarbe für den fokussierten Workspace fest.",
+      "focused-color-label": "Farbe des fokussierten Workspace",
       "follow-focused-screen-description": "Zeige Arbeitsbereiche vom aktuell fokussierten Bildschirm an, statt vom Bildschirm, auf dem sich die Leiste befindet.",
       "follow-focused-screen-label": "Fokussiertem Bildschirm folgen",
       "grouped-border-opacity-description": "Legen Sie die Deckkraft für Workspace-Container-Rahmen fest.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Unbesetzte ausblenden",
       "label-mode-description": "Wählen Sie, wie Arbeitsbereichs-Beschriftungen angezeigt werden.",
       "label-mode-label": "Beschriftungsmodus",
+      "occupied-color-description": "Lege die Hintergrundfarbe für belegte Workspaces fest.",
+      "occupied-color-label": "Farbe für belegte Arbeitsfläche",
+      "reverse-scrolling-description": "Die Richtung des Arbeitsbereichswechsels beim Scrollen umkehren.",
+      "reverse-scrolling-label": "Scrollen umkehren",
       "show-applications-description": "Anwendungssymbole in jedem Arbeitsbereich anzeigen.",
       "show-applications-label": "Anwendungen anzeigen",
+      "show-badge-description": "Zeige die Arbeitsbereichsnummern-Plakette im gruppierten Modus an.",
+      "show-badge-label": "Workspace-Badge anzeigen",
       "show-labels-only-when-occupied-description": "Arbeitsbereichsbezeichnungen nur anzeigen, wenn sie Fenster enthalten.",
       "show-labels-only-when-occupied-label": "Beschriftungen nur anzeigen, wenn belegt",
       "unfocused-icons-opacity-description": "Transparenzgrad für nicht fokussierte App-Symbole festlegen.",
@@ -416,6 +428,7 @@
     "not-found": "Nicht gefunden",
     "notifications": "Benachrichtigungen",
     "official": "Offiziell",
+    "on-surface": "Auf Oberfläche",
     "output": "Ausgabe",
     "pair": "Koppeln",
     "paired": "Gekoppelt",
@@ -428,6 +441,7 @@
     "polling": "Abfrageintervall",
     "position": "Position",
     "previous": "Zurück",
+    "primary": "Primär",
     "random": "Zufällig",
     "reboot": "Neu starten",
     "refresh": "Aktualisieren",
@@ -440,6 +454,7 @@
     "scanning": "Scannen...",
     "screen-corners": "Bildschirmecken",
     "search": "Suche",
+    "secondary": "Sekundär",
     "security": "Sicherheit",
     "select": "Auswählen",
     "shortcuts": "Kurzbefehle",
@@ -451,6 +466,7 @@
     "stop": "Stopp",
     "suspend": "Energie sparen",
     "templates": "Vorlagen",
+    "tertiary": "Tertiär",
     "test": "Test",
     "thresholds": "Schwellenwerte",
     "title": "Titel",
@@ -579,7 +595,10 @@
       "density-compact": "Kompakt",
       "density-default": "Standard",
       "density-mini": "Mini",
-      "density-spacious": "Geräumig"
+      "density-spacious": "Geräumig",
+      "type-floating": "Schwebend",
+      "type-framed": "Gerahmt",
+      "type-simple": "Einfach"
     },
     "control-center": {
       "quick-settings-style-classic": "Klassisch",
@@ -707,6 +726,10 @@
       "appearance-desc": "Erscheinungsbild und Position der Statusleiste anpassen.",
       "appearance-floating-description": "Statusleiste als schwebende 'Pille' anzeigen.",
       "appearance-floating-label": "Schwebende Statusleiste",
+      "appearance-frame-radius": "Innenradius",
+      "appearance-frame-settings-description": "Rahmenstärke und inneren Eckenradius anpassen",
+      "appearance-frame-settings-label": "Rahmeneinstellungen",
+      "appearance-frame-thickness": "Stärke",
       "appearance-hide-on-overview-description": "Die Leiste ausblenden und Panels schließen, wenn die Compositor-Übersicht aktiv ist.",
       "appearance-hide-on-overview-label": "Leiste in der Übersicht ausblenden",
       "appearance-margins-description": "Ränder um die schwebende Statusleiste anpassen.",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "Kapsel anzeigen",
       "appearance-show-outline-description": "Zeige eine sichtbare Umrandung um jedes Widget an.",
       "appearance-show-outline-label": "Widget-Umrisse anzeigen",
+      "appearance-type-description": "Wähle den Stil der Leiste: Einfach, Schwebend oder Gerahmt",
+      "appearance-type-label": "Leistentyp",
       "appearance-use-separate-opacity-description": "Ermöglicht die Verwendung eines separaten Deckkraftwerts für den Leistenhintergrund.",
       "appearance-use-separate-opacity-label": "Separate Leisten-Deckkraft",
       "monitor-configure-widgets": "Widgets konfigurieren",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "Zwischenablage-Text umbrechen",
       "settings-clipboard-history-description": "Zugriff auf zuvor kopierte Elemente über den Launcher.",
       "settings-clipboard-history-label": "Zwischenablageverlauf aktivieren",
+      "settings-clipboard-watch-image-description": "Vollständige Befehlszeichenfolge, die an wl-paste für Bildänderungen übergeben wird. (Neustart erforderlich)",
+      "settings-clipboard-watch-image-label": "Bildüberwachungsbefehl",
+      "settings-clipboard-watch-text-description": "Vollständiger Befehlsstring, der an wl-paste für Textänderungen übergeben wird. (Neustart erforderlich)",
+      "settings-clipboard-watch-text-label": "Textüberwachungsbefehl",
       "settings-custom-launch-prefix-description": "Befehle mit einem benutzerdefinierten Launcher präfixieren (z.B. 'runapp' für systemd-Integration).",
       "settings-custom-launch-prefix-enabled-description": "Verwenden Sie ein benutzerdefiniertes Präfix zum Starten von Anwendungen anstelle der Standardmethode.",
       "settings-custom-launch-prefix-enabled-label": "Benutzerdefiniertes Start-Präfix aktivieren",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "Wetter im Kalender anzeigen"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "Wenn fprintd (Fingerabdruck-Authentifizierung) aktiv ist, können Sie mit dieser Option weiterhin Ihr Passwort anstelle eines Fingerabdrucks verwenden.",
+      "allow-password-with-fprintd-label": "Passwort-Anmeldung mit fprintd erlauben",
+      "auto-start-auth-description": "z. B. startet die Fingerabdruckauthentifizierung automatisch, ohne dass ein Tastendruck oder ein Klick erforderlich ist.",
+      "auto-start-auth-label": "Automatische Authentifizierung beim Start",
       "compact-lockscreen-description": "Zeige nur die Login-Eingabe und Systemsteuerung, blende Wetter- und Medien-Widgets aus.",
       "compact-lockscreen-label": "Kompakter Sperrbildschirm",
       "lock-on-suspend-description": "Den Bildschirm beim Energiesparen automatisch sperren.",
@@ -1528,12 +1561,12 @@
       "enabled": "'Nicht stören' aktiviert",
       "enabled-desc": "Sie finden diese Benachrichtigungen in Ihrem Verlauf"
     },
+    "donation-opened": "Spendenseite in Ihrem Browser geöffnet",
     "internet-limited": "Verbunden ohne Internet",
     "keyboard-layout": {
       "changed": "Tastaturlayout geändert zu {layout}",
       "title": "Tastatur"
     },
-    "kofi-opened": "Ko-fi-Seite in Ihrem Browser geöffnet",
     "missing-control-center": {
       "description": "Das Kontrollzentrum-Widget wurde aus der Leiste entfernt. Um es erneut über die Leiste zu öffnen, fügen Sie das Widget wieder hinzu. Sie können es auch durch Rechtsklick auf die Leiste öffnen",
       "label": "Letztes Kontrollzentrum-Widget entfernt"

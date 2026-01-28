@@ -1,0 +1,29 @@
+{
+  "bar": {
+    "workspace": {
+      "empty-color-description": "खाली कार्यस्थानों के लिए पृष्ठभूमि रंग सेट करें।",
+      "empty-color-label": "खाली कार्यस्थान रंग",
+      "focused-color-description": "फोकस गरिएको कार्यक्षेत्रको लागि पृष्ठभूमि रङ सेट गर्नुहोस्।",
+      "focused-color-label": "फोकस किए गए कार्यक्षेत्र का रंग",
+      "occupied-color-description": "काम में लिए गए कार्यस्थानों के लिए पृष्ठभूमि रंग सेट करें।",
+      "occupied-color-label": "अधिकृत कार्यक्षेत्र रंग",
+      "show-badge-description": "समूहीकृत मोड में कार्यस्थान संख्या बैज दिखाएँ।",
+      "show-badge-label": "कार्यस्थान बैज देखाउनुहोस्"
+    }
+  },
+  "common": {
+    "on-surface": "सतह पर",
+    "primary": "प्राइमरी",
+    "secondary": "माध्यमिक",
+    "tertiary": "तृतीयक"
+  },
+  "panels": {
+    "lock-screen": {
+      "auto-start-auth-description": "उदाहरण के लिए, बिना किसी कुंजी प्रेस या बटन क्लिक की आवश्यकता के स्वचालित रूप से फिंगरप्रिंट प्रमाणीकरण शुरू करता है।",
+      "auto-start-auth-label": "स्वतः प्रमाणन शुरू करें"
+    }
+  },
+  "toast": {
+    "donation-opened": "दान पृष्ठ आपके ब्राउज़र में खुला"
+  }
+}

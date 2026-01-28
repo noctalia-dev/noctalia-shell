@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "Masquer l’icône de notification lorsqu’il n’y a aucune notification non lue.",
       "hide-widget-when-zero-unread-label": "Masquer l’icône sans notifications non lues",
       "show-unread-badge-description": "Afficher un badge montrant le nombre de notifications non lues.",
-      "show-unread-badge-label": "Afficher le badge non lu"
+      "show-unread-badge-label": "Afficher le badge non lu",
+      "unread-badge-color-description": "Sélectionnez la couleur pour le badge de notification non lue.",
+      "unread-badge-color-label": "Couleur du badge non lu"
     },
     "section-editor": {
       "placeholder": "Sélectionnez un widget à ajouter...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "Nombre de caractères à afficher des noms d'espaces de travail (1-10).",
       "character-count-label": "Nombre de caractères",
+      "empty-color-description": "Définir la couleur d'arrière-plan pour les Workspaces vides.",
+      "empty-color-label": "Couleur d'espace de travail vide",
       "enable-scrollwheel-description": "Basculer entre les espaces de travail avec la molette de la souris.",
       "enable-scrollwheel-label": "Faites défiler pour changer d'espace de travail",
+      "focused-color-description": "Définir la couleur d'arrière-plan pour l'espace de travail sélectionné.",
+      "focused-color-label": "Couleur de l'espace de travail sélectionné",
       "follow-focused-screen-description": "Afficher les espaces de travail de l'écran actuellement ciblé, plutôt que de l'écran où se trouve la barre.",
       "follow-focused-screen-label": "Suivre l'écran ciblé",
       "grouped-border-opacity-description": "Définir le niveau d'opacité des bordures des conteneurs d'espace de travail.",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "Masquer les inoccupés",
       "label-mode-description": "Choisir comment les étiquettes d'espace de travail sont affichées.",
       "label-mode-label": "Mode d'étiquette",
+      "occupied-color-description": "Définir la couleur d'arrière-plan pour les Workspaces occupés.",
+      "occupied-color-label": "Couleur de l'espace de travail occupé",
+      "reverse-scrolling-description": "Inverser la direction du changement d'espace de travail lors du défilement.",
+      "reverse-scrolling-label": "Défilement inversé",
       "show-applications-description": "Afficher les icônes des applications dans chaque espace de travail.",
       "show-applications-label": "Afficher les applications",
+      "show-badge-description": "Afficher le badge du numéro d'espace de travail en mode groupé.",
+      "show-badge-label": "Afficher le badge de l'espace de travail",
       "show-labels-only-when-occupied-description": "Afficher uniquement les étiquettes d'espace de travail lorsqu'elles contiennent des fenêtres.",
       "show-labels-only-when-occupied-label": "Afficher les étiquettes uniquement lorsque le champ est occupé",
       "unfocused-icons-opacity-description": "Définir le niveau d'opacité des icônes d'applications non focalisées.",
@@ -416,6 +428,7 @@
     "not-found": "Non trouvé",
     "notifications": "Notifications",
     "official": "Officiel",
+    "on-surface": "Sur la surface",
     "output": "Sortie",
     "pair": "Appairer",
     "paired": "Apparié",
@@ -428,6 +441,7 @@
     "polling": "Interrogation",
     "position": "Position",
     "previous": "Précédent",
+    "primary": "Primaire",
     "random": "Aléatoire",
     "reboot": "Redémarrer",
     "refresh": "Actualiser",
@@ -440,6 +454,7 @@
     "scanning": "Analyse en cours...",
     "screen-corners": "Coins d'écran",
     "search": "Rechercher",
+    "secondary": "Secondaire",
     "security": "Sécurité",
     "select": "Sélectionner",
     "shortcuts": "Raccourcis",
@@ -451,6 +466,7 @@
     "stop": "Arrêtez",
     "suspend": "Mettre en veille",
     "templates": "Modèles",
+    "tertiary": "Tertiaire",
     "test": "Test",
     "thresholds": "Seuils",
     "title": "Titre",
@@ -579,7 +595,10 @@
       "density-compact": "Compact",
       "density-default": "Défaut",
       "density-mini": "Mini",
-      "density-spacious": "Spacieux"
+      "density-spacious": "Spacieux",
+      "type-floating": "Flottante",
+      "type-framed": "Encadrée",
+      "type-simple": "Simple"
     },
     "control-center": {
       "quick-settings-style-classic": "Classique",
@@ -709,6 +728,10 @@
       "appearance-floating-label": "Barre flottante",
       "appearance-island-description": "Colle la barre au bord de l'écran avec des coins arrondis côté opposé et des marges latérales (style Dynamic Island).",
       "appearance-island-label": "Mode island",
+      "appearance-frame-radius": "Rayon interne",
+      "appearance-frame-settings-description": "Ajuster l'épaisseur du cadre et le rayon interne",
+      "appearance-frame-settings-label": "Paramètres du cadre",
+      "appearance-frame-thickness": "Épaisseur",
       "appearance-hide-on-overview-description": "Masquer la barre et fermer les panneaux lorsque l'aperçu du compositeur est actif.",
       "appearance-hide-on-overview-label": "Masquer la barre dans l'aperçu",
       "appearance-margins-description": "Ajustez les marges autour de la barre flottante.",
@@ -723,6 +746,8 @@
       "appearance-show-capsule-label": "Afficher la capsule",
       "appearance-show-outline-description": "Affiche une bordure visible autour de chaque widget.",
       "appearance-show-outline-label": "Afficher les contours des widgets",
+      "appearance-type-description": "Choisissez le style de la barre : Simple, Flottante ou Encadrée",
+      "appearance-type-label": "Type de barre",
       "appearance-use-separate-opacity-description": "Activer l'utilisation d'une valeur d'opacité distincte pour l'arrière-plan de la barre.",
       "appearance-use-separate-opacity-label": "Utiliser l'opacité des barres séparément",
       "monitor-configure-widgets": "Configurer les widgets",
@@ -1029,6 +1054,10 @@
       "settings-clip-wrap-text-label": "Envelopper le texte du presse-papiers",
       "settings-clipboard-history-description": "Accédez aux éléments précédemment copiés depuis le lanceur.",
       "settings-clipboard-history-label": "Activer l'historique du presse-papiers",
+      "settings-clipboard-watch-image-description": "Chaîne de commande complète passée à wl-paste pour les changements d'image. (redémarrage requis)",
+      "settings-clipboard-watch-image-label": "Commande de Surveillance d'Images",
+      "settings-clipboard-watch-text-description": "Chaîne de commande complète passée à wl-paste pour les changements de texte. (nécessite un redémarrage)",
+      "settings-clipboard-watch-text-label": "Commande de surveillance de texte",
       "settings-custom-launch-prefix-description": "Préfixer les commandes avec un lanceur personnalisé (ex. 'runapp' pour l'intégration systemd).",
       "settings-custom-launch-prefix-enabled-description": "Utiliser un préfixe personnalisé pour lancer les applications au lieu de la méthode par défaut.",
       "settings-custom-launch-prefix-enabled-label": "Activer le préfixe de lancement personnalisé",
@@ -1092,6 +1121,10 @@
       "weather-show-in-calendar-label": "Afficher la météo dans le calendrier"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "Lorsque fprintd (authentification par empreinte digitale) est actif, cette option vous permet de vous connecter avec votre mot de passe au lieu d'une empreinte digitale.",
+      "allow-password-with-fprintd-label": "Autoriser la connexion par mot de passe avec fprintd",
+      "auto-start-auth-description": "par exemple, démarre automatiquement l'authentification par empreinte digitale sans nécessiter de pression sur une touche ou un clic de bouton.",
+      "auto-start-auth-label": "Authentification au démarrage automatique",
       "compact-lockscreen-description": "Afficher uniquement le champ de saisie de connexion et les commandes système, en masquant les widgets météo et multimédia.",
       "compact-lockscreen-label": "Écran de verrouillage compact",
       "lock-on-suspend-description": "Verrouiller automatiquement l'écran lors de la mise en veille du système.",
@@ -1530,12 +1563,12 @@
       "enabled": "'Ne pas déranger' activé",
       "enabled-desc": "Vous trouverez ces notifications dans votre historique"
     },
+    "donation-opened": "Page de donation ouverte dans votre navigateur",
     "internet-limited": "Connecté sans Internet",
     "keyboard-layout": {
       "changed": "Disposition du clavier changée vers {layout}",
       "title": "Clavier"
     },
-    "kofi-opened": "Page Ko-fi ouverte dans votre navigateur",
     "missing-control-center": {
       "description": "Le widget du centre de contrôle a été retiré de la barre. Pour y accéder à nouveau depuis la barre, veuillez ré‑ajouter le widget. Vous pouvez aussi l'ouvrir en cliquant avec le bouton droit sur la barre",
       "label": "Dernier widget du centre de contrôle supprimé"

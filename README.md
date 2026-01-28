@@ -16,6 +16,8 @@
   </a>
 </p>
 
+<p><br/></p>
+
 <p align="center">
   <a href="https://github.com/noctalia-dev/noctalia-shell/commits">
     <img src="https://img.shields.io/github/last-commit/noctalia-dev/noctalia-shell?style=for-the-badge&labelColor=0C0D11&color=A8AEFF&logo=git&logoColor=FFFFFF&label=commit" alt="Last commit" />
@@ -123,9 +125,9 @@ A heartfelt thank you to our incredible community of [**contributors**](https://
 
 While all donations are greatly appreciated, they are completely voluntary.
 
-<a href="https://ko-fi.com/">
-  <img src="https://img.shields.io/badge/donate-ko--fi-A8AEFF?style=for-the-badge&logo=kofi&logoColor=FFFFFF&labelColor=0C0D11" alt="Ko-Fi" />
-</a>
+[support-noctalia]: https://www.buymeacoffee.com/noctalia
+[![Support Noctalia](https://assets.noctalia.dev/donate-badge.svg)][support-noctalia]
+
 
 ### Thank you to everyone who supports the project 💜!
 * Gohma

@@ -18,6 +18,13 @@ T.ScrollView {
   property int boundsBehavior: Flickable.StopAtBounds
   readonly property bool verticalScrollable: contentItem.contentHeight > contentItem.height
   readonly property bool horizontalScrollable: contentItem.contentWidth > contentItem.width
+  property bool showGradientMasks: true
+  property color gradientColor: Color.mSurfaceVariant
+  property int gradientHeight: 16
+  property bool reserveScrollbarSpace: true
+  property real userRightPadding: 0
+
+  rightPadding: userRightPadding + (reserveScrollbarSpace && verticalScrollable ? handleWidth + Style.marginXS : 0)
 
   implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
   implicitHeight: Math.max(implicitBackgroundHeight + topInset + bottomInset, contentHeight + topPadding + bottomPadding)
@@ -25,6 +32,55 @@ T.ScrollView {
   // Configure the internal flickable when it becomes available
   Component.onCompleted: {
     configureFlickable();
+    createGradients();
+  }
+
+  // Dynamically create gradient overlays to avoid interfering with ScrollView content management
+  function createGradients() {
+    if (!showGradientMasks)
+      return;
+
+    Qt.createQmlObject(`
+      import QtQuick
+      import qs.Commons
+      Rectangle {
+        x: root.leftPadding
+        y: root.topPadding
+        width: root.availableWidth
+        height: root.gradientHeight
+        z: 1
+        visible: root.showGradientMasks && root.verticalScrollable
+        opacity: root.contentItem.contentY <= 1 ? 0 : 1
+        Behavior on opacity {
+          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+        }
+        gradient: Gradient {
+          GradientStop { position: 0.0; color: root.gradientColor }
+          GradientStop { position: 1.0; color: "transparent" }
+        }
+      }
+    `, root, "topGradient");
+
+    Qt.createQmlObject(`
+      import QtQuick
+      import qs.Commons
+      Rectangle {
+        x: root.leftPadding
+        y: root.height - root.bottomPadding - height + 1
+        width: root.availableWidth
+        height: root.gradientHeight + 1
+        z: 1
+        visible: root.showGradientMasks && root.verticalScrollable
+        opacity: (root.contentItem.contentY + root.contentItem.height >= root.contentItem.contentHeight - 1) ? 0 : 1
+        Behavior on opacity {
+          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+        }
+        gradient: Gradient {
+          GradientStop { position: 0.0; color: "transparent" }
+          GradientStop { position: 1.0; color: root.gradientColor }
+        }
+      }
+    `, root, "bottomGradient");
   }
 
   // Function to configure the underlying Flickable

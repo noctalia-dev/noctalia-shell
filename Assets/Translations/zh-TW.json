@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "沒有未讀通知時隱藏通知圖示。",
       "hide-widget-when-zero-unread-label": "沒有未讀通知時隱藏圖示",
       "show-unread-badge-description": "顯示帶有數量的未讀標記",
-      "show-unread-badge-label": "顯示未讀標記"
+      "show-unread-badge-label": "顯示未讀標記",
+      "unread-badge-color-description": "選擇未讀通知徽章的顏色。",
+      "unread-badge-color-label": "未讀徽章顏色"
     },
     "section-editor": {
       "placeholder": "選取一個小工具來新增...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "限制工作區所設定的名字要顯示幾個字元 (1-10)",
       "character-count-label": "字元上限",
+      "empty-color-description": "設定空白 Workspace 的背景顏色。",
+      "empty-color-label": "空白工作區顏色",
       "enable-scrollwheel-description": "利用滑鼠滾輪在工作區間切換",
       "enable-scrollwheel-label": "捲輪切換工作區",
+      "focused-color-description": "設定焦點 Workspace 的背景顏色。",
+      "focused-color-label": "聚焦的工作區顏色",
       "follow-focused-screen-description": "顯示正在聚焦的螢幕所擁有的工作區, 而不是工具列所在的螢幕擁有的工作區",
       "follow-focused-screen-label": "跟隨焦點所在的螢幕",
       "grouped-border-opacity-description": "設定工作區邊框的不透明度",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "沒有佔用時隱藏",
       "label-mode-description": "選擇工作區標籤該如何顯示",
       "label-mode-label": "標籤樣式",
+      "occupied-color-description": "設定已佔用Workspace的背景顏色。",
+      "occupied-color-label": "已佔用工作區顏色",
+      "reverse-scrolling-description": "捲動時反轉工作區切換方向。",
+      "reverse-scrolling-label": "反轉捲動",
       "show-applications-description": "顯示各個工作區的程式圖示",
       "show-applications-label": "顯示應用程式",
+      "show-badge-description": "在群組模式下顯示工作區編號徽章。",
+      "show-badge-label": "顯示工作區標記",
       "show-labels-only-when-occupied-description": "只在工作區有視窗時顯示工作區標籤",
       "show-labels-only-when-occupied-label": "佔用時顯示標籤",
       "unfocused-icons-opacity-description": "設定非焦點應用程式圖示的不透明度。",
@@ -416,6 +428,7 @@
     "not-found": "找不到",
     "notifications": "通知",
     "official": "官方",
+    "on-surface": "在表面上",
     "output": "輸出",
     "pair": "配對",
     "paired": "已配對",
@@ -428,6 +441,7 @@
     "polling": "輪詢",
     "position": "位置",
     "previous": "上一首",
+    "primary": "主要的",
     "random": "隨機",
     "reboot": "重新啟動",
     "refresh": "重新整理",
@@ -440,6 +454,7 @@
     "scanning": "掃描中...",
     "screen-corners": "畫面邊角",
     "search": "搜尋",
+    "secondary": "輔助",
     "security": "安全",
     "select": "選取",
     "shortcuts": "快捷鍵",
@@ -451,6 +466,7 @@
     "stop": "停止",
     "suspend": "暫停",
     "templates": "模板",
+    "tertiary": "第三",
     "test": "測試",
     "thresholds": "門檻",
     "title": "標題",
@@ -579,7 +595,10 @@
       "density-compact": "緊湊",
       "density-default": "預設",
       "density-mini": "迷你",
-      "density-spacious": "寬敞"
+      "density-spacious": "寬敞",
+      "type-floating": "懸浮",
+      "type-framed": "邊框",
+      "type-simple": "簡約"
     },
     "control-center": {
       "quick-settings-style-classic": "古典",
@@ -707,6 +726,10 @@
       "appearance-desc": "自訂工具列的外觀及位置",
       "appearance-floating-description": "將工具列以懸浮的圓弧長條狀顯示",
       "appearance-floating-label": "懸浮工具列",
+      "appearance-frame-radius": "內圓角",
+      "appearance-frame-settings-description": "調整邊框粗細和內圓角半徑",
+      "appearance-frame-settings-label": "邊框設定",
+      "appearance-frame-thickness": "粗細",
       "appearance-hide-on-overview-description": "當在合成器概覽時, 隱藏工具列並關閉面板",
       "appearance-hide-on-overview-label": "概覽時隱藏工具列",
       "appearance-margins-description": "調整懸浮工具列的邊距",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "顯示小容器",
       "appearance-show-outline-description": "讓每個小工具都顯示可視邊框",
       "appearance-show-outline-label": "顯示小工具外框",
+      "appearance-type-description": "選擇欄的樣式：簡約、懸浮或邊框",
+      "appearance-type-label": "欄類型",
       "appearance-use-separate-opacity-description": "啟用後可針對工具列背景使用分開的不透明度數值",
       "appearance-use-separate-opacity-label": "分開設定工具列不透明度",
       "monitor-configure-widgets": "設定小工具",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "剪貼簿文字換行",
       "settings-clipboard-history-description": "在啟動器存取先前所複製的項目",
       "settings-clipboard-history-label": "啟用剪貼簿歷史",
+      "settings-clipboard-watch-image-description": "傳遞給 wl-paste 以進行圖像更改的完整命令字串。(需要重新啟動)",
+      "settings-clipboard-watch-image-label": "圖像監控命令",
+      "settings-clipboard-watch-text-description": "傳遞給 wl-paste 以進行文字變更的完整命令字串。(需要重新啟動)",
+      "settings-clipboard-watch-text-label": "文字監看指令",
       "settings-custom-launch-prefix-description": "在命令前加上自訂啟動器前綴（例如：用「runapp」來整合 systemd）。",
       "settings-custom-launch-prefix-enabled-description": "使用自訂前綴而不是預設的方式來啟動應用程式",
       "settings-custom-launch-prefix-enabled-label": "啟用自訂的程式啟動前綴",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "在行事曆中顯示天氣"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "當 fprintd（指紋認證）處於活動狀態時，此選項允許您使用密碼而非指紋登入。",
+      "allow-password-with-fprintd-label": "允許使用 fprintd 進行密碼登入",
+      "auto-start-auth-description": "例如，自動啟動指紋驗證，無需按鍵或點擊按鈕。",
+      "auto-start-auth-label": "自動啟動驗證",
       "compact-lockscreen-description": "只顯示登入欄位及電源控制, 隱藏天氣及媒體小工具",
       "compact-lockscreen-label": "精簡鎖定畫面",
       "lock-on-suspend-description": "在暫停系統時自動鎖定畫面",
@@ -1528,12 +1561,12 @@
       "enabled": "勿擾模式已啟用",
       "enabled-desc": "你會在歷史通知找到這些通知"
     },
+    "donation-opened": "捐款頁面已在您的瀏覽器中開啟",
     "internet-limited": "已連接但沒有網際網路",
     "keyboard-layout": {
       "changed": "切換鍵盤佈局為 {layout}",
       "title": "鍵盤"
     },
-    "kofi-opened": "已在瀏覽器打開 Ko-Fi 頁面",
     "missing-control-center": {
       "description": "控制中心小工具已經從工具列移除, 如果想重新自工具列存取, 你必須把小工具加回來; 你也可以在工具列直接點擊右鍵打開",
       "label": "最後一個控制中心小工具已解除"

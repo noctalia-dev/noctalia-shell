@@ -126,6 +126,7 @@ SmartPanel {
       }
 
       NScrollView {
+        id: changelogScrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
         horizontalPolicy: ScrollBar.AlwaysOff
@@ -133,7 +134,7 @@ SmartPanel {
         padding: 0
 
         ColumnLayout {
-          width: parent.width
+          width: changelogScrollView.availableWidth
           spacing: Style.marginM
 
           NText {

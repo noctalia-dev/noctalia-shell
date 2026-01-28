@@ -13,6 +13,8 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
   property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : true
   property string valueClockStyle: widgetData.clockStyle !== undefined ? widgetData.clockStyle : widgetMetadata.clockStyle
@@ -63,6 +65,7 @@ ColumnLayout {
 
       // Ensure the input keeps focus
       input.focus = true;
+      settingsChanged(saveSettings());
     }
   }
 
@@ -90,7 +93,10 @@ ColumnLayout {
         "name": I18n.tr("panels.desktop-widgets.clock-style-binary")
       }
     ]
-    onSelected: key => valueClockStyle = key
+    onSelected: key => {
+                  valueClockStyle = key;
+                  settingsChanged(saveSettings());
+                }
   }
 
   NToggle {
@@ -98,7 +104,10 @@ ColumnLayout {
     label: I18n.tr("bar.clock.use-primary-color-label")
     description: I18n.tr("bar.clock.use-primary-color-description")
     checked: valueUsePrimaryColor
-    onToggled: checked => valueUsePrimaryColor = checked
+    onToggled: checked => {
+                 valueUsePrimaryColor = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -106,7 +115,10 @@ ColumnLayout {
     label: I18n.tr("bar.clock.use-custom-font-label")
     description: I18n.tr("bar.clock.use-custom-font-description")
     checked: valueUseCustomFont
-    onToggled: checked => valueUseCustomFont = checked
+    onToggled: checked => {
+                 valueUseCustomFont = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NSearchableComboBox {
@@ -122,6 +134,7 @@ ColumnLayout {
     minimumWidth: 300
     onSelected: function (key) {
       valueCustomFont = key;
+      settingsChanged(saveSettings());
     }
   }
 
@@ -158,6 +171,7 @@ ColumnLayout {
         placeholderText: "HH:mm\\nd MMMM yyyy"
         text: valueFormat
         onTextChanged: valueFormat = text
+        onEditingFinished: settingsChanged(saveSettings())
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {
@@ -250,7 +264,10 @@ ColumnLayout {
     label: I18n.tr("panels.desktop-widgets.clock-show-background-label")
     description: I18n.tr("panels.desktop-widgets.clock-show-background-description")
     checked: valueShowBackground
-    onToggled: checked => valueShowBackground = checked
+    onToggled: checked => {
+                 valueShowBackground = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -259,6 +276,9 @@ ColumnLayout {
     label: I18n.tr("panels.desktop-widgets.clock-rounded-corners-label")
     description: I18n.tr("panels.desktop-widgets.clock-rounded-corners-description")
     checked: valueRoundedCorners
-    onToggled: checked => valueRoundedCorners = checked
+    onToggled: checked => {
+                 valueRoundedCorners = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 }

@@ -189,9 +189,9 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-floating-label",
-    "descriptionKey": "panels.bar.appearance-floating-description",
-    "widget": "NToggle",
+    "labelKey": "panels.bar.appearance-type-label",
+    "descriptionKey": "panels.bar.appearance-type-description",
+    "widget": "NComboBox",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 0,
@@ -201,6 +201,33 @@
     "labelKey": "panels.bar.appearance-outer-corners-label",
     "descriptionKey": "panels.bar.appearance-outer-corners-description",
     "widget": "NToggle",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.bar.appearance-frame-settings-label",
+    "descriptionKey": "panels.bar.appearance-frame-settings-description",
+    "widget": "NLabel",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.bar.appearance-frame-thickness",
+    "descriptionKey": null,
+    "widget": "NValueSlider",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.bar.appearance-frame-radius",
+    "descriptionKey": null,
+    "widget": "NValueSlider",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 0,
@@ -687,6 +714,24 @@
     "subTabLabel": "common.clipboard"
   },
   {
+    "labelKey": "panels.launcher.settings-clipboard-watch-text-label",
+    "descriptionKey": "panels.launcher.settings-clipboard-watch-text-description",
+    "widget": "NTextInput",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 1,
+    "subTabLabel": "common.clipboard"
+  },
+  {
+    "labelKey": "panels.launcher.settings-clipboard-watch-image-label",
+    "descriptionKey": "panels.launcher.settings-clipboard-watch-image-description",
+    "widget": "NTextInput",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 1,
+    "subTabLabel": "common.clipboard"
+  },
+  {
     "labelKey": "panels.launcher.settings-use-app2unit-label",
     "descriptionKey": "panels.launcher.settings-use-app2unit-description",
     "widget": "NToggle",
@@ -805,6 +850,22 @@
   {
     "labelKey": "panels.lock-screen.compact-lockscreen-label",
     "descriptionKey": "panels.lock-screen.compact-lockscreen-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": null
+  },
+  {
+    "labelKey": "panels.lock-screen.auto-start-auth-label",
+    "descriptionKey": "panels.lock-screen.auto-start-auth-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": null
+  },
+  {
+    "labelKey": "panels.lock-screen.allow-password-with-fprintd-label",
+    "descriptionKey": "panels.lock-screen.allow-password-with-fprintd-description",
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",

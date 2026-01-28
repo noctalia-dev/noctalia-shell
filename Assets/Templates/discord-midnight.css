@@ -1,6 +1,6 @@
 /**
-* @name noctalia-midnight
-* @description a fork of midnight for noctalia-shell
+* @name Noctalia Midnight
+* @description A fork of 'Midnight' for Noctalia Shell
 * @author refact0r
 * @version 2.1.1
 * @invite nz87hXyvcy
@@ -153,68 +153,46 @@ body {
   --purple-5: hsl(267deg, 83%, 70%);
 }
 
-.divider__908e2:not(.isUnread__908e2) {
-  border-color: var(--bg-2);
+/* Dividers (Channel list and messages) */
+[class*="divider"]:not([class*="isUnread"]) {
+  border-color: var(--bg-2) !important;
 }
 
-.bannerButton_de8008, .bannerColor_fb7f94 {
-  color: var(--text-1);
+/* Profile Banners */
+[class*="bannerButton"], 
+[class*="bannerColor"] {
+  color: var(--text-1) !important;
 }
 
-/* Prevent scaling animation on DMS icon */
-.wrapper__6e9f8[data-list-item-id='guildsnav___home']:hover > .childWrapper__6e9f8::before,
-.wrapper__6e9f8[data-list-item-id='guildsnav___home'].selected__6e9f8 > .childWrapper__6e9f8::before {
+/* Prevent scaling animation on Home/DMS icon */
+[class*="guildsnav"] [class*="wrapper"][data-list-item-id='guildsnav___home']:hover > [class*="childWrapper"]::before,
+[class*="guildsnav"] [class*="wrapper"][data-list-item-id='guildsnav___home'][class*="selected"] > [class*="childWrapper"]::before {
   transform: rotate(-360deg) scale(1) !important;
 }
 
-/* Make timestamps use lighter text color */
-.timestamp_c19a55,
-.timestampInline_c19a55,
-.timestamp_c19a55 time,
-.timestampInline_c19a55 time {
-  color: var(--text-4) !important;
-}
-
-/* Make timestamps more readable by overriding inline styles */
+/* Timestamps */
 [class*="timestamp"],
+[class*="timestampInline"],
 [class*="timestamp"] time {
   color: var(--text-4) !important;
 }
 
-.postTitleText_faa96b {
+/* Forum/Thread Titles */
+[class*="postTitleText"],
+[class*="postTitleText"] [class*="highlight"] {
   color: var(--text-2) !important;
 }
 
-.postTitleText_faa96b .highlight {
-  color: var(--text-2) !important;
-}
-
-/* Make thread titles more readable by overriding inline styles */
-[class*="headerText"] [class*="postTitleText"],
-[class*="headerText"] h3[class*="postTitleText"] {
-  color: var(--text-2) !important;
-}
-
-.messageContent_c19a55,
-.messageContent_faa96b {
-  color: var(--text-3) !important;
-}
-
-.messageContent_c19a55 .highlight,
-.messageContent_faa96b .highlight {
-  color: var(--text-2) !important;
-}
-
-/* Make message content more readable by overriding inline styles */
+/* Message Content */
 [class*="messageContent"] {
   color: var(--text-3) !important;
 }
 
-[class*="messageContent"] .highlight {
+[class*="messageContent"] [class*="highlight"] {
   color: var(--text-2) !important;
 }
 
-/* Make slowmode/cooldown text more readable by overriding inline styles */
+/* Slowmode/Cooldown Text */
 [class*="cooldownText"] {
   color: var(--text-4) !important;
 }
@@ -252,7 +230,7 @@ body {
 }
 
 /* Outer circle (non-selected background) */
-._64e6155a0667273d-outerRadioBase {
+[class*="outerRadioBase"] {
     fill: var(--bg-1) !important;      /* background for non-selected radios */
     stroke: var(--border) !important;  /* ring border */
     stroke-width: 1px;
@@ -260,7 +238,7 @@ body {
 }
 
 /* Outer circle fill (selected) */
-._64e6155a0667273d-outerRadioFill {
+[class*="outerRadioFill"] {
     fill: var(--bg-1) !important;  /* accent color for selected */
     stroke: var(--border) !important;
     opacity: 0;                        /* hidden by default */
@@ -268,52 +246,47 @@ body {
 }
 
 /* Inner dot (selected) */
-._64e6155a0667273d-innerDotRadio {
+[class*="innerDotRadio"] {
     fill: var(--accent-1) !important;      /* contrast dot */
     opacity: 0;                        /* hidden by default */
     transition: opacity 0.2s ease;
 }
 
-/* Show outer fill + inner dot when selected (handles initial render & clicks) */
-.parentSelected__6e9f8 ._64e6155a0667273d-outerRadioFill,
-.parentSelected__6e9f8 ._64e6155a0667273d-innerDotRadio,
-._64e6155a0667273d-outerRadioFill[aria-checked="true"],
-._64e6155a0667273d-innerDotRadio[aria-checked="true"],
-._64e6155a0667273d-outerRadioFill[data-selected="true"],
-._64e6155a0667273d-innerDotRadio[data-selected="true"] {
+/* Show outer fill + inner dot when selected */
+[class*="radioSelection"][data-selected="true"] [class*="outerRadioFill"],
+[class*="radioSelection"][data-selected="true"] [class*="innerDotRadio"],
+[class*="radioSelection"][aria-checked="true"] [class*="outerRadioFill"],
+[class*="radioSelection"][aria-checked="true"] [class*="innerDotRadio"],
+[class*="parentSelected"] [class*="outerRadioFill"],
+[class*="parentSelected"] [class*="innerDotRadio"] {
     opacity: 1 !important;
 }
 
 /* Hover effect for base ring */
-._64e6155a0667273d-outerRadioBase:hover {
+[class*="outerRadioBase"]:hover {
     stroke: var(--accent-1) !important;
 }
 
 /* Checkbox checkmark and background for selected */
-._714a9a7abaf0392a-checkboxOption[data-selected="true"] ._714a9a7abaf0392a-checkboxIndicator {
-    background-color: var(--bg-1) !important; /* background of selected checkbox */
-    border-color: var(--border) !important; /* optional: accent border */
+[class*="checkboxOption"][data-selected="true"] [class*="checkboxIndicator"] {
+    background-color: transparent !important; /* Removes the solid fill when selected */
+    border-color: var(--accent-1) !important; /* Changes border to accent color when selected */
 }
 
-._714a9a7abaf0392a-checkboxIndicator {
-    background-color: var(--bg-1) !important;  /* background for non-selected checkboxes */
-    border-color: var(--border) !important;    /* neutral border */
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+[class*="checkboxIndicator"] {
+    background-color: transparent !important;
+    border-color: var(--border) !important;
+    transition: border-color 0.2s ease;
 }
 
-._714a9a7abaf0392a-checkboxOption[data-selected="true"] ._714a9a7abaf0392a-checkStroke,
-._714a9a7abaf0392a-checkboxOption[data-selected="true"] ._714a9a7abaf0392a-dot {
+[class*="checkboxOption"][data-selected="true"] [class*="checkStroke"],
+[class*="checkboxOption"][data-selected="true"] [class*="dot"] {
     color: var(--accent-1) !important; /* checkmark/dot color */
 }
 
 /* Hover effect for selected checkbox */
-._714a9a7abaf0392a-checkboxOption[data-selected="true"]:hover ._714a9a7abaf0392a-checkboxIndicator {
-    background-color: var(--bg-1) !important; /* keep background consistent on hover */
-}
-
-._714a9a7abaf0392a-checkboxOption[data-selected="true"]:hover ._714a9a7abaf0392a-checkStroke,
-._714a9a7abaf0392a-checkboxOption[data-selected="true"]:hover ._714a9a7abaf0392a-dot {
-    color: var(--accent-1) !important; /* keep checkmark accent color on hover */
+[class*="checkboxOption"]:hover [class*="checkboxIndicator"] {
+    border-color: var(--accent-1) /* keep background consistent on hover */
 }
 
 /* Fix hover color for channel mentions */
@@ -321,9 +294,31 @@ body {
   color: var(--text-1) !important;
 }
 
-._3b95d7d910416e54-bar._3b95d7d910416e54-mention {
-  background-color: var(--accent-1) !important;
+[class*="unreadTop"],
+[class*="unreadBottom"],
+[class*="unreadMentionsIndicator"] {
+    background-color: transparent !important;
 }
-._3b95d7d910416e54-bar._3b95d7d910416e54-mention ._3b95d7d910416e54-text {
-  color: var(--text-0) !important;
+
+[class*="unreadBar"],
+[class*="unreadMentionsBar"] {
+    background-color: var(--accent-1) !important;
+    border: 1px solid var(--border);
+}
+
+[class*="unreadBar"][class*="mention"],
+[class*="unreadMentionsBar"][class*="mention"] {
+    background-color: var(--accent-1) !important;
+}
+
+[class*="unreadBar"][class*="unread"],
+[class*="unreadMentionsBar"][class*="unread"] {
+    background-color: var(--bg-1) !important;
+    border-color: var(--accent-1) !important;
+}
+
+[class*="unreadBar"] [class*="text"],
+[class*="unreadMentionsBar"] [class*="text"] {
+    color: var(--text-1) !important;
+    font-weight: 700;
 }

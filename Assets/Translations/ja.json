@@ -182,7 +182,9 @@
       "hide-widget-when-zero-unread-description": "未読の通知がない場合に通知アイコンを非表示にします。",
       "hide-widget-when-zero-unread-label": "未読なしでアイコンを非表示",
       "show-unread-badge-description": "未読通知の数を表示するバッジを表示します。",
-      "show-unread-badge-label": "未読バッジを表示"
+      "show-unread-badge-label": "未読バッジを表示",
+      "unread-badge-color-description": "未読の通知バッジの色を選択してください。",
+      "unread-badge-color-label": "未読バッジの色"
     },
     "section-editor": {
       "placeholder": "追加するウィジェットを選択...",
@@ -254,8 +256,12 @@
     "workspace": {
       "character-count-description": "ワークスペース名から表示する文字数 (1-10)。",
       "character-count-label": "文字数",
+      "empty-color-description": "空のWorkspaceの背景色を設定します。",
+      "empty-color-label": "空のワークスペースの色",
       "enable-scrollwheel-description": "マウスホイールを使用してワークスペースを切り替えます。",
       "enable-scrollwheel-label": "スクロールでワークスペースを切り替え",
+      "focused-color-description": "フォーカスされたWorkspaceの背景色を設定します。",
+      "focused-color-label": "フォーカスされたワークスペースの色",
       "follow-focused-screen-description": "バーが配置されている画面ではなく、現在フォーカスされている画面のワークスペースを表示します。",
       "follow-focused-screen-label": "フォーカス中の画面に追従",
       "grouped-border-opacity-description": "ワークスペースコンテナのボーダーの不透明度を設定します。",
@@ -264,8 +270,14 @@
       "hide-unoccupied-label": "空のワークスペースを隠す",
       "label-mode-description": "ワークスペースラベルの表示方法を選択します。",
       "label-mode-label": "ラベルモード",
+      "occupied-color-description": "使用中のWorkspaceの背景色を設定します。",
+      "occupied-color-label": "使用中のワークスペースの色",
+      "reverse-scrolling-description": "スクロール時のワークスペース切り替え方向を反転する。",
+      "reverse-scrolling-label": "スクロール方向を反転",
       "show-applications-description": "各ワークスペース内にアプリアイコンを表示します。",
       "show-applications-label": "アプリアイコンを表示",
+      "show-badge-description": "グループ化モードでワークスペース番号バッジを表示します。",
+      "show-badge-label": "ワークスペースバッジを表示",
       "show-labels-only-when-occupied-description": "ウィンドウが開いているワークスペースにのみラベルを表示します。",
       "show-labels-only-when-occupied-label": "ウィンドウがある時のみラベルを表示",
       "unfocused-icons-opacity-description": "フォーカスされていないアプリのアイコンの不透明度を設定します。",
@@ -416,6 +428,7 @@
     "not-found": "見つかりませんでした",
     "notifications": "通知",
     "official": "公式",
+    "on-surface": "表面上",
     "output": "出力",
     "pair": "ペアリング",
     "paired": "ペアリング済み",
@@ -428,6 +441,7 @@
     "polling": "ポーリング",
     "position": "位置",
     "previous": "前へ",
+    "primary": "プライマリ",
     "random": "ランダム",
     "reboot": "再起動",
     "refresh": "更新",
@@ -440,6 +454,7 @@
     "scanning": "スキャン中...",
     "screen-corners": "画面の隅",
     "search": "検索",
+    "secondary": "セカンダリー",
     "security": "セキュリティ",
     "select": "選択",
     "shortcuts": "ショートカット",
@@ -451,6 +466,7 @@
     "stop": "停止",
     "suspend": "サスペンド",
     "templates": "テンプレート",
+    "tertiary": "第三",
     "test": "テスト",
     "thresholds": "しきい値",
     "title": "タイトル",
@@ -579,7 +595,10 @@
       "density-compact": "コンパクト",
       "density-default": "標準",
       "density-mini": "ミニ",
-      "density-spacious": "広々とした"
+      "density-spacious": "広々とした",
+      "type-floating": "フローティング",
+      "type-framed": "フレーム",
+      "type-simple": "シンプル"
     },
     "control-center": {
       "quick-settings-style-classic": "クラシック",
@@ -707,6 +726,10 @@
       "appearance-desc": "バーの外観や位置をカスタマイズします。",
       "appearance-floating-description": "バーを浮かせて、カプセル型で表示します。",
       "appearance-floating-label": "フローティングバー",
+      "appearance-frame-radius": "内側の半径",
+      "appearance-frame-settings-description": "フレームの太さと内側の半径を調整します",
+      "appearance-frame-settings-label": "フレーム設定",
+      "appearance-frame-thickness": "太さ",
       "appearance-hide-on-overview-description": "コンポジタの概要がアクティブなときは、バーを非表示にしてパネルを閉じます。",
       "appearance-hide-on-overview-label": "概要のバーを非表示にする",
       "appearance-margins-description": "フローティングバーの周囲の余白を調整します。",
@@ -721,6 +744,8 @@
       "appearance-show-capsule-label": "カプセルを表示",
       "appearance-show-outline-description": "すべてのウィジェットの周囲に枠線を表示します。",
       "appearance-show-outline-label": "ウィジェットの枠線を表示",
+      "appearance-type-description": "バーのスタイルを選択：シンプル、フローティング、またはフレーム",
+      "appearance-type-label": "バーの種類",
       "appearance-use-separate-opacity-description": "バーの背景に別の不透明度の値を使用できるようにする。",
       "appearance-use-separate-opacity-label": "バーの不透明度を個別に設定",
       "monitor-configure-widgets": "ウィジェットを設定",
@@ -1027,6 +1052,10 @@
       "settings-clip-wrap-text-label": "クリップボードのテキストを折り返す",
       "settings-clipboard-history-description": "以前コピーした項目にランチャーからアクセスできるようにします。",
       "settings-clipboard-history-label": "クリップボード履歴を有効化",
+      "settings-clipboard-watch-image-description": "画像変更のためにwl-pasteに渡される完全なコマンド文字列。(再起動が必要)",
+      "settings-clipboard-watch-image-label": "画像監視コマンド",
+      "settings-clipboard-watch-text-description": "テキスト変更のために wl-paste に渡される完全なコマンド文字列。(再起動が必要)",
+      "settings-clipboard-watch-text-label": "テキスト監視コマンド",
       "settings-custom-launch-prefix-description": "コマンドの先頭にカスタムランチャーを付与します（例: systemd 連携用の 'runapp'）。",
       "settings-custom-launch-prefix-enabled-description": "デフォルトの方法の代わりに、カスタムプレフィックスを使用してアプリを起動します。",
       "settings-custom-launch-prefix-enabled-label": "カスタム起動プレフィックスを有効化",
@@ -1090,6 +1119,10 @@
       "weather-show-in-calendar-label": "カレンダー"
     },
     "lock-screen": {
+      "allow-password-with-fprintd-description": "fprintd（指紋認証）が有効な場合、このオプションを使用すると、指紋の代わりにパスワードでログインできます。",
+      "allow-password-with-fprintd-label": "fprintd でパスワードログインを許可する",
+      "auto-start-auth-description": "たとえば、キーを押したりボタンをクリックしたりしなくても、指紋認証が自動的に開始されます。",
+      "auto-start-auth-label": "自動認証を開始",
       "compact-lockscreen-description": "天気やメディアウィジェットを隠し、ログイン入力とシステムコントロールのみを表示します。",
       "compact-lockscreen-label": "コンパクトなロック画面",
       "lock-on-suspend-description": "システムのサスペンド時に、自動的に画面をロックします。",
@@ -1528,12 +1561,12 @@
       "enabled": "おやすみモードを有効化",
       "enabled-desc": "通知は履歴に保存されます"
     },
+    "donation-opened": "寄付ページがブラウザで開かれました",
     "internet-limited": "インターネット未接続",
     "keyboard-layout": {
       "changed": "キーボードレイアウトを {layout} に変更しました",
       "title": "キーボード"
     },
-    "kofi-opened": "ブラウザで Ko-fi ページを開きました",
     "missing-control-center": {
       "description": "コントロールセンターウィジェットがバーから削除されました。再度アクセスするには、ウィジェットを追加し直す必要があります。バーを右クリックして開くことも可能です",
       "label": "最後のコントロールセンターが削除されました"

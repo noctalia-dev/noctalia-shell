@@ -107,7 +107,7 @@ SmartPanel {
                 target: SystemStatService
                 function onCpuUsageChanged() {
                   if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === cpuUsageGauge) {
-                    TooltipService.updateText(I18n.tr("system-monitor.cpu-usage") + `: ${Math.round(SystemStatService.cpuUsage)}%`)
+                    TooltipService.updateText(I18n.tr("system-monitor.cpu-usage") + `: ${Math.round(SystemStatService.cpuUsage)}%`);
                   }
                 }
               }
@@ -127,12 +127,12 @@ SmartPanel {
                 fillColor: SystemStatService.tempColor
                 tooltipText: I18n.tr("system-monitor.cpu-temp") + `: ${Math.round(SystemStatService.cpuTemp)}°C`
               }
-              
+
               Connections {
                 target: SystemStatService
                 function onCpuTempChanged() {
                   if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === cpuTempGauge) {
-                    TooltipService.updateText(I18n.tr("system-monitor.cpu-temp") + `: ${Math.round(SystemStatService.cpuTemp)}%`)
+                    TooltipService.updateText(I18n.tr("system-monitor.cpu-temp") + `: ${Math.round(SystemStatService.cpuTemp)}°C`);
                   }
                 }
               }
@@ -153,12 +153,12 @@ SmartPanel {
                 fillColor: SystemStatService.gpuColor
                 tooltipText: I18n.tr("system-monitor.gpu-temp") + `: ${Math.round(SystemStatService.gpuTemp)}°C`
               }
-              
+
               Connections {
                 target: SystemStatService
                 function onGpuTempChanged() {
                   if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === gpuTempGauge) {
-                    TooltipService.updateText(I18n.tr("system-monitor.gpu-temp") + `: ${Math.round(SystemStatService.gpuTemp)}%`)
+                    TooltipService.updateText(I18n.tr("system-monitor.gpu-temp") + `: ${Math.round(SystemStatService.gpuTemp)}°C`);
                   }
                 }
               }
@@ -178,12 +178,12 @@ SmartPanel {
                 fillColor: SystemStatService.memColor
                 tooltipText: I18n.tr("common.memory") + `: ${Math.round(SystemStatService.memPercent)}%`
               }
-              
+
               Connections {
                 target: SystemStatService
                 function onMemPercentChanged() {
                   if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === memPercentGauge) {
-                    TooltipService.updateText(I18n.tr("common.memory") + `: ${Math.round(SystemStatService.memPercent)}%`)
+                    TooltipService.updateText(I18n.tr("common.memory") + `: ${Math.round(SystemStatService.memPercent)}%`);
                   }
                 }
               }
@@ -204,12 +204,12 @@ SmartPanel {
                 fillColor: SystemStatService.swapColor
                 tooltipText: I18n.tr("bar.system-monitor.swap-usage-label") + `: ${Math.round(SystemStatService.swapPercent)}%`
               }
-              
+
               Connections {
                 target: SystemStatService
                 function onSwapPercentChanged() {
                   if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === swapPercentGauge) {
-                    TooltipService.updateText(I18n.tr("bar.system-monitor.swap-usage-label") + `: ${Math.round(SystemStatService.swapPercent)}%`)
+                    TooltipService.updateText(I18n.tr("bar.system-monitor.swap-usage-label") + `: ${Math.round(SystemStatService.swapPercent)}%`);
                   }
                 }
               }
@@ -229,12 +229,12 @@ SmartPanel {
                 fillColor: SystemStatService.getDiskColor(panelContent.diskPath)
                 tooltipText: I18n.tr("system-monitor.disk") + `: ${SystemStatService.diskPercents[panelContent.diskPath] || 0}%\n${panelContent.diskPath}`
               }
-              
+
               Connections {
                 target: SystemStatService
                 function onDiskPercentsChanged() {
                   if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === diskPercentsGauge) {
-                    TooltipService.updateText(I18n.tr("system-monitor.disk") + `: ${SystemStatService.diskPercents[panelContent.diskPath] || 0}%\n${panelContent.diskPath}`)
+                    TooltipService.updateText(I18n.tr("system-monitor.disk") + `: ${SystemStatService.diskPercents[panelContent.diskPath] || 0}%\n${panelContent.diskPath}`);
                   }
                 }
               }
@@ -290,12 +290,12 @@ SmartPanel {
                   color: Color.mOnSurfaceVariant
                   Layout.alignment: Qt.AlignHCenter
                 }
-                
+
                 Connections {
                   target: SystemStatService
                   function onRxSpeedChanged() {
                     if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === rxSpeedGauge) {
-                      TooltipService.updateText(I18n.tr("common.download") + `: ${SystemStatService.formatSpeed(SystemStatService.rxSpeed).replace(/([0-9.]+)([A-Za-z]+)/, "$1 $2")}` + "/s")
+                      TooltipService.updateText(I18n.tr("common.download") + `: ${SystemStatService.formatSpeed(SystemStatService.rxSpeed).replace(/([0-9.]+)([A-Za-z]+)/, "$1 $2")}` + "/s");
                     }
                   }
                 }
@@ -328,12 +328,12 @@ SmartPanel {
                   color: Color.mOnSurfaceVariant
                   Layout.alignment: Qt.AlignHCenter
                 }
-                
+
                 Connections {
                   target: SystemStatService
                   function onTxSpeedChanged() {
                     if (TooltipService.activeTooltip && TooltipService.activeTooltip.targetItem === txSpeedGauge) {
-                      TooltipService.updateText(I18n.tr("common.upload") + `: ${SystemStatService.formatSpeed(SystemStatService.txSpeed).replace(/([0-9.]+)([A-Za-z]+)/, "$1 $2")}` + "/s")
+                      TooltipService.updateText(I18n.tr("common.upload") + `: ${SystemStatService.formatSpeed(SystemStatService.txSpeed).replace(/([0-9.]+)([A-Za-z]+)/, "$1 $2")}` + "/s");
                     }
                   }
                 }

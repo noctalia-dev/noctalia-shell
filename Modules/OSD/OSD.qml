@@ -422,6 +422,8 @@ Variants {
 
       readonly property string screenBarPosition: Settings.getBarPositionForScreen(root.modelData?.name)
       readonly property real barHeight: Style.getBarHeightForScreen(root.modelData?.name)
+      readonly property bool isFramed: Settings.data.bar.barType === "framed"
+      readonly property real frameThickness: Settings.data.bar.frameThickness ?? 8
 
       function calculateMargin(isAnchored, position) {
         if (!isAnchored)
@@ -433,6 +435,11 @@ Variants {
           const floatExtra = Math.ceil(Settings.data.bar.floating ? (isVertical ? Settings.data.bar.marginVertical : Settings.data.bar.marginHorizontal) : 0);
           return barHeight + base + floatExtra;
         }
+
+        if (isFramed) {
+          return base + frameThickness;
+        }
+
         return base;
       }
 

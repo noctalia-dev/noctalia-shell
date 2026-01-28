@@ -40,7 +40,9 @@
       "foreground": "#dcd7ba",
       "background": "#1f1f28",
       "selectionFg": "#c8c093",
-      "selectionBg": "#2d4f67"
+      "selectionBg": "#2d4f67",
+      "cursorText": "#1f1f28",
+      "cursor": "#c8c093"
     }
   },
   "light": {

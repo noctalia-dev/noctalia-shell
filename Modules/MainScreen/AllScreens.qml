@@ -13,6 +13,7 @@ import qs.Services.UI
 Variants {
   model: Quickshell.screens
   delegate: Item {
+    id: windowItem
     required property ShellScreen modelData
 
     property bool shouldBeActive: {
@@ -76,23 +77,27 @@ Variants {
 
     // BarExclusionZone - created after MainScreen has fully loaded
     // Disabled when bar is hidden or not configured for this screen
-    Loader {
-      active: {
-        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.isVisible)
-          return false;
+    Repeater {
+      model: Settings.data.bar.barType === "framed" ? ["top", "bottom", "left", "right"] : [Settings.getBarPositionForScreen(windowItem.modelData?.name)]
+      delegate: Loader {
+        active: {
+          if (!windowItem.windowLoaded || !windowItem.shouldBeActive || !BarService.effectivelyVisible)
+            return false;
 
-        // Check if bar is configured for this screen
-        var monitors = Settings.data.bar.monitors || [];
-        return monitors.length === 0 || monitors.includes(modelData?.name);
-      }
-      asynchronous: false
+          // Check if bar is configured for this screen
+          var monitors = Settings.data.bar.monitors || [];
+          return monitors.length === 0 || monitors.includes(windowItem.modelData?.name);
+        }
+        asynchronous: false
 
-      sourceComponent: BarExclusionZone {
-        screen: modelData
-      }
+        sourceComponent: BarExclusionZone {
+          screen: windowItem.modelData
+          edge: modelData
+        }
 
-      onLoaded: {
-        Logger.d("AllScreens", "BarExclusionZone created for", modelData?.name);
+        onLoaded: {
+          Logger.d("AllScreens", "BarExclusionZone (" + modelData + ") created for", windowItem.modelData?.name);
+        }
       }
     }
 

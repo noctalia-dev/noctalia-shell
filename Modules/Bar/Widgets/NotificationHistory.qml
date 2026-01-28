@@ -21,9 +21,11 @@ NIconButton {
   property int sectionWidgetsCount: 0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  // Explicit screenName property ensures reactive binding when screen changes
+  readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
-    if (section && sectionWidgetIndex >= 0) {
-      var widgets = Settings.getBarWidgetsForScreen(screen?.name)[section];
+    if (section && sectionWidgetIndex >= 0 && screenName) {
+      var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
       if (widgets && sectionWidgetIndex < widgets.length) {
         return widgets[sectionWidgetIndex];
       }
@@ -33,6 +35,14 @@ NIconButton {
   readonly property bool showUnreadBadge: (widgetSettings.showUnreadBadge !== undefined) ? widgetSettings.showUnreadBadge : widgetMetadata.showUnreadBadge
   readonly property bool hideWhenZero: (widgetSettings.hideWhenZero !== undefined) ? widgetSettings.hideWhenZero : widgetMetadata.hideWhenZero
   readonly property bool hideWhenZeroUnread: (widgetSettings.hideWhenZeroUnread !== undefined) ? widgetSettings.hideWhenZeroUnread : widgetMetadata.hideWhenZeroUnread
+  readonly property string unreadBadgeColor: (widgetSettings.unreadBadgeColor !== undefined) ? widgetSettings.unreadBadgeColor : (widgetMetadata.unreadBadgeColor || "primary")
+
+  readonly property var colorMap: {
+    "primary": Color.mPrimary,
+    "secondary": Color.mSecondary,
+    "tertiary": Color.mTertiary,
+    "onSurface": Color.mOnSurface
+  }
 
   function computeUnreadCount() {
     var since = NotificationService.lastSeenTs;
@@ -86,10 +96,8 @@ NIconButton {
     ]
 
     onTriggered: action => {
-                   var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupMenuWindow) {
-                     popupMenuWindow.close();
-                   }
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
 
                    if (action === "toggle-dnd") {
                      NotificationService.doNotDisturb = !NotificationService.doNotDisturb;
@@ -107,26 +115,22 @@ NIconButton {
   }
 
   onRightClicked: {
-    var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-    if (popupMenuWindow) {
-      popupMenuWindow.showContextMenu(contextMenu);
-      contextMenu.openAtItem(root, screen);
-    }
+    PanelService.showContextMenu(contextMenu, root, screen);
   }
 
   Loader {
-    anchors.right: parent.right
-    anchors.top: parent.top
-    anchors.rightMargin: 2
-    anchors.topMargin: 1
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.horizontalCenterOffset: parent.baseSize / 4
+    anchors.verticalCenterOffset: -parent.baseSize / 4
     z: 2
     active: showUnreadBadge
     sourceComponent: Rectangle {
       id: badge
-      height: 8
+      height: 7
       width: height
       radius: Style.radiusXS
-      color: Color.mError
+      color: root.colorMap[root.unreadBadgeColor] || Color.mError
       border.color: Color.mSurface
       border.width: Style.borderS
       visible: count > 0
