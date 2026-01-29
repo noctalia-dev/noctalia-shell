@@ -607,7 +607,7 @@ Item {
 
     return Math.round(calculatedWidth);
   }
-  readonly property real contentHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginS * 2) : barHeight) : 0
+  readonly property real contentHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginS * 2) : capsuleHeight) : 0
 
   implicitWidth: contentWidth
   implicitHeight: contentHeight
@@ -786,7 +786,7 @@ Item {
               visible: shouldShowTitle
               anchors.centerIn: parent
               width: parent.width
-              height: root.barHeight
+              height: root.capsuleHeight
               color: titleBgColor
               radius: Style.radiusM
 
