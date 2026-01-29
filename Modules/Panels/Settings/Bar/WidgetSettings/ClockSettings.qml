@@ -233,7 +233,7 @@ ColumnLayout {
             // Horizontal
             Repeater {
               Layout.topMargin: Style.marginM
-              model: I18n.locale.toString(now, valueFormatHorizontal.trim()).split("\\n")
+              model: I18n.locale.toString(now, I18n.cjkDateFix(valueFormatHorizontal.trim())).split("\\n")
               delegate: NText {
                 visible: text !== ""
                 text: modelData
@@ -264,7 +264,7 @@ ColumnLayout {
 
             Repeater {
               Layout.topMargin: Style.marginM
-              model: I18n.locale.toString(now, valueFormatVertical.trim()).split(" ")
+              model: I18n.locale.toString(now, I18n.cjkDateFix(valueFormatVertical.trim())).split(" ")
               delegate: NText {
                 visible: text !== ""
                 text: modelData

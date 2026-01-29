@@ -361,4 +361,23 @@ Singleton {
 
     return tr(realKey, finalInterpolations);
   }
+
+  // -------------------------------------------
+  // Fix CJK date format
+  function cjkDateFix(formatString) {
+    if (!formatString) return "";
+    const lang = root.langCode;
+    if (!["ko-KR", "ja", "zh-CN", "zh-TW"].includes(lang)) return formatString;
+
+    let fmt = formatString;
+    let yUnit = (lang === "ko-KR") ? "'년'" : "'年'";
+    let dUnit = (lang === "ko-KR") ? "'일'" : "'日'";
+
+    // 'yy' or 'yyyy' followed by a unit other than 'y' or '년'/'年' will be replaced
+    fmt = fmt.replace(/(^|[^y])(yyyy|yy)(?!y|'년'|'年')/g, "$1$2" + yUnit);
+    // 'd' or 'dd' followed by a unit other than 'd' or '일'/'日' will be replaced
+    fmt = fmt.replace(/(^|[^d])(dd|d)(?!d|'일'|'日')/g, "$1$2" + dUnit);
+
+    return fmt;
+  }
 }
