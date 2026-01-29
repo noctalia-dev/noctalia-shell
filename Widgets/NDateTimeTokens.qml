@@ -347,7 +347,7 @@ Rectangle {
 
                 NText {
                   anchors.centerIn: parent
-                  text: I18n.locale.toString(root.sampleDate, modelData.token)
+                  text: I18n.locale.toString(root.sampleDate, I18n.cjkDateFix(modelData.token))
                   color: tokenMouseArea.containsMouse ? Color.mOnPrimary : Color.mSurfaceVariant
                   pointSize: Style.fontSizeS
 

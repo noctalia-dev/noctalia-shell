@@ -41,8 +41,8 @@ Item {
   readonly property bool usePrimaryColor: widgetSettings.usePrimaryColor !== undefined ? widgetSettings.usePrimaryColor : widgetMetadata.usePrimaryColor
   readonly property bool useCustomFont: widgetSettings.useCustomFont !== undefined ? widgetSettings.useCustomFont : widgetMetadata.useCustomFont
   readonly property string customFont: widgetSettings.customFont !== undefined ? widgetSettings.customFont : widgetMetadata.customFont
-  readonly property string formatHorizontal: widgetSettings.formatHorizontal !== undefined ? widgetSettings.formatHorizontal : widgetMetadata.formatHorizontal
-  readonly property string formatVertical: widgetSettings.formatVertical !== undefined ? widgetSettings.formatVertical : widgetMetadata.formatVertical
+  readonly property string formatHorizontal: I18n.cjkDateFix((widgetSettings.formatHorizontal !== undefined ? widgetSettings.formatHorizontal : widgetMetadata.formatHorizontal))
+  readonly property string formatVertical: I18n.cjkDateFix((widgetSettings.formatVertical !== undefined ? widgetSettings.formatVertical : widgetMetadata.formatVertical))
   readonly property string tooltipFormat: widgetSettings.tooltipFormat !== undefined ? widgetSettings.tooltipFormat : widgetMetadata.tooltipFormat
 
   // Content dimensions for implicit sizing
@@ -166,7 +166,7 @@ Item {
   // Build tooltip text with formatted time/date
   function buildTooltipText() {
     if (tooltipFormat && tooltipFormat.trim() !== "") {
-      return I18n.locale.toString(now, tooltipFormat.trim());
+      return I18n.locale.toString(now, I18n.cjkDateFix(tooltipFormat.trim()));
     }
     // Fallback to default if no format is set
     return I18n.tr("common.calendar"); // Defaults to "Calendar"
