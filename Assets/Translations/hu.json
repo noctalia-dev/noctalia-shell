@@ -216,7 +216,9 @@
       "swap-usage-description": "Cserehely memória használatának megjelenítése.",
       "swap-usage-label": "Cserehely használat",
       "use-monospace-font-description": "Használjon monospace betűtípust az egységes karakter-szélességhez.",
-      "use-monospace-font-label": "Monospace betűtípus"
+      "use-monospace-font-label": "Monospace betűtípus",
+      "storage-details-label": "Tárolási részletek",
+      "storage-details-description": "A lemezterület használatát számokkal jeleníti meg. (csak vízszintes sávkonfigurációk esetén működik)"
     },
     "taskbar": {
       "colorize-icons-description": "Témaszínek alkalmazása a tálca ikonjaira.",

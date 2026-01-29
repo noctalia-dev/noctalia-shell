@@ -216,7 +216,9 @@
       "swap-usage-description": "Mostrar o uso da memória swap.",
       "swap-usage-label": "Utilização de swap",
       "use-monospace-font-description": "Use fonte monoespaçada para largura de caractere consistente.",
-      "use-monospace-font-label": "Fonte monoespaçada"
+      "use-monospace-font-label": "Fonte monoespaçada",
+      "storage-details-label": "Detalhes de armazenamento",
+      "storage-details-description": "Mostrar a utilização do espaço em disco como números. (funciona apenas em configurações de barra horizontal)"
     },
     "taskbar": {
       "colorize-icons-description": "Aplicar cores do tema aos ícones da barra de tarefas.",

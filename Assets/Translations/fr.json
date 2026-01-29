@@ -216,7 +216,9 @@
       "swap-usage-description": "Afficher l'utilisation de la mémoire swap.",
       "swap-usage-label": "Utilisation du swap",
       "use-monospace-font-description": "Utilisez une police de caractères à chasse fixe pour une largeur de caractère uniforme.",
-      "use-monospace-font-label": "Police à chasse fixe"
+      "use-monospace-font-label": "Police à chasse fixe",
+      "storage-details-label": "Détails du stockage",
+      "storage-details-description": "Afficher l'utilisation de l'espace disque sous forme de chiffres. (fonctionne uniquement avec les configurations à barres horizontales)"
     },
     "taskbar": {
       "colorize-icons-description": "Appliquer les couleurs du thème aux icônes de la barre des tâches.",

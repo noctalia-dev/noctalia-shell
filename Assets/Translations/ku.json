@@ -216,7 +216,9 @@
       "swap-usage-description": "Bikaranîna bîra swapê nîşan bide.",
       "swap-usage-label": "Bikaranîna Swapê",
       "use-monospace-font-description": "Bi kar tîne fonta monospace ji bo firehiya karakterê ya domdar.",
-      "use-monospace-font-label": "Tîpa yek-firehî"
+      "use-monospace-font-label": "Tîpa yek-firehî",
+      "storage-details-label": "Hûrgiliyên depokirinê",
+      "storage-details-description": "Bikaranîna cîhê dîskê wek hejmar nîşan bide. (tenê di mîhengên stûna asoyî de dixebite)"
     },
     "taskbar": {
       "colorize-icons-description": "Rengên temayê li îkonên taskbarê bicîh bike.",

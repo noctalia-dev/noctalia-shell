@@ -216,7 +216,9 @@
       "swap-usage-description": "Swap-Speichernutzung anzeigen.",
       "swap-usage-label": "Swap-Auslastung",
       "use-monospace-font-description": "Verwende eine Monospace-Schriftart für eine konsistente Zeichenbreite.",
-      "use-monospace-font-label": "Schriftart mit fester Breite"
+      "use-monospace-font-label": "Schriftart mit fester Breite",
+      "storage-details-label": "Datenträger details",
+      "storage-details-description": "Festplattenspeicher als Zahlen anzeigen. (funktioniert nur bei horizontalen Statusleisten konfigurationen)"
     },
     "taskbar": {
       "colorize-icons-description": "Theme-Farben auf Taskbar-Symbole anwenden.",

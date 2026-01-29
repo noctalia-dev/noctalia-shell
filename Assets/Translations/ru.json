@@ -216,7 +216,9 @@
       "swap-usage-description": "Показать использование swap-памяти.",
       "swap-usage-label": "Использование swap",
       "use-monospace-font-description": "Используйте моноширинный шрифт для единообразной ширины символов.",
-      "use-monospace-font-label": "Моноширинный шрифт"
+      "use-monospace-font-label": "Моноширинный шрифт",
+      "storage-details-label": "Детали хранения",
+      "storage-details-description": "Показать использование дискового пространства в виде цифр. (работает только в конфигурациях с горизонтальными полосами)"
     },
     "taskbar": {
       "colorize-icons-description": "Применить цвета темы к иконкам панели задач.",

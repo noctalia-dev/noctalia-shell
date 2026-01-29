@@ -53,6 +53,7 @@ Item {
   readonly property bool showLoadAverage: (widgetSettings.showLoadAverage !== undefined) ? widgetSettings.showLoadAverage : widgetMetadata.showLoadAverage
   readonly property string diskPath: (widgetSettings.diskPath !== undefined) ? widgetSettings.diskPath : widgetMetadata.diskPath
   readonly property string fontFamily: useMonospaceFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
+  readonly property bool showDiskDetails: (widgetSettings.showDiskDetails !== undefined) ? widgetSettings.showDiskDetails : widgetMetadata.showDiskDetails
 
   readonly property real iconSize: Style.toOdd(capsuleHeight * 0.48)
   readonly property real miniGaugeWidth: Math.max(3, Style.toOdd(root.iconSize * 0.25))
@@ -788,7 +789,14 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: SystemStatService.diskPercents[diskPath] ? `${SystemStatService.diskPercents[diskPath]}%` : "n/a"
+            text: {
+              if (showDiskDetails && !isVertical) {
+                const usedGb = SystemStatService.diskUsedGb[diskPath] || 0;
+                const sizeGb = SystemStatService.diskSizeGb[diskPath] || 0;
+                return `${usedGb.toFixed(1)} GB / ${sizeGb.toFixed(1)} GB`;
+              }
+              return SystemStatService.diskPercents[diskPath] ? `${SystemStatService.diskPercents[diskPath]}%` : "n/a";
+            }
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false

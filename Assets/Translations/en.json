@@ -216,7 +216,9 @@
       "swap-usage-description": "Show swap memory usage.",
       "swap-usage-label": "Swap usage",
       "use-monospace-font-description": "Use monospace font for consistent character width.",
-      "use-monospace-font-label": "Monospace font"
+      "use-monospace-font-label": "Monospace font",
+      "storage-details-label": "Storage details",
+      "storage-details-description": "Show disk space usage as numbers. (only works in horizontal bar configurations)"
     },
     "taskbar": {
       "colorize-icons-description": "Apply theme colors to taskbar icons.",

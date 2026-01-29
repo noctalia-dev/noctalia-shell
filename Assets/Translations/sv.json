@@ -216,7 +216,9 @@
       "swap-usage-description": "Visa användning av växlingsminne.",
       "swap-usage-label": "Växlingsanvändning",
       "use-monospace-font-description": "Använd monospace-teckensnitt för enhetlig teckenbredd. ",
-      "use-monospace-font-label": "Teckensnitt för fast bredd"
+      "use-monospace-font-label": "Teckensnitt för fast bredd",
+      "storage-details-label": "Lagringsinformation",
+      "storage-details-description": "Visa diskutrymmesanvändning som siffror. (fungerar endast i horisontella stapelkonfigurationer)"
     },
     "taskbar": {
       "colorize-icons-description": "Tillämpa temafärger på ikoner i aktivitetsfältet.",

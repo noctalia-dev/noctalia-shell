@@ -216,7 +216,9 @@
       "swap-usage-description": "Takas belleği kullanımını göster.",
       "swap-usage-label": "Takas kullanımı",
       "use-monospace-font-description": "Tekdüze karakter genişliği için tek aralıklı yazı tipini kullanın.",
-      "use-monospace-font-label": "Tek aralıklı yazı tipi"
+      "use-monospace-font-label": "Tek aralıklı yazı tipi",
+      "storage-details-label": "Depolama ayrıntıları",
+      "storage-details-description": "Disk alanı kullanımını sayılarla göster. (yalnızca yatay çubuk yapılandırmalarında çalışır)"
     },
     "taskbar": {
       "colorize-icons-description": "Görev çubuğu simgelerine tema renklerini uygula.",

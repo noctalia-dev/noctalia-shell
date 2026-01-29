@@ -216,7 +216,9 @@
       "swap-usage-description": "Toon swap geheugengebruik.",
       "swap-usage-label": "Swapgebruik",
       "use-monospace-font-description": "Gebruik een monospace lettertype voor een consistente tekenbreedte.",
-      "use-monospace-font-label": "Lettertype met vaste breedte"
+      "use-monospace-font-label": "Lettertype met vaste breedte",
+      "storage-details-label": "Opslaggegevens",
+      "storage-details-description": "Toon schijfruimtegebruik als getallen. (werkt alleen bij horizontale balkconfiguraties)"
     },
     "taskbar": {
       "colorize-icons-description": "Pas themakleuren toe op taakbalkpictogrammen.",

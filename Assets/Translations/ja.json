@@ -216,7 +216,9 @@
       "swap-usage-description": "スワップメモリの使用状況を表示します。",
       "swap-usage-label": "スワップ使用量",
       "use-monospace-font-description": "タイプライター体で翻訳します。",
-      "use-monospace-font-label": "等幅フォント"
+      "use-monospace-font-label": "等幅フォント",
+      "storage-details-label": "保管の詳細",
+      "storage-details-description": "ディスク使用量を数値で表示する（水平バー形式でのみ有効）"
     },
     "taskbar": {
       "colorize-icons-description": "タスクバーのアイコンにテーマカラーを適用します。",

@@ -216,7 +216,9 @@
       "swap-usage-description": "Pokaż użycie pamięci wymiany.",
       "swap-usage-label": "Użycie pamięci wymiany",
       "use-monospace-font-description": "Użyj czcionki o stałej szerokości znaków dla zachowania spójnej szerokości znaków.",
-      "use-monospace-font-label": "Czcionka o stałej szerokości znaków"
+      "use-monospace-font-label": "Czcionka o stałej szerokości znaków",
+      "storage-details-label": "Szczegóły dotyczące przechowywania",
+      "storage-details-description": "Pokaż wykorzystanie miejsca na dysku w postaci liczb. (działa tylko w przypadku konfiguracji z poziomymi paskami)"
     },
     "taskbar": {
       "colorize-icons-description": "Zastosuj kolory motywu do ikon paska zadań.",
