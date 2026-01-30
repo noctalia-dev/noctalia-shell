@@ -365,7 +365,7 @@ ColumnLayout {
       // Stack the 4 layers in order (Back to Front)
       LogoLayer {
         source: "../../../../../Assets/noctalia1.svg"
-        darkColor: Color.mPrimary
+        darkColor: Color.mOnPrimary
         lightColor: Color.mTertiary
       }
       LogoLayer {
@@ -515,6 +515,7 @@ ColumnLayout {
       anchors.fill: layerImage
       colorization: 1.0
       colorizationColor: activeColor
+      brightness: 0.5
     }
   }
   // Action buttons row
