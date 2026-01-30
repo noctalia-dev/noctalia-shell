@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="256"
+   height="256"
+   viewBox="0 0 67.733334 67.733334"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="NoctaliaLogo1.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="3.1985533"
+     inkscape:cx="109.73711"
+     inkscape:cy="151.94369"
+     inkscape:window-width="2560"
+     inkscape:window-height="1409"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <defs
+     id="defs1" />
+  <g
+     id="g60"
+     style="fill:#808080;fill-opacity:1;stroke:#808080;stroke-width:6.2176;stroke-dasharray:none;stroke-opacity:1"
+     transform="matrix(1.0000606,0,0,1.0000606,-5.3736738,-63.880929)">
+    <g
+       id="g1"
+       transform="matrix(0.3457623,0,0,0.3457623,1.8096128,40.073954)"
+       style="fill:#808080;fill-opacity:1;stroke:#808080;stroke-width:17.9823;stroke-dasharray:none;stroke-opacity:1">
+      <g
+         id="g2"
+         style="fill:#808080;fill-opacity:1;stroke:#808080;stroke-width:1.4785;stroke-dasharray:none;stroke-opacity:1"
+         transform="matrix(12.162505,0,0,12.162505,-32.462207,-452.96894)">
+        <path
+           id="path1"
+           style="fill:#808080;fill-opacity:1;stroke:#808080;stroke-width:1.4785;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:9.1;stroke-dasharray:none;stroke-opacity:1;paint-order:fill markers stroke"
+           d="m 11.646507,43.642549 c -4.038226,8.9e-4 -7.3116325,3.274297 -7.3125227,7.312523 -1.947e-4,4.038993 3.2735294,7.313597 7.3125227,7.314488 3.487073,-0.0084 6.483277,-2.47736 7.158181,-5.898508 -0.620978,1.570892 -1.854119,2.821688 -3.416025,3.464933 0.0015,0.277406 0.0039,0.532472 0.0039,0.726484 -0.739445,0 -1.37585,-0.10185 -1.92189,-0.271448 -0.146668,0.01695 -0.293894,0.02867 -0.441396,0.03514 -3.4356877,2.08e-4 -6.2209147,-2.785019 -6.2207066,-6.220707 -2.081e-4,-3.435688 2.7850189,-6.220915 6.2207066,-6.220707 0.192387,2.18e-4 0.38466,0.0094 0.576199,0.0274 -0.637785,-0.178134 -1.296807,-0.268831 -1.959001,-0.269605 z m -3.1385553,3.085838 c 0.1447941,0.443587 0.436407,0.880884 0.8274942,1.046718 -0.1090884,0.328801 -0.1096117,0.719225 -0.1096117,1.137282 0,0.90457 0.6427321,1.676019 1.5479578,1.983086 -0.329929,-0.04179 -0.632013,-0.123222 -0.8682918,-0.287054 -0.431935,0.07708 -0.6133052,0.557376 -0.5744781,1.118235 0.2769283,4.000144 2.8097509,3.741322 2.8324539,3.734783 -1.853097,-0.904141 -1.549482,-2.377876 -1.610382,-2.847445 0.07631,0.794735 0.926406,3.057084 4.098271,3.057084 0,-0.953411 0.0047,-3.40281 -0.304135,-4.157993 -0.09728,-0.294206 -0.3627,-1.081221 -0.686056,-1.169354 -0.262025,0.29403 -0.643893,0.449619 -1.095011,0.527045 0.867912,-0.322492 1.4773,-1.077475 1.4773,-1.958387 0,-0.418057 -5.29e-4,-0.808481 -0.109612,-1.137282 0.391087,-0.165834 0.682701,-0.603131 0.827494,-1.046718 -0.472651,-0.0073 -1.224795,0.166618 -1.866593,0.187028 -0.321367,-0.08366 -0.733857,-0.129693 -1.260165,-0.130256 -0.526307,5.76e-4 -0.938675,0.04659 -1.260042,0.130256 -0.6417973,-0.02041 -1.3939415,-0.194302 -1.8665933,-0.187028 z" />
+      </g>
+    </g>
+  </g>
+</svg>

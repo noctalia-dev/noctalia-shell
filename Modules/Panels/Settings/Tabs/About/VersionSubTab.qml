@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -86,10 +87,10 @@ ColumnLayout {
       const scaleData = scales[name];
       const scaleValue = (typeof scaleData === "object" && scaleData !== null) ? (scaleData.scale || 1.0) : (scaleData || 1.0);
       monitors.push({
-                      width: screen.width || 0,
-                      height: screen.height || 0,
-                      scale: scaleValue
-                    });
+        width: screen.width || 0,
+        height: screen.height || 0,
+        scale: scaleValue
+      });
     }
     return {
       instanceId: TelemetryService.getInstanceId(),
@@ -355,18 +356,34 @@ ColumnLayout {
     spacing: Style.marginXL
 
     // Noctalia logo
-    Image {
-      source: "../../../../../Assets/noctalia.svg"
+    Item {
+      id: themedLogoContainer
       width: 96 * Style.uiScaleRatio
       height: width
-      fillMode: Image.PreserveAspectFit
-      sourceSize.width: width
-      sourceSize.height: height
-      mipmap: true
-      smooth: true
       Layout.alignment: Qt.AlignBottom
-    }
 
+      // Stack the 4 layers in order (Back to Front)
+      LogoLayer {
+        source: "../../../../../Assets/noctalia1.svg"
+        darkColor: Color.mPrimary
+        lightColor: Color.mTertiary
+      }
+      LogoLayer {
+        source: "../../../../../Assets/noctalia2.svg"
+        darkColor: Color.mPrimary
+        lightColor: Color.mOnTertiary
+      }
+      LogoLayer {
+        source: "../../../../../Assets/noctalia3.svg"
+        darkColor: Color.mOnSurface
+        lightColor: Color.mSurfaceVariant
+      }
+      LogoLayer {
+        source: "../../../../../Assets/noctalia4.svg"
+        darkColor: Color.mSecondary
+        lightColor: Color.mSecondary
+      }
+    }
     ColumnLayout {
       NHeader {
         label: I18n.tr("panels.about.noctalia-title")
@@ -476,6 +493,30 @@ ColumnLayout {
     }
   }
 
+  // Helper component to apply theme colors to each layer
+  component LogoLayer: Item {
+    property alias source: layerImage.source
+    property color lightColor: "white"
+    property color darkColor: "black"
+    readonly property color activeColor: Settings.data.colorSchemes.darkMode ? darkColor : lightColor
+
+    anchors.fill: parent
+
+    Image {
+      id: layerImage
+      anchors.fill: parent
+      visible: false // Source must be hidden or MultiEffect renders twice
+      smooth: true
+      fillMode: Image.PreserveAspectFit
+    }
+
+    MultiEffect {
+      source: layerImage
+      anchors.fill: layerImage
+      colorization: 1.0
+      colorizationColor: activeColor
+    }
+  }
   // Action buttons row
   RowLayout {
     Layout.alignment: Qt.AlignHCenter
