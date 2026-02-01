@@ -6,13 +6,11 @@ from pathlib import Path
 
 
 def parse_version(name: str, prefix: str) -> tuple:
-    """Extract semver tuple from a directory name like 'noctalia.noctaliatheme-0.0.6-universal'."""
     # Strip prefix and -universal suffix, then split "0.0.6" into (0, 0, 6) for comparison
     return tuple(int(x) for x in name[len(prefix):].removesuffix("-universal").split("."))
 
 
 def find_newest_theme(extensions_dir: Path, prefix: str) -> str | None:
-    """Return the theme file path for the newest matching extension, or None."""
     # Bail early if the extensions directory doesn't exist
     if not extensions_dir.is_dir():
         return None
