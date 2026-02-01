@@ -443,11 +443,12 @@ Item {
       return [];
 
     // Set category mode based on whether there's a query
-    showsCategories = !query || query.trim() === "";
+    const isSearching = !!(query && query.trim() !== "");
+    showsCategories = !isSearching;
 
-    // Filter by category first
+    // Filter by category only when NOT searching
     let filteredEntries = entries;
-    if (selectedCategory && selectedCategory !== "all") {
+    if (!isSearching && selectedCategory && selectedCategory !== "all") {
       filteredEntries = entries.filter(app => appMatchesCategory(app, selectedCategory));
     }
 
@@ -543,7 +544,7 @@ Item {
       "description": app.genericName || app.comment || "",
       "icon": app.icon || "application-x-executable",
       "isImage": false,
-      "_score": (score !== undefined ? score : 0) + 1,
+      "_score": (score !== undefined ? score : 0),
       "provider": root,
       "onActivate": function () {
         // Close the launcher/SmartPanel immediately without any animations.

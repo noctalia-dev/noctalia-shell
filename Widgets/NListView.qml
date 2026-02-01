@@ -19,6 +19,7 @@ Item {
       return false;
     return listView.contentHeight > listView.height;
   }
+  readonly property bool contentOverflows: listView.contentHeight > listView.height
 
   property bool showGradientMasks: true
   property color gradientColor: Color.mSurfaceVariant
@@ -66,6 +67,9 @@ Item {
   property alias dragging: listView.dragging
   property alias horizontalVelocity: listView.horizontalVelocity
   property alias verticalVelocity: listView.verticalVelocity
+
+  // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
+  property real wheelScrollMultiplier: 2.0
 
   // Forward ListView methods
   function positionViewAtIndex(index, mode) {
@@ -134,8 +138,12 @@ Item {
         width: root.availableWidth
         height: root.gradientHeight
         z: 1
-        visible: root.showGradientMasks && root.verticalScrollBarActive
-        opacity: listView.contentY <= 1 ? 0 : 1
+        visible: root.showGradientMasks && root.contentOverflows
+        opacity: {
+          if (listView.contentY <= 1) return 0;
+          if (listView.currentItem && listView.currentItem.y - listView.contentY < root.gradientHeight) return 0;
+          return 1;
+        }
         Behavior on opacity {
           NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
         }
@@ -156,8 +164,12 @@ Item {
         width: root.availableWidth
         height: root.gradientHeight + 1
         z: 1
-        visible: root.showGradientMasks && root.verticalScrollBarActive
-        opacity: (listView.contentY + listView.height >= listView.contentHeight - 1) ? 0 : 1
+        visible: root.showGradientMasks && root.contentOverflows
+        opacity: {
+          if (listView.contentY + listView.height >= listView.contentHeight - 1) return 0;
+          if (listView.currentItem && listView.currentItem.y + listView.currentItem.height > listView.contentY + listView.height - root.gradientHeight) return 0;
+          return 1;
+        }
         Behavior on opacity {
           NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
         }
@@ -176,6 +188,17 @@ Item {
 
     clip: true
     boundsBehavior: Flickable.StopAtBounds
+
+    WheelHandler {
+      enabled: root.wheelScrollMultiplier !== 1.0
+      acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+      onWheel: event => {
+                 const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 8;
+                 const newY = listView.contentY - (delta * root.wheelScrollMultiplier);
+                 listView.contentY = Math.max(0, Math.min(newY, listView.contentHeight - listView.height));
+                 event.accepted = true;
+               }
+    }
 
     ScrollBar.vertical: ScrollBar {
       parent: root

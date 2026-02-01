@@ -259,7 +259,6 @@ PopupWindow {
     visible = true;
     canAutoClose = false;
     gracePeriodTimer.restart();
-
   }
 
   function hide() {

@@ -219,7 +219,7 @@ ColumnLayout {
         id: chip
         Layout.fillWidth: true
         Layout.preferredHeight: Math.round(Style.baseWidgetSize * 0.9)
-        radius: height / 2
+        radius: Style.iRadiusM
         color: chipMouse.containsMouse ? Color.mHover : (isActive ? Color.mPrimary : Color.mSurface)
         border.color: isActive ? Color.mPrimary : Color.mOutline
         border.width: Style.borderS

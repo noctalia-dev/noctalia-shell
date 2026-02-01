@@ -27,6 +27,34 @@ Item {
     });
   }
 
+  // Hot corner: trigger click on first widget in a section
+  function triggerFirstWidgetInSection(sectionName: string) {
+    var widgets = BarService.getWidgetsBySection(sectionName, screen?.name);
+    for (var i = 0; i < widgets.length; i++) {
+      var widget = widgets[i];
+      if (widget && widget.visible && widget.widgetId !== "Spacer") {
+        if (typeof widget.clicked === "function") {
+          widget.clicked();
+        }
+        return;
+      }
+    }
+  }
+
+  // Hot corner: trigger click on last widget in a section
+  function triggerLastWidgetInSection(sectionName: string) {
+    var widgets = BarService.getWidgetsBySection(sectionName, screen?.name);
+    for (var i = widgets.length - 1; i >= 0; i--) {
+      var widget = widgets[i];
+      if (widget && widget.visible && widget.widgetId !== "Spacer") {
+        if (typeof widget.clicked === "function") {
+          widget.clicked();
+        }
+        return;
+      }
+    }
+  }
+
   // Expose bar region for click-through mask
   readonly property var barRegion: barContentLoader.item?.children[0] || null
 
@@ -46,8 +74,78 @@ Item {
   readonly property real capsuleHeight: Style.getCapsuleHeightForDensity(barDensity, barHeight)
   readonly property real barFontSize: Style.getBarFontSizeForDensity(barHeight, capsuleHeight, barIsVertical)
 
-  // Bar widgets (per-screen)
+  // Bar widgets (per-screen) - initial configuration
+  // Note: Updates are handled via Connections to BarService.widgetsRevisionChanged
   readonly property var barWidgets: Settings.getBarWidgetsForScreen(screen?.name)
+
+  // Stable ListModels for each section - prevents Repeater recreation on settings changes
+  property ListModel leftWidgetsModel: ListModel {}
+  property ListModel centerWidgetsModel: ListModel {}
+  property ListModel rightWidgetsModel: ListModel {}
+
+  // Sync a ListModel with widget data, preserving delegates when only settings change
+  function syncWidgetModel(model, newWidgets) {
+    var validWidgets = filterValidWidgets(newWidgets);
+
+    // Build list of current IDs in model
+    var currentIds = [];
+    for (var i = 0; i < model.count; i++) {
+      currentIds.push(model.get(i).id);
+    }
+
+    // Build list of new IDs
+    var newIds = validWidgets.map(w => w.id);
+
+    // Check if structure changed (different IDs or order)
+    var structureChanged = currentIds.length !== newIds.length;
+    if (!structureChanged) {
+      for (var i = 0; i < currentIds.length; i++) {
+        if (currentIds[i] !== newIds[i]) {
+          structureChanged = true;
+          break;
+        }
+      }
+    }
+
+    Logger.d("Bar", "syncWidgetModel:", currentIds.join("|"), "→", newIds.join("|"), "changed:", structureChanged);
+
+    if (structureChanged) {
+      // Rebuild model - IDs changed
+      model.clear();
+      for (var i = 0; i < validWidgets.length; i++) {
+        model.append(validWidgets[i]);
+      }
+    }
+    // If structure didn't change, delegates are preserved and will read fresh settings
+  }
+
+  // Sync models when widget revision changes
+  // Note: We use Connections instead of onBarWidgetsChanged because getBarWidgetsForScreen
+  // returns the same object reference (Settings.data.bar.widgets) even when content changes,
+  // so QML won't detect the change via property binding.
+  Connections {
+    target: BarService
+    function onWidgetsRevisionChanged() {
+      Logger.d("Bar", "onWidgetsRevisionChanged, revision:", BarService.widgetsRevision, "screen:", root.screen?.name);
+      var widgets = Settings.getBarWidgetsForScreen(root.screen?.name);
+      if (widgets) {
+        root.syncWidgetModel(root.leftWidgetsModel, widgets.left);
+        root.syncWidgetModel(root.centerWidgetsModel, widgets.center);
+        root.syncWidgetModel(root.rightWidgetsModel, widgets.right);
+      }
+    }
+  }
+
+  // Initialize models
+  Component.onCompleted: {
+    Logger.d("Bar", "Bar Component.onCompleted for screen:", screen?.name);
+    var widgets = Settings.getBarWidgetsForScreen(screen?.name);
+    if (widgets) {
+      syncWidgetModel(leftWidgetsModel, widgets.left);
+      syncWidgetModel(centerWidgetsModel, widgets.center);
+      syncWidgetModel(rightWidgetsModel, widgets.right);
+    }
+  }
 
   // Fill the parent (the Loader)
   anchors.fill: parent
@@ -220,26 +318,47 @@ Item {
       anchors.fill: parent
       clip: true
 
+      // Top edge hot corner - triggers first widget in left (top) section
+      MouseArea {
+        width: parent.width
+        height: Style.marginS
+        x: 0
+        y: 0
+        onClicked: root.triggerFirstWidgetInSection("left")
+      }
+
+      // Bottom edge hot corner - triggers last widget in right (bottom) section
+      MouseArea {
+        width: parent.width
+        height: Style.marginS
+        x: 0
+        anchors.bottom: parent.bottom
+        onClicked: root.triggerLastWidgetInSection("right")
+      }
+
+      // Calculate margin to center widgets vertically within the bar height
+      readonly property real verticalBarMargin: Math.round((root.barHeight - root.capsuleHeight) / 2)
+
       // Top section (left widgets)
       ColumnLayout {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.top: parent.top
-        anchors.topMargin: Style.marginM
+        anchors.topMargin: verticalBarMargin
         spacing: Style.marginS
 
         Repeater {
-          model: root.filterValidWidgets(root.barWidgets.left)
+          model: root.leftWidgetsModel
           delegate: BarWidgetLoader {
-            required property var modelData
+            required property var model
             required property int index
 
-            widgetId: modelData.id || ""
+            widgetId: model.id || ""
             widgetScreen: root.screen
             widgetProps: ({
-                            "widgetId": modelData.id,
+                            "widgetId": model.id,
                             "section": "left",
                             "sectionWidgetIndex": index,
-                            "sectionWidgetsCount": root.barWidgets.left.length
+                            "sectionWidgetsCount": root.leftWidgetsModel.count
                           })
             Layout.alignment: Qt.AlignHCenter
           }
@@ -253,18 +372,18 @@ Item {
         spacing: Style.marginS
 
         Repeater {
-          model: root.filterValidWidgets(root.barWidgets.center)
+          model: root.centerWidgetsModel
           delegate: BarWidgetLoader {
-            required property var modelData
+            required property var model
             required property int index
 
-            widgetId: modelData.id || ""
+            widgetId: model.id || ""
             widgetScreen: root.screen
             widgetProps: ({
-                            "widgetId": modelData.id,
+                            "widgetId": model.id,
                             "section": "center",
                             "sectionWidgetIndex": index,
-                            "sectionWidgetsCount": root.barWidgets.center.length
+                            "sectionWidgetsCount": root.centerWidgetsModel.count
                           })
             Layout.alignment: Qt.AlignHCenter
           }
@@ -275,22 +394,22 @@ Item {
       ColumnLayout {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Style.marginM
+        anchors.bottomMargin: verticalBarMargin
         spacing: Style.marginS
 
         Repeater {
-          model: root.filterValidWidgets(root.barWidgets.right)
+          model: root.rightWidgetsModel
           delegate: BarWidgetLoader {
-            required property var modelData
+            required property var model
             required property int index
 
-            widgetId: modelData.id || ""
+            widgetId: model.id || ""
             widgetScreen: root.screen
             widgetProps: ({
-                            "widgetId": modelData.id,
+                            "widgetId": model.id,
                             "section": "right",
                             "sectionWidgetIndex": index,
-                            "sectionWidgetsCount": root.barWidgets.right.length
+                            "sectionWidgetsCount": root.rightWidgetsModel.count
                           })
             Layout.alignment: Qt.AlignHCenter
           }
@@ -306,28 +425,49 @@ Item {
       anchors.fill: parent
       clip: true
 
+      // Left edge hot corner - triggers first widget in left section
+      MouseArea {
+        width: Style.marginS
+        height: parent.height
+        x: 0
+        y: 0
+        onClicked: root.triggerFirstWidgetInSection("left")
+      }
+
+      // Right edge hot corner - triggers last widget in right section
+      MouseArea {
+        width: Style.marginS
+        height: parent.height
+        anchors.right: parent.right
+        y: 0
+        onClicked: root.triggerLastWidgetInSection("right")
+      }
+
+      // Calculate margin to center widgets horizontally within the bar height
+      readonly property real horizontalBarMargin: Math.round((root.barHeight - root.capsuleHeight) / 2)
+
       // Left Section
       RowLayout {
         id: leftSection
         objectName: "leftSection"
         anchors.left: parent.left
-        anchors.leftMargin: Style.marginS
+        anchors.leftMargin: horizontalBarMargin
         y: Style.pixelAlignCenter(parent.height, height)
         spacing: Style.marginS
 
         Repeater {
-          model: root.filterValidWidgets(root.barWidgets.left)
+          model: root.leftWidgetsModel
           delegate: BarWidgetLoader {
-            required property var modelData
+            required property var model
             required property int index
 
-            widgetId: modelData.id || ""
+            widgetId: model.id || ""
             widgetScreen: root.screen
             widgetProps: ({
-                            "widgetId": modelData.id,
+                            "widgetId": model.id,
                             "section": "left",
                             "sectionWidgetIndex": index,
-                            "sectionWidgetsCount": root.barWidgets.left.length
+                            "sectionWidgetsCount": root.leftWidgetsModel.count
                           })
             Layout.alignment: Qt.AlignVCenter
           }
@@ -343,18 +483,18 @@ Item {
         spacing: Style.marginS
 
         Repeater {
-          model: root.filterValidWidgets(root.barWidgets.center)
+          model: root.centerWidgetsModel
           delegate: BarWidgetLoader {
-            required property var modelData
+            required property var model
             required property int index
 
-            widgetId: modelData.id || ""
+            widgetId: model.id || ""
             widgetScreen: root.screen
             widgetProps: ({
-                            "widgetId": modelData.id,
+                            "widgetId": model.id,
                             "section": "center",
                             "sectionWidgetIndex": index,
-                            "sectionWidgetsCount": root.barWidgets.center.length
+                            "sectionWidgetsCount": root.centerWidgetsModel.count
                           })
             Layout.alignment: Qt.AlignVCenter
           }
@@ -366,23 +506,23 @@ Item {
         id: rightSection
         objectName: "rightSection"
         anchors.right: parent.right
-        anchors.rightMargin: Style.marginS
+        anchors.rightMargin: horizontalBarMargin
         y: Style.pixelAlignCenter(parent.height, height)
         spacing: Style.marginS
 
         Repeater {
-          model: root.filterValidWidgets(root.barWidgets.right)
+          model: root.rightWidgetsModel
           delegate: BarWidgetLoader {
-            required property var modelData
+            required property var model
             required property int index
 
-            widgetId: modelData.id || ""
+            widgetId: model.id || ""
             widgetScreen: root.screen
             widgetProps: ({
-                            "widgetId": modelData.id,
+                            "widgetId": model.id,
                             "section": "right",
                             "sectionWidgetIndex": index,
-                            "sectionWidgetsCount": root.barWidgets.right.length
+                            "sectionWidgetsCount": root.rightWidgetsModel.count
                           })
             Layout.alignment: Qt.AlignVCenter
           }

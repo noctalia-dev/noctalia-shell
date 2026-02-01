@@ -316,6 +316,14 @@ Singleton {
     return null;
   }
 
+  // Get focused screen from compositor
+  function getFocusedScreen() {
+    if (backend && backend.getFocusedScreen) {
+      return backend.getFocusedScreen();
+    }
+    return null;
+  }
+
   // Get focused window title
   function getFocusedWindowTitle() {
     if (focusedWindowIndex >= 0 && focusedWindowIndex < windows.count) {

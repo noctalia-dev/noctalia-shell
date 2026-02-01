@@ -163,8 +163,8 @@ Popup {
         }
 
         NButton {
-          id: cancelButton
-          text: I18n.tr("common.cancel")
+          id: closeButton
+          text: I18n.tr("common.close")
           outlined: true
           onClicked: root.close()
         }
@@ -175,7 +175,6 @@ Popup {
           icon: "check"
           onClicked: {
             root.updateEntryCommand(root.entryIndex, commandInput.text);
-            root.close();
           }
         }
       }

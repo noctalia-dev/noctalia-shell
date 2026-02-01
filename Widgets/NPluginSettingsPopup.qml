@@ -67,15 +67,16 @@ Popup {
 
       // Settings loader - pluginApi is passed via setSource() in openPluginSettings()
       NScrollView {
+        id: settingsScrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.minimumHeight: 100
         horizontalPolicy: ScrollBar.AlwaysOff
-        rightPadding: verticalScrollable ? Style.marginM : 0 // Only add padding when scrollbar is visible
+        gradientColor: Color.mSurface
 
         Loader {
           id: settingsLoader
-          width: parent.width
+          width: settingsScrollView.availableWidth
         }
       }
 
@@ -90,7 +91,7 @@ Popup {
         }
 
         NButton {
-          text: I18n.tr("common.cancel")
+          text: I18n.tr("common.close")
           outlined: true
           onClicked: root.close()
         }
@@ -101,7 +102,6 @@ Popup {
           onClicked: {
             if (settingsLoader.item && settingsLoader.item.saveSettings) {
               settingsLoader.item.saveSettings();
-              root.close();
               if (root.showToastOnSave) {
                 ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.settings-saved"));
               }

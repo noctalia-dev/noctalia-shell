@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Services.Noctalia
@@ -16,8 +15,8 @@ ColumnLayout {
   property int tagsRefreshCounter: 0
   property int availablePluginsRefreshCounter: 0
 
-  // Pseudo tags for filtering by download status
-  readonly property var pseudoTags: ["downloaded", "notDownloaded"]
+  // Pseudo tags for filtering
+  readonly property var pseudoTags: ["official", "downloaded", "notDownloaded"]
 
   readonly property var availableTags: {
     // Reference counter to force re-evaluation
@@ -55,6 +54,8 @@ ColumnLayout {
     formatTag: function (tag) {
       if (tag === "")
         return I18n.tr("launcher.categories.all");
+      if (tag === "official")
+        return I18n.tr("common.official");
       if (tag === "downloaded")
         return I18n.tr("panels.plugins.filter-downloaded");
       if (tag === "notDownloaded")
@@ -112,6 +113,10 @@ ColumnLayout {
           if (root.selectedTag === "") {
             // "All" - no filter
             filtered.push(plugin);
+          } else if (root.selectedTag === "official") {
+            // Official (team-maintained) pseudo tag
+            if (plugin.official === true)
+              filtered.push(plugin);
           } else if (root.selectedTag === "downloaded") {
             // Downloaded pseudo tag
             if (downloaded)
@@ -195,17 +200,37 @@ ColumnLayout {
               elide: Text.ElideRight
             }
 
+            // Official badge (Noctalia Team maintained)
+            Rectangle {
+              visible: modelData.official === true
+              color: Color.mSecondary
+              radius: Style.radiusXS
+              implicitWidth: officialBadgeRow.implicitWidth + Style.marginS * 2
+              implicitHeight: officialBadgeRow.implicitHeight + Style.marginXS * 2
+
+              RowLayout {
+                id: officialBadgeRow
+                anchors.centerIn: parent
+                spacing: Style.marginXS
+
+                NIcon {
+                  icon: "official-plugin"
+                  pointSize: Style.fontSizeXXS
+                  color: Color.mOnSecondary
+                }
+
+                NText {
+                  text: I18n.tr("common.official")
+                  font.pointSize: Style.fontSizeXXS
+                  font.weight: Style.fontWeightMedium
+                  color: Color.mOnSecondary
+                }
+              }
+            }
+
             // Spacer
             Item {
               Layout.fillWidth: true
-            }
-
-            // Downloaded indicator
-            NIcon {
-              icon: "circle-check"
-              pointSize: Style.baseWidgetSize * 0.5
-              color: Color.mPrimary
-              visible: modelData.downloaded === true
             }
 
             // Open plugin page button
@@ -216,22 +241,21 @@ ColumnLayout {
               onClicked: Qt.openUrlExternally("https://noctalia.dev/plugins/" + modelData.id + "/")
             }
 
-            // Install/Uninstall button
+            // Downloaded indicator
+            NIcon {
+              icon: "circle-check"
+              pointSize: Style.baseWidgetSize * 0.5
+              color: Color.mPrimary
+              visible: modelData.downloaded === true
+            }
+
+            // Install button (only shown when not downloaded)
             NIconButton {
-              icon: modelData.downloaded ? "trash" : "download"
+              visible: modelData.downloaded === false
+              icon: "download"
               baseSize: Style.baseWidgetSize * 0.7
-              tooltipText: modelData.downloaded ? I18n.tr("common.uninstall") : I18n.tr("common.install")
-              onClicked: {
-                if (modelData.downloaded) {
-                  // Construct composite key for available plugins
-                  var pluginData = Object.assign({}, modelData);
-                  pluginData.compositeKey = PluginRegistry.generateCompositeKey(modelData.id, modelData.source?.url || "");
-                  uninstallDialog.pluginToUninstall = pluginData;
-                  uninstallDialog.open();
-                } else {
-                  installPlugin(modelData);
-                }
-              }
+              tooltipText: I18n.tr("common.install")
+              onClicked: installPlugin(modelData)
             }
           }
 
@@ -282,6 +306,20 @@ ColumnLayout {
               color: Color.mOnSurfaceVariant
             }
 
+            NText {
+              visible: !!modelData.lastUpdated
+              text: "•"
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
+            NText {
+              visible: !!modelData.lastUpdated
+              text: modelData.lastUpdated ? Time.formatRelativeTime(new Date(modelData.lastUpdated)) : ""
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
             Item {
               Layout.fillWidth: true
             }
@@ -295,64 +333,6 @@ ColumnLayout {
       label: I18n.tr("panels.plugins.available-no-plugins-label")
       description: I18n.tr("panels.plugins.available-no-plugins-description")
       Layout.fillWidth: true
-    }
-  }
-
-  // Uninstall confirmation dialog
-  Popup {
-    id: uninstallDialog
-    parent: Overlay.overlay
-    modal: true
-    dim: false
-    anchors.centerIn: parent
-    width: 400 * Style.uiScaleRatio
-    padding: Style.marginL
-
-    property var pluginToUninstall: null
-
-    background: Rectangle {
-      color: Color.mSurface
-      radius: Style.radiusS
-      border.color: Color.mPrimary
-      border.width: Style.borderM
-    }
-
-    contentItem: ColumnLayout {
-      width: parent.width
-      spacing: Style.marginL
-
-      NHeader {
-        label: I18n.tr("panels.plugins.uninstall-dialog-title")
-        description: I18n.tr("panels.plugins.uninstall-dialog-description", {
-                               "plugin": uninstallDialog.pluginToUninstall?.name || ""
-                             })
-      }
-
-      RowLayout {
-        spacing: Style.marginM
-        Layout.fillWidth: true
-
-        Item {
-          Layout.fillWidth: true
-        }
-
-        NButton {
-          text: I18n.tr("common.cancel")
-          onClicked: uninstallDialog.close()
-        }
-
-        NButton {
-          text: I18n.tr("common.uninstall")
-          backgroundColor: Color.mPrimary
-          textColor: Color.mOnPrimary
-          onClicked: {
-            if (uninstallDialog.pluginToUninstall) {
-              uninstallPlugin(uninstallDialog.pluginToUninstall.compositeKey);
-              uninstallDialog.close();
-            }
-          }
-        }
-      }
     }
   }
 
@@ -379,27 +359,6 @@ ColumnLayout {
         PluginService.enablePlugin(registeredKey);
       } else {
         ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.install-error", {
-                                                                          "error": error || "Unknown error"
-                                                                        }));
-      }
-    });
-  }
-
-  function uninstallPlugin(pluginId) {
-    var manifest = PluginRegistry.getPluginManifest(pluginId);
-    var pluginName = manifest?.name || pluginId;
-
-    ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstalling", {
-                                                                       "plugin": pluginName
-                                                                     }));
-
-    PluginService.uninstallPlugin(pluginId, function (success, error) {
-      if (success) {
-        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstall-success", {
-                                                                           "plugin": pluginName
-                                                                         }));
-      } else {
-        ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstall-error", {
                                                                           "error": error || "Unknown error"
                                                                         }));
       }

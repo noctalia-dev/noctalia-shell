@@ -75,17 +75,19 @@ SmartPanel {
       }
 
       NScrollView {
+        id: brightnessScrollView
         Layout.fillWidth: true
         Layout.fillHeight: true
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AsNeeded
-        clip: true
         contentWidth: availableWidth
+        reserveScrollbarSpace: false
+        gradientColor: Color.mSurface
 
         // AudioService Devices
         ColumnLayout {
           spacing: Style.marginM
-          width: parent.width
+          width: brightnessScrollView.availableWidth
 
           Repeater {
             model: Quickshell.screens || []

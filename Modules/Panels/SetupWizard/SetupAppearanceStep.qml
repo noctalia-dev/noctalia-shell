@@ -88,13 +88,14 @@ ColumnLayout {
   }
 
   NScrollView {
+    id: appearanceScrollView
     Layout.fillWidth: true
     Layout.fillHeight: true
     horizontalPolicy: ScrollBar.AlwaysOff
     verticalPolicy: ScrollBar.AsNeeded
 
     ColumnLayout {
-      width: parent.width
+      width: appearanceScrollView.availableWidth
       spacing: Style.marginM
 
       // Dark Mode Toggle

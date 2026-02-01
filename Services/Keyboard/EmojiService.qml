@@ -26,8 +26,7 @@ Singleton {
     }
 
     if (!query || query.trim() === "") {
-      // Return popular/recently used emojis, fallback to all emojis sorted by usage
-      return _getPopularEmojis(50);
+      return emojis;
     }
 
     const terms = query.toLowerCase().split(" ").filter(t => t);

@@ -42,6 +42,16 @@ Singleton {
   property var fallbackQueue: []
   property bool fallbackProcessing: false
 
+  // Process queues to prevent "too many open files" errors
+  property var utilityProcessQueue: []
+  property int runningUtilityProcesses: 0
+  readonly property int maxConcurrentUtilityProcesses: 16
+
+  // Separate queue for heavy ImageMagick processing (lower concurrency)
+  property var imageMagickQueue: []
+  property int runningImageMagickProcesses: 0
+  readonly property int maxConcurrentImageMagickProcesses: 4
+
   // -------------------------------------------------
   // Signals
   // -------------------------------------------------
@@ -341,41 +351,35 @@ Singleton {
     const tempEsc = tempPath.replace(/'/g, "'\\''");
     const urlEsc = url.replace(/'/g, "'\\''");
 
-    // Download first
+    // Download first (uses utility queue since curl/wget are lightweight)
     const downloadCmd = `curl -L -s -o '${tempEsc}' '${urlEsc}' || wget -q -O '${tempEsc}' '${urlEsc}'`;
 
     const processString = `
       import QtQuick
       import Quickshell.Io
       Process {
-        command: ["sh", "-c", ""]
+        command: ["sh", "-c", "${downloadCmd.replace(/"/g, '\\"')}"]
         stdout: StdioCollector {}
         stderr: StdioCollector {}
       }
     `;
 
-    try {
-      const downloadProcess = Qt.createQmlObject(processString, root, "DownloadProcess_" + cacheKey);
-      downloadProcess.command = ["sh", "-c", downloadCmd];
-
-      downloadProcess.exited.connect(function (exitCode) {
-        downloadProcess.destroy();
-
-        if (exitCode !== 0) {
-          Logger.e("ImageCache", "Failed to download avatar for", username);
-          notifyCallbacks(cacheKey, "", false);
-          return;
-        }
-
-        // Now process with ImageMagick
-        processCircularAvatar(tempPath, outputPath, cacheKey);
-      });
-
-      downloadProcess.running = true;
-    } catch (e) {
-      Logger.e("ImageCache", "Failed to create download process:", e);
-      notifyCallbacks(cacheKey, "", false);
-    }
+    queueUtilityProcess({
+                          name: "DownloadProcess_" + cacheKey,
+                          processString: processString,
+                          onComplete: function (exitCode) {
+                            if (exitCode !== 0) {
+                              Logger.e("ImageCache", "Failed to download avatar for", username);
+                              notifyCallbacks(cacheKey, "", false);
+                              return;
+                            }
+                            // Now process with ImageMagick
+                            processCircularAvatar(tempPath, outputPath, cacheKey);
+                          },
+                          onError: function () {
+                            notifyCallbacks(cacheKey, "", false);
+                          }
+                        });
   }
 
   function processCircularAvatar(inputPath, outputPath, cacheKey) {
@@ -385,53 +389,54 @@ Singleton {
     // ImageMagick command for circular crop with alpha
     const command = `magick '${srcEsc}' -resize 256x256^ -gravity center -extent 256x256 -alpha set \\( +clone -channel A -evaluate set 0 +channel -fill white -draw 'circle 128,128 128,0' \\) -compose DstIn -composite '${dstEsc}'`;
 
-    const processString = `
-      import QtQuick
-      import Quickshell.Io
-      Process {
-        command: ["sh", "-c", ""]
-        stdout: StdioCollector {}
-        stderr: StdioCollector {}
-      }
-    `;
+    queueImageMagickProcess({
+                              command: command,
+                              cacheKey: cacheKey,
+                              onComplete: function (exitCode) {
+                                // Clean up temp file
+                                Quickshell.execDetached(["rm", "-f", inputPath]);
 
-    try {
-      const processObj = Qt.createQmlObject(processString, root, "CircularProcess_" + cacheKey);
-      processObj.command = ["sh", "-c", command];
-
-      processObj.exited.connect(function (exitCode) {
-        // Clean up temp file
-        Quickshell.execDetached(["rm", "-f", inputPath]);
-
-        if (exitCode !== 0) {
-          Logger.e("ImageCache", "Failed to create circular avatar");
-          notifyCallbacks(cacheKey, "", false);
-        } else {
-          Logger.d("ImageCache", "Circular avatar created:", outputPath);
-          notifyCallbacks(cacheKey, outputPath, true);
-        }
-
-        processObj.destroy();
-      });
-
-      processObj.running = true;
-    } catch (e) {
-      Logger.e("ImageCache", "Failed to create circular process:", e);
-      Quickshell.execDetached(["rm", "-f", inputPath]);
-      notifyCallbacks(cacheKey, "", false);
-    }
+                                if (exitCode !== 0) {
+                                  Logger.e("ImageCache", "Failed to create circular avatar");
+                                  notifyCallbacks(cacheKey, "", false);
+                                } else {
+                                  Logger.d("ImageCache", "Circular avatar created:", outputPath);
+                                  notifyCallbacks(cacheKey, outputPath, true);
+                                }
+                              },
+                              onError: function () {
+                                Quickshell.execDetached(["rm", "-f", inputPath]);
+                                notifyCallbacks(cacheKey, "", false);
+                              }
+                            });
   }
 
   // -------------------------------------------------
-  // Generic Process Runner
+  // Generic Process Runner (with queue for ImageMagick)
   // -------------------------------------------------
-  function runProcess(command, cacheKey, outputPath, sourcePath) {
+
+  // Queue an ImageMagick process and run it when a slot is available
+  function queueImageMagickProcess(request) {
+    imageMagickQueue.push(request);
+    processImageMagickQueue();
+  }
+
+  // Process queued ImageMagick requests up to the concurrency limit
+  function processImageMagickQueue() {
+    while (runningImageMagickProcesses < maxConcurrentImageMagickProcesses && imageMagickQueue.length > 0) {
+      const request = imageMagickQueue.shift();
+      runImageMagickProcess(request);
+    }
+  }
+
+  // Actually run an ImageMagick process
+  function runImageMagickProcess(request) {
+    runningImageMagickProcesses++;
+
     const processString = `
       import QtQuick
       import Quickshell.Io
       Process {
-        property string cacheKey: ""
-        property string cachedPath: ""
         command: ["sh", "-c", ""]
         stdout: StdioCollector {}
         stderr: StdioCollector {}
@@ -439,29 +444,43 @@ Singleton {
     `;
 
     try {
-      const processObj = Qt.createQmlObject(processString, root, "ImageProcess_" + cacheKey);
-      processObj.cacheKey = cacheKey;
-      processObj.cachedPath = outputPath;
-      processObj.command = ["sh", "-c", command];
+      const processObj = Qt.createQmlObject(processString, root, "ImageProcess_" + request.cacheKey);
+      processObj.command = ["sh", "-c", request.command];
 
       processObj.exited.connect(function (exitCode) {
-        if (exitCode !== 0) {
-          const stderrText = processObj.stderr.text || "";
-          Logger.e("ImageCache", "Processing failed:", stderrText);
-          notifyCallbacks(cacheKey, sourcePath, false);
-        } else {
-          Logger.d("ImageCache", "Processing complete:", outputPath);
-          notifyCallbacks(cacheKey, outputPath, true);
-        }
-
         processObj.destroy();
+        runningImageMagickProcesses--;
+        request.onComplete(exitCode, processObj);
+        processImageMagickQueue();
       });
 
       processObj.running = true;
     } catch (e) {
       Logger.e("ImageCache", "Failed to create process:", e);
-      notifyCallbacks(cacheKey, sourcePath, false);
+      runningImageMagickProcesses--;
+      request.onError(e);
+      processImageMagickQueue();
     }
+  }
+
+  function runProcess(command, cacheKey, outputPath, sourcePath) {
+    queueImageMagickProcess({
+                              command: command,
+                              cacheKey: cacheKey,
+                              onComplete: function (exitCode, proc) {
+                                if (exitCode !== 0) {
+                                  const stderrText = proc.stderr.text || "";
+                                  Logger.e("ImageCache", "Processing failed:", stderrText);
+                                  notifyCallbacks(cacheKey, sourcePath, false);
+                                } else {
+                                  Logger.d("ImageCache", "Processing complete:", outputPath);
+                                  notifyCallbacks(cacheKey, outputPath, true);
+                                }
+                              },
+                              onError: function () {
+                                notifyCallbacks(cacheKey, sourcePath, false);
+                              }
+                            });
   }
 
   // -------------------------------------------------
@@ -550,8 +569,46 @@ Singleton {
   }
 
   // -------------------------------------------------
-  // Utility Functions
+  // Utility Functions (with process queue to prevent fd exhaustion)
   // -------------------------------------------------
+
+  // Queue a utility process and run it when a slot is available
+  function queueUtilityProcess(request) {
+    utilityProcessQueue.push(request);
+    processUtilityQueue();
+  }
+
+  // Process queued utility requests up to the concurrency limit
+  function processUtilityQueue() {
+    while (runningUtilityProcesses < maxConcurrentUtilityProcesses && utilityProcessQueue.length > 0) {
+      const request = utilityProcessQueue.shift();
+      runUtilityProcess(request);
+    }
+  }
+
+  // Actually run a utility process
+  function runUtilityProcess(request) {
+    runningUtilityProcesses++;
+
+    try {
+      const processObj = Qt.createQmlObject(request.processString, root, request.name);
+
+      processObj.exited.connect(function (exitCode) {
+        processObj.destroy();
+        runningUtilityProcesses--;
+        request.onComplete(exitCode, processObj);
+        processUtilityQueue();
+      });
+
+      processObj.running = true;
+    } catch (e) {
+      Logger.e("ImageCache", "Failed to create " + request.name + ":", e);
+      runningUtilityProcesses--;
+      request.onError(e);
+      processUtilityQueue();
+    }
+  }
+
   function getMtime(filePath, callback) {
     const pathEsc = filePath.replace(/'/g, "'\\''");
     const processString = `
@@ -564,20 +621,17 @@ Singleton {
       }
     `;
 
-    try {
-      const processObj = Qt.createQmlObject(processString, root, "MtimeProcess");
-
-      processObj.exited.connect(function (exitCode) {
-        const mtime = exitCode === 0 ? processObj.stdout.text.trim() : "";
-        processObj.destroy();
-        callback(mtime);
-      });
-
-      processObj.running = true;
-    } catch (e) {
-      Logger.e("ImageCache", "Failed to get mtime:", e);
-      callback("");
-    }
+    queueUtilityProcess({
+                          name: "MtimeProcess",
+                          processString: processString,
+                          onComplete: function (exitCode, proc) {
+                            const mtime = exitCode === 0 ? proc.stdout.text.trim() : "";
+                            callback(mtime);
+                          },
+                          onError: function () {
+                            callback("");
+                          }
+                        });
   }
 
   function checkFileExists(filePath, callback) {
@@ -592,19 +646,16 @@ Singleton {
       }
     `;
 
-    try {
-      const processObj = Qt.createQmlObject(processString, root, "FileExistsProcess");
-
-      processObj.exited.connect(function (exitCode) {
-        processObj.destroy();
-        callback(exitCode === 0);
-      });
-
-      processObj.running = true;
-    } catch (e) {
-      Logger.e("ImageCache", "Failed to check file:", e);
-      callback(false);
-    }
+    queueUtilityProcess({
+                          name: "FileExistsProcess",
+                          processString: processString,
+                          onComplete: function (exitCode) {
+                            callback(exitCode === 0);
+                          },
+                          onError: function () {
+                            callback(false);
+                          }
+                        });
   }
 
   function getImageDimensions(filePath, callback) {
@@ -619,27 +670,24 @@ Singleton {
       }
     `;
 
-    try {
-      const processObj = Qt.createQmlObject(processString, root, "IdentifyProcess");
-
-      processObj.exited.connect(function (exitCode) {
-        let width = 0, height = 0;
-        if (exitCode === 0) {
-          const parts = processObj.stdout.text.trim().split(" ");
-          if (parts.length >= 2) {
-            width = parseInt(parts[0], 10) || 0;
-            height = parseInt(parts[1], 10) || 0;
-          }
-        }
-        processObj.destroy();
-        callback(width, height);
-      });
-
-      processObj.running = true;
-    } catch (e) {
-      Logger.e("ImageCache", "Failed to get image dimensions:", e);
-      callback(0, 0);
-    }
+    queueUtilityProcess({
+                          name: "IdentifyProcess",
+                          processString: processString,
+                          onComplete: function (exitCode, proc) {
+                            let width = 0, height = 0;
+                            if (exitCode === 0) {
+                              const parts = proc.stdout.text.trim().split(" ");
+                              if (parts.length >= 2) {
+                                width = parseInt(parts[0], 10) || 0;
+                                height = parseInt(parts[1], 10) || 0;
+                              }
+                            }
+                            callback(width, height);
+                          },
+                          onError: function () {
+                            callback(0, 0);
+                          }
+                        });
   }
 
   // -------------------------------------------------

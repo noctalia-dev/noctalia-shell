@@ -11,7 +11,7 @@ Singleton {
   id: root
 
   // Version properties
-  readonly property string baseVersion: "4.2.3"
+  readonly property string baseVersion: "4.2.6"
   readonly property bool isDevelopment: true
   readonly property string developmentSuffix: "-git"
   readonly property string currentVersion: `v${!isDevelopment ? baseVersion : baseVersion + developmentSuffix}`
@@ -337,7 +337,7 @@ Singleton {
       return;
 
     const target = ensureVersionPrefix(currentVersion.replace(developmentSuffix, ""));
-    const fromVersion = "v3.7.2";
+    const fromVersion = "v3.8.2";
 
     previousVersion = fromVersion;
     changelogCurrentVersion = target;

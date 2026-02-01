@@ -279,7 +279,7 @@ Singleton {
             root.availablePlugins.push(plugin);
           }
 
-          Logger.i("PluginService", "Loaded", registry.plugins.length, "plugins from", source.name);
+          Logger.i("PluginService", `Parsed ${registry.plugins.length} plugins manifest from '${source.name}'`);
 
           // Remove from active fetches BEFORE emitting signal so handler sees correct count
           delete activeFetches[source.url];
@@ -325,7 +325,7 @@ Singleton {
     }
 
     // For official plugins, also check if any custom version with same base ID exists
-    if (PluginRegistry.isOfficialSource(sourceUrl)) {
+    if (PluginRegistry.isMainSource(sourceUrl)) {
       var allInstalled = PluginRegistry.getAllInstalledPluginIds();
       for (var i = 0; i < allInstalled.length; i++) {
         var parsed = PluginRegistry.parseCompositeKey(allInstalled[i]);
@@ -344,7 +344,7 @@ Singleton {
     }
 
     // For custom plugins, check if official version exists
-    if (!PluginRegistry.isOfficialSource(sourceUrl)) {
+    if (!PluginRegistry.isMainSource(sourceUrl)) {
       if (PluginRegistry.isPluginDownloaded(pluginMetadata.id)) {
         return {
           collision: true,
@@ -517,7 +517,7 @@ Singleton {
       var manifest = PluginRegistry.getPluginManifest(compositeKey);
       if (manifest && manifest.entryPoints && manifest.entryPoints.barWidget) {
         var widgetId = "plugin:" + compositeKey;
-        addWidgetToBar(widgetId, "right"); // Default to right section
+        addWidgetToBar(widgetId, "right");
       }
     }
 
@@ -527,6 +527,7 @@ Singleton {
                               enabled: true
                             });
     root.pluginEnabled(compositeKey);
+
     return true;
   }
 
@@ -602,6 +603,11 @@ Singleton {
       if (changed) {
         Settings.data.bar.widgets[section] = newWidgets;
       }
+    }
+
+    // Signal the bar to refresh if widgets were removed
+    if (changed) {
+      BarService.widgetsRevision++;
     }
 
     return changed;
@@ -730,6 +736,9 @@ Singleton {
           // Register with BarWidgetRegistry
           BarWidgetRegistry.registerPluginWidget(pluginId, widgetComponent, manifest.metadata);
           Logger.i("PluginService", "Loaded bar widget for plugin:", pluginId);
+
+          // Now that the widget is registered, bump widgetsRevision so the bar can render it
+          BarService.widgetsRevision++;
         } else if (widgetComponent.status === Component.Error) {
           root.recordPluginError(pluginId, "barWidget", widgetComponent.errorString());
         }
@@ -1122,7 +1131,6 @@ Singleton {
     var writeCmd = "mkdir -p '" + dirEsc + "' && cat > '" + fileEsc + "' << '" + delimiter + "'\n" + settingsJson + "\n" + delimiter + "\n";
 
     Logger.d("PluginService", "Saving settings to:", settingsFile);
-    Logger.d("PluginService", "Settings JSON:", settingsJson);
 
     // Use Quickshell.execDetached to execute the command (use array syntax)
     var pid = Quickshell.execDetached(["sh", "-c", writeCmd]);
@@ -1288,7 +1296,7 @@ Singleton {
     } else if (pendingCount > 0) {
       Logger.i("PluginService", pendingCount, "plugin update(s) pending (require newer Noctalia)");
     } else {
-      Logger.i("PluginService", "All plugins are up to date");
+      Logger.i("PluginService", "All installed plugins are up to date");
     }
 
     shouldCheckUpdatesAfterFetch = false;

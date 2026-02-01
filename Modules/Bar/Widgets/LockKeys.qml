@@ -10,7 +10,7 @@ import qs.Services.Keyboard
 import qs.Services.UI
 import qs.Widgets
 
-Rectangle {
+Item {
   id: root
 
   property ShellScreen screen
@@ -21,9 +21,11 @@ Rectangle {
   property int sectionWidgetsCount: 0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  // Explicit screenName property ensures reactive binding when screen changes
+  readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
-    if (section && sectionWidgetIndex >= 0) {
-      var widgets = Settings.getBarWidgetsForScreen(screen?.name)[section];
+    if (section && sectionWidgetIndex >= 0 && screenName) {
+      var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
       if (widgets && sectionWidgetIndex < widgets.length) {
         return widgets[sectionWidgetIndex];
       }
@@ -31,9 +33,9 @@ Rectangle {
     return {};
   }
 
-  readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isVertical: barPosition === "left" || barPosition === "right"
-  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screen?.name)
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
 
   readonly property bool showCaps: (widgetSettings.showCapsLock !== undefined) ? widgetSettings.showCapsLock : widgetMetadata.showCapsLock
   readonly property bool showNum: (widgetSettings.showNumLock !== undefined) ? widgetSettings.showNumLock : widgetMetadata.showNumLock
@@ -45,15 +47,12 @@ Rectangle {
 
   readonly property bool hideWhenOff: (widgetSettings.hideWhenOff !== undefined) ? widgetSettings.hideWhenOff : (widgetMetadata.hideWhenOff !== undefined ? widgetMetadata.hideWhenOff : false)
 
-  implicitWidth: isVertical ? capsuleHeight : Math.round(layout.implicitWidth + Style.marginXL)
-  implicitHeight: isVertical ? Math.round(layout.implicitHeight + Style.marginXL) : capsuleHeight
+  // Content dimensions for implicit sizing
+  readonly property real contentWidth: isVertical ? capsuleHeight : Math.round(layout.implicitWidth + Style.marginXL)
+  readonly property real contentHeight: isVertical ? Math.round(layout.implicitHeight + Style.marginXL) : capsuleHeight
 
-  Layout.alignment: Qt.AlignVCenter
-
-  radius: Style.radiusM
-  color: Style.capsuleColor
-  border.color: Style.capsuleBorderColor
-  border.width: Style.capsuleBorderWidth
+  implicitWidth: contentWidth
+  implicitHeight: contentHeight
 
   NPopupContextMenu {
     id: contextMenu
@@ -67,10 +66,8 @@ Rectangle {
     ]
 
     onTriggered: action => {
-                   var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupMenuWindow) {
-                     popupMenuWindow.close();
-                   }
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
 
                    if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
@@ -78,70 +75,79 @@ Rectangle {
                  }
   }
 
+  // Visual capsule centered in parent
+  Rectangle {
+    id: visualCapsule
+    width: root.contentWidth
+    height: root.contentHeight
+    anchors.centerIn: parent
+    radius: Style.radiusM
+    color: Style.capsuleColor
+    border.color: Style.capsuleBorderColor
+    border.width: Style.capsuleBorderWidth
+
+    Item {
+      id: layout
+      anchors.verticalCenter: parent.verticalCenter
+      anchors.horizontalCenter: parent.horizontalCenter
+
+      implicitWidth: rowLayout.visible ? rowLayout.implicitWidth : colLayout.implicitWidth
+      implicitHeight: rowLayout.visible ? rowLayout.implicitHeight : colLayout.implicitHeight
+
+      RowLayout {
+        id: rowLayout
+        visible: !root.isVertical
+        spacing: 0
+
+        NIcon {
+          visible: root.showCaps && (!root.hideWhenOff || LockKeysService.capsLockOn)
+          icon: root.capsIcon
+          color: LockKeysService.capsLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
+        }
+        NIcon {
+          visible: root.showNum && (!root.hideWhenOff || LockKeysService.numLockOn)
+          icon: root.numIcon
+          color: LockKeysService.numLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
+        }
+        NIcon {
+          visible: root.showScroll && (!root.hideWhenOff || LockKeysService.scrollLockOn)
+          icon: root.scrollIcon
+          color: LockKeysService.scrollLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
+        }
+      }
+
+      ColumnLayout {
+        id: colLayout
+        visible: root.isVertical
+        spacing: 0
+
+        NIcon {
+          visible: root.showCaps && (!root.hideWhenOff || LockKeysService.capsLockOn)
+          icon: root.capsIcon
+          color: LockKeysService.capsLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
+        }
+        NIcon {
+          visible: root.showNum && (!root.hideWhenOff || LockKeysService.numLockOn)
+          icon: root.numIcon
+          color: LockKeysService.numLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
+        }
+        NIcon {
+          visible: root.showScroll && (!root.hideWhenOff || LockKeysService.scrollLockOn)
+          icon: root.scrollIcon
+          color: LockKeysService.scrollLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
+        }
+      }
+    }
+  }
+
+  // MouseArea at root level for extended click area
   MouseArea {
     anchors.fill: parent
     acceptedButtons: Qt.RightButton
     onClicked: mouse => {
                  if (mouse.button === Qt.RightButton) {
-                   var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupMenuWindow) {
-                     popupMenuWindow.showContextMenu(contextMenu);
-                     contextMenu.openAtItem(root, screen);
-                   }
+                   PanelService.showContextMenu(contextMenu, root, screen);
                  }
                }
-  }
-
-  Item {
-    id: layout
-    anchors.verticalCenter: parent.verticalCenter
-    anchors.horizontalCenter: parent.horizontalCenter
-
-    implicitWidth: rowLayout.visible ? rowLayout.implicitWidth : colLayout.implicitWidth
-    implicitHeight: rowLayout.visible ? rowLayout.implicitHeight : colLayout.implicitHeight
-
-    RowLayout {
-      id: rowLayout
-      visible: !root.isVertical
-      spacing: 0
-
-      NIcon {
-        visible: root.showCaps && (!root.hideWhenOff || LockKeysService.capsLockOn)
-        icon: root.capsIcon
-        color: LockKeysService.capsLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
-      }
-      NIcon {
-        visible: root.showNum && (!root.hideWhenOff || LockKeysService.numLockOn)
-        icon: root.numIcon
-        color: LockKeysService.numLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
-      }
-      NIcon {
-        visible: root.showScroll && (!root.hideWhenOff || LockKeysService.scrollLockOn)
-        icon: root.scrollIcon
-        color: LockKeysService.scrollLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
-      }
-    }
-
-    ColumnLayout {
-      id: colLayout
-      visible: root.isVertical
-      spacing: 0
-
-      NIcon {
-        visible: root.showCaps && (!root.hideWhenOff || LockKeysService.capsLockOn)
-        icon: root.capsIcon
-        color: LockKeysService.capsLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
-      }
-      NIcon {
-        visible: root.showNum && (!root.hideWhenOff || LockKeysService.numLockOn)
-        icon: root.numIcon
-        color: LockKeysService.numLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
-      }
-      NIcon {
-        visible: root.showScroll && (!root.hideWhenOff || LockKeysService.scrollLockOn)
-        icon: root.scrollIcon
-        color: LockKeysService.scrollLockOn ? Color.mTertiary : Qt.alpha(Color.mOnSurfaceVariant, 0.3)
-      }
-    }
   }
 }

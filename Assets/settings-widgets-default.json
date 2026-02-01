@@ -16,7 +16,7 @@
     "Battery": {
       "displayMode": "onhover",
       "warningThreshold": 30,
-      "deviceNativePath": "",
+      "deviceNativePath": "__default__",
       "showPowerProfiles": false,
       "showNoctaliaPerformance": false,
       "hideIfNotDetected": true,
@@ -115,7 +115,8 @@
     "NotificationHistory": {
       "showUnreadBadge": true,
       "hideWhenZero": false,
-      "hideWhenZeroUnread": false
+      "hideWhenZeroUnread": false,
+      "unreadBadgeColor": "primary"
     },
     "SessionMenu": {
       "colorName": "error"
@@ -128,6 +129,7 @@
       "usePrimaryColor": false,
       "useMonospaceFont": true,
       "showCpuUsage": true,
+      "showCpuFreq": false,
       "showCpuTemp": true,
       "showGpuTemp": false,
       "showLoadAverage": false,
@@ -136,6 +138,7 @@
       "showSwapUsage": false,
       "showNetworkStats": false,
       "showDiskUsage": false,
+      "showDiskAsFree": false,
       "diskPath": "/"
     },
     "Taskbar": {
@@ -177,7 +180,12 @@
       "unfocusedIconsOpacity": 1,
       "groupedBorderOpacity": 1,
       "enableScrollWheel": true,
-      "iconScale": 0.8
+      "iconScale": 0.8,
+      "focusedColor": "primary",
+      "occupiedColor": "secondary",
+      "emptyColor": "secondary",
+      "showBadge": true,
+      "reverseScroll": false
     },
     "Volume": {
       "displayMode": "onhover",
@@ -214,6 +222,13 @@
     },
     "Weather": {
       "showBackground": true
+    },
+    "SystemStat": {
+      "showBackground": true,
+      "statType": "CPU",
+      "diskPath": "/",
+      "roundedCorners": true,
+      "layout": "bottom"
     }
   }
 }

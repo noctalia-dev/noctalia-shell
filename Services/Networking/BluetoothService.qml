@@ -527,7 +527,7 @@ Singleton {
 
   function cancelPairing() {
     if (pairingProcess.running) {
-      pairingProcess.kill();
+      pairingProcess.running = false;
     }
     root.pinRequired = false;
   }
@@ -572,7 +572,7 @@ Singleton {
 
     // Stop any previous pairing attempt
     if (pairingProcess.running) {
-      pairingProcess.kill();
+      pairingProcess.running = false;
     }
     root.pinRequired = false;
 

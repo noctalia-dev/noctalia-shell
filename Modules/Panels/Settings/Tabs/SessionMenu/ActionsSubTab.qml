@@ -24,11 +24,12 @@ ColumnLayout {
       anchors.fill: parent
       spacing: Style.marginS
       interactive: false
+      reserveScrollbarSpace: false
       model: root.entriesModel
 
       delegate: Item {
         id: delegateItem
-        width: listView.width
+        width: listView.availableWidth
         height: contentRow.height
 
         required property int index

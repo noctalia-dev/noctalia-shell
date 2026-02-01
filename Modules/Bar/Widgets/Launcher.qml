@@ -17,9 +17,11 @@ NIconButton {
   property int sectionWidgetsCount: 0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  // Explicit screenName property ensures reactive binding when screen changes
+  readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
-    if (section && sectionWidgetIndex >= 0) {
-      var widgets = Settings.getBarWidgetsForScreen(screen?.name)[section];
+    if (section && sectionWidgetIndex >= 0 && screenName) {
+      var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
       if (widgets && sectionWidgetIndex < widgets.length) {
         return widgets[sectionWidgetIndex];
       }
@@ -32,8 +34,8 @@ NIconButton {
 
   icon: iconName
   tooltipText: I18n.tr("actions.open-launcher")
-  tooltipDirection: BarService.getTooltipDirection(screen?.name)
-  baseSize: Style.getCapsuleHeightForScreen(screen?.name)
+  tooltipDirection: BarService.getTooltipDirection(screenName)
+  baseSize: Style.getCapsuleHeightForScreen(screenName)
   applyUiScale: false
   customRadius: Style.radiusL
   colorBg: Style.capsuleColor
@@ -60,10 +62,8 @@ NIconButton {
     ]
 
     onTriggered: action => {
-                   var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupMenuWindow) {
-                     popupMenuWindow.close();
-                   }
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
 
                    if (action === "launcher-settings") {
                      var panel = PanelService.getPanel("settingsPanel", screen);
@@ -78,10 +78,6 @@ NIconButton {
   onClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
   onMiddleClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
   onRightClicked: {
-    var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-    if (popupMenuWindow) {
-      popupMenuWindow.showContextMenu(contextMenu);
-      contextMenu.openAtItem(root, screen);
-    }
+    PanelService.showContextMenu(contextMenu, root, screen);
   }
 }

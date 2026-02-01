@@ -238,6 +238,7 @@ def generate_normal_dark(palette: list[Color]) -> dict[str, str]:
         "primary_fixed_dim": primary_fixed_dim.to_hex(),
         "on_primary_fixed": on_primary_fixed.to_hex(),
         "on_primary_fixed_variant": on_primary_fixed_variant.to_hex(),
+        "surface_tint": primary_adjusted.to_hex(),
         # Secondary
         "secondary": secondary_adjusted.to_hex(),
         "on_secondary": on_secondary.to_hex(),
@@ -433,6 +434,7 @@ def generate_normal_light(palette: list[Color]) -> dict[str, str]:
         "primary_fixed_dim": primary_fixed_dim.to_hex(),
         "on_primary_fixed": on_primary_fixed.to_hex(),
         "on_primary_fixed_variant": on_primary_fixed_variant.to_hex(),
+        "surface_tint": primary_adjusted.to_hex(),
         # Secondary
         "secondary": secondary_adjusted.to_hex(),
         "on_secondary": on_secondary.to_hex(),
@@ -613,6 +615,7 @@ def generate_muted_dark(palette: list[Color]) -> dict[str, str]:
         "primary_fixed_dim": primary_fixed_dim.to_hex(),
         "on_primary_fixed": on_primary_fixed.to_hex(),
         "on_primary_fixed_variant": on_primary_fixed_variant.to_hex(),
+        "surface_tint": primary_adjusted.to_hex(),
         # Secondary
         "secondary": secondary_adjusted.to_hex(),
         "on_secondary": on_secondary.to_hex(),
@@ -787,6 +790,7 @@ def generate_muted_light(palette: list[Color]) -> dict[str, str]:
         "primary_fixed_dim": primary_fixed_dim.to_hex(),
         "on_primary_fixed": on_primary_fixed.to_hex(),
         "on_primary_fixed_variant": on_primary_fixed_variant.to_hex(),
+        "surface_tint": primary_adjusted.to_hex(),
         # Secondary
         "secondary": secondary_adjusted.to_hex(),
         "on_secondary": on_secondary.to_hex(),

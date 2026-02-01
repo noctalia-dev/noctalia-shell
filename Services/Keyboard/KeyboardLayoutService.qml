@@ -48,8 +48,16 @@ Singleton {
     }
 
     // Check for language/country names in the language map
+    // First, try to match at the start of the string (the primary language)
     for (const [lang, code] of Object.entries(languageMap)) {
-      if (str.includes(lang)) {
+      if (str.startsWith(lang)) {
+        return code.toUpperCase();
+      }
+    }
+    // Then try word boundary matching anywhere in the string
+    for (const [lang, code] of Object.entries(languageMap)) {
+      const regex = new RegExp(`\\b${lang}\\b`);
+      if (regex.test(str)) {
         return code.toUpperCase();
       }
     }
@@ -67,7 +75,7 @@ Singleton {
     if (layoutChanged) {
       if (Settings.data.notifications.enableKeyboardLayoutToast) {
         const message = I18n.tr("toast.keyboard-layout.changed", {
-                                  "layout": currentLayout
+                                  "layout": fullLayoutName
                                 });
         ToastService.showNotice(I18n.tr("toast.keyboard-layout.title"), message, "", 2000);
       }

@@ -16,10 +16,11 @@ Popup {
   property string widgetId: ""
   property string sectionId: "" // Not used for desktop widgets, but required by NSectionEditor
   property var screen: null
-
-  signal updateWidgetSettings(string section, int index, var settings)
+  property var settingsCache: ({})
 
   readonly property real maxHeight: screen ? screen.height * 0.9 : 800
+
+  signal updateWidgetSettings(string section, int index, var settings)
 
   width: Math.max(content.implicitWidth + padding * 2, 500)
   height: Math.min(content.implicitHeight + padding * 2, maxHeight)
@@ -73,7 +74,7 @@ Popup {
         NIconButton {
           icon: "close"
           tooltipText: I18n.tr("common.close")
-          onClicked: root.close()
+          onClicked: saveAndClose()
         }
       }
 
@@ -90,9 +91,10 @@ Popup {
         Layout.fillWidth: true
         Layout.fillHeight: true
         Layout.minimumHeight: 100
+        gradientColor: Color.mSurface
 
         ColumnLayout {
-          width: scrollView.width
+          width: scrollView.availableWidth
           spacing: Style.marginM
 
           Loader {
@@ -131,37 +133,37 @@ Popup {
           }
         }
       }
+    }
+  }
 
-      RowLayout {
-        id: buttonRow
-        Layout.fillWidth: true
-        Layout.topMargin: Style.marginM
-        Layout.preferredHeight: implicitHeight
-        spacing: Style.marginM
+  Timer {
+    id: saveTimer
+    running: false
+    interval: 150
+    onTriggered: {
+      root.updateWidgetSettings(root.sectionId, root.widgetIndex, root.settingsCache);
+    }
+  }
 
-        Item {
-          Layout.fillWidth: true
-        }
-
-        NButton {
-          text: I18n.tr("common.cancel")
-          outlined: true
-          onClicked: root.close()
-        }
-
-        NButton {
-          text: I18n.tr("common.apply")
-          icon: "check"
-          onClicked: {
-            if (settingsLoader.item && settingsLoader.item.saveSettings) {
-              var newSettings = settingsLoader.item.saveSettings();
-              root.updateWidgetSettings(root.sectionId, root.widgetIndex, newSettings);
-              root.close();
-            }
-          }
-        }
+  Connections {
+    target: settingsLoader.item
+    ignoreUnknownSignals: true
+    function onSettingsChanged(newSettings) {
+      if (newSettings) {
+        root.settingsCache = newSettings;
+        saveTimer.start();
       }
     }
+  }
+
+  function saveAndClose() {
+    if (settingsLoader.item && typeof settingsLoader.item.saveSettings === 'function') {
+      var newSettings = settingsLoader.item.saveSettings();
+      if (newSettings) {
+        root.updateWidgetSettings(root.sectionId, root.widgetIndex, newSettings);
+      }
+    }
+    root.close();
   }
 
   function loadWidgetSettings() {

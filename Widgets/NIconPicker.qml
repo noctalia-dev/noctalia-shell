@@ -91,6 +91,9 @@ Popup {
       cellWidth: root.cellW
       cellHeight: root.cellH
       model: root.filteredIcons
+      reserveScrollbarSpace: false
+      gradientColor: Color.mSurface
+
       delegate: Rectangle {
         width: grid.cellWidth
         height: grid.cellHeight

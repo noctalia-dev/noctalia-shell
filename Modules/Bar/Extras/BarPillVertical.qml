@@ -60,9 +60,8 @@ Item {
 
   readonly property real iconSize: Style.toOdd(pillHeight * 0.48)
 
-  // For vertical bars: width is just icon size, height includes pill space
-  width: buttonSize
-  height: {
+  // Content height calculation (for implicit sizing and visual layout)
+  readonly property real contentHeight: {
     if (collapseToIcon) {
       return hasIcon ? buttonSize : 0;
     }
@@ -74,6 +73,15 @@ Item {
     // Fallback to buttonSize in idle state to remain clickable
     return buttonSize;
   }
+
+  // Fill parent width to extend horizontal click area
+  // Keep content-based height for visual layout
+  anchors.left: parent ? parent.left : undefined
+  anchors.right: parent ? parent.right : undefined
+  anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+  height: contentHeight
+  implicitWidth: buttonSize
+  implicitHeight: contentHeight
 
   Connections {
     target: root
@@ -88,7 +96,7 @@ Item {
   Rectangle {
     id: pillBackground
     width: buttonSize
-    height: root.height
+    height: root.contentHeight
     radius: Style.radiusM
     color: root.bgColor
     border.color: Style.capsuleBorderColor
@@ -183,7 +191,7 @@ Item {
 
     // Icon positioning based on direction
     x: 0
-    y: openUpward ? (parent.height - height) : 0
+    y: openUpward ? (root.contentHeight - height) : 0
     anchors.horizontalCenter: parent.horizontalCenter
 
     NIcon {

@@ -13,6 +13,7 @@ import qs.Services.UI
 Variants {
   model: Quickshell.screens
   delegate: Item {
+    id: windowItem
     required property ShellScreen modelData
 
     property bool shouldBeActive: {
@@ -74,11 +75,15 @@ Variants {
       }
     }
 
-    // BarExclusionZone - created after MainScreen has fully loaded
-    // Disabled when bar is hidden or not configured for this screen
+    // BarTriggerZone - thin invisible zone to reveal hidden bar
+    // Always loaded when auto-hide is enabled (it's just 1px, no performance impact)
     Loader {
       active: {
-        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.isVisible)
+        if (!parent.windowLoaded || !parent.shouldBeActive)
+          return false;
+        if (!BarService.effectivelyVisible)
+          return false;
+        if (Settings.data.bar.displayMode !== "auto_hide")
           return false;
 
         // Check if bar is configured for this screen
@@ -87,19 +92,51 @@ Variants {
       }
       asynchronous: false
 
-      sourceComponent: BarExclusionZone {
+      sourceComponent: BarTriggerZone {
         screen: modelData
       }
 
       onLoaded: {
-        Logger.d("AllScreens", "BarExclusionZone created for", modelData?.name);
+        Logger.d("AllScreens", "BarTriggerZone created for", modelData?.name);
+      }
+    }
+
+    // BarExclusionZone - created after MainScreen has fully loaded
+    // Disabled when bar is hidden or not configured for this screen
+    Repeater {
+      model: Settings.data.bar.barType === "framed" ? ["top", "bottom", "left", "right"] : [Settings.getBarPositionForScreen(windowItem.modelData?.name)]
+      delegate: Loader {
+        active: {
+          if (!windowItem.windowLoaded || !windowItem.shouldBeActive || !BarService.effectivelyVisible)
+            return false;
+
+          // Check if bar is configured for this screen
+          var monitors = Settings.data.bar.monitors || [];
+          return monitors.length === 0 || monitors.includes(windowItem.modelData?.name);
+        }
+        asynchronous: false
+
+        sourceComponent: BarExclusionZone {
+          screen: windowItem.modelData
+          edge: modelData
+        }
+
+        onLoaded: {
+          Logger.d("AllScreens", "BarExclusionZone (" + modelData + ") created for", windowItem.modelData?.name);
+        }
       }
     }
 
     // PopupMenuWindow - reusable popup window for both tray menus and context menus
-    // Disabled when bar is hidden or not configured for this screen
+    // Active when bar is visible on this screen, OR when desktop widgets edit mode is active
     Loader {
       active: {
+        // Desktop widgets edit mode needs popup window on ALL screens
+        if (DesktopWidgetRegistry.editMode && Settings.data.desktopWidgets.enabled) {
+          return true;
+        }
+
+        // Normal bar-based condition
         if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.effectivelyVisible)
           return false;
 

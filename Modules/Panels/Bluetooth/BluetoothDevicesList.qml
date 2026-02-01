@@ -218,12 +218,6 @@ NBox {
                 enabled: (canConnect || canDisconnect || canPair) && !isBusy
                 outlined: !button.hovered
                 fontSize: Style.fontSizeS
-                backgroundColor: {
-                  if (device.canDisconnect && !isBusy) {
-                    return Color.mError;
-                  }
-                  return Color.mPrimary;
-                }
                 tooltipText: root.tooltipText
                 text: {
                   if (modelData.pairing) {

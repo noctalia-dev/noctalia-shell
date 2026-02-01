@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import qs.Commons
 import qs.Widgets
@@ -7,15 +8,26 @@ PopupWindow {
   id: root
 
   property string text: ""
+  property var rows: null // Array of arrays for grid mode: [["col1", "col2"], ["row2col1", "row2col2"]]
+  property bool isGridMode: rows !== null && Array.isArray(rows) && rows.length > 0
+  property int columnCount: isGridMode && rows.length > 0 ? rows[0].length : 0
   property string direction: "auto" // "auto", "left", "right", "top", "bottom"
   property int margin: Style.marginXS // distance from target
   property int padding: Style.marginM
+  property int gridPaddingVertical: Style.marginXS // extra vertical padding for grid mode
   property int delay: 0
   property int hideDelay: 0
   property int maxWidth: 320
 
   property int animationDuration: Style.animationFast
   property real animationScale: 0.85
+
+  // For measuring grid cell sizes
+  TextMetrics {
+    id: cellMetrics
+    font.family: Settings.data.ui.fontFixed
+    font.pointSize: Style.fontSizeS
+  }
 
   // Internal properties
   property var targetItem: null
@@ -106,9 +118,9 @@ PopupWindow {
     }
   }
 
-  // Function to show tooltip
-  function show(target, tipText, customDirection, showDelay, fontFamily) {
-    if (!target || !tipText || tipText === "")
+  // Function to show tooltip (content can be string or array of arrays for grid mode)
+  function show(target, content, customDirection, showDelay, fontFamily) {
+    if (!target || !content || content === "" || (Array.isArray(content) && content.length === 0))
       return;
 
     root.delay = showDelay;
@@ -124,11 +136,17 @@ PopupWindow {
       hideImmediately();
     }
 
-    // Convert \n to <br> for RichText format
-    const processedText = tipText.replace(/\n/g, '<br>');
+    // Set content based on type
+    if (Array.isArray(content)) {
+      rows = content;
+      text = "";
+    } else {
+      // Convert \n to <br> for RichText format
+      const processedText = content.replace(/\n/g, '<br>');
+      text = processedText;
+      rows = null;
+    }
 
-    // Set properties
-    text = processedText;
     targetItem = target;
 
     // Find the correct screen dimensions based on target's global position
@@ -166,17 +184,68 @@ PopupWindow {
     tooltipText.family = fontFamily ? fontFamily : Settings.data.ui.fontDefault;
   }
 
+  // Calculate grid dimensions using TextMetrics
+  function calculateGridSize() {
+    if (!rows || rows.length === 0)
+      return {
+        width: 0,
+        height: 0
+      };
+
+    const numCols = rows[0].length;
+    const numRows = rows.length;
+    let columnWidths = [];
+
+    // Find max width for each column
+    for (let col = 0; col < numCols; col++) {
+      let maxWidth = 0;
+      for (let row = 0; row < numRows; row++) {
+        cellMetrics.text = rows[row][col] || "";
+        if (cellMetrics.width > maxWidth) {
+          maxWidth = cellMetrics.width;
+        }
+      }
+      columnWidths.push(maxWidth);
+    }
+
+    // Calculate total width: sum of columns + spacing between columns
+    let totalWidth = 0;
+    for (let i = 0; i < columnWidths.length; i++) {
+      totalWidth += columnWidths[i];
+    }
+    totalWidth += (numCols - 1) * Style.marginM; // columnSpacing
+
+    // Calculate total height: rows * row height + spacing + extra vertical padding
+    const rowHeight = cellMetrics.height;
+    const totalHeight = (numRows * rowHeight) + ((numRows - 1) * 0) + (gridPaddingVertical * 2); // rowSpacing is 0
+
+    return {
+      width: totalWidth,
+      height: totalHeight
+    };
+  }
+
   // Function to position and display the tooltip
   function positionAndShow() {
     if (!targetItem || !targetItem.parent) {
       return;
     }
 
-    // Calculate tooltip dimensions
-    const tipWidth = Math.min(tooltipText.implicitWidth + (padding * 2), maxWidth);
+    // Calculate tooltip dimensions based on content mode
+    let contentWidth, contentHeight;
+    if (isGridMode) {
+      const gridSize = calculateGridSize();
+      contentWidth = gridSize.width;
+      contentHeight = gridSize.height;
+    } else {
+      contentWidth = tooltipText.implicitWidth;
+      contentHeight = tooltipText.implicitHeight;
+    }
+
+    const tipWidth = Math.min(contentWidth + (padding * 2), maxWidth);
     root.implicitWidth = tipWidth;
 
-    const tipHeight = tooltipText.implicitHeight + (padding * 2);
+    const tipHeight = contentHeight + (padding * 2);
     root.implicitHeight = tipHeight;
 
     // Get target's global position and convert to screen-relative
@@ -377,6 +446,7 @@ PopupWindow {
     visible = false;
     animatingOut = false;
     text = "";
+    rows = null;
     isPositioned = false;
     tooltipContainer.opacity = 1.0;
     tooltipContainer.scale = 1.0;
@@ -392,18 +462,34 @@ PopupWindow {
     completeHide();
   }
 
-  // Update text function
-  function updateText(newText) {
+  // Update content function (supports both text and rows)
+  function updateContent(newContent) {
     if (visible && targetItem) {
-      // Convert \n to <br> for RichText format
-      const processedText = newText.replace(/\n/g, '<br>');
-      text = processedText;
+      if (Array.isArray(newContent)) {
+        rows = newContent;
+        text = "";
+      } else {
+        // Convert \n to <br> for RichText format
+        const processedText = newContent.replace(/\n/g, '<br>');
+        text = processedText;
+        rows = null;
+      }
 
-      // Recalculate dimensions
-      const tipWidth = Math.min(tooltipText.implicitWidth + (padding * 2), maxWidth);
+      // Recalculate dimensions based on content mode
+      let contentWidth, contentHeight;
+      if (isGridMode) {
+        const gridSize = calculateGridSize();
+        contentWidth = gridSize.width;
+        contentHeight = gridSize.height;
+      } else {
+        contentWidth = tooltipText.implicitWidth;
+        contentHeight = tooltipText.implicitHeight;
+      }
+
+      const tipWidth = Math.min(contentWidth + (padding * 2), maxWidth);
       root.implicitWidth = tipWidth;
 
-      const tipHeight = tooltipText.implicitHeight + (padding * 2);
+      const tipHeight = contentHeight + (padding * 2);
       root.implicitHeight = tipHeight;
 
       // Reposition based on current direction (screen-relative)
@@ -506,6 +592,11 @@ PopupWindow {
     }
   }
 
+  // Backward compatibility alias
+  function updateText(newText) {
+    updateContent(newText);
+  }
+
   // Reset function to clean up state
   function reset() {
     // Stop all timers and animations
@@ -518,6 +609,7 @@ PopupWindow {
     visible = false;
     animatingOut = false;
     text = "";
+    rows = null;
     isPositioned = false;
 
     // Reset to defaults
@@ -547,11 +639,13 @@ PopupWindow {
       border.width: Style.borderS
       radius: Style.radiusS
 
-      // Only show content when we have text
-      visible: root.text !== ""
+      // Only show content when we have content
+      visible: root.text !== "" || root.isGridMode
 
+      // Text content (default mode)
       NText {
         id: tooltipText
+        visible: !root.isGridMode
         anchors.centerIn: parent
         anchors.margins: root.padding
         text: root.text
@@ -563,6 +657,31 @@ PopupWindow {
         wrapMode: Text.WordWrap
         width: Math.min(implicitWidth, root.maxWidth - (root.padding * 2))
         richTextEnabled: true
+      }
+
+      // Grid content (grid mode)
+      GridLayout {
+        id: gridContent
+        visible: root.isGridMode
+        anchors.centerIn: parent
+        anchors.leftMargin: root.padding
+        anchors.rightMargin: root.padding
+        anchors.topMargin: root.padding + root.gridPaddingVertical
+        anchors.bottomMargin: root.padding + root.gridPaddingVertical
+        columns: root.columnCount
+        rowSpacing: 0
+        columnSpacing: Style.marginM
+
+        Repeater {
+          model: root.isGridMode ? [].concat.apply([], root.rows) : []
+
+          NText {
+            text: modelData
+            pointSize: Style.fontSizeS
+            family: tooltipText.family
+            color: Color.mOnSurfaceVariant
+          }
+        }
       }
     }
   }

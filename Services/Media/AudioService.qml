@@ -76,6 +76,13 @@ Singleton {
   // Filtered device nodes (non-stream sinks and sources)
   readonly property var deviceNodes: Pipewire.ready ? Pipewire.nodes.values.reduce((acc, node) => {
                                                                                      if (!node.isStream) {
+                                                                                       // Filter out quickshell nodes (unlikely to be devices, but for consistency)
+                                                                                       const name = node.name || "";
+                                                                                       const mediaName = (node.properties && node.properties["media.name"]) || "";
+                                                                                       if (name === "quickshell" || mediaName === "quickshell") {
+                                                                                         return acc;
+                                                                                       }
+
                                                                                        if (node.isSink) {
                                                                                          acc.sinks.push(node);
                                                                                        } else if (node.audio) {
@@ -120,6 +127,114 @@ Singleton {
   PwObjectTracker {
     id: sourceTracker
     objects: root.source ? [root.source] : []
+  }
+
+  // Track links to the default sink to find active streams
+  PwNodeLinkTracker {
+    id: sinkLinkTracker
+    node: root.sink
+  }
+
+  // Find application streams that are connected to the default sink
+  readonly property var appStreams: {
+    if (!Pipewire.ready || !root.sink) {
+      return [];
+    }
+
+    var connectedStreamIds = {};
+    var connectedStreams = [];
+
+    // Use PwNodeLinkTracker to get properly bound link groups
+    if (!sinkLinkTracker.linkGroups) {
+      return [];
+    }
+
+    var linkGroupsCount = 0;
+    if (sinkLinkTracker.linkGroups.length !== undefined) {
+      linkGroupsCount = sinkLinkTracker.linkGroups.length;
+    } else if (sinkLinkTracker.linkGroups.count !== undefined) {
+      linkGroupsCount = sinkLinkTracker.linkGroups.count;
+    } else {
+      return [];
+    }
+
+    if (linkGroupsCount === 0) {
+      return [];
+    }
+
+    var intermediateNodeIds = {};
+    var nodesToCheck = [];
+
+    for (var i = 0; i < linkGroupsCount; i++) {
+      var linkGroup;
+      if (sinkLinkTracker.linkGroups.get) {
+        linkGroup = sinkLinkTracker.linkGroups.get(i);
+      } else {
+        linkGroup = sinkLinkTracker.linkGroups[i];
+      }
+
+      if (!linkGroup || !linkGroup.source) {
+        continue;
+      }
+
+      var sourceNode = linkGroup.source;
+
+      // Filter out quickshell
+      const name = sourceNode.name || "";
+      const mediaName = (sourceNode.properties && sourceNode.properties["media.name"]) || "";
+      if (name === "quickshell" || mediaName === "quickshell") {
+        continue;
+      }
+
+      // If it's a stream node, add it directly
+      if (sourceNode.isStream && sourceNode.audio) {
+        if (!connectedStreamIds[sourceNode.id]) {
+          connectedStreamIds[sourceNode.id] = true;
+          connectedStreams.push(sourceNode);
+        }
+      } else {
+        // Not a stream - this is an intermediate node, track it
+        intermediateNodeIds[sourceNode.id] = true;
+        nodesToCheck.push(sourceNode);
+      }
+    }
+
+    // If we found intermediate nodes, we need to find streams connected to them
+    if (nodesToCheck.length > 0 || connectedStreams.length === 0) {
+      try {
+        var allNodes = Pipewire.nodes.values || [];
+
+        // Find all stream nodes
+        for (var j = 0; j < allNodes.length; j++) {
+          var node = allNodes[j];
+          if (!node || !node.isStream || !node.audio) {
+            continue;
+          }
+
+          // Filter out quickshell
+          const nodeName = node.name || "";
+          const nodeMediaName = (node.properties && node.properties["media.name"]) || "";
+          if (nodeName === "quickshell" || nodeMediaName === "quickshell") {
+            continue;
+          }
+
+          var streamId = node.id;
+          if (connectedStreamIds[streamId]) {
+            continue;
+          }
+
+          if (Object.keys(intermediateNodeIds).length > 0) {
+            connectedStreamIds[streamId] = true;
+            connectedStreams.push(node);
+          } else if (connectedStreams.length === 0) {
+            connectedStreamIds[streamId] = true;
+            connectedStreams.push(node);
+          }
+        }
+      } catch (e) {}
+    }
+
+    return connectedStreams;
   }
 
   // Bind all devices to ensure their properties are available

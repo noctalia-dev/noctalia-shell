@@ -13,11 +13,14 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   // Local, editable state for checkboxes
   property bool valueCompactMode: widgetData.compactMode !== undefined ? widgetData.compactMode : widgetMetadata.compactMode
   property bool valueUsePrimaryColor: widgetData.usePrimaryColor !== undefined ? widgetData.usePrimaryColor : widgetMetadata.usePrimaryColor
   property bool valueUseMonospaceFont: widgetData.useMonospaceFont !== undefined ? widgetData.useMonospaceFont : widgetMetadata.useMonospaceFont
   property bool valueShowCpuUsage: widgetData.showCpuUsage !== undefined ? widgetData.showCpuUsage : widgetMetadata.showCpuUsage
+  property bool valueShowCpuFreq: widgetData.showCpuFreq !== undefined ? widgetData.showCpuFreq : widgetMetadata.showCpuFreq
   property bool valueShowCpuTemp: widgetData.showCpuTemp !== undefined ? widgetData.showCpuTemp : widgetMetadata.showCpuTemp
   property bool valueShowGpuTemp: widgetData.showGpuTemp !== undefined ? widgetData.showGpuTemp : widgetMetadata.showGpuTemp
   property bool valueShowLoadAverage: widgetData.showLoadAverage !== undefined ? widgetData.showLoadAverage : widgetMetadata.showLoadAverage
@@ -26,6 +29,7 @@ ColumnLayout {
   property bool valueShowSwapUsage: widgetData.showSwapUsage !== undefined ? widgetData.showSwapUsage : widgetMetadata.showSwapUsage
   property bool valueShowNetworkStats: widgetData.showNetworkStats !== undefined ? widgetData.showNetworkStats : widgetMetadata.showNetworkStats
   property bool valueShowDiskUsage: widgetData.showDiskUsage !== undefined ? widgetData.showDiskUsage : widgetMetadata.showDiskUsage
+  property bool valueShowDiskAsFree: widgetData.showDiskAsFree !== undefined ? widgetData.showDiskAsFree : widgetMetadata.showDiskAsFree
   property string valueDiskPath: widgetData.diskPath !== undefined ? widgetData.diskPath : widgetMetadata.diskPath
 
   function saveSettings() {
@@ -34,6 +38,7 @@ ColumnLayout {
     settings.usePrimaryColor = valueUsePrimaryColor;
     settings.useMonospaceFont = valueUseMonospaceFont;
     settings.showCpuUsage = valueShowCpuUsage;
+    settings.showCpuFreq = valueShowCpuFreq;
     settings.showCpuTemp = valueShowCpuTemp;
     settings.showGpuTemp = valueShowGpuTemp;
     settings.showLoadAverage = valueShowLoadAverage;
@@ -42,6 +47,7 @@ ColumnLayout {
     settings.showSwapUsage = valueShowSwapUsage;
     settings.showNetworkStats = valueShowNetworkStats;
     settings.showDiskUsage = valueShowDiskUsage;
+    settings.showDiskAsFree = valueShowDiskAsFree;
     settings.diskPath = valueDiskPath;
 
     return settings;
@@ -52,7 +58,10 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.compact-mode-label")
     description: I18n.tr("bar.system-monitor.compact-mode-description")
     checked: valueCompactMode
-    onToggled: checked => valueCompactMode = checked
+    onToggled: checked => {
+                 valueCompactMode = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -60,7 +69,10 @@ ColumnLayout {
     label: I18n.tr("bar.clock.use-primary-color-label")
     description: I18n.tr("bar.clock.use-primary-color-description")
     checked: valueUsePrimaryColor
-    onToggled: checked => valueUsePrimaryColor = checked
+    onToggled: checked => {
+                 valueUsePrimaryColor = checked;
+                 settingsChanged(saveSettings());
+               }
     visible: !valueCompactMode
   }
 
@@ -69,7 +81,10 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.use-monospace-font-label")
     description: I18n.tr("bar.system-monitor.use-monospace-font-description")
     checked: valueUseMonospaceFont
-    onToggled: checked => valueUseMonospaceFont = checked
+    onToggled: checked => {
+                 valueUseMonospaceFont = checked;
+                 settingsChanged(saveSettings());
+               }
     visible: !valueCompactMode
   }
 
@@ -79,7 +94,22 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.cpu-usage-label")
     description: I18n.tr("bar.system-monitor.cpu-usage-description")
     checked: valueShowCpuUsage
-    onToggled: checked => valueShowCpuUsage = checked
+    onToggled: checked => {
+                 valueShowCpuUsage = checked;
+                 settingsChanged(saveSettings());
+               }
+  }
+
+  NToggle {
+    id: showCpuFreq
+    Layout.fillWidth: true
+    label: "Show CPU Frequency" // TODO: use I18n.tr
+    description: "Display the current CPU clock speed in GHz" // TODO: use I18n.tr
+    checked: valueShowCpuFreq
+    onToggled: checked => {
+                 valueShowCpuFreq = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -88,7 +118,10 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.cpu-temperature-label")
     description: I18n.tr("bar.system-monitor.cpu-temperature-description")
     checked: valueShowCpuTemp
-    onToggled: checked => valueShowCpuTemp = checked
+    onToggled: checked => {
+                 valueShowCpuTemp = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -97,7 +130,10 @@ ColumnLayout {
     label: I18n.tr("panels.system-monitor.gpu-section-label")
     description: I18n.tr("bar.system-monitor.gpu-temperature-description")
     checked: valueShowGpuTemp
-    onToggled: checked => valueShowGpuTemp = checked
+    onToggled: checked => {
+                 valueShowGpuTemp = checked;
+                 settingsChanged(saveSettings());
+               }
     visible: SystemStatService.gpuAvailable
   }
 
@@ -107,7 +143,10 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.load-average-label")
     description: I18n.tr("bar.system-monitor.load-average-description")
     checked: valueShowLoadAverage
-    onToggled: checked => valueShowLoadAverage = checked
+    onToggled: checked => {
+                 valueShowLoadAverage = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -116,7 +155,10 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.memory-usage-label")
     description: I18n.tr("bar.system-monitor.memory-usage-description")
     checked: valueShowMemoryUsage
-    onToggled: checked => valueShowMemoryUsage = checked
+    onToggled: checked => {
+                 valueShowMemoryUsage = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -125,7 +167,10 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.memory-percentage-label")
     description: I18n.tr("bar.system-monitor.memory-percentage-description")
     checked: valueShowMemoryAsPercent
-    onToggled: checked => valueShowMemoryAsPercent = checked
+    onToggled: checked => {
+                 valueShowMemoryAsPercent = checked;
+                 settingsChanged(saveSettings());
+               }
     visible: valueShowMemoryUsage
   }
 
@@ -135,7 +180,10 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.swap-usage-label")
     description: I18n.tr("bar.system-monitor.swap-usage-description")
     checked: valueShowSwapUsage
-    onToggled: checked => valueShowSwapUsage = checked
+    onToggled: checked => {
+                 valueShowSwapUsage = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -144,7 +192,10 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.network-traffic-label")
     description: I18n.tr("bar.system-monitor.network-traffic-description")
     checked: valueShowNetworkStats
-    onToggled: checked => valueShowNetworkStats = checked
+    onToggled: checked => {
+                 valueShowNetworkStats = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -153,7 +204,23 @@ ColumnLayout {
     label: I18n.tr("bar.system-monitor.storage-usage-label")
     description: I18n.tr("bar.system-monitor.storage-usage-description")
     checked: valueShowDiskUsage
-    onToggled: checked => valueShowDiskUsage = checked
+    onToggled: checked => {
+                 valueShowDiskUsage = checked;
+                 settingsChanged(saveSettings());
+               }
+  }
+
+  NToggle {
+    id: showDiskAsFree
+    Layout.fillWidth: true
+    label: "Show Free Space" // TODO: use I18n.tr
+    description: "Display available space (GB) instead of percentage" // TODO: use I18n.tr
+    checked: valueShowDiskAsFree
+    onToggled: checked => {
+                 valueShowDiskAsFree = checked;
+                 settingsChanged(saveSettings());
+               }
+    visible: valueShowDiskUsage
   }
 
   NComboBox {
@@ -169,6 +236,9 @@ ColumnLayout {
                                 }));
     }
     currentKey: valueDiskPath
-    onSelected: key => valueDiskPath = key
+    onSelected: key => {
+                  valueDiskPath = key;
+                  settingsChanged(saveSettings());
+                }
   }
 }

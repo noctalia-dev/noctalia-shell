@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.UI
 import qs.Widgets
 
@@ -31,8 +32,10 @@ PanelWindow {
   visible: false
   color: "transparent"
 
-  // Use Top layer (same as MainScreen) for proper event handling
-  WlrLayershell.layer: WlrLayer.Top
+  // Use Top layer for proper event handling, but on labwc use Bottom
+  // to avoid stealing input from popups while still catching outside clicks.
+  // However, when a dialog is open, always use Top so dialogs appear above apps.
+  WlrLayershell.layer: (CompositorService.isLabwc && !hasDialog) ? WlrLayer.Bottom : WlrLayer.Top
   WlrLayershell.keyboardFocus: hasDialog ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
   WlrLayershell.namespace: "noctalia-" + windowType + "-" + (screen?.name || "unknown")
   WlrLayershell.exclusionMode: ExclusionMode.Ignore
@@ -82,6 +85,7 @@ PanelWindow {
 
   function open() {
     visible = true;
+    BarService.popupOpen = true;
   }
 
   // Show a context menu (temporarily replaces TrayMenu as content)
@@ -123,6 +127,7 @@ PanelWindow {
 
   function close() {
     visible = false;
+    BarService.popupOpen = false;
     // Call close/hide method on current content
     if (contentItem) {
       if (typeof contentItem.hideMenu === "function") {

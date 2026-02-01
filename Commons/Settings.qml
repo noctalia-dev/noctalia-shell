@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 44
+  readonly property int settingsVersion: 46
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -47,11 +47,6 @@ Singleton {
     // ensure settings dir exists
     Quickshell.execDetached(["mkdir", "-p", configDir]);
     Quickshell.execDetached(["mkdir", "-p", cacheDir]);
-
-    // Ensure PAM config file exists in configDir (create once, never override)
-    if (!Quickshell.env("NOCTALIA_PAM_CONFIG")) {
-      ensurePamConfig();
-    }
 
     // Mark directories as created and trigger file loading
     directoriesCreated = true;
@@ -175,6 +170,7 @@ Singleton {
 
     // bar
     property JsonObject bar: JsonObject {
+      property string barType: "simple" // "simple", "floating", "framed"
       property string position: "top" // "top", "bottom", "left", or "right"
       property list<string> monitors: [] // holds bar visibility per monitor
       property string density: "default" // "compact", "default", "comfortable"
@@ -191,14 +187,20 @@ Singleton {
       property int marginVertical: 4
       property int marginHorizontal: 4
 
+      // Framed bar settings
+      property int frameThickness: 8
+      property int frameRadius: 12
+
       // Bar outer corners (inverted/concave corners at bar edges when not floating)
       property bool outerCorners: true
 
-      // Reserves space with compositor
-      property bool exclusive: true
-
       // Hide bar/panels when compositor overview is active
       property bool hideOnOverview: false
+
+      // Auto-hide settings
+      property string displayMode: "always_visible" // "always_visible", "auto_hide"
+      property int autoHideDelay: 500 // ms before hiding after mouse leaves
+      property int autoShowDelay: 150 // ms before showing when mouse enters
 
       // Widget configuration for modular bar system
       property JsonObject widgets
@@ -279,6 +281,8 @@ Singleton {
       property bool telemetryEnabled: false
       property bool enableLockScreenCountdown: true
       property int lockScreenCountdownDuration: 10000
+      property bool autoStartAuth: false
+      property bool allowPasswordWithFprintd: false
     }
 
     // ui
@@ -377,11 +381,13 @@ Singleton {
       property bool autoPasteClipboard: false
       property bool enableClipPreview: true
       property bool clipboardWrapText: true
+      property string clipboardWatchTextCommand: "wl-paste --type text --watch cliphist store"
+      property string clipboardWatchImageCommand: "wl-paste --type image --watch cliphist store"
       property string position: "center"  // Position: center, top_left, top_right, bottom_left, bottom_right, bottom_center, top_center
       property list<string> pinnedApps: []
       property bool useApp2Unit: false
       property bool sortByMostUsed: true
-      property string terminalCommand: "xterm -e"
+      property string terminalCommand: "alacritty -e"
       property bool customLaunchPrefixEnabled: false
       property string customLaunchPrefix: ""
       // View mode: "list" or "grid"
@@ -391,6 +397,7 @@ Singleton {
       property string iconMode: "tabler"
       property bool showIconBackground: false
       property bool enableSettingsSearch: true
+      property bool enableWindowsSearch: true
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
     }
@@ -1097,56 +1104,6 @@ Singleton {
   }
 
   // -----------------------------------------------------
-  // Ensure PAM password.conf exists in configDir (create once, never override)
-  function ensurePamConfig() {
-    var pamConfigDir = configDir + "pam";
-    var pamConfigFile = pamConfigDir + "/password.conf";
-
-    // Check if file already exists
-    fileCheckPamProcess.command = ["test", "-f", pamConfigFile];
-    fileCheckPamProcess.running = true;
-  }
-
-  function doCreatePamConfig() {
-    var pamConfigDir = configDir + "pam";
-    var pamConfigFile = pamConfigDir + "/password.conf";
-    var pamConfigDirEsc = pamConfigDir.replace(/'/g, "'\\''");
-    var pamConfigFileEsc = pamConfigFile.replace(/'/g, "'\\''");
-
-    // Ensure directory exists
-    Quickshell.execDetached(["mkdir", "-p", pamConfigDir]);
-
-    // Generate the PAM config file content
-    var configContent = "auth sufficient pam_fprintd.so timeout=-1\n";
-    configContent += "auth sufficient /run/current-system/sw/lib/security/pam_fprintd.so timeout=-1 # for NixOS\n";
-    configContent += "auth required pam_unix.so\n";
-
-    // Write the config file using heredoc to avoid escaping issues
-    var script = `cat > '${pamConfigFileEsc}' << 'EOF'\n`;
-    script += configContent;
-    script += "EOF\n";
-    Quickshell.execDetached(["sh", "-c", script]);
-
-    Logger.d("Settings", "PAM config file created at:", pamConfigFile);
-  }
-
-  // Process for checking if PAM config file exists
-  Process {
-    id: fileCheckPamProcess
-    running: false
-
-    onExited: function (exitCode) {
-      if (exitCode === 0) {
-        // File exists, skip creation
-        Logger.d("Settings", "PAM config file already exists, skipping creation");
-      } else {
-        // File doesn't exist, create it
-        doCreatePamConfig();
-      }
-    }
-  }
-
-  // -----------------------------------------------------
   // Function to clean up deprecated user/custom bar widgets settings
   function upgradeWidget(widget) {
     // Backup the widget definition before altering
@@ -1157,7 +1114,7 @@ Singleton {
 
     // Delete deprecated user settings from the wiget
     for (const k of Object.keys(widget)) {
-      if (k === "id" || k === "allowUserSettings") {
+      if (k === "id") {
         continue;
       }
       if (!keys.includes(k)) {
@@ -1168,7 +1125,7 @@ Singleton {
     // Inject missing default setting (metaData) from BarWidgetRegistry
     for (var i = 0; i < keys.length; i++) {
       const k = keys[i];
-      if (k === "id" || k === "allowUserSettings") {
+      if (k === "id") {
         continue;
       }
 

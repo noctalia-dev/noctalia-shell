@@ -284,11 +284,12 @@ SmartPanel {
           Layout.fillHeight: true
           horizontalPolicy: ScrollBar.AlwaysOff
           verticalPolicy: ScrollBar.AsNeeded
-          clip: true
+          reserveScrollbarSpace: false
+          gradientColor: Color.mSurface
 
           ColumnLayout {
             id: contentColumn
-            width: parent.width
+            width: contentScroll.availableWidth
             spacing: Style.marginM
 
             // Wi‑Fi disabled state

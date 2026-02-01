@@ -44,15 +44,14 @@ NBox {
       var metadata = BarWidgetRegistry.widgetMetadata[widgetId];
       if (metadata) {
         Object.keys(metadata).forEach(function (key) {
-          if (key !== "allowUserSettings") {
-            newWidget[key] = metadata[key];
-          }
+          newWidget[key] = metadata[key];
         });
       }
     }
     var widgets = _getWidgetsContainer();
     widgets[section].push(newWidget);
     _saveWidgets(widgets);
+    BarService.widgetsRevision++;
   }
 
   function _removeWidgetFromSection(section, index) {
@@ -62,6 +61,7 @@ NBox {
       var removedWidgets = newArray.splice(index, 1);
       widgets[section] = newArray;
       _saveWidgets(widgets);
+      BarService.widgetsRevision++;
 
       if (removedWidgets[0].id === "ControlCenter" && BarService.lookupWidget("ControlCenter") === undefined) {
         ToastService.showWarning(I18n.tr("toast.missing-control-center.label"), I18n.tr("toast.missing-control-center.description"), 12000);
@@ -78,9 +78,12 @@ NBox {
       newArray.splice(toIndex, 0, item);
       widgets[section] = newArray;
       _saveWidgets(widgets);
+      BarService.widgetsRevision++;
     }
   }
 
+  // Note: _updateWidgetSettingsInSection does NOT increment revision
+  // because it only changes settings, not widget structure
   function _updateWidgetSettingsInSection(section, index, settings) {
     var widgets = _getWidgetsContainer();
     widgets[section][index] = settings;
@@ -98,6 +101,7 @@ NBox {
       targetArray.push(widget);
       widgets[toSection] = targetArray;
       _saveWidgets(widgets);
+      BarService.widgetsRevision++;
     }
   }
 

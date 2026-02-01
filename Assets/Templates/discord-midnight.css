@@ -205,16 +205,16 @@ body {
 
 [class*="checkboxOption"]:hover [class*="checkboxIndicator"] {
   background-color: color-mix(in srgb, var(--accent-1) 20%, transparent) !important;
-  border-color: var(--accent-1) !important;
+  border-color: var(--accent-3) !important;
 }
 
 [class*="checkboxOption"][data-selected] [class*="checkboxIndicator"] {
   background-color: var(--accent-1) !important;
-  border-color: var(--accent-1) !important;
+  border-color: var(--accent-3) !important;
 }
 
 [class*="checkboxOption"][data-selected]:hover [class*="checkboxIndicator"] {
-  background-color: var(--accent-3) !important;
+  background-color: var(--accent-1) !important;
   border-color: var(--accent-3) !important;
 }
 
@@ -247,7 +247,7 @@ body {
 
 /* Inner dot (selected) */
 [class*="innerDotRadio"] {
-    fill: var(--accent-1) !important;      /* contrast dot */
+    fill: var(--accent-3) !important;      /* contrast dot */
     opacity: 0;                        /* hidden by default */
     transition: opacity 0.2s ease;
 }
@@ -281,7 +281,7 @@ body {
 
 [class*="checkboxOption"][data-selected="true"] [class*="checkStroke"],
 [class*="checkboxOption"][data-selected="true"] [class*="dot"] {
-    color: var(--accent-1) !important; /* checkmark/dot color */
+    color: var(--accent-3) !important; /* checkmark color */
 }
 
 /* Hover effect for selected checkbox */
@@ -321,4 +321,50 @@ body {
 [class*="unreadMentionsBar"] [class*="text"] {
     color: var(--text-1) !important;
     font-weight: 700;
+}
+
+/* Fix polls visibility */
+[class*="pollContainer_"] [class*="selected__"] [class*="radioForeground_"] {
+    fill: var(--accent-3) !important;
+}
+
+[class*="pollContainer_"] [class*="selected__"] {
+    border: 2px solid var(--active) !important;
+}
+
+[class*="votedStyles_"] [class*="votePercentageBar_"] {
+    background-color: var(--active-2) !important;
+    opacity: 0.5;
+}
+
+[class*="pollContainer_"] [class*="answerSelectionIcon_"] circle {
+    fill: var(--accent-3) !important;
+}
+
+[class*="pollContainer_"] [class*="votedStyles_"] [class*="answerSelectionIcon_"] path {
+    fill: var(--bg-1) !important;
+}
+
+[class*="pollContainer_"] [class*="answer__"]:not([class*="votedStyles_"]) [class*="answerSelectionIcon_"] path {
+    fill: var(--accent-1) !important;
+}
+
+[class*="pollContainer_"] [class*="votesData_"] {
+    color: var(--text-2) !important;
+}
+
+[class*="pollContainer_"] [class*="votedStyles_"] [class*="answerInner_"] {
+    border: 2px solid var(--active) !important;
+}
+
+/* Invite to server button override*/
+[class*="inviteButton_"] svg path,
+[class*="actionIcon_"] path[d^="M14.5 8a3 3 0"] {
+    fill: var(--accent-1) !important;
+    color: var(--accent-1) !important;
+}
+
+[class*="inviteButton_"]:hover svg path {
+    fill: var(--accent-3) !important;
+    color: var(--accent-3) !important;
 }

@@ -291,11 +291,11 @@ Singleton {
     watchersStarted = true;
 
     // Text watcher
-    watchText.command = ["wl-paste", "--type", "text", "--watch", "cliphist", "store"];
+    watchText.command = ["sh", "-lc", Settings.data.appLauncher.clipboardWatchTextCommand];
     watchText.running = true;
 
     // Image watcher
-    watchImage.command = ["wl-paste", "--type", "image", "--watch", "cliphist", "store"];
+    watchImage.command = ["sh", "-lc", Settings.data.appLauncher.clipboardWatchImageCommand];
     watchImage.running = true;
   }
 

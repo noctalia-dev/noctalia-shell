@@ -23,6 +23,7 @@ Item {
   readonly property string emptyBrowsingMessage: selectedCategory === "recent" ? I18n.tr("launcher.providers.emoji-no-recent") : ""
 
   property var categoryIcons: ({
+                                 "all": "apps",
                                  "recent": "clock",
                                  "people": "user",
                                  "animals": "paw",
@@ -35,10 +36,11 @@ Item {
                                  "flags": "flag"
                                })
 
-  property var categories: ["recent", "people", "animals", "nature", "food", "activity", "travel", "objects", "symbols", "flags"]
+  property var categories: ["all", "recent", "people", "animals", "nature", "food", "activity", "travel", "objects", "symbols", "flags"]
 
   function getCategoryName(category) {
     const names = {
+      "all": I18n.tr("launcher.categories.all"),
       "recent": I18n.tr("launcher.categories.emoji-recent"),
       "people": I18n.tr("launcher.categories.emoji-people"),
       "animals": I18n.tr("launcher.categories.emoji-animals"),
@@ -121,16 +123,14 @@ Item {
     }
 
     var query = searchText.slice(6).trim();
+    var emojis = [];
 
-    if (query === "") {
-      showsCategories = true;
-      var emojis = EmojiService.getEmojisByCategory(selectedCategory);
-      return emojis.map(formatEmojiEntry);
+    if (query !== "" || selectedCategory === "all") {
+      emojis = EmojiService.search(query);
     } else {
-      showsCategories = false;
-      var emojis = EmojiService.search(query);
-      return emojis.map(formatEmojiEntry);
+      emojis = EmojiService.getEmojisByCategory(selectedCategory);
     }
+    return emojis.map(formatEmojiEntry);
   }
 
   // Format an emoji entry for the results list

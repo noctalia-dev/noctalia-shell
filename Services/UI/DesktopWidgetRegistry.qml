@@ -25,6 +25,9 @@ Singleton {
   property Component weatherComponent: Component {
     DesktopWeather {}
   }
+  property Component systemStatComponent: Component {
+    DesktopSystemStat {}
+  }
 
   // Widget registry object mapping widget names to components
   // Created in Component.onCompleted to ensure Components are ready
@@ -36,6 +39,7 @@ Singleton {
     widgetsObj["Clock"] = clockComponent;
     widgetsObj["MediaPlayer"] = mediaPlayerComponent;
     widgetsObj["Weather"] = weatherComponent;
+    widgetsObj["SystemStat"] = systemStatComponent;
     widgets = widgetsObj;
 
     Logger.i("DesktopWidgetRegistry", "Service started");
@@ -50,7 +54,8 @@ Singleton {
   property var widgetSettingsMap: ({
                                      "Clock": "WidgetSettings/ClockSettings.qml",
                                      "MediaPlayer": "WidgetSettings/MediaPlayerSettings.qml",
-                                     "Weather": "WidgetSettings/WeatherSettings.qml"
+                                     "Weather": "WidgetSettings/WeatherSettings.qml",
+                                     "SystemStat": "WidgetSettings/SystemStatSettings.qml"
                                    })
 
   property var widgetMetadata: ({
@@ -72,6 +77,13 @@ Singleton {
                                   },
                                   "Weather": {
                                     "showBackground": true
+                                  },
+                                  "SystemStat": {
+                                    "showBackground": true,
+                                    "statType": "CPU",
+                                    "diskPath": "/",
+                                    "roundedCorners": true,
+                                    "layout": "bottom"
                                   }
                                 })
 
@@ -122,7 +134,7 @@ Singleton {
       var manifest = PluginRegistry.getPluginManifest(pluginId);
       return manifest ? manifest.name : pluginId;
     }
-    // Core widgets - return as-is (Clock, MediaPlayer, Weather)
+    // Core widgets - return as-is (Clock, MediaPlayer, Weather, SystemStat)
     return widgetId;
   }
 

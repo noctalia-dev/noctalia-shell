@@ -12,6 +12,8 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   // Local state
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
   property bool valueShowIcon: widgetData.showIcon !== undefined ? widgetData.showIcon : widgetMetadata.showIcon
@@ -27,7 +29,7 @@ ColumnLayout {
     visible: valueShowIcon // Hide display mode setting when icon is disabled
     label: I18n.tr("bar.volume.display-mode-label")
     description: I18n.tr("bar.volume.display-mode-description")
-    minimumWidth: 134
+    minimumWidth: 200
     model: [
       {
         "key": "onhover",
@@ -43,13 +45,19 @@ ColumnLayout {
       }
     ]
     currentKey: valueDisplayMode
-    onSelected: key => valueDisplayMode = key
+    onSelected: key => {
+                  valueDisplayMode = key;
+                  settingsChanged(saveSettings());
+                }
   }
 
   NToggle {
     label: I18n.tr("bar.custom-button.show-icon-label")
     description: I18n.tr("bar.keyboard-layout.show-icon-description")
     checked: valueShowIcon
-    onToggled: checked => valueShowIcon = checked
+    onToggled: checked => {
+                 valueShowIcon = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 }

@@ -138,7 +138,7 @@ in
           sources = [
             {
               enabled = true;
-              name = "Official Noctalia Plugins";
+              name = "Noctalia Plugins";
               url = "https://github.com/noctalia-dev/noctalia-plugins";
             }
           ];

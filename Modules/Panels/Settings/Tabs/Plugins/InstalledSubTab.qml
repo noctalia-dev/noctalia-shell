@@ -41,7 +41,7 @@ ColumnLayout {
                     "count": updateCount
                   })
     icon: "download"
-    visible: updateCount >= 2
+    visible: (updateCount > 0)
     enabled: !isUpdating
     backgroundColor: Color.mPrimary
     textColor: Color.mOnPrimary
@@ -100,9 +100,21 @@ ColumnLayout {
 
             // Add source info
             var parsed = PluginRegistry.parseCompositeKey(compositeKey);
-            pluginData.isOfficial = parsed.isOfficial;
+            pluginData.isFromOfficialRepo = parsed.isOfficial;
             if (!parsed.isOfficial) {
               pluginData.sourceName = PluginRegistry.getSourceNameByHash(parsed.sourceHash);
+            }
+
+            // Look up "official" (team-maintained) status and lastUpdated from available plugins
+            pluginData.official = false;
+            pluginData.lastUpdated = null;
+            var availablePlugins = PluginService.availablePlugins || [];
+            for (var j = 0; j < availablePlugins.length; j++) {
+              if (availablePlugins[j].id === manifest.id) {
+                pluginData.official = availablePlugins[j].official === true;
+                pluginData.lastUpdated = availablePlugins[j].lastUpdated || null;
+                break;
+              }
             }
 
             plugins.push(pluginData);
@@ -115,198 +127,254 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.leftMargin: Style.borderS
         Layout.rightMargin: Style.borderS
-        implicitHeight: Math.round(rowLayout.implicitHeight) + Style.marginL * 2
+        implicitHeight: Math.round(contentColumn.implicitHeight + Style.marginL * 2)
         color: Color.mSurface
 
-        RowLayout {
-          id: rowLayout
+        ColumnLayout {
+          id: contentColumn
           anchors.fill: parent
           anchors.margins: Style.marginL
-          spacing: Style.marginM
+          spacing: Style.marginS
 
-          NIcon {
-            icon: "plugin"
-            pointSize: Style.fontSizeXL
-            color: PluginService.hasPluginError(modelData.compositeKey) ? Color.mError : Color.mPrimary
-          }
-
-          ColumnLayout {
-            spacing: 2
+          // Top row: icon, name, badge, spacer, action buttons
+          RowLayout {
+            spacing: Style.marginM
             Layout.fillWidth: true
+
+            NIcon {
+              icon: "plugin"
+              pointSize: Style.fontSizeL
+              color: PluginService.hasPluginError(modelData.compositeKey) ? Color.mError : Color.mPrimary
+            }
 
             NText {
               text: modelData.name
               color: Color.mPrimary
               elide: Text.ElideRight
+            }
+
+            // Official badge (Noctalia Team maintained)
+            Rectangle {
+              visible: modelData.official === true
+              color: Color.mSecondary
+              radius: Style.radiusXS
+              implicitWidth: officialBadgeRow.implicitWidth + Style.marginS * 2
+              implicitHeight: officialBadgeRow.implicitHeight + Style.marginXS * 2
+
+              RowLayout {
+                id: officialBadgeRow
+                anchors.centerIn: parent
+                spacing: Style.marginXS
+
+                NIcon {
+                  icon: "official-plugin"
+                  pointSize: Style.fontSizeXXS
+                  color: Color.mOnSecondary
+                }
+
+                NText {
+                  text: I18n.tr("common.official")
+                  font.pointSize: Style.fontSizeXXS
+                  font.weight: Style.fontWeightMedium
+                  color: Color.mOnSecondary
+                }
+              }
+            }
+
+            // Spacer
+            Item {
               Layout.fillWidth: true
+            }
+
+            NIconButton {
+              icon: "settings"
+              tooltipText: I18n.tr("panels.plugins.settings-tooltip")
+              baseSize: Style.baseWidgetSize * 0.7
+              visible: (modelData.entryPoints?.settings !== undefined)
+              enabled: modelData.enabled
+              onClicked: {
+                pluginSettingsDialog.openPluginSettings(modelData);
+              }
+            }
+
+            NIconButton {
+              icon: "external-link"
+              tooltipText: I18n.tr("panels.plugins.open-plugin-page")
+              baseSize: Style.baseWidgetSize * 0.7
+              visible: modelData.isFromOfficialRepo
+              onClicked: Qt.openUrlExternally("https://noctalia.dev/plugins/" + modelData.id)
+            }
+
+            NIconButton {
+              icon: "trash"
+              tooltipText: I18n.tr("common.uninstall")
+              baseSize: Style.baseWidgetSize * 0.7
+              onClicked: {
+                uninstallDialog.pluginToUninstall = modelData;
+                uninstallDialog.open();
+              }
+            }
+
+            NButton {
+              id: updateButton
+              property string pluginId: modelData.compositeKey
+              property bool isUpdating: root.updatingPlugins[pluginId] === true
+
+              text: isUpdating ? I18n.tr("panels.plugins.updating") : I18n.tr("common.update")
+              icon: isUpdating ? "" : "download"
+              visible: modelData.updateInfo !== undefined
+              enabled: !isUpdating
+              backgroundColor: Color.mPrimary
+              textColor: Color.mOnPrimary
+              fontSize: Style.fontSizeXXS
+              fontWeight: Style.fontWeightMedium
+              onClicked: {
+                var pid = pluginId;
+                var pname = modelData.name;
+                var pversion = modelData.updateInfo?.availableVersion || "";
+                var rootRef = root;
+                var updates = Object.assign({}, rootRef.updatingPlugins);
+                updates[pid] = true;
+                rootRef.updatingPlugins = updates;
+
+                PluginService.updatePlugin(pid, function (success, error) {
+                  var updates2 = Object.assign({}, rootRef.updatingPlugins);
+                  updates2[pid] = false;
+                  rootRef.updatingPlugins = updates2;
+
+                  if (success) {
+                    ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.update-success", {
+                                                                                       "plugin": pname,
+                                                                                       "version": pversion
+                                                                                     }));
+                  } else {
+                    ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.update-error", {
+                                                                                      "plugin": pname,
+                                                                                      "error": error || "Unknown error"
+                                                                                    }));
+                  }
+                });
+              }
+            }
+
+            NToggle {
+              checked: modelData.enabled
+              baseSize: Style.baseWidgetSize * 0.7
+              onToggled: checked => {
+                           if (checked) {
+                             PluginService.enablePlugin(modelData.compositeKey);
+                           } else {
+                             PluginService.disablePlugin(modelData.compositeKey);
+                           }
+                         }
+            }
+          }
+
+          // Description
+          NText {
+            visible: modelData.description
+            text: modelData.description || ""
+            font.pointSize: Style.fontSizeXS
+            color: Color.mOnSurface
+            wrapMode: Text.WordWrap
+            maximumLineCount: 2
+            elide: Text.ElideRight
+            Layout.fillWidth: true
+          }
+
+          // Details row
+          RowLayout {
+            spacing: Style.marginS
+            Layout.fillWidth: true
+
+            NText {
+              text: {
+                if (modelData.updateInfo) {
+                  return I18n.tr("panels.plugins.update-version", {
+                                   "current": modelData.version,
+                                   "new": modelData.updateInfo.availableVersion
+                                 });
+                } else if (modelData.pendingUpdateInfo) {
+                  return I18n.tr("panels.plugins.update-pending", {
+                                   "current": modelData.version,
+                                   "new": modelData.pendingUpdateInfo.availableVersion,
+                                   "required": modelData.pendingUpdateInfo.minNoctaliaVersion
+                                 });
+                }
+                return "v" + modelData.version;
+              }
+              font.pointSize: Style.fontSizeXS
+              color: modelData.updateInfo ? Color.mPrimary : (modelData.pendingUpdateInfo ? Color.mTertiary : Color.mOnSurfaceVariant)
+              font.weight: (modelData.updateInfo || modelData.pendingUpdateInfo) ? Style.fontWeightMedium : Style.fontWeightRegular
             }
 
             NText {
-              text: modelData.description
+              text: "•"
               font.pointSize: Style.fontSizeXS
-              color: Color.mOnSurface
-              wrapMode: Text.WordWrap
-              maximumLineCount: 2
-              elide: Text.ElideRight
+              color: Color.mOnSurfaceVariant
+            }
+
+            NText {
+              text: stripAuthorEmail(modelData.author)
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
+            // Source indicator for plugins from non-official repos
+            NText {
+              visible: !modelData.isFromOfficialRepo
+              text: "•"
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
+            NText {
+              visible: !modelData.isFromOfficialRepo
+              text: modelData.sourceName || I18n.tr("panels.plugins.source-custom")
+              font.pointSize: Style.fontSizeXS
+              color: Color.mTertiary
+            }
+
+            NText {
+              visible: !!modelData.lastUpdated
+              text: "•"
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
+            NText {
+              visible: !!modelData.lastUpdated
+              text: modelData.lastUpdated ? Time.formatRelativeTime(new Date(modelData.lastUpdated)) : ""
+              font.pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+
+            Item {
               Layout.fillWidth: true
             }
-
-            RowLayout {
-              spacing: Style.marginS
-
-              NText {
-                text: {
-                  if (modelData.updateInfo) {
-                    return I18n.tr("panels.plugins.update-version", {
-                                     "current": modelData.version,
-                                     "new": modelData.updateInfo.availableVersion
-                                   });
-                  } else if (modelData.pendingUpdateInfo) {
-                    return I18n.tr("panels.plugins.update-pending", {
-                                     "current": modelData.version,
-                                     "new": modelData.pendingUpdateInfo.availableVersion,
-                                     "required": modelData.pendingUpdateInfo.minNoctaliaVersion
-                                   });
-                  }
-                  return "v" + modelData.version;
-                }
-                font.pointSize: Style.fontSizeXXS
-                color: modelData.updateInfo ? Color.mPrimary : (modelData.pendingUpdateInfo ? Color.mTertiary : Color.mOnSurfaceVariant)
-                font.weight: (modelData.updateInfo || modelData.pendingUpdateInfo) ? Style.fontWeightMedium : Style.fontWeightRegular
-              }
-
-              NText {
-                text: "•"
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mOnSurfaceVariant
-              }
-
-              NText {
-                text: stripAuthorEmail(modelData.author)
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mOnSurfaceVariant
-              }
-
-              // Source indicator for non-official plugins
-              NText {
-                visible: !modelData.isOfficial
-                text: "•"
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mOnSurfaceVariant
-              }
-
-              NText {
-                visible: !modelData.isOfficial
-                text: modelData.sourceName || I18n.tr("panels.plugins.source-custom")
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mTertiary
-              }
-            }
-
-            // Error indicator
-            RowLayout {
-              spacing: Style.marginS
-              visible: PluginService.hasPluginError(modelData.compositeKey)
-
-              NIcon {
-                icon: "alert-triangle"
-                pointSize: Style.fontSizeS
-                color: Color.mError
-              }
-
-              NText {
-                property var errorInfo: PluginService.getPluginError(modelData.compositeKey)
-                text: errorInfo ? errorInfo.error : ""
-                font.pointSize: Style.fontSizeXXS
-                color: Color.mError
-                wrapMode: Text.WordWrap
-                Layout.fillWidth: true
-                elide: Text.ElideRight
-                maximumLineCount: 3
-              }
-            }
           }
 
-          NIconButton {
-            icon: "settings"
-            tooltipText: I18n.tr("panels.plugins.settings-tooltip")
-            baseSize: Style.baseWidgetSize * 0.7
-            visible: modelData.entryPoints?.settings !== undefined
-            onClicked: {
-              pluginSettingsDialog.openPluginSettings(modelData);
+          // Error indicator
+          RowLayout {
+            spacing: Style.marginS
+            visible: PluginService.hasPluginError(modelData.compositeKey)
+
+            NIcon {
+              icon: "alert-triangle"
+              pointSize: Style.fontSizeS
+              color: Color.mError
             }
-          }
 
-          NIconButton {
-            icon: "external-link"
-            tooltipText: I18n.tr("panels.plugins.open-plugin-page")
-            baseSize: Style.baseWidgetSize * 0.7
-            visible: modelData.isOfficial
-            onClicked: Qt.openUrlExternally("https://noctalia.dev/plugins/" + modelData.id)
-          }
-
-          NIconButton {
-            icon: "trash"
-            tooltipText: I18n.tr("common.uninstall")
-            baseSize: Style.baseWidgetSize * 0.7
-            onClicked: {
-              uninstallDialog.pluginToUninstall = modelData;
-              uninstallDialog.open();
+            NText {
+              property var errorInfo: PluginService.getPluginError(modelData.compositeKey)
+              text: errorInfo ? errorInfo.error : ""
+              font.pointSize: Style.fontSizeXXS
+              color: Color.mError
+              wrapMode: Text.WordWrap
+              Layout.fillWidth: true
+              elide: Text.ElideRight
+              maximumLineCount: 3
             }
-          }
-
-          NButton {
-            id: updateButton
-            property string pluginId: modelData.compositeKey
-            property bool isUpdating: root.updatingPlugins[pluginId] === true
-
-            text: isUpdating ? I18n.tr("panels.plugins.updating") : I18n.tr("common.update")
-            icon: isUpdating ? "" : "download"
-            visible: modelData.updateInfo !== undefined
-            enabled: !isUpdating
-            backgroundColor: Color.mPrimary
-            textColor: Color.mOnPrimary
-            fontSize: Style.fontSizeXXS
-            fontWeight: Style.fontWeightMedium
-            onClicked: {
-              var pid = pluginId;
-              var pname = modelData.name;
-              var pversion = modelData.updateInfo?.availableVersion || "";
-              var rootRef = root;
-              var updates = Object.assign({}, rootRef.updatingPlugins);
-              updates[pid] = true;
-              rootRef.updatingPlugins = updates;
-
-              PluginService.updatePlugin(pid, function (success, error) {
-                var updates2 = Object.assign({}, rootRef.updatingPlugins);
-                updates2[pid] = false;
-                rootRef.updatingPlugins = updates2;
-
-                if (success) {
-                  ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.update-success", {
-                                                                                     "plugin": pname,
-                                                                                     "version": pversion
-                                                                                   }));
-                } else {
-                  ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.update-error", {
-                                                                                    "plugin": pname,
-                                                                                    "error": error || "Unknown error"
-                                                                                  }));
-                }
-              });
-            }
-          }
-
-          NToggle {
-            checked: modelData.enabled
-            baseSize: Style.baseWidgetSize * 0.7
-            onToggled: checked => {
-                         if (checked) {
-                           PluginService.enablePlugin(modelData.compositeKey);
-                         } else {
-                           PluginService.disablePlugin(modelData.compositeKey);
-                         }
-                       }
           }
         }
       }
@@ -388,6 +456,8 @@ ColumnLayout {
   function uninstallPlugin(pluginId) {
     var manifest = PluginRegistry.getPluginManifest(pluginId);
     var pluginName = manifest?.name || pluginId;
+
+    BarService.widgetsRevision++;
 
     ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstalling", {
                                                                        "plugin": pluginName

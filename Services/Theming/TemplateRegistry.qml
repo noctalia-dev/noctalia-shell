@@ -66,7 +66,7 @@ Singleton {
           "path": "~/.config/gtk-4.0/noctalia.css"
         }
       ],
-      "postProcess": mode => `gsettings set org.gnome.desktop.interface color-scheme prefer-${mode} && python3 ${gtkRefreshScript}`
+      "postProcess": mode => `python3 ${gtkRefreshScript} ${mode}`
     },
     {
       "id": "qt",
@@ -307,6 +307,18 @@ Singleton {
         }
       ],
       "postProcess": () => `${templateApplyScript} niri`
+    },
+    {
+      "id": "sway",
+      "name": "Sway",
+      "category": "compositor",
+      "input": "sway",
+      "outputs": [
+        {
+          "path": "~/.config/sway/noctalia"
+        }
+      ],
+      "postProcess": () => `${templateApplyScript} sway`
     },
     {
       "id": "hyprland",

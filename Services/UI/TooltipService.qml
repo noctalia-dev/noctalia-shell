@@ -15,14 +15,14 @@ Singleton {
     Tooltip {}
   }
 
-  function show(target, text, direction, delay, fontFamily) {
+  function show(target, content, direction, delay, fontFamily) {
     if (!Settings.data.ui.tooltipsEnabled) {
       return;
     }
 
-    // Don't create if no text
-    if (!target || !text) {
-      Logger.i("Tooltip", "No target or text");
+    // Don't create if no content
+    if (!target || !content || (Array.isArray(content) && content.length === 0)) {
+      Logger.i("Tooltip", "No target or content");
       return;
     }
 
@@ -42,7 +42,7 @@ Singleton {
 
     // If we already have a tooltip for this target, just update it
     if (activeTooltip && activeTooltip.targetItem === target) {
-      activeTooltip.updateText(text);
+      activeTooltip.updateContent(content);
       return activeTooltip;
     }
 
@@ -78,7 +78,7 @@ Singleton {
                                         });
 
       // Show the tooltip
-      newTooltip.show(target, text, direction || "auto", delay || Style.tooltipDelay, fontFamily);
+      newTooltip.show(target, content, direction || "auto", delay || Style.tooltipDelay, fontFamily);
 
       return newTooltip;
     } else {
@@ -88,12 +88,22 @@ Singleton {
     return null;
   }
 
-  function hide() {
-    if (pendingTooltip) {
-      pendingTooltip.hide();
-    }
-    if (activeTooltip) {
-      activeTooltip.hide();
+  function hide(target) {
+    // If target is provided, only hide if tooltip belongs to that target
+    if (target) {
+      if (pendingTooltip && pendingTooltip.targetItem === target) {
+        pendingTooltip.hide();
+      }
+      if (activeTooltip && activeTooltip.targetItem === target) {
+        activeTooltip.hide();
+      }
+    } else {
+      if (pendingTooltip) {
+        pendingTooltip.hide();
+      }
+      if (activeTooltip) {
+        activeTooltip.hide();
+      }
     }
   }
 
@@ -110,9 +120,14 @@ Singleton {
     }
   }
 
-  function updateText(newText) {
+  function updateContent(newContent) {
     if (activeTooltip) {
-      activeTooltip.updateText(newText);
+      activeTooltip.updateContent(newContent);
     }
+  }
+
+  // Backward compatibility alias
+  function updateText(newText) {
+    updateContent(newText);
   }
 }

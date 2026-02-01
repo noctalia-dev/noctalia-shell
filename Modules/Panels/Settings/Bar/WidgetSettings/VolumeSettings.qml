@@ -12,6 +12,8 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   // Local state
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
   property string valueMiddleClickCommand: widgetData.middleClickCommand !== undefined ? widgetData.middleClickCommand : widgetMetadata.middleClickCommand
@@ -26,7 +28,7 @@ ColumnLayout {
   NComboBox {
     label: I18n.tr("bar.volume.display-mode-label")
     description: I18n.tr("bar.volume.display-mode-description")
-    minimumWidth: 134
+    minimumWidth: 200
     model: [
       {
         "key": "onhover",
@@ -42,7 +44,10 @@ ColumnLayout {
       }
     ]
     currentKey: valueDisplayMode
-    onSelected: key => valueDisplayMode = key
+    onSelected: key => {
+                  valueDisplayMode = key;
+                  settingsChanged(saveSettings());
+                }
   }
 
   // Middle click command
@@ -52,5 +57,6 @@ ColumnLayout {
     placeholderText: I18n.tr("panels.audio.external-mixer-placeholder")
     text: valueMiddleClickCommand
     onTextChanged: valueMiddleClickCommand = text
+    onEditingFinished: settingsChanged(saveSettings())
   }
 }

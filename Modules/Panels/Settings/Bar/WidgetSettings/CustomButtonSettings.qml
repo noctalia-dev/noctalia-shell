@@ -13,6 +13,8 @@ ColumnLayout {
   property var widgetData: null
   property var widgetMetadata: null
 
+  signal settingsChanged(var settings)
+
   property string valueIcon: widgetData.icon !== undefined ? widgetData.icon : widgetMetadata.icon
   property bool valueTextStream: widgetData.textStream !== undefined ? widgetData.textStream : widgetMetadata.textStream
   property bool valueParseJson: widgetData.parseJson !== undefined ? widgetData.parseJson : widgetMetadata.parseJson
@@ -83,6 +85,7 @@ ColumnLayout {
     initialIcon: valueIcon
     onIconSelected: function (iconName) {
       valueIcon = iconName;
+      settingsChanged(saveSettings());
     }
   }
 
@@ -91,7 +94,10 @@ ColumnLayout {
     label: I18n.tr("bar.custom-button.show-icon-label", "Show icon")
     description: I18n.tr("bar.custom-button.show-icon-description", "Toggles the visibility of the widget's icon.")
     checked: valueShowIcon
-    onToggled: checked => valueShowIcon = checked
+    onToggled: checked => {
+                 valueShowIcon = checked;
+                 settingsChanged(saveSettings());
+               }
     visible: textCommandInput.text !== ""
   }
 
@@ -99,7 +105,10 @@ ColumnLayout {
     label: I18n.tr("bar.custom-button.enable-colorization-label")
     description: I18n.tr("bar.custom-button.enable-colorization-description")
     checked: valueEnableColorization
-    onToggled: checked => valueEnableColorization = checked
+    onToggled: checked => {
+                 valueEnableColorization = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NComboBox {
@@ -129,7 +138,10 @@ ColumnLayout {
       }
     ]
     currentKey: valueColorizeSystemIcon
-    onSelected: key => valueColorizeSystemIcon = key
+    onSelected: key => {
+                  valueColorizeSystemIcon = key;
+                  settingsChanged(saveSettings());
+                }
   }
 
   NTextInput {
@@ -139,6 +151,7 @@ ColumnLayout {
     placeholderText: I18n.tr("placeholders.enter-ipc-identifier")
     text: valueIpcIdentifier
     onTextChanged: valueIpcIdentifier = text
+    onEditingFinished: settingsChanged(saveSettings())
   }
 
   RowLayout {
@@ -151,6 +164,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.left-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData?.leftClickExec || widgetMetadata.leftClickExec
+      onEditingFinished: settingsChanged(saveSettings())
     }
 
     NToggle {
@@ -161,7 +175,10 @@ ColumnLayout {
       onEntered: TooltipService.show(leftClickUpdateText, I18n.tr("bar.custom-button.left-click-update-text"), "auto")
       onExited: TooltipService.hide()
       checked: widgetData?.leftClickUpdateText ?? widgetMetadata.leftClickUpdateText
-      onToggled: isChecked => checked = isChecked
+      onToggled: isChecked => {
+                   checked = isChecked;
+                   settingsChanged(saveSettings());
+                 }
     }
   }
 
@@ -175,6 +192,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.right-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData?.rightClickExec || widgetMetadata.rightClickExec
+      onEditingFinished: settingsChanged(saveSettings())
     }
 
     NToggle {
@@ -185,7 +203,10 @@ ColumnLayout {
       onEntered: TooltipService.show(rightClickUpdateText, I18n.tr("bar.custom-button.right-click-update-text"), "auto")
       onExited: TooltipService.hide()
       checked: widgetData?.rightClickUpdateText ?? widgetMetadata.rightClickUpdateText
-      onToggled: isChecked => checked = isChecked
+      onToggled: isChecked => {
+                   checked = isChecked;
+                   settingsChanged(saveSettings());
+                 }
     }
   }
 
@@ -199,6 +220,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.middle-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData.middleClickExec || widgetMetadata.middleClickExec
+      onEditingFinished: settingsChanged(saveSettings())
     }
 
     NToggle {
@@ -209,7 +231,10 @@ ColumnLayout {
       onEntered: TooltipService.show(middleClickUpdateText, I18n.tr("bar.custom-button.middle-click-update-text"), "auto")
       onExited: TooltipService.hide()
       checked: widgetData?.middleClickUpdateText ?? widgetMetadata.middleClickUpdateText
-      onToggled: isChecked => checked = isChecked
+      onToggled: isChecked => {
+                   checked = isChecked;
+                   settingsChanged(saveSettings());
+                 }
     }
   }
 
@@ -223,6 +248,7 @@ ColumnLayout {
     checked: internalChecked
     onToggled: checked => {
                  internalChecked = checked;
+                 settingsChanged(saveSettings());
                }
   }
 
@@ -241,6 +267,7 @@ ColumnLayout {
         description: I18n.tr("bar.custom-button.wheel-description")
         placeholderText: I18n.tr("placeholders.enter-command")
         text: widgetData?.wheelExec || widgetMetadata?.wheelExec
+        onEditingFinished: settingsChanged(saveSettings())
       }
 
       NToggle {
@@ -251,7 +278,10 @@ ColumnLayout {
         onEntered: TooltipService.show(wheelUpdateText, I18n.tr("bar.custom-button.wheel-update-text"), "auto")
         onExited: TooltipService.hide()
         checked: widgetData?.wheelUpdateText ?? widgetMetadata?.wheelUpdateText
-        onToggled: isChecked => checked = isChecked
+        onToggled: isChecked => {
+                     checked = isChecked;
+                     settingsChanged(saveSettings());
+                   }
       }
     }
 
@@ -270,6 +300,7 @@ ColumnLayout {
           description: I18n.tr("bar.custom-button.wheel-up-description")
           placeholderText: I18n.tr("placeholders.enter-command")
           text: widgetData?.wheelUpExec || widgetMetadata?.wheelUpExec
+          onEditingFinished: settingsChanged(saveSettings())
         }
 
         NToggle {
@@ -280,7 +311,10 @@ ColumnLayout {
           onEntered: TooltipService.show(wheelUpUpdateText, I18n.tr("bar.custom-button.wheel-update-text"), "auto")
           onExited: TooltipService.hide()
           checked: (widgetData?.wheelUpUpdateText !== undefined) ? widgetData.wheelUpUpdateText : widgetMetadata?.wheelUpUpdateText
-          onToggled: isChecked => checked = isChecked
+          onToggled: isChecked => {
+                       checked = isChecked;
+                       settingsChanged(saveSettings());
+                     }
         }
       }
 
@@ -294,6 +328,7 @@ ColumnLayout {
           description: I18n.tr("bar.custom-button.wheel-down-description")
           placeholderText: I18n.tr("placeholders.enter-command")
           text: widgetData?.wheelDownExec || widgetMetadata?.wheelDownExec
+          onEditingFinished: settingsChanged(saveSettings())
         }
 
         NToggle {
@@ -304,7 +339,10 @@ ColumnLayout {
           onEntered: TooltipService.show(wheelDownUpdateText, I18n.tr("bar.custom-button.wheel-update-text"), "auto")
           onExited: TooltipService.hide()
           checked: (widgetData?.wheelDownUpdateText !== undefined) ? widgetData.wheelDownUpdateText : widgetMetadata?.wheelDownUpdateText
-          onToggled: isChecked => checked = isChecked
+          onToggled: isChecked => {
+                       checked = isChecked;
+                       settingsChanged(saveSettings());
+                     }
         }
       }
     }
@@ -324,7 +362,10 @@ ColumnLayout {
     from: 0
     to: 100
     value: valueMaxTextLengthHorizontal
-    onValueChanged: valueMaxTextLengthHorizontal = value
+    onValueChanged: {
+      valueMaxTextLengthHorizontal = value;
+      settingsChanged(saveSettings());
+    }
   }
 
   NSpinBox {
@@ -333,7 +374,10 @@ ColumnLayout {
     from: 0
     to: 100
     value: valueMaxTextLengthVertical
-    onValueChanged: valueMaxTextLengthVertical = value
+    onValueChanged: {
+      valueMaxTextLengthVertical = value;
+      settingsChanged(saveSettings());
+    }
   }
 
   NToggle {
@@ -341,7 +385,10 @@ ColumnLayout {
     label: I18n.tr("bar.custom-button.text-stream-label")
     description: I18n.tr("bar.custom-button.text-stream-description")
     checked: valueTextStream
-    onToggled: checked => valueTextStream = checked
+    onToggled: checked => {
+                 valueTextStream = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NToggle {
@@ -349,7 +396,10 @@ ColumnLayout {
     label: I18n.tr("bar.custom-button.parse-json-label", "Parse output as JSON")
     description: I18n.tr("bar.custom-button.parse-json-description", "Parse the command output as a JSON object to dynamically set text and icon.")
     checked: valueParseJson
-    onToggled: checked => valueParseJson = checked
+    onToggled: checked => {
+                 valueParseJson = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NTextInput {
@@ -359,6 +409,7 @@ ColumnLayout {
     description: valueTextStream ? I18n.tr("bar.custom-button.display-command-output-stream-description") : I18n.tr("bar.custom-button.display-command-output-description")
     placeholderText: I18n.tr("placeholders.command-example")
     text: widgetData?.textCommand || widgetMetadata.textCommand
+    onEditingFinished: settingsChanged(saveSettings())
   }
 
   NTextInput {
@@ -369,6 +420,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.collapse-condition-description")
     placeholderText: I18n.tr("placeholders.enter-text-to-collapse")
     text: widgetData?.textCollapse || widgetMetadata.textCollapse
+    onEditingFinished: settingsChanged(saveSettings())
   }
 
   NTextInput {
@@ -379,6 +431,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.refresh-interval-description")
     placeholderText: String(widgetMetadata.textIntervalMs)
     text: widgetData && widgetData.textIntervalMs !== undefined ? String(widgetData.textIntervalMs) : ""
+    onEditingFinished: settingsChanged(saveSettings())
   }
 
   NComboBox {
@@ -400,7 +453,10 @@ ColumnLayout {
       }
     ]
     currentKey: valueHideMode
-    onSelected: key => valueHideMode = key
+    onSelected: key => {
+                  valueHideMode = key;
+                  settingsChanged(saveSettings());
+                }
     visible: textCommandInput.text !== "" && valueTextStream == true
   }
 }

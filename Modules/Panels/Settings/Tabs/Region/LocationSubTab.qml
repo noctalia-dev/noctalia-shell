@@ -47,11 +47,13 @@ ColumnLayout {
   }
 
   // Location
-  RowLayout {
+  ColumnLayout {
     Layout.fillWidth: true
-    spacing: Style.marginL
+    spacing: Style.marginS
 
     NTextInput {
+      Layout.maximumWidth: root.width / 2
+
       label: I18n.tr("panels.location.location-search-label")
       description: I18n.tr("panels.location.location-search-description")
       text: Settings.data.location.name || Settings.defaultLocation
@@ -79,10 +81,6 @@ ColumnLayout {
                     })
       pointSize: Style.fontSizeS
       color: Color.mOnSurfaceVariant
-      verticalAlignment: Text.AlignVCenter
-      horizontalAlignment: Text.AlignRight
-      Layout.alignment: Qt.AlignBottom
-      Layout.bottomMargin: Style.marginM
     }
   }
 

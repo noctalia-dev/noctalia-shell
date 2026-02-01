@@ -21,9 +21,11 @@ Item {
   property int sectionWidgetsCount: 0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId]
+  // Explicit screenName property ensures reactive binding when screen changes
+  readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
-    if (section && sectionWidgetIndex >= 0) {
-      var widgets = Settings.getBarWidgetsForScreen(screen?.name)[section];
+    if (section && sectionWidgetIndex >= 0 && screenName) {
+      var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
       if (widgets && sectionWidgetIndex < widgets.length) {
         return widgets[sectionWidgetIndex];
       }
@@ -31,7 +33,7 @@ Item {
     return {};
   }
 
-  readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
 
   readonly property string customIcon: widgetSettings.icon || widgetMetadata.icon
@@ -231,10 +233,10 @@ Item {
       }
     }
 
-    onClicked: root.onClicked()
-    onRightClicked: root.onRightClicked()
-    onMiddleClicked: root.onMiddleClicked()
-    onWheel: delta => root.onWheel(delta)
+    onClicked: root.clicked()
+    onRightClicked: root.rightClicked()
+    onMiddleClicked: root.middleClicked()
+    onWheel: delta => root.wheeled(delta)
   }
 
   // Internal state for dynamic text
@@ -456,22 +458,20 @@ Item {
     }
   }
 
-  function onClicked() {
+  function clicked() {
     if (leftClickExec) {
       Quickshell.execDetached(["sh", "-lc", leftClickExec]);
       Logger.i("CustomButton", `Executing command: ${leftClickExec}`);
     } else if (!leftClickUpdateText) {
-      // No left click script was defined, open settings
-      var settingsPanel = PanelService.getPanel("settingsPanel", screen);
-      settingsPanel.requestedTab = SettingsPanel.Tab.Bar;
-      settingsPanel.open();
+      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
+      //SettingsPanelService.openToTab(SettingsPanel.Tab.Bar, 1, screen);
     }
     if (!textStream && leftClickUpdateText) {
       runTextCommand();
     }
   }
 
-  function onRightClicked() {
+  function rightClicked() {
     if (rightClickExec) {
       Quickshell.execDetached(["sh", "-lc", rightClickExec]);
       Logger.i("CustomButton", `Executing command: ${rightClickExec}`);
@@ -481,7 +481,7 @@ Item {
     }
   }
 
-  function onMiddleClicked() {
+  function middleClicked() {
     if (middleClickExec) {
       Quickshell.execDetached(["sh", "-lc", middleClickExec]);
       Logger.i("CustomButton", `Executing command: ${middleClickExec}`);
@@ -516,7 +516,7 @@ Item {
     textProc.running = true;
   }
 
-  function onWheel(delta) {
+  function wheeled(delta) {
     if (wheelMode === "unified" && wheelExec) {
       let normalizedDelta = delta > 0 ? 1 : -1;
 

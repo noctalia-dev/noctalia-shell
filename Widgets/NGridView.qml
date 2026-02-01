@@ -22,6 +22,7 @@ Item {
       return false;
     return gridView.contentHeight > gridView.height;
   }
+  readonly property bool contentOverflows: gridView.contentHeight > gridView.height
 
   // Gradient properties
   property bool showGradientMasks: true
@@ -75,6 +76,50 @@ Item {
   property alias horizontalVelocity: gridView.horizontalVelocity
   property alias verticalVelocity: gridView.verticalVelocity
   property alias reuseItems: gridView.reuseItems
+
+  // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
+  property real wheelScrollMultiplier: 2.0
+
+  // Track selection index for gradient visibility (set externally)
+  property int trackedSelectionIndex: -1
+
+  // Check if selection is on first visible row
+  readonly property bool selectionOnFirstVisibleRow: {
+    if (trackedSelectionIndex < 0 || cellHeight <= 0 || cellWidth <= 0)
+      return false;
+
+    // Calculate columns per row
+    var cols = Math.floor(gridView.width / cellWidth);
+    if (cols <= 0)
+      cols = 1;
+
+    // Calculate the row of the selection
+    var selectionRow = Math.round(trackedSelectionIndex / cols);
+
+    // Calculate the first visible row
+    var firstVisibleRow = Math.round(gridView.contentY / cellHeight);
+
+    return selectionRow === firstVisibleRow;
+  }
+
+  // Check if selection is on last visible row
+  readonly property bool selectionOnLastVisibleRow: {
+    if (trackedSelectionIndex < 0 || cellHeight <= 0 || cellWidth <= 0)
+      return false;
+
+    // Calculate columns per row
+    var cols = Math.floor(gridView.width / cellWidth);
+    if (cols <= 0)
+      cols = 1;
+
+    // Calculate the row of the selection
+    var selectionRow = Math.round(trackedSelectionIndex / cols);
+
+    // Calculate the last visible row (might be partially visible)
+    var lastVisibleRow = Math.round((gridView.contentY + gridView.height - 1) / cellHeight);
+
+    return selectionRow === lastVisibleRow;
+  }
 
   // Forward GridView methods
   function positionViewAtIndex(index, mode) {
@@ -163,8 +208,8 @@ Item {
         width: root.availableWidth
         height: root.gradientHeight
         z: 1
-        visible: root.showGradientMasks && root.verticalScrollBarActive
-        opacity: gridView.contentY <= 1 ? 0 : 1
+        visible: root.showGradientMasks && root.contentOverflows
+        opacity: (gridView.contentY <= 1 || root.selectionOnFirstVisibleRow) ? 0 : 1
         Behavior on opacity {
           NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
         }
@@ -185,8 +230,8 @@ Item {
         width: root.availableWidth
         height: root.gradientHeight + 1
         z: 1
-        visible: root.showGradientMasks && root.verticalScrollBarActive
-        opacity: (gridView.contentY + gridView.height >= gridView.contentHeight - 1) ? 0 : 1
+        visible: root.showGradientMasks && root.contentOverflows
+        opacity: ((gridView.contentY + gridView.height >= gridView.contentHeight - 1) || root.selectionOnLastVisibleRow) ? 0 : 1
         Behavior on opacity {
           NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
         }
@@ -219,6 +264,17 @@ Item {
                         root.keyPressed(event);
                       }
                     }
+
+    WheelHandler {
+      enabled: root.wheelScrollMultiplier !== 1.0
+      acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+      onWheel: event => {
+                 const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 8;
+                 const newY = gridView.contentY - (delta * root.wheelScrollMultiplier);
+                 gridView.contentY = Math.max(0, Math.min(newY, gridView.contentHeight - gridView.height));
+                 event.accepted = true;
+               }
+    }
 
     ScrollBar.vertical: ScrollBar {
       parent: root

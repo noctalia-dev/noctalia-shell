@@ -332,6 +332,9 @@ RowLayout {
       function onCurrentKeyChanged() {
         combo.currentIndex = root.findIndexByKey(root.currentKey);
       }
+      function onModelChanged() {
+        combo.currentIndex = root.findIndexByKey(root.currentKey);
+      }
     }
   }
 }

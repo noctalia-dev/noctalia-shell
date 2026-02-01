@@ -608,6 +608,7 @@ Popup {
         }
 
         NScrollView {
+          id: paletteScrollView
           Layout.fillWidth: true
           Layout.preferredHeight: Math.min(paletteGrid.implicitHeight, 200)
           verticalPolicy: paletteGrid.implicitHeight > 200 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
@@ -615,7 +616,7 @@ Popup {
 
           GridLayout {
             id: paletteGrid
-            width: parent.availableWidth
+            width: paletteScrollView.availableWidth
             columns: 17
             columnSpacing: 6
             rowSpacing: 6

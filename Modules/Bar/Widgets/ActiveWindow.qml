@@ -12,6 +12,10 @@ import qs.Widgets
 
 Item {
   id: root
+  Layout.preferredHeight: isVerticalBar ? -1 : Style.getBarHeightForScreen(screenName)
+  Layout.preferredWidth: isVerticalBar ? Style.getBarHeightForScreen(screenName) : -1
+  Layout.fillHeight: false
+  Layout.fillWidth: false
 
   property ShellScreen screen
 
@@ -22,9 +26,11 @@ Item {
   property int sectionWidgetsCount: 0
 
   property var widgetMetadata: BarWidgetRegistry.widgetMetadata[widgetId] || {}
+  // Explicit screenName property ensures reactive binding when screen changes
+  readonly property string screenName: screen ? screen.name : ""
   property var widgetSettings: {
-    if (section && sectionWidgetIndex >= 0) {
-      var widgets = Settings.getBarWidgetsForScreen(screen?.name)[section];
+    if (section && sectionWidgetIndex >= 0 && screenName) {
+      var widgets = Settings.getBarWidgetsForScreen(screenName)[section];
       if (widgets && sectionWidgetIndex < widgets.length && widgets[sectionWidgetIndex]) {
         return widgets[sectionWidgetIndex];
       }
@@ -41,10 +47,11 @@ Item {
   readonly property real maxWidth: (widgetSettings.maxWidth !== undefined) ? widgetSettings.maxWidth : Math.max(widgetMetadata.maxWidth || 0, screen ? screen.width * 0.06 : 0)
   readonly property bool useFixedWidth: (widgetSettings.useFixedWidth !== undefined) ? widgetSettings.useFixedWidth : (widgetMetadata.useFixedWidth || false)
 
-  readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
-  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screen?.name)
-  readonly property real barFontSize: Style.getBarFontSizeForScreen(screen?.name)
+  readonly property real barHeight: Style.getBarHeightForScreen(screenName)
+  readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
+  readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
   readonly property bool hasFocusedWindow: CompositorService.getFocusedWindow() !== null
   readonly property string windowTitle: CompositorService.getFocusedWindowTitle() || "No active window"
   readonly property string fallbackIcon: "user-desktop"
@@ -52,9 +59,9 @@ Item {
   readonly property int iconSize: Style.toOdd(capsuleHeight * 0.75)
   readonly property int verticalSize: Style.toOdd(capsuleHeight * 0.85)
 
-  // For horizontal bars, height is always capsuleHeight (no animation needed)
+  // For horizontal bars, height is always barHeight (no animation needed)
   // For vertical bars, collapse to 0 when hidden
-  implicitHeight: isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : capsuleHeight
+  implicitHeight: isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : barHeight
   implicitWidth: isVerticalBar ? (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : verticalSize) : (((!hasFocusedWindow) && hideMode === "hidden") ? 0 : dynamicWidth)
 
   // "visible": Always Visible, "hidden": Hide When Empty, "transparent": Transparent When Empty
@@ -173,10 +180,8 @@ Item {
     ]
 
     onTriggered: action => {
-                   var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                   if (popupMenuWindow) {
-                     popupMenuWindow.close();
-                   }
+                   contextMenu.close();
+                   PanelService.closeContextMenu(screen);
 
                    if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
@@ -263,6 +268,7 @@ Item {
               return NScrollText.ScrollMode.Hover;
             return NScrollText.ScrollMode.Never;
           }
+          forcedHover: mainMouseArea.containsMouse
           NText {
             text: windowTitle
             pointSize: barFontSize
@@ -312,32 +318,37 @@ Item {
         }
       }
 
-      // Mouse area for hover detection
-      MouseArea {
-        id: mouseArea
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onEntered: {
-          if ((windowTitle !== "") && isVerticalBar || (scrollingMode === "never")) {
-            TooltipService.show(root, windowTitle, BarService.getTooltipDirection(root.screen?.name));
-          }
-        }
-        onExited: {
-          TooltipService.hide();
-        }
-        onClicked: mouse => {
-                     if (mouse.button === Qt.RightButton) {
-                       var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-                       if (popupMenuWindow) {
-                         popupMenuWindow.showContextMenu(contextMenu);
-                         contextMenu.openAtItem(root, screen);
-                       }
-                     }
-                   }
+      // Mouse area moved to root
+    }
+  }
+
+  // Mouse area for hover detection
+  MouseArea {
+    id: mainMouseArea
+    anchors.fill: parent
+
+    // Extend click area to screen edge if widget is at the start/end
+    anchors.leftMargin: (!isVerticalBar && section === "left" && sectionWidgetIndex === 0) ? -Style.marginS : 0
+    anchors.rightMargin: (!isVerticalBar && section === "right" && sectionWidgetIndex === sectionWidgetsCount - 1) ? -Style.marginS : 0
+    anchors.topMargin: (isVerticalBar && section === "left" && sectionWidgetIndex === 0) ? -Style.marginM : 0
+    anchors.bottomMargin: (isVerticalBar && section === "right" && sectionWidgetIndex === sectionWidgetsCount - 1) ? -Style.marginM : 0
+
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    onEntered: {
+      if ((windowTitle !== "") && isVerticalBar || (scrollingMode === "never")) {
+        TooltipService.show(root, windowTitle, BarService.getTooltipDirection(root.screen?.name));
       }
     }
+    onExited: {
+      TooltipService.hide();
+    }
+    onClicked: mouse => {
+                 if (mouse.button === Qt.RightButton) {
+                   PanelService.showContextMenu(contextMenu, root, screen);
+                 }
+               }
   }
 
   Connections {
