@@ -10,6 +10,11 @@ Singleton {
 
   readonly property string templateApplyScript: Quickshell.shellDir + '/Scripts/bash/template-apply.sh'
   readonly property string gtkRefreshScript: Quickshell.shellDir + '/Scripts/python/src/theming/gtk-refresh.py'
+  readonly property string vscodeHelperScript: Quickshell.shellDir + '/Scripts/python/src/theming/vscode-helper.py'
+
+  // Dynamically resolved VSCode extension theme paths
+  property string resolvedCodePath: ""
+  property string resolvedCodiumPath: ""
 
   // Terminal configurations (for wallpaper-based templates)
   // Each terminal must define a postHook that sets up config includes and triggers reload
@@ -196,11 +201,11 @@ Singleton {
       "clients": [
         {
           "name": "code",
-          "path": "~/.vscode/extensions/noctalia.noctaliatheme-0.0.6themes/NoctaliaTheme-color-theme.json"
+          "extensionsDir": "~/.vscode/extensions"
         },
         {
           "name": "codium",
-          "path": "~/.vscode-oss/extensions/noctalia.noctaliatheme-0.0.6-universal/themes/NoctaliaTheme-color-theme.json"
+          "extensionsDir": "~/.vscode-oss/extensions"
         }
       ]
     },
@@ -398,32 +403,48 @@ Singleton {
     return clients;
   }
 
+  // Get resolved theme path for a code client
+  function resolvedCodeClientPath(clientName) {
+    if (clientName === "code") return resolvedCodePath;
+    if (clientName === "codium") return resolvedCodiumPath;
+    return "";
+  }
+
   // Extract Code clients for ProgramCheckerService compatibility
   readonly property var codeClients: {
     var clients = [];
     var codeApp = applications.find(app => app.id === "code");
     if (codeApp && codeApp.clients) {
       codeApp.clients.forEach(client => {
-                                // Extract base config directory from theme path
-                                var themePath = client.path;
-                                var baseConfigDir = "";
-                                if (client.name === "code") {
-                                  // For VSCode: ~/.vscode/extensions/... -> ~/.vscode
-                                  baseConfigDir = "~/.vscode";
-                                } else if (client.name === "codium") {
-                                  // For VSCodium: ~/.vscode-oss/extensions/... -> ~/.vscode-oss
-                                  baseConfigDir = "~/.vscode-oss";
-                                }
+                                var baseConfigDir = client.extensionsDir.replace("/extensions", "");
                                 clients.push({
                                                "name": client.name,
                                                "configPath": baseConfigDir,
-                                               "themePath": themePath
+                                               "themePath": "" // resolved dynamically via resolvedCodeClientPath()
                                              });
                               });
     }
     return clients;
   }
 
+  // Resolve VSCode extension paths dynamically
+  Process {
+    id: codeResolverProcess
+    command: ["python3", vscodeHelperScript, "~/.vscode/extensions"]
+    running: true
+    stdout: SplitParser {
+      onRead: data => { root.resolvedCodePath = data.trim(); }
+    }
+  }
+
+  Process {
+    id: codiumResolverProcess
+    command: ["python3", vscodeHelperScript, "~/.vscode-oss/extensions"]
+    running: true
+    stdout: SplitParser {
+      onRead: data => { root.resolvedCodiumPath = data.trim(); }
+    }
+  }
   // Build user templates TOML content
   function buildUserTemplatesToml() {
     var lines = [];

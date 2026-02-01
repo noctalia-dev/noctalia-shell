@@ -60,7 +60,9 @@ ColumnLayout {
           }
 
           if (include) {
-            validClients.push(client.path);
+            // For code clients, resolve the theme path dynamically (version-independent)
+            var resolvedPath = app.id === "code" ? TemplateRegistry.resolvedCodeClientPath(client.name) : client.path;
+            if (resolvedPath) validClients.push(resolvedPath);
           }
         }
 

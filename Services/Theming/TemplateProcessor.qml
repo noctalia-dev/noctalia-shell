@@ -245,11 +245,11 @@ Singleton {
                                               if (isTemplateEnabled("code")) {
                                                 app.clients.forEach(client => {
                                                                       // Check if this specific client is detected
-                                                                      if (isCodeClientEnabled(client.name)) {
+                                                                      var resolvedPath = TemplateRegistry.resolvedCodeClientPath(client.name);
+                                                                      if (isCodeClientEnabled(client.name) && resolvedPath) {
                                                                         lines.push(`\n[templates.code_${client.name}]`);
                                                                         lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
-                                                                        const expandedPath = client.path.replace("~", homeDir);
-                                                                        lines.push(`output_path = "${expandedPath}"`);
+                                                                        lines.push(`output_path = "${resolvedPath}"`);
                                                                       }
                                                                     });
                                               }
