@@ -294,6 +294,7 @@
     "enabled": true,
     "position": "bottom",
     "displayMode": "auto_hide",
+    "dockType": "floating",
     "backgroundOpacity": 1,
     "floatingRatio": 1,
     "size": 1,

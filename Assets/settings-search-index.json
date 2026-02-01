@@ -503,6 +503,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.dock.appearance-type-label",
+    "descriptionKey": "panels.dock.appearance-type-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.osd.background-opacity-label",
     "descriptionKey": "panels.dock.appearance-background-opacity-description",
     "widget": "NValueSlider",

@@ -74,6 +74,25 @@ ColumnLayout {
                   }
     }
 
+    NComboBox {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-type-label")
+      description: I18n.tr("panels.dock.appearance-type-description")
+      model: [
+        {
+          "key": "floating",
+          "name": I18n.tr("panels.dock.appearance-type-floating")
+        },
+        {
+          "key": "static",
+          "name": I18n.tr("panels.dock.appearance-type-static")
+        }
+      ]
+      currentKey: Settings.data.dock.dockType
+      defaultValue: Settings.getDefaultValue("dock.dockType")
+      onSelected: key => Settings.data.dock.dockType = key
+    }
+
     NValueSlider {
       Layout.fillWidth: true
       label: I18n.tr("panels.osd.background-opacity-label")
