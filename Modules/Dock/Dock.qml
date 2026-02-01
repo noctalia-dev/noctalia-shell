@@ -246,46 +246,49 @@ Loader {
                 const combined = [];
                 const processedToplevels = new Set();
                 const processedPinnedAppIds = new Set();
-                const processedAppIds = new Set();
+                const processedAppIds = new Set(); // NEW: track normalized appIds we've already added
 
-            // Helper to push an app onto combined with the given appType
-            function pushApp(appType, toplevel, appId, title) {
-                 const normalizedId = appId ? normalizeAppId(appId) : null;
- 
-            // If this appId was already added, skip (prevents multiple icons for same appId)
-            if (normalizedId && processedAppIds.has(normalizedId)) {
-                return;
+        //push an app onto combined with the given appType
+        function pushApp(appType, toplevel, appId, title) {
+          const normalizedId = normalizeAppId(appId);
+
+          // Prevent adding multiple icons for the same appId
+          if (normalizedId) {
+            if (processedAppIds.has(normalizedId)) {
+              return; // Already added an app for this appId
             }
-    
-                    // For running apps, track by toplevel object to allow multiple instances
-                    if (toplevel) {
-                        if (processedToplevels.has(toplevel)) {
-                            return; // Already processed this toplevel instance
-                        }
-                        if (Settings.data.dock.onlySameOutput && toplevel.screens && !toplevel.screens.includes(modelData)) {
-                            return; // Filtered out by onlySameOutput setting
-                        }
-                        combined.push({
-                            "type": appType,
-                            "toplevel": toplevel,
-                            "appId": appId,
-                            "title": title
-                        });
-                        processedToplevels.add(toplevel);
-                    } else {
-                        // For pinned apps that aren't running, track by appId to avoid duplicates
-                        if (processedPinnedAppIds.has(appId)) {
-                            return; // Already processed this pinned app
-                        }
-                        combined.push({
-                            "type": appType,
-                            "toplevel": toplevel,
-                            "appId": appId,
-                            "title": title
-                        });
-                        processedPinnedAppIds.add(appId);
-                    }
-                }
+            processedAppIds.add(normalizedId);
+          }
+
+          // For running apps, track by toplevel object to allow multiple instances
+          if (toplevel) {
+              if (processedToplevels.has(toplevel)) {
+                  return; // Already processed this toplevel instance
+              }
+              if (Settings.data.dock.onlySameOutput && toplevel.screens && !toplevel.screens.includes(modelData)) {
+                  return; // Filtered out by onlySameOutput setting
+              }
+              combined.push({
+                  "type": appType,
+                  "toplevel": toplevel,
+                  "appId": appId,
+                  "title": title
+              });
+              processedToplevels.add(toplevel);
+          } else {
+              // For pinned apps that aren't running, track by appId to avoid duplicates
+              if (processedPinnedAppIds.has(appId)) {
+                  return; // Already processed this pinned app
+              }
+              combined.push({
+                  "type": appType,
+                  "toplevel": toplevel,
+                  "appId": appId,
+                  "title": title
+              });
+              processedPinnedAppIds.add(appId);
+          }
+        }
 
                 function pushRunning(first) {
                     runningApps.forEach(toplevel => {
