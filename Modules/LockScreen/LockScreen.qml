@@ -276,6 +276,10 @@ Loader {
                   panelComponent.cancelTimer();
                   event.accepted = true;
                 }
+                if (event.modifiers & Qt.ControlModifier && event.key === Qt.Key_C) {
+                   lockContext.currentText = "";
+                   event.accepted = true;
+                }
               }
 
               Component.onCompleted: forceActiveFocus()
