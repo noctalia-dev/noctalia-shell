@@ -286,6 +286,7 @@ Singleton {
       property bool allowPasswordWithFprintd: false
       property string clockStyle: "custom"
       property string clockFormat: "hh\\nmm"
+      property bool reverseScroll: false
     }
 
     // ui

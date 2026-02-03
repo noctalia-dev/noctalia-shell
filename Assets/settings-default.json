@@ -97,6 +97,7 @@
     "allowPasswordWithFprintd": false,
     "clockStyle": "custom",
     "clockFormat": "hh\\nmm"
+    "reverseScroll": false,
   },
   "ui": {
     "fontDefault": "",

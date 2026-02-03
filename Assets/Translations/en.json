@@ -1041,7 +1041,9 @@
       "screen-corners-solid-black-description": "Use solid black instead of the bar background color.",
       "screen-corners-solid-black-label": "Solid black corners",
       "screen-corners-title": "Screen corners",
-      "settings-copied": "Settings copied to clipboard"
+      "settings-copied": "Settings copied to clipboard",
+      "reverse-scrolling-description": "Reverse the interpreted scroll direction",
+      "reverse-scrolling-label": "Reverse scrolling"
     },
     "hooks": {
       "info-command-info-description": "• Commands are executed via shell (sh -lc)<br>• Commands run in background (detached)<br>• Test buttons execute with current values",
