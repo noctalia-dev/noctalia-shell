@@ -138,13 +138,15 @@ SmartPanel {
             values: SystemStatService.cpuHistory
             values2: SystemStatService.cpuTempHistory
             minValue: 0
-            maxValue: Math.max(SystemStatService.cpuHistoryMax, 1)
+            maxValue: 100
             minValue2: Math.max(SystemStatService.cpuTempHistoryMin - 5, 0)
             maxValue2: Math.max(SystemStatService.cpuTempHistoryMax + 5, 1)
+            autoScale: false
             color: Color.mPrimary
             color2: Color.mError
             fill: true
             fillOpacity: 0.15
+            updateInterval: Settings.data.systemMonitor.cpuPollingInterval
           }
         }
       }
@@ -205,10 +207,12 @@ SmartPanel {
             Layout.fillHeight: true
             values: SystemStatService.memHistory
             minValue: 0
-            maxValue: Math.max(SystemStatService.memHistoryMax, 1)
+            maxValue: 100
+            autoScale: false
             color: Color.mPrimary
             fill: true
             fillOpacity: 0.15
+            updateInterval: Settings.data.systemMonitor.memPollingInterval
           }
         }
       }
@@ -276,6 +280,7 @@ SmartPanel {
             color2: Color.mError
             fill: true
             fillOpacity: 0.15
+            updateInterval: Settings.data.systemMonitor.networkPollingInterval
           }
         }
       }
