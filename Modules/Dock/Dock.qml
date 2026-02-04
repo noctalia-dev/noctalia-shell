@@ -13,7 +13,7 @@ import qs.Widgets
 
 Loader {
 
-  active: Settings.data.dock.enabled && Settings.data.dock.dockType !== "static"
+  active: Settings.data.dock.enabled
   sourceComponent: Variants {
     model: Quickshell.screens
 
@@ -72,6 +72,7 @@ Loader {
       readonly property string displayMode: Settings.data.dock.displayMode
       readonly property bool autoHide: displayMode === "auto_hide"
       readonly property bool exclusive: displayMode === "exclusive"
+      readonly property bool isStaticMode: Settings.data.dock.dockType === "static"
       readonly property int hideDelay: 500
       readonly property int showDelay: 100
       readonly property int hideAnimationDuration: Math.max(0, Math.round(Style.animationFast / (Settings.data.dock.animationSpeed || 1.0)))
@@ -131,6 +132,10 @@ Loader {
         if (currentContextMenu && currentContextMenu.visible) {
           currentContextMenu.hide();
         }
+      }
+
+      function getStaticDockPanel() {
+        return PanelService.getPanel("staticDockPanel", modelData, false);
       }
 
       function getAppKey(appData) {
@@ -416,7 +421,17 @@ Loader {
             menuHovered = false;
           }
           if (autoHide && !dockHovered && !anyAppHovered && !peekHovered && !menuHovered) {
-            closeAllContextMenus();
+            if (isStaticMode) {
+              const panel = getStaticDockPanel();
+              if (panel && panel.isDockHovered) {
+                restart();
+                return;
+              }
+              if (panel)
+                panel.close();
+            } else {
+              closeAllContextMenus();
+            }
             hidden = true;
             unloadTimer.restart(); // Start unload timer when hiding
           } else if (autoHide && !dockHovered && !peekHovered) {
@@ -432,7 +447,13 @@ Loader {
         interval: showDelay
         onTriggered: {
           if (autoHide) {
-            dockLoaded = true; // Load dock immediately
+            if (isStaticMode) {
+              const panel = getStaticDockPanel();
+              if (panel && !panel.isPanelOpen)
+                panel.open();
+            } else {
+              dockLoaded = true; // Load dock immediately
+            }
             hidden = false; // Then trigger show animation
             unloadTimer.stop(); // Cancel any pending unload
           }
@@ -526,7 +547,7 @@ Loader {
 
       Loader {
         id: dockWindowLoader
-        active: Settings.data.dock.enabled && (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && dockLoaded && ToplevelManager && (dockApps.length > 0)
+        active: Settings.data.dock.enabled && !isStaticMode && (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && dockLoaded && ToplevelManager && (dockApps.length > 0)
 
         sourceComponent: PanelWindow {
           id: dockWindow
