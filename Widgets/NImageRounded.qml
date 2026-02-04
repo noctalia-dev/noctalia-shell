@@ -13,11 +13,11 @@ Item {
   property real fallbackIconSize: Style.fontSizeXXL
   property real borderWidth: 0
   property color borderColor: "transparent"
-  property int imageFillMode: Image.PreserveAspectCrop
+  property int imageFillMode: Image.PreserveAspectcrop
   readonly property bool showFallback: (fallbackIcon !== undefined && fallbackIcon !== "") && (imagePath === undefined || imagePath === "")
   readonly property int status: imageSource.status
 
-  Rectangle {
+   Rectangle {
     anchors.fill: parent
     radius: root.radius
     color: "transparent"
@@ -38,6 +38,9 @@ Item {
     }
 
     ShaderEffect {
+      anchors.fill: parent
+      anchors.margins: root.borderWidth
+      visible: !root.showFallback
       property variant source: imageSource
       property real itemWidth: width
       property real itemHeight: height
@@ -46,23 +49,30 @@ Item {
       property real cornerRadius: Math.max(0, root.radius - root.borderWidth)
       property real imageOpacity: 1.0
       property int fillMode: root.imageFillMode
-
+        ShaderEffect {
+            property variant source: imageSource
+            property real itemWidth: width
+            property real itemHeight: height
+            property real sourceWidth: imageSource.sourceSize.width
+            property real sourceHeight: imageSource.sourceSize.height
+            property real cornerRadius: Math.max(0, root.radius - root.borderWidth)
+            property real imageOpacity: 1
+            property int fillMode: root.imageFillMode
             anchors.fill: parent
             anchors.margins: root.borderWidth
             visible: !root.showFallback
+
       fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/rounded_image.frag.qsb")
       supportsAtlasTextures: false
       blending: true
-        }
-
-        NIcon {
-            anchors.fill: parent
-            anchors.margins: root.borderWidth
-            visible: root.showFallback
-            icon: root.fallbackIcon
-            pointSize: root.fallbackIconSize
-        }
-
     }
 
+    NIcon {
+      anchors.fill: parent
+      anchors.margins: root.borderWidth
+      visible: root.showFallback
+      icon: root.fallbackIcon
+      pointSize: root.fallbackIconSize
+    }
+  }
 }
