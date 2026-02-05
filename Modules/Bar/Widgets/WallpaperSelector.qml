@@ -42,7 +42,7 @@ NIconButton {
                    PanelService.closeContextMenu(screen);
 
                    if (action === "random-wallpaper") {
-                     WallpaperService.setRandomWallpaper();
+                     WallpaperService.setRandomWallpaper(null);
                    }
                  }
   }
