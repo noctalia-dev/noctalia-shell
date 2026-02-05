@@ -12,6 +12,8 @@ SmartPanel {
   readonly property string dockPosition: Settings.data.dock.position
   readonly property bool isVertical: dockPosition === "left" || dockPosition === "right"
   readonly property bool isFramed: Settings.data.bar.barType === "framed"
+  readonly property bool hasBar: modelData && modelData.name ? (Settings.data.bar.monitors.includes(modelData.name) || (Settings.data.bar.monitors.length === 0)) : false
+  readonly property bool barAtSameEdge: hasBar && Settings.getBarPositionForScreen(modelData?.name) === dockPosition
   property bool isDockHovered: false
   readonly property int iconSize: Math.round(12 + 24 * (Settings.data.dock.size ?? 1))
   readonly property int maxWidth: screen ? screen.width * 0.8 : 1000
@@ -401,7 +403,7 @@ SmartPanel {
     id: panelContent
 
     property bool allowAttach: true
-    property real frameThickness: isFramed ? Settings.data.bar.frameThickness : 0
+    property real frameThickness: isFramed && !barAtSameEdge ? Settings.data.bar.frameThickness : 0
     property real contentPreferredWidth: Math.round(dockContainerWrapper.width) - (isVertical ? frameThickness : 0)
     property real contentPreferredHeight: Math.round(dockContainerWrapper.height) - (!isVertical ? frameThickness : 0)
 
