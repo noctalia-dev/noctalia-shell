@@ -18,13 +18,14 @@ Item {
   required property int extraLeft
   required property int extraRight
   property alias dockContainer: dockContainer
+  readonly property bool isStaticMode: Settings.data.dock.dockType === "static"
 
   Rectangle {
     id: dockContainer
     // For vertical dock, swap width and height logic
     width: dockRoot.isVertical ? Math.round(dockRoot.iconSize * 1.5) : Math.min(dockLayout.implicitWidth + Style.marginXL, dockRoot.maxWidth)
     height: dockRoot.isVertical ? Math.min(dockLayout.implicitHeight + Style.marginXL, dockRoot.maxHeight) : Math.round(dockRoot.iconSize * 1.5)
-    color: Qt.alpha(Color.mSurface, Settings.data.dock.backgroundOpacity)
+    color: Qt.alpha(Color.mSurface, (isStaticMode ? 0 : Settings.data.dock.backgroundOpacity))
 
     // Anchor based on padding to achieve centering shift
     anchors.horizontalCenter: extraLeft > 0 || extraRight > 0 ? undefined : parent.horizontalCenter
@@ -37,7 +38,7 @@ Item {
 
     radius: Style.radiusL
     border.width: Style.borderS
-    border.color: Qt.alpha(Color.mOutline, Settings.data.dock.backgroundOpacity)
+    border.color: Qt.alpha(Color.mOutline, (isStaticMode ? 0 : Settings.data.dock.backgroundOpacity))
 
     // Enable layer caching to reduce GPU usage from continuous animations
     layer.enabled: true

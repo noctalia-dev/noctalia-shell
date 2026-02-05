@@ -423,6 +423,10 @@ Loader {
           if (autoHide && !dockHovered && !anyAppHovered && !peekHovered && !menuHovered) {
             if (isStaticMode) {
               const panel = getStaticDockPanel();
+              if (panel && (panel.menuHovered || (panel.currentContextMenu && panel.currentContextMenu.visible))) {
+                restart();
+                return;
+              }
               if (panel && panel.isDockHovered) {
                 restart();
                 return;
