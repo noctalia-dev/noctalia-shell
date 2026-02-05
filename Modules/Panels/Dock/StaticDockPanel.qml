@@ -17,10 +17,8 @@ SmartPanel {
   readonly property int maxWidth: screen ? screen.width * 0.8 : 1000
   readonly property int maxHeight: screen ? screen.height * 0.8 : 1000
   readonly property bool autoHide: false
-  readonly property int hideDelay: 500
+  readonly property int hideDelay: 1000
   readonly property int showDelay: 100
-  readonly property int hideAnimationDuration: Math.max(0, Math.round(Style.animationFast / (Settings.data.dock.animationSpeed || 1.0)))
-  readonly property int showAnimationDuration: Math.max(0, Math.round(Style.animationFast / (Settings.data.dock.animationSpeed || 1.0)))
 
   // Shared state with dock content
   property bool dockHovered: false
@@ -47,7 +45,6 @@ SmartPanel {
 
   property alias hideTimer: hideTimer
   property alias showTimer: showTimer
-  property alias unloadTimer: unloadTimer
 
   panelAnchorTop: dockPosition === "top"
   panelAnchorBottom: dockPosition === "bottom"
@@ -365,12 +362,6 @@ SmartPanel {
   }
 
   Timer {
-    id: unloadTimer
-    interval: hideAnimationDuration + 50
-    onTriggered: {}
-  }
-
-  Timer {
     id: hideTimer
     interval: hideDelay
     onTriggered: {}
@@ -408,8 +399,8 @@ SmartPanel {
       id: dockHoverHandler
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onHoveredChanged: {
-        root.isDockHovered = hovered;
         if (hovered) {
+          root.isDockHovered = true;
           hoverCloseTimer.stop();
         } else {
           if (root.menuHovered || (root.currentContextMenu && root.currentContextMenu.visible)) {
