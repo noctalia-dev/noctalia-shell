@@ -45,6 +45,17 @@ SmartPanel {
 
   property alias hideTimer: hideTimer
   property alias showTimer: showTimer
+  
+  onMenuHoveredChanged: {
+    if (!menuHovered && !dockHoverHandler.hovered) {
+      hoverCloseTimer.restart();
+    }
+  }
+
+  onClosed: {
+    hoverCloseTimer.stop();
+    isDockHovered = false;
+  }
 
   panelAnchorTop: dockPosition === "top"
   panelAnchorBottom: dockPosition === "bottom"
