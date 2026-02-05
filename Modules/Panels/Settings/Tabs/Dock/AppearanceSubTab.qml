@@ -94,6 +94,16 @@ ColumnLayout {
                   }
     }
 
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "static" && Settings.data.bar.barType === "framed"
+      label: I18n.tr("panels.dock.appearance-sit-on-frame-label")
+      description: I18n.tr("panels.dock.appearance-sit-on-frame-description")
+      checked: Settings.data.dock.sitOnFrame
+      defaultValue: Settings.getDefaultValue("dock.sitOnFrame")
+      onToggled: checked => Settings.data.dock.sitOnFrame = checked
+    }
+
     NValueSlider {
       Layout.fillWidth: true
       label: I18n.tr("panels.osd.background-opacity-label")
@@ -122,6 +132,7 @@ ColumnLayout {
 
     NValueSlider {
       Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "floating"
       label: I18n.tr("panels.dock.appearance-floating-distance-label")
       description: I18n.tr("panels.dock.appearance-floating-distance-description")
       from: 0
@@ -147,7 +158,7 @@ ColumnLayout {
     }
 
     NValueSlider {
-      visible: Settings.data.dock.displayMode === "auto_hide"
+      visible: Settings.data.dock.dockType === "floating" && Settings.data.dock.displayMode === "auto_hide"
       Layout.fillWidth: true
       label: I18n.tr("panels.dock.appearance-hide-show-speed-label")
       description: I18n.tr("panels.dock.appearance-hide-show-speed-description")

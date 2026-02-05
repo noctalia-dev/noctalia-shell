@@ -305,7 +305,8 @@
     "pinnedStatic": false,
     "inactiveIndicators": false,
     "deadOpacity": 0.6,
-    "animationSpeed": 1
+    "animationSpeed": 1,
+    "sitOnFrame": false
   },
   "network": {
     "wifiEnabled": true,

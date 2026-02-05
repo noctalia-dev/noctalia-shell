@@ -403,7 +403,7 @@ SmartPanel {
     id: panelContent
 
     property bool allowAttach: true
-    property real frameThickness: isFramed && !barAtSameEdge ? Settings.data.bar.frameThickness : 0
+    property real frameThickness: isFramed && !barAtSameEdge && !Settings.data.dock.sitOnFrame ? Settings.data.bar.frameThickness : 0
     property real contentPreferredWidth: Math.round(dockContainerWrapper.width) - (isVertical ? frameThickness : 0)
     property real contentPreferredHeight: Math.round(dockContainerWrapper.height) - (!isVertical ? frameThickness : 0)
 
