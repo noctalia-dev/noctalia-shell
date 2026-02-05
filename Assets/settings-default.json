@@ -16,8 +16,10 @@
     "frameThickness": 8,
     "frameRadius": 12,
     "outerCorners": true,
-    "exclusive": true,
     "hideOnOverview": false,
+    "displayMode": "always_visible",
+    "autoHideDelay": 500,
+    "autoShowDelay": 150,
     "widgets": {
       "left": [
         {
@@ -169,7 +171,8 @@
     "wallhavenApiKey": "",
     "wallhavenResolutionMode": "atleast",
     "wallhavenResolutionWidth": "",
-    "wallhavenResolutionHeight": ""
+    "wallhavenResolutionHeight": "",
+    "sortOrder": "name"
   },
   "appLauncher": {
     "enableClipboardHistory": false,
@@ -190,6 +193,7 @@
     "iconMode": "tabler",
     "showIconBackground": false,
     "enableSettingsSearch": true,
+    "enableWindowsSearch": true,
     "ignoreMouseInput": false,
     "screenshotAnnotationTool": ""
   },
@@ -266,13 +270,14 @@
     "swapCriticalThreshold": 90,
     "diskWarningThreshold": 80,
     "diskCriticalThreshold": 90,
-    "cpuPollingInterval": 3000,
-    "tempPollingInterval": 3000,
+    "diskAvailWarningThreshold": 20,
+    "diskAvailCriticalThreshold": 10,
+    "cpuPollingInterval": 1000,
     "gpuPollingInterval": 3000,
     "enableDgpuMonitoring": false,
-    "memPollingInterval": 3000,
+    "memPollingInterval": 1000,
     "diskPollingInterval": 30000,
-    "networkPollingInterval": 3000,
+    "networkPollingInterval": 1000,
     "loadAvgPollingInterval": 3000,
     "useCustomColors": false,
     "warningColor": "",
@@ -308,8 +313,8 @@
     "countdownDuration": 10000,
     "position": "center",
     "showHeader": true,
-    "largeButtonsStyle": false,
-    "largeButtonsLayout": "grid",
+    "largeButtonsStyle": true,
+    "largeButtonsLayout": "single-row",
     "showNumberLabels": true,
     "powerOptions": [
       {
@@ -348,7 +353,6 @@
     "lowUrgencyDuration": 3,
     "normalUrgencyDuration": 8,
     "criticalUrgencyDuration": 15,
-    "enableKeyboardLayoutToast": true,
     "saveToHistory": {
       "low": true,
       "normal": true,
@@ -363,7 +367,10 @@
       "lowSoundFile": "",
       "excludedApps": "discord,firefox,chrome,chromium,edge"
     },
-    "enableMediaToast": false
+    "enableMediaToast": false,
+    "enableKeyboardLayoutToast": true,
+    "batteryWarningThreshold": 20,
+    "batteryCriticalThreshold": 5
   },
   "osd": {
     "enabled": true,

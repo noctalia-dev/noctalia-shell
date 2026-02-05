@@ -150,7 +150,7 @@ Item {
     // If custom command is defined, execute it
     if (command && command.trim() !== "") {
       Logger.i("SessionProvider", "Executing custom command for action:", action, "Command:", command);
-      Quickshell.execDetached(["sh", "-lc", command]);
+      Quickshell.execDetached(["sh", "-c", command]);
       return;
     }
 

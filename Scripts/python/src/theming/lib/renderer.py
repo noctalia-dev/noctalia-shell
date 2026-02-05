@@ -145,6 +145,7 @@ class TemplateRenderer:
 
     def __init__(self, theme_data: dict[str, dict[str, str]], verbose: bool = True, default_mode: str = "dark", image_path: Optional[str] = None, scheme_type: str = "content"):
         self.theme_data = theme_data
+        self.closest_color = ""
         self.verbose = verbose
         self.default_mode = default_mode
         self.image_path = image_path
@@ -949,6 +950,9 @@ class TemplateRenderer:
         scope = VariableScope()
         result = self._evaluate_nodes(nodes, scope)
 
+        if self.closest_color:
+            result = self._substitute_closest_color(result)
+
         # Process escape sequences (matugen-compatible)
         result = result.replace('\\\\', '\\')
 
@@ -1099,9 +1103,9 @@ class TemplateRenderer:
         # Invalidate colors map cache so new colors appear in iterations
         self._colors_map = None
 
-    def _substitute_closest_color(self, text: str, closest_color: str) -> str:
+    def _substitute_closest_color(self, text: str) -> str:
         """Substitute {{closest_color}} in text."""
-        return re.sub(r"\{\{\s*closest_color\s*\}\}", closest_color, text)
+        return re.sub(r"\{\{\s*closest_color\s*\}\}", self.closest_color, text)
 
     def process_config_file(self, config_path: Path):
         """Process Matugen TOML configuration file."""
@@ -1128,23 +1132,24 @@ class TemplateRenderer:
                     print(f"Warning: Template '{name}' missing input_path or output_path", file=sys.stderr)
                     continue
 
-                self.render_file(Path(input_path).expanduser(), Path(output_path).expanduser())
-
                 # Handle closest_color if configured (matugen-compatible)
-                closest_color_value = ""
+                # Reset for each template to avoid state pollution between templates
+                self.closest_color = ""
                 colors_to_compare = template.get("colors_to_compare")
                 compare_to = template.get("compare_to")
 
                 if colors_to_compare and compare_to:
                     rendered_compare_to = self.render(compare_to)
-                    closest_color_value = find_closest_color(rendered_compare_to, colors_to_compare)
+                    self.closest_color = find_closest_color(rendered_compare_to, colors_to_compare)
+
+                self.render_file(Path(input_path).expanduser(), Path(output_path).expanduser())
 
                 # Execute pre_hook if specified
                 pre_hook = template.get("pre_hook")
                 if pre_hook:
                     import subprocess
-                    if closest_color_value:
-                        pre_hook = self._substitute_closest_color(pre_hook, closest_color_value)
+                    if self.closest_color:
+                        pre_hook = self._substitute_closest_color(pre_hook)
                     pre_hook = self.render(pre_hook)
                     try:
                         subprocess.run(pre_hook, shell=True, check=False)
@@ -1155,8 +1160,8 @@ class TemplateRenderer:
                 post_hook = template.get("post_hook")
                 if post_hook:
                     import subprocess
-                    if closest_color_value:
-                        post_hook = self._substitute_closest_color(post_hook, closest_color_value)
+                    if self.closest_color:
+                        post_hook = self._substitute_closest_color(post_hook)
                     post_hook = self.render(post_hook)
                     try:
                         subprocess.run(post_hook, shell=True, check=False)

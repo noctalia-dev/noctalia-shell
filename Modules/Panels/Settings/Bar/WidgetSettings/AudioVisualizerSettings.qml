@@ -42,24 +42,24 @@ ColumnLayout {
     description: I18n.tr("bar.audio-visualizer.color-name-description")
     model: [
       {
+        "key": "none",
+        "name": I18n.tr("common.none")
+      },
+      {
         "key": "primary",
-        "name": I18n.tr("colors.primary")
+        "name": I18n.tr("common.primary")
       },
       {
         "key": "secondary",
-        "name": I18n.tr("colors.secondary")
+        "name": I18n.tr("common.secondary")
       },
       {
         "key": "tertiary",
-        "name": I18n.tr("colors.tertiary")
-      },
-      {
-        "key": "onSurface",
-        "name": I18n.tr("colors.on-surface")
+        "name": I18n.tr("common.tertiary")
       },
       {
         "key": "error",
-        "name": I18n.tr("colors.error")
+        "name": I18n.tr("common.error")
       }
     ]
     currentKey: root.valueColorName

@@ -46,6 +46,10 @@ class TerminalColors:
     visual_bell: str
     indexed: dict[int, str]
     tab_bar: dict
+    
+    # Kitty border colors
+    active_border: str
+    inactive_border: str
 
     @classmethod
     def from_dict(cls, data: dict, scheme: dict) -> "TerminalColors":
@@ -69,6 +73,7 @@ class TerminalColors:
         m_primary = scheme.get("mPrimary", cursor)
         m_on_primary = scheme.get("mOnPrimary", cursor_text)
         m_secondary = scheme.get("mSecondary", normal["yellow"])
+        m_surface_variant = scheme.get("mSurfaceVariant", selection_bg)
 
         return cls(
             foreground=foreground,
@@ -94,6 +99,10 @@ class TerminalColors:
                 "newTab": {"bg": selection_bg, "fg": foreground},
                 "newTabHover": {"bg": bright["black"], "fg": foreground},
             },
+
+            # Kitty border colors
+            active_border=m_primary,
+            inactive_border=m_secondary
         )
 
 
@@ -186,6 +195,8 @@ class TerminalGenerator:
         lines.append(f"cursor_text_color {self._ensure_hash(c.cursor_text)}")
         lines.append(f"foreground {self._ensure_hash(c.foreground)}")
         lines.append(f"selection_background {self._ensure_hash(c.foreground)}")
+        lines.append(f"active_border_color {self._ensure_hash(c.active_border)}")
+        lines.append(f"inactive_border_color {self._ensure_hash(c.inactive_border)}")
 
         return "\n".join(lines) + "\n"
 

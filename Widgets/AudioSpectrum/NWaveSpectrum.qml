@@ -17,7 +17,7 @@ Item {
   // Reactive path that updates when values change
   readonly property string svgPath: {
     if (!values || !Array.isArray(values) || values.length === 0) {
-      return "";
+      return "M 0 0"; // Valid no-op path to avoid Qt triangulator crash on empty path
     }
 
     // Apply minimum signal if enabled
@@ -28,7 +28,7 @@ Item {
     const mirroredValues = partToMirror.concat(processedValues);
 
     if (mirroredValues.length < 2) {
-      return "";
+      return "M 0 0"; // Valid no-op path to avoid Qt triangulator crash on empty path
     }
 
     const count = mirroredValues.length;

@@ -102,9 +102,12 @@ Rectangle {
             "fr": "dddd d MMMM",
             "hu": "dddd, MMMM d.",
             "ja": "yyyy年M月d日 dddd",
+            "ko": "yyyy년 M월 d일 dddd",
             "ku": "dddd, dê MMMM",
             "nl": "dddd d MMMM",
+            "nn": "dddd d. MMMM",
             "pt": "dddd, d 'de' MMMM",
+            "sv": "dddd d MMMM",
             "zh": "yyyy年M月d日 dddd"
           };
           var dateString = I18n.locale.toString(Time.now, formats[lang] || "dddd, d MMMM");
@@ -122,17 +125,20 @@ Rectangle {
     }
 
     // Clock
+    // Clock
     NClock {
       now: Time.now
-      clockStyle: Settings.data.location.analogClockInCalendar ? "analog" : "digital"
+      clockStyle: "digital"
+      showProgress: false
       Layout.preferredWidth: 70
       Layout.preferredHeight: 70
       Layout.alignment: Qt.AlignVCenter
-      backgroundColor: Color.mSurface
+      backgroundColor: "transparent"
       clockColor: Color.mOnSurface
-      secondHandColor: Color.mPrimary
       hoursFontSize: Style.fontSizeL
       minutesFontSize: Style.fontSizeL
+      hoursFontWeight: Style.fontWeightBold
+      minutesFontWeight: Style.fontWeightBold
     }
   }
 }

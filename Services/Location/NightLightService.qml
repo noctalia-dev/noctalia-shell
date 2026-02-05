@@ -13,7 +13,7 @@ Singleton {
   readonly property var params: Settings.data.nightLight
   property var lastCommand: []
 
-  function apply() {
+  function apply(force = false) {
     // If using LocationService, wait for it to be ready
     if (!params.forced && params.autoSchedule && !LocationService.coordinatesReady) {
       return;
@@ -22,7 +22,7 @@ Singleton {
     var command = buildCommand();
 
     // Compare with previous command to avoid unnecessary restart
-    if (JSON.stringify(command) !== JSON.stringify(lastCommand)) {
+    if (force || JSON.stringify(command) !== JSON.stringify(lastCommand)) {
       lastCommand = command;
       runner.command = command;
 
@@ -90,11 +90,22 @@ Singleton {
     }
   }
 
+  Timer {
+    id: resumeRetryTimer
+    interval: 2000
+    repeat: false
+    onTriggered: {
+      Logger.i("NightLight", "Resume retry - re-applying night light again");
+      root.apply(true);
+    }
+  }
+
   Connections {
     target: Time
     function onResumed() {
       Logger.i("NightLight", "System resumed - re-applying night light");
-      root.apply();
+      root.apply(true);
+      resumeRetryTimer.restart();
     }
   }
 

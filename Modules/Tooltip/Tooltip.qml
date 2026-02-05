@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import qs.Commons
 import qs.Widgets
@@ -7,15 +8,41 @@ PopupWindow {
   id: root
 
   property string text: ""
+  property var rows: null // Array of arrays for grid mode: [["col1", "col2"], ["row2col1", "row2col2"]]
+  property bool isGridMode: rows !== null && Array.isArray(rows) && rows.length > 0
+  property int columnCount: isGridMode && rows.length > 0 ? rows[0].length : 0
   property string direction: "auto" // "auto", "left", "right", "top", "bottom"
   property int margin: Style.marginXS // distance from target
   property int padding: Style.marginM
+  property int gridPaddingVertical: Style.marginXS // extra vertical padding for grid mode
   property int delay: 0
   property int hideDelay: 0
-  property int maxWidth: 320
+  property int maxWidth: 340
 
   property int animationDuration: Style.animationFast
   property real animationScale: 0.85
+
+  // Font scale calculation matching NText behavior
+  readonly property real gridFontScale: {
+    const baseScale = (tooltipText.family === Settings.data.ui.fontDefault ? Settings.data.ui.fontDefaultScale : Settings.data.ui.fontFixedScale);
+    return baseScale * Style.uiScaleRatio;
+  }
+
+  // For measuring grid cell widths - must match actual NText font
+  TextMetrics {
+    id: cellMetrics
+    font.family: tooltipText.family
+    font.pointSize: Math.max(1, Style.fontSizeS * gridFontScale)
+  }
+
+  // For measuring grid row height - hidden NText matches actual grid items exactly
+  NText {
+    id: rowHeightMeasure
+    visible: false
+    text: "Ag"  // Characters with ascenders and descenders
+    pointSize: Style.fontSizeS
+    family: tooltipText.family
+  }
 
   // Internal properties
   property var targetItem: null
@@ -106,9 +133,9 @@ PopupWindow {
     }
   }
 
-  // Function to show tooltip
-  function show(target, tipText, customDirection, showDelay, fontFamily) {
-    if (!target || !tipText || tipText === "")
+  // Function to show tooltip (content can be string or array of arrays for grid mode)
+  function show(target, content, customDirection, showDelay, fontFamily) {
+    if (!target || !content || content === "" || (Array.isArray(content) && content.length === 0))
       return;
 
     root.delay = showDelay;
@@ -124,11 +151,17 @@ PopupWindow {
       hideImmediately();
     }
 
-    // Convert \n to <br> for RichText format
-    const processedText = tipText.replace(/\n/g, '<br>');
+    // Set content based on type
+    if (Array.isArray(content)) {
+      rows = content;
+      text = "";
+    } else {
+      // Convert \n to <br> for RichText format
+      const processedText = content.replace(/\n/g, '<br>');
+      text = processedText;
+      rows = null;
+    }
 
-    // Set properties
-    text = processedText;
     targetItem = target;
 
     // Find the correct screen dimensions based on target's global position
@@ -166,27 +199,80 @@ PopupWindow {
     tooltipText.family = fontFamily ? fontFamily : Settings.data.ui.fontDefault;
   }
 
+  // Calculate grid dimensions using measurements that match actual NText rendering
+  function calculateGridSize() {
+    if (!rows || rows.length === 0)
+      return {
+        width: 0,
+        height: 0
+      };
+
+    const numCols = rows[0].length;
+    const numRows = rows.length;
+    let columnWidths = [];
+
+    // Find max width for each column using TextMetrics
+    for (let col = 0; col < numCols; col++) {
+      let maxWidth = 0;
+      for (let row = 0; row < numRows; row++) {
+        cellMetrics.text = rows[row][col] || "";
+        if (cellMetrics.width > maxWidth) {
+          maxWidth = cellMetrics.width;
+        }
+      }
+      columnWidths.push(maxWidth);
+    }
+
+    // Calculate total width: sum of columns + spacing between columns
+    let totalWidth = 0;
+    for (let i = 0; i < columnWidths.length; i++) {
+      totalWidth += columnWidths[i];
+    }
+    totalWidth += (numCols - 1) * Style.marginM; // columnSpacing
+
+    // Calculate total height using hidden NText for accurate row height
+    const rowHeight = rowHeightMeasure.implicitHeight;
+    const totalHeight = numRows * rowHeight;
+
+    return {
+      width: totalWidth,
+      height: totalHeight
+    };
+  }
+
   // Function to position and display the tooltip
   function positionAndShow() {
     if (!targetItem || !targetItem.parent) {
       return;
     }
 
-    // Calculate tooltip dimensions
-    const tipWidth = Math.min(tooltipText.implicitWidth + (padding * 2), maxWidth);
+    // Calculate tooltip dimensions based on content mode
+    let contentWidth, contentHeight;
+    if (isGridMode) {
+      const gridSize = calculateGridSize();
+      contentWidth = gridSize.width;
+      contentHeight = gridSize.height;
+    } else {
+      contentWidth = tooltipText.implicitWidth;
+      contentHeight = tooltipText.implicitHeight;
+    }
+
+    const tipWidth = Math.ceil(Math.min(contentWidth + (padding * 2), maxWidth));
     root.implicitWidth = tipWidth;
 
-    const tipHeight = tooltipText.implicitHeight + (padding * 2);
+    // Add +2 buffer for fractional scaling issues (especially with "top" direction)
+    const tipHeight = Math.ceil(contentHeight + (padding * 2)) + 2;
     root.implicitHeight = tipHeight;
 
     // Get target's global position and convert to screen-relative
+    // Round all values to avoid sub-pixel positioning issues with fractional scaling
     var targetGlobalAbs = targetItem.mapToGlobal(0, 0);
     var targetGlobal = {
-      "x": targetGlobalAbs.x - screenX,
-      "y": targetGlobalAbs.y - screenY
+      "x": Math.round(targetGlobalAbs.x - screenX),
+      "y": Math.round(targetGlobalAbs.y - screenY)
     };
-    const targetWidth = targetItem.width;
-    const targetHeight = targetItem.height;
+    const targetWidth = Math.round(targetItem.width);
+    const targetHeight = Math.round(targetItem.height);
 
     var newAnchorX = 0;
     var newAnchorY = 0;
@@ -341,8 +427,10 @@ PopupWindow {
     }
 
     // Apply position first (before making visible)
-    anchorX = newAnchorX;
-    anchorY = newAnchorY;
+    // Round to avoid sub-pixel positioning issues with fractional scaling
+    // Use floor for negative values to push tooltip away from target
+    anchorX = newAnchorX < 0 ? Math.floor(newAnchorX) : Math.round(newAnchorX);
+    anchorY = newAnchorY < 0 ? Math.floor(newAnchorY) : Math.round(newAnchorY);
     isPositioned = true;
 
     // Now make visible and start animation
@@ -377,6 +465,7 @@ PopupWindow {
     visible = false;
     animatingOut = false;
     text = "";
+    rows = null;
     isPositioned = false;
     tooltipContainer.opacity = 1.0;
     tooltipContainer.scale = 1.0;
@@ -392,118 +481,149 @@ PopupWindow {
     completeHide();
   }
 
-  // Update text function
-  function updateText(newText) {
+  // Update content function (supports both text and rows)
+  function updateContent(newContent) {
     if (visible && targetItem) {
-      // Convert \n to <br> for RichText format
-      const processedText = newText.replace(/\n/g, '<br>');
-      text = processedText;
-
-      // Recalculate dimensions
-      const tipWidth = Math.min(tooltipText.implicitWidth + (padding * 2), maxWidth);
-      root.implicitWidth = tipWidth;
-
-      const tipHeight = tooltipText.implicitHeight + (padding * 2);
-      root.implicitHeight = tipHeight;
-
-      // Reposition based on current direction (screen-relative)
-      var targetGlobalAbs = targetItem.mapToGlobal(0, 0);
-      var targetGlobal = {
-        "x": targetGlobalAbs.x - screenX,
-        "y": targetGlobalAbs.y - screenY
-      };
-      const targetWidth = targetItem.width;
-      const targetHeight = targetItem.height;
-
-      // Recalculate base anchor position (center on target for top/bottom, etc.)
-      var newAnchorX = anchorX;
-      var newAnchorY = anchorY;
-
-      // Determine which direction the tooltip is currently positioned
-      // and recalculate the centering for that direction
-      var isHorizontalTooltip = false;
-      var isVerticalTooltip = false;
-      if (anchorY > targetHeight / 2) {
-        // Tooltip is below target
-        newAnchorX = (targetWidth - tipWidth) / 2;
-        isHorizontalTooltip = true;
-      } else if (anchorY < -tipHeight / 2) {
-        // Tooltip is above target
-        newAnchorX = (targetWidth - tipWidth) / 2;
-        isHorizontalTooltip = true;
-      } else if (anchorX > targetWidth / 2) {
-        // Tooltip is to the right
-        newAnchorY = (targetHeight - tipHeight) / 2;
-        isVerticalTooltip = true;
-      } else if (anchorX < -tipWidth / 2) {
-        // Tooltip is to the left
-        newAnchorY = (targetHeight - tipHeight) / 2;
-        isVerticalTooltip = true;
+      if (Array.isArray(newContent)) {
+        rows = newContent;
+        text = "";
+      } else {
+        // Convert \n to <br> for RichText format
+        const processedText = newContent.replace(/\n/g, '<br>');
+        text = processedText;
+        rows = null;
       }
 
-      // Adjust horizontal position to keep tooltip on screen if needed
-      // For top/bottom tooltips, always adjust horizontally (they don't overlap horizontally)
-      // For left/right tooltips, check for overlap before adjusting
-      const globalX = targetGlobal.x + newAnchorX;
-      if (globalX < 0) {
-        const adjustedX = -targetGlobal.x + margin;
-        if (isHorizontalTooltip) {
-          newAnchorX = adjustedX;
-        } else {
-          const wouldOverlap = adjustedX < targetWidth && adjustedX + tipWidth > 0;
-          if (!wouldOverlap) {
-            newAnchorX = adjustedX;
-          }
-        }
-      } else if (globalX + tipWidth > screenWidth) {
-        const adjustedX = screenWidth - targetGlobal.x - tipWidth - margin;
-        if (isHorizontalTooltip) {
-          newAnchorX = adjustedX;
-        } else {
-          const wouldOverlap = adjustedX < targetWidth && adjustedX + tipWidth > 0;
-          if (!wouldOverlap) {
-            newAnchorX = adjustedX;
-          }
-        }
-      }
-
-      // Adjust vertical position to keep tooltip on screen if needed
-      // For left/right tooltips, always adjust vertically (they don't overlap vertically)
-      // For top/bottom tooltips, check for overlap before adjusting
-      const globalY = targetGlobal.y + newAnchorY;
-      if (globalY < 0) {
-        const adjustedY = -targetGlobal.y + margin;
-        if (isVerticalTooltip) {
-          newAnchorY = adjustedY;
-        } else {
-          const wouldOverlap = adjustedY < targetHeight && adjustedY + tipHeight > 0;
-          if (!wouldOverlap) {
-            newAnchorY = adjustedY;
-          }
-        }
-      } else if (globalY + tipHeight > screenHeight) {
-        const adjustedY = screenHeight - targetGlobal.y - tipHeight - margin;
-        if (isVerticalTooltip) {
-          newAnchorY = adjustedY;
-        } else {
-          const wouldOverlap = adjustedY < targetHeight && adjustedY + tipHeight > 0;
-          if (!wouldOverlap) {
-            newAnchorY = adjustedY;
-          }
-        }
-      }
-
-      // Apply the new anchor positions
-      anchorX = newAnchorX;
-      anchorY = newAnchorY;
-
-      // Force anchor update
-      Qt.callLater(() => {
-                     if (root.anchor && root.visible) {
-                       root.anchor.updateAnchor();
-                     }
-                   });
+      // Defer dimension recalculation to allow GridLayout to update
+      Qt.callLater(updateContentDeferred);
     }
+  }
+
+  function updateContentDeferred() {
+    if (!visible || !targetItem) {
+      return;
+    }
+
+    // Recalculate dimensions based on content mode
+    // Use calculateGridSize() for consistency with initial show
+    let contentWidth, contentHeight;
+    if (isGridMode) {
+      const gridSize = calculateGridSize();
+      contentWidth = gridSize.width;
+      contentHeight = gridSize.height;
+    } else {
+      contentWidth = tooltipText.implicitWidth;
+      contentHeight = tooltipText.implicitHeight;
+    }
+
+    const tipWidth = Math.ceil(Math.min(contentWidth + (padding * 2), maxWidth));
+    root.implicitWidth = tipWidth;
+
+    // Add +2 buffer for fractional scaling issues (especially with "top" direction)
+    const tipHeight = Math.ceil(contentHeight + (padding * 2)) + 2;
+    root.implicitHeight = tipHeight;
+
+    // Reposition based on current direction (screen-relative)
+    // Round all values to avoid sub-pixel positioning issues with fractional scaling
+    var targetGlobalAbs = targetItem.mapToGlobal(0, 0);
+    var targetGlobal = {
+      "x": Math.round(targetGlobalAbs.x - screenX),
+      "y": Math.round(targetGlobalAbs.y - screenY)
+    };
+    const targetWidth = Math.round(targetItem.width);
+    const targetHeight = Math.round(targetItem.height);
+
+    // Recalculate base anchor position (center on target for top/bottom, etc.)
+    var newAnchorX = anchorX;
+    var newAnchorY = anchorY;
+
+    // Determine which direction the tooltip is currently positioned
+    // and recalculate the centering for that direction
+    var isHorizontalTooltip = false;
+    var isVerticalTooltip = false;
+    if (anchorY > targetHeight / 2) {
+      // Tooltip is below target
+      newAnchorX = (targetWidth - tipWidth) / 2;
+      isHorizontalTooltip = true;
+    } else if (anchorY < -tipHeight / 2) {
+      // Tooltip is above target
+      newAnchorX = (targetWidth - tipWidth) / 2;
+      isHorizontalTooltip = true;
+    } else if (anchorX > targetWidth / 2) {
+      // Tooltip is to the right
+      newAnchorY = (targetHeight - tipHeight) / 2;
+      isVerticalTooltip = true;
+    } else if (anchorX < -tipWidth / 2) {
+      // Tooltip is to the left
+      newAnchorY = (targetHeight - tipHeight) / 2;
+      isVerticalTooltip = true;
+    }
+
+    // Adjust horizontal position to keep tooltip on screen if needed
+    const globalX = targetGlobal.x + newAnchorX;
+    if (globalX < 0) {
+      const adjustedX = -targetGlobal.x + margin;
+      if (isHorizontalTooltip) {
+        newAnchorX = adjustedX;
+      } else {
+        const wouldOverlap = adjustedX < targetWidth && adjustedX + tipWidth > 0;
+        if (!wouldOverlap) {
+          newAnchorX = adjustedX;
+        }
+      }
+    } else if (globalX + tipWidth > screenWidth) {
+      const adjustedX = screenWidth - targetGlobal.x - tipWidth - margin;
+      if (isHorizontalTooltip) {
+        newAnchorX = adjustedX;
+      } else {
+        const wouldOverlap = adjustedX < targetWidth && adjustedX + tipWidth > 0;
+        if (!wouldOverlap) {
+          newAnchorX = adjustedX;
+        }
+      }
+    }
+
+    // Adjust vertical position to keep tooltip on screen if needed
+    const globalY = targetGlobal.y + newAnchorY;
+    if (globalY < 0) {
+      const adjustedY = -targetGlobal.y + margin;
+      if (isVerticalTooltip) {
+        newAnchorY = adjustedY;
+      } else {
+        const wouldOverlap = adjustedY < targetHeight && adjustedY + tipHeight > 0;
+        if (!wouldOverlap) {
+          newAnchorY = adjustedY;
+        }
+      }
+    } else if (globalY + tipHeight > screenHeight) {
+      const adjustedY = screenHeight - targetGlobal.y - tipHeight - margin;
+      if (isVerticalTooltip) {
+        newAnchorY = adjustedY;
+      } else {
+        const wouldOverlap = adjustedY < targetHeight && adjustedY + tipHeight > 0;
+        if (!wouldOverlap) {
+          newAnchorY = adjustedY;
+        }
+      }
+    }
+
+    // Apply the new anchor positions
+    // Round to avoid sub-pixel positioning issues with fractional scaling
+    // Use floor for negative values to push tooltip away from target
+    anchorX = newAnchorX < 0 ? Math.floor(newAnchorX) : Math.round(newAnchorX);
+    anchorY = newAnchorY < 0 ? Math.floor(newAnchorY) : Math.round(newAnchorY);
+
+    // Force anchor update
+    Qt.callLater(() => {
+                   if (root.anchor && root.visible) {
+                     root.anchor.updateAnchor();
+                   }
+                 });
+  }
+
+  // Backward compatibility alias
+  function updateText(newText) {
+    updateContent(newText);
   }
 
   // Reset function to clean up state
@@ -518,6 +638,7 @@ PopupWindow {
     visible = false;
     animatingOut = false;
     text = "";
+    rows = null;
     isPositioned = false;
 
     // Reset to defaults
@@ -547,11 +668,13 @@ PopupWindow {
       border.width: Style.borderS
       radius: Style.radiusS
 
-      // Only show content when we have text
-      visible: root.text !== ""
+      // Only show content when we have content
+      visible: root.text !== "" || root.isGridMode
 
+      // Text content (default mode)
       NText {
         id: tooltipText
+        visible: !root.isGridMode
         anchors.centerIn: parent
         anchors.margins: root.padding
         text: root.text
@@ -563,6 +686,28 @@ PopupWindow {
         wrapMode: Text.WordWrap
         width: Math.min(implicitWidth, root.maxWidth - (root.padding * 2))
         richTextEnabled: true
+      }
+
+      // Grid content (grid mode)
+      GridLayout {
+        id: gridContent
+        visible: root.isGridMode
+        anchors.centerIn: parent
+        columns: root.columnCount
+        rowSpacing: 0
+        columnSpacing: Style.marginM
+
+        Repeater {
+          model: root.isGridMode ? [].concat.apply([], root.rows) : []
+
+          NText {
+            text: modelData
+            pointSize: Style.fontSizeS
+            family: tooltipText.family
+            color: Color.mOnSurfaceVariant
+            Layout.preferredHeight: rowHeightMeasure.implicitHeight
+          }
+        }
       }
     }
   }

@@ -853,14 +853,14 @@ def generate_theme(
     Args:
         palette: List of extracted colors
         mode: "dark" or "light"
-        scheme_type: One of "tonal-spot", "fruit-salad", "rainbow", "vibrant", "faithful", "muted"
+        scheme_type: One of "tonal-spot", "fruit-salad", "rainbow", "vibrant", "faithful", "dysfunctional", "muted"
 
     Returns:
         Dictionary of color token names to hex values
     """
-    # Handle vibrant/faithful modes (use generate_normal_* functions)
-    # Both use same theme generation, but different color extraction (handled in palette.py)
-    if scheme_type in ("vibrant", "faithful"):
+    # Handle vibrant/faithful/dysfunctional modes (use generate_normal_* functions)
+    # All three use same theme generation, but different color extraction (handled in palette.py)
+    if scheme_type in ("vibrant", "faithful", "dysfunctional"):
         if mode == "dark":
             return generate_normal_dark(palette)
         return generate_normal_light(palette)

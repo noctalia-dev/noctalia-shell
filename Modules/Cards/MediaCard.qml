@@ -294,6 +294,7 @@ NBox {
           shadowOpacity: 0.9
           shadowHorizontalOffset: 0
           shadowVerticalOffset: 0
+          shadowColor: Settings.data.colorSchemes.darkMode ? "black" : "white"
         }
 
         ColumnLayout {

@@ -112,7 +112,7 @@ Item {
 
     Loader {
       active: (labelMode !== "none") && (!showLabelsOnlyWhenOccupied || workspace.isOccupied || workspace.isFocused)
-      anchors.centerIn: parent
+      anchors.fill: parent
       sourceComponent: Component {
         NText {
           text: {
@@ -137,6 +137,8 @@ Item {
           applyUiScale: false
           font.capitalization: Font.AllUppercase
           font.weight: Style.fontWeightBold
+          horizontalAlignment: Text.AlignHCenter
+          verticalAlignment: Text.AlignVCenter
           wrapMode: Text.Wrap
           color: {
             if (pillMouseArea.containsMouse)

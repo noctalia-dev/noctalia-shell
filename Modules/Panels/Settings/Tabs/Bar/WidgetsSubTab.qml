@@ -19,6 +19,8 @@ ColumnLayout {
   property var moveWidgetBetweenSections
 
   signal openPluginSettings(var manifest)
+  // determine if the bar is vertical
+  readonly property bool barIsVertical: Settings.data.bar.position === "left" || Settings.data.bar.position === "right"
 
   function getSectionIcons() {
     return {
@@ -36,7 +38,7 @@ ColumnLayout {
 
   // Left Section
   NSectionEditor {
-    sectionName: I18n.tr("positions.left")
+    sectionName: root.barIsVertical ? I18n.tr("positions.top") : I18n.tr("positions.left")
     sectionId: "left"
     settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml")
     widgetRegistry: BarWidgetRegistry
@@ -70,7 +72,7 @@ ColumnLayout {
 
   // Right Section
   NSectionEditor {
-    sectionName: I18n.tr("positions.right")
+    sectionName: root.barIsVertical ? I18n.tr("positions.bottom") : I18n.tr("positions.right")
     sectionId: "right"
     settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml")
     widgetRegistry: BarWidgetRegistry

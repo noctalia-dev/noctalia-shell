@@ -262,6 +262,129 @@ def _score_colors_count(
     return result_colors
 
 
+def _family_center_hue(family: int) -> float:
+    """Get the center hue for a family index."""
+    # Family centers based on _hue_to_family ranges:
+    # 0: RED (330-30°, wraps) -> center 0°
+    # 1: ORANGE (30-60°) -> center 45°
+    # 2: YELLOW (60-105°) -> center 82.5°
+    # 3: GREEN (105-190°) -> center 147.5°
+    # 4: BLUE (190-270°) -> center 230°
+    # 5: PURPLE (270-330°) -> center 300°
+    centers = [0.0, 45.0, 82.5, 147.5, 230.0, 300.0]
+    return centers[family]
+
+
+def _circular_hue_diff(h1: float, h2: float) -> float:
+    """Calculate circular hue difference (0-180)."""
+    diff = abs(h1 - h2)
+    return min(diff, 360.0 - diff)
+
+
+def _score_colors_dysfunctional(
+    colors_with_counts: list[tuple[RGB, int]],
+) -> list[tuple[Color, float]]:
+    """
+    Score colors prioritizing the 2nd most dominant hue family.
+
+    Like count scoring but skips the dominant family (and any families
+    too close to it) to pick a visually distinct secondary color.
+
+    Args:
+        colors_with_counts: List of (RGB, count) tuples from clustering
+
+    Returns:
+        List of (Color, score) tuples, sorted by family dominance then count
+    """
+    MIN_CHROMA = 10.0  # Filter out near-gray colors
+    MIN_HUE_DISTANCE = 45.0  # Minimum hue distance from dominant family
+    MIN_COUNT_RATIO = 0.02  # Distant family must have at least 2% of total colorful pixels
+
+    # First pass: collect colorful colors and group by hue family
+    hue_families: dict[int, list[tuple[Color, float, float, int]]] = {}  # family -> [(color, hue, chroma, count), ...]
+
+    for rgb, count in colors_with_counts:
+        color = Color.from_rgb(rgb)
+        try:
+            hct = color.to_hct()
+            if hct.chroma >= MIN_CHROMA:
+                family = _hue_to_family(hct.hue)
+                if family not in hue_families:
+                    hue_families[family] = []
+                hue_families[family].append((color, hct.hue, hct.chroma, count))
+        except (ValueError, ZeroDivisionError):
+            pass
+
+    # If no colorful colors found, fall back to all colors
+    if not hue_families:
+        result = []
+        for rgb, count in colors_with_counts:
+            color = Color.from_rgb(rgb)
+            result.append((color, float(count)))
+        result.sort(key=lambda x: -x[1])
+        return result
+
+    # Calculate total count per hue family
+    family_totals: list[tuple[int, int]] = []
+    for family, colors in hue_families.items():
+        total = sum(c[3] for c in colors)
+        family_totals.append((family, total))
+
+    # Sort families by total count (dominant family first)
+    family_totals.sort(key=lambda x: -x[1])
+
+    # Find the dominant family and its center hue
+    dominant_family, dominant_count = family_totals[0]
+    dominant_center = _family_center_hue(dominant_family)
+    total_colorful_pixels = sum(count for _, count in family_totals)
+    min_count = total_colorful_pixels * MIN_COUNT_RATIO
+
+    # Find families that are far enough from the dominant one AND have enough pixels
+    distant_families = []
+    close_families = [dominant_family]
+    for family, count in family_totals[1:]:
+        family_center = _family_center_hue(family)
+        hue_diff = _circular_hue_diff(dominant_center, family_center)
+        if hue_diff >= MIN_HUE_DISTANCE and count >= min_count:
+            # Get max chroma in this family - we want families with vibrant colors
+            max_chroma = max(c[2] for c in hue_families[family])
+            distant_families.append((family, count, hue_diff, max_chroma))
+        else:
+            close_families.append(family)
+
+    # Build result: colors from distant families first
+    result_colors = []
+
+    # Sort distant families by weighted score: hue_distance * max_chroma
+    # This balances visual distinctness (hue distance) with color quality (chroma)
+    # A family that's far away AND has good colors beats one that's close with great colors
+    distant_families.sort(key=lambda x: -(x[2] * x[3]))
+
+    for family, _, _, _ in distant_families:
+        family_colors = hue_families[family]
+        # Sort by chroma descending - we want the most vibrant color from this family
+        # Count is tiebreaker to avoid picking tiny noise clusters
+        family_colors.sort(key=lambda x: (-x[2], -x[3]))
+        for color, hue, chroma, count in family_colors:
+            # Score encodes family rank + chroma for proper ordering
+            # Chroma is primary (we want vibrant), count is tiebreaker
+            family_rank = next(i for i, (f, _, _, _) in enumerate(distant_families) if f == family)
+            score = (len(distant_families) - family_rank) * 1000000 + chroma * 1000 + count
+            result_colors.append((color, score))
+
+    # Add colors from close families (including dominant) at lower priority
+    for family in close_families:
+        family_colors = hue_families[family]
+        family_colors.sort(key=lambda x: (-x[3], -x[2]))
+        for color, hue, chroma, count in family_colors:
+            # Lower score than all distant-family colors
+            score = count * 1000 + chroma
+            result_colors.append((color, score))
+
+    result_colors.sort(key=lambda x: -x[1])
+    return result_colors
+
+
 def _score_colors_muted(
     colors_with_counts: list[tuple[RGB, int]],
 ) -> list[tuple[Color, float]]:
@@ -434,6 +557,7 @@ def extract_palette(
                  - "population": matugen-like, representative colors (M3 schemes)
                  - "chroma": vibrant, chroma-prioritized with centroid averaging
                  - "count": area-dominant, picks by pixel count (faithful mode)
+                 - "dysfunctional": picks 2nd most dominant color family
                  - "muted": like count but without chroma filtering (monochrome wallpapers)
 
     Returns:
@@ -454,6 +578,10 @@ def extract_palette(
     elif scoring == "count":
         # Faithful mode: many clusters to capture color diversity, no pre-filtering
         # Scoring will filter to colorful colors and pick by count
+        cluster_count = 48
+        filtered = sampled
+    elif scoring == "dysfunctional":
+        # Dysfunctional mode: same as count but picks 2nd dominant family
         cluster_count = 48
         filtered = sampled
     elif scoring == "muted":
@@ -494,6 +622,10 @@ def extract_palette(
         # Use representative colors with count scoring (faithful mode)
         colors_for_scoring = [(c[1], c[2]) for c in clusters]
         scored = _score_colors_count(colors_for_scoring)
+    elif scoring == "dysfunctional":
+        # Use representative colors with dysfunctional scoring (2nd dominant family)
+        colors_for_scoring = [(c[1], c[2]) for c in clusters]
+        scored = _score_colors_dysfunctional(colors_for_scoring)
     elif scoring == "muted":
         # Use representative colors with muted scoring (no chroma filter)
         colors_for_scoring = [(c[1], c[2]) for c in clusters]

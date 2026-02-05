@@ -52,6 +52,10 @@ Singleton {
       "name": I18n.tr("common.faithful")
     },
     {
+      "key": "dysfunctional",
+      "name": I18n.tr("common.dysfunctional")
+    },
+    {
       "key": "muted",
       "name": I18n.tr("common.color-muted")
     },
@@ -102,7 +106,7 @@ Singleton {
 
     const script = buildGenerationScript(content, wp, mode);
 
-    generateProcess.command = ["sh", "-lc", script];
+    generateProcess.command = ["sh", "-c", script];
     generateProcess.running = true;
   }
 
@@ -162,7 +166,7 @@ Singleton {
     // Add user templates if enabled
     script += buildUserTemplateCommandForPredefined(schemeData, mode);
 
-    generateProcess.command = ["sh", "-lc", script];
+    generateProcess.command = ["sh", "-c", script];
     generateProcess.running = true;
   }
 
@@ -245,11 +249,14 @@ Singleton {
                                               if (isTemplateEnabled("code")) {
                                                 app.clients.forEach(client => {
                                                                       // Check if this specific client is detected
-                                                                      if (isCodeClientEnabled(client.name)) {
-                                                                        lines.push(`\n[templates.code_${client.name}]`);
-                                                                        lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
-                                                                        const expandedPath = client.path.replace("~", homeDir);
-                                                                        lines.push(`output_path = "${expandedPath}"`);
+                                                                      var resolvedPaths = TemplateRegistry.resolvedCodeClientPaths(client.name);
+                                                                      if (isCodeClientEnabled(client.name) && resolvedPaths.length > 0) {
+                                                                        resolvedPaths.forEach((resolvedPath, pathIndex) => {
+                                                                                                var suffix = resolvedPaths.length > 1 ? `_${pathIndex}` : "";
+                                                                                                lines.push(`\n[templates.code_${client.name}${suffix}]`);
+                                                                                                lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${app.input}"`);
+                                                                                                lines.push(`output_path = "${resolvedPath}"`);
+                                                                                              });
                                                                       }
                                                                     });
                                               }
@@ -399,7 +406,7 @@ Singleton {
                                          }
                                        });
 
-    copyProcess.command = ["sh", "-lc", script];
+    copyProcess.command = ["sh", "-c", script];
     copyProcess.running = true;
   }
 
@@ -428,7 +435,7 @@ Singleton {
                                        });
 
     if (commands.length > 0) {
-      copyProcess.command = ["sh", "-lc", commands.join('; ')];
+      copyProcess.command = ["sh", "-c", commands.join('; ')];
       copyProcess.running = true;
     }
   }

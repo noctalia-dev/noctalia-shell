@@ -126,6 +126,9 @@ Singleton {
         }
       }
     }
+    function onSortOrderChanged() {
+      root.refreshWallpapersList();
+    }
   }
 
   // -------------------------------------------------
@@ -559,8 +562,8 @@ Singleton {
     function checkComplete() {
       pendingScans--;
       if (pendingScans === 0) {
-        // Sort both lists
-        result.files.sort();
+        // Files are already sorted by _scanDirectoryInternal according to sortOrder setting
+        // Only sort directories alphabetically
         result.directories.sort();
         callback(result);
       }
@@ -697,6 +700,8 @@ Singleton {
       findArgs.push(filters[i]);
     }
     findArgs.push(")");
+    // Add printf to get modification time
+    findArgs.push("-printf", "%T@|%p\\n");
 
     // Create Process component inline
     var processString = `
@@ -725,18 +730,67 @@ Singleton {
       var files = [];
       if (exitCode === 0) {
         var lines = processObject.stdout.text.split('\n');
+        var parsedFiles = [];
+
         for (var i = 0; i < lines.length; i++) {
           var line = lines[i].trim();
           if (line !== '') {
-            var showHidden = Settings.data.wallpaper.showHiddenFiles;
-            var name = line.split('/').pop();
-            if (showHidden || !name.startsWith('.')) {
-              files.push(line);
+            var parts = line.split('|');
+            if (parts.length >= 2) { // Handle potential extra pipes in filename by joining rest
+              var timestamp = parseFloat(parts[0]);
+              var path = parts.slice(1).join('|');
+
+              var showHidden = Settings.data.wallpaper.showHiddenFiles;
+              var name = path.split('/').pop();
+              if (showHidden || !name.startsWith('.')) {
+                parsedFiles.push({
+                                   path: path,
+                                   time: timestamp,
+                                   name: name
+                                 });
+              }
+            } else if (line.indexOf('|') === -1) {
+              // Fallback for unexpected output format or old find versions (unlikely but safe)
+              var path = line;
+              var showHidden = Settings.data.wallpaper.showHiddenFiles;
+              var name = path.split('/').pop();
+              if (showHidden || !name.startsWith('.')) {
+                parsedFiles.push({
+                                   path: path,
+                                   time: 0,
+                                   name: name
+                                 });
+              }
             }
           }
         }
-        // Sort files for consistent ordering
-        files.sort();
+        // Sort files based on settings
+        var sortOrder = Settings.data.wallpaper.sortOrder || "name";
+
+        // Fischer-Yates shuffle
+        if (sortOrder === "random") {
+          for (let i = parsedFiles.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const temp = parsedFiles[i];
+            parsedFiles[i] = parsedFiles[j];
+            parsedFiles[j] = temp;
+          }
+        } else {
+          parsedFiles.sort(function (a, b) {
+            if (sortOrder === "date_desc") { // Newest first
+              return b.time - a.time;
+            } else if (sortOrder === "date_asc") { // Oldest first
+              return a.time - b.time;
+            } else if (sortOrder === "name_desc") {
+              return b.name.localeCompare(a.name);
+            } else { // name (asc)
+              return a.name.localeCompare(b.name);
+            }
+          });
+        }
+
+        // Map back to string array
+        files = parsedFiles.map(f => f.path);
 
         if (updateList) {
           wallpaperLists[screenName] = files;

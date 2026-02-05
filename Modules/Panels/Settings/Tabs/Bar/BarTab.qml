@@ -33,13 +33,12 @@ ColumnLayout {
       var metadata = BarWidgetRegistry.widgetMetadata[widgetId];
       if (metadata) {
         Object.keys(metadata).forEach(function (key) {
-          if (key !== "allowUserSettings") {
-            newWidget[key] = metadata[key];
-          }
+          newWidget[key] = metadata[key];
         });
       }
     }
     Settings.data.bar.widgets[section].push(newWidget);
+    BarService.widgetsRevision++;
   }
 
   function _removeWidgetFromSection(section, index) {
@@ -48,9 +47,10 @@ ColumnLayout {
       var newArray = widgets[section].slice();
       var removedWidgets = newArray.splice(index, 1);
       widgets[section] = newArray;
+      BarService.widgetsRevision++;
 
       if (removedWidgets[0].id === "ControlCenter" && BarService.lookupWidget("ControlCenter") === undefined) {
-        ToastService.showWarning(I18n.tr("toast.missing-control-center.label"), I18n.tr("toast.missing-control-center.description"), 12000);
+        ToastService.showWarning(I18n.tr("toast.missing-control-center.label"), I18n.tr("toast.missing-control-center.description"), 6000);
       }
     }
   }
@@ -63,9 +63,12 @@ ColumnLayout {
       newArray.splice(fromIndex, 1);
       newArray.splice(toIndex, 0, item);
       widgets[section] = newArray;
+      BarService.widgetsRevision++;
     }
   }
 
+  // Note: _updateWidgetSettingsInSection does NOT increment revision
+  // because it only changes settings, not widget structure
   function _updateWidgetSettingsInSection(section, index, settings) {
     Settings.data.bar.widgets[section][index] = settings;
   }
@@ -80,6 +83,8 @@ ColumnLayout {
       var targetArray = widgets[toSection].slice();
       targetArray.push(widget);
       widgets[toSection] = targetArray;
+      BarService.widgetsRevision++;
+      Logger.d("BarTab", "_moveWidgetBetweenSections: revision now", BarService.widgetsRevision);
     }
   }
 

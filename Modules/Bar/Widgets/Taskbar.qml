@@ -395,9 +395,9 @@ Item {
           Logger.d("Taskbar", "Executing terminal app manually: " + app.name);
           const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
           const command = terminal.concat(app.command);
-          Quickshell.execDetached(command);
+          CompositorService.spawn(command);
         } else if (app.command && app.command.length > 0) {
-          Quickshell.execDetached(app.command);
+          CompositorService.spawn(app.command);
         } else if (app.execute) {
           app.execute();
         } else {
@@ -607,7 +607,7 @@ Item {
 
     return Math.round(calculatedWidth);
   }
-  readonly property real contentHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginS * 2) : barHeight) : 0
+  readonly property real contentHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginS * 2) : capsuleHeight) : 0
 
   implicitWidth: contentWidth
   implicitHeight: contentHeight
@@ -786,7 +786,7 @@ Item {
               visible: shouldShowTitle
               anchors.centerIn: parent
               width: parent.width
-              height: root.barHeight
+              height: root.capsuleHeight
               color: titleBgColor
               radius: Style.radiusM
 
@@ -985,6 +985,7 @@ Item {
     // Set the model directly
     contextMenu.model = items;
 
-    PanelService.showContextMenu(contextMenu, item, screen);
+    // Anchor to root (stable) but center horizontally on the clicked item
+    PanelService.showContextMenu(contextMenu, root, screen, item);
   }
 }

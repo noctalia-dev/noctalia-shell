@@ -103,9 +103,20 @@ ShapePath {
   readonly property real blMultY: bar ? ShapeCornerHelper.getMultY(bar.bottomLeftCornerState) : 1
   readonly property real blRadius: bar ? getCornerRadius(bar.bottomLeftCornerState) : 0
 
+  // Auto-hide opacity factor for background fade
+  property real opacityFactor: (bar && bar.isHidden) ? 0 : 1
+
+  Behavior on opacityFactor {
+    enabled: bar && bar.autoHide
+    NumberAnimation {
+      duration: Style.animationFast
+      easing.type: Easing.OutQuad
+    }
+  }
+
   // ShapePath configuration
   strokeWidth: -1 // No stroke, fill only
-  fillColor: backgroundColor
+  fillColor: Qt.rgba(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a * opacityFactor)
   fillRule: isFramed ? ShapePath.OddEvenFill : ShapePath.WindingFill
 
   // Starting position

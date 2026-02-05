@@ -111,18 +111,18 @@ NBox {
     return [Color.mPrimary, Color.mOnPrimary];
   }
 
-  // Check if widget has settings (either core widget with allowUserSettings or plugin with settings entry point)
+  // Check if widget has settings (either core widget with metadata or plugin with settings entry point)
   function widgetHasSettings(widgetId) {
-    // Check if it's a core widget with user settings
-    if (root.widgetRegistry && root.widgetRegistry.widgetHasUserSettings(widgetId)) {
-      return true;
-    }
-
     // Check if it's a plugin with settings
     if (root.widgetRegistry && root.widgetRegistry.isPluginWidget(widgetId)) {
       var pluginId = widgetId.replace("plugin:", "");
       var manifest = PluginRegistry.getPluginManifest(pluginId);
       return manifest?.entryPoints?.settings !== undefined;
+    }
+
+    // Check if it's a core widget with user settings
+    if (root.widgetRegistry && root.widgetRegistry.widgetHasUserSettings(widgetId)) {
+      return true;
     }
 
     return false;

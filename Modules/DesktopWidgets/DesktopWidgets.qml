@@ -83,9 +83,7 @@ Variants {
         var metadata = DesktopWidgetRegistry.widgetMetadata[widgetId];
         if (metadata) {
           Object.keys(metadata).forEach(function (key) {
-            if (key !== "allowUserSettings") {
-              newWidget[key] = metadata[key];
-            }
+            newWidget[key] = metadata[key];
           });
         }
 

@@ -572,4 +572,12 @@ Item {
     // }
     // return null;
   }
+
+  function spawn(command) {
+    try {
+      Quickshell.execDetached(["swaymsg", "exec", "--"].concat(command));
+    } catch (e) {
+      Logger.e("SwayService", "Failed to spawn command:", e);
+    }
+  }
 }

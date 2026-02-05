@@ -144,6 +144,24 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.bar.appearance-type-label",
+    "descriptionKey": "panels.bar.appearance-type-description",
+    "widget": "NComboBox",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "common.display-mode",
+    "descriptionKey": "panels.bar.appearance-display-mode-description",
+    "widget": "NComboBox",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.bar.appearance-use-separate-opacity-label",
     "descriptionKey": "panels.bar.appearance-use-separate-opacity-description",
     "widget": "NToggle",
@@ -189,9 +207,9 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-type-label",
-    "descriptionKey": "panels.bar.appearance-type-description",
-    "widget": "NComboBox",
+    "labelKey": "panels.bar.appearance-hide-on-overview-label",
+    "descriptionKey": "panels.bar.appearance-hide-on-overview-description",
+    "widget": "NToggle",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 0,
@@ -261,9 +279,18 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-hide-on-overview-label",
-    "descriptionKey": "panels.bar.appearance-hide-on-overview-description",
-    "widget": "NToggle",
+    "labelKey": "panels.bar.appearance-auto-hide-delay-label",
+    "descriptionKey": "panels.bar.appearance-auto-hide-delay-description",
+    "widget": "NValueSlider",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.bar.appearance-auto-show-delay-label",
+    "descriptionKey": "panels.bar.appearance-auto-show-delay-description",
+    "widget": "NValueSlider",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 0,
@@ -831,6 +858,15 @@
     "subTabLabel": "common.general"
   },
   {
+    "labelKey": "panels.launcher.settings-enable-windows-search-label",
+    "descriptionKey": "panels.launcher.settings-enable-windows-search-description",
+    "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
     "labelKey": "panels.launcher.settings-ignore-mouse-input-label",
     "descriptionKey": "panels.launcher.settings-ignore-mouse-input-description",
     "widget": "NToggle",
@@ -1099,8 +1135,8 @@
     "subTabLabel": "common.sound"
   },
   {
-    "labelKey": "panels.notifications.media-toast-label",
-    "descriptionKey": "panels.notifications.media-toast-description",
+    "labelKey": "panels.notifications.toast-media-label",
+    "descriptionKey": "panels.notifications.toast-media-description",
     "widget": "NCheckbox",
     "tab": 9,
     "tabLabel": "common.notifications",
@@ -1111,6 +1147,15 @@
     "labelKey": "panels.notifications.toast-keyboard-label",
     "descriptionKey": "panels.notifications.toast-keyboard-description",
     "widget": "NCheckbox",
+    "tab": 9,
+    "tabLabel": "common.notifications",
+    "subTab": 4,
+    "subTabLabel": "common.toast"
+  },
+  {
+    "labelKey": "panels.notifications.toast-battery-label",
+    "descriptionKey": "panels.notifications.toast-battery-description",
+    "widget": "NLabel",
     "tab": 9,
     "tabLabel": "common.notifications",
     "subTab": 4,

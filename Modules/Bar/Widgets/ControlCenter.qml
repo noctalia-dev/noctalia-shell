@@ -35,20 +35,13 @@ NIconButton {
   }
 
   readonly property string customIcon: widgetSettings.icon || widgetMetadata.icon
-  readonly property bool useDistroLogo: (widgetSettings.useDistroLogo !== undefined) ? widgetSettings.useDistroLogo : widgetMetadata.useDistroLogo
+  readonly property bool useDistroLogo: widgetSettings.useDistroLogo !== undefined ? widgetSettings.useDistroLogo : widgetMetadata.useDistroLogo
   readonly property string customIconPath: widgetSettings.customIconPath || ""
   readonly property bool enableColorization: widgetSettings.enableColorization || false
-
-  readonly property string colorizeSystemIcon: {
-    if (widgetSettings.colorizeSystemIcon !== undefined)
-      return widgetSettings.colorizeSystemIcon;
-    return widgetMetadata.colorizeSystemIcon !== undefined ? widgetMetadata.colorizeSystemIcon : "none";
-  }
-
-  readonly property bool isColorizing: enableColorization && colorizeSystemIcon !== "none"
+  readonly property string colorizeSystemIcon: widgetSettings.colorizeSystemIcon !== undefined ? widgetSettings.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon
 
   readonly property color iconColor: {
-    if (!isColorizing)
+    if (!enableColorization)
       return Color.mOnSurface;
     switch (colorizeSystemIcon) {
     case "primary":
@@ -64,7 +57,7 @@ NIconButton {
     }
   }
   readonly property color iconHoverColor: {
-    if (!isColorizing)
+    if (!enableColorization)
       return Color.mOnHover;
     switch (colorizeSystemIcon) {
     case "primary":
@@ -164,9 +157,9 @@ NIconButton {
     visible: source !== ""
     smooth: true
     asynchronous: true
-    layer.enabled: isColorizing && (useDistroLogo || customIconPath !== "")
+    layer.enabled: enableColorization && (useDistroLogo || customIconPath !== "")
     layer.effect: ShaderEffect {
-      property color targetColor: isColorizing ? iconColor : (Settings.data.colorSchemes.darkMode ? Color.mOnSurface : Color.mSurfaceVariant)
+      property color targetColor: iconColor
       property real colorizeMode: 2.0
 
       fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/appicon_colorize.frag.qsb")

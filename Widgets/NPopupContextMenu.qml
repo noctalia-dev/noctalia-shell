@@ -21,6 +21,12 @@ PopupWindow {
   property real minWidth: 120
   property real calculatedWidth: 180
 
+  // Explicit offset for centering on target item (computed from targetItem in openAtItem)
+  property real targetOffsetX: 0
+  property real targetOffsetY: 0
+  property real targetWidth: 0
+  property real targetHeight: 0
+
   readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
   readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
 
@@ -85,24 +91,27 @@ PopupWindow {
     if (anchorItem && screen) {
       const anchorGlobalPos = anchorItem.mapToItem(null, 0, 0);
 
-      // For right bar: position menu to the left of anchor
+      // Use stored targetOffsetX and targetWidth for positioning
+      const effectiveWidth = targetWidth > 0 ? targetWidth : anchorItem.width;
+      const targetGlobalX = anchorGlobalPos.x + targetOffsetX;
+
+      // For right bar: position menu to the left of target
       if (root.barPosition === "right") {
-        let baseX = -implicitWidth - Style.marginM;
+        let baseX = targetOffsetX - implicitWidth - Style.marginM;
         return baseX;
       }
 
-      // For left bar: position menu to the right of anchor
+      // For left bar: position menu to the right of target
       if (root.barPosition === "left") {
-        let baseX = anchorItem.width + Style.marginM;
+        let baseX = targetOffsetX + effectiveWidth + Style.marginM;
         return baseX;
       }
 
-      // For top/bottom bar: center horizontally on anchor
-      const anchorCenterX = anchorItem.width / 2;
-      let baseX = anchorCenterX - (implicitWidth / 2);
+      // For top/bottom bar: center horizontally on target
+      const targetCenterScreenX = targetGlobalX + (effectiveWidth / 2);
+      const menuScreenX = targetCenterScreenX - (implicitWidth / 2);
+      let baseX = menuScreenX - anchorGlobalPos.x;
 
-      // Calculate menu position on screen
-      const menuScreenX = anchorGlobalPos.x + baseX;
       const menuRight = menuScreenX + implicitWidth;
 
       // Adjust if menu would clip on the right
@@ -136,30 +145,43 @@ PopupWindow {
         return 0;
       }
 
-      const anchorCenterY = anchorItem.height / 2;
+      const anchorGlobalPos = anchorItem.mapToItem(null, 0, 0);
+
+      // Use target offset/height for vertical bars, anchor dimensions otherwise
+      const effectiveHeight = targetHeight > 0 ? targetHeight : anchorItem.height;
+      const effectiveOffsetY = targetOffsetY;
 
       // Calculate base Y position based on bar orientation
       let baseY;
       if (root.barPosition === "bottom") {
         // For bottom bar: position menu above the bar
-        baseY = -(implicitHeight + Style.marginM);
+        baseY = -(implicitHeight + Style.marginS);
       } else if (root.barPosition === "top") {
-        // For top bar: position menu below bar
-        baseY = barHeight + Style.marginM;
+        // For top bar: position menu below bar at consistent height
+        // Compensate for anchor's Y position to ensure menu top is always at (barHeight + margin)
+        baseY = barHeight + Style.marginS - anchorGlobalPos.y;
       } else {
-        // For left/right bar: vertically center on anchor
-        baseY = anchorCenterY - (implicitHeight / 2);
+        // For left/right bar: vertically center on target item
+        const targetCenterY = effectiveOffsetY + (effectiveHeight / 2);
+        baseY = targetCenterY - (implicitHeight / 2);
       }
 
-      // Calculate menu position on screen
-      const anchorGlobalPos = anchorItem.mapToItem(null, 0, 0);
       const menuScreenY = anchorGlobalPos.y + baseY;
-
       const menuBottom = menuScreenY + implicitHeight;
 
-      // Adjust if menu would clip at bottom
-      if (menuBottom > screen.height - Style.marginM) {
-        const overflow = menuBottom - (screen.height - Style.marginM);
+      // Define clipping boundaries based on bar position
+      const topLimit = Style.marginM;
+      const bottomLimit = root.barPosition === "bottom" ? screen.height - barHeight - Style.marginS : screen.height - Style.marginM;
+
+      // Adjust if menu would clip at top (skip for bottom bar - don't push menu down over bar)
+      if (menuScreenY < topLimit && root.barPosition !== "bottom") {
+        const adjustment = topLimit - menuScreenY;
+        return baseY + adjustment;
+      }
+
+      // Adjust if menu would clip at bottom (or overlap bar for bottom bar)
+      if (menuBottom > bottomLimit) {
+        const overflow = menuBottom - bottomLimit;
         return baseY - overflow;
       }
 
@@ -168,7 +190,7 @@ PopupWindow {
 
     // Fallback if no screen
     if (root.barPosition === "bottom") {
-      return -implicitHeight - Style.marginM;
+      return -implicitHeight - Style.marginS;
     }
     return barHeight;
   }
@@ -304,17 +326,40 @@ PopupWindow {
 
   // Helper function to open context menu anchored to an item
   // Position is calculated automatically based on bar position and screen boundaries
-  function openAtItem(item, itemScreen) {
+  // Optional centerOnItem: if provided, menu will be horizontally centered on this item instead of anchorItem
+  function openAtItem(item, itemScreen, centerOnItem) {
     if (!item) {
       Logger.w("NPopupContextMenu", "anchorItem is undefined, won't show menu.");
       return;
     }
 
-    calculateWidth();
-
+    // Set anchor and screen first
     anchorItem = item;
     screen = itemScreen || null;
+
+    // Compute target offset and dimensions from centerOnItem
+    if (centerOnItem && centerOnItem !== item) {
+      const relPos = centerOnItem.mapToItem(item, 0, 0);
+      targetOffsetX = relPos.x;
+      targetOffsetY = relPos.y;
+      targetWidth = centerOnItem.width;
+      targetHeight = centerOnItem.height;
+    } else {
+      targetOffsetX = 0;
+      targetOffsetY = 0;
+      targetWidth = 0;
+      targetHeight = 0;
+    }
+
+    // Calculate menu width after anchor is set
+    calculateWidth();
+
     visible = true;
+
+    // Force anchor recalculation after showing
+    Qt.callLater(() => {
+                   anchor.updateAnchor();
+                 });
   }
 
   function close() {

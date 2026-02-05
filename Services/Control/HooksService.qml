@@ -241,7 +241,7 @@ Singleton {
 
   function runPowerHook(script, callback) {
     pendingPowerCallback = callback;
-    powerHookProcess.command = ["sh", "-c", script];
+    powerHookProcess.command = ["sh", "-lc", script];
     powerHookProcess.running = true;
   }
 

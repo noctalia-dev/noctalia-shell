@@ -24,12 +24,67 @@ Singleton {
 
   property var readyBars: ({})
 
+  // Revision counter - increment when widget list structure changes (add/remove/reorder)
+  // This triggers Bar.qml to re-sync its ListModels
+  property int widgetsRevision: 0
+
   // Registry to store actual widget instances
   // Key format: "screenName|section|widgetId|index"
   property var widgetInstances: ({})
 
   signal activeWidgetsChanged
   signal barReadyChanged(string screenName)
+  signal barAutoHideStateChanged(string screenName, bool hidden)
+  signal barHoverStateChanged(string screenName, bool hovered)
+
+  // Track if a popup menu is open from the bar (prevents auto-hide)
+  property bool popupOpen: false
+
+  // Auto-hide state per screen: { screenName: { hovered: bool, hidden: bool } }
+  property var screenAutoHideState: ({})
+
+  // Get or create auto-hide state for a screen
+  function getOrCreateAutoHideState(screenName) {
+    if (!screenAutoHideState[screenName]) {
+      screenAutoHideState[screenName] = {
+        "hovered": false,
+        "hidden": Settings.data.bar.displayMode === "auto_hide"
+      };
+    }
+    return screenAutoHideState[screenName];
+  }
+
+  // Set hover state for a screen
+  function setScreenHovered(screenName, hovered) {
+    var state = getOrCreateAutoHideState(screenName);
+    if (state.hovered !== hovered) {
+      state.hovered = hovered;
+      screenAutoHideState = Object.assign({}, screenAutoHideState);
+      barHoverStateChanged(screenName, hovered);
+    }
+  }
+
+  // Set hidden state for a screen
+  function setScreenHidden(screenName, hidden) {
+    var state = getOrCreateAutoHideState(screenName);
+    if (state.hidden !== hidden) {
+      state.hidden = hidden;
+      screenAutoHideState = Object.assign({}, screenAutoHideState);
+      barAutoHideStateChanged(screenName, hidden);
+    }
+  }
+
+  // Check if bar is hidden on a screen
+  function isBarHidden(screenName) {
+    var state = screenAutoHideState[screenName];
+    return state ? state.hidden : false;
+  }
+
+  // Check if bar is hovered on a screen
+  function isBarHovered(screenName) {
+    var state = screenAutoHideState[screenName];
+    return state ? state.hovered : false;
+  }
 
   Component.onCompleted: {
     Logger.i("BarService", "Service started");

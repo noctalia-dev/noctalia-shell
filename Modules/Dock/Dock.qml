@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.System
 import qs.Services.UI
 import qs.Widgets
@@ -77,6 +78,8 @@ Loader {
       readonly property int peekHeight: 1
       readonly property int iconSize: Math.round(12 + 24 * (Settings.data.dock.size ?? 1))
       readonly property int floatingMargin: Settings.data.dock.floatingRatio * Style.marginL
+      readonly property int maxWidth: modelData ? modelData.width * 0.8 : 1000
+      readonly property int maxHeight: modelData ? modelData.height * 0.8 : 1000
 
       // Dock position properties
       readonly property string dockPosition: Settings.data.dock.position
@@ -531,8 +534,8 @@ Loader {
           WlrLayershell.namespace: "noctalia-dock-" + (screen?.name || "unknown")
           WlrLayershell.exclusionMode: exclusive ? ExclusionMode.Auto : ExclusionMode.Ignore
 
-          implicitWidth: Math.round(dockContainerWrapper.width + (root.isVertical ? 0 : Style.marginXL * 6))
-          implicitHeight: Math.round(dockContainerWrapper.height)
+          implicitWidth: dockContainerWrapper.width
+          implicitHeight: dockContainerWrapper.height
 
           // Position based on dock setting
           anchors.top: dockPosition === "top"
@@ -595,8 +598,8 @@ Loader {
             Rectangle {
               id: dockContainer
               // For vertical dock, swap width and height logic
-              width: isVertical ? Math.round(iconSize * 1.5) : dockLayout.implicitWidth + Style.marginXL
-              height: isVertical ? dockLayout.implicitHeight + Style.marginXL : Math.round(iconSize * 1.5)
+              width: isVertical ? Math.round(iconSize * 1.5) : Math.min(dockLayout.implicitWidth + Style.marginXL, root.maxWidth)
+              height: isVertical ? Math.min(dockLayout.implicitHeight + Style.marginXL, root.maxHeight) : Math.round(iconSize * 1.5)
               color: Qt.alpha(Color.mSurface, Settings.data.dock.backgroundOpacity)
 
               // Anchor based on padding to achieve centering shift
@@ -643,12 +646,48 @@ Loader {
                 }
               }
 
-              Item {
+              Flickable {
                 id: dock
-                // Swap dimensions based on orientation
-                width: isVertical ? parent.width - (Style.marginXL) : dockLayout.implicitWidth
-                height: isVertical ? dockLayout.implicitHeight : parent.height - (Style.marginXL)
+                // Use parent dimensions more directly to avoid clipping
+                width: isVertical ? parent.width : Math.min(dockLayout.implicitWidth, parent.width - Style.marginXL)
+                height: !isVertical ? parent.height : Math.min(dockLayout.implicitHeight, parent.height - Style.marginXL)
+                contentWidth: dockLayout.implicitWidth
+                contentHeight: dockLayout.implicitHeight
                 anchors.centerIn: parent
+                clip: true
+
+                flickableDirection: isVertical ? Flickable.VerticalFlick : Flickable.HorizontalFlick
+
+                // Keep interactive dependent on overflow
+                interactive: isVertical ? contentHeight > height : contentWidth > width
+
+                // Centering margins
+                contentX: isVertical && contentWidth < width ? (contentWidth - width) / 2 : 0
+                contentY: !isVertical && contentHeight < height ? (contentHeight - height) / 2 : 0
+
+                WheelHandler {
+                  acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                  onWheel: event => {
+                             var delta = (event.angleDelta.y !== 0) ? event.angleDelta.y : event.angleDelta.x;
+                             if (root.isVertical) {
+                               dock.contentY = Math.max(-dock.topMargin, Math.min(dock.contentHeight - dock.height + dock.bottomMargin, dock.contentY - delta));
+                             } else {
+                               // For horizontal dock, we want to scroll contentX with BOTH x and y wheels
+                               var hDelta = (event.angleDelta.x !== 0) ? event.angleDelta.x : event.angleDelta.y;
+                               dock.contentX = Math.max(-dock.leftMargin, Math.min(dock.contentWidth - dock.width + dock.rightMargin, dock.contentX - hDelta));
+                             }
+                             event.accepted = true;
+                           }
+                }
+
+                ScrollBar.horizontal: ScrollBar {
+                  visible: !isVertical && dock.interactive
+                  policy: ScrollBar.AsNeeded
+                }
+                ScrollBar.vertical: ScrollBar {
+                  visible: isVertical && dock.interactive
+                  policy: ScrollBar.AsNeeded
+                }
 
                 function getAppIcon(appData): string {
                   if (!appData || !appData.appId)
@@ -663,15 +702,19 @@ Loader {
                   rows: isVertical ? -1 : 1
                   rowSpacing: Style.marginS
                   columnSpacing: Style.marginS
-                  anchors.centerIn: parent
+
+                  // Ensure the layout takes its full implicit size
+                  width: implicitWidth
+                  height: implicitHeight
 
                   Repeater {
                     model: dockApps
 
                     delegate: Item {
                       id: appButton
-                      Layout.preferredWidth: iconSize
-                      Layout.preferredHeight: iconSize
+                      readonly property real indicatorMargin: Math.max(3, Math.round(iconSize * 0.18))
+                      Layout.preferredWidth: isVertical ? iconSize + indicatorMargin * 2 : iconSize
+                      Layout.preferredHeight: isVertical ? iconSize : iconSize + indicatorMargin * 2
                       Layout.alignment: Qt.AlignCenter
 
                       property bool isActive: modelData.toplevel && ToplevelManager.activeToplevel && ToplevelManager.activeToplevel === modelData.toplevel
@@ -909,7 +952,6 @@ Loader {
                         // Only allow left-click dragging via axis control
                         drag.target: iconContainer
                         drag.axis: (pressedButtons & Qt.LeftButton) ? (root.isVertical ? Drag.YAxis : Drag.XAxis) : Drag.None
-                        preventStealing: true
 
                         onPressed: {
                           var p1 = appButton.mapFromItem(dockContainer, 0, 0);
@@ -1012,13 +1054,12 @@ Loader {
                               } else {
                                 // Fallback logic when app2unit is not used
                                 if (app.runInTerminal) {
-                                  // If app.execute() fails for terminal apps, we handle it manually.
                                   Logger.d("Dock", "Executing terminal app manually: " + app.name);
                                   const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
                                   const command = terminal.concat(app.command);
-                                  Quickshell.execDetached(command);
+                                  CompositorService.spawn(command);
                                 } else if (app.command && app.command.length > 0) {
-                                  Quickshell.execDetached(app.command);
+                                  CompositorService.spawn(app.command);
                                 } else if (app.execute) {
                                   app.execute();
                                 } else {
@@ -1030,15 +1071,28 @@ Loader {
                         }
                       }
 
-                      // Active indicator - always below the icon
+                      // Active indicator - positioned at the edge of the delegate area
                       Rectangle {
                         visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive
-                        width: iconSize * 0.2
-                        height: iconSize * 0.1
+                        width: isVertical ? indicatorMargin * 0.6 : iconSize * 0.2
+                        height: isVertical ? iconSize * 0.2 : indicatorMargin * 0.6
                         color: Color.mPrimary
                         radius: Style.radiusXS
-                        anchors.top: parent.bottom
-                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        // Anchor to the edge facing the screen center
+                        anchors.bottom: !isVertical && dockPosition === "bottom" ? parent.bottom : undefined
+                        anchors.top: !isVertical && dockPosition === "top" ? parent.top : undefined
+                        anchors.left: isVertical && dockPosition === "left" ? parent.left : undefined
+                        anchors.right: isVertical && dockPosition === "right" ? parent.right : undefined
+
+                        anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
+                        anchors.verticalCenter: isVertical ? parent.verticalCenter : undefined
+
+                        // Offset slightly from the edge
+                        anchors.bottomMargin: !isVertical && dockPosition === "bottom" ? 2 : 0
+                        anchors.topMargin: !isVertical && dockPosition === "top" ? 2 : 0
+                        anchors.leftMargin: isVertical && dockPosition === "left" ? 2 : 0
+                        anchors.rightMargin: isVertical && dockPosition === "right" ? 2 : 0
                       }
                     }
                   }

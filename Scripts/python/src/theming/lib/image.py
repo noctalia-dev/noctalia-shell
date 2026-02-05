@@ -250,19 +250,22 @@ def _read_image_imagemagick(path: Path) -> list[RGB]:
 
     # Resize to 112x112 to match matugen's color extraction
     # Use -filter Box for consistent results across ImageMagick versions
+    # Use -depth 8 -colorspace sRGB -strip to reduce variance between HDRI/non-HDRI builds
     resize_spec = "112x112!"
 
     try:
-        # Try 'magick convert' first (ImageMagick 7+), fallback to 'convert' (ImageMagick 6)
+        # Try 'magick' first (ImageMagick 7+), fallback to 'convert' (ImageMagick 6)
         try:
             result = subprocess.run(
-                ['magick', 'convert', str(path), '-filter', 'Box', '-resize', resize_spec, '-depth', '8', 'ppm:-'],
+                ['magick', str(path), '-filter', 'Box', '-resize', resize_spec,
+                 '-depth', '8', '-colorspace', 'sRGB', '-strip', 'ppm:-'],
                 capture_output=True,
                 check=True
             )
         except FileNotFoundError:
             result = subprocess.run(
-                ['convert', str(path), '-filter', 'Box', '-resize', resize_spec, '-depth', '8', 'ppm:-'],
+                ['convert', str(path), '-filter', 'Box', '-resize', resize_spec,
+                 '-depth', '8', '-colorspace', 'sRGB', '-strip', 'ppm:-'],
                 capture_output=True,
                 check=True
             )

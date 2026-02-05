@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Effects
+import QtQuick.Shapes
 import qs.Commons
 import qs.Services.UI
 
@@ -19,6 +19,7 @@ Slider {
 
   readonly property real knobDiameter: Math.round((Style.baseWidgetSize * heightRatio * Style.uiScaleRatio) / 2) * 2
   readonly property real trackHeight: Math.round((knobDiameter * 0.4 * Style.uiScaleRatio) / 2) * 2
+  readonly property real trackRadius: Math.min(Style.iRadiusL, trackHeight / 2)
   readonly property real cutoutExtra: Math.round((Style.baseWidgetSize * 0.1 * Style.uiScaleRatio) / 2) * 2
 
   padding: cutoutExtra / 2
@@ -26,49 +27,155 @@ Slider {
   snapMode: snapAlways ? Slider.SnapAlways : Slider.SnapOnRelease
   implicitHeight: Math.max(trackHeight, knobDiameter)
 
-  background: Rectangle {
+  background: Item {
+    id: bgContainer
     x: root.leftPadding
-    y: root.topPadding + root.availableHeight / 2 - height / 2
+    y: root.topPadding + root.availableHeight / 2 - root.trackHeight / 2
     implicitWidth: Style.sliderWidth
-    implicitHeight: trackHeight
+    implicitHeight: root.trackHeight
     width: root.availableWidth
-    height: implicitHeight
-    radius: Math.min(Style.iRadiusL, height / 2)
-    color: Qt.alpha(Color.mSurface, 0.5)
-    border.color: Qt.alpha(Color.mOutline, 0.5)
-    border.width: Style.borderS
+    height: root.trackHeight
 
-    // A container composite shape that puts a semicircle on the end
-    Item {
-      id: activeTrackContainer
-      width: root.visualPosition * parent.width
-      height: parent.height
+    readonly property real fillWidth: root.visualPosition * width
 
-      // The rounded end cap made from a rounded rectangle
-      Rectangle {
-        width: parent.height
-        height: parent.height
-        radius: Math.min(Style.iRadiusL, width / 2)
-        color: Qt.darker(effectiveFillColor, 1.2) //starting color of gradient
+    // Background track
+    Shape {
+      anchors.fill: parent
+      layer.enabled: true
+      layer.samples: 4
+
+      ShapePath {
+        id: bgPath
+        strokeColor: Qt.alpha(Color.mOutline, 0.5)
+        strokeWidth: Style.borderS
+        fillColor: Qt.alpha(Color.mSurface, 0.5)
+
+        readonly property real w: bgContainer.width
+        readonly property real h: bgContainer.height
+        readonly property real r: root.trackRadius
+
+        startX: r
+        startY: 0
+
+        PathLine {
+          x: bgPath.w - bgPath.r
+          y: 0
+        }
+        PathArc {
+          x: bgPath.w
+          y: bgPath.r
+          radiusX: bgPath.r
+          radiusY: bgPath.r
+        }
+        PathLine {
+          x: bgPath.w
+          y: bgPath.h - bgPath.r
+        }
+        PathArc {
+          x: bgPath.w - bgPath.r
+          y: bgPath.h
+          radiusX: bgPath.r
+          radiusY: bgPath.r
+        }
+        PathLine {
+          x: bgPath.r
+          y: bgPath.h
+        }
+        PathArc {
+          x: 0
+          y: bgPath.h - bgPath.r
+          radiusX: bgPath.r
+          radiusY: bgPath.r
+        }
+        PathLine {
+          x: 0
+          y: bgPath.r
+        }
+        PathArc {
+          x: bgPath.r
+          y: 0
+          radiusX: bgPath.r
+          radiusY: bgPath.r
+        }
       }
+    }
 
-      // The main rectangle
-      Rectangle {
-        x: parent.height / 2
-        width: parent.width - x // Fills the rest of the container
-        height: parent.height
-        radius: 0
-        // Animated gradient fill
-        gradient: Gradient {
-          orientation: Gradient.Horizontal
-          GradientStop {
-            position: 0.0
-            color: Qt.darker(effectiveFillColor, 1.2)
-          }
-          GradientStop {
-            position: 1.0
-            color: effectiveFillColor
-          }
+    LinearGradient {
+      id: fillGradient
+      x1: 0
+      y1: 0
+      x2: root.availableWidth
+      y2: 0
+      GradientStop {
+        position: 0.0
+        color: Qt.darker(effectiveFillColor, 1.2)
+      }
+      GradientStop {
+        position: 1.0
+        color: effectiveFillColor
+      }
+    }
+
+    // Active/filled track
+    Shape {
+      width: bgContainer.fillWidth
+      height: bgContainer.height
+      visible: bgContainer.fillWidth > 0
+      layer.enabled: true
+      layer.samples: 4
+      clip: true
+
+      ShapePath {
+        id: fillPath
+        strokeColor: "transparent"
+        fillGradient: fillGradient
+
+        readonly property real fullWidth: root.availableWidth
+        readonly property real h: root.trackHeight
+        readonly property real r: root.trackRadius
+
+        startX: r
+        startY: 0
+
+        PathLine {
+          x: fillPath.fullWidth - fillPath.r
+          y: 0
+        }
+        PathArc {
+          x: fillPath.fullWidth
+          y: fillPath.r
+          radiusX: fillPath.r
+          radiusY: fillPath.r
+        }
+        PathLine {
+          x: fillPath.fullWidth
+          y: fillPath.h - fillPath.r
+        }
+        PathArc {
+          x: fillPath.fullWidth - fillPath.r
+          y: fillPath.h
+          radiusX: fillPath.r
+          radiusY: fillPath.r
+        }
+        PathLine {
+          x: fillPath.r
+          y: fillPath.h
+        }
+        PathArc {
+          x: 0
+          y: fillPath.h - fillPath.r
+          radiusX: fillPath.r
+          radiusY: fillPath.r
+        }
+        PathLine {
+          x: 0
+          y: fillPath.r
+        }
+        PathArc {
+          x: fillPath.r
+          y: 0
+          radiusX: fillPath.r
+          radiusY: fillPath.r
         }
       }
     }
@@ -76,11 +183,11 @@ Slider {
     // Circular cutout
     Rectangle {
       id: knobCutout
-      implicitWidth: knobDiameter + cutoutExtra
-      implicitHeight: knobDiameter + cutoutExtra
+      implicitWidth: root.knobDiameter + root.cutoutExtra
+      implicitHeight: root.knobDiameter + root.cutoutExtra
       radius: Math.min(Style.iRadiusL, width / 2)
       color: root.cutoutColor !== undefined ? root.cutoutColor : Color.mSurface
-      x: root.leftPadding + root.visualPosition * (root.availableWidth - root.knobDiameter) - cutoutExtra
+      x: root.visualPosition * (root.availableWidth - root.knobDiameter) - root.cutoutExtra / 2
       anchors.verticalCenter: parent.verticalCenter
     }
   }

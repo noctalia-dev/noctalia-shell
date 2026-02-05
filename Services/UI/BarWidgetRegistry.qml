@@ -57,6 +57,7 @@ Singleton {
                                      "LockKeys": "WidgetSettings/LockKeysSettings.qml",
                                      "MediaMini": "WidgetSettings/MediaMiniSettings.qml",
                                      "Microphone": "WidgetSettings/MicrophoneSettings.qml",
+                                     "Network": "WidgetSettings/NetworkSettings.qml",
                                      "NotificationHistory": "WidgetSettings/NotificationHistorySettings.qml",
                                      "SessionMenu": "WidgetSettings/SessionMenuSettings.qml",
                                      "Spacer": "WidgetSettings/SpacerSettings.qml",
@@ -65,9 +66,6 @@ Singleton {
                                      "Tray": "WidgetSettings/TraySettings.qml",
                                      "Volume": "WidgetSettings/VolumeSettings.qml",
                                      "VPN": "WidgetSettings/VPNSettings.qml",
-                                     // Reuse the same settings UI for renamed widget
-                                     "WiFi": "WidgetSettings/WiFiSettings.qml",
-                                     "Network": "WidgetSettings/WiFiSettings.qml",
                                      "Workspace": "WidgetSettings/WorkspaceSettings.qml"
                                    })
 
@@ -86,9 +84,8 @@ Singleton {
                                     "hideWhenIdle": false
                                   },
                                   "Battery": {
-                                    "displayMode": "onhover",
-                                    "warningThreshold": 30,
-                                    "deviceNativePath": "",
+                                    "displayMode": "graphic",
+                                    "deviceNativePath": "__default__",
                                     "showPowerProfiles": false,
                                     "showNoctaliaPerformance": false,
                                     "hideIfNotDetected": true,
@@ -101,7 +98,7 @@ Singleton {
                                     "displayMode": "onhover"
                                   },
                                   "Clock": {
-                                    "usePrimaryColor": false,
+                                    "clockColor": "none",
                                     "useCustomFont": false,
                                     "customFont": "",
                                     "formatHorizontal": "HH:mm ddd, MMM dd",
@@ -187,7 +184,8 @@ Singleton {
                                   "NotificationHistory": {
                                     "showUnreadBadge": true,
                                     "hideWhenZero": false,
-                                    "hideWhenZeroUnread": false
+                                    "hideWhenZeroUnread": false,
+                                    "unreadBadgeColor": "primary"
                                   },
                                   "SessionMenu": {
                                     "colorName": "error"
@@ -200,6 +198,7 @@ Singleton {
                                     "usePrimaryColor": false,
                                     "useMonospaceFont": true,
                                     "showCpuUsage": true,
+                                    "showCpuFreq": false,
                                     "showCpuTemp": true,
                                     "showGpuTemp": false,
                                     "showLoadAverage": false,
@@ -208,6 +207,8 @@ Singleton {
                                     "showSwapUsage": false,
                                     "showNetworkStats": false,
                                     "showDiskUsage": false,
+                                    "showDiskUsageAsPercent": false,
+                                    "showDiskAvailable": false,
                                     "diskPath": "/"
                                   },
                                   "Taskbar": {
@@ -254,7 +255,8 @@ Singleton {
                                     "occupiedColor": "secondary",
                                     "emptyColor": "secondary",
                                     "showBadge": true,
-                                    "reverseScroll": false
+                                    "reverseScroll": false,
+                                    "pillSize": 0.6
                                   },
                                   "Volume": {
                                     "displayMode": "onhover",
@@ -372,13 +374,7 @@ Singleton {
 
   // Helper function to check if widget has user settings
   function widgetHasUserSettings(id) {
-    var meta = widgetMetadata[id];
-    if (meta === undefined)
-      return false;
-    // allowUserSettings=false lets a widget opt out of the settings dialog
-    if (meta.allowUserSettings === false)
-      return false;
-    return true;
+    return widgetMetadata[id] !== undefined;
   }
 
   // ------------------------------

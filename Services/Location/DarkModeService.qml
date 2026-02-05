@@ -52,6 +52,7 @@ Singleton {
     function onResumed() {
       Logger.i("DarkModeService", "System resumed - re-evaluating dark mode");
       root.update();
+      resumeRetryTimer.restart();
     }
   }
 
@@ -59,6 +60,16 @@ Singleton {
     id: timer
     onTriggered: {
       Settings.data.colorSchemes.darkMode = root.nextDarkModeState;
+      root.update();
+    }
+  }
+
+  Timer {
+    id: resumeRetryTimer
+    interval: 2000
+    repeat: false
+    onTriggered: {
+      Logger.i("DarkModeService", "Resume retry - re-evaluating dark mode again");
       root.update();
     }
   }
@@ -151,18 +162,23 @@ Singleton {
 
   function applyCurrentMode(changes) {
     const now = Date.now();
+    Logger.i("DarkModeService", `Applying mode at ${new Date(now).toLocaleString()} (${now})`);
 
     // changes.findLast(change => change.time < now) // not available in QML...
     let lastChange = null;
     for (var i = 0; i < changes.length; i++) {
+      Logger.d("DarkModeService", `Checking change: time=${changes[i].time} (${new Date(changes[i].time).toLocaleString()}), darkMode=${changes[i].darkMode}`);
       if (changes[i].time < now) {
         lastChange = changes[i];
       }
     }
 
     if (lastChange) {
+      Logger.i("DarkModeService", `Selected change: time=${lastChange.time}, darkMode=${lastChange.darkMode}`);
       Settings.data.colorSchemes.darkMode = lastChange.darkMode;
       Logger.d("DarkModeService", `Reset: darkmode=${lastChange.darkMode}`);
+    } else {
+      Logger.w("DarkModeService", "No suitable change found for current time!");
     }
   }
 

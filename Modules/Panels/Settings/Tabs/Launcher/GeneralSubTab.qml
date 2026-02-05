@@ -108,6 +108,14 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.launcher.settings-enable-windows-search-label")
+    description: I18n.tr("panels.launcher.settings-enable-windows-search-description")
+    checked: Settings.data.appLauncher.enableWindowsSearch
+    onToggled: checked => Settings.data.appLauncher.enableWindowsSearch = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.enableWindowsSearch")
+  }
+
+  NToggle {
     label: I18n.tr("panels.launcher.settings-ignore-mouse-input-label")
     description: I18n.tr("panels.launcher.settings-ignore-mouse-input-description")
     checked: Settings.data.appLauncher.ignoreMouseInput

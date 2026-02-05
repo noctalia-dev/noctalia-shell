@@ -229,7 +229,7 @@ Item {
         toastItem.hideImmediately();
       }
 
-      SimpleToast {
+      Toast {
         id: toastItem
         onHidden: root.onToastHidden()
       }

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.System
 
 Item {
@@ -580,13 +581,12 @@ Item {
                        } else {
                          // Fallback logic when app2unit is not used
                          if (app.runInTerminal) {
-                           // If app.execute() fails for terminal apps, we handle it manually.
                            Logger.d("ApplicationsProvider", "Executing terminal app manually: " + app.name);
                            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
                            const command = terminal.concat(app.command);
-                           Quickshell.execDetached(command);
+                           CompositorService.spawn(command);
                          } else if (app.command && app.command.length > 0) {
-                           Quickshell.execDetached(app.command);
+                           CompositorService.spawn(app.command);
                          } else if (app.execute) {
                            app.execute();
                          } else {

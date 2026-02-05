@@ -15,15 +15,18 @@ Item {
     // Panel content: Text, icons, etc...
     property Component panelContent: null
 
-    // Panel size properties
-    property real preferredWidth: 700
-    property real preferredHeight: 900
-    property real preferredWidthRatio
-    property real preferredHeightRatio
-    property color panelBackgroundColor: Color.mSurface
-    property color panelBorderColor: Color.mOutline
-    property var buttonItem: null
-    property bool forceAttachToBar: false
+  // PanelID for binding panels to widgets of the same type
+  property var panelID: null
+
+  // Panel size properties
+  property real preferredWidth: 700
+  property real preferredHeight: 900
+  property real preferredWidthRatio
+  property real preferredHeightRatio
+  property color panelBackgroundColor: Color.mSurface
+  property color panelBorderColor: Color.mOutline
+  property var buttonItem: null
+  property bool forceAttachToBar: false
 
     // Anchoring properties
     property bool panelAnchorHorizontalCenter: false

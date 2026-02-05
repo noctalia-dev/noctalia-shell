@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Services.Noctalia
@@ -234,14 +233,6 @@ ColumnLayout {
               Layout.fillWidth: true
             }
 
-            // Downloaded indicator
-            NIcon {
-              icon: "circle-check"
-              pointSize: Style.baseWidgetSize * 0.5
-              color: Color.mPrimary
-              visible: modelData.downloaded === true
-            }
-
             // Open plugin page button
             NIconButton {
               icon: "external-link"
@@ -250,22 +241,21 @@ ColumnLayout {
               onClicked: Qt.openUrlExternally("https://noctalia.dev/plugins/" + modelData.id + "/")
             }
 
-            // Install/Uninstall button
+            // Downloaded indicator
+            NIcon {
+              icon: "circle-check"
+              pointSize: Style.baseWidgetSize * 0.5
+              color: Color.mPrimary
+              visible: modelData.downloaded === true
+            }
+
+            // Install button (only shown when not downloaded)
             NIconButton {
-              icon: modelData.downloaded ? "trash" : "download"
+              visible: modelData.downloaded === false
+              icon: "download"
               baseSize: Style.baseWidgetSize * 0.7
-              tooltipText: modelData.downloaded ? I18n.tr("common.uninstall") : I18n.tr("common.install")
-              onClicked: {
-                if (modelData.downloaded) {
-                  // Construct composite key for available plugins
-                  var pluginData = Object.assign({}, modelData);
-                  pluginData.compositeKey = PluginRegistry.generateCompositeKey(modelData.id, modelData.source?.url || "");
-                  uninstallDialog.pluginToUninstall = pluginData;
-                  uninstallDialog.open();
-                } else {
-                  installPlugin(modelData);
-                }
-              }
+              tooltipText: I18n.tr("common.install")
+              onClicked: installPlugin(modelData)
             }
           }
 
@@ -346,64 +336,6 @@ ColumnLayout {
     }
   }
 
-  // Uninstall confirmation dialog
-  Popup {
-    id: uninstallDialog
-    parent: Overlay.overlay
-    modal: true
-    dim: false
-    anchors.centerIn: parent
-    width: 400 * Style.uiScaleRatio
-    padding: Style.marginL
-
-    property var pluginToUninstall: null
-
-    background: Rectangle {
-      color: Color.mSurface
-      radius: Style.radiusS
-      border.color: Color.mPrimary
-      border.width: Style.borderM
-    }
-
-    contentItem: ColumnLayout {
-      width: parent.width
-      spacing: Style.marginL
-
-      NHeader {
-        label: I18n.tr("panels.plugins.uninstall-dialog-title")
-        description: I18n.tr("panels.plugins.uninstall-dialog-description", {
-                               "plugin": uninstallDialog.pluginToUninstall?.name || ""
-                             })
-      }
-
-      RowLayout {
-        spacing: Style.marginM
-        Layout.fillWidth: true
-
-        Item {
-          Layout.fillWidth: true
-        }
-
-        NButton {
-          text: I18n.tr("common.cancel")
-          onClicked: uninstallDialog.close()
-        }
-
-        NButton {
-          text: I18n.tr("common.uninstall")
-          backgroundColor: Color.mPrimary
-          textColor: Color.mOnPrimary
-          onClicked: {
-            if (uninstallDialog.pluginToUninstall) {
-              uninstallPlugin(uninstallDialog.pluginToUninstall.compositeKey);
-              uninstallDialog.close();
-            }
-          }
-        }
-      }
-    }
-  }
-
   // Timer to check for updates after refresh starts
   Timer {
     id: checkUpdatesTimer
@@ -427,27 +359,6 @@ ColumnLayout {
         PluginService.enablePlugin(registeredKey);
       } else {
         ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.install-error", {
-                                                                          "error": error || "Unknown error"
-                                                                        }));
-      }
-    });
-  }
-
-  function uninstallPlugin(pluginId) {
-    var manifest = PluginRegistry.getPluginManifest(pluginId);
-    var pluginName = manifest?.name || pluginId;
-
-    ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstalling", {
-                                                                       "plugin": pluginName
-                                                                     }));
-
-    PluginService.uninstallPlugin(pluginId, function (success, error) {
-      if (success) {
-        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstall-success", {
-                                                                           "plugin": pluginName
-                                                                         }));
-      } else {
-        ToastService.showError(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstall-error", {
                                                                           "error": error || "Unknown error"
                                                                         }));
       }

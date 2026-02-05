@@ -498,4 +498,12 @@ Item {
     // }
     // return null;
   }
+
+  function spawn(command) {
+    try {
+      Quickshell.execDetached(["niri", "msg", "action", "spawn", "--"].concat(command));
+    } catch (e) {
+      Logger.e("NiriService", "Failed to spawn command:", e);
+    }
+  }
 }

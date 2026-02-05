@@ -14,6 +14,7 @@ Popup {
   property string widgetId: ""
   property string sectionId: ""
   property var screen: null
+  property var settingsCache: ({})
 
   signal updateWidgetSettings(string section, int index, var settings)
 
@@ -113,14 +114,24 @@ Popup {
     }
   }
 
+  Timer {
+    id: saveTimer
+    running: false
+    interval: 150
+    onTriggered: {
+      root.updateWidgetSettings(root.sectionId, root.widgetIndex, root.settingsCache);
+    }
+  }
+
   Connections {
     target: settingsLoader.item
+    ignoreUnknownSignals: true
     function onSettingsChanged(newSettings) {
       if (newSettings) {
-        root.updateWidgetSettings(root.sectionId, root.widgetIndex, newSettings);
+        root.settingsCache = newSettings;
+        saveTimer.start();
       }
     }
-    ignoreUnknownSignals: true
   }
 
   function saveAndClose() {

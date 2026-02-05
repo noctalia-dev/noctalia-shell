@@ -41,7 +41,7 @@ ColumnLayout {
                     "count": updateCount
                   })
     icon: "download"
-    visible: updateCount >= 2
+    visible: (updateCount > 0)
     enabled: !isUpdating
     backgroundColor: Color.mPrimary
     textColor: Color.mOnPrimary
@@ -456,6 +456,8 @@ ColumnLayout {
   function uninstallPlugin(pluginId) {
     var manifest = PluginRegistry.getPluginManifest(pluginId);
     var pluginName = manifest?.name || pluginId;
+
+    BarService.widgetsRevision++;
 
     ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.uninstalling", {
                                                                        "plugin": pluginName

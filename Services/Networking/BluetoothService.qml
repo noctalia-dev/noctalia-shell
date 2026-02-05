@@ -52,7 +52,7 @@ Singleton {
   }
 
   // Tunables for CLI pairing/connect flow
-  property int pairWaitSeconds: 20
+  property int pairWaitSeconds: 45
   property int connectAttempts: 5
   property int connectRetryIntervalMs: 2000
 
@@ -527,7 +527,7 @@ Singleton {
 
   function cancelPairing() {
     if (pairingProcess.running) {
-      pairingProcess.kill();
+      pairingProcess.running = false;
     }
     root.pinRequired = false;
   }
@@ -540,12 +540,14 @@ Singleton {
         var chunk = data;
         if (chunk.indexOf("[PIN_REQ]") !== -1) {
           root.pinRequired = true;
-          Logger.i("Bluetooth", "PIN required for pairing");
+          Logger.d("Bluetooth", "PIN required for pairing");
           ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("bluetooth.panel.pin-required"), "lock");
         }
       }
     }
-    stderr: StdioCollector {}
+    stderr: SplitParser {
+      onRead: data => Logger.d("Bluetooth", data)
+    }
     onExited: {
       root.pinRequired = false;
       Logger.i("Bluetooth", "Pairing process exited.");
@@ -572,7 +574,7 @@ Singleton {
 
     // Stop any previous pairing attempt
     if (pairingProcess.running) {
-      pairingProcess.kill();
+      pairingProcess.running = false;
     }
     root.pinRequired = false;
 
@@ -586,7 +588,7 @@ Singleton {
     const totalPauseMs = (pairWait * 1000) + (attempts * intervalSec * 1000) + 2000;
     _pauseDiscoveryFor(totalPauseMs);
 
-    const scriptPath = Quickshell.shellDir + "/Scripts/python/src/network/bluetooth-connect.py";
+    const scriptPath = Quickshell.shellDir + "/Scripts/python/src/network/bluetooth-pair.py";
 
     pairingProcess.command = ["python3", scriptPath, String(addr), String(pairWait), String(attempts), String(intervalSec)];
     pairingProcess.running = true;

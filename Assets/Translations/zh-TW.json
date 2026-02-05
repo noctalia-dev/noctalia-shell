@@ -48,6 +48,11 @@
       "device-default": "預設 (顯示裝置)",
       "device-description": "選取要顯示哪個裝置的電池",
       "device-label": "電池裝置",
+      "display-mode-description": "選擇電池在工具列中的顯示方式。",
+      "display-mode-graphic": "圖形化電池",
+      "display-mode-icon-always": "圖示 - 始終顯示 %",
+      "display-mode-icon-hover": "圖示 - 懸停時顯示",
+      "display-mode-icon-only": "僅圖示",
       "hide-if-idle-description": "當電池狀態為閒置時隱藏小工具",
       "hide-if-idle-label": "閒置時隱藏",
       "hide-if-not-detected-description": "如果系統沒有偵測到電池就隱藏小工具",
@@ -69,14 +74,13 @@
       "horizontal-bar-description": "提示: 可以利用 \\n 換行",
       "horizontal-bar-label": "水平列顯示",
       "preview": "預覽",
+      "select-color-description": "套用主題顏色以示強調。",
       "tooltip-format-description": "在游標移過時提示框所顯示的格式, 如果留空則使用預設值",
       "tooltip-format-label": "提示框格式",
       "use-custom-font-description": "為時鐘強制套用自訂的字型",
       "use-custom-font-label": "使用自訂字型",
       "use-monospaced-font-description": "當啟用時, 時鐘會使用等寬字型顯示",
       "use-monospaced-font-label": "使用等寬字型",
-      "use-primary-color-description": "當啟用時, 會以主題的主色強調",
-      "use-primary-color-label": "使用主要顏色",
       "vertical-bar-description": "使用空格把各個部件拆到下一行",
       "vertical-bar-label": "垂直列顯示"
     },
@@ -94,7 +98,6 @@
       "collapse-condition-description": "若輸出文字符合此值，按鈕將會摺疊。",
       "collapse-condition-label": "摺疊條件",
       "color-selection-description": "將主題用色套用至圖示及文字上",
-      "color-selection-label": "選取顏色",
       "display-command-output-description": "輸入一個想要定時重複執行的指令, 指令的第一行輸出將會作為顯示的文字",
       "display-command-output-label": "顯示指令的輸出",
       "display-command-output-stream-description": "輸入一個要持續執行的指令",
@@ -211,6 +214,10 @@
       "memory-usage-label": "記憶體使用量",
       "network-traffic-description": "顯示網路上傳及下載的速度",
       "network-traffic-label": "網路流量",
+      "storage-as-percentage-description": "以百分比而非絕對值顯示磁碟空間。",
+      "storage-as-percentage-label": "磁碟百分比",
+      "storage-available-description": "顯示可用磁碟空間，而非已用空間。",
+      "storage-available-label": "可用磁碟空間",
       "storage-usage-description": "顯示磁碟空間的使用量",
       "storage-usage-label": "磁碟使用量",
       "swap-usage-description": "顯示交換記憶體使用量",
@@ -250,8 +257,7 @@
       "hide-passive-label": "隱藏被動項目"
     },
     "volume": {
-      "display-mode-description": "選擇你想如何顯示這項數值",
-      "display-mode-label": "顯示模式"
+      "display-mode-description": "選擇你想如何顯示這項數值"
     },
     "workspace": {
       "character-count-description": "限制工作區所設定的名字要顯示幾個字元 (1-10)",
@@ -272,6 +278,8 @@
       "label-mode-label": "標籤樣式",
       "occupied-color-description": "設定已佔用Workspace的背景顏色。",
       "occupied-color-label": "已佔用工作區顏色",
+      "pill-size-description": "調整工作區指示器的大小 (50%-100%)。",
+      "pill-size-label": "膠囊大小",
       "reverse-scrolling-description": "捲動時反轉工作區切換方向。",
       "reverse-scrolling-label": "反轉捲動",
       "show-applications-description": "顯示各個工作區的程式圖示",
@@ -339,13 +347,6 @@
       "version-new-user": "全新安裝"
     }
   },
-  "colors": {
-    "error": "錯誤",
-    "on-surface": "工具列表面",
-    "primary": "主要色",
-    "secondary": "輔助色",
-    "tertiary": "三級色"
-  },
   "common": {
     "actions": "操作",
     "add": "新增",
@@ -385,10 +386,13 @@
     "disconnect": "斷線",
     "disconnected": "已斷線",
     "disconnecting": "正在斷線...",
+    "display-mode": "顯示模式",
     "download": "下載",
     "duration": "持續時間",
+    "dysfunctional": "功能失調",
     "edit": "編輯",
     "enabled": "已啟用",
+    "error": "錯誤",
     "events": "事件",
     "execute": "執行",
     "faithful": "忠實",
@@ -457,6 +461,7 @@
     "secondary": "輔助",
     "security": "安全",
     "select": "選取",
+    "select-color": "選擇顏色",
     "shortcuts": "快捷鍵",
     "shutdown": "關機",
     "signal": "訊號",
@@ -489,6 +494,7 @@
     "week": "週",
     "widgets": "小工具",
     "width": "寬度",
+    "windows": "視窗",
     "yes": "是"
   },
   "control-center": {
@@ -508,8 +514,10 @@
     "on-hover": "游標移過時"
   },
   "hide-modes": {
+    "auto-hide": "自動隱藏",
     "hidden": "空白時隱藏",
     "idle": "閒置時隱藏",
+    "non-exclusive": "非獨佔",
     "transparent": "空白時變透明",
     "visible": "始終可見"
   },
@@ -559,7 +567,9 @@
       "emoji-loading": "載入表情符號...",
       "emoji-loading-description": "請稍候",
       "emoji-no-recent": "還沒有最近使用的表情符號",
-      "emoji-search-description": "搜尋和複製表情符號"
+      "emoji-search-description": "搜尋和複製表情符號",
+      "settings-search-description": "搜尋並前往設定",
+      "windows-search-description": "搜尋並聚焦開啟的視窗"
     }
   },
   "lock-screen": {
@@ -596,6 +606,7 @@
       "density-default": "預設",
       "density-mini": "迷你",
       "density-spacious": "寬敞",
+      "display-mode-always-visible": "永遠可見",
       "type-floating": "懸浮",
       "type-framed": "邊框",
       "type-simple": "簡約"
@@ -717,6 +728,11 @@
       "volumes-volume-overdrive-label": "允許音量過載"
     },
     "bar": {
+      "appearance-auto-hide-delay-description": "滑鼠離開後Bar隱藏所需時間",
+      "appearance-auto-hide-delay-label": "隱藏延遲",
+      "appearance-auto-hide-exclusive-note": "注意: 當自動隱藏處於活動狀態時，專屬區域會自動禁用。",
+      "appearance-auto-show-delay-description": "滑鼠進入邊緣時，欄顯示前的延遲時間。",
+      "appearance-auto-show-delay-label": "顯示延遲",
       "appearance-background-opacity-description": "設定工具列背景的不透明度",
       "appearance-background-opacity-label": "工具列背景不透明度",
       "appearance-capsule-opacity-description": "設定當啟用顯示小容器時小工具的背景不透明度",
@@ -724,6 +740,7 @@
       "appearance-density-description": "調整工具列的內部間距來做出緊湊或寬敞的外觀",
       "appearance-density-label": "工具列密度",
       "appearance-desc": "自訂工具列的外觀及位置",
+      "appearance-display-mode-description": "選擇列何時可見",
       "appearance-floating-description": "將工具列以懸浮的圓弧長條狀顯示",
       "appearance-floating-label": "懸浮工具列",
       "appearance-frame-radius": "內圓角",
@@ -795,6 +812,7 @@
       "download-title": "下載配色",
       "method-description": {
         "content": "具有高保真色彩提取的 Material Design 方案，可與來源內容的實際色彩緊密匹配。",
+        "dysfunctional": "與 Faithful 類似，但選擇第二主導的顏色家族作為主要顏色。",
         "faithful": "嘗試在生成和諧調色盤的同時，盡可能接近來源顏色。",
         "fruit-salad": "Material Design 配色方案，可產生一個俏皮、充滿活力的調色盤，具有多樣且多變的色調。",
         "monochrome": "使用單一色調灰階和最少色彩內容的 Material Design 方案。",
@@ -891,6 +909,16 @@
       "media-player-show-buttons-label": "顯示按鈕",
       "media-player-show-visualizer-description": "顯示視覺效果",
       "media-player-visualizer-type-description": "選擇視覺效果的樣式",
+      "system-stat-layout-bottom": "底部",
+      "system-stat-layout-description": "選擇圖例相對於圖表的顯示方式。",
+      "system-stat-layout-label": "佈局",
+      "system-stat-layout-side": "邊",
+      "system-stat-rounded-corners-description": "小工具背景使用圓角。",
+      "system-stat-rounded-corners-label": "圓角",
+      "system-stat-show-background-description": "顯示系統統計小工具的背景容器。",
+      "system-stat-show-background-label": "顯示背景",
+      "system-stat-stat-type-description": "選擇要顯示的系統統計資訊。",
+      "system-stat-stat-type-label": "統計類型",
       "title": "桌面小工具",
       "weather-enabled-description": "在桌面顯示一個天氣小工具",
       "weather-enabled-label": "啟用天氣小工具",
@@ -1005,7 +1033,7 @@
       "info-parameters-label": "可用參數",
       "noctalia-started-description": "Noctalia 完成載入時要執行的指令。",
       "noctalia-started-label": "Noctalia 已啟動",
-      "noctalia-started-placeholder": "例如 notify-send 'Noctalia 已載入'",
+      "noctalia-started-placeholder": "例如: notify-send 'Noctalia 已載入'",
       "performance-mode-disabled-description": "Noctalia 效能模式停用時要執行的指令",
       "performance-mode-disabled-label": "效能模式停用時",
       "performance-mode-disabled-placeholder": "例如: notify-send \"Performance\" \"Mode disabled\"",
@@ -1041,7 +1069,7 @@
       "clipboard-desc": "在啟動器存取及整理你的剪貼簿歷史",
       "execute-desc": "設定應用程式該如何啟動",
       "execute-title": "執行",
-      "settings-annotation-tool-description": "點擊剪貼簿歷史記錄中的註記按鈕時要執行的命令，圖片將會透過管線傳送至此命令。",
+      "settings-annotation-tool-description": "點擊剪貼簿歷史記錄中的註記按鈕時要執行的命令。圖片將會透過管線傳送至此命令。",
       "settings-annotation-tool-label": "註記工具",
       "settings-annotation-tool-placeholder": "例如: gradia', 'satty -f -'",
       "settings-auto-paste-description": "自動貼上選取的剪貼簿項目, 需要 wtype 套件",
@@ -1056,13 +1084,15 @@
       "settings-clipboard-watch-image-label": "圖像監控命令",
       "settings-clipboard-watch-text-description": "傳遞給 wl-paste 以進行文字變更的完整命令字串。(需要重新啟動)",
       "settings-clipboard-watch-text-label": "文字監看指令",
-      "settings-custom-launch-prefix-description": "在命令前加上自訂啟動器前綴（例如：用「runapp」來整合 systemd）。",
+      "settings-custom-launch-prefix-description": "在命令前加上自訂啟動器前綴（例如: 用「runapp」來整合 systemd）。",
       "settings-custom-launch-prefix-enabled-description": "使用自訂前綴而不是預設的方式來啟動應用程式",
       "settings-custom-launch-prefix-enabled-label": "啟用自訂的程式啟動前綴",
       "settings-custom-launch-prefix-label": "自訂啟動前綴",
       "settings-desc": "自訂啟動器的外觀及行為",
       "settings-enable-settings-search-description": "在啟動器中搜尋時顯示設定結果。",
       "settings-enable-settings-search-label": "啟用設定搜尋",
+      "settings-enable-windows-search-description": "搜尋並聚焦作用中視窗。",
+      "settings-enable-windows-search-label": "啟用視窗搜尋",
       "settings-grid-view-description": "將項目以方格排列而不是列表顯示",
       "settings-icon-mode-description": "使用系統原生的圖示而不是自 Tabler 圖示包帶入",
       "settings-icon-mode-label": "使用原生圖示",
@@ -1121,7 +1151,7 @@
     "lock-screen": {
       "allow-password-with-fprintd-description": "當 fprintd（指紋認證）處於活動狀態時，此選項允許您使用密碼而非指紋登入。",
       "allow-password-with-fprintd-label": "允許使用 fprintd 進行密碼登入",
-      "auto-start-auth-description": "例如，自動啟動指紋驗證，無需按鍵或點擊按鈕。",
+      "auto-start-auth-description": "自動啟動指紋驗證，無需按鍵或點擊按鈕。",
       "auto-start-auth-label": "自動啟動驗證",
       "compact-lockscreen-description": "只顯示登入欄位及電源控制, 隱藏天氣及媒體小工具",
       "compact-lockscreen-label": "精簡鎖定畫面",
@@ -1159,8 +1189,6 @@
       "history-low-urgency-label": "儲存低急迫性到歷史通知",
       "history-normal-urgency-description": "將普通急迫的通知存放到歷史通知",
       "history-normal-urgency-label": "儲存普通急迫到歷史通知",
-      "media-toast-description": "媒體播放狀態變更時顯示氣泡訊息",
-      "media-toast-label": "媒體",
       "monitors-desc": "只在特定的顯示器顯示通知, 如果全部取消勾選則會顯示在所有顯示器",
       "settings-always-on-top-description": "在全螢幕視窗與其他層級上方顯示通知。",
       "settings-background-opacity-description": "調整通知背景的不透明度",
@@ -1198,9 +1226,13 @@
       "sounds-unavailable-label": "通知音效無法使用",
       "sounds-volume-description": "調整通知音效的音量大小",
       "sounds-volume-label": "音效音量",
+      "toast-battery-description": "當電池電量低於此百分比時顯示警告。",
+      "toast-battery-label": "低電量提醒",
       "toast-desc": "設定氣泡訊息的外觀及行為",
       "toast-keyboard-description": "當鍵盤佈局改變時顯示氣泡訊息",
-      "toast-keyboard-label": "鍵盤佈局"
+      "toast-keyboard-label": "鍵盤佈局",
+      "toast-media-description": "媒體播放狀態變更時顯示氣泡訊息",
+      "toast-media-label": "媒體"
     },
     "osd": {
       "always-on-top-description": "將螢幕顯示在全螢幕視窗與其他層疊之上",
@@ -1278,6 +1310,7 @@
       "sources-placeholder": "我的超酷儲存庫",
       "sources-remove-tooltip": "移除外掛模組來源",
       "title": "外掛模組 (Plugins)",
+      "translations-reloaded": "已重新載入翻譯：{name}",
       "uninstall-dialog-description": "你確定想要移除 {plugin}? 這樣會移除所有模組的資料",
       "uninstall-dialog-title": "移除外掛模組",
       "uninstall-error": "移除失敗: {error}",
@@ -1325,6 +1358,7 @@
     "system-monitor": {
       "critical-color-label": "危急顏色",
       "custom-highlight-colors-title-label": "自訂突出色",
+      "disk-available-label": "可用磁碟空間",
       "disk-section-label": "磁碟使用量",
       "enable-dgpu-monitoring-description": "注意: 這個選項會喚醒你的 GPU (NVIDIA/AMD), 在混合顯卡的筆電上可能會嚴重影響電池續航力",
       "enable-dgpu-monitoring-label": "啟用監視獨立 GPU",
@@ -1532,8 +1566,10 @@
       "title": "飛航模式"
     },
     "battery": {
+      "critical": "電量嚴重不足",
+      "critical-desc": "電量剩餘 {percent}% — 請立即連接充電器",
       "low": "電量過低",
-      "low-desc": "電池剩餘 {percent}% 電量, 請接上充電器"
+      "low-desc": "電量剩餘 {percent}% — 請連接充電器"
     },
     "bluetooth": {
       "address-copied": "已複製位址至剪貼簿",

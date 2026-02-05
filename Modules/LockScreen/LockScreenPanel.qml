@@ -109,7 +109,7 @@ Item {
   // Compact status indicators container (compact mode only)
   Rectangle {
     width: {
-      var hasBattery = batteryIndicator.isReady && BatteryService.hasAnyBattery();
+      var hasBattery = batteryIndicator.isReady;
       var hasKeyboard = keyboardLayout.currentLayout !== "Unknown";
 
       if (hasBattery && hasKeyboard) {
@@ -127,7 +127,7 @@ Item {
     topLeftRadius: Style.radiusL
     topRightRadius: Style.radiusL
     color: Color.mSurface
-    visible: Settings.data.general.compactLockScreen && ((batteryIndicator.isReady && BatteryService.hasAnyBattery()) || keyboardLayout.currentLayout !== "Unknown")
+    visible: Settings.data.general.compactLockScreen && ((batteryIndicator.isReady) || keyboardLayout.currentLayout !== "Unknown")
 
     RowLayout {
       anchors.centerIn: parent
@@ -136,10 +136,10 @@ Item {
       // Battery indicator
       RowLayout {
         spacing: Style.marginS
-        visible: batteryIndicator.isReady && BatteryService.hasAnyBattery()
+        visible: batteryIndicator.isReady
 
         NIcon {
-          icon: BatteryService.getIcon(Math.round(batteryIndicator.percent), batteryIndicator.charging, batteryIndicator.pluggedIn, batteryIndicator.isReady)
+          icon: batteryIndicator.icon
           pointSize: Style.fontSizeM
           color: batteryIndicator.charging ? Color.mPrimary : Color.mOnSurfaceVariant
         }
@@ -449,22 +449,22 @@ Item {
         }
 
         Item {
-          Layout.fillWidth: batteryIndicator.isReady && BatteryService.hasAnyBattery()
+          Layout.fillWidth: batteryIndicator.isReady
         }
 
         // Battery and Keyboard Layout (full mode only)
         ColumnLayout {
-          Layout.alignment: (batteryIndicator.isReady && BatteryService.hasAnyBattery()) ? (Qt.AlignRight | Qt.AlignVCenter) : Qt.AlignVCenter
+          Layout.alignment: (batteryIndicator.isReady) ? (Qt.AlignRight | Qt.AlignVCenter) : Qt.AlignVCenter
           spacing: Style.marginM
-          visible: (batteryIndicator.isReady && BatteryService.hasAnyBattery()) || keyboardLayout.currentLayout !== "Unknown"
+          visible: (batteryIndicator.isReady) || keyboardLayout.currentLayout !== "Unknown"
 
           // Battery
           RowLayout {
             spacing: Style.marginXS
-            visible: batteryIndicator.isReady && BatteryService.hasAnyBattery()
+            visible: batteryIndicator.isReady
 
             NIcon {
-              icon: BatteryService.getIcon(Math.round(batteryIndicator.percent), batteryIndicator.charging, batteryIndicator.pluggedIn, batteryIndicator.isReady)
+              icon: batteryIndicator.icon
               pointSize: Style.fontSizeM
               color: batteryIndicator.charging ? Color.mPrimary : Color.mOnSurfaceVariant
             }

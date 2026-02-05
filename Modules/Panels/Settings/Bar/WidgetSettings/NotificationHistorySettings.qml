@@ -18,7 +18,7 @@ ColumnLayout {
   property bool valueShowUnreadBadge: widgetData.showUnreadBadge !== undefined ? widgetData.showUnreadBadge : widgetMetadata.showUnreadBadge
   property bool valueHideWhenZero: widgetData.hideWhenZero !== undefined ? widgetData.hideWhenZero : widgetMetadata.hideWhenZero
   property bool valueHideWhenZeroUnread: widgetData.hideWhenZeroUnread !== undefined ? widgetData.hideWhenZeroUnread : widgetMetadata.hideWhenZeroUnread
-  property string valueUnreadBadgeColor: widgetData.unreadBadgeColor !== undefined ? widgetData.unreadBadgeColor : (widgetMetadata.unreadBadgeColor || "primary")
+  property string valueUnreadBadgeColor: widgetData.unreadBadgeColor !== undefined ? widgetData.unreadBadgeColor : widgetMetadata.unreadBadgeColor
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -44,6 +44,10 @@ ColumnLayout {
     description: I18n.tr("bar.notification-history.unread-badge-color-description")
     model: [
       {
+        "key": "none",
+        "name": I18n.tr("common.none")
+      },
+      {
         "key": "primary",
         "name": I18n.tr("common.primary")
       },
@@ -56,8 +60,8 @@ ColumnLayout {
         "name": I18n.tr("common.tertiary")
       },
       {
-        "key": "onSurface",
-        "name": I18n.tr("common.on-surface")
+        "key": "error",
+        "name": I18n.tr("common.error")
       }
     ]
     currentKey: valueUnreadBadgeColor

@@ -48,6 +48,11 @@
       "device-default": "Domyślne (urządzenie wyświetlające)",
       "device-description": "Wybierz, które urządzenie baterii ma być wyświetlane.",
       "device-label": "Urządzenie baterii",
+      "display-mode-description": "Wybierz, jak bateria jest wyświetlana na pasku.",
+      "display-mode-graphic": "Graficzna Bateria",
+      "display-mode-icon-always": "Ikona - Zawsze pokazuj %",
+      "display-mode-icon-hover": "Ikona - Pokaż po najechaniu",
+      "display-mode-icon-only": "Tylko ikona",
       "hide-if-idle-description": "Ukryj widżet, gdy bateria nie jest ładowana ani rozładowywana.",
       "hide-if-idle-label": "Ukryj, gdy bezczynny",
       "hide-if-not-detected-description": "Ukryj widżet, gdy w systemie nie zostanie wykryta bateria.",
@@ -69,14 +74,13 @@
       "horizontal-bar-description": "Wskazówka: Użyj \\n, aby utworzyć podział linii.",
       "horizontal-bar-label": "Pasek poziomy",
       "preview": "Podgląd",
+      "select-color-description": "Zastosuj kolory motywu dla podkreślenia.",
       "tooltip-format-description": "Ciąg formatujący dla etykietki wyświetlanej po najechaniu na zegar. Pozostaw puste, aby użyć domyślnej etykietki.",
       "tooltip-format-label": "Format etykietki",
       "use-custom-font-description": "Zastąp domyślną czcionkę zegara czcionką niestandardową.",
       "use-custom-font-label": "Użyj niestandardowej czcionki",
       "use-monospaced-font-description": "Gdy włączone, zegar będzie używał czcionki o stałej szerokości.",
       "use-monospaced-font-label": "Użyj czcionki monospaced",
-      "use-primary-color-description": "Gdy włączone, stosuje kolor podstawowy dla podkreślenia.",
-      "use-primary-color-label": "Użyj koloru podstawowego",
       "vertical-bar-description": "Użyj spacji, aby oddzielić każdą część w nowej linii.",
       "vertical-bar-label": "Pasek pionowy"
     },
@@ -94,7 +98,6 @@
       "collapse-condition-description": "Jeśli tekst wyjściowy pasuje do tej wartości, przycisk zostanie zwinięty.",
       "collapse-condition-label": "Warunek zwinięcia",
       "color-selection-description": "Zastosuj kolory motywu do ikony i tekstu.",
-      "color-selection-label": "Wybierz kolor",
       "display-command-output-description": "Wpisz polecenie do uruchamiania w regularnych odstępach czasu. Pierwsza linia wyniku zostanie wyświetlona jako tekst.",
       "display-command-output-label": "Wyświetl wynik polecenia",
       "display-command-output-stream-description": "Wpisz polecenie do uruchamiania w trybie ciągłym.",
@@ -211,6 +214,10 @@
       "memory-usage-label": "Użycie pamięci",
       "network-traffic-description": "Wyświetl prędkość wysyłania i pobierania danych w sieci.",
       "network-traffic-label": "Ruch sieciowy",
+      "storage-as-percentage-description": "Wyświetlaj miejsce na dysku jako procent zamiast wartości bezwzględnych.",
+      "storage-as-percentage-label": "Dysk jako procent",
+      "storage-available-description": "Pokazuje, ile miejsca na dysku jest dostępne, zamiast ile jest używane.",
+      "storage-available-label": "Dostępne miejsce na dysku",
       "storage-usage-description": "Pokaż informacje o użyciu miejsca na dysku.",
       "storage-usage-label": "Użycie dysku",
       "swap-usage-description": "Pokaż użycie pamięci wymiany.",
@@ -250,8 +257,7 @@
       "hide-passive-label": "Ukryj pasywne elementy"
     },
     "volume": {
-      "display-mode-description": "Wybierz sposób wyświetlania tej wartości.",
-      "display-mode-label": "Tryb wyświetlania"
+      "display-mode-description": "Wybierz sposób wyświetlania tej wartości."
     },
     "workspace": {
       "character-count-description": "Liczba znaków do wyświetlenia z nazw obszarów roboczych (1-10).",
@@ -272,6 +278,8 @@
       "label-mode-label": "Tryb etykiet",
       "occupied-color-description": "Ustaw kolor tła dla zajętych Workspace'ów.",
       "occupied-color-label": "Kolor zajętego obszaru roboczego",
+      "pill-size-description": "Dostosuj rozmiar pigułek obszaru roboczego (50%-100%).",
+      "pill-size-label": "Rozmiar pigułki",
       "reverse-scrolling-description": "Odwróć kierunek przełączania obszarów roboczych podczas przewijania.",
       "reverse-scrolling-label": "Odwróć przewijanie",
       "show-applications-description": "Wyświetl ikony aplikacji wewnątrz każdego obszaru roboczego.",
@@ -339,13 +347,6 @@
       "version-new-user": "Nowa instalacja"
     }
   },
-  "colors": {
-    "error": "Błąd",
-    "on-surface": "Na powierzchni",
-    "primary": "Podstawowy",
-    "secondary": "Wtórny",
-    "tertiary": "Trzeciorzędowy"
-  },
   "common": {
     "actions": "Akcje",
     "add": "Dodaj",
@@ -385,10 +386,13 @@
     "disconnect": "Rozłącz",
     "disconnected": "Rozłączone",
     "disconnecting": "Rozłączanie...",
+    "display-mode": "Tryb Wyświetlania",
     "download": "Pobierz",
     "duration": "Czas trwania",
+    "dysfunctional": "Dysfunkcyjny",
     "edit": "Edytuj",
     "enabled": "Włączone",
+    "error": "Błąd",
     "events": "Wydarzenia",
     "execute": "Wykonaj",
     "faithful": "Wierny",
@@ -457,6 +461,7 @@
     "secondary": "Dodatkowy",
     "security": "Bezpieczeństwo",
     "select": "Wybierz",
+    "select-color": "Wybierz kolor",
     "shortcuts": "Skróty",
     "shutdown": "Wyłącz",
     "signal": "Sygnał",
@@ -489,6 +494,7 @@
     "week": "Tydzień",
     "widgets": "Widżety",
     "width": "Szerokość",
+    "windows": "Okna",
     "yes": "Tak"
   },
   "control-center": {
@@ -508,8 +514,10 @@
     "on-hover": "Po najechaniu kursorem"
   },
   "hide-modes": {
+    "auto-hide": "Automatyczne ukrywanie",
     "hidden": "Ukryj, gdy puste",
     "idle": "Ukryj, gdy bezczynny",
+    "non-exclusive": "Niewyłączny",
     "transparent": "Przezroczysty, gdy pusty",
     "visible": "Zawsze widoczny"
   },
@@ -559,7 +567,9 @@
       "emoji-loading": "Ładowanie emoji...",
       "emoji-loading-description": "Proszę czekać",
       "emoji-no-recent": "Brak ostatnich emoji",
-      "emoji-search-description": "Szukaj i kopiuj emoji"
+      "emoji-search-description": "Szukaj i kopiuj emoji",
+      "settings-search-description": "Szukaj i przejdź do ustawień",
+      "windows-search-description": "Wyszukaj i aktywuj otwarte okna"
     }
   },
   "lock-screen": {
@@ -596,6 +606,7 @@
       "density-default": "Domyślny",
       "density-mini": "Mini",
       "density-spacious": "Przestronny",
+      "display-mode-always-visible": "Zawsze widoczne",
       "type-floating": "Pływający",
       "type-framed": "Obramowany",
       "type-simple": "Prosty"
@@ -655,7 +666,7 @@
       "system-kernel": "Jądro:",
       "system-loading": "Ładowanie informacji o systemie...",
       "system-memory": "Pamięć:",
-      "system-monitor": "Monitor: Monitor",
+      "system-monitor": "Monitor:",
       "system-not-installed": "fastfetch nie jest zainstalowany",
       "system-os": "System operacyjny:",
       "system-packages": "Paczki:",
@@ -711,12 +722,17 @@
       "volumes-output-volume-description": "Poziom głośności całego systemu.",
       "volumes-step-size-description": "Dostosuj skok zmiany głośności (kółko myszy, skróty klawiszowe).",
       "volumes-step-size-label": "Skok głośności",
-      "volumes-volume-feedback-description": "Odtwarzaj dźwięk zwrotny podczas regulacji głośności",
+      "volumes-volume-feedback-description": "Odtwarzaj dźwięk zwrotny podczas regulacji głośności.",
       "volumes-volume-feedback-label": "Odtwórz dźwięk sprzężenia zwrotnego głośności",
       "volumes-volume-overdrive-description": "Pozwól na zwiększenie głośności powyżej 100%. Może nie być obsługiwane przez każdy sprzęt.",
       "volumes-volume-overdrive-label": "Zezwalaj na wzmocnienie głośności (overdrive)"
     },
     "bar": {
+      "appearance-auto-hide-delay-description": "Czas, po którym Bar zniknie po opuszczeniu go przez mysz.",
+      "appearance-auto-hide-delay-label": "Opóźnienie ukrywania",
+      "appearance-auto-hide-exclusive-note": "Uwaga: Strefa wyłączna jest automatycznie wyłączana, gdy autoukrywanie jest aktywne.",
+      "appearance-auto-show-delay-description": "Czas, zanim pasek pojawi się, gdy mysz wejdzie na krawędź.",
+      "appearance-auto-show-delay-label": "Opóźnienie Wyświetlania",
       "appearance-background-opacity-description": "Ustaw przezroczystość tła konkretnie dla paska.",
       "appearance-background-opacity-label": "Krycie tła paska",
       "appearance-capsule-opacity-description": "Ustaw poziom przezroczystości tła widżetów, gdy kapsuła jest widoczna.",
@@ -724,6 +740,7 @@
       "appearance-density-description": "Dostosuj odstępy paska dla kompaktowego lub przestronnego wyglądu.",
       "appearance-density-label": "Zagęszczenie paska",
       "appearance-desc": "Dostosuj wygląd i pozycję paska.",
+      "appearance-display-mode-description": "Wybierz, kiedy pasek jest widoczny.",
       "appearance-floating-description": "Wyświetl pasek jako pływającą 'pigułkę'.",
       "appearance-floating-label": "Pływający pasek",
       "appearance-frame-radius": "Promień wewnętrzny",
@@ -744,7 +761,7 @@
       "appearance-show-capsule-label": "Pokaż kapsułę",
       "appearance-show-outline-description": "Wyświetla widoczne obramowanie wokół każdego widżetu.",
       "appearance-show-outline-label": "Pokaż obramowanie widżetów",
-      "appearance-type-description": "Wybierz styl paska: Prosty, Pływający lub Obramowany",
+      "appearance-type-description": "Wybierz styl paska: Prosty, Pływający lub Obramowany.",
       "appearance-type-label": "Typ paska",
       "appearance-use-separate-opacity-description": "Umożliwia użycie oddzielnej wartości krycia dla tła paska.",
       "appearance-use-separate-opacity-label": "Użyj osobnej przezroczystości słupków",
@@ -795,6 +812,7 @@
       "download-title": "Pobierz schematy kolorów",
       "method-description": {
         "content": "Schemat Material Design z ekstrakcją kolorów o wysokiej wierności, która ściśle odpowiada rzeczywistym kolorom treści źródłowej.",
+        "dysfunctional": "Jak Faithful, ale wybiera drugą najbardziej dominującą rodzinę kolorów jako główną.",
         "faithful": "Próbuje pozostać blisko koloru źródłowego, jednocześnie generując harmonijną paletę.",
         "fruit-salad": "Schemat Material Design, który tworzy radosną, żywą paletę z różnorodnymi odcieniami.",
         "monochrome": "Schemat Material Design wykorzystujący jednobarwną skalę szarości z minimalną zawartością chromatyczną.",
@@ -891,6 +909,16 @@
       "media-player-show-buttons-label": "Pokaż przyciski",
       "media-player-show-visualizer-description": "Pokaż nakładkę wizualizatora audio.",
       "media-player-visualizer-type-description": "Wybierz typ wizualizacji dla tła odtwarzacza pulpitu.",
+      "system-stat-layout-bottom": "Dół",
+      "system-stat-layout-description": "Wybierz, jak legenda jest wyświetlana względem wykresu.",
+      "system-stat-layout-label": "Układ",
+      "system-stat-layout-side": "Strona",
+      "system-stat-rounded-corners-description": "Użyj zaokrąglonych rogów dla tła widżetu.",
+      "system-stat-rounded-corners-label": "Zaokrąglone Narożniki",
+      "system-stat-show-background-description": "Pokaż kontener tła dla widżetu statystyk systemowych.",
+      "system-stat-show-background-label": "Pokaż tło",
+      "system-stat-stat-type-description": "Wybierz, którą statystykę systemową wyświetlić.",
+      "system-stat-stat-type-label": "Typ Statystyki",
       "title": "Widżety pulpitu",
       "weather-enabled-description": "Pokaż widżet pogody na pulpicie.",
       "weather-enabled-label": "Włącz widżet pogody",
@@ -1008,10 +1036,10 @@
       "noctalia-started-placeholder": "np. notify-send 'Noctalia załadowany'",
       "performance-mode-disabled-description": "Komenda do wykonania, gdy tryb wydajności Noctalia zostanie wyłączony.",
       "performance-mode-disabled-label": "Tryb wydajności wyłączony",
-      "performance-mode-disabled-placeholder": "notify-send \"Wydajność\" \"Tryb wyłączony\"",
+      "performance-mode-disabled-placeholder": "np. notify-send \"Wydajność\" \"Tryb wyłączony\"",
       "performance-mode-enabled-description": "Komenda do wykonania, gdy tryb wydajności Noctalia jest włączony.",
       "performance-mode-enabled-label": "Tryb wydajności włączony",
-      "performance-mode-enabled-placeholder": "notify-send \"Wydajność\" \"Tryb włączony\"",
+      "performance-mode-enabled-placeholder": "np. notify-send \"Wydajność\" \"Tryb włączony\"",
       "screen-lock-description": "Polecenie do wykonania, gdy ekran zostanie zablokowany.",
       "screen-lock-label": "Ekran zablokowany",
       "screen-lock-placeholder": "np. notify-send \"Ekran\" \"Zablokowany\"",
@@ -1063,6 +1091,8 @@
       "settings-desc": "Dostosuj zachowanie i wygląd launchera.",
       "settings-enable-settings-search-description": "Wyświetlaj wyniki ustawień podczas wyszukiwania w Launcherze.",
       "settings-enable-settings-search-label": "Włącz wyszukiwanie w ustawieniach",
+      "settings-enable-windows-search-description": "Wyszukaj i skup aktywne okna.",
+      "settings-enable-windows-search-label": "Włącz wyszukiwanie okien",
       "settings-grid-view-description": "Wyświetlaj elementy w układzie siatki zamiast listy.",
       "settings-icon-mode-description": "Używaj natywnych ikon systemowych zamiast ikon Tabler.",
       "settings-icon-mode-label": "Używaj natywnych ikon",
@@ -1121,7 +1151,7 @@
     "lock-screen": {
       "allow-password-with-fprintd-description": "Gdy fprintd (uwierzytelnianie odciskiem palca) jest aktywne, ta opcja pozwala nadal logować się za pomocą hasła zamiast odcisku palca.",
       "allow-password-with-fprintd-label": "Zezwól na logowanie hasłem za pomocą fprintd",
-      "auto-start-auth-description": "np. automatycznie uruchamia uwierzytelnianie odciskiem palca bez konieczności naciskania klawisza lub klikania przycisku.",
+      "auto-start-auth-description": "Automatycznie uruchamia uwierzytelnianie odciskiem palca bez konieczności naciskania klawisza lub klikania przycisku.",
       "auto-start-auth-label": "Automatyczne uruchamianie uwierzytelniania",
       "compact-lockscreen-description": "Pokaż tylko logowanie i kontrolki systemowe, ukrywając widżety pogody i mediów.",
       "compact-lockscreen-label": "Kompaktowy ekran blokady",
@@ -1159,8 +1189,6 @@
       "history-low-urgency-label": "Odeślij niską pilność do historii",
       "history-normal-urgency-description": "Zapisuj powiadomienia o normalnym priorytecie w historii.",
       "history-normal-urgency-label": "Zapisz normalny priorytet do historii",
-      "media-toast-description": "Wyświetl toast, gdy zmieni się stan odtwarzania multimediów.",
-      "media-toast-label": "Media",
       "monitors-desc": "Pokazuj powiadomienia na konkretnych monitorach. Domyślnie na wszystkich.",
       "settings-always-on-top-description": "Wyświetlaj powiadomienia nad oknami pełnoekranowymi i innymi warstwami.",
       "settings-background-opacity-description": "Dostosuj przezroczystość tła powiadomień.",
@@ -1198,9 +1226,13 @@
       "sounds-unavailable-label": "Dźwięki powiadomień niedostępne",
       "sounds-volume-description": "Dostosuj poziom głośności dźwięków powiadomień.",
       "sounds-volume-label": "Głośność dźwięku",
+      "toast-battery-description": "Wyświetl ostrzeżenie, gdy poziom baterii spadnie poniżej tego procentu.",
+      "toast-battery-label": "Ostrzeżenie o baterii",
       "toast-desc": "Konfiguruj wygląd i zachowanie dymków powiadomień.",
       "toast-keyboard-description": "Pokaż dymek (toast), gdy zmieni się układ klawiatury.",
-      "toast-keyboard-label": "Układ klawiatury"
+      "toast-keyboard-label": "Układ klawiatury",
+      "toast-media-description": "Wyświetl toast, gdy zmieni się stan odtwarzania multimediów.",
+      "toast-media-label": "Media"
     },
     "osd": {
       "always-on-top-description": "Wyświetlaj OSD nad oknami pełnoekranowymi i innymi warstwami.",
@@ -1244,7 +1276,7 @@
       "collision-official-version-exists": "Oficjalna wersja tej wtyczki jest już zainstalowana",
       "filter-downloaded": "Pobrane",
       "filter-not-downloaded": "Niepobrane",
-      "filter-tags-description": "Filtruj wtyczki według kategorii lub statusu pobierania",
+      "filter-tags-description": "Filtruj wtyczki według kategorii lub statusu pobierania.",
       "filter-tags-label": "Tagi",
       "hot-reload-description": "Automatycznie przeładuj wtyczki przy zmianie ich plików. Przydatne przy tworzeniu wtyczek.",
       "hot-reload-label": "Gorące przeładowanie (tryb deweloperski)",
@@ -1278,6 +1310,7 @@
       "sources-placeholder": "Moje fajne repozytorium",
       "sources-remove-tooltip": "Usuń źródło wtyczek",
       "title": "Wtyczki",
+      "translations-reloaded": "Przeładowano tłumaczenia: {name}",
       "uninstall-dialog-description": "Czy na pewno chcesz odinstalować {plugin}? Spowoduje to usunięcie wszystkich danych wtyczki.",
       "uninstall-dialog-title": "Odinstaluj wtyczkę",
       "uninstall-error": "Błąd odinstalowywania: {error}",
@@ -1325,6 +1358,7 @@
     "system-monitor": {
       "critical-color-label": "Kolor krytyczny",
       "custom-highlight-colors-title-label": "Własne kolory podświetlenia",
+      "disk-available-label": "Dostępne miejsce na dysku",
       "disk-section-label": "Użycie dysku",
       "enable-dgpu-monitoring-description": "Ostrzeżenie: To obudzi twoją dedykowaną kartę graficzną (NVIDIA/AMD), co może znacząco wpłynąć na żywotność baterii w laptopach z hybrydową grafiką.",
       "enable-dgpu-monitoring-label": "Włącz monitorowanie dedykowanej karty graficznej",
@@ -1482,7 +1516,7 @@
     },
     "skip-setup": "Pomiń konfigurację",
     "telemetry-wizard-done": "Rozumiem!",
-    "telemetry-wizard-note": "Masz kontrolę – możesz to włączyć lub wyłączyć w dowolnym momencie w Ustawieniach",
+    "telemetry-wizard-note": "Masz kontrolę — możesz to włączyć lub wyłączyć w dowolnym momencie w ustawieniach",
     "telemetry-wizard-subtitle": "Dodaliśmy anonimowe analizy, aby pomóc w ulepszaniu Noctalia",
     "telemetry-wizard-title": "Aktualizacja prywatności",
     "wallpaper": {
@@ -1523,7 +1557,7 @@
     "disk": "Dysk",
     "download-speed": "Prędkość pobierania",
     "gpu-temp": "Temperatura GPU",
-    "load-average": "Obciąż. śr.",
+    "load-average": "Śr. obciążenie",
     "title": "Monitor systemu",
     "upload-speed": "Prędkość wysyłania"
   },
@@ -1532,8 +1566,10 @@
       "title": "Tryb samolotowy"
     },
     "battery": {
+      "critical": "Krytyczny poziom baterii",
+      "critical-desc": "Bateria naładowana w {percent}% — proszę natychmiast podłączyć ładowarkę",
       "low": "Słaba bateria",
-      "low-desc": "Poziom baterii wynosi {percent}%. Podłącz ładowarkę"
+      "low-desc": "Bateria naładowana w {percent}% — proszę podłączyć ładowarkę"
     },
     "bluetooth": {
       "address-copied": "Adres skopiowany do schowka",

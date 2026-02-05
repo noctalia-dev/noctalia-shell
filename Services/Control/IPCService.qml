@@ -198,6 +198,46 @@ Item {
                                               }
                                             });
     }
+    function windows() {
+      root.screenDetector.withCurrentScreen(screen => {
+                                              var launcherPanel = PanelService.getPanel("launcherPanel", screen);
+                                              if (!launcherPanel)
+                                              return;
+                                              var searchText = launcherPanel.searchText || "";
+                                              var isInWindowsMode = searchText.startsWith(">win");
+                                              if (!launcherPanel.isPanelOpen) {
+                                                // Closed -> open in windows mode
+                                                launcherPanel.open();
+                                                launcherPanel.setSearchText(">win ");
+                                              } else if (isInWindowsMode) {
+                                                // Already in windows mode -> close
+                                                launcherPanel.close();
+                                              } else {
+                                                // In another mode -> switch to windows mode
+                                                launcherPanel.setSearchText(">win ");
+                                              }
+                                            });
+    }
+    function settings() {
+      root.screenDetector.withCurrentScreen(screen => {
+                                              var launcherPanel = PanelService.getPanel("launcherPanel", screen);
+                                              if (!launcherPanel)
+                                              return;
+                                              var searchText = launcherPanel.searchText || "";
+                                              var isInSettingsMode = searchText.startsWith(">settings");
+                                              if (!launcherPanel.isPanelOpen) {
+                                                // Closed -> open in settings mode
+                                                launcherPanel.open();
+                                                launcherPanel.setSearchText(">settings ");
+                                              } else if (isInSettingsMode) {
+                                                // Already in settings mode -> close
+                                                launcherPanel.close();
+                                              } else {
+                                                // In another mode -> switch to settings mode
+                                                launcherPanel.setSearchText(">settings ");
+                                              }
+                                            });
+    }
   }
 
   IpcHandler {
@@ -390,28 +430,6 @@ Item {
   }
 
   IpcHandler {
-    target: "batteryManager"
-
-    function cycle() {
-      BatteryService.cycleModes();
-    }
-
-    function set(mode: string) {
-      switch (mode) {
-      case "full":
-        BatteryService.setChargingMode(BatteryService.ChargingMode.Full);
-        break;
-      case "balanced":
-        BatteryService.setChargingMode(BatteryService.ChargingMode.Balanced);
-        break;
-      case "lifespan":
-        BatteryService.setChargingMode(BatteryService.ChargingMode.Lifespan);
-        break;
-      }
-    }
-  }
-
-  IpcHandler {
     target: "wifi"
     function toggle() {
       NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
@@ -421,15 +439,6 @@ Item {
     }
     function disable() {
       NetworkService.setWifiEnabled(false);
-    }
-
-    // TODO REMOVE IN FEB. 2026
-    function togglePanel() {
-      ToastService.showWarning("This IPC call will be deprecated soon, use 'network togglePanel' instead.");
-      root.screenDetector.withCurrentScreen(screen => {
-                                              var networkPanel = PanelService.getPanel("networkPanel", screen);
-                                              networkPanel?.toggle(null, "WiFi");
-                                            });
     }
   }
 
@@ -506,19 +515,6 @@ Item {
 
     function disableNoctaliaPerformance() {
       PowerProfileService.setNoctaliaPerformance(false);
-    }
-  }
-
-  // TODO REMOVE IN FEB. 2026
-  IpcHandler {
-    target: "osd"
-
-    function showText(text: string) {
-      ToastService.showNotice(text, "This IPC call will be deprecated soon, use 'toast send' instead.");
-    }
-
-    function showTextWithIcon(text: string, icon: string) {
-      ToastService.showNotice(text, "This IPC call will be deprecated soon, use 'toast send' instead.", icon);
     }
   }
 

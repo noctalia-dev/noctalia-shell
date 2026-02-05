@@ -15,15 +15,6 @@ SmartPanel {
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(420 * Style.uiScaleRatio)
 
-  onOpened: {
-    // Refresh DDC brightness from monitors (one-time on panel open)
-    BrightnessService.monitors.forEach(m => {
-                                         if (m.isDdc) {
-                                           m.refreshBrightnessFromSystem();
-                                         }
-                                       });
-  }
-
   panelContent: Item {
     id: panelContent
     property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2

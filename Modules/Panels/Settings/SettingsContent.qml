@@ -57,6 +57,8 @@ Item {
   property real _lastMouseY: 0
   property bool _mouseInitialized: false
 
+  readonly property bool panelVeryTransparent: Settings.data.ui.panelBackgroundOpacity <= 0.75
+
   onSearchResultsChanged: {
     searchSelectedIndex = 0;
     ignoreMouseHover = true;
@@ -554,7 +556,9 @@ Item {
     ProgramCheckerService.checkAllPrograms();
     updateTabsModel();
     selectTabById(requestedTab);
-    if (sidebarExpanded) {
+    // Skip auto-focus on Nvidia GPUs - cursor blink causes UI choppiness
+    const isNvidia = SystemStatService.gpuType === "nvidia";
+    if (sidebarExpanded && !isNvidia) {
       Qt.callLater(() => {
                      if (searchInput.inputItem)
                      searchInput.inputItem.forceActiveFocus();
@@ -652,16 +656,14 @@ Item {
       NBox {
         id: sidebar
 
-        readonly property bool panelVeryTransparent: Settings.data.ui.panelBackgroundOpacity <= 0.75
-
         clip: true
-        Layout.preferredWidth: Math.round(root.sidebarExpanded ? 200 * Style.uiScaleRatio : sidebarToggle.width + (panelVeryTransparent ? Style.marginXL : 0) + (sidebarList.verticalScrollBarActive ? Style.marginM : 0))
+        Layout.preferredWidth: Math.round(root.sidebarExpanded ? 200 * Style.uiScaleRatio : sidebarToggle.width + (root.panelVeryTransparent ? Style.marginXL : 0) + (sidebarList.verticalScrollBarActive ? Style.marginM : 0))
         Layout.fillHeight: true
         Layout.alignment: Qt.AlignTop
 
-        radius: sidebar.panelVeryTransparent ? Style.radiusM : 0
-        color: sidebar.panelVeryTransparent ? Color.mSurfaceVariant : "transparent"
-        border.color: sidebar.panelVeryTransparent ? Style.boxBorderColor : "transparent"
+        radius: root.panelVeryTransparent ? Style.radiusM : 0
+        color: root.panelVeryTransparent ? Color.mSurfaceVariant : "transparent"
+        border.color: root.panelVeryTransparent ? Style.boxBorderColor : "transparent"
 
         Behavior on Layout.preferredWidth {
           NumberAnimation {
@@ -674,7 +676,7 @@ Item {
         ColumnLayout {
           anchors.fill: parent
           spacing: Style.marginS
-          anchors.margins: sidebar.panelVeryTransparent ? Style.marginM : 0
+          anchors.margins: root.panelVeryTransparent ? Style.marginM : 0
 
           // Sidebar toggle button
           Item {
@@ -737,7 +739,7 @@ Item {
             Layout.fillWidth: true
             placeholderText: I18n.tr("common.search")
             inputIconName: "search"
-            visible: root.sidebarExpanded
+            visible: opacity > 0
             opacity: root.sidebarExpanded ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -759,7 +761,7 @@ Item {
             id: searchCollapsedContainer
             Layout.fillWidth: true
             Layout.preferredHeight: Math.round(searchCollapsedRow.implicitHeight + Style.marginS * 2)
-            visible: !root.sidebarExpanded
+            visible: opacity > 0
             opacity: !root.sidebarExpanded ? 1.0 : 0.0
 
             Behavior on opacity {
@@ -832,7 +834,7 @@ Item {
               spacing: Style.marginXS
               visible: root.searchText.trim() !== ""
               verticalPolicy: ScrollBar.AsNeeded
-              gradientColor: Color.mSurface
+              gradientColor: "transparent"
               reserveScrollbarSpace: false
 
               HoverHandler {
@@ -932,7 +934,7 @@ Item {
               spacing: Style.marginXS
               currentIndex: root.currentTabIndex
               verticalPolicy: ScrollBar.AsNeeded
-              gradientColor: Color.mSurface
+              gradientColor: "transparent"
               reserveScrollbarSpace: false
 
               delegate: Rectangle {

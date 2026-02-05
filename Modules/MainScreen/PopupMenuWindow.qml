@@ -85,6 +85,7 @@ PanelWindow {
 
   function open() {
     visible = true;
+    BarService.popupOpen = true;
   }
 
   // Show a context menu (temporarily replaces TrayMenu as content)
@@ -126,6 +127,7 @@ PanelWindow {
 
   function close() {
     visible = false;
+    BarService.popupOpen = false;
     // Call close/hide method on current content
     if (contentItem) {
       if (typeof contentItem.hideMenu === "function") {

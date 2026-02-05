@@ -103,13 +103,13 @@ Item {
     onExited: {
       hovering = false;
       if (tooltipText) {
-        TooltipService.hide();
+        TooltipService.hide(root);
       }
       root.exited();
     }
     onClicked: function (mouse) {
       if (tooltipText) {
-        TooltipService.hide();
+        TooltipService.hide(root);
       }
       if (!root.enabled && !allowClickWhenDisabled) {
         return;

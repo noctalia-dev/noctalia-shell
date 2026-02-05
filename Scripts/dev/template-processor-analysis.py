@@ -12,6 +12,7 @@ Scheme types:
 - M3 schemes (tonal-spot, fruit-salad, rainbow, content): Compared with matugen
 - vibrant: Prioritizes the most saturated colors regardless of area
 - faithful: Prioritizes dominant colors by area coverage
+- dysfunctional: Like faithful but picks the 2nd most dominant color family
 - muted: Preserves hue but caps saturation low (for monochrome wallpapers)
 """
 
@@ -115,20 +116,21 @@ def run_matugen(image_path: Path, scheme: str) -> dict | None:
 
 
 def analyze_vibrant_faithful_muted(image_path: Path) -> None:
-    """Analyze vibrant, faithful, and muted mode outputs."""
+    """Analyze vibrant, faithful, dysfunctional, and muted mode outputs."""
     print("\n" + "=" * 78)
-    print("VIBRANT vs FAITHFUL vs MUTED COMPARISON")
+    print("VIBRANT vs FAITHFUL vs DYSFUNCTIONAL vs MUTED COMPARISON")
     print("=" * 78)
     print()
-    print("Vibrant:  Prioritizes the most saturated colors regardless of area")
-    print("Faithful: Prioritizes dominant colors by area coverage")
-    print("Muted:    Preserves hue but caps saturation low (monochrome wallpapers)")
+    print("Vibrant:      Prioritizes the most saturated colors regardless of area")
+    print("Faithful:     Prioritizes dominant colors by area coverage")
+    print("Dysfunctional: Like faithful but picks 2nd most dominant color family")
+    print("Muted:        Preserves hue but caps saturation low (monochrome wallpapers)")
     print()
     print("-" * 78)
-    print(f"{'Mode':<12} {'Color':<12} {'Hex':<10} {'Hue':>8} {'Chroma':>8}  {'Name':<10}")
+    print(f"{'Mode':<14} {'Color':<12} {'Hex':<10} {'Hue':>8} {'Chroma':>8}  {'Name':<10}")
     print("-" * 78)
 
-    for scheme in ["vibrant", "faithful", "muted"]:
+    for scheme in ["vibrant", "faithful", "dysfunctional", "muted"]:
         colors = run_our_processor(image_path, scheme)
         if not colors:
             print(f"{scheme}: Failed to get colors")
@@ -142,39 +144,50 @@ def analyze_vibrant_faithful_muted(image_path: Path) -> None:
             try:
                 hct = get_hct(hex_color)
                 name = hue_to_name(hct.hue)
-                print(f"{scheme:<12} {key:<12} {hex_color:<10} {hct.hue:>7.1f}° {hct.chroma:>7.1f}  {name:<10}")
+                print(f"{scheme:<14} {key:<12} {hex_color:<10} {hct.hue:>7.1f}° {hct.chroma:>7.1f}  {name:<10}")
             except Exception as e:
-                print(f"{scheme:<12} {key:<12} Error: {e}")
+                print(f"{scheme:<14} {key:<12} Error: {e}")
 
         print("-" * 78)
 
     # Summary comparison
     vibrant = run_our_processor(image_path, "vibrant")
     faithful = run_our_processor(image_path, "faithful")
+    dysfunctional = run_our_processor(image_path, "dysfunctional")
     muted = run_our_processor(image_path, "muted")
 
-    if vibrant and faithful and muted:
+    if vibrant and faithful and dysfunctional and muted:
         print()
         print("Summary:")
         v_hct = get_hct(vibrant.get("primary", "#000000"))
         f_hct = get_hct(faithful.get("primary", "#000000"))
+        d_hct = get_hct(dysfunctional.get("primary", "#000000"))
         m_hct = get_hct(muted.get("primary", "#000000"))
 
         v_name = hue_to_name(v_hct.hue)
         f_name = hue_to_name(f_hct.hue)
+        d_name = hue_to_name(d_hct.hue)
         m_name = hue_to_name(m_hct.hue)
 
         vf_diff = hue_diff(v_hct.hue, f_hct.hue)
+        fd_diff = hue_diff(f_hct.hue, d_hct.hue)
 
-        print(f"  Vibrant primary:  {vibrant.get('primary')} ({v_name}, hue {v_hct.hue:.0f}°, chroma {v_hct.chroma:.1f})")
-        print(f"  Faithful primary: {faithful.get('primary')} ({f_name}, hue {f_hct.hue:.0f}°, chroma {f_hct.chroma:.1f})")
-        print(f"  Muted primary:    {muted.get('primary')} ({m_name}, hue {m_hct.hue:.0f}°, chroma {m_hct.chroma:.1f})")
-        print(f"  V-F hue diff:     {vf_diff:.1f}°")
+        print(f"  Vibrant primary:      {vibrant.get('primary')} ({v_name}, hue {v_hct.hue:.0f}°, chroma {v_hct.chroma:.1f})")
+        print(f"  Faithful primary:     {faithful.get('primary')} ({f_name}, hue {f_hct.hue:.0f}°, chroma {f_hct.chroma:.1f})")
+        print(f"  Dysfunctional primary:{dysfunctional.get('primary')} ({d_name}, hue {d_hct.hue:.0f}°, chroma {d_hct.chroma:.1f})")
+        print(f"  Muted primary:        {muted.get('primary')} ({m_name}, hue {m_hct.hue:.0f}°, chroma {m_hct.chroma:.1f})")
+        print(f"  V-F hue diff:         {vf_diff:.1f}°")
+        print(f"  F-D hue diff:         {fd_diff:.1f}°")
 
         if vf_diff > 60:
             print(f"  → Vibrant/Faithful picked DIFFERENT color families ({v_name} vs {f_name})")
         else:
             print(f"  → Vibrant/Faithful picked SIMILAR colors")
+
+        if fd_diff > 30:
+            print(f"  → Faithful/Dysfunctional picked DIFFERENT color families ({f_name} vs {d_name})")
+        else:
+            print(f"  → Faithful/Dysfunctional picked SIMILAR colors (may only have 1 dominant family)")
 
         # Note the muted chroma reduction
         if m_hct.chroma < 20:

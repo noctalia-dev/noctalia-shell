@@ -243,5 +243,38 @@ ColumnLayout {
       suffix: "%"
       onValueChanged: Settings.data.systemMonitor.diskCriticalThreshold = value
     }
+
+    // Disk Available
+    NText {
+      text: I18n.tr("panels.system-monitor.disk-available-label")
+      pointSize: Style.fontSizeM
+    }
+
+    NSpinBox {
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: 100
+      stepSize: 5
+      value: Settings.data.systemMonitor.diskAvailWarningThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.diskAvailWarningThreshold")
+      suffix: "%"
+      onValueChanged: {
+        Settings.data.systemMonitor.diskAvailWarningThreshold = value;
+        if (Settings.data.systemMonitor.diskAvailCriticalThreshold > value) {
+          Settings.data.systemMonitor.diskAvailCriticalThreshold = value;
+        }
+      }
+    }
+
+    NSpinBox {
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: 20
+      stepSize: 5
+      value: Settings.data.systemMonitor.diskAvailCriticalThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.diskAvailCriticalThreshold")
+      suffix: "%"
+      onValueChanged: Settings.data.systemMonitor.diskAvailCriticalThreshold = value
+    }
   }
 }

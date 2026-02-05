@@ -64,7 +64,8 @@ Singleton {
   }
 
   // Show a context menu with proper handling for all compositors
-  function showContextMenu(contextMenu, anchorItem, screen) {
+  // Optional targetItem: if provided, menu will be horizontally centered on this item instead of anchorItem
+  function showContextMenu(contextMenu, anchorItem, screen, targetItem) {
     if (!contextMenu || !anchorItem)
       return;
 
@@ -74,7 +75,7 @@ Singleton {
     var popupMenuWindow = getPopupMenuWindow(screen);
     if (popupMenuWindow) {
       popupMenuWindow.showContextMenu(contextMenu);
-      contextMenu.openAtItem(anchorItem, screen);
+      contextMenu.openAtItem(anchorItem, screen, targetItem);
     }
   }
 
@@ -118,8 +119,28 @@ Singleton {
     }
   }
 
+  // Find a fallback screen, prioritizing 0x0 position (primary)
+  function findFallbackScreen() {
+    let primaryCandidate = null;
+    let firstScreen = null;
+
+    for (let i = 0; i < Quickshell.screens.length; i++) {
+      const s = Quickshell.screens[i];
+      if (s.x === 0 && s.y === 0) {
+        primaryCandidate = s;
+      }
+      if (!firstScreen) {
+        firstScreen = s;
+      }
+    }
+
+    return primaryCandidate || firstScreen || null;
+  }
+
   // Returns a panel (loads it on-demand if not yet loaded)
-  function getPanel(name, screen) {
+  // By default, if panel not found on screen, tries other screens (favoring 0x0)
+  // Pass fallback=false to disable this behavior
+  function getPanel(name, screen, fallback = true) {
     if (!screen) {
       Logger.d("PanelService", "missing screen for getPanel:", name);
       // If no screen specified, return the first matching panel
@@ -136,6 +157,27 @@ Singleton {
     // Check if panel is already loaded
     if (registeredPanels[panelKey]) {
       return registeredPanels[panelKey];
+    }
+
+    // If fallback enabled, try to find panel on another screen
+    if (fallback) {
+      // First try the primary screen (0x0)
+      var fallbackScreen = findFallbackScreen();
+      if (fallbackScreen && fallbackScreen.name !== screen.name) {
+        var fallbackKey = `${name}-${fallbackScreen.name}`;
+        if (registeredPanels[fallbackKey]) {
+          Logger.d("PanelService", "Panel fallback from", screen.name, "to", fallbackScreen.name);
+          return registeredPanels[fallbackKey];
+        }
+      }
+
+      // Try any other screen
+      for (var key in registeredPanels) {
+        if (key.startsWith(name + "-")) {
+          Logger.d("PanelService", "Panel fallback to first available:", key);
+          return registeredPanels[key];
+        }
+      }
     }
 
     Logger.w("PanelService", "Panel not found:", panelKey);

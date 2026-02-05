@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pam
-import Quickshell.Services.UPower
 import Quickshell.Wayland
 import qs.Commons
 import qs.Services.Compositor
@@ -78,11 +77,12 @@ Loader {
           Item {
             id: batteryIndicator
 
-            property bool isReady: BatteryService.ready && BatteryService.batteryReady
+            property bool isReady: BatteryService.batteryReady
             property real percent: BatteryService.batteryPercentage
             property bool charging: BatteryService.batteryCharging
             property bool pluggedIn: BatteryService.batteryPluggedIn
-            property bool batteryVisible: isReady && percent >= 0 && BatteryService.hasAnyBattery()
+            property bool batteryVisible: isReady
+            property string icon: BatteryService.batteryIcon
           }
 
           Item {

@@ -27,9 +27,9 @@ ColumnLayout {
 
   NComboBox {
     visible: valueShowIcon // Hide display mode setting when icon is disabled
-    label: I18n.tr("bar.volume.display-mode-label")
+    label: I18n.tr("common.display-mode")
     description: I18n.tr("bar.volume.display-mode-description")
-    minimumWidth: 134
+    minimumWidth: 200
     model: [
       {
         "key": "onhover",

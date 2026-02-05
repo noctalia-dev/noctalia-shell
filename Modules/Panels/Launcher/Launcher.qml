@@ -179,9 +179,8 @@ SmartPanel {
   readonly property int gridContentWidth: listPanelWidth - (2 * Style.marginXS)
   readonly property int gridCellSize: Math.floor((gridContentWidth - ((targetGridColumns - 1) * Style.marginS)) / targetGridColumns)
 
-  // Actual columns that fit in the GridView
-  // This gets updated dynamically by the GridView when its actual width is known
-  property int gridColumns: 5
+  // Actual columns in the GridView - tracks targetGridColumns
+  readonly property int gridColumns: targetGridColumns
 
   // Listen for plugin provider registry changes
   Connections {
@@ -763,6 +762,14 @@ SmartPanel {
     }
   }
 
+  WindowsProvider {
+    id: windowsProvider
+    Component.onCompleted: {
+      registerProvider(this);
+      Logger.d("Launcher", "Registered: WindowsProvider");
+    }
+  }
+
   // ---------------------------------------------------
   panelContent: Rectangle {
     id: ui
@@ -775,7 +782,7 @@ SmartPanel {
       visible: root.previewActive
       width: root.previewPanelWidth
       height: Math.round(400 * Style.uiScaleRatio)
-      x: ui.width + Style.marginM
+      x: root.panelAnchorRight ? -(root.previewPanelWidth + Style.marginM) : ui.width + Style.marginM
       y: {
         if (!resultsViewLoader.item)
           return Style.marginL;
@@ -1196,6 +1203,24 @@ SmartPanel {
                         color: Color.mOnSurfaceVariant
                       }
                     }
+
+                    // Badge icon overlay (generic indicator for any provider)
+                    Rectangle {
+                      visible: !!modelData.badgeIcon
+                      anchors.bottom: parent.bottom
+                      anchors.right: parent.right
+                      anchors.margins: 2
+                      width: height
+                      height: Style.fontSizeM + Style.marginXS
+                      color: Color.mSurfaceVariant
+                      radius: Style.radiusXXS
+                      NIcon {
+                        anchors.centerIn: parent
+                        icon: modelData.badgeIcon || ""
+                        pointSize: Style.fontSizeS
+                        color: Color.mOnSurfaceVariant
+                      }
+                    }
                   }
 
                   // Text content
@@ -1351,8 +1376,9 @@ SmartPanel {
             horizontalPolicy: ScrollBar.AlwaysOff
             verticalPolicy: ScrollBar.AlwaysOff
             reserveScrollbarSpace: false
-            gradientColor: "transparent" //Color.mSurface
+            gradientColor: Color.mSurface
             wheelScrollMultiplier: 4.0
+            trackedSelectionIndex: root.selectedIndex
 
             width: parent.width
             height: parent.height
@@ -1374,20 +1400,6 @@ SmartPanel {
             keyNavigationEnabled: false
             focus: false
             interactive: !Settings.data.appLauncher.ignoreMouseInput
-
-            Component.onCompleted: {
-              // Initialize gridColumns when grid view is created
-              updateGridColumns();
-            }
-
-            function updateGridColumns() {
-              // Since cellWidth = width / targetGridColumns, the number of columns is always targetGridColumns
-              root.gridColumns = root.targetGridColumns;
-            }
-
-            onWidthChanged: {
-              updateGridColumns();
-            }
 
             // Completely disable GridView key handling
             Keys.enabled: false
@@ -1572,6 +1584,24 @@ SmartPanel {
                       }
                       font.weight: Style.fontWeightBold
                       color: modelData.displayString ? Color.mOnSurface : Color.mOnPrimary
+                    }
+
+                    // Badge icon overlay (generic indicator for any provider)
+                    Rectangle {
+                      visible: !!modelData.badgeIcon
+                      anchors.bottom: parent.bottom
+                      anchors.right: parent.right
+                      anchors.margins: 2
+                      width: height
+                      height: Style.fontSizeM + Style.marginXS
+                      color: Color.mSurfaceVariant
+                      radius: Style.radiusXXS
+                      NIcon {
+                        anchors.centerIn: parent
+                        icon: modelData.badgeIcon || ""
+                        pointSize: Style.fontSizeS
+                        color: Color.mOnSurfaceVariant
+                      }
                     }
                   }
 

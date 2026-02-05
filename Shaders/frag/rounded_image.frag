@@ -47,39 +47,27 @@ void main() {
     // Image.TileHorizontally = 5
     // Image.Pad = 6
 
-    // Default: rounded corners on full item
+    // Rounded corners always apply to full item bounds
     vec2 roundedSize = itemSize;
     vec2 roundedCenter = itemSize * 0.5;
+
+    // Track if pixel is in letterbox area (for PreserveAspectFit)
+    bool inLetterbox = false;
 
     if (fillMode == 1) { // PreserveAspectFit
         float itemAspect = itemSize.x / itemSize.y;
         float sourceAspect = sourceSize.x / sourceSize.y;
 
-        // Calculate actual displayed image size and position
-        vec2 displayedSize;
-        vec2 offset;
-
         if (sourceAspect > itemAspect) {
             // Image is wider than item, letterbox top/bottom
-            displayedSize = vec2(itemSize.x, itemSize.x / sourceAspect);
-            offset = vec2(0.0, (itemSize.y - displayedSize.y) * 0.5);
             imageUV.y = (qt_TexCoord0.y - 0.5) * (sourceAspect / itemAspect) + 0.5;
         } else {
             // Image is taller than item, letterbox left/right
-            displayedSize = vec2(itemSize.y * sourceAspect, itemSize.y);
-            offset = vec2((itemSize.x - displayedSize.x) * 0.5, 0.0);
             imageUV.x = (qt_TexCoord0.x - 0.5) * (itemAspect / sourceAspect) + 0.5;
         }
 
-        // Apply rounded corners to displayed image bounds
-        roundedSize = displayedSize;
-        roundedCenter = offset + displayedSize * 0.5;
-
-        // Make letterbox area transparent
-        if (imageUV.x < 0.0 || imageUV.x > 1.0 || imageUV.y < 0.0 || imageUV.y > 1.0) {
-            fragColor = vec4(0.0);
-            return;
-        }
+        // Check if in letterbox area
+        inLetterbox = (imageUV.x < 0.0 || imageUV.x > 1.0 || imageUV.y < 0.0 || imageUV.y > 1.0);
     } else if (fillMode == 2) { // PreserveAspectCrop
         float itemAspect = itemSize.x / itemSize.y;
         float sourceAspect = sourceSize.x / sourceSize.y;
@@ -101,8 +89,8 @@ void main() {
     // Create smooth alpha mask for edge with anti-aliasing
     float alpha = 1.0 - smoothstep(-0.5, 0.5, distance);
 
-    // Sample the texture
-    vec4 color = texture(source, imageUV);
+    // Sample the texture (or use transparent for letterbox)
+    vec4 color = inLetterbox ? vec4(0.0) : texture(source, imageUV);
 
     // Apply the rounded mask and opacity
     float finalAlpha = color.a * alpha * itemOpacity * ubuf.qt_Opacity;
