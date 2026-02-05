@@ -51,6 +51,26 @@ ColumnLayout {
 
     NComboBox {
       Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-type-label")
+      description: I18n.tr("panels.dock.appearance-type-description")
+      model: [
+        {
+          "key": "floating",
+          "name": I18n.tr("panels.dock.appearance-type-floating")
+        },
+        {
+          "key": "static",
+          "name": I18n.tr("panels.dock.appearance-type-static")
+        }
+      ]
+      currentKey: Settings.data.dock.dockType
+      defaultValue: Settings.getDefaultValue("dock.dockType")
+      onSelected: key => Settings.data.dock.dockType = key
+    }
+
+    NComboBox {
+      visible: Settings.data.dock.dockType === "floating"
+      Layout.fillWidth: true
       label: I18n.tr("panels.display.title")
       description: I18n.tr("panels.dock.appearance-display-description")
       model: [
@@ -72,25 +92,6 @@ ColumnLayout {
       onSelected: key => {
                     Settings.data.dock.displayMode = key;
                   }
-    }
-
-    NComboBox {
-      Layout.fillWidth: true
-      label: I18n.tr("panels.dock.appearance-type-label")
-      description: I18n.tr("panels.dock.appearance-type-description")
-      model: [
-        {
-          "key": "floating",
-          "name": I18n.tr("panels.dock.appearance-type-floating")
-        },
-        {
-          "key": "static",
-          "name": I18n.tr("panels.dock.appearance-type-static")
-        }
-      ]
-      currentKey: Settings.data.dock.dockType
-      defaultValue: Settings.getDefaultValue("dock.dockType")
-      onSelected: key => Settings.data.dock.dockType = key
     }
 
     NValueSlider {

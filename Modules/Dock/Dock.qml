@@ -480,7 +480,7 @@ Loader {
 
       // PEEK WINDOW
       Loader {
-        active: (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && autoHide
+        active: (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && (autoHide || isStaticMode)
 
         sourceComponent: PanelWindow {
           id: peekWindow
@@ -513,6 +513,12 @@ Loader {
 
             onEntered: {
               peekHovered = true;
+              if (isStaticMode && !autoHide) {
+                const panel = getStaticDockPanel();
+                if (panel && !panel.isPanelOpen)
+                  panel.open();
+                return;
+              }
               if (hidden) {
                 showTimer.start();
               }
