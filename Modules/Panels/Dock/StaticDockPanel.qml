@@ -292,7 +292,7 @@ SmartPanel {
                                                        });
                            } else {
                              // App is pinned but not running - add once
-                             pushApp("pinned", null, pinnedAppId, pinnedAppId);
+                             pushApp("pinned", null, pinnedAppId, getAppNameFromDesktopEntry(pinnedAppId) || pinnedAppId);
                            }
                          });
     }
