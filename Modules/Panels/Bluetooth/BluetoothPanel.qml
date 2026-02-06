@@ -88,14 +88,14 @@ SmartPanel {
       return;
 
     if (item.connected) {
-      if (BluetoothService.canDisconnect(item.modelData)) {
-        BluetoothService.disconnectDevice(item.modelData);
+      if (BluetoothService.canDisconnect(item)) {
+        BluetoothService.disconnectDevice(item);
       }
     } else {
-      if (BluetoothService.canPair(item.modelData)) {
-        BluetoothService.pairDevice(item.modelData);
+      if (BluetoothService.canPair(item)) {
+        BluetoothService.pairDevice(item);
       } else {
-        BluetoothService.connectDeviceWithTrust(item.modelData);
+        BluetoothService.connectDeviceWithTrust(item);
       }
     }
   }
