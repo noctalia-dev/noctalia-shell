@@ -16,6 +16,7 @@ DraggableDesktopWidget {
   readonly property real fontSize: Math.round(Style.fontSizeXXXL * 2.5 * widgetScale)
   readonly property real widgetOpacity: (widgetData && widgetData.opacity !== undefined) ? widgetData.opacity : 1.0
   readonly property string clockStyle: (widgetData && widgetData.clockStyle !== undefined) ? widgetData.clockStyle : (widgetMetadata.clockStyle !== undefined ? widgetMetadata.clockStyle : "digital")
+  readonly property string progressStyle: (widgetData && widgetData.progressStyle !== undefined) ? widgetData.progressStyle : (widgetMetadata.progressStyle !== undefined ? widgetMetadata.progressStyle : "solid")
   readonly property string clockColor: (widgetData && widgetData.clockColor !== undefined) ? widgetData.clockColor : (widgetMetadata.clockColor !== undefined ? widgetMetadata.clockColor : "none")
   readonly property bool useCustomFont: (widgetData && widgetData.useCustomFont !== undefined) ? widgetData.useCustomFont : (widgetMetadata.useCustomFont !== undefined ? widgetMetadata.useCustomFont : false)
   readonly property string customFont: (widgetData && widgetData.customFont !== undefined) ? widgetData.customFont : ""
@@ -32,6 +33,7 @@ DraggableDesktopWidget {
     NClock {
       now: root.now
       clockStyle: root.clockStyle
+      progressStyle: root.progressStyle
       backgroundColor: "transparent"
       clockColor: clockTextColor
       progressColor: Color.mPrimary
