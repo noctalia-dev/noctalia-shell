@@ -51,34 +51,34 @@ Item {
                      queryKeyboardLayout();
                    });
       initialized = true;
-      Logger.i("SwayService", "Service started");
+      Logger.i("ScrollService", "Service started");
     } catch (e) {
-      Logger.e("SwayService", "Failed to initialize:", e);
+      Logger.e("ScrollService", "Failed to initialize:", e);
     }
   }
 
   // Query window-to-workspace mapping via IPC
   function queryWindowWorkspaces() {
-    swayTreeProcess.running = true;
+    scrollTreeProcess.running = true;
   }
 
-  // Sway tree process for getting window workspace information
+  // Scroll tree process for getting window workspace information
   Process {
-    id: swayTreeProcess
+    id: scrollTreeProcess
     running: false
-    command: ["swaymsg", "-t", "get_tree", "-r"]
+    command: ["scrollmsg", "-t", "get_tree", "-r"]
 
     property string accumulatedOutput: ""
 
     stdout: SplitParser {
       onRead: function (line) {
-        swayTreeProcess.accumulatedOutput += line;
+        scrollTreeProcess.accumulatedOutput += line;
       }
     }
 
     onExited: function (exitCode) {
       if (exitCode !== 0 || !accumulatedOutput) {
-        Logger.e("SwayService", "Failed to query tree, exit code:", exitCode);
+        Logger.e("ScrollService", "Failed to query tree, exit code:", exitCode);
         accumulatedOutput = "";
         return;
       }
@@ -165,7 +165,7 @@ Item {
         // Update windows with new workspace information
         Qt.callLater(safeUpdateWindows);
       } catch (e) {
-        Logger.e("SwayService", "Failed to parse tree:", e);
+        Logger.e("ScrollService", "Failed to parse tree:", e);
       } finally {
         accumulatedOutput = "";
       }
@@ -174,26 +174,26 @@ Item {
 
   // Query display scales
   function queryDisplayScales() {
-    swayOutputsProcess.running = true;
+    scrollOutputsProcess.running = true;
   }
 
-  // Sway outputs process for display scale detection
+  // Scroll outputs process for display scale detection
   Process {
-    id: swayOutputsProcess
+    id: scrollOutputsProcess
     running: false
-    command: ["swaymsg", "-t", "get_outputs", "-r"]
+    command: ["scrollmsg", "-t", "get_outputs", "-r"]
 
     property string accumulatedOutput: ""
 
     stdout: SplitParser {
       onRead: function (line) {
-        swayOutputsProcess.accumulatedOutput += line;
+        scrollOutputsProcess.accumulatedOutput += line;
       }
     }
 
     onExited: function (exitCode) {
       if (exitCode !== 0 || !accumulatedOutput) {
-        Logger.e("SwayService", "Failed to query outputs, exit code:", exitCode);
+        Logger.e("ScrollService", "Failed to query outputs, exit code:", exitCode);
         accumulatedOutput = "";
         return;
       }
@@ -224,7 +224,7 @@ Item {
           CompositorService.onDisplayScalesUpdated(scales);
         }
       } catch (e) {
-        Logger.e("SwayService", "Failed to parse outputs:", e);
+        Logger.e("ScrollService", "Failed to parse outputs:", e);
       } finally {
         // Clear accumulated output for next query
         accumulatedOutput = "";
@@ -243,26 +243,26 @@ Item {
   }
 
   function queryKeyboardLayout() {
-    swayInputsProcess.running = true;
+    scrollInputsProcess.running = true;
   }
-  // Sway inputs process for keyboard layout detection
+  // Scroll inputs process for keyboard layout detection
   Process {
-    id: swayInputsProcess
+    id: scrollInputsProcess
     running: false
-    command: ["swaymsg", "-t", "get_inputs", "-r"]
+    command: ["scrollmsg", "-t", "get_inputs", "-r"]
 
     property string accumulatedOutput: ""
 
     stdout: SplitParser {
       onRead: function (line) {
         // Accumulate lines instead of parsing each one
-        swayInputsProcess.accumulatedOutput += line;
+        scrollInputsProcess.accumulatedOutput += line;
       }
     }
 
     onExited: function (exitCode) {
       if (exitCode !== 0 || !accumulatedOutput) {
-        Logger.e("SwayService", "Failed to query inputs, exit code:", exitCode);
+        Logger.e("ScrollService", "Failed to query inputs, exit code:", exitCode);
         accumulatedOutput = "";
         return;
       }
@@ -273,12 +273,12 @@ Item {
           if (input.type == "keyboard") {
             const layoutName = input.xkb_active_layout_name;
             KeyboardLayoutService.setCurrentLayout(layoutName);
-            Logger.d("SwayService", "Keyboard layout switched:", layoutName);
+            Logger.d("ScrollService", "Keyboard layout switched:", layoutName);
             break;
           }
         }
       } catch (e) {
-        Logger.e("SwayService", "Failed to parse inputs:", e);
+        Logger.e("ScrollService", "Failed to parse inputs:", e);
       } finally {
         // Clear accumulated output for next query
         accumulatedOutput = "";
@@ -322,7 +322,7 @@ Item {
         workspaces.append(wsData);
       }
     } catch (e) {
-      Logger.e("SwayService", "Error updating workspaces:", e);
+      Logger.e("ScrollService", "Error updating workspaces:", e);
     }
   }
 
@@ -367,7 +367,7 @@ Item {
 
       windowListChanged();
     } catch (e) {
-      Logger.e("SwayService", "Error updating windows:", e);
+      Logger.e("ScrollService", "Error updating windows:", e);
     }
   }
 
@@ -521,7 +521,7 @@ Item {
     try {
       workspace.handle.activate();
     } catch (e) {
-      Logger.e("SwayService", "Failed to switch workspace:", e);
+      Logger.e("ScrollService", "Failed to switch workspace:", e);
     }
   }
 
@@ -529,7 +529,7 @@ Item {
     try {
       window.handle.activate();
     } catch (e) {
-      Logger.e("SwayService", "Failed to switch window:", e);
+      Logger.e("ScrollService", "Failed to switch window:", e);
     }
   }
 
@@ -537,23 +537,23 @@ Item {
     try {
       window.handle.close();
     } catch (e) {
-      Logger.e("SwayService", "Failed to close window:", e);
+      Logger.e("ScrollService", "Failed to close window:", e);
     }
   }
 
   function logout() {
     try {
-      Quickshell.execDetached(["swaymsg", "exit"]);
+      Quickshell.execDetached(["scrollmsg", "exit"]);
     } catch (e) {
-      Logger.e("SwayService", "Failed to logout:", e);
+      Logger.e("ScrollService", "Failed to logout:", e);
     }
   }
 
   function cycleKeyboardLayout() {
     try {
-      Quickshell.execDetached(["swaymsg", "input", "type:keyboard", "xkb_switch_layout", "next"]);
+      Quickshell.execDetached(["scrollmsg", "input", "type:keyboard", "xkb_switch_layout", "next"]);
     } catch (e) {
-      Logger.e("SwayService", "Failed to cycle keyboard layout:", e);
+      Logger.e("ScrollService", "Failed to cycle keyboard layout:", e);
     }
   }
 
@@ -575,9 +575,9 @@ Item {
 
   function spawn(command) {
     try {
-      Quickshell.execDetached(["swaymsg", "exec", "--"].concat(command));
+      Quickshell.execDetached(["scrollmsg", "exec", "--"].concat(command));
     } catch (e) {
-      Logger.e("SwayService", "Failed to spawn command:", e);
+      Logger.e("ScrollService", "Failed to spawn command:", e);
     }
   }
 }
