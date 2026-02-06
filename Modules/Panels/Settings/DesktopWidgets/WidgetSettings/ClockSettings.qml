@@ -18,6 +18,7 @@ ColumnLayout {
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
   property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : true
   property string valueClockStyle: widgetData.clockStyle !== undefined ? widgetData.clockStyle : widgetMetadata.clockStyle
+  property string valueProgressStyle: widgetData.progressStyle !== undefined ? widgetData.progressStyle : (widgetMetadata.progressStyle !== undefined ? widgetMetadata.progressStyle : "solid")
   property string valueClockColor: widgetData.clockColor !== undefined ? widgetData.clockColor : widgetMetadata.clockColor
   property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
   property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : ""
@@ -34,6 +35,7 @@ ColumnLayout {
     settings.showBackground = valueShowBackground;
     settings.roundedCorners = valueRoundedCorners;
     settings.clockStyle = valueClockStyle;
+    settings.progressStyle = valueProgressStyle;
     settings.clockColor = valueClockColor;
     settings.useCustomFont = valueUseCustomFont;
     settings.customFont = valueCustomFont;
@@ -95,6 +97,29 @@ ColumnLayout {
     ]
     onSelected: key => {
                   valueClockStyle = key;
+                  settingsChanged(saveSettings());
+                }
+  }
+
+  NComboBox {
+    Layout.fillWidth: true
+    visible: valueClockStyle === "digital"
+    label: I18n.tr("panels.desktop-widgets.clock-progress-style-label")
+    description: I18n.tr("panels.desktop-widgets.clock-progress-style-description")
+    currentKey: valueProgressStyle
+    minimumWidth: 260 * Style.uiScaleRatio
+    model: [
+      {
+        "key": "solid",
+        "name": I18n.tr("panels.desktop-widgets.clock-progress-style-solid")
+      },
+      {
+        "key": "dashed",
+        "name": I18n.tr("panels.desktop-widgets.clock-progress-style-dashed")
+      }
+    ]
+    onSelected: key => {
+                  valueProgressStyle = key;
                   settingsChanged(saveSettings());
                 }
   }
