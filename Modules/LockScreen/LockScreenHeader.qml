@@ -151,6 +151,7 @@ Rectangle {
         visible: Settings.data.general.clockStyle === "digital"
         now: Time.now
         clockStyle: "digital"
+        progressStyle: Settings.data.general.clockProgressStyle
         showProgress: true
         progressColor: Color.mPrimary
         backgroundColor: "transparent"
