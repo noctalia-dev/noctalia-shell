@@ -285,6 +285,7 @@ Singleton {
       property bool autoStartAuth: false
       property bool allowPasswordWithFprintd: false
       property string clockStyle: "custom"
+      property string clockProgressStyle: "solid"
       property string clockFormat: "hh\\nmm"
     }
 

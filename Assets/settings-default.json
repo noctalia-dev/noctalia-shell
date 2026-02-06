@@ -96,6 +96,7 @@
     "autoStartAuth": false,
     "allowPasswordWithFprintd": false,
     "clockStyle": "custom",
+    "clockProgressStyle": "solid",
     "clockFormat": "hh\\nmm"
   },
   "ui": {
