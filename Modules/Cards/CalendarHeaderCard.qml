@@ -125,6 +125,7 @@ Rectangle {
     anchors.rightMargin: Style.marginXL
     anchors.verticalCenter: parent.verticalCenter
     clockStyle: Settings.data.location.analogClockInCalendar ? "analog" : "digital"
+    progressStyle: "solid"
     progressColor: Color.mOnPrimary
     Layout.alignment: Qt.AlignVCenter
     now: root.now
