@@ -15,6 +15,7 @@ SmartPanel {
   readonly property bool barAtSameEdge: hasBar && Settings.getBarPositionForScreen(modelData?.name) === dockPosition
   readonly property bool isFramed: Settings.data.bar.barType === "framed" && hasBar
   property bool isDockHovered: false
+  property bool panelHovered: false
   readonly property int iconSize: Math.round(12 + 24 * (Settings.data.dock.size ?? 1))
   readonly property int maxWidth: screen ? screen.width * 0.8 : 1000
   readonly property int maxHeight: screen ? screen.height * 0.8 : 1000
@@ -47,9 +48,9 @@ SmartPanel {
 
   property alias hideTimer: hideTimer
   property alias showTimer: showTimer
-  
+
   onMenuHoveredChanged: {
-    if (!menuHovered && !dockHoverHandler.hovered) {
+    if (!menuHovered && !panelHovered) {
       hoverCloseTimer.restart();
     }
   }
@@ -412,6 +413,7 @@ SmartPanel {
       id: dockHoverHandler
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onHoveredChanged: {
+        root.panelHovered = hovered;
         if (hovered) {
           root.isDockHovered = true;
           hoverCloseTimer.stop();

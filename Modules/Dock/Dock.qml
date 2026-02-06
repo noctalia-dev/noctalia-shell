@@ -92,7 +92,14 @@ Loader {
       readonly property bool hasBar: modelData && modelData.name ? (Settings.data.bar.monitors.includes(modelData.name) || (Settings.data.bar.monitors.length === 0)) : false
       readonly property bool barAtSameEdge: hasBar && Settings.getBarPositionForScreen(modelData?.name) === dockPosition
       readonly property int barHeight: Style.getBarHeightForScreen(modelData?.name)
-      readonly property bool showFrameIndicator: isStaticMode && Settings.data.bar.barType === "framed" && hasBar && hidden && Settings.data.dock.showFrameIndicator
+      readonly property bool showFrameIndicator: {
+        if (!isStaticMode || !Settings.data.dock.showFrameIndicator || Settings.data.bar.barType !== "framed" || !hasBar)
+          return false;
+        var panel = getStaticDockPanel();
+        if (panel && panel.isPanelOpen !== undefined)
+          return !panel.isPanelOpen;
+        return hidden;
+      }
       readonly property int frameIndicatorLength: {
         const count = dockApps.length;
         if (count <= 0)
@@ -545,6 +552,10 @@ Loader {
                 const panel = getStaticDockPanel();
                 if (panel && !panel.isPanelOpen)
                   panel.open();
+                return;
+              }
+              if (isStaticMode) {
+                showTimer.start();
                 return;
               }
               if (hidden) {

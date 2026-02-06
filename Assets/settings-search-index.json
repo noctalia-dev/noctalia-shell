@@ -494,6 +494,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.dock.appearance-type-label",
+    "descriptionKey": "panels.dock.appearance-type-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.display.title",
     "descriptionKey": "panels.dock.appearance-display-description",
     "widget": "NComboBox",
@@ -503,9 +512,18 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.dock.appearance-type-label",
-    "descriptionKey": "panels.dock.appearance-type-description",
-    "widget": "NComboBox",
+    "labelKey": "panels.dock.appearance-sit-on-frame-label",
+    "descriptionKey": "panels.dock.appearance-sit-on-frame-description",
+    "widget": "NToggle",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-frame-indicator-label",
+    "descriptionKey": "panels.dock.appearance-frame-indicator-description",
+    "widget": "NToggle",
     "tab": 5,
     "tabLabel": "panels.dock.title",
     "subTab": 0,
