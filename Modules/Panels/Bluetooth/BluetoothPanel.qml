@@ -12,12 +12,123 @@ import qs.Widgets
 SmartPanel {
   id: root
 
+  // Properties for referencing content from root
+  property var navigationLists: []
+  property var bluetoothScrollView: null
+  property int currentListIndex: -1 // -1: None, 0: Connected, 1: Paired, 2: Available
+
+  function onTabPressed() {
+    cycleList(true);
+  }
+  function onBackTabPressed() {
+    cycleList(false);
+  }
+  function onDownPressed() {
+    navigateItem(true);
+  }
+  function onUpPressed() {
+    navigateItem(false);
+  }
+  function onCtrlJPressed() {
+    navigateItem(true);
+  }
+  function onCtrlKPressed() {
+    navigateItem(false);
+  }
+  function onReturnPressed() {
+    activateItem();
+  }
+  function onEnterPressed() {
+    activateItem();
+  }
+
+  onOpened: {
+    currentListIndex = -1;
+  }
+
+  function cycleList(forward) {
+    if (navigationLists.length === 0)
+      return;
+
+    var start = currentListIndex;
+    if (start === -1)
+      start = forward ? 2 : 0; // Prepare for wrap
+
+    for (var i = 1; i <= 3; i++) {
+      var idx;
+      if (forward)
+        idx = (start + i) % 3;
+      else
+        idx = (start - i + 3) % 3;
+
+      if (navigationLists[idx] && navigationLists[idx].visible && navigationLists[idx].count > 0) {
+        currentListIndex = idx;
+        navigationLists[idx].selectFirst();
+        return;
+      }
+    }
+    currentListIndex = -1;
+  }
+
+  function navigateItem(next) {
+    if (currentListIndex !== -1 && navigationLists[currentListIndex]) {
+      if (next)
+        navigationLists[currentListIndex].selectNext();
+      else
+        navigationLists[currentListIndex].selectPrevious();
+    }
+  }
+
+  function activateItem() {
+    if (currentListIndex === -1)
+      return;
+
+    var item = navigationLists[currentListIndex].getSelectedItem();
+    if (!item)
+      return;
+
+    if (item.connected) {
+      if (BluetoothService.canDisconnect(item.modelData)) {
+        BluetoothService.disconnectDevice(item.modelData);
+      }
+    } else {
+      if (BluetoothService.canPair(item.modelData)) {
+        BluetoothService.pairDevice(item.modelData);
+      } else {
+        BluetoothService.connectDeviceWithTrust(item.modelData);
+      }
+    }
+  }
+
+  function scrollToItem(item, topPadding) {
+    if (!item || !bluetoothScrollView || !bluetoothScrollView.contentItem)
+      return;
+    var extra = topPadding || 0;
+
+    var map = item.mapToItem(bluetoothScrollView, 0, 0);
+    var itemY = map.y - extra;
+    var itemHeight = item.height + extra;
+    var viewHeight = bluetoothScrollView.height;
+    var margin = Style.marginM;
+
+    if (itemY < margin) {
+      bluetoothScrollView.contentItem.contentY += (itemY - margin);
+    } else if (itemY + itemHeight > viewHeight - margin) {
+      bluetoothScrollView.contentItem.contentY += (itemY + itemHeight - viewHeight + margin);
+    }
+  }
+
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(500 * Style.uiScaleRatio)
 
   panelContent: Rectangle {
     id: panelContent
     color: "transparent"
+
+    Component.onCompleted: {
+      root.navigationLists = [connectedList, pairedList, availableList];
+      root.bluetoothScrollView = bluetoothScrollView;
+    }
 
     property real contentPreferredHeight: Math.min(root.preferredHeight, mainColumn.implicitHeight + Style.marginL * 2)
 
@@ -272,6 +383,9 @@ SmartPanel {
 
           // Connected devices
           BluetoothDevicesList {
+            id: connectedList
+            onRequestScrollToItem: (item, padding) => root.scrollToItem(item, padding)
+            isFocusedList: root.currentListIndex === 0 && visible
             label: I18n.tr("bluetooth.panel.connected-devices")
             headerMode: "layout"
             property var items: {
@@ -288,6 +402,9 @@ SmartPanel {
 
           // Paired devices
           BluetoothDevicesList {
+            id: pairedList
+            onRequestScrollToItem: (item, padding) => root.scrollToItem(item, padding)
+            isFocusedList: root.currentListIndex === 1 && visible
             label: I18n.tr("bluetooth.panel.paired-devices")
             headerMode: "layout"
             property var items: {
@@ -304,6 +421,9 @@ SmartPanel {
 
           // Available devices (for pairing)
           BluetoothDevicesList {
+            id: availableList
+            onRequestScrollToItem: (item, padding) => root.scrollToItem(item, padding)
+            isFocusedList: root.currentListIndex === 2 && visible
             label: I18n.tr("bluetooth.panel.available-devices")
             headerMode: "filter"
             property var items: {

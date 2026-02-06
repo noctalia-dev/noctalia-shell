@@ -24,6 +24,64 @@ NBox {
   // Persisted under Settings.data.network.bluetoothDetailsViewMode
   property bool detailsGrid: (Settings.data && Settings.data.ui && Settings.data.network.bluetoothDetailsViewMode !== undefined) ? (Settings.data.network.bluetoothDetailsViewMode === "grid") : true
 
+  // Selection support
+  property int selectedIndex: -1
+  property bool isFocusedList: false
+  property alias count: deviceList.count
+  signal requestScrollToItem(var item, real topPadding)
+
+  onSelectedIndexChanged: {
+    if (selectedIndex >= 0 && isFocusedList) {
+      // Find the item
+      var item = deviceList.itemAt(selectedIndex);
+      var topPadding = (selectedIndex === 0) ? (listHeader.height + column.spacing) : 0;
+      if (item)
+        requestScrollToItem(item, topPadding);
+    }
+  }
+
+  onIsFocusedListChanged: {
+    if (isFocusedList && selectedIndex >= 0) {
+      var item = deviceList.itemAt(selectedIndex);
+      var topPadding = (selectedIndex === 0) ? (listHeader.height + column.spacing) : 0;
+      if (item)
+        requestScrollToItem(item, topPadding);
+    }
+  }
+
+  function selectNext() {
+    if (count > 0) {
+      selectedIndex = (selectedIndex + 1) % count;
+    }
+  }
+
+  function selectPrevious() {
+    if (count > 0) {
+      selectedIndex = (selectedIndex - 1 + count) % count;
+    }
+  }
+
+  function selectFirst() {
+    if (count > 0) {
+      selectedIndex = 0;
+    } else {
+      selectedIndex = -1;
+    }
+  }
+
+  function getSelectedItem() {
+    if (selectedIndex >= 0 && selectedIndex < count) {
+      return root.model[selectedIndex];
+    }
+    return null;
+  }
+
+  // Reset selection when model changes significantly or visibility changes
+  onVisibleChanged: {
+    if (!visible)
+      selectedIndex = -1;
+  }
+
   Layout.fillWidth: true
   Layout.preferredHeight: column.implicitHeight + Style.marginXL
 
@@ -35,6 +93,7 @@ NBox {
     spacing: Style.marginM
 
     RowLayout {
+      id: listHeader
       Layout.fillWidth: true
       visible: root.model.length > 0
       Layout.leftMargin: Style.marginM
@@ -79,6 +138,7 @@ NBox {
         readonly property bool canPair: BluetoothService.canPair(modelData)
         readonly property bool isBusy: BluetoothService.isDeviceBusy(modelData)
         readonly property bool isExpanded: root.expandedDeviceKey === BluetoothService.deviceKey(modelData)
+        readonly property bool isSelected: root.isFocusedList && index === root.selectedIndex
 
         function getContentColor(defaultColor = Color.mOnSurface) {
           if (modelData.pairing || modelData.state === BluetoothDeviceState.Connecting)
@@ -92,6 +152,9 @@ NBox {
         Layout.preferredHeight: deviceColumn.implicitHeight + (Style.marginXL)
         radius: Style.radiusM
         clip: true
+
+        border.width: isSelected ? Style.borderM : 0
+        border.color: Color.mPrimary
 
         color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(getContentColor(), 0.08) : Color.mSurface
 
