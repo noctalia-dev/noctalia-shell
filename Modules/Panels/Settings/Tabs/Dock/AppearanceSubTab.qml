@@ -104,6 +104,16 @@ ColumnLayout {
       onToggled: checked => Settings.data.dock.sitOnFrame = checked
     }
 
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "static" && Settings.data.bar.barType === "framed"
+      label: I18n.tr("panels.dock.appearance-frame-indicator-label")
+      description: I18n.tr("panels.dock.appearance-frame-indicator-description")
+      checked: Settings.data.dock.showFrameIndicator
+      defaultValue: Settings.getDefaultValue("dock.showFrameIndicator")
+      onToggled: checked => Settings.data.dock.showFrameIndicator = checked
+    }
+
     NValueSlider {
       Layout.fillWidth: true
       label: I18n.tr("panels.osd.background-opacity-label")

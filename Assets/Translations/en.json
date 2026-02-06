@@ -998,6 +998,8 @@
       "appearance-inactive-indicators-label": "Running indicators",
       "appearance-sit-on-frame-description": "Align the dock inside the frame border instead of sitting on top.",
       "appearance-sit-on-frame-label": "Dock sits on frame",
+      "appearance-frame-indicator-description": "Show a small indicator on the frame when the dock is hidden.",
+      "appearance-frame-indicator-label": "Frame dock indicator",
       "appearance-pinned-static-description": "Always push pinned app icons to the left in static order.",
       "appearance-pinned-static-label": "Static pinned apps",
       "appearance-position-description": "Choose where the dock appears on screen.",

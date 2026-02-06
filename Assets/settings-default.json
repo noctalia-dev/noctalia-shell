@@ -306,7 +306,8 @@
     "inactiveIndicators": false,
     "deadOpacity": 0.6,
     "animationSpeed": 1,
-    "sitOnFrame": false
+    "sitOnFrame": false,
+    "showFrameIndicator": true
   },
   "network": {
     "wifiEnabled": true,
