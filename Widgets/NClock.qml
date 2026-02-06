@@ -16,6 +16,9 @@ Item {
   // Show seconds progress ring (digital only)
   property bool showProgress: true
 
+  // Progress style: "solid" (continuous arc) or "dashed" (tick marks)
+  property string progressStyle: "solid"
+
   // Color properties
   property color backgroundColor: Color.mPrimary
   property color clockColor: Color.mOnPrimary
@@ -124,6 +127,11 @@ Item {
       if ("showProgress" in item) {
         item.showProgress = Qt.binding(function () {
           return root.showProgress;
+        });
+      }
+      if ("progressStyle" in item) {
+        item.progressStyle = Qt.binding(function () {
+          return root.progressStyle;
         });
       }
     }
@@ -242,6 +250,7 @@ Item {
     property int minutesFontWeight: Style.fontWeightBold
     property real scaleRatio: Style.uiScaleRatio
     property bool showProgress: true
+    property string progressStyle: "solid"
 
     anchors.fill: parent
 
@@ -266,20 +275,46 @@ Item {
         var radius = Math.min(width, height) / 2 - 3 * scaleRatio;
         ctx.reset();
 
-        // Background circle
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.lineWidth = 2.5 * scaleRatio;
-        ctx.strokeStyle = Qt.alpha(clockColor, 0.15);
-        ctx.stroke();
+        if (progressStyle === "dashed") {
+          const numTicks = 60;
+          const tickLength = 4.8 * scaleRatio;
 
-        // Progress arc
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progress * 2 * Math.PI);
-        ctx.lineWidth = 2.5 * scaleRatio;
-        ctx.strokeStyle = progressColor;
-        ctx.lineCap = "round";
-        ctx.stroke();
+          ctx.lineWidth = 2.5 * scaleRatio;
+          ctx.lineCap = "round";
+
+          ctx.save();
+          ctx.translate(centerX, centerY);
+
+          for (var i = 0; i < numTicks; i++) {
+            ctx.save();
+            ctx.rotate(-Math.PI / 2 + (i / numTicks) * 2 * Math.PI);
+
+            var isActive = (i / numTicks) <= progress;
+            ctx.strokeStyle = isActive ? progressColor : Qt.alpha(clockColor, 0.15);
+
+            ctx.beginPath();
+            ctx.moveTo(radius - tickLength / 2, 0);
+            ctx.lineTo(radius + tickLength / 2, 0);
+            ctx.stroke();
+            ctx.restore();
+          }
+          ctx.restore();
+        } else {
+          // Background circle
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+          ctx.lineWidth = 2.5 * scaleRatio;
+          ctx.strokeStyle = Qt.alpha(clockColor, 0.15);
+          ctx.stroke();
+
+          // Progress arc
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + progress * 2 * Math.PI);
+          ctx.lineWidth = 2.5 * scaleRatio;
+          ctx.strokeStyle = progressColor;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        }
       }
     }
 
