@@ -15,6 +15,7 @@ Singleton {
   property bool isNiri: false
   property bool isSway: false
   property bool isMango: false
+  property bool isScroll: false
   property bool isLabwc: false
 
   // Generic workspace and window data
@@ -42,12 +43,11 @@ Singleton {
   property var backend: null
 
   Component.onCompleted: {
-    // Load display scales from ShellState
     Qt.callLater(() => {
-                   if (typeof ShellState !== 'undefined' && ShellState.isLoaded) {
-                     loadDisplayScalesFromState();
-                   }
-                 });
+      if (typeof ShellState !== 'undefined' && ShellState.isLoaded) {
+        loadDisplayScalesFromState();
+      }
+    });
 
     detectCompositor();
   }
@@ -68,51 +68,71 @@ Singleton {
     const currentDesktop = Quickshell.env("XDG_CURRENT_DESKTOP");
     const labwcPid = Quickshell.env("LABWC_PID");
 
-    // Check for MangoWC using XDG_CURRENT_DESKTOP environment variable
-    // MangoWC sets XDG_CURRENT_DESKTOP=mango
-    if (currentDesktop && currentDesktop.toLowerCase().includes("mango")) {
+    // Scroll detection
+    if (currentDesktop && currentDesktop.toLowerCase().includes("scroll")) {
+      isHyprland = false;
+      isNiri = false;
+      isSway = false;
+      isMango = false;
+      isLabwc = false;
+      isScroll = true;
+      backendLoader.sourceComponent = scrollComponent;
+
+    // Mango detection
+    } else if (currentDesktop && currentDesktop.toLowerCase().includes("mango")) {
       isHyprland = false;
       isNiri = false;
       isSway = false;
       isMango = true;
       isLabwc = false;
+      isScroll = false;
       backendLoader.sourceComponent = mangoComponent;
+
     } else if (labwcPid && labwcPid.length > 0) {
       isHyprland = false;
       isNiri = false;
       isSway = false;
       isMango = false;
       isLabwc = true;
+      isScroll = false;
       backendLoader.sourceComponent = labwcComponent;
       Logger.i("CompositorService", "Detected LabWC with PID: " + labwcPid);
+
     } else if (niriSocket && niriSocket.length > 0) {
       isHyprland = false;
       isNiri = true;
       isSway = false;
       isMango = false;
       isLabwc = false;
+      isScroll = false;
       backendLoader.sourceComponent = niriComponent;
+
     } else if (hyprlandSignature && hyprlandSignature.length > 0) {
       isHyprland = true;
       isNiri = false;
       isSway = false;
       isMango = false;
       isLabwc = false;
+      isScroll = false;
       backendLoader.sourceComponent = hyprlandComponent;
+
     } else if (swaySock && swaySock.length > 0) {
       isHyprland = false;
       isNiri = false;
       isSway = true;
       isMango = false;
       isLabwc = false;
+      isScroll = false;
       backendLoader.sourceComponent = swayComponent;
+
     } else {
-      // Always fallback to Niri
+      // Fallback to Niri
       isHyprland = false;
       isNiri = true;
       isSway = false;
       isMango = false;
       isLabwc = false;
+      isScroll = false;
       backendLoader.sourceComponent = niriComponent;
     }
   }
@@ -128,7 +148,6 @@ Singleton {
     }
   }
 
-  // Load display scales from ShellState
   function loadDisplayScalesFromState() {
     try {
       const cached = ShellState.getDisplay();
@@ -137,7 +156,6 @@ Singleton {
         displayScalesLoaded = true;
         Logger.d("CompositorService", "Loaded display scales from ShellState");
       } else {
-        // Migration is now handled in Settings.qml
         displayScalesLoaded = true;
       }
     } catch (error) {
@@ -149,139 +167,115 @@ Singleton {
   // Hyprland backend component
   Component {
     id: hyprlandComponent
-    HyprlandService {
-      id: hyprlandBackend
-    }
+    HyprlandService { id: hyprlandBackend }
   }
 
   // Niri backend component
   Component {
     id: niriComponent
-    NiriService {
-      id: niriBackend
-    }
+    NiriService { id: niriBackend }
   }
 
   // Sway backend component
   Component {
     id: swayComponent
-    SwayService {
-      id: swayBackend
-    }
+    SwayService { id: swayBackend }
   }
 
   // Mango backend component
   Component {
     id: mangoComponent
-    MangoService {
-      id: mangoBackend
-    }
+    MangoService { id: mangoBackend }
+  }
+
+  // Scroll backend component
+  Component {
+    id: scrollComponent
+    ScrollService { id: scrollBackend }
   }
 
   // Labwc backend component
   Component {
     id: labwcComponent
-    LabwcService {
-      id: labwcBackend
-    }
+    LabwcService { id: labwcBackend }
   }
 
   function setupBackendConnections() {
     if (!backend)
       return;
 
-    // Connect backend signals to facade signals
     backend.workspaceChanged.connect(() => {
-                                       // Sync workspaces when they change
-                                       syncWorkspaces();
-                                       // Forward the signal
-                                       workspaceChanged();
-                                     });
+      syncWorkspaces();
+      workspaceChanged();
+    });
 
     backend.activeWindowChanged.connect(() => {
-                                          // Only sync focus state, not entire window list
-                                          syncFocusedWindow();
-                                          // Forward the signal
-                                          activeWindowChanged();
-                                        });
+      syncFocusedWindow();
+      activeWindowChanged();
+    });
 
     backend.windowListChanged.connect(() => {
-                                        // Sync windows when they change
-                                        syncWindows();
-                                        // Forward the signal
-                                        windowListChanged();
-                                      });
+      syncWindows();
+      windowListChanged();
+    });
 
-    // Property bindings - use automatic property change signal
     backend.focusedWindowIndexChanged.connect(() => {
-                                                focusedWindowIndex = backend.focusedWindowIndex;
-                                              });
+      focusedWindowIndex = backend.focusedWindowIndex;
+    });
 
-    // Overview state (Niri-specific)
     if (backend.overviewActiveChanged) {
       backend.overviewActiveChanged.connect(() => {
-                                              overviewActive = backend.overviewActive;
-                                            });
+        overviewActive = backend.overviewActive;
+      });
     }
 
-    // Initial sync
     syncWorkspaces();
     syncWindows();
     focusedWindowIndex = backend.focusedWindowIndex;
-    if (backend.overviewActive !== undefined) {
+
+    if (backend.overviewActive !== undefined)
       overviewActive = backend.overviewActive;
-    }
-    if (backend.globalWorkspaces !== undefined) {
+
+    if (backend.globalWorkspaces !== undefined)
       globalWorkspaces = backend.globalWorkspaces;
-    }
   }
 
   function syncWorkspaces() {
     workspaces.clear();
     const ws = backend.workspaces;
-    for (var i = 0; i < ws.count; i++) {
+    for (var i = 0; i < ws.count; i++)
       workspaces.append(ws.get(i));
-    }
-    // Emit signal to notify listeners that workspace list has been updated
     workspacesChanged();
   }
 
   function syncWindows() {
     windows.clear();
     const ws = backend.windows;
-    for (var i = 0; i < ws.length; i++) {
+    for (var i = 0; i < ws.length; i++)
       windows.append(ws[i]);
-    }
-    // Emit signal to notify listeners that window list has been updated
     windowListChanged();
   }
 
-  // Sync only the focused window state, not the entire window list
   function syncFocusedWindow() {
     const newIndex = backend.focusedWindowIndex;
 
-    // Update isFocused flags by syncing from backend
     for (var i = 0; i < windows.count && i < backend.windows.length; i++) {
       const backendFocused = backend.windows[i].isFocused;
-      if (windows.get(i).isFocused !== backendFocused) {
+      if (windows.get(i).isFocused !== backendFocused)
         windows.setProperty(i, "isFocused", backendFocused);
-      }
     }
 
     focusedWindowIndex = newIndex;
   }
 
-  // Update display scales from backend
   function updateDisplayScales() {
     if (!backend || !backend.queryDisplayScales) {
       Logger.w("CompositorService", "Backend does not support display scale queries");
       return;
     }
-
     backend.queryDisplayScales();
   }
 
-  // Called by backend when display scales are ready
   function onDisplayScalesUpdated(scales) {
     displayScales = scales;
     saveDisplayScalesToCache();
@@ -289,7 +283,6 @@ Singleton {
     Logger.d("CompositorService", "Display scales updated");
   }
 
-  // Save display scales to cache
   function saveDisplayScalesToCache() {
     try {
       ShellState.setDisplay(displayScales);
@@ -299,53 +292,40 @@ Singleton {
     }
   }
 
-  // Public function to get scale for a specific display
   function getDisplayScale(displayName) {
-    if (!displayName || !displayScales[displayName]) {
+    if (!displayName || !displayScales[displayName])
       return 1.0;
-    }
     return displayScales[displayName].scale || 1.0;
   }
 
-  // Public function to get all display info for a specific display
   function getDisplayInfo(displayName) {
-    if (!displayName || !displayScales[displayName]) {
+    if (!displayName || !displayScales[displayName])
       return null;
-    }
     return displayScales[displayName];
   }
 
-  // Get focused window
   function getFocusedWindow() {
-    if (focusedWindowIndex >= 0 && focusedWindowIndex < windows.count) {
+    if (focusedWindowIndex >= 0 && focusedWindowIndex < windows.count)
       return windows.get(focusedWindowIndex);
-    }
     return null;
   }
 
-  // Get focused screen from compositor
   function getFocusedScreen() {
-    if (backend && backend.getFocusedScreen) {
+    if (backend && backend.getFocusedScreen)
       return backend.getFocusedScreen();
-    }
     return null;
   }
 
-  // Get focused window title
   function getFocusedWindowTitle() {
     if (focusedWindowIndex >= 0 && focusedWindowIndex < windows.count) {
       var title = windows.get(focusedWindowIndex).title;
-      if (title !== undefined) {
+      if (title !== undefined)
         title = title.replace(/(\r\n|\n|\r)/g, "");
-      }
       return title || "";
     }
     return "";
   }
 
-  // Get clean app name from appId
-  // Extracts the last segment from reverse domain notation (e.g., "org.kde.dolphin" -> "Dolphin")
-  // Falls back to title if appId is empty
   function getCleanAppName(appId, fallbackTitle) {
     var name = (appId || "").split(".").pop() || fallbackTitle || "Unknown";
     return name.charAt(0).toUpperCase() + name.slice(1);
@@ -355,68 +335,56 @@ Singleton {
     var windowsInWs = [];
     for (var i = 0; i < windows.count; i++) {
       var window = windows.get(i);
-      if (window.workspaceId === workspaceId) {
+      if (window.workspaceId === workspaceId)
         windowsInWs.push(window);
-      }
     }
     return windowsInWs;
   }
 
-  // Generic workspace switching
   function switchToWorkspace(workspace) {
-    if (backend && backend.switchToWorkspace) {
+    if (backend && backend.switchToWorkspace)
       backend.switchToWorkspace(workspace);
-    } else {
+    else
       Logger.w("Compositor", "No backend available for workspace switching");
-    }
   }
 
-  // Get current workspace
   function getCurrentWorkspace() {
     for (var i = 0; i < workspaces.count; i++) {
       const ws = workspaces.get(i);
-      if (ws.isFocused) {
+      if (ws.isFocused)
         return ws;
-      }
     }
     return null;
   }
 
-  // Get active workspaces
   function getActiveWorkspaces() {
     const activeWorkspaces = [];
     for (var i = 0; i < workspaces.count; i++) {
       const ws = workspaces.get(i);
-      if (ws.isActive) {
+      if (ws.isActive)
         activeWorkspaces.push(ws);
-      }
     }
     return activeWorkspaces;
   }
 
-  // Set focused window
   function focusWindow(window) {
-    if (backend && backend.focusWindow) {
+    if (backend && backend.focusWindow)
       backend.focusWindow(window);
-    } else {
+    else
       Logger.w("Compositor", "No backend available for window focus");
-    }
   }
 
-  // Close window
   function closeWindow(window) {
-    if (backend && backend.closeWindow) {
+    if (backend && backend.closeWindow)
       backend.closeWindow(window);
-    } else {
+    else
       Logger.w("Compositor", "No backend available for window closing");
-    }
   }
 
-  // Spawn command
   function spawn(command) {
-    if (backend && backend.spawn) {
+    if (backend && backend.spawn)
       backend.spawn(command);
-    } else {
+    else {
       try {
         Quickshell.execDetached(command);
       } catch (e) {
@@ -425,7 +393,6 @@ Singleton {
     }
   }
 
-  // Session management
   function logout() {
     if (backend && backend.logout) {
       Logger.i("Compositor", "Logout requested");
@@ -438,15 +405,15 @@ Singleton {
   function shutdown() {
     Logger.i("Compositor", "Shutdown requested");
     HooksService.executeSessionHook("shutdown", () => {
-                                      Quickshell.execDetached(["sh", "-c", "systemctl poweroff || loginctl poweroff"]);
-                                    });
+      Quickshell.execDetached(["sh", "-c", "systemctl poweroff || loginctl poweroff"]);
+    });
   }
 
   function reboot() {
     Logger.i("Compositor", "Reboot requested");
     HooksService.executeSessionHook("reboot", () => {
-                                      Quickshell.execDetached(["sh", "-c", "systemctl reboot || loginctl reboot"]);
-                                    });
+      Quickshell.execDetached(["sh", "-c", "systemctl reboot || loginctl reboot"]);
+    });
   }
 
   function suspend() {
@@ -460,9 +427,8 @@ Singleton {
   }
 
   function cycleKeyboardLayout() {
-    if (backend && backend.cycleKeyboardLayout) {
+    if (backend && backend.cycleKeyboardLayout)
       backend.cycleKeyboardLayout();
-    }
   }
 
   property int lockAndSuspendCheckCount: 0
@@ -470,20 +436,16 @@ Singleton {
   function lockAndSuspend() {
     Logger.i("Compositor", "Lock and suspend requested");
 
-    // If already locked, suspend immediately
     if (PanelService && PanelService.lockScreen && PanelService.lockScreen.active) {
       Logger.i("Compositor", "Screen already locked, suspending");
       suspend();
       return;
     }
 
-    // Lock the screen first
     try {
       if (PanelService && PanelService.lockScreen) {
         PanelService.lockScreen.active = true;
         lockAndSuspendCheckCount = 0;
-
-        // Wait for lock screen to be confirmed active before suspending
         lockAndSuspendTimer.start();
       } else {
         Logger.w("Compositor", "Lock screen not available, suspending without lock");
@@ -504,18 +466,14 @@ Singleton {
     onTriggered: {
       lockAndSuspendCheckCount++;
 
-      // Check if lock screen is now active
       if (PanelService && PanelService.lockScreen && PanelService.lockScreen.active) {
-        // Verify the lock screen component is loaded
         if (PanelService.lockScreen.item) {
           Logger.i("Compositor", "Lock screen confirmed active, suspending");
           stop();
           lockAndSuspendCheckCount = 0;
           suspend();
         } else {
-          // Lock screen is active but component not loaded yet, wait a bit more
           if (lockAndSuspendCheckCount > 20) {
-            // Max 2 seconds wait
             Logger.w("Compositor", "Lock screen active but component not loaded, suspending anyway");
             stop();
             lockAndSuspendCheckCount = 0;
@@ -523,9 +481,7 @@ Singleton {
           }
         }
       } else {
-        // Lock screen not active yet, keep checking
         if (lockAndSuspendCheckCount > 30) {
-          // Max 3 seconds wait
           Logger.w("Compositor", "Lock screen failed to activate, suspending anyway");
           stop();
           lockAndSuspendCheckCount = 0;
@@ -535,3 +491,4 @@ Singleton {
     }
   }
 }
+
