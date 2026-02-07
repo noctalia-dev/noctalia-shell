@@ -1180,6 +1180,7 @@
       "compact-lockscreen-label": "Compact lock screen",
       "lock-on-suspend-description": "Automatically lock the screen when suspending the system.",
       "lock-on-suspend-label": "Lock on suspend",
+      "monitors-desc": "Show lock screen on specific monitors. Defaults to all if none are chosen.",
       "show-hibernate-description": "Show the option 'hibernate' in the power controls.",
       "show-hibernate-label": "Show hibernate",
       "show-session-buttons-description": "Allow access to power settings from the lock screen.",
