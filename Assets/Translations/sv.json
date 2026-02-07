@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Visa statistik som minibar-diagram istället för textvärden. Förhindrar layoutförskjutning. ",
       "compact-mode-label": "Kompakt läge",
+      "cpu-frequency-description": "Visa aktuell CPU-klockhastighet i GHz.",
+      "cpu-frequency-label": "Visa CPU-frekvens",
       "cpu-temperature-description": "Visa CPU-temperaturvärden om tillgängliga.",
       "cpu-temperature-label": "CPU-temperatur",
       "cpu-usage-description": "Visa aktuell CPU-användningsprocent.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Återställ titelbredd"
     },
     "tray": {
+      "chevron-color-description": "Tillämpa temafärger på lådans pil-ikon.",
+      "chevron-color-label": "Pilfärg",
       "colorize-icons-description": "Tillämpa temafärger på ikoner i aktivitetsfältet.",
       "colorize-icons-label": "Färglägg ikoner",
       "drawer-enabled-description": "När funktionen är aktiverad visas fackikoner som inte är fästa i en låda.<br>När funktionen är inaktiverad visas alla fackikoner i rad.",
@@ -411,6 +415,7 @@
     "installed": "Installerad",
     "interface": "Gränssnitt",
     "internet": "Internet",
+    "keybind": "Tangentbindning",
     "language": "Språk",
     "loading": "Läser in...",
     "local": "Lokal",
@@ -448,6 +453,7 @@
     "primary": "Primär",
     "random": "Slumpmässig",
     "reboot": "Starta om",
+    "record": "Starta inspelning",
     "refresh": "Uppdatera",
     "required": "(krävs)",
     "reset": "Återställ",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Visningsfördröjning",
       "appearance-background-opacity-description": "Ställ in bakgrundens opacitet specifikt för fältet.",
       "appearance-background-opacity-label": "Fältets bakgrundsopacitet",
+      "appearance-capsule-color-description": "Välj en färg för fältkapslar, eller använd ingen för standardytfärgen.",
+      "appearance-capsule-color-label": "Kapselfärg",
       "appearance-capsule-opacity-description": "Ställ in opacitetsnivån för widgetbakgrunder när kapseln visas.",
       "appearance-capsule-opacity-label": "Kapselns opacitet",
       "appearance-density-description": "Justera stapelns avstånd för ett kompakt eller rymligt utseende.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Utgångsvolym"
     },
     "plugins": {
+      "auto-update": "Uppdatera insticksmoduler automatiskt",
+      "auto-update-description": "Uppdatera automatiskt alla plugins när skalet startar.",
       "available-description": "Bläddra bland och installera insticksmoduler från konfigurerade källor.",
       "available-label": "Tillgängliga insticksmoduler",
       "available-no-plugins-description": "Kontrollera dina instickskällor eller uppdatera listan.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Intern utloggning (inget kommando)",
       "entry-settings-default-info-description": "Om inget anpassat kommando anges kommer standardkommandot för systemet att användas.",
       "entry-settings-default-info-label": "Standardkommando",
+      "entry-settings-keybind-description": "Tilldela en tangentkombination för att utlösa denna åtgärd när sessionsmenyn är öppen.",
+      "entry-settings-keybind-placeholder": "Tryck på Spela in för att tilldela en tangent...",
+      "entry-settings-keybind-recording": "Inspelning... Tryck på valfri tangentkombination",
       "entry-settings-title": "Konfigurera {entry}",
       "entry-settings-tooltip": "Konfigurera kommando",
       "general-desc": "Konfigurera sessionens menypanels beteende och utseende.",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Allt klart!",
     "appearance": {
-      "subheader": "Välj mörkt läge och färgkällor (bakgrundsbild eller fördefinierade)."
+      "subheader": "Välj mörkt läge och färgkällor (Bakgrundsbild eller fördefinierade)."
     },
     "customize": {
       "header": "Anpassa din upplevelse",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Skiva",
       "fade": "Tonad",
+      "honeycomb": "Bikaka",
+      "pixelate": "Pixla",
       "stripes": "Ränder",
       "wipe": "Torkning"
     },

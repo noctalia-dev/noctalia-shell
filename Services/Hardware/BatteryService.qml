@@ -18,8 +18,8 @@ Singleton {
   readonly property bool batteryPluggedIn: isPluggedIn(primaryDevice)
   readonly property bool batteryReady: isDeviceReady(primaryDevice)
   readonly property bool batteryPresent: isDevicePresent(primaryDevice)
-  readonly property real warningThreshold: Settings.data.notifications.batteryWarningThreshold
-  readonly property real criticalThreshold: Settings.data.notifications.batteryCriticalThreshold
+  readonly property real warningThreshold: Settings.data.systemMonitor.batteryWarningThreshold
+  readonly property real criticalThreshold: Settings.data.systemMonitor.batteryCriticalThreshold
   readonly property string batteryIcon: getIcon(batteryPercentage, batteryCharging, batteryPluggedIn, batteryReady)
 
   readonly property var laptopBatteries: UPower.devices.values.filter(d => d.isLaptopBattery).sort((x, y) => {
@@ -312,6 +312,9 @@ Singleton {
   }
 
   function notify(device, level) {
+    if (!Settings.data.notifications.enableBatteryToast) {
+      return;
+    }
     var name = getDeviceName(device);
     var titleKey = level === "critical" ? "toast.battery.critical" : "toast.battery.low";
     var descKey = level === "critical" ? "toast.battery.critical-desc" : "toast.battery.low-desc";
@@ -326,11 +329,8 @@ Singleton {
       title = title + " " + name;
     }
 
-    if (level == "critical") {
-      ToastService.showError(title, desc, icon);
-    } else {
-      ToastService.showWarning(title, desc, icon);
-    }
+    // Only 'showNotice' supports custom icons
+    ToastService.showNotice(title, desc, icon, 6000);
   }
 
   Instantiator {

@@ -25,69 +25,11 @@ ColumnLayout {
     onToggled: checked => Settings.data.notifications.enableKeyboardLayoutToast = checked
   }
 
-  NDivider {
+  NCheckbox {
     Layout.fillWidth: true
-  }
-
-  RowLayout {
-
-    NLabel {
-      label: I18n.tr("panels.notifications.toast-battery-label")
-      description: I18n.tr("panels.notifications.toast-battery-description")
-    }
-
-    Item {
-      Layout.fillWidth: true
-    }
-
-    GridLayout {
-      Layout.fillWidth: true
-      columns: 2
-      columnSpacing: Style.marginM
-      rowSpacing: Style.marginM
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("panels.system-monitor.threshold-warning")
-        pointSize: Style.fontSizeS
-        color: Color.mOnSurfaceVariant
-      }
-
-      NText {
-        Layout.alignment: Qt.AlignHCenter
-        horizontalAlignment: Text.AlignHCenter
-        text: I18n.tr("panels.system-monitor.threshold-critical")
-        pointSize: Style.fontSizeS
-        color: Color.mOnSurfaceVariant
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 0
-        to: 100
-        stepSize: 5
-        value: Settings.data.notifications.batteryWarningThreshold
-        defaultValue: Settings.getDefaultValue("notifications.batteryWarningThreshold")
-        suffix: "%"
-        onValueChanged: {
-          Settings.data.notifications.batteryWarningThreshold = value;
-          if (Settings.data.notifications.batteryCriticalThreshold > value) {
-            Settings.data.notifications.batteryCriticalThreshold = value;
-          }
-        }
-      }
-
-      NSpinBox {
-        Layout.alignment: Qt.AlignHCenter
-        from: 0
-        to: Settings.data.notifications.batteryWarningThreshold
-        stepSize: 5
-        value: Settings.data.notifications.batteryCriticalThreshold
-        defaultValue: Settings.getDefaultValue("notifications.batteryCriticalThreshold")
-        suffix: "%"
-        onValueChanged: Settings.data.notifications.batteryCriticalThreshold = value
-      }
-    }
+    label: I18n.tr("panels.notifications.toast-battery-label")
+    description: I18n.tr("panels.notifications.toast-battery-description")
+    checked: Settings.data.notifications.enableBatteryToast
+    onToggled: checked => Settings.data.notifications.enableBatteryToast = checked
   }
 }

@@ -50,6 +50,7 @@ Item {
   property var searchResults: []
   property int searchSelectedIndex: 0
   property string highlightLabelKey: ""
+  property bool navigatingFromSearch: false
 
   // Mouse hover suppression during keyboard navigation
   property bool ignoreMouseHover: false
@@ -155,15 +156,16 @@ Item {
     highlightLabelKey = entry.labelKey;
     _pendingSubTab = (entry.subTab !== null && entry.subTab !== undefined) ? entry.subTab : -1;
 
-    // Check if we're already on this tab
     const alreadyOnTab = (currentTabIndex === entry.tab);
-
+    navigatingFromSearch = true;
     currentTabIndex = entry.tab;
+    navigatingFromSearch = false;
 
     if (alreadyOnTab && activeTabContent) {
-      // Tab is already loaded, apply subtab + highlight directly
       if (_pendingSubTab >= 0) {
+        navigatingFromSearch = true;
         setSubTabIndex(_pendingSubTab);
+        navigatingFromSearch = false;
         _pendingSubTab = -1;
       }
       highlightScrollTimer.targetKey = highlightLabelKey;
@@ -250,6 +252,62 @@ Item {
         return true;
     }
     return false;
+  }
+
+  onCurrentTabIndexChanged: {
+    if (!navigatingFromSearch) {
+      clearHighlightImmediately();
+    }
+  }
+
+  property var currentSubTabBar: null
+
+  onActiveTabContentChanged: {
+    if (currentSubTabBar) {
+      try {
+        currentSubTabBar.currentIndexChanged.disconnect(onSubTabChanged);
+      } catch (e) {}
+      currentSubTabBar = null;
+    }
+
+    if (activeTabContent) {
+      const tabBar = findNTabBar(activeTabContent);
+      if (tabBar) {
+        currentSubTabBar = tabBar;
+        currentSubTabBar.currentIndexChanged.connect(onSubTabChanged);
+      }
+    }
+  }
+
+  function onSubTabChanged() {
+    if (!navigatingFromSearch) {
+      clearHighlightImmediately();
+    }
+  }
+
+  function findNTabBar(item) {
+    if (!item)
+      return null;
+
+    if (item.objectName === "NTabBar") {
+      return item;
+    }
+
+    const childCount = item.children ? item.children.length : 0;
+    for (let i = 0; i < childCount; i++) {
+      const found = findNTabBar(item.children[i]);
+      if (found)
+        return found;
+    }
+    return null;
+  }
+
+  function clearHighlightImmediately() {
+    highlightClearTimer.stop();
+    highlightScrollTimer.stop();
+    highlightAnimation.stop();
+    highlightLabelKey = "";
+    highlightOverlay.opacity = 0;
   }
 
   // Find and highlight a widget by its label key
@@ -950,7 +1008,7 @@ Item {
 
               delegate: Rectangle {
                 id: tabItem
-                width: sidebarList.width - (sidebarList.verticalScrollBarActive ? Style.marginM : 0)
+                width: sidebarList.width
                 height: tabEntryRow.implicitHeight + Style.marginS * 2
                 radius: Style.iRadiusS
                 color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mHover : "transparent")
@@ -1166,10 +1224,11 @@ Item {
                         item.screen = root.screen;
                       }
                       root.activeTabContent = item;
-                      // Handle pending subtab + highlight from search navigation
                       if (root.highlightLabelKey) {
                         if (root._pendingSubTab >= 0) {
+                          root.navigatingFromSearch = true;
                           root.setSubTabIndex(root._pendingSubTab);
+                          root.navigatingFromSearch = false;
                           root._pendingSubTab = -1;
                         }
                         highlightScrollTimer.targetKey = root.highlightLabelKey;

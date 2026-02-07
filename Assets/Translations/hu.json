@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "A statisztikákat mini sávdiagramokként jelenítse meg a szöveges értékek helyett. Megakadályozza az elrendezés eltolódását.",
       "compact-mode-label": "Kompakt mód",
+      "cpu-frequency-description": "Az aktuális CPU órajel megjelenítése GHz-ben.",
+      "cpu-frequency-label": "CPU frekvencia megjelenítése",
       "cpu-temperature-description": "CPU hőmérséklet-adatok megjelenítése, ha elérhetőek.",
       "cpu-temperature-label": "CPU hőmérséklet",
       "cpu-usage-description": "Jelenítse meg az aktuális CPU-használati százalékot.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Cím szélességének alaphelyzetbe állítása"
     },
     "tray": {
+      "chevron-color-description": "Alkalmazza a témaszíneket a fiók nyíl ikonjára.",
+      "chevron-color-label": "Nyíl színe",
       "colorize-icons-description": "Témaszínek alkalmazása a tálcaikonokra.",
       "colorize-icons-label": "Ikonok színezése",
       "drawer-enabled-description": "Ha be van kapcsolva, a nem rögzített tálcaelemek egy fiókpanelen jelennek meg.<br>Kikapcsolva az összes tálcaelem sorban jelenik meg.",
@@ -411,6 +415,7 @@
     "installed": "Telepítve",
     "interface": "Felület",
     "internet": "Internet",
+    "keybind": "Billentyűkombináció",
     "language": "Nyelv",
     "loading": "Betöltés...",
     "local": "Helyi",
@@ -448,6 +453,7 @@
     "primary": "Elsődleges",
     "random": "Véletlen",
     "reboot": "Újraindítás",
+    "record": "Felvétel indítása",
     "refresh": "Frissítés",
     "required": "(kötelező)",
     "reset": "Visszaállítás",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Megjelenítési Késleltetés",
       "appearance-background-opacity-description": "Állítsa be a sáv háttér átlátszóságát.",
       "appearance-background-opacity-label": "Sáv háttér átlátszósága",
+      "appearance-capsule-color-description": "Válassz színt a sávkapszulákhoz, vagy ne használj semmit az alapértelmezett felületszínhez.",
+      "appearance-capsule-color-label": "Kapszula színe",
       "appearance-capsule-opacity-description": "Beállítja a widget hátterének átlátszósági szintjét, amikor a kapszula megjelenik.",
       "appearance-capsule-opacity-label": "Kapszula átlátszósága",
       "appearance-density-description": "Beállítja a sáv belső margóit a kompakt vagy tágas megjelenés érdekében.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Kimeneti hangerő"
     },
     "plugins": {
+      "auto-update": "Beépülők automatikus frissítése",
+      "auto-update-description": "Automatikusan frissítse az összes plugint a shell indításakor.",
       "available-description": "Bővítmények böngészése és telepítése a beállított forrásokból.",
       "available-label": "Elérhető bővítmények",
       "available-no-plugins-description": "Ellenőrizze a bővítményforrásokat, vagy frissítse a listát.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Belső kijelentkezés (nincs parancs)",
       "entry-settings-default-info-description": "Ha nincs megadva egyéni parancs, az alapértelmezett rendszerparancs kerül felhasználásra.",
       "entry-settings-default-info-label": "Alapértelmezett parancs",
+      "entry-settings-keybind-description": "Rendeljen hozzá billentyűkombinációt ezen művelet elindításához, amikor a munkamenet menü nyitva van.",
+      "entry-settings-keybind-placeholder": "Nyomja meg a Felvétel gombot egy billentyű hozzárendeléséhez...",
+      "entry-settings-keybind-recording": "Felvétel... Nyomjon meg bármilyen billentyűkombinációt",
       "entry-settings-title": "{entry} konfigurálása",
       "entry-settings-tooltip": "Parancs konfigurálása",
       "general-desc": "A munkamenet menüpanel viselkedésének és megjelenésének konfigurálása.",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Kész!",
     "appearance": {
-      "subheader": "Válassza ki a Sötét módot és a színforrásokat (háttérkép vagy előre definiált)."
+      "subheader": "Válaszd ki a sötét módot és a színforrásokat (Háttérkép vagy előre meghatározott)."
     },
     "customize": {
       "header": "Tapasztalat testreszabása",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Korong",
       "fade": "Halványítás",
+      "honeycomb": "Méhsejt",
+      "pixelate": "Pixelezés",
       "stripes": "Csíkok",
       "wipe": "Törlés"
     },

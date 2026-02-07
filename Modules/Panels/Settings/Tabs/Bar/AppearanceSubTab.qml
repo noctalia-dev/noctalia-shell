@@ -156,6 +156,17 @@ ColumnLayout {
     onToggled: checked => Settings.data.bar.showCapsule = checked
   }
 
+  NComboBox {
+    Layout.fillWidth: true
+    visible: Settings.data.bar.showCapsule
+    label: I18n.tr("panels.bar.appearance-capsule-color-label")
+    description: I18n.tr("panels.bar.appearance-capsule-color-description")
+    model: Color.colorKeyModel
+    currentKey: Settings.data.bar.capsuleColorKey
+    onSelected: key => Settings.data.bar.capsuleColorKey = key
+    minimumWidth: 200
+  }
+
   NValueSlider {
     Layout.fillWidth: true
     visible: Settings.data.bar.showCapsule

@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "テキスト値の代わりに、ミニ棒グラフとして統計を表示します。レイアウトのずれを防ぎます。",
       "compact-mode-label": "コンパクトモード",
+      "cpu-frequency-description": "現在のCPUクロック速度をGHzで表示します。",
+      "cpu-frequency-label": "CPU周波数を表示",
       "cpu-temperature-description": "利用可能な場合、CPU 温度を表示します。",
       "cpu-temperature-label": "CPU 温度",
       "cpu-usage-description": "現在の CPU 使用率を表示します。",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "タイトルの幅をリセット"
     },
     "tray": {
+      "chevron-color-description": "ドロワーのシェブロンアイコンにテーマの色を適用します。",
+      "chevron-color-label": "矢印の色",
       "colorize-icons-description": "トレイのアイコンにテーマカラーを適用します。",
       "colorize-icons-label": "テーマカラーの適用",
       "drawer-enabled-description": "有効にすると、ピン留めされていないトレイ項目をドロワーパネル内に表示します。<br>無効にすると、すべての項目をインラインで表示します。",
@@ -411,6 +415,7 @@
     "installed": "インストール済み",
     "interface": "インターフェース",
     "internet": "インターネット",
+    "keybind": "キーバインド",
     "language": "言語",
     "loading": "読み込み中...",
     "local": "ローカル",
@@ -448,6 +453,7 @@
     "primary": "プライマリ",
     "random": "ランダム",
     "reboot": "再起動",
+    "record": "録画を開始",
     "refresh": "更新",
     "required": "(必須)",
     "reset": "リセット",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "表示遅延",
       "appearance-background-opacity-description": "バーの背景の不透明度を特に設定します。",
       "appearance-background-opacity-label": "バーの背景の不透明度",
+      "appearance-capsule-color-description": "バーのカプセルの色を選択するか、デフォルトの表面色には色を使用しない。",
+      "appearance-capsule-color-label": "カプセルの色",
       "appearance-capsule-opacity-description": "カプセル表示時のウィジェット背景の不透明度を設定します。",
       "appearance-capsule-opacity-label": "カプセルの不透明度",
       "appearance-density-description": "バーの余白を調整し、コンパクトまたはゆったりとした外観にします。",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "出力音量"
     },
     "plugins": {
+      "auto-update": "プラグインを自動更新",
+      "auto-update-description": "シェル起動時にすべてのプラグインを自動的に更新します。",
       "available-description": "設定されたソースからプラグインを参照してインストールします。",
       "available-label": "利用可能なプラグイン",
       "available-no-plugins-description": "プラグインのソースを確認するか、リストを更新してください。",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "内部ログアウト（コマンドなし）",
       "entry-settings-default-info-description": "カスタムコマンドが指定されていない場合、デフォルトのシステムコマンドが使用されます。",
       "entry-settings-default-info-label": "デフォルトのコマンド",
+      "entry-settings-keybind-description": "セッションメニューが開いているときに、このアクションをトリガーするキーの組み合わせを割り当てます。",
+      "entry-settings-keybind-placeholder": "キーを割り当てるには、記録を押してください...",
+      "entry-settings-keybind-recording": "録音中... 任意のキーの組み合わせを押してください",
       "entry-settings-title": "「{entry}」の設定",
       "entry-settings-tooltip": "コマンドを設定",
       "general-desc": "セッションメニューパネルの動作と外観を設定します。",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "完了！",
     "appearance": {
-      "subheader": "Dark Modeと色のソース（壁紙または定義済み）を選択します。"
+      "subheader": "ダークモードと色のソース（壁紙または事前定義）を選択します。"
     },
     "customize": {
       "header": "自分好みにカスタマイズ",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "ディスク",
       "fade": "フェード",
+      "honeycomb": "ハニカム",
+      "pixelate": "ピクセル化",
       "stripes": "ストライプ",
       "wipe": "ワイプ"
     },

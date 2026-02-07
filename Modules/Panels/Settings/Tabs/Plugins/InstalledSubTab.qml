@@ -32,6 +32,37 @@ ColumnLayout {
     }
   }
 
+  // Auto-update toggle
+  RowLayout {
+    spacing: Style.marginM
+    Layout.fillWidth: true
+
+    ColumnLayout {
+      spacing: Style.marginXS
+      Layout.fillWidth: true
+
+      NText {
+        text: I18n.tr("panels.plugins.auto-update")
+        color: Color.mOnSurface
+      }
+
+      NText {
+        text: I18n.tr("panels.plugins.auto-update-description")
+        font.pointSize: Style.fontSizeXS
+        color: Color.mOnSurfaceVariant
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
+      }
+    }
+
+    NToggle {
+      checked: Settings.data.plugins.autoUpdate
+      onToggled: checked => {
+                   Settings.data.plugins.autoUpdate = checked;
+                 }
+    }
+  }
+
   // Update All button
   NButton {
     property int updateCount: Object.keys(PluginService.pluginUpdates).length

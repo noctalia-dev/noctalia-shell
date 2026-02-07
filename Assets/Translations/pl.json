@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Wyświetlaj statystyki jako mini wykresy słupkowe zamiast wartości tekstowych. Zapobiega przesunięciom układu.",
       "compact-mode-label": "Tryb kompaktowy",
+      "cpu-frequency-description": "Wyświetl aktualną prędkość zegara CPU w GHz.",
+      "cpu-frequency-label": "Pokaż częstotliwość CPU",
       "cpu-temperature-description": "Pokaż odczyty temperatury procesora (jeśli dostępne).",
       "cpu-temperature-label": "Temperatura CPU",
       "cpu-usage-description": "Wyświetl aktualne użycie procesora w procentach.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Resetuj szerokość tytułu"
     },
     "tray": {
+      "chevron-color-description": "Zastosuj kolory motywu do ikony strzałki szuflady.",
+      "chevron-color-label": "Kolor strzałki",
       "colorize-icons-description": "Zastosuj kolory motywu do ikon zasobnika.",
       "colorize-icons-label": "Koloryzuj ikony",
       "drawer-enabled-description": "Gdy włączone, nieprzypięte elementy zasobnika są pokazywane w panelu szuflady.<br>Gdy wyłączone, wszystkie elementy są pokazywane w linii.",
@@ -411,6 +415,7 @@
     "installed": "Zainstalowano",
     "interface": "Interfejs",
     "internet": "Internet",
+    "keybind": "Skrót klawiszowy",
     "language": "Język",
     "loading": "Ładowanie...",
     "local": "Lokalny",
@@ -448,6 +453,7 @@
     "primary": "Podstawowy",
     "random": "Losowy",
     "reboot": "Restart",
+    "record": "Rozpocznij nagrywanie",
     "refresh": "Odśwież",
     "required": "(wymagane)",
     "reset": "Zresetuj",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Opóźnienie Wyświetlania",
       "appearance-background-opacity-description": "Ustaw przezroczystość tła konkretnie dla paska.",
       "appearance-background-opacity-label": "Krycie tła paska",
+      "appearance-capsule-color-description": "Wybierz kolor dla kapsuł paska, lub nie używaj żadnego dla domyślnego koloru powierzchni.",
+      "appearance-capsule-color-label": "Kolor kapsuły",
       "appearance-capsule-opacity-description": "Ustaw poziom przezroczystości tła widżetów, gdy kapsuła jest widoczna.",
       "appearance-capsule-opacity-label": "Przezroczystość kapsuły",
       "appearance-density-description": "Dostosuj odstępy paska dla kompaktowego lub przestronnego wyglądu.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Głośność wyjściowa"
     },
     "plugins": {
+      "auto-update": "Automatyczna aktualizacja wtyczek",
+      "auto-update-description": "Automatycznie aktualizuj wszystkie wtyczki po uruchomieniu shella.",
       "available-description": "Przeglądaj i instaluj wtyczki ze skonfigurowanych źródeł.",
       "available-label": "Dostępne wtyczki",
       "available-no-plugins-description": "Sprawdź źródła wtyczek lub odśwież listę.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Wewnętrzne wylogowanie (brak polecenia)",
       "entry-settings-default-info-description": "Jeśli nie podano własnego polecenia, zostanie użyte domyślne polecenie systemowe.",
       "entry-settings-default-info-label": "Domyślne polecenie",
+      "entry-settings-keybind-description": "Przypisz kombinację klawiszy, aby wywołać tę akcję, gdy menu sesji jest otwarte.",
+      "entry-settings-keybind-placeholder": "Naciśnij Nagraj, aby przypisać klawisz...",
+      "entry-settings-keybind-recording": "Nagrywanie... Naciśnij dowolną kombinację klawiszy",
       "entry-settings-title": "Konfiguruj {entry}",
       "entry-settings-tooltip": "Konfiguruj polecenie",
       "general-desc": "Konfiguruj zachowanie i wygląd panelu menu sesji.",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Gotowe!",
     "appearance": {
-      "subheader": "Wybierz Dark Mode i źródła kolorów (Tapeta lub predefiniowane)."
+      "subheader": "Wybierz tryb ciemny i źródła kolorów (Tapeta lub predefiniowane)."
     },
     "customize": {
       "header": "Dostosuj swoje doświadczenie",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Dysk",
       "fade": "Zanikanie",
+      "honeycomb": "Plaster miodu",
+      "pixelate": "Pikselizuj",
       "stripes": "Paski",
       "wipe": "Wycieranie"
     },

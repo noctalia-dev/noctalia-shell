@@ -89,9 +89,9 @@ Item {
   // Timer to alternate between percentage text and state icon when charging/plugged
   Timer {
     id: alternateTimer
-    interval: 5000
+    interval: 4000
     repeat: true
-    running: root.charging
+    running: root.charging && root.showPercentageText
     onTriggered: root.showStateIcon = !root.showStateIcon
   }
 
@@ -173,7 +173,7 @@ Item {
   NIcon {
     id: stateIconOverlay
     visible: opacity > 0
-    opacity: !root.ready || (root.charging ? root.showStateIcon : root.pluggedIn) ? 1 : 0
+    opacity: !root.ready || (root.charging ? (root.showStateIcon || !root.showPercentageText) : root.pluggedIn) ? 1 : 0
     x: batteryBody.x + Style.pixelAlignCenter(bodyBackground.width, width)
     y: batteryBody.y + bodyBackground.y + Style.pixelAlignCenter(bodyBackground.height, height)
     icon: root.stateIcon

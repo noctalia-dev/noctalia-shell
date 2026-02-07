@@ -198,6 +198,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.bar.appearance-capsule-color-label",
+    "descriptionKey": "panels.bar.appearance-capsule-color-description",
+    "widget": "NComboBox",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.bar.appearance-capsule-opacity-label",
     "descriptionKey": "panels.bar.appearance-capsule-opacity-description",
     "widget": "NValueSlider",
@@ -1171,7 +1180,7 @@
   {
     "labelKey": "panels.notifications.toast-battery-label",
     "descriptionKey": "panels.notifications.toast-battery-description",
-    "widget": "NLabel",
+    "widget": "NCheckbox",
     "tab": 9,
     "tabLabel": "common.notifications",
     "subTab": 4,
@@ -1387,6 +1396,14 @@
     "labelKey": "panels.session-menu.entry-settings-default-info-label",
     "descriptionKey": "panels.session-menu.entry-settings-default-info-description",
     "widget": "NLabel",
+    "tab": 12,
+    "tabLabel": "session-menu.title",
+    "subTab": null
+  },
+  {
+    "labelKey": "common.keybind",
+    "descriptionKey": "panels.session-menu.entry-settings-keybind-description",
+    "widget": "NTextInput",
     "tab": 12,
     "tabLabel": "session-menu.title",
     "subTab": null

@@ -39,8 +39,6 @@ NIconButton {
   customRadius: Style.radiusL
   colorBg: Settings.data.nightLight.forced ? Color.mPrimary : Style.capsuleColor
   colorFg: Settings.data.nightLight.forced ? Color.mOnPrimary : Color.resolveColorKey(iconColorKey)
-  colorBorder: "transparent"
-  colorBorderHover: "transparent"
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
 

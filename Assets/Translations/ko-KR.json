@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "텍스트 값 대신 미니 막대 차트로 통계를 표시합니다. 레이아웃이 변경되는 것을 방지합니다.",
       "compact-mode-label": "소형 모드",
+      "cpu-frequency-description": "현재 CPU 클럭 속도를 GHz 단위로 표시합니다.",
+      "cpu-frequency-label": "CPU 주파수 표시",
       "cpu-temperature-description": "가능한 경우 CPU 온도를 표시합니다.",
       "cpu-temperature-label": "CPU 온도",
       "cpu-usage-description": "현재 CPU 사용량을 백분율로 표시합니다.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "제목 너비 초기화"
     },
     "tray": {
+      "chevron-color-description": "드로어 셰브론 아이콘에 테마 색상을 적용합니다.",
+      "chevron-color-label": "화살표 색상",
       "colorize-icons-description": "트레이 아이콘에 테마 색상을 적용합니다.",
       "colorize-icons-label": "아이콘 색상화",
       "drawer-enabled-description": "활성화하면 고정되지 않은 트레이 항목이 서랍 패널에 표시됩니다.<br>비활성화하면 모든 트레이 항목이 인라인으로 표시됩니다.",
@@ -411,6 +415,7 @@
     "installed": "설치됨",
     "interface": "인터페이스",
     "internet": "인터넷",
+    "keybind": "키 바인딩",
     "language": "언어",
     "loading": "로딩 중...",
     "local": "로컬",
@@ -448,6 +453,7 @@
     "primary": "첫번째",
     "random": "랜덤",
     "reboot": "재부팅",
+    "record": "녹화 시작",
     "refresh": "새로고침",
     "required": "(필수)",
     "reset": "초기화",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "표시 지연",
       "appearance-background-opacity-description": "바에 대해서만 별도로 배경 불투명도를 설정합니다.",
       "appearance-background-opacity-label": "바 배경 불투명도",
+      "appearance-capsule-color-description": "바 캡슐의 색상을 선택하거나, 기본 표면 색상에는 색상을 사용하지 마세요.",
+      "appearance-capsule-color-label": "캡슐 색상",
       "appearance-capsule-opacity-description": "캡슐이 표시될 때 위젯 배경의 불투명도 수준을 설정합니다.",
       "appearance-capsule-opacity-label": "캡슐 불투명도",
       "appearance-density-description": "컴팩트하거나 넓은 모양을 위해 바의 패딩을 조정합니다.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "출력 볼륨"
     },
     "plugins": {
+      "auto-update": "플러그인 자동 업데이트",
+      "auto-update-description": "셸 시작 시 모든 플러그인을 자동으로 업데이트합니다.",
       "available-description": "구성된 소스에서 플러그인을 찾아보고 설치합니다.",
       "available-label": "사용 가능한 플러그인",
       "available-no-plugins-description": "플러그인 소스를 확인하거나 목록을 새로고침하세요.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "내부 로그아웃 (명령 없음)",
       "entry-settings-default-info-description": "사용자 지정 명령이 지정되지 않은 경우 시스템 기본 명령이 사용됩니다.",
       "entry-settings-default-info-label": "기본 명령",
+      "entry-settings-keybind-description": "세션 메뉴가 열려 있을 때 이 작업을 트리거할 키 조합을 할당합니다.",
+      "entry-settings-keybind-placeholder": "키를 할당하려면 기록을 누르세요...",
+      "entry-settings-keybind-recording": "녹음 중... 아무 키 조합이나 누르세요",
       "entry-settings-title": "{entry} 구성",
       "entry-settings-tooltip": "명령 구성",
       "general-desc": "세션 메뉴 패널의 동작과 모양을 구성합니다.",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "완료되었습니다!",
     "appearance": {
-      "subheader": "다크 모드와 색상 소스(배경화면 또는 미리 정의됨)를 선택하세요."
+      "subheader": "다크 모드와 색상 소스(배경화면 또는 사전 정의)를 선택하세요."
     },
     "customize": {
       "header": "경험 사용자 지정",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "디스크",
       "fade": "페이드",
+      "honeycomb": "벌집",
+      "pixelate": "픽셀화",
       "stripes": "스트라이프",
       "wipe": "와이프"
     },

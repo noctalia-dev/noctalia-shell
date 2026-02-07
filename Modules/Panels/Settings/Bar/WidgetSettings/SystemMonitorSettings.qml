@@ -120,8 +120,8 @@ ColumnLayout {
   NToggle {
     id: showCpuFreq
     Layout.fillWidth: true
-    label: "Show CPU Frequency" // TODO: use I18n.tr
-    description: "Display the current CPU clock speed in GHz" // TODO: use I18n.tr
+    label: I18n.tr("bar.system-monitor.cpu-frequency-label")
+    description: I18n.tr("bar.system-monitor.cpu-frequency-description")
     checked: valueShowCpuFreq
     onToggled: checked => {
                  valueShowCpuFreq = checked;

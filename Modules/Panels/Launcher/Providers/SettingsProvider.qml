@@ -168,11 +168,7 @@ Item {
         launcher.close();
 
       Qt.callLater(() => {
-                     var settingsPanel = PanelService.getPanel("settingsPanel", launcher.screen);
-                     if (settingsPanel) {
-                       settingsPanel.requestedEntry = entry;
-                       settingsPanel.open();
-                     }
+                     SettingsPanelService.openToEntry(entry, launcher.screen);
                    });
     };
   }

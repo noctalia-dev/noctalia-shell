@@ -14,7 +14,7 @@ Popup {
   property var screen: null
   readonly property real maxHeight: screen ? screen.height * 0.9 : 800
 
-  width: Math.max(settingsContent.implicitWidth + padding * 2, 500 * Style.uiScaleRatio)
+  width: Math.max(settingsContent.implicitWidth + padding * 2, 600 * Style.uiScaleRatio)
   height: Math.min(settingsContent.implicitHeight + padding * 2, maxHeight)
   padding: Style.marginXL
 

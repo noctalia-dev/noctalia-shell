@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Afficher les statistiques sous forme de mini-graphiques à barres au lieu de valeurs textuelles. Empêche les décalages de mise en page.",
       "compact-mode-label": "Mode compact",
+      "cpu-frequency-description": "Afficher la vitesse d'horloge actuelle du CPU en GHz.",
+      "cpu-frequency-label": "Afficher la fréquence du CPU",
       "cpu-temperature-description": "Afficher les lectures de température du CPU si disponibles.",
       "cpu-temperature-label": "Température du CPU",
       "cpu-usage-description": "Afficher le pourcentage d'utilisation actuel du CPU.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Réinitialiser la largeur du titre"
     },
     "tray": {
+      "chevron-color-description": "Appliquer les couleurs du thème à l'icône chevron du tiroir.",
+      "chevron-color-label": "Couleur du chevron",
       "colorize-icons-description": "Appliquer les couleurs du thème aux icônes de la barre système.",
       "colorize-icons-label": "Coloriser les icônes",
       "drawer-enabled-description": "Lorsqu'elle est activée, les éléments de la barre système non épinglés sont affichés dans un panneau tiroir.<br>Lorsqu'elle est désactivée, tous les éléments de la barre système sont affichés en ligne.",
@@ -411,6 +415,7 @@
     "installed": "Installé",
     "interface": "Interface",
     "internet": "Internet",
+    "keybind": "Raccourci clavier",
     "language": "Langue",
     "loading": "Chargement...",
     "local": "Local",
@@ -448,6 +453,7 @@
     "primary": "Primaire",
     "random": "Aléatoire",
     "reboot": "Redémarrer",
+    "record": "Démarrer l'enregistrement",
     "refresh": "Actualiser",
     "required": "(requis)",
     "reset": "Réinitialiser",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Délai d’apparition ",
       "appearance-background-opacity-description": "Définir l'opacité de l'arrière-plan spécifiquement pour la barre.",
       "appearance-background-opacity-label": "Opacité de l'arrière-plan de la barre",
+      "appearance-capsule-color-description": "Choisissez une couleur pour les capsules de la barre, ou n'en utilisez aucune pour la couleur de surface par défaut.",
+      "appearance-capsule-color-label": "Couleur de la capsule",
       "appearance-capsule-opacity-description": "Définir le niveau d'opacité des arrière-plans des widgets quand la capsule est affichée.",
       "appearance-capsule-opacity-label": "Opacité de la capsule",
       "appearance-density-description": "Ajustez le remplissage de la barre pour un aspect compact ou spacieux.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Volume de sortie"
     },
     "plugins": {
+      "auto-update": "Mettre à jour les plugins automatiquement",
+      "auto-update-description": "Mettre à jour automatiquement tous les plugins au démarrage de la shell.",
       "available-description": "Parcourir et installer des plugins à partir des sources configurées.",
       "available-label": "Plugins disponibles",
       "available-no-plugins-description": "Vérifiez les sources de vos plugins ou actualisez la liste.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Déconnexion interne (sans commande)",
       "entry-settings-default-info-description": "Si aucune commande personnalisée n'est spécifiée, la commande système par défaut sera utilisée.",
       "entry-settings-default-info-label": "Commande par défaut",
+      "entry-settings-keybind-description": "Attribuez une combinaison de touches pour déclencher cette action lorsque le menu de session est ouvert.",
+      "entry-settings-keybind-placeholder": "Appuyez sur Enregistrer pour assigner une touche...",
+      "entry-settings-keybind-recording": "Enregistrement... Appuyez sur n'importe quelle combinaison de touches",
       "entry-settings-title": "Configurer {entry}",
       "entry-settings-tooltip": "Configurer la commande",
       "general-desc": "Configurer le comportement et l'apparence du panneau du menu de session.",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Terminé !",
     "appearance": {
-      "subheader": "Choisissez le Dark Mode et les sources de couleurs (Fond d'écran ou prédéfinies)."
+      "subheader": "Choisissez le mode sombre et les sources de couleur (Fond d'écran ou prédéfinies)."
     },
     "customize": {
       "header": "Personnaliser votre expérience",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Disque",
       "fade": "Fondu",
+      "honeycomb": "Nid d'abeille",
+      "pixelate": "Pixéliser",
       "stripes": "Rayures",
       "wipe": "Balayage"
     },

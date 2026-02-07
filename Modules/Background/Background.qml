@@ -38,6 +38,14 @@ Variants {
       property real stripesCount: 16
       property real stripesAngle: 0
 
+      // Pixelate
+      property real pixelateMaxBlockSize: 64.0
+
+      // Honeycomb
+      property real honeycombCellSize: 0.04
+      property real honeycombCenterX: 0.5
+      property real honeycombCenterY: 0.5
+
       // Used to debounce wallpaper changes
       property string futureWallpaper: ""
       // Track the original wallpaper path being transitioned to (before caching)
@@ -59,6 +67,7 @@ Variants {
 
       Component.onDestruction: {
         transitionAnimation.stop();
+        startupTransitionTimer.stop();
         debounceTimer.stop();
         shaderLoader.active = false;
         currentWallpaper.source = "";
@@ -116,6 +125,15 @@ Variants {
         onTriggered: changeWallpaper()
       }
 
+      // Delay startup transition to ensure the compositor has mapped the window
+      Timer {
+        id: startupTransitionTimer
+        interval: 100
+        running: false
+        repeat: false
+        onTriggered: _executeStartupTransition()
+      }
+
       Image {
         id: currentWallpaper
 
@@ -171,6 +189,10 @@ Variants {
             return discShaderComponent;
           case "stripes":
             return stripesShaderComponent;
+          case "pixelate":
+            return pixelateShaderComponent;
+          case "honeycomb":
+            return honeycombShaderComponent;
           case "fade":
           case "none":
           default:
@@ -309,6 +331,71 @@ Variants {
         }
       }
 
+      // Pixelate transition shader component
+      Component {
+        id: pixelateShaderComponent
+        ShaderEffect {
+          anchors.fill: parent
+
+          property variant source1: currentWallpaper
+          property variant source2: nextWallpaper
+          property real progress: root.transitionProgress
+          property real maxBlockSize: root.pixelateMaxBlockSize
+
+          // Fill mode properties
+          property real fillMode: root.fillMode
+          property vector4d fillColor: root.fillColor
+          property real imageWidth1: source1.sourceSize.width
+          property real imageHeight1: source1.sourceSize.height
+          property real imageWidth2: source2.sourceSize.width
+          property real imageHeight2: source2.sourceSize.height
+          property real screenWidth: width
+          property real screenHeight: height
+
+          // Solid color mode
+          property real isSolid1: root.isSolid1 ? 1.0 : 0.0
+          property real isSolid2: root.isSolid2 ? 1.0 : 0.0
+          property vector4d solidColor1: root.solidColor1
+          property vector4d solidColor2: root.solidColor2
+
+          fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/wp_pixelate.frag.qsb")
+        }
+      }
+
+      // Honeycomb transition shader component
+      Component {
+        id: honeycombShaderComponent
+        ShaderEffect {
+          anchors.fill: parent
+
+          property variant source1: currentWallpaper
+          property variant source2: nextWallpaper
+          property real progress: root.transitionProgress
+          property real cellSize: root.honeycombCellSize
+          property real centerX: root.honeycombCenterX
+          property real centerY: root.honeycombCenterY
+          property real aspectRatio: root.width / root.height
+
+          // Fill mode properties
+          property real fillMode: root.fillMode
+          property vector4d fillColor: root.fillColor
+          property real imageWidth1: source1.sourceSize.width
+          property real imageHeight1: source1.sourceSize.height
+          property real imageWidth2: source2.sourceSize.width
+          property real imageHeight2: source2.sourceSize.height
+          property real screenWidth: width
+          property real screenHeight: height
+
+          // Solid color mode
+          property real isSolid1: root.isSolid1 ? 1.0 : 0.0
+          property real isSolid2: root.isSolid2 ? 1.0 : 0.0
+          property vector4d solidColor1: root.solidColor1
+          property vector4d solidColor2: root.solidColor2
+
+          fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/wp_honeycomb.frag.qsb")
+        }
+      }
+
       // Animation for the transition progress
       NumberAnimation {
         id: transitionAnimation
@@ -316,8 +403,7 @@ Variants {
         property: "transitionProgress"
         from: 0.0
         to: 1.0
-        // The stripes shader feels faster visually, we make it a bit slower here.
-        duration: transitionType == "stripes" ? Settings.data.wallpaper.transitionDuration * 1.6 : Settings.data.wallpaper.transitionDuration
+        duration: Settings.data.wallpaper.transitionDuration
         easing.type: Easing.InOutCubic
         onFinished: {
           // Clear the tracking of what we're transitioning to
@@ -567,6 +653,16 @@ Variants {
           stripesAngle = Math.random() * 360;
           setWallpaperWithTransition(futureWallpaper);
           break;
+        case "pixelate":
+          pixelateMaxBlockSize = Math.round(Math.random() * 80 + 32);
+          setWallpaperWithTransition(futureWallpaper);
+          break;
+        case "honeycomb":
+          honeycombCellSize = Math.random() * 0.04 + 0.02;
+          honeycombCenterX = Math.random();
+          honeycombCenterY = Math.random();
+          setWallpaperWithTransition(futureWallpaper);
+          break;
         default:
           setWallpaperWithTransition(futureWallpaper);
           break;
@@ -575,6 +671,8 @@ Variants {
 
       // ------------------------------------------------------
       // Dedicated function for startup animation
+      // Sets up transition params, then defers the actual animation
+      // to allow the compositor time to map the window.
       function performStartupTransition() {
         // Get the transitionType from the settings
         transitionType = Settings.data.wallpaper.transitionType;
@@ -589,31 +687,40 @@ Variants {
           transitionType = "fade";
         }
 
-        // Apply transitionType so the shader loader picks the correct shader
-        this.transitionType = transitionType;
-
+        // Pre-compute per-type params so the shader is ready
         switch (transitionType) {
-        case "none":
-          setWallpaperImmediate(futureWallpaper);
-          break;
         case "wipe":
           wipeDirection = Math.random() * 4;
-          setWallpaperWithTransition(futureWallpaper);
           break;
         case "disc":
           // Force center origin for elegant startup animation
           discCenterX = 0.5;
           discCenterY = 0.5;
-          setWallpaperWithTransition(futureWallpaper);
           break;
         case "stripes":
           stripesCount = Math.round(Math.random() * 20 + 4);
           stripesAngle = Math.random() * 360;
-          setWallpaperWithTransition(futureWallpaper);
           break;
-        default:
-          setWallpaperWithTransition(futureWallpaper);
+        case "pixelate":
+          pixelateMaxBlockSize = 64.0;
           break;
+        case "honeycomb":
+          honeycombCellSize = 0.04;
+          honeycombCenterX = 0.5;
+          honeycombCenterY = 0.5;
+          break;
+        }
+
+        // Defer the actual transition start so the compositor can map the window
+        startupTransitionTimer.start();
+      }
+
+      // Actually kick off the startup transition after the delay
+      function _executeStartupTransition() {
+        if (transitionType === "none") {
+          setWallpaperImmediate(futureWallpaper);
+        } else {
+          setWallpaperWithTransition(futureWallpaper);
         }
         // Mark startup transition complete
         isStartupTransition = false;

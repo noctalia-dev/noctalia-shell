@@ -41,8 +41,6 @@ NIconButton {
   tooltipDirection: BarService.getTooltipDirection(screen?.name)
   colorBg: Style.capsuleColor
   colorFg: Color.resolveColorKey(iconColorKey)
-  colorBorder: "transparent"
-  colorBorderHover: "transparent"
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
 

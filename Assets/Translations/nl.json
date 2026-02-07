@@ -50,7 +50,7 @@
       "device-label": "Accuapparaat",
       "display-mode-description": "Kies hoe de batterij wordt weergegeven in de balk.",
       "display-mode-graphic": "Grafische accu",
-      "display-mode-graphic-clean": "Grafische batterij (geen %)",
+      "display-mode-graphic-clean": "Grafische accu (geen %)",
       "display-mode-icon-always": "Pictogram - Altijd % tonen",
       "display-mode-icon-hover": "Icoon - Tonen bij hover",
       "display-mode-icon-only": "Alleen pictogram",
@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Statistieken weergeven als mini-staafdiagrammen in plaats van tekstwaarden. Voorkomt lay-outverschuiving.",
       "compact-mode-label": "Compacte modus",
+      "cpu-frequency-description": "De huidige CPU-kloksnelheid in GHz weergeven.",
+      "cpu-frequency-label": "CPU-frequentie weergeven",
       "cpu-temperature-description": "Toon CPU-temperatuur indien beschikbaar.",
       "cpu-temperature-label": "CPU-temperatuur",
       "cpu-usage-description": "Toon het huidige CPU-gebruik in procent.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Titelbreedte resetten"
     },
     "tray": {
+      "chevron-color-description": "Themakleuren toepassen op het pijl-icoon van de lade.",
+      "chevron-color-label": "Pijlkleur",
       "colorize-icons-description": "Pas themakleuren toe op systeemvakpictogrammen.",
       "colorize-icons-label": "Pictogrammen inkleuren",
       "drawer-enabled-description": "Indien ingeschakeld worden niet-vastgemaakte systeemvakitems in een lade weergegeven.<br>Indien uitgeschakeld worden alle items inline getoond.",
@@ -411,6 +415,7 @@
     "installed": "Geïnstalleerd",
     "interface": "Interface",
     "internet": "Internet",
+    "keybind": "Toetsencombinatie",
     "language": "Taal",
     "loading": "Laden...",
     "local": "Lokaal",
@@ -448,6 +453,7 @@
     "primary": "Primair",
     "random": "Willekeurig",
     "reboot": "Herstarten",
+    "record": "Opname starten",
     "refresh": "Vernieuwen",
     "required": "(vereist)",
     "reset": "Resetten",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Toonvertraging",
       "appearance-background-opacity-description": "Stel de achtergronddoorzichtigheid specifiek in voor de balk.",
       "appearance-background-opacity-label": "Balk achtergronddoorzichtigheid",
+      "appearance-capsule-color-description": "Kies een kleur voor balkcapsules, of gebruik geen kleur voor de standaard oppervlaktekleur.",
+      "appearance-capsule-color-label": "Capsulekleur",
       "appearance-capsule-opacity-description": "Stel het doorzichtigheidsniveau in voor widget-achtergronden wanneer capsule wordt getoond.",
       "appearance-capsule-opacity-label": "Capsule-doorzichtigheid",
       "appearance-density-description": "Pas de opvulling van de balk aan voor een compacte of ruime uitstraling.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Uitvoervolume"
     },
     "plugins": {
+      "auto-update": "Plugins automatisch bijwerken",
+      "auto-update-description": "Update automatisch alle plugins wanneer de shell start.",
       "available-description": "Blader door en installeer plugins vanuit geconfigureerde bronnen.",
       "available-label": "Beschikbare plug-ins",
       "available-no-plugins-description": "Controleer je plugin-bronnen of vernieuw de lijst.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Interne afmelding (geen commando)",
       "entry-settings-default-info-description": "Als er geen aangepast commando is opgegeven, wordt het standaard systeemcommando gebruikt.",
       "entry-settings-default-info-label": "Standaardopdracht",
+      "entry-settings-keybind-description": "Wijs een toetscombinatie toe om deze actie te activeren wanneer het sessiemenu geopend is.",
+      "entry-settings-keybind-placeholder": "Druk op Opnemen om een toets toe te wijzen...",
+      "entry-settings-keybind-recording": "Opname... Druk op een willekeurige toetscombinatie",
       "entry-settings-title": "Configureer {entry}",
       "entry-settings-tooltip": "Configureer opdracht",
       "general-desc": "Configureer het gedrag en uiterlijk van het sessiemenupaneel.",
@@ -1405,7 +1418,7 @@
       "box-border-description": "Toon een omlijning rond inhoudsgebieden.",
       "box-border-label": "Containeromtrek",
       "box-border-radius-description": "Past de hoekronding aan van belangrijke lay-outsecties, zoals zijbalken, kaarten en inhoudspanelen.",
-      "box-border-radius-label": "Container Radius",
+      "box-border-radius-label": "Hoekradius",
       "box-border-radius-reset": "Containerstraal resetten",
       "control-border-radius-description": "Regelt de kromming van interactieve elementen, waaronder knoppen, schakelaars en tekstvelden.",
       "control-border-radius-label": "Voer straal in",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Klaar!",
     "appearance": {
-      "subheader": "Kies Dark Mode en kleurbronnen (Wallpaper of vooraf gedefinieerd)."
+      "subheader": "Kies donkere modus en kleurbronnen (Achtergrond of voorgedefinieerd)."
     },
     "customize": {
       "header": "Pas je ervaring aan",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Schijf",
       "fade": "Vervagen",
+      "honeycomb": "Honingraat",
+      "pixelate": "Pixeliseren",
       "stripes": "Strepen",
       "wipe": "Vegen"
     },

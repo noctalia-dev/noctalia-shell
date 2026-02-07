@@ -23,19 +23,34 @@ FloatingWindow {
     SettingsPanelService.settingsWindow = root;
   }
 
+  property bool isInitialized: false
+
   // Sync visibility with service
   onVisibleChanged: {
     if (visible) {
-      settingsContent.requestedTab = SettingsPanelService.requestedTab;
-      settingsContent.initialize();
-      if (SettingsPanelService.requestedSubTab >= 0) {
-        const tab = SettingsPanelService.requestedTab;
-        const subTab = SettingsPanelService.requestedSubTab;
-        SettingsPanelService.requestedSubTab = -1;
-        Qt.callLater(() => settingsContent.navigateToTab(tab, subTab));
+      if (!isInitialized) {
+        // Check if we have a search entry to navigate to
+        if (SettingsPanelService.requestedEntry) {
+          const entry = SettingsPanelService.requestedEntry;
+          SettingsPanelService.requestedEntry = null;
+          settingsContent.requestedTab = entry.tab;
+          settingsContent.initialize();
+          Qt.callLater(() => settingsContent.navigateToResult(entry));
+        } else {
+          settingsContent.requestedTab = SettingsPanelService.requestedTab;
+          settingsContent.initialize();
+          if (SettingsPanelService.requestedSubTab >= 0) {
+            const tab = SettingsPanelService.requestedTab;
+            const subTab = SettingsPanelService.requestedSubTab;
+            SettingsPanelService.requestedSubTab = -1;
+            Qt.callLater(() => settingsContent.navigateToTab(tab, subTab));
+          }
+        }
+        isInitialized = true;
       }
       SettingsPanelService.isWindowOpen = true;
     } else {
+      isInitialized = false;
       SettingsPanelService.isWindowOpen = false;
     }
   }

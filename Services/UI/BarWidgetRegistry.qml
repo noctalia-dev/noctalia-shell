@@ -82,7 +82,8 @@ Singleton {
                                     "scrollingMode": "hover",
                                     "maxWidth": 145,
                                     "useFixedWidth": false,
-                                    "colorizeIcons": false
+                                    "colorizeIcons": false,
+                                    "textColor": "none"
                                   },
                                   "AudioVisualizer": {
                                     "width": 200,
@@ -190,6 +191,7 @@ Singleton {
                                     "showVisualizer": false,
                                     "showProgressRing": true,
                                     "visualizerType": "linear",
+                                    "textColor": "none",
                                     "compactMode": false,
                                     "panelShowAlbumArt": true,
                                     "panelShowVisualizer": true,
@@ -249,6 +251,7 @@ Singleton {
                                   "Tray": {
                                     "blacklist": [],
                                     "colorizeIcons": false,
+                                    "chevronColor": "none",
                                     "pinned": [],
                                     "drawerEnabled": true,
                                     "hidePassive": false

@@ -249,45 +249,63 @@ Singleton {
     checkProcess.running = true;
   }
 
-  // Scan plugin folder to discover installed plugins
+  // Scan plugin folder to discover installed plugins (single process reads all manifests)
   function scanPluginFolder() {
     Logger.i("PluginRegistry", "Scanning plugin folder:", root.pluginsDir);
 
-    var lsProcess = Qt.createQmlObject(`
+    var scanProcess = Qt.createQmlObject(`
       import QtQuick
       import Quickshell.Io
       Process {
-        command: ["sh", "-c", "ls -1 '${root.pluginsDir}' 2>/dev/null || true"]
+        command: ["sh", "-c", "for d in '${root.pluginsDir}'/*/; do [ -d \\"$d\\" ] || continue; [ -f \\"$d/manifest.json\\" ] || continue; echo \\"@@PLUGIN@@$(basename \\"$d\\")\\" ; cat \\"$d/manifest.json\\" ; done"]
         stdout: StdioCollector {}
         running: true
       }
-    `, root, "ScanPlugins");
+    `, root, "ScanAllPlugins");
 
-    lsProcess.exited.connect(function (exitCode) {
-      var output = String(lsProcess.stdout.text || "");
-      var pluginDirs = output.trim().split('\n').filter(function (dir) {
-        return dir.length > 0;
-      });
+    scanProcess.exited.connect(function (exitCode) {
+      var output = String(scanProcess.stdout.text || "");
+      var sections = output.split("@@PLUGIN@@");
+      var loadedCount = 0;
 
-      Logger.i("PluginRegistry", "Found", pluginDirs.length, "potential plugin directories");
+      for (var i = 1; i < sections.length; i++) {
+        var section = sections[i];
+        var newlineIdx = section.indexOf('\n');
+        if (newlineIdx === -1)
+          continue;
 
-      if (pluginDirs.length === 0) {
-        // No plugins to load, emit signal immediately
-        root.pluginsChanged();
-        lsProcess.destroy();
-        return;
+        var pluginId = section.substring(0, newlineIdx).trim();
+        var manifestJson = section.substring(newlineIdx + 1).trim();
+
+        if (!pluginId || !manifestJson)
+          continue;
+
+        try {
+          var manifest = JSON.parse(manifestJson);
+          var validation = validateManifest(manifest);
+
+          if (validation.valid) {
+            manifest.compositeKey = pluginId;
+            root.installedPlugins[pluginId] = manifest;
+            Logger.i("PluginRegistry", "Loaded plugin:", pluginId, "-", manifest.name);
+
+            if (!root.pluginStates[pluginId]) {
+              root.pluginStates[pluginId] = {
+                enabled: false
+              };
+            }
+            loadedCount++;
+          } else {
+            Logger.e("PluginRegistry", "Invalid manifest for", pluginId + ":", validation.error);
+          }
+        } catch (e) {
+          Logger.e("PluginRegistry", "Failed to parse manifest for", pluginId + ":", e.toString());
+        }
       }
 
-      // Track how many manifests we're loading
-      root.pendingManifests = pluginDirs.length;
-      Logger.i("PluginRegistry", "Starting to load", root.pendingManifests, "manifests");
-
-      // Load each manifest
-      for (var i = 0; i < pluginDirs.length; i++) {
-        loadPluginManifest(pluginDirs[i]);
-      }
-
-      lsProcess.destroy();
+      Logger.i("PluginRegistry", "All plugin manifests loaded. Total plugins:", loadedCount);
+      root.pluginsChanged();
+      scanProcess.destroy();
     });
   }
 
@@ -313,6 +331,7 @@ Singleton {
           var validation = validateManifest(manifest);
 
           if (validation.valid) {
+            manifest.compositeKey = pluginId;
             root.installedPlugins[pluginId] = manifest;
             Logger.i("PluginRegistry", "Loaded plugin:", pluginId, "-", manifest.name);
 
@@ -408,6 +427,7 @@ Singleton {
   // sourceUrl is required for new plugins to generate composite key
   function registerPlugin(manifest, sourceUrl) {
     var compositeKey = generateCompositeKey(manifest.id, sourceUrl);
+    manifest.compositeKey = compositeKey;
     root.installedPlugins[compositeKey] = manifest;
 
     // Ensure state exists (default to disabled, store sourceUrl)

@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "İstatistikleri metin değerleri yerine mini çubuk grafikler olarak görüntüleyin. Düzen kaymasını önler.",
       "compact-mode-label": "Kompakt mod",
+      "cpu-frequency-description": "Mevcut CPU saat hızını GHz cinsinden görüntüle.",
+      "cpu-frequency-label": "CPU frekansını göster",
       "cpu-temperature-description": "Mevcut işlemci sıcaklık okumalarını gösterir.",
       "cpu-temperature-label": "İşlemci sıcaklığı",
       "cpu-usage-description": "Mevcut işlemci kullanım yüzdesini göster.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Başlık genişliğini sıfırla"
     },
     "tray": {
+      "chevron-color-description": "Çekmecenin ok simgesine tema renklerini uygula.",
+      "chevron-color-label": "Ok rengi",
       "colorize-icons-description": "Tepsi simgelerine tema renklerini uygula.",
       "colorize-icons-label": "Simgeleri renklendir",
       "drawer-enabled-description": "Etkinleştirildiğinde, sabitlenmemiş tepsi öğeleri bir çekmece panelinde gösterilir.<br>Devre dışı bırakıldığında, tüm tepsi öğeleri satır içi gösterilir.",
@@ -411,6 +415,7 @@
     "installed": "Yüklendi",
     "interface": "Arayüz",
     "internet": "İnternet",
+    "keybind": "Tuş Ataması",
     "language": "Dil",
     "loading": "Yükleniyor...",
     "local": "Yerel",
@@ -448,6 +453,7 @@
     "primary": "Birincil",
     "random": "Rastgele",
     "reboot": "Yeniden başlat",
+    "record": "Kaydı Başlat",
     "refresh": "Yenile",
     "required": "(gerekli)",
     "reset": "Sıfırla",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Gösterme Gecikmesi",
       "appearance-background-opacity-description": "Çubuğun arka plan opaklığını özel olarak ayarlayın.",
       "appearance-background-opacity-label": "Çubuk arka plan opaklığı",
+      "appearance-capsule-color-description": "Çubuk kapsülleri için bir renk seçin veya varsayılan yüzey rengi için hiçbirini kullanmayın.",
+      "appearance-capsule-color-label": "Kapsül rengi",
       "appearance-capsule-opacity-description": "Kapsül gösterildiğinde araç takımı arka planlarının saydamlık seviyesini ayarla.",
       "appearance-capsule-opacity-label": "Kapsül saydamlığı",
       "appearance-density-description": "Sıkı veya geniş bir görünüm için araç çubuğu dolgusunu ayarlayın.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Çıkış sesi"
     },
     "plugins": {
+      "auto-update": "Eklentileri otomatik güncelle",
+      "auto-update-description": "Shell başladığında tüm eklentileri otomatik olarak güncelle.",
       "available-description": "Yapılandırılmış kaynaklardan eklentilere göz atın ve yükleyin.",
       "available-label": "Mevcut eklentiler",
       "available-no-plugins-description": "Eklenti kaynaklarınızı kontrol edin veya listeyi yenileyin.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Dahili oturum kapatma (komut yok)",
       "entry-settings-default-info-description": "Özel bir komut belirtilmezse, varsayılan sistem komutu kullanılır.",
       "entry-settings-default-info-label": "Varsayılan komut",
+      "entry-settings-keybind-description": "Oturum menüsü açıkken bu eylemi tetiklemek için bir tuş kombinasyonu atayın.",
+      "entry-settings-keybind-placeholder": "Bir tuş atamak için Kaydet'e basın...",
+      "entry-settings-keybind-recording": "Kaydediliyor... Herhangi bir tuş kombinasyonuna basın",
       "entry-settings-title": "{entry} yapılandır",
       "entry-settings-tooltip": "Yapılandırma komutu",
       "general-desc": "Oturum menüsü panelinin davranışını ve görünümünü yapılandırın.",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Tamamlandı!",
     "appearance": {
-      "subheader": "Dark Mode'u ve renk kaynaklarını seçin (Duvar kağıdı veya önceden tanımlı)."
+      "subheader": "Koyu modu ve renk kaynaklarını (Duvar kağıdı veya önceden tanımlanmış) seçin."
     },
     "customize": {
       "header": "Deneyiminizi özelleştirin",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Disk",
       "fade": "Belirsizleşme",
+      "honeycomb": "Petek",
+      "pixelate": "Pikselleştir",
       "stripes": "Çizgiler",
       "wipe": "Silme"
     },

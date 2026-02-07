@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "将数据以条形图显示以防止布局偏移。",
       "compact-mode-label": "紧凑模式",
+      "cpu-frequency-description": "显示当前 CPU 时钟速度（GHz）。",
+      "cpu-frequency-label": "显示 CPU 频率",
       "cpu-temperature-description": "显示 CPU 温度（如果可用）。",
       "cpu-temperature-label": "CPU 温度",
       "cpu-usage-description": "以百分比显示当前 CPU 使用率",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "重置标题宽度"
     },
     "tray": {
+      "chevron-color-description": "将主题颜色应用于抽屉的箭头图标。",
+      "chevron-color-label": "箭头颜色",
       "colorize-icons-description": "将主题颜色应用到系统托盘图标。",
       "colorize-icons-label": "着色图标",
       "drawer-enabled-description": "启用时，未固定的托盘项显示在抽屉面板中。<br>禁用时，所有托盘项都内联显示。",
@@ -411,6 +415,7 @@
     "installed": "已安装",
     "interface": "界面",
     "internet": "互联网",
+    "keybind": "按键绑定",
     "language": "语言",
     "loading": "正在加载...",
     "local": "本地",
@@ -448,6 +453,7 @@
     "primary": "主要的",
     "random": "随机",
     "reboot": "重启",
+    "record": "开始录制",
     "refresh": "刷新",
     "required": "(必要)",
     "reset": "重置",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "显示延迟",
       "appearance-background-opacity-description": "为状态栏设置背景不透明度。",
       "appearance-background-opacity-label": "状态栏背景不透明度",
+      "appearance-capsule-color-description": "为栏胶囊选择一种颜色，或不使用任何颜色以采用默认表面颜色。",
+      "appearance-capsule-color-label": "胶囊颜色",
       "appearance-capsule-opacity-description": "设置显示胶囊时小部件背景的不透明度。",
       "appearance-capsule-opacity-label": "胶囊不透明度",
       "appearance-density-description": "调整状态栏的内边距以获得紧凑或宽松的外观。",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "输出音量"
     },
     "plugins": {
+      "auto-update": "自动更新插件",
+      "auto-update-description": "在 shell 启动时自动更新所有插件。",
       "available-description": "浏览并安装来自已配置源的插件。",
       "available-label": "可用插件",
       "available-no-plugins-description": "检查你的插件源或刷新列表。",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "内部注销（无命令）",
       "entry-settings-default-info-description": "如果没有指定自定义命令，将使用默认的系统命令。",
       "entry-settings-default-info-label": "默认命令",
+      "entry-settings-keybind-description": "当会话菜单打开时，分配一个按键组合来触发此操作。",
+      "entry-settings-keybind-placeholder": "按下录制以分配一个键...",
+      "entry-settings-keybind-recording": "录制中... 按任意组合键",
       "entry-settings-title": "配置 {entry}",
       "entry-settings-tooltip": "配置命令",
       "general-desc": "配置会话菜单面板的行为和外观。",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "完成！",
     "appearance": {
-      "subheader": "选择 Dark Mode 和颜色来源（壁纸或预定义）。"
+      "subheader": "选择深色模式和颜色来源（壁纸或预设）。"
     },
     "customize": {
       "header": "自定义体验",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "圆盘",
       "fade": "淡入淡出",
+      "honeycomb": "蜂巢",
+      "pixelate": "像素化",
       "stripes": "条纹",
       "wipe": "擦除"
     },

@@ -193,6 +193,7 @@ Singleton {
       root.pluginsFullyLoaded = true;
       Logger.i("PluginService", "No plugins to load");
       root.allPluginsLoaded();
+      root._isStartupCheck = true;
       refreshAvailablePlugins();
       return;
     }
@@ -218,6 +219,7 @@ Singleton {
       root.allPluginsLoaded();
 
       // Fetch available plugins from all sources
+      root._isStartupCheck = true;
       refreshAvailablePlugins();
     }
   }
@@ -1212,6 +1214,9 @@ Singleton {
   // Internal flag to track if we should check for updates after registry fetch
   property bool shouldCheckUpdatesAfterFetch: false
 
+  // Flag to track if this is the initial startup update check (for auto-update)
+  property bool _isStartupCheck: false
+
   // Check for plugin updates (call this after availablePlugins are loaded)
   function checkForUpdates() {
     Logger.i("PluginService", "Checking for plugin updates");
@@ -1317,7 +1322,41 @@ Singleton {
       Logger.i("PluginService", "All installed plugins are up to date");
     }
 
+    // Auto-update on startup if enabled
+    if (root._isStartupCheck && Settings.data.plugins.autoUpdate && updateCount > 0) {
+      Logger.i("PluginService", "Auto-updating", updateCount, "plugin(s)");
+      updateAllPlugins();
+    }
+
+    root._isStartupCheck = false;
     shouldCheckUpdatesAfterFetch = false;
+  }
+
+  // Update all plugins sequentially
+  function updateAllPlugins(callback) {
+    var pluginIds = Object.keys(root.pluginUpdates);
+    var currentIndex = 0;
+
+    function updateNext() {
+      if (currentIndex >= pluginIds.length) {
+        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.tr("panels.plugins.update-all-success"));
+        if (callback)
+          callback();
+        return;
+      }
+
+      var pluginId = pluginIds[currentIndex];
+      currentIndex++;
+
+      root.updatePlugin(pluginId, function (success, error) {
+        if (!success) {
+          Logger.w("PluginService", "Failed to auto-update", pluginId + ":", error);
+        }
+        Qt.callLater(updateNext);
+      });
+    }
+
+    updateNext();
   }
 
   // Simple version comparison (semantic versioning x.y.z)

@@ -210,6 +210,14 @@ Singleton {
                               "key": "wipe",
                               "name": I18n.tr("wallpaper.transitions.wipe")
                             });
+    transitionsModel.append({
+                              "key": "pixelate",
+                              "name": I18n.tr("wallpaper.transitions.pixelate")
+                            });
+    transitionsModel.append({
+                              "key": "honeycomb",
+                              "name": I18n.tr("wallpaper.transitions.honeycomb")
+                            });
   }
 
   // -------------------------------------------------------------------

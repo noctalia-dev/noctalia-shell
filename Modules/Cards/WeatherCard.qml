@@ -15,13 +15,15 @@ NBox {
   property bool showEffects: Settings.data.location.weatherShowEffects
   readonly property bool weatherReady: Settings.data.location.weatherEnabled && (LocationService.data.weather !== null)
 
-  // Test mode: set to "rain" or "snow"
+  // Test mode: set to "rain", "snow", "cloud" or "fog"
   property string testEffects: ""
 
   // Weather condition detection
   readonly property int currentWeatherCode: weatherReady ? LocationService.data.weather.current_weather.weathercode : 0
   readonly property bool isRaining: testEffects === "rain" || (testEffects === "" && ((currentWeatherCode >= 51 && currentWeatherCode <= 67) || (currentWeatherCode >= 80 && currentWeatherCode <= 82)))
   readonly property bool isSnowing: testEffects === "snow" || (testEffects === "" && ((currentWeatherCode >= 71 && currentWeatherCode <= 77) || (currentWeatherCode >= 85 && currentWeatherCode <= 86)))
+  readonly property bool isCloudy: testEffects === "cloud" || (testEffects === "" && (currentWeatherCode === 3))
+  readonly property bool isFoggy: testEffects === "fog" || (testEffects === "" && (currentWeatherCode === 45 || currentWeatherCode === 48))
 
   visible: Settings.data.location.weatherEnabled
   implicitHeight: Math.max(100 * Style.uiScaleRatio, content.implicitHeight + (Style.marginXL * 2))
@@ -30,7 +32,7 @@ NBox {
   Loader {
     id: weatherEffectLoader
     anchors.fill: parent
-    active: root.showEffects && (root.isRaining || root.isSnowing)
+    active: root.showEffects && (root.isRaining || root.isSnowing || root.isCloudy || root.isFoggy)
 
     sourceComponent: Item {
       anchors.fill: parent
@@ -47,8 +49,8 @@ NBox {
       ShaderEffect {
         id: weatherEffect
         anchors.fill: parent
-        // Snow fills the box, rain matches content margins
-        anchors.margins: root.isSnowing ? root.border.width : Style.marginXL
+        // Rain matches content margins, everything else fills the box
+        anchors.margins: root.isRaining ? Style.marginXL : root.border.width
 
         property var source: ShaderEffectSource {
           sourceItem: content
@@ -59,9 +61,10 @@ NBox {
         property real itemWidth: weatherEffect.width
         property real itemHeight: weatherEffect.height
         property color bgColor: root.color
-        property real cornerRadius: root.isSnowing ? (root.radius - root.border.width) : 0
+        property real cornerRadius: root.isRaining ? 0 : (root.radius - root.border.width)
+        property real alternative: root.isFoggy
 
-        fragmentShader: root.isSnowing ? Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/weather_snow.frag.qsb") : Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/weather_rain.frag.qsb")
+        fragmentShader: root.isSnowing ? Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/weather_snow.frag.qsb") : root.isRaining ? Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/weather_rain.frag.qsb") : root.isCloudy || root.isFoggy ? Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/weather_cloud.frag.qsb") : ""
       }
     }
   }

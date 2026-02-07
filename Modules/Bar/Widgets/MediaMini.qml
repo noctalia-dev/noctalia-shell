@@ -53,6 +53,8 @@ Item {
   readonly property bool showProgressRing: (widgetSettings.showProgressRing !== undefined) ? widgetSettings.showProgressRing : widgetMetadata.showProgressRing
   readonly property bool useFixedWidth: (widgetSettings.useFixedWidth !== undefined) ? widgetSettings.useFixedWidth : widgetMetadata.useFixedWidth
   readonly property real maxWidth: (widgetSettings.maxWidth !== undefined) ? widgetSettings.maxWidth : Math.max(widgetMetadata.maxWidth, screen ? screen.width * 0.06 : 0)
+  readonly property string textColorKey: (widgetSettings.textColor !== undefined) ? widgetSettings.textColor : widgetMetadata.textColor
+  readonly property color textColor: Color.resolveColorKey(textColorKey)
 
   // Dimensions
   readonly property int artSize: Style.toOdd(capsuleHeight * 0.75)
@@ -336,8 +338,7 @@ Item {
           maxWidth: root.maxWidth - root.mainContentWidth
           forcedHover: mainMouseArea.containsMouse
           NText {
-            // anchors.fill: parent
-            color: hasPlayer ? Color.mOnSurface : Color.mOnSurfaceVariant
+            color: hasPlayer ? root.textColor : Color.mOnSurfaceVariant
             pointSize: barFontSize
           }
         }

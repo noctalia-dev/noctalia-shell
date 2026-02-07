@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "用迷你長條來取代文字數值, 可以避免佈局跑版",
       "compact-mode-label": "緊湊模式",
+      "cpu-frequency-description": "顯示目前 CPU 時脈速度（GHz）。",
+      "cpu-frequency-label": "顯示 CPU 頻率",
       "cpu-temperature-description": "如果可用即顯示 CPU 溫度",
       "cpu-temperature-label": "CPU 溫度",
       "cpu-usage-description": "顯示現在 CPU 的使用百分比",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "重設標題寬度"
     },
     "tray": {
+      "chevron-color-description": "將主題顏色套用至抽屜的箭頭圖示。",
+      "chevron-color-label": "箭頭顏色",
       "colorize-icons-description": "將系統夾圖示套用主題用色",
       "colorize-icons-label": "為圖示上色",
       "drawer-enabled-description": "當啟用時, 沒有釘選的系統匣圖示將會顯示在抽屜面板中<br>如果停用則所有的圖示都會在工具列裡顯示",
@@ -411,6 +415,7 @@
     "installed": "已安裝",
     "interface": "介面",
     "internet": "網際網路",
+    "keybind": "按鍵綁定",
     "language": "語言",
     "loading": "正在載入...",
     "local": "本機",
@@ -448,6 +453,7 @@
     "primary": "主要的",
     "random": "隨機",
     "reboot": "重新啟動",
+    "record": "開始錄製",
     "refresh": "重新整理",
     "required": "(必要)",
     "reset": "重設",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "顯示延遲",
       "appearance-background-opacity-description": "設定工具列背景的不透明度",
       "appearance-background-opacity-label": "工具列背景不透明度",
+      "appearance-capsule-color-description": "為欄膠囊選擇一種顏色，或不使用任何顏色以採用預設表面顏色。",
+      "appearance-capsule-color-label": "膠囊顏色",
       "appearance-capsule-opacity-description": "設定當啟用顯示小容器時小工具的背景不透明度",
       "appearance-capsule-opacity-label": "小容器不透明度",
       "appearance-density-description": "調整工具列的內部間距來做出緊湊或寬敞的外觀",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "輸出音量"
     },
     "plugins": {
+      "auto-update": "自動更新外掛程式",
+      "auto-update-description": "在 shell 啟動時自動更新所有外掛程式。",
       "available-description": "從設定的來源檢視及安裝外掛模組",
       "available-label": "可用的外掛模組",
       "available-no-plugins-description": "檢查你的模組來源或者重新整理列表",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "內建登出 (沒有指令)",
       "entry-settings-default-info-description": "如果沒有指定自訂指令則使用系統的預設指令",
       "entry-settings-default-info-label": "預設指令",
+      "entry-settings-keybind-description": "當會話選單打開時，分配一個按鍵組合來觸發此操作。",
+      "entry-settings-keybind-placeholder": "按下錄製以分配一個鍵...",
+      "entry-settings-keybind-recording": "錄製中... 按任意組合鍵",
       "entry-settings-title": "設定{entry}",
       "entry-settings-tooltip": "設定指令",
       "general-desc": "設定工作階段選單的外觀和行為",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "完成!",
     "appearance": {
-      "subheader": "選擇 Dark Mode 和色彩來源 (桌布或預先定義)。"
+      "subheader": "選擇深色模式和顏色來源（桌布或預設）。"
     },
     "customize": {
       "header": "客製你的使用體驗",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "圓盤",
       "fade": "淡入",
+      "honeycomb": "蜂巢",
+      "pixelate": "像素化",
       "stripes": "條紋",
       "wipe": "擦除"
     },

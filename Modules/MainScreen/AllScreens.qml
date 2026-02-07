@@ -4,7 +4,6 @@ import Quickshell.Wayland
 
 import qs.Commons
 import qs.Modules.MainScreen
-import qs.Services.Noctalia
 import qs.Services.UI
 
 // ------------------------------
@@ -39,7 +38,7 @@ Variants {
     // Main Screen loader - Bar and panels backgrounds
     Loader {
       id: windowLoader
-      active: parent.shouldBeActive && PluginService.pluginsFullyLoaded
+      active: parent.shouldBeActive
       asynchronous: false
 
       property ShellScreen loaderScreen: modelData

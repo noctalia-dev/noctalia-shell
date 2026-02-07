@@ -58,7 +58,8 @@ ColumnLayout {
                     "action": entriesModel[i].id,
                     "enabled": entriesModel[i].enabled,
                     "countdownEnabled": entriesModel[i].countdownEnabled !== undefined ? entriesModel[i].countdownEnabled : true,
-                    "command": entriesModel[i].command || ""
+                    "command": entriesModel[i].command || "",
+                    "keybind": entriesModel[i].keybind || ""
                   });
     }
     Settings.data.sessionMenu.powerOptions = toSave;
@@ -112,11 +113,9 @@ ColumnLayout {
 
       if (dialog) {
         root._activeDialog = dialog;
-        dialog.updateEntryCommand.connect((idx, command) => {
-                                            root.updateEntry(idx, {
-                                                               "command": command
-                                                             });
-                                          });
+        dialog.updateEntryProperties.connect((idx, properties) => {
+                                               root.updateEntry(idx, properties);
+                                             });
         dialog.closed.connect(() => {
                                 if (root._activeDialog === dialog) {
                                   root._activeDialog = null;
@@ -159,6 +158,7 @@ ColumnLayout {
           entry.countdownEnabled = settingEntry.countdownEnabled !== undefined ? settingEntry.countdownEnabled : true;
           // Load custom command if defined
           entry.command = settingEntry.command || "";
+          entry.keybind = settingEntry.keybind || "";
           entriesModel.push(entry);
         }
       }
@@ -180,6 +180,7 @@ ColumnLayout {
         entry.countdownEnabled = true;
         // Default command to empty string for new entries
         entry.command = "";
+        entry.keybind = "";
         entriesModel.push(entry);
       }
     }

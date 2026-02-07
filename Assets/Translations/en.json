@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Display stats as mini bar charts instead of text values. Prevents layout shifting.",
       "compact-mode-label": "Compact mode",
+      "cpu-frequency-description": "Display the current CPU clock speed in GHz.",
+      "cpu-frequency-label": "Show CPU frequency",
       "cpu-temperature-description": "Show CPU temperature readings if available.",
       "cpu-temperature-label": "CPU temperature",
       "cpu-usage-description": "Display current CPU usage percentage.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Reset title width"
     },
     "tray": {
+      "chevron-color-description": "Apply theme colors to the drawer chevron icon.",
+      "chevron-color-label": "Chevron color",
       "colorize-icons-description": "Apply theme colors to tray icons.",
       "colorize-icons-label": "Colorize icons",
       "drawer-enabled-description": "When enabled, unpinned tray items are shown in a drawer panel.<br>When disabled, all tray items are shown inline.",
@@ -411,6 +415,7 @@
     "installed": "Installed",
     "interface": "Interface",
     "internet": "Internet",
+    "keybind": "Keybind",
     "language": "Language",
     "loading": "Loading...",
     "local": "Local",
@@ -448,6 +453,7 @@
     "primary": "Primary",
     "random": "Random",
     "reboot": "Reboot",
+    "record": "Start recording",
     "refresh": "Refresh",
     "required": "(required)",
     "reset": "Reset",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Show Delay",
       "appearance-background-opacity-description": "Set the background opacity specifically for the bar.",
       "appearance-background-opacity-label": "Bar background opacity",
+      "appearance-capsule-color-description": "Choose a color for bar capsules, or use none for the default surface color.",
+      "appearance-capsule-color-label": "Capsule color",
       "appearance-capsule-opacity-description": "Set the opacity level for widget backgrounds when capsule is shown.",
       "appearance-capsule-opacity-label": "Capsule opacity",
       "appearance-density-description": "Adjust the bar's padding for a compact or spacious look.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Output volume"
     },
     "plugins": {
+      "auto-update": "Auto-update plugins",
+      "auto-update-description": "Automatically update all plugins when the shell starts.",
       "available-description": "Browse and install plugins from configured sources.",
       "available-label": "Available plugins",
       "available-no-plugins-description": "Check your plugin sources or refresh the list.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Internal logout (no command)",
       "entry-settings-default-info-description": "If no custom command is specified, the default system command will be used.",
       "entry-settings-default-info-label": "Default command",
+      "entry-settings-keybind-description": "Assign a key combination to trigger this action when the session menu is open.",
+      "entry-settings-keybind-placeholder": "Press Record to assign a key...",
+      "entry-settings-keybind-recording": "Recording... Press any key combination",
       "entry-settings-title": "Configure {entry}",
       "entry-settings-tooltip": "Configure command",
       "general-desc": "Configure the session menu panel behavior and appearance.",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Disc",
       "fade": "Fade",
+      "honeycomb": "Honeycomb",
+      "pixelate": "Pixelate",
       "stripes": "Stripes",
       "wipe": "Wipe"
     },

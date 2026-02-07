@@ -6,7 +6,8 @@
       "scrollingMode": "hover",
       "maxWidth": 145,
       "useFixedWidth": false,
-      "colorizeIcons": false
+      "colorizeIcons": false,
+      "textColor": "none"
     },
     "AudioVisualizer": {
       "width": 200,
@@ -14,7 +15,7 @@
       "hideWhenIdle": false
     },
     "Battery": {
-      "displayMode": "graphic",
+      "displayMode": "graphic-clean",
       "deviceNativePath": "__default__",
       "showPowerProfiles": false,
       "showNoctaliaPerformance": false,
@@ -114,6 +115,7 @@
       "showVisualizer": false,
       "showProgressRing": true,
       "visualizerType": "linear",
+      "textColor": "none",
       "compactMode": false,
       "panelShowAlbumArt": true,
       "panelShowVisualizer": true,
@@ -173,6 +175,7 @@
     "Tray": {
       "blacklist": [],
       "colorizeIcons": false,
+      "chevronColor": "none",
       "pinned": [],
       "drawerEnabled": true,
       "hidePassive": false
@@ -240,7 +243,7 @@
     "Clock": {
       "showBackground": true,
       "clockStyle": "digital",
-      "usePrimaryColor": false,
+      "clockColor": "none",
       "useCustomFont": false,
       "format": "HH:mm\\nd MMMM yyyy"
     },

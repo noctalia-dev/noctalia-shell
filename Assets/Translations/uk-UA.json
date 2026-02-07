@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Відображати статистику у вигляді міні-діаграм замість текстових значень. Запобігає зсуву макета.",
       "compact-mode-label": "Компактний режим",
+      "cpu-frequency-description": "Відобразити поточну тактову частоту CPU у ГГц.",
+      "cpu-frequency-label": "Показати частоту CPU",
       "cpu-temperature-description": "Показувати показники температури ЦП, якщо доступно.",
       "cpu-temperature-label": "Температура ЦП",
       "cpu-usage-description": "Відображати поточний відсоток використання ЦП.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Скинути ширину заголовка"
     },
     "tray": {
+      "chevron-color-description": "Застосувати кольори теми до іконки шеврона шухляди.",
+      "chevron-color-label": "Колір стрілки",
       "colorize-icons-description": "Застосувати кольори теми до значків трея.",
       "colorize-icons-label": "Розфарбувати значки",
       "drawer-enabled-description": "Коли увімкнено, не закріплені елементи трея відображаються на панелі ящика.<br>Коли вимкнено, всі елементи трея відображаються в рядку.",
@@ -411,6 +415,7 @@
     "installed": "Встановлено",
     "interface": "Інтерфейс",
     "internet": "Інтернет",
+    "keybind": "Прив'язка клавіш",
     "language": "Мова",
     "loading": "Завантаження...",
     "local": "Місцевий",
@@ -448,6 +453,7 @@
     "primary": "Основний",
     "random": "Випадковий",
     "reboot": "Перезапустити",
+    "record": "Почати запис",
     "refresh": "Оновити",
     "required": "(обов'язково)",
     "reset": "Скинути",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Затримка відображення",
       "appearance-background-opacity-description": "Встановити прозорість фону спеціально для панелі.",
       "appearance-background-opacity-label": "Прозорість фону панелі",
+      "appearance-capsule-color-description": "Виберіть колір для капсул панелі або не використовуйте жодного для стандартного кольору поверхні.",
+      "appearance-capsule-color-label": "Колір капсули",
       "appearance-capsule-opacity-description": "Встановити рівень непрозорості для фону віджетів, коли показано капсулу.",
       "appearance-capsule-opacity-label": "Непрозорість капсули",
       "appearance-density-description": "Налаштуйте відступи панелі для компактного або просторого вигляду.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Вихідна гучність"
     },
     "plugins": {
+      "auto-update": "Автоматичне оновлення плагінів",
+      "auto-update-description": "Автоматично оновлювати всі плагіни при запуску оболонки.",
       "available-description": "Переглядайте та встановлюйте плагіни з налаштованих джерел.",
       "available-label": "Доступні плагіни",
       "available-no-plugins-description": "Перевірте вихідні коди вашого плагіна або оновіть список.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Внутрішній вихід з системи (без команди)",
       "entry-settings-default-info-description": "Якщо не вказано жодної власної команди, буде використано системну команду за замовчуванням.",
       "entry-settings-default-info-label": "Команда за замовчуванням",
+      "entry-settings-keybind-description": "Призначте комбінацію клавіш для запуску цієї дії, коли меню сесії відкрито.",
+      "entry-settings-keybind-placeholder": "Натисніть Запис, щоб призначити клавішу...",
+      "entry-settings-keybind-recording": "Запис... Натисніть будь-яку комбінацію клавіш",
       "entry-settings-title": "Налаштувати {entry}",
       "entry-settings-tooltip": "Налаштувати команду",
       "general-desc": "Налаштувати поведінку та зовнішній вигляд панелі меню сеансу.",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Готово!",
     "appearance": {
-      "subheader": "Виберіть Dark Mode та джерела кольору (Шпалери або попередньо визначені)."
+      "subheader": "Виберіть темний режим і джерела кольорів (Шпалери або попередньо визначені)."
     },
     "customize": {
       "header": "Налаштуйте ваш досвід",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Диск",
       "fade": "Затухання",
+      "honeycomb": "Стільники",
+      "pixelate": "Пікселізувати",
       "stripes": "Смуги",
       "wipe": "Змітання"
     },

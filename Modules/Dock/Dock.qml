@@ -59,11 +59,12 @@ Loader {
         }
       }
 
-      // Refresh icons when DesktopEntries becomes available
+      // Refresh icons and names when DesktopEntries becomes available (or updates)
       Connections {
         target: DesktopEntries.applications
         function onValuesChanged() {
           root.iconRevision++;
+          updateDockApps();
         }
       }
 
@@ -335,7 +336,7 @@ Loader {
                                                            });
                                } else {
                                  // App is pinned but not running - add once
-                                 pushApp("pinned", null, pinnedAppId, pinnedAppId);
+                                 pushApp("pinned", null, pinnedAppId, getAppNameFromDesktopEntry(pinnedAppId) || pinnedAppId);
                                }
                              });
         }

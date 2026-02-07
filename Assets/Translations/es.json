@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Mostrar las estadísticas como mini gráficos de barras en lugar de valores de texto. Evita el desplazamiento del diseño.",
       "compact-mode-label": "Modo compacto",
+      "cpu-frequency-description": "Mostrar la velocidad de reloj actual de la CPU en GHz.",
+      "cpu-frequency-label": "Mostrar frecuencia de la CPU",
       "cpu-temperature-description": "Mostrar las lecturas de temperatura de CPU si están disponibles.",
       "cpu-temperature-label": "Temperatura de la CPU",
       "cpu-usage-description": "Mostrar el porcentaje actual de uso de CPU.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Restablecer ancho del título"
     },
     "tray": {
+      "chevron-color-description": "Aplicar los colores del tema al icono de flecha del cajón.",
+      "chevron-color-label": "Color de la flecha",
       "colorize-icons-description": "Aplicar colores del tema a los iconos de la bandeja del sistema.",
       "colorize-icons-label": "Colorear iconos",
       "drawer-enabled-description": "Cuando está habilitado, los elementos de la bandeja no anclados se muestran en un panel cajón.<br>Cuando está deshabilitado, todos los elementos de la bandeja se muestran en línea.",
@@ -411,6 +415,7 @@
     "installed": "Instalado",
     "interface": "Interfaz",
     "internet": "Internet",
+    "keybind": "Atajo de teclado",
     "language": "Idioma",
     "loading": "Cargando...",
     "local": "Local",
@@ -448,6 +453,7 @@
     "primary": "Primario",
     "random": "Aleatorio",
     "reboot": "Reiniciar",
+    "record": "Iniciar grabación",
     "refresh": "Refrescar",
     "required": "(obligatorio)",
     "reset": "Restablecer",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Demora de Despliegue",
       "appearance-background-opacity-description": "Establece la opacidad del fondo específicamente para la barra.",
       "appearance-background-opacity-label": "Opacidad del fondo de la barra",
+      "appearance-capsule-color-description": "Elige un color para las cápsulas de la barra, o no uses ninguno para el color de superficie predeterminado.",
+      "appearance-capsule-color-label": "Color de la cápsula",
       "appearance-capsule-opacity-description": "Establecer el nivel de opacidad para los fondos de los widgets cuando se muestra la cápsula.",
       "appearance-capsule-opacity-label": "Opacidad de la cápsula",
       "appearance-density-description": "Ajusta el relleno de la barra para un aspecto compacto o espacioso.",
@@ -872,7 +880,7 @@
       "shortcuts-title": "Widgets de accesos directos",
       "system-monitor-disk-path-description": "Selecciona qué punto de montaje de disco debe monitorear la tarjeta del monitor del sistema en el centro de control.",
       "system-monitor-disk-path-label": "Ruta del disco del monitor del sistema",
-      "title": "Centro de control"
+      "title": "Centro de Control"
     },
     "desktop-widgets": {
       "clock-enabled-description": "Mostrar un widget de reloj en el escritorio.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Volumen de salida"
     },
     "plugins": {
+      "auto-update": "Actualizar plugins automáticamente",
+      "auto-update-description": "Actualizar automáticamente todos los plugins cuando se inicie la shell.",
       "available-description": "Navegar e instalar plugins desde fuentes configuradas.",
       "available-label": "Plugins disponibles",
       "available-no-plugins-description": "Comprueba las fuentes de tu plugin o actualiza la lista.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Cierre de sesión interno (sin comando)",
       "entry-settings-default-info-description": "Si no se especifica un comando personalizado, se utilizará el comando predeterminado del sistema.",
       "entry-settings-default-info-label": "Comando predeterminado",
+      "entry-settings-keybind-description": "Asigna una combinación de teclas para activar esta acción cuando el menú de sesión esté abierto.",
+      "entry-settings-keybind-placeholder": "Pulsa Grabar para asignar una tecla...",
+      "entry-settings-keybind-recording": "Grabando... Pulsa cualquier combinación de teclas",
       "entry-settings-title": "Configurar {entry}",
       "entry-settings-tooltip": "Configurar comando",
       "general-desc": "Configurar el comportamiento y la apariencia del panel del menú de sesión.",
@@ -1503,7 +1516,7 @@
     "bottom-center": "Inferior central",
     "bottom-left": "Inferior izquierda",
     "bottom-right": "Inferior derecha",
-    "center": "Centrar",
+    "center": "Centro",
     "center-left": "Izquierda centrado",
     "center-right": "Derecha centrado",
     "close-to-bar": "Cerca del botón de la barra",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "¡Listo!",
     "appearance": {
-      "subheader": "Elige el Modo Oscuro y las fuentes de color (Wallpaper o predefinidas)."
+      "subheader": "Elige el modo oscuro y las fuentes de color (Fondo de pantalla o predefinidas)."
     },
     "customize": {
       "header": "Personaliza tu experiencia",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Disco",
       "fade": "Desvanecer",
+      "honeycomb": "Panal",
+      "pixelate": "Pixelar",
       "stripes": "Rayas",
       "wipe": "Barrido"
     },

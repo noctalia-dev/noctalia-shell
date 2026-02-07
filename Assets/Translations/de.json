@@ -31,7 +31,7 @@
   },
   "bar": {
     "active-window": {
-      "colorize-icons-description": "Theme-Farben auf das aktive Fenster-Symbol anwenden.",
+      "colorize-icons-description": "Themenfarben auf das aktive Fenster-Symbol anwenden.",
       "hide-mode-description": "Steuert das Verhalten des Widgets, wenn kein Fenster aktiv ist.",
       "scrolling-mode-description": "Steuern, wann Textscrolling für lange Fenstertitel aktiviert ist.",
       "show-app-icon-description": "Anwendungssymbol neben dem Fenstertitel anzeigen.",
@@ -50,7 +50,7 @@
       "device-label": "Akkugerät",
       "display-mode-description": "Wählen Sie, wie der Akku in der Leiste angezeigt wird.",
       "display-mode-graphic": "Grafischer Akku",
-      "display-mode-graphic-clean": "Grafische Batterie (ohne %)",
+      "display-mode-graphic-clean": "Grafischer Akku (ohne %)",
       "display-mode-icon-always": "Symbol - Immer % anzeigen",
       "display-mode-icon-hover": "Symbol - Beim Hover anzeigen",
       "display-mode-icon-only": "Nur Symbol",
@@ -186,7 +186,7 @@
       "hide-widget-when-zero-unread-label": "Symbol bei keinen ungelesenen Benachrichtigungen ausblenden",
       "show-unread-badge-description": "Abzeichen mit der Anzahl ungelesener Benachrichtigungen anzeigen.",
       "show-unread-badge-label": "Ungelesen-Abzeichen anzeigen",
-      "unread-badge-color-description": "Wähle die Farbe für das Abzeichen ungelesener Benachrichtigungen.",
+      "unread-badge-color-description": "Wählen Sie die Farbe für das Abzeichen ungelesener Benachrichtigungen.",
       "unread-badge-color-label": "Farbe des Ungelesen-Abzeichens"
     },
     "section-editor": {
@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Statistiken als Mini-Balkendiagramme anstelle von Textwerten anzeigen. Verhindert Layoutverschiebungen.",
       "compact-mode-label": "Kompaktmodus",
+      "cpu-frequency-description": "Die aktuelle CPU-Taktrate in GHz anzeigen.",
+      "cpu-frequency-label": "CPU-Frequenz anzeigen",
       "cpu-temperature-description": "CPU-Temperaturwerte anzeigen, falls verfügbar.",
       "cpu-temperature-label": "CPU-Temperatur",
       "cpu-usage-description": "Aktuelle CPU-Auslastung in Prozent anzeigen.",
@@ -226,7 +228,7 @@
       "use-monospace-font-label": "Schriftart mit fester Breite"
     },
     "taskbar": {
-      "colorize-icons-description": "Theme-Farben auf Taskbar-Symbole anwenden.",
+      "colorize-icons-description": "Themenfarben auf Taskbar-Symbole anwenden.",
       "hide-mode-description": "Steuert das Verhalten des Widgets, wenn keine übereinstimmenden Fenster vorhanden sind.",
       "hide-mode-label": "Ausblendmodus",
       "icon-scale-description": "Legt den Skalierungsfaktor für Taskleistensymbole fest.",
@@ -249,7 +251,9 @@
       "title-width-reset-tooltip": "Titelbreite zurücksetzen"
     },
     "tray": {
-      "colorize-icons-description": "Theme-Farben auf Tray-Symbole anwenden.",
+      "chevron-color-description": "Wendet die Themenfarben auf das Pfeilsymbol des Drawers an.",
+      "chevron-color-label": "Pfeil-Farbe",
+      "colorize-icons-description": "Themenfarben auf Tray-Symbole anwenden.",
       "colorize-icons-label": "Symbole einfärben",
       "drawer-enabled-description": "Wenn aktiviert, werden nicht angeheftete Tray-Elemente in einem Drawer-Panel angezeigt.<br>Wenn deaktiviert, werden alle Tray-Elemente inline angezeigt.",
       "drawer-enabled-label": "Drawer aktivieren",
@@ -411,6 +415,7 @@
     "installed": "Installiert",
     "interface": "Schnittstelle",
     "internet": "Internet",
+    "keybind": "Tastenbelegung",
     "language": "Sprache",
     "loading": "Wird geladen...",
     "local": "Lokal",
@@ -448,6 +453,7 @@
     "primary": "Primär",
     "random": "Zufällig",
     "reboot": "Neu starten",
+    "record": "Aufnahme starten",
     "refresh": "Aktualisieren",
     "required": "(erforderlich)",
     "reset": "Zurücksetzen",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Anzeigeverzögerung",
       "appearance-background-opacity-description": "Legen Sie die Hintergrundtransparenz speziell für die Leiste fest.",
       "appearance-background-opacity-label": "Leisten-Hintergrundtransparenz",
+      "appearance-capsule-color-description": "Wählen Sie eine Farbe für Leistenkapseln oder keine, um die Standard-Oberflächenfarbe zu verwenden.",
+      "appearance-capsule-color-label": "Kapselfarbe",
       "appearance-capsule-opacity-description": "Deckkraft der Widget-Hintergründe festlegen, wenn Kapsel angezeigt wird.",
       "appearance-capsule-opacity-label": "Kapsel-Deckkraft",
       "appearance-density-description": "Innenabstand der Leiste für kompaktes oder geräumiges Aussehen anpassen.",
@@ -844,7 +852,7 @@
       "title": "Farbschema",
       "wallpaper-method-description": "Wählen Sie Ihre bevorzugte Methode zur Palettengenerierung.",
       "wallpaper-method-label": "Methode zur Palettengenerierung",
-      "wallpaper-monitor-source-description": "Wähle den Monitor aus, der für die Extraktion der Wallpaper-Farben verwendet werden soll.",
+      "wallpaper-monitor-source-description": "Wählen Sie den Monitor aus, der für die Extraktion der Wallpaper-Farben verwendet werden soll.",
       "wallpaper-monitor-source-label": "Quelle der Farbgenerierung"
     },
     "control-center": {
@@ -923,7 +931,7 @@
       "system-stat-layout-side": "Seite",
       "system-stat-rounded-corners-description": "Abgerundete Ecken für den Widget-Hintergrund verwenden.",
       "system-stat-rounded-corners-label": "Abgerundete Ecken",
-      "system-stat-show-background-description": "Zeige den Hintergrundbehälter für das Systemstatistik-Widget.",
+      "system-stat-show-background-description": "Zeige den Hintergrundcontainer für das Systemstatistik-Widget.",
       "system-stat-show-background-label": "Hintergrund anzeigen",
       "system-stat-stat-type-description": "Wähle, welche Systemstatistik angezeigt werden soll.",
       "system-stat-stat-type-label": "Statistiktyp",
@@ -968,7 +976,7 @@
       "appearance-background-opacity-description": "Hintergrundtransparenz des Docks anpassen.",
       "appearance-border-radius-description": "Den Radius der Dock-Umrandung anpassen.",
       "appearance-border-radius-label": "Eckenradius",
-      "appearance-colorize-icons-description": "Theme-Farben auf Dock-App-Symbole anwenden (nur nicht fokussierte Apps).",
+      "appearance-colorize-icons-description": "Themenfarben auf Dock-App-Symbole anwenden (nur nicht fokussierte Apps).",
       "appearance-colorize-icons-label": "Symbole einfärben",
       "appearance-dead-opacity-description": "Die Deckkraft von App-Symbolen anpassen, die nicht ausgeführt werden.",
       "appearance-dead-opacity-label": "Tote Opazität",
@@ -1165,7 +1173,7 @@
       "clock-format-label": "Uhrenformat",
       "clock-style-analog": "Analog",
       "clock-style-custom": "Benutzerdefiniert",
-      "clock-style-description": "Wähle den visuellen Stil der Uhr auf dem Sperrbildschirm.",
+      "clock-style-description": "Wählen Sie den visuellen Stil der Uhr auf dem Sperrbildschirm.",
       "clock-style-digital": "Digital",
       "clock-style-label": "Uhrstil",
       "compact-lockscreen-description": "Zeige nur die Login-Eingabe und Systemsteuerung, blende Wetter- und Medien-Widgets aus.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Ausgangslautstärke"
     },
     "plugins": {
+      "auto-update": "Plugins automatisch aktualisieren",
+      "auto-update-description": "Automatisch alle Plugins aktualisieren, wenn die Shell startet.",
       "available-description": "Plugins aus konfigurierten Quellen durchsuchen und installieren.",
       "available-label": "Verfügbare Plugins",
       "available-no-plugins-description": "Überprüfen Sie Ihre Plugin-Quellen oder aktualisieren Sie die Liste.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Interne Abmeldung (kein Befehl)",
       "entry-settings-default-info-description": "Wenn kein benutzerdefinierter Befehl angegeben ist, wird der standardmäßige Systembefehl verwendet.",
       "entry-settings-default-info-label": "Standardbefehl",
+      "entry-settings-keybind-description": "Weisen Sie eine Tastenkombination zu, um diese Aktion auszulösen, wenn das Sitzungsmenü geöffnet ist.",
+      "entry-settings-keybind-placeholder": "Drücke Aufnehmen, um eine Taste zuzuweisen...",
+      "entry-settings-keybind-recording": "Aufnahme läuft... Drücken Sie eine beliebige Tastenkombination",
       "entry-settings-title": "Konfiguriere {entry}",
       "entry-settings-tooltip": "Konfigurationsbefehl",
       "general-desc": "Konfigurieren Sie das Verhalten und Erscheinungsbild des Sitzungsmenü-Panels.",
@@ -1405,7 +1418,7 @@
       "box-border-description": "Zeige eine Umrandung um Inhaltsbereiche an.",
       "box-border-label": "Containerumriss",
       "box-border-radius-description": "Passt die Eckenrundung wichtiger Layoutbereiche an, wie z. B. Seitenleisten, Karten und Inhaltsbereiche.",
-      "box-border-radius-label": "Behälterradius",
+      "box-border-radius-label": "Eckenradius",
       "box-border-radius-reset": "Container-Radius zurücksetzen",
       "control-border-radius-description": "Steuert die Krümmung interaktiver Elemente, einschließlich Schaltflächen, Umschalter und Textfelder.",
       "control-border-radius-label": "Eingaberadius",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Fertig!",
     "appearance": {
-      "subheader": "Wähle Dark Mode und Farbquellen (Wallpaper oder vordefiniert)."
+      "subheader": "Wählen Sie den Dunkelmodus und Farbquellen (Hintergrundbild oder vordefiniert)."
     },
     "customize": {
       "header": "Erlebnis anpassen",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Scheibe",
       "fade": "Überblenden",
+      "honeycomb": "Honigwabe",
+      "pixelate": "Verpixeln",
       "stripes": "Streifen",
       "wipe": "Wischen"
     },

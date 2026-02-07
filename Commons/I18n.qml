@@ -39,7 +39,9 @@ Singleton {
         Logger.e("I18n", `Failed to scan translation directory`);
         // Fallback to default languages
         availableLanguages = ["en"];
-        detectLanguage();
+        if (!root.isLoaded) {
+          detectLanguage();
+        }
       }
     }
   }
@@ -47,6 +49,7 @@ Singleton {
   // FileView to load translation files
   property FileView translationFile: FileView {
     id: fileView
+    printErrors: false
     watchChanges: true
     onFileChanged: reload()
     onLoaded: {
@@ -64,8 +67,29 @@ Singleton {
       }
     }
     onLoadFailed: function (error) {
-      setLanguage("en");
-      Logger.e("I18n", `Failed to load translation file: ${error}`);
+      if (root.langCode === "en") {
+        Logger.e("I18n", `Failed to load English translation file: ${error}`);
+        // English also failed - still emit signal to unblock startup
+        root.isLoaded = true;
+        root.translationsLoaded();
+        return;
+      }
+
+      // Try short code before falling back to English (e.g. "zh-CN" → "zh")
+      // Qt.callLater is needed because FileView doesn't re-trigger when path
+      // is changed inside its own onLoadFailed handler
+      var shortCode = root.langCode.substring(0, 2);
+      if (shortCode !== root.langCode) {
+        Logger.d("I18n", `Translation file for "${root.langCode}" not found, trying "${shortCode}"`);
+        root.langCode = shortCode;
+        Qt.callLater(loadTranslations);
+      } else {
+        Logger.w("I18n", `Translation file for "${root.langCode}" not found, falling back to English`);
+        root.langCode = "en";
+        root.fullLocaleCode = "en";
+        root.locale = Qt.locale("en");
+        Qt.callLater(loadTranslations);
+      }
     }
   }
 
@@ -90,7 +114,45 @@ Singleton {
 
   Component.onCompleted: {
     Logger.i("I18n", "Service started");
+
+    // Fast path: immediately determine language and start loading translations
+    // without waiting for the directory scan
+    var lang = determineFastLanguage();
+    langCode = lang.code;
+    fullLocaleCode = lang.fullLocale;
+    locale = Qt.locale(lang.fullLocale);
+    systemDetectedLangCode = lang.code;
+    Logger.i("I18n", `Fast path: loading "${lang.code}" (locale: "${lang.fullLocale}")`);
+    loadTranslations();
+
+    // Scan available languages in background (needed for settings UI language picker)
     scanAvailableLanguages();
+  }
+
+  // Determine the most likely language without waiting for directory scan
+  function determineFastLanguage() {
+    // Try user preference from Settings (defaults to "" if not yet loaded from disk)
+    var userLang = Settings.data.general.language;
+    if (userLang !== "") {
+      return {
+        code: userLang,
+        fullLocale: userLang
+      };
+    }
+
+    // Fall back to system locale - try full code first (e.g. "zh-CN"),
+    // onLoadFailed will try the short code ("zh") if the file doesn't exist
+    for (var i = 0; i < Qt.locale().uiLanguages.length; i++) {
+      var fullLang = Qt.locale().uiLanguages[i];
+      return {
+        code: fullLang,
+        fullLocale: fullLang
+      };
+    }
+    return {
+      code: "en",
+      fullLocale: "en"
+    };
   }
 
   // -------------------------------------------
@@ -107,7 +169,9 @@ Singleton {
       if (!output || output.trim() === "") {
         Logger.w("I18n", "Empty directory listing output");
         availableLanguages = ["en"];
-        detectLanguage();
+        if (!root.isLoaded) {
+          detectLanguage();
+        }
         return;
       }
 
@@ -141,13 +205,25 @@ Singleton {
       availableLanguages = languages;
       Logger.d("I18n", `Found ${languages.length} available languages: ${languages.join(', ')}`);
 
-      // Detect language after scanning
+      // If translations already loaded via fast path, only correct if user preference differs
+      if (root.isLoaded) {
+        var userLang = Settings.data.general.language;
+        if (userLang !== "" && userLang !== root.langCode && availableLanguages.includes(userLang)) {
+          Logger.i("I18n", `Correcting fast-path: switching to user preference "${userLang}"`);
+          setLanguage(userLang);
+        }
+        return;
+      }
+
+      // Detect language after scanning (fallback if fast path hasn't completed yet)
       detectLanguage();
     } catch (e) {
       Logger.e("I18n", `Failed to parse directory listing: ${e}`);
       // Fallback to default languages
       availableLanguages = ["en"];
-      detectLanguage();
+      if (!root.isLoaded) {
+        detectLanguage();
+      }
     }
   }
 
@@ -228,8 +304,8 @@ Singleton {
     isLoaded = false;
     Logger.d("I18n", `Loading translations: ${langCode}`);
 
-    // Only load fallback translations if we are not using english and english is available
-    if (langCode !== "en" && availableLanguages.includes("en")) {
+    // Load English fallback for non-English languages (English is always bundled)
+    if (langCode !== "en") {
       fallbackFileView.path = `file://${Quickshell.shellDir}/Assets/Translations/en.json`;
     }
   }

@@ -199,6 +199,8 @@
     "system-monitor": {
       "compact-mode-description": "Отображать статистику в виде мини-диаграмм вместо текстовых значений. Предотвращает сдвиг макета.",
       "compact-mode-label": "Компактный режим",
+      "cpu-frequency-description": "Отобразить текущую тактовую частоту CPU в ГГц.",
+      "cpu-frequency-label": "Показать частоту CPU",
       "cpu-temperature-description": "Показывать показания температуры процессора, если доступны.",
       "cpu-temperature-label": "Температура CPU",
       "cpu-usage-description": "Отображать текущий процент использования CPU.",
@@ -249,6 +251,8 @@
       "title-width-reset-tooltip": "Сбросить ширину заголовка"
     },
     "tray": {
+      "chevron-color-description": "Применить цвета темы к иконке шеврона выдвижной панели.",
+      "chevron-color-label": "Цвет стрелки",
       "colorize-icons-description": "Применить цвета темы к иконкам трея.",
       "colorize-icons-label": "Раскрасить иконки",
       "drawer-enabled-description": "Если включено, незакрепленные элементы трея отображаются во всплывающей панели.<br>Если отключено, все элементы трея отображаются в строку.",
@@ -411,6 +415,7 @@
     "installed": "Установлено",
     "interface": "Интерфейс",
     "internet": "Интернет",
+    "keybind": "Привязка клавиш",
     "language": "Язык",
     "loading": "Загрузка...",
     "local": "Местный",
@@ -448,6 +453,7 @@
     "primary": "Основной",
     "random": "Случайный",
     "reboot": "Перезагрузить",
+    "record": "Начать запись",
     "refresh": "Обновить",
     "required": "(обязательно)",
     "reset": "Сброс",
@@ -743,6 +749,8 @@
       "appearance-auto-show-delay-label": "Задержка отображения",
       "appearance-background-opacity-description": "Установите прозрачность фона специально для панели.",
       "appearance-background-opacity-label": "Прозрачность фона бара",
+      "appearance-capsule-color-description": "Выберите цвет для капсул панели или не используйте никакой для цвета поверхности по умолчанию.",
+      "appearance-capsule-color-label": "Цвет капсулы",
       "appearance-capsule-opacity-description": "Установить уровень непрозрачности для фона виджетов, когда капсула отображается.",
       "appearance-capsule-opacity-label": "Непрозрачность капсулы",
       "appearance-density-description": "Настройка отступов панели для компактного или просторного вида.",
@@ -1282,6 +1290,8 @@
       "types-volume-label": "Выходная громкость"
     },
     "plugins": {
+      "auto-update": "Автоматическое обновление плагинов",
+      "auto-update-description": "Автоматически обновлять все плагины при запуске оболочки.",
       "available-description": "Просмотр и установка плагинов из настроенных источников.",
       "available-label": "Доступные плагины",
       "available-no-plugins-description": "Проверьте исходники вашего плагина или обновите список.",
@@ -1357,6 +1367,9 @@
       "entry-settings-default-command-logout": "Внутренний выход из системы (без команды)",
       "entry-settings-default-info-description": "Если не указана пользовательская команда, будет использована системная команда по умолчанию.",
       "entry-settings-default-info-label": "Команда по умолчанию",
+      "entry-settings-keybind-description": "Назначьте комбинацию клавиш для вызова этого действия, когда меню сеанса открыто.",
+      "entry-settings-keybind-placeholder": "Нажмите Запись, чтобы назначить клавишу...",
+      "entry-settings-keybind-recording": "Запись... Нажмите любую комбинацию клавиш",
       "entry-settings-title": "Настроить {entry}",
       "entry-settings-tooltip": "Настроить команду",
       "general-desc": "Настройка поведения и внешнего вида панели меню сеанса.",
@@ -1523,7 +1536,7 @@
   "setup": {
     "all-done": "Готово!",
     "appearance": {
-      "subheader": "Выберите режим оформления и источник палитры цветов (обои или предопределённые)."
+      "subheader": "Выберите темный режим и источники цвета (Обои или предопределенные)."
     },
     "customize": {
       "header": "Настройте свой опыт",
@@ -1767,6 +1780,8 @@
     "transitions": {
       "disc": "Диск",
       "fade": "Затухание",
+      "honeycomb": "Соты",
+      "pixelate": "Пикселизировать",
       "stripes": "Полосы",
       "wipe": "Стирание"
     },

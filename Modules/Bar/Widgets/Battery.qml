@@ -71,15 +71,22 @@ Item {
 
       let timeText = BatteryService.getTimeRemainingText(selectedDevice);
       if (timeText) {
-        const entries = timeText.split(":").map(a => a.trim());
-        rows.push(entries);
+        const colonIdx = timeText.indexOf(":");
+        if (colonIdx >= 0) {
+          rows.push([timeText.substring(0, colonIdx).trim(), timeText.substring(colonIdx + 1).trim()]);
+        } else {
+          rows.push([timeText, ""]);
+        }
       }
 
       let rateText = BatteryService.getRateText(selectedDevice);
-      console.log(rateText);
       if (rateText) {
-        const entries = rateText.split(":").map(a => a.trim());
-        rows.push(entries);
+        const colonIdx = rateText.indexOf(":");
+        if (colonIdx >= 0) {
+          rows.push([rateText.substring(0, colonIdx).trim(), rateText.substring(colonIdx + 1).trim()]);
+        } else {
+          rows.push([rateText, ""]);
+        }
       }
 
       // Show battery health if supported (check actual battery, not DisplayDevice)
@@ -184,6 +191,7 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
+    cursorShape: Qt.PointingHandCursor
     onEntered: {
       if (root.tooltipContent) {
         TooltipService.show(root, root.tooltipContent, BarService.getTooltipDirection(root.screen?.name));

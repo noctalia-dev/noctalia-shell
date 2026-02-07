@@ -46,6 +46,8 @@ Item {
   // Maximum widget width with user settings support
   readonly property real maxWidth: (widgetSettings.maxWidth !== undefined) ? widgetSettings.maxWidth : Math.max(widgetMetadata.maxWidth || 0, screen ? screen.width * 0.06 : 0)
   readonly property bool useFixedWidth: (widgetSettings.useFixedWidth !== undefined) ? widgetSettings.useFixedWidth : (widgetMetadata.useFixedWidth || false)
+  readonly property string textColorKey: (widgetSettings.textColor !== undefined) ? widgetSettings.textColor : widgetMetadata.textColor
+  readonly property color textColor: Color.resolveColorKey(textColorKey)
 
   readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
@@ -274,7 +276,7 @@ Item {
             pointSize: barFontSize
             applyUiScale: false
             font.weight: Style.fontWeightMedium
-            color: Color.mOnSurface
+            color: root.textColor
           }
         }
       }
