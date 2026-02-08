@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Écran de verrouillage compact",
       "lock-on-suspend-description": "Verrouiller automatiquement l'écran lors de la mise en veille du système.",
       "lock-on-suspend-label": "Verrouiller à la suspension",
+      "lock-screen-animations-description": "Activer ou désactiver les animations de l'écran de verrouillage.",
+      "lock-screen-animations-label": "Animations de l'Écran de Verrouillage",
       "show-hibernate-description": "Afficher l’option 'hiberner' dans les commandes d'alimentation.",
       "show-hibernate-label": "Afficher l’hibernation",
       "show-session-buttons-description": "Autoriser l'accès aux paramètres d'alimentation depuis l'écran de verrouillage.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Chargement des fonds d'écran...",
       "no-results": "Aucun fond d'écran trouvé. Essayez une autre requête de recherche.",
-      "page": "{current} sur {total}"
+      "page": "{current} sur {total}",
+      "page-prefix": "Page",
+      "page-suffix": "de {total}"
     }
   },
   "weather": {

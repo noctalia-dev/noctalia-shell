@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "精簡鎖定畫面",
       "lock-on-suspend-description": "在暫停系統時自動鎖定畫面",
       "lock-on-suspend-label": "暫停時鎖定",
+      "lock-screen-animations-description": "啟用或停用鎖定畫面動畫。",
+      "lock-screen-animations-label": "鎖定畫面動畫",
       "show-hibernate-description": "在電源及工作階段選單顯示睡眠",
       "show-hibernate-label": "顯示睡眠",
       "show-session-buttons-description": "允許在鎖定畫面存取電源控制",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "正在載入桌布...",
       "no-results": "找不到桌布, 試著用不同的搜尋字串",
-      "page": "第 {current} / {total} 頁"
+      "page": "第 {current} / {total} 頁",
+      "page-prefix": "頁面",
+      "page-suffix": "共 {total} 個"
     }
   },
   "weather": {

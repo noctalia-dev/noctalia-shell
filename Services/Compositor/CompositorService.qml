@@ -487,6 +487,16 @@ Singleton {
     Quickshell.execDetached(["sh", "-c", "systemctl suspend || loginctl suspend"]);
   }
 
+  function lock() {
+    Logger.i("Compositor", "LockScreen requested");
+    if (executeSessionAction("lock"))
+      return;
+
+    if (PanelService && PanelService.lockScreen) {
+      PanelService.lockScreen.active = true;
+    }
+  }
+
   function hibernate() {
     Logger.i("Compositor", "Hibernate requested");
     if (executeSessionAction("hibernate"))
@@ -505,6 +515,12 @@ Singleton {
 
   function lockAndSuspend() {
     Logger.i("Compositor", "Lock and suspend requested");
+
+    // if a custom lock command exists, execute it and suspend without wait
+    if (executeSessionAction("lock")) {
+      suspend();
+      return;
+    }
 
     // If already locked, suspend immediately
     if (PanelService && PanelService.lockScreen && PanelService.lockScreen.active) {

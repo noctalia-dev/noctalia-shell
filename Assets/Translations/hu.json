@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Kompakt zárolási képernyő",
       "lock-on-suspend-description": "A képernyő automatikus zárolása a rendszer felfüggesztésekor.",
       "lock-on-suspend-label": "Zárolás felfüggesztéskor",
+      "lock-screen-animations-description": "A zárolási képernyő animációinak engedélyezése vagy letiltása.",
+      "lock-screen-animations-label": "Zárolási Képernyő Animációk",
       "show-hibernate-description": "A 'hibernálás' lehetőség megjelenítése az energiakezelési műveletek között.",
       "show-hibernate-label": "Hibernálás megjelenítése",
       "show-session-buttons-description": "Engedélyezi a hozzáférést az energiabeállításokhoz a zárolási képernyőről.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Háttérképek betöltése...",
       "no-results": "Nincs háttérkép. Próbáljon másik keresést.",
-      "page": "{current} / {total}"
+      "page": "{current} / {total}",
+      "page-prefix": "Oldal",
+      "page-suffix": "{total} közül"
     }
   },
   "weather": {

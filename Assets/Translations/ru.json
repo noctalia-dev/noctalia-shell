@@ -675,7 +675,7 @@
       "system-cpu": "ЦП:",
       "system-disk": "Диск:",
       "system-gpu": "Графический процессор",
-      "system-host": "Ведущий:",
+      "system-host": "хост:",
       "system-install-hint": "Установите fastfetch для просмотра информации о системе",
       "system-kernel": "Ядро:",
       "system-loading": "Загрузка системной информации...",
@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Компактный экран блокировки",
       "lock-on-suspend-description": "Автоматически блокировать экран при приостановке работы системы.",
       "lock-on-suspend-label": "Блокировать при приостановке",
+      "lock-screen-animations-description": "Включить или отключить анимации экрана блокировки.",
+      "lock-screen-animations-label": "Анимации Экрана Блокировки",
       "show-hibernate-description": "Показывать опцию 'спящий режим' в элементах управления питанием.",
       "show-hibernate-label": "Показывать спящий режим",
       "show-session-buttons-description": "Разрешить доступ к настройкам питания с экрана блокировки.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Загрузка обоев...",
       "no-results": "Обои не найдены. Попробуйте другой поисковый запрос.",
-      "page": "{current} из {total}"
+      "page": "{current} из {total}",
+      "page-prefix": "Страница",
+      "page-suffix": "из {total}"
     }
   },
   "weather": {

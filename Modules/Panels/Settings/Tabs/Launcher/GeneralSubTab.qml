@@ -56,6 +56,14 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.launcher.settings-overlay-layer-label")
+    description: I18n.tr("panels.launcher.settings-overlay-layer-description")
+    checked: Settings.data.appLauncher.overviewLayer
+    onToggled: checked => Settings.data.appLauncher.overviewLayer = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.overviewLayer")
+  }
+
+  NToggle {
     label: I18n.tr("tooltips.grid-view")
     description: I18n.tr("panels.launcher.settings-grid-view-description")
     checked: Settings.data.appLauncher.viewMode === "grid"

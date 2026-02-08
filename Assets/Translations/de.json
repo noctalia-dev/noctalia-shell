@@ -675,7 +675,7 @@
       "system-cpu": "CPU:",
       "system-disk": "Festplatte:",
       "system-gpu": "GPU:",
-      "system-host": "Gastgeber:",
+      "system-host": "Host:",
       "system-install-hint": "Installieren Sie fastfetch, um Systeminformationen anzuzeigen",
       "system-kernel": "Kernel:",
       "system-loading": "Systeminformationen werden geladen...",
@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Kompakter Sperrbildschirm",
       "lock-on-suspend-description": "Den Bildschirm beim Energiesparen automatisch sperren.",
       "lock-on-suspend-label": "Sperren beim Energiesparen",
+      "lock-screen-animations-description": "Sperrbildschirm-Animationen aktivieren oder deaktivieren.",
+      "lock-screen-animations-label": "Sperrbildschirm-Animationen",
       "show-hibernate-description": "Die Option 'Ruhezustand' in den Energieoptionen anzeigen.",
       "show-hibernate-label": "Ruhezustand anzeigen",
       "show-session-buttons-description": "Zugriff auf die Energieeinstellungen vom Sperrbildschirm aus erlauben.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Hintergrundbilder werden geladen...",
       "no-results": "Keine Hintergrundbilder gefunden. Versuchen Sie eine andere Suchanfrage.",
-      "page": "{current} von {total}"
+      "page": "{current} von {total}",
+      "page-prefix": "Seite",
+      "page-suffix": "von {total}"
     }
   },
   "weather": {

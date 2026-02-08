@@ -675,7 +675,7 @@
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
       "system-gpu": "GPU:",
-      "system-host": "Anfitrião(ã):",
+      "system-host": "Host:",
       "system-install-hint": "Instale o fastfetch para visualizar informações do sistema",
       "system-kernel": "Kernel:",
       "system-loading": "Carregando informações do sistema...",
@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Tela de bloqueio compacta",
       "lock-on-suspend-description": "Bloquear a tela automaticamente ao suspender o sistema.",
       "lock-on-suspend-label": "Bloquear ao suspender",
+      "lock-screen-animations-description": "Ativar ou desativar as animações do ecrã de bloqueio.",
+      "lock-screen-animations-label": "Animações da Tela de Bloqueio",
       "show-hibernate-description": "Mostrar a opção 'hibernar' nos controles de energia.",
       "show-hibernate-label": "Mostrar hibernar",
       "show-session-buttons-description": "Permitir acesso às configurações de energia a partir da tela de bloqueio.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Carregando papéis de parede...",
       "no-results": "Nenhum papel de parede encontrado. Tente uma busca diferente.",
-      "page": "{current} de {total}"
+      "page": "{current} de {total}",
+      "page-prefix": "Página",
+      "page-suffix": "de {total}"
     }
   },
   "weather": {

@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "컴팩트 잠금 화면",
       "lock-on-suspend-description": "시스템 대기 모드 진입 시 자동으로 화면을 잠급니다.",
       "lock-on-suspend-label": "대기 모드 시 잠금",
+      "lock-screen-animations-description": "잠금 화면 애니메이션 활성화 또는 비활성화.",
+      "lock-screen-animations-label": "잠금 화면 애니메이션",
       "show-hibernate-description": "전원 제어에 '최대 절전' 옵션을 표시합니다.",
       "show-hibernate-label": "최대 절전 표시",
       "show-session-buttons-description": "잠금 화면에서 전원 설정에 대한 액세스를 허용합니다.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "배경화면 로딩 중...",
       "no-results": "배경화면을 찾을 수 없습니다. 다른 검색어를 시도해 보세요.",
-      "page": "{total} 중 {current}"
+      "page": "{total} 중 {current}",
+      "page-prefix": "페이지",
+      "page-suffix": "{total}개 중"
     }
   },
   "weather": {

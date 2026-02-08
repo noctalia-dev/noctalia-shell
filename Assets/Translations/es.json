@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Pantalla de bloqueo compacta",
       "lock-on-suspend-description": "Bloquear la pantalla automáticamente al suspender el sistema.",
       "lock-on-suspend-label": "Bloquear al suspender",
+      "lock-screen-animations-description": "Activar o desactivar las animaciones de la pantalla de bloqueo.",
+      "lock-screen-animations-label": "Animaciones de la Pantalla de Bloqueo",
       "show-hibernate-description": "Mostrar la opción 'hibernar' en los controles de energía.",
       "show-hibernate-label": "Mostrar hibernar",
       "show-session-buttons-description": "Permitir el acceso a las opciones de sesión desde la pantalla de bloqueo.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Cargando fondos de pantalla...",
       "no-results": "No se encontraron fondos de pantalla. Intenta con una búsqueda diferente.",
-      "page": "{current} de {total}"
+      "page": "{current} de {total}",
+      "page-prefix": "Página",
+      "page-suffix": "de {total}"
     }
   },
   "weather": {

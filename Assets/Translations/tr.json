@@ -675,7 +675,7 @@
       "system-cpu": "İşlemci:",
       "system-disk": "Disk:",
       "system-gpu": "GPU:",
-      "system-host": "Ev sahibi:",
+      "system-host": "Host:",
       "system-install-hint": "Sistem bilgilerini görüntülemek için fastfetch'i kurun",
       "system-kernel": "Çekirdek:",
       "system-loading": "Sistem bilgileri yükleniyor...",
@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Kompakt ekran kilidi",
       "lock-on-suspend-description": "Sistemi askıya alırken otomatik olarak ekranı kilitler.",
       "lock-on-suspend-label": "Askıya alırken kilitle",
+      "lock-screen-animations-description": "Kilit ekranı animasyonlarını etkinleştir veya devre dışı bırak.",
+      "lock-screen-animations-label": "Kilit Ekranı Animasyonları",
       "show-hibernate-description": "Güç kontrollerinde 'hazırda beklet' seçeneğini göster.",
       "show-hibernate-label": "Hazırda beklet seçeneğini göster",
       "show-session-buttons-description": "Kilit ekranından güç ayarlarına erişime izin ver.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Duvar kâğıtları yükleniyor...",
       "no-results": "Duvar kâğıdı bulunamadı. Farklı bir arama sorgusu deneyin.",
-      "page": "{current} / {total}"
+      "page": "{current} / {total}",
+      "page-prefix": "Sayfa",
+      "page-suffix": "{total} taneden"
     }
   },
   "weather": {

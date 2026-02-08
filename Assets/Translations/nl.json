@@ -675,7 +675,7 @@
       "system-cpu": "CPU:",
       "system-disk": "Schijf:",
       "system-gpu": "GPU:",
-      "system-host": "Gastheer/Gastvrouw:",
+      "system-host": "Host:",
       "system-install-hint": "Installeer fastfetch om systeeminformatie te bekijken",
       "system-kernel": "Kernel:",
       "system-loading": "Systeeminformatie laden...",
@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Compact vergrendelscherm",
       "lock-on-suspend-description": "Vergrendel het scherm automatisch wanneer het systeem wordt onderbroken.",
       "lock-on-suspend-label": "Vergrendelen bij onderbreken",
+      "lock-screen-animations-description": "Vergrendelschermanimaties in- of uitschakelen.",
+      "lock-screen-animations-label": "Vergrendelschermanimaties",
       "show-hibernate-description": "De optie 'sluimerstand' tonen in de energieopties.",
       "show-hibernate-label": "Sluimerstand tonen",
       "show-session-buttons-description": "Toegang tot energie-instellingen toestaan vanaf het vergrendelscherm.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Achtergronden laden...",
       "no-results": "Geen achtergronden gevonden. Probeer een andere zoekopdracht.",
-      "page": "{current} van {total}"
+      "page": "{current} van {total}",
+      "page-prefix": "Pagina",
+      "page-suffix": "van {total}"
     }
   },
   "weather": {

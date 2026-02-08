@@ -377,7 +377,7 @@ PanelWindow {
 
       // Auto-hide properties (read by AllBackgrounds for background fade)
       readonly property bool autoHide: Settings.data.bar.displayMode === "auto_hide"
-      property bool isHidden: false
+      property bool isHidden: autoHide
 
       Connections {
         target: BarService

@@ -75,8 +75,8 @@ NIconButton {
                  }
   }
 
-  onClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
-  onMiddleClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
+  onClicked: PanelService.toggleLauncher(screen)
+  onMiddleClicked: PanelService.toggleLauncher(screen)
   onRightClicked: {
     PanelService.showContextMenu(contextMenu, root, screen);
   }

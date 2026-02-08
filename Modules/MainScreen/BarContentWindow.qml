@@ -46,7 +46,7 @@ PanelWindow {
   readonly property bool autoHide: Settings.data.bar.displayMode === "auto_hide"
   readonly property int hideDelay: Settings.data.bar.autoHideDelay || 500
   readonly property int showDelay: Settings.data.bar.autoShowDelay || 100
-  property bool isHidden: false
+  property bool isHidden: autoHide
 
   // Hover tracking
   property bool barHovered: false

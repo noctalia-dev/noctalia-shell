@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Kompaktowy ekran blokady",
       "lock-on-suspend-description": "Automatycznie blokuj ekran podczas uśpienia systemu.",
       "lock-on-suspend-label": "Blokuj przy uśpieniu",
+      "lock-screen-animations-description": "Włącz lub wyłącz animacje ekranu blokady.",
+      "lock-screen-animations-label": "Animacje Ekranu Blokady",
       "show-hibernate-description": "Pokaż opcję 'hibernacja' w kontrolkach zasilania.",
       "show-hibernate-label": "Pokaż hibernację",
       "show-session-buttons-description": "Zezwalaj na dostęp do ustawień zasilania z poziomu ekranu blokady.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Ładowanie tapet...",
       "no-results": "Nie znaleziono tapet. Spróbuj innego zapytania.",
-      "page": "{current} z {total}"
+      "page": "{current} z {total}",
+      "page-prefix": "Strona",
+      "page-suffix": "z {total}"
     }
   },
   "weather": {

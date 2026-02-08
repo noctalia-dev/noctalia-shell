@@ -98,7 +98,7 @@ NIconButton {
                    PanelService.closeContextMenu(screen);
 
                    if (action === "open-launcher") {
-                     PanelService.getPanel("launcherPanel", screen)?.toggle();
+                     PanelService.toggleLauncher(screen);
                    } else if (action === "open-settings") {
                      var panel = PanelService.getPanel("settingsPanel", screen);
                      panel.requestedTab = SettingsPanel.Tab.General;
@@ -121,7 +121,7 @@ NIconButton {
   onRightClicked: {
     PanelService.showContextMenu(contextMenu, root, screen);
   }
-  onMiddleClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
+  onMiddleClicked: PanelService.toggleLauncher(screen)
 
   IconImage {
     id: customOrDistroLogo

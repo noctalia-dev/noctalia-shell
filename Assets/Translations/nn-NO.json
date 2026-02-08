@@ -1296,6 +1296,8 @@
       "available-label": "Tilgjengelege plugins",
       "available-no-plugins-description": "Sjekk pluginkjeldene dine eller lasta inn lista å nyo.",
       "available-no-plugins-label": "Ingen tilgjengelege plugins",
+      "check-for-updates": "Leit etter oppdateringar",
+      "checking-for-updates": "Leitar etter oppdateringar...",
       "collision-already-installed": "Dette plugin er alt installert",
       "collision-custom-version-exists": "Ein annan versjon frå \"{source}\" er alt installert",
       "collision-official-version-exists": "Den ofisielle versjonen av dette plugin er alt installert",

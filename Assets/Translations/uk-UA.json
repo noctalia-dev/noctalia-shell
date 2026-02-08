@@ -675,7 +675,7 @@
       "system-cpu": "ЦП:",
       "system-disk": "Диск:",
       "system-gpu": "GPU:",
-      "system-host": "Ведучий:",
+      "system-host": "хост:",
       "system-install-hint": "Встановіть fastfetch для перегляду інформації про систему",
       "system-kernel": "Ядро:",
       "system-loading": "Завантаження системної інформації...",
@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Компактний екран блокування",
       "lock-on-suspend-description": "Автоматично блокувати екран при призупиненні системи.",
       "lock-on-suspend-label": "Блокувати при призупиненні",
+      "lock-screen-animations-description": "Увімкнути або вимкнути анімації екрана блокування.",
+      "lock-screen-animations-label": "Анімації Екрана Блокування",
       "show-hibernate-description": "Показувати опцію 'сплячий режим' в елементах керування живленням.",
       "show-hibernate-label": "Показувати сплячий режим",
       "show-session-buttons-description": "Дозволити доступ до налаштувань живлення з екрана блокування.",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Завантаження шпалер...",
       "no-results": "Шпалери не знайдено. Спробуйте інший пошуковий запит.",
-      "page": "{current} з {total}"
+      "page": "{current} з {total}",
+      "page-prefix": "Сторінка",
+      "page-suffix": "з {total}"
     }
   },
   "weather": {

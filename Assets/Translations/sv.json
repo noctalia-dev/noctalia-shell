@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "Kompakt låsskärm",
       "lock-on-suspend-description": "Lås skärmen automatiskt när systemet pausas.",
       "lock-on-suspend-label": "Lås vid paus",
+      "lock-screen-animations-description": "Aktivera eller inaktivera låsskärmsanimeringar.",
+      "lock-screen-animations-label": "Låsskärmsanimationer",
       "show-hibernate-description": "Visa alternativet \"viloläge\"i strömkontrollerna.",
       "show-hibernate-label": "Visa viloläge",
       "show-session-buttons-description": "Tillåt åtkomst till ströminställningar från låsskärmen. ",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "Läser in bakgrundsbilder...",
       "no-results": "Inga bakgrundsbilder hittades. Prova en annan sökfråga.",
-      "page": "{current} av {total}"
+      "page": "{current} av {total}",
+      "page-prefix": "Sida",
+      "page-suffix": "av {total}"
     }
   },
   "weather": {

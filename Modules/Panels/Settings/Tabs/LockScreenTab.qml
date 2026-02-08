@@ -77,6 +77,14 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.lock-screen.lock-screen-animations-label")
+    description: I18n.tr("panels.lock-screen.lock-screen-animations-description")
+    checked: Settings.data.general.lockScreenAnimations
+    onToggled: checked => Settings.data.general.lockScreenAnimations = checked
+    defaultValue: Settings.getDefaultValue("general.lockScreenAnimations")
+  }
+
+  NToggle {
     label: I18n.tr("panels.lock-screen.auto-start-auth-label")
     description: I18n.tr("panels.lock-screen.auto-start-auth-description")
     checked: Settings.data.general.autoStartAuth

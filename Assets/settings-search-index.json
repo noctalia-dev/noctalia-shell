@@ -813,6 +813,15 @@
     "subTabLabel": "common.execute"
   },
   {
+    "labelKey": "panels.launcher.settings-overlay-layer-label",
+    "descriptionKey": "panels.launcher.settings-overlay-layer-description",
+    "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
     "labelKey": "tooltips.grid-view",
     "descriptionKey": "panels.launcher.settings-grid-view-description",
     "widget": "NToggle",
@@ -911,6 +920,14 @@
   {
     "labelKey": "panels.lock-screen.compact-lockscreen-label",
     "descriptionKey": "panels.lock-screen.compact-lockscreen-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": null
+  },
+  {
+    "labelKey": "panels.lock-screen.lock-screen-animations-label",
+    "descriptionKey": "panels.lock-screen.lock-screen-animations-description",
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",

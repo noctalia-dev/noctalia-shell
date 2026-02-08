@@ -1114,6 +1114,8 @@
       "settings-icon-mode-label": "Use native icons",
       "settings-ignore-mouse-input-description": "Disable mouse interaction and scrollwheel in the launcher.",
       "settings-ignore-mouse-input-label": "Ignore mouse input",
+      "settings-overlay-layer-description": "Display the launcher on the overlay layer, above fullscreen windows. When enabled, the launcher will not attach to the bar.",
+      "settings-overlay-layer-label": "Show above fullscreen",
       "settings-position-description": "Choose where the launcher panel appears.",
       "settings-show-categories-description": "Show category tabs for filtering applications.",
       "settings-show-categories-label": "Show categories",
@@ -1180,6 +1182,8 @@
       "compact-lockscreen-label": "Compact lock screen",
       "lock-on-suspend-description": "Automatically lock the screen when suspending the system.",
       "lock-on-suspend-label": "Lock on suspend",
+      "lock-screen-animations-description": "Enable or disable lockscreen animations",
+      "lock-screen-animations-label": "Lockscreen animations",
       "show-hibernate-description": "Show the option 'hibernate' in the power controls.",
       "show-hibernate-label": "Show hibernate",
       "show-session-buttons-description": "Allow access to power settings from the lock screen.",
@@ -1791,7 +1795,9 @@
     "wallhaven": {
       "loading": "Loading wallpapers...",
       "no-results": "No wallpapers found. Try a different search query.",
-      "page": "{current} of {total}"
+      "page": "{current} of {total}",
+      "page-prefix": "Page",
+      "page-suffix": "of {total}"
     }
   },
   "weather": {

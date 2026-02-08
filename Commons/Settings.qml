@@ -269,6 +269,7 @@ Singleton {
       property real animationSpeed: 1.0
       property bool animationDisabled: false
       property bool compactLockScreen: false
+      property bool lockScreenAnimations: false
       property bool lockOnSuspend: true
       property bool showSessionButtonsOnLockScreen: true
       property bool showHibernateOnLockScreen: false
@@ -405,6 +406,7 @@ Singleton {
       property bool enableWindowsSearch: true
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
+      property bool overviewLayer: false
     }
 
     // control center

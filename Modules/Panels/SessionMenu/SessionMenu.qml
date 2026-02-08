@@ -214,10 +214,7 @@ SmartPanel {
     // Use default behavior or custom command handled by CompositorService
     switch (action) {
     case "lock":
-      // Access lockScreen via PanelService
-      if (PanelService.lockScreen && !PanelService.lockScreen.active) {
-        PanelService.lockScreen.active = true;
-      }
+      CompositorService.lock();
       break;
     case "suspend":
       // Check if we should lock before suspending

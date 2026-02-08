@@ -1180,6 +1180,8 @@
       "compact-lockscreen-label": "紧凑型锁屏",
       "lock-on-suspend-description": "系统挂起时自动锁定屏幕。",
       "lock-on-suspend-label": "挂起时锁定",
+      "lock-screen-animations-description": "启用或禁用锁屏动画。",
+      "lock-screen-animations-label": "锁屏动画",
       "show-hibernate-description": "在电源控制中显示'休眠'选项。",
       "show-hibernate-label": "显示休眠",
       "show-session-buttons-description": "允许从锁屏访问电源设置。",
@@ -1791,7 +1793,9 @@
     "wallhaven": {
       "loading": "正在加载壁纸...",
       "no-results": "未找到壁纸。请尝试不同的搜索查询。",
-      "page": "{current} / {total}"
+      "page": "{current} / {total}",
+      "page-prefix": "页面",
+      "page-suffix": "共 {total} 个"
     }
   },
   "weather": {
