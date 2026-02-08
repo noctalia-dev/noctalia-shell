@@ -51,6 +51,26 @@ ColumnLayout {
 
     NComboBox {
       Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-type-label")
+      description: I18n.tr("panels.dock.appearance-type-description")
+      model: [
+        {
+          "key": "floating",
+          "name": I18n.tr("panels.dock.appearance-type-floating")
+        },
+        {
+          "key": "static",
+          "name": I18n.tr("panels.dock.appearance-type-static")
+        }
+      ]
+      currentKey: Settings.data.dock.dockType
+      defaultValue: Settings.getDefaultValue("dock.dockType")
+      onSelected: key => Settings.data.dock.dockType = key
+    }
+
+    NComboBox {
+      visible: Settings.data.dock.dockType === "floating"
+      Layout.fillWidth: true
       label: I18n.tr("panels.display.title")
       description: I18n.tr("panels.dock.appearance-display-description")
       model: [
@@ -72,6 +92,26 @@ ColumnLayout {
       onSelected: key => {
                     Settings.data.dock.displayMode = key;
                   }
+    }
+
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "static" && Settings.data.bar.barType === "framed"
+      label: I18n.tr("panels.dock.appearance-sit-on-frame-label")
+      description: I18n.tr("panels.dock.appearance-sit-on-frame-description")
+      checked: Settings.data.dock.sitOnFrame
+      defaultValue: Settings.getDefaultValue("dock.sitOnFrame")
+      onToggled: checked => Settings.data.dock.sitOnFrame = checked
+    }
+
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "static" && Settings.data.bar.barType === "framed"
+      label: I18n.tr("panels.dock.appearance-frame-indicator-label")
+      description: I18n.tr("panels.dock.appearance-frame-indicator-description")
+      checked: Settings.data.dock.showFrameIndicator
+      defaultValue: Settings.getDefaultValue("dock.showFrameIndicator")
+      onToggled: checked => Settings.data.dock.showFrameIndicator = checked
     }
 
     NValueSlider {
@@ -102,6 +142,7 @@ ColumnLayout {
 
     NValueSlider {
       Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "floating"
       label: I18n.tr("panels.dock.appearance-floating-distance-label")
       description: I18n.tr("panels.dock.appearance-floating-distance-description")
       from: 0
@@ -127,7 +168,7 @@ ColumnLayout {
     }
 
     NValueSlider {
-      visible: Settings.data.dock.displayMode === "auto_hide"
+      visible: Settings.data.dock.dockType === "floating" && Settings.data.dock.displayMode === "auto_hide"
       Layout.fillWidth: true
       label: I18n.tr("panels.dock.appearance-hide-show-speed-label")
       description: I18n.tr("panels.dock.appearance-hide-show-speed-description")

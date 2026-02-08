@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
+import qs.Services.UI
 import qs.Widgets
 
 PopupWindow {
@@ -123,6 +124,11 @@ PopupWindow {
                           Quickshell.execDetached(action.command);
                         } else if (action.execute) {
                           action.execute();
+                        }
+                        if (Settings.data.dock.dockType === "static") {
+                          const panel = PanelService.getPanel("staticDockPanel", root.screen, false);
+                          if (panel)
+                            panel.close();
                         }
                       }
                     });

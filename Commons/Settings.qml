@@ -508,6 +508,7 @@ Singleton {
       property bool enabled: true
       property string position: "bottom" // "top", "bottom", "left", "right"
       property string displayMode: "auto_hide" // "always_visible", "auto_hide", "exclusive"
+      property string dockType: "floating" // "floating", "static"
       property real backgroundOpacity: 1.0
       property real floatingRatio: 1.0
       property real size: 1
@@ -520,6 +521,8 @@ Singleton {
       property bool inactiveIndicators: false
       property double deadOpacity: 0.6
       property real animationSpeed: 1.0 // Speed multiplier for hide/show animations (0.1 = slowest, 2.0 = fastest)
+      property bool sitOnFrame: false
+      property bool showFrameIndicator: true
     }
 
     // network
