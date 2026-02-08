@@ -78,6 +78,9 @@ Loader {
       readonly property int showAnimationDuration: Math.max(0, Math.round(Style.animationFast / (Settings.data.dock.animationSpeed || 1.0)))
       readonly property int peekHeight: 1
       readonly property int iconSize: Math.round(12 + 24 * (Settings.data.dock.size ?? 1))
+      readonly property int dockPadding: Math.round(Style.marginXL * (Settings.data.dock.padding ?? 1.0))
+      readonly property int iconSpacing: Math.round(Style.marginS * (Settings.data.dock.iconSpacing ?? 1.0))
+      readonly property int borderRadius: Math.round(Style.radiusL * (Settings.data.dock.borderRadius ?? 1.0))
       readonly property int floatingMargin: Settings.data.dock.floatingRatio * Style.marginL
       readonly property int maxWidth: modelData ? modelData.width * 0.8 : 1000
       readonly property int maxHeight: modelData ? modelData.height * 0.8 : 1000
@@ -599,8 +602,8 @@ Loader {
             Rectangle {
               id: dockContainer
               // For vertical dock, swap width and height logic
-              width: isVertical ? Math.round(iconSize * 1.5) : Math.min(dockLayout.implicitWidth + Style.marginXL, root.maxWidth)
-              height: isVertical ? Math.min(dockLayout.implicitHeight + Style.marginXL, root.maxHeight) : Math.round(iconSize * 1.5)
+              width: isVertical ? iconSize + dockPadding : Math.min(dockLayout.implicitWidth + dockPadding, root.maxWidth)
+              height: isVertical ? Math.min(dockLayout.implicitHeight + dockPadding, root.maxHeight) : iconSize + dockPadding
               color: Qt.alpha(Color.mSurface, Settings.data.dock.backgroundOpacity)
 
               // Anchor based on padding to achieve centering shift
@@ -609,12 +612,13 @@ Loader {
               anchors.left: parent.extraRight > 0 ? parent.left : undefined
 
               anchors.verticalCenter: parent.extraTop > 0 || parent.extraBottom > 0 ? undefined : parent.verticalCenter
-              anchors.bottom: parent.extraTop > 0 ? parent.bottom : undefined
+              anchors.bottom: parent.extraTop > 0 ? parent.top : undefined
               anchors.top: parent.extraBottom > 0 ? parent.top : undefined
 
-              radius: Style.radiusL
+              radius: borderRadius
               border.width: Style.borderS
               border.color: Qt.alpha(Color.mOutline, Settings.data.dock.backgroundOpacity)
+              clip: true
 
               // Enable layer caching to reduce GPU usage from continuous animations
               layer.enabled: true
@@ -650,12 +654,12 @@ Loader {
               Flickable {
                 id: dock
                 // Use parent dimensions more directly to avoid clipping
-                width: isVertical ? parent.width : Math.min(dockLayout.implicitWidth, parent.width - Style.marginXL)
-                height: !isVertical ? parent.height : Math.min(dockLayout.implicitHeight, parent.height - Style.marginXL)
+                width: isVertical ? parent.width : Math.min(dockLayout.implicitWidth, parent.width - dockPadding)
+                height: !isVertical ? parent.height : Math.min(dockLayout.implicitHeight, parent.height - dockPadding)
                 contentWidth: dockLayout.implicitWidth
                 contentHeight: dockLayout.implicitHeight
                 anchors.centerIn: parent
-                clip: true
+                clip: false
 
                 flickableDirection: isVertical ? Flickable.VerticalFlick : Flickable.HorizontalFlick
 
@@ -701,8 +705,8 @@ Loader {
                   id: dockLayout
                   columns: isVertical ? 1 : -1
                   rows: isVertical ? -1 : 1
-                  rowSpacing: Style.marginS
-                  columnSpacing: Style.marginS
+                  rowSpacing: iconSpacing
+                  columnSpacing: iconSpacing
 
                   // Ensure the layout takes its full implicit size
                   width: implicitWidth
@@ -822,12 +826,12 @@ Loader {
                               if (root.dragSourceIndex < root.dragTargetIndex) {
                                 // Dragging Forward: Items between source and target shift Backward
                                 if (index > root.dragSourceIndex && index <= root.dragTargetIndex) {
-                                  return -1 * (root.isVertical ? iconSize + Style.marginS : iconSize + Style.marginS);
+                                  return -1 * (root.isVertical ? iconSize + root.iconSpacing : iconSize + root.iconSpacing);
                                 }
                               } else if (root.dragSourceIndex > root.dragTargetIndex) {
                                 // Dragging Backward: Items between target and source shift Forward
                                 if (index >= root.dragTargetIndex && index < root.dragSourceIndex) {
-                                  return (root.isVertical ? iconSize + Style.marginS : iconSize + Style.marginS);
+                                  return (root.isVertical ? iconSize + root.iconSpacing : iconSize + root.iconSpacing);
                                 }
                               }
                             }
@@ -855,7 +859,9 @@ Loader {
 
                         IconImage {
                           id: appIcon
-                          anchors.fill: parent
+                          width: parent.width * 0.9
+                          height: parent.height * 0.9
+                          anchors.centerIn: parent
                           source: {
                             root.iconRevision; // Force re-evaluation when revision changes
                             return dock.getAppIcon(modelData);

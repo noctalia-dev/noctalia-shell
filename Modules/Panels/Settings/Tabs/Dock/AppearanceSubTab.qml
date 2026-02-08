@@ -127,6 +127,45 @@ ColumnLayout {
     }
 
     NValueSlider {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-icon-spacing-label")
+      description: I18n.tr("panels.dock.appearance-icon-spacing-description")
+      from: 0
+      to: 2
+      stepSize: 0.01
+      value: Settings.data.dock.iconSpacing
+      defaultValue: Settings.getDefaultValue("dock.iconSpacing")
+      onMoved: value => Settings.data.dock.iconSpacing = value
+      text: Math.floor(Settings.data.dock.iconSpacing * 100) + "%"
+    }
+
+    NValueSlider {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-padding-label")
+      description: I18n.tr("panels.dock.appearance-padding-description")
+      from: 0
+      to: 2
+      stepSize: 0.01
+      value: Settings.data.dock.padding
+      defaultValue: Settings.getDefaultValue("dock.padding")
+      onMoved: value => Settings.data.dock.padding = value
+      text: Math.floor(Settings.data.dock.padding * 100) + "%"
+    }
+
+    NValueSlider {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-border-radius-label")
+      description: I18n.tr("panels.dock.appearance-border-radius-description")
+      from: 0
+      to: 2
+      stepSize: 0.01
+      value: Settings.data.dock.borderRadius
+      defaultValue: Settings.getDefaultValue("dock.borderRadius")
+      onMoved: value => Settings.data.dock.borderRadius = value
+      text: Math.floor(Settings.data.dock.borderRadius * 100) + "%"
+    }
+
+    NValueSlider {
       visible: Settings.data.dock.displayMode === "auto_hide"
       Layout.fillWidth: true
       label: I18n.tr("panels.dock.appearance-hide-show-speed-label")
