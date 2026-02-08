@@ -80,6 +80,9 @@ Item {
 
   property bool exclusiveKeyboard: true
 
+  // Track if panel was opened via keybind (affects bar auto-hide behavior)
+  property bool openedViaKeybind: false
+
   // Keyboard event handler
   // These are called from MainScreen's centralized shortcuts
   // override these in specific panels to handle shortcuts
@@ -219,6 +222,7 @@ Item {
   function close() {
     // Reset immediate close flag to ensure animations work properly
     PanelService.closedImmediately = false;
+    openedViaKeybind = false;
 
     // Start close sequence: fade opacity first
     isClosing = true;

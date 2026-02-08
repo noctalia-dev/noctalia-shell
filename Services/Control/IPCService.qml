@@ -43,8 +43,11 @@ Item {
       } else {
         root.screenDetector.withCurrentScreen(screen => {
                                                 var settingsPanel = PanelService.getPanel("settingsPanel", screen);
-                                                settingsPanel.requestedTab = SettingsPanel.Tab.General;
-                                                settingsPanel?.toggle();
+                                                if (settingsPanel) {
+                                                  settingsPanel.requestedTab = SettingsPanel.Tab.General;
+                                                  settingsPanel.openedViaKeybind = true;
+                                                  settingsPanel.toggle();
+                                                }
                                               });
       }
     }
@@ -55,7 +58,10 @@ Item {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var clockPanel = PanelService.getPanel("clockPanel", screen);
-                                              clockPanel?.toggle(null, "Clock");
+                                              if (clockPanel) {
+                                                clockPanel.openedViaKeybind = true;
+                                                clockPanel.toggle(null, "Clock");
+                                              }
                                             });
     }
   }
@@ -66,7 +72,10 @@ Item {
       // Will attempt to open the panel next to the bar button if any.
       root.screenDetector.withCurrentScreen(screen => {
                                               var notificationHistoryPanel = PanelService.getPanel("notificationHistoryPanel", screen);
-                                              notificationHistoryPanel.toggle(null, "NotificationHistory");
+                                              if (notificationHistoryPanel) {
+                                                notificationHistoryPanel.openedViaKeybind = true;
+                                                notificationHistoryPanel.toggle(null, "NotificationHistory");
+                                              }
                                             });
     }
     function toggleDND() {
@@ -127,6 +136,7 @@ Item {
                                               var isInAppMode = !searchText.startsWith(">");
                                               if (!launcherPanel.isPanelOpen) {
                                                 // Closed -> open in app mode
+                                                launcherPanel.openedViaKeybind = true;
                                                 launcherPanel.open();
                                                 launcherPanel.setSearchText("");
                                               } else if (isInAppMode) {
@@ -147,6 +157,7 @@ Item {
                                               var isInClipMode = searchText.startsWith(">clip");
                                               if (!launcherPanel.isPanelOpen) {
                                                 // Closed -> open in clipboard mode
+                                                launcherPanel.openedViaKeybind = true;
                                                 launcherPanel.open();
                                                 launcherPanel.setSearchText(">clip ");
                                               } else if (isInClipMode) {
@@ -167,6 +178,7 @@ Item {
                                               var isInClipMode = searchText.startsWith(">cmd");
                                               if (!launcherPanel.isPanelOpen) {
                                                 // Closed -> open in clipboard mode
+                                                launcherPanel.openedViaKeybind = true;
                                                 launcherPanel.open();
                                                 launcherPanel.setSearchText(">cmd ");
                                               } else if (isInClipMode) {
@@ -187,6 +199,7 @@ Item {
                                               var isInEmojiMode = searchText.startsWith(">emoji");
                                               if (!launcherPanel.isPanelOpen) {
                                                 // Closed -> open in emoji mode
+                                                launcherPanel.openedViaKeybind = true;
                                                 launcherPanel.open();
                                                 launcherPanel.setSearchText(">emoji ");
                                               } else if (isInEmojiMode) {
@@ -207,6 +220,7 @@ Item {
                                               var isInWindowsMode = searchText.startsWith(">win");
                                               if (!launcherPanel.isPanelOpen) {
                                                 // Closed -> open in windows mode
+                                                launcherPanel.openedViaKeybind = true;
                                                 launcherPanel.open();
                                                 launcherPanel.setSearchText(">win ");
                                               } else if (isInWindowsMode) {
@@ -227,6 +241,7 @@ Item {
                                               var isInSettingsMode = searchText.startsWith(">settings");
                                               if (!launcherPanel.isPanelOpen) {
                                                 // Closed -> open in settings mode
+                                                launcherPanel.openedViaKeybind = true;
                                                 launcherPanel.open();
                                                 launcherPanel.setSearchText(">settings ");
                                               } else if (isInSettingsMode) {
@@ -355,13 +370,19 @@ Item {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.toggle();
+                                              if (panel) {
+                                                panel.openedViaKeybind = true;
+                                                panel.toggle();
+                                              }
                                             });
     }
     function openPanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("audioPanel", screen);
-                                              panel?.open();
+                                              if (panel) {
+                                                panel.openedViaKeybind = true;
+                                                panel.open();
+                                              }
                                             });
     }
     function closePanel() {
@@ -377,7 +398,10 @@ Item {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var sessionMenuPanel = PanelService.getPanel("sessionMenuPanel", screen);
-                                              sessionMenuPanel?.toggle();
+                                              if (sessionMenuPanel) {
+                                                sessionMenuPanel.openedViaKeybind = true;
+                                                sessionMenuPanel.toggle();
+                                              }
                                             });
     }
 
@@ -391,11 +415,14 @@ Item {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-                                              if (Settings.data.controlCenter.position === "close_to_bar_button") {
-                                                // Will attempt to open the panel next to the bar button if any.
-                                                controlCenterPanel?.toggle(null, "ControlCenter");
-                                              } else {
-                                                controlCenterPanel?.toggle();
+                                              if (controlCenterPanel) {
+                                                controlCenterPanel.openedViaKeybind = true;
+                                                if (Settings.data.controlCenter.position === "close_to_bar_button") {
+                                                  // Will attempt to open the panel next to the bar button if any.
+                                                  controlCenterPanel.toggle(null, "ControlCenter");
+                                                } else {
+                                                  controlCenterPanel.toggle();
+                                                }
                                               }
                                             });
     }
@@ -415,7 +442,10 @@ Item {
       if (Settings.data.wallpaper.enabled) {
         root.screenDetector.withCurrentScreen(screen => {
                                                 var wallpaperPanel = PanelService.getPanel("wallpaperPanel", screen);
-                                                wallpaperPanel?.toggle();
+                                                if (wallpaperPanel) {
+                                                  wallpaperPanel.openedViaKeybind = true;
+                                                  wallpaperPanel.toggle();
+                                                }
                                               });
       }
     }
@@ -462,7 +492,10 @@ Item {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var networkPanel = PanelService.getPanel("networkPanel", screen);
-                                              networkPanel?.toggle(null, "WiFi");
+                                              if (networkPanel) {
+                                                networkPanel.openedViaKeybind = true;
+                                                networkPanel.toggle(null, "WiFi");
+                                              }
                                             });
     }
   }
@@ -481,7 +514,10 @@ Item {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var bluetoothPanel = PanelService.getPanel("bluetoothPanel", screen);
-                                              bluetoothPanel?.toggle(null, "Bluetooth");
+                                              if (bluetoothPanel) {
+                                                bluetoothPanel.openedViaKeybind = true;
+                                                bluetoothPanel.toggle(null, "Bluetooth");
+                                              }
                                             });
     }
   }
@@ -491,7 +527,10 @@ Item {
     function togglePanel() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var batteryPanel = PanelService.getPanel("batteryPanel", screen);
-                                              batteryPanel?.toggle(null, "Battery");
+                                              if (batteryPanel) {
+                                                batteryPanel.openedViaKeybind = true;
+                                                batteryPanel.toggle(null, "Battery");
+                                              }
                                             });
     }
   }
@@ -567,7 +606,10 @@ Item {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("mediaPlayerPanel", screen);
-                                              panel?.toggle(null, "MediaMini");
+                                              if (panel) {
+                                                panel.openedViaKeybind = true;
+                                                panel.toggle(null, "MediaMini");
+                                              }
                                             });
     }
 
@@ -665,7 +707,10 @@ Item {
     function toggle() {
       root.screenDetector.withCurrentScreen(screen => {
                                               var panel = PanelService.getPanel("systemStatsPanel", screen);
-                                              panel?.toggle(null, "SystemMonitor");
+                                              if (panel) {
+                                                panel.openedViaKeybind = true;
+                                                panel.toggle(null, "SystemMonitor");
+                                              }
                                             });
     }
   }

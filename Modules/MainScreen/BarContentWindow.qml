@@ -105,11 +105,14 @@ PanelWindow {
     }
   }
 
-  // Don't hide when panel is open
+  // Don't hide when panel is open (unless opened via keybind)
   onPanelOpenChanged: {
     if (panelOpen && autoHide) {
-      hideTimer.stop();
-      BarService.setScreenHidden(barWindow.screen?.name, false);
+      var openedViaKeybind = PanelService.openedPanel?.openedViaKeybind ?? false;
+      if (!openedViaKeybind) {
+        hideTimer.stop();
+        BarService.setScreenHidden(barWindow.screen?.name, false);
+      }
     } else if (!panelOpen && autoHide && !barHovered) {
       hideTimer.restart();
     }
