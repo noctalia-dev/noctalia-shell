@@ -275,11 +275,21 @@ Loader {
         const combined = [];
         const processedToplevels = new Set();
         const processedPinnedAppIds = new Set();
+        const processedAppIds = new Set(); // Track normalized appIds to prevent duplicates
 
         //push an app onto combined with the given appType
         function pushApp(appType, toplevel, appId, title) {
           // Use canonical ID for pinned apps to ensure key stability
           const canonicalId = isAppIdPinned(appId, pinnedApps) ? (pinnedApps.find(p => normalizeAppId(p) === normalizeAppId(appId)) || appId) : appId;
+          const normalizedId = normalizeAppId(canonicalId);
+
+          // Prevent adding multiple icons for the same appId
+          if (normalizedId) {
+            if (processedAppIds.has(normalizedId)) {
+              return; // Already added an app for this appId
+            }
+            processedAppIds.add(normalizedId);
+          }
 
           // For running apps, track by toplevel object to allow multiple instances
           if (toplevel) {
