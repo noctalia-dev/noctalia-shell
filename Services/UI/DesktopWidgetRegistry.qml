@@ -56,6 +56,7 @@ Singleton {
                                   "Clock": {
                                     "showBackground": true,
                                     "clockStyle": "digital",
+                                    "progressStyle": "solid",
                                     "clockColor": "none",
                                     "useCustomFont": false,
                                     "format": "HH:mm\\nd MMMM yyyy"

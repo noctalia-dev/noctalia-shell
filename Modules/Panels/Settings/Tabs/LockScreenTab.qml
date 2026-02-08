@@ -43,6 +43,26 @@ ColumnLayout {
     z: 10
   }
 
+  NComboBox {
+    visible: Settings.data.general.clockStyle === "digital"
+    label: I18n.tr("panels.lock-screen.clock-progress-style-label")
+    description: I18n.tr("panels.lock-screen.clock-progress-style-description")
+    model: [
+      {
+        "key": "solid",
+        "name": I18n.tr("panels.lock-screen.clock-progress-style-solid")
+      },
+      {
+        "key": "dashed",
+        "name": I18n.tr("panels.lock-screen.clock-progress-style-dashed")
+      }
+    ]
+    currentKey: Settings.data.general.clockProgressStyle
+    onSelected: key => Settings.data.general.clockProgressStyle = key
+    defaultValue: Settings.getDefaultValue("general.clockProgressStyle")
+    z: 9
+  }
+
   NTextInput {
     id: formatInput
     label: I18n.tr("panels.lock-screen.clock-format-label")
