@@ -65,6 +65,7 @@ Item {
   readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
   readonly property bool barFloating: Settings.data.bar.floating || false
+  readonly property bool barIsland: Settings.data.bar.island || false
 
   // Bar density (per-screen)
   readonly property string barDensity: Settings.getBarDensityForScreen(screen?.name)
@@ -195,6 +196,14 @@ Item {
           // Floating bar: always simple rounded corners
           if (barFloating)
             return 0;
+          // Island mode: edge corners flat, opposite corners rounded
+          if (barIsland) {
+            // Top/Left bar: top-left against screen edge = no radius
+            if (barPosition === "top" || barPosition === "left")
+              return -1;
+            // Bottom/Right bar: top-left is away from edge = rounded
+            return 0;
+          }
           // Top bar: top corners against screen edge = no radius
           if (barPosition === "top")
             return -1;
@@ -213,6 +222,14 @@ Item {
           // Floating bar: always simple rounded corners
           if (barFloating)
             return 0;
+          // Island mode: edge corners flat, opposite corners rounded
+          if (barIsland) {
+            // Top/Right bar: top-right against screen edge = no radius
+            if (barPosition === "top" || barPosition === "right")
+              return -1;
+            // Bottom/Left bar: top-right is away from edge = rounded
+            return 0;
+          }
           // Top bar: top corners against screen edge = no radius
           if (barPosition === "top")
             return -1;
@@ -231,6 +248,14 @@ Item {
           // Floating bar: always simple rounded corners
           if (barFloating)
             return 0;
+          // Island mode: edge corners flat, opposite corners rounded
+          if (barIsland) {
+            // Bottom/Left bar: bottom-left against screen edge = no radius
+            if (barPosition === "bottom" || barPosition === "left")
+              return -1;
+            // Top/Right bar: bottom-left is away from edge = rounded
+            return 0;
+          }
           // Bottom bar: bottom corners against screen edge = no radius
           if (barPosition === "bottom")
             return -1;
@@ -249,6 +274,14 @@ Item {
           // Floating bar: always simple rounded corners
           if (barFloating)
             return 0;
+          // Island mode: edge corners flat, opposite corners rounded
+          if (barIsland) {
+            // Bottom/Right bar: bottom-right against screen edge = no radius
+            if (barPosition === "bottom" || barPosition === "right")
+              return -1;
+            // Top/Left bar: bottom-right is away from edge = rounded
+            return 0;
+          }
           // Bottom bar: bottom corners against screen edge = no radius
           if (barPosition === "bottom")
             return -1;

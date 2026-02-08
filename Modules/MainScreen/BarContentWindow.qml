@@ -15,10 +15,10 @@ import qs.Services.UI
 * This component should be instantiated once per screen by AllScreens.qml
 */
 PanelWindow {
-  id: barWindow
+    id: barWindow
 
-  // Note: screen property is inherited from PanelWindow and should be set by parent
-  color: "transparent" // Transparent - background is in MainScreen below
+    // Note: screen property is inherited from PanelWindow and should be set by parent
+    color: "transparent" // Transparent - background is in MainScreen below
 
   // Make window pass-through when content is unloaded
   visible: contentLoaded
@@ -27,20 +27,21 @@ PanelWindow {
     Logger.d("BarContentWindow", "Bar content window created for screen:", barWindow.screen?.name);
   }
 
-  // Wayland layer configuration
-  WlrLayershell.namespace: "noctalia-bar-content-" + (barWindow.screen?.name || "unknown")
-  WlrLayershell.layer: WlrLayer.Top
-  WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone in MainScreen handles that
+    // Wayland layer configuration
+    WlrLayershell.namespace: "noctalia-bar-content-" + (barWindow.screen?.name || "unknown")
+    WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.exclusionMode: ExclusionMode.Ignore // Don't reserve space - BarExclusionZone in MainScreen handles that
 
-  // Position and size to match bar location (per-screen)
-  readonly property string barPosition: Settings.getBarPositionForScreen(barWindow.screen?.name)
-  readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
-  readonly property bool isFramed: Settings.data.bar.barType === "framed"
-  readonly property real frameThickness: Settings.data.bar.frameThickness ?? 12
-  readonly property bool barFloating: Settings.data.bar.floating || false
-  readonly property real barMarginH: Math.ceil(barFloating ? Settings.data.bar.marginHorizontal : 0)
-  readonly property real barMarginV: Math.ceil(barFloating ? Settings.data.bar.marginVertical : 0)
-  readonly property real barHeight: Style.getBarHeightForScreen(barWindow.screen?.name)
+    // Position and size to match bar location (per-screen)
+    readonly property string barPosition: Settings.getBarPositionForScreen(barWindow.screen?.name)
+    readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
+    readonly property bool isFramed: Settings.data.bar.barType === "framed"
+    readonly property real frameThickness: Settings.data.bar.frameThickness ?? 12
+    readonly property bool barFloating: Settings.data.bar.floating || false
+    readonly property bool barIsland: Settings.data.bar.island || false
+    readonly property real barMarginH: Math.ceil((barFloating || barIsland) ? Settings.data.bar.marginHorizontal : 0)
+    readonly property real barMarginV: Math.ceil((barFloating || barIsland) ? Settings.data.bar.marginVertical : 0)
+    readonly property real barHeight: Style.getBarHeightForScreen(barWindow.screen?.name)
 
   // Auto-hide properties
   readonly property bool autoHide: Settings.data.bar.displayMode === "auto_hide"
@@ -173,17 +174,49 @@ PanelWindow {
     }
   }
 
-  // Handle floating margins and framed mode offsets
+  // Handle floating/island margins and framed mode offsets
   margins {
-    top: (barPosition === "top") ? barMarginV : (isFramed ? frameThickness : barMarginV)
-    bottom: (barPosition === "bottom") ? barMarginV : (isFramed ? frameThickness : barMarginV)
-    left: (barPosition === "left") ? barMarginH : (isFramed ? frameThickness : barMarginH)
-    right: (barPosition === "right") ? barMarginH : (isFramed ? frameThickness : barMarginH)
+    top: {
+      if (barIsland)
+        return barPosition === "top" ? 0 : (barIsVertical ? barMarginV : 0);
+      if (barPosition === "top")
+        return barMarginV;
+      if (isFramed)
+        return frameThickness;
+      return barIsVertical ? barMarginV : 0;
+    }
+    bottom: {
+      if (barIsland)
+        return barPosition === "bottom" ? 0 : (barIsVertical ? barMarginV : 0);
+      if (barPosition === "bottom")
+        return barMarginV;
+      if (isFramed)
+        return frameThickness;
+      return barIsVertical ? barMarginV : 0;
+    }
+    left: {
+      if (barIsland)
+        return barPosition === "left" ? 0 : (!barIsVertical ? barMarginH : 0);
+      if (barPosition === "left")
+        return barMarginH;
+      if (isFramed)
+        return frameThickness;
+      return !barIsVertical ? barMarginH : 0;
+    }
+    right: {
+      if (barIsland)
+        return barPosition === "right" ? 0 : (!barIsVertical ? barMarginH : 0);
+      if (barPosition === "right")
+        return barMarginH;
+      if (isFramed)
+        return frameThickness;
+      return !barIsVertical ? barMarginH : 0;
+    }
   }
 
-  // Set a tight window size
-  implicitWidth: barIsVertical ? barHeight : barWindow.screen.width
-  implicitHeight: barIsVertical ? barWindow.screen.height : barHeight
+    // Set a tight window size
+    implicitWidth: barIsVertical ? barHeight : barWindow.screen.width
+    implicitHeight: barIsVertical ? barWindow.screen.height : barHeight
 
   // Bar content loader - unloads when hidden to prevent input
   Loader {

@@ -307,18 +307,19 @@ Variants {
 
           readonly property string barPos: Settings.getBarPositionForScreen(window.screen?.name)
           readonly property bool barFloating: Settings.data.bar.floating || false
+          readonly property bool barIsland: Settings.data.bar.island || false
           readonly property real barHeight: Style.getBarHeightForScreen(window.screen?.name)
 
           readonly property int barOffsetTop: {
             if (barPos !== "top")
               return Style.marginM;
-            const floatMarginV = barFloating ? Math.ceil(Settings.data.bar.marginVertical) : 0;
+            const floatMarginV = (barFloating || barIsland) ? (barIsland && barPos === "top" ? 0 : Math.ceil(Settings.data.bar.marginVertical)) : 0;
             return barHeight + floatMarginV + Style.marginM;
           }
           readonly property int barOffsetRight: {
             if (barPos !== "right")
               return Style.marginM;
-            const floatMarginH = barFloating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0;
+            const floatMarginH = (barFloating || barIsland) ? (barIsland && barPos === "right" ? 0 : Math.ceil(Settings.data.bar.marginHorizontal)) : 0;
             return barHeight + floatMarginH + Style.marginM;
           }
 

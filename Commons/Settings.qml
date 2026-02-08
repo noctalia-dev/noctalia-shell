@@ -195,6 +195,9 @@ Singleton {
       // Bar outer corners (inverted/concave corners at bar edges when not floating)
       property bool outerCorners: true
 
+      // Island mode (bar attached to edge with margins only on free sides, like Dynamic Island)
+      property bool island: false
+
       // Hide bar/panels when compositor overview is active
       property bool hideOnOverview: false
 

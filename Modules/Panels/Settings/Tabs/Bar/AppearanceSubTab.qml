@@ -6,31 +6,19 @@ import qs.Services.Compositor
 import qs.Widgets
 
 ColumnLayout {
-  id: root
-  spacing: Style.marginL
-  Layout.fillWidth: true
+    id: root
+    spacing: Style.marginL
+    Layout.fillWidth: true
 
   NComboBox {
     Layout.fillWidth: true
     label: I18n.tr("panels.bar.appearance-position-label")
     description: I18n.tr("panels.bar.appearance-position-description")
     model: [
-      {
-        "key": "top",
-        "name": I18n.tr("positions.top")
-      },
-      {
-        "key": "bottom",
-        "name": I18n.tr("positions.bottom")
-      },
-      {
-        "key": "left",
-        "name": I18n.tr("positions.left")
-      },
-      {
-        "key": "right",
-        "name": I18n.tr("positions.right")
-      }
+      { "key": "top", "name": I18n.tr("positions.top") },
+      { "key": "bottom", "name": I18n.tr("positions.bottom") },
+      { "key": "left", "name": I18n.tr("positions.left") },
+      { "key": "right", "name": I18n.tr("positions.right") }
     ]
     currentKey: Settings.data.bar.position
     defaultValue: Settings.getDefaultValue("bar.position")
@@ -117,44 +105,54 @@ ColumnLayout {
   }
 
   NToggle {
+    Layout.fillWidth: true
+    visible: Settings.data.bar.barType === "simple"
+    label: I18n.tr("panels.bar.appearance-island-label")
+    description: I18n.tr("panels.bar.appearance-island-description")
+    checked: Settings.data.bar.island
+    defaultValue: Settings.getDefaultValue("bar.island")
+    onToggled: checked => Settings.data.bar.island = checked
+  }
+
+  NToggle {
     label: I18n.tr("panels.bar.appearance-use-separate-opacity-label")
-    description: I18n.tr("panels.bar.appearance-use-separate-opacity-description")
-    checked: Settings.data.bar.useSeparateOpacity
-    defaultValue: Settings.getDefaultValue("bar.useSeparateOpacity")
-    onToggled: checked => Settings.data.bar.useSeparateOpacity = checked
-  }
+        description: I18n.tr("panels.bar.appearance-use-separate-opacity-description")
+        checked: Settings.data.bar.useSeparateOpacity
+        defaultValue: Settings.getDefaultValue("bar.useSeparateOpacity")
+        onToggled: checked => Settings.data.bar.useSeparateOpacity = checked
+    }
 
-  NValueSlider {
-    Layout.fillWidth: true
-    visible: Settings.data.bar.useSeparateOpacity
-    label: I18n.tr("panels.bar.appearance-background-opacity-label")
-    description: I18n.tr("panels.bar.appearance-background-opacity-description")
-    from: 0
-    to: 1
-    stepSize: 0.01
-    value: Settings.data.bar.backgroundOpacity
-    defaultValue: Settings.getDefaultValue("bar.backgroundOpacity")
-    onMoved: value => Settings.data.bar.backgroundOpacity = value
-    text: Math.floor(Settings.data.bar.backgroundOpacity * 100) + "%"
-  }
+    NValueSlider {
+        Layout.fillWidth: true
+        visible: Settings.data.bar.useSeparateOpacity
+        label: I18n.tr("panels.bar.appearance-background-opacity-label")
+        description: I18n.tr("panels.bar.appearance-background-opacity-description")
+        from: 0
+        to: 1
+        stepSize: 0.01
+        value: Settings.data.bar.backgroundOpacity
+        defaultValue: Settings.getDefaultValue("bar.backgroundOpacity")
+        onMoved: value => Settings.data.bar.backgroundOpacity = value
+        text: Math.floor(Settings.data.bar.backgroundOpacity * 100) + "%"
+    }
 
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("panels.bar.appearance-show-outline-label")
-    description: I18n.tr("panels.bar.appearance-show-outline-description")
-    checked: Settings.data.bar.showOutline
-    defaultValue: Settings.getDefaultValue("bar.showOutline")
-    onToggled: checked => Settings.data.bar.showOutline = checked
-  }
+    NToggle {
+        Layout.fillWidth: true
+        label: I18n.tr("panels.bar.appearance-show-outline-label")
+        description: I18n.tr("panels.bar.appearance-show-outline-description")
+        checked: Settings.data.bar.showOutline
+        defaultValue: Settings.getDefaultValue("bar.showOutline")
+        onToggled: checked => Settings.data.bar.showOutline = checked
+    }
 
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("panels.bar.appearance-show-capsule-label")
-    description: I18n.tr("panels.bar.appearance-show-capsule-description")
-    checked: Settings.data.bar.showCapsule
-    defaultValue: Settings.getDefaultValue("bar.showCapsule")
-    onToggled: checked => Settings.data.bar.showCapsule = checked
-  }
+    NToggle {
+        Layout.fillWidth: true
+        label: I18n.tr("panels.bar.appearance-show-capsule-label")
+        description: I18n.tr("panels.bar.appearance-show-capsule-description")
+        checked: Settings.data.bar.showCapsule
+        defaultValue: Settings.getDefaultValue("bar.showCapsule")
+        onToggled: checked => Settings.data.bar.showCapsule = checked
+    }
 
   NComboBox {
     Layout.fillWidth: true
@@ -196,7 +194,7 @@ ColumnLayout {
     label: I18n.tr("panels.bar.appearance-outer-corners-label")
     description: I18n.tr("panels.bar.appearance-outer-corners-description")
     checked: Settings.data.bar.outerCorners
-    visible: Settings.data.bar.barType === "simple"
+    visible: Settings.data.bar.barType === "simple" && !Settings.data.bar.island
     defaultValue: Settings.getDefaultValue("bar.outerCorners")
     onToggled: checked => Settings.data.bar.outerCorners = checked
   }
@@ -242,7 +240,7 @@ ColumnLayout {
   }
 
   ColumnLayout {
-    visible: Settings.data.bar.barType === "floating"
+    visible: Settings.data.bar.barType === "floating" || (Settings.data.bar.barType === "simple" && Settings.data.bar.island)
     spacing: Style.marginS
     Layout.fillWidth: true
 
@@ -255,28 +253,38 @@ ColumnLayout {
       Layout.fillWidth: true
       spacing: Style.marginL
 
-      NValueSlider {
-        Layout.fillWidth: true
-        label: I18n.tr("panels.bar.appearance-margins-vertical")
-        from: 0
-        to: 18
-        stepSize: 1
-        value: Settings.data.bar.marginVertical
-        defaultValue: Settings.getDefaultValue("bar.marginVertical")
-        onMoved: value => Settings.data.bar.marginVertical = value
-        text: Settings.data.bar.marginVertical + "px"
+      ColumnLayout {
+        spacing: Style.marginXXS
+        visible: Settings.data.bar.floating || (Settings.data.bar.island && (Settings.data.bar.position === "left" || Settings.data.bar.position === "right"))
+
+        NValueSlider {
+          Layout.fillWidth: true
+          label: I18n.tr("panels.bar.appearance-margins-vertical")
+          from: 0
+          to: 18
+          stepSize: 1
+          value: Settings.data.bar.marginVertical
+          defaultValue: Settings.getDefaultValue("bar.marginVertical")
+          onMoved: value => Settings.data.bar.marginVertical = value
+          text: Settings.data.bar.marginVertical + "px"
+        }
       }
 
-      NValueSlider {
-        Layout.fillWidth: true
-        label: I18n.tr("panels.bar.appearance-margins-horizontal")
-        from: 0
-        to: 18
-        stepSize: 1
-        value: Settings.data.bar.marginHorizontal
-        defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
-        onMoved: value => Settings.data.bar.marginHorizontal = value
-        text: Settings.data.bar.marginHorizontal + "px"
+            ColumnLayout {
+                spacing: Style.marginXXS
+                visible: Settings.data.bar.floating || (Settings.data.bar.island && (Settings.data.bar.position === "top" || Settings.data.bar.position === "bottom"))
+
+        NValueSlider {
+          Layout.fillWidth: true
+          label: I18n.tr("panels.bar.appearance-margins-horizontal")
+          from: 0
+          to: 18
+          stepSize: 1
+          value: Settings.data.bar.marginHorizontal
+          defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
+          onMoved: value => Settings.data.bar.marginHorizontal = value
+          text: Settings.data.bar.marginHorizontal + "px"
+        }
       }
     }
   }
