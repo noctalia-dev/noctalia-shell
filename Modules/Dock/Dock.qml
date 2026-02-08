@@ -542,10 +542,10 @@ Loader {
           implicitHeight: dockContainerWrapper.height
 
           // Position based on dock setting
-          anchors.top: dockPosition === "top"
-          anchors.bottom: dockPosition === "bottom"
-          anchors.left: dockPosition === "left"
-          anchors.right: dockPosition === "right"
+          anchors.top: dockPosition === "top" || isVertical
+          anchors.bottom: dockPosition === "bottom" || isVertical
+          anchors.left: dockPosition === "left" || !isVertical
+          anchors.right: dockPosition === "right" || !isVertical
 
           // Offset past bar when at same edge (skip bar offset if dock is exclusive - exclusion zones stack)
           margins.top: dockPosition === "top" ? (barAtSameEdge && !exclusive ? barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
@@ -601,9 +601,15 @@ Loader {
 
             Rectangle {
               id: dockContainer
+
+              readonly property int baseIndicatorMargin: Math.max(3, Math.round(iconSize * 0.18))
+              readonly property int currentIndicatorMargin: Math.max(4, Math.round(iconSize * 0.32))
+              readonly property int marginDiff: (currentIndicatorMargin - baseIndicatorMargin) * 2
+              readonly property int thicknessReduction: Math.round(currentIndicatorMargin * 0.45)
+
               // For vertical dock, swap width and height logic
-              width: isVertical ? iconSize + dockPadding : Math.min(dockLayout.implicitWidth + dockPadding, root.maxWidth)
-              height: isVertical ? Math.min(dockLayout.implicitHeight + dockPadding, root.maxHeight) : iconSize + dockPadding
+              width: isVertical ? iconSize + dockPadding + marginDiff - thicknessReduction : Math.min(dockLayout.implicitWidth + dockPadding, root.maxWidth)
+              height: isVertical ? Math.min(dockLayout.implicitHeight + dockPadding, root.maxHeight) : iconSize + dockPadding + marginDiff - thicknessReduction
               color: Qt.alpha(Color.mSurface, Settings.data.dock.backgroundOpacity)
 
               // Anchor based on padding to achieve centering shift
@@ -612,7 +618,7 @@ Loader {
               anchors.left: parent.extraRight > 0 ? parent.left : undefined
 
               anchors.verticalCenter: parent.extraTop > 0 || parent.extraBottom > 0 ? undefined : parent.verticalCenter
-              anchors.bottom: parent.extraTop > 0 ? parent.top : undefined
+              anchors.bottom: parent.extraTop > 0 ? parent.bottom : undefined
               anchors.top: parent.extraBottom > 0 ? parent.top : undefined
 
               radius: borderRadius
@@ -659,6 +665,8 @@ Loader {
                 contentWidth: dockLayout.implicitWidth
                 contentHeight: dockLayout.implicitHeight
                 anchors.centerIn: parent
+                anchors.verticalCenterOffset: !isVertical ? (dockPosition === "bottom" ? -thicknessReduction / 2 : (dockPosition === "top" ? thicknessReduction / 2 : 0)) : 0
+                anchors.horizontalCenterOffset: isVertical ? (dockPosition === "right" ? -thicknessReduction / 2 : (dockPosition === "left" ? thicknessReduction / 2 : 0)) : 0
                 clip: false
 
                 flickableDirection: isVertical ? Flickable.VerticalFlick : Flickable.HorizontalFlick
