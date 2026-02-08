@@ -890,7 +890,8 @@
     "widget": "NComboBox",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.clock-format-label",
@@ -898,7 +899,8 @@
     "widget": "NTextInput",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.lock-on-suspend-label",
@@ -906,7 +908,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.compact-lockscreen-label",
@@ -914,7 +917,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.auto-start-auth-label",
@@ -922,7 +926,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.allow-password-with-fprintd-label",
@@ -930,7 +935,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.show-session-buttons-label",
@@ -938,7 +944,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.show-hibernate-label",
@@ -946,7 +953,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.session-menu.enable-countdown-label",
@@ -954,7 +962,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.session-menu.countdown-duration-label",
@@ -962,7 +971,8 @@
     "widget": "NValueSlider",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "actions.enable-wifi",
