@@ -37,6 +37,7 @@ Item {
   readonly property string displayMode: (widgetSettings.displayMode !== undefined) ? widgetSettings.displayMode : widgetMetadata.displayMode
   readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
   readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
+  readonly property bool reverseScroll: Settings.data.general.reverseScroll
 
   // Used to avoid opening the pill on Quickshell startup
   property bool firstBrightnessReceived: false
@@ -162,6 +163,9 @@ Item {
       var monitor = brightnessMonitor;
       if (!monitor || !monitor.brightnessControlAvailable)
         return;
+
+      if (root.reverseScroll)
+        angle *= -1;
 
       if (angle > 0) {
         monitor.increaseBrightness();

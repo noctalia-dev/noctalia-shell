@@ -1041,7 +1041,9 @@
       "screen-corners-solid-black-description": "Usa negro sólido en lugar del color de fondo de la barra.",
       "screen-corners-solid-black-label": "Esquinas negras sólidas",
       "screen-corners-title": "Esquinas de la pantalla",
-      "settings-copied": "Ajustes copiados al portapapeles"
+      "settings-copied": "Ajustes copiados al portapapeles",
+      "appearance-reverse-scrolling-description": "Invertir la dirección de trabajo al desplazarse.",
+      "appearance-reverse-scrolling-label": "Desplazamiento inverso"
     },
     "hooks": {
       "info-command-info-description": "• Los comandos se ejecutan a través de shell (sh -lc)<br>• Los comandos se ejecutan en segundo plano (desvinculados)<br>• Los botones de prueba se ejecutan con los valores actuales",
