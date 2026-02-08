@@ -93,7 +93,7 @@ NBox {
         radius: Style.radiusM
         clip: true
 
-        color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(getContentColor(), 0.08) : Color.mSurface
+        color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(Color.mPrimary, 0.15) : Color.mSurface
 
         // Content column so expanded details are laid out inside the card
         ColumnLayout {
@@ -112,7 +112,7 @@ NBox {
             NIcon {
               icon: BluetoothService.getDeviceIcon(modelData)
               pointSize: Style.fontSizeXXL
-              color: getContentColor(Color.mOnSurface)
+              color: modelData.connected ? Color.mPrimary : getContentColor(Color.mOnSurface)
               Layout.alignment: Qt.AlignVCenter
             }
 
@@ -219,6 +219,7 @@ NBox {
                 outlined: !button.hovered
                 fontSize: Style.fontSizeS
                 tooltipText: root.tooltipText
+                backgroundColor: modelData.connected ? Color.mError : Color.mPrimary
                 text: {
                   if (modelData.pairing) {
                     return I18n.tr("common.pairing");

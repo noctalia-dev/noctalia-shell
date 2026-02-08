@@ -14,7 +14,7 @@ Singleton {
   // Constants (centralized tunables)
   readonly property int ctlPollMs: 1500
   readonly property int ctlPollSoonMs: 250
-  readonly property int scanAutoStopMs: 6000
+  readonly property int scanAutoStopMs: 10000
 
   property bool airplaneModeToggled: false
   property bool lastBluetoothBlocked: false
@@ -103,7 +103,7 @@ Singleton {
   Process {
     id: fallbackScanProcess
     // Pipe scan on and a long sleep to bluetoothctl to keep it running
-    command: ["sh", "-c", "(echo 'scan on'; sleep 3600) | bluetoothctl"]
+    command: ["sh", "-c", "trap 'kill 0' EXIT; (echo 'scan on'; sleep 3600) | bluetoothctl"]
     onExited: Logger.d("Bluetooth", "Fallback scan process exited")
   }
 
@@ -121,13 +121,13 @@ Singleton {
     var nativeSuccess = false;
     try {
       if (adapter) {
-        if (active && adapter.startDiscovery !== undefined) {
+        if (active && adapter.discovering !== undefined) {
           // Logger.e("Bluetooth", "Starting discovery with Quickshell API"); // used for debugging
-          adapter.startDiscovery();
+          adapter.discovering = true;
           nativeSuccess = true;
-        } else if (!active && adapter.stopDiscovery !== undefined) {
+        } else if (!active && adapter.discovering !== undefined) {
           // Logger.e("Bluetooth", "Stopping discovery with Quickshell API"); // used for debugging
-          adapter.stopDiscovery();
+          adapter.discovering = false;
           nativeSuccess = true;
         }
       } else {

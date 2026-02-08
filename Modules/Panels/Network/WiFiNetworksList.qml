@@ -85,7 +85,7 @@ NBox {
 
         opacity: (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) ? 0.6 : 1.0
 
-        color: modelData.connected ? Qt.rgba(Color.mPrimary.r, Color.mPrimary.g, Color.mPrimary.b, 0.08) : Color.mSurface
+        color: modelData.connected ? Qt.alpha(Color.mPrimary, 0.15) : Color.mSurface
 
         Behavior on opacity {
           NumberAnimation {
