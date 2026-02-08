@@ -428,6 +428,12 @@ Variants {
           currentWallpaper.source = tempSource;
           transitionProgress = 0.0;
 
+          // Notify if this was the startup transition
+          if (isStartupTransition) {
+            WallpaperService.completeStartup(screen.name);
+            isStartupTransition = false;
+          }
+
           // Now clear nextWallpaper after currentWallpaper has the new source
           // Force complete cleanup to free texture memory
           Qt.callLater(() => {
@@ -749,11 +755,12 @@ Variants {
       function _executeStartupTransition() {
         if (transitionType === "none") {
           setWallpaperImmediate(futureWallpaper);
+          // For "none" transition, complete immediately
+          WallpaperService.completeStartup(screen.name);
+          isStartupTransition = false;
         } else {
           setWallpaperWithTransition(futureWallpaper);
         }
-        // Mark startup transition complete
-        isStartupTransition = false;
       }
     }
   }

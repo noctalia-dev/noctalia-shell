@@ -45,8 +45,26 @@ Singleton {
   signal wallpaperDirectoryChanged(string screenName, string directory)
   // Emitted when a monitor's directory changes
   signal wallpaperListChanged(string screenName, int count)
-
   // Emitted when available wallpapers list changes
+  signal startupTransitionComplete(string screenName)
+  // Emitted when the wallpaper startup transition finishes for a screen
+
+  // Track which screens have completed startup transition
+  property var startupCompleteScreens: ({})
+
+  // Check if startup transition is complete for a screen
+  function isStartupComplete(screenName) {
+    return startupCompleteScreens[screenName] || false;
+  }
+
+  // Mark startup transition as complete for a screen
+  function completeStartup(screenName) {
+    if (!startupCompleteScreens[screenName]) {
+      startupCompleteScreens[screenName] = true;
+      startupTransitionComplete(screenName);
+      Logger.d("WallpaperService", "Startup transition complete for screen:", screenName);
+    }
+  }
 
   // Browse mode: track current browse path per screen (separate from root directory)
   property var currentBrowsePaths: ({})

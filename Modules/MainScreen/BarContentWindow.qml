@@ -25,6 +25,10 @@ PanelWindow {
 
   Component.onCompleted: {
     Logger.d("BarContentWindow", "Bar content window created for screen:", barWindow.screen?.name);
+    // Initialize auto-hide state for this screen
+    if (barWindow.screen?.name) {
+      BarService.getOrCreateAutoHideState(barWindow.screen.name);
+    }
   }
 
   // Wayland layer configuration
@@ -73,6 +77,32 @@ PanelWindow {
       // Only show if still hovered (via trigger zone or bar itself)
       if (barWindow.autoHide && BarService.isBarHovered(barWindow.screen?.name)) {
         BarService.setScreenHidden(barWindow.screen?.name, false);
+      }
+    }
+  }
+
+  // Auto-hide the bar after boot delay, waiting for wallpaper transition
+  readonly property bool wallpaperEnabled: Settings.data.wallpaper.enabled
+
+  Timer {
+    id: bootHideTimer
+    interval: Style.animationNormal
+    running: barWindow.autoHide && !BarService.isBootCompleted(barWindow.screen?.name)
+             && (!barWindow.wallpaperEnabled || WallpaperService.isStartupComplete(barWindow.screen?.name))
+    onTriggered: {
+      if (barWindow.autoHide && !barWindow.barHovered && !barWindow.panelOpen && !BarService.popupOpen) {
+        BarService.setScreenHidden(barWindow.screen?.name, true);
+        BarService.completeBoot(barWindow.screen?.name);
+      }
+    }
+  }
+
+  // Restart timer when wallpaper startup completes
+  Connections {
+    target: WallpaperService
+    function onStartupTransitionComplete(screenName) {
+      if (screenName === barWindow.screen?.name && barWindow.autoHide && !BarService.isBootCompleted(screenName)) {
+        bootHideTimer.restart();
       }
     }
   }
@@ -218,6 +248,11 @@ PanelWindow {
             if (hovered) {
               barWindow.barHovered = true;
               BarService.setScreenHovered(barWindow.screen?.name, true);
+              // Complete boot on first user interaction
+              if (!BarService.isBootCompleted(barWindow.screen?.name)) {
+                BarService.completeBoot(barWindow.screen?.name);
+                bootHideTimer.stop();
+              }
               if (barWindow.autoHide) {
                 hideTimer.stop();
                 showTimer.restart();

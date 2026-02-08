@@ -43,15 +43,32 @@ Singleton {
   // Auto-hide state per screen: { screenName: { hovered: bool, hidden: bool } }
   property var screenAutoHideState: ({})
 
+  // Track which screens have completed the boot hide sequence
+  property var bootCompletedScreens: ({})
+
   // Get or create auto-hide state for a screen
   function getOrCreateAutoHideState(screenName) {
     if (!screenAutoHideState[screenName]) {
+      // Start visible (hidden: false), will auto-hide after boot delay
       screenAutoHideState[screenName] = {
         "hovered": false,
-        "hidden": Settings.data.bar.displayMode === "auto_hide"
+        "hidden": false
       };
     }
     return screenAutoHideState[screenName];
+  }
+
+  // Check if boot sequence is complete for a screen
+  function isBootCompleted(screenName) {
+    return bootCompletedScreens[screenName] || false;
+  }
+
+  // Mark boot as completed for a screen
+  function completeBoot(screenName) {
+    if (!bootCompletedScreens[screenName]) {
+      bootCompletedScreens[screenName] = true;
+      Logger.d("BarService", "Boot sequence completed for screen:", screenName);
+    }
   }
 
   // Set hover state for a screen

@@ -25,6 +25,13 @@ PanelWindow {
   readonly property real barMarginV: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0
   readonly property real fractOffset: CompositorService.getDisplayScale(screen?.name) % 1.0
 
+  readonly property bool isBarHidden: {
+    if (!screen?.name) return autoHide;
+    // During boot, keep hidden until boot completes to prevent flicker
+    if (!BarService.isBootCompleted(screen.name)) return true;
+    return BarService.isBarHidden(screen.name);
+  }
+
   // Invisible - just reserves space
   color: "transparent"
 
@@ -33,11 +40,11 @@ PanelWindow {
   // Wayland layer shell configuration
   WlrLayershell.layer: WlrLayer.Top
   WlrLayershell.namespace: "noctalia-bar-exclusion-" + edge + "-" + (screen?.name || "unknown")
-  // When auto-hide, non-exclusive mode is enabled, OR bar is explicitly hidden via IPC, don't reserve space
+  // Don't reserve space when: auto-hide is active and bar is hidden, non-exclusive mode, or bar explicitly hidden via IPC
   // Note: We check BarService.isVisible directly, NOT effectivelyVisible, because we want
   // the exclusion zone to stay during overview (effectivelyVisible is false during overview
   // when hideOnOverview is enabled, but isVisible remains true)
-  WlrLayershell.exclusionMode: (autoHide || nonExclusive || !BarService.isVisible) ? ExclusionMode.Ignore : ExclusionMode.Auto
+  WlrLayershell.exclusionMode: (autoHide && isBarHidden) || nonExclusive || !BarService.isVisible ? ExclusionMode.Ignore : ExclusionMode.Auto
 
   // Anchor based on specified edge
   anchors {
