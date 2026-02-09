@@ -892,7 +892,10 @@ SmartPanel {
             if (itemY < viewportTop) {
               contentY = Math.max(0, itemY - cellHeight);
             } else if (itemY + cellHeight > viewportBottom) {
-              contentY = itemY + cellHeight - height + cellHeight;
+              // Calculate desired position and clamp to max scroll position
+              let desiredY = itemY + cellHeight - height + cellHeight;
+              let maxContentY = Math.max(0, contentHeight - height);
+              contentY = Math.min(desiredY, maxContentY);
             }
           }
         }
@@ -1253,7 +1256,10 @@ SmartPanel {
               if (itemY < viewportTop) {
                 contentY = Math.max(0, itemY - cellHeight);
               } else if (itemY + cellHeight > viewportBottom) {
-                contentY = itemY + cellHeight - height + cellHeight;
+                // Calculate desired position and clamp to max scroll position
+                let desiredY = itemY + cellHeight - height + cellHeight;
+                let maxContentY = Math.max(0, contentHeight - height);
+                contentY = Math.min(desiredY, maxContentY);
               }
             }
           }
