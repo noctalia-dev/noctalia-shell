@@ -11,10 +11,6 @@ import qs.Widgets.AudioSpectrum
 
 Item {
   id: root
-  Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
-  Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
-  Layout.fillHeight: false
-  Layout.fillWidth: false
 
   property ShellScreen screen
   property string widgetId: ""
@@ -80,6 +76,11 @@ Item {
   // CavaService registration for visualizer
   readonly property string cavaComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
   readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none"
+
+  Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
+  Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
+  Layout.fillHeight: false
+  Layout.fillWidth: false
 
   onNeedsCavaChanged: {
     if (root.needsCava) {

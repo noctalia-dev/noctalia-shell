@@ -56,11 +56,57 @@ ColumnLayout {
   }
 
   NToggle {
-    label: I18n.tr("tooltips.grid-view")
-    description: I18n.tr("panels.launcher.settings-grid-view-description")
-    checked: Settings.data.appLauncher.viewMode === "grid"
-    onToggled: checked => Settings.data.appLauncher.viewMode = checked ? "grid" : "list"
+    label: I18n.tr("panels.launcher.settings-overlay-layer-label")
+    description: I18n.tr("panels.launcher.settings-overlay-layer-description")
+    checked: Settings.data.appLauncher.overviewLayer
+    onToggled: checked => Settings.data.appLauncher.overviewLayer = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.overviewLayer")
+  }
+
+  NComboBox {
+    label: I18n.tr("panels.launcher.settings-view-mode-label")
+    description: I18n.tr("panels.launcher.settings-view-mode-description")
+    Layout.fillWidth: true
+    model: [
+      {
+        "key": "list",
+        "name": I18n.tr("options.launcher-view-mode.list")
+      },
+      {
+        "key": "grid",
+        "name": I18n.tr("options.launcher-view-mode.grid")
+      }
+    ]
+    currentKey: Settings.data.appLauncher.viewMode
+    onSelected: function (key) {
+      Settings.data.appLauncher.viewMode = key;
+    }
     defaultValue: Settings.getDefaultValue("appLauncher.viewMode")
+  }
+
+  NComboBox {
+    label: I18n.tr("panels.launcher.settings-density-label")
+    description: I18n.tr("panels.launcher.settings-density-description")
+    Layout.fillWidth: true
+    model: [
+      {
+        "key": "compact",
+        "name": I18n.tr("options.launcher-density.compact")
+      },
+      {
+        "key": "default",
+        "name": I18n.tr("options.launcher-density.default")
+      },
+      {
+        "key": "comfortable",
+        "name": I18n.tr("options.launcher-density.comfortable")
+      }
+    ]
+    currentKey: Settings.data.appLauncher.density || "compact"
+    onSelected: function (key) {
+      Settings.data.appLauncher.density = key;
+    }
+    defaultValue: Settings.getDefaultValue("appLauncher.density")
   }
 
   NToggle {

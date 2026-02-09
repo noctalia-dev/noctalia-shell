@@ -58,7 +58,6 @@
       "hide-if-idle-label": "空闲时隐藏",
       "hide-if-not-detected-description": "当系统未检测到电池时，隐藏该小部件。",
       "hide-if-not-detected-label": "未检测到电池时，隐藏该小部件",
-      "low-battery-threshold-description": "当电量低于此百分比时显示警告。",
       "low-battery-threshold-label": "低电量警告阈值",
       "show-noctalia-performance-description": "在电池面板中显示 Noctalia 性能模式开关。<br>该模式通过禁用 Noctalia 中的阴影和动画减少性能开销。",
       "show-noctalia-performance-label": "显示 Noctalia 性能模式开关",
@@ -457,6 +456,7 @@
     "refresh": "刷新",
     "required": "(必要)",
     "reset": "重置",
+    "reset-to-default": "重置为默认值",
     "result-count": "{count} 结果",
     "result-count-plural": "{count} 结果",
     "resume": "继续",
@@ -625,6 +625,15 @@
       "quick-settings-style-modern": "现代"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "舒适",
+      "compact": "紧凑",
+      "default": "默认"
+    },
+    "launcher-view-mode": {
+      "grid": "网格",
+      "list": "列表"
+    },
     "scrolling-modes": {
       "always": "始终滚动",
       "hover": "悬停时滚动",
@@ -1021,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "搜索等宽字体...",
       "fonts-reset-scaling": "恢复默认缩放",
       "fonts-title": "字体",
+      "keybinds-description": "配置面板和启动器的全局导航键。",
+      "keybinds-down": "下移",
+      "keybinds-enter": "确认 / 操作",
+      "keybinds-escape": "关闭 / 返回",
+      "keybinds-left": "左移",
+      "keybinds-right": "右移",
+      "keybinds-title": "导航按键绑定",
+      "keybinds-up": "上移",
       "language-desc": "选择您偏好的应用程序语言。",
       "language-select-auto-detect": "自动检测",
       "language-select-description": "选择应用程序界面中使用的语言。",
@@ -1041,7 +1058,9 @@
       "screen-corners-solid-black-description": "使用实心黑色而非状态栏背景色。",
       "screen-corners-solid-black-label": "实心黑色边角",
       "screen-corners-title": "屏幕边角",
-      "settings-copied": "设置已复制到剪贴板"
+      "settings-copied": "设置已复制到剪贴板",
+      "tab-basics": "基础",
+      "tab-keybinds": "按键绑定"
     },
     "hooks": {
       "info-command-info-description": "• 命令通过 shell 执行（sh -lc）<br>• 命令在后台运行（分离）<br>• 测试按钮使用当前值执行",
@@ -1096,14 +1115,16 @@
       "settings-clip-wrap-text-label": "环绕剪贴板文本",
       "settings-clipboard-history-description": "从启动器访问之前复制的项目。",
       "settings-clipboard-history-label": "启用剪贴板历史记录",
-      "settings-clipboard-watch-image-description": "传递给 wl-paste 以进行图像更改的完整命令字符串。(需要重启)",
+      "settings-clipboard-watch-image-description": "传递给 wl-paste 以进行图像更改的完整命令字符串（需要重启）。",
       "settings-clipboard-watch-image-label": "图像监视命令",
-      "settings-clipboard-watch-text-description": "传递给 wl-paste 以进行文本更改的完整命令字符串。(需要重启)",
+      "settings-clipboard-watch-text-description": "传递给 wl-paste 以进行文本更改的完整命令字符串（需要重启）。",
       "settings-clipboard-watch-text-label": "文本监视命令",
       "settings-custom-launch-prefix-description": "使用自定义启动器前缀命令（例如：'runapp'用于systemd集成）。",
       "settings-custom-launch-prefix-enabled-description": "使用自定义前缀启动应用程序，而不是默认方法。",
       "settings-custom-launch-prefix-enabled-label": "启用自定义启动前缀",
       "settings-custom-launch-prefix-label": "自定义启动前缀",
+      "settings-density-description": "调整应用程序图标大小和 Launcher 密度。",
+      "settings-density-label": "密度",
       "settings-desc": "自定义启动器的行为和外观。",
       "settings-enable-settings-search-description": "在启动器中搜索时显示设置结果。",
       "settings-enable-settings-search-label": "启用设置搜索",
@@ -1114,6 +1135,8 @@
       "settings-icon-mode-label": "使用本地图标",
       "settings-ignore-mouse-input-description": "禁用启动器中的鼠标交互和滚轮。",
       "settings-ignore-mouse-input-label": "忽略鼠标输入",
+      "settings-overlay-layer-description": "在覆盖层上显示启动器，位于全屏窗口之上。启用时，启动器不会附加到栏。",
+      "settings-overlay-layer-label": "在全屏上方显示",
       "settings-position-description": "选择启动器面板出现的位置。",
       "settings-show-categories-description": "显示用于筛选应用程序的类别标签。",
       "settings-show-categories-label": "显示类别",
@@ -1125,6 +1148,8 @@
       "settings-terminal-command-label": "终端命令",
       "settings-use-app2unit-description": "使用替代启动方法以更好地管理应用程序进程并防止问题。",
       "settings-use-app2unit-label": "使用 App2Unit 启动应用程序",
+      "settings-view-mode-description": "选择启动器条目的布局。",
+      "settings-view-mode-label": "视图模式",
       "title": "启动器"
     },
     "location": {
@@ -1180,6 +1205,9 @@
       "compact-lockscreen-label": "紧凑型锁屏",
       "lock-on-suspend-description": "系统挂起时自动锁定屏幕。",
       "lock-on-suspend-label": "挂起时锁定",
+      "lock-screen-animations-description": "启用或禁用锁屏动画。",
+      "lock-screen-animations-label": "锁屏动画",
+      "monitors-desc": "在指定显示器上显示锁屏。如果未选择，则默认为所有显示器。",
       "show-hibernate-description": "在电源控制中显示'休眠'选项。",
       "show-hibernate-label": "显示休眠",
       "show-session-buttons-description": "允许从锁屏访问电源设置。",
@@ -1296,6 +1324,8 @@
       "available-label": "可用插件",
       "available-no-plugins-description": "检查你的插件源或刷新列表。",
       "available-no-plugins-label": "没有可用的插件",
+      "check-for-updates": "检查更新",
+      "checking-for-updates": "正在检查更新...",
       "collision-already-installed": "此插件已安装",
       "collision-custom-version-exists": "来自“{source}”的自定义版本已安装",
       "collision-official-version-exists": "此插件的官方版本已安装",
@@ -1643,7 +1673,7 @@
     "noctalia-performance": {
       "disabled": "性能模式已禁用",
       "enabled": "已启用性能模式",
-      "label": "Noctalia 性能"
+      "label": "Noctalia 性能模式"
     },
     "power-profile": {
       "changed": "电源模式已更改",
@@ -1789,7 +1819,9 @@
     "wallhaven": {
       "loading": "正在加载壁纸...",
       "no-results": "未找到壁纸。请尝试不同的搜索查询。",
-      "page": "{current} / {total}"
+      "page": "{current} / {total}",
+      "page-prefix": "页面",
+      "page-suffix": "共 {total} 个"
     }
   },
   "weather": {

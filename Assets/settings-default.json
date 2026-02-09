@@ -80,6 +80,7 @@
     "animationSpeed": 1,
     "animationDisabled": false,
     "compactLockScreen": false,
+    "lockScreenAnimations": false,
     "lockOnSuspend": true,
     "showSessionButtonsOnLockScreen": true,
     "showHibernateOnLockScreen": false,
@@ -96,7 +97,16 @@
     "autoStartAuth": false,
     "allowPasswordWithFprintd": false,
     "clockStyle": "custom",
-    "clockFormat": "hh\\nmm"
+    "clockFormat": "hh\\nmm",
+    "lockScreenMonitors": [],
+    "keybinds": {
+      "keyUp": "Up",
+      "keyDown": "Down",
+      "keyLeft": "Left",
+      "keyRight": "Right",
+      "keyEnter": "Return",
+      "keyEscape": "Esc"
+    }
   },
   "ui": {
     "fontDefault": "",
@@ -198,7 +208,9 @@
     "enableSettingsSearch": true,
     "enableWindowsSearch": true,
     "ignoreMouseInput": false,
-    "screenshotAnnotationTool": ""
+    "screenshotAnnotationTool": "",
+    "overviewLayer": false,
+    "density": "default"
   },
   "controlCenter": {
     "position": "close_to_bar_button",

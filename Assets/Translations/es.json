@@ -58,7 +58,6 @@
       "hide-if-idle-label": "Ocultar cuando inactivo",
       "hide-if-not-detected-description": "Ocultar el widget cuando no se detecte batería en el sistema.",
       "hide-if-not-detected-label": "Ocultar si no se detecta",
-      "low-battery-threshold-description": "Muestra una advertencia cuando la batería cae por debajo de este porcentaje.",
       "low-battery-threshold-label": "Umbral de advertencia de batería baja",
       "show-noctalia-performance-description": "Muestra el interruptor del modo de rendimiento Noctalia en el panel de batería.<br>Desactiva sombras y animaciones en Noctalia para reducir el uso de recursos.",
       "show-noctalia-performance-label": "Mostrar interruptor de Noctalia Rendimiento",
@@ -457,6 +456,7 @@
     "refresh": "Refrescar",
     "required": "(obligatorio)",
     "reset": "Restablecer",
+    "reset-to-default": "Restablecer a Valores Predeterminados",
     "result-count": "{count} resultado",
     "result-count-plural": "{count} resultados",
     "resume": "Reanudar",
@@ -477,7 +477,7 @@
     "sources": "Fuentes",
     "start": "Comienzo",
     "stop": "Parar",
-    "supporters": "Apoyadores",
+    "supporters": "Patrocinadores",
     "suspend": "Suspender",
     "templates": "Plantillas",
     "tertiary": "Terciario",
@@ -625,6 +625,15 @@
       "quick-settings-style-modern": "Moderno"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "Cómodo",
+      "compact": "Compacto",
+      "default": "Predeterminado"
+    },
+    "launcher-view-mode": {
+      "grid": "Cuadrícula",
+      "list": "Lista"
+    },
     "scrolling-modes": {
       "always": "Desplazar siempre",
       "hover": "Desplazar encima",
@@ -1021,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "Buscar fuentes monoespaciadas...",
       "fonts-reset-scaling": "Restablecer la escala",
       "fonts-title": "Fuentes",
+      "keybinds-description": "Configura las teclas de navegación globales para paneles y el lanzador.",
+      "keybinds-down": "Mover hacia abajo",
+      "keybinds-enter": "Confirmar / Acción",
+      "keybinds-escape": "Cerrar / Volver",
+      "keybinds-left": "Mover a la Izquierda",
+      "keybinds-right": "Mover a la derecha",
+      "keybinds-title": "Atajos de Teclado de Navegación",
+      "keybinds-up": "Mover Arriba",
       "language-desc": "Elige tu idioma preferido para la aplicación.",
       "language-select-auto-detect": "Automático",
       "language-select-description": "Selecciona el idioma utilizado en la interfaz de la aplicación.",
@@ -1041,7 +1058,9 @@
       "screen-corners-solid-black-description": "Usa negro sólido en lugar del color de fondo de la barra.",
       "screen-corners-solid-black-label": "Esquinas negras sólidas",
       "screen-corners-title": "Esquinas de la pantalla",
-      "settings-copied": "Ajustes copiados al portapapeles"
+      "settings-copied": "Ajustes copiados al portapapeles",
+      "tab-basics": "Conceptos Básicos",
+      "tab-keybinds": "Atajos de Teclado"
     },
     "hooks": {
       "info-command-info-description": "• Los comandos se ejecutan a través de shell (sh -lc)<br>• Los comandos se ejecutan en segundo plano (desvinculados)<br>• Los botones de prueba se ejecutan con los valores actuales",
@@ -1096,14 +1115,16 @@
       "settings-clip-wrap-text-label": "Ajustar texto del portapapeles",
       "settings-clipboard-history-description": "Accede a los elementos copiados anteriormente desde el lanzador.",
       "settings-clipboard-history-label": "Activar historial del portapapeles",
-      "settings-clipboard-watch-image-description": "Cadena de comando completa pasada a wl-paste para cambios de imagen. (requiere reinicio)",
+      "settings-clipboard-watch-image-description": "Cadena de comando completa pasada a wl-paste para cambios de imagen (requiere reinicio).",
       "settings-clipboard-watch-image-label": "Comando de vigilancia de imágenes",
-      "settings-clipboard-watch-text-description": "Cadena de comando completa pasada a wl-paste para cambios de texto. (requiere reinicio)",
+      "settings-clipboard-watch-text-description": "Cadena de comando completa pasada a wl-paste para cambios de texto (requiere reinicio).",
       "settings-clipboard-watch-text-label": "Comando de vigilancia de texto",
       "settings-custom-launch-prefix-description": "Prefijar comandos con un lanzador personalizado (p. ej. 'runapp' para integración con systemd).",
       "settings-custom-launch-prefix-enabled-description": "Usar un prefijo personalizado para lanzar aplicaciones en lugar del método predeterminado.",
       "settings-custom-launch-prefix-enabled-label": "Habilitar prefijo de lanzamiento personalizado",
       "settings-custom-launch-prefix-label": "Prefijo de lanzamiento personalizado",
+      "settings-density-description": "Ajusta el tamaño de los iconos de las aplicaciones y la densidad del Launcher.",
+      "settings-density-label": "Densidad",
       "settings-desc": "Personaliza el comportamiento y la apariencia del lanzador.",
       "settings-enable-settings-search-description": "Mostrar los resultados de configuración al buscar en el Launcher.",
       "settings-enable-settings-search-label": "Activar la búsqueda en la configuración",
@@ -1114,6 +1135,8 @@
       "settings-icon-mode-label": "Usar iconos nativos",
       "settings-ignore-mouse-input-description": "Deshabilitar la interacción del ratón y la rueda de desplazamiento en el lanzador.",
       "settings-ignore-mouse-input-label": "Ignorar la entrada del ratón",
+      "settings-overlay-layer-description": "Muestra el lanzador en la capa de superposición, encima de las ventanas a pantalla completa. Cuando está activado, el lanzador no se adjuntará a la barra.",
+      "settings-overlay-layer-label": "Mostrar sobre pantalla completa",
       "settings-position-description": "Elige dónde aparece el panel del lanzador.",
       "settings-show-categories-description": "Mostrar pestañas de categorías para filtrar aplicaciones.",
       "settings-show-categories-label": "Mostrar categorías",
@@ -1125,6 +1148,8 @@
       "settings-terminal-command-label": "Comando de terminal",
       "settings-use-app2unit-description": "Usa un método de lanzamiento alternativo para gestionar mejor los procesos de las aplicaciones y prevenir problemas.",
       "settings-use-app2unit-label": "Usar App2Unit para lanzar aplicaciones",
+      "settings-view-mode-description": "Elige la disposición para las entradas del Lanzador.",
+      "settings-view-mode-label": "Modo de vista",
       "title": "Lanzador"
     },
     "location": {
@@ -1180,6 +1205,9 @@
       "compact-lockscreen-label": "Pantalla de bloqueo compacta",
       "lock-on-suspend-description": "Bloquear la pantalla automáticamente al suspender el sistema.",
       "lock-on-suspend-label": "Bloquear al suspender",
+      "lock-screen-animations-description": "Activar o desactivar las animaciones de la pantalla de bloqueo.",
+      "lock-screen-animations-label": "Animaciones de la Pantalla de Bloqueo",
+      "monitors-desc": "Mostrar pantalla de bloqueo en monitores específicos. Por defecto, se mostrará en todos si no se elige ninguno.",
       "show-hibernate-description": "Mostrar la opción 'hibernar' en los controles de energía.",
       "show-hibernate-label": "Mostrar hibernar",
       "show-session-buttons-description": "Permitir el acceso a las opciones de sesión desde la pantalla de bloqueo.",
@@ -1296,6 +1324,8 @@
       "available-label": "Plugins disponibles",
       "available-no-plugins-description": "Comprueba las fuentes de tu plugin o actualiza la lista.",
       "available-no-plugins-label": "No hay plugins disponibles",
+      "check-for-updates": "Buscar actualizaciones",
+      "checking-for-updates": "Buscando actualizaciones...",
       "collision-already-installed": "Este plugin ya está instalado",
       "collision-custom-version-exists": "Ya hay instalada una versión personalizada de \"{source}\"",
       "collision-official-version-exists": "La versión oficial de este plugin ya está instalada",
@@ -1536,7 +1566,7 @@
   "setup": {
     "all-done": "¡Listo!",
     "appearance": {
-      "subheader": "Elige el modo oscuro y las fuentes de color (Fondo de pantalla o predefinidas)."
+      "subheader": "Elige el modo oscuro y las fuentes de color (fondo de pantalla o predefinidas)."
     },
     "customize": {
       "header": "Personaliza tu experiencia",
@@ -1717,8 +1747,8 @@
     "search-close": "Cerrar búsqueda",
     "session-menu": "Menú de sesión",
     "show-all-devices": "Mostrar todos los dispositivos",
-    "switch-to-dark-mode": "Modo Oscuro",
-    "switch-to-light-mode": "Modo Claro",
+    "switch-to-dark-mode": "Modo oscuro",
+    "switch-to-light-mode": "Modo claro",
     "unmute": "Activar el audio",
     "up": "Directorio superior",
     "volume-at": "Volumen de salida: {volume}%",
@@ -1789,7 +1819,9 @@
     "wallhaven": {
       "loading": "Cargando fondos de pantalla...",
       "no-results": "No se encontraron fondos de pantalla. Intenta con una búsqueda diferente.",
-      "page": "{current} de {total}"
+      "page": "{current} de {total}",
+      "page-prefix": "Página",
+      "page-suffix": "de {total}"
     }
   },
   "weather": {

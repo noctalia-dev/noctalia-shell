@@ -13,6 +13,7 @@ Item {
   required property bool pluggedIn
   required property bool ready
   required property bool low
+  required property bool critical
 
   // Sizing - baseSize controls overall scaleFactor for bar/panel usage
   property real baseSize: Style.fontSizeM
@@ -55,7 +56,7 @@ Item {
     if (charging) {
       return chargingColor;
     }
-    if (low) {
+    if (low || critical) {
       return lowColor;
     }
     return baseColor;
@@ -127,17 +128,17 @@ Item {
       width: root.vertical ? root.terminalHeight : root.terminalWidth
       height: root.vertical ? root.terminalWidth : root.terminalHeight
       radius: root.cornerRadius / 2
-      color: root.emptyColor
+      color: root.critical ? root.lowColor : root.emptyColor
     }
 
     // Fill level
     Rectangle {
       id: fillRect
-      visible: root.ready && root.animatedPercentage > 0
+      visible: root.ready && (root.animatedPercentage > 0 || root.critical)
       x: 0
-      y: root.vertical ? root.terminalWidth + root.bodyWidth * (1 - root.animatedPercentage / 100) : 0
-      width: root.vertical ? root.bodyHeight : root.bodyWidth * (root.animatedPercentage / 100)
-      height: root.vertical ? root.bodyWidth * (root.animatedPercentage / 100) : root.bodyHeight
+      y: root.vertical ? root.terminalWidth + root.bodyWidth * (1 - (root.critical ? 1 : root.animatedPercentage / 100)) : 0
+      width: root.vertical ? root.bodyHeight : root.bodyWidth * (root.critical ? 1 : root.animatedPercentage / 100)
+      height: root.vertical ? root.bodyWidth * (root.critical ? 1 : root.animatedPercentage / 100) : root.bodyHeight
       radius: root.cornerRadius
       color: root.activeColor
     }

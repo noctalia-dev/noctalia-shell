@@ -24,6 +24,9 @@ T.ScrollView {
   property bool reserveScrollbarSpace: true
   property real userRightPadding: 0
 
+  // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
+  property real wheelScrollMultiplier: 2.0
+
   rightPadding: userRightPadding + (reserveScrollbarSpace && verticalScrollable ? handleWidth + Style.marginXS : 0)
 
   implicitWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset, contentWidth + leftPadding + rightPadding)
@@ -83,6 +86,9 @@ T.ScrollView {
     `, root, "bottomGradient");
   }
 
+  // Reference to the internal Flickable for wheel handling
+  property Flickable _internalFlickable: null
+
   // Function to configure the underlying Flickable
   function configureFlickable() {
     // Find the internal Flickable (it's usually the first child)
@@ -91,6 +97,7 @@ T.ScrollView {
       if (child.toString().indexOf("Flickable") !== -1) {
         // Configure the flickable to prevent horizontal scrolling
         child.boundsBehavior = root.boundsBehavior;
+        root._internalFlickable = child;
 
         if (root.preventHorizontalScroll) {
           child.flickableDirection = Flickable.VerticalFlick;
@@ -99,6 +106,20 @@ T.ScrollView {
         break;
       }
     }
+  }
+
+  WheelHandler {
+    enabled: root.wheelScrollMultiplier !== 1.0 && root._internalFlickable !== null
+    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    onWheel: event => {
+               if (!root._internalFlickable)
+               return;
+               const flickable = root._internalFlickable;
+               const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
+               const newY = flickable.contentY - (delta * root.wheelScrollMultiplier);
+               flickable.contentY = Math.max(0, Math.min(newY, flickable.contentHeight - flickable.height));
+               event.accepted = true;
+             }
   }
 
   // Watch for changes in horizontalPolicy

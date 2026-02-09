@@ -25,7 +25,7 @@ Slider {
   padding: cutoutExtra / 2
 
   snapMode: snapAlways ? Slider.SnapAlways : Slider.SnapOnRelease
-  implicitHeight: Math.max(trackHeight, knobDiameter)
+  implicitHeight: Math.max(trackHeight, knobDiameter) + 1
 
   background: Item {
     id: bgContainer

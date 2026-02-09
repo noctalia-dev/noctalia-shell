@@ -12,6 +12,7 @@ Singleton {
   readonly property string pluginsDir: Settings.configDir + "plugins"
   readonly property string pluginsFile: Settings.configDir + "plugins.json"
 
+  readonly property int currentVersion: 2
   // Main source URL - plugins from this source keep plain IDs
   readonly property string mainSourceUrl: "https://github.com/noctalia-dev/noctalia-plugins"
 
@@ -104,7 +105,7 @@ Singleton {
 
     adapter: JsonAdapter {
       id: adapter
-      property int version: 2 // v2 adds sourceUrl to states
+      property int version: root.currentVersion
       property var states: ({})
       property list<var> sources: []
     }
@@ -235,7 +236,7 @@ Singleton {
       import QtQuick
       import Quickshell.Io
       Process {
-        command: ["sh", "-c", "test -f '${root.pluginsFile}' || echo '{\\"version\\":1,\\"states\\":{},\\"sources\\":[]}' > '${root.pluginsFile}'"]
+        command: ["sh", "-c", "test -f '${root.pluginsFile}' || echo '{\\"version\\":${root.currentVersion},\\"states\\":{},\\"sources\\":[]}' > '${root.pluginsFile}'"]
       }
     `, root, "EnsurePluginsFile");
 
@@ -367,6 +368,7 @@ Singleton {
 
   // Save registry to disk (only states and sources)
   function save() {
+    adapter.version = root.currentVersion;
     adapter.states = root.pluginStates;
     adapter.sources = root.pluginSources;
 

@@ -14,7 +14,7 @@ Item {
   property var entries: []
   property string supportedLayouts: "both"
   property bool isDefaultProvider: true // This provider handles empty search
-  property int preferredGridColumns: 5
+  property bool ignoreDensity: false // Apps should scale with launcher density
 
   // Category support
   property string selectedCategory: "all"
@@ -548,6 +548,11 @@ Item {
       "_score": (score !== undefined ? score : 0),
       "provider": root,
       "onActivate": function () {
+        // Record usage before closing (provider may be destroyed after close)
+        if (Settings.data.appLauncher.sortByMostUsed) {
+          root.recordUsage(app);
+        }
+
         // Close the launcher/SmartPanel immediately without any animations.
         // Ensures we are not preventing the future focusing of the app
         launcher.closeImmediately();
@@ -555,10 +560,6 @@ Item {
         // Defer execution to next event loop iteration to ensure panel is fully closed
         Qt.callLater(() => {
                        Logger.d("ApplicationsProvider", `Launching: ${app.name}`);
-                       // Record usage and persist asynchronously
-                       if (Settings.data.appLauncher.sortByMostUsed) {
-                         recordUsage(app);
-                       }
 
                        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
                          // Use custom launch prefix

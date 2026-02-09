@@ -98,18 +98,19 @@ void main() {
     // Triangle wave: pixelation peaks at progress=0.5
     float pixelIntensity = 1.0 - abs(2.0 * ubuf.progress - 1.0);
 
-    // Block size ramps from 1 pixel to maxBlockSize at peak, then back down
-    float blockSize = max(1.0, ubuf.maxBlockSize * pixelIntensity);
+    // Compute the sampling UV — snap to block grid when pixelating, pass through otherwise
+    vec2 sampleUV = uv;
+    if (pixelIntensity > 0.001) {
+        float blockSize = ubuf.maxBlockSize * pixelIntensity;
+        vec2 screenSize = vec2(ubuf.screenWidth, ubuf.screenHeight);
+        vec2 pixelCoord = uv * screenSize;
+        vec2 snappedPixel = floor(pixelCoord / blockSize) * blockSize + blockSize * 0.5;
+        sampleUV = snappedPixel / screenSize;
+    }
 
-    // Snap UV to block grid in pixel space
-    vec2 screenSize = vec2(ubuf.screenWidth, ubuf.screenHeight);
-    vec2 pixelCoord = uv * screenSize;
-    vec2 snappedPixel = floor(pixelCoord / blockSize) * blockSize + blockSize * 0.5;
-    vec2 snappedUV = snappedPixel / screenSize;
-
-    // Sample both textures at the snapped (pixelated) UV
-    vec4 color1 = sampleWithFillMode(source1, snappedUV, ubuf.imageWidth1, ubuf.imageHeight1, ubuf.isSolid1, ubuf.solidColor1);
-    vec4 color2 = sampleWithFillMode(source2, snappedUV, ubuf.imageWidth2, ubuf.imageHeight2, ubuf.isSolid2, ubuf.solidColor2);
+    // Sample both textures at the (possibly snapped) UV
+    vec4 color1 = sampleWithFillMode(source1, sampleUV, ubuf.imageWidth1, ubuf.imageHeight1, ubuf.isSolid1, ubuf.solidColor1);
+    vec4 color2 = sampleWithFillMode(source2, sampleUV, ubuf.imageWidth2, ubuf.imageHeight2, ubuf.isSolid2, ubuf.solidColor2);
 
     // Crossfade concentrated around the peak pixelation (progress ~0.5)
     float blend = smoothstep(0.4, 0.6, ubuf.progress);

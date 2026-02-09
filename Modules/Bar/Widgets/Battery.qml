@@ -180,7 +180,8 @@ Item {
     ready: root.isReady
     charging: root.isCharging
     pluggedIn: root.isPluggedIn
-    low: root.isLowBattery || root.isCriticalBattery
+    low: root.isLowBattery
+    critical: root.isCriticalBattery
     baseColor: graphicMouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
     textColor: graphicMouseArea.containsMouse ? Color.mHover : Color.mSurface
   }

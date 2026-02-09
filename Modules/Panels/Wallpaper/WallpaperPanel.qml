@@ -103,6 +103,13 @@ SmartPanel {
   function onReturnPressed() {
     if (!contentItem)
       return;
+
+    // Check if Wallhaven page input has focus
+    if (contentItem.wallhavenView && contentItem.wallhavenView.visible && contentItem.wallhavenView.pageInput && contentItem.wallhavenView.pageInput.inputItem.activeFocus) {
+      contentItem.wallhavenView.pageInput.submitPage();
+      return;
+    }
+
     let view = contentItem.screenRepeater.itemAt(contentItem.currentScreenIndex);
     if (view?.gridView?.hasActiveFocus) {
       let gridView = view.gridView;
@@ -119,6 +126,7 @@ SmartPanel {
   panelContent: Rectangle {
     id: panelContent
 
+    property alias wallhavenView: wallhavenView
     property int currentScreenIndex: {
       if (screen !== null) {
         for (var i = 0; i < Quickshell.screens.length; i++) {
@@ -411,18 +419,65 @@ SmartPanel {
                 }
               }
 
-              Keys.onDownPressed: {
-                if (Settings.data.wallpaper.useWallhaven) {
-                  if (wallhavenView && wallhavenView.gridView) {
-                    wallhavenView.gridView.forceActiveFocus();
-                  }
-                } else {
-                  let currentView = screenRepeater.itemAt(currentScreenIndex);
-                  if (currentView && currentView.gridView) {
-                    currentView.gridView.forceActiveFocus();
-                  }
-                }
-              }
+              Keys.onPressed: event => {
+                                var boundKey = Settings.data.general.keybinds.keyDown;
+                                if (!boundKey)
+                                return;
+
+                                // Helper to check key string (duplicated from LauncherCore/SessionMenu logic for now)
+                                // Ideally this should be a shared helper
+                                let keyStr = "";
+                                if (event.modifiers & Qt.ControlModifier)
+                                keyStr += "Ctrl+";
+                                if (event.modifiers & Qt.AltModifier)
+                                keyStr += "Alt+";
+                                if (event.modifiers & Qt.ShiftModifier)
+                                keyStr += "Shift+";
+
+                                let keyName = "";
+                                if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z || event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
+                                  keyName = String.fromCharCode(event.key);
+                                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                  keyName = "Return"; // Standardize on Return for check
+                                } else if (event.key === Qt.Key_Escape) {
+                                  keyName = "Esc";
+                                } else if (event.key === Qt.Key_Up)
+                                keyName = "Up";
+                                else if (event.key === Qt.Key_Down)
+                                keyName = "Down";
+                                else if (event.key === Qt.Key_Left)
+                                keyName = "Left";
+                                else if (event.key === Qt.Key_Right)
+                                keyName = "Right";
+
+                                // If the key matches the bound key for Down
+                                if ((keyStr + keyName) === boundKey) {
+                                  if (Settings.data.wallpaper.useWallhaven) {
+                                    if (wallhavenView && wallhavenView.gridView) {
+                                      wallhavenView.gridView.forceActiveFocus();
+                                    }
+                                  } else {
+                                    let currentView = screenRepeater.itemAt(currentScreenIndex);
+                                    if (currentView && currentView.gridView) {
+                                      currentView.gridView.forceActiveFocus();
+                                    }
+                                  }
+                                  event.accepted = true;
+                                }
+                              }
+            }
+
+            NComboBox {
+              visible: Settings.data.colorSchemes.useWallpaperColors
+              Layout.fillWidth: false
+              Layout.minimumWidth: 200
+              minimumWidth: 200
+              model: TemplateProcessor.schemeTypes
+              currentKey: Settings.data.colorSchemes.generationMethod
+              onSelected: key => {
+                            Settings.data.colorSchemes.generationMethod = key;
+                            AppThemeService.generate();
+                          }
             }
 
             NComboBox {
@@ -738,20 +793,6 @@ SmartPanel {
         }
 
         // Right side: actions (view mode, hide filenames, refresh)
-        NComboBox {
-          visible: Settings.data.colorSchemes.useWallpaperColors
-          baseSize: 0.8
-          Layout.minimumWidth: 200
-          minimumWidth: 200
-          //tooltip: I18n.tr("panels.color-scheme.wallpaper-method-label")
-          model: TemplateProcessor.schemeTypes
-          currentKey: Settings.data.colorSchemes.generationMethod
-          onSelected: key => {
-                        Settings.data.colorSchemes.generationMethod = key;
-                        AppThemeService.generate();
-                      }
-        }
-
         NIconButton {
           property string sortOrder: Settings.data.wallpaper.sortOrder || "name"
           icon: {
@@ -1127,6 +1168,7 @@ SmartPanel {
   component WallhavenView: Item {
     id: wallhavenViewRoot
     property alias gridView: wallhavenGridView
+    property alias pageInput: pageInput
 
     property var wallpapers: []
     property bool loading: false
@@ -1377,7 +1419,7 @@ SmartPanel {
           radius: Style.radiusM
           border.color: Color.mOutline
           border.width: Style.borderS
-          visible: loading
+          visible: loading || (typeof WallhavenService !== "undefined" && WallhavenService.fetching)
           z: 10
 
           ColumnLayout {
@@ -1494,7 +1536,7 @@ SmartPanel {
       // Pagination
       RowLayout {
         Layout.fillWidth: true
-        visible: !loading && errorMessage === "" && typeof WallhavenService !== "undefined"
+        visible: errorMessage === "" && typeof WallhavenService !== "undefined"
         spacing: Style.marginS
 
         Item {
@@ -1503,14 +1545,59 @@ SmartPanel {
 
         NIconButton {
           icon: "chevron-left"
-          enabled: WallhavenService.currentPage > 1 && !WallhavenService.fetching
+          enabled: !loading && WallhavenService.currentPage > 1 && !WallhavenService.fetching
           onClicked: WallhavenService.previousPage()
         }
 
-        NText {
-          text: I18n.tr("wallpaper.wallhaven.page").replace("{current}", WallhavenService.currentPage).replace("{total}", WallhavenService.lastPage)
-          color: Color.mOnSurface
-          horizontalAlignment: Text.AlignHCenter
+        RowLayout {
+          spacing: Style.marginXS
+
+          NText {
+            text: I18n.tr("wallpaper.wallhaven.page-prefix")
+            color: Color.mOnSurface
+          }
+
+          NTextInput {
+            id: pageInput
+            text: "" + WallhavenService.currentPage
+            Layout.preferredWidth: 50 * Style.uiScaleRatio
+            Layout.maximumWidth: 50 * Style.uiScaleRatio
+            Layout.fillWidth: false
+            minimumInputWidth: 50 * Style.uiScaleRatio
+            horizontalAlignment: Text.AlignHCenter
+            inputMethodHints: Qt.ImhDigitsOnly
+            enabled: !loading && !WallhavenService.fetching
+            showClearButton: false
+
+            Connections {
+              target: WallhavenService
+              function onCurrentPageChanged() {
+                pageInput.text = "" + WallhavenService.currentPage;
+              }
+            }
+
+            function submitPage() {
+              var page = parseInt(text);
+              if (!isNaN(page) && page >= 1 && page <= WallhavenService.lastPage) {
+                if (page !== WallhavenService.currentPage) {
+                  WallhavenService.search(Settings.data.wallpaper.wallhavenQuery || "", page);
+                }
+              } else {
+                // Reset to current page if invalid
+                text = "" + WallhavenService.currentPage;
+              }
+              // Force focus loss to ensure UI updates cleanly
+              pageInput.inputItem.focus = false;
+            }
+
+            onEditingFinished: submitPage()
+            onAccepted: submitPage()
+          }
+
+          NText {
+            text: I18n.tr("wallpaper.wallhaven.page-suffix").replace("{total}", WallhavenService.lastPage)
+            color: Color.mOnSurface
+          }
         }
 
         NIconButton {

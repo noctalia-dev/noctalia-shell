@@ -141,20 +141,13 @@ Item {
         launcher.close();
 
       Qt.callLater(() => {
-                     executeAction(action, command);
+                     executeAction(action);
                    });
     };
   }
 
-  function executeAction(action, command) {
-    // If custom command is defined, execute it
-    if (command && command.trim() !== "") {
-      Logger.i("SessionProvider", "Executing custom command for action:", action, "Command:", command);
-      Quickshell.execDetached(["sh", "-c", command]);
-      return;
-    }
-
-    // Otherwise, use default behavior
+  function executeAction(action) {
+    // Default behavior or custom command handled by CompositorService
     switch (action) {
     case "lock":
       if (PanelService.lockScreen && !PanelService.lockScreen.active) {

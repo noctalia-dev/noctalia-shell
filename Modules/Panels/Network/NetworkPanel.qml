@@ -16,7 +16,6 @@ SmartPanel {
 
   property string passwordSsid: ""
   property string expandedSsid: ""
-  property bool hasHadNetworks: false
 
   // Info panel collapsed by default, view mode persisted under Settings.data.ui.wifiDetailsViewMode
   // Ethernet details UI state (mirrors Wi‑Fi info behavior)
@@ -65,7 +64,6 @@ SmartPanel {
     return known;
   }
   onOpened: {
-    hasHadNetworks = false;
     NetworkService.scan();
     // Preload active Wi‑Fi details so Info shows instantly
     NetworkService.refreshActiveWifiDetails();
@@ -99,24 +97,6 @@ SmartPanel {
     available.sort((a, b) => b.signal - a.signal);
 
     return available;
-  }
-
-  onKnownNetworksChanged: {
-    if (knownNetworks.length > 0)
-      hasHadNetworks = true;
-  }
-
-  onAvailableNetworksChanged: {
-    if (availableNetworks.length > 0)
-      hasHadNetworks = true;
-  }
-
-  Connections {
-    target: Settings.data.network
-    function onWifiEnabledChanged() {
-      if (!Settings.data.network.wifiEnabled)
-        root.hasHadNetworks = false;
-    }
   }
 
   panelContent: Rectangle {
@@ -341,7 +321,7 @@ SmartPanel {
             // Scanning state (show when no networks and we haven't had any yet)
             NBox {
               id: scanningBox
-              visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && Object.keys(NetworkService.networks).length === 0 && !root.hasHadNetworks
+              visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && Object.keys(NetworkService.networks).length === 0 && NetworkService.scanning
               Layout.fillWidth: true
               Layout.preferredHeight: scanningColumn.implicitHeight + Style.marginXL
 
@@ -378,7 +358,7 @@ SmartPanel {
             // Empty state when no networks (only show after we've had networks before, meaning a real empty result)
             NBox {
               id: emptyBox
-              visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && !NetworkService.scanning && Object.keys(NetworkService.networks).length === 0 && root.hasHadNetworks
+              visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && !NetworkService.scanning && Object.keys(NetworkService.networks).length === 0 && !NetworkService.scanning
               Layout.fillWidth: true
               Layout.preferredHeight: emptyColumn.implicitHeight + Style.marginXL
 

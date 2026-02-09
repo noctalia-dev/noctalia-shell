@@ -269,7 +269,7 @@ Item {
       enabled: root.wheelScrollMultiplier !== 1.0
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onWheel: event => {
-                 const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 8;
+                 const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
                  const newY = gridView.contentY - (delta * root.wheelScrollMultiplier);
                  gridView.contentY = Math.max(0, Math.min(newY, gridView.contentHeight - gridView.height));
                  event.accepted = true;

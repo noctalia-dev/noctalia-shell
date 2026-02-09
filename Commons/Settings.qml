@@ -269,6 +269,7 @@ Singleton {
       property real animationSpeed: 1.0
       property bool animationDisabled: false
       property bool compactLockScreen: false
+      property bool lockScreenAnimations: false
       property bool lockOnSuspend: true
       property bool showSessionButtonsOnLockScreen: true
       property bool showHibernateOnLockScreen: false
@@ -286,6 +287,15 @@ Singleton {
       property bool allowPasswordWithFprintd: false
       property string clockStyle: "custom"
       property string clockFormat: "hh\\nmm"
+      property list<string> lockScreenMonitors: [] // holds lock screen visibility per monitor
+      property JsonObject keybinds: JsonObject {
+        property string keyUp: "Up"
+        property string keyDown: "Down"
+        property string keyLeft: "Left"
+        property string keyRight: "Right"
+        property string keyEnter: "Return"
+        property string keyEscape: "Esc"
+      }
     }
 
     // ui
@@ -405,6 +415,8 @@ Singleton {
       property bool enableWindowsSearch: true
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
+      property bool overviewLayer: false
+      property string density: "default" // "compact", "default", "comfortable"
     }
 
     // control center

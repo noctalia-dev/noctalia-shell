@@ -312,72 +312,6 @@ SmartPanel {
             }
           }
 
-          // Fallback - No devices, scanning
-          NBox {
-            id: scanningBox
-            Layout.fillWidth: true
-            Layout.preferredHeight: scanningColumn.implicitHeight + Style.marginXL
-            visible: {
-              if (!(BluetoothService.adapter && BluetoothService.adapter.enabled && BluetoothService.adapter.devices) || !BluetoothService.scanningActive) {
-                return false;
-              }
-
-              var availableCount = BluetoothService.adapter.devices.values.filter(dev => {
-                                                                                    return dev && !dev.paired && !dev.pairing && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
-                                                                                  }).length;
-              return (availableCount === 0);
-            }
-
-            ColumnLayout {
-              id: scanningColumn
-              anchors.fill: parent
-              anchors.margins: Style.marginM
-              spacing: Style.marginL
-
-              Item {
-                Layout.fillHeight: true
-              }
-
-              RowLayout {
-                Layout.alignment: Qt.AlignHCenter
-                spacing: Style.marginXS
-
-                NIcon {
-                  icon: "refresh"
-                  pointSize: Style.fontSizeXXL * 1.5
-                  color: Color.mPrimary
-
-                  RotationAnimation on rotation {
-                    running: true
-                    loops: Animation.Infinite
-                    from: 0
-                    to: 360
-                    duration: Style.animationSlow * 4
-                  }
-                }
-
-                NText {
-                  text: I18n.tr("bluetooth.panel.scanning")
-                  pointSize: Style.fontSizeL
-                  color: Color.mOnSurface
-                }
-              }
-
-              NText {
-                text: I18n.tr("bluetooth.panel.pairing-mode")
-                pointSize: Style.fontSizeM
-                color: Color.mOnSurfaceVariant
-                horizontalAlignment: Text.AlignHCenter
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-              }
-
-              Item {
-                Layout.fillHeight: true
-              }
-            }
-          }
-
           // Empty state when no devices
           NBox {
             id: emptyBox
@@ -552,6 +486,72 @@ SmartPanel {
             model: items
             visible: items.length > 0 && BluetoothService.adapter && BluetoothService.adapter.enabled
             Layout.fillWidth: true
+          }
+
+          // Fallback - No devices, scanning
+          NBox {
+            id: scanningBox
+            Layout.fillWidth: true
+            Layout.preferredHeight: scanningColumn.implicitHeight + Style.marginXL
+            visible: {
+              if (!(BluetoothService.adapter && BluetoothService.adapter.enabled && BluetoothService.adapter.devices) || !BluetoothService.scanningActive) {
+                return false;
+              }
+
+              var availableCount = BluetoothService.adapter.devices.values.filter(dev => {
+                                                                                    return dev && !dev.paired && !dev.pairing && !dev.blocked && (dev.signalStrength === undefined || dev.signalStrength > 0);
+                                                                                  }).length;
+              return (availableCount === 0);
+            }
+
+            ColumnLayout {
+              id: scanningColumn
+              anchors.fill: parent
+              anchors.margins: Style.marginM
+              spacing: Style.marginL
+
+              Item {
+                Layout.fillHeight: true
+              }
+
+              RowLayout {
+                Layout.alignment: Qt.AlignHCenter
+                spacing: Style.marginXS
+
+                NIcon {
+                  icon: "refresh"
+                  pointSize: Style.fontSizeXXL * 1.5
+                  color: Color.mPrimary
+
+                  RotationAnimation on rotation {
+                    running: true
+                    loops: Animation.Infinite
+                    from: 0
+                    to: 360
+                    duration: Style.animationSlow * 4
+                  }
+                }
+
+                NText {
+                  text: I18n.tr("bluetooth.panel.scanning")
+                  pointSize: Style.fontSizeL
+                  color: Color.mOnSurface
+                }
+              }
+
+              NText {
+                text: I18n.tr("bluetooth.panel.pairing-mode")
+                pointSize: Style.fontSizeM
+                color: Color.mOnSurfaceVariant
+                horizontalAlignment: Text.AlignHCenter
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+              }
+
+              Item {
+                Layout.fillHeight: true
+              }
+            }
           }
         }
       }

@@ -131,7 +131,7 @@ wezterm)
                 # It doesn't exist, so we add it before the 'return config' line.
                 if grep -q '^\s*return\s*config' "$CONFIG_FILE"; then
                     # 'return config' exists. Insert the line before it.
-                    sed -i "/^\s*return\s*config/i\\$WEZTERM_SCHEME_LINE" "$CONFIG_FILE"
+                    sed -i '/^\s*return\s*config/i\'"$WEZTERM_SCHEME_LINE" "$CONFIG_FILE"
                 else
                     # This is a problem. We can't find the insertion point.
                     echo "Warning: 'config.color_scheme' not set and 'return config' line not found." >&2

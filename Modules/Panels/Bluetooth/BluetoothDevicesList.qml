@@ -155,7 +155,7 @@ NBox {
             NIcon {
               icon: BluetoothService.getDeviceIcon(modelData)
               pointSize: Style.fontSizeXXL
-              color: getContentColor(Color.mOnSurface)
+              color: modelData.connected ? Color.mPrimary : getContentColor(Color.mOnSurface)
               Layout.alignment: Qt.AlignVCenter
             }
 
@@ -262,6 +262,7 @@ NBox {
                 outlined: !button.hovered
                 fontSize: Style.fontSizeS
                 tooltipText: root.tooltipText
+                backgroundColor: modelData.connected ? Color.mError : Color.mPrimary
                 text: {
                   if (modelData.pairing) {
                     return I18n.tr("common.pairing");

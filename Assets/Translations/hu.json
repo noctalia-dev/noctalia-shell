@@ -58,7 +58,6 @@
       "hide-if-idle-label": "Elrejtés tétlenség esetén",
       "hide-if-not-detected-description": "Widget elrejtése, ha a rendszer nem észlel akkumulátort.",
       "hide-if-not-detected-label": "Elrejtés, ha nincs észlelve",
-      "low-battery-threshold-description": "Figyelmeztetés megjelenítése, ha az akkumulátor töltöttsége e százalék alá esik.",
       "low-battery-threshold-label": "Alacsony akkumulátor töltöttségi figyelmeztetési küszöb",
       "show-noctalia-performance-description": "A Noctalia teljesítménymód kapcsoló megjelenítése az akkumulátor panelen belül.<br>Kikapcsolja az árnyékokat és animációkat a Noctalia-ban az erőforrás-felhasználás csökkentése érdekében.",
       "show-noctalia-performance-label": "Noctalia teljesítménymód kapcsoló",
@@ -457,6 +456,7 @@
     "refresh": "Frissítés",
     "required": "(kötelező)",
     "reset": "Visszaállítás",
+    "reset-to-default": "Visszaállítás Alapértelmezettre",
     "result-count": "{count} eredmény",
     "result-count-plural": "eredmények",
     "resume": "Folytatás",
@@ -625,6 +625,15 @@
       "quick-settings-style-modern": "Modern"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "Kényelmes",
+      "compact": "Kompakt",
+      "default": "Alapértelmezett"
+    },
+    "launcher-view-mode": {
+      "grid": "Rács",
+      "list": "Lista"
+    },
     "scrolling-modes": {
       "always": "Mindig görgetés",
       "hover": "Görgetés rámutatáskor",
@@ -1021,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "Monospace betűtípus keresése...",
       "fonts-reset-scaling": "Méretezés visszaállítása",
       "fonts-title": "Betűtípusok",
+      "keybinds-description": "Globális navigációs billentyűk beállítása a panelekhez és az indítóhoz.",
+      "keybinds-down": "Lejjebb mozgatás",
+      "keybinds-enter": "Megerősítés / Művelet",
+      "keybinds-escape": "Bezárás / Vissza",
+      "keybinds-left": "Balra mozgat",
+      "keybinds-right": "Mozgatás jobbra",
+      "keybinds-title": "Navigációs Billentyűparancsok",
+      "keybinds-up": "Feljebb",
       "language-desc": "Válassza ki az alkalmazás előnyben részesített nyelvét.",
       "language-select-auto-detect": "Automatikus",
       "language-select-description": "Válassza ki az alkalmazás felületén használt nyelvet.",
@@ -1041,7 +1058,9 @@
       "screen-corners-solid-black-description": "Használjon egyszínű feketét a sáv háttérszíne helyett.",
       "screen-corners-solid-black-label": "Tömör fekete sarkok",
       "screen-corners-title": "Képernyősarkok",
-      "settings-copied": "Beállítások a vágólapra másolva"
+      "settings-copied": "Beállítások a vágólapra másolva",
+      "tab-basics": "Alapok",
+      "tab-keybinds": "Billentyűparancsok"
     },
     "hooks": {
       "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -lc)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
@@ -1096,14 +1115,16 @@
       "settings-clip-wrap-text-label": "Clipboard szöveg becsomagolása",
       "settings-clipboard-history-description": "Hozzáférés a korábban másolt elemekhez az indítóból.",
       "settings-clipboard-history-label": "Vágólapelőzmények engedélyezése",
-      "settings-clipboard-watch-image-description": "Teljes parancssor, ami a wl-paste-nek kerül átadásra a képváltozásokhoz. (újraindítás szükséges)",
+      "settings-clipboard-watch-image-description": "A wl-paste-nek átadott teljes parancssor képmódosításokhoz (újraindítás szükséges).",
       "settings-clipboard-watch-image-label": "Képfigyelő Parancs",
-      "settings-clipboard-watch-text-description": "A wl-paste-nek átadott teljes parancssor a szövegváltozásokhoz. (újraindítást igényel)",
+      "settings-clipboard-watch-text-description": "A wl-paste-nek átadott teljes parancssor a szövegváltozásokhoz (újraindítást szükséges).",
       "settings-clipboard-watch-text-label": "Szövegfigyelő parancs",
       "settings-custom-launch-prefix-description": "Előtagolja a parancsokat egyéni indítóval (pl. 'runapp' a systemd integrációhoz).",
       "settings-custom-launch-prefix-enabled-description": "Használjon egyéni előtagot az alkalmazások indításához az alapértelmezett módszer helyett.",
       "settings-custom-launch-prefix-enabled-label": "Egyéni indítási előtag engedélyezése",
       "settings-custom-launch-prefix-label": "Egyéni indítási előtag",
+      "settings-density-description": "Állítsd be az alkalmazásikonok méretét és a Launcher sűrűségét.",
+      "settings-density-label": "Sűrűség",
       "settings-desc": "Az indító viselkedésének és megjelenésének testreszabása.",
       "settings-enable-settings-search-description": "Beállítások megjelenítése a találatok között az indítón belül.",
       "settings-enable-settings-search-label": "Beállítások keresésének engedélyezése",
@@ -1114,6 +1135,8 @@
       "settings-icon-mode-label": "Natív ikonok használata",
       "settings-ignore-mouse-input-description": "A launcherben tiltsd le az egérműveleteket és a görgőt.",
       "settings-ignore-mouse-input-label": "Egérbemenet figyelmen kívül hagyása",
+      "settings-overlay-layer-description": "Jelenítse meg az indítót az átfedő rétegen, a teljes képernyős ablakok felett. Ha engedélyezve van, az indító nem fog a sávhoz csatlakozni.",
+      "settings-overlay-layer-label": "Megjelenítés teljes képernyő felett",
       "settings-position-description": "Hol jelenjen meg az indító panel.",
       "settings-show-categories-description": "Kategóriafülek megjelenítése az alkalmazások szűréséhez.",
       "settings-show-categories-label": "Kategóriák megjelenítése",
@@ -1125,6 +1148,8 @@
       "settings-terminal-command-label": "Terminál parancs",
       "settings-use-app2unit-description": "Alternatív indítási módszert használ az alkalmazásfolyamatok jobb kezelésére és a problémák megelőzésére.",
       "settings-use-app2unit-label": "App2Unit használata alkalmazások indításához",
+      "settings-view-mode-description": "Válaszd ki az indító bejegyzések elrendezését.",
+      "settings-view-mode-label": "Nézet mód",
       "title": "Indító"
     },
     "location": {
@@ -1180,6 +1205,9 @@
       "compact-lockscreen-label": "Kompakt zárolási képernyő",
       "lock-on-suspend-description": "A képernyő automatikus zárolása a rendszer felfüggesztésekor.",
       "lock-on-suspend-label": "Zárolás felfüggesztéskor",
+      "lock-screen-animations-description": "A zárolási képernyő animációinak engedélyezése vagy letiltása.",
+      "lock-screen-animations-label": "Zárolási Képernyő Animációk",
+      "monitors-desc": "Zárolási képernyő megjelenítése meghatározott monitorokon. Alapértelmezetten mindegyiken megjelenik, ha nincs kiválasztva.",
       "show-hibernate-description": "A 'hibernálás' lehetőség megjelenítése az energiakezelési műveletek között.",
       "show-hibernate-label": "Hibernálás megjelenítése",
       "show-session-buttons-description": "Engedélyezi a hozzáférést az energiabeállításokhoz a zárolási képernyőről.",
@@ -1296,6 +1324,8 @@
       "available-label": "Elérhető bővítmények",
       "available-no-plugins-description": "Ellenőrizze a bővítményforrásokat, vagy frissítse a listát.",
       "available-no-plugins-label": "Nincsenek elérhető bővítmények",
+      "check-for-updates": "Frissítések keresése",
+      "checking-for-updates": "Frissítések keresése...",
       "collision-already-installed": "Ez a bővítmény már telepítve van",
       "collision-custom-version-exists": "Egyéni verzió a következő helyről: \"{source}\" már telepítve van",
       "collision-official-version-exists": "A plugin hivatalos verziója már telepítve van",
@@ -1536,7 +1566,7 @@
   "setup": {
     "all-done": "Kész!",
     "appearance": {
-      "subheader": "Válaszd ki a sötét módot és a színforrásokat (Háttérkép vagy előre meghatározott)."
+      "subheader": "Válaszd ki a sötét módot és a színforrásokat (háttérkép vagy előre meghatározott)."
     },
     "customize": {
       "header": "Tapasztalat testreszabása",
@@ -1789,7 +1819,9 @@
     "wallhaven": {
       "loading": "Háttérképek betöltése...",
       "no-results": "Nincs háttérkép. Próbáljon másik keresést.",
-      "page": "{current} / {total}"
+      "page": "{current} / {total}",
+      "page-prefix": "Oldal",
+      "page-suffix": "{total} közül"
     }
   },
   "weather": {

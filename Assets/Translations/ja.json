@@ -58,7 +58,6 @@
       "hide-if-idle-label": "アイドル時に隠す",
       "hide-if-not-detected-description": "システムでバッテリーが検出されない場合は、ウィジェットを非表示にします。",
       "hide-if-not-detected-label": "検出されなければ隠れる",
-      "low-battery-threshold-description": "バッテリー残量がこのパーセンテージを下回ると警告を表示します。",
       "low-battery-threshold-label": "低バッテリー警告の閾値",
       "show-noctalia-performance-description": "バッテリーパネルに Noctalia パフォーマンスモードのトグルを表示します。<br>Noctalia のシャドウとアニメーションを無効にしてリソース使用量を削減します。",
       "show-noctalia-performance-label": "Noctalia パフォーマンストグルを表示",
@@ -457,6 +456,7 @@
     "refresh": "更新",
     "required": "(必須)",
     "reset": "リセット",
+    "reset-to-default": "デフォルトにリセット",
     "result-count": "{count} 結果",
     "result-count-plural": "{count} 結果",
     "resume": "再開",
@@ -625,6 +625,15 @@
       "quick-settings-style-modern": "モダン"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "快適",
+      "compact": "コンパクト",
+      "default": "デフォルト"
+    },
+    "launcher-view-mode": {
+      "grid": "グリッド",
+      "list": "リスト"
+    },
     "scrolling-modes": {
       "always": "常にスクロール",
       "hover": "ホバー時にスクロール",
@@ -1021,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "等幅フォントを検索...",
       "fonts-reset-scaling": "サイズ設定をリセット",
       "fonts-title": "フォント",
+      "keybinds-description": "パネルとランチャーのグローバルナビゲーションキーを設定します。",
+      "keybinds-down": "下に移動",
+      "keybinds-enter": "確認 / アクション",
+      "keybinds-escape": "閉じる / 戻る",
+      "keybinds-left": "左へ移動",
+      "keybinds-right": "右へ移動",
+      "keybinds-title": "ナビゲーションのキーバインド",
+      "keybinds-up": "上へ移動",
       "language-desc": "アプリケーションで使用する言語を選択します。",
       "language-select-auto-detect": "自動検出",
       "language-select-description": "アプリケーションのインターフェースで使用する言語を選択します。",
@@ -1041,7 +1058,9 @@
       "screen-corners-solid-black-description": "バーの背景色の代わりに、黒一色を使用します。",
       "screen-corners-solid-black-label": "角を黒く塗りつぶす",
       "screen-corners-title": "画面の角",
-      "settings-copied": "設定をクリップボードにコピーしました"
+      "settings-copied": "設定をクリップボードにコピーしました",
+      "tab-basics": "基本",
+      "tab-keybinds": "キーバインド"
     },
     "hooks": {
       "info-command-info-description": "• コマンドはシェル (sh -lc) 経由で実行されます<br>• コマンドはバックグラウンドで実行されます<br>• テストボタンは現在の設定値を使って実行されます",
@@ -1096,14 +1115,16 @@
       "settings-clip-wrap-text-label": "クリップボードのテキストを折り返す",
       "settings-clipboard-history-description": "以前コピーした項目にランチャーからアクセスできるようにします。",
       "settings-clipboard-history-label": "クリップボード履歴を有効化",
-      "settings-clipboard-watch-image-description": "画像変更のためにwl-pasteに渡される完全なコマンド文字列。(再起動が必要)",
+      "settings-clipboard-watch-image-description": "画像変更のためにwl-pasteに渡される完全なコマンド文字列（再起動が必要）。",
       "settings-clipboard-watch-image-label": "画像監視コマンド",
-      "settings-clipboard-watch-text-description": "テキスト変更のために wl-paste に渡される完全なコマンド文字列。(再起動が必要)",
+      "settings-clipboard-watch-text-description": "テキスト変更のために wl-paste に渡される完全なコマンド文字列（再起動が必要）。",
       "settings-clipboard-watch-text-label": "テキスト監視コマンド",
       "settings-custom-launch-prefix-description": "コマンドの先頭にカスタムランチャーを付与します（例：systemd 連携用の 'runapp'）。",
       "settings-custom-launch-prefix-enabled-description": "デフォルトの方法の代わりに、カスタムプレフィックスを使用してアプリを起動します。",
       "settings-custom-launch-prefix-enabled-label": "カスタム起動プレフィックスを有効化",
       "settings-custom-launch-prefix-label": "カスタム起動プレフィックス",
+      "settings-density-description": "アプリケーションアイコンのサイズとLauncherの密度を調整します。",
+      "settings-density-label": "密度",
       "settings-desc": "ランチャーの挙動と外観をカスタマイズします。",
       "settings-enable-settings-search-description": "ランチャーで検索する際に設定結果を表示する。",
       "settings-enable-settings-search-label": "設定検索を有効にする",
@@ -1114,6 +1135,8 @@
       "settings-icon-mode-label": "ネイティブアイコンを使用",
       "settings-ignore-mouse-input-description": "ランチャーでのマウス操作とスクロールホイールを無効にする。",
       "settings-ignore-mouse-input-label": "マウス入力を無視する",
+      "settings-overlay-layer-description": "ランチャーをオーバーレイレイヤーに、全画面ウィンドウの上に表示します。有効にすると、ランチャーはバーにアタッチされません。",
+      "settings-overlay-layer-label": "フルスクリーンより上に表示",
       "settings-position-description": "ランチャーパネルの表示位置を選択します。",
       "settings-show-categories-description": "アプリケーションを絞り込むためのカテゴリタブを表示します。",
       "settings-show-categories-label": "カテゴリを表示",
@@ -1125,6 +1148,8 @@
       "settings-terminal-command-label": "ターミナル起動コマンド",
       "settings-use-app2unit-description": "アプリのプロセス管理を改善し、問題を回避するために代替の起動方法を使用します。",
       "settings-use-app2unit-label": "App2Unit を使用して起動",
+      "settings-view-mode-description": "ランチャーのエントリのレイアウトを選択してください。",
+      "settings-view-mode-label": "表示モード",
       "title": "ランチャー"
     },
     "location": {
@@ -1180,6 +1205,9 @@
       "compact-lockscreen-label": "コンパクトなロック画面",
       "lock-on-suspend-description": "システムのサスペンド時に、自動的に画面をロックします。",
       "lock-on-suspend-label": "サスペンド時にロック",
+      "lock-screen-animations-description": "ロック画面のアニメーションを有効または無効にする。",
+      "lock-screen-animations-label": "ロック画面のアニメーション",
+      "monitors-desc": "ロック画面を特定のモニターに表示します。何も選択されていない場合、デフォルトですべてに表示されます。",
       "show-hibernate-description": "電源操作に「ハイバネート（休止状態）」のオプションを表示します。",
       "show-hibernate-label": "ハイバネートを表示",
       "show-session-buttons-description": "ロック画面から電源操作を行えるようにします。",
@@ -1296,6 +1324,8 @@
       "available-label": "利用可能なプラグイン",
       "available-no-plugins-description": "プラグインのソースを確認するか、リストを更新してください。",
       "available-no-plugins-label": "利用可能なプラグインはありません",
+      "check-for-updates": "アップデートを確認",
+      "checking-for-updates": "アップデートを確認しています...",
       "collision-already-installed": "このプラグインはすでにインストールされています",
       "collision-custom-version-exists": "「{source}」 発 の カスタム版 は 既に インストール されています",
       "collision-official-version-exists": "このプラグインの公式バージョンはすでにインストールされています",
@@ -1789,7 +1819,9 @@
     "wallhaven": {
       "loading": "壁紙を読み込み中...",
       "no-results": "壁紙が見つかりません。別の検索条件を試してください。",
-      "page": "{current} / {total}"
+      "page": "{current} / {total}",
+      "page-prefix": "ページ",
+      "page-suffix": "{total}件中"
     }
   },
   "weather": {

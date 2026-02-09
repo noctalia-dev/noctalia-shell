@@ -96,7 +96,7 @@ Item {
       _ready1 = true;
       _t1 = 0;
     } else {
-      _t1 = _t1 - 1.0;
+      _t1 = Math.max(0, _t1 - 1.0);
     }
     _animTimer.start();
   }
@@ -113,7 +113,7 @@ Item {
       _ready2 = true;
       _t2 = 0;
     } else {
-      _t2 = _t2 - 1.0;
+      _t2 = Math.max(0, _t2 - 1.0);
     }
     _animTimer.start();
   }
@@ -122,8 +122,13 @@ Item {
     id: _animTimer
     interval: 16
     repeat: true
+    property real _prevTime: 0
+
     onTriggered: {
-      const dt = 16 / root.updateInterval;
+      const now = Date.now();
+      const elapsed = _prevTime > 0 ? (now - _prevTime) : 16;
+      _prevTime = now;
+      const dt = elapsed / root.updateInterval;
       let stillAnimating = false;
 
       // Scroll animation
@@ -158,8 +163,10 @@ Item {
 
       canvas.requestPaint();
 
-      if (!stillAnimating)
+      if (!stillAnimating) {
+        _prevTime = 0;
         stop();
+      }
     }
   }
 
@@ -179,7 +186,6 @@ Item {
   Canvas {
     id: canvas
     anchors.fill: parent
-    renderStrategy: Canvas.Cooperative
 
     onPaint: {
       var ctx = getContext("2d");

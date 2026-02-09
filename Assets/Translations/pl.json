@@ -58,7 +58,6 @@
       "hide-if-idle-label": "Ukryj, gdy bezczynny",
       "hide-if-not-detected-description": "Ukryj widżet, gdy w systemie nie zostanie wykryta bateria.",
       "hide-if-not-detected-label": "Ukryj się, jeśli nie wykryto",
-      "low-battery-threshold-description": "Pokaż ostrzeżenie, gdy poziom baterii spadnie poniżej tego procentu.",
       "low-battery-threshold-label": "Próg ostrzegania o niskim poziomie baterii",
       "show-noctalia-performance-description": "Wyświetl przełącznik trybu wydajności Noctalia w panelu baterii.<br>Wyłącza cienie i animacje w Noctalia, aby zmniejszyć zużycie zasobów.",
       "show-noctalia-performance-label": "Pokaż przełącznik wydajności Noctalia",
@@ -457,6 +456,7 @@
     "refresh": "Odśwież",
     "required": "(wymagane)",
     "reset": "Zresetuj",
+    "reset-to-default": "Przywróć do Domyślnych",
     "result-count": "{count} wynik",
     "result-count-plural": "{count} wyniki",
     "resume": "Wznów",
@@ -625,6 +625,15 @@
       "quick-settings-style-modern": "Nowoczesny"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "Komfortowy",
+      "compact": "Kompaktowy",
+      "default": "Domyślny"
+    },
+    "launcher-view-mode": {
+      "grid": "Siatka",
+      "list": "Lista"
+    },
     "scrolling-modes": {
       "always": "Zawsze przewijaj",
       "hover": "Przewijaj po najechaniu",
@@ -1021,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "Szukaj czcionki monospace...",
       "fonts-reset-scaling": "Resetuj skalowanie",
       "fonts-title": "Czcionki",
+      "keybinds-description": "Skonfiguruj globalne klawisze nawigacyjne dla paneli i launchera.",
+      "keybinds-down": "Przenieś w dół",
+      "keybinds-enter": "Potwierdź / Akcja",
+      "keybinds-escape": "Zamknij / Wstecz",
+      "keybinds-left": "Przesuń w lewo",
+      "keybinds-right": "Przesuń w prawo",
+      "keybinds-title": "Skróty Klawiszowe Nawigacji",
+      "keybinds-up": "Przenieś w górę",
       "language-desc": "Wybierz preferowany język aplikacji.",
       "language-select-auto-detect": "Automatyczny",
       "language-select-description": "Wybierz język używany w interfejsie aplikacji.",
@@ -1041,7 +1058,9 @@
       "screen-corners-solid-black-description": "Użyj jednolitej czerni zamiast koloru tła paska.",
       "screen-corners-solid-black-label": "Jednolicie czarne narożniki",
       "screen-corners-title": "Narożniki ekranu",
-      "settings-copied": "Ustawienia skopiowane do schowka"
+      "settings-copied": "Ustawienia skopiowane do schowka",
+      "tab-basics": "Podstawy",
+      "tab-keybinds": "Skróty Klawiszowe"
     },
     "hooks": {
       "info-command-info-description": "• Polecenia są wykonywane przez powłokę (sh -lc)<br>• Polecenia działają w tle (detached)<br>• Przyciski testowe wykonują się z aktualnymi wartościami",
@@ -1096,14 +1115,16 @@
       "settings-clip-wrap-text-label": "Zawijaj tekst ze schowka",
       "settings-clipboard-history-description": "Dostęp do wcześniej skopiowanych elementów z poziomu launchera.",
       "settings-clipboard-history-label": "Włącz historię schowka",
-      "settings-clipboard-watch-image-description": "Pełny ciąg poleceń przekazywany do wl-paste dla zmian obrazu. (wymaga ponownego uruchomienia)",
+      "settings-clipboard-watch-image-description": "Pełny ciąg poleceń przekazywany do wl-paste dla zmian obrazu (wymaga ponownego uruchomienia).",
       "settings-clipboard-watch-image-label": "Polecenie Monitorowania Obrazów",
-      "settings-clipboard-watch-text-description": "Pełny ciąg polecenia przekazany do wl-paste dla zmian tekstu. (wymaga ponownego uruchomienia)",
+      "settings-clipboard-watch-text-description": "Pełny ciąg poleceń przekazywany do wl-paste dla zmian tekstu (wymaga ponownego uruchomienia).",
       "settings-clipboard-watch-text-label": "Polecenie monitorowania tekstu",
       "settings-custom-launch-prefix-description": "Poprzedzaj polecenia własnym prefiksem (np. 'runapp' dla integracji z systemd).",
       "settings-custom-launch-prefix-enabled-description": "Używaj własnego prefiksu do uruchamiania aplikacji zamiast metody domyślnej.",
       "settings-custom-launch-prefix-enabled-label": "Włącz własny prefiks",
       "settings-custom-launch-prefix-label": "Własny prefiks uruchamiania",
+      "settings-density-description": "Dostosuj rozmiar ikon aplikacji i gęstość Launchera.",
+      "settings-density-label": "Gęstość",
       "settings-desc": "Dostosuj zachowanie i wygląd launchera.",
       "settings-enable-settings-search-description": "Wyświetlaj wyniki ustawień podczas wyszukiwania w Launcherze.",
       "settings-enable-settings-search-label": "Włącz wyszukiwanie w ustawieniach",
@@ -1114,6 +1135,8 @@
       "settings-icon-mode-label": "Używaj natywnych ikon",
       "settings-ignore-mouse-input-description": "Wyłącz interakcję myszy i kółko przewijania w launcherze.",
       "settings-ignore-mouse-input-label": "Ignoruj dane wejściowe myszy",
+      "settings-overlay-layer-description": "Wyświetl program uruchamiający na warstwie nakładki, nad oknami pełnoekranowymi. Po włączeniu program uruchamiający nie zostanie przypięty do paska.",
+      "settings-overlay-layer-label": "Pokaż nad pełnym ekranem",
       "settings-position-description": "Wybierz, gdzie pojawia się panel launchera.",
       "settings-show-categories-description": "Pokaż karty kategorii do filtrowania aplikacji.",
       "settings-show-categories-label": "Pokaż kategorie",
@@ -1125,6 +1148,8 @@
       "settings-terminal-command-label": "Polecenie terminala",
       "settings-use-app2unit-description": "Używa alternatywnej metody uruchamiania, aby lepiej zarządzać procesami i zapobiegać problemom.",
       "settings-use-app2unit-label": "Użyj App2Unit do uruchamiania aplikacji",
+      "settings-view-mode-description": "Wybierz układ dla wpisów programu uruchamiającego.",
+      "settings-view-mode-label": "Tryb widoku",
       "title": "Launcher"
     },
     "location": {
@@ -1180,6 +1205,9 @@
       "compact-lockscreen-label": "Kompaktowy ekran blokady",
       "lock-on-suspend-description": "Automatycznie blokuj ekran podczas uśpienia systemu.",
       "lock-on-suspend-label": "Blokuj przy uśpieniu",
+      "lock-screen-animations-description": "Włącz lub wyłącz animacje ekranu blokady.",
+      "lock-screen-animations-label": "Animacje Ekranu Blokady",
+      "monitors-desc": "Pokaż ekran blokady na określonych monitorach. Domyślnie na wszystkich, jeśli żadne nie zostaną wybrane.",
       "show-hibernate-description": "Pokaż opcję 'hibernacja' w kontrolkach zasilania.",
       "show-hibernate-label": "Pokaż hibernację",
       "show-session-buttons-description": "Zezwalaj na dostęp do ustawień zasilania z poziomu ekranu blokady.",
@@ -1296,6 +1324,8 @@
       "available-label": "Dostępne wtyczki",
       "available-no-plugins-description": "Sprawdź źródła wtyczek lub odśwież listę.",
       "available-no-plugins-label": "Brak dostępnych wtyczek",
+      "check-for-updates": "Sprawdź aktualizacje",
+      "checking-for-updates": "Sprawdzanie aktualizacji...",
       "collision-already-installed": "Ta wtyczka jest już zainstalowana",
       "collision-custom-version-exists": "Niestandardowa wersja z \"{source}\" jest już zainstalowana",
       "collision-official-version-exists": "Oficjalna wersja tej wtyczki jest już zainstalowana",
@@ -1536,7 +1566,7 @@
   "setup": {
     "all-done": "Gotowe!",
     "appearance": {
-      "subheader": "Wybierz tryb ciemny i źródła kolorów (Tapeta lub predefiniowane)."
+      "subheader": "Wybierz tryb ciemny i źródła kolorów (tapeta lub predefiniowane)."
     },
     "customize": {
       "header": "Dostosuj swoje doświadczenie",
@@ -1789,7 +1819,9 @@
     "wallhaven": {
       "loading": "Ładowanie tapet...",
       "no-results": "Nie znaleziono tapet. Spróbuj innego zapytania.",
-      "page": "{current} z {total}"
+      "page": "{current} z {total}",
+      "page-prefix": "Strona",
+      "page-suffix": "z {total}"
     }
   },
   "weather": {

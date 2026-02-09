@@ -177,6 +177,9 @@ Variants {
     }
 
     function onBrightnessChanged(newBrightness) {
+      if (!root)
+        return;
+
       root.currentBrightness = newBrightness;
       // Don't show OSD if brightness panel is open
       var brightnessPanel = PanelService.getPanel("brightnessPanel", root.modelData);
@@ -324,6 +327,18 @@ Variants {
       onTriggered: {
         connectBrightnessMonitors();
         root.startupComplete = true;
+      }
+    }
+
+    Component.onDestruction: {
+      if (typeof BrightnessService !== "undefined" && BrightnessService.monitors) {
+        for (var i = 0; i < BrightnessService.monitors.length; i++) {
+          try {
+            BrightnessService.monitors[i].brightnessUpdated.disconnect(onBrightnessChanged);
+          } catch (e) {
+            // Ignore errors if already disconnected or not connected
+          }
+        }
       }
     }
 

@@ -15,15 +15,18 @@ NBox {
   property bool showEffects: Settings.data.location.weatherShowEffects
   readonly property bool weatherReady: Settings.data.location.weatherEnabled && (LocationService.data.weather !== null)
 
-  // Test mode: set to "rain", "snow", "cloud" or "fog"
+  // Test mode: set to "clear_day", "clear_night", "rain", "snow", "cloud" or "fog"
   property string testEffects: ""
 
   // Weather condition detection
   readonly property int currentWeatherCode: weatherReady ? LocationService.data.weather.current_weather.weathercode : 0
+  readonly property bool isDayTime: weatherReady ? LocationService.data.weather.current_weather.is_day : true
   readonly property bool isRaining: testEffects === "rain" || (testEffects === "" && ((currentWeatherCode >= 51 && currentWeatherCode <= 67) || (currentWeatherCode >= 80 && currentWeatherCode <= 82)))
   readonly property bool isSnowing: testEffects === "snow" || (testEffects === "" && ((currentWeatherCode >= 71 && currentWeatherCode <= 77) || (currentWeatherCode >= 85 && currentWeatherCode <= 86)))
   readonly property bool isCloudy: testEffects === "cloud" || (testEffects === "" && (currentWeatherCode === 3))
-  readonly property bool isFoggy: testEffects === "fog" || (testEffects === "" && (currentWeatherCode === 45 || currentWeatherCode === 48))
+  readonly property bool isFoggy: testEffects === "fog" || (testEffects === "" && (currentWeatherCode >= 40 && currentWeatherCode <= 49))
+  readonly property bool isClearDay: testEffects === "clear_day" || (testEffects === "" && (currentWeatherCode === 0 && isDayTime))
+  readonly property bool isClearNight: testEffects === "clear_night" || (testEffects === "" && (currentWeatherCode === 0 && !isDayTime))
 
   visible: Settings.data.location.weatherEnabled
   implicitHeight: Math.max(100 * Style.uiScaleRatio, content.implicitHeight + (Style.marginXL * 2))
@@ -32,7 +35,7 @@ NBox {
   Loader {
     id: weatherEffectLoader
     anchors.fill: parent
-    active: root.showEffects && (root.isRaining || root.isSnowing || root.isCloudy || root.isFoggy)
+    active: root.showEffects && (root.isRaining || root.isSnowing || root.isCloudy || root.isFoggy || root.isClearDay || root.isClearNight)
 
     sourceComponent: Item {
       anchors.fill: parent
@@ -64,7 +67,23 @@ NBox {
         property real cornerRadius: root.isRaining ? 0 : (root.radius - root.border.width)
         property real alternative: root.isFoggy
 
-        fragmentShader: root.isSnowing ? Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/weather_snow.frag.qsb") : root.isRaining ? Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/weather_rain.frag.qsb") : root.isCloudy || root.isFoggy ? Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/weather_cloud.frag.qsb") : ""
+        fragmentShader: {
+          let shaderName;
+          if (root.isSnowing)
+            shaderName = "weather_snow";
+          else if (root.isRaining)
+            shaderName = "weather_rain";
+          else if (root.isCloudy || root.isFoggy)
+            shaderName = "weather_cloud";
+          else if (root.isClearDay)
+            shaderName = "weather_sun";
+          else if (root.isClearNight)
+            shaderName = "weather_stars";
+          else
+            shaderName = "";
+
+          return Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/" + shaderName + ".frag.qsb");
+        }
       }
     }
   }

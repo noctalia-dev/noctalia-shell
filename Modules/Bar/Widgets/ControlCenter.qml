@@ -98,7 +98,7 @@ NIconButton {
                    PanelService.closeContextMenu(screen);
 
                    if (action === "open-launcher") {
-                     PanelService.getPanel("launcherPanel", screen)?.toggle();
+                     PanelService.toggleLauncher(screen);
                    } else if (action === "open-settings") {
                      var panel = PanelService.getPanel("settingsPanel", screen);
                      panel.requestedTab = SettingsPanel.Tab.General;
@@ -121,12 +121,12 @@ NIconButton {
   onRightClicked: {
     PanelService.showContextMenu(contextMenu, root, screen);
   }
-  onMiddleClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
+  onMiddleClicked: PanelService.toggleLauncher(screen)
 
   IconImage {
     id: customOrDistroLogo
     anchors.centerIn: parent
-    width: root.width * 0.8
+    width: root.buttonSize * 0.8
     height: width
     source: {
       if (useDistroLogo)
@@ -138,7 +138,7 @@ NIconButton {
     visible: source !== ""
     smooth: true
     asynchronous: true
-    layer.enabled: (enableColorization || hovering) && (useDistroLogo || customIconPath !== "")
+    layer.enabled: (enableColorization) && (useDistroLogo || customIconPath !== "")
     layer.effect: ShaderEffect {
       property color targetColor: !hovering ? iconColor : Color.mOnHover
       property real colorizeMode: 2.0

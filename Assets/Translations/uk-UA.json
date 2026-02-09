@@ -58,7 +58,6 @@
       "hide-if-idle-label": "Приховати, коли неактивний",
       "hide-if-not-detected-description": "Приховати віджет, коли в системі не виявлено акумулятор.",
       "hide-if-not-detected-label": "Приховати, якщо не виявлено",
-      "low-battery-threshold-description": "Показувати попередження, коли батарея падає нижче цього відсотка.",
       "low-battery-threshold-label": "Поріг попередження про низький заряд батареї",
       "show-noctalia-performance-description": "Відображати перемикач режиму продуктивності Noctalia в панелі батареї.<br>Вимикає тіні та анімації в Noctalia для зменшення використання ресурсів.",
       "show-noctalia-performance-label": "Показувати перемикач Продуктивність Noctalia",
@@ -457,6 +456,7 @@
     "refresh": "Оновити",
     "required": "(обов'язково)",
     "reset": "Скинути",
+    "reset-to-default": "Скинути за Замовчуванням",
     "result-count": "{count} результат",
     "result-count-plural": "{count} результати",
     "resume": "Продовжити",
@@ -625,6 +625,15 @@
       "quick-settings-style-modern": "Сучасний"
     },
     "frame-rates-fps": "{fps} к/с",
+    "launcher-density": {
+      "comfortable": "Комфортний",
+      "compact": "Компактний",
+      "default": "За замовчуванням"
+    },
+    "launcher-view-mode": {
+      "grid": "Сітка",
+      "list": "Список"
+    },
     "scrolling-modes": {
       "always": "Завжди прокручувати",
       "hover": "Прокручувати при наведенні",
@@ -675,7 +684,7 @@
       "system-cpu": "ЦП:",
       "system-disk": "Диск:",
       "system-gpu": "GPU:",
-      "system-host": "Ведучий:",
+      "system-host": "хост:",
       "system-install-hint": "Встановіть fastfetch для перегляду інформації про систему",
       "system-kernel": "Ядро:",
       "system-loading": "Завантаження системної інформації...",
@@ -1021,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "Пошук моноширинного шрифту...",
       "fonts-reset-scaling": "Скинути масштаб",
       "fonts-title": "Шрифти",
+      "keybinds-description": "Налаштуйте глобальні клавіші навігації для панелей та запускача.",
+      "keybinds-down": "Перемістити вниз",
+      "keybinds-enter": "Підтвердити / Дія",
+      "keybinds-escape": "Закрити / Назад",
+      "keybinds-left": "Перемістити вліво",
+      "keybinds-right": "Перемістити вправо",
+      "keybinds-title": "Прив'язки Клавіш Навігації",
+      "keybinds-up": "Перемістити вгору",
       "language-desc": "Виберіть бажану мову застосунку.",
       "language-select-auto-detect": "Автоматично",
       "language-select-description": "Виберіть мову інтерфейсу застосунку.",
@@ -1041,7 +1058,9 @@
       "screen-corners-solid-black-description": "Використовувати суцільний чорний колір замість кольору фону панелі.",
       "screen-corners-solid-black-label": "Суцільні чорні кути",
       "screen-corners-title": "Кути екрана",
-      "settings-copied": "Налаштування скопійовано до буфера обміну"
+      "settings-copied": "Налаштування скопійовано до буфера обміну",
+      "tab-basics": "Основи",
+      "tab-keybinds": "Гарячі Клавіші"
     },
     "hooks": {
       "info-command-info-description": "• Команди виконуються через оболонку (sh -lc)<br>• Команди запускаються у фоні (відокремлено)<br>• Кнопки тестування виконують команди з поточними значеннями",
@@ -1096,14 +1115,16 @@
       "settings-clip-wrap-text-label": "Загорнути текст з буфера обміну",
       "settings-clipboard-history-description": "Отримати доступ до раніше скопійованих елементів із лаунчера.",
       "settings-clipboard-history-label": "Увімкнути історію буфера обміну",
-      "settings-clipboard-watch-image-description": "Повний рядок команди, переданий до wl-paste для зміни зображень. (потрібен перезапуск)",
+      "settings-clipboard-watch-image-description": "Повний рядок команди, переданий до wl-paste для зміни зображень (потрібен перезапуск).",
       "settings-clipboard-watch-image-label": "Команда Спостереження за Зображеннями",
-      "settings-clipboard-watch-text-description": "Повний рядок команди, переданий до wl-paste для змін тексту. (потребує перезапуску)",
+      "settings-clipboard-watch-text-description": "Повний рядок команди, переданий до wl-paste для змін тексту (потребує перезапуску).",
       "settings-clipboard-watch-text-label": "Команда спостереження за текстом",
       "settings-custom-launch-prefix-description": "Додати префікс до команд запуску лаунчером (напр. 'runapp' для інтеграції з systemd).",
       "settings-custom-launch-prefix-enabled-description": "Використовувати власний префікс для запуску застосунків замість стандартного методу.",
       "settings-custom-launch-prefix-enabled-label": "Увімкнути користувацький префікс запуску",
       "settings-custom-launch-prefix-label": "Користувацький префікс запуску",
+      "settings-density-description": "Налаштуйте розмір іконок програм і щільність Launcher.",
+      "settings-density-label": "Щільність",
       "settings-desc": "Налаштуйте поведінку та зовнішній вигляд лаунчера.",
       "settings-enable-settings-search-description": "Показувати результати налаштувань під час пошуку в Launcher.",
       "settings-enable-settings-search-label": "Увімкнути пошук у налаштуваннях",
@@ -1114,6 +1135,8 @@
       "settings-icon-mode-label": "Використовувати нативні іконки",
       "settings-ignore-mouse-input-description": "Вимкнути взаємодію з мишею та коліщатко прокрутки в лаунчері.",
       "settings-ignore-mouse-input-label": "Ігнорувати введення миші",
+      "settings-overlay-layer-description": "Відображати запускач на шарі накладання, над повноекранними вікнами. Коли увімкнено, запускач не буде прикріплено до панелі.",
+      "settings-overlay-layer-label": "Показувати над повноекранним режимом",
       "settings-position-description": "Виберіть, де з'являється панель лаунчера.",
       "settings-show-categories-description": "Показувати вкладки категорій для фільтрації додатків.",
       "settings-show-categories-label": "Показувати категорії",
@@ -1125,6 +1148,8 @@
       "settings-terminal-command-label": "Команда терміналу",
       "settings-use-app2unit-description": "Використовує альтернативний метод запуску для кращого керування процесами застосунків і запобігання проблемам.",
       "settings-use-app2unit-label": "Використовувати App2Unit для запуску застосунків",
+      "settings-view-mode-description": "Виберіть макет для записів Запускача.",
+      "settings-view-mode-label": "Режим перегляду",
       "title": "Лаунчер"
     },
     "location": {
@@ -1180,6 +1205,9 @@
       "compact-lockscreen-label": "Компактний екран блокування",
       "lock-on-suspend-description": "Автоматично блокувати екран при призупиненні системи.",
       "lock-on-suspend-label": "Блокувати при призупиненні",
+      "lock-screen-animations-description": "Увімкнути або вимкнути анімації екрана блокування.",
+      "lock-screen-animations-label": "Анімації Екрана Блокування",
+      "monitors-desc": "Показати екран блокування на певних моніторах. За замовчуванням на всіх, якщо жоден не обрано.",
       "show-hibernate-description": "Показувати опцію 'сплячий режим' в елементах керування живленням.",
       "show-hibernate-label": "Показувати сплячий режим",
       "show-session-buttons-description": "Дозволити доступ до налаштувань живлення з екрана блокування.",
@@ -1296,6 +1324,8 @@
       "available-label": "Доступні плагіни",
       "available-no-plugins-description": "Перевірте вихідні коди вашого плагіна або оновіть список.",
       "available-no-plugins-label": "Немає доступних плагінів",
+      "check-for-updates": "Перевірити оновлення",
+      "checking-for-updates": "Перевірка оновлень...",
       "collision-already-installed": "Цей плагін вже встановлено",
       "collision-custom-version-exists": "Вже встановлено власну версію з \"{source}\"",
       "collision-official-version-exists": "Офіційна версія цього плагіна вже встановлена",
@@ -1536,7 +1566,7 @@
   "setup": {
     "all-done": "Готово!",
     "appearance": {
-      "subheader": "Виберіть темний режим і джерела кольорів (Шпалери або попередньо визначені)."
+      "subheader": "Виберіть темний режим і джерела кольорів (шпалери або попередньо визначені)."
     },
     "customize": {
       "header": "Налаштуйте ваш досвід",
@@ -1789,7 +1819,9 @@
     "wallhaven": {
       "loading": "Завантаження шпалер...",
       "no-results": "Шпалери не знайдено. Спробуйте інший пошуковий запит.",
-      "page": "{current} з {total}"
+      "page": "{current} з {total}",
+      "page-prefix": "Сторінка",
+      "page-suffix": "з {total}"
     }
   },
   "weather": {

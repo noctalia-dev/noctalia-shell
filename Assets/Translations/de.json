@@ -58,7 +58,6 @@
       "hide-if-idle-label": "Ausblenden, wenn im Leerlauf",
       "hide-if-not-detected-description": "Widget ausblenden, wenn kein Akku im System erkannt wird.",
       "hide-if-not-detected-label": "Ausblenden, wenn nicht erkannt",
-      "low-battery-threshold-description": "Warnung anzeigen, wenn Akku unter diesen Prozentsatz fällt.",
       "low-battery-threshold-label": "Schwellenwert für niedrigen Akkustand",
       "show-noctalia-performance-description": "Zeige den Noctalia-Leistungsmodus-Schalter im Akku-Panel an.<br>Deaktiviert Schatten und Animationen in Noctalia, um Ressourcen zu sparen.",
       "show-noctalia-performance-label": "Noctalia-Performance-Schalter anzeigen",
@@ -457,6 +456,7 @@
     "refresh": "Aktualisieren",
     "required": "(erforderlich)",
     "reset": "Zurücksetzen",
+    "reset-to-default": "Auf Standard zurücksetzen",
     "result-count": "{count} Ergebnis",
     "result-count-plural": "{count} Ergebnisse",
     "resume": "Fortsetzen",
@@ -625,6 +625,15 @@
       "quick-settings-style-modern": "Modern"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "Bequem",
+      "compact": "Kompakt",
+      "default": "Standard"
+    },
+    "launcher-view-mode": {
+      "grid": "Gitter",
+      "list": "Liste"
+    },
     "scrolling-modes": {
       "always": "Immer scrollen",
       "hover": "Beim Hover scrollen",
@@ -675,7 +684,7 @@
       "system-cpu": "CPU:",
       "system-disk": "Festplatte:",
       "system-gpu": "GPU:",
-      "system-host": "Gastgeber:",
+      "system-host": "Host:",
       "system-install-hint": "Installieren Sie fastfetch, um Systeminformationen anzuzeigen",
       "system-kernel": "Kernel:",
       "system-loading": "Systeminformationen werden geladen...",
@@ -992,7 +1001,7 @@
       "appearance-icon-size-label": "Dock-Größe",
       "appearance-inactive-indicators-description": "Anzeige von Indikator-Pillen für alle Apps, nicht nur für die aktuell aktive.",
       "appearance-inactive-indicators-label": "Laufende Indikatoren",
-      "appearance-pinned-static-description": "Gepinnten App-Symbole immer in statischer Reihenfolge nach links schieben.",
+      "appearance-pinned-static-description": "Gepinnte App-Symbole immer in statischer Reihenfolge nach links schieben.",
       "appearance-pinned-static-label": "Statische angeheftete Apps",
       "appearance-position-description": "Wählen Sie, wo das Dock auf dem Bildschirm angezeigt wird.",
       "appearance-position-label": "Position",
@@ -1021,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "Monospace-Schriftarten suchen...",
       "fonts-reset-scaling": "Skalierung zurücksetzen",
       "fonts-title": "Schriftarten",
+      "keybinds-description": "Globale Navigationstasten für Panels und Launcher konfigurieren.",
+      "keybinds-down": "Nach unten verschieben",
+      "keybinds-enter": "Bestätigen / Aktion",
+      "keybinds-escape": "Schließen / Zurück",
+      "keybinds-left": "Links verschieben",
+      "keybinds-right": "Rechts bewegen",
+      "keybinds-title": "Navigations-Tastenkombinationen",
+      "keybinds-up": "Nach oben",
       "language-desc": "Ändern Sie die Sprache von Noctalia.",
       "language-select-auto-detect": "Automatisch",
       "language-select-description": "Wählen Sie die Sprache der Anwendungsoberfläche.",
@@ -1041,7 +1058,9 @@
       "screen-corners-solid-black-description": "Schwarze Ecken anstelle der Leisten-Hintergrundfarbe verwenden.",
       "screen-corners-solid-black-label": "Schwarze Ecken",
       "screen-corners-title": "Bildschirmecken",
-      "settings-copied": "Einstellungen in die Zwischenablage kopiert"
+      "settings-copied": "Einstellungen in die Zwischenablage kopiert",
+      "tab-basics": "Grundlagen",
+      "tab-keybinds": "Tastenkombinationen"
     },
     "hooks": {
       "info-command-info-description": "• Befehle werden über Shell ausgeführt (sh -lc)<br>• Befehle laufen im Hintergrund (getrennt)<br>• Test-Buttons führen mit aktuellen Werten aus",
@@ -1096,14 +1115,16 @@
       "settings-clip-wrap-text-label": "Zwischenablage-Text umbrechen",
       "settings-clipboard-history-description": "Zugriff auf zuvor kopierte Elemente über den Launcher.",
       "settings-clipboard-history-label": "Zwischenablageverlauf aktivieren",
-      "settings-clipboard-watch-image-description": "Vollständige Befehlszeichenfolge, die an wl-paste für Bildänderungen übergeben wird. (Neustart erforderlich)",
+      "settings-clipboard-watch-image-description": "Vollständiger Befehlsstring, der an wl-paste für Bildänderungen übergeben wird (Neustart erforderlich).",
       "settings-clipboard-watch-image-label": "Bildüberwachungsbefehl",
-      "settings-clipboard-watch-text-description": "Vollständiger Befehlsstring, der an wl-paste für Textänderungen übergeben wird. (Neustart erforderlich)",
+      "settings-clipboard-watch-text-description": "Vollständiger Befehlsstring, der an wl-paste für Textänderungen übergeben wird (Neustart erforderlich).",
       "settings-clipboard-watch-text-label": "Textüberwachungsbefehl",
       "settings-custom-launch-prefix-description": "Befehle mit einem benutzerdefinierten Launcher präfixieren (z.B. 'runapp' für systemd-Integration).",
       "settings-custom-launch-prefix-enabled-description": "Verwenden Sie ein benutzerdefiniertes Präfix zum Starten von Anwendungen anstelle der Standardmethode.",
       "settings-custom-launch-prefix-enabled-label": "Benutzerdefiniertes Start-Präfix aktivieren",
       "settings-custom-launch-prefix-label": "Benutzerdefiniertes Start-Präfix",
+      "settings-density-description": "Größe der Anwendungssymbole und Dichte des Launchers anpassen.",
+      "settings-density-label": "Dichte",
       "settings-desc": "Verhalten und Erscheinungsbild des Starters anpassen.",
       "settings-enable-settings-search-description": "Einstellungen in den Suchergebnissen des Launchers anzeigen.",
       "settings-enable-settings-search-label": "Einstellungen-Suche aktivieren",
@@ -1114,6 +1135,8 @@
       "settings-icon-mode-label": "Native Icons verwenden",
       "settings-ignore-mouse-input-description": "Deaktivieren Sie die Mausinteraktion und das Mausrad im Launcher.",
       "settings-ignore-mouse-input-label": "Maus-Eingabe ignorieren",
+      "settings-overlay-layer-description": "Zeigt das Startprogramm auf der Überlagerungsebene an, über Vollbildfenstern. Wenn aktiviert, wird das Startprogramm nicht an der Leiste befestigt.",
+      "settings-overlay-layer-label": "Über Vollbild anzeigen",
       "settings-position-description": "Wählen Sie, wo das Starter-Panel erscheint.",
       "settings-show-categories-description": "Kategorienregisterkarten zum Filtern von Anwendungen anzeigen.",
       "settings-show-categories-label": "Kategorien anzeigen",
@@ -1125,6 +1148,8 @@
       "settings-terminal-command-label": "Terminalbefehl",
       "settings-use-app2unit-description": "Verwendet eine alternative Startmethode zur besseren Verwaltung von App-Prozessen und Problemvermeidung.",
       "settings-use-app2unit-label": "App2Unit zum Starten von Anwendungen verwenden",
+      "settings-view-mode-description": "Wähle das Layout für die Anwendungsstarter-Einträge.",
+      "settings-view-mode-label": "Ansichtsmodus",
       "title": "Starter"
     },
     "location": {
@@ -1180,6 +1205,9 @@
       "compact-lockscreen-label": "Kompakter Sperrbildschirm",
       "lock-on-suspend-description": "Den Bildschirm beim Energiesparen automatisch sperren.",
       "lock-on-suspend-label": "Sperren beim Energiesparen",
+      "lock-screen-animations-description": "Sperrbildschirm-Animationen aktivieren oder deaktivieren.",
+      "lock-screen-animations-label": "Sperrbildschirm-Animationen",
+      "monitors-desc": "Sperrbildschirm auf bestimmten Monitoren anzeigen. Standardmäßig auf alle, wenn keine ausgewählt sind.",
       "show-hibernate-description": "Die Option 'Ruhezustand' in den Energieoptionen anzeigen.",
       "show-hibernate-label": "Ruhezustand anzeigen",
       "show-session-buttons-description": "Zugriff auf die Energieeinstellungen vom Sperrbildschirm aus erlauben.",
@@ -1296,6 +1324,8 @@
       "available-label": "Verfügbare Plugins",
       "available-no-plugins-description": "Überprüfen Sie Ihre Plugin-Quellen oder aktualisieren Sie die Liste.",
       "available-no-plugins-label": "Keine Plugins verfügbar",
+      "check-for-updates": "Nach Updates suchen",
+      "checking-for-updates": "Prüfe auf Updates...",
       "collision-already-installed": "Dieses Plugin ist bereits installiert",
       "collision-custom-version-exists": "Eine benutzerdefinierte Version von \"{source}\" ist bereits installiert",
       "collision-official-version-exists": "Die offizielle Version dieses Plugins ist bereits installiert",
@@ -1789,7 +1819,9 @@
     "wallhaven": {
       "loading": "Hintergrundbilder werden geladen...",
       "no-results": "Keine Hintergrundbilder gefunden. Versuchen Sie eine andere Suchanfrage.",
-      "page": "{current} von {total}"
+      "page": "{current} von {total}",
+      "page-prefix": "Seite",
+      "page-suffix": "von {total}"
     }
   },
   "weather": {

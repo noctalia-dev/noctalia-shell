@@ -27,6 +27,10 @@ Noctalia Shell is made possible by the incredible work of many open-source proje
 ### Utilities
 - **[cliphist](https://github.com/sentriz/cliphist)** - Clipboard history support
 
+## Icons
+- **[Tabler Icons](https://tabler.io/icons)** - Icon set used throughout the shell
+- **[Riyan Resdian on Noun Project](https://thenounproject.com/creator/yaicon/)** - Plug icon
+
 ## Audio Assets
 - **[Universfield on Pixabay](https://pixabay.com/users/universfield-28281460/)** - Notification sound effect
 - **[DrNI on Freesound](https://freesound.org/people/DrNI/sounds/34562/)** - Timer's alarm sound effect
@@ -35,7 +39,7 @@ Noctalia Shell is made possible by the incredible work of many open-source proje
 
 ## Special Thanks
 - The **Wayland** community for building the future of Linux desktop graphics
-- The **Niri**, **Hyprland**, **Sway**, and **MangoWC** teams for their excellent Wayland compositors
+- The **Niri**, **Hyprland**, **Sway**, **Labwc**, and **MangoWC** teams for their excellent Wayland compositors
 - All the contributors and users who have helped make Noctalia better
 
 ## License

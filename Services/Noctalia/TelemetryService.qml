@@ -16,7 +16,7 @@ Singleton {
   property int totalRamGb: 0
   property string instanceId: ""
 
-  readonly property string telemetryEndpoint: Quickshell.env("NOCTALIA_TELEMETRY_ENDPOINT") || "https://noctalia.dev:7777/ping"
+  readonly property string telemetryEndpoint: Quickshell.env("NOCTALIA_TELEMETRY_ENDPOINT") || "https://api.noctalia.dev/ping"
 
   function init() {
     if (initialized)

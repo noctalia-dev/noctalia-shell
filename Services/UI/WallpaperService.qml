@@ -131,6 +131,13 @@ Singleton {
     }
   }
 
+  Connections {
+    target: WallhavenService
+    function onWallpaperDownloaded() {
+      root.refreshWallpapersList();
+    }
+  }
+
   // -------------------------------------------------
   function init() {
     Logger.i("Wallpaper", "Service started");

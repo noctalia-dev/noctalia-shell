@@ -624,6 +624,14 @@
     "subTab": null
   },
   {
+    "labelKey": "panels.general.keybinds-title",
+    "descriptionKey": "panels.general.keybinds-description",
+    "widget": "NLabel",
+    "tab": 0,
+    "tabLabel": "common.general",
+    "subTab": null
+  },
+  {
     "labelKey": "panels.hooks.system-hooks-enable-label",
     "descriptionKey": "panels.hooks.system-hooks-enable-description",
     "widget": "NToggle",
@@ -813,9 +821,27 @@
     "subTabLabel": "common.execute"
   },
   {
-    "labelKey": "tooltips.grid-view",
-    "descriptionKey": "panels.launcher.settings-grid-view-description",
+    "labelKey": "panels.launcher.settings-overlay-layer-label",
+    "descriptionKey": "panels.launcher.settings-overlay-layer-description",
     "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.launcher.settings-view-mode-label",
+    "descriptionKey": "panels.launcher.settings-view-mode-description",
+    "widget": "NComboBox",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.launcher.settings-density-label",
+    "descriptionKey": "panels.launcher.settings-density-description",
+    "widget": "NComboBox",
     "tab": 8,
     "tabLabel": "panels.launcher.title",
     "subTab": 0,
@@ -890,7 +916,8 @@
     "widget": "NComboBox",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.clock-format-label",
@@ -898,7 +925,8 @@
     "widget": "NTextInput",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.lock-on-suspend-label",
@@ -906,7 +934,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.compact-lockscreen-label",
@@ -914,7 +943,17 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.lock-screen.lock-screen-animations-label",
+    "descriptionKey": "panels.lock-screen.lock-screen-animations-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.auto-start-auth-label",
@@ -922,7 +961,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.allow-password-with-fprintd-label",
@@ -930,7 +970,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.show-session-buttons-label",
@@ -938,7 +979,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.lock-screen.show-hibernate-label",
@@ -946,7 +988,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.session-menu.enable-countdown-label",
@@ -954,7 +997,8 @@
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.session-menu.countdown-duration-label",
@@ -962,7 +1006,8 @@
     "widget": "NValueSlider",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
-    "subTab": null
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "actions.enable-wifi",
@@ -1214,6 +1259,15 @@
     "subTabLabel": "common.available"
   },
   {
+    "labelKey": "panels.plugins.auto-update",
+    "descriptionKey": "panels.plugins.auto-update-description",
+    "widget": "NToggle",
+    "tab": 18,
+    "tabLabel": "panels.plugins.title",
+    "subTab": 0,
+    "subTabLabel": "common.installed"
+  },
+  {
     "labelKey": "panels.plugins.installed-no-plugins-label",
     "descriptionKey": "panels.plugins.installed-no-plugins-description",
     "widget": "NLabel",
@@ -1383,30 +1437,6 @@
     "tabLabel": "session-menu.title",
     "subTab": 0,
     "subTabLabel": "common.general"
-  },
-  {
-    "labelKey": "common.command",
-    "descriptionKey": "panels.session-menu.entry-settings-command-description",
-    "widget": "NTextInput",
-    "tab": 12,
-    "tabLabel": "session-menu.title",
-    "subTab": null
-  },
-  {
-    "labelKey": "panels.session-menu.entry-settings-default-info-label",
-    "descriptionKey": "panels.session-menu.entry-settings-default-info-description",
-    "widget": "NLabel",
-    "tab": 12,
-    "tabLabel": "session-menu.title",
-    "subTab": null
-  },
-  {
-    "labelKey": "common.keybind",
-    "descriptionKey": "panels.session-menu.entry-settings-keybind-description",
-    "widget": "NTextInput",
-    "tab": 12,
-    "tabLabel": "session-menu.title",
-    "subTab": null
   },
   {
     "labelKey": "panels.system-monitor.enable-dgpu-monitoring-label",

@@ -142,7 +142,7 @@ Singleton {
   Process {
     id: supporterProcess
 
-    command: ["curl", "-s", "https://noctalia.dev:7777/supporters"]
+    command: ["curl", "-s", "https://api.noctalia.dev/supporters"]
 
     stdout: StdioCollector {
       onStreamFinished: {

@@ -14,6 +14,7 @@ import qs.Modules.Panels.Settings.Tabs.Display
 import qs.Modules.Panels.Settings.Tabs.Dock
 import qs.Modules.Panels.Settings.Tabs.Hooks
 import qs.Modules.Panels.Settings.Tabs.Launcher
+import qs.Modules.Panels.Settings.Tabs.LockScreen
 import qs.Modules.Panels.Settings.Tabs.Notifications
 import qs.Modules.Panels.Settings.Tabs.Osd
 import qs.Modules.Panels.Settings.Tabs.Plugins
@@ -230,11 +231,12 @@ Item {
     }
   }
 
-  // Set sub-tab on the currently loaded tab content
+  // Set sub-tab on the currently loaded tab content. Returns true if an NTabBar was found.
   function setSubTabIndex(subTabIndex) {
     if (activeTabContent) {
-      setSubTabRecursive(activeTabContent, subTabIndex);
+      return setSubTabRecursive(activeTabContent, subTabIndex);
     }
+    return false;
   }
 
   function setSubTabRecursive(item, subTabIndex) {
@@ -242,6 +244,16 @@ Item {
       return false;
 
     if (item.objectName === "NTabBar") {
+      // Prepare the sibling NTabView so the index change doesn't animate
+      if (item.parent) {
+        for (let j = 0; j < item.parent.children.length; j++) {
+          const sibling = item.parent.children[j];
+          if (sibling.objectName === "NTabView" && sibling.setIndexWithoutAnimation) {
+            sibling.setIndexWithoutAnimation(subTabIndex);
+            break;
+          }
+        }
+      }
       item.currentIndex = subTabIndex;
       return true;
     }
@@ -345,21 +357,21 @@ Item {
       if (root.activeTabContent && targetKey) {
         const widget = root.findAndHighlightWidget(root.activeTabContent, targetKey);
         if (widget && root.activeScrollView) {
-          // Scroll widget into view
-          const mapped = widget.mapToItem(root.activeScrollView.contentItem, 0, 0);
-          const scrollBar = root.activeScrollView.ScrollBar.vertical;
-          if (scrollBar) {
-            const targetPos = (mapped.y - root.activeScrollView.height / 3) / root.activeScrollView.contentHeight;
-            scrollBar.position = Math.max(0, Math.min(targetPos, 1.0 - scrollBar.size));
-          }
+          // Scroll widget into view using the Flickable directly
+          const flickable = root.activeScrollView.contentItem;
+          const mapped = widget.mapToItem(flickable.contentItem, 0, 0);
+          const targetY = mapped.y - flickable.height / 3;
+          flickable.contentY = Math.max(0, Math.min(targetY, flickable.contentHeight - flickable.height));
 
-          // Position highlight overlay
-          const overlayPos = widget.mapToItem(tabContentArea, 0, 0);
-          highlightOverlay.x = overlayPos.x - Style.marginM;
-          highlightOverlay.y = overlayPos.y - Style.marginM;
-          highlightOverlay.width = widget.width + Style.marginM * 2;
-          highlightOverlay.height = widget.height + Style.marginM * 2;
-          highlightAnimation.restart();
+          // Position highlight overlay after scroll layout has settled
+          Qt.callLater(function () {
+            const overlayPos = widget.mapToItem(tabContentArea, 0, 0);
+            highlightOverlay.x = overlayPos.x - Style.marginM;
+            highlightOverlay.y = overlayPos.y - Style.marginM;
+            highlightOverlay.width = widget.width + Style.marginM * 2;
+            highlightOverlay.height = widget.height + Style.marginM * 2;
+            highlightAnimation.restart();
+          });
         }
       }
       targetKey = "";
@@ -1002,7 +1014,8 @@ Item {
               model: root.tabsModel
               spacing: Style.marginXS
               currentIndex: root.currentTabIndex
-              verticalPolicy: ScrollBar.AsNeeded
+              horizontalPolicy: ScrollBar.AlwaysOff
+              verticalPolicy: ScrollBar.AlwaysOff
               gradientColor: "transparent"
               reserveScrollbarSpace: false
 
@@ -1224,13 +1237,13 @@ Item {
                         item.screen = root.screen;
                       }
                       root.activeTabContent = item;
-                      if (root.highlightLabelKey) {
-                        if (root._pendingSubTab >= 0) {
-                          root.navigatingFromSearch = true;
-                          root.setSubTabIndex(root._pendingSubTab);
-                          root.navigatingFromSearch = false;
+                      if (root._pendingSubTab >= 0) {
+                        root.navigatingFromSearch = true;
+                        if (root.setSubTabIndex(root._pendingSubTab))
                           root._pendingSubTab = -1;
-                        }
+                        root.navigatingFromSearch = false;
+                      }
+                      if (root.highlightLabelKey) {
                         highlightScrollTimer.targetKey = root.highlightLabelKey;
                         highlightScrollTimer.restart();
                       }

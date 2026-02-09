@@ -38,13 +38,11 @@ FloatingWindow {
           Qt.callLater(() => settingsContent.navigateToResult(entry));
         } else {
           settingsContent.requestedTab = SettingsPanelService.requestedTab;
-          settingsContent.initialize();
           if (SettingsPanelService.requestedSubTab >= 0) {
-            const tab = SettingsPanelService.requestedTab;
-            const subTab = SettingsPanelService.requestedSubTab;
+            settingsContent._pendingSubTab = SettingsPanelService.requestedSubTab;
             SettingsPanelService.requestedSubTab = -1;
-            Qt.callLater(() => settingsContent.navigateToTab(tab, subTab));
           }
+          settingsContent.initialize();
         }
         isInitialized = true;
       }

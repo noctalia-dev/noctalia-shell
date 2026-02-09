@@ -17,6 +17,29 @@ async def run_command(*args):
     return stdout.decode().strip()
 
 
+def theme_exists(theme_name: str) -> bool:
+    """Check if a GTK theme exists in common locations."""
+    search_paths = [
+        Path.home() / ".themes",
+        Path.home() / ".local/share/themes",
+        Path("/usr/share/themes"),
+        Path("/usr/local/share/themes"),
+    ]
+
+    # Add paths from XDG_DATA_DIRS
+    xdg_data_dirs = os.environ.get("XDG_DATA_DIRS", "")
+    if xdg_data_dirs:
+        for path in xdg_data_dirs.split(":"):
+            if path:
+                search_paths.append(Path(path) / "themes")
+
+    for base_path in search_paths:
+        if (base_path / theme_name).is_dir():
+            return True
+
+    return False
+
+
 async def apply_gtk3_colors(config_dir: Path):
     gtk3_dir = config_dir / "gtk-3.0"
     colors_file = gtk3_dir / "noctalia.css"
@@ -66,16 +89,22 @@ async def refresh_theme():
     else:
         target_theme = "adw-gtk3-dark"
 
+    theme_available = theme_exists(target_theme)
+    if not theme_available:
+        print(f"Theme '{target_theme}' not found, skipping GTK theme set")
+
     if has_gsettings:
         schemas = await run_command("gsettings", "list-schemas")
         if schemas and "org.gnome.desktop.interface" in schemas:
             await run_command("gsettings", "set", "org.gnome.desktop.interface", "color-scheme", f"prefer-{mode}")
-            await run_command("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", f"{target_theme}")
+            if theme_available:
+                await run_command("gsettings", "set", "org.gnome.desktop.interface", "gtk-theme", f"{target_theme}")
             return
 
     if has_dconf:
         await run_command("dconf", "write", "/org/gnome/desktop/interface/color-scheme", f"'prefer-{mode}'")
-        await run_command("dconf", "write", "/org/gnome/desktop/interface/gtk-theme", f"'{target_theme}'")
+        if theme_available:
+            await run_command("dconf", "write", "/org/gnome/desktop/interface/gtk-theme", f"'{target_theme}'")
 
 
 async def get_config_dir() -> Path:

@@ -58,7 +58,6 @@
       "hide-if-idle-label": "Verbergen indien inactief",
       "hide-if-not-detected-description": "Verberg de widget als er geen accu op het systeem wordt gedetecteerd.",
       "hide-if-not-detected-label": "Verbergen indien niet gedetecteerd",
-      "low-battery-threshold-description": "Toon een waarschuwing wanneer de accu onder dit percentage komt.",
       "low-battery-threshold-label": "Waarschuwingsdrempel voor lage accu",
       "show-noctalia-performance-description": "Toon de Noctalia-prestatiemodus-schakelaar in het accupaneel.<br>Schakelt schaduwen en animaties in Noctalia uit om het resourcegebruik te verminderen.",
       "show-noctalia-performance-label": "Noctalia-Performance-schakelaar tonen",
@@ -457,6 +456,7 @@
     "refresh": "Vernieuwen",
     "required": "(vereist)",
     "reset": "Resetten",
+    "reset-to-default": "Herstellen naar Standaard",
     "result-count": "{count} resultaat",
     "result-count-plural": "{count} resultaten",
     "resume": "Hervatten",
@@ -625,6 +625,15 @@
       "quick-settings-style-modern": "Modern"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "Comfortabel",
+      "compact": "Compact",
+      "default": "Standaard"
+    },
+    "launcher-view-mode": {
+      "grid": "Raster",
+      "list": "Lijst"
+    },
     "scrolling-modes": {
       "always": "Altijd scrollen",
       "hover": "Scrollen bij hover",
@@ -675,7 +684,7 @@
       "system-cpu": "CPU:",
       "system-disk": "Schijf:",
       "system-gpu": "GPU:",
-      "system-host": "Gastheer/Gastvrouw:",
+      "system-host": "Host:",
       "system-install-hint": "Installeer fastfetch om systeeminformatie te bekijken",
       "system-kernel": "Kernel:",
       "system-loading": "Systeeminformatie laden...",
@@ -1021,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "Monospace-lettertype zoeken...",
       "fonts-reset-scaling": "Schaling resetten",
       "fonts-title": "Lettertypes",
+      "keybinds-description": "Globale navigatietoetsen voor panelen en de starter configureren.",
+      "keybinds-down": "Naar beneden verplaatsen",
+      "keybinds-enter": "Bevestigen / Actie",
+      "keybinds-escape": "Sluiten / Terug",
+      "keybinds-left": "Naar links verplaatsen",
+      "keybinds-right": "Naar rechts verplaatsen",
+      "keybinds-title": "Navigatietoetsencombinaties",
+      "keybinds-up": "Omhoog verplaatsen",
       "language-desc": "Kies je voorkeurstaal voor de applicatie.",
       "language-select-auto-detect": "Automatisch",
       "language-select-description": "Selecteer de taal die in de interface van de applicatie wordt gebruikt.",
@@ -1041,7 +1058,9 @@
       "screen-corners-solid-black-description": "Gebruik effen zwart in plaats van de achtergrondkleur van de balk.",
       "screen-corners-solid-black-label": "Effen zwarte hoeken",
       "screen-corners-title": "Schermhoeken",
-      "settings-copied": "Instellingen gekopieerd naar klembord"
+      "settings-copied": "Instellingen gekopieerd naar klembord",
+      "tab-basics": "Basis",
+      "tab-keybinds": "Toetsencombinaties"
     },
     "hooks": {
       "info-command-info-description": "• Commando's worden uitgevoerd via shell (sh -lc)<br>• Commando's draaien op de achtergrond (losgekoppeld)<br>• Testknoppen worden uitgevoerd met de huidige waarden",
@@ -1096,14 +1115,16 @@
       "settings-clip-wrap-text-label": "Klembordtekst omwikkelen",
       "settings-clipboard-history-description": "Toegang tot eerder gekopieerde items vanuit de launcher.",
       "settings-clipboard-history-label": "Klembordgeschiedenis inschakelen",
-      "settings-clipboard-watch-image-description": "Volledige commandoreeks die aan wl-paste wordt doorgegeven voor afbeeldingswijzigingen. (herstart vereist)",
+      "settings-clipboard-watch-image-description": "Volledige commandoreeks die aan wl-paste wordt doorgegeven voor afbeeldingswijzigingen (herstart vereist).",
       "settings-clipboard-watch-image-label": "Afbeelding Bewakingscommando",
-      "settings-clipboard-watch-text-description": "Volledige commandoreeks die aan wl-paste wordt doorgegeven voor tekstwijzigingen. (vereist herstart)",
+      "settings-clipboard-watch-text-description": "Volledige commandoreeks die aan wl-paste wordt doorgegeven voor tekstwijzigingen (vereist herstart).",
       "settings-clipboard-watch-text-label": "Tekst volgcommando",
       "settings-custom-launch-prefix-description": "Voorzie commando's van een aangepaste launcher-prefix (bijv. 'runapp' voor systemd-integratie).",
       "settings-custom-launch-prefix-enabled-description": "Gebruik een aangepaste prefix om applicaties te starten in plaats van de standaardmethode.",
       "settings-custom-launch-prefix-enabled-label": "Aangepaste startprefix inschakelen",
       "settings-custom-launch-prefix-label": "Aangepaste startprefix",
+      "settings-density-description": "Pas de grootte van applicatiepictogrammen en de dichtheid van de Launcher aan.",
+      "settings-density-label": "Dichtheid",
       "settings-desc": "Pas het gedrag en uiterlijk van de launcher aan.",
       "settings-enable-settings-search-description": "Toon instellingen in de zoekresultaten van de Launcher.",
       "settings-enable-settings-search-label": "Instellingen zoeken inschakelen",
@@ -1114,6 +1135,8 @@
       "settings-icon-mode-label": "Gebruik native iconen",
       "settings-ignore-mouse-input-description": "Schakel muisinteractie en scrollwiel uit in de launcher.",
       "settings-ignore-mouse-input-label": "Negeer muisinvoer",
+      "settings-overlay-layer-description": "Toon de starter op de overlaylaag, boven vensters op volledig scherm. Indien ingeschakeld, wordt de starter niet aan de balk bevestigd.",
+      "settings-overlay-layer-label": "Boven volledig scherm weergeven",
       "settings-position-description": "Kies waar het launcherpaneel verschijnt.",
       "settings-show-categories-description": "Categorieën-tabbladen weergeven voor het filteren van applicaties.",
       "settings-show-categories-label": "Categorieën weergeven",
@@ -1125,6 +1148,8 @@
       "settings-terminal-command-label": "Terminalcommando",
       "settings-use-app2unit-description": "Gebruikt een alternatieve startmethode om app-processen beter te beheren en problemen te voorkomen.",
       "settings-use-app2unit-label": "App2Unit gebruiken om applicaties te starten",
+      "settings-view-mode-description": "Kies de indeling voor de starter-items.",
+      "settings-view-mode-label": "Weergavemodus",
       "title": "Launcher"
     },
     "location": {
@@ -1180,6 +1205,9 @@
       "compact-lockscreen-label": "Compact vergrendelscherm",
       "lock-on-suspend-description": "Vergrendel het scherm automatisch wanneer het systeem wordt onderbroken.",
       "lock-on-suspend-label": "Vergrendelen bij onderbreken",
+      "lock-screen-animations-description": "Vergrendelschermanimaties in- of uitschakelen.",
+      "lock-screen-animations-label": "Vergrendelschermanimaties",
+      "monitors-desc": "Vergrendelscherm tonen op specifieke monitoren. Standaard op alle, indien er geen zijn gekozen.",
       "show-hibernate-description": "De optie 'sluimerstand' tonen in de energieopties.",
       "show-hibernate-label": "Sluimerstand tonen",
       "show-session-buttons-description": "Toegang tot energie-instellingen toestaan vanaf het vergrendelscherm.",
@@ -1296,6 +1324,8 @@
       "available-label": "Beschikbare plug-ins",
       "available-no-plugins-description": "Controleer je plugin-bronnen of vernieuw de lijst.",
       "available-no-plugins-label": "Geen plug-ins beschikbaar",
+      "check-for-updates": "Controleren op updates",
+      "checking-for-updates": "Controleren op updates...",
       "collision-already-installed": "Deze plugin is al geïnstalleerd",
       "collision-custom-version-exists": "Er is al een aangepaste versie van \"{source}\" geïnstalleerd",
       "collision-official-version-exists": "De officiële versie van deze plugin is al geïnstalleerd",
@@ -1536,7 +1566,7 @@
   "setup": {
     "all-done": "Klaar!",
     "appearance": {
-      "subheader": "Kies donkere modus en kleurbronnen (Achtergrond of voorgedefinieerd)."
+      "subheader": "Kies donkere modus en kleurbronnen (achtergrond of voorgedefinieerd)."
     },
     "customize": {
       "header": "Pas je ervaring aan",
@@ -1789,7 +1819,9 @@
     "wallhaven": {
       "loading": "Achtergronden laden...",
       "no-results": "Geen achtergronden gevonden. Probeer een andere zoekopdracht.",
-      "page": "{current} van {total}"
+      "page": "{current} van {total}",
+      "page-prefix": "Pagina",
+      "page-suffix": "van {total}"
     }
   },
   "weather": {

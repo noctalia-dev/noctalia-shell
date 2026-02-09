@@ -94,13 +94,23 @@ Variants {
       Connections {
         target: CompositorService
         function onDisplayScalesChanged() {
-          if (isStartupTransition) {
+          const currentPath = WallpaperService.getWallpaper(modelData.name);
+          if (!currentPath || WallpaperService.isSolidColorPath(currentPath)) {
             return;
           }
-          const currentPath = WallpaperService.getWallpaper(modelData.name);
-          if (currentPath) {
-            requestPreprocessedWallpaper(currentPath);
+
+          if (isStartupTransition) {
+            // During startup, just ensure the correct cache exists without visual changes
+            const compositorScale = CompositorService.getDisplayScale(modelData.name);
+            const targetWidth = Math.round(modelData.width * compositorScale);
+            const targetHeight = Math.round(modelData.height * compositorScale);
+            ImageCacheService.getLarge(currentPath, targetWidth, targetHeight, function (cachedPath, success) {
+              WallpaperService.wallpaperProcessingComplete(modelData.name, currentPath, success ? cachedPath : "");
+            });
+            return;
           }
+
+          requestPreprocessedWallpaper(currentPath);
         }
       }
 
@@ -430,6 +440,18 @@ Variants {
         }
       }
 
+      // Normalize a path (string or QUrl) to a plain string for comparison.
+      // QML Image.source is a url type; comparing url === string can return
+      // false even for identical paths. This converts both sides to strings.
+      function _pathStr(p) {
+        var s = p.toString();
+        // QUrl.toString() may add a file:// prefix for local paths
+        if (s.startsWith("file://")) {
+          return s.substring(7);
+        }
+        return s;
+      }
+
       // ------------------------------------------------------
       function setWallpaperInitial() {
         // On startup, defer assigning wallpaper until the services are ready
@@ -510,6 +532,14 @@ Variants {
           } else {
             futureWallpaper = originalPath;
           }
+
+          // Skip transition if the resolved path matches what's already displayed
+          if (_pathStr(futureWallpaper) === _pathStr(currentWallpaper.source)) {
+            transitioningToOriginalPath = "";
+            WallpaperService.wallpaperProcessingComplete(modelData.name, originalPath, success ? cachedPath : "");
+            return;
+          }
+
           debounceTimer.restart();
           // Pass cached path for blur optimization (already resized)
           WallpaperService.wallpaperProcessingComplete(modelData.name, originalPath, success ? cachedPath : "");
@@ -559,8 +589,8 @@ Variants {
           }
         }
 
-        // For images, check if source matches
-        if (!isSolidSource && source === currentWallpaper.source) {
+        // For images, check if source matches (use _pathStr to normalize url vs string)
+        if (!isSolidSource && _pathStr(source) === _pathStr(currentWallpaper.source)) {
           return;
         }
 

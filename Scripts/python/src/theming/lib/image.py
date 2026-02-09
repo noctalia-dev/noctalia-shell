@@ -234,7 +234,7 @@ def _sample_jpeg_colors(data: bytes, width: int, height: int) -> list[RGB]:
     return pixels if pixels else [(128, 128, 128)]
 
 
-def _read_image_imagemagick(path: Path) -> list[RGB]:
+def _read_image_imagemagick(path: Path, resize_filter: str = "Triangle") -> list[RGB]:
     """
     Read image using ImageMagick's convert command.
 
@@ -249,7 +249,8 @@ def _read_image_imagemagick(path: Path) -> list[RGB]:
     # ppm: output as PPM format (easy to parse)
 
     # Resize to 112x112 to match matugen's color extraction
-    # Use -filter Box for consistent results across ImageMagick versions
+    # Use -filter Triangle (bilinear) for M3 schemes to match matugen's FilterType::Triangle default
+    # Use -filter Box for k-means schemes (sharper, preserves distinct color regions)
     # Use -depth 8 -colorspace sRGB -strip to reduce variance between HDRI/non-HDRI builds
     resize_spec = "112x112!"
 
@@ -257,14 +258,14 @@ def _read_image_imagemagick(path: Path) -> list[RGB]:
         # Try 'magick' first (ImageMagick 7+), fallback to 'convert' (ImageMagick 6)
         try:
             result = subprocess.run(
-                ['magick', str(path), '-filter', 'Box', '-resize', resize_spec,
+                ['magick', str(path), '-filter', resize_filter, '-resize', resize_spec,
                  '-depth', '8', '-colorspace', 'sRGB', '-strip', 'ppm:-'],
                 capture_output=True,
                 check=True
             )
         except FileNotFoundError:
             result = subprocess.run(
-                ['convert', str(path), '-filter', 'Box', '-resize', resize_spec,
+                ['convert', str(path), '-filter', resize_filter, '-resize', resize_spec,
                  '-depth', '8', '-colorspace', 'sRGB', '-strip', 'ppm:-'],
                 capture_output=True,
                 check=True
@@ -341,18 +342,23 @@ def _parse_ppm(data: bytes) -> list[RGB]:
     return pixels
 
 
-def read_image(path: Path) -> list[RGB]:
+def read_image(path: Path, resize_filter: str = "Triangle") -> list[RGB]:
     """
     Read an image file and return its pixels as RGB tuples.
 
     Uses ImageMagick for accurate color extraction from any format.
     Falls back to native PNG parsing if ImageMagick is unavailable.
+
+    Args:
+        path: Path to the image file.
+        resize_filter: ImageMagick resize filter. "Triangle" for M3 schemes
+                       (matches matugen), "Box" for k-means schemes.
     """
     suffix = path.suffix.lower()
 
     # Try ImageMagick first (works for any format)
     try:
-        return _read_image_imagemagick(path)
+        return _read_image_imagemagick(path, resize_filter)
     except ImageReadError:
         # Fall back to native parsing for PNG
         if suffix == '.png':

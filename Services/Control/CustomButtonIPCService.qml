@@ -65,7 +65,7 @@ Item {
 
       // Trigger left click if configured
       if (button.leftClickExec || button.textCommand) {
-        button.onClicked();
+        button.clicked();
         Logger.i("CustomButtonIPCService", `Triggered left click on button '${identifier}'`);
       } else {
         Logger.w("CustomButtonIPCService", `Button '${identifier}' has no left click action configured`);
@@ -82,7 +82,7 @@ Item {
 
       // Trigger right click if configured
       if (button.rightClickExec) {
-        button.onRightClicked();
+        button.rightClicked();
         Logger.i("CustomButtonIPCService", `Triggered right click on button '${identifier}'`);
       } else {
         Logger.w("CustomButtonIPCService", `Button '${identifier}' has no right click action configured`);
@@ -99,7 +99,7 @@ Item {
 
       // Trigger middle click if configured
       if (button.middleClickExec) {
-        button.onMiddleClicked();
+        button.middleClicked();
         Logger.i("CustomButtonIPCService", `Triggered middle click on button '${identifier}'`);
       } else {
         Logger.w("CustomButtonIPCService", `Button '${identifier}' has no middle click action configured`);
@@ -116,7 +116,7 @@ Item {
 
       // Trigger wheel up if in separate mode and configured
       if (button.wheelMode === "separate" && button.wheelUpExec) {
-        button.onWheel(1);
+        button.wheeled(1);
         Logger.i("CustomButtonIPCService", `Triggered wheel up on button '${identifier}'`);
       } else {
         Logger.w("CustomButtonIPCService", `Button '${identifier}' has no separate wheel up action configured or is not in separate mode`);
@@ -133,7 +133,7 @@ Item {
 
       // Trigger wheel down if in separate mode and configured
       if (button.wheelMode === "separate" && button.wheelDownExec) {
-        button.onWheel(-1);
+        button.wheeled(-1);
         Logger.i("CustomButtonIPCService", `Triggered wheel down on button '${identifier}'`);
       } else {
         Logger.w("CustomButtonIPCService", `Button '${identifier}' has no separate wheel down action configured or is not in separate mode`);
@@ -150,7 +150,7 @@ Item {
 
       // Trigger unified wheel if in unified mode and configured
       if (button.wheelMode === "unified" && button.wheelExec) {
-        button.onWheel(1);
+        button.wheeled(1);
         Logger.i("CustomButtonIPCService", `Triggered wheel action on button '${identifier}'`);
       } else {
         Logger.w("CustomButtonIPCService", `Button '${identifier}' has no unified wheel action configured or is not in unified mode`);

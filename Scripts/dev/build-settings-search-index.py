@@ -225,6 +225,11 @@ def resolve_tab_info(
         sub_label = subtab_labels[idx] if idx < len(subtab_labels) else None
         return tab_index, tab_label, idx, sub_label
     except ValueError:
+        # File doesn't map to any subtab (e.g. a dialog). If the parent tab
+        # has subtabs, the focus ring can't reach widgets inside dialogs, so
+        # exclude them from the index.
+        if subtab_names:
+            return None, None, None, None
         return tab_index, tab_label, None, None
 
 

@@ -26,12 +26,20 @@ if [ -z "$QMLFORMAT" ]; then
     exit 1
 fi
 
+# Detect qmlformat version for flag compatibility
+EXTRA_FLAGS=""
+if version=$("$QMLFORMAT" --version 2>&1) && [[ "$version" =~ ([0-9]+\.[0-9]+) ]]; then
+    if [[ "$(printf '%s\n6.10\n' "${BASH_REMATCH[1]}" | sort -V | head -1)" == "6.10" ]]; then
+        EXTRA_FLAGS="-S --semicolon-rule always"
+    fi
+fi
+
 format_file() {
-    "${QMLFORMAT}" -w 2 -W 360 -S --semicolon-rule always -i "$1" || { echo "Failed: $1" >&2; return 1; }
+    ${QMLFORMAT} -w 2 -W 360 ${EXTRA_FLAGS} -i "$1" || { echo "Failed: $1" >&2; return 1; }
 }
 
 export -f format_file
-export QMLFORMAT
+export QMLFORMAT EXTRA_FLAGS
 
 # Find all .qml files
 mapfile -t all_files < <(find "${1:-.}" -name "*.qml" -type f)

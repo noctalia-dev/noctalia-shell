@@ -285,7 +285,6 @@ Singleton {
   function onDisplayScalesUpdated(scales) {
     displayScales = scales;
     saveDisplayScalesToCache();
-    displayScalesChanged();
     Logger.d("CompositorService", "Display scales updated");
   }
 
@@ -425,10 +424,35 @@ Singleton {
     }
   }
 
+  // Session management helper for custom commands
+  function getCustomCommand(action) {
+    const powerOptions = Settings.data.sessionMenu.powerOptions || [];
+    for (let i = 0; i < powerOptions.length; i++) {
+      const option = powerOptions[i];
+      if (option.action === action && option.enabled && option.command && option.command.trim() !== "") {
+        return option.command.trim();
+      }
+    }
+    return "";
+  }
+
+  function executeSessionAction(action, defaultCommand) {
+    const customCommand = getCustomCommand(action);
+    if (customCommand) {
+      Logger.i("Compositor", `Executing custom command for action: ${action} Command: ${customCommand}`);
+      Quickshell.execDetached(["sh", "-c", customCommand]);
+      return true;
+    }
+    return false;
+  }
+
   // Session management
   function logout() {
+    Logger.i("Compositor", "Logout requested");
+    if (executeSessionAction("logout"))
+      return;
+
     if (backend && backend.logout) {
-      Logger.i("Compositor", "Logout requested");
       backend.logout();
     } else {
       Logger.w("Compositor", "No backend available for logout");
@@ -437,6 +461,9 @@ Singleton {
 
   function shutdown() {
     Logger.i("Compositor", "Shutdown requested");
+    if (executeSessionAction("shutdown"))
+      return;
+
     HooksService.executeSessionHook("shutdown", () => {
                                       Quickshell.execDetached(["sh", "-c", "systemctl poweroff || loginctl poweroff"]);
                                     });
@@ -444,6 +471,9 @@ Singleton {
 
   function reboot() {
     Logger.i("Compositor", "Reboot requested");
+    if (executeSessionAction("reboot"))
+      return;
+
     HooksService.executeSessionHook("reboot", () => {
                                       Quickshell.execDetached(["sh", "-c", "systemctl reboot || loginctl reboot"]);
                                     });
@@ -451,11 +481,27 @@ Singleton {
 
   function suspend() {
     Logger.i("Compositor", "Suspend requested");
+    if (executeSessionAction("suspend"))
+      return;
+
     Quickshell.execDetached(["sh", "-c", "systemctl suspend || loginctl suspend"]);
+  }
+
+  function lock() {
+    Logger.i("Compositor", "LockScreen requested");
+    if (executeSessionAction("lock"))
+      return;
+
+    if (PanelService && PanelService.lockScreen) {
+      PanelService.lockScreen.active = true;
+    }
   }
 
   function hibernate() {
     Logger.i("Compositor", "Hibernate requested");
+    if (executeSessionAction("hibernate"))
+      return;
+
     Quickshell.execDetached(["sh", "-c", "systemctl hibernate || loginctl hibernate"]);
   }
 
@@ -469,6 +515,12 @@ Singleton {
 
   function lockAndSuspend() {
     Logger.i("Compositor", "Lock and suspend requested");
+
+    // if a custom lock command exists, execute it and suspend without wait
+    if (executeSessionAction("lock")) {
+      suspend();
+      return;
+    }
 
     // If already locked, suspend immediately
     if (PanelService && PanelService.lockScreen && PanelService.lockScreen.active) {

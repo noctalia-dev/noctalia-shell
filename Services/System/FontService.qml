@@ -90,6 +90,15 @@ Singleton {
     availableFonts.clear();
     monospaceFonts.clear();
 
+    availableFonts.append({
+                            "key": Qt.application.font.family,
+                            "name": I18n.tr("panels.indicator.system-default")
+                          });
+    monospaceFonts.append({
+                            "key": "monospace",
+                            "name": I18n.tr("panels.indicator.system-default")
+                          });
+
     for (var m = 0; m < allBatch.length; m++)
       availableFonts.append(allBatch[m]);
     for (var n = 0; n < monoBatch.length; n++)

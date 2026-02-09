@@ -103,6 +103,14 @@ ShapePath {
   readonly property real blMultY: bar ? ShapeCornerHelper.getMultY(bar.bottomLeftCornerState) : 1
   readonly property real blRadius: bar ? getCornerRadius(bar.bottomLeftCornerState) : 0
 
+  // Extend bar background beyond screen edges where both adjacent corners are flat,
+  // to prevent CurveRenderer antialiasing artifacts on screen-flush edges
+  readonly property real screenEdgeOvershoot: 2
+  readonly property real topEdgeOvs: (!isFramed && shouldShow && tlRadius === 0 && trRadius === 0 && barMappedPos.y <= 0) ? -screenEdgeOvershoot : 0
+  readonly property real bottomEdgeOvs: (!isFramed && shouldShow && blRadius === 0 && brRadius === 0 && (barMappedPos.y + barHeight) >= screenHeight) ? screenEdgeOvershoot : 0
+  readonly property real leftEdgeOvs: (!isFramed && shouldShow && tlRadius === 0 && blRadius === 0 && barMappedPos.x <= 0) ? -screenEdgeOvershoot : 0
+  readonly property real rightEdgeOvs: (!isFramed && shouldShow && trRadius === 0 && brRadius === 0 && (barMappedPos.x + barWidth) >= screenWidth) ? screenEdgeOvershoot : 0
+
   // Auto-hide opacity factor for background fade
   property real opacityFactor: (bar && bar.isHidden) ? 0 : 1
 
@@ -121,8 +129,8 @@ ShapePath {
 
   // Starting position
   // In framed mode, we start at (0,0) to draw the screen rectangle first
-  startX: isFramed ? 0 : (barMappedPos.x + tlRadius * tlMultX)
-  startY: isFramed ? 0 : barMappedPos.y
+  startX: isFramed ? 0 : (barMappedPos.x + leftEdgeOvs + tlRadius * tlMultX)
+  startY: isFramed ? 0 : (barMappedPos.y + topEdgeOvs)
 
   // ========== PATH DEFINITION ==========
 
@@ -133,35 +141,35 @@ ShapePath {
         return 0;
       if (root.isFramed)
         return root.screenWidth;
-      return root.barMappedPos.x + root.barWidth - root.trRadius * root.trMultX;
+      return root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.trRadius * root.trMultX;
     }
-    y: root.isFramed ? 0 : root.barMappedPos.y
+    y: root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs)
   }
 
   // Bar top-right corner (only if not framed)
   PathArc {
-    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth)
-    y: root.isFramed ? 0 : (root.barMappedPos.y + root.trRadius * root.trMultY)
+    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs)
+    y: root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs + root.trRadius * root.trMultY)
     radiusX: root.isFramed ? 0 : root.trRadius
     radiusY: root.isFramed ? 0 : root.trRadius
     direction: ShapeCornerHelper.getArcDirection(root.trMultX, root.trMultY)
   }
 
   PathLine {
-    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth)
+    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs)
     y: {
       if (!root.shouldShow)
         return 0;
       if (root.isFramed)
         return root.screenHeight;
-      return root.barMappedPos.y + root.barHeight - root.brRadius * root.brMultY;
+      return root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.brRadius * root.brMultY;
     }
   }
 
   // Bar bottom-right corner (only if not framed)
   PathArc {
-    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth - root.brRadius * root.brMultX)
-    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight)
+    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.brRadius * root.brMultX)
+    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs)
     radiusX: root.isFramed ? 0 : root.brRadius
     radiusY: root.isFramed ? 0 : root.brRadius
     direction: ShapeCornerHelper.getArcDirection(root.brMultX, root.brMultY)
@@ -173,35 +181,35 @@ ShapePath {
         return 0;
       if (root.isFramed)
         return 0;
-      return root.barMappedPos.x + root.blRadius * root.blMultX;
+      return root.barMappedPos.x + root.leftEdgeOvs + root.blRadius * root.blMultX;
     }
-    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight)
+    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs)
   }
 
   // Bar bottom-left corner (only if not framed)
   PathArc {
-    x: root.isFramed ? 0 : root.barMappedPos.x
-    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight - root.blRadius * root.blMultY)
+    x: root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs)
+    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.blRadius * root.blMultY)
     radiusX: root.isFramed ? 0 : root.blRadius
     radiusY: root.isFramed ? 0 : root.blRadius
     direction: ShapeCornerHelper.getArcDirection(root.blMultX, root.blMultY)
   }
 
   PathLine {
-    x: root.isFramed ? 0 : root.barMappedPos.x
+    x: root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs)
     y: {
       if (!root.shouldShow)
         return 0;
       if (root.isFramed)
         return 0;
-      return root.barMappedPos.y + root.tlRadius * root.tlMultY;
+      return root.barMappedPos.y + root.topEdgeOvs + root.tlRadius * root.tlMultY;
     }
   }
 
   // Bar top-left corner (only if not framed, back to start)
   PathArc {
-    x: root.isFramed ? 0 : (root.barMappedPos.x + root.tlRadius * root.tlMultX)
-    y: root.isFramed ? 0 : root.barMappedPos.y
+    x: root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs + root.tlRadius * root.tlMultX)
+    y: root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs)
     radiusX: root.isFramed ? 0 : root.tlRadius
     radiusY: root.isFramed ? 0 : root.tlRadius
     direction: ShapeCornerHelper.getArcDirection(root.tlMultX, root.tlMultY)

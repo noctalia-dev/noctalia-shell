@@ -20,6 +20,9 @@ Singleton {
 
   property bool reloadColors: false
 
+  // Suppress transition animations until the first colors.json load completes
+  property bool skipTransition: true
+
   // Flag indicating theme colors are currently transitioning (for widgets to disable their own animations)
   property bool isTransitioning: false
 
@@ -57,96 +60,112 @@ Singleton {
 
   // --- Color transition animations ---
   Behavior on mPrimary {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mOnPrimary {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mSecondary {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mOnSecondary {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mTertiary {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mOnTertiary {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mError {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mOnError {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mSurface {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mOnSurface {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mSurfaceVariant {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mOnSurfaceVariant {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mOutline {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mShadow {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mHover {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
     }
   }
   Behavior on mOnHover {
+    enabled: !root.skipTransition
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Easing.OutCubic
@@ -163,67 +182,99 @@ Singleton {
   Connections {
     target: customColorsData
     function onMPrimaryChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mPrimary = customColorsData.mPrimary;
     }
     function onMOnPrimaryChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mOnPrimary = customColorsData.mOnPrimary;
     }
     function onMSecondaryChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mSecondary = customColorsData.mSecondary;
     }
     function onMOnSecondaryChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mOnSecondary = customColorsData.mOnSecondary;
     }
     function onMTertiaryChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mTertiary = customColorsData.mTertiary;
     }
     function onMOnTertiaryChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mOnTertiary = customColorsData.mOnTertiary;
     }
     function onMErrorChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mError = customColorsData.mError;
     }
     function onMOnErrorChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mOnError = customColorsData.mOnError;
     }
     function onMSurfaceChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mSurface = customColorsData.mSurface;
     }
     function onMOnSurfaceChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mOnSurface = customColorsData.mOnSurface;
     }
     function onMSurfaceVariantChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mSurfaceVariant = customColorsData.mSurfaceVariant;
     }
     function onMOnSurfaceVariantChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mOnSurfaceVariant = customColorsData.mOnSurfaceVariant;
     }
     function onMOutlineChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mOutline = customColorsData.mOutline;
     }
     function onMShadowChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mShadow = customColorsData.mShadow;
     }
     function onMHoverChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mHover = customColorsData.mHover;
     }
     function onMOnHoverChanged() {
-      startTransition();
+      if (!root.skipTransition) {
+        startTransition();
+      }
       root.mOnHover = customColorsData.mOnHover;
     }
   }
@@ -282,33 +333,33 @@ Singleton {
   ]
 
   // --------------------------------
-  // Default colors: Rose Pine
+  // Default colors: Noctalia (default) dark — must match Assets/ColorScheme/Noctalia-default
   QtObject {
     id: defaultColors
 
-    readonly property color mPrimary: "#c7a1d8"
-    readonly property color mOnPrimary: "#1a151f"
+    readonly property color mPrimary: "#fff59b"
+    readonly property color mOnPrimary: "#0e0e43"
 
-    readonly property color mSecondary: "#a984c4"
-    readonly property color mOnSecondary: "#f3edf7"
+    readonly property color mSecondary: "#a9aefe"
+    readonly property color mOnSecondary: "#0e0e43"
 
-    readonly property color mTertiary: "#e0b7c9"
-    readonly property color mOnTertiary: "#20161f"
+    readonly property color mTertiary: "#9BFECE"
+    readonly property color mOnTertiary: "#0e0e43"
 
-    readonly property color mError: "#e9899d"
-    readonly property color mOnError: "#1e1418"
+    readonly property color mError: "#FD4663"
+    readonly property color mOnError: "#0e0e43"
 
-    readonly property color mSurface: "#1c1822"
-    readonly property color mOnSurface: "#e9e4f0"
+    readonly property color mSurface: "#070722"
+    readonly property color mOnSurface: "#f3edf7"
 
-    readonly property color mSurfaceVariant: "#262130"
-    readonly property color mOnSurfaceVariant: "#a79ab0"
+    readonly property color mSurfaceVariant: "#11112d"
+    readonly property color mOnSurfaceVariant: "#7c80b4"
 
-    readonly property color mOutline: "#342c42"
-    readonly property color mShadow: "#120f18"
+    readonly property color mOutline: "#21215F"
+    readonly property color mShadow: "#070722"
 
-    readonly property color mHover: "#e0b7c9"
-    readonly property color mOnHover: "#20161f"
+    readonly property color mHover: "#9BFECE"
+    readonly property color mOnHover: "#0e0e43"
   }
 
   // ----------------------------------------------------------------
@@ -328,6 +379,14 @@ Singleton {
       writeAdapter();
     }
 
+    onLoaded: {
+      if (root.skipTransition) {
+        Qt.callLater(function () {
+          root.skipTransition = false;
+        });
+      }
+    }
+
     // Trigger initial load when path changes from empty to actual path
     onPathChanged: {
       if (path !== undefined) {
@@ -338,6 +397,12 @@ Singleton {
       if (reloadColors) {
         reloadColors = false;
         return;
+      }
+
+      if (root.skipTransition) {
+        Qt.callLater(function () {
+          root.skipTransition = false;
+        });
       }
 
       // Error code 2 = ENOENT (No such file or directory)
