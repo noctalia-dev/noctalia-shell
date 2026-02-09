@@ -17,23 +17,17 @@ SmartPanel {
   property var bluetoothScrollView: null
   property int currentListIndex: -1 // -1: None, 0: Connected, 1: Paired, 2: Available
 
-  function onTabPressed() {
-    cycleList(true);
-  }
-  function onBackTabPressed() {
-    cycleList(false);
-  }
   function onDownPressed() {
-    navigateItem(true);
+    selectNext();
   }
   function onUpPressed() {
-    navigateItem(false);
+    selectPrev();
   }
   function onCtrlJPressed() {
-    navigateItem(true);
+    selectNext();
   }
   function onCtrlKPressed() {
-    navigateItem(false);
+    selectPrev();
   }
   function onReturnPressed() {
     activateItem();
@@ -46,36 +40,93 @@ SmartPanel {
     currentListIndex = -1;
   }
 
-  function cycleList(forward) {
-    if (navigationLists.length === 0)
+  function selectNext() {
+    // 1. Handle no selection case (start from top)
+    if (currentListIndex === -1) {
+      for (var i = 0; i < 3; i++) {
+        if (navigationLists[i] && navigationLists[i].visible && navigationLists[i].count > 0) {
+          currentListIndex = i;
+          navigationLists[i].selectedIndex = 0;
+          return;
+        }
+      }
       return;
+    }
 
-    var start = currentListIndex;
-    if (start === -1)
-      start = forward ? 2 : 0; // Prepare for wrap
-
-    for (var i = 1; i <= 3; i++) {
-      var idx;
-      if (forward)
-        idx = (start + i) % 3;
-      else
-        idx = (start - i + 3) % 3;
-
-      if (navigationLists[idx] && navigationLists[idx].visible && navigationLists[idx].count > 0) {
-        currentListIndex = idx;
-        navigationLists[idx].selectFirst();
+    // 2. Try to move within current list
+    var list = navigationLists[currentListIndex];
+    if (list && list.count > 0) {
+      var newIdx = list.selectedIndex + 1;
+      if (newIdx >= 0 && newIdx < list.count) {
+        list.selectedIndex = newIdx;
         return;
       }
     }
-    currentListIndex = -1;
+
+    // 3. Move to next list
+    var nextListIndex = currentListIndex;
+    while (true) {
+      nextListIndex++;
+      if (nextListIndex > 2) {
+        nextListIndex = 0; // Loop back to start
+      }
+
+      var nextList = navigationLists[nextListIndex];
+      if (nextList && nextList.visible && nextList.count > 0) {
+        // Found valid next list, deselect current list
+        if (navigationLists[currentListIndex]) {
+          navigationLists[currentListIndex].selectedIndex = -1;
+        }
+
+        currentListIndex = nextListIndex;
+        nextList.selectedIndex = 0;
+        return;
+      }
+    }
   }
 
-  function navigateItem(next) {
-    if (currentListIndex !== -1 && navigationLists[currentListIndex]) {
-      if (next)
-        navigationLists[currentListIndex].selectNext();
-      else
-        navigationLists[currentListIndex].selectPrevious();
+  function selectPrev() {
+    // 1. Handle no selection case (start from bottom)
+    if (currentListIndex === -1) {
+      for (var i = 2; i >= 0; i--) {
+        if (navigationLists[i] && navigationLists[i].visible && navigationLists[i].count > 0) {
+          currentListIndex = i;
+          navigationLists[i].selectedIndex = navigationLists[i].count - 1;
+          return;
+        }
+      }
+      return;
+    }
+
+    // 2. Try to move within current list
+    var list = navigationLists[currentListIndex];
+    if (list && list.count > 0) {
+      var newIdx = list.selectedIndex - 1;
+      if (newIdx >= 0 && newIdx < list.count) {
+        list.selectedIndex = newIdx;
+        return;
+      }
+    }
+
+    // 3. Move to prev list
+    var prevListIndex = currentListIndex;
+    while (true) {
+      prevListIndex--;
+      if (prevListIndex < 0) {
+        prevListIndex = 2;
+      }
+
+      var prevList = navigationLists[prevListIndex];
+      if (prevList && prevList.visible && prevList.count > 0) {
+        // Found valid prev list, deselect current list
+        if (navigationLists[currentListIndex]) {
+          navigationLists[currentListIndex].selectedIndex = -1;
+        }
+
+        currentListIndex = prevListIndex;
+        prevList.selectedIndex = prevList.count - 1; // Select last
+        return;
+      }
     }
   }
 

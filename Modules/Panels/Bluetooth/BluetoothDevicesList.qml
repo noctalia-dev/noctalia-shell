@@ -49,26 +49,6 @@ NBox {
     }
   }
 
-  function selectNext() {
-    if (count > 0) {
-      selectedIndex = (selectedIndex + 1) % count;
-    }
-  }
-
-  function selectPrevious() {
-    if (count > 0) {
-      selectedIndex = (selectedIndex - 1 + count) % count;
-    }
-  }
-
-  function selectFirst() {
-    if (count > 0) {
-      selectedIndex = 0;
-    } else {
-      selectedIndex = -1;
-    }
-  }
-
   function getSelectedItem() {
     if (selectedIndex >= 0 && selectedIndex < count) {
       return root.model[selectedIndex];
