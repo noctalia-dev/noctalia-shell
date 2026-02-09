@@ -144,10 +144,12 @@ Singleton {
     // onLoadFailed will try the short code ("zh") if the file doesn't exist
     for (var i = 0; i < Qt.locale().uiLanguages.length; i++) {
       var fullLang = Qt.locale().uiLanguages[i];
-      return {
-        code: fullLang,
-        fullLocale: fullLang
-      };
+      if (!fullLang.startsWith("zh-Han")) {
+        return {
+          code: fullLang,
+          fullLocale: fullLang
+        };
+      }
     }
     return {
       code: "en",
