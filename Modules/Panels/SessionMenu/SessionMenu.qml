@@ -685,7 +685,7 @@ SmartPanel {
 
     readonly property var contentPreferredWidth: (largeButtonsStyle || showBlurBackground) ? (root.screen?.width || root.width || 0) : undefined
     readonly property var contentPreferredHeight: (largeButtonsStyle || showBlurBackground) ? (root.screen?.height || root.height || 0) : undefined
-    readonly property color blurBackgroundColor: Color[Settings.data.sessionMenu.blurBackgroundColor] ?? Color.mSurface
+    readonly property color blurColor: Color[Settings.data.sessionMenu.blurColor] ?? Color.mSurface
 
     Rectangle {
       id: blurBackground
@@ -697,7 +697,7 @@ SmartPanel {
       gradient: Gradient {
         GradientStop {
           position: 0.0
-          color: Qt.alpha(blurBackgroundColor, 0.4)
+          color: Qt.alpha(blurColor, 0.4)
         }
       }
     }
