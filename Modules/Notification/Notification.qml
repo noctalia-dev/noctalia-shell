@@ -47,8 +47,10 @@ Variants {
       WlrLayershell.namespace: "noctalia-notifications-" + (screen?.name || "unknown")
       WlrLayershell.layer: (Settings.data.notifications?.overlayLayer) ? WlrLayer.Overlay : WlrLayer.Top
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
+      WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
       color: "transparent"
+      focus: true
 
       // Make shadow area click-through, only notification content is clickable
       mask: Region {
@@ -127,6 +129,21 @@ Variants {
       implicitHeight: notificationStack.implicitHeight + Style.marginL
 
       property var animateConnection: null
+      property int selectedIndex: -1
+
+      function focusCardAt(targetIndex) {
+        const count = notificationModel.count;
+        if (count <= 0) {
+          selectedIndex = -1;
+          return;
+        }
+
+        selectedIndex = Math.max(0, Math.min(targetIndex, count - 1));
+        const selectedCard = notificationRepeater.itemAt(selectedIndex);
+        if (selectedCard?.forceActiveFocus) {
+          selectedCard.forceActiveFocus();
+        }
+      }
 
       Component.onCompleted: {
         animateConnection = function (notificationId) {
@@ -149,12 +166,28 @@ Variants {
         };
 
         NotificationService.animateAndRemove.connect(animateConnection);
+        Qt.callLater(() => focusCardAt(0));
       }
 
       Component.onDestruction: {
         if (animateConnection) {
           NotificationService.animateAndRemove.disconnect(animateConnection);
           animateConnection = null;
+        }
+      }
+
+      Connections {
+        target: notificationModel
+        function onCountChanged() {
+          if (notificationModel.count <= 0) {
+            selectedIndex = -1;
+            return;
+          }
+          if (selectedIndex < 0 || selectedIndex >= notificationModel.count) {
+            Qt.callLater(() => focusCardAt(0));
+          } else {
+            Qt.callLater(() => focusCardAt(selectedIndex));
+          }
         }
       }
 
@@ -195,6 +228,9 @@ Variants {
 
             readonly property int animationDelay: index * 100
             readonly property int slideDistance: 300
+            readonly property real dragDismissThreshold: cardBackground.width * 0.35
+            readonly property real dragDismissVelocity: 900
+            readonly property real dragMaxOffset: cardBackground.width * 1.2
 
             Layout.preferredWidth: notifWidth + notifWindow.shadowPadding * 2
             Layout.preferredHeight: notificationContent.implicitHeight + Style.marginM * 2 + notifWindow.shadowPadding * 2
@@ -204,10 +240,14 @@ Variants {
             property real scaleValue: 0.8
             property real opacityValue: 0.0
             property real slideOffset: 0
+            property real dragOffsetX: 0
+            property bool isDragging: false
 
             scale: scaleValue
             opacity: opacityValue
+            activeFocusOnTab: true
             transform: Translate {
+              x: card.dragOffsetX
               y: card.slideOffset
             }
 
@@ -220,8 +260,11 @@ Variants {
               anchors.fill: parent
               anchors.margins: notifWindow.shadowPadding
               radius: Style.radiusL
-              border.color: Qt.alpha(Color.mOutline, Settings.data.notifications.backgroundOpacity || 1.0)
-              border.width: Style.borderS
+              border.color: {
+                const baseColor = card.activeFocus ? Color.mPrimary : Color.mOutline;
+                return Qt.alpha(baseColor, Settings.data.notifications.backgroundOpacity || 1.0);
+              }
+              border.width: card.activeFocus ? Style.borderM : Style.borderS
               color: Qt.alpha(Color.mSurface, Settings.data.notifications.backgroundOpacity || 1.0)
 
               // Progress bar
@@ -293,6 +336,42 @@ Variants {
               }
             }
 
+            DragHandler {
+              id: swipeHandler
+              target: null
+              xAxis.enabled: true
+              yAxis.enabled: false
+              onActiveChanged: {
+                if (card.isRemoving)
+                  return;
+
+                if (active) {
+                  card.isDragging = true;
+                  NotificationService.pauseTimeout(notificationId);
+                  notifWindow.selectedIndex = index;
+                  card.forceActiveFocus();
+                  return;
+                }
+
+                card.isDragging = false;
+                const absOffset = Math.abs(card.dragOffsetX);
+                const absVelocity = Math.abs(centroid.velocity.x);
+                if (absOffset >= card.dragDismissThreshold || absVelocity >= card.dragDismissVelocity) {
+                  const direction = card.dragOffsetX !== 0 ? (card.dragOffsetX > 0 ? 1 : -1) : (centroid.velocity.x >= 0 ? 1 : -1);
+                  card.animateOutSwipe(direction);
+                } else {
+                  card.dragOffsetX = 0;
+                  if (card.hoverCount === 0)
+                    NotificationService.resumeTimeout(notificationId);
+                }
+              }
+              onTranslationChanged: {
+                if (!active || card.isRemoving)
+                  return;
+                card.dragOffsetX = Math.max(-card.dragMaxOffset, Math.min(card.dragMaxOffset, translation.x));
+              }
+            }
+
             // Right-click to dismiss
             MouseArea {
               anchors.fill: cardBackground
@@ -300,6 +379,10 @@ Variants {
               hoverEnabled: true
               onEntered: card.hoverCount++
               onExited: card.hoverCount--
+              onPressed: {
+                notifWindow.selectedIndex = index;
+                card.forceActiveFocus();
+              }
               onClicked: {
                 if (mouse.button === Qt.RightButton) {
                   animateOut();
@@ -314,6 +397,8 @@ Variants {
               resumeTimer.stop();
               isRemoving = false;
               hoverCount = 0;
+              dragOffsetX = 0;
+              isDragging = false;
               if (Settings.data.general.animationDisabled) {
                 slideOffset = 0;
                 scaleValue = 1.0;
@@ -350,12 +435,39 @@ Variants {
                 return;
               animInDelayTimer.stop();
               resumeTimer.stop();
+              dragOffsetX = 0;
               isRemoving = true;
               if (!Settings.data.general.animationDisabled) {
                 slideOffset = slideOutOffset;
                 scaleValue = 0.8;
                 opacityValue = 0.0;
               }
+            }
+
+            function animateOutSwipe(direction) {
+              if (isRemoving)
+                return;
+              animInDelayTimer.stop();
+              resumeTimer.stop();
+              isRemoving = true;
+              slideOffset = 0;
+              if (!Settings.data.general.animationDisabled) {
+                dragOffsetX = (direction >= 0 ? 1 : -1) * dragMaxOffset;
+                scaleValue = 0.92;
+                opacityValue = 0.0;
+              }
+            }
+
+            function invokePrimaryAction() {
+              try {
+                const parsedActions = model.actionsJson ? JSON.parse(model.actionsJson) : [];
+                if (parsedActions.length > 0 && parsedActions[0].identifier) {
+                  NotificationService.invokeAction(notificationId, parsedActions[0].identifier);
+                  return true;
+                }
+              } catch (e) {
+              }
+              return false;
             }
 
             Timer {
@@ -398,6 +510,44 @@ Variants {
                 damping: 0.3
                 epsilon: 0.01
                 mass: 0.6
+              }
+            }
+
+            Behavior on dragOffsetX {
+              enabled: !Settings.data.general.animationDisabled && !card.isDragging
+              NumberAnimation {
+                duration: Style.animationFast
+                easing.type: Easing.OutCubic
+              }
+            }
+
+            Keys.onUpPressed: event => {
+              notifWindow.focusCardAt(index - 1);
+              event.accepted = true;
+            }
+
+            Keys.onDownPressed: event => {
+              notifWindow.focusCardAt(index + 1);
+              event.accepted = true;
+            }
+
+            Keys.onDeletePressed: event => {
+              NotificationService.removeFromHistory(model.id);
+              animateOut();
+              event.accepted = true;
+            }
+
+            Keys.onPressed: event => {
+              if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (!invokePrimaryAction()) {
+                  NotificationService.removeFromHistory(model.id);
+                  animateOut();
+                }
+                event.accepted = true;
+              } else if (event.key === Qt.Key_Escape) {
+                NotificationService.removeFromHistory(model.id);
+                animateOut();
+                event.accepted = true;
               }
             }
 
