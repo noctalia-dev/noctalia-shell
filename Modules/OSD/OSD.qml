@@ -60,6 +60,12 @@ Variants {
       return new Set([...iconKeys, ...aliasKeys]);
     }
 
+    readonly property string animationType: Style.osdAnimationType
+    readonly property bool useScale: Style.animHasScale(animationType)
+    readonly property bool useFade: Style.animHasFade(animationType)
+    readonly property bool useNone: animationType === "none"
+    readonly property real animationScaleValue: Style.animScaleValue(animationType, 0.85)
+
     function getIcon() {
       switch (currentOSDType) {
       case OSD.Type.Volume:
@@ -488,19 +494,21 @@ Variants {
         anchors.fill: parent
         visible: false
         opacity: 0
-        scale: 0.85
+        scale: root.useScale ? root.animationScaleValue : 1.0
 
         Behavior on opacity {
+          enabled: !root.useNone && root.useFade
           NumberAnimation {
             duration: Style.animationNormal
-            easing.type: Easing.InOutQuad
+            easing.type: Style.easingTypeSlow
           }
         }
 
         Behavior on scale {
+          enabled: !root.useNone && root.useScale
           NumberAnimation {
             duration: Style.animationNormal
-            easing.type: Easing.InOutQuad
+            easing.type: Style.easingTypeSlow
           }
         }
 
@@ -573,7 +581,7 @@ Variants {
               Behavior on color {
                 ColorAnimation {
                   duration: Style.animationNormal
-                  easing.type: Easing.InOutQuad
+                  easing.type: Style.easingTypeSlow
                 }
               }
             }
@@ -610,13 +618,13 @@ Variants {
                 Behavior on width {
                   NumberAnimation {
                     duration: Style.animationNormal
-                    easing.type: Easing.InOutQuad
+                    easing.type: Style.easingTypeSlow
                   }
                 }
                 Behavior on color {
                   ColorAnimation {
                     duration: Style.animationNormal
-                    easing.type: Easing.InOutQuad
+                    easing.type: Style.easingTypeSlow
                   }
                 }
               }
@@ -741,13 +749,13 @@ Variants {
                   Behavior on height {
                     NumberAnimation {
                       duration: Style.animationNormal
-                      easing.type: Easing.InOutQuad
+                      easing.type: Style.easingTypeSlow
                     }
                   }
                   Behavior on color {
                     ColorAnimation {
                       duration: Style.animationNormal
-                      easing.type: Easing.InOutQuad
+                      easing.type: Style.easingTypeSlow
                     }
                   }
                 }
@@ -765,7 +773,7 @@ Variants {
               Behavior on color {
                 ColorAnimation {
                   duration: Style.animationNormal
-                  easing.type: Easing.InOutQuad
+                  easing.type: Style.easingTypeSlow
                 }
               }
             }
@@ -777,7 +785,7 @@ Variants {
         // show.
         Timer {
           id: showDelayTimer
-          interval: 30
+          interval: root.useNone ? 0 : 30
           onTriggered: {
             osdItem.visible = true;
             osdItem.opacity = 1;
@@ -789,22 +797,36 @@ Variants {
         function show() {
           hideTimer.stop();
           visibilityTimer.stop();
-          showDelayTimer.start();
+          if (root.useNone) {
+            osdItem.visible = true;
+            osdItem.opacity = 1;
+            osdItem.scale = 1.0;
+            hideTimer.start();
+          } else {
+            showDelayTimer.start();
+          }
         }
 
         function hide() {
           hideTimer.stop();
           visibilityTimer.stop();
-          osdItem.opacity = 0;
-          osdItem.scale = 0.85;
-          visibilityTimer.start();
+          if (root.useNone) {
+            osdItem.visible = false;
+            root.currentOSDType = -1;
+            root.lastLockKeyChanged = "";
+            root.active = false;
+          } else {
+            osdItem.opacity = root.useFade ? 0 : 1;
+            osdItem.scale = root.useScale ? root.animationScaleValue : 1.0;
+            visibilityTimer.start();
+          }
         }
 
         function hideImmediately() {
           hideTimer.stop();
           visibilityTimer.stop();
           osdItem.opacity = 0;
-          osdItem.scale = 0.85;
+          osdItem.scale = root.useScale ? root.animationScaleValue : 1.0;
           osdItem.visible = false;
           root.currentOSDType = -1;
           root.active = false;

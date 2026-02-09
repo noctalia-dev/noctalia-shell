@@ -155,7 +155,7 @@ Item {
       running: root.state === NScrollText.ScrollState.Resetting
       to: 0
       duration: root.resettingDuration
-      easing.type: Easing.OutQuad
+      easing.type: Style.easingTypeFast
       onFinished: {
         root.state = NScrollText.ScrollState.None;
         root.updateState();

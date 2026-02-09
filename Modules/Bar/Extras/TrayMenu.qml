@@ -43,6 +43,12 @@ PopupWindow {
 
   readonly property int menuWidth: 220
 
+  readonly property string animationType: Style.menuAnimationType
+  readonly property bool useScale: Style.animHasScale(animationType)
+  readonly property bool useFade: Style.animHasFade(animationType)
+  readonly property bool useNone: animationType === "none"
+  readonly property real animationScaleValue: Style.animScaleValue(animationType)
+
   implicitWidth: menuWidth
 
   // Use the content height of the Flickable for implicit height
@@ -219,13 +225,23 @@ PopupWindow {
     border.width: Math.max(1, Style.borderS)
     radius: Style.radiusM
 
-    // Fade-in animation
-    opacity: root.visible ? 1.0 : 0.0
+    opacity: root.visible ? 1.0 : ((root.useNone || root.useFade) ? 0.0 : 1.0)
+    scale: (root.visible || !root.useScale) ? 1.0 : root.animationScaleValue
+    transformOrigin: Item.Top
 
     Behavior on opacity {
+      enabled: !root.useNone && root.useFade
       NumberAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.OutQuad
+        easing.type: Style.easingTypeFast
+      }
+    }
+
+    Behavior on scale {
+      enabled: !root.useNone && root.useScale
+      NumberAnimation {
+        duration: Style.animationNormal
+        easing.type: Style.easingTypeFast
       }
     }
   }
@@ -237,13 +253,23 @@ PopupWindow {
     contentHeight: columnLayout.implicitHeight
     interactive: true
 
-    // Fade-in animation
-    opacity: root.visible ? 1.0 : 0.0
+    opacity: root.visible ? 1.0 : ((root.useNone || root.useFade) ? 0.0 : 1.0)
+    scale: (root.visible || !root.useScale) ? 1.0 : root.animationScaleValue
+    transformOrigin: Item.Top
 
     Behavior on opacity {
+      enabled: !root.useNone && root.useFade
       NumberAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.OutQuad
+        easing.type: Style.easingTypeFast
+      }
+    }
+
+    Behavior on scale {
+      enabled: !root.useNone && root.useScale
+      NumberAnimation {
+        duration: Style.animationNormal
+        easing.type: Style.easingTypeFast
       }
     }
 

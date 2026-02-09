@@ -30,6 +30,11 @@ ColumnLayout {
       tabIndex: 2
       checked: subTabBar.currentIndex === 2
     }
+    NTabButton {
+      text: I18n.tr("common.animations")
+      tabIndex: 3
+      checked: subTabBar.currentIndex === 3
+    }
   }
 
   Item {
@@ -44,5 +49,6 @@ ColumnLayout {
     AppearanceSubTab {}
     PanelsSubTab {}
     ScreenCornersSubTab {}
+    AnimationSubTab {}
   }
 }

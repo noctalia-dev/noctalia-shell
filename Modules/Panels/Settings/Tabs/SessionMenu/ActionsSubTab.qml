@@ -252,7 +252,7 @@ ColumnLayout {
           enabled: !delegateItem.dragging
           NumberAnimation {
             duration: Style.animationNormal
-            easing.type: Easing.OutQuad
+            easing.type: Style.easingTypeFast
           }
         }
       }

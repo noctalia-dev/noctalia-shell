@@ -87,12 +87,6 @@ Popup {
       background: Rectangle {
         color: menuItem.hovered && menuItem.enabled ? Color.mHover : "transparent"
         radius: Style.iRadiusS
-
-        Behavior on color {
-          ColorAnimation {
-            duration: Style.animationFast
-          }
-        }
       }
 
       contentItem: RowLayout {
@@ -105,12 +99,6 @@ Popup {
           pointSize: Style.fontSizeM
           color: menuItem.hovered && menuItem.enabled ? Color.mOnHover : Color.mOnSurface
           Layout.leftMargin: root.itemPadding
-
-          Behavior on color {
-            ColorAnimation {
-              duration: Style.animationFast
-            }
-          }
         }
 
         NText {
@@ -120,12 +108,6 @@ Popup {
           verticalAlignment: Text.AlignVCenter
           Layout.fillWidth: true
           Layout.leftMargin: modelData.icon === undefined ? root.itemPadding : 0
-
-          Behavior on color {
-            ColorAnimation {
-              duration: Style.animationFast
-            }
-          }
         }
       }
 

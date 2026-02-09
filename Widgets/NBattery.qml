@@ -83,7 +83,7 @@ Item {
     enabled: !Settings.data.general.animationDisabled
     NumberAnimation {
       duration: Style.animationNormal
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
     }
   }
 
@@ -165,7 +165,7 @@ Item {
       enabled: !Settings.data.general.animationDisabled
       NumberAnimation {
         duration: Style.animationFast
-        easing.type: Easing.InOutQuad
+        easing.type: Style.easingTypeFast
       }
     }
   }
@@ -185,7 +185,7 @@ Item {
       enabled: !Settings.data.general.animationDisabled
       NumberAnimation {
         duration: Style.animationFast
-        easing.type: Easing.InOutQuad
+        easing.type: Style.easingTypeFast
       }
     }
   }

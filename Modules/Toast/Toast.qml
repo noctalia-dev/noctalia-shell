@@ -19,6 +19,20 @@ Item {
 
   signal hidden
 
+  readonly property string animationType: Style.toastAnimationType
+  readonly property bool useSlide: Style.animHasSlide(animationType)
+  readonly property bool useScale: Style.animHasScale(animationType)
+  readonly property bool useFade: Style.animHasFade(animationType)
+  readonly property bool useNone: animationType === "none"
+  readonly property real animationScaleValue: Style.animScaleValue(animationType, initialScale)
+
+  readonly property string location: Settings.data.notifications?.location || "top_right"
+  readonly property bool isTop: location.startsWith("top") || location === "top"
+  readonly property int slideDistance: 100
+  readonly property int slideOffset: isTop ? -slideDistance : slideDistance
+
+  property real yOffset: useSlide ? slideOffset : 0
+
   readonly property int notificationWidth: Math.round(440 * Style.uiScaleRatio)
   readonly property int shadowPadding: Style.shadowBlurMax + Style.marginL
 
@@ -26,7 +40,8 @@ Item {
   height: Math.round(contentLayout.implicitHeight + Style.marginXL * 2 + shadowPadding * 2)
   visible: true
   opacity: 0
-  scale: initialScale
+  scale: useScale ? animationScaleValue : 1.0
+  transform: Translate { y: root.yOffset }
 
   property real progress: 1.0
   property int hoverCount: 0
@@ -135,16 +150,26 @@ Item {
   // Timer: hideTimer removed, using progressAnimation
 
   Behavior on opacity {
+    enabled: !root.useNone && root.useFade
     NumberAnimation {
       duration: Style.animationNormal
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
     }
   }
 
   Behavior on scale {
+    enabled: !root.useNone && root.useScale
     NumberAnimation {
       duration: Style.animationNormal
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
+    }
+  }
+
+  Behavior on yOffset {
+    enabled: !root.useNone && root.useSlide
+    NumberAnimation {
+      duration: Style.animationNormal
+      easing.type: Style.easingTypeDefault
     }
   }
 
@@ -278,6 +303,7 @@ Item {
     visible = true;
     opacity = 1.0;
     scale = 1.0;
+    yOffset = 0;
     progress = 1.0;
     hoverCount = 0;
 
@@ -290,16 +316,23 @@ Item {
 
   function hide() {
     progressAnimation.stop();
-    opacity = 0;
-    scale = initialScale;
-    hideAnimation.restart();
+    if (useNone) {
+      visible = false;
+      root.hidden();
+    } else {
+      opacity = useFade ? 0 : 1;
+      scale = useScale ? animationScaleValue : 1.0;
+      yOffset = useSlide ? slideOffset : 0;
+      hideAnimation.restart();
+    }
   }
 
   function hideImmediately() {
     hideAnimation.stop();
     progressAnimation.stop();
     opacity = 0;
-    scale = initialScale;
+    scale = useScale ? animationScaleValue : 1.0;
+    yOffset = useSlide ? slideOffset : 0;
     root.hidden();
   }
 }

@@ -145,7 +145,7 @@ Item {
           return 1;
         }
         Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+          NumberAnimation { duration: Style.animationFast; easing.type: Style.easingTypeFast }
         }
         gradient: Gradient {
           GradientStop { position: 0.0; color: root.gradientColor }
@@ -171,7 +171,7 @@ Item {
           return 1;
         }
         Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Easing.InOutQuad }
+          NumberAnimation { duration: Style.animationFast; easing.type: Style.easingTypeFast }
         }
         gradient: Gradient {
           GradientStop { position: 0.0; color: "transparent" }

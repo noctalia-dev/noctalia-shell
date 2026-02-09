@@ -116,7 +116,7 @@ SmartPanel {
       Behavior on y {
         NumberAnimation {
           duration: Style.animationFast
-          easing.type: Easing.OutCubic
+          easing.type: Style.easingTypeDefault
         }
       }
 

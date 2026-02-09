@@ -118,7 +118,7 @@ ShapePath {
     enabled: bar && bar.autoHide
     NumberAnimation {
       duration: Style.animationFast
-      easing.type: Easing.OutQuad
+      easing.type: Style.easingTypeFast
     }
   }
 

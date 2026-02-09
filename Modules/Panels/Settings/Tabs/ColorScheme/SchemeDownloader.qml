@@ -863,14 +863,14 @@ Popup {
             Behavior on color {
               ColorAnimation {
                 duration: Style.animationFast
-                easing.type: Easing.InOutCubic
+                easing.type: Style.easingTypeSlow
               }
             }
 
             Behavior on border.color {
               ColorAnimation {
                 duration: Style.animationFast
-                easing.type: Easing.InOutCubic
+                easing.type: Style.easingTypeSlow
               }
             }
 
@@ -915,7 +915,7 @@ Popup {
                   Behavior on color {
                     ColorAnimation {
                       duration: Style.animationFast
-                      easing.type: Easing.InOutCubic
+                      easing.type: Style.easingTypeSlow
                     }
                   }
                 }

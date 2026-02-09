@@ -89,7 +89,7 @@ PanelWindow {
     enabled: !PanelService.closedImmediately
     ColorAnimation {
       duration: isPanelClosing ? Style.animationFaster : Style.animationNormal
-      easing.type: Easing.OutQuad
+      easing.type: Style.easingTypeFast
     }
   }
 

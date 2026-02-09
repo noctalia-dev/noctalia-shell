@@ -74,9 +74,17 @@ Item {
   property bool cachedAnimateFromRight: false
   property bool cachedShouldAnimateWidth: false
   property bool cachedShouldAnimateHeight: false
+  property bool cachedUseScale: false
 
   // Close with escape key
   property bool closeWithEscape: true
+
+  readonly property string animationType: Style.panelAnimationType
+  readonly property bool useSlide: Style.animHasSlide(animationType)
+  readonly property bool useScale: Style.animHasScale(animationType)
+  readonly property bool useFade: Style.animHasFade(animationType)
+  readonly property bool useNone: animationType === "none"
+  readonly property real animationScale: Style.animScaleValue(animationType)
 
   property bool exclusiveKeyboard: true
 
@@ -654,30 +662,31 @@ Item {
     }
   }
 
-  // Opacity animation
-  // Opening: fade in after size animation reaches 75%
-  // Closing: fade out immediately
   opacity: {
+    if (useNone)
+      return isPanelVisible && !isClosing ? 1.0 : 0.0;
     if (isClosing)
-      return 0.0; // Fade out when closing
+      return 0.0;
     if (isPanelVisible && sizeAnimationComplete)
-      return 1.0; // Fade in when opening
+      return 1.0;
+    if (isPanelVisible && !useFade && !useSlide)
+      return 1.0;
     return 0.0;
   }
 
   Behavior on opacity {
-    enabled: !PanelService.closedImmediately
+    enabled: !PanelService.closedImmediately && !root.useNone
     NumberAnimation {
       id: opacityAnimation
-      duration: root.isClosing ? Style.animationFaster : Style.animationFast
-      easing.type: Easing.OutQuad
+      duration: (root.useFade && !root.isClosing) ? Style.animationFast : Style.animationFaster
+      easing.type: Style.easingTypeFast
 
       onRunningChanged: {
         // Safety: If animation didn't run (zero duration), handle immediately
         if (!running && duration === 0) {
           if (root.isClosing && root.opacity === 0.0) {
             root.opacityFadeComplete = true;
-            var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
+            var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight && !root.useScale;
             if (shouldFinalizeNow) {
               // Logger.d("SmartPanel", "Zero-duration opacity + no size animation - finalizing", root.objectName);
               Qt.callLater(root.finalizeClose);
@@ -690,12 +699,11 @@ Item {
           return;
         }
 
-        // When opacity fade completes during close, trigger size animation
+        // When opacity fade completes during close, trigger size/scale animation
         if (!running && root.isClosing && root.opacity === 0.0) {
           root.opacityFadeComplete = true;
-          // If no size animation will run (centered attached panels only), finalize immediately
-          // Detached panels (allowAttach === false) should always animate from top
-          var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight;
+          // If no size/scale animation will run, finalize immediately
+          var shouldFinalizeNow = panelContent.geometryPlaceholder && !panelContent.geometryPlaceholder.shouldAnimateWidth && !panelContent.geometryPlaceholder.shouldAnimateHeight && !root.useScale;
           if (shouldFinalizeNow) {
             //Logger.d("SmartPanel", "No animation - finalizing immediately", root.objectName);
             Qt.callLater(root.finalizeClose);
@@ -712,9 +720,10 @@ Item {
   }
 
   // Timer to trigger opacity fade at 50% of size animation
+  // For non-fade animations, triggers immediately
   Timer {
     id: opacityTrigger
-    interval: Style.animationNormal * 0.5
+    interval: root.useFade ? Style.animationNormal * 0.5 : 0
     repeat: false
     onTriggered: {
       if (root.isPanelVisible) {
@@ -1006,12 +1015,45 @@ Item {
         return false;
       }
 
-      // Determine animation axis based on which edge is closest
-      // Priority: horizontal edges (top/bottom) take precedence over vertical edges (left/right)
-      // This prevents diagonal animations when panel is attached to a corner
-      // Use reactive values here - they're evaluated BEFORE isPanelVisible becomes true
-      readonly property bool shouldAnimateWidth: !shouldAnimateHeight && (animateFromLeft || animateFromRight)
-      readonly property bool shouldAnimateHeight: animateFromTop || animateFromBottom
+      // Horizontal edges take priority over vertical to prevent diagonal animations
+      readonly property bool shouldAnimateWidth: root.useSlide && !shouldAnimateHeight && (animateFromLeft || animateFromRight)
+      readonly property bool shouldAnimateHeight: root.useSlide && (animateFromTop || animateFromBottom)
+
+      readonly property real currentScale: {
+        if (root.useNone) return 1.0
+        if (!root.useScale) return 1.0
+        if (isClosing && opacityFadeComplete) return root.animationScale
+        if (isClosing || isPanelVisible) return 1.0
+        return root.animationScale
+      }
+
+      scale: currentScale
+      transformOrigin: {
+        if (animateFromTop) return Item.Top
+        if (animateFromBottom) return Item.Bottom
+        if (animateFromLeft) return Item.Left
+        if (animateFromRight) return Item.Right
+        return Item.Center
+      }
+
+      Behavior on scale {
+        enabled: !PanelService.closedImmediately && root.useScale
+        NumberAnimation {
+          id: scaleAnimation
+          duration: root.isClosing ? Style.animationFast : Style.animationNormal
+          easing.type: Style.easingTypeFast
+
+          onRunningChanged: {
+            // When scale shrink completes during close, finalize if no slide animation
+            if (!running && root.isClosing && panelBackground.scale === root.animationScale) {
+              // Only finalize if no slide animation is running
+              if (!panelBackground.shouldAnimateWidth && !panelBackground.shouldAnimateHeight) {
+                Qt.callLater(root.finalizeClose);
+              }
+            }
+          }
+        }
+      }
 
       // Current animated width/height (referenced by x/y for right/bottom positioning)
       readonly property real currentWidth: {
@@ -1295,6 +1337,7 @@ Item {
           root.cachedAnimateFromRight = panelBackground.animateFromRight;
           root.cachedShouldAnimateWidth = panelBackground.shouldAnimateWidth;
           root.cachedShouldAnimateHeight = panelBackground.shouldAnimateHeight;
+          root.cachedUseScale = root.useScale;
 
           // Make panel visible, now only the intended dimension will animate
           root.isPanelVisible = true;

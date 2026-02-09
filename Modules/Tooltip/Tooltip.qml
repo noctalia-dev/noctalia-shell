@@ -92,7 +92,7 @@ PopupWindow {
       from: 0.0
       to: 1.0
       duration: root.animationDuration
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
     }
 
     PropertyAnimation {

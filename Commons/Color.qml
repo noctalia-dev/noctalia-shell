@@ -59,97 +59,97 @@ Singleton {
   Behavior on mPrimary {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mOnPrimary {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mSecondary {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mOnSecondary {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mTertiary {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mOnTertiary {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mError {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mOnError {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mSurface {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mOnSurface {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mSurfaceVariant {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mOnSurfaceVariant {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mOutline {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mShadow {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mHover {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on mOnHover {
     ColorAnimation {
       duration: Style.animationSlowest
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
 

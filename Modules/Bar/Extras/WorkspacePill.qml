@@ -156,7 +156,7 @@ Item {
             enabled: !Color.isTransitioning
             ColorAnimation {
               duration: Style.animationFast
-              easing.type: Easing.InOutQuad
+              easing.type: Style.easingTypeSlow
             }
           }
         }
@@ -174,13 +174,13 @@ Item {
       enabled: !Color.isTransitioning
       ColorAnimation {
         duration: Style.animationFast
-        easing.type: Easing.InOutQuad
+        easing.type: Style.easingTypeSlow
       }
     }
     Behavior on opacity {
       NumberAnimation {
         duration: Style.animationFast
-        easing.type: Easing.InOutCubic
+        easing.type: Style.easingTypeSlow
       }
     }
     Behavior on radius {

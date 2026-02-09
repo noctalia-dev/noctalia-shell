@@ -76,6 +76,30 @@ Singleton {
   readonly property int animationSlow: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(450 / Settings.data.general.animationSpeed)
   readonly property int animationSlowest: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(750 / Settings.data.general.animationSpeed)
 
+  readonly property bool animationsDisabled: Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode
+
+  readonly property string panelAnimationType: animationsDisabled ? "none" : (Settings.data.general.panelAnimationType ?? "slideFade")
+  readonly property string notificationAnimationType: animationsDisabled ? "none" : (Settings.data.general.notificationAnimationType ?? "slideFade")
+  readonly property string osdAnimationType: animationsDisabled ? "none" : (Settings.data.general.osdAnimationType ?? "scale")
+  readonly property string toastAnimationType: animationsDisabled ? "none" : (Settings.data.general.toastAnimationType ?? "slide")
+  readonly property string menuAnimationType: animationsDisabled ? "none" : (Settings.data.general.menuAnimationType ?? "fade")
+
+  readonly property int easingTypeDefault: animationsDisabled ? Easing.Linear : Easing.OutCubic
+  readonly property int easingTypeFast: animationsDisabled ? Easing.Linear : Easing.OutQuad
+  readonly property int easingTypeSlow: animationsDisabled ? Easing.Linear : Easing.InOutQuad
+
+  function animHasSlide(type) { return type === "slide" || type === "slideScale" || type === "slideFade" }
+  function animHasScale(type) { return type === "scale" || type === "popin" || type === "slideScale" }
+  function animHasFade(type) { return type === "fade" || type === "popin" || type === "slideFade" }
+  function animScaleValue(type, fallback) {
+    switch (type) {
+    case "scale": return 0.9
+    case "popin": return 0.5
+    case "slideScale": return 0.95
+    default: return fallback !== undefined ? fallback : 1.0
+    }
+  }
+
   // Delays
   readonly property int tooltipDelay: 300
   readonly property int tooltipDelayLong: 1200

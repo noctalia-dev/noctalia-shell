@@ -587,7 +587,7 @@ Item {
   Behavior on opacity {
     NumberAnimation {
       duration: Style.animationNormal
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
     }
   }
 
@@ -732,13 +732,13 @@ Item {
               Behavior on x {
                 NumberAnimation {
                   duration: Style.animationFast
-                  easing.type: Easing.OutQuad
+                  easing.type: Style.easingTypeFast
                 }
               }
               Behavior on y {
                 NumberAnimation {
                   duration: Style.animationFast
-                  easing.type: Easing.OutQuad
+                  easing.type: Style.easingTypeFast
                 }
               }
             }
@@ -793,7 +793,7 @@ Item {
               Behavior on color {
                 ColorAnimation {
                   duration: Style.animationFast
-                  easing.type: Easing.InOutQuad
+                  easing.type: Style.easingTypeSlow
                 }
               }
             }
@@ -846,7 +846,7 @@ Item {
                     Behavior on color {
                       ColorAnimation {
                         duration: Style.animationFast
-                        easing.type: Easing.OutCubic
+                        easing.type: Style.easingTypeDefault
                       }
                     }
                   }

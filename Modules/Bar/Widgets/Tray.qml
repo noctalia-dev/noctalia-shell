@@ -447,7 +447,7 @@ Item {
           Behavior on color {
             ColorAnimation {
               duration: Style.animationFast
-              easing.type: Easing.OutCubic
+              easing.type: Style.easingTypeDefault
             }
           }
         }

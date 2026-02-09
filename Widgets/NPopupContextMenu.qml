@@ -30,6 +30,12 @@ PopupWindow {
   readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
   readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
 
+  readonly property string animationType: Style.menuAnimationType
+  readonly property bool useScale: Style.animHasScale(animationType)
+  readonly property bool useFade: Style.animHasFade(animationType)
+  readonly property bool useNone: animationType === "none"
+  readonly property real animationScaleValue: Style.animScaleValue(animationType)
+
   signal triggered(string action, var item)
 
   implicitWidth: calculatedWidth
@@ -212,12 +218,24 @@ PopupWindow {
     border.color: Color.mOutline
     border.width: Style.borderS
     radius: Style.radiusM
-    opacity: root.visible ? 1.0 : 0.0
+
+    opacity: root.visible ? 1.0 : ((root.useNone || root.useFade) ? 0.0 : 1.0)
+    scale: (root.visible || !root.useScale) ? 1.0 : root.animationScaleValue
+    transformOrigin: Item.Top
 
     Behavior on opacity {
+      enabled: !root.useNone && root.useFade
       NumberAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.OutQuad
+        easing.type: Style.easingTypeDefault
+      }
+    }
+
+    Behavior on scale {
+      enabled: !root.useNone && root.useScale
+      NumberAnimation {
+        duration: Style.animationNormal
+        easing.type: Style.easingTypeDefault
       }
     }
   }
@@ -228,12 +246,24 @@ PopupWindow {
     anchors.margins: Style.marginS
     contentHeight: columnLayout.implicitHeight
     interactive: true
-    opacity: root.visible ? 1.0 : 0.0
+
+    opacity: root.visible ? 1.0 : ((root.useNone || root.useFade) ? 0.0 : 1.0)
+    scale: (root.visible || !root.useScale) ? 1.0 : root.animationScaleValue
+    transformOrigin: Item.Top
 
     Behavior on opacity {
+      enabled: !root.useNone && root.useFade
       NumberAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.OutQuad
+        easing.type: Style.easingTypeDefault
+      }
+    }
+
+    Behavior on scale {
+      enabled: !root.useNone && root.useScale
+      NumberAnimation {
+        duration: Style.animationNormal
+        easing.type: Style.easingTypeDefault
       }
     }
 
@@ -262,12 +292,6 @@ PopupWindow {
             radius: Style.radiusS
             opacity: modelData.enabled !== false ? 1.0 : 0.5
 
-            Behavior on color {
-              ColorAnimation {
-                duration: Style.animationFast
-              }
-            }
-
             RowLayout {
               anchors.fill: parent
               anchors.leftMargin: Style.marginM
@@ -281,12 +305,6 @@ PopupWindow {
                 applyUiScale: false
                 color: mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
                 verticalAlignment: Text.AlignVCenter
-
-                Behavior on color {
-                  ColorAnimation {
-                    duration: Style.animationFast
-                  }
-                }
               }
 
               NText {
@@ -295,12 +313,6 @@ PopupWindow {
                 color: mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
                 verticalAlignment: Text.AlignVCenter
                 Layout.fillWidth: true
-
-                Behavior on color {
-                  ColorAnimation {
-                    duration: Style.animationFast
-                  }
-                }
               }
             }
 

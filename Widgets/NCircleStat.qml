@@ -40,7 +40,7 @@ Item {
     enabled: !Settings.data.general.animationDisabled
     NumberAnimation {
       duration: Style.animationNormal
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
     }
   }
 

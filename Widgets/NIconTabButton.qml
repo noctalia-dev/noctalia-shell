@@ -31,7 +31,7 @@ Rectangle {
   Behavior on color {
     ColorAnimation {
       duration: Style.animationFast
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
     }
   }
 
@@ -45,7 +45,7 @@ Rectangle {
     Behavior on color {
       ColorAnimation {
         duration: Style.animationFast
-        easing.type: Easing.OutCubic
+        easing.type: Style.easingTypeDefault
       }
     }
   }

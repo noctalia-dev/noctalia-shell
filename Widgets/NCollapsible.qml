@@ -23,7 +23,7 @@ ColumnLayout {
   Rectangle {
     id: headerContainer
     Layout.fillWidth: true
-    Layout.preferredHeight: headerContent.implicitHeight + (Style.marginXL)
+    Layout.preferredHeight: headerContent.implicitHeight + Style.marginXL
     color: root.expanded ? Color.mSecondary : Color.mPrimary
     radius: Style.iRadiusM
     border.color: root.expanded ? Color.mOnSecondary : Color.mOutline
@@ -34,7 +34,7 @@ ColumnLayout {
       enabled: root._userInteracted
       ColorAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.OutCubic
+        easing.type: Style.easingTypeDefault
       }
     }
 
@@ -42,7 +42,7 @@ ColumnLayout {
       enabled: root._userInteracted
       ColorAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.OutCubic
+        easing.type: Style.easingTypeDefault
       }
     }
 
@@ -92,7 +92,7 @@ ColumnLayout {
           enabled: root._userInteracted
           NumberAnimation {
             duration: Style.animationNormal
-            easing.type: Easing.OutCubic
+            easing.type: Style.easingTypeDefault
           }
         }
 
@@ -151,29 +151,33 @@ ColumnLayout {
     id: contentContainer
     Layout.fillWidth: true
     Layout.topMargin: Style.marginS
+    clip: true
 
-    visible: root.expanded
+    // Stay visible during animation, hide only when fully collapsed
+    visible: Layout.preferredHeight > 0
     color: Color.mSurface
     radius: Style.iRadiusL
     border.color: Color.mOutline
     border.width: Style.borderS
 
     // Dynamic height based on content
-    Layout.preferredHeight: expanded ? contentLayout.implicitHeight + (Style.marginL * 2) : 0
+    Layout.preferredHeight: root.expanded ? contentLayout.implicitHeight + (Style.marginL * 2) : 0
 
     // Smooth height animation
     Behavior on Layout.preferredHeight {
       enabled: root._userInteracted
       NumberAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.OutCubic
+        easing.type: Style.easingTypeDefault
       }
     }
 
     // Content layout
     ColumnLayout {
       id: contentLayout
-      anchors.fill: parent
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
       anchors.margins: Style.marginL
       spacing: root.contentSpacing
     }
@@ -184,7 +188,7 @@ ColumnLayout {
       enabled: root._userInteracted
       NumberAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.OutCubic
+        easing.type: Style.easingTypeDefault
       }
     }
   }

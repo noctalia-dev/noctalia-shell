@@ -146,19 +146,19 @@ Item {
   Behavior on opacity {
     NumberAnimation {
       duration: Style.animationNormal
-      easing.type: Easing.InOutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on implicitWidth {
     NumberAnimation {
       duration: Style.animationNormal
-      easing.type: Easing.InOutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
   Behavior on implicitHeight {
     NumberAnimation {
       duration: Style.animationNormal
-      easing.type: Easing.InOutCubic
+      easing.type: Style.easingTypeSlow
     }
   }
 
@@ -248,13 +248,13 @@ Item {
     Behavior on width {
       NumberAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.InOutCubic
+        easing.type: Style.easingTypeSlow
       }
     }
     Behavior on height {
       NumberAnimation {
         duration: Style.animationNormal
-        easing.type: Easing.InOutCubic
+        easing.type: Style.easingTypeSlow
       }
     }
 

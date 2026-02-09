@@ -738,7 +738,7 @@ Item {
         Behavior on Layout.preferredWidth {
           NumberAnimation {
             duration: Style.animationFast
-            easing.type: Easing.InOutQuad
+            easing.type: Style.easingTypeSlow
           }
         }
 
@@ -761,14 +761,6 @@ Item {
               anchors.left: parent.left
               radius: Style.radiusS
               color: toggleMouseArea.containsMouse ? Color.mHover : "transparent"
-
-              Behavior on color {
-                enabled: !Color.isTransitioning
-                ColorAnimation {
-                  duration: Style.animationFast
-                  easing.type: Easing.InOutQuad
-                }
-              }
 
               RowLayout {
                 id: toggleRow
@@ -823,7 +815,7 @@ Item {
               Behavior on opacity {
                 NumberAnimation {
                   duration: Style.animationFast
-                  easing.type: Easing.InOutQuad
+                  easing.type: Style.easingTypeSlow
                 }
               }
 
@@ -847,7 +839,7 @@ Item {
               Behavior on opacity {
                 NumberAnimation {
                   duration: Style.animationFast
-                  easing.type: Easing.InOutQuad
+                  easing.type: Style.easingTypeSlow
                 }
               }
 
@@ -858,14 +850,6 @@ Item {
                 anchors.left: parent.left
                 radius: Style.radiusS
                 color: searchCollapsedMouseArea.containsMouse ? Color.mHover : "transparent"
-
-                Behavior on color {
-                  enabled: !Color.isTransitioning
-                  ColorAnimation {
-                    duration: Style.animationFast
-                    easing.type: Easing.InOutQuad
-                  }
-                }
 
                 RowLayout {
                   id: searchCollapsedRow
@@ -946,14 +930,6 @@ Item {
                 readonly property bool effectiveHover: !root.ignoreMouseHover && resultMouseArea.containsMouse
                 color: (effectiveHover || selected) ? Color.mHover : "transparent"
 
-                Behavior on color {
-                  enabled: !Color.isTransitioning
-                  ColorAnimation {
-                    duration: Style.animationFast
-                    easing.type: Easing.InOutQuad
-                  }
-                }
-
                 ColumnLayout {
                   id: resultColumn
                   anchors.fill: parent
@@ -1029,22 +1005,6 @@ Item {
                 property bool hovering: false
                 property color tabTextColor: selected ? Color.mOnPrimary : (tabItem.hovering ? Color.mOnHover : Color.mOnSurface)
 
-                Behavior on color {
-                  enabled: !Color.isTransitioning
-                  ColorAnimation {
-                    duration: Style.animationFast
-                    easing.type: Easing.InOutQuad
-                  }
-                }
-
-                Behavior on tabTextColor {
-                  enabled: !Color.isTransitioning
-                  ColorAnimation {
-                    duration: Style.animationFast
-                    easing.type: Easing.InOutQuad
-                  }
-                }
-
                 RowLayout {
                   id: tabEntryRow
                   anchors.fill: parent
@@ -1072,7 +1032,7 @@ Item {
                     Behavior on opacity {
                       NumberAnimation {
                         duration: Style.animationFast
-                        easing.type: Easing.InOutQuad
+                        easing.type: Style.easingTypeSlow
                       }
                     }
                   }
@@ -1199,7 +1159,7 @@ Item {
                   from: 0
                   to: 1
                   duration: Style.animationSlowest
-                  easing.type: Easing.OutCubic
+                  easing.type: Style.easingTypeDefault
                   running: false
                 }
 
@@ -1272,7 +1232,7 @@ Item {
                   property: "opacity"
                   to: 1.0
                   duration: Style.animationSlow
-                  easing.type: Easing.OutQuad
+                  easing.type: Style.easingTypeFast
                 }
 
                 PauseAnimation {
@@ -1284,7 +1244,7 @@ Item {
                   property: "opacity"
                   to: 0
                   duration: Style.animationSlowest
-                  easing.type: Easing.InQuad
+                  easing.type: Style.easingTypeFast
                 }
               }
             }

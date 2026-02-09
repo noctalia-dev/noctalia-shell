@@ -282,11 +282,6 @@ RowLayout {
                   verticalAlignment: Text.AlignVCenter
                   elide: Text.ElideRight
                   Layout.fillWidth: true
-                  Behavior on color {
-                    ColorAnimation {
-                      duration: Style.animationFast
-                    }
-                  }
                 }
 
                 RowLayout {
@@ -342,11 +337,6 @@ RowLayout {
                 anchors.fill: parent
                 color: highlighted ? Color.mHover : "transparent"
                 radius: Style.iRadiusS
-                Behavior on color {
-                  ColorAnimation {
-                    duration: Style.animationFast
-                  }
-                }
               }
             }
           }

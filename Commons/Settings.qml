@@ -268,6 +268,14 @@ Singleton {
       property real screenRadiusRatio: 1.0
       property real animationSpeed: 1.0
       property bool animationDisabled: false
+      property string panelAnimationType: "slideFade"
+      property string notificationAnimationType: "slideFade"
+      property string osdAnimationType: "scale"
+      property string toastAnimationType: "slide"
+      property string menuAnimationType: "fade"
+      property string easingType: "OutCubic"
+      property string easingTypeFast: "OutQuad"
+      property string easingTypeSlow: "InOutQuad"
       property bool compactLockScreen: false
       property bool lockScreenAnimations: false
       property bool lockOnSuspend: true

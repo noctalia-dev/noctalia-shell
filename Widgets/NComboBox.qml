@@ -272,12 +272,6 @@ RowLayout {
           radius: Style.iRadiusS
           color: isHighlighted ? Color.mHover : "transparent"
 
-          Behavior on color {
-            ColorAnimation {
-              duration: Style.animationFast
-            }
-          }
-
           NText {
             id: delegateText
             anchors.fill: parent
@@ -290,12 +284,6 @@ RowLayout {
             text: {
               var item = root.getItem(delegateRect.index);
               return item && item.name ? item.name : "";
-            }
-
-            Behavior on color {
-              ColorAnimation {
-                duration: Style.animationFast
-              }
             }
           }
 

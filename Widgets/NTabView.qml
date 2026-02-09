@@ -145,7 +145,7 @@ Item {
     id: fromXAnim
     property: "x"
     duration: root.transitionTime
-    easing.type: Easing.OutCubic
+    easing.type: Style.easingTypeDefault
     onFinished: {
       if (target && target !== contentItems[currentIndex]) {
         target.visible = false;
@@ -160,7 +160,7 @@ Item {
     property: "opacity"
     to: 0.25
     duration: root.transitionTime
-    easing.type: Easing.OutCubic
+    easing.type: Style.easingTypeDefault
   }
 
   NumberAnimation {
@@ -168,7 +168,7 @@ Item {
     property: "x"
     to: 0
     duration: root.transitionTime
-    easing.type: Easing.OutCubic
+    easing.type: Style.easingTypeDefault
   }
 
   NumberAnimation {
@@ -176,6 +176,6 @@ Item {
     property: "opacity"
     to: 1.0
     duration: root.transitionTime
-    easing.type: Easing.OutCubic
+    easing.type: Style.easingTypeDefault
   }
 }

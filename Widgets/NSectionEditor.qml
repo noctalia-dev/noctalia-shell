@@ -561,25 +561,25 @@ NBox {
           NumberAnimation {
             to: 1
             duration: 400
-            easing.type: Easing.InOutQuad
+            easing.type: Style.easingTypeSlow
           }
           NumberAnimation {
             to: 0.6
             duration: 400
-            easing.type: Easing.InOutQuad
+            easing.type: Style.easingTypeSlow
           }
         }
 
         Behavior on x {
           NumberAnimation {
             duration: 100
-            easing.type: Easing.OutCubic
+            easing.type: Style.easingTypeDefault
           }
         }
         Behavior on y {
           NumberAnimation {
             duration: 100
-            easing.type: Easing.OutCubic
+            easing.type: Style.easingTypeDefault
           }
         }
       }

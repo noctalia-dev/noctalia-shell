@@ -24,7 +24,7 @@ ColumnLayout {
     from: 0
     to: 1
     duration: Style.animationSlowest
-    easing.type: Easing.OutCubic
+    easing.type: Style.easingTypeDefault
     running: false
   }
 

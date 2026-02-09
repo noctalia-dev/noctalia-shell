@@ -826,7 +826,7 @@ Item {
             enabled: !Color.isTransitioning
             ColorAnimation {
               duration: Style.animationFast
-              easing.type: Easing.InOutCubic
+              easing.type: Style.easingTypeSlow
             }
           }
         }
@@ -885,7 +885,7 @@ Item {
           Behavior on opacity {
             NumberAnimation {
               duration: Style.animationFast
-              easing.type: Easing.InOutCubic
+              easing.type: Style.easingTypeSlow
             }
           }
         }
@@ -893,7 +893,7 @@ Item {
         Behavior on opacity {
           NumberAnimation {
             duration: Style.animationFast
-            easing.type: Easing.InOutCubic
+            easing.type: Style.easingTypeSlow
           }
         }
       }

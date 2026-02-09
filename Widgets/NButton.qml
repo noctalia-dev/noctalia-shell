@@ -73,7 +73,7 @@ Rectangle {
     enabled: !Color.isTransitioning
     ColorAnimation {
       duration: Style.animationFast
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
     }
   }
 
@@ -81,7 +81,7 @@ Rectangle {
     enabled: !Color.isTransitioning
     ColorAnimation {
       duration: Style.animationFast
-      easing.type: Easing.OutCubic
+      easing.type: Style.easingTypeDefault
     }
   }
 
@@ -106,7 +106,7 @@ Rectangle {
         enabled: !Color.isTransitioning
         ColorAnimation {
           duration: Style.animationFast
-          easing.type: Easing.OutCubic
+          easing.type: Style.easingTypeDefault
         }
       }
     }
@@ -124,7 +124,7 @@ Rectangle {
         enabled: !Color.isTransitioning
         ColorAnimation {
           duration: Style.animationFast
-          easing.type: Easing.OutCubic
+          easing.type: Style.easingTypeDefault
         }
       }
     }
