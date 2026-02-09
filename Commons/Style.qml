@@ -88,15 +88,25 @@ Singleton {
   readonly property int easingTypeFast: animationsDisabled ? Easing.Linear : Easing.OutQuad
   readonly property int easingTypeSlow: animationsDisabled ? Easing.Linear : Easing.InOutQuad
 
-  function animHasSlide(type) { return type === "slide" || type === "slideScale" || type === "slideFade" }
-  function animHasScale(type) { return type === "scale" || type === "popin" || type === "slideScale" }
-  function animHasFade(type) { return type === "fade" || type === "popin" || type === "slideFade" }
+  function animHasSlide(type) {
+    return type === "slide" || type === "slideScale" || type === "slideFade";
+  }
+  function animHasScale(type) {
+    return type === "scale" || type === "popin" || type === "slideScale";
+  }
+  function animHasFade(type) {
+    return type === "fade" || type === "popin" || type === "slideFade";
+  }
   function animScaleValue(type, fallback) {
     switch (type) {
-    case "scale": return 0.9
-    case "popin": return 0.5
-    case "slideScale": return 0.95
-    default: return fallback !== undefined ? fallback : 1.0
+    case "scale":
+      return 0.9;
+    case "popin":
+      return 0.5;
+    case "slideScale":
+      return 0.95;
+    default:
+      return fallback !== undefined ? fallback : 1.0;
     }
   }
 

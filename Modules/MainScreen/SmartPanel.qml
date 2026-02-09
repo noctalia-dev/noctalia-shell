@@ -1020,20 +1020,28 @@ Item {
       readonly property bool shouldAnimateHeight: root.useSlide && (animateFromTop || animateFromBottom)
 
       readonly property real currentScale: {
-        if (root.useNone) return 1.0
-        if (!root.useScale) return 1.0
-        if (isClosing && opacityFadeComplete) return root.animationScale
-        if (isClosing || isPanelVisible) return 1.0
-        return root.animationScale
+        if (root.useNone)
+          return 1.0;
+        if (!root.useScale)
+          return 1.0;
+        if (isClosing && opacityFadeComplete)
+          return root.animationScale;
+        if (isClosing || isPanelVisible)
+          return 1.0;
+        return root.animationScale;
       }
 
       scale: currentScale
       transformOrigin: {
-        if (animateFromTop) return Item.Top
-        if (animateFromBottom) return Item.Bottom
-        if (animateFromLeft) return Item.Left
-        if (animateFromRight) return Item.Right
-        return Item.Center
+        if (animateFromTop)
+          return Item.Top;
+        if (animateFromBottom)
+          return Item.Bottom;
+        if (animateFromLeft)
+          return Item.Left;
+        if (animateFromRight)
+          return Item.Right;
+        return Item.Center;
       }
 
       Behavior on scale {

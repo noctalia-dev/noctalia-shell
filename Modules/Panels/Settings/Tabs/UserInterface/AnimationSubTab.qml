@@ -11,21 +11,74 @@ ColumnLayout {
 
   // Animation type options for per-component dropdowns
   readonly property var animationTypeOptions: [
-    { "key": "slide", "name": I18n.tr("panels.user-interface.animation-type-slide") },
-    { "key": "scale", "name": I18n.tr("panels.user-interface.animation-type-scale") },
-    { "key": "fade", "name": I18n.tr("panels.user-interface.animation-type-fade") },
-    { "key": "popin", "name": I18n.tr("panels.user-interface.animation-type-popin") },
-    { "key": "slideFade", "name": I18n.tr("panels.user-interface.animation-type-slideFade") },
-    { "key": "slideScale", "name": I18n.tr("panels.user-interface.animation-type-slideScale") },
-    { "key": "none", "name": I18n.tr("panels.user-interface.animation-type-none") }
+    {
+      "key": "slide",
+      "name": I18n.tr("panels.user-interface.animation-type-slide")
+    },
+    {
+      "key": "scale",
+      "name": I18n.tr("panels.user-interface.animation-type-scale")
+    },
+    {
+      "key": "fade",
+      "name": I18n.tr("panels.user-interface.animation-type-fade")
+    },
+    {
+      "key": "popin",
+      "name": I18n.tr("panels.user-interface.animation-type-popin")
+    },
+    {
+      "key": "slideFade",
+      "name": I18n.tr("panels.user-interface.animation-type-slideFade")
+    },
+    {
+      "key": "slideScale",
+      "name": I18n.tr("panels.user-interface.animation-type-slideScale")
+    },
+    {
+      "key": "none",
+      "name": I18n.tr("panels.user-interface.animation-type-none")
+    }
   ]
 
   // Preset definitions: each maps a name to 5 component animation types
   readonly property var presets: [
-    { "key": "default", "name": I18n.tr("panels.user-interface.animation-style-preset-default"), "panels": "slideFade", "notifications": "slideFade", "osd": "scale", "toasts": "slide", "menus": "fade" },
-    { "key": "fade", "name": I18n.tr("panels.user-interface.animation-style-preset-fade"), "panels": "fade", "notifications": "fade", "osd": "fade", "toasts": "fade", "menus": "fade" },
-    { "key": "pop", "name": I18n.tr("panels.user-interface.animation-style-preset-pop"), "panels": "popin", "notifications": "popin", "osd": "popin", "toasts": "popin", "menus": "popin" },
-    { "key": "slide", "name": I18n.tr("panels.user-interface.animation-style-preset-slide"), "panels": "slide", "notifications": "slide", "osd": "scale", "toasts": "slide", "menus": "fade" }
+    {
+      "key": "default",
+      "name": I18n.tr("panels.user-interface.animation-style-preset-default"),
+      "panels": "slideFade",
+      "notifications": "slideFade",
+      "osd": "scale",
+      "toasts": "slide",
+      "menus": "fade"
+    },
+    {
+      "key": "fade",
+      "name": I18n.tr("panels.user-interface.animation-style-preset-fade"),
+      "panels": "fade",
+      "notifications": "fade",
+      "osd": "fade",
+      "toasts": "fade",
+      "menus": "fade"
+    },
+    {
+      "key": "pop",
+      "name": I18n.tr("panels.user-interface.animation-style-preset-pop"),
+      "panels": "popin",
+      "notifications": "popin",
+      "osd": "popin",
+      "toasts": "popin",
+      "menus": "popin"
+    },
+    {
+      "key": "slide",
+      "name": I18n.tr("panels.user-interface.animation-style-preset-slide"),
+      "panels": "slide",
+      "notifications": "slide",
+      "osd": "scale",
+      "toasts": "slide",
+      "menus": "fade"
+    }
   ]
 
   // Derive current preset from per-component settings
@@ -47,7 +100,10 @@ ColumnLayout {
   readonly property var presetModel: {
     var model = presets.slice();
     if (currentPresetKey === "custom")
-      model.push({ "key": "custom", "name": I18n.tr("panels.user-interface.animation-style-custom") });
+      model.push({
+                   "key": "custom",
+                   "name": I18n.tr("panels.user-interface.animation-style-custom")
+                 });
     return model;
   }
 
@@ -119,9 +175,9 @@ ColumnLayout {
         currentKey: root.currentPresetKey
         defaultValue: "default"
         onSelected: key => {
-          if (key !== "custom")
-            root.applyPreset(key);
-        }
+                      if (key !== "custom")
+                      root.applyPreset(key);
+                    }
       }
 
       Item {

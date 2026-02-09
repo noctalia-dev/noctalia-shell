@@ -41,7 +41,9 @@ Item {
   visible: true
   opacity: 0
   scale: useScale ? animationScaleValue : 1.0
-  transform: Translate { y: root.yOffset }
+  transform: Translate {
+    y: root.yOffset
+  }
 
   property real progress: 1.0
   property int hoverCount: 0
