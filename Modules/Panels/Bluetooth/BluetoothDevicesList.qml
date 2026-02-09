@@ -136,7 +136,7 @@ NBox {
         border.width: isSelected ? Style.borderM : 0
         border.color: Color.mPrimary
 
-        color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(getContentColor(), 0.08) : Color.mSurface
+        color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(Color.mPrimary, 0.15) : Color.mSurface
 
         // Content column so expanded details are laid out inside the card
         ColumnLayout {
