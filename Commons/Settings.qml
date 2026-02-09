@@ -549,6 +549,7 @@ Singleton {
       property string position: "center"
       property bool showHeader: true
       property bool largeButtonsStyle: true
+      property bool showBlurBackground: true
       property string largeButtonsLayout: "single-row"
       property bool showNumberLabels: true
       property list<var> powerOptions: [
