@@ -241,6 +241,28 @@ Singleton {
     }
   }
 
+  // Re-sync Bluetooth state after system resume (wake from sleep).
+  Connections {
+    target: Time
+    function onResumed() {
+      Logger.i("Bluetooth", "System resumed - power-cycling Bluetooth adapter");
+      btExec(["bluetoothctl", "power", "off"]);
+      resumePowerOnTimer.restart();
+    }
+  }
+
+  Timer {
+    id: resumePowerOnTimer
+    interval: 1500
+    repeat: false
+    onTriggered: {
+      Logger.i("Bluetooth", "Resume power-cycle: powering adapter back on");
+      btExec(["bluetoothctl", "power", "on"]);
+      root.ctlPowered = true;
+      requestCtlPoll(ctlPollSoonMs);
+    }
+  }
+
   Process {
     id: checkWifiBlocked
     running: false
