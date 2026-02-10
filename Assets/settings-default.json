@@ -172,6 +172,8 @@
     "transitionDuration": 1500,
     "transitionType": "random",
     "transitionEdgeSmoothness": 0.05,
+    "overviewBlur": 0.4,
+    "overviewTint": 0.6,
     "panelPosition": "follow_bar",
     "hideWallpaperFilenames": false,
     "useWallhaven": false,

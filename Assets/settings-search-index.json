@@ -1664,18 +1664,9 @@
     "subTabLabel": "common.general"
   },
   {
-    "labelKey": "panels.wallpaper.settings-enable-overview-label",
-    "descriptionKey": "panels.wallpaper.settings-enable-overview-description",
-    "widget": "NToggle",
-    "tab": 3,
-    "tabLabel": "common.wallpaper",
-    "subTab": 0,
-    "subTabLabel": "common.general"
-  },
-  {
-    "labelKey": "panels.wallpaper.settings-folder-label",
-    "descriptionKey": "panels.wallpaper.settings-folder-description",
-    "widget": "NTextInputButton",
+    "labelKey": "tooltips.wallpaper-selector",
+    "descriptionKey": "panels.wallpaper.settings-selector-description",
+    "widget": "NLabel",
     "tab": 3,
     "tabLabel": "common.wallpaper",
     "subTab": 0,
@@ -1691,6 +1682,15 @@
     "subTabLabel": "common.general"
   },
   {
+    "labelKey": "panels.wallpaper.settings-folder-label",
+    "descriptionKey": "panels.wallpaper.settings-folder-description",
+    "widget": "NTextInputButton",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
     "labelKey": "panels.wallpaper.settings-monitor-specific-label",
     "descriptionKey": "panels.wallpaper.settings-monitor-specific-description",
     "widget": "NToggle",
@@ -1700,9 +1700,27 @@
     "subTabLabel": "common.general"
   },
   {
-    "labelKey": "tooltips.wallpaper-selector",
-    "descriptionKey": "panels.wallpaper.settings-selector-description",
-    "widget": "NLabel",
+    "labelKey": "panels.wallpaper.settings-enable-overview-label",
+    "descriptionKey": "panels.wallpaper.settings-enable-overview-description",
+    "widget": "NToggle",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.wallpaper.settings-overview-blur-strength-label",
+    "descriptionKey": "panels.wallpaper.settings-overview-blur-strength-description",
+    "widget": "NValueSlider",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.wallpaper.settings-overview-tint-label",
+    "descriptionKey": "panels.wallpaper.settings-overview-tint-description",
+    "widget": "NValueSlider",
     "tab": 3,
     "tabLabel": "common.wallpaper",
     "subTab": 0,

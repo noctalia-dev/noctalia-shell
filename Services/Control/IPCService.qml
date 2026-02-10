@@ -33,6 +33,11 @@ Item {
     function showBar() {
       BarService.isVisible = true;
     }
+    function setDisplayMode(mode: string) {
+      if (mode === "always_visible" || mode === "non_exclusive" || mode === "auto_hide") {
+        Settings.data.bar.displayMode = mode;
+      }
+    }
   }
 
   // Settings IPC helpers (outside IpcHandler to avoid QVariant IPC warnings)

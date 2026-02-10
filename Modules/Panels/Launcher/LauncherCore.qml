@@ -58,7 +58,7 @@ Rectangle {
   readonly property var defaultProvider: appsProvider
   readonly property var currentProvider: activeProvider || defaultProvider
 
-  readonly property string launcherDensity: (currentProvider && currentProvider.ignoreDensity === false) ? (Settings.data.appLauncher.density || "default") : "default"
+  readonly property string launcherDensity: (currentProvider && currentProvider.ignoreDensity === false) ? (Settings.data.appLauncher.density || "default") : "comfortable"
   readonly property int effectiveIconSize: launcherDensity === "comfortable" ? 48 : (launcherDensity === "default" ? 32 : 24)
   readonly property int badgeSize: Math.round(effectiveIconSize * Style.uiScaleRatio)
   readonly property int entryHeight: Math.round(badgeSize + (launcherDensity === "compact" ? (Style.marginL + Style.marginXXS) : (Style.marginXL + Style.marginS)))
@@ -793,16 +793,20 @@ Rectangle {
 
   ColumnLayout {
     anchors.fill: parent
-    anchors.margins: Style.marginL
+    anchors.topMargin: Style.marginL
+    anchors.bottomMargin: Style.marginL
     spacing: Style.marginL
 
     RowLayout {
       Layout.fillWidth: true
+      Layout.leftMargin: Style.marginL
+      Layout.rightMargin: Style.marginL
       spacing: Style.marginS
 
       NTextInput {
         id: searchInput
         Layout.fillWidth: true
+        radius: Style.iRadiusM
         text: root.searchText
         placeholderText: I18n.tr("placeholders.search-launcher")
         fontSize: Style.fontSizeM
@@ -822,6 +826,7 @@ Rectangle {
         visible: root.showLayoutToggle
         icon: Settings.data.appLauncher.viewMode === "grid" ? "layout-list" : "layout-grid"
         tooltipText: Settings.data.appLauncher.viewMode === "grid" ? I18n.tr("tooltips.list-view") : I18n.tr("tooltips.grid-view")
+        customRadius: Style.iRadiusM
         Layout.preferredWidth: searchInput.height
         Layout.preferredHeight: searchInput.height
         onClicked: Settings.data.appLauncher.viewMode = Settings.data.appLauncher.viewMode === "grid" ? "list" : "grid"
@@ -833,7 +838,9 @@ Rectangle {
       id: categoryTabs
       visible: root.showProviderCategories
       Layout.fillWidth: true
-      margins: Style.marginM
+      Layout.leftMargin: Style.marginL
+      Layout.rightMargin: Style.marginL
+      margins: 0
       border.color: Style.boxBorderColor
       border.width: Style.borderS
 
@@ -858,6 +865,8 @@ Rectangle {
     Loader {
       id: resultsViewLoader
       Layout.fillWidth: true
+      Layout.leftMargin: Style.marginL
+      Layout.rightMargin: Style.marginL
       Layout.fillHeight: true
       sourceComponent: root.isSingleView ? singleViewComponent : (root.isGridView ? gridViewComponent : listViewComponent)
     }
@@ -935,7 +944,7 @@ Rectangle {
                 // Icon background
                 Rectangle {
                   anchors.fill: parent
-                  radius: Style.radiusM
+                  radius: Style.radiusXS
                   color: Color.mSurfaceVariant
                   visible: Settings.data.appLauncher.showIconBackground && !modelData.isImage
                 }

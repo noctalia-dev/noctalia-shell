@@ -199,7 +199,7 @@ Singleton {
       property bool hideOnOverview: false
 
       // Auto-hide settings
-      property string displayMode: "always_visible" // "always_visible", "auto_hide"
+      property string displayMode: "always_visible"
       property int autoHideDelay: 500 // ms before hiding after mouse leaves
       property int autoShowDelay: 150 // ms before showing when mouse enters
 
@@ -374,6 +374,8 @@ Singleton {
       property real transitionEdgeSmoothness: 0.05
       property string panelPosition: "follow_bar"
       property bool hideWallpaperFilenames: false
+      property real overviewBlur: 0.4
+      property real overviewTint: 0.6
       // Wallhaven settings
       property bool useWallhaven: false
       property string wallhavenQuery: ""
