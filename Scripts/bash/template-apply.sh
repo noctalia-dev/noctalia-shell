@@ -4,7 +4,7 @@
 if [ "$#" -lt 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|yazi|niri|hyprland|sway|mango|btop|zathura} [dark|light]" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|yazi|niri|hyprland|sway|scroll|mango|btop|zathura} [dark|light]" >&2
     exit 1
 fi
 
@@ -131,7 +131,7 @@ wezterm)
                 # It doesn't exist, so we add it before the 'return config' line.
                 if grep -q '^\s*return\s*config' "$CONFIG_FILE"; then
                     # 'return config' exists. Insert the line before it.
-                    sed -i "/^\s*return\s*config/i\\$WEZTERM_SCHEME_LINE" "$CONFIG_FILE"
+                    sed -i '/^\s*return\s*config/i\'"$WEZTERM_SCHEME_LINE" "$CONFIG_FILE"
                 else
                     # This is a problem. We can't find the insertion point.
                     echo "Warning: 'config.color_scheme' not set and 'return config' line not found." >&2
@@ -367,6 +367,33 @@ sway)
 
     # Reload sway
     swaymsg reload
+    ;;
+
+scroll)
+    echo "Applying 'noctalia' theme to Scroll..."
+    CONFIG_DIR="$HOME/.config/scroll"
+    CONFIG_FILE="$CONFIG_DIR/config"
+    INCLUDE_LINE='include ~/.config/scroll/noctalia'
+
+    # Check if the config file exists.
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "Config file not found, creating $CONFIG_FILE..."
+        mkdir -p "$(dirname "$CONFIG_FILE")"
+        echo -e "\n$INCLUDE_LINE\n" >"$CONFIG_FILE"
+        echo "Created new config file with noctalia theme."
+    else
+        # Check if noctalia include already exists (flexible matching)
+        if grep -qE 'include\s+.*noctalia' "$CONFIG_FILE"; then
+            echo "Theme already included, skipping modification."
+        else
+            # Add the include line to the end of the file
+            echo -e "\n$INCLUDE_LINE\n" >>"$CONFIG_FILE"
+            echo "Added noctalia theme include to config."
+        fi
+    fi
+
+    # Reload scroll
+    scrollmsg reload
     ;;
 
 mango)

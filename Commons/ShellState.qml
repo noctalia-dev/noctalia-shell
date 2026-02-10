@@ -237,6 +237,7 @@ Singleton {
           doNotDisturb: NotificationService.doNotDisturb,
           noctaliaPerformanceMode: PowerProfileService.noctaliaPerformanceMode,
           barVisible: BarService.isVisible,
+          openedPanel: PanelService.openedPanel?.objectName || "",
           lockScreenActive: PanelService.lockScreen?.active || false,
           wallpapers: WallpaperService.currentWallpapers || {},
           desktopWidgetsEditMode: DesktopWidgetRegistry.editMode || false,

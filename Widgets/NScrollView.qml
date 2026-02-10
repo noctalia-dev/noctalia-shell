@@ -3,14 +3,14 @@ import QtQuick.Controls
 import QtQuick.Templates as T
 import qs.Commons
 
-T.ScrollView {
+ScrollView {
   id: root
 
   property color handleColor: Qt.alpha(Color.mHover, 0.8)
   property color handleHoverColor: handleColor
   property color handlePressedColor: handleColor
   property color trackColor: "transparent"
-  property real handleWidth: 6
+  property real handleWidth: Math.round(6 * Style.uiScaleRatio)
   property real handleRadius: Style.iRadiusM
   property int verticalPolicy: ScrollBar.AsNeeded
   property int horizontalPolicy: ScrollBar.AsNeeded
@@ -133,7 +133,6 @@ T.ScrollView {
     x: root.mirrored ? 0 : root.width - width
     y: root.topPadding
     height: root.availableHeight
-    active: root.ScrollBar.horizontal.active
     policy: root.verticalPolicy
 
     contentItem: Rectangle {
@@ -176,7 +175,6 @@ T.ScrollView {
     x: root.leftPadding
     y: root.height - height
     width: root.availableWidth
-    active: root.ScrollBar.vertical.active
     policy: root.horizontalPolicy
 
     contentItem: Rectangle {

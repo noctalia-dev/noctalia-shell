@@ -27,11 +27,16 @@ Item {
     function toggle() {
       BarService.isVisible = !BarService.isVisible;
     }
-    function hide() {
+    function hideBar() {
       BarService.isVisible = false;
     }
-    function show() {
+    function showBar() {
       BarService.isVisible = true;
+    }
+    function setDisplayMode(mode: string) {
+      if (mode === "always_visible" || mode === "non_exclusive" || mode === "auto_hide") {
+        Settings.data.bar.displayMode = mode;
+      }
     }
   }
 
@@ -234,21 +239,14 @@ Item {
     }
     function command() {
       root.screenDetector.withCurrentScreen(screen => {
-                                              var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                                              if (!launcherPanel)
-                                              return;
-                                              var searchText = launcherPanel.searchText || "";
-                                              var isInClipMode = searchText.startsWith(">cmd");
-                                              if (!launcherPanel.isPanelOpen) {
-                                                // Closed -> open in clipboard mode
-                                                launcherPanel.open();
-                                                launcherPanel.setSearchText(">cmd ");
-                                              } else if (isInClipMode) {
-                                                // Already in clipboard mode -> close
-                                                launcherPanel.close();
+                                              var searchText = PanelService.getLauncherSearchText(screen);
+                                              var isInCmdMode = searchText.startsWith(">cmd");
+                                              if (!PanelService.isLauncherOpen(screen)) {
+                                                PanelService.openLauncherWithSearch(screen, ">cmd ");
+                                              } else if (isInCmdMode) {
+                                                PanelService.closeLauncher(screen);
                                               } else {
-                                                // In another mode -> switch to clipboard mode
-                                                launcherPanel.setSearchText(">cmd ");
+                                                PanelService.setLauncherSearchText(screen, ">cmd ");
                                               }
                                             }, Settings.data.appLauncher.overviewLayer);
     }
@@ -270,41 +268,27 @@ Item {
     }
     function windows() {
       root.screenDetector.withCurrentScreen(screen => {
-                                              var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                                              if (!launcherPanel)
-                                              return;
-                                              var searchText = launcherPanel.searchText || "";
+                                              var searchText = PanelService.getLauncherSearchText(screen);
                                               var isInWindowsMode = searchText.startsWith(">win");
-                                              if (!launcherPanel.isPanelOpen) {
-                                                // Closed -> open in windows mode
-                                                launcherPanel.open();
-                                                launcherPanel.setSearchText(">win ");
+                                              if (!PanelService.isLauncherOpen(screen)) {
+                                                PanelService.openLauncherWithSearch(screen, ">win ");
                                               } else if (isInWindowsMode) {
-                                                // Already in windows mode -> close
-                                                launcherPanel.close();
+                                                PanelService.closeLauncher(screen);
                                               } else {
-                                                // In another mode -> switch to windows mode
-                                                launcherPanel.setSearchText(">win ");
+                                                PanelService.setLauncherSearchText(screen, ">win ");
                                               }
                                             }, Settings.data.appLauncher.overviewLayer);
     }
     function settings() {
       root.screenDetector.withCurrentScreen(screen => {
-                                              var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                                              if (!launcherPanel)
-                                              return;
-                                              var searchText = launcherPanel.searchText || "";
+                                              var searchText = PanelService.getLauncherSearchText(screen);
                                               var isInSettingsMode = searchText.startsWith(">settings");
-                                              if (!launcherPanel.isPanelOpen) {
-                                                // Closed -> open in settings mode
-                                                launcherPanel.open();
-                                                launcherPanel.setSearchText(">settings ");
+                                              if (!PanelService.isLauncherOpen(screen)) {
+                                                PanelService.openLauncherWithSearch(screen, ">settings ");
                                               } else if (isInSettingsMode) {
-                                                // Already in settings mode -> close
-                                                launcherPanel.close();
+                                                PanelService.closeLauncher(screen);
                                               } else {
-                                                // In another mode -> switch to settings mode
-                                                launcherPanel.setSearchText(">settings ");
+                                                PanelService.setLauncherSearchText(screen, ">settings ");
                                               }
                                             }, Settings.data.appLauncher.overviewLayer);
     }

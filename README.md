@@ -40,7 +40,7 @@
 A beautiful, minimal desktop shell for Wayland that actually gets out of your way. Built on [Quickshell](https://quickshell.outfoxxed.me/) (Qt/QML) with a warm lavender aesthetic that you can easily customize to match your vibe.
 
 **✨ Key Features:**
-- 🪟 Native support for Niri, Hyprland, Sway, Labwc and MangoWC
+- 🪟 Native support for Niri, Hyprland, Sway, Scroll, Labwc and MangoWC
 - 🎨 Extensive theming with predefined color schemes and automatic color generation from your wallpaper
 - 🖼️ Wallpaper management with Wallhaven integration
 - 🔔 Notification system with history and Do Not Disturb
@@ -74,7 +74,7 @@ https://github.com/user-attachments/assets/bf46f233-8d66-439a-a1ae-ab0446270f2d
 
 ## 📋 Requirements
 
-- Wayland compositor (Niri, Hyprland, Sway, MangoWC or labwc recommended)
+- Wayland compositor (Niri, Hyprland, Sway, Scroll, MangoWC or labwc recommended)
 - Quickshell
 - Additional dependencies are listed in our [documentation](https://docs.noctalia.dev)
 

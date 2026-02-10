@@ -14,7 +14,7 @@ Item {
   property var entries: []
   property string supportedLayouts: "both"
   property bool isDefaultProvider: true // This provider handles empty search
-  property int preferredGridColumns: 5
+  property bool ignoreDensity: false // Apps should scale with launcher density
 
   // Category support
   property string selectedCategory: "all"
@@ -455,15 +455,15 @@ Item {
 
     if (!query || query.trim() === "") {
       // Return filtered apps, optionally sorted by usage
-      const favoriteApps = Settings.data.appLauncher.favoriteApps || [];
       let sorted;
       if (Settings.data.appLauncher.sortByMostUsed) {
         sorted = filteredEntries.slice().sort((a, b) => {
-                                                // Favorites first
-                                                const aFav = favoriteApps.includes(getAppKey(a));
-                                                const bFav = favoriteApps.includes(getAppKey(b));
-                                                if (aFav !== bFav)
-                                                return aFav ? -1 : 1;
+                                                // Pinned first
+                                                const aPinned = isAppPinned(a);
+                                                const bPinned = isAppPinned(b);
+                                                if (aPinned !== bPinned)
+                                                return aPinned ? -1 : 1;
+
                                                 const ua = getUsageCount(a);
                                                 const ub = getUsageCount(b);
                                                 if (ub !== ua)
@@ -472,10 +472,10 @@ Item {
                                               });
       } else {
         sorted = filteredEntries.slice().sort((a, b) => {
-                                                const aFav = favoriteApps.includes(getAppKey(a));
-                                                const bFav = favoriteApps.includes(getAppKey(b));
-                                                if (aFav !== bFav)
-                                                return aFav ? -1 : 1;
+                                                const aPinned = isAppPinned(a);
+                                                const bPinned = isAppPinned(b);
+                                                if (aPinned !== bPinned)
+                                                return aPinned ? -1 : 1;
                                                 return (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
                                               });
       }
@@ -489,18 +489,17 @@ Item {
                                           "limit": 20
                                         });
 
-      // Sort favorites first within fuzzy results while preserving fuzzysort order otherwise
-      const favoriteApps = Settings.data.appLauncher.favoriteApps || [];
-      const fav = [];
-      const nonFav = [];
+      // Sort pinned first within fuzzy results while preserving fuzzysort order otherwise
+      const pinned = [];
+      const nonPinned = [];
       for (const r of fuzzyResults) {
         const app = r.obj;
-        if (favoriteApps.includes(getAppKey(app)))
-          fav.push(r);
+        if (isAppPinned(app))
+          pinned.push(r);
         else
-          nonFav.push(r);
+          nonPinned.push(r);
       }
-      return fav.concat(nonFav).map(result => createResultEntry(result.obj, result.score));
+      return pinned.concat(nonPinned).map(result => createResultEntry(result.obj, result.score));
     } else {
       // Fallback to simple search
       const searchTerm = query.toLowerCase();
@@ -653,11 +652,18 @@ Item {
 
   function recordUsage(app) {
     const key = getAppKey(app);
-    if (!usageAdapter.counts)
-      usageAdapter.counts = ({});
+    Logger.d("ApplicationsProvider", `Recording usage for: ${key}`);
+
+    let counts = Object.assign({}, usageAdapter.counts || {});
     const current = getUsageCount(app);
-    usageAdapter.counts[key] = current + 1;
-    // Trigger save via debounced timer
-    saveTimer.restart();
+    counts[key] = current + 1;
+
+    // Direct assignment to property var triggers change notification for JsonAdapter
+    usageAdapter.counts = counts;
+
+    // Write immediately instead of debouncing because the launcher
+    // often closes and destroys this provider right after launching an app.
+    usageFile.writeAdapter();
+    Logger.d("ApplicationsProvider", `Usage recorded and written for: ${key}`);
   }
 }

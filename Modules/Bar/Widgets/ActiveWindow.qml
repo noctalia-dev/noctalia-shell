@@ -275,6 +275,10 @@ Item {
             return NScrollText.ScrollMode.Never;
           }
           forcedHover: mainMouseArea.containsMouse
+          gradientColor: Style.capsuleColor
+          gradientWidth: Math.round(8 * Style.uiScaleRatio)
+          cornerRadius: Style.radiusM
+
           NText {
             text: windowTitle
             pointSize: barFontSize

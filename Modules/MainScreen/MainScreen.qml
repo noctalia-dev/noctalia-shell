@@ -476,22 +476,21 @@ PanelWindow {
       }
     }
 
-    /**
-    *  Screen Corners
-    */
+    // Screen Corners
     ScreenCorners {}
   }
 
-  // ========================================
   // Centralized Keyboard Shortcuts
-  // ========================================
+
   // These shortcuts delegate to the opened panel's handler functions
   // Panels can implement: onEscapePressed, onTabPressed, onBackTabPressed,
   // onUpPressed, onDownPressed, onReturnPressed, etc...
   Shortcut {
-    sequence: "Escape"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onEscapePressed !== undefined)
-    onActivated: PanelService.openedPanel.onEscapePressed()
+    sequence: Settings.data.general.keybinds.keyEscape
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onEscapePressed !== undefined) && !PanelService.isKeybindRecording
+    onActivated: {
+      PanelService.openedPanel.onEscapePressed();
+    }
   }
 
   Shortcut {
@@ -507,38 +506,32 @@ PanelWindow {
   }
 
   Shortcut {
-    sequence: "Up"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onUpPressed !== undefined)
+    sequence: Settings.data.general.keybinds.keyUp
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onUpPressed !== undefined) && !PanelService.isKeybindRecording
     onActivated: PanelService.openedPanel.onUpPressed()
   }
 
   Shortcut {
-    sequence: "Down"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onDownPressed !== undefined)
+    sequence: Settings.data.general.keybinds.keyDown
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onDownPressed !== undefined) && !PanelService.isKeybindRecording
     onActivated: PanelService.openedPanel.onDownPressed()
   }
 
   Shortcut {
-    sequence: "Return"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onReturnPressed !== undefined)
-    onActivated: PanelService.openedPanel.onReturnPressed()
-  }
-
-  Shortcut {
-    sequence: "Enter"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onEnterPressed !== undefined)
+    sequence: Settings.data.general.keybinds.keyEnter
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onEnterPressed !== undefined) && !PanelService.isKeybindRecording
     onActivated: PanelService.openedPanel.onEnterPressed()
   }
 
   Shortcut {
-    sequence: "Left"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onLeftPressed !== undefined)
+    sequence: Settings.data.general.keybinds.keyLeft
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onLeftPressed !== undefined) && !PanelService.isKeybindRecording
     onActivated: PanelService.openedPanel.onLeftPressed()
   }
 
   Shortcut {
-    sequence: "Right"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onRightPressed !== undefined)
+    sequence: Settings.data.general.keybinds.keyRight
+    enabled: root.isPanelOpen && (PanelService.openedPanel.onRightPressed !== undefined) && !PanelService.isKeybindRecording
     onActivated: PanelService.openedPanel.onRightPressed()
   }
 
@@ -564,42 +557,6 @@ PanelWindow {
     sequence: "PgDown"
     enabled: root.isPanelOpen && (PanelService.openedPanel.onPageDownPressed !== undefined)
     onActivated: PanelService.openedPanel.onPageDownPressed()
-  }
-
-  Shortcut {
-    sequence: "Ctrl+H"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlHPressed !== undefined)
-    onActivated: PanelService.openedPanel.onCtrlHPressed()
-  }
-
-  Shortcut {
-    sequence: "Ctrl+J"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlJPressed !== undefined)
-    onActivated: PanelService.openedPanel.onCtrlJPressed()
-  }
-
-  Shortcut {
-    sequence: "Ctrl+K"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlKPressed !== undefined)
-    onActivated: PanelService.openedPanel.onCtrlKPressed()
-  }
-
-  Shortcut {
-    sequence: "Ctrl+L"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlLPressed !== undefined)
-    onActivated: PanelService.openedPanel.onCtrlLPressed()
-  }
-
-  Shortcut {
-    sequence: "Ctrl+N"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlNPressed !== undefined)
-    onActivated: PanelService.openedPanel.onCtrlNPressed()
-  }
-
-  Shortcut {
-    sequence: "Ctrl+P"
-    enabled: root.isPanelOpen && (PanelService.openedPanel.onCtrlPPressed !== undefined)
-    onActivated: PanelService.openedPanel.onCtrlPPressed()
   }
 
   Shortcut {

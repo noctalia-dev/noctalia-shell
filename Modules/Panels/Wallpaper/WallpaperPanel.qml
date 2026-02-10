@@ -419,18 +419,52 @@ SmartPanel {
                 }
               }
 
-              Keys.onDownPressed: {
-                if (Settings.data.wallpaper.useWallhaven) {
-                  if (wallhavenView && wallhavenView.gridView) {
-                    wallhavenView.gridView.forceActiveFocus();
-                  }
-                } else {
-                  let currentView = screenRepeater.itemAt(currentScreenIndex);
-                  if (currentView && currentView.gridView) {
-                    currentView.gridView.forceActiveFocus();
-                  }
-                }
-              }
+              Keys.onPressed: event => {
+                                var boundKey = Settings.data.general.keybinds.keyDown;
+                                if (!boundKey)
+                                return;
+
+                                // Helper to check key string (duplicated from LauncherCore/SessionMenu logic for now)
+                                // Ideally this should be a shared helper
+                                let keyStr = "";
+                                if (event.modifiers & Qt.ControlModifier)
+                                keyStr += "Ctrl+";
+                                if (event.modifiers & Qt.AltModifier)
+                                keyStr += "Alt+";
+                                if (event.modifiers & Qt.ShiftModifier)
+                                keyStr += "Shift+";
+
+                                let keyName = "";
+                                if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z || event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
+                                  keyName = String.fromCharCode(event.key);
+                                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                  keyName = "Return"; // Standardize on Return for check
+                                } else if (event.key === Qt.Key_Escape) {
+                                  keyName = "Esc";
+                                } else if (event.key === Qt.Key_Up)
+                                keyName = "Up";
+                                else if (event.key === Qt.Key_Down)
+                                keyName = "Down";
+                                else if (event.key === Qt.Key_Left)
+                                keyName = "Left";
+                                else if (event.key === Qt.Key_Right)
+                                keyName = "Right";
+
+                                // If the key matches the bound key for Down
+                                if ((keyStr + keyName) === boundKey) {
+                                  if (Settings.data.wallpaper.useWallhaven) {
+                                    if (wallhavenView && wallhavenView.gridView) {
+                                      wallhavenView.gridView.forceActiveFocus();
+                                    }
+                                  } else {
+                                    let currentView = screenRepeater.itemAt(currentScreenIndex);
+                                    if (currentView && currentView.gridView) {
+                                      currentView.gridView.forceActiveFocus();
+                                    }
+                                  }
+                                  event.accepted = true;
+                                }
+                              }
             }
 
             NComboBox {
@@ -751,6 +785,9 @@ SmartPanel {
           text: isBrowseMode ? currentBrowsePath : WallpaperService.getMonitorDirectory(targetScreen?.name ?? "")
           Layout.fillWidth: true
           scrollMode: NScrollText.ScrollMode.Hover
+          gradientColor: Color.mSurfaceVariant
+          cornerRadius: Style.radiusM
+
           NText {
             text: isBrowseMode ? currentBrowsePath : WallpaperService.getMonitorDirectory(targetScreen?.name ?? "")
             pointSize: Style.fontSizeS

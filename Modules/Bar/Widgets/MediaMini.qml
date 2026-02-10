@@ -11,10 +11,6 @@ import qs.Widgets.AudioSpectrum
 
 Item {
   id: root
-  Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
-  Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
-  Layout.fillHeight: false
-  Layout.fillWidth: false
 
   property ShellScreen screen
   property string widgetId: ""
@@ -80,6 +76,11 @@ Item {
   // CavaService registration for visualizer
   readonly property string cavaComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
   readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none"
+
+  Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
+  Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
+  Layout.fillHeight: false
+  Layout.fillWidth: false
 
   onNeedsCavaChanged: {
     if (root.needsCava) {
@@ -342,9 +343,14 @@ Item {
           cursorShape: hasPlayer ? Qt.PointingHandCursor : Qt.ArrowCursor
           maxWidth: root.maxWidth - root.mainContentWidth
           forcedHover: mainMouseArea.containsMouse
+          gradientColor: Style.capsuleColor
+          gradientWidth: Math.round(8 * Style.uiScaleRatio)
+          cornerRadius: Style.radiusM
+
           NText {
             color: hasPlayer ? root.textColor : Color.mOnSurfaceVariant
             pointSize: barFontSize
+            elide: Text.ElideNone
           }
         }
       }

@@ -25,12 +25,12 @@ Slider {
   padding: cutoutExtra / 2
 
   snapMode: snapAlways ? Slider.SnapAlways : Slider.SnapOnRelease
-  implicitHeight: Math.max(trackHeight, knobDiameter) + 1
+  implicitHeight: Math.max(trackHeight, knobDiameter)
 
   background: Item {
     id: bgContainer
     x: root.leftPadding
-    y: root.topPadding + root.availableHeight / 2 - root.trackHeight / 2
+    y: root.topPadding + Style.pixelAlignCenter(root.availableHeight, root.trackHeight)
     implicitWidth: Style.sliderWidth
     implicitHeight: root.trackHeight
     width: root.availableWidth
@@ -41,8 +41,7 @@ Slider {
     // Background track
     Shape {
       anchors.fill: parent
-      layer.enabled: true
-      layer.samples: 4
+      preferredRendererType: Shape.CurveRenderer
 
       ShapePath {
         id: bgPath
@@ -121,8 +120,7 @@ Slider {
       width: bgContainer.fillWidth
       height: bgContainer.height
       visible: bgContainer.fillWidth > 0
-      layer.enabled: true
-      layer.samples: 4
+      preferredRendererType: Shape.CurveRenderer
       clip: true
 
       ShapePath {

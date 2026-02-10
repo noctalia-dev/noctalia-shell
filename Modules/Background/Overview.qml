@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Commons
 import qs.Services.Compositor
+import qs.Services.Power
 import qs.Services.UI
 
 Loader {
@@ -100,16 +101,16 @@ Loader {
         layer.enabled: true
         layer.smooth: false
         layer.effect: MultiEffect {
-          blurEnabled: true
-          blur: 1.0
-          blurMax: 32
+          blurEnabled: !PowerProfileService.noctaliaPerformanceMode && (Settings.data.wallpaper.overviewBlur > 0)
+          blur: Settings.data.wallpaper.overviewBlur
+          blurMax: 48
         }
 
         // Tint overlay
         Rectangle {
           anchors.fill: parent
           color: tintColor
-          opacity: 0.6
+          opacity: Settings.data.wallpaper.overviewTint
         }
       }
     }

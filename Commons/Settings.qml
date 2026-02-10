@@ -199,7 +199,7 @@ Singleton {
       property bool hideOnOverview: false
 
       // Auto-hide settings
-      property string displayMode: "always_visible" // "always_visible", "auto_hide"
+      property string displayMode: "always_visible"
       property int autoHideDelay: 500 // ms before hiding after mouse leaves
       property int autoShowDelay: 150 // ms before showing when mouse enters
 
@@ -296,6 +296,16 @@ Singleton {
       property string clockStyle: "custom"
       property string clockFormat: "hh\\nmm"
       property list<string> lockScreenMonitors: [] // holds lock screen visibility per monitor
+      property real lockScreenBlur: 0.0
+      property real lockScreenTint: 0.0
+      property JsonObject keybinds: JsonObject {
+        property string keyUp: "Up"
+        property string keyDown: "Down"
+        property string keyLeft: "Left"
+        property string keyRight: "Right"
+        property string keyEnter: "Return"
+        property string keyEscape: "Esc"
+      }
     }
 
     // ui
@@ -374,6 +384,8 @@ Singleton {
       property real transitionEdgeSmoothness: 0.05
       property string panelPosition: "follow_bar"
       property bool hideWallpaperFilenames: false
+      property real overviewBlur: 0.4
+      property real overviewTint: 0.6
       // Wallhaven settings
       property bool useWallhaven: false
       property string wallhavenQuery: ""
@@ -416,6 +428,7 @@ Singleton {
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
       property bool overviewLayer: false
+      property string density: "default" // "compact", "default", "comfortable"
     }
 
     // control center

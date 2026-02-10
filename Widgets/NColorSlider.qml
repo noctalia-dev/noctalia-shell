@@ -93,8 +93,7 @@ Slider {
       anchors.centerIn: parent
       width: root.trackWidth
       height: bgContainer.height
-      layer.enabled: true
-      layer.samples: 4
+      preferredRendererType: Shape.CurveRenderer
 
       ShapePath {
         id: trackPath

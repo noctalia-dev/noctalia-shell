@@ -103,7 +103,17 @@
     "allowPasswordWithFprintd": false,
     "clockStyle": "custom",
     "clockFormat": "hh\\nmm",
-    "lockScreenMonitors": []
+    "lockScreenMonitors": [],
+    "lockScreenBlur": 0.0,
+    "lockScreenTint": 0.0,
+    "keybinds": {
+      "keyUp": "Up",
+      "keyDown": "Down",
+      "keyLeft": "Left",
+      "keyRight": "Right",
+      "keyEnter": "Return",
+      "keyEscape": "Esc"
+    }
   },
   "ui": {
     "fontDefault": "",
@@ -171,6 +181,8 @@
     "transitionEdgeSmoothness": 0.05,
     "panelPosition": "follow_bar",
     "hideWallpaperFilenames": false,
+    "overviewBlur": 0.4,
+    "overviewTint": 0.6,
     "useWallhaven": false,
     "wallhavenQuery": "",
     "wallhavenSorting": "relevance",
@@ -206,7 +218,8 @@
     "enableWindowsSearch": true,
     "ignoreMouseInput": false,
     "screenshotAnnotationTool": "",
-    "overviewLayer": false
+    "overviewLayer": false,
+    "density": "default"
   },
   "controlCenter": {
     "position": "close_to_bar_button",

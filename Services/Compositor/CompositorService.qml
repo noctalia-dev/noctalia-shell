@@ -16,6 +16,7 @@ Singleton {
   property bool isSway: false
   property bool isMango: false
   property bool isLabwc: false
+  property bool isScroll: false
 
   // Generic workspace and window data
   property ListModel workspaces: ListModel {}
@@ -105,6 +106,7 @@ Singleton {
       isSway = true;
       isMango = false;
       isLabwc = false;
+      isScroll = currentDesktop && currentDesktop.toLowerCase().includes("scroll");
       backendLoader.sourceComponent = swayComponent;
     } else {
       // Always fallback to Niri
@@ -121,6 +123,9 @@ Singleton {
     id: backendLoader
     onLoaded: {
       if (item) {
+        if (isScroll) {
+          item.msgCommand = "scrollmsg";
+        }
         root.backend = item;
         setupBackendConnections();
         backend.initialize();

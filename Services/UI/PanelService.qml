@@ -24,6 +24,10 @@ Singleton {
   // Brief window after panel opens where Exclusive keyboard is allowed on Hyprland
   // This allows text inputs to receive focus, then switches to OnDemand for click-to-close
   property bool isInitializingKeyboard: false
+
+  // Global state for keybind recording components to block global shortcuts
+  property bool isKeybindRecording: false
+
   signal willOpen
   signal didClose
 
