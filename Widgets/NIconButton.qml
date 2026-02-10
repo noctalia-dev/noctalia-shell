@@ -63,6 +63,7 @@ Item {
       ColorAnimation {
         duration: Style.animationFast
         easing.type: Style.easingTypeFast
+        easing.bezierCurve: Style.easingCurveFast
       }
     }
 
@@ -80,6 +81,7 @@ Item {
         ColorAnimation {
           duration: Style.animationFast
           easing.type: Style.easingTypeFast
+          easing.bezierCurve: Style.easingCurveFast
         }
       }
     }

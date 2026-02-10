@@ -501,6 +501,7 @@ Variants {
           NumberAnimation {
             duration: Style.animationNormal
             easing.type: Style.easingTypeSlow
+            easing.bezierCurve: Style.easingCurveSlow
           }
         }
 
@@ -509,6 +510,7 @@ Variants {
           NumberAnimation {
             duration: Style.animationNormal
             easing.type: Style.easingTypeSlow
+            easing.bezierCurve: Style.easingCurveSlow
           }
         }
 
@@ -582,6 +584,7 @@ Variants {
                 ColorAnimation {
                   duration: Style.animationNormal
                   easing.type: Style.easingTypeSlow
+                  easing.bezierCurve: Style.easingCurveSlow
                 }
               }
             }
@@ -619,12 +622,14 @@ Variants {
                   NumberAnimation {
                     duration: Style.animationNormal
                     easing.type: Style.easingTypeSlow
+                    easing.bezierCurve: Style.easingCurveSlow
                   }
                 }
                 Behavior on color {
                   ColorAnimation {
                     duration: Style.animationNormal
                     easing.type: Style.easingTypeSlow
+                    easing.bezierCurve: Style.easingCurveSlow
                   }
                 }
               }
@@ -750,12 +755,14 @@ Variants {
                     NumberAnimation {
                       duration: Style.animationNormal
                       easing.type: Style.easingTypeSlow
+                      easing.bezierCurve: Style.easingCurveSlow
                     }
                   }
                   Behavior on color {
                     ColorAnimation {
                       duration: Style.animationNormal
                       easing.type: Style.easingTypeSlow
+                      easing.bezierCurve: Style.easingCurveSlow
                     }
                   }
                 }
@@ -774,6 +781,7 @@ Variants {
                 ColorAnimation {
                   duration: Style.animationNormal
                   easing.type: Style.easingTypeSlow
+                  easing.bezierCurve: Style.easingCurveSlow
                 }
               }
             }

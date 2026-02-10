@@ -84,9 +84,35 @@ Singleton {
   readonly property string toastAnimationType: animationsDisabled ? "none" : (Settings.data.general.toastAnimationType ?? "slide")
   readonly property string menuAnimationType: animationsDisabled ? "none" : (Settings.data.general.menuAnimationType ?? "fade")
 
-  readonly property int easingTypeDefault: animationsDisabled ? Easing.Linear : Easing.OutCubic
-  readonly property int easingTypeFast: animationsDisabled ? Easing.Linear : Easing.OutQuad
-  readonly property int easingTypeSlow: animationsDisabled ? Easing.Linear : Easing.InOutQuad
+  readonly property int easingTypeDefault: animationsDisabled ? Easing.Linear : Easing.BezierSpline
+  readonly property int easingTypeFast: animationsDisabled ? Easing.Linear : Easing.BezierSpline
+  readonly property int easingTypeSlow: animationsDisabled ? Easing.Linear : Easing.BezierSpline
+
+  // M3 Animation Curves
+  readonly property QtObject animationCurves: QtObject {
+    // Expressive curves — spatial movement with overshoot character
+    readonly property var expressiveFastSpatial: [0.42, 1.67, 0.21, 0.90, 1, 1]
+    readonly property var expressiveDefaultSpatial: [0.38, 1.21, 0.22, 1.00, 1, 1]
+    readonly property var expressiveSlowSpatial: [0.39, 1.29, 0.35, 0.98, 1, 1]
+    readonly property var expressiveEffects: [0.34, 0.80, 0.34, 1.00, 1, 1]
+
+    // Emphasized curves — prominent transitions
+    readonly property var emphasized: [0.05, 0, 2 / 15, 0.06, 1 / 6, 0.4, 5 / 24, 0.82, 0.25, 1, 1, 1]
+    readonly property var emphasizedFirstHalf: [0.05, 0, 2 / 15, 0.06, 1 / 6, 0.4, 5 / 24, 0.82]
+    readonly property var emphasizedLastHalf: [5 / 24, 0.82, 0.25, 1, 1, 1]
+    readonly property var emphasizedAccel: [0.3, 0, 0.8, 0.15, 1, 1]
+    readonly property var emphasizedDecel: [0.05, 0.7, 0.1, 1, 1, 1]
+
+    // Standard curves — subtle transitions
+    readonly property var standard: [0.2, 0, 0, 1, 1, 1]
+    readonly property var standardAccel: [0.3, 0, 1, 1, 1, 1]
+    readonly property var standardDecel: [0, 0, 0, 1, 1, 1]
+  }
+
+  // Paired bezier curves for each easing type
+  readonly property var easingCurveDefault: animationCurves.expressiveDefaultSpatial
+  readonly property var easingCurveFast: animationCurves.expressiveEffects
+  readonly property var easingCurveSlow: animationCurves.emphasized
 
   function animHasSlide(type) {
     return type === "slide" || type === "slideScale" || type === "slideFade";

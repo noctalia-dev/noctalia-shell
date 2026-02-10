@@ -680,6 +680,7 @@ Item {
       id: opacityAnimation
       duration: (root.useFade && !root.isClosing) ? Style.animationFast : Style.animationFaster
       easing.type: Style.easingTypeFast
+      easing.bezierCurve: Style.easingCurveFast
 
       onRunningChanged: {
         // Safety: If animation didn't run (zero duration), handle immediately
@@ -820,7 +821,7 @@ Item {
       // Track whether dimensions have been initialized (to prevent initial changes from animating)
       property bool dimensionsInitialized: false
 
-      property var bezierCurve: [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1]
+      property var bezierCurve: Style.animationCurves.emphasized
 
       // Determine which edges the panel is closest to for animation direction
       // Use target position (not animated position) to avoid binding loops
@@ -1050,6 +1051,7 @@ Item {
           id: scaleAnimation
           duration: root.isClosing ? Style.animationFast : Style.animationNormal
           easing.type: Style.easingTypeFast
+          easing.bezierCurve: Style.easingCurveFast
 
           onRunningChanged: {
             // When scale shrink completes during close, finalize if no slide animation

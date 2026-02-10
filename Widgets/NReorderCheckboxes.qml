@@ -302,6 +302,7 @@ Item {
           NumberAnimation {
             duration: Style.animationNormal
             easing.type: Style.easingTypeFast
+            easing.bezierCurve: Style.easingCurveFast
           }
         }
       }

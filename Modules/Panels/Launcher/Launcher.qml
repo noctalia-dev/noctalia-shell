@@ -117,6 +117,7 @@ SmartPanel {
         NumberAnimation {
           duration: Style.animationFast
           easing.type: Style.easingTypeDefault
+          easing.bezierCurve: Style.easingCurveDefault
         }
       }
 

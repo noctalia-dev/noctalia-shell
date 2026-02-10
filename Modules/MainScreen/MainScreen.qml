@@ -90,6 +90,7 @@ PanelWindow {
     ColorAnimation {
       duration: isPanelClosing ? Style.animationFaster : Style.animationNormal
       easing.type: Style.easingTypeFast
+      easing.bezierCurve: Style.easingCurveFast
     }
   }
 

@@ -25,6 +25,7 @@ ColumnLayout {
     to: 1
     duration: Style.animationSlowest
     easing.type: Style.easingTypeDefault
+    easing.bezierCurve: Style.easingCurveDefault
     running: false
   }
 

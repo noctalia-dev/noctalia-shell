@@ -84,6 +84,7 @@ Item {
     NumberAnimation {
       duration: Style.animationNormal
       easing.type: Style.easingTypeDefault
+      easing.bezierCurve: Style.easingCurveDefault
     }
   }
 
@@ -166,6 +167,7 @@ Item {
       NumberAnimation {
         duration: Style.animationFast
         easing.type: Style.easingTypeFast
+        easing.bezierCurve: Style.easingCurveFast
       }
     }
   }
@@ -186,6 +188,7 @@ Item {
       NumberAnimation {
         duration: Style.animationFast
         easing.type: Style.easingTypeFast
+        easing.bezierCurve: Style.easingCurveFast
       }
     }
   }

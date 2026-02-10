@@ -739,6 +739,7 @@ Item {
           NumberAnimation {
             duration: Style.animationFast
             easing.type: Style.easingTypeSlow
+            easing.bezierCurve: Style.easingCurveSlow
           }
         }
 
@@ -816,6 +817,7 @@ Item {
                 NumberAnimation {
                   duration: Style.animationFast
                   easing.type: Style.easingTypeSlow
+                  easing.bezierCurve: Style.easingCurveSlow
                 }
               }
 
@@ -840,6 +842,7 @@ Item {
                 NumberAnimation {
                   duration: Style.animationFast
                   easing.type: Style.easingTypeSlow
+                  easing.bezierCurve: Style.easingCurveSlow
                 }
               }
 
@@ -1033,6 +1036,7 @@ Item {
                       NumberAnimation {
                         duration: Style.animationFast
                         easing.type: Style.easingTypeSlow
+                        easing.bezierCurve: Style.easingCurveSlow
                       }
                     }
                   }
@@ -1160,6 +1164,7 @@ Item {
                   to: 1
                   duration: Style.animationSlowest
                   easing.type: Style.easingTypeDefault
+                  easing.bezierCurve: Style.easingCurveDefault
                   running: false
                 }
 
@@ -1233,6 +1238,7 @@ Item {
                   to: 1.0
                   duration: Style.animationSlow
                   easing.type: Style.easingTypeFast
+                  easing.bezierCurve: Style.easingCurveFast
                 }
 
                 PauseAnimation {
@@ -1245,6 +1251,7 @@ Item {
                   to: 0
                   duration: Style.animationSlowest
                   easing.type: Style.easingTypeFast
+                  easing.bezierCurve: Style.easingCurveFast
                 }
               }
             }

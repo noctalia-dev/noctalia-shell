@@ -228,6 +228,7 @@ PopupWindow {
       NumberAnimation {
         duration: Style.animationNormal
         easing.type: Style.easingTypeDefault
+        easing.bezierCurve: Style.easingCurveDefault
       }
     }
 
@@ -236,6 +237,7 @@ PopupWindow {
       NumberAnimation {
         duration: Style.animationNormal
         easing.type: Style.easingTypeDefault
+        easing.bezierCurve: Style.easingCurveDefault
       }
     }
   }
@@ -256,6 +258,7 @@ PopupWindow {
       NumberAnimation {
         duration: Style.animationNormal
         easing.type: Style.easingTypeDefault
+        easing.bezierCurve: Style.easingCurveDefault
       }
     }
 
@@ -264,6 +267,7 @@ PopupWindow {
       NumberAnimation {
         duration: Style.animationNormal
         easing.type: Style.easingTypeDefault
+        easing.bezierCurve: Style.easingCurveDefault
       }
     }
 

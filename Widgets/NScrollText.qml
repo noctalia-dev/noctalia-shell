@@ -156,6 +156,7 @@ Item {
       to: 0
       duration: root.resettingDuration
       easing.type: Style.easingTypeFast
+      easing.bezierCurve: Style.easingCurveFast
       onFinished: {
         root.state = NScrollText.ScrollState.None;
         root.updateState();

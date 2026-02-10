@@ -165,6 +165,7 @@ Item {
       ColorAnimation {
         duration: Style.animationFast
         easing.type: Style.easingTypeSlow
+        easing.bezierCurve: Style.easingCurveSlow
       }
     }
   }

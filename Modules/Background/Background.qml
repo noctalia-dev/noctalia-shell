@@ -416,6 +416,7 @@ Variants {
         // The stripes shader feels faster visually, we make it a bit slower here.
         duration: transitionType == "stripes" ? Settings.data.wallpaper.transitionDuration * 1.6 : Settings.data.wallpaper.transitionDuration
         easing.type: Style.easingTypeSlow
+        easing.bezierCurve: Style.easingCurveSlow
         onFinished: {
           // Clear the tracking of what we're transitioning to
           transitioningToOriginalPath = "";

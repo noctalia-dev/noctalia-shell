@@ -64,6 +64,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mOnPrimary {
@@ -71,6 +72,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mSecondary {
@@ -78,6 +80,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mOnSecondary {
@@ -85,6 +88,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mTertiary {
@@ -92,6 +96,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mOnTertiary {
@@ -99,6 +104,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mError {
@@ -106,6 +112,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mOnError {
@@ -113,6 +120,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mSurface {
@@ -120,6 +128,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mOnSurface {
@@ -127,6 +136,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mSurfaceVariant {
@@ -134,6 +144,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mOnSurfaceVariant {
@@ -141,6 +152,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mOutline {
@@ -148,6 +160,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mShadow {
@@ -155,6 +168,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mHover {
@@ -162,6 +176,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on mOnHover {
@@ -169,6 +184,7 @@ Singleton {
     ColorAnimation {
       duration: Style.animationSlowest
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
 

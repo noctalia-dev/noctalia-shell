@@ -156,6 +156,7 @@ Item {
     NumberAnimation {
       duration: Style.animationNormal
       easing.type: Style.easingTypeDefault
+      easing.bezierCurve: Style.easingCurveDefault
     }
   }
 
@@ -164,6 +165,7 @@ Item {
     NumberAnimation {
       duration: Style.animationNormal
       easing.type: Style.easingTypeDefault
+      easing.bezierCurve: Style.easingCurveDefault
     }
   }
 
@@ -172,6 +174,7 @@ Item {
     NumberAnimation {
       duration: Style.animationNormal
       easing.type: Style.easingTypeDefault
+      easing.bezierCurve: Style.easingCurveDefault
     }
   }
 

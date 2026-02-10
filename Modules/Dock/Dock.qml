@@ -585,6 +585,7 @@ Loader {
               NumberAnimation {
                 duration: hidden ? hideAnimationDuration : showAnimationDuration
                 easing.type: Style.easingTypeSlow
+                easing.bezierCurve: Style.easingCurveSlow
               }
             }
 
@@ -843,12 +844,14 @@ Loader {
                             NumberAnimation {
                               duration: Style.animationFast
                               easing.type: Style.easingTypeFast
+                              easing.bezierCurve: Style.easingCurveFast
                             }
                           }
                           Behavior on y {
                             NumberAnimation {
                               duration: Style.animationFast
                               easing.type: Style.easingTypeFast
+                              easing.bezierCurve: Style.easingCurveFast
                             }
                           }
                         }
@@ -880,6 +883,7 @@ Loader {
                             NumberAnimation {
                               duration: Style.animationFast
                               easing.type: Style.easingTypeFast
+                              easing.bezierCurve: Style.easingCurveFast
                             }
                           }
                         }
@@ -897,6 +901,7 @@ Loader {
                             NumberAnimation {
                               duration: Style.animationFast
                               easing.type: Style.easingTypeFast
+                              easing.bezierCurve: Style.easingCurveFast
                             }
                           }
                         }

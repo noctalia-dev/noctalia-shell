@@ -161,6 +161,7 @@ Loader {
                     NumberAnimation {
                       duration: Style.animationNormal
                       easing.type: Style.easingTypeDefault
+                      easing.bezierCurve: Style.easingCurveDefault
                     }
                   }
                 }
@@ -200,6 +201,7 @@ Loader {
                     NumberAnimation {
                       duration: Style.animationNormal
                       easing.type: Style.easingTypeDefault
+                      easing.bezierCurve: Style.easingCurveDefault
                     }
                   }
                 }
@@ -258,6 +260,7 @@ Loader {
                     NumberAnimation {
                       duration: Style.animationNormal
                       easing.type: Style.easingTypeDefault
+                      easing.bezierCurve: Style.easingCurveDefault
                     }
                   }
                 }

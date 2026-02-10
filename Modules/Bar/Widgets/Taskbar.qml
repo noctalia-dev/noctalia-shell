@@ -588,6 +588,7 @@ Item {
     NumberAnimation {
       duration: Style.animationNormal
       easing.type: Style.easingTypeDefault
+      easing.bezierCurve: Style.easingCurveDefault
     }
   }
 
@@ -733,12 +734,14 @@ Item {
                 NumberAnimation {
                   duration: Style.animationFast
                   easing.type: Style.easingTypeFast
+                  easing.bezierCurve: Style.easingCurveFast
                 }
               }
               Behavior on y {
                 NumberAnimation {
                   duration: Style.animationFast
                   easing.type: Style.easingTypeFast
+                  easing.bezierCurve: Style.easingCurveFast
                 }
               }
             }
@@ -794,6 +797,7 @@ Item {
                 ColorAnimation {
                   duration: Style.animationFast
                   easing.type: Style.easingTypeSlow
+                  easing.bezierCurve: Style.easingCurveSlow
                 }
               }
             }
@@ -847,6 +851,7 @@ Item {
                       ColorAnimation {
                         duration: Style.animationFast
                         easing.type: Style.easingTypeDefault
+                        easing.bezierCurve: Style.easingCurveDefault
                       }
                     }
                   }

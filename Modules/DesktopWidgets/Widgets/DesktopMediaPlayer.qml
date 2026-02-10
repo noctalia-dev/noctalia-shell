@@ -253,6 +253,7 @@ DraggableDesktopWidget {
           NumberAnimation {
             duration: Style.animationSlow
             easing.type: Style.easingTypeSlow
+            easing.bezierCurve: Style.easingCurveSlow
           }
         }
         baseSize: Math.round(32 * widgetScale)
@@ -289,6 +290,7 @@ DraggableDesktopWidget {
           NumberAnimation {
             duration: Style.animationSlow
             easing.type: Style.easingTypeSlow
+            easing.bezierCurve: Style.easingCurveSlow
           }
         }
         baseSize: Math.round(32 * widgetScale)

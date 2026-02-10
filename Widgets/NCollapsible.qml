@@ -35,6 +35,7 @@ ColumnLayout {
       ColorAnimation {
         duration: Style.animationNormal
         easing.type: Style.easingTypeDefault
+        easing.bezierCurve: Style.easingCurveDefault
       }
     }
 
@@ -43,6 +44,7 @@ ColumnLayout {
       ColorAnimation {
         duration: Style.animationNormal
         easing.type: Style.easingTypeDefault
+        easing.bezierCurve: Style.easingCurveDefault
       }
     }
 
@@ -93,6 +95,7 @@ ColumnLayout {
           NumberAnimation {
             duration: Style.animationNormal
             easing.type: Style.easingTypeDefault
+            easing.bezierCurve: Style.easingCurveDefault
           }
         }
 
@@ -169,6 +172,7 @@ ColumnLayout {
       NumberAnimation {
         duration: Style.animationNormal
         easing.type: Style.easingTypeDefault
+        easing.bezierCurve: Style.easingCurveDefault
       }
     }
 
@@ -189,6 +193,7 @@ ColumnLayout {
       NumberAnimation {
         duration: Style.animationNormal
         easing.type: Style.easingTypeDefault
+        easing.bezierCurve: Style.easingCurveDefault
       }
     }
   }

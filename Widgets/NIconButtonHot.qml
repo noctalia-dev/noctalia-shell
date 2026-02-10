@@ -67,6 +67,7 @@ Rectangle {
     ColorAnimation {
       duration: Style.animationFast
       easing.type: Style.easingTypeFast
+      easing.bezierCurve: Style.easingCurveFast
     }
   }
 
@@ -97,6 +98,7 @@ Rectangle {
       ColorAnimation {
         duration: Style.animationFast
         easing.type: Style.easingTypeFast
+        easing.bezierCurve: Style.easingCurveFast
       }
     }
   }

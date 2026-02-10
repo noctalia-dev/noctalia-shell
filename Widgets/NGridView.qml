@@ -211,7 +211,7 @@ Item {
         visible: root.showGradientMasks && root.contentOverflows
         opacity: (gridView.contentY <= 1 || root.selectionOnFirstVisibleRow) ? 0 : 1
         Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Style.easingTypeFast }
+          NumberAnimation { duration: Style.animationFast; easing.type: Style.easingTypeFast; easing.bezierCurve: Style.easingCurveFast }
         }
         gradient: Gradient {
           GradientStop { position: 0.0; color: root.gradientColor }
@@ -233,7 +233,7 @@ Item {
         visible: root.showGradientMasks && root.contentOverflows
         opacity: ((gridView.contentY + gridView.height >= gridView.contentHeight - 1) || root.selectionOnLastVisibleRow) ? 0 : 1
         Behavior on opacity {
-          NumberAnimation { duration: Style.animationFast; easing.type: Style.easingTypeFast }
+          NumberAnimation { duration: Style.animationFast; easing.type: Style.easingTypeFast; easing.bezierCurve: Style.easingCurveFast }
         }
         gradient: Gradient {
           GradientStop { position: 0.0; color: "transparent" }

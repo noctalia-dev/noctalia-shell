@@ -146,6 +146,7 @@ Item {
     property: "x"
     duration: root.transitionTime
     easing.type: Style.easingTypeDefault
+    easing.bezierCurve: Style.easingCurveDefault
     onFinished: {
       if (target && target !== contentItems[currentIndex]) {
         target.visible = false;
@@ -161,6 +162,7 @@ Item {
     to: 0.25
     duration: root.transitionTime
     easing.type: Style.easingTypeDefault
+    easing.bezierCurve: Style.easingCurveDefault
   }
 
   NumberAnimation {
@@ -169,6 +171,7 @@ Item {
     to: 0
     duration: root.transitionTime
     easing.type: Style.easingTypeDefault
+    easing.bezierCurve: Style.easingCurveDefault
   }
 
   NumberAnimation {
@@ -177,5 +180,6 @@ Item {
     to: 1.0
     duration: root.transitionTime
     easing.type: Style.easingTypeDefault
+    easing.bezierCurve: Style.easingCurveDefault
   }
 }

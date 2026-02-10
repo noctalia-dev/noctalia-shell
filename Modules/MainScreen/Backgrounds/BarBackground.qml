@@ -119,6 +119,7 @@ ShapePath {
     NumberAnimation {
       duration: Style.animationFast
       easing.type: Style.easingTypeFast
+      easing.bezierCurve: Style.easingCurveFast
     }
   }
 

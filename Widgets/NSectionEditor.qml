@@ -562,11 +562,13 @@ NBox {
             to: 1
             duration: 400
             easing.type: Style.easingTypeSlow
+            easing.bezierCurve: Style.easingCurveSlow
           }
           NumberAnimation {
             to: 0.6
             duration: 400
             easing.type: Style.easingTypeSlow
+            easing.bezierCurve: Style.easingCurveSlow
           }
         }
 
@@ -574,12 +576,14 @@ NBox {
           NumberAnimation {
             duration: 100
             easing.type: Style.easingTypeDefault
+            easing.bezierCurve: Style.easingCurveDefault
           }
         }
         Behavior on y {
           NumberAnimation {
             duration: 100
             easing.type: Style.easingTypeDefault
+            easing.bezierCurve: Style.easingCurveDefault
           }
         }
       }

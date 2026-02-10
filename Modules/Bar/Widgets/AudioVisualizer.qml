@@ -88,12 +88,14 @@ Item {
     NumberAnimation {
       duration: Style.animationNormal
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
   Behavior on implicitHeight {
     NumberAnimation {
       duration: Style.animationNormal
       easing.type: Style.easingTypeSlow
+      easing.bezierCurve: Style.easingCurveSlow
     }
   }
 
