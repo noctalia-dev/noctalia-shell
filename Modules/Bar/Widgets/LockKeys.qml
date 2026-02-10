@@ -51,6 +51,8 @@ Item {
   readonly property real contentWidth: isVertical ? capsuleHeight : Math.round(layout.implicitWidth + Style.marginXL)
   readonly property real contentHeight: isVertical ? Math.round(layout.implicitHeight + Style.marginXL) : capsuleHeight
 
+  visible: !root.hideWhenOff || (root.showCaps && LockKeysService.capsLockOn) || (root.showNum && LockKeysService.numLockOn) || (root.showScroll && LockKeysService.scrollLockOn)
+
   implicitWidth: contentWidth
   implicitHeight: contentHeight
 
@@ -85,7 +87,6 @@ Item {
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
     border.width: Style.capsuleBorderWidth
-    visible: !root.hideWhenOff || (root.showCaps && LockKeysService.capsLockOn) || (root.showNum && LockKeysService.numLockOn) || (root.showScroll && LockKeysService.scrollLockOn)
 
     Item {
       id: layout
