@@ -28,6 +28,7 @@
   imagemagick,
   wget,
   python3,
+  wayland-scanner,
   # calendar support
   calendarSupport ? false,
   evolution-data-server,
@@ -90,6 +91,7 @@ stdenvNoCC.mkDerivation {
   preFixup = ''
     qtWrapperArgs+=(
       --prefix PATH : ${lib.makeBinPath (runtimeDeps ++ extraPackages)}
+      --prefix XDG_DATA_DIRS : ${wayland-scanner}/share
       --add-flags "-p $out/share/noctalia-shell"
       ${lib.optionalString calendarSupport "--prefix GI_TYPELIB_PATH : ${giTypelibPath}"}
     )

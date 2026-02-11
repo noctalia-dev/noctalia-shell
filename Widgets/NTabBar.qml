@@ -20,6 +20,10 @@ Rectangle {
   Component.onCompleted: _applyDistribution()
 
   function _updateFirstLast() {
+    // Defensive check for QML initialization timing
+    if (!tabRow || !tabRow.children) {
+      return;
+    }
     var kids = tabRow.children;
     var len = kids.length;
     var firstVisible = -1;
@@ -43,6 +47,9 @@ Rectangle {
   }
 
   function _applyDistribution() {
+    if (!tabRow || !tabRow.children) {
+      return;
+    }
     if (!distributeEvenly) {
       for (var i = 0; i < tabRow.children.length; i++) {
         var child = tabRow.children[i];

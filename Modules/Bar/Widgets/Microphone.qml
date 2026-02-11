@@ -38,6 +38,8 @@ Item {
   readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
   readonly property string displayMode: (widgetSettings.displayMode !== undefined) ? widgetSettings.displayMode : widgetMetadata.displayMode
   readonly property string middleClickCommand: (widgetSettings.middleClickCommand !== undefined) ? widgetSettings.middleClickCommand : widgetMetadata.middleClickCommand
+  readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
+  readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
 
   // Used to avoid opening the pill on Quickshell startup
   property bool firstInputVolumeReceived: false
@@ -117,7 +119,7 @@ Item {
                    if (action === "toggle-mute") {
                      AudioService.setInputMuted(!AudioService.inputMuted);
                    } else if (action === "custom-command") {
-                     Quickshell.execDetached(["sh", "-lc", middleClickCommand]);
+                     Quickshell.execDetached(["sh", "-c", middleClickCommand]);
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }
@@ -129,6 +131,8 @@ Item {
 
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
+    customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
+    customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
     icon: AudioService.getInputIcon()
     autoHide: false // Important to be false so we can hover as long as we want
     text: {
@@ -167,7 +171,7 @@ Item {
       PanelService.showContextMenu(contextMenu, pill, screen);
     }
     onMiddleClicked: {
-      Quickshell.execDetached(["sh", "-lc", middleClickCommand]);
+      Quickshell.execDetached(["sh", "-c", middleClickCommand]);
     }
   }
 }

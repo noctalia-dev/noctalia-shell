@@ -117,23 +117,7 @@ Item {
     if (widgetIndex < 0 || !screen || !screen.name) {
       return;
     }
-
-    var monitorWidgets = Settings.data.desktopWidgets.monitorWidgets || [];
-    var newMonitorWidgets = monitorWidgets.slice();
-
-    for (var i = 0; i < newMonitorWidgets.length; i++) {
-      if (newMonitorWidgets[i].name === screen.name) {
-        var widgets = (newMonitorWidgets[i].widgets || []).slice();
-        if (widgetIndex < widgets.length) {
-          widgets[widgetIndex] = Object.assign({}, widgets[widgetIndex], properties);
-          newMonitorWidgets[i] = Object.assign({}, newMonitorWidgets[i], {
-                                                 "widgets": widgets
-                                               });
-          Settings.data.desktopWidgets.monitorWidgets = newMonitorWidgets;
-        }
-        break;
-      }
-    }
+    DesktopWidgetRegistry.updateWidgetData(screen.name, widgetIndex, properties);
   }
 
   function removeWidget() {
@@ -208,79 +192,7 @@ Item {
   }
 
   function openWidgetSettings() {
-    if (!widgetData || !widgetData.id || !screen) {
-      return;
-    }
-
-    var widgetId = widgetData.id;
-    var hasSettings = false;
-
-    // Check if widget has settings
-    if (DesktopWidgetRegistry.isPluginWidget(widgetId)) {
-      var pluginId = widgetId.replace("plugin:", "");
-      var manifest = PluginRegistry.getPluginManifest(pluginId);
-      if (manifest && manifest.entryPoints && manifest.entryPoints.settings) {
-        hasSettings = true;
-      }
-    } else {
-      hasSettings = DesktopWidgetRegistry.widgetSettingsMap[widgetId] !== undefined;
-    }
-
-    if (!hasSettings) {
-      Logger.w("DraggableDesktopWidget", "Widget does not have settings:", widgetId);
-      return;
-    }
-
-    var popupMenuWindow = PanelService.getPopupMenuWindow(screen);
-    if (!popupMenuWindow) {
-      Logger.e("DraggableDesktopWidget", "No popup menu window found for screen");
-      return;
-    }
-
-    // Hide the dynamic context menu (popup window stays open for the dialog)
-    if (popupMenuWindow.hideDynamicMenu) {
-      popupMenuWindow.hideDynamicMenu();
-    }
-
-    var component = Qt.createComponent(Quickshell.shellDir + "/Modules/Panels/Settings/DesktopWidgets/DesktopWidgetSettingsDialog.qml");
-
-    function instantiateAndOpen() {
-      var dialog = component.createObject(popupMenuWindow.dialogParent, {
-                                            "widgetIndex": widgetIndex,
-                                            "widgetData": widgetData,
-                                            "widgetId": widgetId,
-                                            "sectionId": screen.name
-                                          });
-
-      if (dialog) {
-        dialog.updateWidgetSettings.connect((sec, idx, settings) => {
-                                              root.updateWidgetData(settings);
-                                            });
-        popupMenuWindow.hasDialog = true;
-        dialog.closed.connect(() => {
-                                popupMenuWindow.hasDialog = false;
-                                popupMenuWindow.close();
-                                dialog.destroy();
-                              });
-        dialog.open();
-      } else {
-        Logger.e("DraggableDesktopWidget", "Failed to create widget settings dialog");
-      }
-    }
-
-    if (component.status === Component.Ready) {
-      instantiateAndOpen();
-    } else if (component.status === Component.Error) {
-      Logger.e("DraggableDesktopWidget", "Error loading settings dialog component:", component.errorString());
-    } else {
-      component.statusChanged.connect(() => {
-                                        if (component.status === Component.Ready) {
-                                          instantiateAndOpen();
-                                        } else if (component.status === Component.Error) {
-                                          Logger.e("DraggableDesktopWidget", "Error loading settings dialog component:", component.errorString());
-                                        }
-                                      });
-    }
+    DesktopWidgetRegistry.openWidgetSettings(screen, widgetIndex, widgetData.id, widgetData);
   }
 
   function handleContextMenuAction(action) {
@@ -378,6 +290,7 @@ Item {
     id: contentContainer
     anchors.fill: parent
     z: 1
+    clip: true
   }
 
   // Context menu model and handler - menu is created dynamically in PopupMenuWindow

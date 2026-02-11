@@ -28,6 +28,7 @@ ColumnLayout {
   property bool valueUseFixedWidth: (widgetData && widgetData.useFixedWidth !== undefined) ? widgetData.useFixedWidth : (widgetMetadata && widgetMetadata.useFixedWidth !== undefined ? widgetMetadata.useFixedWidth : false)
   property bool valueShowProgressRing: (widgetData && widgetData.showProgressRing !== undefined) ? widgetData.showProgressRing : (widgetMetadata && widgetMetadata.showProgressRing !== undefined ? widgetMetadata.showProgressRing : true)
   property bool valueCompactMode: widgetData.compactMode !== undefined ? widgetData.compactMode : widgetMetadata.compactMode
+  property string valueTextColor: (widgetData && widgetData.textColor !== undefined) ? widgetData.textColor : (widgetMetadata && widgetMetadata.textColor !== undefined ? widgetMetadata.textColor : "none")
 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
@@ -49,6 +50,7 @@ ColumnLayout {
     settings.useFixedWidth = valueUseFixedWidth;
     settings.showProgressRing = valueShowProgressRing;
     settings.compactMode = valueCompactMode;
+    settings.textColor = valueTextColor;
     return settings;
   }
 
@@ -165,6 +167,18 @@ ColumnLayout {
                  valueShowProgressRing = checked;
                  settingsChanged(saveSettings());
                }
+  }
+
+  NComboBox {
+    label: I18n.tr("common.select-color")
+    description: I18n.tr("common.select-color-description")
+    model: Color.colorKeyModel
+    currentKey: valueTextColor
+    onSelected: key => {
+                  valueTextColor = key;
+                  settingsChanged(saveSettings());
+                }
+    minimumWidth: 200
   }
 
   NComboBox {

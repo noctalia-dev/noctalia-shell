@@ -34,7 +34,9 @@ Item {
   onHoverCountChanged: {
     if (hoverCount > 0) {
       resumeTimer.stop();
-      progressAnimation.pause();
+      if (progressAnimation.running && !progressAnimation.paused) {
+        progressAnimation.pause();
+      }
     } else {
       resumeTimer.start();
     }
@@ -45,7 +47,7 @@ Item {
     interval: 50
     repeat: false
     onTriggered: {
-      if (hoverCount === 0) {
+      if (hoverCount === 0 && progressAnimation.paused) {
         progressAnimation.resume();
       }
     }

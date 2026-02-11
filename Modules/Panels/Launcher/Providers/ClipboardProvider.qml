@@ -46,6 +46,14 @@ Item {
         }
       }
     }
+    function onActiveChanged() {
+      // When active state changes (e.g. dependency check completes), refresh results
+      if (ClipboardService.active && launcher && launcher.searchText.startsWith(">clip")) {
+        isWaitingForData = true;
+        gotResults = false;
+        ClipboardService.list(100);
+      }
+    }
   }
 
   // Initialize provider
@@ -113,6 +121,19 @@ Item {
 
     // Check if clipboard service is not active
     if (!ClipboardService.active) {
+      // If dependency check hasn't completed yet, show loading instead of disabled
+      if (!ClipboardService.dependencyChecked) {
+        return [
+              {
+                "name": I18n.tr("launcher.providers.clipboard-loading"),
+                "description": I18n.tr("launcher.providers.emoji-loading-description"),
+                "icon": iconMode === "tabler" ? "refresh" : "view-refresh",
+                "isTablerIcon": true,
+                "isImage": false,
+                "onActivate": function () {}
+              }
+            ];
+      }
       return [
             {
               "name": I18n.tr("launcher.providers.clipboard-history-disabled"),

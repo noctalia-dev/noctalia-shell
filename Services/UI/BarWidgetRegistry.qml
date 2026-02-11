@@ -52,13 +52,18 @@ Singleton {
                                      "Clock": "WidgetSettings/ClockSettings.qml",
                                      "ControlCenter": "WidgetSettings/ControlCenterSettings.qml",
                                      "CustomButton": "WidgetSettings/CustomButtonSettings.qml",
+                                     "DarkMode": "WidgetSettings/DarkModeSettings.qml",
+                                     "KeepAwake": "WidgetSettings/KeepAwakeSettings.qml",
                                      "KeyboardLayout": "WidgetSettings/KeyboardLayoutSettings.qml",
                                      "Launcher": "WidgetSettings/LauncherSettings.qml",
                                      "LockKeys": "WidgetSettings/LockKeysSettings.qml",
                                      "MediaMini": "WidgetSettings/MediaMiniSettings.qml",
                                      "Microphone": "WidgetSettings/MicrophoneSettings.qml",
                                      "Network": "WidgetSettings/NetworkSettings.qml",
+                                     "NightLight": "WidgetSettings/NightLightSettings.qml",
+                                     "NoctaliaPerformance": "WidgetSettings/NoctaliaPerformanceSettings.qml",
                                      "NotificationHistory": "WidgetSettings/NotificationHistorySettings.qml",
+                                     "PowerProfile": "WidgetSettings/PowerProfileSettings.qml",
                                      "SessionMenu": "WidgetSettings/SessionMenuSettings.qml",
                                      "Spacer": "WidgetSettings/SpacerSettings.qml",
                                      "SystemMonitor": "WidgetSettings/SystemMonitorSettings.qml",
@@ -66,6 +71,7 @@ Singleton {
                                      "Tray": "WidgetSettings/TraySettings.qml",
                                      "Volume": "WidgetSettings/VolumeSettings.qml",
                                      "VPN": "WidgetSettings/VPNSettings.qml",
+                                     "WallpaperSelector": "WidgetSettings/WallpaperSelectorSettings.qml",
                                      "Workspace": "WidgetSettings/WorkspaceSettings.qml"
                                    })
 
@@ -76,7 +82,8 @@ Singleton {
                                     "scrollingMode": "hover",
                                     "maxWidth": 145,
                                     "useFixedWidth": false,
-                                    "colorizeIcons": false
+                                    "colorizeIcons": false,
+                                    "textColor": "none"
                                   },
                                   "AudioVisualizer": {
                                     "width": 200,
@@ -84,8 +91,7 @@ Singleton {
                                     "hideWhenIdle": false
                                   },
                                   "Battery": {
-                                    "displayMode": "onhover",
-                                    "warningThreshold": 30,
+                                    "displayMode": "graphic-clean",
                                     "deviceNativePath": "__default__",
                                     "showPowerProfiles": false,
                                     "showNoctaliaPerformance": false,
@@ -93,13 +99,17 @@ Singleton {
                                     "hideIfIdle": false
                                   },
                                   "Bluetooth": {
-                                    "displayMode": "onhover"
+                                    "displayMode": "onhover",
+                                    "iconColor": "none",
+                                    "textColor": "none"
                                   },
                                   "Brightness": {
-                                    "displayMode": "onhover"
+                                    "displayMode": "onhover",
+                                    "iconColor": "none",
+                                    "textColor": "none"
                                   },
                                   "Clock": {
-                                    "usePrimaryColor": false,
+                                    "clockColor": "none",
                                     "useCustomFont": false,
                                     "customFont": "",
                                     "formatHorizontal": "HH:mm ddd, MMM dd",
@@ -144,9 +154,18 @@ Singleton {
                                     "colorizeSystemIcon": "none",
                                     "ipcIdentifier": ""
                                   },
+                                  "DarkMode": {
+                                    "iconColor": "none"
+                                  },
+                                  "KeepAwake": {
+                                    "iconColor": "none",
+                                    "textColor": "none"
+                                  },
                                   "KeyboardLayout": {
                                     "displayMode": "onhover",
-                                    "showIcon": true
+                                    "showIcon": true,
+                                    "iconColor": "none",
+                                    "textColor": "none"
                                   },
                                   "LockKeys": {
                                     "showCapsLock": true,
@@ -159,7 +178,7 @@ Singleton {
                                   },
                                   "Launcher": {
                                     "icon": "rocket",
-                                    "usePrimaryColor": false
+                                    "iconColor": "none"
                                   },
                                   "MediaMini": {
                                     "hideMode": "hidden",
@@ -172,6 +191,7 @@ Singleton {
                                     "showVisualizer": false,
                                     "showProgressRing": true,
                                     "visualizerType": "linear",
+                                    "textColor": "none",
                                     "compactMode": false,
                                     "panelShowAlbumArt": true,
                                     "panelShowVisualizer": true,
@@ -180,23 +200,27 @@ Singleton {
                                   },
                                   "Microphone": {
                                     "displayMode": "onhover",
-                                    "middleClickCommand": "pwvucontrol || pavucontrol"
+                                    "middleClickCommand": "pwvucontrol || pavucontrol",
+                                    "iconColor": "none",
+                                    "textColor": "none"
                                   },
                                   "NotificationHistory": {
                                     "showUnreadBadge": true,
                                     "hideWhenZero": false,
                                     "hideWhenZeroUnread": false,
-                                    "unreadBadgeColor": "primary"
+                                    "unreadBadgeColor": "primary",
+                                    "iconColor": "none"
                                   },
                                   "SessionMenu": {
-                                    "colorName": "error"
+                                    "iconColor": "error"
                                   },
                                   "Spacer": {
                                     "width": 20
                                   },
                                   "SystemMonitor": {
                                     "compactMode": true,
-                                    "usePrimaryColor": false,
+                                    "iconColor": "none",
+                                    "textColor": "none",
                                     "useMonospaceFont": true,
                                     "showCpuUsage": true,
                                     "showCpuFreq": false,
@@ -208,7 +232,8 @@ Singleton {
                                     "showSwapUsage": false,
                                     "showNetworkStats": false,
                                     "showDiskUsage": false,
-                                    "showDiskAsFree": false,
+                                    "showDiskUsageAsPercent": false,
+                                    "showDiskAvailable": false,
                                     "diskPath": "/"
                                   },
                                   "Taskbar": {
@@ -226,18 +251,29 @@ Singleton {
                                   "Tray": {
                                     "blacklist": [],
                                     "colorizeIcons": false,
+                                    "chevronColor": "none",
                                     "pinned": [],
                                     "drawerEnabled": true,
                                     "hidePassive": false
                                   },
                                   "VPN": {
-                                    "displayMode": "onhover"
-                                  },
-                                  "WiFi": {
-                                    "displayMode": "onhover"
+                                    "displayMode": "onhover",
+                                    "iconColor": "none",
+                                    "textColor": "none"
                                   },
                                   "Network": {
-                                    "displayMode": "onhover"
+                                    "displayMode": "onhover",
+                                    "iconColor": "none",
+                                    "textColor": "none"
+                                  },
+                                  "NightLight": {
+                                    "iconColor": "none"
+                                  },
+                                  "NoctaliaPerformance": {
+                                    "iconColor": "none"
+                                  },
+                                  "PowerProfile": {
+                                    "iconColor": "none"
                                   },
                                   "Workspace": {
                                     "labelMode": "index",
@@ -255,11 +291,17 @@ Singleton {
                                     "occupiedColor": "secondary",
                                     "emptyColor": "secondary",
                                     "showBadge": true,
-                                    "reverseScroll": false
+                                    "reverseScroll": false,
+                                    "pillSize": 0.6
                                   },
                                   "Volume": {
                                     "displayMode": "onhover",
-                                    "middleClickCommand": "pwvucontrol || pavucontrol"
+                                    "middleClickCommand": "pwvucontrol || pavucontrol",
+                                    "iconColor": "none",
+                                    "textColor": "none"
+                                  },
+                                  "WallpaperSelector": {
+                                    "iconColor": "none"
                                   }
                                 })
 

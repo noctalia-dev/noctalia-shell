@@ -30,6 +30,9 @@ Singleton {
   // Track current alphabetical index for each screen
   property var alphabeticalIndices: ({})
 
+  // Track used wallpapers for random mode (persisted across reboots)
+  property var usedRandomWallpapers: ({})
+
   property bool isInitialized: false
   property string wallpaperCacheFile: ""
 
@@ -57,6 +60,7 @@ Singleton {
   Connections {
     target: Settings.data.wallpaper
     function onDirectoryChanged() {
+      root.usedRandomWallpapers = {};
       root.refreshWallpapersList();
       // Emit directory change signals for monitors using the default directory
       if (!Settings.data.wallpaper.enableMultiMonitorDirectories) {
@@ -76,6 +80,7 @@ Singleton {
       }
     }
     function onEnableMultiMonitorDirectoriesChanged() {
+      root.usedRandomWallpapers = {};
       root.refreshWallpapersList();
       // Notify all monitors about potential directory changes
       for (var i = 0; i < Quickshell.screens.length; i++) {
@@ -125,6 +130,16 @@ Singleton {
           root.wallpaperChanged(Quickshell.screens[i].name, solidPath);
         }
       }
+    }
+    function onSortOrderChanged() {
+      root.refreshWallpapersList();
+    }
+  }
+
+  Connections {
+    target: WallhavenService
+    function onWallpaperDownloaded() {
+      root.refreshWallpapersList();
     }
   }
 
@@ -206,6 +221,14 @@ Singleton {
     transitionsModel.append({
                               "key": "wipe",
                               "name": I18n.tr("wallpaper.transitions.wipe")
+                            });
+    transitionsModel.append({
+                              "key": "pixelate",
+                              "name": I18n.tr("wallpaper.transitions.pixelate")
+                            });
+    transitionsModel.append({
+                              "key": "honeycomb",
+                              "name": I18n.tr("wallpaper.transitions.honeycomb")
                             });
   }
 
@@ -383,8 +406,7 @@ Singleton {
         var wallpaperList = getWallpapersList(screenName);
 
         if (wallpaperList.length > 0) {
-          var randomIndex = Math.floor(Math.random() * wallpaperList.length);
-          var randomPath = wallpaperList[randomIndex];
+          var randomPath = _pickUnusedRandom(screenName, wallpaperList);
           changeWallpaper(randomPath, screenName);
         }
       }
@@ -393,11 +415,56 @@ Singleton {
       // We can use any screenName here, so we just pick the primary one.
       var wallpaperList = getWallpapersList(Screen.name);
       if (wallpaperList.length > 0) {
-        var randomIndex = Math.floor(Math.random() * wallpaperList.length);
-        var randomPath = wallpaperList[randomIndex];
+        var randomPath = _pickUnusedRandom("all", wallpaperList);
         changeWallpaper(randomPath, undefined);
       }
     }
+  }
+
+  // -------------------------------------------------------------------
+  // Pick a random wallpaper that hasn't been used yet in the current cycle.
+  // Once all wallpapers have been shown, resets the pool (keeping only the
+  // last-shown wallpaper to avoid an immediate repeat).
+  function _pickUnusedRandom(key, wallpaperList) {
+    var used = usedRandomWallpapers[key] || [];
+
+    // Clean stale entries (files that were removed from the directory)
+    var wallpaperSet = new Set(wallpaperList);
+    used = used.filter(function (path) {
+      return wallpaperSet.has(path);
+    });
+
+    // Filter to wallpapers that haven't been used yet
+    var unused = wallpaperList.filter(function (path) {
+      return used.indexOf(path) === -1;
+    });
+
+    // If all have been used, reset but keep the last one to avoid immediate repeat
+    if (unused.length === 0) {
+      var lastUsed = used.length > 0 ? used[used.length - 1] : "";
+      used = lastUsed ? [lastUsed] : [];
+      unused = wallpaperList.filter(function (path) {
+        return used.indexOf(path) === -1;
+      });
+      // Edge case: only one wallpaper in the directory
+      if (unused.length === 0) {
+        unused = wallpaperList;
+      }
+      Logger.d("Wallpaper", "All wallpapers used for", key, "- resetting pool");
+    }
+
+    // Pick randomly from unused
+    var randomIndex = Math.floor(Math.random() * unused.length);
+    var picked = unused[randomIndex];
+
+    // Record as used
+    used.push(picked);
+    usedRandomWallpapers[key] = used;
+
+    // Persist
+    saveTimer.restart();
+
+    return picked;
   }
 
   // -------------------------------------------------------------------
@@ -559,8 +626,8 @@ Singleton {
     function checkComplete() {
       pendingScans--;
       if (pendingScans === 0) {
-        // Sort both lists
-        result.files.sort();
+        // Files are already sorted by _scanDirectoryInternal according to sortOrder setting
+        // Only sort directories alphabetically
         result.directories.sort();
         callback(result);
       }
@@ -697,6 +764,8 @@ Singleton {
       findArgs.push(filters[i]);
     }
     findArgs.push(")");
+    // Add printf to get modification time
+    findArgs.push("-printf", "%T@|%p\\n");
 
     // Create Process component inline
     var processString = `
@@ -725,18 +794,67 @@ Singleton {
       var files = [];
       if (exitCode === 0) {
         var lines = processObject.stdout.text.split('\n');
+        var parsedFiles = [];
+
         for (var i = 0; i < lines.length; i++) {
           var line = lines[i].trim();
           if (line !== '') {
-            var showHidden = Settings.data.wallpaper.showHiddenFiles;
-            var name = line.split('/').pop();
-            if (showHidden || !name.startsWith('.')) {
-              files.push(line);
+            var parts = line.split('|');
+            if (parts.length >= 2) { // Handle potential extra pipes in filename by joining rest
+              var timestamp = parseFloat(parts[0]);
+              var path = parts.slice(1).join('|');
+
+              var showHidden = Settings.data.wallpaper.showHiddenFiles;
+              var name = path.split('/').pop();
+              if (showHidden || !name.startsWith('.')) {
+                parsedFiles.push({
+                                   path: path,
+                                   time: timestamp,
+                                   name: name
+                                 });
+              }
+            } else if (line.indexOf('|') === -1) {
+              // Fallback for unexpected output format or old find versions (unlikely but safe)
+              var path = line;
+              var showHidden = Settings.data.wallpaper.showHiddenFiles;
+              var name = path.split('/').pop();
+              if (showHidden || !name.startsWith('.')) {
+                parsedFiles.push({
+                                   path: path,
+                                   time: 0,
+                                   name: name
+                                 });
+              }
             }
           }
         }
-        // Sort files for consistent ordering
-        files.sort();
+        // Sort files based on settings
+        var sortOrder = Settings.data.wallpaper.sortOrder || "name";
+
+        // Fischer-Yates shuffle
+        if (sortOrder === "random") {
+          for (let i = parsedFiles.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const temp = parsedFiles[i];
+            parsedFiles[i] = parsedFiles[j];
+            parsedFiles[j] = temp;
+          }
+        } else {
+          parsedFiles.sort(function (a, b) {
+            if (sortOrder === "date_desc") { // Newest first
+              return b.time - a.time;
+            } else if (sortOrder === "date_asc") { // Oldest first
+              return a.time - b.time;
+            } else if (sortOrder === "name_desc") {
+              return b.name.localeCompare(a.name);
+            } else { // name (asc)
+              return a.name.localeCompare(b.name);
+            }
+          });
+        }
+
+        // Map back to string array
+        files = parsedFiles.map(f => f.path);
 
         if (updateList) {
           wallpaperLists[screenName] = files;
@@ -809,11 +927,13 @@ Singleton {
       id: wallpaperCacheAdapter
       property var wallpapers: ({})
       property string defaultWallpaper: root.noctaliaDefaultWallpaper
+      property var usedRandomWallpapers: ({})
     }
 
     onLoaded: {
       // Load wallpapers from cache file
       root.currentWallpapers = wallpaperCacheAdapter.wallpapers || {};
+      root.usedRandomWallpapers = wallpaperCacheAdapter.usedRandomWallpapers || {};
 
       // Load default wallpaper from cache if it exists, otherwise use Noctalia default
       if (wallpaperCacheAdapter.defaultWallpaper && wallpaperCacheAdapter.defaultWallpaper !== "") {
@@ -843,6 +963,7 @@ Singleton {
     onTriggered: {
       wallpaperCacheAdapter.wallpapers = root.currentWallpapers;
       wallpaperCacheAdapter.defaultWallpaper = root.defaultWallpaper;
+      wallpaperCacheAdapter.usedRandomWallpapers = root.usedRandomWallpapers;
       wallpaperCacheView.writeAdapter();
       Logger.d("Wallpaper", "Saved wallpapers to cache file");
     }

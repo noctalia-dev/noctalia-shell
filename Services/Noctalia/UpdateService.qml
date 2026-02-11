@@ -11,7 +11,7 @@ Singleton {
   id: root
 
   // Version properties
-  readonly property string baseVersion: "4.2.6"
+  readonly property string baseVersion: "4.4.3"
   readonly property bool isDevelopment: true
   readonly property string developmentSuffix: "-git"
   readonly property string currentVersion: `v${!isDevelopment ? baseVersion : baseVersion + developmentSuffix}`
@@ -22,7 +22,7 @@ Singleton {
   // URLs
   readonly property string discordUrl: "https://discord.noctalia.dev"
   readonly property string feedbackUrl: Quickshell.env("NOCTALIA_CHANGELOG_FEEDBACK_URL") || ""
-  readonly property string upgradeLogBaseUrl: Quickshell.env("NOCTALIA_UPGRADELOG_URL") || "https://noctalia.dev:7777/upgradelog"
+  readonly property string upgradeLogBaseUrl: Quickshell.env("NOCTALIA_UPGRADELOG_URL") || "https://api.noctalia.dev/upgradelog"
 
   // Changelog properties
   property bool initialized: false
@@ -306,10 +306,6 @@ Singleton {
     if (!currentVersion)
       return;
 
-    if (!Settings.data.general.showChangelogOnStartup) {
-      return;
-    }
-
     if (!changelogStateLoaded) {
       pendingShowRequest = true;
       return;
@@ -321,6 +317,12 @@ Singleton {
 
     if (lastSeen === target)
       return;
+
+    if (!Settings.data.general.showChangelogOnStartup) {
+      // user has opted out of seeing changelogs, mark as seen
+      markChangelogSeen(target);
+      return;
+    }
 
     changelogFromVersion = lastSeen;
     changelogToVersion = target;

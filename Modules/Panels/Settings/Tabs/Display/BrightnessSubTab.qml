@@ -19,10 +19,45 @@ ColumnLayout {
       model: Quickshell.screens || []
       delegate: NBox {
         Layout.fillWidth: true
-        implicitHeight: contentCol.implicitHeight + Style.marginL * 2
+        implicitHeight: Math.round(contentCol.implicitHeight + Style.marginL * 2)
         color: Color.mSurface
 
         property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)
+        property real localBrightness: 0.5
+        property bool localBrightnessChanging: false
+
+        onBrightnessMonitorChanged: {
+          if (brightnessMonitor && !localBrightnessChanging)
+            localBrightness = brightnessMonitor.brightness || 0.5;
+        }
+
+        Connections {
+          target: BrightnessService
+          function onMonitorBrightnessChanged(monitor, newBrightness) {
+            if (monitor === brightnessMonitor && !localBrightnessChanging) {
+              localBrightness = newBrightness;
+            }
+          }
+        }
+        Connections {
+          target: brightnessMonitor
+          ignoreUnknownSignals: true
+          function onBrightnessUpdated() {
+            if (brightnessMonitor && !localBrightnessChanging) {
+              localBrightness = brightnessMonitor.brightness || 0;
+            }
+          }
+        }
+        Timer {
+          id: debounceTimer
+          interval: 120
+          repeat: false
+          onTriggered: {
+            if (brightnessMonitor && brightnessMonitor.brightnessControlAvailable && Math.abs(localBrightness - brightnessMonitor.brightness) >= 0.005) {
+              brightnessMonitor.setBrightness(localBrightness);
+            }
+          }
+        }
 
         ColumnLayout {
           id: contentCol
@@ -80,24 +115,32 @@ ColumnLayout {
                 id: brightnessSlider
                 from: 0
                 to: 1
-                value: brightnessMonitor ? brightnessMonitor.brightness : 0.5
+                value: localBrightness
                 stepSize: 0.01
                 enabled: brightnessMonitor ? brightnessMonitor.brightnessControlAvailable : false
                 onMoved: value => {
                            if (brightnessMonitor && brightnessMonitor.brightnessControlAvailable) {
-                             brightnessMonitor.setBrightness(value);
+                             localBrightness = value;
+                             debounceTimer.restart();
                            }
                          }
                 onPressedChanged: (pressed, value) => {
+                                    localBrightnessChanging = pressed;
                                     if (brightnessMonitor && brightnessMonitor.brightnessControlAvailable) {
-                                      brightnessMonitor.setBrightness(value);
+                                      if (pressed) {
+                                        localBrightness = value;
+                                        debounceTimer.restart();
+                                      } else {
+                                        localBrightness = value;
+                                        debounceTimer.restart();
+                                      }
                                     }
                                   }
                 Layout.fillWidth: true
               }
 
               NText {
-                text: brightnessMonitor ? Math.round(brightnessSlider.value * 100) + "%" : "N/A"
+                text: brightnessMonitor ? Math.round(localBrightness * 100) + "%" : "N/A"
                 Layout.preferredWidth: 55
                 horizontalAlignment: Text.AlignRight
                 Layout.alignment: Qt.AlignVCenter

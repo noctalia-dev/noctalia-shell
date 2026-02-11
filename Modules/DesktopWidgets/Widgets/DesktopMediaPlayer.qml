@@ -82,12 +82,10 @@ DraggableDesktopWidget {
     z: 0
     clip: true
     active: shouldShowVisualizer
-    layer.enabled: root.roundedCorners
+    layer.enabled: true
     layer.smooth: true
     layer.effect: MultiEffect {
-      maskEnabled: true
-      maskThresholdMin: 0.95
-      maskSpreadAtMin: 0.15
+      maskEnabled: root.roundedCorners
       maskSource: ShaderEffectSource {
         sourceItem: Rectangle {
           width: root.width - Math.round(Style.marginXS * widgetScale) * 2
@@ -117,7 +115,7 @@ DraggableDesktopWidget {
         anchors.fill: parent
         values: CavaService.values
         fillColor: Color.mPrimary
-        opacity: 1.0
+        opacity: 0.5
       }
     }
 
@@ -127,7 +125,7 @@ DraggableDesktopWidget {
         anchors.fill: parent
         values: CavaService.values
         fillColor: Color.mPrimary
-        opacity: 1.0
+        opacity: 0.5
       }
     }
 
@@ -137,7 +135,7 @@ DraggableDesktopWidget {
         anchors.fill: parent
         values: CavaService.values
         fillColor: Color.mPrimary
-        opacity: 1.0
+        opacity: 0.5
       }
     }
   }

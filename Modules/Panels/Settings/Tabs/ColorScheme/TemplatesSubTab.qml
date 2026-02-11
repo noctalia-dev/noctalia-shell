@@ -56,11 +56,19 @@ ColumnLayout {
           if (app.id === "discord") {
             include = TemplateProcessor.isDiscordClientEnabled(client.name);
           } else if (app.id === "code") {
-            include = TemplateProcessor.isCodeClientEnabled(client.name);
+            // For code clients, resolve all theme paths dynamically (version-independent)
+            if (TemplateProcessor.isCodeClientEnabled(client.name)) {
+              var resolvedPaths = TemplateRegistry.resolvedCodeClientPaths(client.name);
+              for (var p = 0; p < resolvedPaths.length; p++) {
+                validClients.push(resolvedPaths[p]);
+              }
+            }
+            continue;
           }
 
           if (include) {
-            validClients.push(client.path);
+            if (client.path)
+              validClients.push(client.path);
           }
         }
 

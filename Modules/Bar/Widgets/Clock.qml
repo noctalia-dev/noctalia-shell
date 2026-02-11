@@ -38,12 +38,14 @@ Item {
   readonly property var now: Time.now
 
   // Resolve settings: try user settings or defaults from BarWidgetRegistry
-  readonly property bool usePrimaryColor: widgetSettings.usePrimaryColor !== undefined ? widgetSettings.usePrimaryColor : widgetMetadata.usePrimaryColor
+  readonly property string clockColor: widgetSettings.clockColor !== undefined ? widgetSettings.clockColor : widgetMetadata.clockColor
   readonly property bool useCustomFont: widgetSettings.useCustomFont !== undefined ? widgetSettings.useCustomFont : widgetMetadata.useCustomFont
   readonly property string customFont: widgetSettings.customFont !== undefined ? widgetSettings.customFont : widgetMetadata.customFont
   readonly property string formatHorizontal: widgetSettings.formatHorizontal !== undefined ? widgetSettings.formatHorizontal : widgetMetadata.formatHorizontal
   readonly property string formatVertical: widgetSettings.formatVertical !== undefined ? widgetSettings.formatVertical : widgetMetadata.formatVertical
   readonly property string tooltipFormat: widgetSettings.tooltipFormat !== undefined ? widgetSettings.tooltipFormat : widgetMetadata.tooltipFormat
+
+  readonly property color textColor: Color.resolveColorKey(clockColor)
 
   // Content dimensions for implicit sizing
   readonly property real contentWidth: isBarVertical ? capsuleHeight : Math.round((isBarVertical ? verticalLoader.implicitWidth : horizontalLoader.implicitWidth) + Style.marginXL)
@@ -100,7 +102,7 @@ Item {
                 }
               }
               applyUiScale: false
-              color: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
+              color: textColor
               wrapMode: Text.WordWrap
               Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             }
@@ -124,7 +126,7 @@ Item {
               family: useCustomFont && customFont ? customFont : Settings.data.ui.fontDefault
               pointSize: barFontSize
               applyUiScale: false
-              color: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
+              color: textColor
               wrapMode: Text.WordWrap
               Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
             }

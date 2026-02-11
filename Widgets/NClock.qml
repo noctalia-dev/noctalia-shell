@@ -13,6 +13,9 @@ Item {
   // Style: "analog" or "digital"
   property string clockStyle: "analog"
 
+  // Show seconds progress ring (digital only)
+  property bool showProgress: true
+
   // Color properties
   property color backgroundColor: Color.mPrimary
   property color clockColor: Color.mOnPrimary
@@ -52,6 +55,8 @@ Item {
   // Font size properties for digital clock
   property real hoursFontSize: Style.fontSizeXS
   property real minutesFontSize: Style.fontSizeXXS
+  property int hoursFontWeight: Style.fontWeightBold
+  property int minutesFontWeight: Style.fontWeightBold
 
   // Scale ratio for canvas line widths (used by desktop widget scaling)
   property real scaleRatio: Style.uiScaleRatio
@@ -101,9 +106,24 @@ Item {
           return root.minutesFontSize;
         });
       }
+      if ("hoursFontWeight" in item) {
+        item.hoursFontWeight = Qt.binding(function () {
+          return root.hoursFontWeight;
+        });
+      }
+      if ("minutesFontWeight" in item) {
+        item.minutesFontWeight = Qt.binding(function () {
+          return root.minutesFontWeight;
+        });
+      }
       if (item.hasOwnProperty("scaleRatio")) {
         item.scaleRatio = Qt.binding(function () {
           return root.scaleRatio;
+        });
+      }
+      if ("showProgress" in item) {
+        item.showProgress = Qt.binding(function () {
+          return root.showProgress;
         });
       }
     }
@@ -218,7 +238,10 @@ Item {
     property color progressColor: Color.mError
     property real hoursFontSize: Style.fontSizeXS
     property real minutesFontSize: Style.fontSizeXXS
+    property int hoursFontWeight: Style.fontWeightBold
+    property int minutesFontWeight: Style.fontWeightBold
     property real scaleRatio: Style.uiScaleRatio
+    property bool showProgress: true
 
     anchors.fill: parent
 
@@ -226,6 +249,7 @@ Item {
     Canvas {
       id: secondsProgress
       anchors.fill: parent
+      visible: showProgress
       property real progress: now.getSeconds() / 60
       onProgressChanged: requestPaint()
       Connections {
@@ -271,7 +295,7 @@ Item {
         }
 
         pointSize: hoursFontSize
-        font.weight: Style.fontWeightBold
+        font.weight: hoursFontWeight
         color: clockColor
         family: Settings.data.ui.fontFixed
         Layout.alignment: Qt.AlignHCenter
@@ -280,7 +304,7 @@ Item {
       NText {
         text: Qt.formatTime(now, "mm")
         pointSize: minutesFontSize
-        font.weight: Style.fontWeightBold
+        font.weight: minutesFontWeight
         color: clockColor
         family: Settings.data.ui.fontFixed
         Layout.alignment: Qt.AlignHCenter

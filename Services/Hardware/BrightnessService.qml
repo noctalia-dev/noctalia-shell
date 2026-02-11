@@ -227,9 +227,9 @@ Singleton {
         // For internal displays, query the system directly
         refreshProc.command = ["sh", "-c", "cat " + monitor.brightnessPath + " && " + "cat " + monitor.maxBrightnessPath];
         refreshProc.running = true;
-      } else if (monitor.isDdc) {
+      } else if (monitor.isDdc && monitor.busNum !== "") {
         // For DDC displays, get the current value
-        refreshProc.command = ["ddcutil", "-b", monitor.busNum, "getvcp", "10", "--brief"];
+        refreshProc.command = ["ddcutil", "-b", monitor.busNum, "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
         refreshProc.running = true;
       } else if (monitor.isAppleDisplay) {
         // For Apple displays, get the current value
@@ -311,7 +311,7 @@ Singleton {
 
     // Timer for debouncing rapid changes
     readonly property Timer timer: Timer {
-      interval: 100
+      interval: 250
       onTriggered: {
         if (!isNaN(monitor.queuedBrightness)) {
           monitor.setBrightness(monitor.queuedBrightness);
@@ -319,21 +319,6 @@ Singleton {
         }
       }
     }
-
-    // Disabled as this is very inneficient and create spikes lag on many computers due to I2C being very slow and synchronous.
-    // // Timer for polling DDC monitor brightness (every 30 seconds)
-    // readonly property Timer pollTimer: Timer {
-    //   interval: 30000
-    //   repeat: true
-    //   running: monitor.isDdc
-    //   triggeredOnStart: true
-    //   onTriggered: {
-    //     // Only refresh if not currently setting brightness
-    //     if (!monitor.commandRunning && isNaN(monitor.queuedBrightness)) {
-    //       monitor.refreshBrightnessFromSystem();
-    //     }
-    //   }
-    // }
 
     function setBrightnessDebounced(value: real): void {
       monitor.queuedBrightness = value;
@@ -377,17 +362,23 @@ Singleton {
       }
 
       // Execute the brightness change command
-      monitor.commandRunning = true;
-      monitor.ignoreNextChange = true;
-
       if (isAppleDisplay) {
+        monitor.commandRunning = true;
+        monitor.ignoreNextChange = true;
         setBrightnessProc.command = ["asdbctl", "set", rounded];
         setBrightnessProc.running = true;
-      } else if (isDdc) {
+      } else if (isDdc && busNum !== "") {
+        monitor.commandRunning = true;
+        monitor.ignoreNextChange = true;
         var ddcValue = Math.round(value * monitor.maxBrightness);
-        setBrightnessProc.command = ["ddcutil", "-b", busNum, "--sleep-multiplier=0.05", "setvcp", "10", ddcValue];
-        setBrightnessProc.running = true;
-      } else {
+        var ddcBus = busNum;
+        Qt.callLater(() => {
+                       setBrightnessProc.command = ["ddcutil", "-b", ddcBus, "--noverify", "--async", "--sleep-multiplier=0.05", "setvcp", "10", ddcValue];
+                       setBrightnessProc.running = true;
+                     });
+      } else if (!isDdc) {
+        monitor.commandRunning = true;
+        monitor.ignoreNextChange = true;
         setBrightnessProc.command = ["brightnessctl", "s", rounded + "%"];
         setBrightnessProc.running = true;
       }
@@ -396,14 +387,16 @@ Singleton {
     function initBrightness(): void {
       if (isAppleDisplay) {
         initProc.command = ["asdbctl", "get"];
-      } else if (isDdc) {
-        initProc.command = ["ddcutil", "-b", busNum, "getvcp", "10", "--brief"];
-      } else {
+        initProc.running = true;
+      } else if (isDdc && busNum !== "") {
+        initProc.command = ["ddcutil", "-b", busNum, "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
+        initProc.running = true;
+      } else if (!isDdc) {
         // Internal backlight - find the first available backlight device and get its info
         // This now returns: device_path, current_brightness, max_brightness (on separate lines)
         initProc.command = ["sh", "-c", "for dev in /sys/class/backlight/*; do " + "  if [ -f \"$dev/brightness\" ] && [ -f \"$dev/max_brightness\" ]; then " + "    echo \"$dev\"; " + "    cat \"$dev/brightness\"; " + "    cat \"$dev/max_brightness\"; " + "    break; " + "  fi; " + "done"];
+        initProc.running = true;
       }
-      initProc.running = true;
     }
 
     onBusNumChanged: initBrightness()

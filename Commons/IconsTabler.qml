@@ -4788,6 +4788,7 @@ Singleton {
     "playstation-triangle": "\u{f2af}",
     "playstation-x": "\u{f2b0}",
     "plug": "\u{ebd9}",
+    "plug-filled": "\u{f6b3}",
     "plug-connected": "\u{f00a}",
     "plug-connected-x": "\u{f0a0}",
     "plug-off": "\u{f180}",

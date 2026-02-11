@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pam
-import Quickshell.Services.UPower
 import Quickshell.Wayland
 import qs.Commons
 import qs.Services.Compositor
@@ -12,6 +11,7 @@ import qs.Services.Keyboard
 import qs.Services.Media
 import qs.Services.UI
 import qs.Widgets
+import "../../Helpers/Keybinds.js" as Keybinds
 
 Loader {
   id: root
@@ -75,219 +75,241 @@ Loader {
         WlSessionLockSurface {
           id: lockSurface
 
-          Item {
-            id: batteryIndicator
-
-            property bool isReady: BatteryService.batteryReady
-            property real percent: BatteryService.batteryPercentage
-            property bool charging: BatteryService.batteryCharging
-            property bool pluggedIn: BatteryService.batteryPluggedIn
-            property bool batteryVisible: isReady && BatteryService.hasAnyBattery()
-          }
-
-          Item {
-            id: keyboardLayout
-            property string currentLayout: KeyboardLayoutService.currentLayout
-          }
-
-          // Background with wallpaper, gradient, and screen corners
-          LockScreenBackground {
-            id: backgroundComponent
-            screen: lockSurface.screen
-          }
-
-          Item {
+          Loader {
             anchors.fill: parent
+            active: true
+            sourceComponent: (Settings.data.general.lockScreenMonitors.length === 0 || Settings.data.general.lockScreenMonitors.includes(lockSurface.screen.name)) ? fullLockScreenComponent : blackScreenComponent
+          }
 
-            // Mouse area to trigger focus on cursor movement (workaround for Hyprland focus issues)
-            MouseArea {
-              anchors.fill: parent
-              hoverEnabled: true
-              acceptedButtons: Qt.NoButton
-              onPositionChanged: {
-                if (passwordInput) {
-                  passwordInput.forceActiveFocus();
-                }
-              }
-            }
+          Component {
+            id: fullLockScreenComponent
 
-            // Header with avatar, welcome, time, date
-            LockScreenHeader {
-              id: headerComponent
-            }
+            Item {
+              Item {
+                id: batteryIndicator
 
-            // Info notification
-            Rectangle {
-              width: infoRowLayout.implicitWidth + Style.marginXL * 1.5
-              height: 50
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 280 : 360) * Style.uiScaleRatio
-              radius: Style.radiusL
-              color: Color.mTertiary
-              visible: lockContext.showInfo && lockContext.infoMessage && !panelComponent.timerActive
-              opacity: visible ? 1.0 : 0.0
-
-              RowLayout {
-                id: infoRowLayout
-                anchors.centerIn: parent
-                spacing: Style.marginM
-
-                NIcon {
-                  icon: "circle-key"
-                  pointSize: Style.fontSizeXL
-                  color: Color.mOnTertiary
-                }
-
-                NText {
-                  text: lockContext.infoMessage
-                  color: Color.mOnTertiary
-                  pointSize: Style.fontSizeL
-                  horizontalAlignment: Text.AlignHCenter
-                }
+                property bool isReady: BatteryService.batteryReady
+                property real percent: BatteryService.batteryPercentage
+                property bool charging: BatteryService.batteryCharging
+                property bool pluggedIn: BatteryService.batteryPluggedIn
+                property bool batteryVisible: isReady
+                property string icon: BatteryService.batteryIcon
               }
 
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: Style.animationNormal
-                  easing.type: Easing.OutCubic
-                }
-              }
-            }
-
-            // Error notification
-            Rectangle {
-              width: errorRowLayout.implicitWidth + Style.marginXL * 1.5
-              height: 50
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 280 : 360) * Style.uiScaleRatio
-              radius: Style.radiusL
-              color: Color.mError
-              visible: lockContext.showFailure && lockContext.errorMessage && !panelComponent.timerActive
-              opacity: visible ? 1.0 : 0.0
-
-              RowLayout {
-                id: errorRowLayout
-                anchors.centerIn: parent
-                spacing: Style.marginM
-
-                NIcon {
-                  icon: "alert-circle"
-                  pointSize: Style.fontSizeXL
-                  color: Color.mOnError
-                }
-
-                NText {
-                  text: lockContext.errorMessage || "Authentication failed"
-                  color: Color.mOnError
-                  pointSize: Style.fontSizeL
-                  horizontalAlignment: Text.AlignHCenter
-                }
+              Item {
+                id: keyboardLayout
+                property string currentLayout: KeyboardLayoutService.currentLayout
               }
 
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: Style.animationNormal
-                  easing.type: Easing.OutCubic
-                }
+              // Background with wallpaper, gradient, and screen corners
+              LockScreenBackground {
+                id: backgroundComponent
+                screen: lockSurface.screen
               }
-            }
 
-            // Countdown notification
-            Rectangle {
-              width: countdownRowLayout.implicitWidth + Style.marginXL * 1.5
-              height: 50
-              anchors.horizontalCenter: parent.horizontalCenter
-              anchors.bottom: parent.bottom
-              anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 280 : 360) * Style.uiScaleRatio
-              radius: Style.radiusL
-              color: Color.mSurface
-              visible: panelComponent.timerActive
-              opacity: visible ? 1.0 : 0.0
-
-              RowLayout {
-                id: countdownRowLayout
+              Item {
                 anchors.fill: parent
-                anchors.margins: Style.marginM
-                spacing: Style.marginM
 
-                NIcon {
-                  icon: "clock"
-                  pointSize: Style.fontSizeXL
+                // Mouse area to trigger focus on cursor movement (workaround for Hyprland focus issues)
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  acceptedButtons: Qt.NoButton
+                  onPositionChanged: {
+                    if (passwordInput) {
+                      passwordInput.forceActiveFocus();
+                    }
+                  }
+                }
+
+                // Header with avatar, welcome, time, date
+                LockScreenHeader {
+                  id: headerComponent
+                }
+
+                // Info notification
+                Rectangle {
+                  width: infoRowLayout.implicitWidth + Style.marginXL * 1.5
+                  height: 50
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  anchors.bottom: parent.bottom
+                  anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 280 : 360) * Style.uiScaleRatio
+                  radius: Style.radiusL
+                  color: Color.mTertiary
+                  visible: lockContext.showInfo && lockContext.infoMessage && !panelComponent.timerActive
+                  opacity: visible ? 1.0 : 0.0
+
+                  RowLayout {
+                    id: infoRowLayout
+                    anchors.centerIn: parent
+                    spacing: Style.marginM
+
+                    NIcon {
+                      icon: "circle-key"
+                      pointSize: Style.fontSizeXL
+                      color: Color.mOnTertiary
+                    }
+
+                    NText {
+                      text: lockContext.infoMessage
+                      color: Color.mOnTertiary
+                      pointSize: Style.fontSizeL
+                      horizontalAlignment: Text.AlignHCenter
+                    }
+                  }
+
+                  Behavior on opacity {
+                    NumberAnimation {
+                      duration: Style.animationNormal
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+
+                // Error notification
+                Rectangle {
+                  width: errorRowLayout.implicitWidth + Style.marginXL * 1.5
+                  height: 50
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  anchors.bottom: parent.bottom
+                  anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 280 : 360) * Style.uiScaleRatio
+                  radius: Style.radiusL
+                  color: Color.mError
+                  visible: lockContext.showFailure && lockContext.errorMessage && !panelComponent.timerActive
+                  opacity: visible ? 1.0 : 0.0
+
+                  RowLayout {
+                    id: errorRowLayout
+                    anchors.centerIn: parent
+                    spacing: Style.marginM
+
+                    NIcon {
+                      icon: "alert-circle"
+                      pointSize: Style.fontSizeXL
+                      color: Color.mOnError
+                    }
+
+                    NText {
+                      text: lockContext.errorMessage || "Authentication failed"
+                      color: Color.mOnError
+                      pointSize: Style.fontSizeL
+                      horizontalAlignment: Text.AlignHCenter
+                    }
+                  }
+
+                  Behavior on opacity {
+                    NumberAnimation {
+                      duration: Style.animationNormal
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+
+                // Countdown notification
+                Rectangle {
+                  width: countdownRowLayout.implicitWidth + Style.marginXL * 1.5
+                  height: 50
+                  anchors.horizontalCenter: parent.horizontalCenter
+                  anchors.bottom: parent.bottom
+                  anchors.bottomMargin: (Settings.data.general.compactLockScreen ? 280 : 360) * Style.uiScaleRatio
+                  radius: Style.radiusL
+                  color: Color.mSurface
+                  visible: panelComponent.timerActive
+                  opacity: visible ? 1.0 : 0.0
+
+                  RowLayout {
+                    id: countdownRowLayout
+                    anchors.fill: parent
+                    anchors.margins: Style.marginM
+                    spacing: Style.marginM
+
+                    NIcon {
+                      icon: "clock"
+                      pointSize: Style.fontSizeXL
+                      color: Color.mPrimary
+                    }
+
+                    NText {
+                      text: I18n.tr("session-menu.action-in-seconds", {
+                                      "action": I18n.tr("common." + panelComponent.pendingAction),
+                                      "seconds": Math.ceil(panelComponent.timeRemaining / 1000)
+                                    })
+                      color: Color.mOnSurface
+                      pointSize: Style.fontSizeL
+                      horizontalAlignment: Text.AlignHCenter
+                      font.weight: Style.fontWeightBold
+                    }
+
+                    Item {
+                      Layout.fillWidth: true
+                    }
+
+                    NIconButton {
+                      icon: "x"
+                      tooltipText: I18n.tr("session-menu.cancel-timer")
+                      baseSize: 32
+                      colorBg: Qt.alpha(Color.mPrimary, 0.1)
+                      colorFg: Color.mPrimary
+                      colorBgHover: Color.mPrimary
+                      onClicked: panelComponent.cancelTimer()
+                    }
+                  }
+
+                  Behavior on opacity {
+                    NumberAnimation {
+                      duration: Style.animationNormal
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+
+                // Hidden input that receives actual text
+                TextInput {
+                  id: passwordInput
+                  width: 0
+                  height: 0
+                  visible: false
+                  enabled: !lockContext.unlockInProgress
+                  font.pointSize: Style.fontSizeM
                   color: Color.mPrimary
+                  echoMode: TextInput.Password
+                  passwordCharacter: "•"
+                  passwordMaskDelay: 0
+                  text: lockContext.currentText
+                  onTextChanged: lockContext.currentText = text
+
+                  Keys.onPressed: function (event) {
+                    if (Keybinds.checkKey(event, 'enter', Settings)) {
+                      lockContext.tryUnlock();
+                      event.accepted = true;
+                    }
+                    if (Keybinds.checkKey(event, 'escape', Settings) && panelComponent.timerActive) {
+                      panelComponent.cancelTimer();
+                      event.accepted = true;
+                    }
+                  }
+
+                  Component.onCompleted: forceActiveFocus()
                 }
 
-                NText {
-                  text: I18n.tr("session-menu.action-in-seconds", {
-                                  "action": I18n.tr("common." + panelComponent.pendingAction),
-                                  "seconds": Math.ceil(panelComponent.timeRemaining / 1000)
-                                })
-                  color: Color.mOnSurface
-                  pointSize: Style.fontSizeL
-                  horizontalAlignment: Text.AlignHCenter
-                  font.weight: Style.fontWeightBold
-                }
-
-                Item {
-                  Layout.fillWidth: true
-                }
-
-                NIconButton {
-                  icon: "x"
-                  tooltipText: I18n.tr("session-menu.cancel-timer")
-                  baseSize: 32
-                  colorBg: Qt.alpha(Color.mPrimary, 0.1)
-                  colorFg: Color.mPrimary
-                  colorBgHover: Color.mPrimary
-                  onClicked: panelComponent.cancelTimer()
-                }
-              }
-
-              Behavior on opacity {
-                NumberAnimation {
-                  duration: Style.animationNormal
-                  easing.type: Easing.OutCubic
+                // Main panel with password, weather, media, session controls
+                LockScreenPanel {
+                  id: panelComponent
+                  lockControl: lockContext
+                  batteryIndicator: batteryIndicator
+                  keyboardLayout: keyboardLayout
+                  passwordInput: passwordInput
                 }
               }
             }
+          }
 
-            // Hidden input that receives actual text
-            TextInput {
-              id: passwordInput
-              width: 0
-              height: 0
-              visible: false
-              enabled: !lockContext.unlockInProgress
-              font.pointSize: Style.fontSizeM
-              color: Color.mPrimary
-              echoMode: TextInput.Password
-              passwordCharacter: "•"
-              passwordMaskDelay: 0
-              text: lockContext.currentText
-              onTextChanged: lockContext.currentText = text
+          Component {
+            id: blackScreenComponent
 
-              Keys.onPressed: function (event) {
-                if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                  lockContext.tryUnlock();
-                  event.accepted = true;
-                }
-                if (event.key === Qt.Key_Escape && panelComponent.timerActive) {
-                  panelComponent.cancelTimer();
-                  event.accepted = true;
-                }
-              }
-
-              Component.onCompleted: forceActiveFocus()
-            }
-
-            // Main panel with password, weather, media, session controls
-            LockScreenPanel {
-              id: panelComponent
-              lockControl: lockContext
-              batteryIndicator: batteryIndicator
-              keyboardLayout: keyboardLayout
-              passwordInput: passwordInput
+            Rectangle {
+              anchors.fill: parent
+              color: "black"
             }
           }
         }

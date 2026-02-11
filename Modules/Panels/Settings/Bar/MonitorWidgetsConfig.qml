@@ -14,6 +14,9 @@ NBox {
 
   required property var screen
   readonly property string screenName: screen?.name || ""
+  // determine bar orientation
+  readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
+  readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
 
   color: Color.mSurfaceVariant
   Layout.fillWidth: true
@@ -153,8 +156,9 @@ NBox {
 
     // Left Section
     NSectionEditor {
-      sectionName: I18n.tr("positions.left")
+      sectionName: root.barIsVertical ? I18n.tr("positions.top") : I18n.tr("positions.left")
       sectionId: "left"
+      barIsVertical: root.barIsVertical
       screen: root.screen
       settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml")
       widgetRegistry: BarWidgetRegistry
@@ -172,6 +176,7 @@ NBox {
     NSectionEditor {
       sectionName: I18n.tr("positions.center")
       sectionId: "center"
+      barIsVertical: root.barIsVertical
       screen: root.screen
       settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml")
       widgetRegistry: BarWidgetRegistry
@@ -187,8 +192,9 @@ NBox {
 
     // Right Section
     NSectionEditor {
-      sectionName: I18n.tr("positions.right")
+      sectionName: root.barIsVertical ? I18n.tr("positions.bottom") : I18n.tr("positions.right")
       sectionId: "right"
+      barIsVertical: root.barIsVertical
       screen: root.screen
       settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml")
       widgetRegistry: BarWidgetRegistry

@@ -12,13 +12,14 @@ Supported scheme types:
 - monochrome: Pure grayscale M3 scheme (chroma = 0, only error has color)
 - vibrant: Prioritizes the most saturated colors regardless of area coverage
 - faithful: Prioritizes dominant colors by area, what you see is what you get
+- dysfunctional: Like faithful but picks the 2nd most dominant color family
 - muted: Preserves hue but caps saturation low (for monochrome/monotonal wallpapers)
 
 Usage:
     python3 template-processor.py IMAGE_OR_JSON [OPTIONS]
 
 Options:
-    --scheme-type    Scheme type: tonal-spot (default), content, fruit-salad, rainbow, monochrome, vibrant, faithful, muted
+    --scheme-type    Scheme type: tonal-spot (default), content, fruit-salad, rainbow, monochrome, vibrant, faithful, dysfunctional, muted
     --dark           Generate dark theme only
     --light          Generate light theme only
     --both           Generate both themes (default)
@@ -83,7 +84,7 @@ Examples:
     # Scheme type selection
     parser.add_argument(
         '--scheme-type',
-        choices=['tonal-spot', 'content', 'fruit-salad', 'rainbow', 'monochrome', 'vibrant', 'faithful', 'muted'],
+        choices=['tonal-spot', 'content', 'fruit-salad', 'rainbow', 'monochrome', 'vibrant', 'faithful', 'dysfunctional', 'muted'],
         default='tonal-spot',
         help='Color scheme type (default: tonal-spot)'
     )
@@ -250,8 +251,16 @@ def main() -> int:
                 print(f"Error: Not a file: {args.image}", file=sys.stderr)
                 return 1
 
+            # Determine scheme type
+            scheme_type = args.scheme_type
+
+            # M3 schemes use Triangle filter (matches matugen), others use Box
+            # (sharper downscale preserves distinct color regions for k-means)
+            m3_schemes = {"tonal-spot", "content", "fruit-salad", "rainbow", "monochrome"}
+            resize_filter = "Triangle" if scheme_type in m3_schemes else "Box"
+
             try:
-                pixels = read_image(args.image)
+                pixels = read_image(args.image, resize_filter)
             except ImageReadError as e:
                 print(f"Error reading image: {e}", file=sys.stderr)
                 return 1
@@ -259,14 +268,12 @@ def main() -> int:
                 print(f"Unexpected error reading image: {e}", file=sys.stderr)
                 return 1
 
-            # Determine scheme type
-            scheme_type = args.scheme_type
-
             # Extract palette based on scheme type:
             # - M3 schemes (tonal-spot, fruit-salad, rainbow, content): Use Wu quantizer + Score
             #   This matches matugen's color extraction exactly
             # - vibrant: Use k-means clustering for colorful/blended colors
             # - faithful: Use Wu quantizer for primary (dominant by area), k-means for accents
+            # - dysfunctional: Like faithful but picks 2nd most dominant color family
             # - muted: Like count but without chroma filtering (for monochrome wallpapers)
             if scheme_type == "vibrant":
                 # K-means with chroma scoring for vibrant, blended colors
@@ -275,6 +282,10 @@ def main() -> int:
                 # K-means with count scoring - picks dominant color by area coverage
                 # This ensures primary reflects what you actually see in the image
                 palette = extract_palette(pixels, k=5, scoring="count")
+            elif scheme_type == "dysfunctional":
+                # K-means with dysfunctional scoring - picks 2nd most dominant color family
+                # For when the dominant color is not what you want as primary
+                palette = extract_palette(pixels, k=5, scoring="dysfunctional")
             elif scheme_type == "muted":
                 # K-means with muted scoring - accepts low/zero chroma colors
                 # For monochrome/monotonal wallpapers where dominant color has low saturation

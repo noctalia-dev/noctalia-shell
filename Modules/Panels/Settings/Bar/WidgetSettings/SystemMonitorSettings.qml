@@ -17,7 +17,8 @@ ColumnLayout {
 
   // Local, editable state for checkboxes
   property bool valueCompactMode: widgetData.compactMode !== undefined ? widgetData.compactMode : widgetMetadata.compactMode
-  property bool valueUsePrimaryColor: widgetData.usePrimaryColor !== undefined ? widgetData.usePrimaryColor : widgetMetadata.usePrimaryColor
+  property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
+  property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
   property bool valueUseMonospaceFont: widgetData.useMonospaceFont !== undefined ? widgetData.useMonospaceFont : widgetMetadata.useMonospaceFont
   property bool valueShowCpuUsage: widgetData.showCpuUsage !== undefined ? widgetData.showCpuUsage : widgetMetadata.showCpuUsage
   property bool valueShowCpuFreq: widgetData.showCpuFreq !== undefined ? widgetData.showCpuFreq : widgetMetadata.showCpuFreq
@@ -29,13 +30,15 @@ ColumnLayout {
   property bool valueShowSwapUsage: widgetData.showSwapUsage !== undefined ? widgetData.showSwapUsage : widgetMetadata.showSwapUsage
   property bool valueShowNetworkStats: widgetData.showNetworkStats !== undefined ? widgetData.showNetworkStats : widgetMetadata.showNetworkStats
   property bool valueShowDiskUsage: widgetData.showDiskUsage !== undefined ? widgetData.showDiskUsage : widgetMetadata.showDiskUsage
-  property bool valueShowDiskAsFree: widgetData.showDiskAsFree !== undefined ? widgetData.showDiskAsFree : widgetMetadata.showDiskAsFree
+  property bool valueShowDiskUsageAsPercent: widgetData.showDiskUsageAsPercent !== undefined ? widgetData.showDiskUsageAsPercent : widgetMetadata.showDiskUsageAsPercent
+  property bool valueShowDiskAvailable: widgetData.showDiskAvailable !== undefined ? widgetData.showDiskAvailable : widgetMetadata.showDiskAvailable
   property string valueDiskPath: widgetData.diskPath !== undefined ? widgetData.diskPath : widgetMetadata.diskPath
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.compactMode = valueCompactMode;
-    settings.usePrimaryColor = valueUsePrimaryColor;
+    settings.iconColor = valueIconColor;
+    settings.textColor = valueTextColor;
     settings.useMonospaceFont = valueUseMonospaceFont;
     settings.showCpuUsage = valueShowCpuUsage;
     settings.showCpuFreq = valueShowCpuFreq;
@@ -47,7 +50,8 @@ ColumnLayout {
     settings.showSwapUsage = valueShowSwapUsage;
     settings.showNetworkStats = valueShowNetworkStats;
     settings.showDiskUsage = valueShowDiskUsage;
-    settings.showDiskAsFree = valueShowDiskAsFree;
+    settings.showDiskUsageAsPercent = valueShowDiskUsageAsPercent;
+    settings.showDiskAvailable = valueShowDiskAvailable;
     settings.diskPath = valueDiskPath;
 
     return settings;
@@ -64,15 +68,28 @@ ColumnLayout {
                }
   }
 
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("bar.clock.use-primary-color-label")
-    description: I18n.tr("bar.clock.use-primary-color-description")
-    checked: valueUsePrimaryColor
-    onToggled: checked => {
-                 valueUsePrimaryColor = checked;
-                 settingsChanged(saveSettings());
-               }
+  NComboBox {
+    label: I18n.tr("common.select-icon-color")
+    description: I18n.tr("common.select-color-description")
+    model: Color.colorKeyModel
+    currentKey: valueIconColor
+    onSelected: key => {
+                  valueIconColor = key;
+                  settingsChanged(saveSettings());
+                }
+    minimumWidth: 200
+  }
+
+  NComboBox {
+    label: I18n.tr("common.select-color")
+    description: I18n.tr("common.select-color-description")
+    model: Color.colorKeyModel
+    currentKey: valueTextColor
+    onSelected: key => {
+                  valueTextColor = key;
+                  settingsChanged(saveSettings());
+                }
+    minimumWidth: 200
     visible: !valueCompactMode
   }
 
@@ -103,8 +120,8 @@ ColumnLayout {
   NToggle {
     id: showCpuFreq
     Layout.fillWidth: true
-    label: "Show CPU Frequency" // TODO: use I18n.tr
-    description: "Display the current CPU clock speed in GHz" // TODO: use I18n.tr
+    label: I18n.tr("bar.system-monitor.cpu-frequency-label")
+    description: I18n.tr("bar.system-monitor.cpu-frequency-description")
     checked: valueShowCpuFreq
     onToggled: checked => {
                  valueShowCpuFreq = checked;
@@ -211,16 +228,27 @@ ColumnLayout {
   }
 
   NToggle {
-    id: showDiskAsFree
+    id: showDiskUsageAsPercent
     Layout.fillWidth: true
-    label: "Show Free Space" // TODO: use I18n.tr
-    description: "Display available space (GB) instead of percentage" // TODO: use I18n.tr
-    checked: valueShowDiskAsFree
+    label: I18n.tr("bar.system-monitor.storage-as-percentage-label")
+    description: I18n.tr("bar.system-monitor.storage-as-percentage-description")
+    checked: valueShowDiskUsageAsPercent
     onToggled: checked => {
-                 valueShowDiskAsFree = checked;
+                 valueShowDiskUsageAsPercent = checked;
                  settingsChanged(saveSettings());
                }
-    visible: valueShowDiskUsage
+  }
+
+  NToggle {
+    id: showDiskAvailable
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.storage-available-label")
+    description: I18n.tr("bar.system-monitor.storage-available-description")
+    checked: valueShowDiskAvailable
+    onToggled: checked => {
+                 valueShowDiskAvailable = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NComboBox {

@@ -14,7 +14,7 @@ Singleton {
   // Constants (centralized tunables)
   readonly property int ctlPollMs: 1500
   readonly property int ctlPollSoonMs: 250
-  readonly property int scanAutoStopMs: 6000
+  readonly property int scanAutoStopMs: 10000
 
   property bool airplaneModeToggled: false
   property bool lastBluetoothBlocked: false
@@ -52,7 +52,7 @@ Singleton {
   }
 
   // Tunables for CLI pairing/connect flow
-  property int pairWaitSeconds: 20
+  property int pairWaitSeconds: 45
   property int connectAttempts: 5
   property int connectRetryIntervalMs: 2000
 
@@ -103,7 +103,7 @@ Singleton {
   Process {
     id: fallbackScanProcess
     // Pipe scan on and a long sleep to bluetoothctl to keep it running
-    command: ["sh", "-c", "(echo 'scan on'; sleep 3600) | bluetoothctl"]
+    command: ["sh", "-c", "trap 'kill 0' EXIT; (echo 'scan on'; sleep 3600) | bluetoothctl"]
     onExited: Logger.d("Bluetooth", "Fallback scan process exited")
   }
 
@@ -121,13 +121,13 @@ Singleton {
     var nativeSuccess = false;
     try {
       if (adapter) {
-        if (active && adapter.startDiscovery !== undefined) {
+        if (active && adapter.discovering !== undefined) {
           // Logger.e("Bluetooth", "Starting discovery with Quickshell API"); // used for debugging
-          adapter.startDiscovery();
+          adapter.discovering = true;
           nativeSuccess = true;
-        } else if (!active && adapter.stopDiscovery !== undefined) {
+        } else if (!active && adapter.discovering !== undefined) {
           // Logger.e("Bluetooth", "Stopping discovery with Quickshell API"); // used for debugging
-          adapter.stopDiscovery();
+          adapter.discovering = false;
           nativeSuccess = true;
         }
       } else {
@@ -540,12 +540,14 @@ Singleton {
         var chunk = data;
         if (chunk.indexOf("[PIN_REQ]") !== -1) {
           root.pinRequired = true;
-          Logger.i("Bluetooth", "PIN required for pairing");
+          Logger.d("Bluetooth", "PIN required for pairing");
           ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("bluetooth.panel.pin-required"), "lock");
         }
       }
     }
-    stderr: StdioCollector {}
+    stderr: SplitParser {
+      onRead: data => Logger.d("Bluetooth", data)
+    }
     onExited: {
       root.pinRequired = false;
       Logger.i("Bluetooth", "Pairing process exited.");
@@ -586,7 +588,7 @@ Singleton {
     const totalPauseMs = (pairWait * 1000) + (attempts * intervalSec * 1000) + 2000;
     _pauseDiscoveryFor(totalPauseMs);
 
-    const scriptPath = Quickshell.shellDir + "/Scripts/python/src/network/bluetooth-connect.py";
+    const scriptPath = Quickshell.shellDir + "/Scripts/python/src/network/bluetooth-pair.py";
 
     pairingProcess.command = ["python3", scriptPath, String(addr), String(pairWait), String(attempts), String(intervalSec)];
     pairingProcess.running = true;

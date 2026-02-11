@@ -13,7 +13,7 @@ Item {
   property string icon: ""
   property string text: ""
   property string suffix: ""
-  property string tooltipText: ""
+  property var tooltipText: ""
   property bool autoHide: false
   property bool forceOpen: false
   property bool forceClose: false
@@ -21,6 +21,8 @@ Item {
   property bool hovered: false
   property color customBackgroundColor: "transparent"
   property color customTextIconColor: "transparent"
+  property color customIconColor: "transparent"
+  property color customTextColor: "transparent"
 
   readonly property bool collapseToIcon: forceClose && !forceOpen
 
@@ -50,6 +52,8 @@ Item {
   // Always prioritize hover color, then the custom one and finally the fallback color
   readonly property color bgColor: hovered ? Color.mHover : (customBackgroundColor.a > 0) ? customBackgroundColor : Style.capsuleColor
   readonly property color fgColor: hovered ? Color.mOnHover : (customTextIconColor.a > 0) ? customTextIconColor : Color.mOnSurface
+  readonly property color iconFgColor: hovered ? Color.mOnHover : (customIconColor.a > 0) ? customIconColor : (customTextIconColor.a > 0) ? customTextIconColor : Color.mOnSurface
+  readonly property color textFgColor: hovered ? Color.mOnHover : (customTextColor.a > 0) ? customTextColor : (customTextIconColor.a > 0) ? customTextIconColor : Color.mOnSurface
 
   readonly property real iconSize: Style.toOdd(pillHeight * 0.48)
 
@@ -139,7 +143,7 @@ Item {
       family: Settings.data.ui.fontFixed
       pointSize: root.barFontSize
       applyUiScale: false
-      color: root.fgColor
+      color: root.textFgColor
       visible: revealed
     }
 
@@ -173,7 +177,7 @@ Item {
       icon: root.icon
       pointSize: iconSize
       applyUiScale: false
-      color: root.fgColor
+      color: root.iconFgColor
       // Center horizontally
       x: (iconCircle.width - width) / 2
       // Center vertically accounting for font metrics
@@ -282,15 +286,15 @@ Item {
       }
       TooltipService.hide();
     }
-    onClicked: function (mouse) {
-      if (mouse.button === Qt.LeftButton) {
-        root.clicked();
-      } else if (mouse.button === Qt.RightButton) {
-        root.rightClicked();
-      } else if (mouse.button === Qt.MiddleButton) {
-        root.middleClicked();
-      }
-    }
+    onClicked: mouse => {
+                 if (mouse.button === Qt.LeftButton) {
+                   root.clicked();
+                 } else if (mouse.button === Qt.RightButton) {
+                   root.rightClicked();
+                 } else if (mouse.button === Qt.MiddleButton) {
+                   root.middleClicked();
+                 }
+               }
     onWheel: wheel => root.wheel(wheel.angleDelta.y)
   }
 

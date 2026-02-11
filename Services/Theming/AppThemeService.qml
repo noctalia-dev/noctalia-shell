@@ -39,6 +39,10 @@ Singleton {
         generateFromWallpaper();
       }
     }
+    function onGenerationMethodChanged() {
+      Logger.d("AppThemeService", "Generation method changed to:", Settings.data.colorSchemes.generationMethod);
+      generate();
+    }
   }
 
   // PUBLIC FUNCTIONS

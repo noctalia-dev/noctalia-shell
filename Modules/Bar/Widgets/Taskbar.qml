@@ -395,9 +395,9 @@ Item {
           Logger.d("Taskbar", "Executing terminal app manually: " + app.name);
           const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
           const command = terminal.concat(app.command);
-          Quickshell.execDetached(command);
+          CompositorService.spawn(command);
         } else if (app.command && app.command.length > 0) {
-          Quickshell.execDetached(app.command);
+          CompositorService.spawn(app.command);
         } else if (app.execute) {
           app.execute();
         } else {
@@ -896,31 +896,31 @@ Item {
               }
             }
 
-            onClicked: function (mouse) {
-              if (!modelData)
-                return;
-              if (mouse.button === Qt.LeftButton) {
-                if (isRunning && modelData.window) {
-                  // Running app - focus it
-                  try {
-                    CompositorService.focusWindow(modelData.window);
-                  } catch (error) {
-                    Logger.e("Taskbar", "Failed to activate toplevel: " + error);
-                  }
-                } else if (isPinned) {
-                  // Pinned app not running - launch it
-                  root.launchPinnedApp(modelData.appId);
-                }
-              } else if (mouse.button === Qt.RightButton) {
-                TooltipService.hide();
-                // Only show context menu for running apps
-                if (isRunning && modelData.window) {
-                  root.selectedWindowId = modelData.id;
-                  root.selectedAppId = modelData.appId;
-                  root.openTaskbarContextMenu(taskbarItem);
-                }
-              }
-            }
+            onClicked: mouse => {
+                         if (!modelData)
+                         return;
+                         if (mouse.button === Qt.LeftButton) {
+                           if (isRunning && modelData.window) {
+                             // Running app - focus it
+                             try {
+                               CompositorService.focusWindow(modelData.window);
+                             } catch (error) {
+                               Logger.e("Taskbar", "Failed to activate toplevel: " + error);
+                             }
+                           } else if (isPinned) {
+                             // Pinned app not running - launch it
+                             root.launchPinnedApp(modelData.appId);
+                           }
+                         } else if (mouse.button === Qt.RightButton) {
+                           TooltipService.hide();
+                           // Only show context menu for running apps
+                           if (isRunning && modelData.window) {
+                             root.selectedWindowId = modelData.id;
+                             root.selectedAppId = modelData.appId;
+                             root.openTaskbarContextMenu(taskbarItem);
+                           }
+                         }
+                       }
             onEntered: {
               root.hoveredWindowId = taskbarItem.modelData.id;
               TooltipService.show(taskbarItem, taskbarItem.title, BarService.getTooltipDirection(root.screen?.name));

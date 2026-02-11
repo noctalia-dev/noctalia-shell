@@ -37,28 +37,32 @@ ColumnLayout {
     description: I18n.tr("panels.desktop-widgets.system-stat-stat-type-description")
     currentKey: valueStatType
     minimumWidth: 260 * Style.uiScaleRatio
-    model: [
-      {
-        "key": "CPU",
-        "name": I18n.tr("system-monitor.cpu-usage")
-      },
-      {
-        "key": "GPU",
-        "name": I18n.tr("panels.system-monitor.gpu-section-label")
-      },
-      {
-        "key": "Memory",
-        "name": I18n.tr("common.memory")
-      },
-      {
-        "key": "Network",
-        "name": I18n.tr("bar.system-monitor.network-traffic-label")
-      },
-      {
-        "key": "Disk",
-        "name": I18n.tr("system-monitor.disk")
-      }
-    ]
+    model: {
+      let items = [
+            {
+              "key": "CPU",
+              "name": I18n.tr("system-monitor.cpu-usage")
+            },
+            {
+              "key": "Memory",
+              "name": I18n.tr("common.memory")
+            },
+            {
+              "key": "Network",
+              "name": I18n.tr("bar.system-monitor.network-traffic-label")
+            },
+            {
+              "key": "Disk",
+              "name": I18n.tr("system-monitor.disk")
+            }
+          ];
+      if (Settings.data.systemMonitor.enableDgpuMonitoring)
+        items.push({
+                     "key": "GPU",
+                     "name": I18n.tr("panels.system-monitor.gpu-section-label")
+                   });
+      return items;
+    }
     onSelected: key => {
                   valueStatType = key;
                   settingsChanged(saveSettings());

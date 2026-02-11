@@ -293,6 +293,85 @@ PopupWindow {
               anchors.rightMargin: Style.marginM
               spacing: Style.marginS
 
+              // Indicator Container
+              Item {
+                visible: (modelData?.buttonType ?? QsMenuButtonType.None) !== QsMenuButtonType.None
+
+                implicitWidth: Math.round(Style.baseWidgetSize * 0.5)
+                implicitHeight: Math.round(Style.baseWidgetSize * 0.5)
+                Layout.alignment: Qt.AlignVCenter
+
+                // Helper properties
+                readonly property int type: modelData?.buttonType ?? QsMenuButtonType.None
+                readonly property bool isRadio: type === QsMenuButtonType.RadioButton
+                readonly property bool isChecked: modelData?.checkState === Qt.Checked || (modelData?.checked ?? false)
+
+                // Color Logic
+                readonly property color activeColor: mouseArea.containsMouse ? Color.mOnHover : Color.mPrimary
+                readonly property color checkMarkColor: mouseArea.containsMouse ? Color.mHover : Color.mOnPrimary
+                readonly property color borderColor: isChecked ? activeColor : (mouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface)
+
+                // Checkbox Visuals
+                Rectangle {
+                  visible: !parent.isRadio
+                  anchors.centerIn: parent
+                  width: Math.round(Style.baseWidgetSize * 0.5)
+                  height: Math.round(Style.baseWidgetSize * 0.5)
+                  radius: Style.iRadiusXS
+                  color: "transparent" // Transparent to match RadioButton style
+                  border.color: parent.borderColor
+                  border.width: Style.borderM
+
+                  Behavior on border.color {
+                    ColorAnimation {
+                      duration: Style.animationFast
+                    }
+                  }
+
+                  NIcon {
+                    visible: parent.parent.isChecked
+                    anchors.centerIn: parent
+                    anchors.horizontalCenterOffset: -1
+                    icon: "check"
+                    color: parent.parent.activeColor
+                    pointSize: Math.max(Style.fontSizeXXS, parent.width * 0.6)
+                  }
+                }
+
+                // RadioButton Visuals
+                Rectangle {
+                  visible: parent.isRadio
+                  anchors.centerIn: parent
+                  width: Style.toOdd(Style.baseWidgetSize * 0.5)
+                  height: Style.toOdd(Style.baseWidgetSize * 0.5)
+                  radius: width / 2
+                  color: "transparent"
+                  border.color: parent.borderColor
+                  border.width: Style.borderM // Slightly thicker for radio look
+
+                  Behavior on border.color {
+                    ColorAnimation {
+                      duration: Style.animationFast
+                    }
+                  }
+
+                  Rectangle {
+                    visible: parent.parent.isChecked
+                    anchors.centerIn: parent
+                    width: Style.toOdd(parent.width * 0.5)
+                    height: Style.toOdd(parent.height * 0.5)
+                    radius: width / 2
+                    color: parent.parent.activeColor
+
+                    Behavior on color {
+                      ColorAnimation {
+                        duration: Style.animationFast
+                      }
+                    }
+                  }
+                }
+              }
+
               NText {
                 id: text
                 Layout.fillWidth: true

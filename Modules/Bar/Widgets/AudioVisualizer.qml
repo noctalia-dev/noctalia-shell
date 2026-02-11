@@ -51,7 +51,6 @@ Item {
       return Color.mTertiary;
     case "error":
       return Color.mError;
-    case "onSurface":
     default:
       return Color.mOnSurface;
     }

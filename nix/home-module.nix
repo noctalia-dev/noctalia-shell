@@ -148,7 +148,7 @@ in
               sourceUrl = "https://github.com/noctalia-dev/noctalia-plugins";
             };
           };
-          version = 1;
+          version = 2;
         }
       '';
       description = ''

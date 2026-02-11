@@ -90,6 +90,28 @@ Singleton {
     Logger.i("BarService", "Service started");
   }
 
+  // update bar's hidden state when mode changes
+  Connections {
+    target: Settings.data.bar
+    function onDisplayModeChanged() {
+      Logger.d("BarService", "Display mode changed to:", Settings.data.bar.displayMode);
+
+      if (Settings.data.bar.displayMode === "auto_hide") {
+        // When switching to auto_hide mode, hide the bar on all screens
+        for (let screenName in screenAutoHideState) {
+          setScreenHidden(screenName, true);
+        }
+      } else {
+        // When switching out of auto_hide mode, show the bar on all screens
+        for (let screenName in screenAutoHideState) {
+          if (screenAutoHideState[screenName].hidden) {
+            setScreenHidden(screenName, false);
+          }
+        }
+      }
+    }
+  }
+
   // Function for the Bar to call when it's ready
   function registerBar(screenName) {
     if (!readyBars[screenName]) {

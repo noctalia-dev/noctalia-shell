@@ -145,9 +145,12 @@ Variants {
             }
           }
 
-          if (delegate?.animateOut) {
-            delegate.animateOut();
-          } else {
+          try {
+            if (delegate && typeof delegate.animateOut === "function" && !delegate.isRemoving) {
+              delegate.animateOut();
+            }
+          } catch (e) {
+            // Service fallback if delegate is already invalid
             NotificationService.dismissActiveNotification(notificationId);
           }
         };
@@ -299,17 +302,26 @@ Variants {
             // Right-click to dismiss
             MouseArea {
               anchors.fill: cardBackground
-              acceptedButtons: Qt.RightButton
+              acceptedButtons: Qt.LeftButton | Qt.RightButton
               hoverEnabled: true
               onEntered: card.hoverCount++
               onExited: card.hoverCount--
-              onClicked: {
-                if (mouse.button === Qt.RightButton) {
-                  animateOut();
-                }
-              }
+              onClicked: mouse => {
+                           if (mouse.button === Qt.RightButton) {
+                             card.animateOut();
+                           } else if (mouse.button === Qt.LeftButton) {
+                             var actions = model.actionsJson ? JSON.parse(model.actionsJson) : [];
+                             var hasDefault = actions.some(function (a) {
+                               return a.identifier === "default";
+                             });
+                             if (hasDefault) {
+                               card.animateOut();
+                               deferredActionTimer.actionId = "default";
+                               deferredActionTimer.start();
+                             }
+                           }
+                         }
             }
-
             // Animation setup
             function triggerEntryAnimation() {
               animInDelayTimer.stop();
@@ -367,6 +379,20 @@ Variants {
               repeat: false
               onTriggered: {
                 NotificationService.dismissActiveNotification(notificationId);
+              }
+            }
+
+            Timer {
+              id: deferredActionTimer
+              interval: 50
+              property string actionId: ""
+              property bool isHistoryRemoval: false
+              onTriggered: {
+                if (isHistoryRemoval) {
+                  NotificationService.removeFromHistory(notificationId);
+                } else {
+                  NotificationService.invokeAction(notificationId, actionId);
+                }
               }
             }
 
@@ -536,7 +562,10 @@ Variants {
                         outlined: false
                         implicitHeight: 24
                         onClicked: {
-                          NotificationService.invokeAction(parent.parentNotificationId, actionData.identifier);
+                          card.animateOut();
+                          deferredActionTimer.actionId = actionData.identifier;
+                          deferredActionTimer.isHistoryRemoval = false;
+                          deferredActionTimer.start();
                         }
                       }
                     }
@@ -556,8 +585,9 @@ Variants {
               anchors.rightMargin: Style.marginM
 
               onClicked: {
-                NotificationService.removeFromHistory(model.id);
-                animateOut();
+                card.animateOut();
+                deferredActionTimer.isHistoryRemoval = true;
+                deferredActionTimer.start();
               }
             }
           }

@@ -15,6 +15,7 @@ ColumnLayout {
   // Local state
   property var localBlacklist: widgetData.blacklist || []
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
+  property string valueChevronColor: widgetData.chevronColor !== undefined ? widgetData.chevronColor : widgetMetadata.chevronColor
   property bool valueDrawerEnabled: widgetData.drawerEnabled !== undefined ? widgetData.drawerEnabled : widgetMetadata.drawerEnabled
   property bool valueHidePassive: widgetData.hidePassive !== undefined ? widgetData.hidePassive : widgetMetadata.hidePassive
 
@@ -35,22 +36,35 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("bar.tray.colorize-icons-label")
-    description: I18n.tr("bar.tray.colorize-icons-description")
-    checked: root.valueColorizeIcons
-    onToggled: checked => {
-                 root.valueColorizeIcons = checked;
-                 settingsChanged(saveSettings());
-               }
-  }
-
-  NToggle {
-    Layout.fillWidth: true
     label: I18n.tr("bar.tray.drawer-enabled-label")
     description: I18n.tr("bar.tray.drawer-enabled-description")
     checked: root.valueDrawerEnabled
     onToggled: checked => {
                  root.valueDrawerEnabled = checked;
+                 settingsChanged(saveSettings());
+               }
+  }
+
+  NComboBox {
+    label: I18n.tr("bar.tray.chevron-color-label")
+    description: I18n.tr("bar.tray.chevron-color-description")
+    model: Color.colorKeyModel
+    currentKey: root.valueChevronColor
+    onSelected: key => {
+                  root.valueChevronColor = key;
+                  settingsChanged(saveSettings());
+                }
+    minimumWidth: 200
+    visible: root.valueDrawerEnabled
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.tray.colorize-icons-label")
+    description: I18n.tr("bar.tray.colorize-icons-description")
+    checked: root.valueColorizeIcons
+    onToggled: checked => {
+                 root.valueColorizeIcons = checked;
                  settingsChanged(saveSettings());
                }
   }
@@ -170,6 +184,7 @@ ColumnLayout {
     var settings = Object.assign({}, widgetData || {});
     settings.blacklist = newBlacklist;
     settings.colorizeIcons = root.valueColorizeIcons;
+    settings.chevronColor = root.valueChevronColor;
     settings.drawerEnabled = root.valueDrawerEnabled;
     settings.hidePassive = root.valueHidePassive;
     return settings;

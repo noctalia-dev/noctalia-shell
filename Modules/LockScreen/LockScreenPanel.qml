@@ -20,6 +20,10 @@ Item {
   required property var keyboardLayout
   required property TextInput passwordInput
 
+  // Whether to enable lock screen animations (smooth cursor blink).
+  // Defaults to false to reduce GPU usage.  Set Settings.data.general.lockScreenAnimations = true to restore.
+  readonly property bool animationsEnabled: Settings.data.general.lockScreenAnimations || false
+
   Component.onCompleted: {
     if (Settings.data.general.autoStartAuth) {
       doUnlock();
@@ -109,7 +113,7 @@ Item {
   // Compact status indicators container (compact mode only)
   Rectangle {
     width: {
-      var hasBattery = batteryIndicator.isReady && BatteryService.hasAnyBattery();
+      var hasBattery = batteryIndicator.isReady;
       var hasKeyboard = keyboardLayout.currentLayout !== "Unknown";
 
       if (hasBattery && hasKeyboard) {
@@ -127,7 +131,7 @@ Item {
     topLeftRadius: Style.radiusL
     topRightRadius: Style.radiusL
     color: Color.mSurface
-    visible: Settings.data.general.compactLockScreen && ((batteryIndicator.isReady && BatteryService.hasAnyBattery()) || keyboardLayout.currentLayout !== "Unknown")
+    visible: Settings.data.general.compactLockScreen && ((batteryIndicator.isReady) || keyboardLayout.currentLayout !== "Unknown")
 
     RowLayout {
       anchors.centerIn: parent
@@ -136,10 +140,10 @@ Item {
       // Battery indicator
       RowLayout {
         spacing: Style.marginS
-        visible: batteryIndicator.isReady && BatteryService.hasAnyBattery()
+        visible: batteryIndicator.isReady
 
         NIcon {
-          icon: BatteryService.getIcon(Math.round(batteryIndicator.percent), batteryIndicator.charging, batteryIndicator.pluggedIn, batteryIndicator.isReady)
+          icon: batteryIndicator.icon
           pointSize: Style.fontSizeM
           color: batteryIndicator.charging ? Color.mPrimary : Color.mOnSurfaceVariant
         }
@@ -449,22 +453,22 @@ Item {
         }
 
         Item {
-          Layout.fillWidth: batteryIndicator.isReady && BatteryService.hasAnyBattery()
+          Layout.fillWidth: batteryIndicator.isReady
         }
 
         // Battery and Keyboard Layout (full mode only)
         ColumnLayout {
-          Layout.alignment: (batteryIndicator.isReady && BatteryService.hasAnyBattery()) ? (Qt.AlignRight | Qt.AlignVCenter) : Qt.AlignVCenter
+          Layout.alignment: (batteryIndicator.isReady) ? (Qt.AlignRight | Qt.AlignVCenter) : Qt.AlignVCenter
           spacing: Style.marginM
-          visible: (batteryIndicator.isReady && BatteryService.hasAnyBattery()) || keyboardLayout.currentLayout !== "Unknown"
+          visible: (batteryIndicator.isReady) || keyboardLayout.currentLayout !== "Unknown"
 
           // Battery
           RowLayout {
             spacing: Style.marginXS
-            visible: batteryIndicator.isReady && BatteryService.hasAnyBattery()
+            visible: batteryIndicator.isReady
 
             NIcon {
-              icon: BatteryService.getIcon(Math.round(batteryIndicator.percent), batteryIndicator.charging, batteryIndicator.pluggedIn, batteryIndicator.isReady)
+              icon: batteryIndicator.icon
               pointSize: Style.fontSizeM
               color: batteryIndicator.charging ? Color.mPrimary : Color.mOnSurfaceVariant
             }
@@ -544,9 +548,10 @@ Item {
                 visible: passwordInput.activeFocus && passwordInput.text.length === 0
                 anchors.verticalCenter: parent.verticalCenter
 
+                // Smooth fade animation (when animations enabled)
                 SequentialAnimation on opacity {
                   loops: Animation.Infinite
-                  running: passwordInput.activeFocus && passwordInput.text.length === 0
+                  running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length === 0
                   NumberAnimation {
                     to: 0
                     duration: 530
@@ -555,6 +560,14 @@ Item {
                     to: 1
                     duration: 530
                   }
+                }
+
+                // Simple toggle (when animations disabled) — no per-frame repaints
+                Timer {
+                  interval: 530
+                  running: !root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length === 0
+                  repeat: true
+                  onTriggered: parent.opacity = parent.opacity > 0.5 ? 0 : 1
                 }
               }
 
@@ -601,9 +614,10 @@ Item {
                 visible: passwordInput.activeFocus && passwordInput.text.length > 0
                 anchors.verticalCenter: parent.verticalCenter
 
+                // Smooth fade animation (when animations enabled)
                 SequentialAnimation on opacity {
                   loops: Animation.Infinite
-                  running: passwordInput.activeFocus && passwordInput.text.length > 0
+                  running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0
                   NumberAnimation {
                     to: 0
                     duration: 530
@@ -612,6 +626,14 @@ Item {
                     to: 1
                     duration: 530
                   }
+                }
+
+                // Simple toggle (when animations disabled) — no per-frame repaints
+                Timer {
+                  interval: 530
+                  running: !root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0
+                  repeat: true
+                  onTriggered: parent.opacity = parent.opacity > 0.5 ? 0 : 1
                 }
               }
             }

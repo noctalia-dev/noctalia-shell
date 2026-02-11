@@ -41,7 +41,8 @@ Item {
             "onActivate": function () {
               launcher.closeImmediately();
               Qt.callLater(() => {
-                             Quickshell.execDetached(["sh", "-lc", expression]);
+                             Logger.d("CommandProvider", "Executing shell command: " + expression);
+                             Quickshell.execDetached(["sh", "-c", expression]);
                            });
             }
           }

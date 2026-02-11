@@ -243,5 +243,71 @@ ColumnLayout {
       suffix: "%"
       onValueChanged: Settings.data.systemMonitor.diskCriticalThreshold = value
     }
+
+    // Disk Available
+    NText {
+      text: I18n.tr("panels.system-monitor.disk-available-label")
+      pointSize: Style.fontSizeM
+    }
+
+    NSpinBox {
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: 100
+      stepSize: 5
+      value: Settings.data.systemMonitor.diskAvailWarningThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.diskAvailWarningThreshold")
+      suffix: "%"
+      onValueChanged: {
+        Settings.data.systemMonitor.diskAvailWarningThreshold = value;
+        if (Settings.data.systemMonitor.diskAvailCriticalThreshold > value) {
+          Settings.data.systemMonitor.diskAvailCriticalThreshold = value;
+        }
+      }
+    }
+
+    NSpinBox {
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: 20
+      stepSize: 5
+      value: Settings.data.systemMonitor.diskAvailCriticalThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.diskAvailCriticalThreshold")
+      suffix: "%"
+      onValueChanged: Settings.data.systemMonitor.diskAvailCriticalThreshold = value
+    }
+
+    // Battery
+    NText {
+      text: I18n.tr("panels.notifications.toast-battery-label")
+      pointSize: Style.fontSizeM
+    }
+
+    NSpinBox {
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: 100
+      stepSize: 5
+      value: Settings.data.systemMonitor.batteryWarningThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.batteryWarningThreshold")
+      suffix: "%"
+      onValueChanged: {
+        Settings.data.systemMonitor.batteryWarningThreshold = value;
+        if (Settings.data.systemMonitor.batteryCriticalThreshold > value) {
+          Settings.data.systemMonitor.batteryCriticalThreshold = value;
+        }
+      }
+    }
+
+    NSpinBox {
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: Settings.data.systemMonitor.batteryWarningThreshold
+      stepSize: 5
+      value: Settings.data.systemMonitor.batteryCriticalThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.batteryCriticalThreshold")
+      suffix: "%"
+      onValueChanged: Settings.data.systemMonitor.batteryCriticalThreshold = value
+    }
   }
 }

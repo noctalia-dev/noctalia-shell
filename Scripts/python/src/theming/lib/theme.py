@@ -326,14 +326,15 @@ def generate_normal_light(palette: list[Color]) -> dict[str, str]:
     error = find_error_color(palette)
 
     # Keep colors vibrant - darken for visibility on light bg
+    # Clamp lightness to [0.25, 0.45] so colors are never near-black nor washed out
     h, s, l = primary.to_hsl()
-    primary_adjusted = Color.from_hsl(h, max(s, 0.7), min(l, 0.45))
+    primary_adjusted = Color.from_hsl(h, max(s, 0.7), max(min(l, 0.45), 0.25))
 
     h, s, l = secondary.to_hsl()
-    secondary_adjusted = Color.from_hsl(h, max(s, 0.6), min(l, 0.40))
+    secondary_adjusted = Color.from_hsl(h, max(s, 0.6), max(min(l, 0.40), 0.22))
 
     h, s, l = tertiary.to_hsl()
-    tertiary_adjusted = Color.from_hsl(h, max(s, 0.5), min(l, 0.35))
+    tertiary_adjusted = Color.from_hsl(h, max(s, 0.5), max(min(l, 0.35), 0.20))
 
     # Container colors - lighter, less saturated versions of accent colors for light mode
     def make_container_light(base: Color) -> Color:
@@ -853,14 +854,14 @@ def generate_theme(
     Args:
         palette: List of extracted colors
         mode: "dark" or "light"
-        scheme_type: One of "tonal-spot", "fruit-salad", "rainbow", "vibrant", "faithful", "muted"
+        scheme_type: One of "tonal-spot", "fruit-salad", "rainbow", "vibrant", "faithful", "dysfunctional", "muted"
 
     Returns:
         Dictionary of color token names to hex values
     """
-    # Handle vibrant/faithful modes (use generate_normal_* functions)
-    # Both use same theme generation, but different color extraction (handled in palette.py)
-    if scheme_type in ("vibrant", "faithful"):
+    # Handle vibrant/faithful/dysfunctional modes (use generate_normal_* functions)
+    # All three use same theme generation, but different color extraction (handled in palette.py)
+    if scheme_type in ("vibrant", "faithful", "dysfunctional"):
         if mode == "dark":
             return generate_normal_dark(palette)
         return generate_normal_light(palette)

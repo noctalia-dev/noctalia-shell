@@ -36,28 +36,6 @@ ColumnLayout {
     }
   }
 
-  // Temperature Polling
-  RowLayout {
-    Layout.fillWidth: true
-    spacing: Style.marginM
-
-    NText {
-      Layout.fillWidth: true
-      text: I18n.tr("bar.system-monitor.cpu-temperature-label")
-      pointSize: Style.fontSizeM
-    }
-
-    NSpinBox {
-      from: 250
-      to: 10000
-      stepSize: 250
-      value: Settings.data.systemMonitor.tempPollingInterval
-      defaultValue: Settings.getDefaultValue("systemMonitor.tempPollingInterval")
-      onValueChanged: Settings.data.systemMonitor.tempPollingInterval = value
-      suffix: " ms"
-    }
-  }
-
   // GPU Polling
   RowLayout {
     Layout.fillWidth: true

@@ -47,14 +47,12 @@ Rectangle {
   // Appearance
   opacity: root.enabled ? Style.opacityFull : Style.opacityMedium
   color: {
-    if (pressed) {
+    if (root.enabled && root.hovering || pressed) {
       return colorBgHover;
     }
+
     if (hot) {
       return colorBgHot;
-    }
-    if (root.enabled && root.hovering) {
-      return colorBgHover;
     }
     return colorBg;
   }
@@ -76,14 +74,11 @@ Rectangle {
     pointSize: Math.max(1, Math.round(root.width * 0.48))
     applyUiScale: root.applyUiScale
     color: {
-      if (pressed) {
+      if (root.enabled && root.hovering || pressed) {
         return colorFgHover;
       }
       if (hot) {
         return colorFgHot;
-      }
-      if (root.enabled && root.hovering) {
-        return colorFgHover;
       }
       return colorFg;
     }

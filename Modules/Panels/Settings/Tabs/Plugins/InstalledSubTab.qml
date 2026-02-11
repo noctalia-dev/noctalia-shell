@@ -32,6 +32,26 @@ ColumnLayout {
     }
   }
 
+  // Auto-update toggle
+  NToggle {
+    label: I18n.tr("panels.plugins.auto-update")
+    description: I18n.tr("panels.plugins.auto-update-description")
+    checked: Settings.data.plugins.autoUpdate
+    onToggled: checked => Settings.data.plugins.autoUpdate = checked
+  }
+
+  // Check for updates button
+  NButton {
+    property bool isChecking: Object.keys(PluginService.activeFetches).length > 0
+
+    text: isChecking ? I18n.tr("panels.plugins.checking-for-updates") : I18n.tr("panels.plugins.check-for-updates")
+    icon: "refresh"
+    enabled: !isChecking
+    visible: Object.keys(PluginService.pluginUpdates).length === 0
+    Layout.fillWidth: true
+    onClicked: PluginService.checkForUpdates()
+  }
+
   // Update All button
   NButton {
     property int updateCount: Object.keys(PluginService.pluginUpdates).length

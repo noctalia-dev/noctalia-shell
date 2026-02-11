@@ -4,7 +4,6 @@ import Quickshell.Wayland
 
 import qs.Commons
 import qs.Modules.MainScreen
-import qs.Services.Noctalia
 import qs.Services.UI
 
 // ------------------------------
@@ -39,7 +38,7 @@ Variants {
     // Main Screen loader - Bar and panels backgrounds
     Loader {
       id: windowLoader
-      active: parent.shouldBeActive && PluginService.pluginsFullyLoaded
+      active: parent.shouldBeActive
       asynchronous: false
 
       property ShellScreen loaderScreen: modelData
@@ -102,12 +101,15 @@ Variants {
     }
 
     // BarExclusionZone - created after MainScreen has fully loaded
-    // Disabled when bar is hidden or not configured for this screen
+    // Note: Exclusion zone should NOT be affected by hideOnOverview setting.
+    // When bar is hidden during overview, the exclusion zone should remain to prevent
+    // windows from moving into the bar area. Auto-hide is handled by the component
+    // itself via ExclusionMode.Ignore/Auto.
     Repeater {
       model: Settings.data.bar.barType === "framed" ? ["top", "bottom", "left", "right"] : [Settings.getBarPositionForScreen(windowItem.modelData?.name)]
       delegate: Loader {
         active: {
-          if (!windowItem.windowLoaded || !windowItem.shouldBeActive || !BarService.effectivelyVisible)
+          if (!windowItem.windowLoaded || !windowItem.shouldBeActive)
             return false;
 
           // Check if bar is configured for this screen

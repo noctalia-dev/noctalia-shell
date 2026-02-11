@@ -5,7 +5,6 @@ import Quickshell
 import qs.Commons
 import qs.Modules.Cards
 import qs.Modules.MainScreen
-import qs.Services.Hardware
 import qs.Services.Media
 import qs.Services.UI
 import qs.Widgets
@@ -81,12 +80,6 @@ SmartPanel {
 
   onOpened: {
     MediaService.autoSwitchingPaused = true;
-    // Refresh DDC brightness from monitors (one-time on QS open)
-    BrightnessService.monitors.forEach(m => {
-                                         if (m.isDdc) {
-                                           m.refreshBrightnessFromSystem();
-                                         }
-                                       });
   }
 
   onClosed: {

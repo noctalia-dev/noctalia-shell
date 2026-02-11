@@ -13,7 +13,8 @@ Singleton {
   property var locale: Qt.locale()
   property string systemDetectedLangCode: ""
   property string fullLocaleCode: "" // Preserves regional locale variants
-  property var availableLanguages: []
+  // Static list of available translations — update when adding/removing translation files
+  property var availableLanguages: ["en", "de", "es", "fr", "hu", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "zh-CN", "zh-TW"]
   property var translations: ({})
   property var fallbackTranslations: ({})
 
@@ -21,32 +22,10 @@ Singleton {
   signal languageChanged(string newLanguage)
   signal translationsLoaded
 
-  // Process to list directory contents
-  property Process directoryScanner: Process {
-    id: directoryProcess
-    command: ["ls", `${Quickshell.shellDir}/Assets/Translations/`]
-    running: false
-
-    stdout: StdioCollector {
-      id: stdoutCollector
-    }
-
-    onExited: function (exitCode, exitStatus) {
-      if (exitCode === 0) {
-        var output = stdoutCollector.text || "";
-        parseDirectoryListing(output);
-      } else {
-        Logger.e("I18n", `Failed to scan translation directory`);
-        // Fallback to default languages
-        availableLanguages = ["en"];
-        detectLanguage();
-      }
-    }
-  }
-
   // FileView to load translation files
   property FileView translationFile: FileView {
     id: fileView
+    printErrors: false
     watchChanges: true
     onFileChanged: reload()
     onLoaded: {
@@ -54,18 +33,50 @@ Singleton {
         var data = JSON.parse(text());
         root.translations = data;
         Logger.i("I18n", `Loaded translations for "${root.langCode}"`);
-        Logger.d("I18n", `Available root keys: ${Object.keys(data).join(", ")}`);
 
         root.isLoaded = true;
         root.translationsLoaded();
+
+        // Load English fallback for non-English languages (only after main file succeeds)
+        if (root.langCode !== "en") {
+          fallbackFileView.path = `file://${Quickshell.shellDir}/Assets/Translations/en.json`;
+        }
       } catch (e) {
         Logger.e("I18n", `Failed to parse translation file: ${e}`);
         setLanguage("en");
       }
     }
     onLoadFailed: function (error) {
-      setLanguage("en");
-      Logger.e("I18n", `Failed to load translation file: ${error}`);
+      if (root.langCode === "en") {
+        Logger.e("I18n", `Failed to load English translation file: ${error}`);
+        // English also failed - still emit signal to unblock startup
+        root.isLoaded = true;
+        root.translationsLoaded();
+        return;
+      }
+
+      // Qt.callLater is needed because FileView doesn't re-trigger when path
+      // is changed inside its own onLoadFailed handler
+      var strippedCode = stripScript(root.langCode);
+      if (strippedCode !== root.langCode) {
+        Logger.d("I18n", `Translation file for "${root.langCode}" not found, trying "${strippedCode}"`);
+        root.langCode = strippedCode;
+        Qt.callLater(loadTranslations);
+      } else {
+        // Try language-only code (e.g. "zh-CN" → "zh")
+        var shortCode = root.langCode.substring(0, 2);
+        if (shortCode !== root.langCode) {
+          Logger.d("I18n", `Translation file for "${root.langCode}" not found, trying "${shortCode}"`);
+          root.langCode = shortCode;
+          Qt.callLater(loadTranslations);
+        } else {
+          Logger.w("I18n", `Translation file for "${root.langCode}" not found, falling back to English`);
+          root.langCode = "en";
+          root.fullLocaleCode = "en";
+          root.locale = Qt.locale("en");
+          Qt.callLater(loadTranslations);
+        }
+      }
     }
   }
 
@@ -88,117 +99,92 @@ Singleton {
     }
   }
 
+  // Correct language when settings finish loading from disk (or user changes it)
+  Connections {
+    target: Settings.data.general
+    function onLanguageChanged() {
+      var userLang = Settings.data.general.language;
+      if (userLang !== "" && userLang !== root.langCode && availableLanguages.includes(userLang)) {
+        Logger.i("I18n", `Applying user language preference: "${userLang}"`);
+        setLanguage(userLang);
+      } else if (userLang === "" && root.systemDetectedLangCode !== "" && root.systemDetectedLangCode !== root.langCode) {
+        Logger.i("I18n", `Language reset to default, reverting to system language: "${root.systemDetectedLangCode}"`);
+        setLanguage(root.systemDetectedLangCode);
+      }
+    }
+  }
+
   Component.onCompleted: {
     Logger.i("I18n", "Service started");
-    scanAvailableLanguages();
+
+    var lang = determineFastLanguage();
+    langCode = lang.code;
+    fullLocaleCode = lang.fullLocale;
+    locale = Qt.locale(lang.fullLocale);
+    systemDetectedLangCode = lang.code;
+    Logger.i("I18n", `Loading "${lang.code}" (locale: "${lang.fullLocale}")`);
+    loadTranslations();
   }
 
-  // -------------------------------------------
-  function scanAvailableLanguages() {
-    Logger.d("I18n", "Scanning for available translation files...");
-    directoryScanner.running = true;
-  }
-
-  // -------------------------------------------
-  function parseDirectoryListing(output) {
-    var languages = [];
-
-    try {
-      if (!output || output.trim() === "") {
-        Logger.w("I18n", "Empty directory listing output");
-        availableLanguages = ["en"];
-        detectLanguage();
-        return;
+  // Strip 4-letter script subtag from a BCP 47 tag (e.g. "fr-Latn-FR" → "fr-FR")
+  function stripScript(tag) {
+    var parts = tag.split("-");
+    var result = [];
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].length === 4 && /^[A-Za-z]{4}$/.test(parts[i])) {
+        continue;
       }
-
-      const entries = output.trim().split('\n');
-
-      for (var i = 0; i < entries.length; i++) {
-        const entry = entries[i].trim();
-        if (entry && entry.endsWith('.json')) {
-          // Extract language code from filename (e.g., "en.json" -> "en")
-          const langCode = entry.substring(0, entry.lastIndexOf('.json'));
-          if (langCode.length >= 2 && langCode.length <= 5) {
-            // Basic validation for language codes
-            languages.push(langCode);
-          }
-        }
-      }
-
-      // Sort languages alphabetically, but ensure "en" comes first if available
-      languages.sort();
-      const enIndex = languages.indexOf("en");
-      if (enIndex > 0) {
-        languages.splice(enIndex, 1);
-        languages.unshift("en");
-      }
-
-      if (languages.length === 0) {
-        Logger.w("I18n", "No translation files found, using fallback");
-        languages = ["en"]; // Fallback
-      }
-
-      availableLanguages = languages;
-      Logger.d("I18n", `Found ${languages.length} available languages: ${languages.join(', ')}`);
-
-      // Detect language after scanning
-      detectLanguage();
-    } catch (e) {
-      Logger.e("I18n", `Failed to parse directory listing: ${e}`);
-      // Fallback to default languages
-      availableLanguages = ["en"];
-      detectLanguage();
+      result.push(parts[i]);
     }
+    return result.join("-");
   }
 
-  // -------------------------------------------
-  function detectLanguage() {
-    Logger.d("I18n", `detectLanguage() called. Available languages: [${availableLanguages.join(', ')}]`);
-
-    if (availableLanguages.length === 0) {
-      Logger.w("I18n", "No available languages found");
-      return;
+  // Determine the best language match against availableLanguages
+  function determineFastLanguage() {
+    // User preference from Settings (defaults to "" if not yet loaded from disk)
+    var userLang = Settings.data.general.language;
+    if (userLang !== "" && availableLanguages.includes(userLang)) {
+      return {
+        code: userLang,
+        fullLocale: userLang
+      };
     }
 
-    var detectedLang = "";
-    var detectedFullLocale = "";
-
-    // First, determine the system's preferred language
+    // Match system locale against available translations
     for (var i = 0; i < Qt.locale().uiLanguages.length; i++) {
-      const fullUserLang = Qt.locale().uiLanguages[i];
+      var fullLang = Qt.locale().uiLanguages[i];
 
-      if (availableLanguages.includes(fullUserLang)) {
-        detectedLang = fullUserLang;
-        detectedFullLocale = fullUserLang;
-        break;
+      // Exact match (e.g. "zh-CN")
+      if (availableLanguages.includes(fullLang)) {
+        return {
+          code: fullLang,
+          fullLocale: fullLang
+        };
       }
 
-      const shortUserLang = fullUserLang.substring(0, 2);
-      if (availableLanguages.includes(shortUserLang)) {
-        detectedLang = shortUserLang;
-        detectedFullLocale = fullUserLang;
-        break;
+      // Script-stripped match (e.g. "zh-Hans-CN" → "zh-CN")
+      var stripped = stripScript(fullLang);
+      if (stripped !== fullLang && availableLanguages.includes(stripped)) {
+        return {
+          code: stripped,
+          fullLocale: fullLang
+        };
+      }
+
+      // Language-only match (e.g. "fr-FR" → "fr")
+      var short_ = fullLang.substring(0, 2);
+      if (availableLanguages.includes(short_)) {
+        return {
+          code: short_,
+          fullLocale: fullLang
+        };
       }
     }
 
-    // If no system language is found among available languages, fallback
-    if (detectedLang === "") {
-      detectedLang = availableLanguages.includes("en") ? "en" : availableLanguages[0];
-      detectedFullLocale = detectedLang;
-    }
-
-    root.systemDetectedLangCode = detectedLang;
-    root.fullLocaleCode = detectedFullLocale;
-    Logger.d("I18n", `System detected language: "${root.systemDetectedLangCode}" (full locale: "${root.fullLocaleCode}")`);
-
-    // Now, apply the language: user-defined, then system-detected
-    if (Settings.data.general.language !== "" && availableLanguages.includes(Settings.data.general.language)) {
-      Logger.d("I18n", `User-defined language found: "${Settings.data.general.language}"`);
-      setLanguage(Settings.data.general.language);
-    } else {
-      Logger.d("I18n", `No user-defined language, using system detected: "${root.systemDetectedLangCode}"`);
-      setLanguage(root.systemDetectedLangCode, root.fullLocaleCode);
-    }
+    return {
+      code: "en",
+      fullLocale: "en"
+    };
   }
 
   // -------------------------------------------
@@ -226,12 +212,6 @@ Singleton {
     const filePath = `file://${Quickshell.shellDir}/Assets/Translations/${langCode}.json`;
     fileView.path = filePath;
     isLoaded = false;
-    Logger.d("I18n", `Loading translations: ${langCode}`);
-
-    // Only load fallback translations if we are not using english and english is available
-    if (langCode !== "en" && availableLanguages.includes("en")) {
-      fallbackFileView.path = `file://${Quickshell.shellDir}/Assets/Translations/en.json`;
-    }
   }
 
   // -------------------------------------------

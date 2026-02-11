@@ -113,30 +113,9 @@ ColumnLayout {
 
   NComboBox {
     visible: valueEnableColorization
-    label: I18n.tr("bar.custom-button.color-selection-label")
+    label: I18n.tr("common.select-color")
     description: I18n.tr("bar.custom-button.color-selection-description")
-    model: [
-      {
-        "name": I18n.tr("common.none"),
-        "key": "none"
-      },
-      {
-        "name": I18n.tr("colors.primary"),
-        "key": "primary"
-      },
-      {
-        "name": I18n.tr("colors.secondary"),
-        "key": "secondary"
-      },
-      {
-        "name": I18n.tr("colors.tertiary"),
-        "key": "tertiary"
-      },
-      {
-        "name": I18n.tr("colors.error"),
-        "key": "error"
-      }
-    ]
+    model: Color.colorKeyModel
     currentKey: valueColorizeSystemIcon
     onSelected: key => {
                   valueColorizeSystemIcon = key;

@@ -48,11 +48,16 @@
       "device-default": "기본값 (디스플레이 장치)",
       "device-description": "표시할 배터리 장치를 선택합니다.",
       "device-label": "배터리 장치",
+      "display-mode-description": "배터리가 바에 어떻게 표시될지 선택하세요.",
+      "display-mode-graphic": "그래픽 배터리",
+      "display-mode-graphic-clean": "그래픽 배터리 (퍼센트 없음)",
+      "display-mode-icon-always": "아이콘 - 항상 % 표시",
+      "display-mode-icon-hover": "아이콘 - 호버 시 표시",
+      "display-mode-icon-only": "아이콘만",
       "hide-if-idle-description": "배터리가 충전 중이거나 방전 중이 아닐 때 위젯을 숨깁니다.",
       "hide-if-idle-label": "유휴 상태일 때 숨기기",
       "hide-if-not-detected-description": "시스템에서 배터리가 감지되지 않으면 위젯을 숨깁니다.",
       "hide-if-not-detected-label": "감지되지 않으면 숨기기",
-      "low-battery-threshold-description": "배터리가 여기서 지정한 퍼센트 미만일 때 경고를 표시합니다.",
       "low-battery-threshold-label": "배터리 부족 경고 임계값",
       "show-noctalia-performance-description": "배터리 패널 내부에 Noctalia 성능 모드 토글을 표시합니다.<br>리소스 사용량을 줄이기 위해 Noctalia의 그림자와 애니메이션을 비활성화합니다.",
       "show-noctalia-performance-label": "Noctalia 성능 토글 표시",
@@ -75,8 +80,6 @@
       "use-custom-font-label": "사용자 지정 글꼴 사용",
       "use-monospaced-font-description": "활성화하면 시계가 고정폭 글꼴을 사용합니다.",
       "use-monospaced-font-label": "고정폭 글꼴 사용",
-      "use-primary-color-description": "활성화하면 강조를 위해 첫번째 색상을 적용합니다.",
-      "use-primary-color-label": "첫번째 색 사용",
       "vertical-bar-description": "각 부분을 새 줄로 나누려면 공백을 사용하세요.",
       "vertical-bar-label": "수직 바"
     },
@@ -94,7 +97,6 @@
       "collapse-condition-description": "출력 텍스트가 이 값과 일치하면 버튼이 접힙니다.",
       "collapse-condition-label": "접히는 조건",
       "color-selection-description": "아이콘과 텍스트에 테마 색상을 적용합니다.",
-      "color-selection-label": "색상 선택",
       "display-command-output-description": "정기적인 간격으로 실행할 명령을 입력합니다. 출력의 첫 번째 줄이 텍스트로 표시됩니다.",
       "display-command-output-label": "명령 출력 표시",
       "display-command-output-stream-description": "지속적으로 실행할 명령을 입력합니다.",
@@ -196,6 +198,8 @@
     "system-monitor": {
       "compact-mode-description": "텍스트 값 대신 미니 막대 차트로 통계를 표시합니다. 레이아웃이 변경되는 것을 방지합니다.",
       "compact-mode-label": "소형 모드",
+      "cpu-frequency-description": "현재 CPU 클럭 속도를 GHz 단위로 표시합니다.",
+      "cpu-frequency-label": "CPU 주파수 표시",
       "cpu-temperature-description": "가능한 경우 CPU 온도를 표시합니다.",
       "cpu-temperature-label": "CPU 온도",
       "cpu-usage-description": "현재 CPU 사용량을 백분율로 표시합니다.",
@@ -211,6 +215,10 @@
       "memory-usage-label": "메모리 사용량",
       "network-traffic-description": "네트워크 업로드 및 다운로드 속도를 표시합니다.",
       "network-traffic-label": "네트워크 트래픽",
+      "storage-as-percentage-description": "디스크 공간을 절대값 대신 백분율로 표시합니다.",
+      "storage-as-percentage-label": "디스크 백분율",
+      "storage-available-description": "사용된 공간 대신 사용 가능한 디스크 공간을 표시합니다.",
+      "storage-available-label": "사용 가능한 디스크 공간",
       "storage-usage-description": "디스크 공간 사용량 정보를 표시합니다.",
       "storage-usage-label": "저장소 사용량",
       "swap-usage-description": "스왑 메모리 사용량을 표시합니다.",
@@ -242,6 +250,8 @@
       "title-width-reset-tooltip": "제목 너비 초기화"
     },
     "tray": {
+      "chevron-color-description": "드로어 셰브론 아이콘에 테마 색상을 적용합니다.",
+      "chevron-color-label": "화살표 색상",
       "colorize-icons-description": "트레이 아이콘에 테마 색상을 적용합니다.",
       "colorize-icons-label": "아이콘 색상화",
       "drawer-enabled-description": "활성화하면 고정되지 않은 트레이 항목이 서랍 패널에 표시됩니다.<br>비활성화하면 모든 트레이 항목이 인라인으로 표시됩니다.",
@@ -250,8 +260,7 @@
       "hide-passive-label": "패시브 항목 숨기기"
     },
     "volume": {
-      "display-mode-description": "이 값이 어떻게 표시될지 선택하세요.",
-      "display-mode-label": "표시 모드"
+      "display-mode-description": "이 값이 어떻게 표시될지 선택하세요."
     },
     "workspace": {
       "character-count-description": "작업 공간 이름에서 표시할 문자 수 (1-10).",
@@ -272,6 +281,8 @@
       "label-mode-label": "레이블 모드",
       "occupied-color-description": "사용 중인 작업 공간의 배경색을 설정합니다.",
       "occupied-color-label": "사용 중인 작업 공간 색상",
+      "pill-size-description": "작업 공간 알약의 크기를 조절합니다 (50%-100%).",
+      "pill-size-label": "필 크기",
       "reverse-scrolling-description": "스크롤할 때 작업 공간 전환 방향을 반대로 합니다.",
       "reverse-scrolling-label": "스크롤 반전",
       "show-applications-description": "각 작업 공간 내부에 애플리케이션 아이콘을 표시합니다.",
@@ -339,13 +350,6 @@
       "version-new-user": "새로 설치됨"
     }
   },
-  "colors": {
-    "error": "오류",
-    "on-surface": "표면 색",
-    "primary": "첫번째 색",
-    "secondary": "두번째 색",
-    "tertiary": "세번째 색"
-  },
   "common": {
     "actions": "작업",
     "add": "추가",
@@ -385,10 +389,13 @@
     "disconnect": "연결 해제",
     "disconnected": "연결 끊김",
     "disconnecting": "연결 해제 중...",
+    "display-mode": "디스플레이 모드",
     "download": "다운로드",
     "duration": "지속 시간",
+    "dysfunctional": "기능 장애",
     "edit": "편집",
     "enabled": "활성화됨",
+    "error": "오류",
     "events": "일정",
     "execute": "실행",
     "faithful": "충실하게",
@@ -407,6 +414,7 @@
     "installed": "설치됨",
     "interface": "인터페이스",
     "internet": "인터넷",
+    "keybind": "키 바인딩",
     "language": "언어",
     "loading": "로딩 중...",
     "local": "로컬",
@@ -444,9 +452,11 @@
     "primary": "첫번째",
     "random": "랜덤",
     "reboot": "재부팅",
+    "record": "녹화 시작",
     "refresh": "새로고침",
     "required": "(필수)",
     "reset": "초기화",
+    "reset-to-default": "기본값으로 초기화",
     "result-count": "{count}개 결과",
     "result-count-plural": "{count}개 결과",
     "resume": "재개",
@@ -457,6 +467,9 @@
     "secondary": "두번째",
     "security": "보안",
     "select": "선택",
+    "select-color": "색상 선택",
+    "select-color-description": "강조를 위해 테마 색상을 적용합니다.",
+    "select-icon-color": "아이콘 색상 선택",
     "shortcuts": "단축키",
     "shutdown": "시스템 종료",
     "signal": "신호",
@@ -464,6 +477,7 @@
     "sources": "소스",
     "start": "시작",
     "stop": "중지",
+    "supporters": "후원자",
     "suspend": "대기 모드",
     "templates": "템플릿",
     "tertiary": "세번째",
@@ -512,6 +526,7 @@
     "auto-hide": "자동 숨기기",
     "hidden": "비어 있을 때 숨기기",
     "idle": "유휴 상태일 때 숨기기",
+    "non-exclusive": "비독점",
     "transparent": "비어 있을 때 투명하게",
     "visible": "항상 표시"
   },
@@ -610,6 +625,15 @@
       "quick-settings-style-modern": "모던"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "편안한",
+      "compact": "컴팩트",
+      "default": "기본값"
+    },
+    "launcher-view-mode": {
+      "grid": "그리드",
+      "list": "목록"
+    },
     "scrolling-modes": {
       "always": "항상 스크롤",
       "hover": "마우스 오버 시 스크롤",
@@ -640,8 +664,9 @@
   },
   "panels": {
     "about": {
+      "become-supporter": "후원자 되기",
       "changelog": "변경 로그 보기",
-      "contributors-desc": "{count}명의 <b>멋진</b> 기여자에게 감사를 전합니다!",
+      "contributors-description": "{count}명의 <b>멋진</b> 기여자에게 감사를 전합니다!",
       "contributors-description-plural": "{count}명의 <b>멋진</b> 기여자들에게 감사를 전합니다!",
       "copy-info": "정보 복사",
       "info-copied": "정보가 클립보드에 복사됨",
@@ -652,6 +677,10 @@
       "noctalia-title": "Noctalia 셸",
       "privacy-policy": "개인정보 처리방침",
       "support": "후원하기",
+      "supporter-badge": "후원자",
+      "supporters-desc": "멋진 후원자분께 진심으로 감사드립니다!",
+      "supporters-desc-plural": "저희의 <b>{count}명의 멋진</b> 후원자분들께 진심으로 감사드립니다!",
+      "supporters-loading": "후원자 불러오는 중...",
       "system-cpu": "CPU:",
       "system-disk": "디스크:",
       "system-gpu": "GPU:",
@@ -716,7 +745,7 @@
       "volumes-output-volume-description": "시스템 전체 볼륨 레벨입니다.",
       "volumes-step-size-description": "볼륨 변경(스크롤 휠, 키보드 단축키)의 단계 크기를 조정합니다.",
       "volumes-step-size-label": "볼륨 단계 크기",
-      "volumes-volume-feedback-description": "볼륨 조절 시 피드백 소리를 재생합니다",
+      "volumes-volume-feedback-description": "볼륨 조절 시 피드백 소리를 재생합니다.",
       "volumes-volume-feedback-label": "볼륨 피드백 소리 재생",
       "volumes-volume-overdrive-description": "볼륨을 100% 이상으로 높일 수 있도록 허용합니다. 모든 하드웨어에서 지원되지 않을 수 있습니다.",
       "volumes-volume-overdrive-label": "볼륨 오버드라이브 허용"
@@ -729,13 +758,14 @@
       "appearance-auto-show-delay-label": "표시 지연",
       "appearance-background-opacity-description": "바에 대해서만 별도로 배경 불투명도를 설정합니다.",
       "appearance-background-opacity-label": "바 배경 불투명도",
+      "appearance-capsule-color-description": "바 캡슐의 색상을 선택하거나, 기본 표면 색상에는 색상을 사용하지 마세요.",
+      "appearance-capsule-color-label": "캡슐 색상",
       "appearance-capsule-opacity-description": "캡슐이 표시될 때 위젯 배경의 불투명도 수준을 설정합니다.",
       "appearance-capsule-opacity-label": "캡슐 불투명도",
       "appearance-density-description": "컴팩트하거나 넓은 모양을 위해 바의 패딩을 조정합니다.",
       "appearance-density-label": "바 밀도",
       "appearance-desc": "바의 모양과 위치를 사용자 지정합니다.",
       "appearance-display-mode-description": "바가 언제 표시될지 선택하세요.",
-      "appearance-display-mode-label": "디스플레이 모드",
       "appearance-floating-description": "바를 플로팅 '알약' 형태로 표시합니다.",
       "appearance-floating-label": "플로팅 바",
       "appearance-frame-radius": "내부 반경",
@@ -756,7 +786,7 @@
       "appearance-show-capsule-label": "캡슐 표시",
       "appearance-show-outline-description": "모든 위젯 주위에 보이는 테두리를 표시합니다.",
       "appearance-show-outline-label": "위젯 윤곽선 표시",
-      "appearance-type-description": "바의 스타일을 선택하세요: 심플, 플로팅, 프레임",
+      "appearance-type-description": "바의 스타일을 선택하세요: 심플, 플로팅, 프레임.",
       "appearance-type-label": "바 유형",
       "appearance-use-separate-opacity-description": "바 배경에 대해 별도의 불투명도 값을 사용하려면 활성화하세요.",
       "appearance-use-separate-opacity-label": "별도 바 불투명도 사용",
@@ -807,6 +837,7 @@
       "download-title": "색상 구성 다운로드",
       "method-description": {
         "content": "소스 콘텐츠의 실제 색상을 매우 유사하게 재현하는 고품질 색상 추출을 사용하는 머티리얼 디자인 구성입니다.",
+        "dysfunctional": "Faithful과 비슷하지만, 두 번째로 지배적인 색상 계열을 기본으로 선택합니다.",
         "faithful": "소스 색상에 가깝게 유지하면서 조화로운 팔레트 생성을 시도합니다.",
         "fruit-salad": "다양하고 다채로운 색조로 유쾌하고 생동감 넘치는 팔레트를 생성하는 머티리얼 디자인 구성입니다.",
         "monochrome": "채도가 최소화된 단일 색조 그레이스케일을 사용하는 머티리얼 디자인 구성입니다.",
@@ -999,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "고정폭 글꼴 검색...",
       "fonts-reset-scaling": "크기 초기화",
       "fonts-title": "글꼴",
+      "keybinds-description": "패널 및 런처에 대한 전역 탐색 키를 구성합니다.",
+      "keybinds-down": "아래로 이동",
+      "keybinds-enter": "확인 / 동작",
+      "keybinds-escape": "닫기 / 뒤로",
+      "keybinds-left": "왼쪽으로 이동",
+      "keybinds-right": "오른쪽으로 이동",
+      "keybinds-title": "탐색 키 바인딩",
+      "keybinds-up": "위로 이동",
       "language-desc": "애플리케이션의 선호 언어를 선택하세요.",
       "language-select-auto-detect": "자동",
       "language-select-description": "애플리케이션 인터페이스에 사용될 언어를 선택합니다.",
@@ -1019,7 +1058,9 @@
       "screen-corners-solid-black-description": "바 배경색 대신 완전한 검은색을 사용합니다.",
       "screen-corners-solid-black-label": "검은색 모서리",
       "screen-corners-title": "화면 모서리",
-      "settings-copied": "설정이 클립보드에 복사됨"
+      "settings-copied": "설정이 클립보드에 복사됨",
+      "tab-basics": "기본",
+      "tab-keybinds": "키 바인딩"
     },
     "hooks": {
       "info-command-info-description": "• 명령은 셸(sh -lc)을 통해 실행됩니다.<br>• 명령은 백그라운드(detached)에서 실행됩니다.<br>• 테스트 버튼은 현재 값으로 실행됩니다.",
@@ -1074,14 +1115,16 @@
       "settings-clip-wrap-text-label": "클립보드 텍스트 줄바꿈",
       "settings-clipboard-history-description": "이전에 복사한 항목에 런처에서 액세스합니다.",
       "settings-clipboard-history-label": "클립보드 기록 활성화",
-      "settings-clipboard-watch-image-description": "이미지 변경을 위해 wl-paste에 전달되는 전체 명령 문자열. (재시작 필요)",
+      "settings-clipboard-watch-image-description": "이미지 변경을 위해 wl-paste에 전달되는 전체 명령 문자열 (재시작 필요).",
       "settings-clipboard-watch-image-label": "이미지 감시 명령",
-      "settings-clipboard-watch-text-description": "텍스트 변경을 위해 wl-paste에 전달되는 전체 명령 문자열. (재시작 필요)",
+      "settings-clipboard-watch-text-description": "텍스트 변경을 위해 wl-paste에 전달되는 전체 명령 문자열 (재시작 필요).",
       "settings-clipboard-watch-text-label": "텍스트 감시 명령",
       "settings-custom-launch-prefix-description": "기본 런처 대신 사용자 지정 접두사를 사용하여 명령을 실행합니다 (예: systemd 통합을 위한 'runapp').",
       "settings-custom-launch-prefix-enabled-description": "기본 방식 대신 사용자 지정 접두사를 사용하여 애플리케이션을 실행합니다.",
       "settings-custom-launch-prefix-enabled-label": "사용자 지정 실행 접두사 활성화",
       "settings-custom-launch-prefix-label": "사용자 지정 실행 접두사",
+      "settings-density-description": "애플리케이션 아이콘 크기와 Launcher 밀도를 조정합니다.",
+      "settings-density-label": "밀도",
       "settings-desc": "런처의 동작과 모양을 사용자 지정합니다.",
       "settings-enable-settings-search-description": "런처에서 검색할 때 설정 결과를 표시합니다.",
       "settings-enable-settings-search-label": "설정 검색 활성화",
@@ -1092,6 +1135,8 @@
       "settings-icon-mode-label": "기본 아이콘 사용",
       "settings-ignore-mouse-input-description": "런처에서 마우스 상호작용 및 스크롤 휠을 비활성화합니다.",
       "settings-ignore-mouse-input-label": "마우스 입력 무시",
+      "settings-overlay-layer-description": "런처를 전체 화면 창 위에 있는 오버레이 레이어에 표시합니다. 활성화되면 런처는 바에 연결되지 않습니다.",
+      "settings-overlay-layer-label": "전체 화면 위에 표시",
       "settings-position-description": "런처 패널이 나타날 위치를 선택하세요.",
       "settings-show-categories-description": "애플리케이션 필터링을 위한 카테고리 탭을 표시합니다.",
       "settings-show-categories-label": "카테고리 표시",
@@ -1103,6 +1148,8 @@
       "settings-terminal-command-label": "터미널 명령",
       "settings-use-app2unit-description": "앱 프로세스를 더 잘 관리하고 문제를 방지하기 위해 대체 실행 방법을 사용합니다.",
       "settings-use-app2unit-label": "애플리케이션 실행에 App2Unit 사용",
+      "settings-view-mode-description": "런처 항목의 레이아웃을 선택하세요.",
+      "settings-view-mode-label": "보기 모드",
       "title": "런처"
     },
     "location": {
@@ -1119,7 +1166,7 @@
       "date-time-show-events-description": "달력 패널에 일정을 표시합니다.",
       "date-time-show-events-label": "달력 일정 표시",
       "date-time-title": "날짜 및 시간",
-      "date-time-use-analog-description": "달력 창과 잠금 화면에 아날로그 스타일 시계를 표시합니다.",
+      "date-time-use-analog-description": "달력 창에 아날로그 스타일 시계를 표시합니다.",
       "date-time-use-analog-label": "아날로그 스타일 시계 사용",
       "date-time-week-numbers-description": "달력에 해당 연도의 주차(예: 38주차)를 표시합니다.",
       "date-time-week-numbers-label": "주 번호 표시",
@@ -1145,12 +1192,26 @@
     "lock-screen": {
       "allow-password-with-fprintd-description": "fprintd(지문 인증)가 활성화된 경우, 이 옵션을 사용하면 지문 대신 비밀번호로 로그인할 수 있습니다.",
       "allow-password-with-fprintd-label": "fprintd로 암호 로그인 허용",
-      "auto-start-auth-description": "예: 키 입력이나 버튼 클릭 없이 지문 인증을 자동으로 시작합니다.",
+      "auto-start-auth-description": "키 입력이나 버튼 클릭 없이 지문 인증을 자동으로 시작합니다.",
       "auto-start-auth-label": "인증 자동 시작",
+      "clock-format-description": "날짜/시간 구문 토큰을 사용하여 시계 형식을 사용자 지정합니다.",
+      "clock-format-label": "시계 형식",
+      "clock-style-analog": "아날로그",
+      "clock-style-custom": "사용자 지정",
+      "clock-style-description": "잠금 화면 시계의 시각적 스타일을 선택하세요.",
+      "clock-style-digital": "디지털",
+      "clock-style-label": "시계 스타일",
       "compact-lockscreen-description": "로그인 입력과 시스템 제어만 표시하고 날씨 및 미디어 위젯을 숨깁니다.",
       "compact-lockscreen-label": "컴팩트 잠금 화면",
       "lock-on-suspend-description": "시스템 대기 모드 진입 시 자동으로 화면을 잠급니다.",
       "lock-on-suspend-label": "대기 모드 시 잠금",
+      "lock-screen-animations-description": "잠금 화면 애니메이션 활성화 또는 비활성화.",
+      "lock-screen-animations-label": "잠금 화면 애니메이션",
+      "lock-screen-blur-strength-description": "잠금 화면 배경화면에 흐림 효과를 적용합니다.",
+      "lock-screen-blur-strength-label": "잠금 화면 흐림 강도",
+      "lock-screen-tint-strength-description": "잠금 화면 배경화면에 색조 오버레이를 적용합니다.",
+      "lock-screen-tint-strength-label": "잠금 화면 틴트 강도",
+      "monitors-desc": "특정 모니터에 잠금 화면을 표시합니다. 아무것도 선택하지 않으면 기본적으로 모두에 표시됩니다.",
       "show-hibernate-description": "전원 제어에 '최대 절전' 옵션을 표시합니다.",
       "show-hibernate-label": "최대 절전 표시",
       "show-session-buttons-description": "잠금 화면에서 전원 설정에 대한 액세스를 허용합니다.",
@@ -1183,8 +1244,6 @@
       "history-low-urgency-label": "중요도 낮음 기록 저장",
       "history-normal-urgency-description": "보통 레벨의 알림을 기록에 저장합니다.",
       "history-normal-urgency-label": "중요도 보통 기록 저장",
-      "media-toast-description": "미디어 재생 상태가 변경될 때 토스트를 표시합니다.",
-      "media-toast-label": "미디어",
       "monitors-desc": "특정 모니터에 알림을 표시합니다. 선택하지 않으면 모든 모니터에 표시됩니다.",
       "settings-always-on-top-description": "전체 화면 창 및 다른 레이어 위에 알림을 표시합니다.",
       "settings-background-opacity-description": "알림 배경의 불투명도를 조정합니다.",
@@ -1222,9 +1281,13 @@
       "sounds-unavailable-label": "알림 소리 사용 불가",
       "sounds-volume-description": "알림 소리의 볼륨 레벨을 조정합니다.",
       "sounds-volume-label": "소리 볼륨",
+      "toast-battery-description": "배터리 잔량이 이 비율 아래로 떨어지면 경고를 표시합니다.",
+      "toast-battery-label": "배터리 경고",
       "toast-desc": "토스트 모양과 동작을 구성합니다.",
       "toast-keyboard-description": "키보드 레이아웃 변경 시 토스트를 표시합니다.",
-      "toast-keyboard-label": "키보드 레이아웃"
+      "toast-keyboard-label": "키보드 레이아웃",
+      "toast-media-description": "미디어 재생 상태가 변경될 때 토스트를 표시합니다.",
+      "toast-media-label": "미디어"
     },
     "osd": {
       "always-on-top-description": "전체 화면 창 및 다른 레이어 위에 OSD를 표시합니다.",
@@ -1259,16 +1322,20 @@
       "types-volume-label": "출력 볼륨"
     },
     "plugins": {
+      "auto-update": "플러그인 자동 업데이트",
+      "auto-update-description": "셸 시작 시 모든 플러그인을 자동으로 업데이트합니다.",
       "available-description": "구성된 소스에서 플러그인을 찾아보고 설치합니다.",
       "available-label": "사용 가능한 플러그인",
       "available-no-plugins-description": "플러그인 소스를 확인하거나 목록을 새로고침하세요.",
       "available-no-plugins-label": "사용 가능한 플러그인 없음",
+      "check-for-updates": "업데이트 확인",
+      "checking-for-updates": "업데이트 확인 중...",
       "collision-already-installed": "이 플러그인은 이미 설치되어 있습니다",
       "collision-custom-version-exists": "\"{source}\"의 사용자 지정 버전이 이미 설치되어 있습니다",
       "collision-official-version-exists": "이 플러그인의 공식 버전이 이미 설치되어 있습니다",
       "filter-downloaded": "다운로드됨",
       "filter-not-downloaded": "다운로드되지 않음",
-      "filter-tags-description": "카테고리 또는 다운로드 상태별로 플러그인을 필터링합니다",
+      "filter-tags-description": "카테고리 또는 다운로드 상태별로 플러그인을 필터링합니다.",
       "filter-tags-label": "태그",
       "hot-reload-description": "파일이 변경될 때 자동으로 플러그인을 다시 로드합니다. 플러그인 개발에 유용합니다.",
       "hot-reload-label": "핫 리로드 (개발 모드)",
@@ -1302,6 +1369,7 @@
       "sources-placeholder": "내 멋진 저장소",
       "sources-remove-tooltip": "플러그인 소스 제거",
       "title": "플러그인",
+      "translations-reloaded": "번역 다시 로드됨: {name}",
       "uninstall-dialog-description": "정말 {plugin}을(를) 제거하시겠습니까? 모든 플러그인 데이터가 삭제됩니다.",
       "uninstall-dialog-title": "플러그인 제거",
       "uninstall-error": "제거 실패: {error}",
@@ -1333,6 +1401,9 @@
       "entry-settings-default-command-logout": "내부 로그아웃 (명령 없음)",
       "entry-settings-default-info-description": "사용자 지정 명령이 지정되지 않은 경우 시스템 기본 명령이 사용됩니다.",
       "entry-settings-default-info-label": "기본 명령",
+      "entry-settings-keybind-description": "세션 메뉴가 열려 있을 때 이 작업을 트리거할 키 조합을 할당합니다.",
+      "entry-settings-keybind-placeholder": "키를 할당하려면 기록을 누르세요...",
+      "entry-settings-keybind-recording": "녹음 중... 아무 키 조합이나 누르세요",
       "entry-settings-title": "{entry} 구성",
       "entry-settings-tooltip": "명령 구성",
       "general-desc": "세션 메뉴 패널의 동작과 모양을 구성합니다.",
@@ -1349,6 +1420,7 @@
     "system-monitor": {
       "critical-color-label": "위험 색상",
       "custom-highlight-colors-title-label": "사용자 지정 강조 색상",
+      "disk-available-label": "사용 가능한 디스크 공간",
       "disk-section-label": "디스크 사용량",
       "enable-dgpu-monitoring-description": "경고: 이 기능은 외장 GPU(NVIDIA/AMD)를 깨워 하이브리드 그래픽 노트북의 배터리 수명에 상당한 영향을 줄 수 있습니다.",
       "enable-dgpu-monitoring-label": "외장 GPU 모니터링 활성화",
@@ -1403,7 +1475,7 @@
       "settings-panel-mode-description": "설정 레이아웃을 선택하세요 (다시 열어야 할 수 있음).",
       "settings-panel-mode-label": "설정 패널 모드",
       "shadows-description": "바와 패널 아래에 그림자를 활성화합니다.",
-      "shadows-direction-description": "그림자가 드리워지는 방향을 선택하세요.",
+      "shadows-direction-description": "그림자가 드리워질 위치를 선택하세요.",
       "shadows-direction-label": "그림자 방향",
       "shadows-label": "그림자",
       "title": "사용자 인터페이스",
@@ -1443,6 +1515,10 @@
       "settings-monitor-specific-description": "각 모니터에 대해 다른 배경화면 폴더를 설정합니다.",
       "settings-monitor-specific-label": "모니터별 디렉토리",
       "settings-monitor-specific-tooltip": "모니터 배경화면 폴더",
+      "settings-overview-blur-strength-description": "개요에 흐림 강도를 적용합니다.",
+      "settings-overview-blur-strength-label": "개요 흐림 강도",
+      "settings-overview-tint-description": "개요에 색조 강도를 적용합니다.",
+      "settings-overview-tint-label": "개요 색조 강도",
       "settings-recursive-search-description": "배경화면 디렉토리의 하위 폴더에서도 배경화면을 검색합니다.",
       "settings-recursive-search-label": "하위 폴더 검색",
       "settings-select-monitor-folder": "모니터 배경화면 폴더 선택",
@@ -1498,7 +1574,7 @@
   "setup": {
     "all-done": "완료되었습니다!",
     "appearance": {
-      "subheader": "다크 모드와 색상 소스(배경화면 또는 미리 정의됨)를 선택하세요."
+      "subheader": "다크 모드와 색상 소스(배경화면 또는 사전 정의)를 선택하세요."
     },
     "customize": {
       "header": "경험 사용자 지정",
@@ -1556,8 +1632,10 @@
       "title": "비행기 모드"
     },
     "battery": {
+      "critical": "배터리 부족",
+      "critical-desc": "배터리 {percent}% — 즉시 충전기를 연결해주세요",
       "low": "배터리 부족",
-      "low-desc": "배터리가 {percent}%입니다. 충전기를 연결하세요"
+      "low-desc": "배터리가 {percent}%입니다 — 충전기를 연결해주세요"
     },
     "bluetooth": {
       "address-copied": "주소가 클립보드에 복사됨",
@@ -1740,6 +1818,8 @@
     "transitions": {
       "disc": "디스크",
       "fade": "페이드",
+      "honeycomb": "벌집",
+      "pixelate": "픽셀화",
       "stripes": "스트라이프",
       "wipe": "와이프"
     },
@@ -1747,7 +1827,9 @@
     "wallhaven": {
       "loading": "배경화면 로딩 중...",
       "no-results": "배경화면을 찾을 수 없습니다. 다른 검색어를 시도해 보세요.",
-      "page": "{total} 중 {current}"
+      "page": "{total} 중 {current}",
+      "page-prefix": "페이지",
+      "page-suffix": "{total}개 중"
     }
   },
   "weather": {

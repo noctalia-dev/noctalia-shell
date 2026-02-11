@@ -30,7 +30,7 @@ NIconButton {
   }
 
   readonly property string iconName: widgetSettings.icon || (widgetMetadata ? widgetMetadata.icon : "search")
-  readonly property bool usePrimaryColor: (widgetSettings.usePrimaryColor !== undefined) ? widgetSettings.usePrimaryColor : ((widgetMetadata && widgetMetadata.usePrimaryColor !== undefined) ? widgetMetadata.usePrimaryColor : true)
+  readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
 
   icon: iconName
   tooltipText: I18n.tr("actions.open-launcher")
@@ -40,8 +40,8 @@ NIconButton {
   customRadius: Style.radiusL
   colorBg: Style.capsuleColor
   colorBgHover: Color.mHover
-  colorFg: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
-  colorFgHover: usePrimaryColor ? Qt.darker(Color.mPrimary, 1.2) : Color.mOnHover
+  colorFg: Color.resolveColorKey(iconColorKey)
+  colorFgHover: Color.mOnHover
   colorBorder: Style.capsuleBorderColor
   colorBorderHover: Style.capsuleBorderColor
 
@@ -75,8 +75,8 @@ NIconButton {
                  }
   }
 
-  onClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
-  onMiddleClicked: PanelService.getPanel("launcherPanel", screen)?.toggle()
+  onClicked: PanelService.toggleLauncher(screen)
+  onMiddleClicked: PanelService.toggleLauncher(screen)
   onRightClicked: {
     PanelService.showContextMenu(contextMenu, root, screen);
   }

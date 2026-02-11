@@ -291,11 +291,11 @@ Singleton {
     watchersStarted = true;
 
     // Text watcher
-    watchText.command = ["sh", "-lc", Settings.data.appLauncher.clipboardWatchTextCommand];
+    watchText.command = ["sh", "-c", Settings.data.appLauncher.clipboardWatchTextCommand];
     watchText.running = true;
 
     // Image watcher
-    watchImage.command = ["sh", "-lc", Settings.data.appLauncher.clipboardWatchImageCommand];
+    watchImage.command = ["sh", "-c", Settings.data.appLauncher.clipboardWatchImageCommand];
     watchImage.running = true;
   }
 
@@ -407,7 +407,7 @@ Singleton {
     root._b64CurrentCb = job.cb;
     root._b64CurrentMime = job.mime;
     root._b64CurrentId = job.id;
-    decodeB64Proc.command = ["sh", "-lc", `cliphist decode ${job.id} | base64 -w 0`];
+    decodeB64Proc.command = ["sh", "-c", `cliphist decode ${job.id} | base64 -w 0`];
     decodeB64Proc.running = true;
   }
 
@@ -415,7 +415,7 @@ Singleton {
     if (!root.cliphistAvailable) {
       return;
     }
-    copyProc.command = ["sh", "-lc", `cliphist decode ${id} | wl-copy`];
+    copyProc.command = ["sh", "-c", `cliphist decode ${id} | wl-copy`];
     copyProc.running = true;
   }
 
@@ -427,7 +427,7 @@ Singleton {
     const typeArg = isImage ? ` --type ${mime}` : "";
     const pasteKeys = isImage ? "wtype -M ctrl -k v" : "wtype -M ctrl -M shift v";
     const cmd = `cliphist decode ${id} | wl-copy${typeArg} && ${pasteKeys}`;
-    pasteProc.command = ["sh", "-lc", cmd];
+    pasteProc.command = ["sh", "-c", cmd];
     pasteProc.running = true;
   }
 
@@ -436,7 +436,7 @@ Singleton {
       return;
     const escaped = text.replace(/'/g, "'\\''");
     const cmd = `printf '%s' '${escaped}' | wl-copy && wtype -M ctrl -M shift v`;
-    pasteProc.command = ["sh", "-lc", cmd];
+    pasteProc.command = ["sh", "-c", cmd];
     pasteProc.running = true;
   }
 

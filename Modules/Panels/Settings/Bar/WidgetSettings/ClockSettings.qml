@@ -17,12 +17,27 @@ ColumnLayout {
   signal settingsChanged(var settings)
 
   // Local state
-  property bool valueUsePrimaryColor: widgetData.usePrimaryColor !== undefined ? widgetData.usePrimaryColor : widgetMetadata.usePrimaryColor
+  property string valueClockColor: widgetData.clockColor !== undefined ? widgetData.clockColor : widgetMetadata.clockColor
   property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
   property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : (widgetMetadata.customFont !== undefined ? widgetMetadata.customFont : "")
   property string valueFormatHorizontal: widgetData.formatHorizontal !== undefined ? widgetData.formatHorizontal : (widgetMetadata.formatHorizontal !== undefined ? widgetMetadata.formatHorizontal : "")
   property string valueFormatVertical: widgetData.formatVertical !== undefined ? widgetData.formatVertical : (widgetMetadata.formatVertical !== undefined ? widgetMetadata.formatVertical : "")
   property string valueTooltipFormat: widgetData.tooltipFormat !== undefined ? widgetData.tooltipFormat : (widgetMetadata.tooltipFormat !== undefined ? widgetMetadata.tooltipFormat : "")
+
+  readonly property color textColor: {
+    switch (valueClockColor) {
+    case "primary":
+      return Color.mPrimary;
+    case "secondary":
+      return Color.mSecondary;
+    case "tertiary":
+      return Color.mTertiary;
+    case "error":
+      return Color.mError;
+    default:
+      return Color.mOnSurface;
+    }
+  }
 
   // Track the currently focused input field
   property var focusedInput: null
@@ -32,7 +47,7 @@ ColumnLayout {
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
-    settings.usePrimaryColor = valueUsePrimaryColor;
+    settings.clockColor = valueClockColor;
     settings.useCustomFont = valueUseCustomFont;
     settings.customFont = valueCustomFont;
     settings.formatHorizontal = valueFormatHorizontal.trim();
@@ -68,15 +83,16 @@ ColumnLayout {
     }
   }
 
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("bar.clock.use-primary-color-label")
-    description: I18n.tr("bar.clock.use-primary-color-description")
-    checked: valueUsePrimaryColor
-    onToggled: checked => {
-                 valueUsePrimaryColor = checked;
-                 settingsChanged(saveSettings());
-               }
+  NComboBox {
+    label: I18n.tr("common.select-color")
+    description: I18n.tr("common.select-color-description")
+    model: Color.colorKeyModel
+    currentKey: valueClockColor
+    onSelected: key => {
+                  valueClockColor = key;
+                  settingsChanged(saveSettings());
+                }
+    minimumWidth: 200
   }
 
   NToggle {
@@ -240,7 +256,7 @@ ColumnLayout {
                 family: valueUseCustomFont && valueCustomFont ? valueCustomFont : Settings.data.ui.fontDefault
                 pointSize: Style.fontSizeM
                 font.weight: Style.fontWeightBold
-                color: valueUsePrimaryColor ? Color.mPrimary : Color.mOnSurface
+                color: textColor
                 wrapMode: Text.WordWrap
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
@@ -271,7 +287,7 @@ ColumnLayout {
                 family: valueUseCustomFont && valueCustomFont ? valueCustomFont : Settings.data.ui.fontDefault
                 pointSize: Style.fontSizeM
                 font.weight: Style.fontWeightBold
-                color: valueUsePrimaryColor ? Color.mPrimary : Color.mOnSurface
+                color: textColor
                 wrapMode: Text.WordWrap
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 

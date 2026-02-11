@@ -21,6 +21,7 @@ ColumnLayout {
   property int valueMaxWidth: widgetData.maxWidth !== undefined ? widgetData.maxWidth : widgetMetadata.maxWidth
   property bool valueUseFixedWidth: widgetData.useFixedWidth !== undefined ? widgetData.useFixedWidth : widgetMetadata.useFixedWidth
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
+  property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
@@ -36,6 +37,7 @@ ColumnLayout {
     settings.maxWidth = parseInt(widthInput.text) || widgetMetadata.maxWidth;
     settings.useFixedWidth = valueUseFixedWidth;
     settings.colorizeIcons = valueColorizeIcons;
+    settings.textColor = valueTextColor;
     return settings;
   }
 
@@ -64,6 +66,18 @@ ColumnLayout {
                 }
   }
 
+  NComboBox {
+    label: I18n.tr("common.select-color")
+    description: I18n.tr("common.select-color-description")
+    model: Color.colorKeyModel
+    currentKey: valueTextColor
+    onSelected: key => {
+                  valueTextColor = key;
+                  settingsChanged(saveSettings());
+                }
+    minimumWidth: 200
+  }
+
   NToggle {
     Layout.fillWidth: true
     label: I18n.tr("bar.active-window.show-app-icon-label")
@@ -84,6 +98,7 @@ ColumnLayout {
                  root.valueColorizeIcons = checked;
                  settingsChanged(saveSettings());
                }
+    visible: root.valueShowIcon
   }
 
   NTextInput {

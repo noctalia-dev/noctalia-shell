@@ -14,8 +14,11 @@ DraggableDesktopWidget {
   readonly property var widgetMetadata: DesktopWidgetRegistry.widgetMetadata["SystemStat"]
   readonly property string statType: (widgetData && widgetData.statType !== undefined) ? widgetData.statType : (widgetMetadata.statType !== undefined ? widgetMetadata.statType : "CPU")
   readonly property string diskPath: (widgetData && widgetData.diskPath !== undefined) ? widgetData.diskPath : "/"
-  readonly property color color: (widgetData && widgetData.color !== undefined) ? widgetData.color : Color.mPrimary
   readonly property string layout: (widgetData && widgetData.layout !== undefined) ? widgetData.layout : (widgetMetadata.layout !== undefined ? widgetMetadata.layout : "side")
+
+  // Fixed colors
+  readonly property color color: Color.mPrimary
+  readonly property color color2: Color.mSecondary
 
   // Legend items model - each item has: text, color, icon (optional), bold (optional), opacity (optional), elide (optional)
   readonly property var legendItems: {
@@ -36,7 +39,7 @@ DraggableDesktopWidget {
             {
               icon: "cpu-temperature",
               text: SystemStatService.cpuTemp + "°C",
-              color: Color.mError
+              color: root.color2
             }
           ];
     case "GPU":
@@ -82,7 +85,7 @@ DraggableDesktopWidget {
             {
               icon: "upload-speed",
               text: SystemStatService.formatSpeed(SystemStatService.txSpeed),
-              color: Color.mError
+              color: root.color2
             }
           ];
     default:
@@ -121,17 +124,17 @@ DraggableDesktopWidget {
   }
 
   // Graph min/max values
-  readonly property real graphMinValue: root.statType === "GPU" ? SystemStatService.gpuTempHistoryMin : 0
+  readonly property real graphMinValue: root.statType === "GPU" ? Math.max(SystemStatService.gpuTempHistoryMin - 5, 0) : 0
   readonly property real graphMaxValue: {
     switch (root.statType) {
     case "CPU":
-      return Math.max(SystemStatService.cpuHistoryMax, 1);
-    case "GPU":
-      return Math.max(SystemStatService.gpuTempHistoryMax, 1);
     case "Memory":
-      return Math.max(SystemStatService.memHistoryMax, 1);
+    case "Disk":
+      return 100;  // Percentage-based stats use fixed 0-100 range
+    case "GPU":
+      return Math.max(SystemStatService.gpuTempHistoryMax + 5, 1);
     case "Network":
-      return Math.max(SystemStatService.rxMaxSpeed, 1);
+      return SystemStatService.rxMaxSpeed;
     default:
       return 100;
     }
@@ -139,7 +142,7 @@ DraggableDesktopWidget {
   readonly property real graphMinValue2: {
     switch (root.statType) {
     case "CPU":
-      return SystemStatService.cpuTempHistoryMin;
+      return Math.max(SystemStatService.cpuTempHistoryMin - 5, 0);
     default:
       return graphMinValue;
     }
@@ -147,9 +150,9 @@ DraggableDesktopWidget {
   readonly property real graphMaxValue2: {
     switch (root.statType) {
     case "CPU":
-      return Math.max(SystemStatService.cpuTempHistoryMax, 1);
+      return Math.max(SystemStatService.cpuTempHistoryMax + 5, 1);
     case "Network":
-      return Math.max(SystemStatService.txMaxSpeed, 1);
+      return SystemStatService.txMaxSpeed;
     default:
       return graphMaxValue;
     }
@@ -159,6 +162,24 @@ DraggableDesktopWidget {
   implicitHeight: Math.round(120 * widgetScale)
   width: implicitWidth
   height: implicitHeight
+
+  // Update interval per stat type
+  readonly property int graphUpdateInterval: {
+    switch (root.statType) {
+    case "CPU":
+      return Settings.data.systemMonitor.cpuPollingInterval;
+    case "GPU":
+      return Settings.data.systemMonitor.gpuPollingInterval;
+    case "Memory":
+      return Settings.data.systemMonitor.memPollingInterval;
+    case "Disk":
+      return Settings.data.systemMonitor.diskPollingInterval;
+    case "Network":
+      return Settings.data.systemMonitor.networkPollingInterval;
+    default:
+      return 1000;
+    }
+  }
 
   // Graph component (shared between layouts)
   Component {
@@ -171,15 +192,17 @@ DraggableDesktopWidget {
       minValue2: root.graphMinValue2
       maxValue2: root.graphMaxValue2
       color: root.color
-      color2: Color.mError
+      color2: root.color2
       fill: true
+      updateInterval: root.graphUpdateInterval
+      animateScale: root.statType === "Network"
     }
   }
 
   // Side layout: icon + legend on left, graph on right
   RowLayout {
     anchors.fill: parent
-    anchors.margins: Math.round(Style.marginL * widgetScale)
+    anchors.margins: Math.round(Style.marginM * widgetScale)
     spacing: Math.round(Style.marginL * widgetScale)
     visible: root.layout === "side"
 
@@ -219,6 +242,7 @@ DraggableDesktopWidget {
     }
 
     Loader {
+      active: root.layout === "side"
       Layout.fillWidth: true
       Layout.fillHeight: true
       sourceComponent: graphComponent
@@ -228,11 +252,12 @@ DraggableDesktopWidget {
   // Bottom layout: full-width graph, horizontal legend at bottom
   ColumnLayout {
     anchors.fill: parent
-    anchors.margins: Math.round(Style.marginL * widgetScale)
+    anchors.margins: Math.round(Style.marginM * widgetScale)
     spacing: Math.round(Style.marginS * widgetScale)
     visible: root.layout === "bottom"
 
     Loader {
+      active: root.layout === "bottom"
       Layout.fillWidth: true
       Layout.fillHeight: true
       sourceComponent: graphComponent

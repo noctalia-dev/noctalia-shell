@@ -94,7 +94,7 @@ ColumnLayout {
     return {
       instanceId: TelemetryService.getInstanceId(),
       version: UpdateService.currentVersion,
-      compositor: CompositorService.isHyprland ? "Hyprland" : CompositorService.isNiri ? "Niri" : CompositorService.isSway ? "Sway" : CompositorService.isMango ? "MangoWC" : CompositorService.isLabwc ? "LabWC" : "Unknown",
+      compositor: TelemetryService.getCompositorType(),
       os: HostService.osPretty || "Unknown",
       ramGb: Math.round((root.getModule("Memory")?.result?.total || 0) / root.giga),
       monitors: monitors,
@@ -140,7 +140,7 @@ ColumnLayout {
         info += "GPU: " + gpu.result.map(g => g.name || "Unknown").join(", ") + "\n";
       }
       if (mem?.result) {
-        info += "Memory: " + SystemStatService.formatMemoryGb(mem.result.total / root.giga) + "\n";
+        info += "Memory: " + SystemStatService.formatGigabytes(mem.result.total / root.giga) + "\n";
       }
       if (wm?.result) {
         info += "WM: " + (wm.result.prettyName || wm.result.processName || "N/A") + "\n";
@@ -328,7 +328,7 @@ ColumnLayout {
 
   Process {
     id: fastfetchProcess
-    command: ["fastfetch", "--format", "json", "--config", "none"]
+    command: ["fastfetch", "--format", "json", "--config", Quickshell.shellDir + "/Assets/Services/fastfetch/system-info.jsonc"]
     running: false
 
     onExited: function (exitCode) {
@@ -476,17 +476,22 @@ ColumnLayout {
     }
   }
 
-  // Action buttons row
-  RowLayout {
+  GridLayout {
+    id: actionsGrid
     Layout.alignment: Qt.AlignHCenter
     Layout.topMargin: Style.marginM
     Layout.bottomMargin: Style.marginM
-    spacing: Style.marginM
+    rowSpacing: Style.marginM
+    columnSpacing: Style.marginM
+
+    columns: (changelogBtn.implicitWidth + copyBtn.implicitWidth + supportBtn.implicitWidth + 2 * columnSpacing) < root.width ? 3 : 1
 
     NButton {
+      id: changelogBtn
       icon: "sparkles"
       text: I18n.tr("panels.about.changelog")
       outlined: true
+      Layout.alignment: Qt.AlignHCenter
       onClicked: {
         var screen = PanelService.openedPanel?.screen || Quickshell.screens[0];
         UpdateService.viewChangelog(screen);
@@ -494,19 +499,23 @@ ColumnLayout {
     }
 
     NButton {
+      id: copyBtn
       icon: "copy"
       text: I18n.tr("panels.about.copy-info")
       outlined: true
+      Layout.alignment: Qt.AlignHCenter
       onClicked: root.copyInfoToClipboard()
     }
 
     NButton {
+      id: supportBtn
       icon: "heart"
       text: I18n.tr("panels.about.support")
       outlined: true
+      Layout.alignment: Qt.AlignHCenter
       onClicked: {
         Quickshell.execDetached(["xdg-open", "https://buymeacoffee.com/noctalia"]);
-        ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.kofi-opened"));
+        ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.donation-opened"));
       }
     }
   }
@@ -688,8 +697,8 @@ ColumnLayout {
         const mem = root.getModule("Memory");
         if (!mem?.result)
           return "N/A";
-        const used = SystemStatService.formatMemoryGb(mem.result.used / root.giga);
-        const total = SystemStatService.formatMemoryGb(mem.result.total / root.giga);
+        const used = SystemStatService.formatGigabytes(mem.result.used / root.giga);
+        const total = SystemStatService.formatGigabytes(mem.result.total / root.giga);
         return used + " / " + total;
       }
       color: Color.mOnSurface
@@ -712,8 +721,8 @@ ColumnLayout {
         const rootDisk = disk.result.find(d => d.mountpoint === "/");
         if (!rootDisk?.bytes)
           return "N/A";
-        const used = SystemStatService.formatMemoryGb(rootDisk.bytes.used / root.giga);
-        const total = SystemStatService.formatMemoryGb(rootDisk.bytes.total / root.giga);
+        const used = SystemStatService.formatGigabytes(rootDisk.bytes.used / root.giga);
+        const total = SystemStatService.formatGigabytes(rootDisk.bytes.total / root.giga);
         return used + " / " + total + " (" + rootDisk.filesystem + ")";
       }
       color: Color.mOnSurface

@@ -15,6 +15,9 @@ Item {
   // Panel content: Text, icons, etc...
   property Component panelContent: null
 
+  // PanelID for binding panels to widgets of the same type
+  property var panelID: null
+
   // Panel size properties
   property real preferredWidth: 700
   property real preferredHeight: 900

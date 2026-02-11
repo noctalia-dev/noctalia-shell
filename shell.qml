@@ -21,6 +21,7 @@ import qs.Modules.LockScreen
 import qs.Modules.MainScreen
 import qs.Modules.Notification
 import qs.Modules.OSD
+import qs.Modules.Panels.Launcher
 import qs.Modules.Panels.Settings
 import qs.Modules.Toast
 import qs.Services.Control
@@ -89,19 +90,26 @@ ShellRoot {
     sourceComponent: Item {
       Component.onCompleted: {
         Logger.i("Shell", "---------------------------");
+
+        // Critical services needed for initial UI rendering
         WallpaperService.init();
         ImageCacheService.init();
         AppThemeService.init();
         ColorSchemeService.init();
-        LocationService.init();
-        NightLightService.apply();
         DarkModeService.init();
-        HooksService.init();
-        BluetoothService.init();
-        IdleInhibitorService.init();
-        PowerProfileService.init();
-        HostService.init();
-        GitHubService.init();
+
+        // Defer non-critical services to unblock first frame
+        Qt.callLater(function () {
+          LocationService.init();
+          NightLightService.apply();
+          HooksService.init();
+          BluetoothService.init();
+          IdleInhibitorService.init();
+          PowerProfileService.init();
+          HostService.init();
+          GitHubService.init();
+          SupporterService.init();
+        });
 
         delayedInitTimer.running = true;
       }
@@ -114,6 +122,14 @@ ShellRoot {
       Notification {}
       ToastOverlay {}
       OSD {}
+
+      // Launcher overlay window (for overlay layer mode)
+      Loader {
+        active: Settings.data.appLauncher.overviewLayer
+        sourceComponent: Component {
+          LauncherOverlayWindow {}
+        }
+      }
 
       LockScreen {}
 

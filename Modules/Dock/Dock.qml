@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.System
 import qs.Services.UI
 import qs.Widgets
@@ -58,11 +59,12 @@ Loader {
         }
       }
 
-      // Refresh icons when DesktopEntries becomes available
+      // Refresh icons and names when DesktopEntries becomes available (or updates)
       Connections {
         target: DesktopEntries.applications
         function onValuesChanged() {
           root.iconRevision++;
+          updateDockApps();
         }
       }
 
@@ -344,7 +346,7 @@ Loader {
                                                            });
                                } else {
                                  // App is pinned but not running - add once
-                                 pushApp("pinned", null, pinnedAppId, pinnedAppId);
+                                 pushApp("pinned", null, pinnedAppId, getAppNameFromDesktopEntry(pinnedAppId) || pinnedAppId);
                                }
                              });
         }
@@ -658,8 +660,8 @@ Loader {
               Flickable {
                 id: dock
                 // Use parent dimensions more directly to avoid clipping
-                width: isVertical ? parent.width - Style.marginS * 2 : Math.min(dockLayout.implicitWidth, parent.width - Style.marginXL)
-                height: !isVertical ? parent.height - Style.marginS * 2 : Math.min(dockLayout.implicitHeight, parent.height - Style.marginXL)
+                width: isVertical ? parent.width : Math.min(dockLayout.implicitWidth, parent.width - Style.marginXL)
+                height: !isVertical ? parent.height : Math.min(dockLayout.implicitHeight, parent.height - Style.marginXL)
                 contentWidth: dockLayout.implicitWidth
                 contentHeight: dockLayout.implicitHeight
                 anchors.centerIn: parent
@@ -671,10 +673,8 @@ Loader {
                 interactive: isVertical ? contentHeight > height : contentWidth > width
 
                 // Centering margins
-                leftMargin: contentWidth < width ? (width - contentWidth) / 2 : 0
-                rightMargin: leftMargin
-                topMargin: contentHeight < height ? (height - contentHeight) / 2 : 0
-                bottomMargin: topMargin
+                contentX: isVertical && contentWidth < width ? (contentWidth - width) / 2 : 0
+                contentY: !isVertical && contentHeight < height ? (contentHeight - height) / 2 : 0
 
                 WheelHandler {
                   acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
@@ -723,8 +723,9 @@ Loader {
 
                     delegate: Item {
                       id: appButton
-                      Layout.preferredWidth: iconSize
-                      Layout.preferredHeight: iconSize
+                      readonly property real indicatorMargin: Math.max(3, Math.round(iconSize * 0.18))
+                      Layout.preferredWidth: isVertical ? iconSize + indicatorMargin * 2 : iconSize
+                      Layout.preferredHeight: isVertical ? iconSize : iconSize + indicatorMargin * 2
                       Layout.alignment: Qt.AlignCenter
 
                       property bool isActive: modelData.toplevel && ToplevelManager.activeToplevel && ToplevelManager.activeToplevel === modelData.toplevel
@@ -1005,92 +1006,104 @@ Loader {
                           }
                         }
 
-                        onClicked: function (mouse) {
-                          if (mouse.button === Qt.RightButton) {
-                            // If right-clicking on the same app with an open context menu, close it
-                            if (root.currentContextMenu === contextMenu && contextMenu.visible) {
-                              root.closeAllContextMenus();
-                              return;
-                            }
-                            // Close any other existing context menu first
-                            root.closeAllContextMenus();
-                            // Hide tooltip when showing context menu
-                            TooltipService.hideImmediately();
-                            contextMenu.show(appButton, modelData.toplevel || modelData);
-                            return;
-                          }
+                        onClicked: mouse => {
+                                     if (mouse.button === Qt.RightButton) {
+                                       // If right-clicking on the same app with an open context menu, close it
+                                       if (root.currentContextMenu === contextMenu && contextMenu.visible) {
+                                         root.closeAllContextMenus();
+                                         return;
+                                       }
+                                       // Close any other existing context menu first
+                                       root.closeAllContextMenus();
+                                       // Hide tooltip when showing context menu
+                                       TooltipService.hideImmediately();
+                                       contextMenu.show(appButton, modelData.toplevel || modelData);
+                                       return;
+                                     }
 
-                          // Close any existing context menu for non-right-click actions
-                          root.closeAllContextMenus();
+                                     // Close any existing context menu for non-right-click actions
+                                     root.closeAllContextMenus();
 
-                          // Check if toplevel is still valid (not a stale reference)
-                          const isValidToplevel = modelData?.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(modelData.toplevel);
+                                     // Check if toplevel is still valid (not a stale reference)
+                                     const isValidToplevel = modelData?.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(modelData.toplevel);
 
-                          if (mouse.button === Qt.MiddleButton && isValidToplevel && modelData.toplevel.close) {
-                            modelData.toplevel.close();
-                            Qt.callLater(root.updateDockApps); // Force immediate dock update
-                          } else if (mouse.button === Qt.LeftButton) {
-                            if (isValidToplevel && modelData.toplevel.activate) {
-                              // Running app - activate it
-                              modelData.toplevel.activate();
-                            } else if (modelData?.appId) {
-                              // Pinned app not running - launch it
-                              // Use ThemeIcons to robustly find the desktop entry
-                              const app = ThemeIcons.findAppEntry(modelData.appId);
+                                     if (mouse.button === Qt.MiddleButton && isValidToplevel && modelData.toplevel.close) {
+                                       modelData.toplevel.close();
+                                       Qt.callLater(root.updateDockApps); // Force immediate dock update
+                                     } else if (mouse.button === Qt.LeftButton) {
+                                       if (isValidToplevel && modelData.toplevel.activate) {
+                                         // Running app - activate it
+                                         modelData.toplevel.activate();
+                                       } else if (modelData?.appId) {
+                                         // Pinned app not running - launch it
+                                         // Use ThemeIcons to robustly find the desktop entry
+                                         const app = ThemeIcons.findAppEntry(modelData.appId);
 
-                              if (!app) {
-                                Logger.w("Dock", `Could not find desktop entry for pinned app: ${modelData.appId}`);
-                                return;
-                              }
+                                         if (!app) {
+                                           Logger.w("Dock", `Could not find desktop entry for pinned app: ${modelData.appId}`);
+                                           return;
+                                         }
 
-                              if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
-                                // Use custom launch prefix
-                                const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
+                                         if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
+                                           // Use custom launch prefix
+                                           const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
 
-                                if (app.runInTerminal) {
-                                  const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
-                                  const command = prefix.concat(terminal.concat(app.command));
-                                  Quickshell.execDetached(command);
-                                } else {
-                                  const command = prefix.concat(app.command);
-                                  Quickshell.execDetached(command);
-                                }
-                              } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
-                                Logger.d("Dock", `Using app2unit for: ${app.id}`);
-                                if (app.runInTerminal)
-                                  Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
-                                else
-                                  Quickshell.execDetached(["app2unit", "--"].concat(app.command));
-                              } else {
-                                // Fallback logic when app2unit is not used
-                                if (app.runInTerminal) {
-                                  // If app.execute() fails for terminal apps, we handle it manually.
-                                  Logger.d("Dock", "Executing terminal app manually: " + app.name);
-                                  const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
-                                  const command = terminal.concat(app.command);
-                                  Quickshell.execDetached(command);
-                                } else if (app.command && app.command.length > 0) {
-                                  Quickshell.execDetached(app.command);
-                                } else if (app.execute) {
-                                  app.execute();
-                                } else {
-                                  Logger.w("Dock", `Could not launch: ${app.name}. No valid launch method.`);
-                                }
-                              }
-                            }
-                          }
-                        }
+                                           if (app.runInTerminal) {
+                                             const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+                                             const command = prefix.concat(terminal.concat(app.command));
+                                             Quickshell.execDetached(command);
+                                           } else {
+                                             const command = prefix.concat(app.command);
+                                             Quickshell.execDetached(command);
+                                           }
+                                         } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
+                                           Logger.d("Dock", `Using app2unit for: ${app.id}`);
+                                           if (app.runInTerminal)
+                                           Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
+                                           else
+                                           Quickshell.execDetached(["app2unit", "--"].concat(app.command));
+                                         } else {
+                                           // Fallback logic when app2unit is not used
+                                           if (app.runInTerminal) {
+                                             Logger.d("Dock", "Executing terminal app manually: " + app.name);
+                                             const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+                                             const command = terminal.concat(app.command);
+                                             CompositorService.spawn(command);
+                                           } else if (app.command && app.command.length > 0) {
+                                             CompositorService.spawn(app.command);
+                                           } else if (app.execute) {
+                                             app.execute();
+                                           } else {
+                                             Logger.w("Dock", `Could not launch: ${app.name}. No valid launch method.`);
+                                           }
+                                         }
+                                       }
+                                     }
+                                   }
                       }
 
-                      // Active indicator - always below the icon
+                      // Active indicator - positioned at the edge of the delegate area
                       Rectangle {
                         visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive
-                        width: iconSize * 0.2
-                        height: iconSize * 0.1
+                        width: isVertical ? indicatorMargin * 0.6 : iconSize * 0.2
+                        height: isVertical ? iconSize * 0.2 : indicatorMargin * 0.6
                         color: Color.mPrimary
                         radius: Style.radiusXS
-                        anchors.top: parent.bottom
-                        anchors.horizontalCenter: parent.horizontalCenter
+
+                        // Anchor to the edge facing the screen center
+                        anchors.bottom: !isVertical && dockPosition === "bottom" ? parent.bottom : undefined
+                        anchors.top: !isVertical && dockPosition === "top" ? parent.top : undefined
+                        anchors.left: isVertical && dockPosition === "left" ? parent.left : undefined
+                        anchors.right: isVertical && dockPosition === "right" ? parent.right : undefined
+
+                        anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
+                        anchors.verticalCenter: isVertical ? parent.verticalCenter : undefined
+
+                        // Offset slightly from the edge
+                        anchors.bottomMargin: !isVertical && dockPosition === "bottom" ? 2 : 0
+                        anchors.topMargin: !isVertical && dockPosition === "top" ? 2 : 0
+                        anchors.leftMargin: isVertical && dockPosition === "left" ? 2 : 0
+                        anchors.rightMargin: isVertical && dockPosition === "right" ? 2 : 0
                       }
                     }
                   }

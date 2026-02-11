@@ -13,7 +13,7 @@ Item {
   property real fallbackIconSize: Style.fontSizeXXL
   property real borderWidth: 0
   property color borderColor: "transparent"
-  property int imageFillMode: Image.PreserveAspectFit
+  property int imageFillMode: Image.PreserveAspectCrop
 
   readonly property bool showFallback: (fallbackIcon !== undefined && fallbackIcon !== "") && (imagePath === undefined || imagePath === "")
   readonly property int status: imageSource.status

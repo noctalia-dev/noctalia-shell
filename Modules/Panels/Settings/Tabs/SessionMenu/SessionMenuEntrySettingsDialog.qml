@@ -12,8 +12,9 @@ Popup {
   property var entryData: null
   property string entryId: ""
   property string entryText: ""
+  property string keybindInputText: ""
 
-  signal updateEntryCommand(int index, string command)
+  signal updateEntryProperties(int index, var properties)
 
   // Default commands mapping
   readonly property var defaultCommands: {
@@ -38,9 +39,17 @@ Popup {
     // Load command when popup opens
     if (entryData) {
       commandInput.text = entryData.command || "";
+      keybindInputText = entryData.keybind || "";
     }
     // Request focus to ensure keyboard input works
     forceActiveFocus();
+  }
+
+  function save() {
+    root.updateEntryProperties(root.entryIndex, {
+                                 "command": commandInput.text,
+                                 "keybind": keybindInputText
+                               });
   }
 
   background: Rectangle {
@@ -78,7 +87,10 @@ Popup {
         NIconButton {
           icon: "close"
           tooltipText: I18n.tr("common.close")
-          onClicked: root.close()
+          onClicked: {
+            root.save();
+            root.close();
+          }
         }
       }
 
@@ -96,16 +108,7 @@ Popup {
         label: I18n.tr("common.command")
         description: I18n.tr("panels.session-menu.entry-settings-command-description")
         placeholderText: I18n.tr("panels.session-menu.entry-settings-command-placeholder")
-        onEditingFinished: {
-          // Auto-focus on Enter
-          applyButton.forceActiveFocus();
-        }
-        Keys.onReturnPressed: {
-          applyButton.clicked();
-        }
-        Keys.onEnterPressed: {
-          applyButton.clicked();
-        }
+        onTextChanged: root.save()
       }
 
       // Default command info
@@ -152,31 +155,25 @@ Popup {
         }
       }
 
-      // Action buttons
-      RowLayout {
+      NKeybindRecorder {
+        id: keybindRecorder
         Layout.fillWidth: true
-        Layout.topMargin: Style.marginM
-        spacing: Style.marginM
+        label: I18n.tr("common.keybind")
+        description: I18n.tr("panels.session-menu.entry-settings-keybind-description")
+        allowEmpty: true
+        currentKeybinds: keybindInputText ? [keybindInputText] : []
+        onKeybindsChanged: newKeybinds => {
+                             keybindInputText = newKeybinds.length > 0 ? newKeybinds[0] : "";
+                             root.save();
+                           }
+      }
 
-        Item {
-          Layout.fillWidth: true
-        }
+      // Hidden property to store the text since NKeybindRecorder manages its own state
+      // but we need to initialize it and read from it
 
-        NButton {
-          id: closeButton
-          text: I18n.tr("common.close")
-          outlined: true
-          onClicked: root.close()
-        }
-
-        NButton {
-          id: applyButton
-          text: I18n.tr("common.apply")
-          icon: "check"
-          onClicked: {
-            root.updateEntryCommand(root.entryIndex, commandInput.text);
-          }
-        }
+      // Bottom spacer to maintain padding
+      Item {
+        Layout.preferredHeight: Style.marginS
       }
     }
   }

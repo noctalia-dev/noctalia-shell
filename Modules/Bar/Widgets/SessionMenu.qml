@@ -31,23 +31,7 @@ NIconButton {
     return {};
   }
 
-  readonly property string colorName: widgetSettings.colorName !== undefined ? widgetSettings.colorName : widgetMetadata.colorName
-
-  readonly property color iconColor: {
-    switch (colorName) {
-    case "primary":
-      return Color.mPrimary;
-    case "secondary":
-      return Color.mSecondary;
-    case "tertiary":
-      return Color.mTertiary;
-    case "error":
-      return Color.mError;
-    case "onSurface":
-    default:
-      return Color.mOnSurface;
-    }
-  }
+  readonly property string iconColorKey: (widgetSettings.iconColor !== undefined) ? widgetSettings.iconColor : widgetMetadata.iconColor
 
   baseSize: Style.getCapsuleHeightForScreen(screenName)
   applyUiScale: false
@@ -56,9 +40,7 @@ NIconButton {
   tooltipText: I18n.tr("tooltips.session-menu")
   tooltipDirection: BarService.getTooltipDirection(screenName)
   colorBg: Style.capsuleColor
-  colorFg: root.iconColor
-  colorBorder: "transparent"
-  colorBorderHover: "transparent"
+  colorFg: Color.resolveColorKey(iconColorKey)
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
 

@@ -95,12 +95,16 @@ ColumnLayout {
 
   NComboBox {
     Layout.fillWidth: true
-    label: I18n.tr("panels.bar.appearance-display-mode-label")
+    label: I18n.tr("common.display-mode")
     description: I18n.tr("panels.bar.appearance-display-mode-description")
     model: [
       {
         "key": "always_visible",
         "name": I18n.tr("hide-modes.visible")
+      },
+      {
+        "key": "non_exclusive",
+        "name": I18n.tr("hide-modes.non-exclusive")
       },
       {
         "key": "auto_hide",
@@ -150,6 +154,17 @@ ColumnLayout {
     checked: Settings.data.bar.showCapsule
     defaultValue: Settings.getDefaultValue("bar.showCapsule")
     onToggled: checked => Settings.data.bar.showCapsule = checked
+  }
+
+  NComboBox {
+    Layout.fillWidth: true
+    visible: Settings.data.bar.showCapsule
+    label: I18n.tr("panels.bar.appearance-capsule-color-label")
+    description: I18n.tr("panels.bar.appearance-capsule-color-description")
+    model: Color.colorKeyModel
+    currentKey: Settings.data.bar.capsuleColorKey
+    onSelected: key => Settings.data.bar.capsuleColorKey = key
+    minimumWidth: 200
   }
 
   NValueSlider {
@@ -269,6 +284,7 @@ ColumnLayout {
   NDivider {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginS
+    visible: Settings.data.bar.displayMode === "auto_hide"
   }
 
   ColumnLayout {

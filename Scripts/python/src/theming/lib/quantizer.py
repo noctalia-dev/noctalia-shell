@@ -1,12 +1,14 @@
 """
-Wu quantizer implementation matching material-color-utilities.
+Wu and WSMeans quantizer implementations matching material-color-utilities.
 
-This implements Xiaolin Wu's color quantization algorithm from Graphics Gems II (1991),
-which is the same algorithm used by matugen/material-color-utilities for extracting
-dominant colors from images.
+Wu implements Xiaolin Wu's color quantization algorithm from Graphics Gems II (1991).
+WSMeans refines Wu's output via weighted k-means in Lab space (QuantizerCelebi pipeline).
+Together they match the QuantizerCelebi pipeline used by matugen/material-color-utilities.
 """
 
 from typing import Dict, List, Tuple
+
+from .color import rgb_to_lab, lab_to_rgb
 
 # Constants matching material-color-utilities
 INDEX_BITS = 5
@@ -155,17 +157,15 @@ class QuantizerWu:
         volume_variance = [0.0] * max_colors
 
         # Initialize first box to cover entire color space
-        self.cubes[0].r0 = 0
-        self.cubes[0].g0 = 0
-        self.cubes[0].b0 = 0
         self.cubes[0].r1 = SIDE_LENGTH - 1
         self.cubes[0].g1 = SIDE_LENGTH - 1
         self.cubes[0].b1 = SIDE_LENGTH - 1
 
         generated_color_count = max_colors
         next_box = 0
+        i = 1
 
-        for i in range(1, max_colors):
+        while i < max_colors:
             if self._cut(self.cubes[next_box], self.cubes[i]):
                 volume_variance[next_box] = (
                     self._variance(self.cubes[next_box])
@@ -191,6 +191,8 @@ class QuantizerWu:
                 generated_color_count = i + 1
                 break
 
+            i += 1
+
         return generated_color_count
 
     def _create_result(self, color_count: int) -> List[int]:
@@ -200,9 +202,9 @@ class QuantizerWu:
             cube = self.cubes[i]
             weight = self._volume(cube, self.weights)
             if weight > 0:
-                r = round(self._volume(cube, self.moments_r) / weight)
-                g = round(self._volume(cube, self.moments_g) / weight)
-                b = round(self._volume(cube, self.moments_b) / weight)
+                r = int(self._volume(cube, self.moments_r) / weight)
+                g = int(self._volume(cube, self.moments_g) / weight)
+                b = int(self._volume(cube, self.moments_b) / weight)
                 color = _argb_from_rgb(r, g, b)
                 colors.append(color)
         return colors
@@ -410,35 +412,211 @@ def quantize_wu(pixels: List[Tuple[int, int, int]], max_colors: int = 128) -> Di
     quantizer = QuantizerWu()
     result_colors = quantizer.quantize(argb_pixels, max_colors)
 
-    # Build color to count mapping
-    # Count original pixels that map to each quantized color
-    color_to_count: Dict[int, int] = {}
+    # Build color to count mapping in box order (matching Rust's IndexMap insertion order)
+    # Wu returns colors with count 0; WSMeans uses only the keys as starting clusters
+    color_to_count: Dict[int, int] = {c: 0 for c in result_colors}
 
-    # For Wu quantizer, we approximate counts based on the quantizer's weights
-    # Since Wu gives us representative colors, we need to map original pixels
-    bits_to_remove = 8 - INDEX_BITS
-    for argb in argb_pixels:
-        if (argb >> 24) & 0xFF != 255:
+    return color_to_count
+
+
+# =============================================================================
+# WSMeans Quantizer - weighted k-means refinement in Lab space
+# =============================================================================
+
+# Mask for 48-bit LCG state
+_LCG_MASK = (1 << 48) - 1
+
+
+class _Random:
+    """LCG matching Java's java.util.Random / material-color-utilities."""
+
+    def __init__(self, seed: int):
+        self._seed = (seed ^ 0x5DEECE66D) & _LCG_MASK
+
+    def _next(self, bits: int) -> int:
+        self._seed = (self._seed * 0x5DEECE66D + 0xB) & _LCG_MASK
+        # Unsigned right shift: treat as unsigned 48-bit, shift, return as signed 32-bit
+        val = self._seed >> (48 - bits)
+        # Convert to signed 32-bit int to match Java behavior
+        if val >= (1 << 31):
+            val -= (1 << 32)
+        return val
+
+    def next_range(self, range_val: int) -> int:
+        if (range_val & -range_val) == range_val:
+            # Power of 2
+            return (range_val * self._next(31)) >> 31
+        while True:
+            bits = self._next(31)
+            val = bits % range_val
+            if bits - val + (range_val - 1) >= 0:
+                return val
+
+
+def _lab_distance_squared(a: Tuple[float, float, float], b: Tuple[float, float, float]) -> float:
+    """Squared Euclidean distance in Lab space (no sqrt)."""
+    dL = a[0] - b[0]
+    da = a[1] - b[1]
+    db = a[2] - b[2]
+    return dL * dL + da * da + db * db
+
+
+def quantize_wsmeans(
+    pixels: List[Tuple[int, int, int]],
+    max_colors: int,
+    starting_clusters: List[int],
+) -> Dict[int, int]:
+    """
+    Refine quantized colors via weighted k-means in Lab space.
+
+    Port of QuantizerWsmeans from material-colors-0.4.2 Rust crate.
+
+    Args:
+        pixels: List of (R, G, B) tuples (original image pixels)
+        max_colors: Maximum number of colors
+        starting_clusters: List of ARGB colors from Wu quantizer
+
+    Returns:
+        Dictionary mapping ARGB colors to pixel counts
+    """
+    # Deduplicate pixels, build count map and Lab points
+    pixel_to_count: Dict[int, int] = {}
+    unique_pixels: List[int] = []  # ARGB values in insertion order
+    points: List[Tuple[float, float, float]] = []  # Lab coordinates
+
+    for r, g, b in pixels:
+        argb = _argb_from_rgb(r, g, b)
+        if argb in pixel_to_count:
+            pixel_to_count[argb] += 1
+        else:
+            unique_pixels.append(argb)
+            points.append(rgb_to_lab(r, g, b))
+            pixel_to_count[argb] = 1
+
+    cluster_count = min(max_colors, len(points))
+    if cluster_count == 0:
+        return {}
+
+    # Convert starting clusters from ARGB to Lab
+    clusters: List[Tuple[float, float, float]] = []
+    for argb in starting_clusters:
+        cr, cg, cb = _rgb_from_argb(argb)
+        clusters.append(rgb_to_lab(cr, cg, cb))
+
+    # Fill remaining clusters with actual image pixels using seeded LCG
+    additional_needed = cluster_count - len(clusters)
+    if additional_needed > 0:
+        rng = _Random(0x42688)
+        indices: List[int] = []
+        for _ in range(additional_needed):
+            index = rng.next_range(len(points))
+            while index in indices:
+                index = rng.next_range(len(points))
+            indices.append(index)
+        for index in indices:
+            clusters.append(points[index])
+
+    # Initialize assignments
+    cluster_indices = [i % cluster_count for i in range(len(points))]
+
+    # Distance matrix and sorted index matrix
+    distance_to_index_matrix: List[List[List]] = [
+        [[0.0, j] for j in range(cluster_count)]
+        for _ in range(cluster_count)
+    ]
+    pixel_count_sums = [0] * cluster_count
+
+    for iteration in range(10):
+        points_moved = 0
+
+        # Compute inter-cluster distance matrix
+        for i in range(cluster_count):
+            for j in range(i + 1, cluster_count):
+                dist = _lab_distance_squared(clusters[i], clusters[j])
+                distance_to_index_matrix[j][i][0] = dist
+                distance_to_index_matrix[j][i][1] = i
+                distance_to_index_matrix[i][j][0] = dist
+                distance_to_index_matrix[i][j][1] = j
+
+            # Sort row by distance
+            distance_to_index_matrix[i].sort(key=lambda x: x[0])
+
+        # Assignment step: find nearest cluster for each point
+        for i in range(len(points)):
+            point = points[i]
+            prev_idx = cluster_indices[i]
+            prev_dist = _lab_distance_squared(point, clusters[prev_idx])
+
+            min_dist = prev_dist
+            new_idx = -1
+
+            for j in range(cluster_count):
+                # Triangle inequality: skip if inter-cluster dist >= 4 * current dist
+                if distance_to_index_matrix[prev_idx][j][0] >= 4.0 * prev_dist:
+                    continue
+
+                dist = _lab_distance_squared(point, clusters[j])
+                if dist < min_dist:
+                    min_dist = dist
+                    new_idx = j
+
+            if new_idx != -1:
+                points_moved += 1
+                cluster_indices[i] = new_idx
+
+        # Early stop
+        if points_moved == 0 and iteration > 0:
+            break
+
+        # Update step: compute new centroids as weighted mean in Lab space
+        component_l = [0.0] * cluster_count
+        component_a = [0.0] * cluster_count
+        component_b = [0.0] * cluster_count
+        for k in range(cluster_count):
+            pixel_count_sums[k] = 0
+
+        for i in range(len(points)):
+            cidx = cluster_indices[i]
+            pt = points[i]
+            count = pixel_to_count[unique_pixels[i]]
+            pixel_count_sums[cidx] += count
+            component_l[cidx] += pt[0] * count
+            component_a[cidx] += pt[1] * count
+            component_b[cidx] += pt[2] * count
+
+        for i in range(cluster_count):
+            count = pixel_count_sums[i]
+            if count == 0:
+                clusters[i] = (0.0, 0.0, 0.0)
+            else:
+                clusters[i] = (
+                    component_l[i] / count,
+                    component_a[i] / count,
+                    component_b[i] / count,
+                )
+
+    # Build result: convert cluster centroids from Lab to ARGB with populations
+    cluster_argbs: List[int] = []
+    cluster_populations: List[int] = []
+
+    for i in range(cluster_count):
+        count = pixel_count_sums[i]
+        if count == 0:
             continue
 
-        r = (argb >> 16) & 0xFF
-        g = (argb >> 8) & 0xFF
-        b = argb & 0xFF
+        lab = clusters[i]
+        cr, cg, cb = lab_to_rgb(lab[0], lab[1], lab[2])
+        argb = _argb_from_rgb(cr, cg, cb)
 
-        # Find closest quantized color
-        min_dist = float('inf')
-        closest = result_colors[0] if result_colors else argb
+        if argb in cluster_argbs:
+            continue
 
-        for qcolor in result_colors:
-            qr = (qcolor >> 16) & 0xFF
-            qg = (qcolor >> 8) & 0xFF
-            qb = qcolor & 0xFF
-            dist = (r - qr) ** 2 + (g - qg) ** 2 + (b - qb) ** 2
-            if dist < min_dist:
-                min_dist = dist
-                closest = qcolor
+        cluster_argbs.append(argb)
+        cluster_populations.append(count)
 
-        color_to_count[closest] = color_to_count.get(closest, 0) + 1
+    color_to_count: Dict[int, int] = {}
+    for i in range(len(cluster_argbs)):
+        color_to_count[cluster_argbs[i]] = cluster_populations[i]
 
     return color_to_count
 
@@ -590,7 +768,8 @@ def extract_source_color(
     """
     Extract the primary source color from image pixels.
 
-    Uses Wu quantizer + Score algorithm matching matugen/material-color-utilities.
+    Uses Wu + WSMeans quantizer (QuantizerCelebi) + Score algorithm matching
+    matugen/material-color-utilities.
 
     Args:
         pixels: List of (R, G, B) tuples
@@ -604,8 +783,10 @@ def extract_source_color(
     if not pixels:
         return fallback_color
 
-    # Quantize using Wu algorithm (128 colors like matugen)
-    color_to_count = quantize_wu(pixels, max_colors=128)
+    # Quantize using Wu + WSMeans (QuantizerCelebi pipeline like matugen)
+    wu_result = quantize_wu(pixels, max_colors=128)
+    starting_clusters = list(wu_result.keys())
+    color_to_count = quantize_wsmeans(pixels, 128, starting_clusters)
 
     # Filter out low-chroma colors before scoring (like matugen)
     filtered = {}

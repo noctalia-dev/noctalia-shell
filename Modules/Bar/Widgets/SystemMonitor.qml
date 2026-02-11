@@ -40,7 +40,9 @@ Item {
   readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
   readonly property bool compactMode: widgetSettings.compactMode !== undefined ? widgetSettings.compactMode : widgetMetadata.compactMode
-  readonly property bool usePrimaryColor: widgetSettings.usePrimaryColor !== undefined ? widgetSettings.usePrimaryColor : widgetMetadata.usePrimaryColor
+  readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
+  readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
+
   readonly property bool useMonospaceFont: widgetSettings.useMonospaceFont !== undefined ? widgetSettings.useMonospaceFont : widgetMetadata.useMonospaceFont
   readonly property bool showCpuUsage: (widgetSettings.showCpuUsage !== undefined) ? widgetSettings.showCpuUsage : widgetMetadata.showCpuUsage
   readonly property bool showCpuFreq: (widgetSettings.showCpuFreq !== undefined) ? widgetSettings.showCpuFreq : widgetMetadata.showCpuFreq
@@ -51,7 +53,8 @@ Item {
   readonly property bool showSwapUsage: (widgetSettings.showSwapUsage !== undefined) ? widgetSettings.showSwapUsage : widgetMetadata.showSwapUsage
   readonly property bool showNetworkStats: (widgetSettings.showNetworkStats !== undefined) ? widgetSettings.showNetworkStats : widgetMetadata.showNetworkStats
   readonly property bool showDiskUsage: (widgetSettings.showDiskUsage !== undefined) ? widgetSettings.showDiskUsage : widgetMetadata.showDiskUsage
-  readonly property bool showDiskAsFree: (widgetSettings.showDiskAsFree !== undefined) ? widgetSettings.showDiskAsFree : widgetMetadata.showDiskAsFree
+  readonly property bool showDiskUsageAsPercent: (widgetSettings.showDiskUsageAsPercent !== undefined) ? widgetSettings.showDiskUsageAsPercent : widgetMetadata.showDiskUsageAsPercent
+  readonly property bool showDiskAvailable: (widgetSettings.showDiskAvailable !== undefined) ? widgetSettings.showDiskAvailable : widgetMetadata.showDiskAvailable
   readonly property bool showLoadAverage: (widgetSettings.showLoadAverage !== undefined) ? widgetSettings.showLoadAverage : widgetMetadata.showLoadAverage
   readonly property string diskPath: (widgetSettings.diskPath !== undefined) ? widgetSettings.diskPath : widgetMetadata.diskPath
   readonly property string fontFamily: useMonospaceFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
@@ -62,6 +65,9 @@ Item {
   // Content dimensions for implicit sizing
   readonly property real contentWidth: isVertical ? capsuleHeight : Math.round(mainGrid.implicitWidth + Style.marginXL)
   readonly property real contentHeight: isVertical ? Math.round(mainGrid.implicitHeight + Style.marginXL) : capsuleHeight
+
+  readonly property color iconColor: Color.resolveColorKey(iconColorKey)
+  readonly property color textColor: Color.resolveColorKey(textColorKey)
 
   // Size: use implicit width/height
   // BarWidgetLoader sets explicit width/height to extend click area
@@ -77,7 +83,7 @@ Item {
     let rows = [];
 
     // CPU
-    rows.push([I18n.tr("system-monitor.cpu-usage"), `${Math.round(SystemStatService.cpuUsage)}% (${SystemStatService.cpuFreq})`]);
+    rows.push([I18n.tr("system-monitor.cpu-usage"), `${Math.round(SystemStatService.cpuUsage)}% (${SystemStatService.cpuFreq.replace(/[^0-9.]/g, "")} GHz)`]);
 
     if (SystemStatService.cpuTemp > 0) {
       rows.push([I18n.tr("system-monitor.cpu-temp"), `${Math.round(SystemStatService.cpuTemp)}°C`]);
@@ -94,11 +100,11 @@ Item {
     }
 
     // Memory
-    rows.push([I18n.tr("common.memory"), `${Math.round(SystemStatService.memPercent)}% (${SystemStatService.formatMemoryGb(SystemStatService.memGb).replace(/[^0-9.]/g, "") + " GB"})`]);
+    rows.push([I18n.tr("common.memory"), `${Math.round(SystemStatService.memPercent)}% (${SystemStatService.formatGigabytes(SystemStatService.memGb).replace(/[^0-9.]/g, "") + " GB"})`]);
 
     // Swap (if available)
     if (SystemStatService.swapTotalGb > 0) {
-      rows.push([I18n.tr("bar.system-monitor.swap-usage-label"), `${Math.round(SystemStatService.swapPercent)}% (${SystemStatService.formatMemoryGb(SystemStatService.swapGb).replace(/[^0-9.]/g, "") + " GB"})`]);
+      rows.push([I18n.tr("bar.system-monitor.swap-usage-label"), `${Math.round(SystemStatService.swapPercent)}% (${SystemStatService.formatGigabytes(SystemStatService.swapGb).replace(/[^0-9.]/g, "") + " GB"})`]);
     }
 
     // Network
@@ -110,17 +116,13 @@ Item {
     if (diskPercent !== undefined) {
       const usedGb = SystemStatService.diskUsedGb[diskPath] || 0;
       const sizeGb = SystemStatService.diskSizeGb[diskPath] || 0;
-      const availGb = SystemStatService.diskAvailGb[diskPath] || 0;
-      rows.push([I18n.tr("system-monitor.disk"), `${usedGb.toFixed(1)}GB/${sizeGb.toFixed(1)}GB (${diskPercent}%)`]);
-
-      // TODO i18n
-      rows.push(["Available", `${availGb.toFixed(1)}G`]);
+      const availGb = SystemStatService.diskAvailableGb[diskPath] || 0;
+      rows.push([I18n.tr("system-monitor.disk"), `${diskPercent}% (${usedGb.toFixed(1)} / ${sizeGb.toFixed(1)} GB)`]);
+      rows.push([I18n.tr("common.available"), `${availGb.toFixed(1)} GB`]);
     }
 
     return rows;
   }
-
-  readonly property color textColor: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
 
   // Visibility-aware warning/critical states (delegates to service)
   readonly property bool cpuWarning: showCpuUsage && SystemStatService.cpuWarning
@@ -250,7 +252,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : Color.mOnSurface
+              color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : root.iconColor
             }
           }
 
@@ -264,7 +266,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : textColor
+            color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -318,7 +320,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: Color.mOnSurface
+              color: root.iconColor
             }
           }
 
@@ -332,7 +334,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: textColor
+            color: root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -386,7 +388,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (tempWarning || tempCritical) ? SystemStatService.tempColor : Color.mOnSurface
+              color: (tempWarning || tempCritical) ? SystemStatService.tempColor : root.iconColor
             }
           }
 
@@ -400,7 +402,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (tempWarning || tempCritical) ? SystemStatService.tempColor : textColor
+            color: (tempWarning || tempCritical) ? SystemStatService.tempColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -454,7 +456,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : Color.mOnSurface
+              color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : root.iconColor
             }
           }
 
@@ -468,7 +470,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : textColor
+            color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -522,7 +524,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: Color.mOnSurface
+              color: root.iconColor
             }
           }
 
@@ -536,7 +538,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: textColor
+            color: root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -590,21 +592,21 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (memWarning || memCritical) ? SystemStatService.memColor : Color.mOnSurface
+              color: (memWarning || memCritical) ? SystemStatService.memColor : root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: showMemoryAsPercent ? `${Math.round(SystemStatService.memPercent)}%` : SystemStatService.formatMemoryGb(SystemStatService.memGb)
+            text: showMemoryAsPercent ? `${Math.round(SystemStatService.memPercent)}%` : SystemStatService.formatGigabytes(SystemStatService.memGb)
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (memWarning || memCritical) ? SystemStatService.memColor : textColor
+            color: (memWarning || memCritical) ? SystemStatService.memColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -658,7 +660,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (swapWarning || swapCritical) ? SystemStatService.swapColor : Color.mOnSurface
+              color: (swapWarning || swapCritical) ? SystemStatService.swapColor : root.iconColor
             }
           }
 
@@ -672,7 +674,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (swapWarning || swapCritical) ? SystemStatService.swapColor : textColor
+            color: (swapWarning || swapCritical) ? SystemStatService.swapColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -725,6 +727,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
+              color: root.iconColor
             }
           }
 
@@ -738,7 +741,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: textColor
+            color: root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -790,6 +793,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
+              color: root.iconColor
             }
           }
 
@@ -803,7 +807,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: textColor
+            color: root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -856,28 +860,24 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : Color.mOnSurface
+              color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: {
-              if (showDiskAsFree && !isVertical) {
-                let avail = SystemStatService.diskAvailGb[diskPath] || 0;
-                return avail.toFixed(1) + "G";
-              } else {
-                return SystemStatService.diskPercents[diskPath] ? `${SystemStatService.diskPercents[diskPath]}%` : "n/a";
-              }
-            }
+            text: SystemStatService.formatDiskDisplay(diskPath, {
+                                                        percent: showDiskUsageAsPercent,
+                                                        available: showDiskAvailable
+                                                      })
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : textColor
+            color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -892,8 +892,8 @@ Item {
             Layout.column: 1
 
             onLoaded: {
-              item.ratio = Qt.binding(() => (SystemStatService.diskPercents[diskPath] ?? 0) / 100);
-              item.statColor = Qt.binding(() => SystemStatService.getDiskColor(diskPath));
+              item.ratio = Qt.binding(() => (showDiskAvailable ? SystemStatService.diskAvailPercents[diskPath] : SystemStatService.diskPercents[diskPath] ?? 0) / 100);
+              item.statColor = Qt.binding(() => SystemStatService.getDiskColor(diskPath, showDiskAvailable));
             }
           }
         }

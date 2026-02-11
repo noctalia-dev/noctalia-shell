@@ -19,6 +19,9 @@ ColumnLayout {
   property var moveWidgetBetweenSections
 
   signal openPluginSettings(var manifest)
+  // determine bar orientation
+  readonly property string barPosition: Settings.data.bar.position
+  readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
 
   function getSectionIcons() {
     return {
@@ -36,8 +39,9 @@ ColumnLayout {
 
   // Left Section
   NSectionEditor {
-    sectionName: I18n.tr("positions.left")
+    sectionName: root.barIsVertical ? I18n.tr("positions.top") : I18n.tr("positions.left")
     sectionId: "left"
+    barIsVertical: root.barIsVertical
     settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml")
     widgetRegistry: BarWidgetRegistry
     widgetModel: Settings.data.bar.widgets.left
@@ -55,6 +59,7 @@ ColumnLayout {
   NSectionEditor {
     sectionName: I18n.tr("positions.center")
     sectionId: "center"
+    barIsVertical: root.barIsVertical
     settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml")
     widgetRegistry: BarWidgetRegistry
     widgetModel: Settings.data.bar.widgets.center
@@ -70,8 +75,9 @@ ColumnLayout {
 
   // Right Section
   NSectionEditor {
-    sectionName: I18n.tr("positions.right")
+    sectionName: root.barIsVertical ? I18n.tr("positions.bottom") : I18n.tr("positions.right")
     sectionId: "right"
+    barIsVertical: root.barIsVertical
     settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/Bar/BarWidgetSettingsDialog.qml")
     widgetRegistry: BarWidgetRegistry
     widgetModel: Settings.data.bar.widgets.right

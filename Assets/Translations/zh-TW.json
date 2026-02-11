@@ -48,11 +48,16 @@
       "device-default": "預設 (顯示裝置)",
       "device-description": "選取要顯示哪個裝置的電池",
       "device-label": "電池裝置",
+      "display-mode-description": "選擇電池在工具列中的顯示方式。",
+      "display-mode-graphic": "圖形化電池",
+      "display-mode-graphic-clean": "圖形電池（無%）",
+      "display-mode-icon-always": "圖示 - 始終顯示 %",
+      "display-mode-icon-hover": "圖示 - 懸停時顯示",
+      "display-mode-icon-only": "僅圖示",
       "hide-if-idle-description": "當電池狀態為閒置時隱藏小工具",
       "hide-if-idle-label": "閒置時隱藏",
       "hide-if-not-detected-description": "如果系統沒有偵測到電池就隱藏小工具",
       "hide-if-not-detected-label": "沒有偵測到時隱藏",
-      "low-battery-threshold-description": "在電池落到此百分比以下時顯示警告",
       "low-battery-threshold-label": "低電量警告",
       "show-noctalia-performance-description": "在電池面板內顯示 Noctalia 效能模式開關",
       "show-noctalia-performance-label": "顯示 Noctalia 效能模式開關",
@@ -75,8 +80,6 @@
       "use-custom-font-label": "使用自訂字型",
       "use-monospaced-font-description": "當啟用時, 時鐘會使用等寬字型顯示",
       "use-monospaced-font-label": "使用等寬字型",
-      "use-primary-color-description": "當啟用時, 會以主題的主色強調",
-      "use-primary-color-label": "使用主要顏色",
       "vertical-bar-description": "使用空格把各個部件拆到下一行",
       "vertical-bar-label": "垂直列顯示"
     },
@@ -94,7 +97,6 @@
       "collapse-condition-description": "若輸出文字符合此值，按鈕將會摺疊。",
       "collapse-condition-label": "摺疊條件",
       "color-selection-description": "將主題用色套用至圖示及文字上",
-      "color-selection-label": "選取顏色",
       "display-command-output-description": "輸入一個想要定時重複執行的指令, 指令的第一行輸出將會作為顯示的文字",
       "display-command-output-label": "顯示指令的輸出",
       "display-command-output-stream-description": "輸入一個要持續執行的指令",
@@ -196,6 +198,8 @@
     "system-monitor": {
       "compact-mode-description": "用迷你長條來取代文字數值, 可以避免佈局跑版",
       "compact-mode-label": "緊湊模式",
+      "cpu-frequency-description": "顯示目前 CPU 時脈速度（GHz）。",
+      "cpu-frequency-label": "顯示 CPU 頻率",
       "cpu-temperature-description": "如果可用即顯示 CPU 溫度",
       "cpu-temperature-label": "CPU 溫度",
       "cpu-usage-description": "顯示現在 CPU 的使用百分比",
@@ -211,6 +215,10 @@
       "memory-usage-label": "記憶體使用量",
       "network-traffic-description": "顯示網路上傳及下載的速度",
       "network-traffic-label": "網路流量",
+      "storage-as-percentage-description": "以百分比而非絕對值顯示磁碟空間。",
+      "storage-as-percentage-label": "磁碟百分比",
+      "storage-available-description": "顯示可用磁碟空間，而非已用空間。",
+      "storage-available-label": "可用磁碟空間",
       "storage-usage-description": "顯示磁碟空間的使用量",
       "storage-usage-label": "磁碟使用量",
       "swap-usage-description": "顯示交換記憶體使用量",
@@ -242,6 +250,8 @@
       "title-width-reset-tooltip": "重設標題寬度"
     },
     "tray": {
+      "chevron-color-description": "將主題顏色套用至抽屜的箭頭圖示。",
+      "chevron-color-label": "箭頭顏色",
       "colorize-icons-description": "將系統夾圖示套用主題用色",
       "colorize-icons-label": "為圖示上色",
       "drawer-enabled-description": "當啟用時, 沒有釘選的系統匣圖示將會顯示在抽屜面板中<br>如果停用則所有的圖示都會在工具列裡顯示",
@@ -250,8 +260,7 @@
       "hide-passive-label": "隱藏被動項目"
     },
     "volume": {
-      "display-mode-description": "選擇你想如何顯示這項數值",
-      "display-mode-label": "顯示模式"
+      "display-mode-description": "選擇你想如何顯示這項數值"
     },
     "workspace": {
       "character-count-description": "限制工作區所設定的名字要顯示幾個字元 (1-10)",
@@ -272,6 +281,8 @@
       "label-mode-label": "標籤樣式",
       "occupied-color-description": "設定已佔用Workspace的背景顏色。",
       "occupied-color-label": "已佔用工作區顏色",
+      "pill-size-description": "調整工作區指示器的大小 (50%-100%)。",
+      "pill-size-label": "膠囊大小",
       "reverse-scrolling-description": "捲動時反轉工作區切換方向。",
       "reverse-scrolling-label": "反轉捲動",
       "show-applications-description": "顯示各個工作區的程式圖示",
@@ -339,13 +350,6 @@
       "version-new-user": "全新安裝"
     }
   },
-  "colors": {
-    "error": "錯誤",
-    "on-surface": "工具列表面",
-    "primary": "主要色",
-    "secondary": "輔助色",
-    "tertiary": "三級色"
-  },
   "common": {
     "actions": "操作",
     "add": "新增",
@@ -385,10 +389,13 @@
     "disconnect": "斷線",
     "disconnected": "已斷線",
     "disconnecting": "正在斷線...",
+    "display-mode": "顯示模式",
     "download": "下載",
     "duration": "持續時間",
+    "dysfunctional": "功能失調",
     "edit": "編輯",
     "enabled": "已啟用",
+    "error": "錯誤",
     "events": "事件",
     "execute": "執行",
     "faithful": "忠實",
@@ -407,6 +414,7 @@
     "installed": "已安裝",
     "interface": "介面",
     "internet": "網際網路",
+    "keybind": "按鍵綁定",
     "language": "語言",
     "loading": "正在載入...",
     "local": "本機",
@@ -444,9 +452,11 @@
     "primary": "主要的",
     "random": "隨機",
     "reboot": "重新啟動",
+    "record": "開始錄製",
     "refresh": "重新整理",
     "required": "(必要)",
     "reset": "重設",
+    "reset-to-default": "重設為預設值",
     "result-count": "{count} 筆結果",
     "result-count-plural": "{count} 筆結果",
     "resume": "繼續",
@@ -457,6 +467,9 @@
     "secondary": "輔助",
     "security": "安全",
     "select": "選取",
+    "select-color": "選擇顏色",
+    "select-color-description": "套用主題顏色以示強調。",
+    "select-icon-color": "選擇圖示顏色",
     "shortcuts": "快捷鍵",
     "shutdown": "關機",
     "signal": "訊號",
@@ -464,6 +477,7 @@
     "sources": "來源",
     "start": "開始",
     "stop": "停止",
+    "supporters": "支持者",
     "suspend": "暫停",
     "templates": "模板",
     "tertiary": "第三",
@@ -512,6 +526,7 @@
     "auto-hide": "自動隱藏",
     "hidden": "空白時隱藏",
     "idle": "閒置時隱藏",
+    "non-exclusive": "非獨佔",
     "transparent": "空白時變透明",
     "visible": "始終可見"
   },
@@ -610,6 +625,15 @@
       "quick-settings-style-modern": "現代"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "舒適",
+      "compact": "緊湊",
+      "default": "預設"
+    },
+    "launcher-view-mode": {
+      "grid": "網格",
+      "list": "列表"
+    },
     "scrolling-modes": {
       "always": "總是捲動",
       "hover": "游標移過時捲動",
@@ -640,8 +664,9 @@
   },
   "panels": {
     "about": {
+      "become-supporter": "成為支持者",
       "changelog": "檢視更新日誌",
-      "contributors-desc": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
+      "contributors-description": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
       "contributors-description-plural": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
       "copy-info": "複製資訊",
       "info-copied": "資訊已複製至剪貼簿",
@@ -652,6 +677,10 @@
       "noctalia-title": "Noctalia Shell",
       "privacy-policy": "隱私權政策",
       "support": "支持我們",
+      "supporter-badge": "支持者",
+      "supporters-desc": "非常感謝我們出色的支持者！",
+      "supporters-desc-plural": "非常感謝我們的<b>{count}位出色</b>支持者！",
+      "supporters-loading": "正在載入支持者...",
       "system-cpu": "CPU:",
       "system-disk": "磁碟:",
       "system-gpu": "GPU:",
@@ -729,13 +758,14 @@
       "appearance-auto-show-delay-label": "顯示延遲",
       "appearance-background-opacity-description": "設定工具列背景的不透明度",
       "appearance-background-opacity-label": "工具列背景不透明度",
+      "appearance-capsule-color-description": "為欄膠囊選擇一種顏色，或不使用任何顏色以採用預設表面顏色。",
+      "appearance-capsule-color-label": "膠囊顏色",
       "appearance-capsule-opacity-description": "設定當啟用顯示小容器時小工具的背景不透明度",
       "appearance-capsule-opacity-label": "小容器不透明度",
       "appearance-density-description": "調整工具列的內部間距來做出緊湊或寬敞的外觀",
       "appearance-density-label": "工具列密度",
       "appearance-desc": "自訂工具列的外觀及位置",
       "appearance-display-mode-description": "選擇列何時可見",
-      "appearance-display-mode-label": "顯示模式",
       "appearance-floating-description": "將工具列以懸浮的圓弧長條狀顯示",
       "appearance-floating-label": "懸浮工具列",
       "appearance-frame-radius": "內圓角",
@@ -807,6 +837,7 @@
       "download-title": "下載配色",
       "method-description": {
         "content": "具有高保真色彩提取的 Material Design 方案，可與來源內容的實際色彩緊密匹配。",
+        "dysfunctional": "與 Faithful 類似，但選擇第二主導的顏色家族作為主要顏色。",
         "faithful": "嘗試在生成和諧調色盤的同時，盡可能接近來源顏色。",
         "fruit-salad": "Material Design 配色方案，可產生一個俏皮、充滿活力的調色盤，具有多樣且多變的色調。",
         "monochrome": "使用單一色調灰階和最少色彩內容的 Material Design 方案。",
@@ -999,6 +1030,14 @@
       "fonts-monospace-search-placeholder": "搜尋等寬字型...",
       "fonts-reset-scaling": "重設文字大小",
       "fonts-title": "字型",
+      "keybinds-description": "配置面板和啟動器的全域導航鍵。",
+      "keybinds-down": "下移",
+      "keybinds-enter": "確認 / 動作",
+      "keybinds-escape": "關閉 / 返回",
+      "keybinds-left": "向左移動",
+      "keybinds-right": "向右移動",
+      "keybinds-title": "導覽按鍵綁定",
+      "keybinds-up": "上移",
       "language-desc": "選擇你偏好使用的語言",
       "language-select-auto-detect": "自動選擇",
       "language-select-description": "選擇要在應用程式所使用的介面語言",
@@ -1019,7 +1058,9 @@
       "screen-corners-solid-black-description": "使用黑色而不是工具列背景色",
       "screen-corners-solid-black-label": "黑色邊角",
       "screen-corners-title": "畫面邊角",
-      "settings-copied": "已複製設定至剪貼簿"
+      "settings-copied": "已複製設定至剪貼簿",
+      "tab-basics": "基礎",
+      "tab-keybinds": "按鍵綁定"
     },
     "hooks": {
       "info-command-info-description": "• 指令將透過 shell (sh -lc) 執行<br>• 指令會在背景 (detached 狀態) 執行<br>• 測試按鈕會以當下填寫的內容執行",
@@ -1027,7 +1068,7 @@
       "info-parameters-label": "可用參數",
       "noctalia-started-description": "Noctalia 完成載入時要執行的指令。",
       "noctalia-started-label": "Noctalia 已啟動",
-      "noctalia-started-placeholder": "例如 notify-send 'Noctalia 已載入'",
+      "noctalia-started-placeholder": "例如: notify-send 'Noctalia 已載入'",
       "performance-mode-disabled-description": "Noctalia 效能模式停用時要執行的指令",
       "performance-mode-disabled-label": "效能模式停用時",
       "performance-mode-disabled-placeholder": "例如: notify-send \"Performance\" \"Mode disabled\"",
@@ -1074,14 +1115,16 @@
       "settings-clip-wrap-text-label": "剪貼簿文字換行",
       "settings-clipboard-history-description": "在啟動器存取先前所複製的項目",
       "settings-clipboard-history-label": "啟用剪貼簿歷史",
-      "settings-clipboard-watch-image-description": "傳遞給 wl-paste 以進行圖像更改的完整命令字串。(需要重新啟動)",
+      "settings-clipboard-watch-image-description": "傳遞給 wl-paste 以進行圖像更改的完整命令字串（需要重新啟動）。",
       "settings-clipboard-watch-image-label": "圖像監控命令",
-      "settings-clipboard-watch-text-description": "傳遞給 wl-paste 以進行文字變更的完整命令字串。(需要重新啟動)",
+      "settings-clipboard-watch-text-description": "傳遞給 wl-paste 以進行文字變更的完整命令字串（需要重新啟動）。",
       "settings-clipboard-watch-text-label": "文字監看指令",
-      "settings-custom-launch-prefix-description": "在命令前加上自訂啟動器前綴（例如：用「runapp」來整合 systemd）。",
+      "settings-custom-launch-prefix-description": "在命令前加上自訂啟動器前綴（例如: 用「runapp」來整合 systemd）。",
       "settings-custom-launch-prefix-enabled-description": "使用自訂前綴而不是預設的方式來啟動應用程式",
       "settings-custom-launch-prefix-enabled-label": "啟用自訂的程式啟動前綴",
       "settings-custom-launch-prefix-label": "自訂啟動前綴",
+      "settings-density-description": "調整應用程式圖示大小和 Launcher 密度。",
+      "settings-density-label": "密度",
       "settings-desc": "自訂啟動器的外觀及行為",
       "settings-enable-settings-search-description": "在啟動器中搜尋時顯示設定結果。",
       "settings-enable-settings-search-label": "啟用設定搜尋",
@@ -1092,6 +1135,8 @@
       "settings-icon-mode-label": "使用原生圖示",
       "settings-ignore-mouse-input-description": "對啟動器停用滑鼠互動及滾輪捲動",
       "settings-ignore-mouse-input-label": "忽略滑鼠輸入",
+      "settings-overlay-layer-description": "在覆蓋層上顯示啟動器，位於全螢幕視窗之上。啟用時，啟動器不會附加到列。",
+      "settings-overlay-layer-label": "在全螢幕上方顯示",
       "settings-position-description": "選擇啟動器面板要出現的地方",
       "settings-show-categories-description": "顯示分類標籤來篩選應用程式",
       "settings-show-categories-label": "顯示分類",
@@ -1103,6 +1148,8 @@
       "settings-terminal-command-label": "終端機指令",
       "settings-use-app2unit-description": "使用替代的啟動方式，以更好地管理應用程式程序並避免問題。",
       "settings-use-app2unit-label": "使用 App2Unit 啟動應用程式",
+      "settings-view-mode-description": "選擇啟動器項目的版面配置。",
+      "settings-view-mode-label": "檢視模式",
       "title": "啟動器"
     },
     "location": {
@@ -1119,7 +1166,7 @@
       "date-time-show-events-description": "在行事曆面板裡顯示活動",
       "date-time-show-events-label": "顯示行事曆活動",
       "date-time-title": "日期與時間",
-      "date-time-use-analog-description": "在行事曆及鎖定畫面顯示類比時鐘",
+      "date-time-use-analog-description": "在日曆視窗上顯示類比時鐘。",
       "date-time-use-analog-label": "使用類比時鐘",
       "date-time-week-numbers-description": "在行事曆顯示今年當週的週數 (例如: 第38週)",
       "date-time-week-numbers-label": "顯示週數",
@@ -1145,12 +1192,26 @@
     "lock-screen": {
       "allow-password-with-fprintd-description": "當 fprintd（指紋認證）處於活動狀態時，此選項允許您使用密碼而非指紋登入。",
       "allow-password-with-fprintd-label": "允許使用 fprintd 進行密碼登入",
-      "auto-start-auth-description": "例如，自動啟動指紋驗證，無需按鍵或點擊按鈕。",
+      "auto-start-auth-description": "自動啟動指紋驗證，無需按鍵或點擊按鈕。",
       "auto-start-auth-label": "自動啟動驗證",
+      "clock-format-description": "使用日期/時間語法令牌自訂時鐘格式。",
+      "clock-format-label": "時鐘格式",
+      "clock-style-analog": "類比",
+      "clock-style-custom": "自訂",
+      "clock-style-description": "選擇鎖定畫面時鐘的視覺樣式。",
+      "clock-style-digital": "數位",
+      "clock-style-label": "時鐘樣式",
       "compact-lockscreen-description": "只顯示登入欄位及電源控制, 隱藏天氣及媒體小工具",
       "compact-lockscreen-label": "精簡鎖定畫面",
       "lock-on-suspend-description": "在暫停系統時自動鎖定畫面",
       "lock-on-suspend-label": "暫停時鎖定",
+      "lock-screen-animations-description": "啟用或停用鎖定畫面動畫。",
+      "lock-screen-animations-label": "鎖定畫面動畫",
+      "lock-screen-blur-strength-description": "對鎖定畫面桌布套用模糊效果。",
+      "lock-screen-blur-strength-label": "鎖定螢幕模糊強度",
+      "lock-screen-tint-strength-description": "將色調疊加套用到鎖定畫面桌布。",
+      "lock-screen-tint-strength-label": "鎖定畫面著色強度",
+      "monitors-desc": "在特定顯示器上顯示鎖定畫面。如果未選擇，則預設為所有顯示器。",
       "show-hibernate-description": "在電源及工作階段選單顯示睡眠",
       "show-hibernate-label": "顯示睡眠",
       "show-session-buttons-description": "允許在鎖定畫面存取電源控制",
@@ -1183,8 +1244,6 @@
       "history-low-urgency-label": "儲存低急迫性到歷史通知",
       "history-normal-urgency-description": "將普通急迫的通知存放到歷史通知",
       "history-normal-urgency-label": "儲存普通急迫到歷史通知",
-      "media-toast-description": "媒體播放狀態變更時顯示氣泡訊息",
-      "media-toast-label": "媒體",
       "monitors-desc": "只在特定的顯示器顯示通知, 如果全部取消勾選則會顯示在所有顯示器",
       "settings-always-on-top-description": "在全螢幕視窗與其他層級上方顯示通知。",
       "settings-background-opacity-description": "調整通知背景的不透明度",
@@ -1222,9 +1281,13 @@
       "sounds-unavailable-label": "通知音效無法使用",
       "sounds-volume-description": "調整通知音效的音量大小",
       "sounds-volume-label": "音效音量",
+      "toast-battery-description": "當電池電量低於此百分比時顯示警告。",
+      "toast-battery-label": "低電量提醒",
       "toast-desc": "設定氣泡訊息的外觀及行為",
       "toast-keyboard-description": "當鍵盤佈局改變時顯示氣泡訊息",
-      "toast-keyboard-label": "鍵盤佈局"
+      "toast-keyboard-label": "鍵盤佈局",
+      "toast-media-description": "媒體播放狀態變更時顯示氣泡訊息",
+      "toast-media-label": "媒體"
     },
     "osd": {
       "always-on-top-description": "將螢幕顯示在全螢幕視窗與其他層疊之上",
@@ -1259,10 +1322,14 @@
       "types-volume-label": "輸出音量"
     },
     "plugins": {
+      "auto-update": "自動更新外掛程式",
+      "auto-update-description": "在 shell 啟動時自動更新所有外掛程式。",
       "available-description": "從設定的來源檢視及安裝外掛模組",
       "available-label": "可用的外掛模組",
       "available-no-plugins-description": "檢查你的模組來源或者重新整理列表",
       "available-no-plugins-label": "沒有可用的外掛模組",
+      "check-for-updates": "檢查更新",
+      "checking-for-updates": "正在檢查更新...",
       "collision-already-installed": "這個模組已經安裝過了",
       "collision-custom-version-exists": "已經安裝了來自 \"{source}\" 的自訂版本",
       "collision-official-version-exists": "已經安裝了這個模組的官方版本",
@@ -1302,6 +1369,7 @@
       "sources-placeholder": "我的超酷儲存庫",
       "sources-remove-tooltip": "移除外掛模組來源",
       "title": "外掛模組 (Plugins)",
+      "translations-reloaded": "已重新載入翻譯：{name}",
       "uninstall-dialog-description": "你確定想要移除 {plugin}? 這樣會移除所有模組的資料",
       "uninstall-dialog-title": "移除外掛模組",
       "uninstall-error": "移除失敗: {error}",
@@ -1333,6 +1401,9 @@
       "entry-settings-default-command-logout": "內建登出 (沒有指令)",
       "entry-settings-default-info-description": "如果沒有指定自訂指令則使用系統的預設指令",
       "entry-settings-default-info-label": "預設指令",
+      "entry-settings-keybind-description": "當會話選單打開時，分配一個按鍵組合來觸發此操作。",
+      "entry-settings-keybind-placeholder": "按下錄製以分配一個鍵...",
+      "entry-settings-keybind-recording": "錄製中... 按任意組合鍵",
       "entry-settings-title": "設定{entry}",
       "entry-settings-tooltip": "設定指令",
       "general-desc": "設定工作階段選單的外觀和行為",
@@ -1349,6 +1420,7 @@
     "system-monitor": {
       "critical-color-label": "危急顏色",
       "custom-highlight-colors-title-label": "自訂突出色",
+      "disk-available-label": "可用磁碟空間",
       "disk-section-label": "磁碟使用量",
       "enable-dgpu-monitoring-description": "注意: 這個選項會喚醒你的 GPU (NVIDIA/AMD), 在混合顯卡的筆電上可能會嚴重影響電池續航力",
       "enable-dgpu-monitoring-label": "啟用監視獨立 GPU",
@@ -1403,7 +1475,7 @@
       "settings-panel-mode-description": "選擇介面設定出現所用的佈局 (可能需要重新打開)",
       "settings-panel-mode-label": "設定面板顯示",
       "shadows-description": "為工具列及面板啟用陰影",
-      "shadows-direction-description": "選擇陰影要投射的方向",
+      "shadows-direction-description": "選擇陰影投射的位置。",
       "shadows-direction-label": "陰影方向",
       "shadows-label": "陰影",
       "title": "使用者介面",
@@ -1443,6 +1515,10 @@
       "settings-monitor-specific-description": "替個別顯示器設定不同的桌布文件夾",
       "settings-monitor-specific-label": "給特定顯示器所使用的文件夾",
       "settings-monitor-specific-tooltip": "顯示器桌布文件夾",
+      "settings-overview-blur-strength-description": "將模糊強度應用於概覽。",
+      "settings-overview-blur-strength-label": "概覽模糊強度",
+      "settings-overview-tint-description": "將著色強度套用至概覽。",
+      "settings-overview-tint-label": "概覽著色強度",
       "settings-recursive-search-description": "也同時搜尋桌布目錄底下的子文件夾",
       "settings-recursive-search-label": "搜尋子文件夾",
       "settings-select-monitor-folder": "選擇顯示器所使用的桌布文件夾",
@@ -1498,7 +1574,7 @@
   "setup": {
     "all-done": "完成!",
     "appearance": {
-      "subheader": "選擇 Dark Mode 和色彩來源 (桌布或預先定義)。"
+      "subheader": "選擇深色模式和顏色來源（桌布或預設）。"
     },
     "customize": {
       "header": "客製你的使用體驗",
@@ -1556,8 +1632,10 @@
       "title": "飛航模式"
     },
     "battery": {
+      "critical": "電量嚴重不足",
+      "critical-desc": "電量剩餘 {percent}% — 請立即連接充電器",
       "low": "電量過低",
-      "low-desc": "電池剩餘 {percent}% 電量, 請接上充電器"
+      "low-desc": "電量剩餘 {percent}% — 請連接充電器"
     },
     "bluetooth": {
       "address-copied": "已複製位址至剪貼簿",
@@ -1740,6 +1818,8 @@
     "transitions": {
       "disc": "圓盤",
       "fade": "淡入",
+      "honeycomb": "蜂巢",
+      "pixelate": "像素化",
       "stripes": "條紋",
       "wipe": "擦除"
     },
@@ -1747,7 +1827,9 @@
     "wallhaven": {
       "loading": "正在載入桌布...",
       "no-results": "找不到桌布, 試著用不同的搜尋字串",
-      "page": "第 {current} / {total} 頁"
+      "page": "第 {current} / {total} 頁",
+      "page-prefix": "頁面",
+      "page-suffix": "共 {total} 個"
     }
   },
   "weather": {

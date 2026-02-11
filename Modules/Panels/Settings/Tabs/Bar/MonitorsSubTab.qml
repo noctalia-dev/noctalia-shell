@@ -113,6 +113,7 @@ ColumnLayout {
             checked: monitorCard.overrideEnabled
             onToggled: checked => {
                          Settings.setScreenOverride(monitorCard.screenName, "enabled", checked);
+                         BarService.widgetsRevision++;
                        }
           }
 
@@ -211,7 +212,10 @@ ColumnLayout {
                 fontSize: Style.fontSizeS
                 text: I18n.tr("panels.bar.use-global-widgets")
                 icon: "refresh"
-                onClicked: Settings.clearScreenOverride(monitorCard.screenName, "widgets")
+                onClicked: {
+                  Settings.clearScreenOverride(monitorCard.screenName, "widgets");
+                  BarService.widgetsRevision++;
+                }
               }
 
               NButton {
@@ -219,7 +223,10 @@ ColumnLayout {
                 fontSize: Style.fontSizeS
                 text: I18n.tr("panels.bar.monitor-reset-all")
                 icon: "restore"
-                onClicked: Settings.clearScreenOverride(monitorCard.screenName)
+                onClicked: {
+                  Settings.clearScreenOverride(monitorCard.screenName);
+                  BarService.widgetsRevision++;
+                }
               }
             }
 
