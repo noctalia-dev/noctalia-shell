@@ -76,6 +76,12 @@ Singleton {
   readonly property int animationSlow: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(450 / Settings.data.general.animationSpeed)
   readonly property int animationSlowest: (Settings.data.general.animationDisabled || PowerProfileService.noctaliaPerformanceMode) ? 0 : Math.round(750 / Settings.data.general.animationSpeed)
 
+  // Animation easing curves (Material Design 3)
+  readonly property int easingType: Easing.BezierSpline
+  readonly property var easingCurve: [0.2, 0, 0, 1]
+  readonly property var easingCurveEnter: [0.05, 0.7, 0.1, 1]
+  readonly property var easingCurveExit: [0.3, 0, 0.8, 0.15]
+
   // Delays
   readonly property int tooltipDelay: 300
   readonly property int tooltipDelayLong: 1200
