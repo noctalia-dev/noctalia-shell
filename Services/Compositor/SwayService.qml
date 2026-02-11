@@ -32,14 +32,6 @@ Item {
   // Track window usage counts per workspace to handle duplicates
   property var windowUsageCountsPerWorkspace: ({})
 
-  // Debounce timer for updates
-  Timer {
-    id: updateTimer
-    interval: 50
-    repeat: false
-    onTriggered: safeUpdate()
-  }
-
   // Initialization
   function initialize() {
     if (initialized)
@@ -289,12 +281,6 @@ Item {
     }
   }
 
-  // Safe update wrapper
-  function safeUpdate() {
-    queryWindowWorkspaces();
-    safeUpdateWorkspaces();
-  }
-
   // Safe workspace update
   function safeUpdateWorkspaces() {
     try {
@@ -492,7 +478,18 @@ Item {
     target: ToplevelManager
     enabled: initialized
     function onActiveToplevelChanged() {
-      updateTimer.restart();
+      safeUpdateWindows();
+      activeWindowChanged();
+    }
+  }
+
+  // Track title changes on the currently focused toplevel
+  Connections {
+    target: ToplevelManager.activeToplevel
+    enabled: initialized && ToplevelManager.activeToplevel !== null
+    function onTitleChanged() {
+      safeUpdateWindows();
+      activeWindowChanged();
     }
   }
 
@@ -500,9 +497,11 @@ Item {
     target: I3
     enabled: initialized
     function onRawEvent(event) {
-      safeUpdateWorkspaces();
-      workspaceChanged();
-      updateTimer.restart();
+      if (event.type === "workspace" || event.type === "window") {
+        safeUpdateWorkspaces();
+        workspaceChanged();
+        Qt.callLater(queryWindowWorkspaces);
+      }
 
       if (event.type === "output") {
         Qt.callLater(queryDisplayScales);
@@ -510,11 +509,6 @@ Item {
 
       if (event.type == "get_inputs") {
         handleInputEvent(event.data);
-      }
-
-      // Query window workspaces on relevant events
-      if (event.type === "window" || event.type === "workspace") {
-        Qt.callLater(queryWindowWorkspaces);
       }
     }
   }
