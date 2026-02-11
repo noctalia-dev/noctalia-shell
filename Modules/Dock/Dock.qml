@@ -1104,7 +1104,7 @@ Loader {
 
                       // Active indicator - positioned at the edge of the delegate area
                       Rectangle {
-                        visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive
+                        visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive && modelData.instanceCount > 1
                         width: isVertical ? indicatorMargin * 0.6 : iconSize * 0.2
                         height: isVertical ? iconSize * 0.2 : indicatorMargin * 0.6
                         color: Color.mPrimary
@@ -1129,36 +1129,48 @@ Loader {
                       // Multiple instances badge - positioned opposite to active indicator
                       Rectangle {
                         visible: modelData && modelData.instanceCount && modelData.instanceCount > 1
-                        width: isVertical ? iconSize * 0.28 : indicatorMargin * 0.8
-                        height: isVertical ? indicatorMargin * 0.8 : iconSize * 0.28
-                        color: Color.mPrimaryContainer
-                        radius: width / 2
+                        width: isVertical ? indicatorMargin * 0.6 : iconSize * 0.2
+                        height: isVertical ? iconSize * 0.2 : indicatorMargin * 0.6
+                        color: Color.mPrimary
+                        radius: Style.radiusXS
 
-                        // Anchor to the edge opposite to screen center
-                        anchors.bottom: !isVertical && dockPosition === "top" ? parent.bottom : undefined
-                        anchors.top: !isVertical && dockPosition === "bottom" ? parent.top : undefined
-                        anchors.left: isVertical && dockPosition === "right" ? parent.left : undefined
-                        anchors.right: isVertical && dockPosition === "left" ? parent.right : undefined
+                        anchors.bottom: !isVertical && dockPosition === "bottom" ? parent.bottom : undefined
+                        anchors.top: !isVertical && dockPosition === "top" ? parent.top : undefined
+                        anchors.left: isVertical && dockPosition === "left" ? parent.left : undefined
+                        anchors.right: isVertical && dockPosition === "right" ? parent.right : undefined
 
                         anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
                         anchors.verticalCenter: isVertical ? parent.verticalCenter : undefined
 
                         // Offset slightly from the edge
-                        anchors.bottomMargin: !isVertical && dockPosition === "top" ? 2 : 0
-                        anchors.topMargin: !isVertical && dockPosition === "bottom" ? 2 : 0
-                        anchors.leftMargin: isVertical && dockPosition === "right" ? 2 : 0
-                        anchors.rightMargin: isVertical && dockPosition === "left" ? 2 : 0
+                        anchors.bottomMargin: !isVertical && dockPosition === "bottom" ? 2 : 0
+                        anchors.topMargin: !isVertical && dockPosition === "top" ? 2 : 0
+                        anchors.leftMargin: isVertical && dockPosition === "left" ? 2 : 0
+                        anchors.rightMargin: isVertical && dockPosition === "right" ? 2 : 0
 
-                        Text {
-                          anchors.centerIn: parent
-                          text: modelData.instanceCount > 9 ? "9+" : modelData.instanceCount.toString()
-                          font.pixelSize: Math.max(8, Math.round(width * 0.6))
-                          color: Color.mOnPrimaryContainer
-                          horizontalAlignment: Text.AlignHCenter
-                          verticalAlignment: Text.AlignVCenter
-                          renderType: Text.NativeRendering
-                        }
-                      }
+                    }
+
+                    Rectangle {
+                        visible: modelData && modelData.instanceCount && modelData.instanceCount > 1
+                        width: isVertical ? indicatorMargin * 0.6 : iconSize * 0.2
+                        height: isVertical ? iconSize * 0.2 : indicatorMargin * 0.8
+                        color: Color.mPrimary
+                        radius: Style.radiusXS
+
+                        anchors.bottom: !isVertical && dockPosition === "bottom" ? parent.bottom : undefined
+                        anchors.top: !isVertical && dockPosition === "top" ? parent.top : undefined
+                        anchors.left: isVertical && dockPosition === "left" ? parent.left : undefined
+                        anchors.right: isVertical && dockPosition === "right" ? parent.right : undefined
+
+                        anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
+                        anchors.verticalCenter: isVertical ? parent.verticalCenter : undefined
+
+                        // Offset slightly from the edge
+                        anchors.bottomMargin: !isVertical && dockPosition === "bottom" ? 2 : 0
+                        anchors.topMargin: !isVertical && dockPosition === "top" ? 2 : 0
+                        anchors.leftMargin: isVertical && dockPosition === "left" ? 2 : 0
+                        anchors.rightMargin: isVertical && dockPosition === "right" ? 2 : 0
+
                     }
                   }
                 }
@@ -1169,4 +1181,5 @@ Loader {
       }
     }
   }
+}
 }
