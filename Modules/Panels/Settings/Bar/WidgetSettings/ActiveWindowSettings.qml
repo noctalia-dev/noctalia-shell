@@ -22,6 +22,7 @@ ColumnLayout {
   property bool valueUseFixedWidth: widgetData.useFixedWidth !== undefined ? widgetData.useFixedWidth : widgetMetadata.useFixedWidth
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
   property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
+  property bool valuePerScreen: widgetData.perScreen !== undefined ? widgetData.perScreen : widgetMetadata.perScreen
 
   Component.onCompleted: {
     if (widgetData && widgetData.hideMode !== undefined) {
@@ -38,6 +39,7 @@ ColumnLayout {
     settings.useFixedWidth = valueUseFixedWidth;
     settings.colorizeIcons = valueColorizeIcons;
     settings.textColor = valueTextColor;
+    settings.perScreen = valuePerScreen;
     return settings;
   }
 
@@ -64,6 +66,17 @@ ColumnLayout {
                   root.valueHideMode = key;
                   settingsChanged(saveSettings());
                 }
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.active-window.per-screen-label")
+    description: I18n.tr("bar.active-window.per-screen-description")
+    checked: root.valuePerScreen
+    onToggled: checked => {
+                 root.valuePerScreen = checked;
+                 settingsChanged(saveSettings());
+               }
   }
 
   NComboBox {

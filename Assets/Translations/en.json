@@ -35,7 +35,9 @@
       "hide-mode-description": "Controls how the widget behaves when no window is active.",
       "scrolling-mode-description": "Control when text scrolling is enabled for long window titles.",
       "show-app-icon-description": "Display the application icon next to the window title.",
-      "show-app-icon-label": "Show app icon"
+      "show-app-icon-label": "Show app icon",
+      "per-screen-label": "Per-screen focus",
+      "per-screen-description": "Show the focused window for this screen only, instead of the globally focused window."
     },
     "audio-visualizer": {
       "color-name-description": "Select the color for the visualizer.",

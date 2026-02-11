@@ -48,14 +48,26 @@ Item {
   readonly property bool useFixedWidth: (widgetSettings.useFixedWidth !== undefined) ? widgetSettings.useFixedWidth : (widgetMetadata.useFixedWidth || false)
   readonly property string textColorKey: (widgetSettings.textColor !== undefined) ? widgetSettings.textColor : widgetMetadata.textColor
   readonly property color textColor: Color.resolveColorKey(textColorKey)
+  readonly property bool perScreen: (widgetSettings.perScreen !== undefined) ? widgetSettings.perScreen : (widgetMetadata.perScreen !== undefined ? widgetMetadata.perScreen : true)
 
   readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
   readonly property real barHeight: Style.getBarHeightForScreen(screenName)
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
   readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
-  readonly property bool hasFocusedWindow: CompositorService.getFocusedWindow() !== null
-  readonly property string windowTitle: CompositorService.getFocusedWindowTitle() || "No active window"
+
+  // Revision counter incremented on focus/window-list signals to trigger binding re-evaluation
+  property int _focusRevision: 0
+
+  readonly property bool hasFocusedWindow: {
+    void (_focusRevision);
+    return perScreen ? CompositorService.getFocusedWindowForScreen(screenName) !== null : CompositorService.getFocusedWindow() !== null;
+  }
+  readonly property string windowTitle: {
+    void (_focusRevision);
+    return (perScreen ? CompositorService.getFocusedWindowTitleForScreen(screenName) : CompositorService.getFocusedWindowTitle()) || "No active window";
+  }
+
   readonly property int iconSize: Style.toOdd(capsuleHeight * 0.75)
   readonly property int verticalSize: Style.toOdd(capsuleHeight * 0.85)
 
@@ -126,9 +138,11 @@ Item {
   }
 
   function getAppIcon() {
+    // Force re-evaluation when focus revision changes
+    void (_focusRevision);
+
     try {
-      // Try CompositorService first
-      const focusedWindow = CompositorService.getFocusedWindow();
+      const focusedWindow = perScreen ? CompositorService.getFocusedWindowForScreen(screenName) : CompositorService.getFocusedWindow();
       if (focusedWindow && focusedWindow.appId) {
         try {
           const idValue = focusedWindow.appId;
@@ -355,20 +369,10 @@ Item {
   Connections {
     target: CompositorService
     function onActiveWindowChanged() {
-      try {
-        windowIcon.source = Qt.binding(getAppIcon);
-        windowIconVertical.source = Qt.binding(getAppIcon);
-      } catch (e) {
-        Logger.w("ActiveWindow", "Error in onActiveWindowChanged:", e);
-      }
+      _focusRevision++;
     }
     function onWindowListChanged() {
-      try {
-        windowIcon.source = Qt.binding(getAppIcon);
-        windowIconVertical.source = Qt.binding(getAppIcon);
-      } catch (e) {
-        Logger.w("ActiveWindow", "Error in onWindowListChanged:", e);
-      }
+      _focusRevision++;
     }
   }
 }

@@ -32,6 +32,9 @@ Item {
   // Track window usage counts per workspace to handle duplicates
   property var windowUsageCountsPerWorkspace: ({})
 
+  // Per-output focused window tracking: maps output name -> { appId, title, handle }
+  property var focusedWindowPerOutput: ({})
+
   // Initialization
   function initialize() {
     if (initialized)
@@ -44,6 +47,7 @@ Item {
                      queryWindowWorkspaces();
                      queryDisplayScales();
                      queryKeyboardLayout();
+                     updateFocusedWindowPerOutput();
                    });
       initialized = true;
       Logger.i("SwayService", "Service started");
@@ -82,6 +86,8 @@ Item {
         const treeData = JSON.parse(accumulatedOutput);
         const newMap = {};
         const workspaceWindows = {}; // Track windows per workspace
+        let treeHasFocusedWindow = false;
+        let focusedWorkspaceNum = -1;
 
         // Recursively find all windows and their workspaces
         function traverseTree(node, workspaceNum) {
@@ -94,10 +100,15 @@ Item {
             if (!workspaceWindows[workspaceNum]) {
               workspaceWindows[workspaceNum] = [];
             }
+            if (node.focused)
+              focusedWorkspaceNum = workspaceNum;
           }
 
           // If this is a container with app_id or class (i.e., a window)
           if (node.type === "con" && (node.app_id || node.window_properties)) {
+            if (node.focused)
+              treeHasFocusedWindow = true;
+
             const appId = node.app_id || (node.window_properties ? node.window_properties.class : null);
             const title = node.name || "";
             const id = node.id;
@@ -156,6 +167,25 @@ Item {
         }
 
         windowWorkspaceMap = newMap;
+
+        // Sync per-output focus with the tree's actual focus state
+        const monName = I3.focusedMonitor ? I3.focusedMonitor.name : "";
+        const focusedWsEmpty = focusedWorkspaceNum >= 0 && (!workspaceWindows[focusedWorkspaceNum] || workspaceWindows[focusedWorkspaceNum].length === 0);
+        if (monName) {
+          if (!treeHasFocusedWindow && focusedWsEmpty) {
+            // Truly empty workspace: clear the per-output focus
+            if (focusedWindowPerOutput[monName]) {
+              const newFocusMap = Object.assign({}, focusedWindowPerOutput);
+              delete newFocusMap[monName];
+              focusedWindowPerOutput = newFocusMap;
+              activeWindowChanged();
+            }
+          } else if (!focusedWindowPerOutput[monName]) {
+            // Window is focused but entry was cleared: restore it
+            updateFocusedWindowPerOutput();
+            activeWindowChanged();
+          }
+        }
 
         // Update windows with new workspace information
         Qt.callLater(safeUpdateWindows);
@@ -349,6 +379,20 @@ Item {
 
       windows = windowsList;
 
+      // Validate per-output map: remove entries whose handles are no longer alive
+      const currentHandles = new Set(hlToplevels);
+      const newMap = Object.assign({}, focusedWindowPerOutput);
+      let mapChanged = false;
+      for (const output in newMap) {
+        if (newMap[output] && newMap[output].handle && !currentHandles.has(newMap[output].handle)) {
+          delete newMap[output];
+          mapChanged = true;
+        }
+      }
+      if (mapChanged) {
+        focusedWindowPerOutput = newMap;
+      }
+
       if (newFocusedIndex !== focusedWindowIndex) {
         focusedWindowIndex = newFocusedIndex;
         activeWindowChanged();
@@ -358,6 +402,55 @@ Item {
     } catch (e) {
       Logger.e("SwayService", "Error updating windows:", e);
     }
+  }
+
+  // Update per-output focused window map from the current activeToplevel
+  function updateFocusedWindowPerOutput() {
+    try {
+      const active = ToplevelManager.activeToplevel;
+      const newMap = Object.assign({}, focusedWindowPerOutput);
+
+      if (active) {
+        // Determine which output this toplevel is on
+        let outputName = "";
+        if (active.screens && active.screens.length > 0) {
+          outputName = active.screens[0].name;
+        }
+        if (!outputName && I3.focusedMonitor) {
+          outputName = I3.focusedMonitor.name;
+        }
+        if (outputName) {
+          newMap[outputName] = {
+            appId: getAppId(active),
+            title: safeGetProperty(active, "title", ""),
+            handle: active
+          };
+        }
+      }
+      // Note: we intentionally do NOT clear on null activeToplevel here.
+      // Transient null states occur when focus moves between windows/workspaces.
+      // The tree query (queryWindowWorkspaces) handles clearing for truly empty workspaces.
+
+      focusedWindowPerOutput = newMap;
+    } catch (e) {
+      Logger.e("SwayService", "Error updating per-output focus:", e);
+    }
+  }
+
+  // Get focused window data for a specific screen/output
+  function getFocusedWindowForScreen(screenName) {
+    if (!screenName)
+      return null;
+    const entry = focusedWindowPerOutput[screenName];
+    if (entry && entry.handle) {
+      // Return live title from the handle so unfocused screens stay current
+      return {
+        appId: entry.appId,
+        title: safeGetProperty(entry.handle, "title", entry.title),
+        handle: entry.handle
+      };
+    }
+    return null;
   }
 
   // Extract window data safely from a toplevel
@@ -479,6 +572,7 @@ Item {
     enabled: initialized
     function onActiveToplevelChanged() {
       safeUpdateWindows();
+      updateFocusedWindowPerOutput();
       activeWindowChanged();
     }
   }
@@ -489,6 +583,10 @@ Item {
     enabled: initialized && ToplevelManager.activeToplevel !== null
     function onTitleChanged() {
       safeUpdateWindows();
+      // Do NOT call updateFocusedWindowPerOutput() here: the I3.focusedMonitor
+      // fallback can assign this window to the wrong output when focus is on
+      // an empty workspace.  getFocusedWindowForScreen() reads the live title
+      // from the handle, so the cached snapshot doesn't need refreshing.
       activeWindowChanged();
     }
   }
@@ -501,6 +599,11 @@ Item {
         safeUpdateWorkspaces();
         workspaceChanged();
         Qt.callLater(queryWindowWorkspaces);
+
+        // Window events include title changes; notify so per-output
+        // widgets re-read the live title from the handle.
+        if (event.type === "window")
+          activeWindowChanged();
       }
 
       if (event.type === "output") {
