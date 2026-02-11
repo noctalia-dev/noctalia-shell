@@ -56,8 +56,6 @@ Item {
   readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
   readonly property bool hasFocusedWindow: CompositorService.getFocusedWindow() !== null
   readonly property string windowTitle: CompositorService.getFocusedWindowTitle() || "No active window"
-  readonly property string fallbackIcon: "user-desktop"
-
   readonly property int iconSize: Style.toOdd(capsuleHeight * 0.75)
   readonly property int verticalSize: Style.toOdd(capsuleHeight * 0.85)
 
@@ -163,10 +161,11 @@ Item {
         }
       }
 
-      return ThemeIcons.iconFromName(fallbackIcon);
+      // No focused window -- return empty string to avoid fallback icon lookup warnings
+      return "";
     } catch (e) {
       Logger.w("ActiveWindow", "Error in getAppIcon:", e);
-      return ThemeIcons.iconFromName(fallbackIcon);
+      return "";
     }
   }
 
