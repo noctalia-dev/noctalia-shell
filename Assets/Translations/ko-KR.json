@@ -1126,6 +1126,8 @@
       "settings-density-description": "애플리케이션 아이콘 크기와 Launcher 밀도를 조정합니다.",
       "settings-density-label": "밀도",
       "settings-desc": "런처의 동작과 모양을 사용자 지정합니다.",
+      "settings-enable-session-search-description": "런처에서 검색할 때 세션 작업(잠금, 종료, 재시작 등)을 표시합니다.",
+      "settings-enable-session-search-label": "세션 검색 활성화",
       "settings-enable-settings-search-description": "런처에서 검색할 때 설정 결과를 표시합니다.",
       "settings-enable-settings-search-label": "설정 검색 활성화",
       "settings-enable-windows-search-description": "활성 창을 검색하고 포커스합니다.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "큰 버튼 스타일",
       "position-description": "세션 메뉴 패널이 열릴 때 나타날 위치를 선택하세요.",
       "show-header-description": "세션 메뉴 상단에 제목과 닫기 버튼을 표시합니다.",
-      "show-header-label": "헤더 표시",
-      "show-number-labels-description": "버튼에 숫자 레이블(1-2-3-4...)을 표시하고 빠른 선택을 위한 숫자 키 바인딩을 활성화합니다.",
-      "show-number-labels-label": "숫자 레이블 표시"
+      "show-header-label": "헤더 표시"
     },
     "system-monitor": {
       "critical-color-label": "위험 색상",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "배경화면 뒤에 나타날 수 있는 채우기 색상을 선택하세요.",
       "look-feel-fill-mode-description": "이미지가 모니터 해상도에 맞춰 스케일링되는 방식을 선택하세요.",
       "look-feel-fill-mode-label": "채우기 모드",
+      "look-feel-skip-startup-transition-description": "쉘 시작 시 배경화면 애니메이션을 건너뛰기.",
+      "look-feel-skip-startup-transition-label": "시작 전환 건너뛰기",
       "look-feel-title": "모양 및 느낌",
       "look-feel-transition-duration-description": "전환 애니메이션의 지속 시간(초)입니다.",
       "look-feel-transition-duration-label": "전환 지속 시간",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "새 키 바인딩 추가",
     "command-example": "echo \"Hello World\"",
     "enter-command": "실행할 명령 입력 (앱 또는 사용자 지정 스크립트)",
     "enter-ipc-identifier": "IPC 명령을 위한 고유 식별자 입력",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "예: '재생 중인 항목 없음'. 패턴에는 /regex/를 사용하세요.",
     "enter-tooltip": "툴팁 입력",
     "enter-width-pixels": "너비 입력 (픽셀 단위)",
+    "keybind-recording": "키 바인딩 기록 중...",
     "search": "검색...",
     "search-icons": "예: noctalia, niri, battery, cloud",
     "search-launcher": "항목 검색... 또는 명령을 위해 > 사용",

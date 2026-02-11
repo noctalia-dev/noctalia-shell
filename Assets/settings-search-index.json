@@ -902,6 +902,15 @@
     "subTabLabel": "common.general"
   },
   {
+    "labelKey": "panels.launcher.settings-enable-session-search-label",
+    "descriptionKey": "panels.launcher.settings-enable-session-search-description",
+    "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
     "labelKey": "panels.launcher.settings-ignore-mouse-input-label",
     "descriptionKey": "panels.launcher.settings-ignore-mouse-input-description",
     "widget": "NToggle",
@@ -1439,15 +1448,6 @@
     "subTabLabel": "common.general"
   },
   {
-    "labelKey": "panels.session-menu.show-number-labels-label",
-    "descriptionKey": "panels.session-menu.show-number-labels-description",
-    "widget": "NToggle",
-    "tab": 12,
-    "tabLabel": "session-menu.title",
-    "subTab": 0,
-    "subTabLabel": "common.general"
-  },
-  {
     "labelKey": "panels.session-menu.show-header-label",
     "descriptionKey": "panels.session-menu.show-header-description",
     "widget": "NToggle",
@@ -1766,6 +1766,15 @@
     "labelKey": "panels.wallpaper.look-feel-transition-type-label",
     "descriptionKey": "panels.wallpaper.look-feel-transition-type-description",
     "widget": "NComboBox",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 1,
+    "subTabLabel": "common.look"
+  },
+  {
+    "labelKey": "panels.wallpaper.look-feel-skip-startup-transition-label",
+    "descriptionKey": "panels.wallpaper.look-feel-skip-startup-transition-description",
+    "widget": "NToggle",
     "tab": 3,
     "tabLabel": "common.wallpaper",
     "subTab": 1,

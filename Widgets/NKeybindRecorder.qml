@@ -16,6 +16,7 @@ Item {
   property color labelColor: Color.mOnSurface
   property color descriptionColor: Color.mOnSurfaceVariant
 
+  property int maxKeybinds: 2
   signal keybindsChanged(var newKeybinds)
 
   implicitHeight: contentLayout.implicitHeight
@@ -31,45 +32,47 @@ Item {
     var newKeybinds = Array.from(root.currentKeybinds);
     if (recordingIndex >= 0) {
       newKeybinds[recordingIndex] = keyStr;
-    } else if (recordingIndex === -2) {
-      newKeybinds.push(keyStr);
     }
+    // Ensure array is dense and limited to maxKeybinds
+    newKeybinds = newKeybinds.filter(k => k !== undefined && k !== "").slice(0, root.maxKeybinds);
     recordingIndex = -1;
     root.keybindsChanged(newKeybinds);
   }
 
-  ColumnLayout {
+  RowLayout {
     id: contentLayout
     width: parent.width
-    spacing: Style.marginS
+    spacing: Style.marginL
 
     // Label and Description (optional)
     NLabel {
+      id: labelContainer
       label: root.label
       description: root.description
       labelColor: root.labelColor
       descriptionColor: root.descriptionColor
       visible: label !== "" || description !== ""
       Layout.fillWidth: true
-      Layout.bottomMargin: -Style.marginXS // Match other widgets spacing
+      Layout.alignment: Qt.AlignVCenter
     }
 
-    Flow {
-      Layout.fillWidth: true
+    RowLayout {
+      id: slotsRow
       spacing: Style.marginS
+      Layout.alignment: Qt.AlignVCenter | (labelContainer.visible ? Qt.AlignRight : Qt.AlignLeft)
 
-      // Existing keybind pills
       Repeater {
-        model: root.currentKeybinds
-
+        model: root.maxKeybinds
         delegate: MouseArea {
-          id: pillArea
-          width: pillBg.width
+          id: slotArea
+          width: Math.round(180 * Style.uiScaleRatio)
           height: root._pillHeight
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
 
-          property bool isRecordingThis: root.recordingIndex === index
+          readonly property bool isOccupied: index < root.currentKeybinds.length
+          readonly property bool isRecordingThis: root.recordingIndex === index
+          readonly property string keybindText: isRecordingThis ? I18n.tr("placeholders.keybind-recording") : (isOccupied ? root.currentKeybinds[index] : I18n.tr("placeholders.add-new-keybind"))
 
           onClicked: {
             if (isRecordingThis) {
@@ -81,12 +84,11 @@ Item {
           }
 
           Rectangle {
-            id: pillBg
-            width: Math.max(root._pillHeight * 2, pillRow.implicitWidth + Style.marginM * 2)
-            height: parent.height
+            id: slotBg
+            anchors.fill: parent
             radius: Style.iRadiusS
-            color: pillArea.isRecordingThis ? Color.mSecondary : (pillArea.containsMouse ? Qt.alpha(Color.mSecondary, 0.15) : Color.mSurface)
-            border.color: pillArea.isRecordingThis ? Color.mPrimary : (pillArea.containsMouse ? Color.mSecondary : Color.mOutline)
+            color: slotArea.isRecordingThis ? Color.mSecondary : (slotArea.containsMouse ? Qt.alpha(Color.mSecondary, 0.15) : Color.mSurface)
+            border.color: slotArea.isRecordingThis ? Color.mPrimary : (slotArea.containsMouse ? Color.mSecondary : Color.mOutline)
             border.width: Style.borderS
 
             Behavior on color {
@@ -101,113 +103,53 @@ Item {
             }
 
             RowLayout {
-              id: pillRow
-              anchors.centerIn: parent
+              anchors.fill: parent
+              anchors.leftMargin: Style.marginM
+              anchors.rightMargin: Style.marginS
               spacing: Style.marginXS
 
               NIcon {
-                icon: pillArea.isRecordingThis ? "circle-dot" : "keyboard"
-                color: pillArea.isRecordingThis ? Color.mOnSecondary : Color.mOnSurfaceVariant
+                icon: slotArea.isRecordingThis ? "circle-dot" : "keyboard"
+                color: slotArea.isRecordingThis ? Color.mOnSecondary : (slotArea.isOccupied ? Color.mOnSurfaceVariant : Qt.alpha(Color.mOnSurfaceVariant, 0.4))
                 opacity: 0.8
+                visible: !slotArea.isRecordingThis
               }
 
               NText {
-                text: pillArea.isRecordingThis ? I18n.tr("panels.session-menu.entry-settings-keybind-recording") : modelData
-                color: pillArea.isRecordingThis ? Color.mOnSecondary : Color.mOnSurface
-                font.family: Settings.data.ui.fontFixed
-                font.weight: Style.fontWeightBold
+                Layout.fillWidth: true
+                text: slotArea.keybindText
+                color: slotArea.isRecordingThis ? Color.mOnSecondary : (slotArea.isOccupied ? Color.mOnSurface : Color.mOnSurfaceVariant)
+                font.family: slotArea.isOccupied && !slotArea.isRecordingThis ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
+                font.pointSize: slotArea.isOccupied ? Style.fontSizeM : Style.fontSizeS
+                font.weight: slotArea.isOccupied ? Style.fontWeightBold : Style.fontWeightRegular
+                elide: Text.ElideRight
+                opacity: slotArea.isOccupied || slotArea.isRecordingThis ? 1.0 : 0.6
               }
 
-              // Remove button (hidden if only one keybind or while recording)
-              NIconButton {
-                visible: (root.currentKeybinds.length > 1 || root.allowEmpty) && root.recordingIndex === -1
-                icon: "x"
-                colorBg: "transparent"
-                colorBgHover: Qt.alpha(Color.mError, 0.1)
-                colorFg: Color.mOnSurfaceVariant
-                colorFgHover: Color.mError
-                border.width: 0
-                tooltipText: I18n.tr("common.delete")
-                onClicked: {
-                  var newKeybinds = Array.from(root.currentKeybinds);
-                  newKeybinds.splice(index, 1);
-                  root.keybindsChanged(newKeybinds);
+              Item {
+                Layout.preferredWidth: Math.round(root._pillHeight * 0.7)
+                Layout.fillHeight: true
+                visible: slotArea.isOccupied
+
+                NIconButton {
+                  anchors.centerIn: parent
+                  visible: root.recordingIndex === -1 && (root.currentKeybinds.length > 1 || root.allowEmpty)
+                  icon: "x"
+                  colorBg: "transparent"
+                  colorBgHover: Qt.alpha(Color.mError, 0.1)
+                  colorFg: Color.mOnSurfaceVariant
+                  colorFgHover: Color.mError
+                  border.width: 0
+                  baseSize: Style.baseWidgetSize * 0.7
+                  onClicked: {
+                    var newKeybinds = Array.from(root.currentKeybinds);
+                    newKeybinds.splice(index, 1);
+                    root.keybindsChanged(newKeybinds);
+                  }
                 }
               }
             }
           }
-        }
-      }
-
-      // Recording indicator for new keybind
-      MouseArea {
-        visible: root.recordingIndex === -2
-        width: addRecordingBg.width
-        height: root._pillHeight
-        cursorShape: Qt.PointingHandCursor
-        onClicked: root.recordingIndex = -1
-
-        Rectangle {
-          id: addRecordingBg
-          width: addRecordingRow.implicitWidth + Style.marginM * 2
-          height: parent.height
-          radius: Style.iRadiusS
-          color: Color.mSecondary
-          border.color: Color.mPrimary
-          border.width: Style.borderS
-
-          RowLayout {
-            id: addRecordingRow
-            anchors.centerIn: parent
-            spacing: Style.marginXS
-
-            NIcon {
-              icon: "circle-dot"
-              color: Color.mOnSecondary
-              opacity: 0.8
-            }
-
-            NText {
-              text: I18n.tr("panels.session-menu.entry-settings-keybind-recording")
-              color: Color.mOnSecondary
-              pointSize: Style.fontSizeS
-            }
-          }
-        }
-      }
-
-      // Add button
-      Item {
-        visible: root.recordingIndex === -1
-        width: addBtn.width
-        height: root._pillHeight
-
-        NIconButton {
-          id: addBtn
-          anchors.verticalCenter: parent.verticalCenter
-          icon: "plus"
-          baseSize: Style.baseWidgetSize * 0.8
-          tooltipText: I18n.tr("common.add")
-          onClicked: {
-            root.recordingIndex = -2;
-            keybindInput.forceActiveFocus();
-          }
-        }
-      }
-
-      // Reset button
-      Item {
-        visible: root.recordingIndex === -1 && root.defaultKeybind !== ""
-        width: resetBtn.width
-        height: root._pillHeight
-
-        NIconButton {
-          id: resetBtn
-          anchors.verticalCenter: parent.verticalCenter
-          icon: "restore"
-          baseSize: Style.baseWidgetSize * 0.8
-          tooltipText: I18n.tr("common.reset-to-default")
-          onClicked: root.keybindsChanged([root.defaultKeybind])
         }
       }
     }

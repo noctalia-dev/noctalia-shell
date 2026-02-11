@@ -17,7 +17,7 @@ Popup {
   property var screen: null
   property var settingsCache: ({})
 
-  readonly property real maxHeight: screen ? screen.height * 0.9 : 800
+  readonly property real maxHeight: (screen ? screen.height : (parent ? parent.height : 800)) * 0.8
 
   signal updateWidgetSettings(string section, int index, var settings)
 

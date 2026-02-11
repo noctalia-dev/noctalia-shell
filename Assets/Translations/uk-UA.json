@@ -1126,6 +1126,8 @@
       "settings-density-description": "Налаштуйте розмір іконок програм і щільність Launcher.",
       "settings-density-label": "Щільність",
       "settings-desc": "Налаштуйте поведінку та зовнішній вигляд лаунчера.",
+      "settings-enable-session-search-description": "Показувати дії сеансу (блокування, вимкнення, перезавантаження тощо) під час пошуку в Launcher.",
+      "settings-enable-session-search-label": "Увімкнути пошук сесії",
       "settings-enable-settings-search-description": "Показувати результати налаштувань під час пошуку в Launcher.",
       "settings-enable-settings-search-label": "Увімкнути пошук у налаштуваннях",
       "settings-enable-windows-search-description": "Шукати та фокусувати активні вікна.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Стиль великих кнопок",
       "position-description": "Виберіть, де з'являється панель меню сеансу при відкритті.",
       "show-header-description": "Відображати заголовок та кнопку закриття в верхній частині меню сеансу.",
-      "show-header-label": "Показувати заголовок",
-      "show-number-labels-description": "Відображати числові мітки (1-2-3-4...) на кнопках і увімкнути числові гарячі клавіші для швидкого вибору.",
-      "show-number-labels-label": "Показувати числові мітки"
+      "show-header-label": "Показувати заголовок"
     },
     "system-monitor": {
       "critical-color-label": "Критичний колір",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Виберіть колір заповнення, що може з'являтися за шпалерами.",
       "look-feel-fill-mode-description": "Виберіть, як зображення має масштабуватися відповідно до роздільної здатності монітора.",
       "look-feel-fill-mode-label": "Режим заповнення",
+      "look-feel-skip-startup-transition-description": "Пропускати анімацію шпалер при запуску оболонки.",
+      "look-feel-skip-startup-transition-label": "Пропустити стартову анімацію",
       "look-feel-title": "Зовнішній вигляд",
       "look-feel-transition-duration-description": "Тривалість анімацій переходу в секундах.",
       "look-feel-transition-duration-label": "Тривалість переходу",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Додати нову прив'язку клавіш",
     "command-example": "echo \"Привіт, Світ\"",
     "enter-command": "Введіть команду для виконання (застосунок або власний скрипт)",
     "enter-ipc-identifier": "Введіть унікальний ідентифікатор для команд IPC",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "напр. 'нічого не відтворюється'. Використовуйте /regex/ для шаблонів.",
     "enter-tooltip": "Введіть підказку",
     "enter-width-pixels": "Введіть ширину в пікселях",
+    "keybind-recording": "Запис комбінації клавіш...",
     "search": "Пошук...",
     "search-icons": "напр. noctalia, niri, battery, cloud",
     "search-launcher": "Пошук записів... або використовуйте > для команд",

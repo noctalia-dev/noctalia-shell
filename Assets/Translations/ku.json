@@ -1341,9 +1341,7 @@
       "large-buttons-style-label": "Şêwaza bişkokên mezin",
       "position-description": "Dema ku panelê menuya danişînê vebe, hilbijêre ku li ku derê xuya bibe.",
       "show-header-description": "Sernavê û bişkoka girtinê li jorê menuyê rûniştinê nîşan bide.",
-      "show-header-label": "Serpê nîşan bide",
-      "show-number-labels-description": "Li ser bişkokan etîketên hejmaran (1-2-3-4...) nîşan bide û ji bo hilbijartina bilez kilîdên hejmaran çalak bike.",
-      "show-number-labels-label": "Nîşanên hejmaran nîşan bide"
+      "show-header-label": "Serpê nîşan bide"
     },
     "system-monitor": {
       "critical-color-label": "Rengê krîtîk",

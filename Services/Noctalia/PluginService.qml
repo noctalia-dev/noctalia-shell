@@ -1741,36 +1741,42 @@ Singleton {
 
     var watchers = [manifestWatcher];
 
-    // Only watch entry points that actually exist in the manifest
-    var entryPoints = manifest.entryPoints || {};
-    var entryPointFiles = [];
-
-    if (entryPoints.main)
-      entryPointFiles.push(entryPoints.main);
-    if (entryPoints.barWidget)
-      entryPointFiles.push(entryPoints.barWidget);
-    if (entryPoints.desktopWidget)
-      entryPointFiles.push(entryPoints.desktopWidget);
-    if (entryPoints.launcherProvider)
-      entryPointFiles.push(entryPoints.launcherProvider);
-    if (entryPoints.panel)
-      entryPointFiles.push(entryPoints.panel);
-    if (entryPoints.settings)
-      entryPointFiles.push(entryPoints.settings);
-    if (entryPoints.controlCenterWidget)
-      entryPointFiles.push(entryPoints.controlCenterWidget);
-
-    for (var i = 0; i < entryPointFiles.length; i++) {
-      var entryPointFile = entryPointFiles[i];
-      var watcher = Qt.createQmlObject(`
+    // Only watch .qml and .js files, also follow symlinks since some of the plugins might have been symlinked in.
+    var qmlWatcher = Qt.createQmlObject(`
+        import QtQuick
         import Quickshell.Io
-        FileView {
-          path: "${pluginDir}/${entryPointFile}"
-          watchChanges: true
+
+        import qs.Commons
+
+        Item {
+            id: root
+            signal fileChanged();
+
+            Process {
+                command: [ "sh", "-c", "find -L ${pluginDir} -name '*.qml' -o -name '*.js'" ]
+                running: true
+                stdout: SplitParser {
+                    splitMarker: "\n"
+                    onRead: line => {
+                        fileWatcher.createObject(root, { path: Qt.resolvedUrl(line) });
+                    }
+                }
+            }
+
+            Component {
+                id: fileWatcher
+                FileView {
+                    watchChanges: true
+
+                    onFileChanged: {
+                        root.fileChanged();
+                    }
+                }
+            }
+
         }
-      `, root, "FileWatcher_" + pluginId + "_" + i);
-      watchers.push(watcher);
-    }
+    `, root, "QmlWatcher_" + pluginId);
+    watchers.push(qmlWatcher);
 
     // Connect all watchers to the debounce timer
     for (var j = 0; j < watchers.length; j++) {

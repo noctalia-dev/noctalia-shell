@@ -1126,6 +1126,8 @@
       "settings-density-description": "Dostosuj rozmiar ikon aplikacji i gęstość Launchera.",
       "settings-density-label": "Gęstość",
       "settings-desc": "Dostosuj zachowanie i wygląd launchera.",
+      "settings-enable-session-search-description": "Pokaż akcje sesji (blokowanie, wyłączanie, ponowne uruchamianie itp.) podczas wyszukiwania w Launcherze.",
+      "settings-enable-session-search-label": "Włącz wyszukiwanie sesji",
       "settings-enable-settings-search-description": "Wyświetlaj wyniki ustawień podczas wyszukiwania w Launcherze.",
       "settings-enable-settings-search-label": "Włącz wyszukiwanie w ustawieniach",
       "settings-enable-windows-search-description": "Wyszukaj i skup aktywne okna.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Styl dużych przycisków",
       "position-description": "Wybierz, gdzie pojawia się panel menu sesji po otwarciu.",
       "show-header-description": "Wyświetlaj tytuł i przycisk zamknięcia na górze menu sesji.",
-      "show-header-label": "Pokaż nagłówek",
-      "show-number-labels-description": "Wyświetl etykiety z numerami (1-2-3-4...) na przyciskach i włącz przypisanie klawiszy numerycznych do szybkiego wyboru.",
-      "show-number-labels-label": "Pokaż etykiety numerów"
+      "show-header-label": "Pokaż nagłówek"
     },
     "system-monitor": {
       "critical-color-label": "Kolor krytyczny",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Wybierz kolor wypełnienia, który może pojawić się pod tapetą.",
       "look-feel-fill-mode-description": "Wybierz, jak obraz ma się skalować, aby pasować do rozdzielczości monitora.",
       "look-feel-fill-mode-label": "Tryb wypełnienia",
+      "look-feel-skip-startup-transition-description": "Pomiń animację tapety przy starcie powłoki.",
+      "look-feel-skip-startup-transition-label": "Pomiń animację startową",
       "look-feel-title": "Wygląd i styl",
       "look-feel-transition-duration-description": "Czas trwania animacji przejścia w sekundach.",
       "look-feel-transition-duration-label": "Czas trwania przejścia",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Dodaj nowy skrót klawiszowy",
     "command-example": "echo \"Witaj świecie\"",
     "enter-command": "Wpisz polecenie do wykonania (aplikacja lub skrypt)",
     "enter-ipc-identifier": "Wprowadź unikalny identyfikator dla poleceń IPC",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "np. 'nic nie jest odtwarzane'. Użyj /regex/ dla wzorców.",
     "enter-tooltip": "Wpisz tekst podpowiedzi",
     "enter-width-pixels": "Wpisz szerokość w pikselach",
+    "keybind-recording": "Nagrywanie skrótu klawiszowego...",
     "search": "Szukaj...",
     "search-icons": "np. noctalia, niri, battery, cloud",
     "search-launcher": "Szukaj wpisów... lub użyj > dla poleceń",

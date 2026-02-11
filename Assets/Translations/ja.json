@@ -1126,6 +1126,8 @@
       "settings-density-description": "アプリケーションアイコンのサイズとLauncherの密度を調整します。",
       "settings-density-label": "密度",
       "settings-desc": "ランチャーの挙動と外観をカスタマイズします。",
+      "settings-enable-session-search-description": "Launcherで検索する際に、セッションアクション（ロック、シャットダウン、再起動など）を表示する。",
+      "settings-enable-session-search-label": "セッション検索を有効にする",
       "settings-enable-settings-search-description": "ランチャーで検索する際に設定結果を表示する。",
       "settings-enable-settings-search-label": "設定検索を有効にする",
       "settings-enable-windows-search-description": "アクティブなウィンドウを検索してフォーカスします。",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "大きなボタンのスタイル",
       "position-description": "セッションメニューパネルの表示位置を選択します。",
       "show-header-description": "セッションメニューの上部にタイトルと閉じるボタンを表示します。",
-      "show-header-label": "ヘッダーを表示",
-      "show-number-labels-description": "ボタンに数字ラベル（1-2-3-4...）を表示し、クイック選択用の数字キーバインドを有効にします。",
-      "show-number-labels-label": "数字ラベルを表示"
+      "show-header-label": "ヘッダーを表示"
     },
     "system-monitor": {
       "critical-color-label": "危険時の色",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "壁紙の背景に表示される塗りつぶし色を選択します。",
       "look-feel-fill-mode-description": "画像をディスプレイの解像度に合わせる方法を選択してください。",
       "look-feel-fill-mode-label": "配置方法",
+      "look-feel-skip-startup-transition-description": "シェル起動時に壁紙アニメーションをスキップする。",
+      "look-feel-skip-startup-transition-label": "起動時のトランジションをスキップ",
       "look-feel-title": "表示と演出",
       "look-feel-transition-duration-description": "切り替えアニメーションにかかる時間（秒）。",
       "look-feel-transition-duration-label": "切り替え時間",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "新しいキーバインドを追加",
     "command-example": "echo \"Hello World\"",
     "enter-command": "実行するコマンドを入力（アプリまたはスクリプト）",
     "enter-ipc-identifier": "IPCコマンドの一意の識別子を入力してください",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "例：'nothing is playing'。正規表現 (/.../) も使用できます。",
     "enter-tooltip": "ツールチップを入力",
     "enter-width-pixels": "幅を入力（ピクセル）",
+    "keybind-recording": "キーバインドを記録中...",
     "search": "検索...",
     "search-icons": "例：noctalia, niri, battery, cloud",
     "search-launcher": "項目を検索...（または > でコマンド実行）",

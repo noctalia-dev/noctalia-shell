@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 51
+  readonly property int settingsVersion: 52
   readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -373,6 +373,7 @@ Singleton {
       property int randomIntervalSec: 300 // 5 min
       property int transitionDuration: 1500 // 1500 ms
       property string transitionType: "random"
+      property bool skipStartupTransition: false
       property real transitionEdgeSmoothness: 0.05
       property string panelPosition: "follow_bar"
       property bool hideWallpaperFilenames: false
@@ -417,6 +418,7 @@ Singleton {
       property bool showIconBackground: false
       property bool enableSettingsSearch: true
       property bool enableWindowsSearch: true
+      property bool enableSessionSearch: true
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
       property bool overviewLayer: false
@@ -555,31 +557,36 @@ Singleton {
       property bool showHeader: true
       property bool largeButtonsStyle: true
       property string largeButtonsLayout: "single-row"
-      property bool showNumberLabels: true
       property list<var> powerOptions: [
         {
           "action": "lock",
-          "enabled": true
+          "enabled": true,
+          "keybind": "1"
         },
         {
           "action": "suspend",
-          "enabled": true
+          "enabled": true,
+          "keybind": "2"
         },
         {
           "action": "hibernate",
-          "enabled": true
+          "enabled": true,
+          "keybind": "3"
         },
         {
           "action": "reboot",
-          "enabled": true
+          "enabled": true,
+          "keybind": "4"
         },
         {
           "action": "logout",
-          "enabled": true
+          "enabled": true,
+          "keybind": "5"
         },
         {
           "action": "shutdown",
-          "enabled": true
+          "enabled": true,
+          "keybind": "6"
         }
       ]
     }

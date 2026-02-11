@@ -524,18 +524,21 @@ Item {
 
         // Defer execution to next event loop iteration to ensure panel is fully closed
         Qt.callLater(() => {
-                       Logger.d("ApplicationsProvider", `Launching: ${app.name}`);
+                       Logger.d("ApplicationsProvider", `Launching: ${app.name} (App ID: ${app.id || "unknown"})`);
 
                        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
                          // Use custom launch prefix
                          const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
+                         Logger.d("ApplicationsProvider", `Using custom launch prefix: ${Settings.data.appLauncher.customLaunchPrefix}`);
 
                          if (app.runInTerminal) {
                            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
                            const command = prefix.concat(terminal.concat(app.command));
+                           Logger.d("ApplicationsProvider", `Executing command (with prefix and terminal): ${command.join(" ")}`);
                            Quickshell.execDetached(command);
                          } else {
                            const command = prefix.concat(app.command);
+                           Logger.d("ApplicationsProvider", `Executing command (with prefix): ${command.join(" ")}`);
                            Quickshell.execDetached(command);
                          }
                        } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
@@ -550,10 +553,13 @@ Item {
                            Logger.d("ApplicationsProvider", "Executing terminal app manually: " + app.name);
                            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
                            const command = terminal.concat(app.command);
+                           Logger.d("ApplicationsProvider", "Executing command (manual terminal): " + command.join(" "));
                            CompositorService.spawn(command);
                          } else if (app.command && app.command.length > 0) {
+                           Logger.d("ApplicationsProvider", "Executing command: " + app.command.join(" "));
                            CompositorService.spawn(app.command);
                          } else if (app.execute) {
+                           Logger.d("ApplicationsProvider", "Calling app.execute() for: " + app.name);
                            app.execute();
                          } else {
                            Logger.w("ApplicationsProvider", `Could not launch: ${app.name}. No valid launch method.`);

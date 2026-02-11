@@ -1123,6 +1123,8 @@
       "settings-custom-launch-prefix-enabled-description": "Brukar eigendefinert førefeste for å starta applikasjonar heller enn standardmåten.",
       "settings-custom-launch-prefix-enabled-label": "Slå på eigendefinert startførefeste",
       "settings-custom-launch-prefix-label": "Eigendefinert startførefeste",
+      "settings-density-description": "Endra på kor store applikasjonsikon er, og kor tette dei er i veljaren.",
+      "settings-density-label": "Tettleik",
       "settings-desc": "Vel korleis programveljaren ser ut og kva det gjer.",
       "settings-enable-settings-search-description": "Viser innstillingar når ein leitar i programveljaren.",
       "settings-enable-settings-search-label": "Søk i innstillingar",
@@ -1146,6 +1148,8 @@
       "settings-terminal-command-label": "Terminalkommando",
       "settings-use-app2unit-description": "Brukar annan oppstartsmåte for å betre kunna ordna app-prosessar og for å hindra feil.",
       "settings-use-app2unit-label": "Bruk App2Unit for å køyra applikasjonar",
+      "settings-view-mode-description": "Vel oppsettet for veljarobjekt.",
+      "settings-view-mode-label": "Synsmodus",
       "title": "Programveljar"
     },
     "location": {
@@ -1203,6 +1207,10 @@
       "lock-on-suspend-label": "Lås på suspendering",
       "lock-screen-animations-description": "Slå på/av animasjonar på låseskjermen.",
       "lock-screen-animations-label": "Animasjonar på låseskjermen",
+      "lock-screen-blur-strength-description": "Gjev ein uklår effekt til bilætet på låseskjermen.",
+      "lock-screen-blur-strength-label": "Uklåre på låseskjermen",
+      "lock-screen-tint-strength-description": "Gjev ein fargesnev i overlag til biletet på låseskjermen.",
+      "lock-screen-tint-strength-label": "Fargestyrke på låseskjermen",
       "monitors-desc": "Syn låseskjerm på visse skjermar. Dersom du ikkje vel noko, syner han seg på alle.",
       "show-hibernate-description": "Viser 'Set i full dvale' i straumkontrollane.",
       "show-hibernate-label": "Vis full dvale",
@@ -1405,9 +1413,7 @@
       "large-buttons-style-label": "Stil med store knappar",
       "position-description": "Vel kvar øktsmenyen opnar seg på skjermen når du opnar han.",
       "show-header-description": "Viser tittel og stengeknapp øvst på øktsmenyen.",
-      "show-header-label": "Vis topptekst",
-      "show-number-labels-description": "Viser taletikettar (1-2-3-4...) på knappar og slår på talsnarvegar for å velja fort.",
-      "show-number-labels-label": "Vis taletikettar"
+      "show-header-label": "Vis topptekst"
     },
     "system-monitor": {
       "critical-color-label": "Kritisk farge",
@@ -1507,6 +1513,10 @@
       "settings-monitor-specific-description": "Fastset ulike biletemapper for kvar skjerm.",
       "settings-monitor-specific-label": "Skjermvise mapper",
       "settings-monitor-specific-tooltip": "Vakta bakgrunnsbiletemappa",
+      "settings-overview-blur-strength-description": "Gjev uklåre til overlaget.",
+      "settings-overview-blur-strength-label": "Overlagsuklåre",
+      "settings-overview-tint-description": "Gjev fargesnev til oversyna.",
+      "settings-overview-tint-label": "Oversynsfargestyrke",
       "settings-recursive-search-description": "Leit etter bakgrunnsbilete i underordna mapper i biletemappa òg.",
       "settings-recursive-search-label": "Leit i underordna mapper",
       "settings-select-monitor-folder": "Vel bakgrunnsbiletemappe for skjerm",
@@ -1524,6 +1534,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Legg til ny beinknapp",
     "command-example": "echo \"Hei, verd\"",
     "enter-command": "Skriv inn kommando som skal køyra (app eller eigendefinert skript)",
     "enter-ipc-identifier": "Skriv inn unik identifikator for IPC kommandoar",
@@ -1531,6 +1542,7 @@
     "enter-text-to-collapse": "t.d. 'ingenting spelar av. Bruk /regex/ til mønster.",
     "enter-tooltip": "Skriv inn hjelpetekst",
     "enter-width-pixels": "Skriv inn breidde i piksel",
+    "keybind-recording": "Tek opp beinknapp...",
     "search": "Søk...",
     "search-icons": "t.d. noctalia, niri, battery, cloud",
     "search-launcher": "Søk i treff... eller bruk > for kommandoar",

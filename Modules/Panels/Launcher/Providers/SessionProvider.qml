@@ -10,7 +10,7 @@ Item {
   // Provider metadata
   property string name: I18n.tr("tooltips.session-menu")
   property var launcher: null
-  property bool handleSearch: true
+  property bool handleSearch: Settings.data.appLauncher.enableSessionSearch
   property string supportedLayouts: "list"
 
   // Session actions with search keywords

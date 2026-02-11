@@ -418,13 +418,17 @@ Singleton {
 
   // Spawn command
   function spawn(command) {
+    // Ensure command is a proper JS array (QML lists can behave unexpectedly in some contexts)
+    const cmdArray = Array.isArray(command) ? command : (command && typeof command === "object" && command.length !== undefined) ? Array.from(command) : [command];
+
+    Logger.d("CompositorService", `Spawning: ${cmdArray.join(" ")}`);
     if (backend && backend.spawn) {
-      backend.spawn(command);
+      backend.spawn(cmdArray);
     } else {
       try {
-        Quickshell.execDetached(command);
+        Quickshell.execDetached(cmdArray);
       } catch (e) {
-        Logger.e("Compositor", "Failed to exececute detached:", e);
+        Logger.e("CompositorService", "Failed to execute detached:", e);
       }
     }
   }

@@ -1126,6 +1126,8 @@
       "settings-density-description": "Adjust the size of application icons and the density of the launcher.",
       "settings-density-label": "Density",
       "settings-desc": "Customize the launcher's behavior and appearance.",
+      "settings-enable-session-search-description": "Show session actions (lock, shutdown, reboot, etc.) when searching in the launcher.",
+      "settings-enable-session-search-label": "Enable session search",
       "settings-enable-settings-search-description": "Show settings results when searching in the launcher.",
       "settings-enable-settings-search-label": "Enable settings search",
       "settings-enable-windows-search-description": "Search and focus active windows.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Large buttons style",
       "position-description": "Choose where the session menu panel appears when opened.",
       "show-header-description": "Display the title and close button at the top of the session menu.",
-      "show-header-label": "Show header",
-      "show-number-labels-description": "Display number labels (1-2-3-4...) on buttons and enable number keybinds for quick selection.",
-      "show-number-labels-label": "Show number labels"
+      "show-header-label": "Show header"
     },
     "system-monitor": {
       "critical-color-label": "Critical color",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Choose a fill color that may appear behind the wallpaper.",
       "look-feel-fill-mode-description": "Select how the image should scale to match your monitor's resolution.",
       "look-feel-fill-mode-label": "Fill mode",
+      "look-feel-skip-startup-transition-description": "Skip the wallpaper animation when the shell starts.",
+      "look-feel-skip-startup-transition-label": "Skip startup transition",
       "look-feel-title": "Look & feel",
       "look-feel-transition-duration-description": "Duration of transition animations in seconds.",
       "look-feel-transition-duration-label": "Transition duration",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Add a new keybind",
     "command-example": "echo \"Hello World\"",
     "enter-command": "Enter command to execute (app or custom script)",
     "enter-ipc-identifier": "Enter unique identifier for IPC commands",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "e.g. 'nothing is playing'. Use /regex/ for patterns.",
     "enter-tooltip": "Enter tooltip",
     "enter-width-pixels": "Enter width in pixels",
+    "keybind-recording": "Recording keybind...",
     "search": "Search...",
     "search-icons": "e.g. noctalia, niri, battery, cloud",
     "search-launcher": "Search entries... or use > for commands",

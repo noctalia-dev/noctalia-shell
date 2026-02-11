@@ -1126,6 +1126,8 @@
       "settings-density-description": "Állítsd be az alkalmazásikonok méretét és a Launcher sűrűségét.",
       "settings-density-label": "Sűrűség",
       "settings-desc": "Az indító viselkedésének és megjelenésének testreszabása.",
+      "settings-enable-session-search-description": "Munkamenet-műveletek (zárolás, leállítás, újraindítás stb.) megjelenítése a Launcherben való kereséskor.",
+      "settings-enable-session-search-label": "Munkamenet-keresés engedélyezése",
       "settings-enable-settings-search-description": "Beállítások megjelenítése a találatok között az indítón belül.",
       "settings-enable-settings-search-label": "Beállítások keresésének engedélyezése",
       "settings-enable-windows-search-description": "Aktív ablakok keresése és fókuszálása.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Nagyméretű gombok stílusa",
       "position-description": "Válassza ki, hol jelenjen meg a munkamenet menüpanel megnyitáskor.",
       "show-header-description": "A cím és a bezárás gomb megjelenítése a munkamenet menü tetején.",
-      "show-header-label": "Fejléc megjelenítése",
-      "show-number-labels-description": "Számcímkék (1-2-3-4...) megjelenítése a gombokon és számbillentyűk engedélyezése a gyors kiválasztáshoz.",
-      "show-number-labels-label": "Számcímkék megjelenítése"
+      "show-header-label": "Fejléc megjelenítése"
     },
     "system-monitor": {
       "critical-color-label": "Kritikus szín",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Válasszon kitöltési színt, amely a háttérkép mögött megjelenhet.",
       "look-feel-fill-mode-description": "Válassza ki, hogyan méretezze át a kép magát a monitor felbontásához.",
       "look-feel-fill-mode-label": "Kitöltési mód",
+      "look-feel-skip-startup-transition-description": "Hagyja ki a háttérkép animációt a shell indításakor.",
+      "look-feel-skip-startup-transition-label": "Indítási átmenet kihagyása",
       "look-feel-title": "Megjelenés és érzet",
       "look-feel-transition-duration-description": "Az átmeneti animációk időtartama másodpercben.",
       "look-feel-transition-duration-label": "Átmenet időtartama",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Új billentyűkombináció hozzáadása",
     "command-example": "echo \"Hello World\"",
     "enter-command": "Adja meg a végrehajtandó parancsot (alkalmazás vagy egyéni parancsfájl)",
     "enter-ipc-identifier": "Adja meg az IPC parancsok egyedi azonosítóját",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "pl. 'semmi sem játszik'. Használjon /regex/-et mintákhoz.",
     "enter-tooltip": "Adja meg a buboréksúgót",
     "enter-width-pixels": "Adja meg a szélességet képpontban",
+    "keybind-recording": "Billentyűkombináció rögzítése...",
     "search": "Keresés...",
     "search-icons": "pl. noctalia, niri, battery, cloud",
     "search-launcher": "Keressen bejegyzéseket vagy írja be „>”-t a parancsokhoz",

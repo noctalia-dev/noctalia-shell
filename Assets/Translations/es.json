@@ -1126,7 +1126,9 @@
       "settings-density-description": "Ajusta el tamaño de los iconos de las aplicaciones y la densidad del Launcher.",
       "settings-density-label": "Densidad",
       "settings-desc": "Personaliza el comportamiento y la apariencia del lanzador.",
-      "settings-enable-settings-search-description": "Mostrar los resultados de configuración al buscar en el Launcher.",
+      "settings-enable-session-search-description": "Mostrar acciones de sesión (bloquear, apagar, reiniciar, etc.) al buscar en el Launcher.",
+      "settings-enable-session-search-label": "Habilitar búsqueda de sesión",
+      "settings-enable-settings-search-description": "Mostrar los resultados de configuración al buscar en el lanzador.",
       "settings-enable-settings-search-label": "Activar la búsqueda en la configuración",
       "settings-enable-windows-search-description": "Buscar y enfocar ventanas activas.",
       "settings-enable-windows-search-label": "Habilitar búsqueda de ventanas",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Estilo de botones grandes",
       "position-description": "Elige dónde aparece el panel del menú de sesión cuando se abre.",
       "show-header-description": "Mostrar el título y el botón de cerrar en la parte superior del menú de sesión.",
-      "show-header-label": "Mostrar encabezado",
-      "show-number-labels-description": "Mostrar etiquetas numéricas (1-2-3-4...) en los botones y habilitar atajos de teclado numéricos para selección rápida.",
-      "show-number-labels-label": "Mostrar etiquetas numéricas"
+      "show-header-label": "Mostrar encabezado"
     },
     "system-monitor": {
       "critical-color-label": "Color crítico",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Elige un color de relleno que pueda aparecer detrás del fondo de pantalla.",
       "look-feel-fill-mode-description": "Selecciona cómo debe escalar la imagen para coincidir con la resolución de tu monitor.",
       "look-feel-fill-mode-label": "Modo de relleno",
+      "look-feel-skip-startup-transition-description": "Omitir la animación del fondo de pantalla al iniciar la shell.",
+      "look-feel-skip-startup-transition-label": "Omitir transición de inicio",
       "look-feel-title": "Apariencia y estilo",
       "look-feel-transition-duration-description": "Duración de las animaciones de transición en segundos.",
       "look-feel-transition-duration-label": "Duración de la transición",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Añadir atajo de teclado",
     "command-example": "echo \"Hola, mundo\"",
     "enter-command": "Introduce el comando a ejecutar (aplicación o script personalizado)",
     "enter-ipc-identifier": "Introduce un identificador único para los comandos IPC",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "p. ej. 'no se está reproduciendo nada'. Usa /regex/ para patrones.",
     "enter-tooltip": "Introduce tooltip",
     "enter-width-pixels": "Introduce el ancho en píxeles",
+    "keybind-recording": "Grabando atajo de teclado...",
     "search": "Buscar...",
     "search-icons": "p. ej. noctalia, niri, battery, cloud",
     "search-launcher": "Buscar entradas... o usa > para comandos",

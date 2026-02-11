@@ -1126,6 +1126,8 @@
       "settings-density-description": "調整應用程式圖示大小和 Launcher 密度。",
       "settings-density-label": "密度",
       "settings-desc": "自訂啟動器的外觀及行為",
+      "settings-enable-session-search-description": "在 Launcher 中搜尋時顯示工作階段動作（鎖定、關機、重新啟動等）。",
+      "settings-enable-session-search-label": "啟用工作階段搜尋",
       "settings-enable-settings-search-description": "在啟動器中搜尋時顯示設定結果。",
       "settings-enable-settings-search-label": "啟用設定搜尋",
       "settings-enable-windows-search-description": "搜尋並聚焦作用中視窗。",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "以大按鈕顯示",
       "position-description": "選擇工作階段選單在哪裡顯示",
       "show-header-description": "在工作階段選單顯示標題及關閉按鈕",
-      "show-header-label": "顯示標題列",
-      "show-number-labels-description": "在選項上顯示數字標記並啟用以數字鍵快速選擇",
-      "show-number-labels-label": "顯示數字標記"
+      "show-header-label": "顯示標題列"
     },
     "system-monitor": {
       "critical-color-label": "危急顏色",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "挑選一個桌布底下可能會顯示的填充實色",
       "look-feel-fill-mode-description": "選擇圖像該以什麼方式縮放來符合顯示器的解析度",
       "look-feel-fill-mode-label": "填充模式",
+      "look-feel-skip-startup-transition-description": "在 shell 啟動時跳過桌布動畫。",
+      "look-feel-skip-startup-transition-label": "跳過啟動過場動畫",
       "look-feel-title": "外觀及風格",
       "look-feel-transition-duration-description": "設定轉場動畫使用的秒數",
       "look-feel-transition-duration-label": "轉場長度",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "新增按鍵綁定",
     "command-example": "echo \"Hello World\"",
     "enter-command": "輸入要執行的指令 (程式或自訂腳本)",
     "enter-ipc-identifier": "輸入 IPC 命令的唯一識別碼",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "例如: 'nothing is playing'. 也可用正規表示式 /regex/ 指定格式",
     "enter-tooltip": "輸入提示框文字",
     "enter-width-pixels": "以像素 (px) 輸入寬度",
+    "keybind-recording": "正在錄製按鍵綁定...",
     "search": "在這裡搜尋...",
     "search-icons": "例如: noctalia, niri, battery, cloud",
     "search-launcher": "搜尋所有項目... 或輸入 > 使用指令",

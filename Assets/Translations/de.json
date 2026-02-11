@@ -1126,6 +1126,8 @@
       "settings-density-description": "Größe der Anwendungssymbole und Dichte des Launchers anpassen.",
       "settings-density-label": "Dichte",
       "settings-desc": "Verhalten und Erscheinungsbild des Starters anpassen.",
+      "settings-enable-session-search-description": "Sitzungsaktionen (Sperren, Herunterfahren, Neustarten usw.) beim Suchen im Launcher anzeigen.",
+      "settings-enable-session-search-label": "Sitzungssuche aktivieren",
       "settings-enable-settings-search-description": "Einstellungen in den Suchergebnissen des Launchers anzeigen.",
       "settings-enable-settings-search-label": "Einstellungen-Suche aktivieren",
       "settings-enable-windows-search-description": "Aktive Fenster suchen und fokussieren.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Stil: Große Schaltflächen",
       "position-description": "Wählen Sie, wo das Sitzungsmenü-Panel beim Öffnen erscheint.",
       "show-header-description": "Zeige den Titel und die Schließen-Schaltfläche oben im Sitzungsmenü.",
-      "show-header-label": "Kopfzeile anzeigen",
-      "show-number-labels-description": "Nummern-Labels (1-2-3-4...) auf Schaltflächen anzeigen und Nummern-Tastenkürzel für schnelle Auswahl aktivieren.",
-      "show-number-labels-label": "Nummern-Labels anzeigen"
+      "show-header-label": "Kopfzeile anzeigen"
     },
     "system-monitor": {
       "critical-color-label": "Kritische Farbe",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Füllfarbe wählen, die hinter dem Hintergrundbild erscheinen kann.",
       "look-feel-fill-mode-description": "Wählen Sie, wie das Bild skaliert werden soll, um zur Auflösung Ihres Monitors zu passen.",
       "look-feel-fill-mode-label": "Füllmodus",
+      "look-feel-skip-startup-transition-description": "Überspringe die Hintergrundbild-Animation, wenn die Shell startet.",
+      "look-feel-skip-startup-transition-label": "Startübergang überspringen",
       "look-feel-title": "Aussehen & Verhalten",
       "look-feel-transition-duration-description": "Dauer der Übergangsanimationen in Sekunden.",
       "look-feel-transition-duration-label": "Übergangsdauer",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Neue Tastenkombination hinzufügen",
     "command-example": "echo \"Hallo Welt\"",
     "enter-command": "Befehl eingeben (App oder benutzerdefiniertes Skript)",
     "enter-ipc-identifier": "Geben Sie eine eindeutige Kennung für IPC-Befehle ein",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "z.B. 'nothing is playing'. Verwenden Sie /regex/ für Muster.",
     "enter-tooltip": "Tooltip eingeben",
     "enter-width-pixels": "Breite in Pixeln eingeben",
+    "keybind-recording": "Tastenkombination aufzeichnen...",
     "search": "Suchen...",
     "search-icons": "z.B. noctalia, niri, battery, cloud",
     "search-launcher": "Einträge suchen... oder > für Befehle verwenden",

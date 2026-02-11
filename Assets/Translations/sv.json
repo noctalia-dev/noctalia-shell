@@ -1126,6 +1126,8 @@
       "settings-density-description": "Justera storleken på applikationsikoner och Launcherns densitet.",
       "settings-density-label": "Densitet",
       "settings-desc": "Anpassa startprogrammets beteende och utseende.",
+      "settings-enable-session-search-description": "Visa sessionsåtgärder (lås, stäng av, starta om, etc.) vid sökning i Launcher.",
+      "settings-enable-session-search-label": "Aktivera sessionssökning",
       "settings-enable-settings-search-description": "Visa inställningsresultat vid sökning i startprogrammet.",
       "settings-enable-settings-search-label": "Aktivera inställningssökning",
       "settings-enable-windows-search-description": "Sök och fokusera aktiva fönster.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Stor knappstil",
       "position-description": "Välj var sessionsmenypanelen ska visas när den öppnas.",
       "show-header-description": "Visa titeln och stängningsknappen högst upp i sessionsmenyn.",
-      "show-header-label": "Visa rubrik",
-      "show-number-labels-description": "Visa numrerade etiketter (1-2-3-4...) på knapparna och aktivera numretangenter för snabbval.",
-      "show-number-labels-label": "Visa nummeretiketter"
+      "show-header-label": "Visa rubrik"
     },
     "system-monitor": {
       "critical-color-label": "Kritisk färg",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Välj en fyllningsfärg som kan visas bakom bakgrundsbilden.",
       "look-feel-fill-mode-description": "Välj hur bilden ska skalas för att passa din skärms upplösning.",
       "look-feel-fill-mode-label": "Fyllningsläge",
+      "look-feel-skip-startup-transition-description": "Hoppa över bakgrundsbildsanimationen när skalet startar.",
+      "look-feel-skip-startup-transition-label": "Hoppa över startövergång",
       "look-feel-title": "Utseende och känsla",
       "look-feel-transition-duration-description": "Övergångsanimationernas varaktighet i sekunder.",
       "look-feel-transition-duration-label": "Övergångens varaktighet",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Lägg till ny tangentbindning",
     "command-example": "echo \"Hello World\"",
     "enter-command": "Ange kommando att utföra (app eller anpassat skript)",
     "enter-ipc-identifier": "Ange unik identifierare för IPC-kommandon",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "t.ex. \"ingenting spelas upp\". Använd /regex/ för mönster.",
     "enter-tooltip": "Ange verktygstips",
     "enter-width-pixels": "Ange bredd i bildpunkter",
+    "keybind-recording": "Spelar in tangentbindning...",
     "search": "Sök... ",
     "search-icons": "t.ex. noctalia, niri, batteri, moln",
     "search-launcher": "Sök poster... eller använd > för kommandon",

@@ -1126,6 +1126,8 @@
       "settings-density-description": "Pas de grootte van applicatiepictogrammen en de dichtheid van de Launcher aan.",
       "settings-density-label": "Dichtheid",
       "settings-desc": "Pas het gedrag en uiterlijk van de launcher aan.",
+      "settings-enable-session-search-description": "Toon sessieacties (vergrendelen, afsluiten, herstarten, etc.) bij het zoeken in de Launcher.",
+      "settings-enable-session-search-label": "Sessie zoeken inschakelen",
       "settings-enable-settings-search-description": "Toon instellingen in de zoekresultaten van de Launcher.",
       "settings-enable-settings-search-label": "Instellingen zoeken inschakelen",
       "settings-enable-windows-search-description": "Actieve vensters zoeken en focussen.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Stijl met grote knoppen",
       "position-description": "Kies waar het sessiemenupaneel verschijnt wanneer het wordt geopend.",
       "show-header-description": "Toon de titel en sluitknop bovenaan het sessiemenu.",
-      "show-header-label": "Koptekst tonen",
-      "show-number-labels-description": "Nummerlabels (1-2-3-4...) op knoppen weergeven en nummertoetsen voor snelle selectie inschakelen.",
-      "show-number-labels-label": "Nummerlabels tonen"
+      "show-header-label": "Koptekst tonen"
     },
     "system-monitor": {
       "critical-color-label": "Kritische kleur",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Kies een vulkleur die achter de achtergrond kan verschijnen.",
       "look-feel-fill-mode-description": "Selecteer hoe de afbeelding moet schalen om overeen te komen met de resolutie van je monitor.",
       "look-feel-fill-mode-label": "Vulmodus",
+      "look-feel-skip-startup-transition-description": "Sla de achtergrondanimatie over wanneer de shell start.",
+      "look-feel-skip-startup-transition-label": "Opstartovergang overslaan",
       "look-feel-title": "Uiterlijk & gevoel",
       "look-feel-transition-duration-description": "Duur van overgangsanimaties in seconden.",
       "look-feel-transition-duration-label": "Overgangsduur",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Nieuwe toetsencombinatie toevoegen",
     "command-example": "echo \"Hello World\"",
     "enter-command": "Voer het uit te voeren commando in (app of aangepast script)",
     "enter-ipc-identifier": "Voer een unieke identificatie in voor IPC-opdrachten",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "bijv. 'er wordt niets afgespeeld'. Gebruik /regex/ voor patronen.",
     "enter-tooltip": "Voer tooltip in",
     "enter-width-pixels": "Voer breedte in pixels in",
+    "keybind-recording": "Toetsencombinatie opnemen...",
     "search": "Zoeken...",
     "search-icons": "bijv. noctalia, niri, battery, cloud",
     "search-launcher": "Items zoeken... of gebruik > voor commando's",

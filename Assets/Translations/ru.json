@@ -1126,6 +1126,8 @@
       "settings-density-description": "Настройте размер значков приложений и плотность Launcher.",
       "settings-density-label": "Плотность",
       "settings-desc": "Настройка поведения и внешнего вида запуска.",
+      "settings-enable-session-search-description": "Показывать действия сеанса (блокировка, выключение, перезагрузка и т.д.) при поиске в Launcher.",
+      "settings-enable-session-search-label": "Включить поиск по сессии",
       "settings-enable-settings-search-description": "Показывать результаты настроек при поиске в лаунчере.",
       "settings-enable-settings-search-label": "Включить поиск в настройках",
       "settings-enable-windows-search-description": "Поиск и фокусировка активных окон.",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "Стиль крупные кнопки",
       "position-description": "Выберите, где появляется панель меню сеанса при открытии.",
       "show-header-description": "Отображать заголовок и кнопку закрытия в верхней части меню сеанса.",
-      "show-header-label": "Показывать заголовок",
-      "show-number-labels-description": "Отображать числовые метки (1-2-3-4...) на кнопках и включить числовые горячие клавиши для быстрого выбора.",
-      "show-number-labels-label": "Показывать числовые метки"
+      "show-header-label": "Показывать заголовок"
     },
     "system-monitor": {
       "critical-color-label": "Критический цвет",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "Выберите цвет заливки, который может появиться за обоями.",
       "look-feel-fill-mode-description": "Выберите, как изображение должно масштабироваться, чтобы соответствовать разрешению вашего монитора.",
       "look-feel-fill-mode-label": "Режим заполнения",
+      "look-feel-skip-startup-transition-description": "Пропускать анимацию обоев при запуске оболочки.",
+      "look-feel-skip-startup-transition-label": "Пропустить стартовую анимацию",
       "look-feel-title": "Внешний вид",
       "look-feel-transition-duration-description": "Продолжительность анимации перехода в секундах.",
       "look-feel-transition-duration-label": "Продолжительность перехода",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Добавить новую привязку клавиш",
     "command-example": "например, echo \"Hello World\"",
     "enter-command": "Введите команду для выполнения (приложение или пользовательский скрипт)",
     "enter-ipc-identifier": "Введите уникальный идентификатор для команд IPC",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "напр. 'ничего не играет'. Используйте /regex/ для шаблонов.",
     "enter-tooltip": "Введите подсказку",
     "enter-width-pixels": "Введите ширину в пикселях",
+    "keybind-recording": "Запись сочетания клавиш...",
     "search": "Поиск...",
     "search-icons": "напр. noctalia, niri, battery, cloud",
     "search-launcher": "Поиск записей... или используйте > для команд",

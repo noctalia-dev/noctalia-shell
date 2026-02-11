@@ -691,9 +691,7 @@ Item {
 
   function spawn(command) {
     try {
-      // Convert QML list to JS array if needed (QML lists fail Array.isArray but have length)
-      const cmdArray = Array.isArray(command) ? command : (command && typeof command === "object" && command.length !== undefined) ? Array.from(command) : [command];
-      const cmdStr = cmdArray.join(" ");
+      const cmdStr = command.join(" ");
       Quickshell.execDetached(["sh", "-c", "mmsg -d 'spawn," + cmdStr + "'"]);
     } catch (e) {
       Logger.e("MangoService", "Failed to spawn command:", e);

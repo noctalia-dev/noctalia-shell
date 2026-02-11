@@ -704,6 +704,12 @@ Variants {
       // Sets up transition params, then defers the actual animation
       // to allow the compositor time to map the window.
       function performStartupTransition() {
+        if (Settings.data.wallpaper.skipStartupTransition) {
+          setWallpaperImmediate(futureWallpaper);
+          isStartupTransition = false;
+          return;
+        }
+
         // Get the transitionType from the settings
         transitionType = Settings.data.wallpaper.transitionType;
 

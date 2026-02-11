@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pam
 import Quickshell.Wayland
+import "../../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Services.Compositor
 import qs.Services.Hardware
@@ -278,11 +279,11 @@ Loader {
                   onTextChanged: lockContext.currentText = text
 
                   Keys.onPressed: function (event) {
-                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    if (Keybinds.checkKey(event, 'enter', Settings)) {
                       lockContext.tryUnlock();
                       event.accepted = true;
                     }
-                    if (event.key === Qt.Key_Escape && panelComponent.timerActive) {
+                    if (Keybinds.checkKey(event, 'escape', Settings) && panelComponent.timerActive) {
                       panelComponent.cancelTimer();
                       event.accepted = true;
                     }

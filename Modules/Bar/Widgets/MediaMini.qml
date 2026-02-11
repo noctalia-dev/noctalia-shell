@@ -239,8 +239,8 @@ Item {
     id: container
     x: Style.pixelAlignCenter(parent.width, width)
     y: Style.pixelAlignCenter(parent.height, height)
-    width: isVertical ? (isHidden ? 0 : verticalSize) : (isHidden ? 0 : contentWidth)
-    height: isVertical ? (isHidden ? 0 : verticalSize) : capsuleHeight
+    width: Style.toOdd(isVertical ? (isHidden ? 0 : verticalSize) : (isHidden ? 0 : contentWidth))
+    height: Style.toOdd(isVertical ? (isHidden ? 0 : verticalSize) : capsuleHeight)
     radius: Style.radiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
@@ -268,8 +268,8 @@ Item {
       Loader {
         x: Style.pixelAlignCenter(parent.width, width)
         y: Style.pixelAlignCenter(parent.height, height)
-        width: parent.width
-        height: parent.height
+        width: Style.toOdd(parent.width)
+        height: Style.toOdd(parent.height)
         active: showVisualizer
         z: 0
         sourceComponent: {
@@ -354,8 +354,8 @@ Item {
       Item {
         id: verticalLayout
         visible: isVertical
-        width: verticalSize
-        height: width
+        width: Style.toOdd(verticalSize)
+        height: Style.toOdd(width)
         x: Style.pixelAlignCenter(parent.width, width)
         y: Style.pixelAlignCenter(parent.height, height)
         z: 1

@@ -1126,6 +1126,8 @@
       "settings-density-description": "调整应用程序图标大小和 Launcher 密度。",
       "settings-density-label": "密度",
       "settings-desc": "自定义启动器的行为和外观。",
+      "settings-enable-session-search-description": "在 Launcher 中搜索时显示会话操作（锁定、关机、重启等）。",
+      "settings-enable-session-search-label": "启用会话搜索",
       "settings-enable-settings-search-description": "在启动器中搜索时显示设置结果。",
       "settings-enable-settings-search-label": "启用设置搜索",
       "settings-enable-windows-search-description": "搜索并聚焦活动窗口。",
@@ -1413,9 +1415,7 @@
       "large-buttons-style-label": "大按钮样式",
       "position-description": "选择会话菜单面板打开时出现的位置。",
       "show-header-description": "在会话菜单顶部显示标题和关闭按钮。",
-      "show-header-label": "显示标题",
-      "show-number-labels-description": "在按钮上显示数字标签（1-2-3-4...）并启用数字快捷键以快速选择。",
-      "show-number-labels-label": "显示数字标签"
+      "show-header-label": "显示标题"
     },
     "system-monitor": {
       "critical-color-label": "严重颜色",
@@ -1498,6 +1498,8 @@
       "look-feel-fill-color-description": "选择可能出现在壁纸后面的填充颜色。",
       "look-feel-fill-mode-description": "选择图像应如何缩放以匹配显示器的分辨率。",
       "look-feel-fill-mode-label": "填充模式",
+      "look-feel-skip-startup-transition-description": "在 shell 启动时跳过壁纸动画。",
+      "look-feel-skip-startup-transition-label": "跳过启动过渡动画",
       "look-feel-title": "外观与体验",
       "look-feel-transition-duration-description": "过渡动画的持续时间（秒）。",
       "look-feel-transition-duration-label": "过渡持续时间",
@@ -1536,6 +1538,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "添加新键位绑定",
     "command-example": "echo \"Hello World\"",
     "enter-command": "输入要执行的命令（应用程序或自定义脚本）",
     "enter-ipc-identifier": "输入 IPC 命令的唯一标识符",
@@ -1543,6 +1546,7 @@
     "enter-text-to-collapse": "例如：“nothing is playing”。使用 /regex/ 表示匹配模式。",
     "enter-tooltip": "输入提示信息",
     "enter-width-pixels": "输入宽度（像素）",
+    "keybind-recording": "正在录制按键绑定...",
     "search": "搜索...",
     "search-icons": "例如：noctalia, niri, battery, cloud",
     "search-launcher": "搜索条目...或使用 > 执行命令",
