@@ -626,11 +626,13 @@ Item {
     }
   }
 
-  Component.onCompleted: {
-    if (ipcIdentifier && ipcIdentifier.trim() !== "")
+  onIpcIdentifierChanged: {
+    // Re-register when ipcIdentifier is set (happens after onCompleted)
+    if (ipcIdentifier && ipcIdentifier.trim() !== "") {
+      Logger.i("CustomButton", `Registering button with identifier: '${ipcIdentifier}'`);
       CustomButtonIPCService.registerButton(root);
+    }
   }
-
   Component.onDestruction: {
     if (ipcIdentifier && ipcIdentifier.trim() !== "")
       CustomButtonIPCService.unregisterButton(root);
