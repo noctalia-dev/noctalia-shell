@@ -1160,6 +1160,15 @@
     "subTabLabel": "common.history"
   },
   {
+    "labelKey": "panels.notifications.history-vim-navigation-label",
+    "descriptionKey": "panels.notifications.history-vim-navigation-description",
+    "widget": "NToggle",
+    "tab": 9,
+    "tabLabel": "common.notifications",
+    "subTab": 2,
+    "subTabLabel": "common.history"
+  },
+  {
     "labelKey": "panels.notifications.sounds-unavailable-label",
     "descriptionKey": "panels.notifications.sounds-unavailable-description",
     "widget": "NLabel",

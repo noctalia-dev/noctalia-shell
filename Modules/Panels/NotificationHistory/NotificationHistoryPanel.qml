@@ -329,6 +329,43 @@ SmartPanel {
     }
 
     Keys.onPressed: event => {
+                      const vimNavigationEnabled = Settings.data.notifications?.vimKeyboardNavigation === true;
+                      const hasBlockingModifier = (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) !== 0;
+                      if (vimNavigationEnabled && !hasBlockingModifier && event.text && event.text.length === 1) {
+                        const vimKey = event.text;
+                        const vimKeyLower = vimKey.toLowerCase();
+                        if (vimKeyLower === "j") {
+                          panelContent.selectRelative(1);
+                          event.accepted = true;
+                          return;
+                        }
+                        if (vimKeyLower === "k") {
+                          panelContent.selectRelative(-1);
+                          event.accepted = true;
+                          return;
+                        }
+                        if (vimKeyLower === "h") {
+                          panelContent.selectPreviousRange();
+                          event.accepted = true;
+                          return;
+                        }
+                        if (vimKeyLower === "l") {
+                          panelContent.selectNextRange();
+                          event.accepted = true;
+                          return;
+                        }
+                        if (vimKey === "g") {
+                          panelContent.selectBoundary(false);
+                          event.accepted = true;
+                          return;
+                        }
+                        if (vimKey === "G") {
+                          panelContent.selectBoundary(true);
+                          event.accepted = true;
+                          return;
+                        }
+                      }
+
                       if (event.key === Qt.Key_Up) {
                         panelContent.selectRelative(-1);
                         event.accepted = true;

@@ -1253,6 +1253,8 @@
       "history-low-urgency-label": "Save low urgency to history",
       "history-normal-urgency-description": "Save normal priority notifications to history.",
       "history-normal-urgency-label": "Save normal urgency to history",
+      "history-vim-navigation-description": "Enable Vim-style keys in notification history: h/l switch ranges, j/k move, g/G jump.",
+      "history-vim-navigation-label": "Vim keyboard navigation",
       "monitors-desc": "Show notification on specific monitors. Defaults to all if none are chosen.",
       "settings-always-on-top-description": "Display notifications above fullscreen windows and other layers.",
       "settings-background-opacity-description": "Adjust the opacity of notification backgrounds.",

@@ -32,4 +32,12 @@ ColumnLayout {
     onToggled: checked => Settings.data.notifications.saveToHistory.critical = checked
     defaultValue: Settings.getDefaultValue("notifications.saveToHistory.critical")
   }
+
+  NToggle {
+    label: I18n.tr("panels.notifications.history-vim-navigation-label")
+    description: I18n.tr("panels.notifications.history-vim-navigation-description")
+    checked: Settings.data.notifications?.vimKeyboardNavigation === true
+    onToggled: checked => Settings.data.notifications.vimKeyboardNavigation = checked
+    defaultValue: Settings.getDefaultValue("notifications.vimKeyboardNavigation")
+  }
 }
