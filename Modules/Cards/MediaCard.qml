@@ -106,7 +106,7 @@ NBox {
       readonly property int dim: Math.round(256 * Style.uiScaleRatio)
       anchors.fill: parent
       visible: source.toString() !== ""
-      source: MediaService.trackArtUrl || (Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor ? root.cachedWallpaper : "")
+      source: MediaService.trackArtUrl || (!Settings.data.wallpaper.useSolidColor ? root.cachedWallpaper : "")
       sourceSize: Qt.size(dim, dim)
       fillMode: Image.PreserveAspectCrop
       layer.enabled: true
