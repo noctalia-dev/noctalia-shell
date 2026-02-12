@@ -38,7 +38,9 @@ SmartPanel {
   }
 
   function onEnterPressed() {
-    if (root.contentItem)
+    if (!root.contentItem)
+      return;
+    if (!root.contentItem.invokeSelectedAction())
       root.contentItem.toggleSelectedExpand();
   }
 
@@ -85,6 +87,13 @@ SmartPanel {
     property int currentRange: 1  // start on Today by default
     property bool groupByDate: true
     property string keyboardSelectedId: ""
+    property string keyboardActionNotificationId: ""
+    property int keyboardActionIndex: -1
+
+    function clearActionSelection() {
+      keyboardActionNotificationId = "";
+      keyboardActionIndex = -1;
+    }
 
     function isDelegateNavigable(delegateItem) {
       return delegateItem && delegateItem.visible && !delegateItem.isRemoving && delegateItem.height > 0;
@@ -127,6 +136,7 @@ SmartPanel {
       var delegates = visibleDelegates();
       if (delegates.length === 0) {
         keyboardSelectedId = "";
+        clearActionSelection();
         return false;
       }
 
@@ -140,6 +150,7 @@ SmartPanel {
       }
 
       keyboardSelectedId = delegates[0].notificationId;
+      clearActionSelection();
       ensureDelegateVisible(delegates[0]);
       return true;
     }
@@ -148,6 +159,7 @@ SmartPanel {
       var delegates = visibleDelegates();
       if (delegates.length === 0) {
         keyboardSelectedId = "";
+        clearActionSelection();
         return false;
       }
 
@@ -163,7 +175,10 @@ SmartPanel {
         currentIndex = delta > 0 ? -1 : delegates.length;
 
       var nextIndex = Math.max(0, Math.min(delegates.length - 1, currentIndex + delta));
+      var previousSelectedId = keyboardSelectedId;
       keyboardSelectedId = delegates[nextIndex].notificationId;
+      if (previousSelectedId !== keyboardSelectedId)
+        clearActionSelection();
       ensureDelegateVisible(delegates[nextIndex]);
       return true;
     }
@@ -172,11 +187,15 @@ SmartPanel {
       var delegates = visibleDelegates();
       if (delegates.length === 0) {
         keyboardSelectedId = "";
+        clearActionSelection();
         return false;
       }
 
       var index = toEnd ? delegates.length - 1 : 0;
+      var previousSelectedId = keyboardSelectedId;
       keyboardSelectedId = delegates[index].notificationId;
+      if (previousSelectedId !== keyboardSelectedId)
+        clearActionSelection();
       ensureDelegateVisible(delegates[index]);
       return true;
     }
@@ -210,6 +229,70 @@ SmartPanel {
       return true;
     }
 
+    function actionCountForSelected() {
+      var delegateItem = selectedDelegate();
+      if (!delegateItem || !delegateItem.actionsList)
+        return 0;
+      return delegateItem.actionsList.length;
+    }
+
+    function selectActionRelative(delta) {
+      if (!ensureKeyboardSelection())
+        return false;
+
+      var actionCount = actionCountForSelected();
+      if (actionCount <= 0)
+        return false;
+
+      keyboardActionNotificationId = keyboardSelectedId;
+      if (keyboardActionIndex < 0 || keyboardActionIndex >= actionCount) {
+        keyboardActionIndex = delta >= 0 ? 0 : actionCount - 1;
+      } else {
+        keyboardActionIndex = (keyboardActionIndex + delta + actionCount) % actionCount;
+      }
+      return true;
+    }
+
+    function invokeSelectedAction() {
+      if (!ensureKeyboardSelection())
+        return false;
+      if (keyboardActionNotificationId !== keyboardSelectedId || keyboardActionIndex < 0)
+        return false;
+
+      var delegateItem = selectedDelegate();
+      if (!delegateItem || !delegateItem.actionsList)
+        return false;
+      if (keyboardActionIndex >= delegateItem.actionsList.length)
+        return false;
+
+      var action = delegateItem.actionsList[keyboardActionIndex];
+      if (!action || !action.identifier)
+        return false;
+
+      NotificationService.invokeAction(delegateItem.notificationId, action.identifier);
+      return true;
+    }
+
+    function invokeActionByNumber(numberKey) {
+      if (!ensureKeyboardSelection())
+        return false;
+      var delegateItem = selectedDelegate();
+      if (!delegateItem || !delegateItem.actionsList)
+        return false;
+
+      var actionIndex = numberKey - 1;
+      if (actionIndex < 0 || actionIndex >= delegateItem.actionsList.length)
+        return false;
+
+      keyboardActionNotificationId = delegateItem.notificationId;
+      keyboardActionIndex = actionIndex;
+      var action = delegateItem.actionsList[actionIndex];
+      if (!action || !action.identifier)
+        return false;
+      NotificationService.invokeAction(delegateItem.notificationId, action.identifier);
+      return true;
+    }
+
     function dismissSelectedNotification() {
       if (!ensureKeyboardSelection())
         return false;
@@ -218,6 +301,7 @@ SmartPanel {
       if (!delegateItem || delegateItem.isRemoving)
         return false;
 
+      clearActionSelection();
       delegateItem.swipeOffset = 1;
       delegateItem.dismissBySwipe();
       return true;
@@ -227,6 +311,7 @@ SmartPanel {
       if (!groupByDate || !tabsBox.visible)
         return false;
       currentRange = Math.min(3, currentRange + 1);
+      clearActionSelection();
       Qt.callLater(() => ensureKeyboardSelection());
       return true;
     }
@@ -235,6 +320,7 @@ SmartPanel {
       if (!groupByDate || !tabsBox.visible)
         return false;
       currentRange = Math.max(0, currentRange - 1);
+      clearActionSelection();
       Qt.callLater(() => ensureKeyboardSelection());
       return true;
     }
@@ -331,6 +417,16 @@ SmartPanel {
     Keys.onPressed: event => {
                       const vimNavigationEnabled = Settings.data.notifications?.vimKeyboardNavigation === true;
                       const hasBlockingModifier = (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) !== 0;
+                      if (!hasBlockingModifier && event.text && event.text.length === 1) {
+                        const digit = parseInt(event.text, 10);
+                        if (!isNaN(digit) && digit >= 1 && digit <= 9) {
+                          if (panelContent.invokeActionByNumber(digit)) {
+                            event.accepted = true;
+                            return;
+                          }
+                        }
+                      }
+
                       if (vimNavigationEnabled && !hasBlockingModifier && event.text && event.text.length === 1) {
                         const vimKey = event.text;
                         const vimKeyLower = vimKey.toLowerCase();
@@ -397,9 +493,22 @@ SmartPanel {
                         return;
                       }
                       if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                        panelContent.toggleSelectedExpand();
+                        if (!panelContent.invokeSelectedAction())
+                          panelContent.toggleSelectedExpand();
                         event.accepted = true;
                         return;
+                      }
+                      if (event.key === Qt.Key_Tab) {
+                        if (panelContent.selectActionRelative(1)) {
+                          event.accepted = true;
+                          return;
+                        }
+                      }
+                      if (event.key === Qt.Key_Backtab) {
+                        if (panelContent.selectActionRelative(-1)) {
+                          event.accepted = true;
+                          return;
+                        }
                       }
                       if (event.key === Qt.Key_Delete || event.key === Qt.Key_Backspace) {
                         if (panelContent.dismissSelectedNotification())
@@ -728,6 +837,7 @@ SmartPanel {
                       onPressed: mouse => {
                                    if (mouse.button !== Qt.LeftButton)
                                      return;
+                                   panelContent.clearActionSelection();
                                    panelContent.keyboardSelectedId = notificationId;
                                    panelContent.ensureDelegateVisible(notificationDelegate);
                                    const globalPoint = historyInteractionArea.mapToGlobal(mouse.x, mouse.y);
@@ -934,7 +1044,11 @@ SmartPanel {
                               delegate: NButton {
                                 text: modelData.text
                                 fontSize: Style.fontSizeS
-                                backgroundColor: Color.mPrimary
+                                property int actionIndex: index
+                                property bool isKeyboardActionSelected: panelContent.keyboardSelectedId === notificationDelegate.notificationId
+                                    && panelContent.keyboardActionNotificationId === notificationDelegate.notificationId
+                                    && panelContent.keyboardActionIndex === actionIndex
+                                backgroundColor: isKeyboardActionSelected ? Color.mSecondary : Color.mPrimary
                                 textColor: Color.mOnPrimary
                                 outlined: false
                                 implicitHeight: 24
@@ -942,6 +1056,9 @@ SmartPanel {
                                 // Capture modelData in a property to avoid reference errors
                                 property var actionData: modelData
                                 onClicked: {
+                                  panelContent.keyboardSelectedId = notificationDelegate.notificationId;
+                                  panelContent.keyboardActionNotificationId = notificationDelegate.notificationId;
+                                  panelContent.keyboardActionIndex = actionIndex;
                                   NotificationService.invokeAction(notificationDelegate.notificationId, actionData.identifier);
                                 }
                               }
