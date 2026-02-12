@@ -26,7 +26,7 @@ ColumnLayout {
   }
 
   ColumnLayout {
-    enabled: Settings.data.wallpaper.enabled
+    enabled: true
     spacing: Style.marginL
     Layout.fillWidth: true
 
