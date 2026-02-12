@@ -202,6 +202,7 @@ Singleton {
       property string displayMode: "always_visible"
       property int autoHideDelay: 500 // ms before hiding after mouse leaves
       property int autoShowDelay: 150 // ms before showing when mouse enters
+      property bool showOnWorkspaceSwitch: true // show bar briefly on workspace switch
 
       // Widget configuration for modular bar system
       property JsonObject widgets

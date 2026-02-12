@@ -761,6 +761,8 @@
       "appearance-auto-hide-exclusive-note": "Note: Exclusive zone is automatically disabled when auto-hide is active",
       "appearance-auto-show-delay-description": "Time before bar shows when mouse enters edge",
       "appearance-auto-show-delay-label": "Show Delay",
+      "appearance-show-on-workspace-switch-description": "Automatically show the bar briefly when the workspace changes.",
+      "appearance-show-on-workspace-switch-label": "Show bar on workspace switch",
       "appearance-background-opacity-description": "Set the background opacity specifically for the bar.",
       "appearance-background-opacity-label": "Bar background opacity",
       "appearance-capsule-color-description": "Choose a color for bar capsules, or use none for the default surface color.",
