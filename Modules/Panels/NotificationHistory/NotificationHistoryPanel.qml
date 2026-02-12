@@ -15,14 +15,57 @@ SmartPanel {
 
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(540 * Style.uiScaleRatio)
+  property var contentItem: null
 
   onOpened: {
     NotificationService.updateLastSeenTs();
+    Qt.callLater(() => {
+                   if (!root.contentItem)
+                     return;
+                   root.contentItem.forceActiveFocus();
+                   root.contentItem.ensureKeyboardSelection();
+                 });
+  }
+
+  function onUpPressed() {
+    if (root.contentItem)
+      root.contentItem.selectRelative(-1);
+  }
+
+  function onDownPressed() {
+    if (root.contentItem)
+      root.contentItem.selectRelative(1);
+  }
+
+  function onEnterPressed() {
+    if (root.contentItem)
+      root.contentItem.toggleSelectedExpand();
+  }
+
+  function onLeftPressed() {
+    if (root.contentItem)
+      root.contentItem.selectPreviousRange();
+  }
+
+  function onRightPressed() {
+    if (root.contentItem)
+      root.contentItem.selectNextRange();
+  }
+
+  function onHomePressed() {
+    if (root.contentItem)
+      root.contentItem.selectBoundary(false);
+  }
+
+  function onEndPressed() {
+    if (root.contentItem)
+      root.contentItem.selectBoundary(true);
   }
 
   panelContent: Rectangle {
     id: panelContent
     color: "transparent"
+    focus: true
 
     // Calculate content height based on header + tabs (if visible) + content
     property real calculatedHeight: {
@@ -41,6 +84,160 @@ SmartPanel {
     // 0 = All, 1 = Today, 2 = Yesterday, 3 = Earlier
     property int currentRange: 1  // start on Today by default
     property bool groupByDate: true
+    property string keyboardSelectedId: ""
+
+    function isDelegateNavigable(delegateItem) {
+      return delegateItem && delegateItem.visible && !delegateItem.isRemoving && delegateItem.height > 0;
+    }
+
+    function visibleDelegates() {
+      var delegates = [];
+      if (!notificationRepeater)
+        return delegates;
+      for (var i = 0; i < notificationRepeater.count; ++i) {
+        var item = notificationRepeater.itemAt(i);
+        if (isDelegateNavigable(item))
+          delegates.push(item);
+      }
+      return delegates;
+    }
+
+    function ensureDelegateVisible(delegateItem) {
+      if (!delegateItem || !scrollView || !scrollView.contentItem)
+        return;
+
+      var flickable = scrollView.contentItem;
+      var topY = delegateItem.y;
+      var bottomY = topY + delegateItem.height;
+      var viewportTop = flickable.contentY;
+      var viewportBottom = viewportTop + flickable.height;
+      var targetY = flickable.contentY;
+
+      if (topY < viewportTop) {
+        targetY = topY;
+      } else if (bottomY > viewportBottom) {
+        targetY = bottomY - flickable.height;
+      }
+
+      var maxY = Math.max(0, flickable.contentHeight - flickable.height);
+      flickable.contentY = Math.max(0, Math.min(targetY, maxY));
+    }
+
+    function ensureKeyboardSelection() {
+      var delegates = visibleDelegates();
+      if (delegates.length === 0) {
+        keyboardSelectedId = "";
+        return false;
+      }
+
+      if (keyboardSelectedId !== "") {
+        for (var i = 0; i < delegates.length; ++i) {
+          if (delegates[i].notificationId === keyboardSelectedId) {
+            ensureDelegateVisible(delegates[i]);
+            return true;
+          }
+        }
+      }
+
+      keyboardSelectedId = delegates[0].notificationId;
+      ensureDelegateVisible(delegates[0]);
+      return true;
+    }
+
+    function selectRelative(delta) {
+      var delegates = visibleDelegates();
+      if (delegates.length === 0) {
+        keyboardSelectedId = "";
+        return false;
+      }
+
+      var currentIndex = -1;
+      for (var i = 0; i < delegates.length; ++i) {
+        if (delegates[i].notificationId === keyboardSelectedId) {
+          currentIndex = i;
+          break;
+        }
+      }
+
+      if (currentIndex < 0)
+        currentIndex = delta > 0 ? -1 : delegates.length;
+
+      var nextIndex = Math.max(0, Math.min(delegates.length - 1, currentIndex + delta));
+      keyboardSelectedId = delegates[nextIndex].notificationId;
+      ensureDelegateVisible(delegates[nextIndex]);
+      return true;
+    }
+
+    function selectBoundary(toEnd) {
+      var delegates = visibleDelegates();
+      if (delegates.length === 0) {
+        keyboardSelectedId = "";
+        return false;
+      }
+
+      var index = toEnd ? delegates.length - 1 : 0;
+      keyboardSelectedId = delegates[index].notificationId;
+      ensureDelegateVisible(delegates[index]);
+      return true;
+    }
+
+    function selectedDelegate() {
+      if (!notificationRepeater || keyboardSelectedId === "")
+        return null;
+      for (var i = 0; i < notificationRepeater.count; ++i) {
+        var item = notificationRepeater.itemAt(i);
+        if (item && item.notificationId === keyboardSelectedId)
+          return item;
+      }
+      return null;
+    }
+
+    function toggleSelectedExpand() {
+      if (!ensureKeyboardSelection())
+        return false;
+
+      var delegateItem = selectedDelegate();
+      if (!delegateItem || !delegateItem.canExpand)
+        return false;
+
+      if (scrollView.expandedId === delegateItem.notificationId) {
+        scrollView.expandedId = "";
+      } else {
+        scrollView.expandedId = delegateItem.notificationId;
+      }
+
+      ensureDelegateVisible(delegateItem);
+      return true;
+    }
+
+    function dismissSelectedNotification() {
+      if (!ensureKeyboardSelection())
+        return false;
+
+      var delegateItem = selectedDelegate();
+      if (!delegateItem || delegateItem.isRemoving)
+        return false;
+
+      delegateItem.swipeOffset = 1;
+      delegateItem.dismissBySwipe();
+      return true;
+    }
+
+    function selectNextRange() {
+      if (!groupByDate || !tabsBox.visible)
+        return false;
+      currentRange = Math.min(3, currentRange + 1);
+      Qt.callLater(() => ensureKeyboardSelection());
+      return true;
+    }
+
+    function selectPreviousRange() {
+      if (!groupByDate || !tabsBox.visible)
+        return false;
+      currentRange = Math.max(0, currentRange - 1);
+      Qt.callLater(() => ensureKeyboardSelection());
+      return true;
+    }
 
     // Helper functions (lazy-loaded with panelContent)
     function dateOnly(d) {
@@ -114,17 +311,69 @@ SmartPanel {
     }
 
     Component.onCompleted: {
+      root.contentItem = panelContent;
       recalcRangeCounts();
       // Initialize lastKnownDate
       lastKnownDate = getDateKey(new Date());
+      Qt.callLater(() => ensureKeyboardSelection());
     }
+
+    onCurrentRangeChanged: Qt.callLater(() => ensureKeyboardSelection())
 
     Connections {
       target: NotificationService.historyList
       function onCountChanged() {
         panelContent.recalcRangeCounts();
+        Qt.callLater(() => panelContent.ensureKeyboardSelection());
       }
     }
+
+    Keys.onPressed: event => {
+                      if (event.key === Qt.Key_Up) {
+                        panelContent.selectRelative(-1);
+                        event.accepted = true;
+                        return;
+                      }
+                      if (event.key === Qt.Key_Down) {
+                        panelContent.selectRelative(1);
+                        event.accepted = true;
+                        return;
+                      }
+                      if (event.key === Qt.Key_Left) {
+                        panelContent.selectPreviousRange();
+                        event.accepted = true;
+                        return;
+                      }
+                      if (event.key === Qt.Key_Right) {
+                        panelContent.selectNextRange();
+                        event.accepted = true;
+                        return;
+                      }
+                      if (event.key === Qt.Key_Home) {
+                        panelContent.selectBoundary(false);
+                        event.accepted = true;
+                        return;
+                      }
+                      if (event.key === Qt.Key_End) {
+                        panelContent.selectBoundary(true);
+                        event.accepted = true;
+                        return;
+                      }
+                      if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                        panelContent.toggleSelectedExpand();
+                        event.accepted = true;
+                        return;
+                      }
+                      if (event.key === Qt.Key_Delete || event.key === Qt.Key_Backspace) {
+                        if (panelContent.dismissSelectedNotification())
+                          event.accepted = true;
+                        return;
+                      }
+                      if (event.key === Qt.Key_Escape) {
+                        root.close();
+                        event.accepted = true;
+                      }
+                    }
 
     // Timer to check for day changes at midnight
     Timer {
@@ -325,6 +574,7 @@ SmartPanel {
                 spacing: Style.marginM
 
                 Repeater {
+                  id: notificationRepeater
                   model: NotificationService.historyList
 
                   delegate: Item {
@@ -336,6 +586,7 @@ SmartPanel {
                     property string notificationId: model.id
                     property bool isExpanded: scrollView.expandedId === notificationId
                     property bool canExpand: summaryText.truncated || bodyText.truncated
+                    property bool isKeyboardSelected: panelContent.keyboardSelectedId === notificationId
                     property real swipeOffset: 0
                     property real pressGlobalX: 0
                     property real pressGlobalY: 0
@@ -418,8 +669,8 @@ SmartPanel {
                     Rectangle {
                       anchors.fill: parent
                       radius: Style.radiusM
-                      color: Color.mSurfaceVariant
-                      border.color: Settings.data.ui.boxBorderEnabled ? Qt.alpha(Color.mOutline, Style.opacityHeavy) : "transparent"
+                      color: notificationDelegate.isKeyboardSelected ? Qt.alpha(Color.mPrimary, Style.opacityLight) : Color.mSurfaceVariant
+                      border.color: notificationDelegate.isKeyboardSelected ? Qt.alpha(Color.mPrimary, Style.opacityHeavy) : (Settings.data.ui.boxBorderEnabled ? Qt.alpha(Color.mOutline, Style.opacityHeavy) : "transparent")
                       border.width: Style.borderS
 
                       Behavior on color {
@@ -440,6 +691,8 @@ SmartPanel {
                       onPressed: mouse => {
                                    if (mouse.button !== Qt.LeftButton)
                                      return;
+                                   panelContent.keyboardSelectedId = notificationId;
+                                   panelContent.ensureDelegateVisible(notificationDelegate);
                                    const globalPoint = historyInteractionArea.mapToGlobal(mouse.x, mouse.y);
                                    notificationDelegate.pressGlobalX = globalPoint.x;
                                    notificationDelegate.pressGlobalY = globalPoint.y;
