@@ -347,6 +347,30 @@ Singleton {
     return "";
   }
 
+  // Get focused window for a specific screen/output (per-output tracking)
+  function getFocusedWindowForScreen(screenName) {
+    if (backend && backend.getFocusedWindowForScreen) {
+      return backend.getFocusedWindowForScreen(screenName);
+    }
+    return getFocusedWindow();
+  }
+
+  // Get focused window title for a specific screen/output
+  function getFocusedWindowTitleForScreen(screenName) {
+    if (backend && backend.getFocusedWindowForScreen) {
+      const win = backend.getFocusedWindowForScreen(screenName);
+      if (win) {
+        var title = win.title;
+        if (title !== undefined) {
+          title = title.replace(/(\r\n|\n|\r)/g, "");
+        }
+        return title || "";
+      }
+      return "";
+    }
+    return getFocusedWindowTitle();
+  }
+
   // Get clean app name from appId
   // Extracts the last segment from reverse domain notation (e.g., "org.kde.dolphin" -> "Dolphin")
   // Falls back to title if appId is empty
