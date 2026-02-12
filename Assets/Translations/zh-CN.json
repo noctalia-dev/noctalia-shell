@@ -761,6 +761,8 @@
       "appearance-auto-hide-exclusive-note": "注意: 当自动隐藏处于活动状态时，专属区域会自动禁用。",
       "appearance-auto-show-delay-description": "鼠标进入边缘时，栏显示前的延迟时间。",
       "appearance-auto-show-delay-label": "显示延迟",
+      "appearance-show-on-workspace-switch-description": "切换工作区时自动短暂显示状态栏。",
+      "appearance-show-on-workspace-switch-label": "工作区切换时显示状态栏",
       "appearance-background-opacity-description": "为状态栏设置背景不透明度。",
       "appearance-background-opacity-label": "状态栏背景不透明度",
       "appearance-capsule-color-description": "为栏胶囊选择一种颜色，或不使用任何颜色以采用默认表面颜色。",
