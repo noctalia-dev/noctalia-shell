@@ -23,13 +23,16 @@ ColumnLayout {
     id: blacklistModel
   }
 
-  Component.onCompleted: {
-    // Populate the ListModel from localBlacklist
+  function populateBlacklist() {
     for (var i = 0; i < localBlacklist.length; i++) {
       blacklistModel.append({
                               "rule": localBlacklist[i]
                             });
     }
+  }
+
+  Component.onCompleted: {
+    Qt.callLater(populateBlacklist);
   }
 
   spacing: Style.marginM

@@ -28,8 +28,7 @@ ColumnLayout {
     property string generalTooltipText: (widgetData && widgetData.generalTooltipText !== undefined) ? widgetData.generalTooltipText : (widgetMetadata && widgetMetadata.generalTooltipText ? widgetMetadata.generalTooltipText : "Custom Button")
     property bool enableOnStateLogic: (widgetData && widgetData.enableOnStateLogic !== undefined) ? widgetData.enableOnStateLogic : (widgetMetadata && widgetMetadata.enableOnStateLogic !== undefined ? widgetMetadata.enableOnStateLogic : false)
 
-    Component.onCompleted: {
-      stateChecksJson = (widgetData && widgetData.stateChecksJson !== undefined) ? widgetData.stateChecksJson : (widgetMetadata && widgetMetadata.stateChecksJson ? widgetMetadata.stateChecksJson : "[]");
+    function populateStateChecks() {
       try {
         var initialChecks = JSON.parse(stateChecksJson);
         if (initialChecks && Array.isArray(initialChecks)) {
@@ -41,13 +40,18 @@ ColumnLayout {
                                                        "icon": item.icon || ""
                                                      });
             } else {
-              console.warn("⚠️ Invalid stateChecks entry at index " + i + ":", item);
+              Logger.w("CustomButtonSettings", "Invalid stateChecks entry at index " + i + ":", item);
             }
           }
         }
       } catch (e) {
-        console.error("CustomButtonSettings: Failed to parse stateChecksJson:", e.message);
+        Logger.e("CustomButtonSettings", "Failed to parse stateChecksJson:", e.message);
       }
+    }
+
+    Component.onCompleted: {
+      stateChecksJson = (widgetData && widgetData.stateChecksJson !== undefined) ? widgetData.stateChecksJson : (widgetMetadata && widgetMetadata.stateChecksJson ? widgetMetadata.stateChecksJson : "[]");
+      Qt.callLater(populateStateChecks);
     }
   }
 

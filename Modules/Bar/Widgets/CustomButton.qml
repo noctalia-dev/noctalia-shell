@@ -626,7 +626,10 @@ Item {
     }
   }
 
-  Component.onCompleted: {
+  // Register IPC button in onLoaded (called by BarWidgetLoader after properties are set).
+  // Component.onCompleted is too early — widgetSettings depends on section/index/screen
+  // which are set by BarWidgetLoader.onLoaded after the component is created.
+  function onLoaded() {
     if (ipcIdentifier && ipcIdentifier.trim() !== "")
       CustomButtonIPCService.registerButton(root);
   }
