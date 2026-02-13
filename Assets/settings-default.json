@@ -84,6 +84,7 @@
     "lockOnSuspend": true,
     "showSessionButtonsOnLockScreen": true,
     "showHibernateOnLockScreen": false,
+    "enableLockScreenMediaControls": false,
     "enableShadows": true,
     "shadowDirection": "bottom_right",
     "shadowOffsetX": 2,
