@@ -28,7 +28,7 @@ ColumnLayout {
     settings.showBackground = valueShowBackground;
     settings.roundedCorners = valueRoundedCorners;
     settings.layout = valueLayout;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -65,7 +65,7 @@ ColumnLayout {
     }
     onSelected: key => {
                   valueStatType = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -84,7 +84,7 @@ ColumnLayout {
     currentKey: valueDiskPath
     onSelected: key => {
                   valueDiskPath = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -99,7 +99,7 @@ ColumnLayout {
     checked: valueShowBackground
     onToggled: checked => {
                  valueShowBackground = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -111,7 +111,7 @@ ColumnLayout {
     checked: valueRoundedCorners
     onToggled: checked => {
                  valueRoundedCorners = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -137,7 +137,7 @@ ColumnLayout {
     ]
     onSelected: key => {
                   valueLayout = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 }

@@ -18,7 +18,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.showBackground = valueShowBackground;
-    return settings;
+    settingsChanged(settings);
   }
 
   NToggle {
@@ -28,7 +28,7 @@ ColumnLayout {
     checked: valueShowBackground
     onToggled: checked => {
                  valueShowBackground = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

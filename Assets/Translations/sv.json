@@ -634,6 +634,10 @@
       "grid": "Rutnät",
       "list": "Lista"
     },
+    "notification-density": {
+      "compact": "Kompakt",
+      "default": "Standard"
+    },
     "scrolling-modes": {
       "always": "Rulla alltid",
       "hover": "Rulla vid muspekning",
@@ -669,6 +673,8 @@
       "contributors-description": "Tack till våra {count} <b>fantastiska</b> bidragsgivare!",
       "contributors-description-plural": "Tack till våra {count} <b>fantastiska</b> bidragsgivare!",
       "copy-info": "Kopiera info",
+      "debug-disabled": "Felsökningsläge inaktiverat",
+      "debug-enabled": "Felsökningsläge aktiverat",
       "info-copied": "Info kopierad till urklipp",
       "noctalia-desc": "Ett elegant och minimalistiskt skrivbordsskal som är noggrant utformat för Wayland och byggt med Quickshell.",
       "noctalia-git-commit": "Git-commit:",
@@ -1030,6 +1036,8 @@
       "fonts-monospace-search-placeholder": "Sök teckensnitt med fast bredd...",
       "fonts-reset-scaling": "Återställ skalning",
       "fonts-title": "Teckensnitt",
+      "keybinds-conflict-description": "Tangentkombinationen är redan tilldelad {action}.",
+      "keybinds-conflict-title": "Tangentbindningskonflikt",
       "keybinds-description": "Konfigurera globala navigeringsknappar för paneler och startprogram.",
       "keybinds-down": "Flytta nedåt",
       "keybinds-enter": "Bekräfta / Åtgärd",
@@ -1126,6 +1134,8 @@
       "settings-density-description": "Justera storleken på applikationsikoner och Launcherns densitet.",
       "settings-density-label": "Densitet",
       "settings-desc": "Anpassa startprogrammets beteende och utseende.",
+      "settings-enable-session-search-description": "Visa sessionsåtgärder (lås, stäng av, starta om, etc.) vid sökning i Launcher.",
+      "settings-enable-session-search-label": "Aktivera sessionssökning",
       "settings-enable-settings-search-description": "Visa inställningsresultat vid sökning i startprogrammet.",
       "settings-enable-settings-search-label": "Aktivera inställningssökning",
       "settings-enable-windows-search-description": "Sök och fokusera aktiva fönster.",
@@ -1247,6 +1257,8 @@
       "monitors-desc": "Visa meddelanden på specifika skärmar. Standardinställningen är alla om ingen väljs.",
       "settings-always-on-top-description": "Visa meddelanden ovanför helskärmsfönster och andra lager.",
       "settings-background-opacity-description": "Justera opaciteten för meddelandenas bakgrund.",
+      "settings-density-description": "Välj densitet för aviseringskortet.",
+      "settings-density-label": "Densitet",
       "settings-desc": "Konfigurera meddelandenas utseende och beteende.",
       "settings-do-not-disturb-description": "Inaktivera alla popup-meddelanden när funktionen är aktiverad.",
       "settings-enabled-description": "Aktivera eller inaktivera meddelandedemonen, kräver omstart av Noctalia-skalet.",
@@ -1333,6 +1345,8 @@
       "collision-already-installed": "Denna insticksmodul är redan installerad",
       "collision-custom-version-exists": "En anpassad version från \"{source}\"är redan installerad",
       "collision-official-version-exists": "Den officiella versionen av denna insticksmodul är redan installerad",
+      "development-disable": "Inaktivera utvecklingsläge för denna plugin",
+      "development-enable": "Aktivera utvecklingsläge för denna plugin.",
       "filter-downloaded": "Hämtade",
       "filter-not-downloaded": "Inte hämtade",
       "filter-tags-description": "Filtrera insticksmoduler efter kategori eller hämtningsstatus.",
@@ -1413,9 +1427,7 @@
       "large-buttons-style-label": "Stor knappstil",
       "position-description": "Välj var sessionsmenypanelen ska visas när den öppnas.",
       "show-header-description": "Visa titeln och stängningsknappen högst upp i sessionsmenyn.",
-      "show-header-label": "Visa rubrik",
-      "show-number-labels-description": "Visa numrerade etiketter (1-2-3-4...) på knapparna och aktivera numretangenter för snabbval.",
-      "show-number-labels-label": "Visa nummeretiketter"
+      "show-header-label": "Visa rubrik"
     },
     "system-monitor": {
       "critical-color-label": "Kritisk färg",
@@ -1498,6 +1510,8 @@
       "look-feel-fill-color-description": "Välj en fyllningsfärg som kan visas bakom bakgrundsbilden.",
       "look-feel-fill-mode-description": "Välj hur bilden ska skalas för att passa din skärms upplösning.",
       "look-feel-fill-mode-label": "Fyllningsläge",
+      "look-feel-skip-startup-transition-description": "Hoppa över bakgrundsbildsanimationen när skalet startar.",
+      "look-feel-skip-startup-transition-label": "Hoppa över startövergång",
       "look-feel-title": "Utseende och känsla",
       "look-feel-transition-duration-description": "Övergångsanimationernas varaktighet i sekunder.",
       "look-feel-transition-duration-label": "Övergångens varaktighet",
@@ -1536,6 +1550,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Lägg till ny tangentbindning",
     "command-example": "echo \"Hello World\"",
     "enter-command": "Ange kommando att utföra (app eller anpassat skript)",
     "enter-ipc-identifier": "Ange unik identifierare för IPC-kommandon",
@@ -1543,6 +1558,7 @@
     "enter-text-to-collapse": "t.ex. \"ingenting spelas upp\". Använd /regex/ för mönster.",
     "enter-tooltip": "Ange verktygstips",
     "enter-width-pixels": "Ange bredd i bildpunkter",
+    "keybind-recording": "Spelar in tangentbindning...",
     "search": "Sök... ",
     "search-icons": "t.ex. noctalia, niri, batteri, moln",
     "search-launcher": "Sök poster... eller använd > för kommandon",
@@ -1788,6 +1804,8 @@
       "categories-anime": "Anime",
       "categories-label": "Kategorier",
       "categories-people": "Personer",
+      "color-extraction-disabled": "Använd bakgrundsfärgsutvinning",
+      "color-extraction-enabled": "Använd fördefinierade färgscheman",
       "order-asc": "Stigande",
       "order-desc": "Fallande",
       "order-label": "Ordning",

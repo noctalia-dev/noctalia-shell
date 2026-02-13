@@ -365,6 +365,42 @@ ColumnLayout {
       mipmap: true
       smooth: true
       Layout.alignment: Qt.AlignBottom
+      rotation: Settings.isDebug ? 180 : 0
+
+      Behavior on rotation {
+        NumberAnimation {
+          duration: Style.animationSlowest
+          easing.type: Easing.OutBack
+        }
+      }
+
+      property int debugTapCount: 0
+
+      Timer {
+        id: debugTapTimer
+        interval: 5000
+        onTriggered: parent.debugTapCount = 0
+      }
+
+      MouseArea {
+        anchors.fill: parent
+        onClicked: {
+          if (parent.debugTapCount === 0) {
+            debugTapTimer.restart();
+          }
+          parent.debugTapCount++;
+          if (parent.debugTapCount >= 8) {
+            parent.debugTapCount = 0;
+            debugTapTimer.stop();
+            Settings.isDebug = !Settings.isDebug;
+            if (Settings.isDebug) {
+              ToastService.showNotice("Debug", I18n.tr("panels.about.debug-enabled"));
+            } else {
+              ToastService.showNotice("Debug", I18n.tr("panels.about.debug-disabled"));
+            }
+          }
+        }
+      }
     }
 
     ColumnLayout {

@@ -44,6 +44,8 @@ Item {
   readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
 
   readonly property bool useMonospaceFont: widgetSettings.useMonospaceFont !== undefined ? widgetSettings.useMonospaceFont : widgetMetadata.useMonospaceFont
+  readonly property bool usePadding: !compactMode && !isVertical && useMonospaceFont && ((widgetSettings.usePadding !== undefined) ? widgetSettings.usePadding : widgetMetadata.usePadding)
+
   readonly property bool showCpuUsage: (widgetSettings.showCpuUsage !== undefined) ? widgetSettings.showCpuUsage : widgetMetadata.showCpuUsage
   readonly property bool showCpuFreq: (widgetSettings.showCpuFreq !== undefined) ? widgetSettings.showCpuFreq : widgetMetadata.showCpuFreq
   readonly property bool showCpuTemp: (widgetSettings.showCpuTemp !== undefined) ? widgetSettings.showCpuTemp : widgetMetadata.showCpuTemp
@@ -58,6 +60,11 @@ Item {
   readonly property bool showLoadAverage: (widgetSettings.showLoadAverage !== undefined) ? widgetSettings.showLoadAverage : widgetMetadata.showLoadAverage
   readonly property string diskPath: (widgetSettings.diskPath !== undefined) ? widgetSettings.diskPath : widgetMetadata.diskPath
   readonly property string fontFamily: useMonospaceFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
+
+  readonly property int paddingPercent: usePadding ? String("100%").length : 0
+  readonly property int paddingTemp: usePadding ? String("999°").length : 0
+  readonly property int paddingCpuFreq: usePadding ? String("9.9").length : 0
+  readonly property int paddingSpeed: usePadding ? String("9999G").length : 0
 
   readonly property real iconSize: Style.toOdd(capsuleHeight * 0.48)
   readonly property real miniGaugeWidth: Math.max(3, Style.toOdd(root.iconSize * 0.25))
@@ -259,7 +266,7 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: `${Math.round(SystemStatService.cpuUsage)}%`
+            text: `${Math.round(SystemStatService.cpuUsage)}%`.padStart(paddingPercent, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -327,7 +334,7 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: SystemStatService.cpuFreq.replace(" ", "")
+            text: SystemStatService.cpuFreq.replace("Hz", "").replace(" ", "").padStart(paddingCpuFreq, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -395,7 +402,7 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: `${Math.round(SystemStatService.cpuTemp)}°`
+            text: `${Math.round(SystemStatService.cpuTemp)}°`.padStart(paddingTemp, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -463,7 +470,7 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: `${Math.round(SystemStatService.gpuTemp)}°`
+            text: `${Math.round(SystemStatService.gpuTemp)}°`.padStart(paddingTemp, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -531,7 +538,7 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: SystemStatService.loadAvg1.toFixed(1)
+            text: `${SystemStatService.loadAvg1.toFixed(1)}`.padStart(usePadding ? `${SystemStatService.nproc.toFixed(1)}`.length : 0, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -599,7 +606,10 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: showMemoryAsPercent ? `${Math.round(SystemStatService.memPercent)}%` : SystemStatService.formatGigabytes(SystemStatService.memGb)
+            text: SystemStatService.formatRamDisplay({
+                                                       percent: showMemoryAsPercent,
+                                                       padding: usePadding
+                                                     })
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -667,7 +677,11 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: `${Math.round(SystemStatService.swapPercent)}%`
+            text: SystemStatService.formatRamDisplay({
+                                                       swap: true,
+                                                       percent: true,
+                                                       padding: usePadding
+                                                     })
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -734,7 +748,7 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.rxSpeed) : SystemStatService.formatSpeed(SystemStatService.rxSpeed)
+            text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.rxSpeed) : SystemStatService.formatSpeed(SystemStatService.rxSpeed).padStart(paddingSpeed, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -800,7 +814,7 @@ Item {
           // Text mode
           NText {
             visible: !compactMode
-            text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.txSpeed) : SystemStatService.formatSpeed(SystemStatService.txSpeed)
+            text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.txSpeed) : SystemStatService.formatSpeed(SystemStatService.txSpeed).padStart(paddingSpeed, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
@@ -869,7 +883,8 @@ Item {
             visible: !compactMode
             text: SystemStatService.formatDiskDisplay(diskPath, {
                                                         percent: showDiskUsageAsPercent,
-                                                        available: showDiskAvailable
+                                                        available: showDiskAvailable,
+                                                        padding: usePadding
                                                       })
             family: fontFamily
             pointSize: barFontSize

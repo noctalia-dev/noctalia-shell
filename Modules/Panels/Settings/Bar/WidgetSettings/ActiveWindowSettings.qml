@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -38,7 +39,7 @@ ColumnLayout {
     settings.useFixedWidth = valueUseFixedWidth;
     settings.colorizeIcons = valueColorizeIcons;
     settings.textColor = valueTextColor;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -62,7 +63,7 @@ ColumnLayout {
     currentKey: root.valueHideMode
     onSelected: key => {
                   root.valueHideMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -73,7 +74,7 @@ ColumnLayout {
     currentKey: valueTextColor
     onSelected: key => {
                   valueTextColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -85,7 +86,7 @@ ColumnLayout {
     checked: root.valueShowIcon
     onToggled: checked => {
                  root.valueShowIcon = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -96,7 +97,7 @@ ColumnLayout {
     checked: root.valueColorizeIcons
     onToggled: checked => {
                  root.valueColorizeIcons = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
     visible: root.valueShowIcon
   }
@@ -108,7 +109,7 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.max-width-description")
     placeholderText: widgetMetadata.maxWidth
     text: valueMaxWidth
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 
   NToggle {
@@ -118,7 +119,7 @@ ColumnLayout {
     checked: valueUseFixedWidth
     onToggled: checked => {
                  valueUseFixedWidth = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -142,7 +143,7 @@ ColumnLayout {
     currentKey: valueScrollingMode
     onSelected: key => {
                   valueScrollingMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }

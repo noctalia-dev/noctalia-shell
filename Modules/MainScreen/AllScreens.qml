@@ -54,9 +54,12 @@ Variants {
     }
 
     // Bar content in separate windows to prevent fullscreen redraws
+    // Note: Window stays alive when bar is hidden (visible=false) to avoid
+    // rapid Wayland surface destruction/creation that can crash compositors.
+    // Content is debounce-unloaded inside BarContentWindow.
     Loader {
       active: {
-        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.effectivelyVisible)
+        if (!parent.windowLoaded || !parent.shouldBeActive)
           return false;
 
         // Check if bar is configured for this screen
@@ -130,7 +133,8 @@ Variants {
     }
 
     // PopupMenuWindow - reusable popup window for both tray menus and context menus
-    // Active when bar is visible on this screen, OR when desktop widgets edit mode is active
+    // Stays alive when bar is hidden to avoid Wayland surface churn crashes.
+    // PopupMenuWindow manages its own visibility internally.
     Loader {
       active: {
         // Desktop widgets edit mode needs popup window on ALL screens
@@ -139,7 +143,7 @@ Variants {
         }
 
         // Normal bar-based condition
-        if (!parent.windowLoaded || !parent.shouldBeActive || !BarService.effectivelyVisible)
+        if (!parent.windowLoaded || !parent.shouldBeActive)
           return false;
 
         // Check if bar is configured for this screen

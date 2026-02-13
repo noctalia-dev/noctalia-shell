@@ -940,7 +940,7 @@ Item {
               delegate: Rectangle {
                 id: resultItem
                 width: searchResultsList.width - (searchResultsList.verticalScrollBarActive ? Style.marginM : 0)
-                height: resultColumn.implicitHeight + Style.marginS * 2
+                height: resultColumn.implicitHeight + Style.marginM * 2
                 radius: Style.iRadiusS
                 readonly property bool selected: index === root.searchSelectedIndex
                 readonly property bool effectiveHover: !root.ignoreMouseHover && resultMouseArea.containsMouse
@@ -957,10 +957,10 @@ Item {
                 ColumnLayout {
                   id: resultColumn
                   anchors.fill: parent
-                  anchors.leftMargin: Style.marginS
-                  anchors.rightMargin: Style.marginS
-                  anchors.topMargin: Style.marginXS
-                  anchors.bottomMargin: Style.marginXS
+                  anchors.leftMargin: Style.marginL
+                  anchors.rightMargin: Style.marginL
+                  anchors.topMargin: Style.marginM
+                  anchors.bottomMargin: Style.marginM
                   spacing: 0
 
                   NText {

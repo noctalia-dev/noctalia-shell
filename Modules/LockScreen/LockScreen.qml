@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pam
 import Quickshell.Wayland
+import "../../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Services.Compositor
 import qs.Services.Hardware
@@ -11,7 +12,6 @@ import qs.Services.Keyboard
 import qs.Services.Media
 import qs.Services.UI
 import qs.Widgets
-import "../../Helpers/Keybinds.js" as Keybinds
 
 Loader {
   id: root

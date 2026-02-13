@@ -56,26 +56,31 @@ FloatingWindow {
   // Keyboard shortcuts
   Shortcut {
     sequence: "Escape"
+    enabled: !PanelService.isKeybindRecording
     onActivated: SettingsPanelService.closeWindow()
   }
 
   Shortcut {
     sequence: "Tab"
+    enabled: !PanelService.isKeybindRecording
     onActivated: settingsContent.selectNextTab()
   }
 
   Shortcut {
     sequence: "Backtab"
+    enabled: !PanelService.isKeybindRecording
     onActivated: settingsContent.selectPreviousTab()
   }
 
   Shortcut {
     sequence: "Up"
+    enabled: !PanelService.isKeybindRecording
     onActivated: settingsContent.scrollUp()
   }
 
   Shortcut {
     sequence: "Down"
+    enabled: !PanelService.isKeybindRecording
     onActivated: settingsContent.scrollDown()
   }
 

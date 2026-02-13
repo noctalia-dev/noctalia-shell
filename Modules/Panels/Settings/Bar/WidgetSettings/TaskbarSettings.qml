@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -48,7 +49,7 @@ ColumnLayout {
     settings.titleWidth = parseInt(titleWidthInput.text) || widgetMetadata.titleWidth;
     settings.showPinnedApps = valueShowPinnedApps;
     settings.iconScale = valueIconScale;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -72,7 +73,7 @@ ColumnLayout {
     currentKey: root.valueHideMode
     onSelected: key => {
                   root.valueHideMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -83,7 +84,7 @@ ColumnLayout {
     checked: root.valueOnlySameOutput
     onToggled: checked => {
                  root.valueOnlySameOutput = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -94,7 +95,7 @@ ColumnLayout {
     checked: root.valueOnlyActiveWorkspaces
     onToggled: checked => {
                  root.valueOnlyActiveWorkspaces = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -105,7 +106,7 @@ ColumnLayout {
     checked: root.valueColorizeIcons
     onToggled: checked => {
                  root.valueColorizeIcons = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -116,7 +117,7 @@ ColumnLayout {
     checked: root.valueShowPinnedApps
     onToggled: checked => {
                  root.valueShowPinnedApps = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -130,7 +131,7 @@ ColumnLayout {
     value: root.valueIconScale
     onMoved: value => {
                root.valueIconScale = value;
-               settingsChanged(saveSettings());
+               saveSettings();
              }
     text: Math.round(root.valueIconScale * 100) + "%"
   }
@@ -142,7 +143,7 @@ ColumnLayout {
     checked: root.valueShowTitle
     onToggled: checked => {
                  root.valueShowTitle = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
     enabled: !isVerticalBar
   }
@@ -155,7 +156,7 @@ ColumnLayout {
     description: I18n.tr("bar.taskbar.title-width-description")
     text: widgetData.titleWidth || widgetMetadata.titleWidth
     placeholderText: I18n.tr("placeholders.enter-width-pixels")
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 
   NToggle {
@@ -166,7 +167,7 @@ ColumnLayout {
     checked: root.valueSmartWidth
     onToggled: checked => {
                  root.valueSmartWidth = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -181,7 +182,7 @@ ColumnLayout {
     value: root.valueMaxTaskbarWidth
     onMoved: value => {
                root.valueMaxTaskbarWidth = Math.round(value);
-               settingsChanged(saveSettings());
+               saveSettings();
              }
     text: Math.round(root.valueMaxTaskbarWidth) + "%"
   }

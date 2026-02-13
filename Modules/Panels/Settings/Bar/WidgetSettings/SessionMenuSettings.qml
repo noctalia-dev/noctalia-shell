@@ -11,6 +11,7 @@ ColumnLayout {
   width: 700
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -22,7 +23,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.iconColor = valueIconColor;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -32,7 +33,7 @@ ColumnLayout {
     currentKey: root.valueIconColor
     onSelected: key => {
                   root.valueIconColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }

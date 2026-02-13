@@ -206,6 +206,7 @@ Item {
       y: 0
       height: root.height
       policy: root.verticalPolicy
+      visible: policy === ScrollBar.AlwaysOn || root.verticalScrollBarActive
 
       contentItem: Rectangle {
         implicitWidth: root.handleWidth

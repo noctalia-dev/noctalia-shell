@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -26,7 +27,7 @@ ColumnLayout {
     settings.showIcon = valueShowIcon;
     settings.iconColor = valueIconColor;
     settings.textColor = valueTextColor;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -51,7 +52,7 @@ ColumnLayout {
     currentKey: valueDisplayMode
     onSelected: key => {
                   valueDisplayMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -61,7 +62,7 @@ ColumnLayout {
     checked: valueShowIcon
     onToggled: checked => {
                  valueShowIcon = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -72,7 +73,7 @@ ColumnLayout {
     currentKey: valueIconColor
     onSelected: key => {
                   valueIconColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -84,7 +85,7 @@ ColumnLayout {
     currentKey: valueTextColor
     onSelected: key => {
                   valueTextColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }

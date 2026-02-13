@@ -86,6 +86,49 @@ Singleton {
     return state ? state.hovered : false;
   }
 
+  // Toggle bar visibility. In auto-hide mode, toggles the auto-hide state
+  // on all screens instead of setting the global isVisible flag.
+  function toggleVisibility() {
+    if (Settings.data.bar.displayMode === "auto_hide") {
+      // Check if any screen is currently visible (not hidden)
+      var anyVisible = false;
+      for (var screenName in screenAutoHideState) {
+        if (!screenAutoHideState[screenName].hidden) {
+          anyVisible = true;
+          break;
+        }
+      }
+      // Toggle all screens
+      for (var screenName in screenAutoHideState) {
+        setScreenHidden(screenName, anyVisible);
+      }
+    } else {
+      isVisible = !isVisible;
+    }
+  }
+
+  // Show bar. In auto-hide mode, un-hides on all screens.
+  function show() {
+    if (Settings.data.bar.displayMode === "auto_hide") {
+      for (var screenName in screenAutoHideState) {
+        setScreenHidden(screenName, false);
+      }
+    } else {
+      isVisible = true;
+    }
+  }
+
+  // Hide bar. In auto-hide mode, hides on all screens.
+  function hide() {
+    if (Settings.data.bar.displayMode === "auto_hide") {
+      for (var screenName in screenAutoHideState) {
+        setScreenHidden(screenName, true);
+      }
+    } else {
+      isVisible = false;
+    }
+  }
+
   Component.onCompleted: {
     Logger.i("BarService", "Service started");
   }

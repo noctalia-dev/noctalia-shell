@@ -573,5 +573,4 @@ PanelWindow {
     enabled: root.isPanelOpen && (PanelService.openedPanel.onPageDownPressed !== undefined)
     onActivated: PanelService.openedPanel.onPageDownPressed()
   }
-
 }

@@ -21,7 +21,7 @@ ColumnLayout {
 
   property var screen
 
-  Component.onCompleted: {
+  function populateTimeOptions() {
     for (var h = 0; h < 24; h++) {
       for (var m = 0; m < 60; m += 30) {
         var hh = ("0" + h).slice(-2);
@@ -33,6 +33,10 @@ ColumnLayout {
                            });
       }
     }
+  }
+
+  Component.onCompleted: {
+    Qt.callLater(populateTimeOptions);
   }
 
   // Download popup

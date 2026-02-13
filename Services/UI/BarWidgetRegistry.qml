@@ -222,6 +222,7 @@ Singleton {
                                     "iconColor": "none",
                                     "textColor": "none",
                                     "useMonospaceFont": true,
+                                    "usePadding": true,
                                     "showCpuUsage": true,
                                     "showCpuFreq": false,
                                     "showCpuTemp": true,

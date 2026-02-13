@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -51,7 +52,7 @@ ColumnLayout {
     settings.showProgressRing = valueShowProgressRing;
     settings.compactMode = valueCompactMode;
     settings.textColor = valueTextColor;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -79,7 +80,7 @@ ColumnLayout {
     currentKey: root.valueHideMode
     onSelected: key => {
                   root.valueHideMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -89,7 +90,7 @@ ColumnLayout {
     checked: valueShowAlbumArt
     onToggled: checked => {
                  valueShowAlbumArt = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -99,7 +100,7 @@ ColumnLayout {
     checked: valueShowArtistFirst
     onToggled: checked => {
                  valueShowArtistFirst = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -109,7 +110,7 @@ ColumnLayout {
     checked: valueShowVisualizer
     onToggled: checked => {
                  valueShowVisualizer = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -134,7 +135,7 @@ ColumnLayout {
     currentKey: valueVisualizerType
     onSelected: key => {
                   valueVisualizerType = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -146,7 +147,7 @@ ColumnLayout {
     description: I18n.tr("bar.media-mini.max-width-description")
     placeholderText: widgetMetadata.maxWidth
     text: valueMaxWidth
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 
   NToggle {
@@ -155,7 +156,7 @@ ColumnLayout {
     checked: valueUseFixedWidth
     onToggled: checked => {
                  valueUseFixedWidth = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -165,7 +166,7 @@ ColumnLayout {
     checked: valueShowProgressRing
     onToggled: checked => {
                  valueShowProgressRing = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -176,7 +177,7 @@ ColumnLayout {
     currentKey: valueTextColor
     onSelected: key => {
                   valueTextColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -201,7 +202,7 @@ ColumnLayout {
     currentKey: valueScrollingMode
     onSelected: key => {
                   valueScrollingMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -223,7 +224,7 @@ ColumnLayout {
     checked: valuePanelShowAlbumArt
     onToggled: checked => {
                  valuePanelShowAlbumArt = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -233,7 +234,7 @@ ColumnLayout {
     checked: valueCompactMode
     onToggled: checked => {
                  valueCompactMode = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

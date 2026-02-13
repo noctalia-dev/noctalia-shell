@@ -45,6 +45,8 @@ Item {
   property color gradientColor: Color.mSurfaceVariant
   property real cornerRadius: 0
 
+  readonly property bool gradientsEnabled: root.showGradients && Settings.data.bar.capsuleOpacity >= 1.0
+
   readonly property real contentWidth: {
     if (!titleText.item)
       return 0;
@@ -184,7 +186,7 @@ Item {
     anchors.bottom: parent.bottom
     width: root.gradientWidth
     z: 2
-    visible: root.showGradients && root.contentWidth > root.maxWidth
+    visible: root.gradientsEnabled && root.contentWidth > root.maxWidth
     radius: root.cornerRadius
     opacity: scrollContainer.x < -1 ? 1 : 0
     gradient: Gradient {
@@ -213,7 +215,7 @@ Item {
     anchors.bottom: parent.bottom
     width: root.gradientWidth
     z: 2
-    visible: root.showGradients && root.contentWidth > root.maxWidth
+    visible: root.gradientsEnabled && root.contentWidth > root.maxWidth
     radius: root.cornerRadius
     opacity: 1 // Always show if overflowing as it loops
     gradient: Gradient {

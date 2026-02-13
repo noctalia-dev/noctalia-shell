@@ -626,60 +626,16 @@ Item {
     }
   }
 
-  // Timer to handle registration attempts
-  Timer {
-    id: registrationTimer
-    interval: 1500
-    repeat: false
-    onTriggered: {
-      // Only register if ipcIdentifier is set
-      if (ipcIdentifier && ipcIdentifier.trim() !== "") {
-        // Try to access the service through the global application object
-        try {
-          if (typeof Qt !== 'undefined' && Qt.application && Qt.application.customButtonIPCService) {
-            var service = Qt.application.customButtonIPCService;
-            var success = service.registerButton(root);
-            if (success) {
-              Logger.i("CustomButton", `Successfully registered button with identifier: '${ipcIdentifier}'`);
-            } else {
-              Logger.w("CustomButton", `Failed to register button with identifier: '${ipcIdentifier}'`);
-            }
-          } else {
-            Logger.w("CustomButton", `Service not available for button with identifier '${ipcIdentifier}'`);
-          }
-        } catch (e) {
-          Logger.w("CustomButton", `Error during registration of button with identifier '${ipcIdentifier}': ${e.message}`);
-        }
-      } else {
-        Logger.d("CustomButton", `No IPC identifier set for button, skipping registration`);
-      }
-    }
+  // Register IPC button in onLoaded (called by BarWidgetLoader after properties are set).
+  // Component.onCompleted is too early — widgetSettings depends on section/index/screen
+  // which are set by BarWidgetLoader.onLoaded after the component is created.
+  function onLoaded() {
+    if (ipcIdentifier && ipcIdentifier.trim() !== "")
+      CustomButtonIPCService.registerButton(root);
   }
 
-  // Register this button with the IPC service when component is completed
-  Component.onCompleted: {
-    registrationTimer.start();
-  }
-
-  // Unregister this button when component is destroyed
   Component.onDestruction: {
-    if (ipcIdentifier && ipcIdentifier.trim() !== "") {
-      // Try to access the service through the global application object for unregistration
-      try {
-        if (typeof Qt !== 'undefined' && Qt.application && Qt.application.customButtonIPCService) {
-          var service = Qt.application.customButtonIPCService;
-          var success = service.unregisterButton(root);
-          if (success) {
-            Logger.i("CustomButton", `Successfully unregistered button with identifier: '${ipcIdentifier}'`);
-          } else {
-            Logger.w("CustomButton", `Failed to unregister button with identifier: '${ipcIdentifier}'`);
-          }
-        } else {
-          Logger.w("CustomButton", `Service not available for unregistration of button with identifier '${ipcIdentifier}'`);
-        }
-      } catch (e) {
-        Logger.w("CustomButton", `Error during unregistration of button with identifier '${ipcIdentifier}': ${e.message}`);
-      }
-    }
+    if (ipcIdentifier && ipcIdentifier.trim() !== "")
+      CustomButtonIPCService.unregisterButton(root);
   }
 }

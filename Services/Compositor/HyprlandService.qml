@@ -160,6 +160,7 @@ Item {
   function safeUpdate() {
     safeUpdateWindows();
     safeUpdateWorkspaces();
+    workspaceChanged();
     windowListChanged();
   }
 
@@ -410,6 +411,7 @@ Item {
     enabled: initialized
     function onRawEvent(event) {
       Hyprland.refreshWorkspaces();
+      Hyprland.refreshToplevels();
       safeUpdateWorkspaces();
       workspaceChanged();
       updateTimer.restart();
