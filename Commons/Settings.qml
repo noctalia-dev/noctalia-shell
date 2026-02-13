@@ -297,6 +297,7 @@ Singleton {
         property list<string> keyRight: ["Right"]
         property list<string> keyEnter: ["Return"]
         property list<string> keyEscape: ["Esc"]
+        property list<string> keyRemove: ["Del"]
       }
     }
 

@@ -14,7 +14,7 @@ function getKeybindString(event) {
         keyName = String.fromCharCode(event.key);
     } else if (event.key >= Qt.Key_F1 && event.key <= Qt.Key_F12) {
         keyName = "F" + (event.key - Qt.Key_F1 + 1);
-    } else if (rawText && rawText.length > 0 && rawText.charCodeAt(0) > 31) {
+    } else if (rawText && rawText.length > 0 && rawText.charCodeAt(0) > 31 && rawText.charCodeAt(0) !== 127) {
         keyName = rawText.toUpperCase();
 
         if (event.modifiers & Qt.ShiftModifier) {

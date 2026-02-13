@@ -119,6 +119,9 @@
       ],
       "keyEscape": [
         "Esc"
+      ],
+      "keyRemove": [
+        "Del"
       ]
     }
   },
