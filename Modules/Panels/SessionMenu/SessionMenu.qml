@@ -104,6 +104,11 @@ SmartPanel {
       "title": I18n.tr("common.reboot"),
       "isShutdown": false
     },
+    "reboot to uefi firmware": {
+      "icon": "reboot-to-uefi"
+      "title": I18n.tr("common.reboot-to-uefi-firmware")
+      "isShutdown": false
+    },
     "logout": {
       "icon": "logout",
       "title": I18n.tr("common.logout"),
@@ -231,6 +236,9 @@ SmartPanel {
     case "reboot":
       CompositorService.reboot();
       break;
+    case "reboot-to-uefi-firmware":
+       CompositorService.reboot-to-uefi-firmware();
+       break;
     case "logout":
       CompositorService.logout();
       break;
