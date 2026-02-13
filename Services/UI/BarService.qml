@@ -155,6 +155,9 @@ Singleton {
     }
   }
 
+  // Track last workspace ID to detect actual workspace changes
+  property var lastWorkspaceId: null
+
   // Workspace switch handler - directly show bar on the focused workspace screen
   Connections {
     target: CompositorService
@@ -166,12 +169,18 @@ Singleton {
 
       var ws = CompositorService.getCurrentWorkspace();
       if (!ws || !ws.output) {
-        Logger.d("BarService", "No workspace or output found");
         return;
       }
 
+      // Only trigger if workspace actually changed
+      var currentWsId = ws.id;
+      if (currentWsId === root.lastWorkspaceId) {
+        return;
+      }
+      root.lastWorkspaceId = currentWsId;
+
       var screenName = ws.output || "";
-      Logger.d("BarService", "Workspace switched on screen:", screenName);
+      Logger.d("BarService", "Workspace switched to:", currentWsId, "on screen:", screenName);
 
       // Show bar immediately
       setScreenHidden(screenName, false);
