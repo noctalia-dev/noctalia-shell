@@ -14,7 +14,7 @@ function getKeybindString(event) {
         keyName = String.fromCharCode(event.key);
     } else if (event.key >= Qt.Key_F1 && event.key <= Qt.Key_F12) {
         keyName = "F" + (event.key - Qt.Key_F1 + 1);
-    } else if (rawText && rawText.length > 0 && rawText.charCodeAt(0) > 31) {
+    } else if (rawText && rawText.length > 0 && rawText.charCodeAt(0) > 31 && rawText.charCodeAt(0) !== 127) {
         keyName = rawText.toUpperCase();
 
         if (event.modifiers & Qt.ShiftModifier) {
@@ -108,4 +108,63 @@ function checkKey(event, settingName, settings) {
             return true;
     }
     return false;
+}
+
+/**
+ * Check if a keybind string conflicts with any other existing keybinds.
+ * @param {string} keyStr - The keybind string to check (e.g., "Ctrl+A").
+ * @param {string} currentPath - The settings path of the keybind being edited (to skip checking itself).
+ * @param {object} data - The settings data object (from Settings.data).
+ * @returns {string|null} - The name of the conflicting action, or null if no conflict.
+ */
+function getKeybindConflict(keyStr, currentPath, data) {
+    if (!keyStr || !data) return null;
+
+    const searchKey = String(keyStr).trim().toLowerCase();
+
+    // 1. Check navigation keybinds
+    const navKeybinds = data.general ? data.general.keybinds : null;
+    const navMap = {
+        "keyUp": "Navigation: Up",
+        "keyDown": "Navigation: Down",
+        "keyLeft": "Navigation: Left",
+        "keyRight": "Navigation: Right",
+        "keyEnter": "Navigation: Enter",
+        "keyEscape": "Navigation: Escape"
+    };
+
+    if (navKeybinds) {
+        for (const prop in navMap) {
+            const fullPath = "general.keybinds." + prop;
+            if (fullPath === currentPath) continue;
+
+            const boundKeys = navKeybinds[prop];
+            if (boundKeys && boundKeys.length !== undefined) {
+                for (let i = 0; i < boundKeys.length; i++) {
+                    if (String(boundKeys[i]).trim().toLowerCase() === searchKey) {
+                        return navMap[prop];
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Check session menu power options
+    const sessionMenu = data.sessionMenu;
+    if (sessionMenu && sessionMenu.powerOptions) {
+        const powerOptions = sessionMenu.powerOptions;
+        for (let i = 0; i < powerOptions.length; i++) {
+            const entry = powerOptions[i];
+            const fullPath = "sessionMenu.powerOptions[" + i + "].keybind";
+            if (fullPath === currentPath) continue;
+
+            if (entry.keybind && String(entry.keybind).trim().toLowerCase() === searchKey) {
+                // Capitalize action name
+                const actionName = entry.action ? entry.action.charAt(0).toUpperCase() + entry.action.slice(1) : "Unknown";
+                return "Session Menu: " + actionName;
+            }
+        }
+    }
+
+    return null;
 }

@@ -634,6 +634,10 @@
       "grid": "網格",
       "list": "列表"
     },
+    "notification-density": {
+      "compact": "緊湊",
+      "default": "預設"
+    },
     "scrolling-modes": {
       "always": "總是捲動",
       "hover": "游標移過時捲動",
@@ -669,6 +673,8 @@
       "contributors-description": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
       "contributors-description-plural": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
       "copy-info": "複製資訊",
+      "debug-disabled": "偵錯模式已停用",
+      "debug-enabled": "偵錯模式已啟用",
       "info-copied": "資訊已複製至剪貼簿",
       "noctalia-desc": "一個為 Wayland 精心打造, 兼具簡潔及流暢的桌面介面, 使用 Quickshell 建置",
       "noctalia-git-commit": "Git commit:",
@@ -1030,6 +1036,8 @@
       "fonts-monospace-search-placeholder": "搜尋等寬字型...",
       "fonts-reset-scaling": "重設文字大小",
       "fonts-title": "字型",
+      "keybinds-conflict-description": "此按鍵組合已分配給 {action}。",
+      "keybinds-conflict-title": "按鍵綁定衝突",
       "keybinds-description": "配置面板和啟動器的全域導航鍵。",
       "keybinds-down": "下移",
       "keybinds-enter": "確認 / 動作",
@@ -1126,6 +1134,8 @@
       "settings-density-description": "調整應用程式圖示大小和 Launcher 密度。",
       "settings-density-label": "密度",
       "settings-desc": "自訂啟動器的外觀及行為",
+      "settings-enable-session-search-description": "在 Launcher 中搜尋時顯示工作階段動作（鎖定、關機、重新啟動等）。",
+      "settings-enable-session-search-label": "啟用工作階段搜尋",
       "settings-enable-settings-search-description": "在啟動器中搜尋時顯示設定結果。",
       "settings-enable-settings-search-label": "啟用設定搜尋",
       "settings-enable-windows-search-description": "搜尋並聚焦作用中視窗。",
@@ -1247,6 +1257,8 @@
       "monitors-desc": "只在特定的顯示器顯示通知, 如果全部取消勾選則會顯示在所有顯示器",
       "settings-always-on-top-description": "在全螢幕視窗與其他層級上方顯示通知。",
       "settings-background-opacity-description": "調整通知背景的不透明度",
+      "settings-density-description": "選擇通知卡密度。",
+      "settings-density-label": "密度",
       "settings-desc": "設定通知的外觀及行為",
       "settings-do-not-disturb-description": "當啟用時, 停止彈出所有通知",
       "settings-enabled-description": "啟用或完全停用通知的 daemon, 需要重新啟動 Noctalia 介面",
@@ -1333,6 +1345,8 @@
       "collision-already-installed": "這個模組已經安裝過了",
       "collision-custom-version-exists": "已經安裝了來自 \"{source}\" 的自訂版本",
       "collision-official-version-exists": "已經安裝了這個模組的官方版本",
+      "development-disable": "停用此插件的開發者模式",
+      "development-enable": "為此外掛程式啟用開發模式。",
       "filter-downloaded": "已下載",
       "filter-not-downloaded": "未下載",
       "filter-tags-description": "以分類或下載狀態篩選外掛模組",
@@ -1413,9 +1427,7 @@
       "large-buttons-style-label": "以大按鈕顯示",
       "position-description": "選擇工作階段選單在哪裡顯示",
       "show-header-description": "在工作階段選單顯示標題及關閉按鈕",
-      "show-header-label": "顯示標題列",
-      "show-number-labels-description": "在選項上顯示數字標記並啟用以數字鍵快速選擇",
-      "show-number-labels-label": "顯示數字標記"
+      "show-header-label": "顯示標題列"
     },
     "system-monitor": {
       "critical-color-label": "危急顏色",
@@ -1498,6 +1510,8 @@
       "look-feel-fill-color-description": "挑選一個桌布底下可能會顯示的填充實色",
       "look-feel-fill-mode-description": "選擇圖像該以什麼方式縮放來符合顯示器的解析度",
       "look-feel-fill-mode-label": "填充模式",
+      "look-feel-skip-startup-transition-description": "在 shell 啟動時跳過桌布動畫。",
+      "look-feel-skip-startup-transition-label": "跳過啟動過場動畫",
       "look-feel-title": "外觀及風格",
       "look-feel-transition-duration-description": "設定轉場動畫使用的秒數",
       "look-feel-transition-duration-label": "轉場長度",
@@ -1536,6 +1550,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "新增按鍵綁定",
     "command-example": "echo \"Hello World\"",
     "enter-command": "輸入要執行的指令 (程式或自訂腳本)",
     "enter-ipc-identifier": "輸入 IPC 命令的唯一識別碼",
@@ -1543,6 +1558,7 @@
     "enter-text-to-collapse": "例如: 'nothing is playing'. 也可用正規表示式 /regex/ 指定格式",
     "enter-tooltip": "輸入提示框文字",
     "enter-width-pixels": "以像素 (px) 輸入寬度",
+    "keybind-recording": "正在錄製按鍵綁定...",
     "search": "在這裡搜尋...",
     "search-icons": "例如: noctalia, niri, battery, cloud",
     "search-launcher": "搜尋所有項目... 或輸入 > 使用指令",
@@ -1788,6 +1804,8 @@
       "categories-anime": "動漫",
       "categories-label": "分類",
       "categories-people": "人物",
+      "color-extraction-disabled": "使用桌布顏色擷取",
+      "color-extraction-enabled": "使用預設配色方案",
       "order-asc": "升序",
       "order-desc": "降序",
       "order-label": "排序",

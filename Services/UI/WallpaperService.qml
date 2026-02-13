@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Theming
 import qs.Services.UI
 
 Singleton {
@@ -345,17 +346,35 @@ Singleton {
       Settings.data.wallpaper.useSolidColor = false;
     }
 
+    // Save current favorite color schemes before switching away.
+    // This must happen before applyFavoriteTheme (called by the UI)
+    // overwrites the settings that _createFavoriteEntry reads.
+    _saveOutgoingFavorites(path, screenName);
+
     if (screenName !== undefined) {
       _setWallpaper(screenName, path);
     } else {
-      // If no screenName specified change for all screens
-      // Merge connected screens and cached screens to include disconnected monitors
       var allScreenNames = new Set(Object.keys(currentWallpapers));
       for (var i = 0; i < Quickshell.screens.length; i++) {
         allScreenNames.add(Quickshell.screens[i].name);
       }
       allScreenNames.forEach(name => _setWallpaper(name, path));
     }
+  }
+
+  // -------------------------------------------------------------------
+  // Save the color scheme of any favorited wallpapers that are about
+  // to be replaced, while the current settings still reflect them.
+  function _saveOutgoingFavorites(newPath, screenName) {
+    var outgoing = screenName !== undefined ? [currentWallpapers[screenName]] : Object.values(currentWallpapers);
+
+    var unique = [...new Set(outgoing)];
+
+    unique.forEach(function (path) {
+      if (path && path !== newPath && isFavorite(path)) {
+        updateFavoriteColorScheme(path);
+      }
+    });
   }
 
   // -------------------------------------------------------------------
@@ -369,14 +388,8 @@ Singleton {
       return;
     }
 
-    //Logger.i("Wallpaper", "setWallpaper on", screenName, ": ", path)
-
-    // Check if wallpaper actually changed
     var oldPath = currentWallpapers[screenName] || "";
-    var wallpaperChanged = (oldPath !== path);
-
-    if (!wallpaperChanged) {
-      // No change needed
+    if (oldPath === path) {
       return;
     }
 
@@ -901,6 +914,133 @@ Singleton {
   // -------------------------------------------------------------------
   function scanDirectoryRecursive(screenName, directory) {
     _scanDirectoryInternal(screenName, directory, true, true, null);
+  }
+
+  // -------------------------------------------------------------------
+  // Favorites
+  // -------------------------------------------------------------------
+  readonly property int _favoriteNotFound: -1
+
+  // -------------------------------------------------------------------
+  function _findFavoriteIndex(path) {
+    var favorites = Settings.data.wallpaper.favorites;
+    for (var i = 0; i < favorites.length; i++) {
+      if (favorites[i].path === path) {
+        return i;
+      }
+    }
+    return _favoriteNotFound;
+  }
+
+  // -------------------------------------------------------------------
+  function _createFavoriteEntry(path) {
+    return {
+      "path": path,
+      "colorScheme": Settings.data.colorSchemes.predefinedScheme,
+      "darkMode": Settings.data.colorSchemes.darkMode,
+      "useWallpaperColors": Settings.data.colorSchemes.useWallpaperColors,
+      "generationMethod": Settings.data.colorSchemes.generationMethod,
+      "paletteColors": [Color.mPrimary.toString(), Color.mSecondary.toString(), Color.mTertiary.toString(), Color.mError.toString()]
+    };
+  }
+
+  // -------------------------------------------------------------------
+  function isFavorite(path) {
+    return _findFavoriteIndex(path) !== _favoriteNotFound;
+  }
+
+  // -------------------------------------------------------------------
+  function getFavorite(path) {
+    var favoriteIndex = _findFavoriteIndex(path);
+    if (favoriteIndex === _favoriteNotFound)
+      return null;
+    return Settings.data.wallpaper.favorites[favoriteIndex];
+  }
+
+  // -------------------------------------------------------------------
+  function toggleFavorite(path) {
+    var favorites = Settings.data.wallpaper.favorites.slice();
+    var existingIndex = _findFavoriteIndex(path);
+
+    if (existingIndex !== _favoriteNotFound) {
+      favorites.splice(existingIndex, 1);
+      Logger.d("Wallpaper", "Removed favorite:", path);
+    } else {
+      favorites.push(_createFavoriteEntry(path));
+      Logger.d("Wallpaper", "Added favorite:", path);
+    }
+
+    Settings.data.wallpaper.favorites = favorites;
+    favoritesChanged(path);
+  }
+
+  // -------------------------------------------------------------------
+  function applyFavoriteTheme(path, screenName) {
+    // Only apply theme if the wallpaper is on the monitor driving colors
+    var effectiveMonitor = Settings.data.colorSchemes.monitorForColors;
+    if (effectiveMonitor === "" || effectiveMonitor === undefined) {
+      effectiveMonitor = Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
+    }
+    if (screenName !== undefined && screenName !== effectiveMonitor) {
+      return;
+    }
+
+    var favorite = getFavorite(path);
+    if (!favorite)
+      return;
+
+    // Track which auto-triggered properties are changing to avoid redundant generation calls
+    var generationMethodChanging = Settings.data.colorSchemes.generationMethod !== favorite.generationMethod;
+    var darkModeChanging = Settings.data.colorSchemes.darkMode !== favorite.darkMode;
+
+    // Update settings to match the favorite's saved color scheme
+    Settings.data.colorSchemes.useWallpaperColors = favorite.useWallpaperColors;
+    Settings.data.colorSchemes.predefinedScheme = favorite.colorScheme;
+    Settings.data.colorSchemes.generationMethod = favorite.generationMethod;
+    Settings.data.colorSchemes.darkMode = favorite.darkMode;
+
+    // Only explicitly trigger generation if the auto-triggered properties didn't change.
+    // If generationMethod or darkMode changed, their change handlers already called generate().
+    if (!generationMethodChanging && !darkModeChanging) {
+      AppThemeService.generate();
+    }
+  }
+
+  // -------------------------------------------------------------------
+  function updateFavoriteColorScheme(path) {
+    var existingIndex = _findFavoriteIndex(path);
+    if (existingIndex === _favoriteNotFound)
+      return;
+
+    var favorites = Settings.data.wallpaper.favorites.slice();
+    favorites[existingIndex] = _createFavoriteEntry(path);
+    Settings.data.wallpaper.favorites = favorites;
+    Logger.d("Wallpaper", "Updated color scheme for favorite:", path);
+    favoriteDataUpdated(path);
+  }
+
+  signal favoritesChanged(string path)
+  signal favoriteDataUpdated(string path)
+
+  // Auto-update favorite palette colors when theme colors finish transitioning
+  Connections {
+    target: Color
+    function onIsTransitioningChanged() {
+      if (!Color.isTransitioning) {
+        _updateCurrentWallpaperFavorites();
+      }
+    }
+  }
+
+  function _updateCurrentWallpaperFavorites() {
+    var effectiveMonitor = Settings.data.colorSchemes.monitorForColors;
+    if (effectiveMonitor === "" || effectiveMonitor === undefined) {
+      effectiveMonitor = Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
+    }
+    var wp = getWallpaper(effectiveMonitor);
+    if (wp && isFavorite(wp)) {
+      updateFavoriteColorScheme(wp);
+    }
   }
 
   // -------------------------------------------------------------------

@@ -71,10 +71,6 @@ Rectangle {
         TooltipService.hide();
       }
       root.clicked();
-      // Update parent NTabBar's currentIndex
-      if (root.parent && root.parent.parent && root.parent.parent.currentIndex !== undefined) {
-        root.parent.parent.currentIndex = root.tabIndex;
-      }
     }
   }
 }

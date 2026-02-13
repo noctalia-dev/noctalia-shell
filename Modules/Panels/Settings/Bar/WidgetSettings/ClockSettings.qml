@@ -11,6 +11,7 @@ ColumnLayout {
   width: 700
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -53,7 +54,7 @@ ColumnLayout {
     settings.formatHorizontal = valueFormatHorizontal.trim();
     settings.formatVertical = valueFormatVertical.trim();
     settings.tooltipFormat = valueTooltipFormat.trim();
-    return settings;
+    settingsChanged(settings);
   }
 
   // Function to insert token at cursor position in the focused input
@@ -90,7 +91,7 @@ ColumnLayout {
     currentKey: valueClockColor
     onSelected: key => {
                   valueClockColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -102,7 +103,7 @@ ColumnLayout {
     checked: valueUseCustomFont
     onToggled: checked => {
                  valueUseCustomFont = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -119,7 +120,7 @@ ColumnLayout {
     minimumWidth: 300
     onSelected: function (key) {
       valueCustomFont = key;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -154,7 +155,7 @@ ColumnLayout {
         placeholderText: "HH:mm ddd, MMM dd"
         text: valueFormatHorizontal
         onTextChanged: valueFormatHorizontal = text
-        onEditingFinished: settingsChanged(saveSettings())
+        onEditingFinished: saveSettings()
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {
@@ -179,7 +180,7 @@ ColumnLayout {
         placeholderText: "HH mm dd MM"
         text: valueFormatVertical
         onTextChanged: valueFormatVertical = text
-        onEditingFinished: settingsChanged(saveSettings())
+        onEditingFinished: saveSettings()
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {
@@ -199,7 +200,7 @@ ColumnLayout {
         placeholderText: "HH:mm, ddd MMM dd"
         text: valueTooltipFormat
         onTextChanged: valueTooltipFormat = text
-        onEditingFinished: settingsChanged(saveSettings())
+        onEditingFinished: saveSettings()
         Component.onCompleted: {
           if (inputItem) {
             inputItem.onActiveFocusChanged.connect(function () {

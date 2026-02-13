@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
+import "../../../Helpers/Keybinds.js" as Keybinds
 
 import "Providers"
 import qs.Commons
@@ -10,7 +11,6 @@ import qs.Services.Keyboard
 import qs.Services.Noctalia
 import qs.Services.UI
 import qs.Widgets
-import "../../../Helpers/Keybinds.js" as Keybinds
 
 // Core launcher logic and UI - shared between SmartPanel (Launcher.qml) and overlay (LauncherOverlayWindow.qml)
 Rectangle {

@@ -58,7 +58,7 @@ Item {
 
   // Initialize provider
   function init() {
-    Logger.i("ClipboardProvider", "Initialized");
+    Logger.d("ClipboardProvider", "Initialized");
     // Pre-load clipboard data if service is active
     if (ClipboardService.active) {
       ClipboardService.list(100);

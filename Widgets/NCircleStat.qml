@@ -81,6 +81,10 @@ Item {
     layer.enabled: true
     layer.smooth: true
 
+    // Hide until first paint to avoid white FBO flash
+    visible: false
+    onPainted: visible = true
+
     Component.onCompleted: {
       requestPaint();
     }

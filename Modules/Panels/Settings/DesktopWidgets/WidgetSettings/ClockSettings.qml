@@ -38,7 +38,7 @@ ColumnLayout {
     settings.useCustomFont = valueUseCustomFont;
     settings.customFont = valueCustomFont;
     settings.format = valueFormat.trim();
-    return settings;
+    settingsChanged(settings);
   }
 
   // Function to insert token at cursor position in the focused input
@@ -65,7 +65,7 @@ ColumnLayout {
 
       // Ensure the input keeps focus
       input.focus = true;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -95,7 +95,7 @@ ColumnLayout {
     ]
     onSelected: key => {
                   valueClockStyle = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -127,7 +127,7 @@ ColumnLayout {
     currentKey: valueClockColor
     onSelected: key => {
                   valueClockColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -139,7 +139,7 @@ ColumnLayout {
     checked: valueUseCustomFont
     onToggled: checked => {
                  valueUseCustomFont = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -156,7 +156,7 @@ ColumnLayout {
     minimumWidth: 300
     onSelected: function (key) {
       valueCustomFont = key;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -288,7 +288,7 @@ ColumnLayout {
     checked: valueShowBackground
     onToggled: checked => {
                  valueShowBackground = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -300,7 +300,7 @@ ColumnLayout {
     checked: valueRoundedCorners
     onToggled: checked => {
                  valueRoundedCorners = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

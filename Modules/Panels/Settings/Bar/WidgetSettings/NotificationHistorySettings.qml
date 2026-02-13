@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -28,7 +29,7 @@ ColumnLayout {
     settings.hideWhenZeroUnread = valueHideWhenZeroUnread;
     settings.unreadBadgeColor = valueUnreadBadgeColor;
     settings.iconColor = valueIconColor;
-    return settings;
+    settingsChanged(settings);
   }
 
   NToggle {
@@ -37,7 +38,7 @@ ColumnLayout {
     checked: valueShowUnreadBadge
     onToggled: checked => {
                  valueShowUnreadBadge = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -48,7 +49,7 @@ ColumnLayout {
     currentKey: valueIconColor
     onSelected: key => {
                   valueIconColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -60,7 +61,7 @@ ColumnLayout {
     currentKey: valueUnreadBadgeColor
     onSelected: key => {
                   valueUnreadBadgeColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
     visible: valueShowUnreadBadge
@@ -72,7 +73,7 @@ ColumnLayout {
     checked: valueHideWhenZero
     onToggled: checked => {
                  valueHideWhenZero = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
     visible: !valueHideWhenZeroUnread
   }
@@ -83,7 +84,7 @@ ColumnLayout {
     checked: valueHideWhenZeroUnread
     onToggled: checked => {
                  valueHideWhenZeroUnread = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

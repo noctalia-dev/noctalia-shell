@@ -99,8 +99,8 @@
     "clockStyle": "custom",
     "clockFormat": "hh\\nmm",
     "lockScreenMonitors": [],
-    "lockScreenBlur": 0.0,
-    "lockScreenTint": 0.0,
+    "lockScreenBlur": 0,
+    "lockScreenTint": 0,
     "keybinds": {
       "keyUp": [
         "Up"
@@ -119,6 +119,9 @@
       ],
       "keyEscape": [
         "Esc"
+      ],
+      "keyRemove": [
+        "Del"
       ]
     }
   },
@@ -185,6 +188,7 @@
     "randomIntervalSec": 300,
     "transitionDuration": 1500,
     "transitionType": "random",
+    "skipStartupTransition": false,
     "transitionEdgeSmoothness": 0.05,
     "panelPosition": "follow_bar",
     "hideWallpaperFilenames": false,
@@ -201,7 +205,8 @@
     "wallhavenResolutionMode": "atleast",
     "wallhavenResolutionWidth": "",
     "wallhavenResolutionHeight": "",
-    "sortOrder": "name"
+    "sortOrder": "name",
+    "favorites": []
   },
   "appLauncher": {
     "enableClipboardHistory": false,
@@ -223,6 +228,7 @@
     "showIconBackground": false,
     "enableSettingsSearch": true,
     "enableWindowsSearch": true,
+    "enableSessionSearch": true,
     "ignoreMouseInput": false,
     "screenshotAnnotationTool": "",
     "overviewLayer": false,
@@ -348,7 +354,6 @@
     "showHeader": true,
     "largeButtonsStyle": true,
     "largeButtonsLayout": "single-row",
-    "showNumberLabels": true,
     "powerOptions": [
       {
         "action": "lock",
@@ -384,6 +389,7 @@
   },
   "notifications": {
     "enabled": true,
+    "density": "default",
     "monitors": [],
     "location": "top_right",
     "overlayLayer": true,

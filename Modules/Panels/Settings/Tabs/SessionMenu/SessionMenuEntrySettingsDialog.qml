@@ -159,9 +159,11 @@ Popup {
         id: keybindRecorder
         Layout.fillWidth: true
         label: I18n.tr("common.keybind")
-        description: I18n.tr("panels.session-menu.entry-settings-keybind-description")
+        description: I18n.tr("placeholders.keybind-recording")
         allowEmpty: true
+        maxKeybinds: 1
         currentKeybinds: keybindInputText ? [keybindInputText] : []
+        settingsPath: "sessionMenu.powerOptions[" + root.entryIndex + "].keybind"
         onKeybindsChanged: newKeybinds => {
                              keybindInputText = newKeybinds.length > 0 ? newKeybinds[0] : "";
                              root.save();

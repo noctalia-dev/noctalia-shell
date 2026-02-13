@@ -331,11 +331,80 @@ SmartPanel {
                     id: notificationDelegate
                     width: parent.width
                     visible: panelContent.isInCurrentRange(model.timestamp)
-                    height: visible ? contentColumn.height + Style.marginXL : 0
+                    height: visible && !isRemoving ? contentColumn.height + Style.marginXL : 0
 
                     property string notificationId: model.id
                     property bool isExpanded: scrollView.expandedId === notificationId
                     property bool canExpand: summaryText.truncated || bodyText.truncated
+                    property real swipeOffset: 0
+                    property real pressGlobalX: 0
+                    property real pressGlobalY: 0
+                    property bool isSwiping: false
+                    property bool suppressClick: false
+                    property bool isRemoving: false
+                    readonly property real swipeStartThreshold: Math.round(16 * Style.uiScaleRatio)
+                    readonly property real swipeDismissThreshold: Math.max(110, width * 0.3)
+                    readonly property int removeAnimationDuration: Style.animationNormal
+
+                    transform: Translate {
+                      x: notificationDelegate.swipeOffset
+                    }
+
+                    function dismissBySwipe() {
+                      if (isRemoving)
+                        return;
+                      isRemoving = true;
+                      isSwiping = false;
+                      suppressClick = true;
+
+                      if (Settings.data.general.animationDisabled) {
+                        NotificationService.removeFromHistory(notificationId);
+                        return;
+                      }
+
+                      swipeOffset = swipeOffset >= 0 ? width + Style.marginL : -width - Style.marginL;
+                      opacity = 0;
+                      removeTimer.restart();
+                    }
+
+                    Timer {
+                      id: removeTimer
+                      interval: notificationDelegate.removeAnimationDuration
+                      repeat: false
+                      onTriggered: NotificationService.removeFromHistory(notificationId)
+                    }
+
+                    Behavior on swipeOffset {
+                      enabled: !Settings.data.general.animationDisabled && !notificationDelegate.isSwiping
+                      NumberAnimation {
+                        duration: notificationDelegate.removeAnimationDuration
+                        easing.type: Easing.OutCubic
+                      }
+                    }
+
+                    Behavior on opacity {
+                      enabled: !Settings.data.general.animationDisabled
+                      NumberAnimation {
+                        duration: notificationDelegate.removeAnimationDuration
+                        easing.type: Easing.OutCubic
+                      }
+                    }
+
+                    Behavior on height {
+                      enabled: !Settings.data.general.animationDisabled
+                      NumberAnimation {
+                        duration: notificationDelegate.removeAnimationDuration
+                        easing.type: Easing.OutCubic
+                      }
+                    }
+
+                    Behavior on y {
+                      enabled: !Settings.data.general.animationDisabled
+                      NumberAnimation {
+                        duration: notificationDelegate.removeAnimationDuration
+                        easing.type: Easing.OutCubic
+                      }
+                    }
 
                     // Parse actions safely
                     property var actionsList: {
@@ -363,18 +432,85 @@ SmartPanel {
 
                     // Click to expand/collapse
                     MouseArea {
+                      id: historyInteractionArea
                       anchors.fill: parent
                       anchors.rightMargin: Style.baseWidgetSize
-                      enabled: notificationDelegate.canExpand
-                      cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                      onClicked: {
-                        if (scrollView.expandedId === notificationId) {
-                          scrollView.expandedId = "";
-                        } else {
-                          scrollView.expandedId = notificationId;
-                        }
+                      enabled: !notificationDelegate.isRemoving
+                      cursorShape: notificationDelegate.canExpand ? Qt.PointingHandCursor : Qt.ArrowCursor
+                      onPressed: mouse => {
+                                   if (mouse.button !== Qt.LeftButton)
+                                   return;
+                                   const globalPoint = historyInteractionArea.mapToGlobal(mouse.x, mouse.y);
+                                   notificationDelegate.pressGlobalX = globalPoint.x;
+                                   notificationDelegate.pressGlobalY = globalPoint.y;
+                                   notificationDelegate.isSwiping = false;
+                                   notificationDelegate.suppressClick = false;
+                                 }
+                      onPositionChanged: mouse => {
+                                           if (!(mouse.buttons & Qt.LeftButton) || notificationDelegate.isRemoving)
+                                           return;
+
+                                           const globalPoint = historyInteractionArea.mapToGlobal(mouse.x, mouse.y);
+                                           const deltaX = globalPoint.x - notificationDelegate.pressGlobalX;
+                                           const deltaY = globalPoint.y - notificationDelegate.pressGlobalY;
+
+                                           if (!notificationDelegate.isSwiping) {
+                                             if (Math.abs(deltaX) < notificationDelegate.swipeStartThreshold)
+                                             return;
+
+                                             // Only start a swipe-dismiss when horizontal movement is dominant.
+                                             if (Math.abs(deltaX) <= Math.abs(deltaY) * 1.15) {
+                                               notificationDelegate.suppressClick = true;
+                                               return;
+                                             }
+                                             notificationDelegate.isSwiping = true;
+                                           }
+
+                                           notificationDelegate.swipeOffset = deltaX;
+                                         }
+                      onReleased: mouse => {
+                                    if (mouse.button !== Qt.LeftButton)
+                                    return;
+
+                                    if (notificationDelegate.isSwiping) {
+                                      if (Math.abs(notificationDelegate.swipeOffset) >= notificationDelegate.swipeDismissThreshold) {
+                                        notificationDelegate.dismissBySwipe();
+                                      } else {
+                                        notificationDelegate.swipeOffset = 0;
+                                      }
+                                      notificationDelegate.suppressClick = true;
+                                      notificationDelegate.isSwiping = false;
+                                      return;
+                                    }
+
+                                    if (!notificationDelegate.canExpand || notificationDelegate.suppressClick)
+                                    return;
+
+                                    if (scrollView.expandedId === notificationId) {
+                                      scrollView.expandedId = "";
+                                    } else {
+                                      scrollView.expandedId = notificationId;
+                                    }
+                                  }
+                      onCanceled: {
+                        notificationDelegate.isSwiping = false;
+                        notificationDelegate.swipeOffset = 0;
+                        notificationDelegate.suppressClick = true;
                       }
                     }
+
+                    onVisibleChanged: {
+                      if (!visible) {
+                        notificationDelegate.isSwiping = false;
+                        notificationDelegate.suppressClick = false;
+                        notificationDelegate.swipeOffset = 0;
+                        notificationDelegate.opacity = 1;
+                        notificationDelegate.isRemoving = false;
+                        removeTimer.stop();
+                      }
+                    }
+
+                    Component.onDestruction: removeTimer.stop()
 
                     Column {
                       id: contentColumn

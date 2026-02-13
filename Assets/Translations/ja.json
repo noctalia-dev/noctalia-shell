@@ -634,6 +634,10 @@
       "grid": "グリッド",
       "list": "リスト"
     },
+    "notification-density": {
+      "compact": "コンパクト",
+      "default": "デフォルト"
+    },
     "scrolling-modes": {
       "always": "常にスクロール",
       "hover": "ホバー時にスクロール",
@@ -669,6 +673,8 @@
       "contributors-description": "{count}人の<b>素晴らしい</b>コントリビューターに感謝！",
       "contributors-description-plural": "{count}人の<b>素晴らしい</b>コントリビューターに感謝！",
       "copy-info": "情報をコピー",
+      "debug-disabled": "デバッグモードが無効になりました",
+      "debug-enabled": "デバッグモードが有効です",
       "info-copied": "クリップボードにコピーしました",
       "noctalia-desc": "Wayland のために丁寧に作り込まれた、Quickshell 製の洗練されたミニマルなデスクトップシェル。",
       "noctalia-git-commit": "Git コミット：",
@@ -1030,6 +1036,8 @@
       "fonts-monospace-search-placeholder": "等幅フォントを検索...",
       "fonts-reset-scaling": "サイズ設定をリセット",
       "fonts-title": "フォント",
+      "keybinds-conflict-description": "このキーの組み合わせはすでに{action}に割り当てられています。",
+      "keybinds-conflict-title": "キーバインドの競合",
       "keybinds-description": "パネルとランチャーのグローバルナビゲーションキーを設定します。",
       "keybinds-down": "下に移動",
       "keybinds-enter": "確認 / アクション",
@@ -1126,6 +1134,8 @@
       "settings-density-description": "アプリケーションアイコンのサイズとLauncherの密度を調整します。",
       "settings-density-label": "密度",
       "settings-desc": "ランチャーの挙動と外観をカスタマイズします。",
+      "settings-enable-session-search-description": "Launcherで検索する際に、セッションアクション（ロック、シャットダウン、再起動など）を表示する。",
+      "settings-enable-session-search-label": "セッション検索を有効にする",
       "settings-enable-settings-search-description": "ランチャーで検索する際に設定結果を表示する。",
       "settings-enable-settings-search-label": "設定検索を有効にする",
       "settings-enable-windows-search-description": "アクティブなウィンドウを検索してフォーカスします。",
@@ -1247,6 +1257,8 @@
       "monitors-desc": "通知を表示するディスプレイを選択します。未選択の場合は全てに表示されます。",
       "settings-always-on-top-description": "全画面ウィンドウや他のレイヤーよりも手前に通知を表示します。",
       "settings-background-opacity-description": "通知の背景の不透明度を調整します。",
+      "settings-density-description": "通知カードの密度を選択してください。",
+      "settings-density-label": "密度",
       "settings-desc": "通知の外観と挙動を設定します。",
       "settings-do-not-disturb-description": "有効にすると、すべての通知ポップアップを無効にします。",
       "settings-enabled-description": "通知デーモンを有効化・無効化します（Noctalia shellの再起動が必要です）。",
@@ -1333,6 +1345,8 @@
       "collision-already-installed": "このプラグインはすでにインストールされています",
       "collision-custom-version-exists": "「{source}」 発 の カスタム版 は 既に インストール されています",
       "collision-official-version-exists": "このプラグインの公式バージョンはすでにインストールされています",
+      "development-disable": "このプラグインの開発者モードを無効にする",
+      "development-enable": "このプラグインの開発モードを有効にする。",
       "filter-downloaded": "ダウンロード済み",
       "filter-not-downloaded": "未ダウンロード",
       "filter-tags-description": "カテゴリーまたはダウンロード状況でプラグインを絞り込む。",
@@ -1413,9 +1427,7 @@
       "large-buttons-style-label": "大きなボタンのスタイル",
       "position-description": "セッションメニューパネルの表示位置を選択します。",
       "show-header-description": "セッションメニューの上部にタイトルと閉じるボタンを表示します。",
-      "show-header-label": "ヘッダーを表示",
-      "show-number-labels-description": "ボタンに数字ラベル（1-2-3-4...）を表示し、クイック選択用の数字キーバインドを有効にします。",
-      "show-number-labels-label": "数字ラベルを表示"
+      "show-header-label": "ヘッダーを表示"
     },
     "system-monitor": {
       "critical-color-label": "危険時の色",
@@ -1498,6 +1510,8 @@
       "look-feel-fill-color-description": "壁紙の背景に表示される塗りつぶし色を選択します。",
       "look-feel-fill-mode-description": "画像をディスプレイの解像度に合わせる方法を選択してください。",
       "look-feel-fill-mode-label": "配置方法",
+      "look-feel-skip-startup-transition-description": "シェル起動時に壁紙アニメーションをスキップする。",
+      "look-feel-skip-startup-transition-label": "起動時のトランジションをスキップ",
       "look-feel-title": "表示と演出",
       "look-feel-transition-duration-description": "切り替えアニメーションにかかる時間（秒）。",
       "look-feel-transition-duration-label": "切り替え時間",
@@ -1536,6 +1550,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "新しいキーバインドを追加",
     "command-example": "echo \"Hello World\"",
     "enter-command": "実行するコマンドを入力（アプリまたはスクリプト）",
     "enter-ipc-identifier": "IPCコマンドの一意の識別子を入力してください",
@@ -1543,6 +1558,7 @@
     "enter-text-to-collapse": "例：'nothing is playing'。正規表現 (/.../) も使用できます。",
     "enter-tooltip": "ツールチップを入力",
     "enter-width-pixels": "幅を入力（ピクセル）",
+    "keybind-recording": "キーバインドを記録中...",
     "search": "検索...",
     "search-icons": "例：noctalia, niri, battery, cloud",
     "search-launcher": "項目を検索...（または > でコマンド実行）",
@@ -1788,6 +1804,8 @@
       "categories-anime": "アニメ",
       "categories-label": "カテゴリ",
       "categories-people": "人物",
+      "color-extraction-disabled": "壁紙の色抽出を使用する",
+      "color-extraction-enabled": "事前定義された配色スキームを使用する",
       "order-asc": "昇順",
       "order-desc": "降順",
       "order-label": "順序",

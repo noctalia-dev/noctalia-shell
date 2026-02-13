@@ -634,6 +634,10 @@
       "grid": "网格",
       "list": "列表"
     },
+    "notification-density": {
+      "compact": "紧凑",
+      "default": "默认"
+    },
     "scrolling-modes": {
       "always": "始终滚动",
       "hover": "悬停时滚动",
@@ -669,6 +673,8 @@
       "contributors-description": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
       "contributors-description-plural": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
       "copy-info": "复制信息",
+      "debug-disabled": "调试模式已禁用",
+      "debug-enabled": "调试模式已启用",
       "info-copied": "信息已复制到剪贴板",
       "noctalia-desc": "一款为 Wayland 精心打造的时尚简约桌面 shell，基于 Quickshell 构建。",
       "noctalia-git-commit": "Git 提交:",
@@ -1030,6 +1036,8 @@
       "fonts-monospace-search-placeholder": "搜索等宽字体...",
       "fonts-reset-scaling": "恢复默认缩放",
       "fonts-title": "字体",
+      "keybinds-conflict-description": "此按键组合已分配给 {action}。",
+      "keybinds-conflict-title": "按键绑定冲突",
       "keybinds-description": "配置面板和启动器的全局导航键。",
       "keybinds-down": "下移",
       "keybinds-enter": "确认 / 操作",
@@ -1126,6 +1134,8 @@
       "settings-density-description": "调整应用程序图标大小和 Launcher 密度。",
       "settings-density-label": "密度",
       "settings-desc": "自定义启动器的行为和外观。",
+      "settings-enable-session-search-description": "在 Launcher 中搜索时显示会话操作（锁定、关机、重启等）。",
+      "settings-enable-session-search-label": "启用会话搜索",
       "settings-enable-settings-search-description": "在启动器中搜索时显示设置结果。",
       "settings-enable-settings-search-label": "启用设置搜索",
       "settings-enable-windows-search-description": "搜索并聚焦活动窗口。",
@@ -1247,6 +1257,8 @@
       "monitors-desc": "在特定显示器上显示通知。如果未选择，则默认为全部。",
       "settings-always-on-top-description": "在全屏窗口和其他图层上方显示通知。",
       "settings-background-opacity-description": "调整通知背景的透明度。",
+      "settings-density-description": "选择通知卡密度。",
+      "settings-density-label": "密度",
       "settings-desc": "配置通知的外观和行为。",
       "settings-do-not-disturb-description": "启用后禁用所有通知弹出窗口。",
       "settings-enabled-description": "启用或禁用通知守护进程，需要重启 Noctalia shell。",
@@ -1333,6 +1345,8 @@
       "collision-already-installed": "此插件已安装",
       "collision-custom-version-exists": "来自“{source}”的自定义版本已安装",
       "collision-official-version-exists": "此插件的官方版本已安装",
+      "development-disable": "禁用此插件的开发模式",
+      "development-enable": "为此插件启用开发模式。",
       "filter-downloaded": "已下载",
       "filter-not-downloaded": "未下载",
       "filter-tags-description": "按类别或下载状态筛选插件。",
@@ -1413,9 +1427,7 @@
       "large-buttons-style-label": "大按钮样式",
       "position-description": "选择会话菜单面板打开时出现的位置。",
       "show-header-description": "在会话菜单顶部显示标题和关闭按钮。",
-      "show-header-label": "显示标题",
-      "show-number-labels-description": "在按钮上显示数字标签（1-2-3-4...）并启用数字快捷键以快速选择。",
-      "show-number-labels-label": "显示数字标签"
+      "show-header-label": "显示标题"
     },
     "system-monitor": {
       "critical-color-label": "严重颜色",
@@ -1498,6 +1510,8 @@
       "look-feel-fill-color-description": "选择可能出现在壁纸后面的填充颜色。",
       "look-feel-fill-mode-description": "选择图像应如何缩放以匹配显示器的分辨率。",
       "look-feel-fill-mode-label": "填充模式",
+      "look-feel-skip-startup-transition-description": "在 shell 启动时跳过壁纸动画。",
+      "look-feel-skip-startup-transition-label": "跳过启动过渡动画",
       "look-feel-title": "外观与体验",
       "look-feel-transition-duration-description": "过渡动画的持续时间（秒）。",
       "look-feel-transition-duration-label": "过渡持续时间",
@@ -1536,6 +1550,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "添加新键位绑定",
     "command-example": "echo \"Hello World\"",
     "enter-command": "输入要执行的命令（应用程序或自定义脚本）",
     "enter-ipc-identifier": "输入 IPC 命令的唯一标识符",
@@ -1543,6 +1558,7 @@
     "enter-text-to-collapse": "例如：“nothing is playing”。使用 /regex/ 表示匹配模式。",
     "enter-tooltip": "输入提示信息",
     "enter-width-pixels": "输入宽度（像素）",
+    "keybind-recording": "正在录制按键绑定...",
     "search": "搜索...",
     "search-icons": "例如：noctalia, niri, battery, cloud",
     "search-launcher": "搜索条目...或使用 > 执行命令",
@@ -1788,6 +1804,8 @@
       "categories-anime": "动漫",
       "categories-label": "分类",
       "categories-people": "人物",
+      "color-extraction-disabled": "使用壁纸颜色提取",
+      "color-extraction-enabled": "使用预设配色方案",
       "order-asc": "升序",
       "order-desc": "降序",
       "order-label": "顺序",

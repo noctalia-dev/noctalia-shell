@@ -10,16 +10,21 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
   signal settingsChanged(var settings)
+
+  readonly property string barPosition: Settings.getBarPositionForScreen(screen?.name)
+  readonly property bool isVerticalBar: barPosition === "left" || barPosition === "right"
 
   // Local, editable state for checkboxes
   property bool valueCompactMode: widgetData.compactMode !== undefined ? widgetData.compactMode : widgetMetadata.compactMode
   property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
   property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
   property bool valueUseMonospaceFont: widgetData.useMonospaceFont !== undefined ? widgetData.useMonospaceFont : widgetMetadata.useMonospaceFont
+  property bool valueUsePadding: widgetData.usePadding !== undefined ? widgetData.usePadding : widgetMetadata.usePadding
   property bool valueShowCpuUsage: widgetData.showCpuUsage !== undefined ? widgetData.showCpuUsage : widgetMetadata.showCpuUsage
   property bool valueShowCpuFreq: widgetData.showCpuFreq !== undefined ? widgetData.showCpuFreq : widgetMetadata.showCpuFreq
   property bool valueShowCpuTemp: widgetData.showCpuTemp !== undefined ? widgetData.showCpuTemp : widgetMetadata.showCpuTemp
@@ -40,6 +45,7 @@ ColumnLayout {
     settings.iconColor = valueIconColor;
     settings.textColor = valueTextColor;
     settings.useMonospaceFont = valueUseMonospaceFont;
+    settings.usePadding = valueUsePadding;
     settings.showCpuUsage = valueShowCpuUsage;
     settings.showCpuFreq = valueShowCpuFreq;
     settings.showCpuTemp = valueShowCpuTemp;
@@ -54,7 +60,7 @@ ColumnLayout {
     settings.showDiskAvailable = valueShowDiskAvailable;
     settings.diskPath = valueDiskPath;
 
-    return settings;
+    settingsChanged(settings);
   }
 
   NToggle {
@@ -64,7 +70,7 @@ ColumnLayout {
     checked: valueCompactMode
     onToggled: checked => {
                  valueCompactMode = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -75,7 +81,7 @@ ColumnLayout {
     currentKey: valueIconColor
     onSelected: key => {
                   valueIconColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
   }
@@ -87,7 +93,7 @@ ColumnLayout {
     currentKey: valueTextColor
     onSelected: key => {
                   valueTextColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     minimumWidth: 200
     visible: !valueCompactMode
@@ -100,9 +106,26 @@ ColumnLayout {
     checked: valueUseMonospaceFont
     onToggled: checked => {
                  valueUseMonospaceFont = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
     visible: !valueCompactMode
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.use-padding-label")
+    description: isVerticalBar ? I18n.tr("bar.system-monitor.use-padding-description-disabled-vertical") : !valueUseMonospaceFont ? I18n.tr("bar.system-monitor.use-padding-description-disabled-monospace-font") : I18n.tr("bar.system-monitor.use-padding-description")
+    checked: valueUsePadding && !isVerticalBar && valueUseMonospaceFont
+    onToggled: checked => {
+                 valueUsePadding = checked;
+                 saveSettings();
+               }
+    visible: !valueCompactMode
+    enabled: !isVerticalBar && valueUseMonospaceFont
+  }
+
+  NDivider {
+    Layout.fillWidth: true
   }
 
   NToggle {
@@ -113,7 +136,7 @@ ColumnLayout {
     checked: valueShowCpuUsage
     onToggled: checked => {
                  valueShowCpuUsage = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -125,7 +148,7 @@ ColumnLayout {
     checked: valueShowCpuFreq
     onToggled: checked => {
                  valueShowCpuFreq = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -137,7 +160,19 @@ ColumnLayout {
     checked: valueShowCpuTemp
     onToggled: checked => {
                  valueShowCpuTemp = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
+               }
+  }
+
+  NToggle {
+    id: showLoadAverage
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.load-average-label")
+    description: I18n.tr("bar.system-monitor.load-average-description")
+    checked: valueShowLoadAverage
+    onToggled: checked => {
+                 valueShowLoadAverage = checked;
+                 saveSettings();
                }
   }
 
@@ -149,21 +184,9 @@ ColumnLayout {
     checked: valueShowGpuTemp
     onToggled: checked => {
                  valueShowGpuTemp = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
     visible: SystemStatService.gpuAvailable
-  }
-
-  NToggle {
-    id: showLoadAverage
-    Layout.fillWidth: true
-    label: I18n.tr("bar.system-monitor.load-average-label")
-    description: I18n.tr("bar.system-monitor.load-average-description")
-    checked: valueShowLoadAverage
-    onToggled: checked => {
-                 valueShowLoadAverage = checked;
-                 settingsChanged(saveSettings());
-               }
   }
 
   NToggle {
@@ -174,7 +197,7 @@ ColumnLayout {
     checked: valueShowMemoryUsage
     onToggled: checked => {
                  valueShowMemoryUsage = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -186,7 +209,7 @@ ColumnLayout {
     checked: valueShowMemoryAsPercent
     onToggled: checked => {
                  valueShowMemoryAsPercent = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
     visible: valueShowMemoryUsage
   }
@@ -199,7 +222,7 @@ ColumnLayout {
     checked: valueShowSwapUsage
     onToggled: checked => {
                  valueShowSwapUsage = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -211,8 +234,12 @@ ColumnLayout {
     checked: valueShowNetworkStats
     onToggled: checked => {
                  valueShowNetworkStats = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
   }
 
   NToggle {
@@ -223,7 +250,7 @@ ColumnLayout {
     checked: valueShowDiskUsage
     onToggled: checked => {
                  valueShowDiskUsage = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -235,7 +262,7 @@ ColumnLayout {
     checked: valueShowDiskUsageAsPercent
     onToggled: checked => {
                  valueShowDiskUsageAsPercent = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -247,7 +274,7 @@ ColumnLayout {
     checked: valueShowDiskAvailable
     onToggled: checked => {
                  valueShowDiskAvailable = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -266,7 +293,7 @@ ColumnLayout {
     currentKey: valueDiskPath
     onSelected: key => {
                   valueDiskPath = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 }

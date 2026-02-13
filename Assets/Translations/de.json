@@ -224,7 +224,11 @@
       "swap-usage-description": "Swap-Speichernutzung anzeigen.",
       "swap-usage-label": "Swap-Auslastung",
       "use-monospace-font-description": "Verwende eine Monospace-Schriftart für eine konsistente Zeichenbreite.",
-      "use-monospace-font-label": "Schriftart mit fester Breite"
+      "use-monospace-font-label": "Schriftart mit fester Breite",
+      "use-padding-description": "Füllt die Textwerte mit Leerzeichen auf. Verhindert Layoutverschiebungen.",
+      "use-padding-description-disabled-monospace-font": "Eine Monospace-Schriftart ist notwendig, um dieses Option wählen zu können.",
+      "use-padding-description-disabled-vertical": "Vertikale Taskleiste unterstützt keine Titelanzeige.",
+      "use-padding-label": "Text mit führenden Leerzeichen auffüllen"
     },
     "taskbar": {
       "colorize-icons-description": "Themenfarben auf Taskbar-Symbole anwenden.",
@@ -634,6 +638,10 @@
       "grid": "Gitter",
       "list": "Liste"
     },
+    "notification-density": {
+      "compact": "Kompakt",
+      "default": "Standard"
+    },
     "scrolling-modes": {
       "always": "Immer scrollen",
       "hover": "Beim Hover scrollen",
@@ -669,6 +677,8 @@
       "contributors-description": "Ein Dankeschön an unseren {count} <b>großartigen</b> Mitwirkenden!",
       "contributors-description-plural": "Ein Dankeschön an unsere {count} <b>großartigen</b> Mitwirkenden!",
       "copy-info": "Informationen kopieren",
+      "debug-disabled": "Debug-Modus deaktiviert",
+      "debug-enabled": "Debug-Modus aktiviert",
       "info-copied": "Info in die Zwischenablage kopiert",
       "noctalia-desc": "Eine elegante und minimalistische Desktop-Shell, sorgfältig für Wayland entwickelt, gebaut mit Quickshell.",
       "noctalia-git-commit": "Git-Commit:",
@@ -1030,12 +1040,14 @@
       "fonts-monospace-search-placeholder": "Monospace-Schriftarten suchen...",
       "fonts-reset-scaling": "Skalierung zurücksetzen",
       "fonts-title": "Schriftarten",
+      "keybinds-conflict-description": "Die Tastenkombination ist bereits {action} zugewiesen.",
+      "keybinds-conflict-title": "Tastenbelegungskonflikt",
       "keybinds-description": "Globale Navigationstasten für Panels und Launcher konfigurieren.",
-      "keybinds-down": "Nach unten verschieben",
+      "keybinds-down": "Nach unten",
       "keybinds-enter": "Bestätigen / Aktion",
       "keybinds-escape": "Schließen / Zurück",
-      "keybinds-left": "Links verschieben",
-      "keybinds-right": "Rechts bewegen",
+      "keybinds-left": "Nach links",
+      "keybinds-right": "Nach rechts",
       "keybinds-title": "Navigations-Tastenkombinationen",
       "keybinds-up": "Nach oben",
       "language-desc": "Ändern Sie die Sprache von Noctalia.",
@@ -1126,6 +1138,8 @@
       "settings-density-description": "Größe der Anwendungssymbole und Dichte des Launchers anpassen.",
       "settings-density-label": "Dichte",
       "settings-desc": "Verhalten und Erscheinungsbild des Starters anpassen.",
+      "settings-enable-session-search-description": "Sitzungsaktionen (Sperren, Herunterfahren, Neustarten usw.) beim Suchen im Launcher anzeigen.",
+      "settings-enable-session-search-label": "Sitzungssuche aktivieren",
       "settings-enable-settings-search-description": "Einstellungen in den Suchergebnissen des Launchers anzeigen.",
       "settings-enable-settings-search-label": "Einstellungen-Suche aktivieren",
       "settings-enable-windows-search-description": "Aktive Fenster suchen und fokussieren.",
@@ -1247,6 +1261,8 @@
       "monitors-desc": "Benachrichtigungen auf bestimmten Monitoren anzeigen. Standardmäßig werden sie auf allen Monitoren angezeigt.",
       "settings-always-on-top-description": "Benachrichtigungen über Vollbildfenstern und anderen Ebenen anzeigen.",
       "settings-background-opacity-description": "Transparenz der Benachrichtigungshintergründe anpassen.",
+      "settings-density-description": "Wähle die Dichte der Benachrichtigungskarte.",
+      "settings-density-label": "Dichte",
       "settings-desc": "Erscheinungsbild und Verhalten von Benachrichtigungen konfigurieren.",
       "settings-do-not-disturb-description": "Alle Benachrichtigungs-Popups deaktivieren.",
       "settings-enabled-description": "Benachrichtigungs-Daemon aktivieren oder deaktivieren, erfordert einen Neustart von Noctalia Shell.",
@@ -1333,6 +1349,8 @@
       "collision-already-installed": "Dieses Plugin ist bereits installiert",
       "collision-custom-version-exists": "Eine benutzerdefinierte Version von \"{source}\" ist bereits installiert",
       "collision-official-version-exists": "Die offizielle Version dieses Plugins ist bereits installiert",
+      "development-disable": "Entwicklungsmodus für dieses Plugin deaktivieren",
+      "development-enable": "Entwicklungsmodus für dieses Plugin aktivieren.",
       "filter-downloaded": "Heruntergeladen",
       "filter-not-downloaded": "Nicht heruntergeladen",
       "filter-tags-description": "Plugins nach Kategorie oder Download-Status filtern.",
@@ -1413,9 +1431,7 @@
       "large-buttons-style-label": "Stil: Große Schaltflächen",
       "position-description": "Wählen Sie, wo das Sitzungsmenü-Panel beim Öffnen erscheint.",
       "show-header-description": "Zeige den Titel und die Schließen-Schaltfläche oben im Sitzungsmenü.",
-      "show-header-label": "Kopfzeile anzeigen",
-      "show-number-labels-description": "Nummern-Labels (1-2-3-4...) auf Schaltflächen anzeigen und Nummern-Tastenkürzel für schnelle Auswahl aktivieren.",
-      "show-number-labels-label": "Nummern-Labels anzeigen"
+      "show-header-label": "Kopfzeile anzeigen"
     },
     "system-monitor": {
       "critical-color-label": "Kritische Farbe",
@@ -1498,6 +1514,8 @@
       "look-feel-fill-color-description": "Füllfarbe wählen, die hinter dem Hintergrundbild erscheinen kann.",
       "look-feel-fill-mode-description": "Wählen Sie, wie das Bild skaliert werden soll, um zur Auflösung Ihres Monitors zu passen.",
       "look-feel-fill-mode-label": "Füllmodus",
+      "look-feel-skip-startup-transition-description": "Überspringe die Hintergrundbild-Animation, wenn die Shell startet.",
+      "look-feel-skip-startup-transition-label": "Startübergang überspringen",
       "look-feel-title": "Aussehen & Verhalten",
       "look-feel-transition-duration-description": "Dauer der Übergangsanimationen in Sekunden.",
       "look-feel-transition-duration-label": "Übergangsdauer",
@@ -1536,6 +1554,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "Neue Tastenkombination hinzufügen",
     "command-example": "echo \"Hallo Welt\"",
     "enter-command": "Befehl eingeben (App oder benutzerdefiniertes Skript)",
     "enter-ipc-identifier": "Geben Sie eine eindeutige Kennung für IPC-Befehle ein",
@@ -1543,6 +1562,7 @@
     "enter-text-to-collapse": "z.B. 'nothing is playing'. Verwenden Sie /regex/ für Muster.",
     "enter-tooltip": "Tooltip eingeben",
     "enter-width-pixels": "Breite in Pixeln eingeben",
+    "keybind-recording": "Tastenkombination aufzeichnen...",
     "search": "Suchen...",
     "search-icons": "z.B. noctalia, niri, battery, cloud",
     "search-launcher": "Einträge suchen... oder > für Befehle verwenden",
@@ -1788,6 +1808,8 @@
       "categories-anime": "Anime",
       "categories-label": "Kategorien",
       "categories-people": "Personen",
+      "color-extraction-disabled": "Hintergrundbild-Farbenextraktion verwenden",
+      "color-extraction-enabled": "Vordefinierte Farbschemata nutzen",
       "order-asc": "Aufsteigend",
       "order-desc": "Absteigend",
       "order-label": "Reihenfolge",

@@ -77,6 +77,9 @@ Item {
   property alias verticalVelocity: gridView.verticalVelocity
   property alias reuseItems: gridView.reuseItems
 
+  // Animate items when the model is reordered (e.g. ListModel.move())
+  property bool animateMovement: false
+
   // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
   property real wheelScrollMultiplier: 2.0
 
@@ -247,6 +250,26 @@ Item {
     id: gridView
     anchors.fill: parent
     anchors.rightMargin: root.reserveScrollbarSpace ? root.handleWidth + Style.marginXS : 0
+
+    move: root.animateMovement ? moveTransitionImpl : null
+    displaced: root.animateMovement ? displacedTransitionImpl : null
+
+    Transition {
+      id: moveTransitionImpl
+      NumberAnimation {
+        properties: "x,y"
+        duration: Style.animationNormal
+        easing.type: Easing.InOutQuad
+      }
+    }
+    Transition {
+      id: displacedTransitionImpl
+      NumberAnimation {
+        properties: "x,y"
+        duration: Style.animationNormal
+        easing.type: Easing.InOutQuad
+      }
+    }
 
     // Enable clipping to keep content within bounds
     clip: true

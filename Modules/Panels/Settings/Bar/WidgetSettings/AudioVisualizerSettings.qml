@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -23,7 +24,7 @@ ColumnLayout {
     settings.width = parseInt(widthInput.text) || widgetMetadata.width;
     settings.hideWhenIdle = valueHideWhenIdle;
     settings.colorName = valueColorName;
-    return settings;
+    settingsChanged(settings);
   }
 
   NTextInput {
@@ -33,7 +34,7 @@ ColumnLayout {
     description: I18n.tr("bar.audio-visualizer.width-description")
     text: widgetData.width || widgetMetadata.width
     placeholderText: I18n.tr("placeholders.enter-width-pixels")
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 
   NComboBox {
@@ -44,7 +45,7 @@ ColumnLayout {
     currentKey: root.valueColorName
     onSelected: key => {
                   root.valueColorName = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -54,7 +55,7 @@ ColumnLayout {
     checked: valueHideWhenIdle
     onToggled: checked => {
                  valueHideWhenIdle = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

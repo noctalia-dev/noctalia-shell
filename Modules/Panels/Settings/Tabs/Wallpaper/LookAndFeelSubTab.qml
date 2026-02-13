@@ -45,6 +45,13 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("wallpaper.transitionType")
   }
 
+  NToggle {
+    label: I18n.tr("panels.wallpaper.look-feel-skip-startup-transition-label")
+    description: I18n.tr("panels.wallpaper.look-feel-skip-startup-transition-description")
+    checked: Settings.data.wallpaper.skipStartupTransition
+    onToggled: Settings.data.wallpaper.skipStartupTransition = checked
+  }
+
   NValueSlider {
     Layout.fillWidth: true
     label: I18n.tr("panels.wallpaper.look-feel-transition-duration-label")

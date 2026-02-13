@@ -162,6 +162,14 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.launcher.settings-enable-session-search-label")
+    description: I18n.tr("panels.launcher.settings-enable-session-search-description")
+    checked: Settings.data.appLauncher.enableSessionSearch
+    onToggled: checked => Settings.data.appLauncher.enableSessionSearch = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.enableSessionSearch")
+  }
+
+  NToggle {
     label: I18n.tr("panels.launcher.settings-ignore-mouse-input-label")
     description: I18n.tr("panels.launcher.settings-ignore-mouse-input-description")
     checked: Settings.data.appLauncher.ignoreMouseInput

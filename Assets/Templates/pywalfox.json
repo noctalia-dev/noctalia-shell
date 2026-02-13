@@ -2,7 +2,7 @@
   "wallpaper": "{{image}}",
   "alpha": "100",
   "colors": {
-    "color0": "{{colors.shadow.default.hex}}",
+    "color0": "{{colors.surface.default.hex}}",
     "color1": "",
     "color2": "",
     "color3": "{{colors.primary.default.hex}}",

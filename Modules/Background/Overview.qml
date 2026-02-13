@@ -19,9 +19,11 @@ Loader {
       required property ShellScreen modelData
       property string wallpaper: ""
       property string preprocessedWallpaper: "" // Pre-resized wallpaper from Background.qml
-      property bool isSolidColor: false
+      property bool isSolidColor: Settings.data.wallpaper.useSolidColor
       property color solidColor: Settings.data.wallpaper.solidColor
       property color tintColor: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
+
+      visible: wallpaper !== "" || isSolidColor
 
       Component.onCompleted: {
         if (modelData) {
@@ -83,6 +85,7 @@ Loader {
         Rectangle {
           anchors.fill: parent
           color: tintColor
+          opacity: Settings.data.wallpaper.overviewTint
         }
       }
 

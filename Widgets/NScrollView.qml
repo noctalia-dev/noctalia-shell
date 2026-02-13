@@ -16,8 +16,8 @@ ScrollView {
   property int horizontalPolicy: ScrollBar.AsNeeded
   property bool preventHorizontalScroll: horizontalPolicy === ScrollBar.AlwaysOff
   property int boundsBehavior: Flickable.StopAtBounds
-  readonly property bool verticalScrollable: contentItem.contentHeight > contentItem.height
-  readonly property bool horizontalScrollable: contentItem.contentWidth > contentItem.width
+  readonly property bool verticalScrollable: (contentItem.contentHeight > contentItem.height) || (verticalPolicy == ScrollBar.AlwaysOn)
+  readonly property bool horizontalScrollable: (contentItem.contentWidth > contentItem.width) || (horizontalPolicy == ScrollBar.AlwaysOn)
   property bool showGradientMasks: true
   property color gradientColor: Color.mSurfaceVariant
   property int gradientHeight: 16
@@ -134,6 +134,7 @@ ScrollView {
     y: root.topPadding
     height: root.availableHeight
     policy: root.verticalPolicy
+    interactive: root.verticalScrollable
 
     contentItem: Rectangle {
       implicitWidth: root.handleWidth
@@ -176,6 +177,7 @@ ScrollView {
     y: root.height - height
     width: root.availableWidth
     policy: root.horizontalPolicy
+    interactive: root.horizontalScrollable
 
     contentItem: Rectangle {
       implicitWidth: 100
