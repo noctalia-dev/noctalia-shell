@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Wayland
 import "Backgrounds" as Backgrounds
 
 import qs.Commons
@@ -477,6 +478,42 @@ PanelWindow {
 
     // Screen Corners
     ScreenCorners {}
+
+    // Blur behind the bar and open panels
+    BackgroundBlur {
+      id: backgroundBlur
+
+      // Panel background geometry (from the currently open panel on this screen)
+      readonly property var panelBg: {
+        if (!root.isPanelOpen)
+          return null;
+        var region = PanelService.openedPanel?.panelRegion;
+        return (region && region.visible) ? region.panelItem : null;
+      }
+
+      blurRegion: Region {
+        // Bar blur region (simple rectangle)
+        Region {
+          x: root.barShouldShow ? barPlaceholder.x : 0
+          y: root.barShouldShow ? barPlaceholder.y : 0
+          width: root.barShouldShow ? barPlaceholder.width : 0
+          height: root.barShouldShow ? barPlaceholder.height : 0
+        }
+
+        // Panel blur region (with per-corner radius)
+        Region {
+          x: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.x) : 0
+          y: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.y) : 0
+          width: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.width) : 0
+          height: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.height) : 0
+          radius: Style.radiusL
+          topLeftCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topLeftCornerState : CornerState.Normal
+          topRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topRightCornerState : CornerState.Normal
+          bottomLeftCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.bottomLeftCornerState : CornerState.Normal
+          bottomRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.bottomRightCornerState : CornerState.Normal
+        }
+      }
+    }
   }
 
   // Centralized Keyboard Shortcuts
