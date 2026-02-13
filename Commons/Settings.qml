@@ -582,14 +582,19 @@ Singleton {
           "keybind": "4"
         },
         {
-          "action": "logout",
+          "action": "reboot-to-uefi-firmware",
           "enabled": true,
           "keybind": "5"
         },
         {
-          "action": "shutdown",
+          "action": "logout",
           "enabled": true,
           "keybind": "6"
+        },
+        {
+          "action": "shutdown",
+          "enabled": true,
+          "keybind": "7"
         }
       ]
     }
