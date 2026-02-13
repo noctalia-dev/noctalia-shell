@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Services.UI
 import qs.Widgets
@@ -15,6 +16,7 @@ Item {
   property bool allowEmpty: false
   property color labelColor: Color.mOnSurface
   property color descriptionColor: Color.mOnSurfaceVariant
+  property string settingsPath: ""
 
   property int maxKeybinds: 2
   signal keybindsChanged(var newKeybinds)
@@ -23,12 +25,44 @@ Item {
 
   // -1 = not recording, >= 0 = re-recording at index, -2 = adding new
   property int recordingIndex: -1
+  property bool hasConflict: false
 
-  onRecordingIndexChanged: PanelService.isKeybindRecording = recordingIndex !== -1
+  onRecordingIndexChanged: {
+    PanelService.isKeybindRecording = recordingIndex !== -1;
+    if (recordingIndex !== -1) {
+      hasConflict = false;
+    }
+  }
 
   readonly property real _pillHeight: Style.baseWidgetSize * 1.1 * Style.uiScaleRatio
 
   function _applyKeybind(keyStr) {
+    if (!keyStr)
+      return;
+
+    // 1. Internal duplicate check (same action)
+    for (let i = 0; i < root.currentKeybinds.length; i++) {
+      if (i !== root.recordingIndex && String(root.currentKeybinds[i]).toLowerCase() === keyStr.toLowerCase()) {
+        hasConflict = true;
+        ToastService.showWarning(I18n.tr("panels.general.keybinds-conflict-title"), I18n.tr("panels.general.keybinds-conflict-description", {
+                                                                                              "action": root.label || "This action"
+                                                                                            }));
+        conflictTimer.restart();
+        return;
+      }
+    }
+
+    // 2. External conflict check (other actions)
+    const conflict = Keybinds.getKeybindConflict(keyStr, root.settingsPath, Settings.data);
+    if (conflict) {
+      hasConflict = true;
+      ToastService.showWarning(I18n.tr("panels.general.keybinds-conflict-title"), I18n.tr("panels.general.keybinds-conflict-description", {
+                                                                                            "action": conflict
+                                                                                          }));
+      conflictTimer.restart();
+      return;
+    }
+
     var newKeybinds = Array.from(root.currentKeybinds);
     if (recordingIndex >= 0) {
       newKeybinds[recordingIndex] = keyStr;
@@ -37,6 +71,15 @@ Item {
     newKeybinds = newKeybinds.filter(k => k !== undefined && k !== "").slice(0, root.maxKeybinds);
     recordingIndex = -1;
     root.keybindsChanged(newKeybinds);
+  }
+
+  Timer {
+    id: conflictTimer
+    interval: 2000
+    onTriggered: {
+      hasConflict = false;
+      recordingIndex = -1;
+    }
   }
 
   RowLayout {
@@ -87,8 +130,8 @@ Item {
             id: slotBg
             anchors.fill: parent
             radius: Style.iRadiusS
-            color: slotArea.isRecordingThis ? Color.mSecondary : (slotArea.containsMouse ? Qt.alpha(Color.mSecondary, 0.15) : Color.mSurface)
-            border.color: slotArea.isRecordingThis ? Color.mPrimary : (slotArea.containsMouse ? Color.mSecondary : Color.mOutline)
+            color: root.hasConflict && slotArea.isRecordingThis ? Color.mError : (slotArea.isRecordingThis ? Color.mSecondary : (slotArea.containsMouse ? Qt.alpha(Color.mSecondary, 0.15) : Color.mSurface))
+            border.color: root.hasConflict && slotArea.isRecordingThis ? Color.mError : (slotArea.isRecordingThis ? Color.mPrimary : (slotArea.containsMouse ? Color.mSecondary : Color.mOutline))
             border.width: Style.borderS
 
             Behavior on color {
@@ -109,10 +152,10 @@ Item {
               spacing: Style.marginXS
 
               NIcon {
-                icon: slotArea.isRecordingThis ? "circle-dot" : "keyboard"
+                icon: root.hasConflict && slotArea.isRecordingThis ? "alert-circle" : (slotArea.isRecordingThis ? "circle-dot" : "keyboard")
                 color: slotArea.isRecordingThis ? Color.mOnSecondary : (slotArea.isOccupied ? Color.mOnSurfaceVariant : Qt.alpha(Color.mOnSurfaceVariant, 0.4))
                 opacity: 0.8
-                visible: !slotArea.isRecordingThis
+                visible: !slotArea.isRecordingThis || root.hasConflict
               }
 
               NText {
@@ -129,7 +172,7 @@ Item {
               Item {
                 Layout.preferredWidth: Math.round(root._pillHeight * 0.7)
                 Layout.fillHeight: true
-                visible: slotArea.isOccupied
+                visible: slotArea.isOccupied && root.recordingIndex === -1
 
                 NIconButton {
                   anchors.centerIn: parent
@@ -162,7 +205,7 @@ Item {
       focus: true
 
       Keys.onPressed: event => {
-                        if (root.recordingIndex === -1)
+                        if (root.recordingIndex === -1 || root.hasConflict)
                         return;
 
                         // Handle Escape specifically to ensure it doesn't close the panel

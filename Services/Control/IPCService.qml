@@ -1,3 +1,5 @@
+pragma Singleton
+
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -16,22 +18,27 @@ import qs.Services.System
 import qs.Services.Theming
 import qs.Services.UI
 
-Item {
+Singleton {
   id: root
 
-  // Screen detector passed from shell.qml
-  required property CurrentScreenDetector screenDetector
+  // Screen detector, set via init()
+  property var screenDetector: null
+
+  function init(detector) {
+    root.screenDetector = detector;
+    Logger.i("IPCService", "Service started");
+  }
 
   IpcHandler {
     target: "bar"
     function toggle() {
-      BarService.isVisible = !BarService.isVisible;
+      BarService.toggleVisibility();
     }
     function hideBar() {
-      BarService.isVisible = false;
+      BarService.hide();
     }
     function showBar() {
-      BarService.isVisible = true;
+      BarService.show();
     }
     function setDisplayMode(mode: string) {
       if (mode === "always_visible" || mode === "non_exclusive" || mode === "auto_hide") {

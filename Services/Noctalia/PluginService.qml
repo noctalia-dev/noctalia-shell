@@ -48,13 +48,7 @@ Singleton {
 
   // Hot reload: file watchers for plugin directories
   property var pluginFileWatchers: ({}) // { pluginId: FileView }
-  property bool hotReloadEnabled: Settings.isDebug
-
-  onHotReloadEnabledChanged: {
-    if (root.initialized) {
-      setHotReloadEnabled(root.hotReloadEnabled);
-    }
-  }
+  property list<string> pluginHotReloadEnabled: [] // List of pluginIds that have hot reload enabled
 
   // Track active fetches
   property var activeFetches: ({})
@@ -98,6 +92,23 @@ Singleton {
     }
   }
 
+  // When debug mode is disabled, tear down all hot reload watchers
+  Connections {
+    target: Settings
+
+    function onIsDebugChanged() {
+      if (!Settings.isDebug && root.pluginHotReloadEnabled.length > 0) {
+        Logger.i("PluginService", "Debug mode disabled, removing all hot reload watchers");
+        // Remove watchers for all hot-reload-enabled plugins
+        var plugins = root.pluginHotReloadEnabled.slice(); // copy since we mutate
+        for (var i = 0; i < plugins.length; i++) {
+          removePluginFileWatcher(plugins[i]);
+        }
+        root.pluginHotReloadEnabled = [];
+      }
+    }
+  }
+
   // Listen for language changes to reload plugin translations
   Connections {
     target: I18n
@@ -135,7 +146,7 @@ Singleton {
       }
 
       // Update translation file watchers to watch the new language's files
-      if (root.hotReloadEnabled) {
+      if (root.pluginHotReloadEnabled.length > 0) {
         updateTranslationWatchers();
       }
     }
@@ -1696,7 +1707,7 @@ Singleton {
 
   // Set up file watcher for a plugin directory
   function setupPluginFileWatcher(pluginId) {
-    if (!root.hotReloadEnabled) {
+    if (!isPluginHotReloadEnabled(pluginId)) {
       return;
     }
 
@@ -1978,22 +1989,22 @@ Singleton {
     return true;
   }
 
-  // Enable/disable hot reload for all loaded plugins
-  function setHotReloadEnabled(enabled) {
-    root.hotReloadEnabled = enabled;
+  // Check if a certain plugin has hot reload enabled
+  function isPluginHotReloadEnabled(pluginId) {
+    return root.pluginHotReloadEnabled.indexOf(pluginId) !== -1;
+  }
 
-    if (enabled) {
-      // Set up watchers for all loaded plugins
-      for (var pluginId in root.loadedPlugins) {
-        setupPluginFileWatcher(pluginId);
-      }
-      Logger.i("PluginService", "Hot reload enabled for all plugins");
+  // Toggle the hot reload state of a certain plugin
+  function togglePluginHotReload(pluginId) {
+    const index = root.pluginHotReloadEnabled.indexOf(pluginId);
+    if (index === -1) {
+      root.pluginHotReloadEnabled.push(pluginId);
+      setupPluginFileWatcher(pluginId);
+      Logger.i("PluginService", "Hot reload enabled for plugin:", pluginId);
     } else {
-      // Remove all watchers
-      for (var pluginId in root.pluginFileWatchers) {
-        removePluginFileWatcher(pluginId);
-      }
-      Logger.i("PluginService", "Hot reload disabled");
+      root.pluginHotReloadEnabled.splice(index, 1);
+      removePluginFileWatcher(pluginId);
+      Logger.i("PluginService", "Hot reload disabled for plugin:", pluginId);
     }
   }
 }

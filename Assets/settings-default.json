@@ -202,7 +202,8 @@
     "wallhavenResolutionMode": "atleast",
     "wallhavenResolutionWidth": "",
     "wallhavenResolutionHeight": "",
-    "sortOrder": "name"
+    "sortOrder": "name",
+    "favorites": []
   },
   "appLauncher": {
     "enableClipboardHistory": false,
@@ -385,6 +386,7 @@
   },
   "notifications": {
     "enabled": true,
+    "density": "default",
     "monitors": [],
     "location": "top_right",
     "overlayLayer": true,

@@ -22,6 +22,9 @@ Variants {
       property string transitionType: "fade"
       property real transitionProgress: 0
       property bool isStartupTransition: true
+      property bool wallpaperReady: false
+
+      visible: wallpaperReady
 
       readonly property real edgeSmoothness: Settings.data.wallpaper.transitionEdgeSmoothness
       readonly property var allTransitions: WallpaperService.allTransitions
@@ -94,6 +97,10 @@ Variants {
       Connections {
         target: CompositorService
         function onDisplayScalesChanged() {
+          if (!WallpaperService.isInitialized) {
+            return;
+          }
+
           const currentPath = WallpaperService.getWallpaper(modelData.name);
           if (!currentPath || WallpaperService.isSolidColorPath(currentPath)) {
             return;
@@ -156,6 +163,8 @@ Variants {
         onStatusChanged: {
           if (status === Image.Error) {
             Logger.w("Current wallpaper failed to load:", source);
+          } else if (status === Image.Ready && !wallpaperReady) {
+            wallpaperReady = true;
           }
         }
       }
@@ -176,6 +185,9 @@ Variants {
             Logger.w("Next wallpaper failed to load:", source);
             pendingTransition = false;
           } else if (status === Image.Ready) {
+            if (!wallpaperReady) {
+              wallpaperReady = true;
+            }
             if (pendingTransition) {
               pendingTransition = false;
               currentWallpaper.asynchronous = false;
@@ -562,6 +574,9 @@ Variants {
           // Clear image sources for memory efficiency
           currentWallpaper.source = "";
           nextWallpaper.source = "";
+          if (!wallpaperReady) {
+            wallpaperReady = true;
+          }
           return;
         }
 
@@ -635,11 +650,17 @@ Variants {
           _solidColor2 = colorStr;
           // No image to load, start transition immediately
           nextWallpaper.source = "";
+          if (!wallpaperReady) {
+            wallpaperReady = true;
+          }
           currentWallpaper.asynchronous = false;
           transitionAnimation.start();
         } else {
           nextWallpaper.source = source;
           if (nextWallpaper.status === Image.Ready) {
+            if (!wallpaperReady) {
+              wallpaperReady = true;
+            }
             currentWallpaper.asynchronous = false;
             transitionAnimation.start();
           } else {

@@ -183,6 +183,7 @@ Popup {
         }
       }
       settingsLoader.setSource(source, {
+                                 "screen": screen,
                                  "widgetData": currentWidgetData,
                                  "widgetMetadata": BarWidgetRegistry.widgetMetadata[widgetId]
                                });

@@ -1106,6 +1106,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.notifications.settings-density-label",
+    "descriptionKey": "panels.notifications.settings-density-description",
+    "widget": "NComboBox",
+    "tab": 9,
+    "tabLabel": "common.notifications",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "tooltips.do-not-disturb-enabled",
     "descriptionKey": "panels.notifications.settings-do-not-disturb-description",
     "widget": "NToggle",

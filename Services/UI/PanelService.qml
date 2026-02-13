@@ -65,6 +65,15 @@ Singleton {
     popupMenuWindowRegistered(screen);
   }
 
+  // Unregister popup menu window for a screen (called on destruction)
+  function unregisterPopupMenuWindow(screen) {
+    if (!screen)
+      return;
+    var key = screen.name;
+    delete popupMenuWindows[key];
+    Logger.d("PanelService", "Unregistered popup menu window for screen:", key);
+  }
+
   // Get popup menu window for a screen
   function getPopupMenuWindow(screen) {
     if (!screen)

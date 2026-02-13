@@ -20,8 +20,8 @@ PanelWindow {
   // Note: screen property is inherited from PanelWindow and should be set by parent
   color: "transparent" // Transparent - background is in MainScreen below
 
-  // Make window pass-through when content is unloaded
-  visible: contentLoaded
+  // Make window pass-through when content is unloaded or bar is hidden via IPC
+  visible: contentLoaded && BarService.effectivelyVisible
 
   Component.onCompleted: {
     Logger.d("BarContentWindow", "Bar content window created for screen:", barWindow.screen?.name);
@@ -169,7 +169,39 @@ PanelWindow {
     } else {
       // Load immediately when showing
       unloadTimer.stop();
+      deferredUnloadTimer.stop();
       contentLoaded = true;
+    }
+  }
+
+  // Debounced content unload when bar visibility is toggled.
+  // Rapid toggles keep widgets alive; content is only unloaded after the bar
+  // has been continuously hidden for the debounce period.
+  Timer {
+    id: deferredUnloadTimer
+    interval: 1000
+    onTriggered: {
+      if (!BarService.effectivelyVisible) {
+        barWindow.barHovered = false;
+        barWindow.contentLoaded = false;
+        Logger.d("BarContentWindow", "Debounced content unload for screen:", barWindow.screen?.name);
+      }
+    }
+  }
+
+  Connections {
+    target: BarService
+    function onEffectivelyVisibleChanged() {
+      if (!BarService.effectivelyVisible) {
+        // Bar hidden — start debounced unload
+        deferredUnloadTimer.restart();
+      } else {
+        // Bar shown — cancel pending unload, ensure content is loaded
+        deferredUnloadTimer.stop();
+        if (!barWindow.isHidden) {
+          barWindow.contentLoaded = true;
+        }
+      }
     }
   }
 

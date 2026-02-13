@@ -21,6 +21,7 @@ ColumnLayout {
     label: I18n.tr("panels.general.keybinds-up")
     currentKeybinds: Settings.data.general.keybinds.keyUp
     defaultKeybind: "Up"
+    settingsPath: "general.keybinds.keyUp"
     onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyUp = newKeybinds
   }
 
@@ -29,6 +30,7 @@ ColumnLayout {
     label: I18n.tr("panels.general.keybinds-down")
     currentKeybinds: Settings.data.general.keybinds.keyDown
     defaultKeybind: "Down"
+    settingsPath: "general.keybinds.keyDown"
     onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyDown = newKeybinds
   }
 
@@ -37,6 +39,7 @@ ColumnLayout {
     label: I18n.tr("panels.general.keybinds-left")
     currentKeybinds: Settings.data.general.keybinds.keyLeft
     defaultKeybind: "Left"
+    settingsPath: "general.keybinds.keyLeft"
     onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyLeft = newKeybinds
   }
 
@@ -45,6 +48,7 @@ ColumnLayout {
     label: I18n.tr("panels.general.keybinds-right")
     currentKeybinds: Settings.data.general.keybinds.keyRight
     defaultKeybind: "Right"
+    settingsPath: "general.keybinds.keyRight"
     onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyRight = newKeybinds
   }
 
@@ -53,6 +57,7 @@ ColumnLayout {
     label: I18n.tr("panels.general.keybinds-enter")
     currentKeybinds: Settings.data.general.keybinds.keyEnter
     defaultKeybind: "Return"
+    settingsPath: "general.keybinds.keyEnter"
     onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyEnter = newKeybinds
   }
 
@@ -61,6 +66,7 @@ ColumnLayout {
     label: I18n.tr("panels.general.keybinds-escape")
     currentKeybinds: Settings.data.general.keybinds.keyEscape
     defaultKeybind: "Esc"
+    settingsPath: "general.keybinds.keyEscape"
     onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyEscape = newKeybinds
   }
 }

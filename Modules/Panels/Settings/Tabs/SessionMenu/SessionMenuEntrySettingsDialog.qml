@@ -163,6 +163,7 @@ Popup {
         allowEmpty: true
         maxKeybinds: 1
         currentKeybinds: keybindInputText ? [keybindInputText] : []
+        settingsPath: "sessionMenu.powerOptions[" + root.entryIndex + "].keybind"
         onKeybindsChanged: newKeybinds => {
                              keybindInputText = newKeybinds.length > 0 ? newKeybinds[0] : "";
                              root.save();

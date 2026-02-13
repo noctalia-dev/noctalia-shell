@@ -526,6 +526,25 @@ Item {
         Qt.callLater(() => {
                        Logger.d("ApplicationsProvider", `Launching: ${app.name} (App ID: ${app.id || "unknown"})`);
 
+                       const execString = (app.exec !== undefined && app.exec !== null) ? String(app.exec) : "";
+                       const commandArgs = Array.isArray(app.command) ? app.command : (app.command && app.command.length !== undefined) ? Array.from(app.command) : [];
+                       let hasQuotedArgs = execString.includes("\"") || execString.includes("'");
+                       let hasSpaceArgs = false;
+                       if (!hasQuotedArgs) {
+                         hasQuotedArgs = commandArgs.some(arg => {
+                                                            const text = String(arg);
+                                                            return text.includes("\"") || text.includes("'");
+                                                          });
+                       }
+                       if (!hasSpaceArgs) {
+                         hasSpaceArgs = commandArgs.some(arg => String(arg).includes(" "));
+                       }
+                       if (app.execute && (hasQuotedArgs || hasSpaceArgs)) {
+                         Logger.d("ApplicationsProvider", `Detected quoted/space arguments in Exec for ${app.name}, using app.execute()`);
+                         app.execute();
+                         return;
+                       }
+
                        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
                          // Use custom launch prefix
                          const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
