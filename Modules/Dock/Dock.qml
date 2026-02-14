@@ -137,16 +137,7 @@ Loader {
         if (!appData)
           return null;
 
-        // Use stable appId for pinned apps to maintain their slot regardless of running state
-        if (appData.type === "pinned" || appData.type === "pinned-running") {
-          return appData.appId;
-        }
-
-        // prefer toplevel object identity for unpinned running apps to distinguish instances
-        if (appData.toplevel)
-          return appData.toplevel;
-
-        // fallback to appId
+        // Use stable appId for all apps to group multiple instances together
         return appData.appId;
       }
 
@@ -275,6 +266,15 @@ Loader {
         const combined = [];
         const processedToplevels = new Set();
         const processedPinnedAppIds = new Set();
+        const appInstanceCounts = {}; // Track how many instances each app has
+
+        // Count instances for each app
+        runningApps.forEach(toplevel => {
+          if (toplevel && toplevel.appId) {
+            const normalizedId = normalizeAppId(toplevel.appId);
+            appInstanceCounts[normalizedId] = (appInstanceCounts[normalizedId] || 0) + 1;
+          }
+        });
 
         //push an app onto combined with the given appType
         function pushApp(appType, toplevel, appId, title) {
@@ -289,13 +289,42 @@ Loader {
             if (Settings.data.dock.onlySameOutput && toplevel.screens && !toplevel.screens.includes(modelData)) {
               return; // Filtered out by onlySameOutput setting
             }
-            combined.push({
+
+            // Check if we should group multiple instances
+            const normalizedId = normalizeAppId(appId);
+            const instanceCount = appInstanceCounts[normalizedId] || 1;
+
+            // Only add the first instance, but mark it as having multiple instances
+            if (instanceCount > 1) {
+              // Check if we've already added an instance of this app
+              const alreadyAdded = combined.some(app =>
+                app.appId && normalizeAppId(app.appId) === normalizedId
+              );
+
+              if (!alreadyAdded) {
+                combined.push({
+                                "type": appType,
+                                "toplevel": toplevel,
+                                "appId": canonicalId,
+                                "title": title,
+                                "instanceCount": instanceCount
+                              });
+                processedToplevels.add(toplevel);
+              } else {
+                // Skip additional instances
+                processedToplevels.add(toplevel);
+                return;
+              }
+            } else {
+              combined.push({
                             "type": appType,
                             "toplevel": toplevel,
                             "appId": canonicalId,
-                            "title": title
+                            "title": title,
+                            "instanceCount": 1
                           });
-            processedToplevels.add(toplevel);
+              processedToplevels.add(toplevel);
+            }
           } else {
             // For pinned apps that aren't running, track by appId to avoid duplicates
             if (processedPinnedAppIds.has(canonicalId)) {
@@ -305,7 +334,8 @@ Loader {
                             "type": appType,
                             "toplevel": toplevel,
                             "appId": canonicalId,
-                            "title": title
+                            "title": title,
+                            "instanceCount": 1
                           });
             processedPinnedAppIds.add(canonicalId);
           }
@@ -1074,7 +1104,7 @@ Loader {
 
                       // Active indicator - positioned at the edge of the delegate area
                       Rectangle {
-                        visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive
+                        visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive && modelData.instanceCount > 1
                         width: isVertical ? indicatorMargin * 0.6 : iconSize * 0.2
                         height: isVertical ? iconSize * 0.2 : indicatorMargin * 0.6
                         color: Color.mPrimary
@@ -1095,6 +1125,52 @@ Loader {
                         anchors.leftMargin: isVertical && dockPosition === "left" ? 2 : 0
                         anchors.rightMargin: isVertical && dockPosition === "right" ? 2 : 0
                       }
+
+                      // Multiple instances badge - positioned opposite to active indicator
+                      Rectangle {
+                        visible: modelData && modelData.instanceCount && modelData.instanceCount > 1
+                        width: isVertical ? indicatorMargin * 0.6 : iconSize * 0.2
+                        height: isVertical ? iconSize * 0.2 : indicatorMargin * 0.6
+                        color: Color.mPrimary
+                        radius: Style.radiusXS
+
+                        anchors.bottom: !isVertical && dockPosition === "bottom" ? parent.bottom : undefined
+                        anchors.top: !isVertical && dockPosition === "top" ? parent.top : undefined
+                        anchors.left: isVertical && dockPosition === "left" ? parent.left : undefined
+                        anchors.right: isVertical && dockPosition === "right" ? parent.right : undefined
+
+                        anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
+                        anchors.verticalCenter: isVertical ? parent.verticalCenter : undefined
+
+                        // Offset slightly from the edge
+                        anchors.bottomMargin: !isVertical && dockPosition === "bottom" ? 2 : 0
+                        anchors.topMargin: !isVertical && dockPosition === "top" ? 2 : 0
+                        anchors.leftMargin: isVertical && dockPosition === "left" ? 2 : 0
+                        anchors.rightMargin: isVertical && dockPosition === "right" ? 2 : 0
+
+                    }
+
+                    Rectangle {
+                        visible: modelData && modelData.instanceCount && modelData.instanceCount > 1
+                        width: isVertical ? indicatorMargin * 0.6 : iconSize * 0.2
+                        height: isVertical ? iconSize * 0.2 : indicatorMargin * 0.8
+                        color: Color.mPrimary
+                        radius: Style.radiusXS
+
+                        anchors.bottom: !isVertical && dockPosition === "bottom" ? parent.bottom : undefined
+                        anchors.top: !isVertical && dockPosition === "top" ? parent.top : undefined
+                        anchors.left: isVertical && dockPosition === "left" ? parent.left : undefined
+                        anchors.right: isVertical && dockPosition === "right" ? parent.right : undefined
+
+                        anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
+                        anchors.verticalCenter: isVertical ? parent.verticalCenter : undefined
+
+                        // Offset slightly from the edge
+                        anchors.bottomMargin: !isVertical && dockPosition === "bottom" ? 2 : 0
+                        anchors.topMargin: !isVertical && dockPosition === "top" ? 2 : 0
+                        anchors.leftMargin: isVertical && dockPosition === "left" ? 2 : 0
+                        anchors.rightMargin: isVertical && dockPosition === "right" ? 2 : 0
+
                     }
                   }
                 }
@@ -1105,4 +1181,5 @@ Loader {
       }
     }
   }
+}
 }
