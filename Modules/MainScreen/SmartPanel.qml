@@ -157,7 +157,17 @@ Item {
     PanelService.closedImmediately = false;
 
     if (!buttonItem && buttonName) {
-      buttonItem = BarService.lookupWidget(buttonName, screen.name);
+      // Check if buttonName is actually a point object (click coordinates)
+      if (typeof buttonName === "object" && buttonName.x !== undefined && buttonName.y !== undefined) {
+        root.buttonItem = null;
+        root.buttonPosition = buttonName;
+        root.buttonWidth = 0;
+        root.buttonHeight = 0;
+        root.useButtonPosition = true;
+      } else {
+        // buttonName is a widget name, look it up
+        buttonItem = BarService.lookupWidget(buttonName, screen.name);
+      }
     }
 
     // Validate buttonItem is a valid QML Item with mapToItem function
@@ -201,10 +211,9 @@ Item {
         root.buttonItem = null;
         root.useButtonPosition = false;
       }
-    } else {
-      // No valid button provided: reset button position mode
+    } else if (!root.useButtonPosition) {
+      // No valid button provided and no click position: reset button position mode
       root.buttonItem = null;
-      root.useButtonPosition = false;
     }
 
     // Set isPanelOpen to trigger content loading, but don't show yet
