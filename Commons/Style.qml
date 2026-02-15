@@ -136,8 +136,14 @@ Singleton {
   }
 
   // The base/default font size for all texts in the bar
-  readonly property real _barBaseFontSize: Math.max(1, (Style.barHeight / Style.capsuleHeight) * Style.fontSizeXXS)
-  readonly property real barFontSize: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? _barBaseFontSize * 0.9 : _barBaseFontSize
+  readonly property real barFontSize: {
+  if (Settings.data.bar.useSeparateFontSize) {
+    return Settings.data.bar.fontSize;
+  } else {
+    const baseFontSize = Math.max(1, (Style.barHeight / Style.capsuleHeight) * Style.fontSizeXXS);
+    return (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? baseFontSize * 0.9 : baseFontSize;
+  }
+}
 
   readonly property color capsuleColor: Settings.data.bar.showCapsule ? Qt.alpha(Settings.data.bar.capsuleColorKey !== "none" ? Color.resolveColorKey(Settings.data.bar.capsuleColorKey) : Color.mSurfaceVariant, Settings.data.bar.capsuleOpacity) : "transparent"
 
@@ -207,11 +213,15 @@ Singleton {
     return toOdd(h);
   }
 
-  // Get bar font size for a specific bar height, capsule height, and orientation
-  function getBarFontSizeForDensity(barHeight, capsuleHeight, isVertical) {
-    const baseFontSize = Math.max(1, (barHeight / capsuleHeight) * Style.fontSizeXXS);
-    return isVertical ? baseFontSize * 0.9 : baseFontSize;
+  // Get bar font size for a specific bar height, capsule height, and orientation or if custom bzr font size is enbaled default to it
+function getBarFontSizeForDensity(barHeight, capsuleHeight, isVertical) {
+  if (Settings.data.bar.useSeparateFontSize) {
+    return Settings.data.bar.fontSize;
   }
+  
+  const baseFontSize = Math.max(1, (barHeight / capsuleHeight) * Style.fontSizeXXS);
+  return isVertical ? baseFontSize * 0.9 : baseFontSize;
+}
 
   // Convenience functions for per-screen bar sizing
   function getBarHeightForScreen(screenName) {
