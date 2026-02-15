@@ -88,6 +88,9 @@ Item {
     case "reboot":
       CompositorService.reboot();
       break;
+    case "rebootToUefi":
+      CompositorService.rebootToUefi();
+      break;
     case "shutdown":
       CompositorService.shutdown();
       break;
@@ -830,6 +833,26 @@ Item {
             horizontalAlignment: Qt.AlignHCenter
             buttonRadius: Style.radiusL
             onClicked: startTimer("reboot")
+          }
+        }
+
+        Item {
+          Layout.preferredWidth: sessionButtonRow.buttonWidth
+          Layout.preferredHeight: sessionButtonRow.buttonHeight
+
+          NButton {
+            anchors.fill: parent
+            icon: "reboot"
+            text: I18n.tr("common.reboot-to-uefi")
+            outlined: true
+            backgroundColor: Color.mOnSurfaceVariant
+            textColor: Color.mOnPrimary
+            hoverColor: Color.mPrimary
+            fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
+            iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
+            horizontalAlignment: Qt.AlignHCenter
+            buttonRadius: Style.radiusL
+            onClicked: startTimer("rebootToUefi")
           }
         }
 
