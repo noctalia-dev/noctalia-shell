@@ -48,6 +48,7 @@ Singleton {
   property real gpuMemPercent: 0
   property real gpuMemTotalGb: 0
   property string gpuType: "" // "amd", "intel", "nvidia"
+  property var availableGpus: [] // Public list of detected GPUs: [{id, name, type, isDgpu}]
   property real memGb: 0
   property real memPercent: 0
   property real memTotalGb: 0
@@ -294,7 +295,7 @@ Singleton {
   // Note: NVIDIA requires opt-in because nvidia-smi wakes the dGPU on laptops, draining battery
   readonly property var supportedTempGpuSensorNames: ["amdgpu", "xe"]
   property string gpuTempHwmonPath: ""
-  property var foundGpuSensors: [] // [{hwmonPath, type, hasDedicatedVram}]
+  property var foundGpuSensors: [] // [{hwmonPath, type, deviceId, deviceName}]
   property int gpuVramCheckIndex: 0
 
   // --------------------------------------------
@@ -339,6 +340,14 @@ Singleton {
     function onEnableDgpuMonitoringChanged() {
       Logger.i("SystemStat", "dGPU monitoring opt-in setting changed, re-detecting GPUs");
       restartGpuDetection();
+    }
+    function onGpuSelectionModeChanged() {
+      Logger.i("SystemStat", "GPU selection mode changed, re-selecting GPU");
+      selectBestGpu();
+    }
+    function onSelectedGpuIdChanged() {
+      Logger.i("SystemStat", "Selected GPU ID changed, re-selecting GPU");
+      selectBestGpu();
     }
   }
 
@@ -880,7 +889,8 @@ Singleton {
         root.foundGpuSensors.push({
                                     "hwmonPath": hwmonPath,
                                     "type": gpuType,
-                                    "hasDedicatedVram": false // Will be checked later for AMD
+                                    "deviceId": "", // Will be read in checkNextGpuVram
+                                    "deviceName": "" // Will be determined after device ID is read
                                   });
         Logger.d("SystemStat", `Found ${name} GPU sensor at ${hwmonPath}`);
       }
@@ -925,11 +935,12 @@ Singleton {
           root.foundGpuSensors.push({
                                       "hwmonPath": "",
                                       "type": "nvidia",
-                                      "hasDedicatedVram": true // NVIDIA is always discrete
+                                      "deviceId": "", // Will be read via nvidia-smi
+                                      "deviceName": "" // Will be read via nvidia-smi
                                     });
           Logger.d("SystemStat", "Found NVIDIA GPU (nvidia-smi available)");
         }
-        // After NVIDIA check, check VRAM for AMD GPUs to distinguish dGPU from iGPU
+        // After NVIDIA check, read device IDs for all GPUs
         root.gpuVramCheckIndex = 0;
         checkNextGpuVram();
       }
@@ -937,19 +948,31 @@ Singleton {
   }
 
   // ----
-  // #4 - Check VRAM for AMD GPUs to distinguish dGPU from iGPU
-  // dGPUs have dedicated VRAM, iGPUs don't (use system RAM)
+  // #4 - Read device IDs and names for all GPUs
   FileView {
-    id: gpuVramChecker
+    id: gpuDeviceIdChecker
     printErrors: false
 
     onLoaded: {
-      // File exists and has content = dGPU with dedicated VRAM
-      const vramSize = parseInt(text().trim());
-      if (vramSize > 0) {
-        root.foundGpuSensors[root.gpuVramCheckIndex].hasDedicatedVram = true;
-        Logger.d("SystemStat", `GPU at ${root.foundGpuSensors[root.gpuVramCheckIndex].hwmonPath} has dedicated VRAM (dGPU)`);
+      const deviceId = text().trim();
+      const gpu = root.foundGpuSensors[root.gpuVramCheckIndex];
+      
+      // Store device ID
+      gpu.deviceId = deviceId;
+      
+      // Determine device name
+      if (gpu.type === "amd") {
+        const isIgpu = root.amdIgpuDeviceIds.includes(deviceId);
+        if (root.amdGpuNames[deviceId]) {
+          gpu.deviceName = `AMD ${root.amdGpuNames[deviceId]}`;
+        }
+        Logger.d("SystemStat", `AMD GPU at ${gpu.hwmonPath} device ${deviceId} (${isIgpu ? 'iGPU' : 'dGPU'}): ${gpu.deviceName || 'Unknown'}`);
+      } else if (gpu.type === "intel") {
+        // Intel Arc - could add name mapping later
+        gpu.deviceName = "Intel Arc";
+        Logger.d("SystemStat", `Intel GPU at ${gpu.hwmonPath} device ${deviceId}`);
       }
+
       root.gpuVramCheckIndex++;
       Qt.callLater(() => {
                      checkNextGpuVram();
@@ -957,8 +980,7 @@ Singleton {
     }
 
     onLoadFailed: function (error) {
-      // File doesn't exist = iGPU (no dedicated VRAM)
-      // hasDedicatedVram is already false by default
+      // Can't read device ID, continue anyway
       root.gpuVramCheckIndex++;
       Qt.callLater(() => {
                      checkNextGpuVram();
@@ -1381,34 +1403,177 @@ Singleton {
     cpuTempReader.reload();
   }
 
+  // Known AMD APU/iGPU device IDs (Ryzen integrated graphics)
+  // Covers Vega, RDNA2, RDNA3 APUs - dGPUs have different IDs
+  readonly property var amdIgpuDeviceIds: [
+    "0x1636", "0x1638", "0x164c", "0x1506",  // Renoir/Cezanne/Lucienne/Mendocino
+    "0x15d8", "0x15dd", "0x15e7",             // Picasso/Raven Ridge/Barcelo (Vega)
+    "0x163f", "0x1681",                       // VanGogh (Steam Deck) / Rembrandt
+    "0x13c0",                                 // Granite Ridge (Ryzen AI 300)
+    "0x15bf", "0x1900", "0x1901"              // Phoenix/HawkPoint (Ryzen 7040/8040)
+  ]
+
+  // AMD GPU device ID to marketing name mapping (partial list of common GPUs)
+  readonly property var amdGpuNames: ({
+    // APU/iGPU (RDNA3)
+    "0x13c0": "Radeon Graphics (Granite Ridge)",
+    // APU/iGPU (RDNA2/Zen3+)
+    "0x1636": "Radeon Graphics (Renoir)",
+    "0x1638": "Radeon Graphics (Cezanne)",
+    "0x164c": "Radeon Graphics (Lucienne)",
+    "0x1506": "Radeon 610M (Mendocino)",
+    "0x15bf": "Radeon Graphics (Phoenix1)",
+    "0x1900": "Radeon Graphics (HawkPoint1)",
+    "0x1901": "Radeon Graphics (HawkPoint2)",
+    "0x1681": "Radeon 680M (Rembrandt)",
+    // APU/iGPU (Vega)
+    "0x15d8": "Radeon Vega (Picasso/Raven 2)",
+    "0x15dd": "Radeon Vega (Raven Ridge)",
+    "0x15e7": "Radeon Graphics (Barcelo)",
+    "0x163f": "Radeon Graphics (VanGogh)",
+    // dGPU (RDNA3)
+    "0x744c": "Radeon RX 7900 XT/XTX",
+    "0x747e": "Radeon RX 7700 XT/7800 XT",
+    "0x7480": "Radeon RX 7600/7600 XT",
+    // dGPU (RDNA2)
+    "0x73bf": "Radeon RX 6800/6800 XT/6900 XT",
+    "0x73df": "Radeon RX 6700/6700 XT/6750 XT",
+    "0x73ff": "Radeon RX 6600/6600 XT"
+  })
+
+  // NVIDIA GPU device ID to marketing name mapping (partial list of common GPUs)
+  readonly property var nvidiaGpuNames: ({
+    // RTX 50 series (Blackwell)
+    "0x2b85": "GeForce RTX 5090",
+    "0x2b87": "GeForce RTX 5090 D",
+    "0x2c02": "GeForce RTX 5080",
+    "0x2c05": "GeForce RTX 5070 Ti",
+    "0x2f04": "GeForce RTX 5070",
+    "0x2d04": "GeForce RTX 5060 Ti",
+    "0x2d05": "GeForce RTX 5060",
+    // RTX 40 series (Ada Lovelace)
+    "0x2684": "GeForce RTX 4090",
+    "0x2704": "GeForce RTX 4080",
+    "0x2782": "GeForce RTX 4070 Ti",
+    "0x2786": "GeForce RTX 4070",
+    "0x2803": "GeForce RTX 4060 Ti",
+    "0x2882": "GeForce RTX 4060",
+    // RTX 30 series (Ampere)
+    "0x2204": "GeForce RTX 3090",
+    "0x2206": "GeForce RTX 3080",
+    "0x2484": "GeForce RTX 3070",
+    "0x2487": "GeForce RTX 3060",
+    "0x2503": "GeForce RTX 3060"
+  })
+
   // -------------------------------------------------------
-  // Function to check VRAM for each AMD GPU to determine if it's a dGPU
+  // Function to read device IDs and names for detected GPUs
   function checkNextGpuVram() {
-    // Skip non-AMD GPUs (NVIDIA and Intel Arc are always discrete)
     while (root.gpuVramCheckIndex < root.foundGpuSensors.length) {
       const gpu = root.foundGpuSensors[root.gpuVramCheckIndex];
-      if (gpu.type === "amd") {
-        // Check for dedicated VRAM at hwmonPath/device/mem_info_vram_total
-        gpuVramChecker.path = `${gpu.hwmonPath}/device/mem_info_vram_total`;
-        gpuVramChecker.reload();
+      
+      if (gpu.type === "nvidia") {
+        // Read NVIDIA GPU name via nvidia-smi
+        nvidiaNameReader.running = true;
+        return;
+      } else if (gpu.type === "amd" || gpu.type === "intel") {
+        // Read device ID from sysfs
+        gpuDeviceIdChecker.path = `${gpu.hwmonPath}/device/device`;
+        gpuDeviceIdChecker.reload();
         return;
       }
-      // Skip non-AMD GPUs
+      
+      // Unknown type, skip
       root.gpuVramCheckIndex++;
     }
 
-    // All VRAM checks complete, now select the best GPU
+    // All checks complete, now select the best GPU
     selectBestGpu();
   }
 
+  // ----
+  // NVIDIA GPU name reader
+  Process {
+    id: nvidiaNameReader
+    command: ["nvidia-smi", "--query-gpu=name,pci.device_id", "--format=csv,noheader"]
+    running: false
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const parts = text.trim().split(',');
+        if (parts.length >= 2) {
+          const gpu = root.foundGpuSensors[root.gpuVramCheckIndex];
+          gpu.deviceName = parts[0].trim();
+          gpu.deviceId = parts[1].trim();
+          Logger.d("SystemStat", `NVIDIA GPU: ${gpu.deviceName} (${gpu.deviceId})`);
+        }
+        root.gpuVramCheckIndex++;
+        Qt.callLater(() => {
+                       checkNextGpuVram();
+                     });
+      }
+    }
+    stderr: StdioCollector {}
+  }
+
   // -------------------------------------------------------
-  // Function to select the best GPU based on priority
+  // Function to check if a GPU is discrete (dGPU)
+  function isGpuDiscrete(gpu) {
+    if (gpu.type === "nvidia") {
+      return true; // NVIDIA is always discrete
+    } else if (gpu.type === "intel") {
+      return true; // Intel Arc is discrete (integrated doesn't show in hwmon)
+    } else if (gpu.type === "amd") {
+      // AMD: check if device ID is in the iGPU list
+      return !root.amdIgpuDeviceIds.includes(gpu.deviceId);
+    }
+    return false;
+  }
+
+  // -------------------------------------------------------
+  // Function to generate user-friendly GPU name
+  function getGpuDisplayName(gpu) {
+    // Use stored device name if available
+    if (gpu.deviceName && gpu.deviceName !== "") {
+      return gpu.deviceName;
+    }
+
+    // Fallback to generic names
+    if (gpu.type === "nvidia") {
+      return "NVIDIA GPU";
+    } else if (gpu.type === "intel") {
+      return "Intel Arc";
+    } else if (gpu.type === "amd") {
+      const isDiscrete = isGpuDiscrete(gpu);
+      // Try to get name from mapping
+      if (gpu.deviceId && root.amdGpuNames[gpu.deviceId]) {
+        const name = root.amdGpuNames[gpu.deviceId];
+        return isDiscrete ? `AMD ${name}` : `AMD ${name}`;
+      }
+      return isDiscrete ? "AMD Radeon (dGPU)" : "AMD Radeon (iGPU)";
+    }
+    return "Unknown GPU";
+  }
+
+  // -------------------------------------------------------
+  // Function to generate GPU ID for settings
+  function getGpuId(gpu) {
+    if (gpu.type === "nvidia") {
+      return "nvidia";
+    }
+    return gpu.hwmonPath;
+  }
+
+  // -------------------------------------------------------
+  // Function to select the best GPU based on priority or user selection
   // Priority (when dGPU monitoring enabled): NVIDIA > AMD dGPU > Intel Arc > AMD iGPU
   // Priority (when dGPU monitoring disabled): AMD iGPU only (discrete GPUs skipped to preserve D3cold)
   function selectBestGpu() {
     const dgpuEnabled = Settings.data.systemMonitor.enableDgpuMonitoring;
+    const selectionMode = Settings.data.systemMonitor.gpuSelectionMode;
+    const selectedGpuId = Settings.data.systemMonitor.selectedGpuId;
 
     if (root.foundGpuSensors.length === 0) {
+      root.availableGpus = [];
       // No hwmon GPU sensors found, try thermal_zone fallback
       if (dgpuEnabled && root.gpuThermalZonePath === "" && root.gpuThermalZonePaths.length === 0) {
         // Thermal zone scanner hasn't found GPU zones yet; start a scan
@@ -1417,40 +1582,83 @@ Singleton {
       return;
     }
 
-    let best = null;
-
+    // Build list of available GPUs for UI
+    let availableList = [];
     for (var i = 0; i < root.foundGpuSensors.length; i++) {
       const gpu = root.foundGpuSensors[i];
+      const isDgpu = isGpuDiscrete(gpu);
+      availableList.push({
+        id: getGpuId(gpu),
+        name: getGpuDisplayName(gpu),
+        type: gpu.type,
+        isDgpu: isDgpu,
+        hwmonPath: gpu.hwmonPath,
+        deviceId: gpu.deviceId
+      });
+    }
+    root.availableGpus = availableList;
 
-      // NVIDIA is always highest priority (always discrete) - skip if dGPU monitoring disabled
-      if (gpu.type === "nvidia") {
-        if (dgpuEnabled) {
+    let best = null;
+
+    // Manual selection mode
+    if (selectionMode === "manual" && selectedGpuId !== "") {
+      // Find the GPU matching the selected ID
+      for (var j = 0; j < root.foundGpuSensors.length; j++) {
+        const gpu = root.foundGpuSensors[j];
+        if (getGpuId(gpu) === selectedGpuId) {
           best = gpu;
+          Logger.i("SystemStat", `Manually selected GPU: ${getGpuDisplayName(gpu)}`);
           break;
         }
-        continue;
       }
+      if (!best) {
+        Logger.w("SystemStat", `Selected GPU ID "${selectedGpuId}" not found, falling back to auto selection`);
+      }
+    }
 
-      // AMD dGPU is second priority - skip if dGPU monitoring disabled (preserves D3cold power state)
-      if (gpu.type === "amd" && gpu.hasDedicatedVram) {
-        if (dgpuEnabled) {
-          best = gpu;
-          break;
+    // Auto selection mode (or fallback if manual selection failed)
+    if (!best) {
+      let bestPriority = 999; // Lower number = higher priority
+
+      for (var k = 0; k < root.foundGpuSensors.length; k++) {
+        const gpu = root.foundGpuSensors[k];
+
+        let priority = 999;
+
+        // NVIDIA is always highest priority (priority 1)
+        if (gpu.type === "nvidia") {
+          if (dgpuEnabled) {
+            priority = 1;
+          } else {
+            continue; // Skip if dGPU monitoring disabled
+          }
         }
-        continue;
-      }
-
-      // Intel Arc is third priority (always discrete) - skip if dGPU monitoring disabled
-      if (gpu.type === "intel" && !best) {
-        if (dgpuEnabled) {
-          best = gpu;
+        // AMD dGPU is second priority (priority 2)
+        else if (gpu.type === "amd" && isGpuDiscrete(gpu)) {
+          if (dgpuEnabled) {
+            priority = 2;
+          } else {
+            continue; // Skip if dGPU monitoring disabled
+          }
         }
-        continue;
-      }
+        // Intel Arc is third priority (priority 3)
+        else if (gpu.type === "intel") {
+          if (dgpuEnabled) {
+            priority = 3;
+          } else {
+            continue; // Skip if dGPU monitoring disabled
+          }
+        }
+        // AMD iGPU is lowest priority (priority 4) - always allowed
+        else if (gpu.type === "amd" && !isGpuDiscrete(gpu)) {
+          priority = 4;
+        }
 
-      // AMD iGPU is lowest priority (fallback) - always allowed (no D3cold issue)
-      if (gpu.type === "amd" && !gpu.hasDedicatedVram && !best) {
-        best = gpu;
+        // Select GPU with highest priority (lowest number)
+        if (priority < bestPriority) {
+          best = gpu;
+          bestPriority = priority;
+        }
       }
     }
 
@@ -1459,10 +1667,11 @@ Singleton {
       root.gpuType = best.type;
       root.gpuAvailable = true;
 
-      const gpuDesc = best.type === "nvidia" ? "NVIDIA" : (best.type === "intel" ? "Intel Arc" : (best.hasDedicatedVram ? "AMD dGPU" : "AMD iGPU"));
-      Logger.i("SystemStat", `Selected ${gpuDesc} for temperature monitoring at ${best.hwmonPath || "nvidia-smi"}`);
-    } else if (!dgpuEnabled) {
-      Logger.d("SystemStat", "No iGPU found and dGPU monitoring is disabled");
+      const gpuDesc = getGpuDisplayName(best);
+      const modeDesc = selectionMode === "manual" ? "Manual" : "Auto";
+      Logger.i("SystemStat", `${modeDesc} selected ${gpuDesc} for temperature monitoring at ${best.hwmonPath || "nvidia-smi"}`);
+    } else {
+      Logger.d("SystemStat", "No suitable GPU found (dGPU monitoring disabled: " + !dgpuEnabled + ")");
     }
   }
 

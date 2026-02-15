@@ -515,6 +515,8 @@ Singleton {
       property int batteryWarningThreshold: 20
       property int batteryCriticalThreshold: 5
       property bool enableDgpuMonitoring: false // Opt-in: reading dGPU sysfs/nvidia-smi wakes it from D3cold, draining battery
+      property string gpuSelectionMode: "auto" // "auto" or "manual"
+      property string selectedGpuId: "" // Empty = use auto selection, otherwise hwmonPath or "nvidia" for manual selection
       property bool useCustomColors: false
       property string warningColor: ""
       property string criticalColor: ""
