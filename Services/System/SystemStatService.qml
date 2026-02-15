@@ -968,9 +968,13 @@ Singleton {
         }
         Logger.d("SystemStat", `AMD GPU at ${gpu.hwmonPath} device ${deviceId} (${isIgpu ? 'iGPU' : 'dGPU'}): ${gpu.deviceName || 'Unknown'}`);
       } else if (gpu.type === "intel") {
-        // Intel Arc - could add name mapping later
-        gpu.deviceName = "Intel Arc";
-        Logger.d("SystemStat", `Intel GPU at ${gpu.hwmonPath} device ${deviceId}`);
+        // Intel iGPU
+        if (root.intelGpuNames[deviceId]) {
+          gpu.deviceName = `Intel ${root.intelGpuNames[deviceId]}`;
+        } else {
+          gpu.deviceName = "Intel Graphics";
+        }
+        Logger.d("SystemStat", `Intel GPU at ${gpu.hwmonPath} device ${deviceId}: ${gpu.deviceName}`);
       }
 
       root.gpuVramCheckIndex++;
@@ -1464,6 +1468,78 @@ Singleton {
     "0x2484": "GeForce RTX 3070",
     "0x2487": "GeForce RTX 3060",
     "0x2503": "GeForce RTX 3060"
+  })
+
+  // Intel iGPU device ID to marketing name mapping (common integrated graphics)
+  readonly property var intelGpuNames: ({
+    // 13th Gen (Raptor Lake) - 2022-2023
+    "0xa780": "UHD Graphics 770",
+    "0xa720": "UHD Graphics",
+    "0xa721": "UHD Graphics",
+    "0xa7a0": "Iris Xe Graphics",
+    "0xa7a1": "Iris Xe Graphics",
+    "0xa7a8": "UHD Graphics",
+    // 12th Gen (Alder Lake) - 2021-2022
+    "0x4680": "UHD Graphics 770",
+    "0x4682": "UHD Graphics 730",
+    "0x4688": "UHD Graphics 770",
+    "0x4690": "UHD Graphics 770",
+    "0x4692": "UHD Graphics 730",
+    "0x4693": "UHD Graphics 710",
+    "0x46a6": "Iris Xe Graphics",
+    "0x46a8": "Iris Xe Graphics",
+    "0x46aa": "Iris Xe Graphics",
+    "0x46a3": "UHD Graphics",
+    "0x46d0": "UHD Graphics",
+    // 11th Gen (Tiger Lake) - 2020-2021
+    "0x9a40": "Iris Xe Graphics",
+    "0x9a49": "Iris Xe Graphics",
+    "0x9a60": "UHD Graphics",
+    "0x9a68": "UHD Graphics",
+    "0x9a70": "UHD Graphics",
+    "0x9a78": "UHD Graphics",
+    // 11th Gen (Rocket Lake) - 2021
+    "0x4c8a": "UHD Graphics 750",
+    "0x4c8b": "UHD Graphics 730",
+    "0x4c90": "UHD Graphics P750",
+    // 10th Gen (Comet Lake) - 2019-2020
+    "0x9ba4": "UHD Graphics 610",
+    "0x9ba8": "UHD Graphics 610",
+    "0x9b21": "UHD Graphics 620",
+    "0x9bc5": "UHD Graphics 630",
+    "0x9bc8": "UHD Graphics 630",
+    "0x9bc4": "UHD Graphics",
+    // 10th Gen (Ice Lake) - 2019
+    "0x8a51": "Iris Plus Graphics G7",
+    "0x8a52": "Iris Plus Graphics G7",
+    "0x8a53": "Iris Plus Graphics G7",
+    "0x8a5a": "Iris Plus Graphics G4",
+    "0x8a5c": "Iris Plus Graphics G4",
+    "0x8a56": "Iris Plus Graphics G1",
+    "0x8a58": "UHD Graphics G1",
+    // 8th/9th Gen (Coffee/Whiskey Lake) - 2017-2019
+    "0x3e90": "UHD Graphics 610",
+    "0x3e93": "UHD Graphics 610",
+    "0x3ea1": "UHD Graphics 610",
+    "0x3ea0": "UHD Graphics 620",
+    "0x3ea9": "UHD Graphics 620",
+    "0x3e91": "UHD Graphics 630",
+    "0x3e92": "UHD Graphics 630",
+    "0x3e98": "UHD Graphics 630",
+    "0x3e9b": "UHD Graphics 630",
+    "0x3ea5": "Iris Plus Graphics 655",
+    "0x3ea6": "Iris Plus Graphics 645",
+    "0x3ea8": "Iris Plus Graphics 655",
+    // 7th Gen (Kaby Lake) - 2016-2017
+    "0x5902": "HD Graphics 610",
+    "0x5906": "HD Graphics 610",
+    "0x591e": "HD Graphics 615",
+    "0x5916": "HD Graphics 620",
+    "0x5917": "UHD Graphics 620",
+    "0x5912": "HD Graphics 630",
+    "0x591b": "HD Graphics 630",
+    "0x5926": "Iris Plus Graphics 640",
+    "0x5927": "Iris Plus Graphics 650"
   })
 
   // -------------------------------------------------------
