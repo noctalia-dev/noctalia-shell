@@ -213,7 +213,7 @@ Singleton {
     return toOdd(h);
   }
 
-  // Get bar font size for a specific bar height, capsule height, and orientation or if custom bzr font size is enbaled default to it
+  // Get bar font size for a specific bar height, capsule height, and orientation or if custom bar font size is enabled default to it
 function getBarFontSizeForDensity(barHeight, capsuleHeight, isVertical) {
   if (Settings.data.bar.useSeparateFontSize) {
     return Settings.data.bar.fontSize;
