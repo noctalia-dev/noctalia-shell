@@ -200,6 +200,62 @@ SmartPanel {
         }
       }
 
+      // GPU Memory Card (only if GPU available)
+      NBox {
+        Layout.fillWidth: true
+        Layout.preferredHeight: panelContent.cardHeight
+        visible: SystemStatService.gpuAvailable
+
+        ColumnLayout {
+          anchors.fill: parent
+          anchors.margins: Style.marginS
+          spacing: Style.marginXS
+
+          RowLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginXS
+
+            NIcon {
+              icon: "gpu-temperature"
+              pointSize: Style.fontSizeXS
+              color: Color.mPrimary
+            }
+
+            NText {
+              text: `${Math.round(SystemStatService.gpuMemPercent)}% (${SystemStatService.formatGigabytes(SystemStatService.gpuMemGb).replace(/[^0-9.]/g, "")} GB)`
+              pointSize: Style.fontSizeXS
+              color: Color.mPrimary
+              font.family: Settings.data.ui.fontFixed
+            }
+
+            Item {
+              Layout.fillWidth: true
+            }
+
+            NText {
+              text: I18n.tr("system-monitor.gpu-memory")
+              pointSize: Style.fontSizeXS
+              color: Color.mOnSurfaceVariant
+            }
+          }
+
+          NGraph {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.leftMargin: -Style.marginS
+            Layout.rightMargin: -Style.marginS
+            Layout.bottomMargin: 2
+            values: SystemStatService.gpuMemHistory
+            minValue: 0
+            maxValue: 100
+            color: Color.mPrimary
+            fill: true
+            fillOpacity: 0.15
+            updateInterval: SystemStatService.gpuIntervalMs
+          }
+        }
+      }
+
       // Network Card (dual-line: RX + TX speeds)
       NBox {
         Layout.fillWidth: true
