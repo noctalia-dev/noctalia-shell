@@ -581,7 +581,7 @@ Item {
 
                 Row {
                   id: passwordDisplayContent
-                  spacing: Style.marginS
+                  spacing: Style.marginXXXS
                   anchors.verticalCenter: parent.verticalCenter
 
                   Repeater {
@@ -592,7 +592,7 @@ Item {
                     NIcon {
                       id: icon
                       icon: "circle-filled"
-                      pointSize: Style.fontSizeS
+                      pointSize: Style.fontSizeL
                       color: Color.mPrimary
                       opacity: 1.0
                       scale: 0.5
