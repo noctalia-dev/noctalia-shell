@@ -805,6 +805,8 @@
       "appearance-type-label": "Bar type",
       "appearance-use-separate-opacity-description": "Enable to use a separate opacity value for the bar background.",
       "appearance-use-separate-opacity-label": "Use separate bar opacity",
+      "appearance-use-separate-font-size-description": "Enable to set a custom font size for the bar independant from the rest of the system.",
+      "appearance-use-separate-font-size-label": "Use separate bar font size",
       "monitor-configure-widgets": "Configure widgets",
       "monitor-override-settings": "Override global settings",
       "monitor-override-settings-description": "Use custom settings for this monitor.",
