@@ -10,6 +10,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -34,7 +35,7 @@ ColumnLayout {
     settings.hideIfNotDetected = valueHideIfNotDetected;
     settings.hideIfIdle = valueHideIfIdle;
     settings.deviceNativePath = valueDeviceNativePath;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -47,7 +48,7 @@ ColumnLayout {
     currentKey: root.valueDeviceNativePath
     onSelected: key => {
                   root.valueDeviceNativePath = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -60,6 +61,10 @@ ColumnLayout {
       {
         "key": "graphic",
         "name": I18n.tr("bar.battery.display-mode-graphic")
+      },
+      {
+        "key": "graphic-clean",
+        "name": I18n.tr("bar.battery.display-mode-graphic-clean")
       },
       {
         "key": "icon-hover",
@@ -77,28 +82,8 @@ ColumnLayout {
     currentKey: root.valueDisplayMode
     onSelected: key => {
                   root.valueDisplayMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
-  }
-
-  NToggle {
-    label: I18n.tr("bar.battery.show-power-profile-label")
-    description: I18n.tr("bar.battery.show-power-profile-description")
-    checked: valueShowPowerProfiles
-    onToggled: checked => {
-                 valueShowPowerProfiles = checked;
-                 settingsChanged(saveSettings());
-               }
-  }
-
-  NToggle {
-    label: I18n.tr("bar.battery.show-noctalia-performance-label")
-    description: I18n.tr("bar.battery.show-noctalia-performance-description")
-    checked: valueShowNoctaliaPerformance
-    onToggled: checked => {
-                 valueShowNoctaliaPerformance = checked;
-                 settingsChanged(saveSettings());
-               }
   }
 
   NToggle {
@@ -107,7 +92,7 @@ ColumnLayout {
     checked: valueHideIfNotDetected
     onToggled: checked => {
                  valueHideIfNotDetected = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -117,7 +102,31 @@ ColumnLayout {
     checked: valueHideIfIdle
     onToggled: checked => {
                  valueHideIfIdle = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
+               }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  NToggle {
+    label: I18n.tr("bar.battery.show-power-profile-label")
+    description: I18n.tr("bar.battery.show-power-profile-description")
+    checked: valueShowPowerProfiles
+    onToggled: checked => {
+                 valueShowPowerProfiles = checked;
+                 saveSettings();
+               }
+  }
+
+  NToggle {
+    label: I18n.tr("bar.battery.show-noctalia-performance-label")
+    description: I18n.tr("bar.battery.show-noctalia-performance-description")
+    checked: valueShowNoctaliaPerformance
+    onToggled: checked => {
+                 valueShowNoctaliaPerformance = checked;
+                 saveSettings();
                }
   }
 }

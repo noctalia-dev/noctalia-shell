@@ -37,15 +37,20 @@
 
 ## What is Noctalia?
 
-A beautiful, minimal desktop shell for Wayland that actually gets out of your way. Built on Quickshell with a warm lavender aesthetic that you can easily customize to match your vibe.
+A beautiful, minimal desktop shell for Wayland that actually gets out of your way. Built on [Quickshell](https://quickshell.outfoxxed.me/) (Qt/QML) with a warm lavender aesthetic that you can easily customize to match your vibe.
 
 **✨ Key Features:**
-- 🪟 Native support for Niri, Hyprland, Sway, MangoWC and labwc
+- 🪟 Native support for Niri, Hyprland, Sway, Scroll, Labwc and MangoWC
+- 🎨 Extensive theming with predefined color schemes and automatic color generation from your wallpaper
+- 🖼️ Wallpaper management with Wallhaven integration
+- 🔔 Notification system with history and Do Not Disturb
+- 🖥️ Multi-monitor support
+- 🔒 Lock screen
+- 🧩 Desktop widgets (clock, media player and more)
+- 💡 OSD for volume and brightness
+- 🔌 30+ plugins available ([explore plugins](https://noctalia.dev/plugins/))
+- 🪄 Setup wizard for first-time users
 - ⚡ Built on Quickshell for performance
-- 🎯 Minimalist design philosophy
-- 🔌 Plugin support ([explore plugins](https://noctalia.dev/plugins/))
-- 🔧 Easily customizable to match your style
-- 🎨 Many color schemes available
 ---
 
 ## Preview
@@ -69,7 +74,7 @@ https://github.com/user-attachments/assets/bf46f233-8d66-439a-a1ae-ab0446270f2d
 
 ## 📋 Requirements
 
-- Wayland compositor (Niri, Hyprland, Sway, MangoWC or labwc recommended)
+- Wayland compositor (Niri, Hyprland, Sway, Scroll, MangoWC or labwc recommended)
 - Quickshell
 - Additional dependencies are listed in our [documentation](https://docs.noctalia.dev)
 
@@ -77,7 +82,7 @@ https://github.com/user-attachments/assets/bf46f233-8d66-439a-a1ae-ab0446270f2d
 
 ## 🚀 Getting Started
 
-**New to Noctalia?**  
+**New to Noctalia?**
 Check out our comprehensive documentation and installation guide to get up and running!
 
 <p align="center">
@@ -96,7 +101,7 @@ Check out our comprehensive documentation and installation guide to get up and r
 
 ## 🖥️ Wayland Compositors
 
-Noctalia provides native support for **Niri**, **Hyprland** and **Sway**. Other Wayland compositors will work but may require additional workspace logic configuration.
+Noctalia provides native support for **Niri**, **Hyprland**, **Sway**, **Labwc** and **MangoWC**. Other Wayland compositors may work but could require additional configuration for compositor-specific features like workspaces and window management.
 
 ---
 
@@ -115,6 +120,16 @@ Nix users can use the flake's devShell to access a development environment. Run 
 
 ---
 
+## ⭐ Star History
+
+<p align="center">
+  <a href="https://github.com/noctalia-dev/noctalia-shell/stargazers">
+    <img src="https://api.noctalia.dev/stars" alt="Star History" />
+  </a>
+</p>
+
+---
+
 ## 💜 Credits
 
 A heartfelt thank you to our incredible community of [**contributors**](https://github.com/noctalia-dev/noctalia-shell/graphs/contributors). We are immensely grateful for your dedicated participation and the constructive feedback you've provided, which continue to shape and improve our project for everyone.
@@ -124,38 +139,16 @@ A heartfelt thank you to our incredible community of [**contributors**](https://
 ## ☕ Donations
 
 While all donations are greatly appreciated, they are completely voluntary.
+Thank you to everyone who supports the project! 💜
 
 <p>
-  Buy Me a Coffee - Credit Card<br/>
   <a href="https://www.buymeacoffee.com/noctalia">
-    <img src="https://assets.noctalia.dev/donate-badge.svg" alt="Support Noctalia Coffee">
+    <img src="https://img.shields.io/badge/Buy_Me_a_Coffee-A8AEFF?style=for-the-badge&logo=buymeacoffee&logoColor=FFFFFF&labelColor=0C0D11" alt="Buy Me a Coffee">
+  </a>
+  <a href="https://ko-fi.com/noctaliadev">
+    <img src="https://img.shields.io/badge/Ko--fi-A8AEFF?style=for-the-badge&logo=kofi&logoColor=FFFFFF&labelColor=0C0D11" alt="Ko-fi">
   </a>
 </p>
-<p>
-  Ko-fi - Paypal & Credit Card<br/>
-  <a href="https://ko-fi.com/noctaliadev">
-    <img src="https://assets.noctalia.dev/donate-badge.svg" alt="Support Noctalia Kofi">
-  </a>
-<p>
-
-
-### Thank you to everyone who supports the project 💜!
-* Gohma
-* DiscoCevapi
-* <a href="https://pika-os.com/" target="_blank">PikaOS</a>
-* LionHeartP
-* Nyxion ツ
-* RockDuck
-* Eynix
-* MrDowntempo
-* Tempus Thales
-* Raine
-* JustCurtis
-* llego
-* Grune
-* Maitreya (Max)
-* sheast
-* Radu
 
 ---
 

@@ -71,6 +71,9 @@ Singleton {
       property var telemetry: ({
                                  instanceId: ""
                                })
+
+      // Launcher app usage counts
+      property var launcherUsage: ({})
     }
 
     onLoaded: {
@@ -88,6 +91,22 @@ Singleton {
         root.isLoaded = true;
       }
     }
+  }
+
+  // Launcher usage
+  function getLauncherUsageCount(key) {
+    const m = adapter.launcherUsage;
+    if (!m)
+      return 0;
+    const v = m[key];
+    return typeof v === 'number' && isFinite(v) ? v : 0;
+  }
+
+  function recordLauncherUsage(key) {
+    let counts = Object.assign({}, adapter.launcherUsage || {});
+    counts[key] = getLauncherUsageCount(key) + 1;
+    adapter.launcherUsage = counts;
+    save();
   }
 
   // Debounced save timer
@@ -237,6 +256,7 @@ Singleton {
           doNotDisturb: NotificationService.doNotDisturb,
           noctaliaPerformanceMode: PowerProfileService.noctaliaPerformanceMode,
           barVisible: BarService.isVisible,
+          openedPanel: PanelService.openedPanel?.objectName || "",
           lockScreenActive: PanelService.lockScreen?.active || false,
           wallpapers: WallpaperService.currentWallpapers || {},
           desktopWidgetsEditMode: DesktopWidgetRegistry.editMode || false,

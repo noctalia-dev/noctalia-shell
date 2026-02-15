@@ -43,7 +43,7 @@ Item {
       try {
         _parsedStateChecks = JSON.parse(stateChecksJson);
       } catch (e) {
-        console.error("CustomButton: Failed to parse stateChecksJson:", e.message);
+        Logger.e("CustomButton", "Failed to parse stateChecksJson:", e.message);
         _parsedStateChecks = [];
       }
       generalTooltipText = widgetSettings.generalTooltipText || "Custom Button";

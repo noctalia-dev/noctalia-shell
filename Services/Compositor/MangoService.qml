@@ -691,10 +691,15 @@ Item {
 
   function spawn(command) {
     try {
-      // Convert QML list to JS array if needed (QML lists fail Array.isArray but have length)
-      const cmdArray = Array.isArray(command) ? command : (command && typeof command === "object" && command.length !== undefined) ? Array.from(command) : [command];
-      const cmdStr = cmdArray.join(" ");
-      Quickshell.execDetached(["sh", "-c", "mmsg -d 'spawn," + cmdStr + "'"]);
+      // mmsg's IPC protocol cannot handle spaces within arguments,
+      // fall back to direct exec when any argument contains a space.
+      const hasSpaces = command.some(arg => arg.includes(" "));
+
+      if (hasSpaces) {
+        Quickshell.execDetached(command);
+      } else {
+        Quickshell.execDetached(["mmsg", "-s", "-d", "spawn," + command.join(" ")]);
+      }
     } catch (e) {
       Logger.e("MangoService", "Failed to spawn command:", e);
     }

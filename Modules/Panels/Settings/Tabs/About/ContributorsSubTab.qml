@@ -24,11 +24,7 @@ ColumnLayout {
   spacing: Style.marginL
 
   NHeader {
-    description: root.contributors.length === 1 ? I18n.tr("panels.about.contributors-desc", {
-                                                            "count": root.contributors.length
-                                                          }) : I18n.tr("panels.about.contributors-description-plural", {
-                                                                         "count": root.contributors.length
-                                                                       })
+    description: I18n.trp("panels.about.contributors-description", root.contributors.length)
     enableDescriptionRichText: true
   }
 

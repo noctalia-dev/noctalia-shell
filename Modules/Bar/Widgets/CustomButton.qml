@@ -144,38 +144,47 @@ Item {
 
   readonly property bool isColorizing: enableColorization && colorizeSystemIcon !== "none"
 
-  readonly property color iconColor: {
-    if (!isColorizing)
-      return Color.mOnSurface;
-    switch (colorizeSystemIcon) {
-    case "primary":
-      return Color.mPrimary;
-    case "secondary":
-      return Color.mSecondary;
-    case "tertiary":
-      return Color.mTertiary;
-    case "error":
-      return Color.mError;
-    default:
-      return Color.mOnSurface;
-    }
+  // Get color value from color name (returns null for invalid names)
+  function _getColorValue(colorName, forHover) {
+    const baseColor = (function () {
+      switch (colorName) {
+      case "primary":
+        return Color.mPrimary;
+      case "secondary":
+        return Color.mSecondary;
+      case "tertiary":
+        return Color.mTertiary;
+      case "error":
+        return Color.mError;
+      default:
+        return null;
+      }
+    })();
+    return baseColor !== null ? (forHover ? Qt.darker(baseColor, 1.2) : baseColor) : null;
   }
-  readonly property color iconHoverColor: {
-    if (!isColorizing)
-      return Color.mOnHover;
-    switch (colorizeSystemIcon) {
-    case "primary":
-      return Qt.darker(Color.mPrimary, 1.2);
-    case "secondary":
-      return Qt.darker(Color.mSecondary, 1.2);
-    case "tertiary":
-      return Qt.darker(Color.mTertiary, 1.2);
-    case "error":
-      return Qt.darker(Color.mError, 1.2);
-    default:
-      return Color.mOnHover;
+
+  // Resolve icon color with priority: dynamic > static > default
+  function _resolveIconColor(dynamicColorName, staticColorName, isHover) {
+    if (dynamicColorName && dynamicColorName !== "") {
+      if (dynamicColorName === "none") {
+        return isHover ? Color.mOnHover : Color.mOnSurface;
+      }
+      const color = _getColorValue(dynamicColorName, isHover);
+      if (color !== null)
+        return color;
     }
+
+    if (staticColorName && staticColorName !== "" && isColorizing) {
+      const color = _getColorValue(staticColorName, isHover);
+      if (color !== null)
+        return color;
+    }
+
+    return isHover ? Color.mOnHover : Color.mOnSurface;
   }
+
+  readonly property color iconColor: _resolveIconColor(_dynamicColor, colorizeSystemIcon, false)
+  readonly property color iconHoverColor: _resolveIconColor(_dynamicColor, colorizeSystemIcon, true)
 
   implicitWidth: pill.width
   implicitHeight: pill.height
@@ -192,7 +201,7 @@ Item {
     rotateText: isVerticalBar && currentMaxTextLength > 0
     autoHide: false
     forceOpen: _pillForceOpen
-    customTextIconColor: isColorizing ? iconColor : "transparent"
+    customTextIconColor: iconColor
 
     tooltipText: {
       var tooltipLines = [];
@@ -243,6 +252,7 @@ Item {
   property string _dynamicText: ""
   property string _dynamicIcon: ""
   property string _dynamicTooltip: ""
+  property string _dynamicColor: ""
 
   // Maximum length for text display before scrolling (different values for horizontal and vertical)
   readonly property var maxTextLength: {
@@ -358,27 +368,31 @@ Item {
   function parseDynamicContent(content) {
     var contentStr = String(content || "").trim();
 
-    if (parseJson) {
-      var lineToParse = contentStr;
-
-      if (!textStream && contentStr.includes('\n')) {
+    if (parseJson && contentStr) {
+      // Handle multi-line JSON by filtering empty lines and joining
+      var jsonStr = contentStr;
+      if (contentStr.includes('\n')) {
         const lines = contentStr.split('\n').filter(line => line.trim() !== '');
-        if (lines.length > 0) {
-          lineToParse = lines[lines.length - 1];
-        }
+        jsonStr = lines.join('');
       }
 
       try {
-        const parsed = JSON.parse(lineToParse);
+        const parsed = JSON.parse(jsonStr);
         const text = parsed.text || "";
         const icon = parsed.icon || "";
         let tooltip = parsed.tooltip || "";
+        const color = parsed.color || "";
+
+        // Validate color value
+        const validColors = ["primary", "secondary", "tertiary", "error", "none"];
+        const validColor = (color && validColors.includes(color)) ? color : "";
 
         if (checkCollapse(text)) {
           _scrollState.originalText = "";
           _dynamicText = "";
           _dynamicIcon = "";
           _dynamicTooltip = "";
+          _dynamicColor = "";
           _scrollState.needsScrolling = false;
           _scrollState.phase = 0;
           _scrollState.phaseCounter = 0;
@@ -388,23 +402,23 @@ Item {
         _scrollState.originalText = text;
         _scrollState.needsScrolling = text.length > currentMaxTextLength && currentMaxTextLength > 0;
         if (_scrollState.needsScrolling) {
-          // Start with the beginning of the text
           _dynamicText = text.substring(0, currentMaxTextLength);
-          _scrollState.phase = 0;  // Start at phase 0 (static beginning)
+          _scrollState.phase = 0;
           _scrollState.phaseCounter = 0;
           _scrollState.offset = 0;
-          scrollTimer.start();  // Start the scrolling timer
+          scrollTimer.start();
         } else {
           _dynamicText = text;
           scrollTimer.stop();
         }
         _dynamicIcon = icon;
+        _dynamicColor = validColor;
 
         _dynamicTooltip = toHtml(tooltip);
         _scrollState.offset = 0;
         return;
       } catch (e) {
-        Logger.w("CustomButton", `Failed to parse JSON. Content: "${lineToParse}"`);
+        Logger.w("CustomButton", `Failed to parse JSON. Content: "${contentStr}"`);
       }
     }
 
@@ -413,6 +427,7 @@ Item {
       _dynamicText = "";
       _dynamicIcon = "";
       _dynamicTooltip = "";
+      _dynamicColor = "";
       _scrollState.needsScrolling = false;
       _scrollState.phase = 0;
       _scrollState.phaseCounter = 0;
@@ -422,17 +437,17 @@ Item {
     _scrollState.originalText = contentStr;
     _scrollState.needsScrolling = contentStr.length > currentMaxTextLength && currentMaxTextLength > 0;
     if (_scrollState.needsScrolling) {
-      // Start with the beginning of the text
       _dynamicText = contentStr.substring(0, currentMaxTextLength);
-      _scrollState.phase = 0;  // Start at phase 0 (static beginning)
+      _scrollState.phase = 0;
       _scrollState.phaseCounter = 0;
       _scrollState.offset = 0;
-      scrollTimer.start();  // Start the scrolling timer
+      scrollTimer.start();
     } else {
       _dynamicText = contentStr;
       scrollTimer.stop();
     }
     _dynamicIcon = "";
+    _dynamicColor = "";
     _dynamicTooltip = toHtml(contentStr);
     _scrollState.offset = 0;
   }
@@ -611,60 +626,16 @@ Item {
     }
   }
 
-  // Timer to handle registration attempts
-  Timer {
-    id: registrationTimer
-    interval: 1500
-    repeat: false
-    onTriggered: {
-      // Only register if ipcIdentifier is set
-      if (ipcIdentifier && ipcIdentifier.trim() !== "") {
-        // Try to access the service through the global application object
-        try {
-          if (typeof Qt !== 'undefined' && Qt.application && Qt.application.customButtonIPCService) {
-            var service = Qt.application.customButtonIPCService;
-            var success = service.registerButton(root);
-            if (success) {
-              Logger.i("CustomButton", `Successfully registered button with identifier: '${ipcIdentifier}'`);
-            } else {
-              Logger.w("CustomButton", `Failed to register button with identifier: '${ipcIdentifier}'`);
-            }
-          } else {
-            Logger.w("CustomButton", `Service not available for button with identifier '${ipcIdentifier}'`);
-          }
-        } catch (e) {
-          Logger.w("CustomButton", `Error during registration of button with identifier '${ipcIdentifier}': ${e.message}`);
-        }
-      } else {
-        Logger.d("CustomButton", `No IPC identifier set for button, skipping registration`);
-      }
-    }
+  // Register IPC button in onLoaded (called by BarWidgetLoader after properties are set).
+  // Component.onCompleted is too early — widgetSettings depends on section/index/screen
+  // which are set by BarWidgetLoader.onLoaded after the component is created.
+  function onLoaded() {
+    if (ipcIdentifier && ipcIdentifier.trim() !== "")
+      CustomButtonIPCService.registerButton(root);
   }
 
-  // Register this button with the IPC service when component is completed
-  Component.onCompleted: {
-    registrationTimer.start();
-  }
-
-  // Unregister this button when component is destroyed
   Component.onDestruction: {
-    if (ipcIdentifier && ipcIdentifier.trim() !== "") {
-      // Try to access the service through the global application object for unregistration
-      try {
-        if (typeof Qt !== 'undefined' && Qt.application && Qt.application.customButtonIPCService) {
-          var service = Qt.application.customButtonIPCService;
-          var success = service.unregisterButton(root);
-          if (success) {
-            Logger.i("CustomButton", `Successfully unregistered button with identifier: '${ipcIdentifier}'`);
-          } else {
-            Logger.w("CustomButton", `Failed to unregister button with identifier: '${ipcIdentifier}'`);
-          }
-        } else {
-          Logger.w("CustomButton", `Service not available for unregistration of button with identifier '${ipcIdentifier}'`);
-        }
-      } catch (e) {
-        Logger.w("CustomButton", `Error during unregistration of button with identifier '${ipcIdentifier}': ${e.message}`);
-      }
-    }
+    if (ipcIdentifier && ipcIdentifier.trim() !== "")
+      CustomButtonIPCService.unregisterButton(root);
   }
 }

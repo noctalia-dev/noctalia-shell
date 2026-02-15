@@ -20,12 +20,12 @@ PanelWindow {
     // Note: screen property is inherited from PanelWindow and should be set by parent
     color: "transparent" // Transparent - background is in MainScreen below
 
-  // Make window pass-through when content is unloaded
-  visible: contentLoaded
+    // Make window pass-through when content is unloaded or bar is hidden via IPC
+    visible: contentLoaded && BarService.effectivelyVisible
 
-  Component.onCompleted: {
-    Logger.d("BarContentWindow", "Bar content window created for screen:", barWindow.screen?.name);
-  }
+    Component.onCompleted: {
+        Logger.d("BarContentWindow", "Bar content window created for screen:", barWindow.screen?.name);
+    }
 
     // Wayland layer configuration
     WlrLayershell.namespace: "noctalia-bar-content-" + (barWindow.screen?.name || "unknown")
@@ -43,232 +43,264 @@ PanelWindow {
     readonly property real barMarginV: Math.ceil((barFloating || barIsland) ? Settings.data.bar.marginVertical : 0)
     readonly property real barHeight: Style.getBarHeightForScreen(barWindow.screen?.name)
 
-  // Auto-hide properties
-  readonly property bool autoHide: Settings.data.bar.displayMode === "auto_hide"
-  readonly property int hideDelay: Settings.data.bar.autoHideDelay || 500
-  readonly property int showDelay: Settings.data.bar.autoShowDelay || 100
-  property bool isHidden: false
+    // Auto-hide properties
+    readonly property bool autoHide: Settings.data.bar.displayMode === "auto_hide"
+    readonly property int hideDelay: Settings.data.bar.autoHideDelay || 500
+    readonly property int showDelay: Settings.data.bar.autoShowDelay || 100
+    property bool isHidden: autoHide
 
-  // Hover tracking
-  property bool barHovered: false
+    // Hover tracking
+    property bool barHovered: false
 
-  // Check if any panel is open on this screen
-  readonly property bool panelOpen: PanelService.openedPanel !== null
+    // Check if any panel is open on this screen
+    readonly property bool panelOpen: PanelService.openedPanel !== null
 
-  // Timer for delayed hide
-  Timer {
-    id: hideTimer
-    interval: barWindow.hideDelay
-    onTriggered: {
-      if (barWindow.autoHide && !barWindow.barHovered && !barWindow.panelOpen && !BarService.popupOpen) {
-        BarService.setScreenHidden(barWindow.screen?.name, true);
-      }
-    }
-  }
-
-  // Timer for delayed show
-  Timer {
-    id: showTimer
-    interval: barWindow.showDelay
-    onTriggered: {
-      // Only show if still hovered (via trigger zone or bar itself)
-      if (barWindow.autoHide && BarService.isBarHovered(barWindow.screen?.name)) {
-        BarService.setScreenHidden(barWindow.screen?.name, false);
-      }
-    }
-  }
-
-  // React to auto-hide state changes from BarService
-  Connections {
-    target: BarService
-    function onBarAutoHideStateChanged(screenName, hidden) {
-      Logger.d("BarContentWindow", "onBarAutoHideStateChanged:", screenName, hidden, "my screen:", barWindow.screen?.name);
-      if (screenName === barWindow.screen?.name) {
-        barWindow.isHidden = hidden;
-      }
-    }
-    function onBarHoverStateChanged(screenName, hovered) {
-      if (screenName === barWindow.screen?.name && barWindow.autoHide) {
-        if (hovered) {
-          hideTimer.stop();
-          // If bar is already visible, no need to delay
-          if (!barWindow.isHidden) {
-            showTimer.stop();
-          } else {
-            // Bar is hidden, use show delay
-            showTimer.restart();
-          }
-        } else if (!barWindow.barHovered && !barWindow.panelOpen) {
-          showTimer.stop();
-          hideTimer.restart();
+    // Timer for delayed hide
+    Timer {
+        id: hideTimer
+        interval: barWindow.hideDelay
+        onTriggered: {
+            if (barWindow.autoHide && !barWindow.barHovered && !barWindow.panelOpen && !BarService.popupOpen) {
+                BarService.setScreenHidden(barWindow.screen?.name, true);
+            }
         }
-      }
     }
-  }
 
-  // Don't hide when panel is open
-  onPanelOpenChanged: {
-    if (panelOpen && autoHide) {
-      hideTimer.stop();
-      BarService.setScreenHidden(barWindow.screen?.name, false);
-    } else if (!panelOpen && autoHide && !barHovered) {
-      hideTimer.restart();
+    // Timer for delayed show
+    Timer {
+        id: showTimer
+        interval: barWindow.showDelay
+        onTriggered: {
+            // Only show if still hovered (via trigger zone or bar itself)
+            if (barWindow.autoHide && BarService.isBarHovered(barWindow.screen?.name)) {
+                BarService.setScreenHidden(barWindow.screen?.name, false);
+            }
+        }
     }
-  }
 
-  // React to popup menu closing
-  Connections {
-    target: BarService
-    function onPopupOpenChanged() {
-      if (!BarService.popupOpen && barWindow.autoHide && !barWindow.barHovered && !barWindow.panelOpen) {
-        hideTimer.restart();
-      }
+    // React to auto-hide state changes from BarService
+    Connections {
+        target: BarService
+        function onBarAutoHideStateChanged(screenName, hidden) {
+            Logger.d("BarContentWindow", "onBarAutoHideStateChanged:", screenName, hidden, "my screen:", barWindow.screen?.name);
+            if (screenName === barWindow.screen?.name) {
+                barWindow.isHidden = hidden;
+            }
+        }
+        function onBarHoverStateChanged(screenName, hovered) {
+            if (screenName === barWindow.screen?.name && barWindow.autoHide) {
+                if (hovered) {
+                    hideTimer.stop();
+                    // If bar is already visible, no need to delay
+                    if (!barWindow.isHidden) {
+                        showTimer.stop();
+                    } else {
+                        // Bar is hidden, use show delay
+                        showTimer.restart();
+                    }
+                } else if (!barWindow.barHovered && !barWindow.panelOpen) {
+                    showTimer.stop();
+                    hideTimer.restart();
+                }
+            }
+        }
     }
-  }
 
-  // React to displayMode changes
-  onAutoHideChanged: {
-    if (!autoHide) {
-      // Show bar when auto-hide is disabled
-      hideTimer.stop();
-      showTimer.stop();
-      barWindow.isHidden = false;
+    // Don't hide when panel is open
+    onPanelOpenChanged: {
+        if (panelOpen && autoHide) {
+            hideTimer.stop();
+            BarService.setScreenHidden(barWindow.screen?.name, false);
+        } else if (!panelOpen && autoHide && !barHovered) {
+            hideTimer.restart();
+        }
     }
-    // When auto-hide is enabled, don't immediately hide - wait for mouse to leave
-  }
 
-  // Anchor to the bar's edge
-  anchors {
-    top: barPosition === "top" || barIsVertical
-    bottom: barPosition === "bottom" || barIsVertical
-    left: barPosition === "left" || !barIsVertical
-    right: barPosition === "right" || !barIsVertical
-  }
+    // React to popup menu closing
+    Connections {
+        target: BarService
+        function onPopupOpenChanged() {
+            if (!BarService.popupOpen && barWindow.autoHide && !barWindow.barHovered && !barWindow.panelOpen) {
+                hideTimer.restart();
+            }
+        }
+    }
 
-  // Track if content should be loaded (stays true during fade-out animation)
-  property bool contentLoaded: !isHidden
+    // React to displayMode changes
+    onAutoHideChanged: {
+        if (!autoHide) {
+            // Show bar when auto-hide is disabled
+            hideTimer.stop();
+            showTimer.stop();
+            barWindow.isHidden = false;
+        }
+        // When auto-hide is enabled, don't immediately hide - wait for mouse to leave
+    }
 
-  // Timer to delay unload until after fade animation
-  Timer {
-    id: unloadTimer
-    interval: Style.animationFast + 50
-    onTriggered: {
-      // Only unload if still hidden AND not about to show (prevents unload/reload race)
-      if (barWindow.isHidden && !showTimer.running) {
-        // Clear hover state before unloading to prevent issues during destruction
-        barWindow.barHovered = false;
-        barWindow.contentLoaded = false;
-      }
+    // Anchor to the bar's edge
+    anchors {
+        top: barPosition === "top" || barIsVertical
+        bottom: barPosition === "bottom" || barIsVertical
+        left: barPosition === "left" || !barIsVertical
+        right: barPosition === "right" || !barIsVertical
     }
-  }
 
-  // When hidden changes, handle load/unload
-  onIsHiddenChanged: {
-    if (isHidden) {
-      // Start fade out, then unload after animation
-      unloadTimer.restart();
-    } else {
-      // Load immediately when showing
-      unloadTimer.stop();
-      contentLoaded = true;
-    }
-  }
+    // Track if content should be loaded (stays true during fade-out animation)
+    property bool contentLoaded: !isHidden
 
-  // Handle floating/island margins and framed mode offsets
-  margins {
-    top: {
-      if (barIsland)
-        return barPosition === "top" ? 0 : (barIsVertical ? barMarginV : 0);
-      if (barPosition === "top")
-        return barMarginV;
-      if (isFramed)
-        return frameThickness;
-      return barIsVertical ? barMarginV : 0;
+    // Timer to delay unload until after fade animation
+    Timer {
+        id: unloadTimer
+        interval: Style.animationFast + 50
+        onTriggered: {
+            // Only unload if still hidden AND not about to show (prevents unload/reload race)
+            if (barWindow.isHidden && !showTimer.running) {
+                // Clear hover state before unloading to prevent issues during destruction
+                barWindow.barHovered = false;
+                barWindow.contentLoaded = false;
+            }
+        }
     }
-    bottom: {
-      if (barIsland)
-        return barPosition === "bottom" ? 0 : (barIsVertical ? barMarginV : 0);
-      if (barPosition === "bottom")
-        return barMarginV;
-      if (isFramed)
-        return frameThickness;
-      return barIsVertical ? barMarginV : 0;
+
+    // When hidden changes, handle load/unload
+    onIsHiddenChanged: {
+        if (isHidden) {
+            // Start fade out, then unload after animation
+            unloadTimer.restart();
+        } else {
+            // Load immediately when showing
+            unloadTimer.stop();
+            deferredUnloadTimer.stop();
+            contentLoaded = true;
+        }
     }
-    left: {
-      if (barIsland)
-        return barPosition === "left" ? 0 : (!barIsVertical ? barMarginH : 0);
-      if (barPosition === "left")
-        return barMarginH;
-      if (isFramed)
-        return frameThickness;
-      return !barIsVertical ? barMarginH : 0;
+
+    // Debounced content unload when bar visibility is toggled.
+    // Rapid toggles keep widgets alive; content is only unloaded after the bar
+    // has been continuously hidden for the debounce period.
+    Timer {
+        id: deferredUnloadTimer
+        interval: 1000
+        onTriggered: {
+            if (!BarService.effectivelyVisible) {
+                barWindow.barHovered = false;
+                barWindow.contentLoaded = false;
+                Logger.d("BarContentWindow", "Debounced content unload for screen:", barWindow.screen?.name);
+            }
+        }
     }
-    right: {
-      if (barIsland)
-        return barPosition === "right" ? 0 : (!barIsVertical ? barMarginH : 0);
-      if (barPosition === "right")
-        return barMarginH;
-      if (isFramed)
-        return frameThickness;
-      return !barIsVertical ? barMarginH : 0;
+
+    Connections {
+        target: BarService
+        function onEffectivelyVisibleChanged() {
+            if (!BarService.effectivelyVisible) {
+                // Bar hidden — start debounced unload
+                deferredUnloadTimer.restart();
+            } else {
+                // Bar shown — cancel pending unload, ensure content is loaded
+                deferredUnloadTimer.stop();
+                if (!barWindow.isHidden) {
+                    barWindow.contentLoaded = true;
+                }
+            }
+        }
     }
-  }
+
+    // Handle floating/island margins and framed mode offsets
+    margins {
+        top: {
+            if (barIsland)
+                return barPosition === "top" ? 0 : (barIsVertical ? barMarginV : 0);
+            if (barPosition === "top")
+                return barMarginV;
+            if (isFramed)
+                return frameThickness;
+            return barIsVertical ? barMarginV : 0;
+        }
+        bottom: {
+            if (barIsland)
+                return barPosition === "bottom" ? 0 : (barIsVertical ? barMarginV : 0);
+            if (barPosition === "bottom")
+                return barMarginV;
+            if (isFramed)
+                return frameThickness;
+            return barIsVertical ? barMarginV : 0;
+        }
+        left: {
+            if (barIsland)
+                return barPosition === "left" ? 0 : (!barIsVertical ? barMarginH : 0);
+            if (barPosition === "left")
+                return barMarginH;
+            if (isFramed)
+                return frameThickness;
+            return !barIsVertical ? barMarginH : 0;
+        }
+        right: {
+            if (barIsland)
+                return barPosition === "right" ? 0 : (!barIsVertical ? barMarginH : 0);
+            if (barPosition === "right")
+                return barMarginH;
+            if (isFramed)
+                return frameThickness;
+            return !barIsVertical ? barMarginH : 0;
+        }
+    }
 
     // Set a tight window size
     implicitWidth: barIsVertical ? barHeight : barWindow.screen.width
     implicitHeight: barIsVertical ? barWindow.screen.height : barHeight
 
-  // Bar content loader - unloads when hidden to prevent input
-  Loader {
-    id: barLoader
-    anchors.fill: parent
-    active: barWindow.contentLoaded
-
-    sourceComponent: Item {
-      anchors.fill: parent
-
-      // Fade animation
-      opacity: barWindow.isHidden ? 0 : 1
-
-      Behavior on opacity {
-        enabled: barWindow.autoHide
-        NumberAnimation {
-          duration: Style.animationFast
-          easing.type: Easing.OutQuad
-        }
-      }
-
-      Bar {
-        id: barContent
+    // Bar content loader - unloads when hidden to prevent input
+    Loader {
+        id: barLoader
         anchors.fill: parent
-        screen: barWindow.screen
+        active: barWindow.contentLoaded
 
-        // Hover detection using HoverHandler (doesn't block child hover events)
-        HoverHandler {
-          id: hoverHandler
+        sourceComponent: Item {
+            anchors.fill: parent
 
-          onHoveredChanged: {
-            if (hovered) {
-              barWindow.barHovered = true;
-              BarService.setScreenHovered(barWindow.screen?.name, true);
-              if (barWindow.autoHide) {
-                hideTimer.stop();
-                showTimer.restart();
-              }
-            } else {
-              // Skip if already hidden (being destroyed)
-              if (barWindow.isHidden)
-                return;
-              barWindow.barHovered = false;
-              BarService.setScreenHovered(barWindow.screen?.name, false);
-              if (barWindow.autoHide && !barWindow.panelOpen) {
-                showTimer.stop();
-                hideTimer.restart();
-              }
+            // Fade animation
+            opacity: barWindow.isHidden ? 0 : 1
+
+            Behavior on opacity {
+                enabled: barWindow.autoHide
+                NumberAnimation {
+                    duration: Style.animationFast
+                    easing.type: Easing.OutQuad
+                }
             }
-          }
+
+            Bar {
+                id: barContent
+                anchors.fill: parent
+                screen: barWindow.screen
+
+                // Hover detection using HoverHandler (doesn't block child hover events)
+                HoverHandler {
+                    id: hoverHandler
+
+                    onHoveredChanged: {
+                        if (hovered) {
+                            barWindow.barHovered = true;
+                            BarService.setScreenHovered(barWindow.screen?.name, true);
+                            if (barWindow.autoHide) {
+                                hideTimer.stop();
+                                showTimer.restart();
+                            }
+                        } else {
+                            // Skip if already hidden (being destroyed)
+                            if (barWindow.isHidden)
+                                return;
+                            barWindow.barHovered = false;
+                            BarService.setScreenHovered(barWindow.screen?.name, false);
+                            if (barWindow.autoHide && !barWindow.panelOpen) {
+                                showTimer.stop();
+                                hideTimer.restart();
+                            }
+                        }
+                    }
+                }
+            }
         }
-      }
     }
-  }
 }

@@ -6,7 +6,8 @@
       "scrollingMode": "hover",
       "maxWidth": 145,
       "useFixedWidth": false,
-      "colorizeIcons": false
+      "colorizeIcons": false,
+      "textColor": "none"
     },
     "AudioVisualizer": {
       "width": 200,
@@ -14,7 +15,7 @@
       "hideWhenIdle": false
     },
     "Battery": {
-      "displayMode": "graphic",
+      "displayMode": "graphic-clean",
       "deviceNativePath": "__default__",
       "showPowerProfiles": false,
       "showNoctaliaPerformance": false,
@@ -22,10 +23,14 @@
       "hideIfIdle": false
     },
     "Bluetooth": {
-      "displayMode": "onhover"
+      "displayMode": "onhover",
+      "iconColor": "none",
+      "textColor": "none"
     },
     "Brightness": {
-      "displayMode": "onhover"
+      "displayMode": "onhover",
+      "iconColor": "none",
+      "textColor": "none"
     },
     "Clock": {
       "clockColor": "none",
@@ -73,9 +78,18 @@
       "colorizeSystemIcon": "none",
       "ipcIdentifier": ""
     },
+    "DarkMode": {
+      "iconColor": "none"
+    },
+    "KeepAwake": {
+      "iconColor": "none",
+      "textColor": "none"
+    },
     "KeyboardLayout": {
       "displayMode": "onhover",
-      "showIcon": true
+      "showIcon": true,
+      "iconColor": "none",
+      "textColor": "none"
     },
     "LockKeys": {
       "showCapsLock": true,
@@ -88,7 +102,7 @@
     },
     "Launcher": {
       "icon": "rocket",
-      "usePrimaryColor": false
+      "iconColor": "none"
     },
     "MediaMini": {
       "hideMode": "hidden",
@@ -101,6 +115,7 @@
       "showVisualizer": false,
       "showProgressRing": true,
       "visualizerType": "linear",
+      "textColor": "none",
       "compactMode": false,
       "panelShowAlbumArt": true,
       "panelShowVisualizer": true,
@@ -109,24 +124,29 @@
     },
     "Microphone": {
       "displayMode": "onhover",
-      "middleClickCommand": "pwvucontrol || pavucontrol"
+      "middleClickCommand": "pwvucontrol || pavucontrol",
+      "iconColor": "none",
+      "textColor": "none"
     },
     "NotificationHistory": {
       "showUnreadBadge": true,
       "hideWhenZero": false,
       "hideWhenZeroUnread": false,
-      "unreadBadgeColor": "primary"
+      "unreadBadgeColor": "primary",
+      "iconColor": "none"
     },
     "SessionMenu": {
-      "colorName": "error"
+      "iconColor": "error"
     },
     "Spacer": {
       "width": 20
     },
     "SystemMonitor": {
       "compactMode": true,
-      "usePrimaryColor": false,
+      "iconColor": "none",
+      "textColor": "none",
       "useMonospaceFont": true,
+      "usePadding": false,
       "showCpuUsage": true,
       "showCpuFreq": false,
       "showCpuTemp": true,
@@ -156,18 +176,29 @@
     "Tray": {
       "blacklist": [],
       "colorizeIcons": false,
+      "chevronColor": "none",
       "pinned": [],
       "drawerEnabled": true,
       "hidePassive": false
     },
     "VPN": {
-      "displayMode": "onhover"
-    },
-    "WiFi": {
-      "displayMode": "onhover"
+      "displayMode": "onhover",
+      "iconColor": "none",
+      "textColor": "none"
     },
     "Network": {
-      "displayMode": "onhover"
+      "displayMode": "onhover",
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "NightLight": {
+      "iconColor": "none"
+    },
+    "NoctaliaPerformance": {
+      "iconColor": "none"
+    },
+    "PowerProfile": {
+      "iconColor": "none"
     },
     "Workspace": {
       "labelMode": "index",
@@ -190,7 +221,12 @@
     },
     "Volume": {
       "displayMode": "onhover",
-      "middleClickCommand": "pwvucontrol || pavucontrol"
+      "middleClickCommand": "pwvucontrol || pavucontrol",
+      "iconColor": "none",
+      "textColor": "none"
+    },
+    "WallpaperSelector": {
+      "iconColor": "none"
     }
   },
   "controlCenter": {
@@ -208,7 +244,7 @@
     "Clock": {
       "showBackground": true,
       "clockStyle": "digital",
-      "usePrimaryColor": false,
+      "clockColor": "none",
       "useCustomFont": false,
       "format": "HH:mm\\nd MMMM yyyy"
     },

@@ -94,7 +94,7 @@ ColumnLayout {
     return {
       instanceId: TelemetryService.getInstanceId(),
       version: UpdateService.currentVersion,
-      compositor: CompositorService.isHyprland ? "Hyprland" : CompositorService.isNiri ? "Niri" : CompositorService.isSway ? "Sway" : CompositorService.isMango ? "MangoWC" : CompositorService.isLabwc ? "LabWC" : "Unknown",
+      compositor: TelemetryService.getCompositorType(),
       os: HostService.osPretty || "Unknown",
       ramGb: Math.round((root.getModule("Memory")?.result?.total || 0) / root.giga),
       monitors: monitors,
@@ -328,7 +328,7 @@ ColumnLayout {
 
   Process {
     id: fastfetchProcess
-    command: ["fastfetch", "--format", "json", "--config", "none"]
+    command: ["fastfetch", "--format", "json", "--config", Quickshell.shellDir + "/Assets/Services/fastfetch/system-info.jsonc"]
     running: false
 
     onExited: function (exitCode) {
@@ -365,6 +365,42 @@ ColumnLayout {
       mipmap: true
       smooth: true
       Layout.alignment: Qt.AlignBottom
+      rotation: Settings.isDebug ? 180 : 0
+
+      Behavior on rotation {
+        NumberAnimation {
+          duration: Style.animationSlowest
+          easing.type: Easing.OutBack
+        }
+      }
+
+      property int debugTapCount: 0
+
+      Timer {
+        id: debugTapTimer
+        interval: 5000
+        onTriggered: parent.debugTapCount = 0
+      }
+
+      MouseArea {
+        anchors.fill: parent
+        onClicked: {
+          if (parent.debugTapCount === 0) {
+            debugTapTimer.restart();
+          }
+          parent.debugTapCount++;
+          if (parent.debugTapCount >= 8) {
+            parent.debugTapCount = 0;
+            debugTapTimer.stop();
+            Settings.isDebug = !Settings.isDebug;
+            if (Settings.isDebug) {
+              ToastService.showNotice("Debug", I18n.tr("panels.about.debug-enabled"));
+            } else {
+              ToastService.showNotice("Debug", I18n.tr("panels.about.debug-disabled"));
+            }
+          }
+        }
+      }
     }
 
     ColumnLayout {
@@ -515,7 +551,7 @@ ColumnLayout {
       Layout.alignment: Qt.AlignHCenter
       onClicked: {
         Quickshell.execDetached(["xdg-open", "https://buymeacoffee.com/noctalia"]);
-        ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.kofi-opened"));
+        ToastService.showNotice(I18n.tr("panels.about.support"), I18n.tr("toast.donation-opened"));
       }
     }
   }

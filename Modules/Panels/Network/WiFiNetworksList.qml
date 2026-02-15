@@ -48,7 +48,7 @@ NBox {
   }
 
   Layout.fillWidth: true
-  Layout.preferredHeight: column.implicitHeight + Style.marginXL
+  Layout.preferredHeight: Math.round(column.implicitHeight + Style.marginXL)
   visible: root.model.length > 0
 
   ColumnLayout {
@@ -65,8 +65,7 @@ NBox {
 
       NText {
         text: root.label
-        pointSize: Style.fontSizeS
-        color: Color.mSecondary
+        pointSize: Style.fontSizeM
         font.weight: Style.fontWeightBold
         Layout.fillWidth: true
       }
@@ -81,11 +80,11 @@ NBox {
         Layout.fillWidth: true
         Layout.leftMargin: Style.marginXS
         Layout.rightMargin: Style.marginXS
-        implicitHeight: netColumn.implicitHeight + (Style.marginXL)
+        implicitHeight: Math.round(netColumn.implicitHeight + (Style.marginXL))
 
         opacity: (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) ? 0.6 : 1.0
 
-        color: modelData.connected ? Qt.rgba(Color.mPrimary.r, Color.mPrimary.g, Color.mPrimary.b, 0.08) : Color.mSurface
+        color: modelData.connected ? Qt.alpha(Color.mPrimary, 0.15) : Color.mSurface
 
         Behavior on opacity {
           NumberAnimation {
@@ -157,8 +156,8 @@ NBox {
                   visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
                   color: NetworkService.internetConnectivity ? Color.mPrimary : Color.mError
                   radius: height * 0.5
-                  width: connectedText.implicitWidth + (Style.marginS * 2)
-                  height: connectedText.implicitHeight + (Style.marginXS)
+                  width: Math.round(connectedText.implicitWidth + (Style.marginS * 2))
+                  height: Math.round(connectedText.implicitHeight + (Style.marginXS))
 
                   NText {
                     id: connectedText
@@ -187,8 +186,8 @@ NBox {
                   visible: NetworkService.disconnectingFrom === modelData.ssid
                   color: Color.mError
                   radius: height * 0.5
-                  width: disconnectingText.implicitWidth + (Style.marginS * 2)
-                  height: disconnectingText.implicitHeight + (Style.marginXS)
+                  width: Math.round(disconnectingText.implicitWidth + (Style.marginS * 2))
+                  height: Math.round(disconnectingText.implicitHeight + (Style.marginXS))
 
                   NText {
                     id: disconnectingText
@@ -203,8 +202,8 @@ NBox {
                   visible: NetworkService.forgettingNetwork === modelData.ssid
                   color: Color.mError
                   radius: height * 0.5
-                  width: forgettingText.implicitWidth + (Style.marginS * 2)
-                  height: forgettingText.implicitHeight + (Style.marginXS)
+                  width: Math.round(forgettingText.implicitWidth + (Style.marginS * 2))
+                  height: Math.round(forgettingText.implicitHeight + (Style.marginXS))
 
                   NText {
                     id: forgettingText
@@ -295,7 +294,7 @@ NBox {
                 visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
                 text: I18n.tr("common.disconnect")
                 outlined: !hovered
-                fontSize: Style.fontSizeXS
+                fontSize: Style.fontSizeS
                 backgroundColor: Color.mError
                 onClicked: NetworkService.disconnect(modelData.ssid)
               }
@@ -310,7 +309,7 @@ NBox {
             radius: Style.radiusS
             border.width: Style.borderS
             border.color: Color.mOutline
-            implicitHeight: infoGrid.implicitHeight + Style.marginS * 2
+            implicitHeight: Math.round(infoGrid.implicitHeight + Style.marginS * 2)
             clip: true
             onVisibleChanged: {
               if (visible && infoGrid && infoGrid.forceLayout) {
@@ -402,7 +401,7 @@ NBox {
                       const value = NetworkService.activeWifiIf || "";
                       if (value.length > 0) {
                         Quickshell.execDetached(["wl-copy", value]);
-                        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                        ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
                       }
                     }
                   }
@@ -545,7 +544,7 @@ NBox {
                       const value = NetworkService.activeWifiDetails.ipv4 || "";
                       if (value.length > 0) {
                         Quickshell.execDetached(["wl-copy", value]);
-                        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                        ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
                       }
                     }
                   }

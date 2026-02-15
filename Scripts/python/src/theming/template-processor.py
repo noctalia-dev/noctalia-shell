@@ -251,17 +251,22 @@ def main() -> int:
                 print(f"Error: Not a file: {args.image}", file=sys.stderr)
                 return 1
 
+            # Determine scheme type
+            scheme_type = args.scheme_type
+
+            # M3 schemes use Triangle filter (matches matugen), others use Box
+            # (sharper downscale preserves distinct color regions for k-means)
+            m3_schemes = {"tonal-spot", "content", "fruit-salad", "rainbow", "monochrome"}
+            resize_filter = "Triangle" if scheme_type in m3_schemes else "Box"
+
             try:
-                pixels = read_image(args.image)
+                pixels = read_image(args.image, resize_filter)
             except ImageReadError as e:
                 print(f"Error reading image: {e}", file=sys.stderr)
                 return 1
             except Exception as e:
                 print(f"Unexpected error reading image: {e}", file=sys.stderr)
                 return 1
-
-            # Determine scheme type
-            scheme_type = args.scheme_type
 
             # Extract palette based on scheme type:
             # - M3 schemes (tonal-spot, fruit-salad, rainbow, content): Use Wu quantizer + Score

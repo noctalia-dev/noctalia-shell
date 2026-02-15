@@ -50,6 +50,7 @@
       "device-label": "电池设备",
       "display-mode-description": "选择电池在任务栏中的显示方式。",
       "display-mode-graphic": "图形化电池",
+      "display-mode-graphic-clean": "图形电池（无%）",
       "display-mode-icon-always": "图标 - 始终显示 %",
       "display-mode-icon-hover": "图标 - 悬停时显示",
       "display-mode-icon-only": "仅图标",
@@ -57,7 +58,6 @@
       "hide-if-idle-label": "空闲时隐藏",
       "hide-if-not-detected-description": "当系统未检测到电池时，隐藏该小部件。",
       "hide-if-not-detected-label": "未检测到电池时，隐藏该小部件",
-      "low-battery-threshold-description": "当电量低于此百分比时显示警告。",
       "low-battery-threshold-label": "低电量警告阈值",
       "show-noctalia-performance-description": "在电池面板中显示 Noctalia 性能模式开关。<br>该模式通过禁用 Noctalia 中的阴影和动画减少性能开销。",
       "show-noctalia-performance-label": "显示 Noctalia 性能模式开关",
@@ -74,7 +74,6 @@
       "horizontal-bar-description": "提示：使用 \\n 创建换行。",
       "horizontal-bar-label": "水平栏",
       "preview": "预览",
-      "select-color-description": "应用主题颜色以示强调。",
       "tooltip-format-description": "自定义鼠标悬停在时钟上时显示的提示信息，可以使用格式化字符串。留空以使用默认提示信息。",
       "tooltip-format-label": "提示信息格式",
       "use-custom-font-description": "使用自定义字体覆盖时钟的默认字体选择。",
@@ -199,6 +198,8 @@
     "system-monitor": {
       "compact-mode-description": "将数据以条形图显示以防止布局偏移。",
       "compact-mode-label": "紧凑模式",
+      "cpu-frequency-description": "显示当前 CPU 时钟速度（GHz）。",
+      "cpu-frequency-label": "显示 CPU 频率",
       "cpu-temperature-description": "显示 CPU 温度（如果可用）。",
       "cpu-temperature-label": "CPU 温度",
       "cpu-usage-description": "以百分比显示当前 CPU 使用率",
@@ -223,7 +224,11 @@
       "swap-usage-description": "显示 Swap 使用情况。",
       "swap-usage-label": "Swap",
       "use-monospace-font-description": "使用等宽字体以保持字符宽度一致。",
-      "use-monospace-font-label": "等宽字体"
+      "use-monospace-font-label": "等宽字体",
+      "use-padding-description": "用前导空格填充文本值，以防止布局偏移。",
+      "use-padding-description-disabled-monospace-font": "此功能需要等宽字体。",
+      "use-padding-description-disabled-vertical": "垂直任务栏不支持文本内边距。",
+      "use-padding-label": "文本填充"
     },
     "taskbar": {
       "colorize-icons-description": "将主题颜色应用到任务栏图标。",
@@ -249,6 +254,8 @@
       "title-width-reset-tooltip": "重置标题宽度"
     },
     "tray": {
+      "chevron-color-description": "将主题颜色应用于抽屉的箭头图标。",
+      "chevron-color-label": "箭头颜色",
       "colorize-icons-description": "将主题颜色应用到系统托盘图标。",
       "colorize-icons-label": "着色图标",
       "drawer-enabled-description": "启用时，未固定的托盘项显示在抽屉面板中。<br>禁用时，所有托盘项都内联显示。",
@@ -370,6 +377,7 @@
     "color-muted": "已静音",
     "colors": "颜色",
     "command": "命令",
+    "confirm": "确认",
     "connect": "连接",
     "connected": "已连接",
     "connecting": "正在连接...",
@@ -393,6 +401,7 @@
     "edit": "编辑",
     "enabled": "已启用",
     "error": "错误",
+    "ethernet": "以太网",
     "events": "事件",
     "execute": "执行",
     "faithful": "忠实",
@@ -411,6 +420,7 @@
     "installed": "已安装",
     "interface": "界面",
     "internet": "互联网",
+    "keybind": "按键绑定",
     "language": "语言",
     "loading": "正在加载...",
     "local": "本地",
@@ -448,9 +458,12 @@
     "primary": "主要的",
     "random": "随机",
     "reboot": "重启",
+    "reboot-to-uefi": "重启到 UEFI 固件",
+    "record": "开始录制",
     "refresh": "刷新",
     "required": "(必要)",
     "reset": "重置",
+    "reset-to-default": "重置为默认值",
     "result-count": "{count} 结果",
     "result-count-plural": "{count} 结果",
     "resume": "继续",
@@ -462,6 +475,9 @@
     "security": "安全",
     "select": "选择",
     "select-color": "选择颜色",
+    "select-color-description": "应用主题颜色以示强调。",
+    "select-icon-color": "选择图标颜色",
+    "settings": "设置",
     "shortcuts": "快捷方式",
     "shutdown": "关机",
     "signal": "信号",
@@ -469,6 +485,7 @@
     "sources": "来源",
     "start": "开始",
     "stop": "停止",
+    "supporters": "支持者",
     "suspend": "挂起",
     "templates": "模板",
     "tertiary": "第三",
@@ -494,6 +511,7 @@
     "week": "周",
     "widgets": "小部件",
     "width": "宽度",
+    "wifi": "Wi-Fi",
     "windows": "窗口",
     "yes": "是"
   },
@@ -616,6 +634,19 @@
       "quick-settings-style-modern": "现代"
     },
     "frame-rates-fps": "{fps} FPS",
+    "launcher-density": {
+      "comfortable": "舒适",
+      "compact": "紧凑",
+      "default": "默认"
+    },
+    "launcher-view-mode": {
+      "grid": "网格",
+      "list": "列表"
+    },
+    "notification-density": {
+      "compact": "紧凑",
+      "default": "默认"
+    },
     "scrolling-modes": {
       "always": "始终滚动",
       "hover": "悬停时滚动",
@@ -646,10 +677,13 @@
   },
   "panels": {
     "about": {
+      "become-supporter": "成为支持者",
       "changelog": "查看更改日志",
-      "contributors-desc": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
+      "contributors-description": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
       "contributors-description-plural": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
       "copy-info": "复制信息",
+      "debug-disabled": "调试模式已禁用",
+      "debug-enabled": "调试模式已启用",
       "info-copied": "信息已复制到剪贴板",
       "noctalia-desc": "一款为 Wayland 精心打造的时尚简约桌面 shell，基于 Quickshell 构建。",
       "noctalia-git-commit": "Git 提交:",
@@ -658,6 +692,10 @@
       "noctalia-title": "Noctalia shell",
       "privacy-policy": "隐私政策",
       "support": "支持我们",
+      "supporter-badge": "支持者",
+      "supporters-desc": "非常感谢我们出色的支持者！",
+      "supporters-desc-plural": "非常感谢我们的<b>{count}位出色</b>支持者！",
+      "supporters-loading": "正在加载支持者...",
       "system-cpu": "中央处理器：",
       "system-disk": "磁盘：",
       "system-gpu": "图形处理器：",
@@ -735,6 +773,8 @@
       "appearance-auto-show-delay-label": "显示延迟",
       "appearance-background-opacity-description": "为状态栏设置背景不透明度。",
       "appearance-background-opacity-label": "状态栏背景不透明度",
+      "appearance-capsule-color-description": "为栏胶囊选择一种颜色，或不使用任何颜色以采用默认表面颜色。",
+      "appearance-capsule-color-label": "胶囊颜色",
       "appearance-capsule-opacity-description": "设置显示胶囊时小部件背景的不透明度。",
       "appearance-capsule-opacity-label": "胶囊不透明度",
       "appearance-density-description": "调整状态栏的内边距以获得紧凑或宽松的外观。",
@@ -838,6 +878,21 @@
       "wallpaper-method-label": "调色板生成方法",
       "wallpaper-monitor-source-description": "选择用于提取壁纸颜色的显示器。",
       "wallpaper-monitor-source-label": "颜色生成源"
+    },
+    "connections": {
+      "authentication-required": "需要认证",
+      "bluetooth-devices-unnamed": "未命名设备不显示。",
+      "bluetooth-discoverable": "当此设置选项卡打开时，此设备可被发现为 <b> {hostName} </b>。",
+      "bluetooth-rssi-polling-description": "通过 bluetoothctl 定期采样已连接设备的 RSSI。可能并非所有设备都可用；启用时占用最少资源。",
+      "bluetooth-rssi-polling-interval-description": "配置已连接设备的信号强度更新频率。",
+      "bluetooth-rssi-polling-interval-label": "轮询间隔",
+      "bluetooth-rssi-polling-label": "蓝牙信号轮询",
+      "disable-discoverability-description": "将您的设备从附近的 Bluetooth 设备中隐藏。",
+      "disable-discoverability-label": "禁用设备可见性",
+      "hide-unnamed-devices-description": "隐藏仅显示为 Bluetooth 地址的设备。",
+      "hide-unnamed-devices-label": "隐藏未命名设备",
+      "pin-instructions": "请输入您设备上显示的PIN码。",
+      "title": "连接"
     },
     "control-center": {
       "cards-desc": "自定义在控制中心显示的控制项及其顺序。",
@@ -1005,6 +1060,19 @@
       "fonts-monospace-search-placeholder": "搜索等宽字体...",
       "fonts-reset-scaling": "恢复默认缩放",
       "fonts-title": "字体",
+      "keybinds-conflict-description": "此按键组合已分配给 {action}。",
+      "keybinds-conflict-title": "按键绑定冲突",
+      "keybinds-description": "配置面板和启动器的全局导航键。",
+      "keybinds-down": "下移",
+      "keybinds-enter": "确认 / 操作",
+      "keybinds-escape": "关闭 / 返回",
+      "keybinds-left": "左移",
+      "keybinds-modifier-description": "快捷键必须包含修饰键 (Ctrl 或 Alt)。",
+      "keybinds-modifier-title": "需要修饰键",
+      "keybinds-remove": "删除",
+      "keybinds-right": "右移",
+      "keybinds-title": "导航按键绑定",
+      "keybinds-up": "上移",
       "language-desc": "选择您偏好的应用程序语言。",
       "language-select-auto-detect": "自动检测",
       "language-select-description": "选择应用程序界面中使用的语言。",
@@ -1025,7 +1093,9 @@
       "screen-corners-solid-black-description": "使用实心黑色而非状态栏背景色。",
       "screen-corners-solid-black-label": "实心黑色边角",
       "screen-corners-title": "屏幕边角",
-      "settings-copied": "设置已复制到剪贴板"
+      "settings-copied": "设置已复制到剪贴板",
+      "tab-basics": "基础",
+      "tab-keybinds": "按键绑定"
     },
     "hooks": {
       "info-command-info-description": "• 命令通过 shell 执行（sh -lc）<br>• 命令在后台运行（分离）<br>• 测试按钮使用当前值执行",
@@ -1080,15 +1150,19 @@
       "settings-clip-wrap-text-label": "环绕剪贴板文本",
       "settings-clipboard-history-description": "从启动器访问之前复制的项目。",
       "settings-clipboard-history-label": "启用剪贴板历史记录",
-      "settings-clipboard-watch-image-description": "传递给 wl-paste 以进行图像更改的完整命令字符串。(需要重启)",
+      "settings-clipboard-watch-image-description": "传递给 wl-paste 以进行图像更改的完整命令字符串（需要重启）。",
       "settings-clipboard-watch-image-label": "图像监视命令",
-      "settings-clipboard-watch-text-description": "传递给 wl-paste 以进行文本更改的完整命令字符串。(需要重启)",
+      "settings-clipboard-watch-text-description": "传递给 wl-paste 以进行文本更改的完整命令字符串（需要重启）。",
       "settings-clipboard-watch-text-label": "文本监视命令",
       "settings-custom-launch-prefix-description": "使用自定义启动器前缀命令（例如：'runapp'用于systemd集成）。",
       "settings-custom-launch-prefix-enabled-description": "使用自定义前缀启动应用程序，而不是默认方法。",
       "settings-custom-launch-prefix-enabled-label": "启用自定义启动前缀",
       "settings-custom-launch-prefix-label": "自定义启动前缀",
+      "settings-density-description": "调整应用程序图标大小和 Launcher 密度。",
+      "settings-density-label": "密度",
       "settings-desc": "自定义启动器的行为和外观。",
+      "settings-enable-session-search-description": "在 Launcher 中搜索时显示会话操作（锁定、关机、重启等）。",
+      "settings-enable-session-search-label": "启用会话搜索",
       "settings-enable-settings-search-description": "在启动器中搜索时显示设置结果。",
       "settings-enable-settings-search-label": "启用设置搜索",
       "settings-enable-windows-search-description": "搜索并聚焦活动窗口。",
@@ -1098,6 +1172,8 @@
       "settings-icon-mode-label": "使用本地图标",
       "settings-ignore-mouse-input-description": "禁用启动器中的鼠标交互和滚轮。",
       "settings-ignore-mouse-input-label": "忽略鼠标输入",
+      "settings-overlay-layer-description": "在覆盖层上显示启动器，位于全屏窗口之上。启用时，启动器不会附加到栏。",
+      "settings-overlay-layer-label": "在全屏上方显示",
       "settings-position-description": "选择启动器面板出现的位置。",
       "settings-show-categories-description": "显示用于筛选应用程序的类别标签。",
       "settings-show-categories-label": "显示类别",
@@ -1109,6 +1185,8 @@
       "settings-terminal-command-label": "终端命令",
       "settings-use-app2unit-description": "使用替代启动方法以更好地管理应用程序进程并防止问题。",
       "settings-use-app2unit-label": "使用 App2Unit 启动应用程序",
+      "settings-view-mode-description": "选择启动器条目的布局。",
+      "settings-view-mode-label": "视图模式",
       "title": "启动器"
     },
     "location": {
@@ -1125,7 +1203,7 @@
       "date-time-show-events-description": "在日历面板中显示事件。",
       "date-time-show-events-label": "显示日历事件",
       "date-time-title": "日期和时间",
-      "date-time-use-analog-description": "在日历窗口和锁定屏幕上显示模拟时钟。",
+      "date-time-use-analog-description": "在日历窗口上显示模拟时钟。",
       "date-time-use-analog-label": "使用模拟时钟样式",
       "date-time-week-numbers-description": "在日历中显示一年中的第几周（例如：第 38 周）。",
       "date-time-week-numbers-label": "显示周数",
@@ -1153,10 +1231,24 @@
       "allow-password-with-fprintd-label": "允许使用 fprintd 进行密码登录",
       "auto-start-auth-description": "自动启动指纹验证，无需按键或单击按钮。",
       "auto-start-auth-label": "自动启动身份验证",
+      "clock-format-description": "使用日期/时间语法令牌自定义时钟格式。",
+      "clock-format-label": "时钟格式",
+      "clock-style-analog": "模拟",
+      "clock-style-custom": "自定义",
+      "clock-style-description": "选择锁屏时钟的视觉样式。",
+      "clock-style-digital": "数字",
+      "clock-style-label": "时钟样式",
       "compact-lockscreen-description": "仅显示登录输入和系统控制，隐藏天气和媒体小部件。",
       "compact-lockscreen-label": "紧凑型锁屏",
       "lock-on-suspend-description": "系统挂起时自动锁定屏幕。",
       "lock-on-suspend-label": "挂起时锁定",
+      "lock-screen-animations-description": "启用或禁用锁屏动画。",
+      "lock-screen-animations-label": "锁屏动画",
+      "lock-screen-blur-strength-description": "对锁屏壁纸应用模糊效果。",
+      "lock-screen-blur-strength-label": "锁屏模糊强度",
+      "lock-screen-tint-strength-description": "将色调叠加应用于锁屏壁纸。",
+      "lock-screen-tint-strength-label": "锁屏着色强度",
+      "monitors-desc": "在指定显示器上显示锁屏。如果未选择，则默认为所有显示器。",
       "show-hibernate-description": "在电源控制中显示'休眠'选项。",
       "show-hibernate-label": "显示休眠",
       "show-session-buttons-description": "允许从锁屏访问电源设置。",
@@ -1192,6 +1284,8 @@
       "monitors-desc": "在特定显示器上显示通知。如果未选择，则默认为全部。",
       "settings-always-on-top-description": "在全屏窗口和其他图层上方显示通知。",
       "settings-background-opacity-description": "调整通知背景的透明度。",
+      "settings-density-description": "选择通知卡密度。",
+      "settings-density-label": "密度",
       "settings-desc": "配置通知的外观和行为。",
       "settings-do-not-disturb-description": "启用后禁用所有通知弹出窗口。",
       "settings-enabled-description": "启用或禁用通知守护进程，需要重启 Noctalia shell。",
@@ -1267,13 +1361,19 @@
       "types-volume-label": "输出音量"
     },
     "plugins": {
+      "auto-update": "自动更新插件",
+      "auto-update-description": "在 shell 启动时自动更新所有插件。",
       "available-description": "浏览并安装来自已配置源的插件。",
       "available-label": "可用插件",
       "available-no-plugins-description": "检查你的插件源或刷新列表。",
       "available-no-plugins-label": "没有可用的插件",
+      "check-for-updates": "检查更新",
+      "checking-for-updates": "正在检查更新...",
       "collision-already-installed": "此插件已安装",
       "collision-custom-version-exists": "来自“{source}”的自定义版本已安装",
       "collision-official-version-exists": "此插件的官方版本已安装",
+      "development-disable": "禁用此插件的开发模式",
+      "development-enable": "为此插件启用开发模式。",
       "filter-downloaded": "已下载",
       "filter-not-downloaded": "未下载",
       "filter-tags-description": "按类别或下载状态筛选插件。",
@@ -1342,6 +1442,9 @@
       "entry-settings-default-command-logout": "内部注销（无命令）",
       "entry-settings-default-info-description": "如果没有指定自定义命令，将使用默认的系统命令。",
       "entry-settings-default-info-label": "默认命令",
+      "entry-settings-keybind-description": "当会话菜单打开时，分配一个按键组合来触发此操作。",
+      "entry-settings-keybind-placeholder": "按下录制以分配一个键...",
+      "entry-settings-keybind-recording": "录制中... 按任意组合键",
       "entry-settings-title": "配置 {entry}",
       "entry-settings-tooltip": "配置命令",
       "general-desc": "配置会话菜单面板的行为和外观。",
@@ -1352,8 +1455,8 @@
       "position-description": "选择会话菜单面板打开时出现的位置。",
       "show-header-description": "在会话菜单顶部显示标题和关闭按钮。",
       "show-header-label": "显示标题",
-      "show-number-labels-description": "在按钮上显示数字标签（1-2-3-4...）并启用数字快捷键以快速选择。",
-      "show-number-labels-label": "显示数字标签"
+      "show-keybinds-description": "在会话选项上显示快捷键提示。",
+      "show-keybinds-label": "显示快捷键"
     },
     "system-monitor": {
       "critical-color-label": "严重颜色",
@@ -1413,7 +1516,7 @@
       "settings-panel-mode-description": "选择「设置」面板的布局（可能需要重新打开「设置」面板才会生效）。",
       "settings-panel-mode-label": "「设置」面板模式",
       "shadows-description": "启用条形图和面板下的阴影。",
-      "shadows-direction-description": "选择阴影投射的方向。",
+      "shadows-direction-description": "选择阴影投射的位置。",
       "shadows-direction-label": "阴影方向",
       "shadows-label": "阴影",
       "title": "用户界面",
@@ -1436,6 +1539,8 @@
       "look-feel-fill-color-description": "选择可能出现在壁纸后面的填充颜色。",
       "look-feel-fill-mode-description": "选择图像应如何缩放以匹配显示器的分辨率。",
       "look-feel-fill-mode-label": "填充模式",
+      "look-feel-skip-startup-transition-description": "在 shell 启动时跳过壁纸动画。",
+      "look-feel-skip-startup-transition-label": "跳过启动过渡动画",
       "look-feel-title": "外观与体验",
       "look-feel-transition-duration-description": "过渡动画的持续时间（秒）。",
       "look-feel-transition-duration-label": "过渡持续时间",
@@ -1453,6 +1558,10 @@
       "settings-monitor-specific-description": "为每个显示器设置不同的壁纸文件夹。",
       "settings-monitor-specific-label": "显示器特定目录",
       "settings-monitor-specific-tooltip": "显示器壁纸文件夹",
+      "settings-overview-blur-strength-description": "将模糊强度应用于概览。",
+      "settings-overview-blur-strength-label": "概览模糊强度",
+      "settings-overview-tint-description": "将着色强度应用到概览。",
+      "settings-overview-tint-label": "概览着色强度",
       "settings-recursive-search-description": "同时在壁纸目录的子文件夹中搜索壁纸。",
       "settings-recursive-search-label": "搜索子文件夹",
       "settings-select-monitor-folder": "选择显示器壁纸文件夹",
@@ -1470,6 +1579,7 @@
     }
   },
   "placeholders": {
+    "add-new-keybind": "添加新键位绑定",
     "command-example": "echo \"Hello World\"",
     "enter-command": "输入要执行的命令（应用程序或自定义脚本）",
     "enter-ipc-identifier": "输入 IPC 命令的唯一标识符",
@@ -1477,6 +1587,7 @@
     "enter-text-to-collapse": "例如：“nothing is playing”。使用 /regex/ 表示匹配模式。",
     "enter-tooltip": "输入提示信息",
     "enter-width-pixels": "输入宽度（像素）",
+    "keybind-recording": "正在录制按键绑定...",
     "search": "搜索...",
     "search-icons": "例如：noctalia, niri, battery, cloud",
     "search-launcher": "搜索条目...或使用 > 执行命令",
@@ -1508,7 +1619,7 @@
   "setup": {
     "all-done": "完成！",
     "appearance": {
-      "subheader": "选择 Dark Mode 和颜色来源（壁纸或预定义）。"
+      "subheader": "选择深色模式和颜色来源（壁纸或预设）。"
     },
     "customize": {
       "header": "自定义体验",
@@ -1615,7 +1726,7 @@
     "noctalia-performance": {
       "disabled": "性能模式已禁用",
       "enabled": "已启用性能模式",
-      "label": "Noctalia 性能"
+      "label": "Noctalia 性能模式"
     },
     "power-profile": {
       "changed": "电源模式已更改",
@@ -1722,6 +1833,8 @@
       "categories-anime": "动漫",
       "categories-label": "分类",
       "categories-people": "人物",
+      "color-extraction-disabled": "使用壁纸颜色提取",
+      "color-extraction-enabled": "使用预设配色方案",
       "order-asc": "升序",
       "order-desc": "降序",
       "order-label": "顺序",
@@ -1752,6 +1865,8 @@
     "transitions": {
       "disc": "圆盘",
       "fade": "淡入淡出",
+      "honeycomb": "蜂巢",
+      "pixelate": "像素化",
       "stripes": "条纹",
       "wipe": "擦除"
     },
@@ -1759,7 +1874,9 @@
     "wallhaven": {
       "loading": "正在加载壁纸...",
       "no-results": "未找到壁纸。请尝试不同的搜索查询。",
-      "page": "{current} / {total}"
+      "page": "{current} / {total}",
+      "page-prefix": "页面",
+      "page-suffix": "共 {total} 个"
     }
   },
   "weather": {

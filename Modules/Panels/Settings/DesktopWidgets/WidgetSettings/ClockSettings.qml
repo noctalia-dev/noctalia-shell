@@ -18,7 +18,7 @@ ColumnLayout {
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
   property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : true
   property string valueClockStyle: widgetData.clockStyle !== undefined ? widgetData.clockStyle : widgetMetadata.clockStyle
-  property bool valueUsePrimaryColor: widgetData.usePrimaryColor !== undefined ? widgetData.usePrimaryColor : widgetMetadata.usePrimaryColor
+  property string valueClockColor: widgetData.clockColor !== undefined ? widgetData.clockColor : widgetMetadata.clockColor
   property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
   property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : ""
   property string valueFormat: widgetData.format !== undefined ? widgetData.format : widgetMetadata.format
@@ -34,11 +34,11 @@ ColumnLayout {
     settings.showBackground = valueShowBackground;
     settings.roundedCorners = valueRoundedCorners;
     settings.clockStyle = valueClockStyle;
-    settings.usePrimaryColor = valueUsePrimaryColor;
+    settings.clockColor = valueClockColor;
     settings.useCustomFont = valueUseCustomFont;
     settings.customFont = valueCustomFont;
     settings.format = valueFormat.trim();
-    return settings;
+    settingsChanged(settings);
   }
 
   // Function to insert token at cursor position in the focused input
@@ -65,7 +65,7 @@ ColumnLayout {
 
       // Ensure the input keeps focus
       input.focus = true;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -95,19 +95,41 @@ ColumnLayout {
     ]
     onSelected: key => {
                   valueClockStyle = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
-  NToggle {
-    Layout.fillWidth: true
-    label: I18n.tr("bar.clock.use-primary-color-label")
-    description: I18n.tr("bar.clock.use-primary-color-description")
-    checked: valueUsePrimaryColor
-    onToggled: checked => {
-                 valueUsePrimaryColor = checked;
-                 settingsChanged(saveSettings());
-               }
+  NComboBox {
+    label: I18n.tr("common.select-color")
+    description: I18n.tr("common.select-color-description")
+    model: [
+      {
+        "name": I18n.tr("common.none"),
+        "key": "none"
+      },
+      {
+        "key": "primary",
+        "name": I18n.tr("common.primary")
+      },
+      {
+        "key": "secondary",
+        "name": I18n.tr("common.secondary")
+      },
+      {
+        "key": "tertiary",
+        "name": I18n.tr("common.tertiary")
+      },
+      {
+        "key": "error",
+        "name": I18n.tr("common.error")
+      }
+    ]
+    currentKey: valueClockColor
+    onSelected: key => {
+                  valueClockColor = key;
+                  saveSettings();
+                }
+    minimumWidth: 200
   }
 
   NToggle {
@@ -117,7 +139,7 @@ ColumnLayout {
     checked: valueUseCustomFont
     onToggled: checked => {
                  valueUseCustomFont = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -134,7 +156,7 @@ ColumnLayout {
     minimumWidth: 300
     onSelected: function (key) {
       valueCustomFont = key;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -225,7 +247,7 @@ ColumnLayout {
                 family: valueUseCustomFont && valueCustomFont ? valueCustomFont : Settings.data.ui.fontDefault
                 pointSize: Style.fontSizeM
                 font.weight: Style.fontWeightBold
-                color: valueUsePrimaryColor ? Color.mPrimary : Color.mOnSurface
+                color: Color.resolveColorKey(valueClockColor)
                 wrapMode: Text.WordWrap
                 Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
 
@@ -266,7 +288,7 @@ ColumnLayout {
     checked: valueShowBackground
     onToggled: checked => {
                  valueShowBackground = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -278,7 +300,7 @@ ColumnLayout {
     checked: valueRoundedCorners
     onToggled: checked => {
                  valueRoundedCorners = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

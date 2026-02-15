@@ -3,26 +3,29 @@ import QtQuick.Controls
 import QtQuick.Templates as T
 import qs.Commons
 
-T.ScrollView {
+ScrollView {
   id: root
 
   property color handleColor: Qt.alpha(Color.mHover, 0.8)
   property color handleHoverColor: handleColor
   property color handlePressedColor: handleColor
   property color trackColor: "transparent"
-  property real handleWidth: 6
+  property real handleWidth: Math.round(6 * Style.uiScaleRatio)
   property real handleRadius: Style.iRadiusM
   property int verticalPolicy: ScrollBar.AsNeeded
   property int horizontalPolicy: ScrollBar.AsNeeded
   property bool preventHorizontalScroll: horizontalPolicy === ScrollBar.AlwaysOff
   property int boundsBehavior: Flickable.StopAtBounds
-  readonly property bool verticalScrollable: contentItem.contentHeight > contentItem.height
-  readonly property bool horizontalScrollable: contentItem.contentWidth > contentItem.width
+  readonly property bool verticalScrollable: (contentItem.contentHeight > contentItem.height) || (verticalPolicy == ScrollBar.AlwaysOn)
+  readonly property bool horizontalScrollable: (contentItem.contentWidth > contentItem.width) || (horizontalPolicy == ScrollBar.AlwaysOn)
   property bool showGradientMasks: true
   property color gradientColor: Color.mSurfaceVariant
   property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
   property real userRightPadding: 0
+
+  // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
+  property real wheelScrollMultiplier: 2.0
 
   rightPadding: userRightPadding + (reserveScrollbarSpace && verticalScrollable ? handleWidth + Style.marginXS : 0)
 
@@ -83,6 +86,9 @@ T.ScrollView {
     `, root, "bottomGradient");
   }
 
+  // Reference to the internal Flickable for wheel handling
+  property Flickable _internalFlickable: null
+
   // Function to configure the underlying Flickable
   function configureFlickable() {
     // Find the internal Flickable (it's usually the first child)
@@ -91,6 +97,7 @@ T.ScrollView {
       if (child.toString().indexOf("Flickable") !== -1) {
         // Configure the flickable to prevent horizontal scrolling
         child.boundsBehavior = root.boundsBehavior;
+        root._internalFlickable = child;
 
         if (root.preventHorizontalScroll) {
           child.flickableDirection = Flickable.VerticalFlick;
@@ -99,6 +106,20 @@ T.ScrollView {
         break;
       }
     }
+  }
+
+  WheelHandler {
+    enabled: root.wheelScrollMultiplier !== 1.0 && root._internalFlickable !== null
+    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+    onWheel: event => {
+               if (!root._internalFlickable)
+               return;
+               const flickable = root._internalFlickable;
+               const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
+               const newY = flickable.contentY - (delta * root.wheelScrollMultiplier);
+               flickable.contentY = Math.max(0, Math.min(newY, flickable.contentHeight - flickable.height));
+               event.accepted = true;
+             }
   }
 
   // Watch for changes in horizontalPolicy
@@ -112,8 +133,8 @@ T.ScrollView {
     x: root.mirrored ? 0 : root.width - width
     y: root.topPadding
     height: root.availableHeight
-    active: root.ScrollBar.horizontal.active
     policy: root.verticalPolicy
+    interactive: root.verticalScrollable
 
     contentItem: Rectangle {
       implicitWidth: root.handleWidth
@@ -155,8 +176,8 @@ T.ScrollView {
     x: root.leftPadding
     y: root.height - height
     width: root.availableWidth
-    active: root.ScrollBar.vertical.active
     policy: root.horizontalPolicy
+    interactive: root.horizontalScrollable
 
     contentItem: Rectangle {
       implicitWidth: 100

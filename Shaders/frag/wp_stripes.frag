@@ -174,16 +174,13 @@ void main() {
         stripeProgress = (ubuf.progress - activeStart) / (activeEnd - activeStart);
     }
     
-    // Use gentler easing curve
-    stripeProgress = stripeProgress * stripeProgress * (3.0 - 2.0 * stripeProgress);  // Smootherstep instead of smoothstep
-    
     // Use the perpendicular coordinate for edge comparison
     float yPos = perpCoord;
     
     // Calculate edge position for this stripe
     // Use the actual perpendicular coordinate range for this angle
     float perpRange = maxPerp - minPerp;
-    float margin = edgeSmooth * 2.0;  // Simplified margin calculation
+    float margin = edgeSmooth;  // Just enough buffer for the smoothstep zone to clear the edge
     float edgePosition;
     if (isOddStripe) {
         // Odd stripes: edge moves from max to min

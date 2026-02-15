@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -17,7 +18,7 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.width = parseInt(widthInput.text) || widgetMetadata.width;
-    return settings;
+    settingsChanged(settings);
   }
 
   NTextInput {
@@ -27,6 +28,6 @@ ColumnLayout {
     description: I18n.tr("bar.spacer.width-description")
     text: widgetData.width || widgetMetadata.width
     placeholderText: I18n.tr("placeholders.enter-width-pixels")
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 }

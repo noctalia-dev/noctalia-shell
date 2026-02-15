@@ -18,13 +18,18 @@ ColumnLayout {
   property int fontWeight: Style.fontWeightRegular
   property var defaultValue: undefined
   property string settingsPath: ""
+  property real radius: Style.iRadiusM
+  property real minimumInputWidth: 80 * Style.uiScaleRatio
+  property bool showClearButton: true
 
   property alias text: input.text
   property alias placeholderText: input.placeholderText
   property alias inputMethodHints: input.inputMethodHints
+  property alias horizontalAlignment: input.horizontalAlignment
   property alias inputItem: input
 
   signal editingFinished
+  signal accepted
 
   opacity: enabled ? 1.0 : 0.3
   spacing: Style.marginS
@@ -50,7 +55,7 @@ ColumnLayout {
     id: frameControl
 
     Layout.fillWidth: true
-    Layout.minimumWidth: 80 * Style.uiScaleRatio
+    Layout.minimumWidth: root.minimumInputWidth
     implicitHeight: Style.baseWidgetSize * 1.1 * Style.uiScaleRatio
 
     // This is important - makes the control accept focus
@@ -60,7 +65,7 @@ ColumnLayout {
     background: Rectangle {
       id: frame
 
-      radius: Style.iRadiusM
+      radius: root.radius
       color: Color.mSurface
       border.color: input.activeFocus ? Color.mSecondary : Color.mOutline
       border.width: Style.borderS
@@ -116,7 +121,7 @@ ColumnLayout {
         id: inputContainer
         anchors.fill: parent
         anchors.leftMargin: Style.marginM
-        // anchors.rightMargin: Style.marginM
+        anchors.rightMargin: Style.marginM
         clip: true
         z: 1
 
@@ -162,6 +167,7 @@ ColumnLayout {
             font.weight: root.fontWeight
 
             onEditingFinished: root.editingFinished()
+            onAccepted: root.accepted()
 
             // Override mouse handling to prevent propagation
             MouseArea {
@@ -216,7 +222,7 @@ ColumnLayout {
             colorFg: Color.mOnSurface
             colorFgHover: Color.mError
 
-            visible: input.text.length > 0 && !root.readOnly
+            visible: root.showClearButton && input.text.length > 0 && !root.readOnly
             enabled: input.text.length > 0 && !root.readOnly && root.enabled
 
             onClicked: {

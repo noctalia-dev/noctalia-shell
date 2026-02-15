@@ -15,6 +15,7 @@ Item {
   property int preferredGridColumns: 7 // More columns for compact emoji display
   property real preferredGridCellRatio: 1.15 // Slightly taller than wide to accommodate label
   property bool supportsAutoPaste: true // Emoji can be auto-pasted
+  property bool ignoreDensity: false // Emoji should scale with launcher density
 
   property string selectedCategory: "recent"
   property bool showsCategories: true // Default to showing categories

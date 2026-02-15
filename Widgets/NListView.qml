@@ -10,7 +10,7 @@ Item {
   property color handleHoverColor: handleColor
   property color handlePressedColor: handleColor
   property color trackColor: "transparent"
-  property real handleWidth: 6
+  property real handleWidth: Math.round(6 * Style.uiScaleRatio)
   property real handleRadius: Style.iRadiusM
   property int verticalPolicy: ScrollBar.AsNeeded
   property int horizontalPolicy: ScrollBar.AlwaysOff
@@ -193,7 +193,7 @@ Item {
       enabled: root.wheelScrollMultiplier !== 1.0
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onWheel: event => {
-                 const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 8;
+                 const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
                  const newY = listView.contentY - (delta * root.wheelScrollMultiplier);
                  listView.contentY = Math.max(0, Math.min(newY, listView.contentHeight - listView.height));
                  event.accepted = true;
@@ -206,6 +206,7 @@ Item {
       y: 0
       height: root.height
       policy: root.verticalPolicy
+      visible: policy === ScrollBar.AlwaysOn || root.verticalScrollBarActive
 
       contentItem: Rectangle {
         implicitWidth: root.handleWidth

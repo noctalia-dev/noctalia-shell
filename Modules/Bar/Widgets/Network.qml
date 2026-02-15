@@ -3,6 +3,7 @@ import QtQuick.Controls
 import Quickshell
 import qs.Commons
 import qs.Modules.Bar.Extras
+import qs.Modules.Panels.Settings // For SettingsPanel
 import qs.Services.Networking
 import qs.Services.UI
 import qs.Widgets
@@ -34,6 +35,8 @@ Item {
   readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
   readonly property string displayMode: widgetSettings.displayMode !== undefined ? widgetSettings.displayMode : widgetMetadata.displayMode
+  readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
+  readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
 
   implicitWidth: pill.width
   implicitHeight: pill.height
@@ -45,7 +48,13 @@ Item {
       {
         "label": Settings.data.network.wifiEnabled ? I18n.tr("actions.disable-wifi") : I18n.tr("actions.enable-wifi"),
         "action": "toggle-wifi",
-        "icon": Settings.data.network.wifiEnabled ? "wifi-off" : "wifi"
+        "icon": Settings.data.network.wifiEnabled ? "wifi-off" : "wifi",
+        "enabled": !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
+      },
+      {
+        "label": I18n.tr("common.wifi") + " " + I18n.tr("tooltips.open-settings"),
+        "action": "wifi-settings",
+        "icon": "settings"
       },
       {
         "label": I18n.tr("actions.widget-settings"),
@@ -60,6 +69,8 @@ Item {
 
                    if (action === "toggle-wifi") {
                      NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
+                   } else if (action === "wifi-settings") {
+                     SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 0, screen);
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }
@@ -71,6 +82,8 @@ Item {
 
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
+    customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
+    customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
     icon: {
       try {
         if (NetworkService.ethernetConnected) {
@@ -129,7 +142,7 @@ Item {
           else if (NetworkService.activeEthernetIf && NetworkService.activeEthernetIf.length > 0)
             base = NetworkService.activeEthernetIf;
           else
-            base = I18n.tr("control-center.wifi.label-ethernet");
+            base = I18n.tr("common.ethernet");
           const speed = (d.speed && d.speed.length > 0) ? d.speed : "";
           return speed ? (base + " — " + speed) : base;
         }
@@ -142,7 +155,7 @@ Item {
       } catch (e) {
         // noop
       }
-      return I18n.tr("tooltips.manage-wifi");
+      return I18n.tr("common.wifi");
     }
   }
 }

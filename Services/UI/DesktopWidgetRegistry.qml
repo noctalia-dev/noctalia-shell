@@ -43,12 +43,6 @@ Singleton {
     widgets = widgetsObj;
 
     Logger.i("DesktopWidgetRegistry", "Service started");
-    Logger.d("DesktopWidgetRegistry", "Available widgets:", Object.keys(widgets));
-    Logger.d("DesktopWidgetRegistry", "Clock component:", clockComponent ? "exists" : "null");
-    Logger.d("DesktopWidgetRegistry", "MediaPlayer component:", mediaPlayerComponent ? "exists" : "null");
-    Logger.d("DesktopWidgetRegistry", "Weather component:", weatherComponent ? "exists" : "null");
-    Logger.d("DesktopWidgetRegistry", "Widgets object keys:", Object.keys(widgets));
-    Logger.d("DesktopWidgetRegistry", "Widgets object values check - Clock:", widgets["Clock"] ? "exists" : "null");
   }
 
   property var widgetSettingsMap: ({
@@ -62,7 +56,7 @@ Singleton {
                                   "Clock": {
                                     "showBackground": true,
                                     "clockStyle": "digital",
-                                    "usePrimaryColor": false,
+                                    "clockColor": "none",
                                     "useCustomFont": false,
                                     "format": "HH:mm\\nd MMMM yyyy"
                                   },

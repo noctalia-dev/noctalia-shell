@@ -24,6 +24,7 @@ Item {
 
   // Pending callback to execute once screen is detected
   property var pendingCallback: null
+  property bool pendingSkipBarCheck: false
 
   // Detected screen
   property var detectedScreen: null
@@ -70,7 +71,7 @@ Item {
           * On single-monitor setups, executes immediately.
           * On multi-monitor setups, briefly opens an invisible window to detect the screen.
           */
-          function withCurrentScreen(callback: var) {
+          function withCurrentScreen(callback: var, skipBarCheck: bool) {
           if (root.pendingCallback) {
             Logger.w("CurrentScreenDetector", "Another detection is pending, ignoring new call");
             return;
@@ -86,8 +87,8 @@ Item {
               let screen = CompositorService.getFocusedScreen();
 
               if (screen) {
-                // Apply the bar check if configured
-                if (!Settings.data.general.allowPanelsOnScreenWithoutBar) {
+                // Apply the bar check if configured (skip for overlay launcher etc.)
+                if (!skipBarCheck && !Settings.data.general.allowPanelsOnScreenWithoutBar) {
                   const monitors = Settings.data.bar.monitors || [];
                   const hasBar = monitors.length === 0 || monitors.includes(screen.name);
                   if (!hasBar) {
@@ -102,6 +103,7 @@ Item {
                     // Fallback: Multi-monitor setup needs async detection via invisible PanelWindow
                     root.detectedScreen = null;
                     root.pendingCallback = callback;
+                    root.pendingSkipBarCheck = !!skipBarCheck;
                     screenDetectorLoader.active = true;
                   }
 
@@ -114,7 +116,7 @@ Item {
 
                         // Execute pending callback if any
                         if (root.pendingCallback) {
-                          if (!Settings.data.general.allowPanelsOnScreenWithoutBar) {
+                          if (!root.pendingSkipBarCheck && !Settings.data.general.allowPanelsOnScreenWithoutBar) {
                             // If we explicitly disabled panels on screen without bar, check if bar is configured
                             // for this screen, and fallback to primary screen if necessary
                             var monitors = Settings.data.bar.monitors || [];
@@ -129,6 +131,7 @@ Item {
                           // if the callback throws an error
                           var callback = root.pendingCallback;
                           root.pendingCallback = null;
+                          root.pendingSkipBarCheck = false;
                           try {
                             callback(root.detectedScreen);
                           } catch (e) {

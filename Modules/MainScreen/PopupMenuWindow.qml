@@ -49,6 +49,10 @@ PanelWindow {
     PanelService.registerPopupMenuWindow(screen, root);
   }
 
+  Component.onDestruction: {
+    PanelService.unregisterPopupMenuWindow(screen);
+  }
+
   // Load TrayMenu as the default content
   Loader {
     id: trayMenuLoader

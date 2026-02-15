@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -16,11 +17,15 @@ ColumnLayout {
 
   // Local state
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
+  property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
+  property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.displayMode = valueDisplayMode;
-    return settings;
+    settings.iconColor = valueIconColor;
+    settings.textColor = valueTextColor;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -44,7 +49,24 @@ ColumnLayout {
     currentKey: valueDisplayMode
     onSelected: key => {
                   valueDisplayMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
+                }
+  }
+
+  NColorChoice {
+    label: I18n.tr("common.select-icon-color")
+    currentKey: valueIconColor
+    onSelected: key => {
+                  valueIconColor = key;
+                  saveSettings();
+                }
+  }
+
+  NColorChoice {
+    currentKey: valueTextColor
+    onSelected: key => {
+                  valueTextColor = key;
+                  saveSettings();
                 }
   }
 }

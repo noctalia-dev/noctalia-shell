@@ -4,6 +4,7 @@ import qs.Commons
 
 Item {
   id: root
+  objectName: "NTabView"
 
   property int currentIndex: 0
 
@@ -27,6 +28,29 @@ Item {
   Item {
     id: container
     anchors.fill: parent
+  }
+
+  // Set the visible tab to idx without triggering a slide animation.
+  // Call this BEFORE the bound currentIndex changes so that
+  // onCurrentIndexChanged sees previousIndex === currentIndex and skips.
+  function setIndexWithoutAnimation(idx) {
+    fromXAnim.stop();
+    fromOpacityAnim.stop();
+    toXAnim.stop();
+    toOpacityAnim.stop();
+    animating = false;
+    previousIndex = idx;
+    for (let i = 0; i < contentItems.length; i++) {
+      if (i === idx) {
+        contentItems[i].x = 0;
+        contentItems[i].visible = true;
+        contentItems[i].opacity = 1.0;
+      } else {
+        contentItems[i].x = root.width;
+        contentItems[i].visible = false;
+        contentItems[i].opacity = 1.0;
+      }
+    }
   }
 
   Component.onCompleted: {

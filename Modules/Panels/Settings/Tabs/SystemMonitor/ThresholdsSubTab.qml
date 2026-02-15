@@ -276,5 +276,38 @@ ColumnLayout {
       suffix: "%"
       onValueChanged: Settings.data.systemMonitor.diskAvailCriticalThreshold = value
     }
+
+    // Battery
+    NText {
+      text: I18n.tr("panels.notifications.toast-battery-label")
+      pointSize: Style.fontSizeM
+    }
+
+    NSpinBox {
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: 100
+      stepSize: 5
+      value: Settings.data.systemMonitor.batteryWarningThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.batteryWarningThreshold")
+      suffix: "%"
+      onValueChanged: {
+        Settings.data.systemMonitor.batteryWarningThreshold = value;
+        if (Settings.data.systemMonitor.batteryCriticalThreshold > value) {
+          Settings.data.systemMonitor.batteryCriticalThreshold = value;
+        }
+      }
+    }
+
+    NSpinBox {
+      Layout.alignment: Qt.AlignHCenter
+      from: 0
+      to: Settings.data.systemMonitor.batteryWarningThreshold
+      stepSize: 5
+      value: Settings.data.systemMonitor.batteryCriticalThreshold
+      defaultValue: Settings.getDefaultValue("systemMonitor.batteryCriticalThreshold")
+      suffix: "%"
+      onValueChanged: Settings.data.systemMonitor.batteryCriticalThreshold = value
+    }
   }
 }

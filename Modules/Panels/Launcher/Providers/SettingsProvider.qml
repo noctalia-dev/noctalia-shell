@@ -12,6 +12,7 @@ Item {
   property var launcher: null
   property bool handleSearch: Settings.data.appLauncher.enableSettingsSearch
   property string supportedLayouts: "list"
+  property string iconMode: Settings.data.appLauncher.iconMode
 
   property var searchIndex: []
 
@@ -45,7 +46,7 @@ Item {
           {
             "name": ">settings",
             "description": I18n.tr("launcher.providers.settings-search-description"),
-            "icon": "settings",
+            "icon": iconMode === "tabler" ? "settings" : "preferences-system",
             "isTablerIcon": true,
             "isImage": false,
             "onActivate": function () {
@@ -117,7 +118,7 @@ Item {
       launcherItems.push({
                            "name": entry.label,
                            "description": breadcrumb,
-                           "icon": "settings",
+                           "icon": iconMode === "tabler" ? "settings" : "preferences-system",
                            "isTablerIcon": true,
                            "isImage": false,
                            "_score": score - 2,
@@ -142,7 +143,7 @@ Item {
       launcherItems.push({
                            "name": label,
                            "description": breadcrumb,
-                           "icon": "settings",
+                           "icon": iconMode === "tabler" ? "settings" : "preferences-system",
                            "isTablerIcon": true,
                            "isImage": false,
                            "_score": 0,
@@ -168,11 +169,7 @@ Item {
         launcher.close();
 
       Qt.callLater(() => {
-                     var settingsPanel = PanelService.getPanel("settingsPanel", launcher.screen);
-                     if (settingsPanel) {
-                       settingsPanel.requestedEntry = entry;
-                       settingsPanel.open();
-                     }
+                     SettingsPanelService.openToEntry(entry, launcher.screen);
                    });
     };
   }

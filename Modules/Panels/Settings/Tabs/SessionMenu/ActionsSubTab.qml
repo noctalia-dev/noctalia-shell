@@ -183,35 +183,26 @@ ColumnLayout {
             elide: Text.ElideRight
           }
 
-          // Countdown toggle with icon (only shown when global countdown is enabled)
-          RowLayout {
+          // Countdown toggle (only shown when global countdown is enabled)
+          NIconButtonHot {
             visible: Settings.data.sessionMenu.enableCountdown
-            spacing: Style.marginXS
+            icon: "clock"
+            hot: modelData.countdownEnabled !== undefined ? modelData.countdownEnabled : true
+            baseSize: Style.baseWidgetSize * 0.8
             Layout.alignment: Qt.AlignVCenter
-
-            NIcon {
-              icon: "clock"
-              color: Color.mOnSurfaceVariant
-              pointSize: Style.fontSizeS
-            }
-
-            NToggle {
-              checked: modelData.countdownEnabled !== undefined ? modelData.countdownEnabled : true
-              onToggled: checked => root.updateEntry(delegateItem.index, {
-                                                       "countdownEnabled": checked
-                                                     })
-            }
+            tooltipText: I18n.tr("common.countdown")
+            onClicked: root.updateEntry(delegateItem.index, {
+                                          "countdownEnabled": !(modelData.countdownEnabled !== undefined ? modelData.countdownEnabled : true)
+                                        })
           }
 
           // Settings button (cogwheel)
           NIconButton {
             icon: "settings"
             tooltipText: I18n.tr("panels.session-menu.entry-settings-tooltip")
-            baseSize: Style.baseWidgetSize * 0.7
+            baseSize: Style.baseWidgetSize * 0.8
             Layout.alignment: Qt.AlignVCenter
-            onClicked: {
-              root.openEntrySettingsDialog(delegateItem.index);
-            }
+            onClicked: root.openEntrySettingsDialog(delegateItem.index)
           }
         }
 

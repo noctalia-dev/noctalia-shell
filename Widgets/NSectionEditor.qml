@@ -17,6 +17,7 @@ NBox {
   property var availableSections: ["left", "center", "right"]
   property var sectionLabels: ({}) // Map of sectionId -> display label
   property var sectionIcons: ({}) // Map of sectionId -> icon name
+  property bool barIsVertical: false // When true, map left/right to top/bottom in labels
   property int maxWidgets: -1 // -1 means unlimited
   property bool draggable: true // Enable/disable drag reordering
 
@@ -388,8 +389,16 @@ NBox {
                   if (section !== root.sectionId) {
                     var label = root.getSectionLabel(section);
                     var displayLabel = '';
-                    if (I18n.hasTranslation("positions." + section)) {
-                      displayLabel = I18n.tr("positions." + section);
+                    // Map section IDs to correct position keys based on bar orientation
+                    var positionKey = section;
+                    if (root.barIsVertical) {
+                      if (section === "left")
+                        positionKey = "top";
+                      else if (section === "right")
+                        positionKey = "bottom";
+                    }
+                    if (I18n.hasTranslation("positions." + positionKey)) {
+                      displayLabel = I18n.tr("positions." + positionKey);
                     } else {
                       displayLabel = label.charAt(0).toUpperCase() + label.slice(1);
                     }

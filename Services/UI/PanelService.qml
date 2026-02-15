@@ -16,9 +16,18 @@ Singleton {
   property var openedPanel: null
   property var closingPanel: null
   property bool closedImmediately: false
+
+  // Overlay launcher state (separate from normal panels)
+  property bool overlayLauncherOpen: false
+  property var overlayLauncherScreen: null
+  property var overlayLauncherCore: null  // Reference to LauncherCore when overlay is active
   // Brief window after panel opens where Exclusive keyboard is allowed on Hyprland
   // This allows text inputs to receive focus, then switches to OnDemand for click-to-close
   property bool isInitializingKeyboard: false
+
+  // Global state for keybind recording components to block global shortcuts
+  property bool isKeybindRecording: false
+
   signal willOpen
   signal didClose
 
@@ -54,6 +63,15 @@ Singleton {
     popupMenuWindows[key] = window;
     Logger.d("PanelService", "Registered popup menu window for screen:", key);
     popupMenuWindowRegistered(screen);
+  }
+
+  // Unregister popup menu window for a screen (called on destruction)
+  function unregisterPopupMenuWindow(screen) {
+    if (!screen)
+      return;
+    var key = screen.name;
+    delete popupMenuWindows[key];
+    Logger.d("PanelService", "Unregistered popup menu window for screen:", key);
   }
 
   // Get popup menu window for a screen
@@ -219,6 +237,12 @@ Singleton {
 
   // Helper to keep only one panel open at any time
   function willOpenPanel(panel) {
+    // Close overlay launcher if open
+    if (overlayLauncherOpen) {
+      overlayLauncherOpen = false;
+      overlayLauncherScreen = null;
+    }
+
     if (openedPanel && openedPanel !== panel) {
       // Move current panel to closing slot before closing it
       closingPanel = openedPanel;
@@ -231,13 +255,137 @@ Singleton {
     assignToSlot(0, panel);
 
     // Start keyboard initialization period (for Hyprland workaround)
-    if (panel.exclusiveKeyboard) {
+    if (panel && panel.exclusiveKeyboard) {
       isInitializingKeyboard = true;
       keyboardInitTimer.restart();
     }
 
     // emit signal
     willOpen();
+  }
+
+  // Open launcher panel (handles both normal and overlay mode)
+  function openLauncher(screen) {
+    if (Settings.data.appLauncher.overviewLayer) {
+      // Close any regular panel first
+      if (openedPanel) {
+        closingPanel = openedPanel;
+        assignToSlot(1, closingPanel);
+        openedPanel.close();
+        openedPanel = null;
+      }
+      // Open overlay launcher
+      overlayLauncherOpen = true;
+      overlayLauncherScreen = screen;
+      willOpen();
+    } else {
+      // Normal mode - use the SmartPanel
+      var panel = getPanel("launcherPanel", screen);
+      if (panel)
+        panel.open();
+    }
+  }
+
+  // Toggle launcher panel
+  function toggleLauncher(screen) {
+    if (Settings.data.appLauncher.overviewLayer) {
+      if (overlayLauncherOpen && overlayLauncherScreen === screen) {
+        closeOverlayLauncher();
+      } else {
+        openLauncher(screen);
+      }
+    } else {
+      var panel = getPanel("launcherPanel", screen);
+      if (panel)
+        panel.toggle();
+    }
+  }
+
+  // Close overlay launcher
+  function closeOverlayLauncher() {
+    if (overlayLauncherOpen) {
+      overlayLauncherOpen = false;
+      overlayLauncherScreen = null;
+      didClose();
+    }
+  }
+
+  // Close overlay launcher immediately (for app launches)
+  function closeOverlayLauncherImmediately() {
+    if (overlayLauncherOpen) {
+      closedImmediately = true;
+      overlayLauncherOpen = false;
+      overlayLauncherScreen = null;
+      didClose();
+    }
+  }
+
+  // ==================== Unified Launcher API ====================
+  // These methods work for both normal (SmartPanel) and overlay modes
+
+  function isLauncherOpen(screen) {
+    if (Settings.data.appLauncher.overviewLayer) {
+      return overlayLauncherOpen && overlayLauncherScreen === screen;
+    } else {
+      var panel = getPanel("launcherPanel", screen);
+      return panel ? panel.isPanelOpen : false;
+    }
+  }
+
+  function getLauncherSearchText(screen) {
+    if (Settings.data.appLauncher.overviewLayer) {
+      return overlayLauncherCore ? overlayLauncherCore.searchText : "";
+    } else {
+      var panel = getPanel("launcherPanel", screen);
+      return panel ? panel.searchText : "";
+    }
+  }
+
+  function setLauncherSearchText(screen, text) {
+    if (Settings.data.appLauncher.overviewLayer) {
+      if (overlayLauncherCore)
+        overlayLauncherCore.setSearchText(text);
+    } else {
+      var panel = getPanel("launcherPanel", screen);
+      if (panel)
+        panel.setSearchText(text);
+    }
+  }
+
+  function openLauncherWithSearch(screen, searchText) {
+    if (Settings.data.appLauncher.overviewLayer) {
+      openLauncher(screen);
+      // Set search text after core is ready
+      Qt.callLater(() => {
+                     if (overlayLauncherCore)
+                     overlayLauncherCore.setSearchText(searchText);
+                   });
+    } else {
+      var panel = getPanel("launcherPanel", screen);
+      if (panel) {
+        panel.open();
+        panel.setSearchText(searchText);
+      }
+    }
+  }
+
+  function closeLauncher(screen) {
+    if (Settings.data.appLauncher.overviewLayer) {
+      closeOverlayLauncher();
+    } else {
+      var panel = getPanel("launcherPanel", screen);
+      if (panel)
+        panel.close();
+    }
+  }
+
+  // Close any open panel (for general use)
+  function closePanel() {
+    if (overlayLauncherOpen) {
+      closeOverlayLauncher();
+    } else if (openedPanel && openedPanel.close) {
+      openedPanel.close();
+    }
   }
 
   function closedPanel(panel) {

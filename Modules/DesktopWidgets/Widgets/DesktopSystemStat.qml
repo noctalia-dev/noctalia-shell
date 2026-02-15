@@ -14,8 +14,11 @@ DraggableDesktopWidget {
   readonly property var widgetMetadata: DesktopWidgetRegistry.widgetMetadata["SystemStat"]
   readonly property string statType: (widgetData && widgetData.statType !== undefined) ? widgetData.statType : (widgetMetadata.statType !== undefined ? widgetMetadata.statType : "CPU")
   readonly property string diskPath: (widgetData && widgetData.diskPath !== undefined) ? widgetData.diskPath : "/"
-  readonly property color color: (widgetData && widgetData.color !== undefined) ? widgetData.color : Color.mPrimary
   readonly property string layout: (widgetData && widgetData.layout !== undefined) ? widgetData.layout : (widgetMetadata.layout !== undefined ? widgetMetadata.layout : "side")
+
+  // Fixed colors
+  readonly property color color: Color.mPrimary
+  readonly property color color2: Color.mSecondary
 
   // Legend items model - each item has: text, color, icon (optional), bold (optional), opacity (optional), elide (optional)
   readonly property var legendItems: {
@@ -36,7 +39,7 @@ DraggableDesktopWidget {
             {
               icon: "cpu-temperature",
               text: SystemStatService.cpuTemp + "°C",
-              color: Color.mError
+              color: root.color2
             }
           ];
     case "GPU":
@@ -82,7 +85,7 @@ DraggableDesktopWidget {
             {
               icon: "upload-speed",
               text: SystemStatService.formatSpeed(SystemStatService.txSpeed),
-              color: Color.mError
+              color: root.color2
             }
           ];
     default:
@@ -155,6 +158,9 @@ DraggableDesktopWidget {
     }
   }
 
+  Component.onCompleted: SystemStatService.registerComponent("desktop-sysstat:" + root.statType)
+  Component.onDestruction: SystemStatService.unregisterComponent("desktop-sysstat:" + root.statType)
+
   implicitWidth: Math.round(240 * widgetScale)
   implicitHeight: Math.round(120 * widgetScale)
   width: implicitWidth
@@ -164,15 +170,15 @@ DraggableDesktopWidget {
   readonly property int graphUpdateInterval: {
     switch (root.statType) {
     case "CPU":
-      return Settings.data.systemMonitor.cpuPollingInterval;
+      return SystemStatService.cpuIntervalMs;
     case "GPU":
-      return Settings.data.systemMonitor.gpuPollingInterval;
+      return SystemStatService.gpuIntervalMs;
     case "Memory":
-      return Settings.data.systemMonitor.memPollingInterval;
+      return SystemStatService.memIntervalMs;
     case "Disk":
-      return Settings.data.systemMonitor.diskPollingInterval;
+      return SystemStatService.diskIntervalMs;
     case "Network":
-      return Settings.data.systemMonitor.networkPollingInterval;
+      return SystemStatService.networkIntervalMs;
     default:
       return 1000;
     }
@@ -189,7 +195,7 @@ DraggableDesktopWidget {
       minValue2: root.graphMinValue2
       maxValue2: root.graphMaxValue2
       color: root.color
-      color2: Color.mError
+      color2: root.color2
       fill: true
       updateInterval: root.graphUpdateInterval
       animateScale: root.statType === "Network"

@@ -40,8 +40,12 @@ Item {
   readonly property real barFontSize: Style.getBarFontSizeForScreen(screenName)
 
   readonly property bool compactMode: widgetSettings.compactMode !== undefined ? widgetSettings.compactMode : widgetMetadata.compactMode
-  readonly property bool usePrimaryColor: widgetSettings.usePrimaryColor !== undefined ? widgetSettings.usePrimaryColor : widgetMetadata.usePrimaryColor
+  readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
+  readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
+
   readonly property bool useMonospaceFont: widgetSettings.useMonospaceFont !== undefined ? widgetSettings.useMonospaceFont : widgetMetadata.useMonospaceFont
+  readonly property bool usePadding: !compactMode && !isVertical && useMonospaceFont && ((widgetSettings.usePadding !== undefined) ? widgetSettings.usePadding : widgetMetadata.usePadding)
+
   readonly property bool showCpuUsage: (widgetSettings.showCpuUsage !== undefined) ? widgetSettings.showCpuUsage : widgetMetadata.showCpuUsage
   readonly property bool showCpuFreq: (widgetSettings.showCpuFreq !== undefined) ? widgetSettings.showCpuFreq : widgetMetadata.showCpuFreq
   readonly property bool showCpuTemp: (widgetSettings.showCpuTemp !== undefined) ? widgetSettings.showCpuTemp : widgetMetadata.showCpuTemp
@@ -57,6 +61,11 @@ Item {
   readonly property string diskPath: (widgetSettings.diskPath !== undefined) ? widgetSettings.diskPath : widgetMetadata.diskPath
   readonly property string fontFamily: useMonospaceFont ? Settings.data.ui.fontFixed : Settings.data.ui.fontDefault
 
+  readonly property int paddingPercent: usePadding ? String("100%").length : 0
+  readonly property int paddingTemp: usePadding ? String("999°").length : 0
+  readonly property int paddingCpuFreq: usePadding ? String("9.9").length : 0
+  readonly property int paddingSpeed: usePadding ? String("9999G").length : 0
+
   readonly property real iconSize: Style.toOdd(capsuleHeight * 0.48)
   readonly property real miniGaugeWidth: Math.max(3, Style.toOdd(root.iconSize * 0.25))
 
@@ -64,10 +73,16 @@ Item {
   readonly property real contentWidth: isVertical ? capsuleHeight : Math.round(mainGrid.implicitWidth + Style.marginXL)
   readonly property real contentHeight: isVertical ? Math.round(mainGrid.implicitHeight + Style.marginXL) : capsuleHeight
 
+  readonly property color iconColor: Color.resolveColorKey(iconColorKey)
+  readonly property color textColor: Color.resolveColorKey(textColorKey)
+
   // Size: use implicit width/height
   // BarWidgetLoader sets explicit width/height to extend click area
   implicitWidth: contentWidth
   implicitHeight: contentHeight
+
+  Component.onCompleted: SystemStatService.registerComponent("bar-sysmon:" + (screen?.name || "unknown"))
+  Component.onDestruction: SystemStatService.unregisterComponent("bar-sysmon:" + (screen?.name || "unknown"))
 
   function openExternalMonitor() {
     Quickshell.execDetached(["sh", "-c", Settings.data.systemMonitor.externalMonitor]);
@@ -78,7 +93,7 @@ Item {
     let rows = [];
 
     // CPU
-    rows.push([I18n.tr("system-monitor.cpu-usage"), `${Math.round(SystemStatService.cpuUsage)}% (${SystemStatService.cpuFreq})`]);
+    rows.push([I18n.tr("system-monitor.cpu-usage"), `${Math.round(SystemStatService.cpuUsage)}% (${SystemStatService.cpuFreq.replace(/[^0-9.]/g, "")} GHz)`]);
 
     if (SystemStatService.cpuTemp > 0) {
       rows.push([I18n.tr("system-monitor.cpu-temp"), `${Math.round(SystemStatService.cpuTemp)}°C`]);
@@ -118,8 +133,6 @@ Item {
 
     return rows;
   }
-
-  readonly property color textColor: usePrimaryColor ? Color.mPrimary : Color.mOnSurface
 
   // Visibility-aware warning/critical states (delegates to service)
   readonly property bool cpuWarning: showCpuUsage && SystemStatService.cpuWarning
@@ -249,21 +262,21 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : Color.mOnSurface
+              color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: `${Math.round(SystemStatService.cpuUsage)}%`
+            text: `${Math.round(SystemStatService.cpuUsage)}%`.padStart(paddingPercent, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : textColor
+            color: (cpuWarning || cpuCritical) ? SystemStatService.cpuColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -317,21 +330,21 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: Color.mOnSurface
+              color: root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: SystemStatService.cpuFreq.replace(" ", "")
+            text: SystemStatService.cpuFreq.replace("Hz", "").replace(" ", "").padStart(paddingCpuFreq, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: textColor
+            color: root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -385,21 +398,21 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (tempWarning || tempCritical) ? SystemStatService.tempColor : Color.mOnSurface
+              color: (tempWarning || tempCritical) ? SystemStatService.tempColor : root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: `${Math.round(SystemStatService.cpuTemp)}°`
+            text: `${Math.round(SystemStatService.cpuTemp)}°`.padStart(paddingTemp, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (tempWarning || tempCritical) ? SystemStatService.tempColor : textColor
+            color: (tempWarning || tempCritical) ? SystemStatService.tempColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -453,21 +466,21 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : Color.mOnSurface
+              color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: `${Math.round(SystemStatService.gpuTemp)}°`
+            text: `${Math.round(SystemStatService.gpuTemp)}°`.padStart(paddingTemp, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : textColor
+            color: (gpuWarning || gpuCritical) ? SystemStatService.gpuColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -521,21 +534,21 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: Color.mOnSurface
+              color: root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: SystemStatService.loadAvg1.toFixed(1)
+            text: `${SystemStatService.loadAvg1.toFixed(1)}`.padStart(usePadding ? `${SystemStatService.nproc.toFixed(1)}`.length : 0, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: textColor
+            color: root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -589,21 +602,24 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (memWarning || memCritical) ? SystemStatService.memColor : Color.mOnSurface
+              color: (memWarning || memCritical) ? SystemStatService.memColor : root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: showMemoryAsPercent ? `${Math.round(SystemStatService.memPercent)}%` : SystemStatService.formatGigabytes(SystemStatService.memGb)
+            text: SystemStatService.formatRamDisplay({
+                                                       percent: showMemoryAsPercent,
+                                                       padding: usePadding
+                                                     })
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (memWarning || memCritical) ? SystemStatService.memColor : textColor
+            color: (memWarning || memCritical) ? SystemStatService.memColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -657,21 +673,25 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (swapWarning || swapCritical) ? SystemStatService.swapColor : Color.mOnSurface
+              color: (swapWarning || swapCritical) ? SystemStatService.swapColor : root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: `${Math.round(SystemStatService.swapPercent)}%`
+            text: SystemStatService.formatRamDisplay({
+                                                       swap: true,
+                                                       percent: true,
+                                                       padding: usePadding
+                                                     })
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (swapWarning || swapCritical) ? SystemStatService.swapColor : textColor
+            color: (swapWarning || swapCritical) ? SystemStatService.swapColor : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -724,20 +744,21 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
+              color: root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.rxSpeed) : SystemStatService.formatSpeed(SystemStatService.rxSpeed)
+            text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.rxSpeed) : SystemStatService.formatSpeed(SystemStatService.rxSpeed).padStart(paddingSpeed, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: textColor
+            color: root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -789,20 +810,21 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
+              color: root.iconColor
             }
           }
 
           // Text mode
           NText {
             visible: !compactMode
-            text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.txSpeed) : SystemStatService.formatSpeed(SystemStatService.txSpeed)
+            text: isVertical ? SystemStatService.formatCompactSpeed(SystemStatService.txSpeed) : SystemStatService.formatSpeed(SystemStatService.txSpeed).padStart(paddingSpeed, " ")
             family: fontFamily
             pointSize: barFontSize
             applyUiScale: false
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: textColor
+            color: root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }
@@ -855,7 +877,7 @@ Item {
               applyUiScale: false
               x: Style.pixelAlignCenter(parent.width, width)
               y: Style.pixelAlignCenter(parent.height, contentHeight)
-              color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : Color.mOnSurface
+              color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : root.iconColor
             }
           }
 
@@ -864,7 +886,8 @@ Item {
             visible: !compactMode
             text: SystemStatService.formatDiskDisplay(diskPath, {
                                                         percent: showDiskUsageAsPercent,
-                                                        available: showDiskAvailable
+                                                        available: showDiskAvailable,
+                                                        padding: usePadding
                                                       })
             family: fontFamily
             pointSize: barFontSize
@@ -872,7 +895,7 @@ Item {
             Layout.alignment: Qt.AlignCenter
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : textColor
+            color: (diskWarning || diskCritical) ? SystemStatService.getDiskColor(diskPath) : root.textColor
             Layout.row: isVertical ? 0 : 0
             Layout.column: isVertical ? 0 : 1
           }

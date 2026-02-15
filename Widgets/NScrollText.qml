@@ -35,10 +35,17 @@ Item {
   property bool forcedHover: false
   property int cursorShape: Qt.ArrowCursor
 
-  // animation controls
   property real waitBeforeScrolling: 1000
   property real scrollCycleDuration: Math.max(4000, root.text.length * 120)
   property real resettingDuration: 300
+
+  // gradient controls
+  property bool showGradients: true
+  property real gradientWidth: Math.round(12 * Style.uiScaleRatio)
+  property color gradientColor: Color.mSurfaceVariant
+  property real cornerRadius: 0
+
+  readonly property bool gradientsEnabled: root.showGradients && Settings.data.bar.capsuleOpacity >= 1.0
 
   readonly property real contentWidth: {
     if (!titleText.item)
@@ -168,6 +175,65 @@ Item {
       duration: root.scrollCycleDuration
       loops: Animation.Infinite
       easing.type: Easing.Linear
+    }
+  }
+
+  // Fade Gradients
+  Rectangle {
+    id: leftGradient
+    anchors.left: parent.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    width: root.gradientWidth
+    z: 2
+    visible: root.gradientsEnabled && root.contentWidth > root.maxWidth
+    radius: root.cornerRadius
+    opacity: scrollContainer.x < -1 ? 1 : 0
+    gradient: Gradient {
+      orientation: Gradient.Horizontal
+      GradientStop {
+        position: 0.0
+        color: root.gradientColor
+      }
+      GradientStop {
+        position: 1.0
+        color: "transparent"
+      }
+    }
+    Behavior on opacity {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.InOutQuad
+      }
+    }
+  }
+
+  Rectangle {
+    id: rightGradient
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    width: root.gradientWidth
+    z: 2
+    visible: root.gradientsEnabled && root.contentWidth > root.maxWidth
+    radius: root.cornerRadius
+    opacity: 1 // Always show if overflowing as it loops
+    gradient: Gradient {
+      orientation: Gradient.Horizontal
+      GradientStop {
+        position: 0.0
+        color: "transparent"
+      }
+      GradientStop {
+        position: 1.0
+        color: root.gradientColor
+      }
+    }
+    Behavior on opacity {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.InOutQuad
+      }
     }
   }
 }

@@ -177,6 +177,9 @@ Variants {
     }
 
     function onBrightnessChanged(newBrightness) {
+      if (!root)
+        return;
+
       root.currentBrightness = newBrightness;
       // Don't show OSD if brightness panel is open
       var brightnessPanel = PanelService.getPanel("brightnessPanel", root.modelData);
@@ -295,6 +298,20 @@ Variants {
       }
     }
 
+    // Register/unregister LockKeysService polling based on whether LockKey OSD is enabled
+    onLockKeyOSDEnabledChanged: {
+      if (lockKeyOSDEnabled) {
+        LockKeysService.registerComponent("osd:" + (modelData?.name || "unknown"));
+      } else {
+        LockKeysService.unregisterComponent("osd:" + (modelData?.name || "unknown"));
+      }
+    }
+    Component.onCompleted: {
+      if (lockKeyOSDEnabled) {
+        LockKeysService.registerComponent("osd:" + (modelData?.name || "unknown"));
+      }
+    }
+
     // LockKeys monitoring with a cleaner approach
     // Only connect when LockKey OSD is enabled to avoid starting the service unnecessarily
     Connections {
@@ -324,6 +341,19 @@ Variants {
       onTriggered: {
         connectBrightnessMonitors();
         root.startupComplete = true;
+      }
+    }
+
+    Component.onDestruction: {
+      LockKeysService.unregisterComponent("osd:" + (modelData?.name || "unknown"));
+      if (typeof BrightnessService !== "undefined" && BrightnessService.monitors) {
+        for (var i = 0; i < BrightnessService.monitors.length; i++) {
+          try {
+            BrightnessService.monitors[i].brightnessUpdated.disconnect(onBrightnessChanged);
+          } catch (e) {
+            // Ignore errors if already disconnected or not connected
+          }
+        }
       }
     }
 

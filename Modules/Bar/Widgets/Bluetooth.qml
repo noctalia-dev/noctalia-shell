@@ -3,6 +3,7 @@ import QtQuick.Controls
 import Quickshell
 import qs.Commons
 import qs.Modules.Bar.Extras
+import qs.Modules.Panels.Settings // For SettingsPanel
 import qs.Services.Networking
 import qs.Services.UI
 import qs.Widgets
@@ -34,6 +35,8 @@ Item {
   readonly property string barPosition: Settings.getBarPositionForScreen(screenName)
   readonly property bool isBarVertical: barPosition === "left" || barPosition === "right"
   readonly property string displayMode: widgetSettings.displayMode !== undefined ? widgetSettings.displayMode : widgetMetadata.displayMode
+  readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
+  readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
 
   implicitWidth: pill.width
   implicitHeight: pill.height
@@ -45,7 +48,13 @@ Item {
       {
         "label": BluetoothService.enabled ? I18n.tr("actions.disable-bluetooth") : I18n.tr("actions.enable-bluetooth"),
         "action": "toggle-bluetooth",
-        "icon": BluetoothService.enabled ? "bluetooth-off" : "bluetooth"
+        "icon": BluetoothService.enabled ? "bluetooth-off" : "bluetooth",
+        "enabled": !Settings.data.network.airplaneModeEnabled && BluetoothService.bluetoothAvailable
+      },
+      {
+        "label": I18n.tr("common.bluetooth") + " " + I18n.tr("tooltips.open-settings"),
+        "action": "bluetooth-settings",
+        "icon": "settings"
       },
       {
         "label": I18n.tr("actions.widget-settings"),
@@ -60,6 +69,8 @@ Item {
 
                    if (action === "toggle-bluetooth") {
                      BluetoothService.setBluetoothEnabled(!BluetoothService.enabled);
+                   } else if (action === "bluetooth-settings") {
+                     SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 1, screen);
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }
@@ -71,6 +82,8 @@ Item {
 
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
+    customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
+    customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
     icon: !BluetoothService.enabled ? "bluetooth-off" : ((BluetoothService.connectedDevices && BluetoothService.connectedDevices.length > 0) ? "bluetooth-connected" : "bluetooth")
     text: {
       if (BluetoothService.connectedDevices && BluetoothService.connectedDevices.length > 0) {

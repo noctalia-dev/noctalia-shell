@@ -13,6 +13,40 @@ Singleton {
   readonly property var params: Settings.data.nightLight
   property var lastCommand: []
 
+  // Crash tracking for auto-restart
+  property int _crashCount: 0
+  property int _maxCrashes: 5
+
+  // Kill any stale wlsunset processes on startup to prevent issues after shell restart
+  Component.onCompleted: {
+    killStaleProcess.running = true;
+  }
+
+  Process {
+    id: killStaleProcess
+    running: false
+    command: ["pkill", "-x", "wlsunset"]
+    onExited: function (code, status) {
+      if (code === 0) {
+        Logger.i("NightLight", "Killed stale wlsunset process from previous session");
+      }
+      // Now apply the settings after cleanup
+      root.apply();
+    }
+  }
+
+  Timer {
+    id: restartTimer
+    interval: 2000
+    repeat: false
+    onTriggered: {
+      if (root.params.enabled && !runner.running) {
+        Logger.w("NightLight", "Restarting after crash...");
+        runner.running = true;
+      }
+    }
+  }
+
   function apply(force = false) {
     // If using LocationService, wait for it to be ready
     if (!params.forced && params.autoSchedule && !LocationService.coordinatesReady) {
@@ -115,9 +149,24 @@ Singleton {
     running: false
     onStarted: {
       Logger.i("NightLight", "Wlsunset started:", runner.command);
+      // Reset crash count on successful start
+      if (root._crashCount > 0) {
+        root._crashCount = 0;
+      }
     }
     onExited: function (code, status) {
-      Logger.i("NightLight", "Wlsunset exited:", code, status);
+      if (root.params.enabled) {
+        root._crashCount++;
+        if (root._crashCount <= root._maxCrashes) {
+          Logger.w("NightLight", "Wlsunset exited unexpectedly (code: " + code + "), restarting in 2s... (attempt " + root._crashCount + "/" + root._maxCrashes + ")");
+          restartTimer.start();
+        } else {
+          Logger.e("NightLight", "Wlsunset crashed too many times (" + root._maxCrashes + "), giving up");
+        }
+      } else {
+        Logger.i("NightLight", "Wlsunset exited (disabled):", code, status);
+        root._crashCount = 0;
+      }
     }
   }
 }

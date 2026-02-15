@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -19,6 +20,7 @@ ColumnLayout {
   property bool valueHideWhenZero: widgetData.hideWhenZero !== undefined ? widgetData.hideWhenZero : widgetMetadata.hideWhenZero
   property bool valueHideWhenZeroUnread: widgetData.hideWhenZeroUnread !== undefined ? widgetData.hideWhenZeroUnread : widgetMetadata.hideWhenZeroUnread
   property string valueUnreadBadgeColor: widgetData.unreadBadgeColor !== undefined ? widgetData.unreadBadgeColor : widgetMetadata.unreadBadgeColor
+  property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -26,7 +28,8 @@ ColumnLayout {
     settings.hideWhenZero = valueHideWhenZero;
     settings.hideWhenZeroUnread = valueHideWhenZeroUnread;
     settings.unreadBadgeColor = valueUnreadBadgeColor;
-    return settings;
+    settings.iconColor = valueIconColor;
+    settingsChanged(settings);
   }
 
   NToggle {
@@ -35,41 +38,27 @@ ColumnLayout {
     checked: valueShowUnreadBadge
     onToggled: checked => {
                  valueShowUnreadBadge = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
-  NComboBox {
+  NColorChoice {
+    label: I18n.tr("common.select-icon-color")
+    currentKey: valueIconColor
+    onSelected: key => {
+                  valueIconColor = key;
+                  saveSettings();
+                }
+  }
+
+  NColorChoice {
     label: I18n.tr("bar.notification-history.unread-badge-color-label")
     description: I18n.tr("bar.notification-history.unread-badge-color-description")
-    model: [
-      {
-        "key": "none",
-        "name": I18n.tr("common.none")
-      },
-      {
-        "key": "primary",
-        "name": I18n.tr("common.primary")
-      },
-      {
-        "key": "secondary",
-        "name": I18n.tr("common.secondary")
-      },
-      {
-        "key": "tertiary",
-        "name": I18n.tr("common.tertiary")
-      },
-      {
-        "key": "error",
-        "name": I18n.tr("common.error")
-      }
-    ]
     currentKey: valueUnreadBadgeColor
     onSelected: key => {
                   valueUnreadBadgeColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
-    minimumWidth: 200
     visible: valueShowUnreadBadge
   }
 
@@ -79,7 +68,7 @@ ColumnLayout {
     checked: valueHideWhenZero
     onToggled: checked => {
                  valueHideWhenZero = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
     visible: !valueHideWhenZeroUnread
   }
@@ -90,7 +79,7 @@ ColumnLayout {
     checked: valueHideWhenZeroUnread
     onToggled: checked => {
                  valueHideWhenZeroUnread = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

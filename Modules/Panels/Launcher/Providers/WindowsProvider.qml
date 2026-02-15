@@ -10,6 +10,7 @@ Item {
   property var launcher: null
   property bool handleSearch: Settings.data.appLauncher.enableWindowsSearch
   property string supportedLayouts: "list"
+  property string iconMode: Settings.data.appLauncher.iconMode
 
   function init() {
     Logger.d("WindowsProvider", "Initialized");
@@ -26,7 +27,7 @@ Item {
           {
             "name": ">win",
             "description": I18n.tr("launcher.providers.windows-search-description"),
-            "icon": "app-window",
+            "icon": iconMode === "tabler" ? "app-window" : "preferences-system-windows",
             "isTablerIcon": true,
             "isImage": false,
             "onActivate": function () {

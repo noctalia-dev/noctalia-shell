@@ -9,11 +9,13 @@ import qs.Modules.Panels.Settings.Tabs.About
 import qs.Modules.Panels.Settings.Tabs.Audio
 import qs.Modules.Panels.Settings.Tabs.Bar
 import qs.Modules.Panels.Settings.Tabs.ColorScheme
+import qs.Modules.Panels.Settings.Tabs.Connections
 import qs.Modules.Panels.Settings.Tabs.ControlCenter
 import qs.Modules.Panels.Settings.Tabs.Display
 import qs.Modules.Panels.Settings.Tabs.Dock
 import qs.Modules.Panels.Settings.Tabs.Hooks
 import qs.Modules.Panels.Settings.Tabs.Launcher
+import qs.Modules.Panels.Settings.Tabs.LockScreen
 import qs.Modules.Panels.Settings.Tabs.Notifications
 import qs.Modules.Panels.Settings.Tabs.Osd
 import qs.Modules.Panels.Settings.Tabs.Plugins
@@ -28,6 +30,8 @@ import qs.Widgets
 
 Item {
   id: root
+
+  Component.onDestruction: SystemStatService.unregisterComponent("settings")
 
   // Screen reference for child components
   property var screen
@@ -50,6 +54,7 @@ Item {
   property var searchResults: []
   property int searchSelectedIndex: 0
   property string highlightLabelKey: ""
+  property bool navigatingFromSearch: false
 
   // Mouse hover suppression during keyboard navigation
   property bool ignoreMouseHover: false
@@ -155,15 +160,16 @@ Item {
     highlightLabelKey = entry.labelKey;
     _pendingSubTab = (entry.subTab !== null && entry.subTab !== undefined) ? entry.subTab : -1;
 
-    // Check if we're already on this tab
     const alreadyOnTab = (currentTabIndex === entry.tab);
-
+    navigatingFromSearch = true;
     currentTabIndex = entry.tab;
+    navigatingFromSearch = false;
 
     if (alreadyOnTab && activeTabContent) {
-      // Tab is already loaded, apply subtab + highlight directly
       if (_pendingSubTab >= 0) {
+        navigatingFromSearch = true;
         setSubTabIndex(_pendingSubTab);
+        navigatingFromSearch = false;
         _pendingSubTab = -1;
       }
       highlightScrollTimer.targetKey = highlightLabelKey;
@@ -228,11 +234,12 @@ Item {
     }
   }
 
-  // Set sub-tab on the currently loaded tab content
+  // Set sub-tab on the currently loaded tab content. Returns true if an NTabBar was found.
   function setSubTabIndex(subTabIndex) {
     if (activeTabContent) {
-      setSubTabRecursive(activeTabContent, subTabIndex);
+      return setSubTabRecursive(activeTabContent, subTabIndex);
     }
+    return false;
   }
 
   function setSubTabRecursive(item, subTabIndex) {
@@ -240,6 +247,16 @@ Item {
       return false;
 
     if (item.objectName === "NTabBar") {
+      // Prepare the sibling NTabView so the index change doesn't animate
+      if (item.parent) {
+        for (let j = 0; j < item.parent.children.length; j++) {
+          const sibling = item.parent.children[j];
+          if (sibling.objectName === "NTabView" && sibling.setIndexWithoutAnimation) {
+            sibling.setIndexWithoutAnimation(subTabIndex);
+            break;
+          }
+        }
+      }
       item.currentIndex = subTabIndex;
       return true;
     }
@@ -250,6 +267,62 @@ Item {
         return true;
     }
     return false;
+  }
+
+  onCurrentTabIndexChanged: {
+    if (!navigatingFromSearch) {
+      clearHighlightImmediately();
+    }
+  }
+
+  property var currentSubTabBar: null
+
+  onActiveTabContentChanged: {
+    if (currentSubTabBar) {
+      try {
+        currentSubTabBar.currentIndexChanged.disconnect(onSubTabChanged);
+      } catch (e) {}
+      currentSubTabBar = null;
+    }
+
+    if (activeTabContent) {
+      const tabBar = findNTabBar(activeTabContent);
+      if (tabBar) {
+        currentSubTabBar = tabBar;
+        currentSubTabBar.currentIndexChanged.connect(onSubTabChanged);
+      }
+    }
+  }
+
+  function onSubTabChanged() {
+    if (!navigatingFromSearch) {
+      clearHighlightImmediately();
+    }
+  }
+
+  function findNTabBar(item) {
+    if (!item)
+      return null;
+
+    if (item.objectName === "NTabBar") {
+      return item;
+    }
+
+    const childCount = item.children ? item.children.length : 0;
+    for (let i = 0; i < childCount; i++) {
+      const found = findNTabBar(item.children[i]);
+      if (found)
+        return found;
+    }
+    return null;
+  }
+
+  function clearHighlightImmediately() {
+    highlightClearTimer.stop();
+    highlightScrollTimer.stop();
+    highlightAnimation.stop();
+    highlightLabelKey = "";
+    highlightOverlay.opacity = 0;
   }
 
   // Find and highlight a widget by its label key
@@ -287,21 +360,21 @@ Item {
       if (root.activeTabContent && targetKey) {
         const widget = root.findAndHighlightWidget(root.activeTabContent, targetKey);
         if (widget && root.activeScrollView) {
-          // Scroll widget into view
-          const mapped = widget.mapToItem(root.activeScrollView.contentItem, 0, 0);
-          const scrollBar = root.activeScrollView.ScrollBar.vertical;
-          if (scrollBar) {
-            const targetPos = (mapped.y - root.activeScrollView.height / 3) / root.activeScrollView.contentHeight;
-            scrollBar.position = Math.max(0, Math.min(targetPos, 1.0 - scrollBar.size));
-          }
+          // Scroll widget into view using the Flickable directly
+          const flickable = root.activeScrollView.contentItem;
+          const mapped = widget.mapToItem(flickable.contentItem, 0, 0);
+          const targetY = mapped.y - flickable.height / 3;
+          flickable.contentY = Math.max(0, Math.min(targetY, flickable.contentHeight - flickable.height));
 
-          // Position highlight overlay
-          const overlayPos = widget.mapToItem(tabContentArea, 0, 0);
-          highlightOverlay.x = overlayPos.x - Style.marginM;
-          highlightOverlay.y = overlayPos.y - Style.marginM;
-          highlightOverlay.width = widget.width + Style.marginM * 2;
-          highlightOverlay.height = widget.height + Style.marginM * 2;
-          highlightAnimation.restart();
+          // Position highlight overlay after scroll layout has settled
+          Qt.callLater(function () {
+            const overlayPos = widget.mapToItem(tabContentArea, 0, 0);
+            highlightOverlay.x = overlayPos.x - Style.marginM;
+            highlightOverlay.y = overlayPos.y - Style.marginM;
+            highlightOverlay.width = widget.width + Style.marginM * 2;
+            highlightOverlay.height = widget.height + Style.marginM * 2;
+            highlightAnimation.restart();
+          });
         }
       }
       targetKey = "";
@@ -319,6 +392,7 @@ Item {
   }
 
   Component.onCompleted: {
+    SystemStatService.registerComponent("settings");
     // Restore sidebar state
     sidebarExpanded = ShellState.getSettingsSidebarExpanded();
   }
@@ -349,8 +423,8 @@ Item {
     OsdTab {}
   }
   Component {
-    id: networkTab
-    NetworkTab {}
+    id: connectionsTab
+    ConnectionsTab {}
   }
   Component {
     id: regionTab
@@ -502,10 +576,10 @@ Item {
             "source": displayTab
           },
           {
-            "id": SettingsPanel.Tab.Network,
-            "label": "common.network",
+            "id": SettingsPanel.Tab.Connections,
+            "label": "panels.connections.title",
             "icon": "settings-network",
-            "source": networkTab
+            "source": connectionsTab
           },
           {
             "id": SettingsPanel.Tab.Location,
@@ -554,7 +628,13 @@ Item {
 
   function initialize() {
     ProgramCheckerService.checkAllPrograms();
+    // Guard _pendingSubTab during model rebuild: updateTabsModel() triggers
+    // a ListView model reset which can set currentTabIndex=0 via the sidebar
+    // sync handler, causing the wrong tab to load and consume _pendingSubTab.
+    const savedPendingSubTab = _pendingSubTab;
+    _pendingSubTab = -1;
     updateTabsModel();
+    _pendingSubTab = savedPendingSubTab;
     selectTabById(requestedTab);
     // Skip auto-focus on Nvidia GPUs - cursor blink causes UI choppiness
     const isNvidia = SystemStatService.gpuType === "nvidia";
@@ -733,89 +813,100 @@ Item {
             }
           }
 
-          // Search input
-          NTextInput {
-            id: searchInput
-            Layout.fillWidth: true
-            placeholderText: I18n.tr("common.search")
-            inputIconName: "search"
-            visible: opacity > 0
-            opacity: root.sidebarExpanded ? 1.0 : 0.0
-
-            Behavior on opacity {
-              NumberAnimation {
-                duration: Style.animationFast
-                easing.type: Easing.InOutQuad
-              }
-            }
-
-            onTextChanged: root.searchText = text
-            onEditingFinished: {
-              if (root.searchText.trim() !== "")
-                root.searchActivate();
-            }
-          }
-
-          // Search button for collapsed sidebar
+          // Search container wrapper to prevent layout jumps
           Item {
-            id: searchCollapsedContainer
+            id: searchContainerWrapper
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.round(searchCollapsedRow.implicitHeight + Style.marginS * 2)
-            visible: opacity > 0
-            opacity: !root.sidebarExpanded ? 1.0 : 0.0
+            Layout.preferredHeight: searchInput.implicitHeight > 0 ? searchInput.implicitHeight : (Style.fontSizeXL + Style.marginM * 2)
 
-            Behavior on opacity {
-              NumberAnimation {
-                duration: Style.animationFast
-                easing.type: Easing.InOutQuad
-              }
-            }
-
-            Rectangle {
-              id: searchCollapsedButton
-              width: Math.round(searchCollapsedRow.implicitWidth + Style.marginS * 2)
-              height: parent.height
+            // Search input
+            NTextInput {
+              id: searchInput
               anchors.left: parent.left
-              radius: Style.radiusS
-              color: searchCollapsedMouseArea.containsMouse ? Color.mHover : "transparent"
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              placeholderText: I18n.tr("common.search")
+              inputIconName: "search"
+              visible: opacity > 0
+              opacity: root.sidebarExpanded ? 1.0 : 0.0
 
-              Behavior on color {
-                enabled: !Color.isTransitioning
-                ColorAnimation {
+              Behavior on opacity {
+                NumberAnimation {
                   duration: Style.animationFast
                   easing.type: Easing.InOutQuad
                 }
               }
 
-              RowLayout {
-                id: searchCollapsedRow
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-                anchors.leftMargin: Style.marginS
-                spacing: 0
+              onTextChanged: root.searchText = text
+              onEditingFinished: {
+                if (root.searchText.trim() !== "")
+                  root.searchActivate();
+              }
+            }
 
-                NIcon {
-                  icon: "search"
-                  color: searchCollapsedMouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
-                  pointSize: Style.fontSizeXL
+            // Search button for collapsed sidebar
+            Item {
+              id: searchCollapsedContainer
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              height: Math.round(searchCollapsedRow.implicitHeight + Style.marginS * 2)
+              visible: opacity > 0
+              opacity: !root.sidebarExpanded ? 1.0 : 0.0
+
+              Behavior on opacity {
+                NumberAnimation {
+                  duration: Style.animationFast
+                  easing.type: Easing.InOutQuad
                 }
               }
 
-              MouseArea {
-                id: searchCollapsedMouseArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                  root.sidebarExpanded = true;
-                  root.wasCollapsedBeforeSearch = false; // Expanding manually resets this
-                  Qt.callLater(() => searchInput.inputItem.forceActiveFocus());
+              Rectangle {
+                id: searchCollapsedButton
+                width: Math.round(searchCollapsedRow.implicitWidth + Style.marginS * 2)
+                height: parent.height
+                anchors.left: parent.left
+                radius: Style.radiusS
+                color: searchCollapsedMouseArea.containsMouse ? Color.mHover : "transparent"
+
+                Behavior on color {
+                  enabled: !Color.isTransitioning
+                  ColorAnimation {
+                    duration: Style.animationFast
+                    easing.type: Easing.InOutQuad
+                  }
                 }
-                onEntered: {
-                  TooltipService.show(searchCollapsedButton, I18n.tr("common.search"));
+
+                RowLayout {
+                  id: searchCollapsedRow
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.left: parent.left
+                  anchors.leftMargin: Style.marginS
+                  spacing: 0
+
+                  NIcon {
+                    icon: "search"
+                    color: searchCollapsedMouseArea.containsMouse ? Color.mOnHover : Color.mOnSurface
+                    pointSize: Style.fontSizeXL
+                  }
                 }
-                onExited: {
-                  TooltipService.hide();
+
+                MouseArea {
+                  id: searchCollapsedMouseArea
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: {
+                    root.sidebarExpanded = true;
+                    root.wasCollapsedBeforeSearch = false; // Expanding manually resets this
+                    Qt.callLater(() => searchInput.inputItem.forceActiveFocus());
+                  }
+                  onEntered: {
+                    TooltipService.show(searchCollapsedButton, I18n.tr("common.search"));
+                  }
+                  onExited: {
+                    TooltipService.hide();
+                  }
                 }
               }
             }
@@ -859,7 +950,7 @@ Item {
               delegate: Rectangle {
                 id: resultItem
                 width: searchResultsList.width - (searchResultsList.verticalScrollBarActive ? Style.marginM : 0)
-                height: resultColumn.implicitHeight + Style.marginS * 2
+                height: resultColumn.implicitHeight + Style.marginM * 2
                 radius: Style.iRadiusS
                 readonly property bool selected: index === root.searchSelectedIndex
                 readonly property bool effectiveHover: !root.ignoreMouseHover && resultMouseArea.containsMouse
@@ -876,10 +967,10 @@ Item {
                 ColumnLayout {
                   id: resultColumn
                   anchors.fill: parent
-                  anchors.leftMargin: Style.marginS
-                  anchors.rightMargin: Style.marginS
-                  anchors.topMargin: Style.marginXS
-                  anchors.bottomMargin: Style.marginXS
+                  anchors.leftMargin: Style.marginL
+                  anchors.rightMargin: Style.marginL
+                  anchors.topMargin: Style.marginM
+                  anchors.bottomMargin: Style.marginM
                   spacing: 0
 
                   NText {
@@ -933,13 +1024,14 @@ Item {
               model: root.tabsModel
               spacing: Style.marginXS
               currentIndex: root.currentTabIndex
-              verticalPolicy: ScrollBar.AsNeeded
+              horizontalPolicy: ScrollBar.AlwaysOff
+              verticalPolicy: ScrollBar.AlwaysOff
               gradientColor: "transparent"
               reserveScrollbarSpace: false
 
               delegate: Rectangle {
                 id: tabItem
-                width: sidebarList.width - (sidebarList.verticalScrollBarActive ? Style.marginM : 0)
+                width: sidebarList.width
                 height: tabEntryRow.implicitHeight + Style.marginS * 2
                 radius: Style.iRadiusS
                 color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mHover : "transparent")
@@ -1155,12 +1247,13 @@ Item {
                         item.screen = root.screen;
                       }
                       root.activeTabContent = item;
-                      // Handle pending subtab + highlight from search navigation
-                      if (root.highlightLabelKey) {
-                        if (root._pendingSubTab >= 0) {
-                          root.setSubTabIndex(root._pendingSubTab);
+                      if (root._pendingSubTab >= 0) {
+                        root.navigatingFromSearch = true;
+                        if (root.setSubTabIndex(root._pendingSubTab))
                           root._pendingSubTab = -1;
-                        }
+                        root.navigatingFromSearch = false;
+                      }
+                      if (root.highlightLabelKey) {
                         highlightScrollTimer.targetKey = root.highlightLabelKey;
                         highlightScrollTimer.restart();
                       }

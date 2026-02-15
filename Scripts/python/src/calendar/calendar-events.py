@@ -5,7 +5,8 @@ gi.require_version('ECal', '2.0')
 gi.require_version('ICalGLib', "3.0")
 
 import json, sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from gi.repository import ECal, EDataServer, ICalGLib
 
 start_time = int(sys.argv[1])
@@ -19,16 +20,30 @@ def safe_get_time(ical_time):
     if not ical_time:
         return None, False
     try:
+        year, month, day = ical_time.get_year(), ical_time.get_month(), ical_time.get_day()
         is_all_day = hasattr(ical_time, "is_date") and ical_time.is_date()
-        year = ical_time.get_year()
-        month = ical_time.get_month()
-        day = ical_time.get_day()
         if is_all_day:
+            # All-day events (birthdays, holidays) should not need
+            # to be timezone converted
             return int(datetime(year, month, day).timestamp()), True
-        hour = ical_time.get_hour()
-        minute = ical_time.get_minute()
-        second = ical_time.get_second()
-        dt = datetime(year, month, day, hour, minute, second)
+
+        hour, minute, second = ical_time.get_hour(), ical_time.get_minute(), ical_time.get_second()
+
+        # Determine timezone for proper conversion
+        tz_obj = ical_time.get_timezone() if hasattr(ical_time, 'get_timezone') else None
+        tzid = tz_obj.get_tzid() if tz_obj else None
+        tz = None
+        if ical_time.is_utc() if hasattr(ical_time, 'is_utc') else False:
+            tz = timezone.utc  # Explicit UTC time
+        elif tzid:
+            # Evolution uses non-standard format: /freeassociation.sourceforge.net/America/Los_Angeles
+            # Strip prefix to get IANA name: America/Los_Angeles
+            iana = tzid.replace('/freeassociation.sourceforge.net/', '') if tzid.startswith('/') else tzid
+            try: tz = ZoneInfo(iana)
+            except: pass
+
+        # Create timezone-aware datetime
+        dt = datetime(year, month, day, hour, minute, second, tzinfo=tz)
         return int(dt.timestamp()), False
     except:
         return None, False

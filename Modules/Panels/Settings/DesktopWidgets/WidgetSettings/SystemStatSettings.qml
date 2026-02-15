@@ -28,7 +28,7 @@ ColumnLayout {
     settings.showBackground = valueShowBackground;
     settings.roundedCorners = valueRoundedCorners;
     settings.layout = valueLayout;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -37,31 +37,35 @@ ColumnLayout {
     description: I18n.tr("panels.desktop-widgets.system-stat-stat-type-description")
     currentKey: valueStatType
     minimumWidth: 260 * Style.uiScaleRatio
-    model: [
-      {
-        "key": "CPU",
-        "name": I18n.tr("system-monitor.cpu-usage")
-      },
-      {
-        "key": "GPU",
-        "name": I18n.tr("panels.system-monitor.gpu-section-label")
-      },
-      {
-        "key": "Memory",
-        "name": I18n.tr("common.memory")
-      },
-      {
-        "key": "Network",
-        "name": I18n.tr("bar.system-monitor.network-traffic-label")
-      },
-      {
-        "key": "Disk",
-        "name": I18n.tr("system-monitor.disk")
-      }
-    ]
+    model: {
+      let items = [
+            {
+              "key": "CPU",
+              "name": I18n.tr("system-monitor.cpu-usage")
+            },
+            {
+              "key": "Memory",
+              "name": I18n.tr("common.memory")
+            },
+            {
+              "key": "Network",
+              "name": I18n.tr("bar.system-monitor.network-traffic-label")
+            },
+            {
+              "key": "Disk",
+              "name": I18n.tr("system-monitor.disk")
+            }
+          ];
+      if (Settings.data.systemMonitor.enableDgpuMonitoring)
+        items.push({
+                     "key": "GPU",
+                     "name": I18n.tr("panels.system-monitor.gpu-section-label")
+                   });
+      return items;
+    }
     onSelected: key => {
                   valueStatType = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -80,7 +84,7 @@ ColumnLayout {
     currentKey: valueDiskPath
     onSelected: key => {
                   valueDiskPath = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -95,7 +99,7 @@ ColumnLayout {
     checked: valueShowBackground
     onToggled: checked => {
                  valueShowBackground = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -107,7 +111,7 @@ ColumnLayout {
     checked: valueRoundedCorners
     onToggled: checked => {
                  valueRoundedCorners = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -133,7 +137,7 @@ ColumnLayout {
     ]
     onSelected: key => {
                   valueLayout = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 }

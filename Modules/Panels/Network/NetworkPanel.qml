@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import qs.Commons
 import qs.Modules.MainScreen
+import qs.Modules.Panels.Settings
 import qs.Services.Networking
 import qs.Services.UI
 import qs.Widgets
@@ -16,7 +17,6 @@ SmartPanel {
 
   property string passwordSsid: ""
   property string expandedSsid: ""
-  property bool hasHadNetworks: false
 
   // Info panel collapsed by default, view mode persisted under Settings.data.ui.wifiDetailsViewMode
   // Ethernet details UI state (mirrors Wi‑Fi info behavior)
@@ -65,7 +65,6 @@ SmartPanel {
     return known;
   }
   onOpened: {
-    hasHadNetworks = false;
     NetworkService.scan();
     // Preload active Wi‑Fi details so Info shows instantly
     NetworkService.refreshActiveWifiDetails();
@@ -101,24 +100,6 @@ SmartPanel {
     return available;
   }
 
-  onKnownNetworksChanged: {
-    if (knownNetworks.length > 0)
-      hasHadNetworks = true;
-  }
-
-  onAvailableNetworksChanged: {
-    if (availableNetworks.length > 0)
-      hasHadNetworks = true;
-  }
-
-  Connections {
-    target: Settings.data.network
-    function onWifiEnabledChanged() {
-      if (!Settings.data.network.wifiEnabled)
-        root.hasHadNetworks = false;
-    }
-  }
-
   panelContent: Rectangle {
     color: "transparent"
 
@@ -133,7 +114,7 @@ SmartPanel {
       // Header
       NBox {
         Layout.fillWidth: true
-        Layout.preferredHeight: header.implicitHeight + Style.marginXL
+        Layout.preferredHeight: Math.round(header.implicitHeight + Style.marginM * 2 + 1)
 
         ColumnLayout {
           id: header
@@ -160,25 +141,17 @@ SmartPanel {
                     panelViewMode = "wifi";
                   }
                 }
-                onEntered: TooltipService.show(parent, panelViewMode === "wifi" ? I18n.tr("control-center.wifi.label-ethernet") : I18n.tr("wifi.panel.title"))
+                onEntered: TooltipService.show(parent, panelViewMode === "wifi" ? I18n.tr("common.ethernet") : I18n.tr("common.wifi"))
                 onExited: TooltipService.hide()
               }
             }
 
             NText {
-              text: panelViewMode === "wifi" ? I18n.tr("wifi.panel.title") : I18n.tr("control-center.wifi.label-ethernet")
+              text: panelViewMode === "wifi" ? I18n.tr("common.wifi") : I18n.tr("common.ethernet")
               pointSize: Style.fontSizeL
               font.weight: Style.fontWeightBold
               color: Color.mOnSurface
               Layout.fillWidth: true
-            }
-
-            NToggle {
-              id: wifiSwitch
-              visible: panelViewMode === "wifi"
-              checked: Settings.data.network.wifiEnabled
-              onToggled: checked => NetworkService.setWifiEnabled(checked)
-              baseSize: Style.baseWidgetSize * 0.7 // Slightly smaller
             }
 
             NIconButton {
@@ -192,6 +165,22 @@ SmartPanel {
                 else
                   NetworkService.refreshEthernet();
               }
+            }
+
+            NToggle {
+              id: wifiSwitch
+              visible: panelViewMode === "wifi"
+              checked: Settings.data.network.wifiEnabled
+              enabled: !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
+              onToggled: checked => NetworkService.setWifiEnabled(checked)
+              baseSize: Style.baseWidgetSize * 0.7 // Slightly smaller
+            }
+
+            NIconButton {
+              icon: "settings"
+              tooltipText: I18n.tr("tooltips.open-settings")
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: SettingsPanelService.openToTab(SettingsPanel.Tab.Connections, 0, screen)
             }
 
             NIconButton {
@@ -208,8 +197,6 @@ SmartPanel {
             visible: NetworkService.hasEthernet()
             margins: Style.marginS
             Layout.fillWidth: true
-            border.color: Style.boxBorderColor
-            border.width: Style.borderS
             spacing: Style.marginM
             distributeEvenly: true
             currentIndex: root.panelViewMode === "wifi" ? 0 : 1
@@ -218,13 +205,13 @@ SmartPanel {
             }
 
             NTabButton {
-              text: I18n.tr("tooltips.manage-wifi")
+              text: I18n.tr("common.wifi")
               tabIndex: 0
               checked: modeTabBar.currentIndex === 0
             }
 
             NTabButton {
-              text: I18n.tr("control-center.wifi.label-ethernet")
+              text: I18n.tr("common.ethernet")
               tabIndex: 1
               checked: modeTabBar.currentIndex === 1
             }
@@ -289,7 +276,7 @@ SmartPanel {
 
           ColumnLayout {
             id: contentColumn
-            width: contentScroll.availableWidth
+            width: Math.round(contentScroll.availableWidth)
             spacing: Style.marginM
 
             // Wi‑Fi disabled state
@@ -297,7 +284,7 @@ SmartPanel {
               id: disabledBox
               visible: panelViewMode === "wifi" && !Settings.data.network.wifiEnabled
               Layout.fillWidth: true
-              Layout.preferredHeight: disabledColumn.implicitHeight + Style.marginXL
+              Layout.preferredHeight: Math.round(disabledColumn.implicitHeight + Style.marginM * 2 + 1)
 
               ColumnLayout {
                 id: disabledColumn
@@ -341,9 +328,9 @@ SmartPanel {
             // Scanning state (show when no networks and we haven't had any yet)
             NBox {
               id: scanningBox
-              visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && Object.keys(NetworkService.networks).length === 0 && !root.hasHadNetworks
+              visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && Object.keys(NetworkService.networks).length === 0 && NetworkService.scanning
               Layout.fillWidth: true
-              Layout.preferredHeight: scanningColumn.implicitHeight + Style.marginXL
+              Layout.preferredHeight: Math.round(scanningColumn.implicitHeight + Style.marginM * 2 + 1)
 
               ColumnLayout {
                 id: scanningColumn
@@ -378,9 +365,9 @@ SmartPanel {
             // Empty state when no networks (only show after we've had networks before, meaning a real empty result)
             NBox {
               id: emptyBox
-              visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && !NetworkService.scanning && Object.keys(NetworkService.networks).length === 0 && root.hasHadNetworks
+              visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && !NetworkService.scanning && Object.keys(NetworkService.networks).length === 0 && !NetworkService.scanning
               Layout.fillWidth: true
-              Layout.preferredHeight: emptyColumn.implicitHeight + Style.marginXL
+              Layout.preferredHeight: Math.round(emptyColumn.implicitHeight + Style.marginM * 2 + 1)
 
               ColumnLayout {
                 id: emptyColumn
@@ -489,7 +476,7 @@ SmartPanel {
               NBox {
                 visible: !(NetworkService.ethernetInterfaces && NetworkService.ethernetInterfaces.length > 0)
                 Layout.fillWidth: true
-                Layout.preferredHeight: emptyEthColumn.implicitHeight + Style.marginXL
+                Layout.preferredHeight: Math.round(emptyEthColumn.implicitHeight + Style.marginM * 2 + 1)
 
                 ColumnLayout {
                   id: emptyEthColumn
@@ -536,7 +523,7 @@ SmartPanel {
                     Layout.fillWidth: true
                     Layout.leftMargin: Style.marginXS
                     Layout.rightMargin: Style.marginXS
-                    implicitHeight: ethItemColumn.implicitHeight + (Style.marginXL)
+                    implicitHeight: Math.round(ethItemColumn.implicitHeight + (Style.marginXL))
                     radius: Style.radiusM
                     border.width: Style.borderS
                     border.color: modelData.connected ? Color.mPrimary : Color.mOutline
@@ -727,7 +714,7 @@ SmartPanel {
                                   const value = (NetworkService.activeEthernetDetails.ifname && NetworkService.activeEthernetDetails.ifname.length > 0) ? NetworkService.activeEthernetDetails.ifname : (NetworkService.activeEthernetIf || "");
                                   if (value.length > 0) {
                                     Quickshell.execDetached(["wl-copy", value]);
-                                    ToastService.showNotice(I18n.tr("control-center.wifi.label-ethernet"), I18n.tr("toast.bluetooth.address-copied"), "ethernet");
+                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("toast.bluetooth.address-copied"), "ethernet");
                                   }
                                 }
                               }
@@ -879,7 +866,7 @@ SmartPanel {
                                   const value = NetworkService.activeEthernetDetails.ipv4 || "";
                                   if (value.length > 0) {
                                     Quickshell.execDetached(["wl-copy", value]);
-                                    ToastService.showNotice(I18n.tr("control-center.wifi.label-ethernet"), I18n.tr("toast.bluetooth.address-copied"), "ethernet");
+                                    ToastService.showNotice(I18n.tr("common.ethernet"), I18n.tr("toast.bluetooth.address-copied"), "ethernet");
                                   }
                                 }
                               }

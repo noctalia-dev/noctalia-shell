@@ -11,6 +11,9 @@ import qs.Widgets
 SmartPanel {
   id: root
 
+  Component.onCompleted: SystemStatService.registerComponent("panel-systemstats")
+  Component.onDestruction: SystemStatService.unregisterComponent("panel-systemstats")
+
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
 
   panelContent: Item {
@@ -90,7 +93,7 @@ SmartPanel {
             }
 
             NText {
-              text: `${Math.round(SystemStatService.cpuUsage)}% ${SystemStatService.cpuFreq}`
+              text: `${Math.round(SystemStatService.cpuUsage)}% (${SystemStatService.cpuFreq.replace(/[^0-9.]/g, "")} GHz)`
               pointSize: Style.fontSizeXS
               color: Color.mPrimary
               font.family: Settings.data.ui.fontFixed
@@ -99,13 +102,13 @@ SmartPanel {
             NIcon {
               icon: "cpu-temperature"
               pointSize: Style.fontSizeXS
-              color: Color.mError
+              color: Color.mSecondary
             }
 
             NText {
               text: `${Math.round(SystemStatService.cpuTemp)}°C`
               pointSize: Style.fontSizeXS
-              color: Color.mError
+              color: Color.mSecondary
               font.family: Settings.data.ui.fontFixed
               Layout.rightMargin: Style.marginS
             }
@@ -124,6 +127,9 @@ SmartPanel {
           NGraph {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.leftMargin: -Style.marginS
+            Layout.rightMargin: -Style.marginS
+            Layout.bottomMargin: 2
             values: SystemStatService.cpuHistory
             values2: SystemStatService.cpuTempHistory
             minValue: 0
@@ -131,10 +137,10 @@ SmartPanel {
             minValue2: Math.max(SystemStatService.cpuTempHistoryMin - 5, 0)
             maxValue2: Math.max(SystemStatService.cpuTempHistoryMax + 5, 1)
             color: Color.mPrimary
-            color2: Color.mError
+            color2: Color.mSecondary
             fill: true
             fillOpacity: 0.15
-            updateInterval: Settings.data.systemMonitor.cpuPollingInterval
+            updateInterval: SystemStatService.cpuIntervalMs
           }
         }
       }
@@ -160,7 +166,7 @@ SmartPanel {
             }
 
             NText {
-              text: `${Math.round(SystemStatService.memPercent)}% ${SystemStatService.formatGigabytes(SystemStatService.memGb).replace(/[^0-9.]/g, "")} GB`
+              text: `${Math.round(SystemStatService.memPercent)}% (${SystemStatService.formatGigabytes(SystemStatService.memGb).replace(/[^0-9.]/g, "")} GB)`
               pointSize: Style.fontSizeXS
               color: Color.mPrimary
               font.family: Settings.data.ui.fontFixed
@@ -180,13 +186,16 @@ SmartPanel {
           NGraph {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.leftMargin: -Style.marginS
+            Layout.rightMargin: -Style.marginS
+            Layout.bottomMargin: 2
             values: SystemStatService.memHistory
             minValue: 0
             maxValue: 100
             color: Color.mPrimary
             fill: true
             fillOpacity: 0.15
-            updateInterval: Settings.data.systemMonitor.memPollingInterval
+            updateInterval: SystemStatService.memIntervalMs
           }
         }
       }
@@ -222,13 +231,13 @@ SmartPanel {
             NIcon {
               icon: "upload-speed"
               pointSize: Style.fontSizeXS
-              color: Color.mError
+              color: Color.mSecondary
             }
 
             NText {
               text: SystemStatService.formatSpeed(SystemStatService.txSpeed).replace(/([0-9.]+)([A-Za-z]+)/, "$1 $2") + "/s"
               pointSize: Style.fontSizeXS
-              color: Color.mError
+              color: Color.mSecondary
               font.family: Settings.data.ui.fontFixed
             }
 
@@ -246,6 +255,9 @@ SmartPanel {
           NGraph {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.leftMargin: -Style.marginS
+            Layout.rightMargin: -Style.marginS
+            Layout.bottomMargin: 2
             values: SystemStatService.rxSpeedHistory
             values2: SystemStatService.txSpeedHistory
             minValue: 0
@@ -253,10 +265,10 @@ SmartPanel {
             minValue2: 0
             maxValue2: SystemStatService.txMaxSpeed
             color: Color.mPrimary
-            color2: Color.mError
+            color2: Color.mSecondary
             fill: true
             fillOpacity: 0.15
-            updateInterval: Settings.data.systemMonitor.networkPollingInterval
+            updateInterval: SystemStatService.networkIntervalMs
             animateScale: true
           }
         }

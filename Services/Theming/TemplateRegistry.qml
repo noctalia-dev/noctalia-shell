@@ -327,6 +327,18 @@ Singleton {
       "postProcess": () => `${templateApplyScript} sway`
     },
     {
+      "id": "scroll",
+      "name": "Scroll",
+      "category": "compositor",
+      "input": "sway",
+      "outputs": [
+        {
+          "path": "~/.config/scroll/noctalia"
+        }
+      ],
+      "postProcess": () => `${templateApplyScript} scroll`
+    },
+    {
       "id": "hyprland",
       "name": "Hyprland",
       "category": "compositor",

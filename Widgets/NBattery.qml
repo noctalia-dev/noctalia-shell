@@ -13,6 +13,7 @@ Item {
   required property bool pluggedIn
   required property bool ready
   required property bool low
+  required property bool critical
 
   // Sizing - baseSize controls overall scaleFactor for bar/panel usage
   property real baseSize: Style.fontSizeM
@@ -27,11 +28,11 @@ Item {
   property bool showPercentageText: true
   property bool vertical: false
 
-  // Alternating state icon display (toggles between percentage and icon when charging/plugged)
+  // Alternating state icon display (toggles between percentage and icon when charging)
   property bool showStateIcon: false
 
-  onHasStateIconChanged: {
-    if (!hasStateIcon)
+  onChargingChanged: {
+    if (!charging)
       showStateIcon = false;
   }
 
@@ -55,17 +56,16 @@ Item {
     if (charging) {
       return chargingColor;
     }
-    if (low) {
+    if (low || critical) {
       return lowColor;
     }
     return baseColor;
   }
 
   // Background color for empty portion (semi-transparent)
-  readonly property color emptyColor: Qt.alpha(baseColor, 0.7)
+  readonly property color emptyColor: Qt.alpha(baseColor, 0.66)
 
   // State icon logic
-  readonly property bool hasStateIcon: (!ready || charging || pluggedIn)
   readonly property string stateIcon: {
     if (!ready)
       return "x";
@@ -90,9 +90,9 @@ Item {
   // Timer to alternate between percentage text and state icon when charging/plugged
   Timer {
     id: alternateTimer
-    interval: 3000
+    interval: 4000
     repeat: true
-    running: root.hasStateIcon && root.ready
+    running: root.charging && root.showPercentageText
     onTriggered: root.showStateIcon = !root.showStateIcon
   }
 
@@ -128,17 +128,17 @@ Item {
       width: root.vertical ? root.terminalHeight : root.terminalWidth
       height: root.vertical ? root.terminalWidth : root.terminalHeight
       radius: root.cornerRadius / 2
-      color: root.emptyColor
+      color: root.critical ? root.lowColor : root.emptyColor
     }
 
     // Fill level
     Rectangle {
       id: fillRect
-      visible: root.ready && root.animatedPercentage > 0
+      visible: root.ready && (root.animatedPercentage > 0 || root.critical)
       x: 0
-      y: root.vertical ? root.terminalWidth + root.bodyWidth * (1 - root.animatedPercentage / 100) : 0
-      width: root.vertical ? root.bodyHeight : root.bodyWidth * (root.animatedPercentage / 100)
-      height: root.vertical ? root.bodyWidth * (root.animatedPercentage / 100) : root.bodyHeight
+      y: root.vertical ? root.terminalWidth + root.bodyWidth * (1 - (root.critical ? 1 : root.animatedPercentage / 100)) : 0
+      width: root.vertical ? root.bodyHeight : root.bodyWidth * (root.critical ? 1 : root.animatedPercentage / 100)
+      height: root.vertical ? root.bodyWidth * (root.critical ? 1 : root.animatedPercentage / 100) : root.bodyHeight
       radius: root.cornerRadius
       color: root.activeColor
     }
@@ -148,7 +148,7 @@ Item {
   NText {
     id: percentageText
     visible: opacity > 0
-    opacity: root.showPercentageText && root.ready && !root.showStateIcon ? 1 : 0
+    opacity: root.showPercentageText && root.ready && (root.charging ? !root.showStateIcon : !root.pluggedIn) ? 1 : 0
     x: batteryBody.x + Style.pixelAlignCenter(bodyBackground.width, width)
     y: batteryBody.y + bodyBackground.y + Style.pixelAlignCenter(bodyBackground.height, height)
     font.family: Settings.data.ui.fontFixed
@@ -174,7 +174,7 @@ Item {
   NIcon {
     id: stateIconOverlay
     visible: opacity > 0
-    opacity: !root.ready || (root.hasStateIcon && root.showStateIcon) ? 1 : 0
+    opacity: !root.ready || (root.charging ? (root.showStateIcon || !root.showPercentageText) : root.pluggedIn) ? 1 : 0
     x: batteryBody.x + Style.pixelAlignCenter(bodyBackground.width, width)
     y: batteryBody.y + bodyBackground.y + Style.pixelAlignCenter(bodyBackground.height, height)
     icon: root.stateIcon

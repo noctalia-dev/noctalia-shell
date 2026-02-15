@@ -249,13 +249,20 @@ ColumnLayout {
               visible: modelData.downloaded === true
             }
 
-            // Install button (only shown when not downloaded)
+            // Install button (only shown when not downloaded and not installing)
             NIconButton {
-              visible: modelData.downloaded === false
+              visible: modelData.downloaded === false && !PluginService.installingPlugins[modelData.id]
               icon: "download"
               baseSize: Style.baseWidgetSize * 0.7
               tooltipText: I18n.tr("common.install")
               onClicked: installPlugin(modelData)
+            }
+
+            // Installing spinner
+            NBusyIndicator {
+              visible: !modelData.downloaded && (PluginService.installingPlugins[modelData.id] === true)
+              size: Style.baseWidgetSize * 0.5
+              running: visible
             }
           }
 

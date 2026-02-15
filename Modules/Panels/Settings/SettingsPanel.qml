@@ -91,7 +91,7 @@ SmartPanel {
     Hooks,
     Launcher,
     Location,
-    Network,
+    Connections,
     Notifications,
     Plugins,
     SessionMenu,
@@ -172,12 +172,11 @@ SmartPanel {
         Qt.callLater(() => _settingsContent.navigateToResult(entry));
       } else {
         _settingsContent.requestedTab = requestedTab;
-        _settingsContent.initialize();
         if (requestedSubTab >= 0) {
-          const subTab = requestedSubTab;
+          _settingsContent._pendingSubTab = requestedSubTab;
           requestedSubTab = -1;
-          Qt.callLater(() => _settingsContent.navigateToTab(requestedTab, subTab));
         }
+        _settingsContent.initialize();
       }
     }
   }

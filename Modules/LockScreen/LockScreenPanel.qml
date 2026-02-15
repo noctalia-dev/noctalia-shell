@@ -20,6 +20,10 @@ Item {
   required property var keyboardLayout
   required property TextInput passwordInput
 
+  // Whether to enable lock screen animations (smooth cursor blink).
+  // Defaults to false to reduce GPU usage.  Set Settings.data.general.lockScreenAnimations = true to restore.
+  readonly property bool animationsEnabled: Settings.data.general.lockScreenAnimations || false
+
   Component.onCompleted: {
     if (Settings.data.general.autoStartAuth) {
       doUnlock();
@@ -544,9 +548,10 @@ Item {
                 visible: passwordInput.activeFocus && passwordInput.text.length === 0
                 anchors.verticalCenter: parent.verticalCenter
 
+                // Smooth fade animation (when animations enabled)
                 SequentialAnimation on opacity {
                   loops: Animation.Infinite
-                  running: passwordInput.activeFocus && passwordInput.text.length === 0
+                  running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length === 0
                   NumberAnimation {
                     to: 0
                     duration: 530
@@ -555,6 +560,14 @@ Item {
                     to: 1
                     duration: 530
                   }
+                }
+
+                // Simple toggle (when animations disabled) — no per-frame repaints
+                Timer {
+                  interval: 530
+                  running: !root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length === 0
+                  repeat: true
+                  onTriggered: parent.opacity = parent.opacity > 0.5 ? 0 : 1
                 }
               }
 
@@ -601,9 +614,10 @@ Item {
                 visible: passwordInput.activeFocus && passwordInput.text.length > 0
                 anchors.verticalCenter: parent.verticalCenter
 
+                // Smooth fade animation (when animations enabled)
                 SequentialAnimation on opacity {
                   loops: Animation.Infinite
-                  running: passwordInput.activeFocus && passwordInput.text.length > 0
+                  running: root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0
                   NumberAnimation {
                     to: 0
                     duration: 530
@@ -612,6 +626,14 @@ Item {
                     to: 1
                     duration: 530
                   }
+                }
+
+                // Simple toggle (when animations disabled) — no per-frame repaints
+                Timer {
+                  interval: 530
+                  running: !root.animationsEnabled && passwordInput.activeFocus && passwordInput.text.length > 0
+                  repeat: true
+                  onTriggered: parent.opacity = parent.opacity > 0.5 ? 0 : 1
                 }
               }
             }

@@ -30,11 +30,7 @@ ColumnLayout {
     settings.showAlbumArt = valueShowAlbumArt;
     settings.showVisualizer = valueShowVisualizer;
     settings.roundedCorners = valueRoundedCorners;
-
-    // Clean up legacy property
-    delete settings.visualizerVisibility;
-
-    return settings;
+    settingsChanged(settings);
   }
 
   NToggle {
@@ -44,7 +40,7 @@ ColumnLayout {
     checked: valueShowBackground
     onToggled: checked => {
                  valueShowBackground = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -55,7 +51,7 @@ ColumnLayout {
     checked: valueRoundedCorners
     onToggled: checked => {
                  valueRoundedCorners = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -66,7 +62,7 @@ ColumnLayout {
     checked: valueShowAlbumArt
     onToggled: checked => {
                  valueShowAlbumArt = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -77,7 +73,7 @@ ColumnLayout {
     checked: valueShowVisualizer
     onToggled: checked => {
                  valueShowVisualizer = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -88,7 +84,7 @@ ColumnLayout {
     checked: valueShowButtons
     onToggled: checked => {
                  valueShowButtons = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -114,7 +110,7 @@ ColumnLayout {
     currentKey: valueVisualizerType
     onSelected: key => {
                   valueVisualizerType = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -139,7 +135,7 @@ ColumnLayout {
     currentKey: valueHideMode
     onSelected: key => {
                   valueHideMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 }

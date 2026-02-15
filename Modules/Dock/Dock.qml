@@ -59,11 +59,12 @@ Loader {
         }
       }
 
-      // Refresh icons when DesktopEntries becomes available
+      // Refresh icons and names when DesktopEntries becomes available (or updates)
       Connections {
         target: DesktopEntries.applications
         function onValuesChanged() {
           root.iconRevision++;
+          updateDockApps();
         }
       }
 
@@ -335,7 +336,7 @@ Loader {
                                                            });
                                } else {
                                  // App is pinned but not running - add once
-                                 pushApp("pinned", null, pinnedAppId, pinnedAppId);
+                                 pushApp("pinned", null, pinnedAppId, getAppNameFromDesktopEntry(pinnedAppId) || pinnedAppId);
                                }
                              });
         }
@@ -995,80 +996,80 @@ Loader {
                           }
                         }
 
-                        onClicked: function (mouse) {
-                          if (mouse.button === Qt.RightButton) {
-                            // If right-clicking on the same app with an open context menu, close it
-                            if (root.currentContextMenu === contextMenu && contextMenu.visible) {
-                              root.closeAllContextMenus();
-                              return;
-                            }
-                            // Close any other existing context menu first
-                            root.closeAllContextMenus();
-                            // Hide tooltip when showing context menu
-                            TooltipService.hideImmediately();
-                            contextMenu.show(appButton, modelData.toplevel || modelData);
-                            return;
-                          }
+                        onClicked: mouse => {
+                                     if (mouse.button === Qt.RightButton) {
+                                       // If right-clicking on the same app with an open context menu, close it
+                                       if (root.currentContextMenu === contextMenu && contextMenu.visible) {
+                                         root.closeAllContextMenus();
+                                         return;
+                                       }
+                                       // Close any other existing context menu first
+                                       root.closeAllContextMenus();
+                                       // Hide tooltip when showing context menu
+                                       TooltipService.hideImmediately();
+                                       contextMenu.show(appButton, modelData.toplevel || modelData);
+                                       return;
+                                     }
 
-                          // Close any existing context menu for non-right-click actions
-                          root.closeAllContextMenus();
+                                     // Close any existing context menu for non-right-click actions
+                                     root.closeAllContextMenus();
 
-                          // Check if toplevel is still valid (not a stale reference)
-                          const isValidToplevel = modelData?.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(modelData.toplevel);
+                                     // Check if toplevel is still valid (not a stale reference)
+                                     const isValidToplevel = modelData?.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(modelData.toplevel);
 
-                          if (mouse.button === Qt.MiddleButton && isValidToplevel && modelData.toplevel.close) {
-                            modelData.toplevel.close();
-                            Qt.callLater(root.updateDockApps); // Force immediate dock update
-                          } else if (mouse.button === Qt.LeftButton) {
-                            if (isValidToplevel && modelData.toplevel.activate) {
-                              // Running app - activate it
-                              modelData.toplevel.activate();
-                            } else if (modelData?.appId) {
-                              // Pinned app not running - launch it
-                              // Use ThemeIcons to robustly find the desktop entry
-                              const app = ThemeIcons.findAppEntry(modelData.appId);
+                                     if (mouse.button === Qt.MiddleButton && isValidToplevel && modelData.toplevel.close) {
+                                       modelData.toplevel.close();
+                                       Qt.callLater(root.updateDockApps); // Force immediate dock update
+                                     } else if (mouse.button === Qt.LeftButton) {
+                                       if (isValidToplevel && modelData.toplevel.activate) {
+                                         // Running app - activate it
+                                         modelData.toplevel.activate();
+                                       } else if (modelData?.appId) {
+                                         // Pinned app not running - launch it
+                                         // Use ThemeIcons to robustly find the desktop entry
+                                         const app = ThemeIcons.findAppEntry(modelData.appId);
 
-                              if (!app) {
-                                Logger.w("Dock", `Could not find desktop entry for pinned app: ${modelData.appId}`);
-                                return;
-                              }
+                                         if (!app) {
+                                           Logger.w("Dock", `Could not find desktop entry for pinned app: ${modelData.appId}`);
+                                           return;
+                                         }
 
-                              if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
-                                // Use custom launch prefix
-                                const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
+                                         if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
+                                           // Use custom launch prefix
+                                           const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
 
-                                if (app.runInTerminal) {
-                                  const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
-                                  const command = prefix.concat(terminal.concat(app.command));
-                                  Quickshell.execDetached(command);
-                                } else {
-                                  const command = prefix.concat(app.command);
-                                  Quickshell.execDetached(command);
-                                }
-                              } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
-                                Logger.d("Dock", `Using app2unit for: ${app.id}`);
-                                if (app.runInTerminal)
-                                  Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
-                                else
-                                  Quickshell.execDetached(["app2unit", "--"].concat(app.command));
-                              } else {
-                                // Fallback logic when app2unit is not used
-                                if (app.runInTerminal) {
-                                  Logger.d("Dock", "Executing terminal app manually: " + app.name);
-                                  const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
-                                  const command = terminal.concat(app.command);
-                                  CompositorService.spawn(command);
-                                } else if (app.command && app.command.length > 0) {
-                                  CompositorService.spawn(app.command);
-                                } else if (app.execute) {
-                                  app.execute();
-                                } else {
-                                  Logger.w("Dock", `Could not launch: ${app.name}. No valid launch method.`);
-                                }
-                              }
-                            }
-                          }
-                        }
+                                           if (app.runInTerminal) {
+                                             const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+                                             const command = prefix.concat(terminal.concat(app.command));
+                                             Quickshell.execDetached(command);
+                                           } else {
+                                             const command = prefix.concat(app.command);
+                                             Quickshell.execDetached(command);
+                                           }
+                                         } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
+                                           Logger.d("Dock", `Using app2unit for: ${app.id}`);
+                                           if (app.runInTerminal)
+                                           Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
+                                           else
+                                           Quickshell.execDetached(["app2unit", "--"].concat(app.command));
+                                         } else {
+                                           // Fallback logic when app2unit is not used
+                                           if (app.runInTerminal) {
+                                             Logger.d("Dock", "Executing terminal app manually: " + app.name);
+                                             const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+                                             const command = terminal.concat(app.command);
+                                             CompositorService.spawn(command);
+                                           } else if (app.command && app.command.length > 0) {
+                                             CompositorService.spawn(app.command);
+                                           } else if (app.execute) {
+                                             app.execute();
+                                           } else {
+                                             Logger.w("Dock", `Could not launch: ${app.name}. No valid launch method.`);
+                                           }
+                                         }
+                                       }
+                                     }
+                                   }
                       }
 
                       // Active indicator - positioned at the edge of the delegate area

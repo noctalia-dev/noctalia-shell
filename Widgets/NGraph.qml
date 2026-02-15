@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import qs.Commons
 
 Item {
@@ -32,11 +33,8 @@ Item {
   // Animate scale changes (for network graphs with dynamic max)
   property bool animateScale: false
 
-  // Padding for bezier overshoot (percentage of range)
+  // Vertical padding (percentage of range) to keep values from touching edges
   readonly property real curvePadding: 0.12
-
-  // Edge padding to hide bezier curve overshoot (in pixels)
-  readonly property real edgePadding: Math.max(8, width * 0.02)
 
   readonly property bool hasData: values.length >= 4
   readonly property bool hasData2: values2.length >= 4
@@ -93,7 +91,7 @@ Item {
       _ready1 = true;
       _t1 = 0;
     } else {
-      _t1 = _t1 - 1.0;
+      _t1 = Math.max(0, _t1 - 1.0);
     }
     _animTimer.start();
   }
@@ -110,7 +108,7 @@ Item {
       _ready2 = true;
       _t2 = 0;
     } else {
-      _t2 = _t2 - 1.0;
+      _t2 = Math.max(0, _t2 - 1.0);
     }
     _animTimer.start();
   }
@@ -119,8 +117,13 @@ Item {
     id: _animTimer
     interval: 16
     repeat: true
+    property real _prevTime: 0
+
     onTriggered: {
-      const dt = 16 / root.updateInterval;
+      const now = Date.now();
+      const elapsed = _prevTime > 0 ? (now - _prevTime) : 16;
+      _prevTime = now;
+      const dt = elapsed / root.updateInterval;
       let stillAnimating = false;
 
       // Scroll animation
@@ -153,14 +156,14 @@ Item {
         }
       }
 
-      canvas.requestPaint();
-
-      if (!stillAnimating)
+      if (!stillAnimating) {
+        _prevTime = 0;
         stop();
+      }
     }
   }
 
-  // Convert a value to Y coordinate (with padding for bezier curves)
+  // Convert a value to Y coordinate (with padding to keep values from touching edges)
   function valueToY(val, minVal, maxVal) {
     let range = maxVal - minVal;
     if (range <= 0)
@@ -173,144 +176,145 @@ Item {
     return height - normalized * height;
   }
 
-  Canvas {
-    id: canvas
-    anchors.fill: parent
-    renderStrategy: Canvas.Cooperative
+  // Build SVG path with cubic bezier curves (Catmull-Rom → Bezier conversion)
+  function buildSvg(vals, pred, minVal, maxVal, t, closeFill) {
+    if (!vals || vals.length < 4 || width <= 0 || height <= 0)
+      return "M 0 0";
 
-    onPaint: {
-      var ctx = getContext("2d");
-      ctx.clearRect(0, 0, width, height);
-      if (width <= 0 || height <= 0)
-        return;
+    const n = vals.length;
+    const step = width / (n - 3);
+    if (!isFinite(step) || step <= 0)
+      return "M 0 0";
 
-      // Apply edge clipping to hide bezier overshoot (symmetric horizontal)
-      const pad = root.edgePadding;
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(pad, 0, width - pad * 2, height);
-      ctx.clip();
+    // Build raw data points
+    let raw = [];
+    raw.push({
+               x: (-2 - t) * step,
+               y: valueToY(vals[0], minVal, maxVal)
+             });
+    raw.push({
+               x: (-1 - t) * step,
+               y: valueToY(vals[1], minVal, maxVal)
+             });
+    for (let i = 2; i < n; i++) {
+      raw.push({
+                 x: (i - 2 - t) * step,
+                 y: valueToY(vals[i], minVal, maxVal)
+               });
+    }
+    raw.push({
+               x: (n - 2 - t) * step,
+               y: valueToY(pred, minVal, maxVal)
+             });
 
-      // Draw primary line
-      if (root.hasData) {
-        const n = root.values.length;
-        // Step based on visible points (n-2 since vals[0] and vals[1] are off-screen buffers)
-        const step = width / (n - 3);
-        drawGraph(ctx, root.values, root._pred1, root.minValue, root._effectiveMax1, root.color, root._t1, step);
-      }
+    // Start at first point
+    let svg = `M ${raw[0].x} ${raw[0].y}`;
 
-      // Draw secondary line (independent animation)
-      if (root.hasData2) {
-        const n2 = root.values2.length;
-        const step2 = width / (n2 - 3);
-        drawGraph(ctx, root.values2, root._pred2, root.minValue2, root._effectiveMax2, root.color2, root._t2, step2);
-      }
+    // Catmull-Rom to cubic bezier: cp1 = p1 + (p2-p0)/6, cp2 = p2 - (p3-p1)/6
+    for (let i = 0; i < raw.length - 1; i++) {
+      const p0 = raw[Math.max(i - 1, 0)];
+      const p1 = raw[i];
+      const p2 = raw[i + 1];
+      const p3 = raw[Math.min(i + 2, raw.length - 1)];
 
-      ctx.restore();
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      svg += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
     }
 
-    function drawGraph(ctx, vals, pred, minVal, maxVal, lineColor, t, step) {
-      if (!vals || vals.length < 4)
-        return;
+    if (closeFill) {
+      const last = raw[raw.length - 1];
+      svg += ` L ${last.x} ${height} L ${raw[0].x} ${height} Z`;
+    }
 
-      // Safety check for invalid step
-      if (!isFinite(step) || step <= 0)
-        return;
+    return svg;
+  }
 
-      const n = vals.length;
+  // Reactive SVG paths — re-evaluated when any dependency changes
+  readonly property string _strokeSvg1: buildSvg(values, _pred1, minValue, _effectiveMax1, _t1, false)
+  readonly property string _fillSvg1: fill ? buildSvg(values, _pred1, minValue, _effectiveMax1, _t1, true) : "M 0 0"
+  readonly property string _strokeSvg2: buildSvg(values2, _pred2, minValue2, _effectiveMax2, _t2, false)
+  readonly property string _fillSvg2: fill ? buildSvg(values2, _pred2, minValue2, _effectiveMax2, _t2, true) : "M 0 0"
 
-      // Build points with interpolated X positions for smooth scrolling
-      // vals[0] and vals[1] are off-screen buffers for bezier continuity
-      // Visible data starts from vals[2]
-      let pts = [];
+  Shape {
+    anchors.fill: parent
+    preferredRendererType: Shape.CurveRenderer
 
-      // Buffer points (always off-screen, provide bezier continuity)
-      pts.push({
-                 x: (-2 - t) * step,
-                 y: root.valueToY(vals[0], minVal, maxVal)
-               });
-      pts.push({
-                 x: (-1 - t) * step,
-                 y: root.valueToY(vals[1], minVal, maxVal)
-               });
+    // Fill for primary line
+    ShapePath {
+      fillGradient: LinearGradient {
+        y1: 0
+        y2: root.height
 
-      // Visible data points start from vals[2]
-      for (let i = 2; i < n; i++) {
-        const x = (i - 2 - t) * step;
-        const y = root.valueToY(vals[i], minVal, maxVal);
-        pts.push({
-                   x: x,
-                   y: y
-                 });
-      }
-
-      // Prediction point
-      pts.push({
-                 x: (n - 2 - t) * step,
-                 y: root.valueToY(pred, minVal, maxVal)
-               });
-
-      // Calculate tangents for smooth bezier curves
-      let tan = [];
-      for (let i = 0; i < pts.length; i++) {
-        let tg = 0;
-        if (i === 0 && pts[1].x !== pts[0].x) {
-          tg = (pts[1].y - pts[0].y) / (pts[1].x - pts[0].x);
-        } else if (i === pts.length - 1 && pts[i].x !== pts[i - 1].x) {
-          tg = (pts[i].y - pts[i - 1].y) / (pts[i].x - pts[i - 1].x);
-        } else if (i > 0 && i < pts.length - 1) {
-          const dxL = pts[i].x - pts[i - 1].x;
-          const dxR = pts[i + 1].x - pts[i].x;
-          const l = dxL !== 0 ? (pts[i].y - pts[i - 1].y) / dxL : 0;
-          const r = dxR !== 0 ? (pts[i + 1].y - pts[i].y) / dxR : 0;
-          tg = (l + r) / 2;
+        GradientStop {
+          position: 0
+          color: Qt.rgba(root.color.r, root.color.g, root.color.b, root.fillOpacity)
         }
-        tan.push(tg);
-      }
 
-      // Draw fill gradient
-      if (root.fill) {
-        let grad = ctx.createLinearGradient(0, 0, 0, height);
-        grad.addColorStop(0, Qt.rgba(lineColor.r, lineColor.g, lineColor.b, root.fillOpacity));
-        grad.addColorStop(1, "transparent");
-
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
-        for (let i = 0; i < pts.length - 1; i++) {
-          const dx = pts[i + 1].x - pts[i].x;
-          if (Math.abs(dx) < 0.1) {
-            ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
-            continue;
-          }
-          const c1x = pts[i].x + dx / 3, c1y = pts[i].y + tan[i] * dx / 3;
-          const c2x = pts[i + 1].x - dx / 3, c2y = pts[i + 1].y - tan[i + 1] * dx / 3;
-          ctx.bezierCurveTo(c1x, c1y, c2x, c2y, pts[i + 1].x, pts[i + 1].y);
+        GradientStop {
+          position: 1
+          color: "transparent"
         }
-        ctx.lineTo(pts[pts.length - 1].x, height);
-        ctx.lineTo(pts[0].x, height);
-        ctx.closePath();
-        ctx.fillStyle = grad;
-        ctx.fill();
       }
+      strokeWidth: -1
+      strokeColor: "transparent"
 
-      // Draw stroke
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 0; i < pts.length - 1; i++) {
-        const dx = pts[i + 1].x - pts[i].x;
-        if (Math.abs(dx) < 0.1) {
-          ctx.lineTo(pts[i + 1].x, pts[i + 1].y);
-          continue;
-        }
-        const c1x = pts[i].x + dx / 3, c1y = pts[i].y + tan[i] * dx / 3;
-        const c2x = pts[i + 1].x - dx / 3, c2y = pts[i + 1].y - tan[i + 1] * dx / 3;
-        ctx.bezierCurveTo(c1x, c1y, c2x, c2y, pts[i + 1].x, pts[i + 1].y);
+      PathSvg {
+        path: root._fillSvg1
       }
-      ctx.strokeStyle = lineColor;
-      ctx.lineWidth = root.strokeWidth;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.stroke();
+    }
+
+    // Stroke for primary line
+    ShapePath {
+      strokeColor: root.color
+      strokeWidth: root.strokeWidth
+      fillColor: "transparent"
+      capStyle: ShapePath.RoundCap
+      joinStyle: ShapePath.RoundJoin
+
+      PathSvg {
+        path: root._strokeSvg1
+      }
+    }
+
+    // Fill for secondary line
+    ShapePath {
+      fillGradient: LinearGradient {
+        y1: 0
+        y2: root.height
+
+        GradientStop {
+          position: 0
+          color: Qt.rgba(root.color2.r, root.color2.g, root.color2.b, root.fillOpacity)
+        }
+
+        GradientStop {
+          position: 1
+          color: "transparent"
+        }
+      }
+      strokeWidth: -1
+      strokeColor: "transparent"
+
+      PathSvg {
+        path: root._fillSvg2
+      }
+    }
+
+    // Stroke for secondary line
+    ShapePath {
+      strokeColor: root.color2
+      strokeWidth: root.strokeWidth
+      fillColor: "transparent"
+      capStyle: ShapePath.RoundCap
+      joinStyle: ShapePath.RoundJoin
+
+      PathSvg {
+        path: root._strokeSvg2
+      }
     }
   }
 }
