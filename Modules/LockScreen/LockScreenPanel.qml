@@ -585,13 +585,31 @@ Item {
                   anchors.verticalCenter: parent.verticalCenter
 
                   Repeater {
-                    model: passwordInput.text.length
+                    model: ScriptModel {
+                      values: Array(passwordInput.text.length)
+                    }
 
                     NIcon {
+                      id: icon
                       icon: "circle-filled"
                       pointSize: Style.fontSizeS
                       color: Color.mPrimary
                       opacity: 1.0
+                      scale: 0.5
+                      ParallelAnimation {
+                        id: iconAnim
+                        NumberAnimation {
+                          target: icon
+                          properties: "scale"
+                          to: 1
+                          duration: Style.animationFast
+                          easing.type: Easing.BezierSpline
+                          easing.bezierCurve: Easing.OutInBounce
+                        }
+                      }
+                      Component.onCompleted: {
+                        iconAnim.start();
+                      }
                     }
                   }
                 }
