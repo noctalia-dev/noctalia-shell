@@ -777,6 +777,8 @@
       "appearance-capsule-color-label": "Capsule color",
       "appearance-capsule-opacity-description": "Set the opacity level for widget backgrounds when capsule is shown.",
       "appearance-capsule-opacity-label": "Capsule opacity",
+      "appearance-separate-font-size-description": "Set the independant font size used for the bar",
+      "appearance-separate-font-size-label": "Bar font size",
       "appearance-density-description": "Adjust the bar's padding for a compact or spacious look.",
       "appearance-density-label": "Bar density",
       "appearance-desc": "Customize the bar's appearance and position.",
