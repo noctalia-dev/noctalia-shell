@@ -67,6 +67,20 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("bar.density")
     onSelected: key => Settings.data.bar.density = key
   }
+
+  NValueSlider {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.appearance-widget-spacing-label")
+    description: I18n.tr("panels.bar.appearance-widget-spacing-description")
+    from: 0
+    to: 30
+    stepSize: 1
+    value: Settings.data.bar.widgetSpacing
+    defaultValue: Settings.getDefaultValue("bar.widgetSpacing")
+    onMoved: value => Settings.data.bar.widgetSpacing = value
+    text: Settings.data.bar.widgetSpacing + "px"
+  }
+
   NComboBox {
     Layout.fillWidth: true
     label: I18n.tr("panels.bar.appearance-type-label")
