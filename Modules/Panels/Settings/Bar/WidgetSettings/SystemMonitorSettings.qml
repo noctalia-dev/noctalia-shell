@@ -29,6 +29,8 @@ ColumnLayout {
   property bool valueShowCpuFreq: widgetData.showCpuFreq !== undefined ? widgetData.showCpuFreq : widgetMetadata.showCpuFreq
   property bool valueShowCpuTemp: widgetData.showCpuTemp !== undefined ? widgetData.showCpuTemp : widgetMetadata.showCpuTemp
   property bool valueShowGpuTemp: widgetData.showGpuTemp !== undefined ? widgetData.showGpuTemp : widgetMetadata.showGpuTemp
+  property bool valueShowGpuMem: widgetData.showGpuMem !== undefined ? widgetData.showGpuMem : widgetMetadata.showGpuMem
+  property bool valueShowGpuMemAsPercent: widgetData.showGpuMemAsPercent !== undefined ? widgetData.showGpuMemAsPercent : widgetMetadata.showGpuMemAsPercent
   property bool valueShowLoadAverage: widgetData.showLoadAverage !== undefined ? widgetData.showLoadAverage : widgetMetadata.showLoadAverage
   property bool valueShowMemoryUsage: widgetData.showMemoryUsage !== undefined ? widgetData.showMemoryUsage : widgetMetadata.showMemoryUsage
   property bool valueShowMemoryAsPercent: widgetData.showMemoryAsPercent !== undefined ? widgetData.showMemoryAsPercent : widgetMetadata.showMemoryAsPercent
@@ -50,6 +52,8 @@ ColumnLayout {
     settings.showCpuFreq = valueShowCpuFreq;
     settings.showCpuTemp = valueShowCpuTemp;
     settings.showGpuTemp = valueShowGpuTemp;
+    settings.showGpuMem = valueShowGpuMem;
+    settings.showGpuMemAsPercent = valueShowGpuMemAsPercent;
     settings.showLoadAverage = valueShowLoadAverage;
     settings.showMemoryUsage = valueShowMemoryUsage;
     settings.showMemoryAsPercent = valueShowMemoryAsPercent;
@@ -180,6 +184,32 @@ ColumnLayout {
                  saveSettings();
                }
     visible: SystemStatService.gpuAvailable
+  }
+
+  NToggle {
+    id: showGpuMem
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.gpu-memory-label")
+    description: I18n.tr("bar.system-monitor.gpu-memory-description")
+    checked: valueShowGpuMem
+    onToggled: checked => {
+                 valueShowGpuMem = checked;
+                 saveSettings();
+               }
+    visible: SystemStatService.gpuAvailable
+  }
+
+  NToggle {
+    id: showGpuMemAsPercent
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.gpu-memory-percentage-label")
+    description: I18n.tr("bar.system-monitor.gpu-memory-percentage-description")
+    checked: valueShowGpuMemAsPercent
+    onToggled: checked => {
+                 valueShowGpuMemAsPercent = checked;
+                 saveSettings();
+               }
+    visible: valueShowGpuMem && SystemStatService.gpuAvailable
   }
 
   NToggle {

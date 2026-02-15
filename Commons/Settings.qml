@@ -502,6 +502,8 @@ Singleton {
       property int tempCriticalThreshold: 90
       property int gpuWarningThreshold: 80
       property int gpuCriticalThreshold: 90
+      property int gpuMemWarningThreshold: 80
+      property int gpuMemCriticalThreshold: 90
       property int memWarningThreshold: 80
       property int memCriticalThreshold: 90
       property int swapWarningThreshold: 80

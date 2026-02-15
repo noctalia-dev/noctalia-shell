@@ -218,6 +218,10 @@
       "disk-path-description": "Select which disk mount point to monitor.",
       "disk-path-label": "Disk path",
       "gpu-temperature-description": "Show GPU temperature readings if available.",
+      "gpu-memory-description": "Show GPU memory usage.",
+      "gpu-memory-label": "GPU memory",
+      "gpu-memory-percentage-description": "Show GPU memory as percentage instead of gigabytes.",
+      "gpu-memory-percentage-label": "GPU memory as percentage",
       "load-average-description": "Display system load average.",
       "load-average-label": "Load average",
       "memory-percentage-description": "Show memory usage as a percentage instead of absolute values.",
@@ -1700,6 +1704,7 @@
     "disk": "Disk",
     "download-speed": "Download speed",
     "gpu-temp": "GPU temp",
+    "gpu-memory": "GPU memory",
     "load-average": "Load average",
     "title": "System Monitor",
     "upload-speed": "Upload speed"

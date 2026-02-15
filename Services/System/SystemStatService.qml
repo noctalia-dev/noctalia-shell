@@ -44,6 +44,9 @@ Singleton {
   property real cpuGlobalMaxFreq: 3.5
   property real gpuTemp: 0
   property bool gpuAvailable: false
+  property real gpuMemGb: 0
+  property real gpuMemPercent: 0
+  property real gpuMemTotalGb: 0
   property string gpuType: "" // "amd", "intel", "nvidia"
   property real memGb: 0
   property real memPercent: 0
@@ -80,6 +83,7 @@ Singleton {
   property var cpuHistory: new Array(cpuHistoryLength).fill(0)
   property var cpuTempHistory: new Array(cpuHistoryLength).fill(40)  // Reasonable default temp
   property var gpuTempHistory: new Array(gpuHistoryLength).fill(40)  // Reasonable default temp
+  property var gpuMemHistory: new Array(gpuHistoryLength).fill(0)
   property var memHistory: new Array(memHistoryLength).fill(0)
   property var diskHistories: ({}) // Keyed by mount path, initialized on first update
   property var rxSpeedHistory: new Array(networkHistoryLength).fill(0)
@@ -130,6 +134,14 @@ Singleton {
     if (h.length > gpuHistoryLength)
       h.shift();
     gpuTempHistory = h;
+  }
+
+  function pushGpuMemHistory() {
+    let h = gpuMemHistory.slice();
+    h.push(gpuMemPercent);
+    if (h.length > gpuHistoryLength)
+      h.shift();
+    gpuMemHistory = h;
   }
 
   function pushMemHistory() {
@@ -193,6 +205,8 @@ Singleton {
   readonly property int tempCriticalThreshold: Settings.data.systemMonitor.tempCriticalThreshold
   readonly property int gpuWarningThreshold: Settings.data.systemMonitor.gpuWarningThreshold
   readonly property int gpuCriticalThreshold: Settings.data.systemMonitor.gpuCriticalThreshold
+  readonly property int gpuMemWarningThreshold: Settings.data.systemMonitor.gpuMemWarningThreshold
+  readonly property int gpuMemCriticalThreshold: Settings.data.systemMonitor.gpuMemCriticalThreshold
   readonly property int memWarningThreshold: Settings.data.systemMonitor.memWarningThreshold
   readonly property int memCriticalThreshold: Settings.data.systemMonitor.memCriticalThreshold
   readonly property int swapWarningThreshold: Settings.data.systemMonitor.swapWarningThreshold
@@ -209,6 +223,8 @@ Singleton {
   readonly property bool tempCritical: cpuTemp >= tempCriticalThreshold
   readonly property bool gpuWarning: gpuAvailable && gpuTemp >= gpuWarningThreshold
   readonly property bool gpuCritical: gpuAvailable && gpuTemp >= gpuCriticalThreshold
+  readonly property bool gpuMemWarning: gpuAvailable && gpuMemPercent >= gpuMemWarningThreshold
+  readonly property bool gpuMemCritical: gpuAvailable && gpuMemPercent >= gpuMemCriticalThreshold
   readonly property bool memWarning: memPercent >= memWarningThreshold
   readonly property bool memCritical: memPercent >= memCriticalThreshold
   readonly property bool swapWarning: swapPercent >= swapWarningThreshold
@@ -227,6 +243,7 @@ Singleton {
   readonly property color cpuColor: cpuCritical ? criticalColor : (cpuWarning ? warningColor : Color.mPrimary)
   readonly property color tempColor: tempCritical ? criticalColor : (tempWarning ? warningColor : Color.mPrimary)
   readonly property color gpuColor: gpuCritical ? criticalColor : (gpuWarning ? warningColor : Color.mPrimary)
+  readonly property color gpuMemColor: gpuMemCritical ? criticalColor : (gpuMemWarning ? warningColor : Color.mPrimary)
   readonly property color memColor: memCritical ? criticalColor : (memWarning ? warningColor : Color.mPrimary)
   readonly property color swapColor: swapCritical ? criticalColor : (swapWarning ? warningColor : Color.mPrimary)
 
@@ -341,6 +358,9 @@ Singleton {
     root.gpuType = "";
     root.gpuTempHwmonPath = "";
     root.gpuTemp = 0;
+    root.gpuMemGb = 0;
+    root.gpuMemPercent = 0;
+    root.gpuMemTotalGb = 0;
     root.foundGpuSensors = [];
     root.gpuVramCheckIndex = 0;
 
@@ -411,14 +431,14 @@ Singleton {
     onTriggered: netDevFile.reload()
   }
 
-  // Timer for GPU temperature
+  // Timer for GPU stats (temperature and memory)
   Timer {
     id: gpuTempTimer
     interval: root.gpuIntervalMs
     repeat: true
     running: root.shouldRun && root.gpuAvailable
     triggeredOnStart: true
-    onTriggered: updateGpuTemperature()
+    onTriggered: updateGpuStats()
   }
 
   // --------------------------------------------
@@ -947,17 +967,31 @@ Singleton {
   }
 
   // ----
-  // #4 - Read GPU temperature via nvidia-smi (NVIDIA only)
+  // #4 - Read GPU temperature and memory via nvidia-smi (NVIDIA only)
   Process {
-    id: nvidiaTempProcess
-    command: ["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"]
+    id: nvidiaStatsProcess
+    command: ["nvidia-smi", "--query-gpu=temperature.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"]
     running: false
     stdout: StdioCollector {
       onStreamFinished: {
-        const temp = parseInt(text.trim());
-        if (!isNaN(temp)) {
-          root.gpuTemp = temp;
-          root.pushGpuHistory();
+        const parts = text.trim().split(',');
+        if (parts.length >= 3) {
+          // Temperature
+          const temp = parseInt(parts[0].trim());
+          if (!isNaN(temp)) {
+            root.gpuTemp = temp;
+            root.pushGpuHistory();
+          }
+
+          // Memory
+          const usedMb = parseInt(parts[1].trim());
+          const totalMb = parseInt(parts[2].trim());
+          if (!isNaN(usedMb) && !isNaN(totalMb) && totalMb > 0) {
+            root.gpuMemGb = (usedMb / 1024).toFixed(1);
+            root.gpuMemTotalGb = (totalMb / 1024).toFixed(1);
+            root.gpuMemPercent = Math.round((usedMb / totalMb) * 100);
+            root.pushGpuMemHistory();
+          }
         }
       }
     }
@@ -1433,10 +1467,10 @@ Singleton {
   }
 
   // -------------------------------------------------------
-  // Function to update GPU temperature
-  function updateGpuTemperature() {
+  // Function to update GPU stats (temperature and memory)
+  function updateGpuStats() {
     if (root.gpuType === "nvidia") {
-      nvidiaTempProcess.running = true;
+      nvidiaStatsProcess.running = true;
     } else if (root.gpuType === "amd" || root.gpuType === "intel") {
       gpuTempReader.path = `${root.gpuTempHwmonPath}/temp1_input`;
       gpuTempReader.reload();
