@@ -61,6 +61,15 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.lock-screen.password-chars-label")
+    description: I18n.tr("panels.lock-screen.password-chars-description")
+    checked: Settings.data.general.passwordChars
+    onToggled: checked => Settings.data.general.passwordChars = checked
+    defaultValue: Settings.getDefaultValue("general.passwordChars")
+    z: 10
+  }
+
+  NToggle {
     label: I18n.tr("panels.lock-screen.lock-on-suspend-label")
     description: I18n.tr("panels.lock-screen.lock-on-suspend-description")
     checked: Settings.data.general.lockOnSuspend

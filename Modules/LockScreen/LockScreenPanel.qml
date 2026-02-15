@@ -585,17 +585,26 @@ Item {
                   anchors.verticalCenter: parent.verticalCenter
 
                   Repeater {
+                    id: iconRepeater
                     model: ScriptModel {
                       values: Array(passwordInput.text.length)
                     }
 
+                    property list<string> passwordChars: ["circle-filled", "pentagon-filled", "michelin-star-filled", "square-rounded-filled", "guitar-pick-filled", "blob-filled", "triangle-filled"]
+
                     NIcon {
                       id: icon
-                      icon: "circle-filled"
+
+                      required property int index
+                      // This will be called with index = -1 when the TextInput is deleted
+                      // So we make sur index is positive to avoid warning on array accesses
+                      property bool drawCustomChar: index >= 0 && Settings.data.general.passwordChars
+
+                      icon: drawCustomChar ? iconRepeater.passwordChars[index % iconRepeater.passwordChars.length] : "circle-filled"
                       pointSize: Style.fontSizeL
                       color: Color.mPrimary
                       opacity: 1.0
-                      scale: 0.5
+                      scale: animationsEnabled ? 0.5 : 1
                       ParallelAnimation {
                         id: iconAnim
                         NumberAnimation {
@@ -608,7 +617,9 @@ Item {
                         }
                       }
                       Component.onCompleted: {
-                        iconAnim.start();
+                        if (animationsEnabled) {
+                          iconAnim.start();
+                        }
                       }
                     }
                   }
