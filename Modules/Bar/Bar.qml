@@ -268,39 +268,39 @@ Item {
           acceptedButtons: Qt.RightButton
           hoverEnabled: false
           preventStealing: true
-          onClicked: function (mouse) {
-            if (mouse.button === Qt.RightButton) {
-              // Check if click is over any widget
-              var widgets = BarService.getAllWidgetInstances(null, screen.name);
-              for (var i = 0; i < widgets.length; i++) {
-                var widget = widgets[i];
-                if (!widget || !widget.visible || widget.widgetId === "Spacer") {
-                  continue;
-                }
-                // Map click position to widget's coordinate space
-                var localPos = mapToItem(widget, mouse.x, mouse.y);
+          onClicked: mouse => {
+                       if (mouse.button === Qt.RightButton) {
+                         // Check if click is over any widget
+                         var widgets = BarService.getAllWidgetInstances(null, screen.name);
+                         for (var i = 0; i < widgets.length; i++) {
+                           var widget = widgets[i];
+                           if (!widget || !widget.visible || widget.widgetId === "Spacer") {
+                             continue;
+                           }
+                           // Map click position to widget's coordinate space
+                           var localPos = mapToItem(widget, mouse.x, mouse.y);
 
-                if (root.barIsVertical) {
-                  if (localPos.y >= -Style.marginS && localPos.y <= widget.height + Style.marginS) {
-                    return;
-                  }
-                } else {
-                  if (localPos.x >= -Style.marginS && localPos.x <= widget.width + Style.marginS) {
-                    return;
-                  }
-                }
-              }
-              // Click is on empty bar background - open control center
-              var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-              if (Settings.data.controlCenter.position === "close_to_bar_button") {
-                // Will attempt to open the panel next to the bar button if any.
-                controlCenterPanel?.toggle(null, "ControlCenter");
-              } else {
-                controlCenterPanel?.toggle();
-              }
-              mouse.accepted = true;
-            }
-          }
+                           if (root.barIsVertical) {
+                             if (localPos.y >= -Style.marginS && localPos.y <= widget.height + Style.marginS) {
+                               return;
+                             }
+                           } else {
+                             if (localPos.x >= -Style.marginS && localPos.x <= widget.width + Style.marginS) {
+                               return;
+                             }
+                           }
+                         }
+                         // Click is on empty bar background - open control center
+                         var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
+                         if (Settings.data.controlCenter.position === "close_to_bar_button") {
+                           // Will attempt to open the panel next to the bar button if any.
+                           controlCenterPanel?.toggle(null, "ControlCenter");
+                         } else {
+                           controlCenterPanel?.toggle();
+                         }
+                         mouse.accepted = true;
+                       }
+                     }
         }
 
         Loader {

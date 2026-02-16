@@ -9,6 +9,7 @@ RowLayout {
 
   property string label: ""
   property string description: ""
+  property string icon: ""
   property bool checked: false
   property bool hovering: false
   property int baseSize: Math.round(Style.baseWidgetSize * 0.8 * Style.uiScaleRatio)
@@ -33,6 +34,8 @@ RowLayout {
     Layout.fillWidth: true
     label: root.label
     description: root.description
+    icon: root.icon
+    iconColor: root.checked ? Color.mPrimary : Color.mOnSurface
     visible: root.label !== "" || root.description !== ""
     showIndicator: root.isValueChanged
     indicatorTooltip: root.indicatorTooltip
@@ -63,7 +66,6 @@ RowLayout {
     }
 
     Rectangle {
-
       implicitWidth: Math.round(root.baseSize * 0.4) * 2
       implicitHeight: Math.round(root.baseSize * 0.4) * 2
       radius: Math.min(Style.iRadiusL, height / 2)

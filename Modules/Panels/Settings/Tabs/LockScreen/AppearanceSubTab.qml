@@ -139,4 +139,34 @@ ColumnLayout {
     text: Math.round(Settings.data.general.lockScreenCountdownDuration / 1000) + "s"
     defaultValue: Settings.getDefaultValue("general.lockScreenCountdownDuration")
   }
+
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  NValueSlider {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.lock-screen.lock-screen-blur-strength-label")
+    description: I18n.tr("panels.lock-screen.lock-screen-blur-strength-description")
+    from: 0.0
+    to: 1.0
+    stepSize: 0.01
+    value: Settings.data.general.lockScreenBlur
+    onMoved: value => Settings.data.general.lockScreenBlur = value
+    text: ((Settings.data.general.lockScreenBlur) * 100).toFixed(0) + "%"
+    defaultValue: Settings.getDefaultValue("general.lockScreenBlur")
+  }
+
+  NValueSlider {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.lock-screen.lock-screen-tint-strength-label")
+    description: I18n.tr("panels.lock-screen.lock-screen-tint-strength-description")
+    from: 0.0
+    to: 1.0
+    stepSize: 0.01
+    value: Settings.data.general.lockScreenTint
+    onMoved: value => Settings.data.general.lockScreenTint = value
+    text: ((Settings.data.general.lockScreenTint) * 100).toFixed(0) + "%"
+    defaultValue: Settings.getDefaultValue("general.lockScreenTint")
+  }
 }

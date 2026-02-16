@@ -8,8 +8,10 @@ ColumnLayout {
 
   property string label: ""
   property string description: ""
+  property string icon: ""
   property color labelColor: Color.mOnSurface
   property color descriptionColor: Color.mOnSurfaceVariant
+  property color iconColor: Color.mOnSurface
   property bool showIndicator: false
   property string indicatorTooltip: ""
 
@@ -22,10 +24,19 @@ ColumnLayout {
   RowLayout {
     spacing: Style.marginXS
     Layout.fillWidth: true
-    visible: label !== ""
+    visible: root.label !== ""
+
+    NIcon {
+      visible: root.icon !== ""
+      icon: root.icon
+      pointSize: Style.fontSizeXXL
+      color: root.iconColor
+      Layout.rightMargin: Style.marginS
+    }
 
     NText {
-      text: label
+      Layout.fillWidth: !root.showIndicator
+      text: root.label
       pointSize: Style.fontSizeL
       font.weight: Style.fontWeightSemiBold
       color: labelColor
@@ -34,27 +45,22 @@ ColumnLayout {
 
     // Settings indicator
     Loader {
-      active: showIndicator
-      sourceComponent: indicatorComponent
-    }
-  }
-
-  Component {
-    id: indicatorComponent
-    NSettingsIndicator {
-      show: true
-      tooltipText: root.indicatorTooltip || ""
-      Layout.alignment: Qt.AlignVCenter
+      active: root.showIndicator
+      sourceComponent: NSettingsIndicator {
+        show: true
+        tooltipText: root.indicatorTooltip || ""
+        Layout.alignment: Qt.AlignVCenter
+      }
     }
   }
 
   NText {
+    visible: root.description !== ""
     Layout.fillWidth: true
-    text: description
+    text: root.description
     pointSize: Style.fontSizeS
-    color: descriptionColor
+    color: root.descriptionColor
     wrapMode: Text.WordWrap
-    visible: description !== ""
     textFormat: Text.StyledText
   }
 }

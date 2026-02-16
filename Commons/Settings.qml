@@ -25,8 +25,8 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 49
-  readonly property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
+  readonly property int settingsVersion: 53
+  property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
   readonly property string cacheDir: Quickshell.env("NOCTALIA_CACHE_DIR") || (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/" + shellName + "/"
@@ -199,7 +199,7 @@ Singleton {
       property bool hideOnOverview: false
 
       // Auto-hide settings
-      property string displayMode: "always_visible" // "always_visible", "auto_hide"
+      property string displayMode: "always_visible"
       property int autoHideDelay: 500 // ms before hiding after mouse leaves
       property int autoShowDelay: 150 // ms before showing when mouse enters
 
@@ -288,14 +288,18 @@ Singleton {
       property string clockStyle: "custom"
       property string clockFormat: "hh\\nmm"
       property list<string> lockScreenMonitors: [] // holds lock screen visibility per monitor
+      property real lockScreenBlur: 0.0
+      property real lockScreenTint: 0.0
       property JsonObject keybinds: JsonObject {
-        property string keyUp: "Up"
-        property string keyDown: "Down"
-        property string keyLeft: "Left"
-        property string keyRight: "Right"
-        property string keyEnter: "Return"
-        property string keyEscape: "Esc"
+        property list<string> keyUp: ["Up"]
+        property list<string> keyDown: ["Down"]
+        property list<string> keyLeft: ["Left"]
+        property list<string> keyRight: ["Right"]
+        property list<string> keyEnter: ["Return"]
+        property list<string> keyEscape: ["Esc"]
+        property list<string> keyRemove: ["Del"]
       }
+      property bool reverseScroll: false
     }
 
     // ui
@@ -371,9 +375,12 @@ Singleton {
       property int randomIntervalSec: 300 // 5 min
       property int transitionDuration: 1500 // 1500 ms
       property string transitionType: "random"
+      property bool skipStartupTransition: false
       property real transitionEdgeSmoothness: 0.05
       property string panelPosition: "follow_bar"
       property bool hideWallpaperFilenames: false
+      property real overviewBlur: 0.4
+      property real overviewTint: 0.6
       // Wallhaven settings
       property bool useWallhaven: false
       property string wallhavenQuery: ""
@@ -388,6 +395,8 @@ Singleton {
 
       property string wallhavenResolutionHeight: ""
       property string sortOrder: "name" // "name", "name_desc", "date", "date_desc", "random"
+      property list<var> favorites: []
+      // Format: [{ "path": "/path/to/wallpaper.jpg", "colorScheme": "...", "darkMode": true, "useWallpaperColors": true, "generationMethod": "tonal-spot" }]
     }
 
     // applauncher
@@ -413,9 +422,11 @@ Singleton {
       property bool showIconBackground: false
       property bool enableSettingsSearch: true
       property bool enableWindowsSearch: true
+      property bool enableSessionSearch: true
       property bool ignoreMouseInput: false
       property string screenshotAnnotationTool: ""
       property bool overviewLayer: false
+      property string density: "default" // "compact", "default", "comfortable"
     }
 
     // control center
@@ -500,13 +511,7 @@ Singleton {
       property int diskAvailCriticalThreshold: 10
       property int batteryWarningThreshold: 20
       property int batteryCriticalThreshold: 5
-      property int cpuPollingInterval: 1000
-      property int gpuPollingInterval: 3000
       property bool enableDgpuMonitoring: false // Opt-in: reading dGPU sysfs/nvidia-smi wakes it from D3cold, draining battery
-      property int memPollingInterval: 1000
-      property int diskPollingInterval: 30000
-      property int networkPollingInterval: 1000
-      property int loadAvgPollingInterval: 3000
       property bool useCustomColors: false
       property string warningColor: ""
       property string criticalColor: ""
@@ -535,11 +540,13 @@ Singleton {
     // network
     property JsonObject network: JsonObject {
       property bool wifiEnabled: true
+      property bool airplaneModeEnabled: false
       property bool bluetoothRssiPollingEnabled: false  // Opt-in Bluetooth RSSI polling (uses bluetoothctl)
-      property int bluetoothRssiPollIntervalMs: 10000 // Polling interval in milliseconds for RSSI queries
+      property int bluetoothRssiPollIntervalMs: 60000 // Polling interval in milliseconds for RSSI queries
       property string wifiDetailsViewMode: "grid"   // "grid" or "list"
       property string bluetoothDetailsViewMode: "grid" // "grid" or "list"
       property bool bluetoothHideUnnamedDevices: false
+      property bool disableDiscoverability: false
     }
 
     // session menu
@@ -548,35 +555,41 @@ Singleton {
       property int countdownDuration: 10000
       property string position: "center"
       property bool showHeader: true
+      property bool showKeybinds: true
       property bool largeButtonsStyle: true
       property bool showBlurBackground: false
       property string blurColor: "mSurface"
       property string largeButtonsLayout: "single-row"
-      property bool showNumberLabels: true
       property list<var> powerOptions: [
         {
           "action": "lock",
-          "enabled": true
+          "enabled": true,
+          "keybind": "1"
         },
         {
           "action": "suspend",
-          "enabled": true
+          "enabled": true,
+          "keybind": "2"
         },
         {
           "action": "hibernate",
-          "enabled": true
+          "enabled": true,
+          "keybind": "3"
         },
         {
           "action": "reboot",
-          "enabled": true
+          "enabled": true,
+          "keybind": "4"
         },
         {
           "action": "logout",
-          "enabled": true
+          "enabled": true,
+          "keybind": "5"
         },
         {
           "action": "shutdown",
-          "enabled": true
+          "enabled": true,
+          "keybind": "6"
         }
       ]
     }
@@ -584,6 +597,8 @@ Singleton {
     // notifications
     property JsonObject notifications: JsonObject {
       property bool enabled: true
+      property bool enableMarkdown: false
+      property string density: "default" // "default", "compact"
       property list<string> monitors: [] // holds notifications visibility per monitor
       property string location: "top_right"
       property bool overlayLayer: true

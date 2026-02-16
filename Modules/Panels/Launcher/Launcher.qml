@@ -150,13 +150,20 @@ SmartPanel {
     }
 
     // Core launcher (state, providers, UI)
-    LauncherCore {
-      id: launcherCore
+    NBox {
       anchors.fill: parent
-      screen: root.screen
-      isOpen: root.isPanelOpen
-      onRequestClose: root.close()
-      onRequestCloseImmediately: root.closeImmediately()
+      anchors.margins: Style.marginL
+
+      LauncherCore {
+        id: launcherCore
+        anchors.fill: parent
+        screen: root.screen
+        isOpen: root.isPanelOpen
+        onRequestClose: root.close()
+        // Defer so the signal emission completes before SmartPanel
+        // sets isPanelOpen=false and the contentLoader destroys us.
+        onRequestCloseImmediately: Qt.callLater(root.closeImmediately)
+      }
     }
 
     // Update preview when selection changes

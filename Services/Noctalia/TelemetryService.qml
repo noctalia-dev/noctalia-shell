@@ -141,6 +141,8 @@ Singleton {
       return "Hyprland";
     if (CompositorService.isNiri)
       return "Niri";
+    if (CompositorService.isScroll)
+      return "Scroll";
     if (CompositorService.isSway)
       return "Sway";
     if (CompositorService.isMango)

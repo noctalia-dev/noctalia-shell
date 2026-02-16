@@ -12,7 +12,7 @@ Popup {
   dim: false
   anchors.centerIn: parent
   property var screen: null
-  readonly property real maxHeight: screen ? screen.height * 0.9 : 800
+  readonly property real maxHeight: (screen ? screen.height : (parent ? parent.height : 800)) * 0.8
 
   width: Math.max(settingsContent.implicitWidth + padding * 2, 600 * Style.uiScaleRatio)
   height: Math.min(settingsContent.implicitHeight + padding * 2, maxHeight)

@@ -198,15 +198,6 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-capsule-color-label",
-    "descriptionKey": "panels.bar.appearance-capsule-color-description",
-    "widget": "NComboBox",
-    "tab": 4,
-    "tabLabel": "panels.bar.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
     "labelKey": "panels.bar.appearance-capsule-opacity-label",
     "descriptionKey": "panels.bar.appearance-capsule-opacity-description",
     "widget": "NValueSlider",
@@ -376,6 +367,96 @@
     "tabLabel": "panels.color-scheme.title",
     "subTab": 1,
     "subTabLabel": "common.templates"
+  },
+  {
+    "labelKey": "common.bluetooth",
+    "descriptionKey": null,
+    "widget": "NToggle",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "bluetooth.panel.connected-devices",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "bluetooth.panel.paired-devices",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "bluetooth.panel.available-devices",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "panels.connections.hide-unnamed-devices-label",
+    "descriptionKey": "panels.connections.hide-unnamed-devices-description",
+    "widget": "NToggle",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "panels.connections.disable-discoverability-label",
+    "descriptionKey": "panels.connections.disable-discoverability-description",
+    "widget": "NToggle",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "panels.connections.bluetooth-rssi-polling-label",
+    "descriptionKey": "panels.connections.bluetooth-rssi-polling-description",
+    "widget": "NToggle",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "panels.connections.bluetooth-rssi-polling-interval-label",
+    "descriptionKey": "panels.connections.bluetooth-rssi-polling-interval-description",
+    "widget": "NSpinBox",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "toast.airplane-mode.title",
+    "descriptionKey": null,
+    "widget": "NToggle",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "common.wifi",
+    "descriptionKey": null,
+    "widget": "NToggle",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi"
   },
   {
     "labelKey": "common.position",
@@ -632,6 +713,14 @@
     "subTab": null
   },
   {
+    "labelKey": "panels.general.reverse-scrolling-label",
+    "descriptionKey": "panels.general.reverse-scrolling-description",
+    "widget": "NToggle",
+    "tab": 0,
+    "tabLabel": "common.general",
+    "subTab": null
+  },
+  {
     "labelKey": "panels.hooks.system-hooks-enable-label",
     "descriptionKey": "panels.hooks.system-hooks-enable-description",
     "widget": "NToggle",
@@ -830,9 +919,18 @@
     "subTabLabel": "common.general"
   },
   {
-    "labelKey": "tooltips.grid-view",
-    "descriptionKey": "panels.launcher.settings-grid-view-description",
-    "widget": "NToggle",
+    "labelKey": "panels.launcher.settings-view-mode-label",
+    "descriptionKey": "panels.launcher.settings-view-mode-description",
+    "widget": "NComboBox",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.launcher.settings-density-label",
+    "descriptionKey": "panels.launcher.settings-density-description",
+    "widget": "NComboBox",
     "tab": 8,
     "tabLabel": "panels.launcher.title",
     "subTab": 0,
@@ -886,6 +984,15 @@
   {
     "labelKey": "panels.launcher.settings-enable-windows-search-label",
     "descriptionKey": "panels.launcher.settings-enable-windows-search-description",
+    "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.launcher.settings-enable-session-search-label",
+    "descriptionKey": "panels.launcher.settings-enable-session-search-description",
     "widget": "NToggle",
     "tab": 8,
     "tabLabel": "panels.launcher.title",
@@ -1001,28 +1108,22 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "actions.enable-wifi",
-    "descriptionKey": "panels.network.wifi-description",
-    "widget": "NToggle",
-    "tab": 15,
-    "tabLabel": "common.network",
-    "subTab": null
+    "labelKey": "panels.lock-screen.lock-screen-blur-strength-label",
+    "descriptionKey": "panels.lock-screen.lock-screen-blur-strength-description",
+    "widget": "NValueSlider",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "actions.enable-bluetooth",
-    "descriptionKey": "panels.network.bluetooth-description",
-    "widget": "NToggle",
-    "tab": 15,
-    "tabLabel": "common.network",
-    "subTab": null
-  },
-  {
-    "labelKey": "panels.network.bluetooth-rssi-polling-label",
-    "descriptionKey": "panels.network.bluetooth-rssi-polling-description",
-    "widget": "NToggle",
-    "tab": 15,
-    "tabLabel": "common.network",
-    "subTab": null
+    "labelKey": "panels.lock-screen.lock-screen-tint-strength-label",
+    "descriptionKey": "panels.lock-screen.lock-screen-tint-strength-description",
+    "widget": "NValueSlider",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
   },
   {
     "labelKey": "panels.notifications.duration-respect-expire-label",
@@ -1070,6 +1171,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.notifications.settings-density-label",
+    "descriptionKey": "panels.notifications.settings-density-description",
+    "widget": "NComboBox",
+    "tab": 9,
+    "tabLabel": "common.notifications",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "tooltips.do-not-disturb-enabled",
     "descriptionKey": "panels.notifications.settings-do-not-disturb-description",
     "widget": "NToggle",
@@ -1086,6 +1196,15 @@
     "tabLabel": "common.notifications",
     "subTab": 0,
     "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.notifications.settings-markdown-label",
+    "descriptionKey": "panels.notifications.settings-markdown-description",
+    "widget": "NToggle",
+    "tab": 9,
+    "tabLabel": "common.notifications",
+    "subTab": 2,
+    "subTabLabel": "common.history"
   },
   {
     "labelKey": "panels.notifications.history-low-urgency-label",
@@ -1250,6 +1369,15 @@
     "subTabLabel": "common.available"
   },
   {
+    "labelKey": "panels.plugins.auto-update",
+    "descriptionKey": "panels.plugins.auto-update-description",
+    "widget": "NToggle",
+    "tab": 18,
+    "tabLabel": "panels.plugins.title",
+    "subTab": 0,
+    "subTabLabel": "common.installed"
+  },
+  {
     "labelKey": "panels.plugins.installed-no-plugins-label",
     "descriptionKey": "panels.plugins.installed-no-plugins-description",
     "widget": "NLabel",
@@ -1403,8 +1531,8 @@
     "subTabLabel": "common.general"
   },
   {
-    "labelKey": "panels.session-menu.show-number-labels-label",
-    "descriptionKey": "panels.session-menu.show-number-labels-description",
+    "labelKey": "panels.session-menu.show-header-label",
+    "descriptionKey": "panels.session-menu.show-header-description",
     "widget": "NToggle",
     "tab": 12,
     "tabLabel": "session-menu.title",
@@ -1412,8 +1540,8 @@
     "subTabLabel": "common.general"
   },
   {
-    "labelKey": "panels.session-menu.show-header-label",
-    "descriptionKey": "panels.session-menu.show-header-description",
+    "labelKey": "panels.session-menu.show-keybinds-label",
+    "descriptionKey": "panels.session-menu.show-keybinds-description",
     "widget": "NToggle",
     "tab": 12,
     "tabLabel": "session-menu.title",
@@ -1664,18 +1792,9 @@
     "subTabLabel": "common.general"
   },
   {
-    "labelKey": "panels.wallpaper.settings-enable-overview-label",
-    "descriptionKey": "panels.wallpaper.settings-enable-overview-description",
-    "widget": "NToggle",
-    "tab": 3,
-    "tabLabel": "common.wallpaper",
-    "subTab": 0,
-    "subTabLabel": "common.general"
-  },
-  {
-    "labelKey": "panels.wallpaper.settings-folder-label",
-    "descriptionKey": "panels.wallpaper.settings-folder-description",
-    "widget": "NTextInputButton",
+    "labelKey": "tooltips.wallpaper-selector",
+    "descriptionKey": "panels.wallpaper.settings-selector-description",
+    "widget": "NLabel",
     "tab": 3,
     "tabLabel": "common.wallpaper",
     "subTab": 0,
@@ -1691,6 +1810,15 @@
     "subTabLabel": "common.general"
   },
   {
+    "labelKey": "panels.wallpaper.settings-folder-label",
+    "descriptionKey": "panels.wallpaper.settings-folder-description",
+    "widget": "NTextInputButton",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
     "labelKey": "panels.wallpaper.settings-monitor-specific-label",
     "descriptionKey": "panels.wallpaper.settings-monitor-specific-description",
     "widget": "NToggle",
@@ -1700,9 +1828,27 @@
     "subTabLabel": "common.general"
   },
   {
-    "labelKey": "tooltips.wallpaper-selector",
-    "descriptionKey": "panels.wallpaper.settings-selector-description",
-    "widget": "NLabel",
+    "labelKey": "panels.wallpaper.settings-enable-overview-label",
+    "descriptionKey": "panels.wallpaper.settings-enable-overview-description",
+    "widget": "NToggle",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.wallpaper.settings-overview-blur-strength-label",
+    "descriptionKey": "panels.wallpaper.settings-overview-blur-strength-description",
+    "widget": "NValueSlider",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 0,
+    "subTabLabel": "common.general"
+  },
+  {
+    "labelKey": "panels.wallpaper.settings-overview-tint-label",
+    "descriptionKey": "panels.wallpaper.settings-overview-tint-description",
+    "widget": "NValueSlider",
     "tab": 3,
     "tabLabel": "common.wallpaper",
     "subTab": 0,
@@ -1730,6 +1876,15 @@
     "labelKey": "panels.wallpaper.look-feel-transition-type-label",
     "descriptionKey": "panels.wallpaper.look-feel-transition-type-description",
     "widget": "NComboBox",
+    "tab": 3,
+    "tabLabel": "common.wallpaper",
+    "subTab": 1,
+    "subTabLabel": "common.look"
+  },
+  {
+    "labelKey": "panels.wallpaper.look-feel-skip-startup-transition-label",
+    "descriptionKey": "panels.wallpaper.look-feel-skip-startup-transition-description",
+    "widget": "NToggle",
     "tab": 3,
     "tabLabel": "common.wallpaper",
     "subTab": 1,

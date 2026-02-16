@@ -23,11 +23,7 @@ ColumnLayout {
   spacing: Style.marginL
 
   NHeader {
-    description: root.supporters.length === 0 ? I18n.tr("panels.about.supporters-loading") : root.supporters.length === 1 ? I18n.tr("panels.about.supporters-desc-singular", {
-                                                                                                                                      "count": 1
-                                                                                                                                    }) : I18n.tr("panels.about.supporters-desc-plural", {
-                                                                                                                                                   "count": root.supporters.length
-                                                                                                                                                 })
+    description: root.supporters.length === 0 ? I18n.tr("panels.about.supporters-loading") : I18n.trp("panels.about.supporters-desc", root.supporters.length)
     enableDescriptionRichText: true
   }
 

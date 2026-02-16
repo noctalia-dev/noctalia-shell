@@ -18,12 +18,11 @@ Popup {
 
   signal updateWidgetSettings(string section, int index, var settings)
 
-  readonly property real maxHeight: screen ? screen.height * 0.9 : 800
+  readonly property real maxHeight: (screen ? screen.height : (parent ? parent.height : 800)) * 0.8
   readonly property real defaultContentWidth: Math.round(600 * Style.uiScaleRatio)
   readonly property real settingsContentWidth: {
     if (settingsLoader.item && settingsLoader.item.implicitWidth > 0) {
       return settingsLoader.item.implicitWidth;
-      d;
     }
     return defaultContentWidth;
   }

@@ -3,21 +3,21 @@ import QtQuick.Controls
 import QtQuick.Templates as T
 import qs.Commons
 
-T.ScrollView {
+ScrollView {
   id: root
 
   property color handleColor: Qt.alpha(Color.mHover, 0.8)
   property color handleHoverColor: handleColor
   property color handlePressedColor: handleColor
   property color trackColor: "transparent"
-  property real handleWidth: 6
+  property real handleWidth: Math.round(6 * Style.uiScaleRatio)
   property real handleRadius: Style.iRadiusM
   property int verticalPolicy: ScrollBar.AsNeeded
   property int horizontalPolicy: ScrollBar.AsNeeded
   property bool preventHorizontalScroll: horizontalPolicy === ScrollBar.AlwaysOff
   property int boundsBehavior: Flickable.StopAtBounds
-  readonly property bool verticalScrollable: contentItem.contentHeight > contentItem.height
-  readonly property bool horizontalScrollable: contentItem.contentWidth > contentItem.width
+  readonly property bool verticalScrollable: (contentItem.contentHeight > contentItem.height) || (verticalPolicy == ScrollBar.AlwaysOn)
+  readonly property bool horizontalScrollable: (contentItem.contentWidth > contentItem.width) || (horizontalPolicy == ScrollBar.AlwaysOn)
   property bool showGradientMasks: true
   property color gradientColor: Color.mSurfaceVariant
   property int gradientHeight: 16
@@ -133,8 +133,8 @@ T.ScrollView {
     x: root.mirrored ? 0 : root.width - width
     y: root.topPadding
     height: root.availableHeight
-    active: root.ScrollBar.horizontal.active
     policy: root.verticalPolicy
+    interactive: root.verticalScrollable
 
     contentItem: Rectangle {
       implicitWidth: root.handleWidth
@@ -176,8 +176,8 @@ T.ScrollView {
     x: root.leftPadding
     y: root.height - height
     width: root.availableWidth
-    active: root.ScrollBar.vertical.active
     policy: root.horizontalPolicy
+    interactive: root.horizontalScrollable
 
     contentItem: Rectangle {
       implicitWidth: 100

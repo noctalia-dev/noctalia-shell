@@ -10,6 +10,12 @@ import qs.Services.UI
 Singleton {
   id: root
 
+  readonly property bool wifiAvailable: _wifiAvailable
+  readonly property bool ethernetAvailable: _ethernetAvailable
+
+  property bool _wifiAvailable: false
+  property bool _ethernetAvailable: false
+
   // Core state
   property var networks: ({})
   property bool scanning: false
@@ -69,14 +75,14 @@ Singleton {
     function onWifiEnabledChanged() {
       if (Settings.data.network.wifiEnabled) {
         if (!BluetoothService.airplaneModeToggled) {
-          ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("common.enabled"), "wifi");
+          ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.enabled"), "wifi");
         }
         // Perform a scan to update the UI
         delayedScanTimer.interval = 3000;
         delayedScanTimer.restart();
       } else {
         if (!BluetoothService.airplaneModeToggled) {
-          ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("common.disabled"), "wifi-off");
+          ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.disabled"), "wifi-off");
         }
         // Clear networks so the widget icon changes
         root.networks = ({});
@@ -84,9 +90,23 @@ Singleton {
     }
   }
 
+  // Handle system resume to refresh state and connectivity
+  Connections {
+    target: Time
+    function onResumed() {
+      Logger.i("Network", "System resumed - forcing state poll");
+      ethernetStateProcess.running = true;
+      root.scan();
+      root.refreshActiveWifiDetails();
+      root.refreshActiveEthernetDetails();
+      connectivityCheckProcess.running = true;
+    }
+  }
+
   Component.onCompleted: {
     Logger.i("Network", "Service started");
     if (ProgramCheckerService.nmcliAvailable) {
+      detectNetworkCapabilities();
       syncWifiState();
       scan();
       // Prime ethernet state immediately so UI can reflect wired status on startup
@@ -101,6 +121,7 @@ Singleton {
     target: ProgramCheckerService
     function onNmcliAvailableChanged() {
       if (ProgramCheckerService.nmcliAvailable) {
+        detectNetworkCapabilities();
         syncWifiState();
         scan();
         // Refresh ethernet status as soon as nmcli becomes available
@@ -108,6 +129,39 @@ Singleton {
         // Also refresh details so panels get info without waiting for timers
         refreshActiveWifiDetails();
         refreshActiveEthernetDetails();
+      }
+    }
+  }
+
+  // Function to detect host's networking capabilities eg has WiFi/Ethernet.
+  function detectNetworkCapabilities() {
+    if (ProgramCheckerService.nmcliAvailable) {
+      Logger.d("Network", "Starting network capability detection...");
+      capabilityDetectProcess.running = true;
+    }
+  }
+
+  // Process to detect host's networking capabilities
+  Process {
+    id: capabilityDetectProcess
+    running: false
+    command: ["nmcli", "-t", "-f", "TYPE", "device"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var lines = text.trim().split("\n");
+        var wifi = false;
+        var eth = false;
+        for (var i = 0; i < lines.length; i++) {
+          var type = lines[i].trim();
+          if (type === "wifi") {
+            wifi = true;
+          } else if (type === "ethernet") {
+            eth = true;
+          }
+        }
+        root._wifiAvailable = wifi;
+        root._ethernetAvailable = eth;
+        Logger.d("Network", "Detected capabilities - WiFi:", wifi, "Ethernet:", eth);
       }
     }
   }
@@ -123,8 +177,9 @@ Singleton {
   function refreshActiveWifiDetails() {
     const now = Date.now();
     // If we're already fetching, don't start a new one
-    if (detailsLoading)
+    if (detailsLoading) {
       return;
+    }
 
     // Use cached details if they are fresh
     if (activeWifiIf && activeWifiDetails && (now - activeWifiDetailsTimestamp) < activeWifiDetailsTtlMs)
@@ -158,8 +213,9 @@ Singleton {
   // Refresh details for the currently active Ethernet link
   function refreshActiveEthernetDetails() {
     const now = Date.now();
-    if (ethernetDetailsLoading)
+    if (ethernetDetailsLoading) {
       return;
+    }
     if (!root.ethernetConnected) {
       // Link is down: keep the selected interface so UI can still show its info as disconnected
       // Only clear details to avoid showing stale IP/speed/etc.
@@ -187,21 +243,25 @@ Singleton {
 
   // Core functions
   function syncWifiState() {
-    if (!ProgramCheckerService.nmcliAvailable)
+    if (!ProgramCheckerService.nmcliAvailable) {
       return;
+    }
     wifiStateProcess.running = true;
   }
 
   function setWifiEnabled(enabled) {
-    if (!ProgramCheckerService.nmcliAvailable)
+    if (!ProgramCheckerService.nmcliAvailable) {
       return;
+    }
+    Logger.i("Wi-Fi", "SetWifiEnabled", enabled);
     Settings.data.network.wifiEnabled = enabled;
     wifiStateEnableProcess.running = true;
   }
 
   function scan() {
-    if (!ProgramCheckerService.nmcliAvailable || !Settings.data.network.wifiEnabled)
+    if (!ProgramCheckerService.nmcliAvailable || !Settings.data.network.wifiEnabled) {
       return;
+    }
     if (scanning) {
       // Mark current scan results to be ignored and schedule a new scan
       Logger.d("Network", "Scan already in progress, will ignore results and rescan");
@@ -226,15 +286,17 @@ Singleton {
 
   // Refresh only Ethernet state/details
   function refreshEthernet() {
-    if (!ProgramCheckerService.nmcliAvailable)
+    if (!ProgramCheckerService.nmcliAvailable) {
       return;
+    }
     ethernetStateProcess.running = true;
     refreshActiveEthernetDetails();
   }
 
   function connect(ssid, password = "") {
-    if (!ProgramCheckerService.nmcliAvailable || connecting)
+    if (!ProgramCheckerService.nmcliAvailable || connecting) {
       return;
+    }
     connecting = true;
     connectingTo = ssid;
     lastError = "";
@@ -254,16 +316,18 @@ Singleton {
   }
 
   function disconnect(ssid) {
-    if (!ProgramCheckerService.nmcliAvailable)
+    if (!ProgramCheckerService.nmcliAvailable) {
       return;
+    }
     disconnectingFrom = ssid;
     disconnectProcess.ssid = ssid;
     disconnectProcess.running = true;
   }
 
   function forget(ssid) {
-    if (!ProgramCheckerService.nmcliAvailable)
+    if (!ProgramCheckerService.nmcliAvailable) {
       return;
+    }
     forgettingNetwork = ssid;
 
     // Remove from cache
@@ -317,16 +381,21 @@ Singleton {
 
   // Helper functions
   function signalIcon(signal, isConnected) {
-    if (isConnected === undefined)
+    if (isConnected === undefined) {
       isConnected = false;
-    if (isConnected && !root.internetConnectivity)
+    }
+    if (isConnected && !root.internetConnectivity) {
       return "world-off";
-    if (signal >= 80)
+    }
+    if (signal >= 80) {
       return "wifi";
-    if (signal >= 50)
+    }
+    if (signal >= 50) {
       return "wifi-2";
-    if (signal >= 20)
+    }
+    if (signal >= 20) {
       return "wifi-1";
+    }
     return "wifi-0";
   }
 
@@ -447,8 +516,9 @@ Singleton {
         });
         root.ethernetInterfaces = ethList;
         if (ifname) {
-          if (root.activeEthernetIf !== ifname)
-          root.activeEthernetIf = ifname;
+          if (root.activeEthernetIf !== ifname) {
+            root.activeEthernetIf = ifname;
+          }
           ethernetDeviceShowProcess.ifname = ifname;
           ethernetDeviceShowProcess.running = true;
         } else {
@@ -488,11 +558,13 @@ Singleton {
         const lines = text.split("\n");
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
-          if (!line)
-          continue;
+          if (!line) {
+            continue;
+          }
           const idx = line.indexOf(":");
-          if (idx === -1)
-          continue;
+          if (idx === -1) {
+            continue;
+          }
           const key = line.substring(0, idx);
           const val = line.substring(idx + 1);
           if (key === "GENERAL.CONNECTION") {
@@ -502,8 +574,9 @@ Singleton {
           } else if (key === "IP4.GATEWAY") {
             gw4 = val;
           } else if (key.indexOf("IP4.DNS") === 0) {
-            if (val && dnsServers.indexOf(val) === -1)
-            dnsServers.push(val);
+            if (val && dnsServers.indexOf(val) === -1) {
+              dnsServers.push(val);
+            }
           }
         }
         details.ifname = ethernetDeviceShowProcess.ifname;
@@ -595,8 +668,9 @@ Singleton {
           details.speed = speedText;
           // Try to derive numeric value
           const m = speedText.match(/([0-9]+(?:\.[0-9]+)?)\s*Mbit\/s/i);
-          if (m)
-          details.speedMbit = parseFloat(m[1]);
+          if (m) {
+            details.speedMbit = parseFloat(m[1]);
+          }
           root.activeEthernetDetails = details;
         }
         root.activeEthernetDetailsTimestamp = Date.now();
@@ -669,11 +743,13 @@ Singleton {
         const lines = text.split("\n");
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
-          if (!line)
-          continue;
+          if (!line) {
+            continue;
+          }
           const idx = line.indexOf(":");
-          if (idx === -1)
-          continue;
+          if (idx === -1) {
+            continue;
+          }
           const key = line.substring(0, idx);
           const val = line.substring(idx + 1);
           if (key.indexOf("IP4.ADDRESS") === 0) {
@@ -764,8 +840,9 @@ Singleton {
           var compact = [];
           for (var i = 0; i < parts.length; i++) {
             var p = parts[i];
-            if (p && p.length > 0)
-            compact.push(p);
+            if (p && p.length > 0) {
+              compact.push(p);
+            }
           }
           // Find a token that represents Mbit/s and use the previous number
           var unitIdx = -1;
@@ -841,7 +918,6 @@ Singleton {
 
     stdout: StdioCollector {
       onStreamFinished: {
-        Logger.i("Network", "Wi-Fi state change command executed");
         // Re-check the state to ensure it's in sync
         syncWifiState();
       }
@@ -995,8 +1071,9 @@ Singleton {
 
         for (var i = 0; i < lines.length; ++i) {
           const line = lines[i].trim();
-          if (!line)
-          continue;
+          if (!line) {
+            continue;
+          }
 
           // Parse from the end to handle SSIDs with colons
           // Format is SSID:SECURITY:SIGNAL:IN-USE
@@ -1182,9 +1259,9 @@ Singleton {
         root.connecting = false;
         root.connectingTo = "";
         Logger.i("Network", "Connected to network: '" + connectProcess.ssid + "'");
-        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.connected", {
-                                                                       "ssid": connectProcess.ssid
-                                                                     }), "wifi");
+        ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.wifi.connected", {
+                                                                  "ssid": connectProcess.ssid
+                                                                }), "wifi");
 
         // Still do a scan to get accurate signal and security info
         delayedScanTimer.interval = 5000;
@@ -1213,7 +1290,7 @@ Singleton {
 
           Logger.w("Network", "Connect error: " + text);
           // Notify user about the failure
-          ToastService.showWarning(I18n.tr("wifi.panel.title"), root.lastError || I18n.tr("toast.wifi.connection-failed"));
+          ToastService.showWarning(I18n.tr("common.wifi"), root.lastError || I18n.tr("toast.wifi.connection-failed"));
         }
       }
     }
@@ -1228,9 +1305,9 @@ Singleton {
     stdout: StdioCollector {
       onStreamFinished: {
         Logger.i("Network", "Disconnected from network: '" + disconnectProcess.ssid + "'");
-        ToastService.showNotice(I18n.tr("wifi.panel.title"), I18n.tr("toast.wifi.disconnected", {
-                                                                       "ssid": disconnectProcess.ssid
-                                                                     }), "wifi-off");
+        ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.wifi.disconnected", {
+                                                                  "ssid": disconnectProcess.ssid
+                                                                }), "wifi-off");
 
         // Immediately update UI on successful disconnect
         root.updateNetworkStatus(disconnectProcess.ssid, false);

@@ -19,48 +19,63 @@ ColumnLayout {
   NKeybindRecorder {
     Layout.fillWidth: true
     label: I18n.tr("panels.general.keybinds-up")
-    currentKeybind: Settings.data.general.keybinds.keyUp
+    currentKeybinds: Settings.data.general.keybinds.keyUp
     defaultKeybind: "Up"
-    onKeybindChanged: newKeybind => Settings.data.general.keybinds.keyUp = newKeybind
+    settingsPath: "general.keybinds.keyUp"
+    onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyUp = newKeybinds
   }
 
   NKeybindRecorder {
     Layout.fillWidth: true
     label: I18n.tr("panels.general.keybinds-down")
-    currentKeybind: Settings.data.general.keybinds.keyDown
+    currentKeybinds: Settings.data.general.keybinds.keyDown
     defaultKeybind: "Down"
-    onKeybindChanged: newKeybind => Settings.data.general.keybinds.keyDown = newKeybind
+    settingsPath: "general.keybinds.keyDown"
+    onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyDown = newKeybinds
   }
 
   NKeybindRecorder {
     Layout.fillWidth: true
     label: I18n.tr("panels.general.keybinds-left")
-    currentKeybind: Settings.data.general.keybinds.keyLeft
+    currentKeybinds: Settings.data.general.keybinds.keyLeft
     defaultKeybind: "Left"
-    onKeybindChanged: newKeybind => Settings.data.general.keybinds.keyLeft = newKeybind
+    settingsPath: "general.keybinds.keyLeft"
+    onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyLeft = newKeybinds
   }
 
   NKeybindRecorder {
     Layout.fillWidth: true
     label: I18n.tr("panels.general.keybinds-right")
-    currentKeybind: Settings.data.general.keybinds.keyRight
+    currentKeybinds: Settings.data.general.keybinds.keyRight
     defaultKeybind: "Right"
-    onKeybindChanged: newKeybind => Settings.data.general.keybinds.keyRight = newKeybind
+    settingsPath: "general.keybinds.keyRight"
+    onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyRight = newKeybinds
   }
 
   NKeybindRecorder {
     Layout.fillWidth: true
     label: I18n.tr("panels.general.keybinds-enter")
-    currentKeybind: Settings.data.general.keybinds.keyEnter
+    currentKeybinds: Settings.data.general.keybinds.keyEnter
     defaultKeybind: "Return"
-    onKeybindChanged: newKeybind => Settings.data.general.keybinds.keyEnter = newKeybind
+    settingsPath: "general.keybinds.keyEnter"
+    onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyEnter = newKeybinds
   }
 
   NKeybindRecorder {
     Layout.fillWidth: true
     label: I18n.tr("panels.general.keybinds-escape")
-    currentKeybind: Settings.data.general.keybinds.keyEscape
+    currentKeybinds: Settings.data.general.keybinds.keyEscape
     defaultKeybind: "Esc"
-    onKeybindChanged: newKeybind => Settings.data.general.keybinds.keyEscape = newKeybind
+    settingsPath: "general.keybinds.keyEscape"
+    onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyEscape = newKeybinds
+  }
+
+  NKeybindRecorder {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.general.keybinds-remove")
+    currentKeybinds: Settings.data.general.keybinds.keyRemove
+    defaultKeybind: "Del"
+    settingsPath: "general.keybinds.keyRemove"
+    onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyRemove = newKeybinds
   }
 }

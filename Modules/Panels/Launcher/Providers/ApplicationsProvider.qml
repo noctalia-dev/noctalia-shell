@@ -1,6 +1,5 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import qs.Commons
 import qs.Services.Compositor
 import qs.Services.System
@@ -14,7 +13,7 @@ Item {
   property var entries: []
   property string supportedLayouts: "both"
   property bool isDefaultProvider: true // This provider handles empty search
-  property int preferredGridColumns: 5
+  property bool ignoreDensity: false // Apps should scale with launcher density
 
   // Category support
   property string selectedCategory: "all"
@@ -57,38 +56,6 @@ Item {
       "WebBrowser": I18n.tr("launcher.categories.webbrowser")
     };
     return names[category] || category;
-  }
-
-  // Persistent usage tracking stored in cacheDir
-  property string usageFilePath: Settings.cacheDir + "launcher_app_usage.json"
-
-  // Debounced saver to avoid excessive IO
-  Timer {
-    id: saveTimer
-    interval: 750
-    repeat: false
-    onTriggered: usageFile.writeAdapter()
-  }
-
-  FileView {
-    id: usageFile
-    path: usageFilePath
-    printErrors: false
-    watchChanges: false
-
-    onLoadFailed: function (error) {
-      if (error.toString().includes("No such file") || error === 2) {
-        writeAdapter();
-      }
-    }
-
-    onAdapterUpdated: saveTimer.start()
-
-    JsonAdapter {
-      id: usageAdapter
-      // key: app id/command, value: integer count
-      property var counts: ({})
-    }
   }
 
   function init() {
@@ -455,15 +422,15 @@ Item {
 
     if (!query || query.trim() === "") {
       // Return filtered apps, optionally sorted by usage
-      const favoriteApps = Settings.data.appLauncher.favoriteApps || [];
       let sorted;
       if (Settings.data.appLauncher.sortByMostUsed) {
         sorted = filteredEntries.slice().sort((a, b) => {
-                                                // Favorites first
-                                                const aFav = favoriteApps.includes(getAppKey(a));
-                                                const bFav = favoriteApps.includes(getAppKey(b));
-                                                if (aFav !== bFav)
-                                                return aFav ? -1 : 1;
+                                                // Pinned first
+                                                const aPinned = isAppPinned(a);
+                                                const bPinned = isAppPinned(b);
+                                                if (aPinned !== bPinned)
+                                                return aPinned ? -1 : 1;
+
                                                 const ua = getUsageCount(a);
                                                 const ub = getUsageCount(b);
                                                 if (ub !== ua)
@@ -472,10 +439,10 @@ Item {
                                               });
       } else {
         sorted = filteredEntries.slice().sort((a, b) => {
-                                                const aFav = favoriteApps.includes(getAppKey(a));
-                                                const bFav = favoriteApps.includes(getAppKey(b));
-                                                if (aFav !== bFav)
-                                                return aFav ? -1 : 1;
+                                                const aPinned = isAppPinned(a);
+                                                const bPinned = isAppPinned(b);
+                                                if (aPinned !== bPinned)
+                                                return aPinned ? -1 : 1;
                                                 return (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase());
                                               });
       }
@@ -489,18 +456,17 @@ Item {
                                           "limit": 20
                                         });
 
-      // Sort favorites first within fuzzy results while preserving fuzzysort order otherwise
-      const favoriteApps = Settings.data.appLauncher.favoriteApps || [];
-      const fav = [];
-      const nonFav = [];
+      // Sort pinned first within fuzzy results while preserving fuzzysort order otherwise
+      const pinned = [];
+      const nonPinned = [];
       for (const r of fuzzyResults) {
         const app = r.obj;
-        if (favoriteApps.includes(getAppKey(app)))
-          fav.push(r);
+        if (isAppPinned(app))
+          pinned.push(r);
         else
-          nonFav.push(r);
+          nonPinned.push(r);
       }
-      return fav.concat(nonFav).map(result => createResultEntry(result.obj, result.score));
+      return pinned.concat(nonPinned).map(result => createResultEntry(result.obj, result.score));
     } else {
       // Fallback to simple search
       const searchTerm = query.toLowerCase();
@@ -548,7 +514,6 @@ Item {
       "_score": (score !== undefined ? score : 0),
       "provider": root,
       "onActivate": function () {
-        // Record usage before closing (provider may be destroyed after close)
         if (Settings.data.appLauncher.sortByMostUsed) {
           root.recordUsage(app);
         }
@@ -559,18 +524,40 @@ Item {
 
         // Defer execution to next event loop iteration to ensure panel is fully closed
         Qt.callLater(() => {
-                       Logger.d("ApplicationsProvider", `Launching: ${app.name}`);
+                       Logger.d("ApplicationsProvider", `Launching: ${app.name} (App ID: ${app.id || "unknown"})`);
+
+                       const execString = (app.exec !== undefined && app.exec !== null) ? String(app.exec) : "";
+                       const commandArgs = Array.isArray(app.command) ? app.command : (app.command && app.command.length !== undefined) ? Array.from(app.command) : [];
+                       let hasQuotedArgs = execString.includes("\"") || execString.includes("'");
+                       let hasSpaceArgs = false;
+                       if (!hasQuotedArgs) {
+                         hasQuotedArgs = commandArgs.some(arg => {
+                                                            const text = String(arg);
+                                                            return text.includes("\"") || text.includes("'");
+                                                          });
+                       }
+                       if (!hasSpaceArgs) {
+                         hasSpaceArgs = commandArgs.some(arg => String(arg).includes(" "));
+                       }
+                       if (app.execute && (hasQuotedArgs || hasSpaceArgs)) {
+                         Logger.d("ApplicationsProvider", `Detected quoted/space arguments in Exec for ${app.name}, using app.execute()`);
+                         app.execute();
+                         return;
+                       }
 
                        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
                          // Use custom launch prefix
                          const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
+                         Logger.d("ApplicationsProvider", `Using custom launch prefix: ${Settings.data.appLauncher.customLaunchPrefix}`);
 
                          if (app.runInTerminal) {
                            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
                            const command = prefix.concat(terminal.concat(app.command));
+                           Logger.d("ApplicationsProvider", `Executing command (with prefix and terminal): ${command.join(" ")}`);
                            Quickshell.execDetached(command);
                          } else {
                            const command = prefix.concat(app.command);
+                           Logger.d("ApplicationsProvider", `Executing command (with prefix): ${command.join(" ")}`);
                            Quickshell.execDetached(command);
                          }
                        } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
@@ -585,10 +572,13 @@ Item {
                            Logger.d("ApplicationsProvider", "Executing terminal app manually: " + app.name);
                            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
                            const command = terminal.concat(app.command);
+                           Logger.d("ApplicationsProvider", "Executing command (manual terminal): " + command.join(" "));
                            CompositorService.spawn(command);
                          } else if (app.command && app.command.length > 0) {
+                           Logger.d("ApplicationsProvider", "Executing command: " + app.command.join(" "));
                            CompositorService.spawn(app.command);
                          } else if (app.execute) {
+                           Logger.d("ApplicationsProvider", "Calling app.execute() for: " + app.name);
                            app.execute();
                          } else {
                            Logger.w("ApplicationsProvider", `Could not launch: ${app.name}. No valid launch method.`);
@@ -643,21 +633,10 @@ Item {
   }
 
   function getUsageCount(app) {
-    const key = getAppKey(app);
-    const m = usageAdapter && usageAdapter.counts ? usageAdapter.counts : null;
-    if (!m)
-      return 0;
-    const v = m[key];
-    return typeof v === 'number' && isFinite(v) ? v : 0;
+    return ShellState.getLauncherUsageCount(getAppKey(app));
   }
 
   function recordUsage(app) {
-    const key = getAppKey(app);
-    if (!usageAdapter.counts)
-      usageAdapter.counts = ({});
-    const current = getUsageCount(app);
-    usageAdapter.counts[key] = current + 1;
-    // Trigger save via debounced timer
-    saveTimer.restart();
+    ShellState.recordLauncherUsage(getAppKey(app));
   }
 }

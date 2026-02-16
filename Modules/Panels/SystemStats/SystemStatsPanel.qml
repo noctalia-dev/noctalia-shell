@@ -11,6 +11,9 @@ import qs.Widgets
 SmartPanel {
   id: root
 
+  Component.onCompleted: SystemStatService.registerComponent("panel-systemstats")
+  Component.onDestruction: SystemStatService.unregisterComponent("panel-systemstats")
+
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
 
   panelContent: Item {
@@ -90,7 +93,7 @@ SmartPanel {
             }
 
             NText {
-              text: `${Math.round(SystemStatService.cpuUsage)}% ${SystemStatService.cpuFreq.replace(/[^0-9.]/g, "")} GHz`
+              text: `${Math.round(SystemStatService.cpuUsage)}% (${SystemStatService.cpuFreq.replace(/[^0-9.]/g, "")} GHz)`
               pointSize: Style.fontSizeXS
               color: Color.mPrimary
               font.family: Settings.data.ui.fontFixed
@@ -99,13 +102,13 @@ SmartPanel {
             NIcon {
               icon: "cpu-temperature"
               pointSize: Style.fontSizeXS
-              color: Color.mError
+              color: Color.mSecondary
             }
 
             NText {
               text: `${Math.round(SystemStatService.cpuTemp)}°C`
               pointSize: Style.fontSizeXS
-              color: Color.mError
+              color: Color.mSecondary
               font.family: Settings.data.ui.fontFixed
               Layout.rightMargin: Style.marginS
             }
@@ -137,8 +140,7 @@ SmartPanel {
             color2: Color.mSecondary
             fill: true
             fillOpacity: 0.15
-            updateInterval: Settings.data.systemMonitor.cpuPollingInterval
-            edgeToEdge: true
+            updateInterval: SystemStatService.cpuIntervalMs
           }
         }
       }
@@ -164,7 +166,7 @@ SmartPanel {
             }
 
             NText {
-              text: `${Math.round(SystemStatService.memPercent)}% ${SystemStatService.formatGigabytes(SystemStatService.memGb).replace(/[^0-9.]/g, "")} GB`
+              text: `${Math.round(SystemStatService.memPercent)}% (${SystemStatService.formatGigabytes(SystemStatService.memGb).replace(/[^0-9.]/g, "")} GB)`
               pointSize: Style.fontSizeXS
               color: Color.mPrimary
               font.family: Settings.data.ui.fontFixed
@@ -193,8 +195,7 @@ SmartPanel {
             color: Color.mPrimary
             fill: true
             fillOpacity: 0.15
-            updateInterval: Settings.data.systemMonitor.memPollingInterval
-            edgeToEdge: true
+            updateInterval: SystemStatService.memIntervalMs
           }
         }
       }
@@ -230,13 +231,13 @@ SmartPanel {
             NIcon {
               icon: "upload-speed"
               pointSize: Style.fontSizeXS
-              color: Color.mError
+              color: Color.mSecondary
             }
 
             NText {
               text: SystemStatService.formatSpeed(SystemStatService.txSpeed).replace(/([0-9.]+)([A-Za-z]+)/, "$1 $2") + "/s"
               pointSize: Style.fontSizeXS
-              color: Color.mError
+              color: Color.mSecondary
               font.family: Settings.data.ui.fontFixed
             }
 
@@ -267,9 +268,8 @@ SmartPanel {
             color2: Color.mSecondary
             fill: true
             fillOpacity: 0.15
-            updateInterval: Settings.data.systemMonitor.networkPollingInterval
+            updateInterval: SystemStatService.networkIntervalMs
             animateScale: true
-            edgeToEdge: true
           }
         }
       }

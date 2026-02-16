@@ -11,7 +11,7 @@ Singleton {
   id: root
 
   // Version properties
-  readonly property string baseVersion: "4.4.1"
+  readonly property string baseVersion: "4.4.4"
   readonly property bool isDevelopment: true
   readonly property string developmentSuffix: "-git"
   readonly property string currentVersion: `v${!isDevelopment ? baseVersion : baseVersion + developmentSuffix}`
@@ -306,10 +306,6 @@ Singleton {
     if (!currentVersion)
       return;
 
-    if (!Settings.data.general.showChangelogOnStartup) {
-      return;
-    }
-
     if (!changelogStateLoaded) {
       pendingShowRequest = true;
       return;
@@ -321,6 +317,12 @@ Singleton {
 
     if (lastSeen === target)
       return;
+
+    if (!Settings.data.general.showChangelogOnStartup) {
+      // user has opted out of seeing changelogs, mark as seen
+      markChangelogSeen(target);
+      return;
+    }
 
     changelogFromVersion = lastSeen;
     changelogToVersion = target;

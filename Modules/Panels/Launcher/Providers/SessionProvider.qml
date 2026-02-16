@@ -10,45 +10,46 @@ Item {
   // Provider metadata
   property string name: I18n.tr("tooltips.session-menu")
   property var launcher: null
-  property bool handleSearch: true
+  property bool handleSearch: Settings.data.appLauncher.enableSessionSearch
   property string supportedLayouts: "list"
+  property string iconMode: Settings.data.appLauncher.iconMode
 
   // Session actions with search keywords
   readonly property var sessionActions: [
     {
       "action": "lock",
       "labelKey": "common.lock",
-      "icon": "lock",
+      "icon": iconMode === "tabler" ? "lock" : "system-lock-screen",
       "keywords": ["lock", "screen", "secure"]
     },
     {
       "action": "suspend",
       "labelKey": "common.suspend",
-      "icon": "suspend",
+      "icon": iconMode === "tabler" ? "suspend" : "system-suspend",
       "keywords": ["suspend", "sleep", "standby"]
     },
     {
       "action": "hibernate",
       "labelKey": "common.hibernate",
-      "icon": "hibernate",
+      "icon": iconMode === "tabler" ? "hibernate" : "system-suspend-hibernate",
       "keywords": ["hibernate", "disk"]
     },
     {
       "action": "reboot",
       "labelKey": "common.reboot",
-      "icon": "reboot",
+      "icon": iconMode === "tabler" ? "reboot" : "system-reboot",
       "keywords": ["reboot", "restart", "reload"]
     },
     {
       "action": "logout",
       "labelKey": "common.logout",
-      "icon": "logout",
+      "icon": iconMode === "tabler" ? "logout" : "system-log-out",
       "keywords": ["logout", "sign out", "exit", "leave"]
     },
     {
       "action": "shutdown",
       "labelKey": "common.shutdown",
-      "icon": "shutdown",
+      "icon": iconMode === "tabler" ? "shutdown" : "system-shutdown",
       "keywords": ["shutdown", "power off", "turn off", "poweroff"]
     }
   ]

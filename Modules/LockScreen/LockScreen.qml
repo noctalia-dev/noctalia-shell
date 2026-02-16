@@ -278,11 +278,11 @@ Loader {
                   onTextChanged: lockContext.currentText = text
 
                   Keys.onPressed: function (event) {
-                    if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    if (Keybinds.checkKey(event, 'enter', Settings)) {
                       lockContext.tryUnlock();
                       event.accepted = true;
                     }
-                    if (event.key === Qt.Key_Escape && panelComponent.timerActive) {
+                    if (Keybinds.checkKey(event, 'escape', Settings) && panelComponent.timerActive) {
                       panelComponent.cancelTimer();
                       event.accepted = true;
                     }

@@ -33,7 +33,7 @@ NIconButtonHot {
     try {
       if (NetworkService.ethernetConnected) {
         // Match design: fixed label when on Ethernet
-        return I18n.tr("control-center.wifi.label-ethernet");
+        return I18n.tr("common.ethernet");
       }
       // Wi‑Fi: SSID — link speed (if available)
       for (const net in NetworkService.networks) {
@@ -46,11 +46,15 @@ NIconButtonHot {
     } catch (e) {
       // noop
     }
-    return I18n.tr("tooltips.manage-wifi");
+    return I18n.tr("common.wifi");
   }
   onClicked: {
     var panel = PanelService.getPanel("networkPanel", screen);
     panel?.toggle(this);
   }
-  onRightClicked: NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled)
+  onRightClicked: {
+    if (!Settings.data.network.airplaneModeEnabled) {
+      NetworkService.setWifiEnabled(!Settings.data.network.wifiEnabled);
+    }
+  }
 }

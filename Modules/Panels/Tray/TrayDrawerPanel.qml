@@ -63,7 +63,7 @@ SmartPanel {
       void (settingsVersion);
       if (root.widgetSection === "" || root.widgetIndex < 0)
         return {};
-      var widgets = Settings.data.bar.widgets[root.widgetSection];
+      var widgets = Settings.getBarWidgetsForScreen(root.screen?.name)[root.widgetSection];
       if (!widgets || root.widgetIndex >= widgets.length)
         return {};
       var settings = widgets[root.widgetIndex];

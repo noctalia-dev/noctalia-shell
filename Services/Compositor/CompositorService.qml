@@ -16,6 +16,7 @@ Singleton {
   property bool isSway: false
   property bool isMango: false
   property bool isLabwc: false
+  property bool isScroll: false
 
   // Generic workspace and window data
   property ListModel workspaces: ListModel {}
@@ -105,6 +106,7 @@ Singleton {
       isSway = true;
       isMango = false;
       isLabwc = false;
+      isScroll = currentDesktop && currentDesktop.toLowerCase().includes("scroll");
       backendLoader.sourceComponent = swayComponent;
     } else {
       // Always fallback to Niri
@@ -121,6 +123,9 @@ Singleton {
     id: backendLoader
     onLoaded: {
       if (item) {
+        if (isScroll) {
+          item.msgCommand = "scrollmsg";
+        }
         root.backend = item;
         setupBackendConnections();
         backend.initialize();
@@ -413,13 +418,17 @@ Singleton {
 
   // Spawn command
   function spawn(command) {
+    // Ensure command is a proper JS array (QML lists can behave unexpectedly in some contexts)
+    const cmdArray = Array.isArray(command) ? command : (command && typeof command === "object" && command.length !== undefined) ? Array.from(command) : [command];
+
+    Logger.d("CompositorService", `Spawning: ${cmdArray.join(" ")}`);
     if (backend && backend.spawn) {
-      backend.spawn(command);
+      backend.spawn(cmdArray);
     } else {
       try {
-        Quickshell.execDetached(command);
+        Quickshell.execDetached(cmdArray);
       } catch (e) {
-        Logger.e("Compositor", "Failed to exececute detached:", e);
+        Logger.e("CompositorService", "Failed to execute detached:", e);
       }
     }
   }
@@ -476,6 +485,16 @@ Singleton {
 
     HooksService.executeSessionHook("reboot", () => {
                                       Quickshell.execDetached(["sh", "-c", "systemctl reboot || loginctl reboot"]);
+                                    });
+  }
+
+  function rebootToUefi() {
+    Logger.i("Compositor", "Reboot to UEFI firmware requested requested");
+    if (executeSessionAction("rebootToUefi"))
+      return;
+
+    HooksService.executeSessionHook("rebootToUefi", () => {
+                                      Quickshell.execDetached(["sh", "-c", "systemctl reboot --firmware-setup"]);
                                     });
   }
 

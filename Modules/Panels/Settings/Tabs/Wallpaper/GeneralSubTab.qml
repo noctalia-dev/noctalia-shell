@@ -25,114 +25,6 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("wallpaper.enabled")
   }
 
-  NToggle {
-    enabled: Settings.data.wallpaper.enabled
-    visible: CompositorService.isNiri
-    label: I18n.tr("panels.wallpaper.settings-enable-overview-label")
-    description: I18n.tr("panels.wallpaper.settings-enable-overview-description")
-    checked: Settings.data.wallpaper.enabled && Settings.data.wallpaper.overviewEnabled
-    onToggled: checked => Settings.data.wallpaper.overviewEnabled = checked
-    defaultValue: Settings.getDefaultValue("wallpaper.overviewEnabled")
-  }
-
-  NDivider {
-    Layout.fillWidth: true
-  }
-
-  ColumnLayout {
-    enabled: Settings.data.wallpaper.enabled
-    spacing: Style.marginL
-    Layout.fillWidth: true
-
-    NTextInputButton {
-      id: wallpaperPathInput
-      label: I18n.tr("panels.wallpaper.settings-folder-label")
-      description: I18n.tr("panels.wallpaper.settings-folder-description")
-      text: Settings.data.wallpaper.directory
-      buttonIcon: "folder-open"
-      buttonTooltip: I18n.tr("panels.wallpaper.settings-folder-label")
-      Layout.fillWidth: true
-      onInputEditingFinished: Settings.data.wallpaper.directory = text
-      onButtonClicked: root.openMainFolderPicker()
-    }
-
-    NComboBox {
-      label: I18n.tr("panels.wallpaper.settings-view-mode-label")
-      description: I18n.tr("panels.wallpaper.settings-view-mode-description")
-      Layout.fillWidth: true
-      model: [
-        {
-          "key": "single",
-          "name": I18n.tr("panels.wallpaper.view-mode-single")
-        },
-        {
-          "key": "recursive",
-          "name": I18n.tr("panels.wallpaper.view-mode-recursive")
-        },
-        {
-          "key": "browse",
-          "name": I18n.tr("panels.wallpaper.view-mode-browse")
-        }
-      ]
-      currentKey: Settings.data.wallpaper.viewMode
-      onSelected: key => Settings.data.wallpaper.viewMode = key
-      defaultValue: Settings.getDefaultValue("wallpaper.viewMode")
-    }
-
-    NToggle {
-      label: I18n.tr("panels.wallpaper.settings-monitor-specific-label")
-      description: I18n.tr("panels.wallpaper.settings-monitor-specific-description")
-      checked: Settings.data.wallpaper.enableMultiMonitorDirectories
-      onToggled: checked => Settings.data.wallpaper.enableMultiMonitorDirectories = checked
-      defaultValue: Settings.getDefaultValue("wallpaper.enableMultiMonitorDirectories")
-    }
-
-    NBox {
-      visible: Settings.data.wallpaper.enableMultiMonitorDirectories
-      Layout.fillWidth: true
-      radius: Style.radiusM
-      color: Color.mSurface
-      border.color: Color.mOutline
-      border.width: Style.borderS
-      implicitHeight: contentCol.implicitHeight + Style.marginL * 2
-      clip: true
-
-      ColumnLayout {
-        id: contentCol
-        anchors.fill: parent
-        anchors.margins: Style.marginL
-        spacing: Style.marginM
-        Repeater {
-          model: Quickshell.screens || []
-          delegate: ColumnLayout {
-            Layout.fillWidth: true
-            spacing: Style.marginS
-
-            NText {
-              text: (modelData.name || "Unknown")
-              color: Color.mPrimary
-              font.weight: Style.fontWeightBold
-              pointSize: Style.fontSizeM
-            }
-
-            NTextInputButton {
-              text: WallpaperService.getMonitorDirectory(modelData.name)
-              buttonIcon: "folder-open"
-              buttonTooltip: I18n.tr("panels.wallpaper.settings-monitor-specific-tooltip")
-              Layout.fillWidth: true
-              onInputEditingFinished: WallpaperService.setMonitorDirectory(modelData.name, text)
-              onButtonClicked: root.openMonitorFolderPicker(modelData.name)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  NDivider {
-    Layout.fillWidth: true
-  }
-
   ColumnLayout {
     enabled: Settings.data.wallpaper.enabled
     spacing: Style.marginL
@@ -194,6 +86,140 @@ ColumnLayout {
       currentKey: Settings.data.wallpaper.panelPosition
       onSelected: key => Settings.data.wallpaper.panelPosition = key
       defaultValue: Settings.getDefaultValue("wallpaper.panelPosition")
+    }
+
+    NComboBox {
+      label: I18n.tr("panels.wallpaper.settings-view-mode-label")
+      description: I18n.tr("panels.wallpaper.settings-view-mode-description")
+      Layout.fillWidth: true
+      model: [
+        {
+          "key": "single",
+          "name": I18n.tr("panels.wallpaper.view-mode-single")
+        },
+        {
+          "key": "recursive",
+          "name": I18n.tr("panels.wallpaper.view-mode-recursive")
+        },
+        {
+          "key": "browse",
+          "name": I18n.tr("panels.wallpaper.view-mode-browse")
+        }
+      ]
+      currentKey: Settings.data.wallpaper.viewMode
+      onSelected: key => Settings.data.wallpaper.viewMode = key
+      defaultValue: Settings.getDefaultValue("wallpaper.viewMode")
+    }
+
+    NTextInputButton {
+      id: wallpaperPathInput
+      label: I18n.tr("panels.wallpaper.settings-folder-label")
+      description: I18n.tr("panels.wallpaper.settings-folder-description")
+      text: Settings.data.wallpaper.directory
+      buttonIcon: "folder-open"
+      buttonTooltip: I18n.tr("panels.wallpaper.settings-folder-label")
+      Layout.fillWidth: true
+      onInputEditingFinished: Settings.data.wallpaper.directory = text
+      onButtonClicked: root.openMainFolderPicker()
+    }
+
+    NToggle {
+      label: I18n.tr("panels.wallpaper.settings-monitor-specific-label")
+      description: I18n.tr("panels.wallpaper.settings-monitor-specific-description")
+      checked: Settings.data.wallpaper.enableMultiMonitorDirectories
+      onToggled: checked => Settings.data.wallpaper.enableMultiMonitorDirectories = checked
+      defaultValue: Settings.getDefaultValue("wallpaper.enableMultiMonitorDirectories")
+    }
+
+    NBox {
+      visible: Settings.data.wallpaper.enableMultiMonitorDirectories
+      Layout.fillWidth: true
+      radius: Style.radiusM
+      color: Color.mSurface
+      border.color: Color.mOutline
+      border.width: Style.borderS
+      implicitHeight: contentCol.implicitHeight + Style.marginL * 2
+      clip: true
+
+      ColumnLayout {
+        id: contentCol
+        anchors.fill: parent
+        anchors.margins: Style.marginL
+        spacing: Style.marginM
+        Repeater {
+          model: Quickshell.screens || []
+          delegate: ColumnLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginS
+
+            NText {
+              text: (modelData.name || "Unknown")
+              color: Color.mPrimary
+              font.weight: Style.fontWeightBold
+              pointSize: Style.fontSizeM
+            }
+
+            NTextInputButton {
+              text: WallpaperService.getMonitorDirectory(modelData.name)
+              buttonIcon: "folder-open"
+              buttonTooltip: I18n.tr("panels.wallpaper.settings-monitor-specific-tooltip")
+              Layout.fillWidth: true
+              onInputEditingFinished: WallpaperService.setMonitorDirectory(modelData.name, text)
+              onButtonClicked: root.openMonitorFolderPicker(modelData.name)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+    visible: CompositorService.isNiri
+  }
+
+  ColumnLayout {
+    visible: CompositorService.isNiri
+    enabled: Settings.data.wallpaper.enabled
+    spacing: Style.marginL
+    Layout.fillWidth: true
+
+    NToggle {
+      label: I18n.tr("panels.wallpaper.settings-enable-overview-label")
+      description: I18n.tr("panels.wallpaper.settings-enable-overview-description")
+      checked: Settings.data.wallpaper.enabled && Settings.data.wallpaper.overviewEnabled
+      onToggled: checked => Settings.data.wallpaper.overviewEnabled = checked
+      defaultValue: Settings.getDefaultValue("wallpaper.overviewEnabled")
+    }
+
+    NValueSlider {
+      Layout.fillWidth: true
+      enabled: Settings.data.wallpaper.overviewEnabled
+      label: I18n.tr("panels.wallpaper.settings-overview-blur-strength-label")
+      description: I18n.tr("panels.wallpaper.settings-overview-blur-strength-description")
+      visible: CompositorService.isNiri
+      from: 0.0
+      to: 1.0
+      stepSize: 0.01
+      value: Settings.data.wallpaper.overviewBlur
+      onMoved: value => Settings.data.wallpaper.overviewBlur = value
+      text: ((Settings.data.wallpaper.overviewBlur) * 100).toFixed(0) + "%"
+      defaultValue: Settings.getDefaultValue("wallpaper.overviewBlur")
+    }
+
+    NValueSlider {
+      Layout.fillWidth: true
+      enabled: Settings.data.wallpaper.overviewEnabled
+      label: I18n.tr("panels.wallpaper.settings-overview-tint-label")
+      description: I18n.tr("panels.wallpaper.settings-overview-tint-description")
+      visible: CompositorService.isNiri
+      from: 0.0
+      to: 1.0
+      stepSize: 0.01
+      value: Settings.data.wallpaper.overviewTint
+      onMoved: value => Settings.data.wallpaper.overviewTint = value
+      text: ((Settings.data.wallpaper.overviewTint) * 100).toFixed(0) + "%"
+      defaultValue: Settings.getDefaultValue("wallpaper.overviewTint")
     }
   }
 }

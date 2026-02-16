@@ -58,8 +58,10 @@ Rectangle {
   readonly property var defaultProvider: appsProvider
   readonly property var currentProvider: activeProvider || defaultProvider
 
-  readonly property int badgeSize: Math.round(Style.baseWidgetSize * 1.6 * Style.uiScaleRatio)
-  readonly property int entryHeight: Math.round(badgeSize + Style.marginXL)
+  readonly property string launcherDensity: (currentProvider && currentProvider.ignoreDensity === false) ? (Settings.data.appLauncher.density || "default") : "comfortable"
+  readonly property int effectiveIconSize: launcherDensity === "comfortable" ? 48 : (launcherDensity === "default" ? 36 : 24)
+  readonly property int badgeSize: Math.round(effectiveIconSize * Style.uiScaleRatio)
+  readonly property int entryHeight: Math.round(badgeSize + (launcherDensity === "compact" ? (Style.marginL + Style.marginXXS) : (Style.marginXL + Style.marginS)))
 
   readonly property bool providerShowsCategories: currentProvider.showsCategories === true
 
@@ -103,13 +105,30 @@ Rectangle {
       return "single";
     if (providerHasDisplayString)
       return "grid";
-    return Settings.data.appLauncher.viewMode === "grid" ? "grid" : "list";
+    return Settings.data.appLauncher.viewMode;
   }
 
   readonly property bool isGridView: layoutMode === "grid"
   readonly property bool isSingleView: layoutMode === "single"
+  readonly property bool isCompactDensity: launcherDensity === "compact"
 
-  readonly property int targetGridColumns: currentProvider && currentProvider.preferredGridColumns ? currentProvider.preferredGridColumns : 5
+  readonly property int targetGridColumns: {
+    let base = 5;
+    if (launcherDensity === "comfortable")
+      base = 4;
+    else if (launcherDensity === "compact")
+      base = 6;
+
+    if (!activeProvider || activeProvider === defaultProvider)
+      return base;
+
+    if (activeProvider.preferredGridColumns) {
+      let multiplier = base / 5.0;
+      return Math.max(1, Math.round(activeProvider.preferredGridColumns * multiplier));
+    }
+
+    return base;
+  }
   readonly property int listPanelWidth: Math.round(500 * Style.uiScaleRatio)
   readonly property int gridContentWidth: listPanelWidth - (2 * Style.marginXS)
   readonly property int gridCellSize: Math.floor((gridContentWidth - ((targetGridColumns - 1) * Style.marginS)) / targetGridColumns)
@@ -166,7 +185,10 @@ Rectangle {
     }
   }
 
-  onSearchTextChanged: updateResults()
+  onSearchTextChanged: {
+    if (isOpen)
+      updateResults();
+  }
 
   function close() {
     requestClose();
@@ -462,112 +484,8 @@ Rectangle {
     }
   }
 
-  function getKeybindString(event) {
-    let keyStr = "";
-    if (event.modifiers & Qt.ControlModifier)
-      keyStr += "Ctrl+";
-    if (event.modifiers & Qt.AltModifier)
-      keyStr += "Alt+";
-    if (event.modifiers & Qt.ShiftModifier)
-      keyStr += "Shift+";
-
-    let keyName = "";
-    let rawText = event.text;
-
-    if (event.key >= Qt.Key_A && event.key <= Qt.Key_Z || event.key >= Qt.Key_0 && event.key <= Qt.Key_9) {
-      keyName = String.fromCharCode(event.key);
-    } else if (event.key >= Qt.Key_F1 && event.key <= Qt.Key_F12) {
-      keyName = "F" + (event.key - Qt.Key_F1 + 1);
-    } else if (rawText && rawText.length > 0 && rawText.charCodeAt(0) > 31) {
-      keyName = rawText.toUpperCase();
-
-      if (event.modifiers & Qt.ShiftModifier) {
-        const shiftMap = {
-          "!": "1",
-          "\"": "2",
-          "§": "3",
-          "$": "4",
-          "%": "5",
-          "&": "6",
-          "/": "7",
-          "(": "8",
-          ")": "9",
-          "=": "0",
-          "@": "2",
-          "#": "3",
-          "^": "6",
-          "*": "8"
-        };
-        if (shiftMap[keyName]) {
-          keyName = shiftMap[keyName];
-        }
-      }
-    } else {
-      switch (event.key) {
-      case Qt.Key_Escape:
-        keyName = "Esc";
-        break;
-      case Qt.Key_Space:
-        keyName = "Space";
-        break;
-      case Qt.Key_Return:
-        keyName = "Return";
-        break;
-      case Qt.Key_Enter:
-        keyName = "Enter";
-        break;
-      case Qt.Key_Tab:
-        keyName = "Tab";
-        break;
-      case Qt.Key_Backspace:
-        keyName = "Backspace";
-        break;
-      case Qt.Key_Delete:
-        keyName = "Del";
-        break;
-      case Qt.Key_Insert:
-        keyName = "Ins";
-        break;
-      case Qt.Key_Home:
-        keyName = "Home";
-        break;
-      case Qt.Key_End:
-        keyName = "End";
-        break;
-      case Qt.Key_PageUp:
-        keyName = "PgUp";
-        break;
-      case Qt.Key_PageDown:
-        keyName = "PgDn";
-        break;
-      case Qt.Key_Left:
-        keyName = "Left";
-        break;
-      case Qt.Key_Right:
-        keyName = "Right";
-        break;
-      case Qt.Key_Up:
-        keyName = "Up";
-        break;
-      case Qt.Key_Down:
-        keyName = "Down";
-        break;
-      }
-    }
-
-    if (!keyName)
-      return "";
-    return keyStr + keyName;
-  }
-
   function checkKey(event, settingName) {
-    // Map simplified names to the actual setting property names
-    var propName = "key" + settingName.charAt(0).toUpperCase() + settingName.slice(1);
-    var boundKey = Settings.data.general.keybinds[propName];
-    if (!boundKey)
-      return false;
-    var eventString = getKeybindString(event);
-    return eventString === boundKey;
+    return Keybinds.checkKey(event, settingName, Settings);
   }
 
   // Keyboard handler
@@ -774,16 +692,20 @@ Rectangle {
 
   ColumnLayout {
     anchors.fill: parent
-    anchors.margins: Style.marginL
-    spacing: Style.marginM
+    anchors.topMargin: Style.marginL
+    anchors.bottomMargin: Style.marginL
+    spacing: Style.marginL
 
     RowLayout {
       Layout.fillWidth: true
+      Layout.leftMargin: Style.marginL
+      Layout.rightMargin: Style.marginL
       spacing: Style.marginS
 
       NTextInput {
         id: searchInput
         Layout.fillWidth: true
+        radius: Style.iRadiusM
         text: root.searchText
         placeholderText: I18n.tr("placeholders.search-launcher")
         fontSize: Style.fontSizeM
@@ -803,6 +725,7 @@ Rectangle {
         visible: root.showLayoutToggle
         icon: Settings.data.appLauncher.viewMode === "grid" ? "layout-list" : "layout-grid"
         tooltipText: Settings.data.appLauncher.viewMode === "grid" ? I18n.tr("tooltips.list-view") : I18n.tr("tooltips.grid-view")
+        customRadius: Style.iRadiusM
         Layout.preferredWidth: searchInput.height
         Layout.preferredHeight: searchInput.height
         onClicked: Settings.data.appLauncher.viewMode = Settings.data.appLauncher.viewMode === "grid" ? "list" : "grid"
@@ -814,7 +737,9 @@ Rectangle {
       id: categoryTabs
       visible: root.showProviderCategories
       Layout.fillWidth: true
-      margins: Style.marginM
+      Layout.leftMargin: Style.marginL
+      Layout.rightMargin: Style.marginL
+      margins: 0
       border.color: Style.boxBorderColor
       border.width: Style.borderS
 
@@ -823,7 +748,7 @@ Rectangle {
 
       Repeater {
         model: root.providerCategories
-        NIconTabButton {
+        NTabButton {
           required property string modelData
           required property int index
           icon: root.currentProvider.categoryIcons ? (root.currentProvider.categoryIcons[modelData] || "star") : "star"
@@ -839,6 +764,8 @@ Rectangle {
     Loader {
       id: resultsViewLoader
       Layout.fillWidth: true
+      Layout.leftMargin: Style.marginL
+      Layout.rightMargin: Style.marginL
       Layout.fillHeight: true
       sourceComponent: root.isSingleView ? singleViewComponent : (root.isGridView ? gridViewComponent : listViewComponent)
     }
@@ -853,12 +780,12 @@ Rectangle {
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AlwaysOff
         reserveScrollbarSpace: false
-        gradientColor: Color.mSurface
+        gradientColor: Color.mSurfaceVariant
         wheelScrollMultiplier: 4.0
 
         width: parent.width
         height: parent.height
-        spacing: Style.marginXS
+        spacing: Style.marginS
         model: root.results
         currentIndex: root.selectedIndex
         cacheBuffer: resultsList.height * 2
@@ -899,13 +826,13 @@ Rectangle {
           ColumnLayout {
             id: contentLayout
             anchors.fill: parent
-            anchors.margins: Style.marginM
-            spacing: Style.marginM
+            anchors.margins: root.isCompactDensity ? Style.marginXS : Style.marginM
+            spacing: root.isCompactDensity ? Style.marginXS : Style.marginM
 
             // Top row - Main entry content with action buttons
             RowLayout {
               Layout.fillWidth: true
-              spacing: Style.marginM
+              spacing: root.isCompactDensity ? Style.marginS : Style.marginM
 
               // Icon badge or Image preview or Emoji
               Item {
@@ -916,7 +843,7 @@ Rectangle {
                 // Icon background
                 Rectangle {
                   anchors.fill: parent
-                  radius: Style.radiusM
+                  radius: Style.radiusXS
                   color: Color.mSurfaceVariant
                   visible: Settings.data.appLauncher.showIconBackground && !modelData.isImage
                 }
@@ -1080,7 +1007,7 @@ Rectangle {
                   elide: Text.ElideRight
                   maximumLineCount: 1
                   Layout.fillWidth: true
-                  visible: text !== ""
+                  visible: text !== "" && !root.isCompactDensity
                 }
               }
 
@@ -1210,7 +1137,7 @@ Rectangle {
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AlwaysOff
         reserveScrollbarSpace: false
-        gradientColor: Color.mSurface
+        gradientColor: Color.mSurfaceVariant
         wheelScrollMultiplier: 4.0
         trackedSelectionIndex: root.selectedIndex
 
@@ -1290,9 +1217,9 @@ Rectangle {
 
             ColumnLayout {
               anchors.fill: parent
-              anchors.margins: Style.marginS
-              anchors.bottomMargin: Style.marginS
-              spacing: Style.marginXXS
+              anchors.margins: root.isCompactDensity ? Style.marginXS : Style.marginS
+              anchors.bottomMargin: root.isCompactDensity ? Style.marginXS : Style.marginS
+              spacing: root.isCompactDensity ? 0 : Style.marginXXS
 
               // Icon badge or Image preview or Emoji
               Item {
@@ -1519,30 +1446,36 @@ Rectangle {
       }
     }
 
-    NDivider {
-      Layout.fillWidth: true
-    }
+    ColumnLayout {
+      Layout.leftMargin: Style.marginL
+      Layout.rightMargin: Style.marginL
 
-    NText {
-      Layout.fillWidth: true
-      text: {
-        if (root.results.length === 0) {
-          if (root.searchText) {
-            return I18n.tr("common.no-results");
-          }
-          // Use provider's empty browsing message if available
-          var provider = root.currentProvider;
-          if (provider && provider.emptyBrowsingMessage) {
-            return provider.emptyBrowsingMessage;
-          }
-          return "";
-        }
-        var prefix = root.activeProvider && root.activeProvider.name ? root.activeProvider.name + ": " : "";
-        return prefix + I18n.trp("common.result-count", root.results.length);
+      NDivider {
+        Layout.fillWidth: true
+        Layout.bottomMargin: Style.marginS
       }
-      pointSize: Style.fontSizeXS
-      color: Color.mOnSurfaceVariant
-      horizontalAlignment: Text.AlignCenter
+
+      NText {
+        Layout.fillWidth: true
+        text: {
+          if (root.results.length === 0) {
+            if (root.searchText) {
+              return I18n.tr("common.no-results");
+            }
+            // Use provider's empty browsing message if available
+            var provider = root.currentProvider;
+            if (provider && provider.emptyBrowsingMessage) {
+              return provider.emptyBrowsingMessage;
+            }
+            return "";
+          }
+          var prefix = root.activeProvider && root.activeProvider.name ? root.activeProvider.name + ": " : "";
+          return prefix + I18n.trp("common.result-count", root.results.length);
+        }
+        pointSize: Style.fontSizeXS
+        color: Color.mOnSurfaceVariant
+        horizontalAlignment: Text.AlignCenter
+      }
     }
   }
 }

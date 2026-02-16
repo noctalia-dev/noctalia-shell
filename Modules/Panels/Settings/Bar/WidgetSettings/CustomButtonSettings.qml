@@ -10,6 +10,8 @@ ColumnLayout {
   id: root
   spacing: Style.marginM
 
+  // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -56,7 +58,7 @@ ColumnLayout {
     settings.enableColorization = valueEnableColorization;
     settings.colorizeSystemIcon = valueColorizeSystemIcon;
     settings.ipcIdentifier = valueIpcIdentifier;
-    return settings;
+    settingsChanged(settings);
   }
 
   RowLayout {
@@ -85,7 +87,7 @@ ColumnLayout {
     initialIcon: valueIcon
     onIconSelected: function (iconName) {
       valueIcon = iconName;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -96,7 +98,7 @@ ColumnLayout {
     checked: valueShowIcon
     onToggled: checked => {
                  valueShowIcon = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
     visible: textCommandInput.text !== ""
   }
@@ -107,19 +109,18 @@ ColumnLayout {
     checked: valueEnableColorization
     onToggled: checked => {
                  valueEnableColorization = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
-  NComboBox {
+  NColorChoice {
     visible: valueEnableColorization
-    label: I18n.tr("common.select-color")
+    label: I18n.tr("common.select-icon-color")
     description: I18n.tr("bar.custom-button.color-selection-description")
-    model: Color.colorKeyModel
     currentKey: valueColorizeSystemIcon
     onSelected: key => {
                   valueColorizeSystemIcon = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -130,7 +131,7 @@ ColumnLayout {
     placeholderText: I18n.tr("placeholders.enter-ipc-identifier")
     text: valueIpcIdentifier
     onTextChanged: valueIpcIdentifier = text
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 
   RowLayout {
@@ -143,7 +144,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.left-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData?.leftClickExec || widgetMetadata.leftClickExec
-      onEditingFinished: settingsChanged(saveSettings())
+      onEditingFinished: saveSettings()
     }
 
     NToggle {
@@ -156,7 +157,7 @@ ColumnLayout {
       checked: widgetData?.leftClickUpdateText ?? widgetMetadata.leftClickUpdateText
       onToggled: isChecked => {
                    checked = isChecked;
-                   settingsChanged(saveSettings());
+                   saveSettings();
                  }
     }
   }
@@ -171,7 +172,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.right-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData?.rightClickExec || widgetMetadata.rightClickExec
-      onEditingFinished: settingsChanged(saveSettings())
+      onEditingFinished: saveSettings()
     }
 
     NToggle {
@@ -184,7 +185,7 @@ ColumnLayout {
       checked: widgetData?.rightClickUpdateText ?? widgetMetadata.rightClickUpdateText
       onToggled: isChecked => {
                    checked = isChecked;
-                   settingsChanged(saveSettings());
+                   saveSettings();
                  }
     }
   }
@@ -199,7 +200,7 @@ ColumnLayout {
       description: I18n.tr("bar.custom-button.middle-click-description")
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData.middleClickExec || widgetMetadata.middleClickExec
-      onEditingFinished: settingsChanged(saveSettings())
+      onEditingFinished: saveSettings()
     }
 
     NToggle {
@@ -212,7 +213,7 @@ ColumnLayout {
       checked: widgetData?.middleClickUpdateText ?? widgetMetadata.middleClickUpdateText
       onToggled: isChecked => {
                    checked = isChecked;
-                   settingsChanged(saveSettings());
+                   saveSettings();
                  }
     }
   }
@@ -227,7 +228,7 @@ ColumnLayout {
     checked: internalChecked
     onToggled: checked => {
                  internalChecked = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -246,7 +247,7 @@ ColumnLayout {
         description: I18n.tr("bar.custom-button.wheel-description")
         placeholderText: I18n.tr("placeholders.enter-command")
         text: widgetData?.wheelExec || widgetMetadata?.wheelExec
-        onEditingFinished: settingsChanged(saveSettings())
+        onEditingFinished: saveSettings()
       }
 
       NToggle {
@@ -259,7 +260,7 @@ ColumnLayout {
         checked: widgetData?.wheelUpdateText ?? widgetMetadata?.wheelUpdateText
         onToggled: isChecked => {
                      checked = isChecked;
-                     settingsChanged(saveSettings());
+                     saveSettings();
                    }
       }
     }
@@ -279,7 +280,7 @@ ColumnLayout {
           description: I18n.tr("bar.custom-button.wheel-up-description")
           placeholderText: I18n.tr("placeholders.enter-command")
           text: widgetData?.wheelUpExec || widgetMetadata?.wheelUpExec
-          onEditingFinished: settingsChanged(saveSettings())
+          onEditingFinished: saveSettings()
         }
 
         NToggle {
@@ -292,7 +293,7 @@ ColumnLayout {
           checked: (widgetData?.wheelUpUpdateText !== undefined) ? widgetData.wheelUpUpdateText : widgetMetadata?.wheelUpUpdateText
           onToggled: isChecked => {
                        checked = isChecked;
-                       settingsChanged(saveSettings());
+                       saveSettings();
                      }
         }
       }
@@ -307,7 +308,7 @@ ColumnLayout {
           description: I18n.tr("bar.custom-button.wheel-down-description")
           placeholderText: I18n.tr("placeholders.enter-command")
           text: widgetData?.wheelDownExec || widgetMetadata?.wheelDownExec
-          onEditingFinished: settingsChanged(saveSettings())
+          onEditingFinished: saveSettings()
         }
 
         NToggle {
@@ -320,7 +321,7 @@ ColumnLayout {
           checked: (widgetData?.wheelDownUpdateText !== undefined) ? widgetData.wheelDownUpdateText : widgetMetadata?.wheelDownUpdateText
           onToggled: isChecked => {
                        checked = isChecked;
-                       settingsChanged(saveSettings());
+                       saveSettings();
                      }
         }
       }
@@ -343,7 +344,7 @@ ColumnLayout {
     value: valueMaxTextLengthHorizontal
     onValueChanged: {
       valueMaxTextLengthHorizontal = value;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -355,7 +356,7 @@ ColumnLayout {
     value: valueMaxTextLengthVertical
     onValueChanged: {
       valueMaxTextLengthVertical = value;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -366,7 +367,7 @@ ColumnLayout {
     checked: valueTextStream
     onToggled: checked => {
                  valueTextStream = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -377,7 +378,7 @@ ColumnLayout {
     checked: valueParseJson
     onToggled: checked => {
                  valueParseJson = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -388,7 +389,7 @@ ColumnLayout {
     description: valueTextStream ? I18n.tr("bar.custom-button.display-command-output-stream-description") : I18n.tr("bar.custom-button.display-command-output-description")
     placeholderText: I18n.tr("placeholders.command-example")
     text: widgetData?.textCommand || widgetMetadata.textCommand
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 
   NTextInput {
@@ -399,7 +400,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.collapse-condition-description")
     placeholderText: I18n.tr("placeholders.enter-text-to-collapse")
     text: widgetData?.textCollapse || widgetMetadata.textCollapse
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 
   NTextInput {
@@ -410,7 +411,7 @@ ColumnLayout {
     description: I18n.tr("bar.custom-button.refresh-interval-description")
     placeholderText: String(widgetMetadata.textIntervalMs)
     text: widgetData && widgetData.textIntervalMs !== undefined ? String(widgetData.textIntervalMs) : ""
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 
   NComboBox {
@@ -434,7 +435,7 @@ ColumnLayout {
     currentKey: valueHideMode
     onSelected: key => {
                   valueHideMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
     visible: textCommandInput.text !== "" && valueTextStream == true
   }

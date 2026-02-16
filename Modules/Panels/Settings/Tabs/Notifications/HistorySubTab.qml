@@ -10,6 +10,14 @@ ColumnLayout {
   Layout.fillWidth: true
 
   NToggle {
+    label: I18n.tr("panels.notifications.settings-markdown-label")
+    description: I18n.tr("panels.notifications.settings-markdown-description")
+    checked: Settings.data.notifications.enableMarkdown
+    onToggled: checked => Settings.data.notifications.enableMarkdown = checked
+    defaultValue: Settings.getDefaultValue("notifications.enableMarkdown")
+  }
+
+  NToggle {
     label: I18n.tr("panels.notifications.history-low-urgency-label")
     description: I18n.tr("panels.notifications.history-low-urgency-description")
     checked: Settings.data.notifications?.saveToHistory?.low !== false

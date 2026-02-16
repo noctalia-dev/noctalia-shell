@@ -74,6 +74,18 @@ Singleton {
                           }
                         })
 
+  // Manage process lifecycle imperatively to avoid broken bindings.
+  // A declarative `running: shouldRun` binding would be destroyed when
+  // the restart timer or the Process itself sets `running` imperatively,
+  // causing cava to keep running after all components unregister.
+  onShouldRunChanged: {
+    if (shouldRun && !process.running) {
+      process.running = true;
+    } else if (!shouldRun && process.running) {
+      process.running = false;
+    }
+  }
+
   Timer {
     id: restartTimer
     interval: 2000
@@ -89,7 +101,6 @@ Singleton {
   Process {
     id: process
     stdinEnabled: true
-    running: root.shouldRun
     command: ["cava", "-p", "/dev/stdin"]
     onRunningChanged: {
       Logger.d("Cava", "Process running:", running);

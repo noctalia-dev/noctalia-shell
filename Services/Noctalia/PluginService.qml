@@ -48,13 +48,7 @@ Singleton {
 
   // Hot reload: file watchers for plugin directories
   property var pluginFileWatchers: ({}) // { pluginId: FileView }
-  property bool hotReloadEnabled: Settings.isDebug
-
-  onHotReloadEnabledChanged: {
-    if (root.initialized) {
-      setHotReloadEnabled(root.hotReloadEnabled);
-    }
-  }
+  property list<string> pluginHotReloadEnabled: [] // List of pluginIds that have hot reload enabled
 
   // Track active fetches
   property var activeFetches: ({})
@@ -98,6 +92,23 @@ Singleton {
     }
   }
 
+  // When debug mode is disabled, tear down all hot reload watchers
+  Connections {
+    target: Settings
+
+    function onIsDebugChanged() {
+      if (!Settings.isDebug && root.pluginHotReloadEnabled.length > 0) {
+        Logger.i("PluginService", "Debug mode disabled, removing all hot reload watchers");
+        // Remove watchers for all hot-reload-enabled plugins
+        var plugins = root.pluginHotReloadEnabled.slice(); // copy since we mutate
+        for (var i = 0; i < plugins.length; i++) {
+          removePluginFileWatcher(plugins[i]);
+        }
+        root.pluginHotReloadEnabled = [];
+      }
+    }
+  }
+
   // Listen for language changes to reload plugin translations
   Connections {
     target: I18n
@@ -135,7 +146,7 @@ Singleton {
       }
 
       // Update translation file watchers to watch the new language's files
-      if (root.hotReloadEnabled) {
+      if (root.pluginHotReloadEnabled.length > 0) {
         updateTranslationWatchers();
       }
     }
@@ -562,11 +573,11 @@ Singleton {
     return true;
   }
 
-  // Helper function to add a widget to the bar
+  // Helper function to add a widget to the bar (global + all screen overrides)
   function addWidgetToBar(widgetId, section) {
     section = section || "right"; // Default to right section
 
-    // Check if widget already exists in any section
+    // Check if widget already exists in any section (global)
     var sections = ["left", "center", "right"];
     for (var s = 0; s < sections.length; s++) {
       var widgets = Settings.data.bar.widgets[sections[s]] || [];
@@ -578,12 +589,41 @@ Singleton {
       }
     }
 
-    // Add to specified section
-    var widgets = Settings.data.bar.widgets[section] || [];
-    widgets.push({
-                   id: widgetId
-                 });
-    Settings.data.bar.widgets[section] = widgets;
+    // Add to global
+    var globalWidgets = Settings.data.bar.widgets[section] || [];
+    globalWidgets.push({
+                         id: widgetId
+                       });
+    Settings.data.bar.widgets[section] = globalWidgets;
+
+    // Also add to any screen overrides that have widget configurations
+    var overrides = Settings.data.bar.screenOverrides || [];
+    for (var o = 0; o < overrides.length; o++) {
+      if (overrides[o] && overrides[o].widgets) {
+        var overrideWidgets = overrides[o].widgets;
+        var sectionWidgets = overrideWidgets[section] || [];
+        // Check if widget already exists in this override
+        var alreadyExists = false;
+        for (var j = 0; j < sections.length; j++) {
+          var owSec = overrideWidgets[sections[j]] || [];
+          for (var k = 0; k < owSec.length; k++) {
+            if (owSec[k].id === widgetId) {
+              alreadyExists = true;
+              break;
+            }
+          }
+          if (alreadyExists)
+            break;
+        }
+        if (!alreadyExists) {
+          sectionWidgets.push({
+                                id: widgetId
+                              });
+          overrideWidgets[section] = sectionWidgets;
+          Settings.setScreenOverride(overrides[o].name, "widgets", overrideWidgets);
+        }
+      }
+    }
 
     Logger.i("PluginService", "Added widget", widgetId, "to bar section:", section);
     return true;
@@ -612,11 +652,12 @@ Singleton {
     return true;
   }
 
-  // Helper function to remove a widget from all bar sections
+  // Helper function to remove a widget from all bar sections (global + screen overrides)
   function removeWidgetFromBar(widgetId) {
     var sections = ["left", "center", "right"];
     var changed = false;
 
+    // Remove from global
     for (var s = 0; s < sections.length; s++) {
       var section = sections[s];
       var widgets = Settings.data.bar.widgets[section] || [];
@@ -633,6 +674,35 @@ Singleton {
 
       if (changed) {
         Settings.data.bar.widgets[section] = newWidgets;
+      }
+    }
+
+    // Also remove from any screen overrides that have widget configurations
+    var overrides = Settings.data.bar.screenOverrides || [];
+    for (var o = 0; o < overrides.length; o++) {
+      if (overrides[o] && overrides[o].widgets) {
+        var overrideWidgets = overrides[o].widgets;
+        var overrideChanged = false;
+        for (var s2 = 0; s2 < sections.length; s2++) {
+          var sec = sections[s2];
+          var owWidgets = overrideWidgets[sec] || [];
+          var owNew = [];
+          for (var j = 0; j < owWidgets.length; j++) {
+            if (owWidgets[j].id !== widgetId) {
+              owNew.push(owWidgets[j]);
+            } else {
+              overrideChanged = true;
+              changed = true;
+              Logger.i("PluginService", "Removed widget", widgetId, "from screen override:", overrides[o].name, "section:", sec);
+            }
+          }
+          if (overrideChanged) {
+            overrideWidgets[sec] = owNew;
+          }
+        }
+        if (overrideChanged) {
+          Settings.setScreenOverride(overrides[o].name, "widgets", overrideWidgets);
+        }
       }
     }
 
@@ -932,6 +1002,9 @@ Singleton {
         property var openPanel: null
         property var closePanel: null
         property var togglePanel: null
+        property var openLauncher: null
+        property var closeLauncher: null
+        property var toggleLauncher: null
         property var withCurrentScreen: null
         property var tr: null
         property var trp: null
@@ -1009,6 +1082,53 @@ Singleton {
         }
       }
       return false;
+    };
+
+    // ----------------------------------------
+    // Launcher provider methods
+    // ----------------------------------------
+
+    // Get the search prefix for this plugin's launcher provider
+    var getSearchPrefix = function () {
+      var metadata = LauncherProviderRegistry.getProviderMetadata("plugin:" + pluginId);
+      var prefix = (metadata && metadata.commandPrefix) ? metadata.commandPrefix : pluginId;
+      return ">" + prefix + " ";
+    };
+
+    api.openLauncher = function (screen) {
+      // Open the launcher with this plugin's provider active
+      if (!screen) {
+        Logger.w("PluginAPI", "No screen available for opening launcher");
+        return;
+      }
+      PanelService.openLauncherWithSearch(screen, getSearchPrefix());
+    };
+
+    api.closeLauncher = function (screen) {
+      // Close the launcher
+      if (!screen) {
+        Logger.w("PluginAPI", "No screen available for closing launcher");
+        return;
+      }
+      PanelService.closeLauncher(screen);
+    };
+
+    api.toggleLauncher = function (screen) {
+      // Toggle the launcher with this plugin's provider active
+      if (!screen) {
+        Logger.w("PluginAPI", "No screen available for toggling launcher");
+        return;
+      }
+      var searchPrefix = getSearchPrefix();
+      var searchText = PanelService.getLauncherSearchText(screen);
+      var isInThisMode = searchText.startsWith(searchPrefix);
+      if (!PanelService.isLauncherOpen(screen)) {
+        PanelService.openLauncherWithSearch(screen, searchPrefix);
+      } else if (isInThisMode) {
+        PanelService.closeLauncher(screen);
+      } else {
+        PanelService.setLauncherSearchText(screen, searchPrefix);
+      }
     };
 
     // ----------------------------------------
@@ -1426,13 +1546,14 @@ Singleton {
       Logger.d("PluginService", "Plugin requires Noctalia v" + availablePlugin.minNoctaliaVersion);
     }
 
-    // Backup entire bar layout
+    // Backup entire bar layout (global + screen overrides)
     var barBackup = {
       left: JSON.parse(JSON.stringify(Settings.data.bar.widgets.left || [])),
       center: JSON.parse(JSON.stringify(Settings.data.bar.widgets.center || [])),
       right: JSON.parse(JSON.stringify(Settings.data.bar.widgets.right || []))
     };
-    Logger.d("PluginService", "Backed up bar layout");
+    var screenOverridesBackup = JSON.parse(JSON.stringify(Settings.data.bar.screenOverrides || []));
+    Logger.d("PluginService", "Backed up bar layout (global + screen overrides)");
 
     // Backup desktop widget settings (includes this plugin's widgets)
     var desktopWidgetsBackup = JSON.parse(JSON.stringify(Settings.data.desktopWidgets.monitorWidgets || []));
@@ -1472,7 +1593,8 @@ Singleton {
         Settings.data.bar.widgets.left = barBackup.left;
         Settings.data.bar.widgets.center = barBackup.center;
         Settings.data.bar.widgets.right = barBackup.right;
-        Logger.d("PluginService", "Restored bar layout");
+        Settings.data.bar.screenOverrides = screenOverridesBackup;
+        Logger.d("PluginService", "Restored bar layout (global + screen overrides)");
 
         // Restore desktop widget settings
         Settings.data.desktopWidgets.monitorWidgets = desktopWidgetsBackup;
@@ -1488,10 +1610,11 @@ Singleton {
       } else {
         Logger.e("PluginService", "Failed to update plugin:", pluginId, error);
 
-        // Restore bar layout even on failure
+        // Restore bar layout even on failure (global + screen overrides)
         Settings.data.bar.widgets.left = barBackup.left;
         Settings.data.bar.widgets.center = barBackup.center;
         Settings.data.bar.widgets.right = barBackup.right;
+        Settings.data.bar.screenOverrides = screenOverridesBackup;
 
         // Restore desktop widget settings even on failure
         Settings.data.desktopWidgets.monitorWidgets = desktopWidgetsBackup;
@@ -1646,7 +1769,7 @@ Singleton {
 
   // Set up file watcher for a plugin directory
   function setupPluginFileWatcher(pluginId) {
-    if (!root.hotReloadEnabled) {
+    if (!isPluginHotReloadEnabled(pluginId)) {
       return;
     }
 
@@ -1691,36 +1814,42 @@ Singleton {
 
     var watchers = [manifestWatcher];
 
-    // Only watch entry points that actually exist in the manifest
-    var entryPoints = manifest.entryPoints || {};
-    var entryPointFiles = [];
-
-    if (entryPoints.main)
-      entryPointFiles.push(entryPoints.main);
-    if (entryPoints.barWidget)
-      entryPointFiles.push(entryPoints.barWidget);
-    if (entryPoints.desktopWidget)
-      entryPointFiles.push(entryPoints.desktopWidget);
-    if (entryPoints.launcherProvider)
-      entryPointFiles.push(entryPoints.launcherProvider);
-    if (entryPoints.panel)
-      entryPointFiles.push(entryPoints.panel);
-    if (entryPoints.settings)
-      entryPointFiles.push(entryPoints.settings);
-    if (entryPoints.controlCenterWidget)
-      entryPointFiles.push(entryPoints.controlCenterWidget);
-
-    for (var i = 0; i < entryPointFiles.length; i++) {
-      var entryPointFile = entryPointFiles[i];
-      var watcher = Qt.createQmlObject(`
+    // Only watch .qml and .js files, also follow symlinks since some of the plugins might have been symlinked in.
+    var qmlWatcher = Qt.createQmlObject(`
+        import QtQuick
         import Quickshell.Io
-        FileView {
-          path: "${pluginDir}/${entryPointFile}"
-          watchChanges: true
+
+        import qs.Commons
+
+        Item {
+            id: root
+            signal fileChanged();
+
+            Process {
+                command: [ "sh", "-c", "find -L ${pluginDir} -name '*.qml' -o -name '*.js'" ]
+                running: true
+                stdout: SplitParser {
+                    splitMarker: "\n"
+                    onRead: line => {
+                        fileWatcher.createObject(root, { path: Qt.resolvedUrl(line) });
+                    }
+                }
+            }
+
+            Component {
+                id: fileWatcher
+                FileView {
+                    watchChanges: true
+
+                    onFileChanged: {
+                        root.fileChanged();
+                    }
+                }
+            }
+
         }
-      `, root, "FileWatcher_" + pluginId + "_" + i);
-      watchers.push(watcher);
-    }
+    `, root, "QmlWatcher_" + pluginId);
+    watchers.push(qmlWatcher);
 
     // Connect all watchers to the debounce timer
     for (var j = 0; j < watchers.length; j++) {
@@ -1922,22 +2051,22 @@ Singleton {
     return true;
   }
 
-  // Enable/disable hot reload for all loaded plugins
-  function setHotReloadEnabled(enabled) {
-    root.hotReloadEnabled = enabled;
+  // Check if a certain plugin has hot reload enabled
+  function isPluginHotReloadEnabled(pluginId) {
+    return root.pluginHotReloadEnabled.indexOf(pluginId) !== -1;
+  }
 
-    if (enabled) {
-      // Set up watchers for all loaded plugins
-      for (var pluginId in root.loadedPlugins) {
-        setupPluginFileWatcher(pluginId);
-      }
-      Logger.i("PluginService", "Hot reload enabled for all plugins");
+  // Toggle the hot reload state of a certain plugin
+  function togglePluginHotReload(pluginId) {
+    const index = root.pluginHotReloadEnabled.indexOf(pluginId);
+    if (index === -1) {
+      root.pluginHotReloadEnabled.push(pluginId);
+      setupPluginFileWatcher(pluginId);
+      Logger.i("PluginService", "Hot reload enabled for plugin:", pluginId);
     } else {
-      // Remove all watchers
-      for (var pluginId in root.pluginFileWatchers) {
-        removePluginFileWatcher(pluginId);
-      }
-      Logger.i("PluginService", "Hot reload disabled");
+      root.pluginHotReloadEnabled.splice(index, 1);
+      removePluginFileWatcher(pluginId);
+      Logger.i("PluginService", "Hot reload disabled for plugin:", pluginId);
     }
   }
 }

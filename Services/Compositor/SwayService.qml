@@ -9,6 +9,9 @@ import qs.Services.Keyboard
 Item {
   id: root
 
+  // Configurable IPC command name (overridden to "scrollmsg" for Scroll)
+  property string msgCommand: "swaymsg"
+
   // Properties that match the facade interface
   property ListModel workspaces: ListModel {}
   property var windows: []
@@ -66,7 +69,7 @@ Item {
   Process {
     id: swayTreeProcess
     running: false
-    command: ["swaymsg", "-t", "get_tree", "-r"]
+    command: [msgCommand, "-t", "get_tree", "-r"]
 
     property string accumulatedOutput: ""
 
@@ -181,7 +184,7 @@ Item {
   Process {
     id: swayOutputsProcess
     running: false
-    command: ["swaymsg", "-t", "get_outputs", "-r"]
+    command: [msgCommand, "-t", "get_outputs", "-r"]
 
     property string accumulatedOutput: ""
 
@@ -249,7 +252,7 @@ Item {
   Process {
     id: swayInputsProcess
     running: false
-    command: ["swaymsg", "-t", "get_inputs", "-r"]
+    command: [msgCommand, "-t", "get_inputs", "-r"]
 
     property string accumulatedOutput: ""
 
@@ -543,7 +546,7 @@ Item {
 
   function logout() {
     try {
-      Quickshell.execDetached(["swaymsg", "exit"]);
+      Quickshell.execDetached([msgCommand, "exit"]);
     } catch (e) {
       Logger.e("SwayService", "Failed to logout:", e);
     }
@@ -551,7 +554,7 @@ Item {
 
   function cycleKeyboardLayout() {
     try {
-      Quickshell.execDetached(["swaymsg", "input", "type:keyboard", "xkb_switch_layout", "next"]);
+      Quickshell.execDetached([msgCommand, "input", "type:keyboard", "xkb_switch_layout", "next"]);
     } catch (e) {
       Logger.e("SwayService", "Failed to cycle keyboard layout:", e);
     }
@@ -575,7 +578,7 @@ Item {
 
   function spawn(command) {
     try {
-      Quickshell.execDetached(["swaymsg", "exec", "--"].concat(command));
+      Quickshell.execDetached([msgCommand, "exec", "--"].concat(command));
     } catch (e) {
       Logger.e("SwayService", "Failed to spawn command:", e);
     }

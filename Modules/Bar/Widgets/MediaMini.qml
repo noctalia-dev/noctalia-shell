@@ -11,10 +11,6 @@ import qs.Widgets.AudioSpectrum
 
 Item {
   id: root
-  Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
-  Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
-  Layout.fillHeight: false
-  Layout.fillWidth: false
 
   property ShellScreen screen
   property string widgetId: ""
@@ -80,6 +76,11 @@ Item {
   // CavaService registration for visualizer
   readonly property string cavaComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
   readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none"
+
+  Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
+  Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
+  Layout.fillHeight: false
+  Layout.fillWidth: false
 
   onNeedsCavaChanged: {
     if (root.needsCava) {
@@ -238,8 +239,8 @@ Item {
     id: container
     x: Style.pixelAlignCenter(parent.width, width)
     y: Style.pixelAlignCenter(parent.height, height)
-    width: isVertical ? (isHidden ? 0 : verticalSize) : (isHidden ? 0 : contentWidth)
-    height: isVertical ? (isHidden ? 0 : verticalSize) : capsuleHeight
+    width: Style.toOdd(isVertical ? (isHidden ? 0 : verticalSize) : (isHidden ? 0 : contentWidth))
+    height: Style.toOdd(isVertical ? (isHidden ? 0 : verticalSize) : capsuleHeight)
     radius: Style.radiusM
     color: Style.capsuleColor
     border.color: Style.capsuleBorderColor
@@ -267,8 +268,8 @@ Item {
       Loader {
         x: Style.pixelAlignCenter(parent.width, width)
         y: Style.pixelAlignCenter(parent.height, height)
-        width: parent.width
-        height: parent.height
+        width: Style.toOdd(parent.width)
+        height: Style.toOdd(parent.height)
         active: showVisualizer
         z: 0
         sourceComponent: {
@@ -337,9 +338,14 @@ Item {
           cursorShape: hasPlayer ? Qt.PointingHandCursor : Qt.ArrowCursor
           maxWidth: root.maxWidth - root.mainContentWidth
           forcedHover: mainMouseArea.containsMouse
+          gradientColor: Style.capsuleColor
+          gradientWidth: Math.round(8 * Style.uiScaleRatio)
+          cornerRadius: Style.radiusM
+
           NText {
             color: hasPlayer ? root.textColor : Color.mOnSurfaceVariant
             pointSize: barFontSize
+            elide: Text.ElideNone
           }
         }
       }
@@ -348,8 +354,8 @@ Item {
       Item {
         id: verticalLayout
         visible: isVertical
-        width: verticalSize
-        height: width
+        width: Style.toOdd(verticalSize)
+        height: Style.toOdd(width)
         x: Style.pixelAlignCenter(parent.width, width)
         y: Style.pixelAlignCenter(parent.height, height)
         z: 1

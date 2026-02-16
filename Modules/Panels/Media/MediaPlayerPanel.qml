@@ -16,22 +16,28 @@ SmartPanel {
   preferredWidth: Math.round((root.isSideBySide ? 480 : 400) * Style.uiScaleRatio)
   preferredHeight: Math.round((root.compactMode ? 240 : (root.showAlbumArt ? 560 : 300)) * Style.uiScaleRatio)
 
-  readonly property var mediaMiniSettings: {
-    try {
-      var widgets = Settings.data.bar.widgets;
-      var sections = ["left", "center", "right"];
-      for (var i = 0; i < sections.length; i++) {
-        var list = widgets[sections[i]];
-        if (list) {
-          for (var j = 0; j < list.length; j++) {
-            if (list[j].id === "MediaMini") {
-              return list[j];
-            }
-          }
-        }
-      }
-    } catch (e) {}
-    return {};
+  property var mediaMiniSettings: {
+    const widget = BarService.lookupWidget("MediaMini", screen?.name);
+    return widget ? widget.widgetSettings : null;
+  }
+
+  function refreshMediaMiniSettings() {
+    const widget = BarService.lookupWidget("MediaMini", screen?.name);
+    root.mediaMiniSettings = widget ? widget.widgetSettings : null;
+  }
+
+  Connections {
+    target: BarService
+    function onActiveWidgetsChanged() {
+      root.refreshMediaMiniSettings();
+    }
+  }
+
+  Connections {
+    target: Settings
+    function onSettingsSaved() {
+      root.refreshMediaMiniSettings();
+    }
   }
 
   readonly property string visualizerType: (mediaMiniSettings && mediaMiniSettings.visualizerType !== undefined) ? mediaMiniSettings.visualizerType : "linear"
@@ -69,14 +75,7 @@ SmartPanel {
 
     readonly property real contentPreferredHeight: (root.compactMode ? 240 : (root.showAlbumArt ? 560 : 300)) * Style.uiScaleRatio
 
-    Loader {
-      id: visualizerLoaderCompact
-      anchors.fill: parent
-      anchors.margins: Style.marginL
-      z: 0
-      active: !!(root.needsCava && !root.showAlbumArt)
-      sourceComponent: visualizerSource
-    }
+    // Old loader removed from here
 
     property Component visualizerSource: {
       switch (root.visualizerType) {
@@ -235,6 +234,14 @@ SmartPanel {
         Layout.fillWidth: true
         Layout.fillHeight: true
 
+        // Visualizer background for content area
+        Loader {
+          anchors.fill: parent
+          z: 0
+          active: !!(root.needsCava && !root.showAlbumArt)
+          sourceComponent: visualizerSource
+        }
+
         GridLayout {
           anchors.fill: parent
           anchors.leftMargin: root.compactMode ? Style.marginL : Style.marginM
@@ -302,6 +309,8 @@ SmartPanel {
                     return NScrollText.ScrollMode.Hover;
                   return NScrollText.ScrollMode.Never;
                 }
+                gradientColor: Color.mSurfaceVariant
+                cornerRadius: Style.radiusM
 
                 delegate: NText {
                   pointSize: root.compactMode ? Style.fontSizeL : Style.fontSizeXL
@@ -331,6 +340,8 @@ SmartPanel {
                     return NScrollText.ScrollMode.Hover;
                   return NScrollText.ScrollMode.Never;
                 }
+                gradientColor: Color.mSurfaceVariant
+                cornerRadius: Style.radiusM
 
                 delegate: NText {
                   pointSize: root.compactMode ? Style.fontSizeS : Style.fontSizeM

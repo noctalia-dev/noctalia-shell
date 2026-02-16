@@ -18,6 +18,7 @@ ColumnLayout {
   property int fontWeight: Style.fontWeightRegular
   property var defaultValue: undefined
   property string settingsPath: ""
+  property real radius: Style.iRadiusM
   property real minimumInputWidth: 80 * Style.uiScaleRatio
   property bool showClearButton: true
 
@@ -64,7 +65,7 @@ ColumnLayout {
     background: Rectangle {
       id: frame
 
-      radius: Style.iRadiusM
+      radius: root.radius
       color: Color.mSurface
       border.color: input.activeFocus ? Color.mSecondary : Color.mOutline
       border.width: Style.borderS

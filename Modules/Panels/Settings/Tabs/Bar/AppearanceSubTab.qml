@@ -156,15 +156,15 @@ ColumnLayout {
     onToggled: checked => Settings.data.bar.showCapsule = checked
   }
 
-  NComboBox {
+  NColorChoice {
     Layout.fillWidth: true
     visible: Settings.data.bar.showCapsule
     label: I18n.tr("panels.bar.appearance-capsule-color-label")
     description: I18n.tr("panels.bar.appearance-capsule-color-description")
-    model: Color.colorKeyModel
+    noneColor: Color.mSurfaceVariant
+    noneOnColor: Color.mOnSurfaceVariant
     currentKey: Settings.data.bar.capsuleColorKey
     onSelected: key => Settings.data.bar.capsuleColorKey = key
-    minimumWidth: 200
   }
 
   NValueSlider {
@@ -284,6 +284,7 @@ ColumnLayout {
   NDivider {
     Layout.fillWidth: true
     Layout.topMargin: Style.marginS
+    visible: Settings.data.bar.displayMode === "auto_hide"
   }
 
   ColumnLayout {

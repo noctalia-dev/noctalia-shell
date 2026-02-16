@@ -84,7 +84,7 @@ SmartPanel {
     Hooks,
     Launcher,
     Location,
-    Network,
+    Connections,
     Notifications,
     Plugins,
     SessionMenu,

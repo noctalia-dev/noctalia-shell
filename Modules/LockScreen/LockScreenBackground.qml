@@ -1,7 +1,9 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import qs.Commons
 import qs.Services.Compositor
+import qs.Services.Power
 import qs.Services.UI
 
 Item {
@@ -10,6 +12,7 @@ Item {
 
   // Cached wallpaper path - exposed for parent components
   property string resolvedWallpaperPath: ""
+  property color tintColor: Settings.data.colorSchemes.darkMode ? Color.mSurface : Color.mOnSurface
 
   required property var screen
 
@@ -116,6 +119,21 @@ Item {
     smooth: true
     mipmap: false
     antialiasing: true
+
+    layer.enabled: true
+    layer.smooth: false
+    layer.effect: MultiEffect {
+      blurEnabled: !PowerProfileService.noctaliaPerformanceMode && (Settings.data.general.lockScreenBlur > 0)
+      blur: Settings.data.general.lockScreenBlur
+      blurMax: 48
+    }
+
+    // Tint overlay
+    Rectangle {
+      anchors.fill: parent
+      color: root.tintColor
+      opacity: Settings.data.general.lockScreenTint
+    }
   }
 
   Rectangle {
