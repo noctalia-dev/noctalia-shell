@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Notifications
 import Quickshell.Wayland
-import "../../../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Modules.MainScreen
 import qs.Services.System
@@ -825,7 +824,7 @@ SmartPanel {
                             text: model.summary || I18n.tr("common.no-summary")
                             pointSize: Style.fontSizeM
                             color: Color.mOnSurface
-                            textFormat: Text.PlainText
+                            textFormat: Text.StyledText
                             wrapMode: Text.Wrap
                             maximumLineCount: notificationDelegate.isExpanded ? 999 : 2
                             elide: Text.ElideRight
@@ -838,7 +837,7 @@ SmartPanel {
                             text: model.body || ""
                             pointSize: Style.fontSizeS
                             color: Color.mOnSurfaceVariant
-                            textFormat: Text.PlainText
+                            textFormat: Text.StyledText
                             wrapMode: Text.Wrap
                             maximumLineCount: notificationDelegate.isExpanded ? 999 : 3
                             elide: Text.ElideRight

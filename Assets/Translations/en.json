@@ -1084,6 +1084,8 @@
       "profile-select-avatar": "Select avatar image",
       "profile-title": "Profile",
       "profile-tooltip": "Profile picture",
+      "reverse-scrolling-description": "Reverse the interpreted scroll direction",
+      "reverse-scrolling-label": "Reverse scrolling",
       "screen-corners-desc": "Customize screen corner rounding and visual effects.",
       "screen-corners-radius-description": "Adjust the rounded corners of the screen.",
       "screen-corners-radius-label": "Screen corners radius",

@@ -378,6 +378,24 @@
     "subTabLabel": "common.bluetooth"
   },
   {
+    "labelKey": "bluetooth.panel.connected-devices",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
+    "labelKey": "bluetooth.panel.paired-devices",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 15,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
     "labelKey": "bluetooth.panel.available-devices",
     "descriptionKey": null,
     "widget": "NLabel",
@@ -690,6 +708,14 @@
     "labelKey": "panels.general.keybinds-title",
     "descriptionKey": "panels.general.keybinds-description",
     "widget": "NLabel",
+    "tab": 0,
+    "tabLabel": "common.general",
+    "subTab": null
+  },
+  {
+    "labelKey": "panels.general.reverse-scrolling-label",
+    "descriptionKey": "panels.general.reverse-scrolling-description",
+    "widget": "NToggle",
     "tab": 0,
     "tabLabel": "common.general",
     "subTab": null

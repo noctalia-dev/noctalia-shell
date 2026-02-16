@@ -426,8 +426,8 @@ Singleton {
 
     return {
       "id": id,
-      "summary": n.summary || "",
-      "body": stripTags(n.body || ""),
+      "summary": processNotificationText(n.summary || ""),
+      "body": processNotificationText(n.body || ""),
       "appName": getAppName(n.appName || n.desktopEntry || ""),
       "urgency": n.urgency < 0 || n.urgency > 2 ? 1 : n.urgency,
       "expireTimeout": n.expireTimeout,
@@ -737,8 +737,40 @@ Singleton {
     return ThemeIcons.iconFromName(icon);
   }
 
-  function stripTags(text) {
-    return text.replace(/<[^>]*>?/gm, '');
+  function escapeHtml(text) {
+    if (!text)
+      return "";
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function processNotificationText(text) {
+    if (!text)
+      return "";
+
+    // Split by tags to process segments separately
+    const parts = text.split(/(<[^>]+>)/);
+    let result = "";
+    const allowedTags = ["b", "i", "u", "a", "br"];
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part.startsWith("<") && part.endsWith(">")) {
+        const content = part.substring(1, part.length - 1);
+        const firstWord = content.split(/[\s/]/).filter(s => s.length > 0)[0]?.toLowerCase();
+
+        if (allowedTags.includes(firstWord)) {
+          // Preserve valid HTML tag
+          result += part;
+        } else {
+          // Unknown tag: strip brackets and escape inner content
+          result += escapeHtml(content);
+        }
+      } else {
+        // Normal text: escape everything
+        result += escapeHtml(part);
+      }
+    }
+    return result;
   }
 
   function generateImageId(notification, image) {

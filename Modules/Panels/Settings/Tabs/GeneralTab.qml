@@ -37,10 +37,24 @@ ColumnLayout {
     Layout.preferredHeight: Style.marginL
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.general.reverse-scrolling-label")
+    description: I18n.tr("panels.general.reverse-scrolling-description")
+    checked: Settings.data.general.reverseScroll
+    defaultValue: Settings.getDefaultValue("general.reverseScroll")
+    onToggled: checked => Settings.data.general.reverseScroll = checked
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+    Layout.topMargin: Style.marginM
+    Layout.bottomMargin: Style.marginM
+  }
+
   NTabView {
     id: tabView
     currentIndex: subTabBar.currentIndex
-
     BasicsSubTab {}
     KeybindsSubTab {}
   }

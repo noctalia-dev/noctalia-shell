@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Services.UI
 import qs.Widgets

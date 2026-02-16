@@ -63,10 +63,8 @@ NBox {
       Layout.leftMargin: Style.marginS
       spacing: Style.marginS
 
-      NText {
-        text: root.label
-        pointSize: Style.fontSizeM
-        font.weight: Style.fontWeightBold
+      NLabel {
+        label: root.label
         Layout.fillWidth: true
       }
     }

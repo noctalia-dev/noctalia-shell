@@ -124,6 +124,7 @@
         "Del"
       ]
     }
+    "reverseScroll": false,
   },
   "ui": {
     "fontDefault": "",

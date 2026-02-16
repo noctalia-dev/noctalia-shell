@@ -312,8 +312,7 @@ Singleton {
     try {
       if (adapter) {
         adapter.enabled = state;
-      }
-      else {
+      } else {
         btExec(["bluetoothctl", "power", state ? "on" : "off"]);
         root.ctlPowered = state;
         requestCtlPoll(ctlPollSoonMs);
@@ -331,8 +330,7 @@ Singleton {
     try {
       if (adapter) {
         adapter.discoverable = state;
-      }
-      else {
+      } else {
         btExec(["bluetoothctl", "discoverable", state ? "on" : "off"]);
         root.ctlDiscoverable = state; // optimistic
         requestCtlPoll(ctlPollSoonMs);

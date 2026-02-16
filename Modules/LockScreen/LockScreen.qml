@@ -4,7 +4,6 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pam
 import Quickshell.Wayland
-import "../../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Services.Compositor
 import qs.Services.Hardware

@@ -121,6 +121,7 @@ SmartPanel {
           anchors.fill: parent
           anchors.margins: Style.marginM
           spacing: Style.marginM
+
           RowLayout {
             NIcon {
               id: modeIcon
@@ -146,11 +147,8 @@ SmartPanel {
               }
             }
 
-            NText {
-              text: panelViewMode === "wifi" ? I18n.tr("common.wifi") : I18n.tr("common.ethernet")
-              pointSize: Style.fontSizeL
-              font.weight: Style.fontWeightBold
-              color: Color.mOnSurface
+            NLabel {
+              label: panelViewMode === "wifi" ? I18n.tr("common.wifi") : I18n.tr("common.ethernet")
               Layout.fillWidth: true
             }
 

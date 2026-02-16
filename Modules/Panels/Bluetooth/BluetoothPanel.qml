@@ -27,7 +27,7 @@ SmartPanel {
     ColumnLayout {
       id: mainColumn
       anchors.fill: parent
-      anchors.margins: Style.marginL
+      anchors.margins: Style.marginM
       spacing: Style.marginM
 
       // Header
@@ -39,7 +39,6 @@ SmartPanel {
           id: headerRow
           anchors.fill: parent
           anchors.margins: Style.marginM
-          spacing: Style.marginM
 
           NIcon {
             icon: BluetoothService.enabled ? "bluetooth" : "bluetooth-off"
@@ -47,11 +46,8 @@ SmartPanel {
             color: BluetoothService.enabled ? Color.mPrimary : Color.mOnSurfaceVariant
           }
 
-          NText {
-            text: I18n.tr("common.bluetooth")
-            pointSize: Style.fontSizeL
-            font.weight: Style.fontWeightBold
-            color: Color.mOnSurface
+          NLabel {
+            label: I18n.tr("common.bluetooth")
             Layout.fillWidth: true
           }
 

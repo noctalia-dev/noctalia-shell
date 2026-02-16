@@ -208,10 +208,8 @@ Item {
         anchors.rightMargin: showOnlyLists ? Style.marginM : 0
         spacing: Style.marginM
 
-        NText {
-          text: I18n.tr("bluetooth.panel.connected-devices")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
+        NLabel {
+          label: I18n.tr("bluetooth.panel.connected-devices")
           Layout.fillWidth: true
           Layout.leftMargin: Style.marginS
         }
@@ -240,10 +238,8 @@ Item {
         anchors.rightMargin: showOnlyLists ? Style.marginM : 0
         spacing: Style.marginM
 
-        NText {
-          text: I18n.tr("bluetooth.panel.paired-devices")
-          pointSize: Style.fontSizeL
-          font.weight: Style.fontWeightBold
+        NLabel {
+          label: I18n.tr("bluetooth.panel.paired-devices")
           Layout.fillWidth: true
           Layout.leftMargin: Style.marginS
         }

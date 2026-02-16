@@ -636,7 +636,7 @@ Variants {
                     pointSize: Style.fontSizeM
                     font.weight: Style.fontWeightMedium
                     color: Color.mOnSurface
-                    textFormat: Text.PlainText
+                    textFormat: Text.StyledText
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     maximumLineCount: 3
                     elide: Text.ElideRight
@@ -649,7 +649,7 @@ Variants {
                     text: model.body || ""
                     pointSize: Style.fontSizeM
                     color: Color.mOnSurface
-                    textFormat: Text.PlainText
+                    textFormat: Text.StyledText
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
 
                     maximumLineCount: 5
@@ -758,7 +758,7 @@ Variants {
                   pointSize: Style.fontSizeM
                   font.weight: Style.fontWeightMedium
                   color: Color.mOnSurface
-                  textFormat: Text.PlainText
+                  textFormat: Text.StyledText
                   maximumLineCount: 1
                   elide: Text.ElideRight
                   Layout.fillWidth: true
@@ -770,7 +770,7 @@ Variants {
                   text: model.body || ""
                   pointSize: Style.fontSizeS
                   color: Color.mOnSurfaceVariant
-                  textFormat: Text.PlainText
+                  textFormat: Text.StyledText
                   wrapMode: Text.Wrap
                   maximumLineCount: 2
                   elide: Text.ElideRight
