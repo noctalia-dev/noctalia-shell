@@ -151,7 +151,7 @@ ColumnLayout {
     visible: Settings.data.bar.useSeparateFontSize
     label: I18n.tr("panels.bar.appearance-separate-font-size-label")
     description: I18n.tr("panels.bar.appearance-separate-font-size-description")
-    from: 0.75
+    from: 0.50
     to: 1.25
     stepSize: 0.01
     value: Settings.data.bar.fontSize

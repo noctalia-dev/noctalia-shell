@@ -183,6 +183,10 @@ Singleton {
       property real backgroundOpacity: 0.93
       property bool useSeparateOpacity: false
 
+      // Bar font size settings
+      property real fontSize: 12
+      property bool useSeparateFontSize : false
+
       // Floating bar settings
       property bool floating: false
       property int marginVertical: 4

@@ -216,9 +216,9 @@ Singleton {
   // Get bar font size for a specific bar height, capsule height, and orientation or if custom bar font size is enabled default to it
 function getBarFontSizeForDensity(barHeight, capsuleHeight, isVertical) {
   if (Settings.data.bar.useSeparateFontSize) {
-    return Settings.data.bar.fontSize;
+    return Settings.data.bar.fontSize * Style.fontSizeXXL;
   }
-  
+
   const baseFontSize = Math.max(1, (barHeight / capsuleHeight) * Style.fontSizeXXS);
   return isVertical ? baseFontSize * 0.9 : baseFontSize;
 }
