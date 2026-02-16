@@ -183,12 +183,8 @@ in
 
   config = lib.mkIf cfg.enable {
     systemd.user.services.noctalia-shell = lib.mkIf cfg.systemd.enable {
-      Unit = {
-        Description = "Noctalia Shell - Wayland desktop shell";
-        Documentation = "https://docs.noctalia.dev";
-        PartOf = [ config.wayland.systemd.target ];
-        After = [ config.wayland.systemd.target ];
-        X-Restart-Triggers =
+      let
+        restartTriggers =
           lib.optional (cfg.settings != { }) config.xdg.configFile."noctalia/settings.json".source
           ++ lib.optional (cfg.colors != { }) config.xdg.configFile."noctalia/colors.json".source
           ++ lib.optional (cfg.plugins != { }) config.xdg.configFile."noctalia/plugins.json".source
@@ -196,8 +192,15 @@ in
             cfg.user-templates != { }
           ) config.xdg.configFile."noctalia/user-templates.toml".source
           ++ lib.mapAttrsToList (
-            name: value: config.xdg.configFile."noctalia/plugins/${name}/settings.json".source
+            name: _: config.xdg.configFile."noctalia/plugins/${name}/settings.json".source
           ) cfg.pluginSettings;
+      in
+      Unit = {
+        Description = "Noctalia Shell - Wayland desktop shell";
+        Documentation = "https://docs.noctalia.dev";
+        PartOf = [ config.wayland.systemd.target ];
+        After = [ config.wayland.systemd.target ];
+        X-Restart-Triggers = map toString restartTriggers;
       };
 
       Service = {
