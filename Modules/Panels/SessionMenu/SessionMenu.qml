@@ -868,6 +868,8 @@ SmartPanel {
           text: buttonRoot.title
           font.weight: Style.fontWeightMedium
           pointSize: Style.fontSizeM
+          wrapMode: Text.WordWrap
+          Layout.fillWidth: true
           color: {
             if (buttonRoot.pending)
               return Color.mPrimary;
@@ -1042,6 +1044,8 @@ SmartPanel {
         text: largeButtonRoot.title
         font.weight: Style.fontWeightMedium
         pointSize: Style.fontSizeL
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
         color: {
           if (largeButtonRoot.pending)
             return Color.mOnPrimary;
