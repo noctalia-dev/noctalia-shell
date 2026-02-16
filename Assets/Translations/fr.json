@@ -783,6 +783,8 @@
       "appearance-display-mode-description": "Choisir quand la barre est visible.",
       "appearance-floating-description": "Afficher la barre sous forme de 'pilule' flottante.",
       "appearance-floating-label": "Barre flottante",
+      "appearance-island-description": "Colle la barre au bord de l'écran avec des coins arrondis côté opposé et des marges latérales (style Dynamic Island).",
+      "appearance-island-label": "Mode island",
       "appearance-frame-radius": "Rayon interne",
       "appearance-frame-settings-description": "Ajuster l'épaisseur du cadre et le rayon interne",
       "appearance-frame-settings-label": "Paramètres du cadre",
