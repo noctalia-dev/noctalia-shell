@@ -169,7 +169,7 @@ ColumnLayout {
   ColumnLayout {
     Layout.fillWidth: true
     visible: _settings.enableOnStateLogic
-    spacing: (Style?.marginM ?? 8) * 2
+    spacing: Style?.marginM ?? 8
 
     NLabel {
       label: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-label")
@@ -180,7 +180,7 @@ ColumnLayout {
       delegate: Item {
         property int currentIndex: index
 
-        implicitHeight: contentRow.implicitHeight + ((divider.visible) ? divider.height : 0)
+        implicitHeight: contentRow.implicitHeight
         Layout.fillWidth: true
 
         RowLayout {
@@ -246,13 +246,11 @@ ColumnLayout {
             saveSettings();
           }
         }
-
-        NDivider {
-          id: divider
-          anchors.bottom: parent.bottom
-          visible: index < _settings._stateChecksListModel.count - 1 // Only show divider if not the last item
-        }
       }
+    }
+
+    Item {
+      Layout.fillWidth: true
     }
 
     RowLayout {
@@ -269,12 +267,6 @@ ColumnLayout {
           saveSettings();
         }
       }
-
-      Item {
-        Layout.fillWidth: true
-      }
     }
   }
-
-  NDivider {}
 }
