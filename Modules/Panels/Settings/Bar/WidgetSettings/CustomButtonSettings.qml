@@ -29,6 +29,7 @@ ColumnLayout {
   property bool valueEnableColorization: widgetData.enableColorization || false
   property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon || "none"
   property string valueIpcIdentifier: widgetData.ipcIdentifier !== undefined ? widgetData.ipcIdentifier : widgetMetadata.ipcIdentifier || ""
+  property string valueGeneralTooltipText: widgetData.generalTooltipText !== undefined ? widgetData.generalTooltipText : widgetMetadata.generalTooltipText || ""
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -62,6 +63,7 @@ ColumnLayout {
     settings.enableColorization = valueEnableColorization;
     settings.colorizeSystemIcon = valueColorizeSystemIcon;
     settings.ipcIdentifier = valueIpcIdentifier;
+    settings.generalTooltipText = valueGeneralTooltipText;
     settingsChanged(settings);
   }
 
@@ -126,6 +128,16 @@ ColumnLayout {
                   valueColorizeSystemIcon = key;
                   saveSettings();
                 }
+  }
+
+  NTextInput {
+    Layout.fillWidth: true
+    label: I18n.tr("bar.custom-button.general-tooltip-text-label")
+    description: I18n.tr("bar.custom-button.general-tooltip-text-description")
+    placeholderText: I18n.tr("placeholders.enter-tooltip")
+    text: valueGeneralTooltipText
+    onTextChanged: valueGeneralTooltipText = text
+    onEditingFinished: saveSettings()
   }
 
   NToggle {

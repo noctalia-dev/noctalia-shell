@@ -482,15 +482,12 @@ Singleton {
     id: pairingProcess
     stdout: SplitParser {
       onRead: data => {
-        if (data.indexOf("[PIN_REQ]") !== -1) {
+        Logger.d("Bluetooth", data)
+        if (data.indexOf("PIN_REQUIRED") !== -1) {
           root.pinRequired = true;
-          Logger.d("Bluetooth", "PIN required for pairing");
-          ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("bluetooth.panel.pin-required"), "lock");
+          Logger.i("Bluetooth", "PIN required for pairing");
         }
       }
-    }
-    stderr: SplitParser {
-      onRead: data => Logger.d("Bluetooth", data)
     }
     onExited: {
       root.pinRequired = false;
@@ -502,6 +499,9 @@ Singleton {
       root._discoveryWasRunning = false;
       root.requestCtlPoll();
     }
+    environment: ({
+      "LC_ALL": "C"
+    })
   }
 
   // Pair using bluetoothctl which registers its own BlueZ agent internally.

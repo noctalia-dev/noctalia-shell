@@ -70,9 +70,6 @@ SmartPanel {
   forceAttachToBar: hasBar
   exclusiveKeyboard: false
 
-  preferredWidth: dockContainerWrapper.width
-  preferredHeight: dockContainerWrapper.height
-
   // when dragging ended but the cursor is outside the dock area, restart the timer
   onDragSourceIndexChanged: {
     if (dragSourceIndex === -1) {

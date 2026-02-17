@@ -640,7 +640,7 @@ Item {
     }
   }
 
-  // PIN Authentication Overlay
+  // PIN Authentication Overlay (This part needs some love :P)
   Rectangle {
     id: pinOverlay
     visible: !root.showOnlyLists && BluetoothService.pinRequired

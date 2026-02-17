@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
+import errno
+import os
+import pty
+import select
+import subprocess
 import sys
 import time
-import subprocess
-import pty
-import os
-import select
-import errno
+# flake8: noqa: E501 # Line too long
+version = "0.0.2-1"
 
 
 def log(msg) -> None:
-    sys.stderr.write(f"[pair] {msg}\n")
+    sys.stdout.write(f"[pair] {msg}\n")
+    sys.stdout.flush()  # Flush to ensure the message is passed
 
 
 def pair_fast():
@@ -87,43 +90,44 @@ def pair_fast():
         out = read_output(timeout=0.5)
         if out:
             print(out, end='')
+            # Device not found yet
+            device_not_discovered: list[str] = [f"Device {addr} not available"]
+            if any(e in out for e in device_not_discovered):
+                log(f"Device {addr} is discovered yet...")
+                pair_wait_seconds += 30  # Add additional time for device discovery
+
+            # Confirm Passkey
             # Numberic Comparison (NC) 1 of 4 - Tested pairing with my iPhone.
-            if "Confirm passkey" in out or "yes/no" in out or "Request confirmation" in out:
+            expected_confirmation: list[str] = ["Confirm passkey", "yes/no", "Request confirmation"]
+            if any(e in out for e in expected_confirmation):
                 log("Detected passkey prompt. Sending 'yes'.")
                 send_command("yes")
 
             # Authorization Request
-            if "Authorize service" in out or "Request authorization" in out:
+            expected_auth: list[str] = ["Authorize service", "Request authorization"]
+            if any(e in out for e in expected_auth):
                 log("Detected authorization request. Sending 'yes'.")
                 send_command("yes")
 
-            # Passkey Display (User needs to type this on the remote device, e.g. Keyboard)
-            if "Passkey:" in out:
-                for line in out.splitlines():
-                    if "Passkey:" in line:
-                        log(f"ACTION REQUIRED: {line.strip()} (Type this on the device)")
-
             # Interactive PIN/Passkey Entry (Device displays code, User must enter on PC)
-            if "Enter passkey" in out or "Enter PIN code" in out:
+            expected_pin: list[str] = ["Enter passkey", "Enter PIN code", "Passkey: "]
+            if any(e in out for e in expected_pin):
                 log("Device requested PIN/Passkey. Waiting for user input...")
-                print("[PIN_REQ]")
-                sys.stdout.flush()
+                log("PIN_REQUIRED")  # Signal to service, to prompt user.
 
                 try:
                     # Read PIN from stdin (blocking)
                     user_pin = sys.stdin.readline().strip()
                     if user_pin:
-                        log(f"Sending PIN: {user_pin}")
+                        log(f"Received PIN: {user_pin}, relaying to bluetoothctl...")
                         send_command(user_pin)
-                    else:
-                        log("Empty PIN received. Aborting.")
-                        break
                 except Exception as e:
                     log(f"Error reading stdin: {e}")
                     break
 
             # Just Works (JW) is implicit (no prompt)
-            if "Pairing successful" in out or "Paired: yes" in out or "Bonded: yes" in out:
+            expected_success: list[str] = ["Pairing successful", "Paired: yes", "Bonded: yes"]
+            if any(e in out for e in expected_success):
                 paired = True
                 log("Pairing successful detected in stream.")
                 break
@@ -131,8 +135,9 @@ def pair_fast():
             if "Failed to pair" in out:
                 log("Pairing failed explicitly.")
                 break
-
-            if "Already joined" in out or "Already exists" in out:
+            
+            expected_already_paired: list[str] = ["Already joined", "Already exists"]
+            if any(e in out for e in expected_already_paired):
                 paired = True
                 log("Device already paired.")
                 break

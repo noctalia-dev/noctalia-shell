@@ -823,8 +823,8 @@ Singleton {
           // Preserve valid HTML tag
           result += part;
         } else {
-          // Unknown tag: strip brackets and escape inner content
-          result += escapeHtml(content);
+          // Unknown tag: drop tag without leaking attributes
+          result += "";
         }
       } else {
         // Normal text: escape everything

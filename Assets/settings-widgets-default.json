@@ -51,6 +51,9 @@
     "CustomButton": {
       "icon": "heart",
       "showIcon": true,
+      "showExecTooltip": true,
+      "showTextTooltip": true,
+      "generalTooltipText": "",
       "hideMode": "alwaysExpanded",
       "leftClickExec": "",
       "leftClickUpdateText": false,
@@ -234,9 +237,10 @@
       "onClicked": "",
       "onRightClicked": "",
       "onMiddleClicked": "",
-      "stateChecks": [],
-      "generalTooltipText": "Custom Button",
-      "enableOnStateLogic": false
+      "stateChecksJson": "[]",
+      "generalTooltipText": "",
+      "enableOnStateLogic": false,
+      "showExecTooltip": true
     }
   },
   "desktop": {

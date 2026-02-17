@@ -30,9 +30,10 @@ Singleton {
                                     "onClicked": "",
                                     "onRightClicked": "",
                                     "onMiddleClicked": "",
-                                    "stateChecks": [],
-                                    "generalTooltipText": "Custom Button",
-                                    "enableOnStateLogic": false
+                                    "stateChecksJson": "[]",
+                                    "generalTooltipText": "",
+                                    "enableOnStateLogic": false,
+                                    "showExecTooltip": true
                                   }
                                 })
 

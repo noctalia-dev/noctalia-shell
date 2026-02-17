@@ -444,7 +444,8 @@
   "brightness": {
     "brightnessStep": 5,
     "enforceMinimum": true,
-    "enableDdcSupport": false
+    "enableDdcSupport": false,
+    "syncAllMonitors": false
   },
   "colorSchemes": {
     "useWallpaperColors": false,
