@@ -10,6 +10,7 @@ Singleton {
 
   // Widget registry object mapping widget names to components
   property var widgets: ({
+                           "AirplaneMode": airplaneModeComponent,
                            "Bluetooth": bluetoothComponent,
                            "CustomButton": customButtonComponent,
                            "DarkMode": darkModeComponent,
@@ -37,6 +38,9 @@ Singleton {
                                 })
 
   // Component definitions - these are loaded once at startup
+  property Component airplaneModeComponent: Component {
+    AirplaneMode {}
+  }
   property Component bluetoothComponent: Component {
     Bluetooth {}
   }
