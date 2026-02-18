@@ -929,7 +929,7 @@
       "shortcuts-custom-button-on-state-icon-label": "On-state icon",
       "shortcuts-custom-button-show-exec-tooltip-description": "Show tooltips with command details (left/right/middle click).",
       "shortcuts-custom-button-show-exec-tooltip-label": "Show command tooltips",
-      "shortcuts-custom-button-state-checks-add": "Add State Check",
+      "shortcuts-custom-button-state-checks-add": "Add state check",
       "shortcuts-custom-button-state-checks-command": "Command to execute for this state check",
       "shortcuts-custom-button-state-checks-label": "State checks",
       "shortcuts-custom-button-state-checks-remove": "Remove",
