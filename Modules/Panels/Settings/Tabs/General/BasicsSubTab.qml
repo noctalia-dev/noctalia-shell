@@ -131,7 +131,7 @@ ColumnLayout {
             icon: "restore"
             baseSize: Style.baseWidgetSize * 0.8
             tooltipText: I18n.tr("panels.general.fonts-reset-scaling")
-            onClicked: Settings.data.ui.fontDefaultScale = 1.0
+            onClicked: Settings.data.ui.fontDefaultScale = Settings.getDefaultValue("ui.fontDefaultScale")
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
           }
@@ -164,7 +164,7 @@ ColumnLayout {
             icon: "restore"
             baseSize: Style.baseWidgetSize * 0.8
             tooltipText: I18n.tr("panels.general.fonts-reset-scaling")
-            onClicked: Settings.data.ui.fontFixedScale = 1.0
+            onClicked: Settings.data.ui.fontFixedScale = Settings.getDefaultValue("ui.fontFixedScale")
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
           }

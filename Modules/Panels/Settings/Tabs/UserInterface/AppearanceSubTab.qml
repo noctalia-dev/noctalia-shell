@@ -127,7 +127,7 @@ ColumnLayout {
         icon: "restore"
         baseSize: Style.baseWidgetSize * 0.8
         tooltipText: I18n.tr("panels.user-interface.scaling-reset-scaling")
-        onClicked: Settings.data.general.scaleRatio = 1.0
+        onClicked: Settings.data.general.scaleRatio = Settings.getDefaultValue("general.scaleRatio")
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
       }
@@ -163,7 +163,7 @@ ColumnLayout {
         icon: "restore"
         baseSize: Style.baseWidgetSize * 0.8
         tooltipText: I18n.tr("panels.user-interface.box-border-radius-reset")
-        onClicked: Settings.data.general.radiusRatio = 1.0
+        onClicked: Settings.data.general.radiusRatio = Settings.getDefaultValue("general.radiusRatio")
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
       }
@@ -195,7 +195,7 @@ ColumnLayout {
         icon: "restore"
         baseSize: Style.baseWidgetSize * 0.8
         tooltipText: I18n.tr("panels.user-interface.control-border-radius-reset")
-        onClicked: Settings.data.general.iRadiusRatio = 1.0
+        onClicked: Settings.data.general.iRadiusRatio = Settings.getDefaultValue("general.iRadiusRatio")
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
       }
@@ -248,7 +248,7 @@ ColumnLayout {
             icon: "restore"
             baseSize: Style.baseWidgetSize * 0.8
             tooltipText: I18n.tr("panels.user-interface.animation-speed-reset")
-            onClicked: Settings.data.general.animationSpeed = 1.0
+            onClicked: Settings.data.general.animationSpeed = Settings.getDefaultValue("general.animationSpeed")
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
           }

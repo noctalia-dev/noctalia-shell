@@ -42,7 +42,7 @@ ColumnLayout {
         icon: "restore"
         baseSize: Style.baseWidgetSize * 0.8
         tooltipText: I18n.tr("panels.notifications.duration-reset")
-        onClicked: Settings.data.notifications.lowUrgencyDuration = 3
+        onClicked: Settings.data.notifications.lowUrgencyDuration = Settings.getDefaultValue("notifications.lowUrgencyDuration")
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
       }
@@ -74,7 +74,7 @@ ColumnLayout {
         icon: "restore"
         baseSize: Style.baseWidgetSize * 0.8
         tooltipText: I18n.tr("panels.notifications.duration-reset")
-        onClicked: Settings.data.notifications.normalUrgencyDuration = 8
+        onClicked: Settings.data.notifications.normalUrgencyDuration = Settings.getDefaultValue("notifications.normalUrgencyDuration")
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
       }
@@ -106,7 +106,7 @@ ColumnLayout {
         icon: "restore"
         baseSize: Style.baseWidgetSize * 0.8
         tooltipText: I18n.tr("panels.notifications.duration-reset")
-        onClicked: Settings.data.notifications.criticalUrgencyDuration = 15
+        onClicked: Settings.data.notifications.criticalUrgencyDuration = Settings.getDefaultValue("notifications.criticalUrgencyDuration")
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
       }
