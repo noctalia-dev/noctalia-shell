@@ -25,27 +25,38 @@ FloatingWindow {
 
   property bool isInitialized: false
 
+  // Navigate to a specific tab and optional subtab.
+  // Works whether the window is already visible or just becoming visible.
+  function navigateTo(tab, subTab) {
+    const tabId = tab !== undefined ? tab : 0;
+    const subTabId = (subTab !== undefined && subTab !== null && subTab >= 0) ? subTab : -1;
+    if (isInitialized) {
+      settingsContent.navigateToTab(tabId, subTabId);
+    } else {
+      settingsContent.requestedTab = tabId;
+      if (subTabId >= 0)
+        settingsContent._pendingSubTab = subTabId;
+      settingsContent.initialize();
+      isInitialized = true;
+    }
+  }
+
+  // Navigate to a search result entry.
+  // Works whether the window is already visible or just becoming visible.
+  function navigateToEntry(entry) {
+    if (isInitialized) {
+      Qt.callLater(() => settingsContent.navigateToResult(entry));
+    } else {
+      settingsContent.requestedTab = entry.tab;
+      settingsContent.initialize();
+      Qt.callLater(() => settingsContent.navigateToResult(entry));
+      isInitialized = true;
+    }
+  }
+
   // Sync visibility with service
   onVisibleChanged: {
     if (visible) {
-      if (!isInitialized) {
-        // Check if we have a search entry to navigate to
-        if (SettingsPanelService.requestedEntry) {
-          const entry = SettingsPanelService.requestedEntry;
-          SettingsPanelService.requestedEntry = null;
-          settingsContent.requestedTab = entry.tab;
-          settingsContent.initialize();
-          Qt.callLater(() => settingsContent.navigateToResult(entry));
-        } else {
-          settingsContent.requestedTab = SettingsPanelService.requestedTab;
-          if (SettingsPanelService.requestedSubTab >= 0) {
-            settingsContent._pendingSubTab = SettingsPanelService.requestedSubTab;
-            SettingsPanelService.requestedSubTab = -1;
-          }
-          settingsContent.initialize();
-        }
-        isInitialized = true;
-      }
       SettingsPanelService.isWindowOpen = true;
     } else {
       isInitialized = false;
