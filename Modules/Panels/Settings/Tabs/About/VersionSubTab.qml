@@ -529,7 +529,8 @@ ColumnLayout {
       outlined: true
       Layout.alignment: Qt.AlignHCenter
       onClicked: {
-        var screen = PanelService.openedPanel?.screen || Quickshell.screens[0];
+        var screen = PanelService.openedPanel?.screen || SettingsPanelService.settingsWindow?.screen || PanelService.findScreenForPanels();
+        SettingsPanelService.close(screen);
         UpdateService.viewChangelog(screen);
       }
     }
