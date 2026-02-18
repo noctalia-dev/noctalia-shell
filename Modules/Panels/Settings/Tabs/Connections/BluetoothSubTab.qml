@@ -124,11 +124,11 @@ Item {
 
   Component.onDestruction: {
     // Ensure scanning is stopped when component is closed
-    if (isScanningActive) {
+    if (isScanningActive && !showOnlyLists) {
       BluetoothService.setScanActive(false);
     }
     // Ensure discoverable is disabled when component is closed
-    if (isDiscoverable) {
+    if (isDiscoverable && !showOnlyLists) {
       BluetoothService.setDiscoverable(false);
     }
     Logger.d("BluetoothPrefs", "Panel closed");

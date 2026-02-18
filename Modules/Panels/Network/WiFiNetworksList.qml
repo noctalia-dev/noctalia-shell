@@ -154,8 +154,8 @@ NBox {
                   visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
                   color: NetworkService.internetConnectivity ? Color.mPrimary : Color.mError
                   radius: height * 0.5
-                  width: connectedText.implicitWidth + Style.marginS * 2
-                  height: connectedText.implicitHeight + Style.marginXS
+                  width: Math.round(connectedText.implicitWidth + Style.marginS * 2)
+                  height: Math.round(connectedText.implicitHeight + Style.marginXS)
 
                   NText {
                     id: connectedText
@@ -184,8 +184,8 @@ NBox {
                   visible: NetworkService.disconnectingFrom === modelData.ssid
                   color: Color.mError
                   radius: height * 0.5
-                  width: disconnectingText.implicitWidth + Style.marginS * 2
-                  height: disconnectingText.implicitHeight + Style.marginXS
+                  width: Math.round(disconnectingText.implicitWidth + Style.marginS * 2)
+                  height: Math.round(disconnectingText.implicitHeight + Style.marginXS)
 
                   NText {
                     id: disconnectingText
@@ -200,8 +200,8 @@ NBox {
                   visible: NetworkService.forgettingNetwork === modelData.ssid
                   color: Color.mError
                   radius: height * 0.5
-                  width: forgettingText.implicitWidth + Style.marginS * 2
-                  height: forgettingText.implicitHeight + Style.marginXS
+                  width: Math.round(forgettingText.implicitWidth + Style.marginS * 2)
+                  height: math.round(forgettingText.implicitHeight + Style.marginXS)
 
                   NText {
                     id: forgettingText
