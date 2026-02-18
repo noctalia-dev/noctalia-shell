@@ -69,6 +69,7 @@
       ]
     },
     "mouseWheelAction": "none",
+    "reverseScroll": false,
     "screenOverrides": []
   },
   "general": {

@@ -382,7 +382,7 @@ Item {
             var step = 120;
             if (Math.abs(bar.barWheelAccumulatedDelta) >= step) {
               var direction = bar.barWheelAccumulatedDelta > 0 ? -1 : 1;
-              if (Settings.data.general.reverseScroll)
+              if (Settings.data.bar.reverseScroll)
                 direction *= -1;
               if (bar.barWheelAction === "workspace") {
                 bar.switchWorkspaceByOffset(direction);

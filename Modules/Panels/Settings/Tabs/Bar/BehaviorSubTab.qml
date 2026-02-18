@@ -39,4 +39,14 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("bar.mouseWheelAction")
     onSelected: key => Settings.data.bar.mouseWheelAction = key
   }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.general.reverse-scrolling-label")
+    description: I18n.tr("panels.general.reverse-scrolling-description")
+    checked: Settings.data.bar.reverseScroll
+    defaultValue: Settings.getDefaultValue("bar.reverseScroll")
+    onToggled: checked => Settings.data.bar.reverseScroll = checked
+    visible: Settings.data.bar.mouseWheelAction !== "none"
+  }
 }
