@@ -231,10 +231,10 @@ Item {
           lines.push(I18n.tr("bar.custom-button.wheel-label") + `: ${wheelExec}`);
         } else if (wheelMode === "separate") {
           if (wheelUpExec !== "") {
-            lines.push("bar.custom-button.wheel-up") + `: ${wheelUpExec}`);
+            lines.push(I18n.tr("bar.custom-button.wheel-up") + `: ${wheelUpExec}`);
           }
           if (wheelDownExec !== "") {
-            lines.push("bar.custom-button.wheel-down") + `Wheel down: ${wheelDownExec}`);
+            lines.push(I18n.tr("bar.custom-button.wheel-down") + `Wheel down: ${wheelDownExec}`);
           }
         }
       }

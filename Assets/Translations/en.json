@@ -920,7 +920,7 @@
       "shortcuts-custom-button-on-state-command-label": "On-state check command",
       "shortcuts-custom-button-on-state-icon-description": "The icon for the button when it's in the 'on' state.",
       "shortcuts-custom-button-on-state-icon-label": "On-state icon",
-      "shortcuts-custom-button-state-checks-add": "Add State Check",
+      "shortcuts-custom-button-state-checks-add": "Add state check",
       "shortcuts-custom-button-state-checks-command": "Command to execute for this state check",
       "shortcuts-custom-button-state-checks-label": "State checks",
       "shortcuts-custom-button-state-checks-remove": "Remove",
