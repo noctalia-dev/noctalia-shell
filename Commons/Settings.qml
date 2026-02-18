@@ -591,6 +591,11 @@ Singleton {
           "action": "shutdown",
           "enabled": true,
           "keybind": "6"
+        },
+        {
+          "action": "rebootToUefi",
+          "enabled": true,
+          "keybind": "7"
         }
       ]
     }
