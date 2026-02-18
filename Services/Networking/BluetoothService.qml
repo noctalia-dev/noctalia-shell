@@ -66,6 +66,8 @@ Singleton {
   // Internal: temporarily pause discovery during pair/connect to reduce HCI churn
   property bool _discoveryWasRunning: false
   property bool _ctlInit: false
+  // Track whether the bluetoothctl CLI is available on the system
+  property bool ctlBinaryAvailable: false
 
   Timer {
     id: initDelayTimer
@@ -182,7 +184,7 @@ Singleton {
     id: ctlPollTimer
     interval: adapter ? ctlPollMs : 2000
     repeat: true
-    running: true
+    running: adapter || root.ctlBinaryAvailable
     onTriggered: {
       pollCtlState();
       var targetInterval = adapter ? ctlPollMs : 2000;
@@ -193,17 +195,46 @@ Singleton {
   }
 
   function requestCtlPoll(delayMs) {
+    if (!adapter && !root.ctlBinaryAvailable) {
+      return;
+    }
     ctlPollTimer.interval = Math.max(50, delayMs || ctlPollSoonMs);
     ctlPollTimer.restart();
   }
 
   function pollCtlState() {
+    if (!adapter && !root.ctlBinaryAvailable) {
+      return;
+    }
     if (ctlShowProcess.running) {
       return;
     }
     try {
       ctlShowProcess.running = true;
     } catch (_) {}
+  }
+
+  // One-time detection of bluetoothctl binary presence to avoid spamming logs on systems without Bluetooth
+  Process {
+    id: ctlBinaryCheck
+    running: true
+    command: ["sh", "-c", "command -v bluetoothctl >/dev/null 2>&1 && echo yes || echo no"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var available = (text || "").trim() === "yes";
+        root.ctlBinaryAvailable = available;
+        if (!available) {
+          Logger.i("Bluetooth", "bluetoothctl not found; disabling CLI fallback polling");
+        }
+      }
+    }
+    stderr: StdioCollector {
+      onStreamFinished: {
+        if (text && text.trim()) {
+          Logger.d("Bluetooth", "bluetoothctl check stderr:", text.trim());
+        }
+      }
+    }
   }
 
   // bluetoothctl state polling
@@ -280,6 +311,10 @@ Singleton {
 
   // Unify discovery controls
   function setScanActive(active) {
+    if (!adapter && !root.ctlBinaryAvailable) {
+      Logger.d("Bluetooth", "Scan request ignored: bluetoothctl unavailable");
+      return;
+    }
     var nativeSuccess = false;
     try {
       if (adapter && adapter.discovering !== undefined) {
@@ -309,6 +344,10 @@ Singleton {
   // Adapter power (enable/disable) via bluetoothctl
   function setBluetoothEnabled(state) {
     Logger.i("Bluetooth", "SetBluetoothEnabled", state);
+    if (!adapter && !root.ctlBinaryAvailable) {
+      Logger.i("Bluetooth", "Enable/Disable skipped: no adapter or bluetoothctl");
+      return;
+    }
     try {
       if (adapter) {
         adapter.enabled = state;
@@ -327,6 +366,10 @@ Singleton {
 
   // Toggle adapter discoverability (advertising visibility) via bluetoothctl
   function setDiscoverable(state) {
+    if (!adapter && !root.ctlBinaryAvailable) {
+      Logger.d("Bluetooth", "Discoverable change skipped: no adapter or bluetoothctl");
+      return;
+    }
     try {
       if (adapter) {
         adapter.discoverable = state;
