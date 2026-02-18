@@ -252,7 +252,6 @@ Singleton {
           }
         ]
       }
-      property bool enableWorkspaceScroll: false
       property string mouseWheelAction: "none"
       // Per-screen overrides for position and widgets
       // Format: [{ "name": "HDMI-1", "position": "left" }, { "name": "DP-1", "position": "bottom", "widgets": {...} }]

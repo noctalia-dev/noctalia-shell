@@ -68,7 +68,6 @@
         }
       ]
     },
-    "enableWorkspaceScroll": false,
     "mouseWheelAction": "none",
     "screenOverrides": []
   },

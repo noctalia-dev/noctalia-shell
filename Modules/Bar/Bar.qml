@@ -185,9 +185,7 @@ Item {
         property int barWheelAccumulatedDelta: 0
         property bool barWheelCooldown: false
         readonly property string barWheelAction: {
-          if (Settings.data.bar.mouseWheelAction !== undefined && Settings.data.bar.mouseWheelAction !== "")
-            return Settings.data.bar.mouseWheelAction;
-          return Settings.data.bar.enableWorkspaceScroll ? "workspace" : "none";
+          return Settings.data.bar.mouseWheelAction || "none";
         }
 
         // Position and size the bar content based on orientation
@@ -367,7 +365,7 @@ Item {
           id: barWheelHandler
           target: bar
           acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-          enabled: bar.barWheelAction === "workspace"
+          enabled: bar.barWheelAction !== "none"
           
           onWheel: function (event) {
             if (bar.barWheelCooldown)
@@ -386,7 +384,11 @@ Item {
               var direction = bar.barWheelAccumulatedDelta > 0 ? -1 : 1;
               if (Settings.data.general.reverseScroll)
                 direction *= -1;
-              bar.switchWorkspaceByOffset(direction);
+              if (bar.barWheelAction === "workspace") {
+                bar.switchWorkspaceByOffset(direction);
+              } else if (bar.barWheelAction === "content") {
+                CompositorService.scrollWorkspaceContent(direction);
+              }
               bar.barWheelCooldown = true;
               barWheelDebounce.restart();
               bar.barWheelAccumulatedDelta = 0;

@@ -10,11 +10,7 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-  readonly property string effectiveWheelAction: {
-    if (Settings.data.bar.mouseWheelAction !== undefined && Settings.data.bar.mouseWheelAction !== "")
-      return Settings.data.bar.mouseWheelAction;
-    return Settings.data.bar.enableWorkspaceScroll ? "workspace" : "none";
-  }
+  readonly property string effectiveWheelAction: Settings.data.bar.mouseWheelAction || "none"
 
   NComboBox {
     Layout.fillWidth: true
@@ -41,9 +37,6 @@ ColumnLayout {
     }
     currentKey: root.effectiveWheelAction
     defaultValue: Settings.getDefaultValue("bar.mouseWheelAction")
-    onSelected: key => {
-                  Settings.data.bar.mouseWheelAction = key;
-                  Settings.data.bar.enableWorkspaceScroll = (key === "workspace");
-                }
+    onSelected: key => Settings.data.bar.mouseWheelAction = key
   }
 }
