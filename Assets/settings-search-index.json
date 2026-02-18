@@ -1054,6 +1054,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.lock-screen.password-chars-label",
+    "descriptionKey": "panels.lock-screen.password-chars-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.lock-screen.lock-on-suspend-label",
     "descriptionKey": "panels.lock-screen.lock-on-suspend-description",
     "widget": "NToggle",

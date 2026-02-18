@@ -47,6 +47,7 @@ Singleton {
   readonly property int borderL: Math.max(1, Math.round(3 * uiScaleRatio))
 
   // Margins (for margins and spacing)
+  readonly property int marginXXXS: Math.round(1 * uiScaleRatio)
   readonly property int marginXXS: Math.round(2 * uiScaleRatio)
   readonly property int marginXS: Math.round(4 * uiScaleRatio)
   readonly property int marginS: Math.round(6 * uiScaleRatio)

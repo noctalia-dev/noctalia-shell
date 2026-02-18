@@ -1279,6 +1279,8 @@
       "lock-screen-tint-strength-description": "Applies a tint overlay to the lock screen wallpaper.",
       "lock-screen-tint-strength-label": "Lock screen tint strength",
       "monitors-desc": "Show lock screen on specific monitors. Defaults to all if none are chosen.",
+      "password-chars-description": "Cute icons used to hide your password.",
+      "password-chars-label": "Hidden password icons",
       "show-hibernate-description": "Show the option 'hibernate' in the power controls.",
       "show-hibernate-label": "Show hibernate",
       "show-session-buttons-description": "Allow access to power settings from the lock screen.",
