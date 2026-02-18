@@ -496,6 +496,17 @@ Item {
     }
   }
 
+  // browser tab switches change the title without changing focus.
+  // This backend mostly refreshes on focus/raw IPC events, so title-only updates
+  // can be missed on Sway/Scroll unless we listen to titleChanged directly.
+  Connections {
+    target: ToplevelManager ? ToplevelManager.activeToplevel : null
+    enabled: initialized
+    function onTitleChanged() {
+      updateTimer.restart();
+    }
+  }
+
   Connections {
     target: I3
     enabled: initialized
