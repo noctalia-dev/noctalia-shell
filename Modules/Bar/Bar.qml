@@ -319,9 +319,15 @@ Item {
           if (current < 0)
             current = 0;
 
-          var next = (current + offset) % candidates.length;
-          if (next < 0)
-            next = candidates.length - 1;
+          var next = current + offset;
+          if (Settings.data.bar.mouseWheelWrap) {
+            next = next % candidates.length;
+            if (next < 0)
+              next = candidates.length - 1;
+          } else {
+            if (next < 0 || next >= candidates.length)
+              return;
+          }
 
           CompositorService.switchToWorkspace(candidates[next]);
         }

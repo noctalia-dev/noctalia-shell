@@ -49,4 +49,14 @@ ColumnLayout {
     onToggled: checked => Settings.data.bar.reverseScroll = checked
     visible: Settings.data.bar.mouseWheelAction !== "none"
   }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.behavior-wheel-wrap-label")
+    description: I18n.tr("panels.bar.behavior-wheel-wrap-description")
+    checked: Settings.data.bar.mouseWheelWrap
+    defaultValue: Settings.getDefaultValue("bar.mouseWheelWrap")
+    onToggled: checked => Settings.data.bar.mouseWheelWrap = checked
+    visible: Settings.data.bar.mouseWheelAction === "workspace"
+  }
 }

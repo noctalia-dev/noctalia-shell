@@ -254,6 +254,7 @@ Singleton {
       }
       property string mouseWheelAction: "none"
       property bool reverseScroll: false
+      property bool mouseWheelWrap: true
       // Per-screen overrides for position and widgets
       // Format: [{ "name": "HDMI-1", "position": "left" }, { "name": "DP-1", "position": "bottom", "widgets": {...} }]
       property list<var> screenOverrides: []

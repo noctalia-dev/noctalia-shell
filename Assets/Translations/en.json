@@ -829,6 +829,8 @@
       "appearance-widget-spacing-label": "Widget spacing",
       "behavior-workspace-scroll-description": "Choose what the mouse wheel does on empty areas of the bar.",
       "behavior-workspace-scroll-label": "Bar mouse wheel action",
+      "behavior-wheel-wrap-description": "When enabled, scrolling continues from the last item to the first.",
+      "behavior-wheel-wrap-label": "Wrap around",
       "monitor-configure-widgets": "Configure widgets",
       "monitor-override-settings": "Override global settings",
       "monitor-override-settings-description": "Use custom settings for this monitor.",
