@@ -502,6 +502,7 @@ Variants {
 
             function runAction(actionId, isDismissed) {
               if (!isDismissed) {
+                NotificationService.focusSenderWindow(model.appName);
                 NotificationService.invokeActionAndSuppressClose(notificationId, actionId);
               } else if (Settings.data.notifications.clearDismissed) {
                 NotificationService.removeFromHistory(notificationId);
