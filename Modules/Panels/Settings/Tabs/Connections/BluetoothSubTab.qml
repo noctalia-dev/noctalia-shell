@@ -113,10 +113,10 @@ Item {
       }
     } else {
       Logger.d("BluetoothPrefs", "Panel/tab inactive");
-      if (isScanningActive) {
+      if (isScanningActive && !showOnlyLists) {
         BluetoothService.setScanActive(false);
       }
-      if (isDiscoverable) {
+      if (isDiscoverable && !showOnlyLists) {
         BluetoothService.setDiscoverable(false);
       }
     }
@@ -204,8 +204,8 @@ Item {
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
-        anchors.leftMargin: showOnlyLists ? Style.marginM : 0
-        anchors.rightMargin: showOnlyLists ? Style.marginM : 0
+        anchors.leftMargin: showOnlyLists ? Style.marginL : 0
+        anchors.rightMargin: showOnlyLists ? Style.marginL : 0
         spacing: Style.marginM
 
         NLabel {
@@ -234,8 +234,8 @@ Item {
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
-        anchors.leftMargin: showOnlyLists ? Style.marginM : 0
-        anchors.rightMargin: showOnlyLists ? Style.marginM : 0
+        anchors.leftMargin: showOnlyLists ? Style.marginL : 0
+        anchors.rightMargin: showOnlyLists ? Style.marginL : 0
         spacing: Style.marginM
 
         NLabel {
@@ -264,8 +264,6 @@ Item {
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
-        anchors.leftMargin: showOnlyLists ? Style.marginM : 0
-        anchors.rightMargin: showOnlyLists ? Style.marginM : 0
         spacing: Style.marginM
 
         RowLayout {

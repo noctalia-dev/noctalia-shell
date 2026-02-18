@@ -27,7 +27,7 @@ SmartPanel {
     ColumnLayout {
       id: mainColumn
       anchors.fill: parent
-      anchors.margins: Style.marginM
+      anchors.margins: Style.marginL
       spacing: Style.marginM
 
       // Header

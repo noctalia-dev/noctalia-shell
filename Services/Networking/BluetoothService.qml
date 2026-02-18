@@ -313,9 +313,8 @@ Singleton {
       if (adapter) {
         adapter.enabled = state;
       } else {
-        btExec(["bluetoothctl", "power", state ? "on" : "off"]);
         root.ctlPowered = state;
-        requestCtlPoll(ctlPollSoonMs);
+        btExec(["bluetoothctl", "power", state ? "on" : "off"]);
         ToastService.showNotice(I18n.tr("common.bluetooth"), state ? I18n.tr("common.enabled") : I18n.tr("common.disabled"), state ? "bluetooth" : "bluetooth-off");
         Logger.d("Bluetooth", state ? "Adapter enabled" : "Adapter disabled");
       }
