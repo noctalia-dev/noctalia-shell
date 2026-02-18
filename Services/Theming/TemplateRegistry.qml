@@ -303,6 +303,18 @@ Singleton {
       "input": "emacs.el"
     },
     {
+      "id": "labwc",
+      "name": "Labwc",
+      "category": "compositor",
+      "input": "labwc.conf",
+      "outputs": [
+        {
+          "path": "~/.config/labwc/themerc-override"
+        }
+      ],
+      "postProcess": () => `${templateApplyScript} labwc`
+    },
+    {
       "id": "niri",
       "name": "Niri",
       "category": "compositor",
