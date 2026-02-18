@@ -184,6 +184,11 @@ Item {
         // Wheel scroll handling (empty bar area)
         property int barWheelAccumulatedDelta: 0
         property bool barWheelCooldown: false
+        readonly property string barWheelAction: {
+          if (Settings.data.bar.mouseWheelAction !== undefined && Settings.data.bar.mouseWheelAction !== "")
+            return Settings.data.bar.mouseWheelAction;
+          return Settings.data.bar.enableWorkspaceScroll ? "workspace" : "none";
+        }
 
         // Position and size the bar content based on orientation
         x: (root.barPosition === "right") ? (parent.width - root.barHeight) : 0
@@ -362,7 +367,7 @@ Item {
           id: barWheelHandler
           target: bar
           acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-          enabled: Settings.data.bar.enableWorkspaceScroll
+          enabled: bar.barWheelAction === "workspace"
           
           onWheel: function (event) {
             if (bar.barWheelCooldown)
