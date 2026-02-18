@@ -68,6 +68,7 @@
         }
       ]
     },
+    "enableWorkspaceScroll": false,
     "screenOverrides": []
   },
   "general": {
