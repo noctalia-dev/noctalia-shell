@@ -655,7 +655,6 @@ Singleton {
       property int brightnessStep: 5
       property bool enforceMinimum: true
       property bool enableDdcSupport: false
-      property bool syncAllMonitors: false
     }
 
     property JsonObject colorSchemes: JsonObject {

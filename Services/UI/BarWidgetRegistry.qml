@@ -107,7 +107,7 @@ Singleton {
                                     "displayMode": "onhover",
                                     "iconColor": "none",
                                     "textColor": "none",
-                                    "applyScrollToAllMonitors": false
+                                    "applyToAllMonitors": false
                                   },
                                   "Clock": {
                                     "clockColor": "none",

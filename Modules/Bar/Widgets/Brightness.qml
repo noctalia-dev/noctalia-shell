@@ -37,7 +37,7 @@ Item {
   readonly property string displayMode: (widgetSettings.displayMode !== undefined) ? widgetSettings.displayMode : widgetMetadata.displayMode
   readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
   readonly property string textColorKey: widgetSettings.textColor !== undefined ? widgetSettings.textColor : widgetMetadata.textColor
-  readonly property bool applyScrollToAllMonitors: widgetSettings.applyScrollToAllMonitors !== undefined ? widgetSettings.applyScrollToAllMonitors : (Settings.data.brightness.syncAllMonitors !== undefined ? Settings.data.brightness.syncAllMonitors : widgetMetadata.applyScrollToAllMonitors)
+  readonly property bool applyToAllMonitors: widgetSettings.applyToAllMonitors !== undefined ? widgetSettings.applyToAllMonitors : (Settings.data.brightness.syncAllMonitors !== undefined ? Settings.data.brightness.syncAllMonitors : widgetMetadata.applyToAllMonitors)
   readonly property bool reverseScroll: Settings.data.general.reverseScroll
 
   // Used to avoid opening the pill on Quickshell startup
@@ -181,7 +181,7 @@ Item {
       if (angle === 0)
         return;
 
-      var shouldApplyToAll = root.applyScrollToAllMonitors && root.getControllableMonitorCount() > 1;
+      var shouldApplyToAll = root.applyToAllMonitors && root.getControllableMonitorCount() > 1;
       if (shouldApplyToAll) {
         var direction = angle > 0 ? 1 : -1;
         var baseValue = !isNaN(monitor.queuedBrightness) ? monitor.queuedBrightness : monitor.brightness;

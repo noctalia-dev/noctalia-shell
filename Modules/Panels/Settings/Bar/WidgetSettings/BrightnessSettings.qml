@@ -20,7 +20,7 @@ ColumnLayout {
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
   property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
   property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
-  property bool valueApplyScrollToAllMonitors: widgetData.applyScrollToAllMonitors !== undefined ? widgetData.applyScrollToAllMonitors : (Settings.data.brightness.syncAllMonitors !== undefined ? Settings.data.brightness.syncAllMonitors : widgetMetadata.applyScrollToAllMonitors)
+  property bool valueApplyToAllMonitors: widgetData.applyToAllMonitors !== undefined ? widgetData.applyToAllMonitors : (Settings.data.brightness.syncAllMonitors !== undefined ? Settings.data.brightness.syncAllMonitors : widgetMetadata.applyToAllMonitors)
 
   readonly property bool hasMultipleMonitors: (Quickshell.screens || []).length > 1
 
@@ -29,8 +29,7 @@ ColumnLayout {
     settings.displayMode = valueDisplayMode;
     settings.iconColor = valueIconColor;
     settings.textColor = valueTextColor;
-    settings.applyScrollToAllMonitors = valueApplyScrollToAllMonitors;
-    Settings.data.brightness.syncAllMonitors = valueApplyScrollToAllMonitors;
+    settings.applyToAllMonitors = valueApplyToAllMonitors;
     settingsChanged(settings);
   }
 
@@ -79,13 +78,13 @@ ColumnLayout {
   NToggle {
     visible: hasMultipleMonitors
     Layout.fillWidth: true
-    label: I18n.tr("bar.brightness.apply-scroll-all-label")
-    description: I18n.tr("bar.brightness.apply-scroll-all-description")
-    checked: valueApplyScrollToAllMonitors
+    label: I18n.tr("bar.brightness.apply-all-label")
+    description: I18n.tr("bar.brightness.apply-all-description")
+    checked: valueApplyToAllMonitors
     onToggled: checked => {
-                 valueApplyScrollToAllMonitors = checked;
+                 valueApplyToAllMonitors = checked;
                  saveSettings();
                }
-    defaultValue: widgetMetadata.applyScrollToAllMonitors
+    defaultValue: widgetMetadata.applyToAllMonitors
   }
 }

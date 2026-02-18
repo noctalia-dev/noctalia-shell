@@ -65,8 +65,8 @@
       "show-power-profile-label": "Show power profile controls"
     },
     "brightness": {
-      "apply-scroll-all-description": "Change brightness for every monitor when using the scroll wheel.",
-      "apply-scroll-all-label": "Apply scroll changes to all monitors"
+      "apply-all-description": "Change brightness for every monitor when using the scroll wheel.",
+      "apply-all-label": "Apply scroll changes to all monitors"
     },
     "clock": {
       "clock-display-description": "Customize your clock's display by adding tokens from the list below. To use the 12-hour format, you must include the 'AP' token.",
@@ -1003,13 +1003,13 @@
       "monitors-brightness-step-label": "Brightness step size",
       "monitors-brightness-unavailable-ddc-disabled": "Brightness control unavailable. Enable \"External brightness support\" to control this display's brightness.",
       "monitors-brightness-unavailable-generic": "Brightness control is not available for this display.",
-      "monitors-global-brightness-description": "Adjust brightness for all monitors at once.",
-      "monitors-global-brightness-label": "All monitors",
       "monitors-desc": "Adjust settings brightness for each display.",
       "monitors-enforce-minimum-description": "Solves the problem of backlight completely turning off on some displays at 0% brightness.",
       "monitors-enforce-minimum-label": "Enforce minimum brightness (1%)",
       "monitors-external-brightness-description": "Enable DDCUtil support for controlling brightness on external displays via DDC/CI protocol.",
       "monitors-external-brightness-label": "External brightness support",
+      "monitors-global-brightness-description": "Adjust brightness for all monitors at once.",
+      "monitors-global-brightness-label": "All monitors",
       "monitors-title": "Per-monitor settings",
       "night-light-auto-schedule-description": "Based on the sunset and sunrise time in <i>{location}</i> — recommended.",
       "night-light-auto-schedule-label": "Automatic scheduling",
