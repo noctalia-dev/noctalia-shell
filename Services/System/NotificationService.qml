@@ -8,6 +8,7 @@ import Quickshell.Services.Notifications
 import Quickshell.Wayland
 import "../../Helpers/sha256.js" as Checksum
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.Media
 import qs.Services.Power
 import qs.Services.UI
@@ -652,7 +653,9 @@ Singleton {
                              "urgency": item.urgency < 0 || item.urgency > 2 ? 1 : item.urgency,
                              "timestamp": time,
                              "originalImage": item.originalImage || "",
-                             "cachedImage": cachedImage
+                             "cachedImage": cachedImage,
+                             "actionsJson": item.actionsJson || "[]",
+                             "originalId": item.originalId || 0
                            });
       }
     } catch (e) {
@@ -896,45 +899,72 @@ Singleton {
     quickshellIdToInternalId = {};
   }
 
+  function invokeActionAndSuppressClose(id, actionId) {
+    const notifData = activeNotifications[id];
+    if (notifData && notifData.notification && notifData.onClosed) {
+      try {
+        notifData.notification.closed.disconnect(notifData.onClosed);
+      } catch (e) {
+      }
+    }
+
+    return invokeAction(id, actionId);
+  }
+
   function invokeAction(id, actionId) {
-    // 1. Try invoking via live object
     let invoked = false;
     const notifData = activeNotifications[id];
 
-    if (!notifData) {
-      // No data
-    } else if (!notifData.notification) {
-      // No notification object
-    } else {
-      // Use cached actions if live actions are empty (which happens if app closed notification)
-      const actionsToUse = (notifData.notification.actions && notifData.notification.actions.length > 0) ? notifData.notification.actions : (notifData.cachedActions || []);
+    if (notifData && notifData.notification) {
+      const actionsToUse = (notifData.notification.actions && notifData.notification.actions.length > 0)
+          ? notifData.notification.actions
+          : (notifData.cachedActions || []);
 
       if (actionsToUse && actionsToUse.length > 0) {
         for (const item of actionsToUse) {
-          const id = item.identifier; // Works for both raw object and wrapper (if properties match)
-          const actionObj = item.actionObject ? item.actionObject : item; // Unwrap if wrapper
+          const itemId = item.identifier;
+          const actionObj = item.actionObject ? item.actionObject : item;
 
-          if (id === actionId) {
+          if (itemId === actionId) {
             if (actionObj.invoke) {
               try {
                 actionObj.invoke();
                 invoked = true;
               } catch (e) {
-                if (manualInvoke(notifData.metadata.originalId, id)) {
+                Logger.w("NotificationService", "invoke() failed, trying manual fallback: " + e);
+                if (manualInvoke(notifData.metadata.originalId, itemId)) {
                   invoked = true;
                 }
               }
             } else {
-              if (manualInvoke(notifData.metadata.originalId, id)) {
+              if (manualInvoke(notifData.metadata.originalId, itemId)) {
                 invoked = true;
               }
             }
+            break;
           }
+        }
+      }
+
+      if (!invoked && notifData.metadata.originalId) {
+        Logger.w("NotificationService", "Action objects exhausted, trying manual invoke for id=" + id + " action=" + actionId);
+        invoked = manualInvoke(notifData.metadata.originalId, actionId);
+      }
+    } else if (!notifData) {
+      Logger.w("NotificationService", "No active notification data for id=" + id + ", searching history for manual invoke");
+      for (var i = 0; i < historyList.count; i++) {
+        if (historyList.get(i).id === id) {
+          const histEntry = historyList.get(i);
+          if (histEntry.originalId) {
+            invoked = manualInvoke(histEntry.originalId, actionId);
+          }
+          break;
         }
       }
     }
 
     if (!invoked) {
+      Logger.w("NotificationService", "Failed to invoke action '" + actionId + "' for notification " + id);
       return false;
     }
 
@@ -962,6 +992,32 @@ Singleton {
       Logger.e("NotificationService", "Manual invoke failed: " + e);
       return false;
     }
+  }
+
+  function focusSenderWindow(appName) {
+    if (!appName || appName === "" || appName === "Unknown")
+      return false;
+
+    const normalizedName = appName.toLowerCase().replace(/\s+/g, "");
+
+    for (var i = 0; i < CompositorService.windows.count; i++) {
+      const win = CompositorService.windows.get(i);
+      const winAppId = (win.appId || "").toLowerCase();
+
+      const segments = winAppId.split(".");
+      const lastSegment = segments[segments.length - 1] || "";
+
+      if (winAppId === normalizedName
+          || lastSegment === normalizedName
+          || winAppId.includes(normalizedName)
+          || normalizedName.includes(lastSegment)) {
+        CompositorService.focusWindow(win);
+        return true;
+      }
+    }
+
+    Logger.d("NotificationService", "No window found for app: " + appName);
+    return false;
   }
 
   function removeFromHistory(notificationId) {
