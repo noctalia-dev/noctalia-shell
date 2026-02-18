@@ -4,7 +4,7 @@
 if [ "$#" -lt 1 ]; then
     # Print usage information to standard error.
     echo "Error: No application specified." >&2
-    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|yazi|niri|hyprland|sway|scroll|mango|btop|zathura} [dark|light]" >&2
+    echo "Usage: $0 {kitty|ghostty|foot|alacritty|wezterm|fuzzel|walker|pywalfox|cava|yazi|labwc|niri|hyprland|sway|scroll|mango|btop|zathura} [dark|light]" >&2
     exit 1
 fi
 
@@ -286,6 +286,11 @@ EOF
             echo 'light = "noctalia"' >>"$CONFIG_FILE"
         fi
     fi
+    ;;
+
+labwc)
+    # Update the theme
+    labwc -r
     ;;
 
 niri)
