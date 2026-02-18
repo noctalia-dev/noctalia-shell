@@ -904,8 +904,7 @@ Singleton {
     if (notifData && notifData.notification && notifData.onClosed) {
       try {
         notifData.notification.closed.disconnect(notifData.onClosed);
-      } catch (e) {
-      }
+      } catch (e) {}
     }
 
     return invokeAction(id, actionId);
@@ -916,9 +915,7 @@ Singleton {
     const notifData = activeNotifications[id];
 
     if (notifData && notifData.notification) {
-      const actionsToUse = (notifData.notification.actions && notifData.notification.actions.length > 0)
-          ? notifData.notification.actions
-          : (notifData.cachedActions || []);
+      const actionsToUse = (notifData.notification.actions && notifData.notification.actions.length > 0) ? notifData.notification.actions : (notifData.cachedActions || []);
 
       if (actionsToUse && actionsToUse.length > 0) {
         for (const item of actionsToUse) {
@@ -1007,10 +1004,7 @@ Singleton {
       const segments = winAppId.split(".");
       const lastSegment = segments[segments.length - 1] || "";
 
-      if (winAppId === normalizedName
-          || lastSegment === normalizedName
-          || winAppId.includes(normalizedName)
-          || normalizedName.includes(lastSegment)) {
+      if (winAppId === normalizedName || lastSegment === normalizedName || winAppId.includes(normalizedName) || normalizedName.includes(lastSegment)) {
         CompositorService.focusWindow(win);
         return true;
       }
