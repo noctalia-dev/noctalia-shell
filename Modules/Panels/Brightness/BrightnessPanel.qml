@@ -7,6 +7,7 @@ import qs.Commons
 import qs.Modules.MainScreen
 import qs.Services.Compositor
 import qs.Services.Hardware
+import qs.Services.UI
 import qs.Widgets
 
 SmartPanel {
@@ -18,6 +19,25 @@ SmartPanel {
   panelContent: Item {
     id: panelContent
     property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
+
+    property var brightnessWidgetInstance: BarService.lookupWidget("Brightness", screen ? screen.name : null)
+    readonly property var brightnessWidgetSettings: brightnessWidgetInstance ? brightnessWidgetInstance.widgetSettings : null
+    readonly property var brightnessWidgetMetadata: BarWidgetRegistry.widgetMetadata["Brightness"]
+
+    function resolveWidgetSetting(key, defaultValue) {
+      if (brightnessWidgetSettings && brightnessWidgetSettings[key] !== undefined)
+        return brightnessWidgetSettings[key];
+      if (brightnessWidgetMetadata && brightnessWidgetMetadata[key] !== undefined)
+        return brightnessWidgetMetadata[key];
+      return defaultValue;
+    }
+
+    Connections {
+      target: BarService
+      function onActiveWidgetsChanged() {
+        panelContent.brightnessWidgetInstance = BarService.lookupWidget("Brightness", screen ? screen.name : null);
+      }
+    }
 
     property real globalBrightness: 0
     property bool globalBrightnessChanging: false
@@ -135,7 +155,7 @@ SmartPanel {
 
           NBox {
             Layout.fillWidth: true
-            visible: panelContent.globalBrightnessCapableMonitors > 1 && Settings.data.brightness.syncAllMonitors
+            visible: panelContent.globalBrightnessCapableMonitors > 1 && panelContent.resolveWidgetSetting("applyToAllMonitors", false)
             implicitHeight: globalBrightnessContent.implicitHeight + (Style.marginXL)
 
             ColumnLayout {
