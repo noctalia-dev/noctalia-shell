@@ -12,6 +12,7 @@ Singleton {
 
   // Program availability properties
   property bool nmcliAvailable: false
+  property bool bluetoothctlAvailable: false
   property bool wlsunsetAvailable: false
   property bool app2unitAvailable: false
   property bool gnomeCalendarAvailable: false
@@ -20,6 +21,7 @@ Singleton {
 
   // Programs to check - maps property names to commands
   readonly property var programsToCheck: ({
+                                            "bluetoothctlAvailable": ["sh", "-c", "command -v bluetoothctl"],
                                             "nmcliAvailable": ["sh", "-c", "command -v nmcli"],
                                             "wlsunsetAvailable": ["sh", "-c", "command -v wlsunset"],
                                             "app2unitAvailable": ["sh", "-c", "command -v app2unit"],
