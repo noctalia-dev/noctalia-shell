@@ -105,70 +105,32 @@ ColumnLayout {
         onSelected: key => Settings.data.ui.fontFixed = key
       }
 
-      RowLayout {
-        spacing: Style.marginL
+      NValueSlider {
         Layout.fillWidth: true
-
-        NValueSlider {
-          Layout.fillWidth: true
-          label: I18n.tr("panels.general.fonts-default-scale-label")
-          description: I18n.tr("panels.general.fonts-default-scale-description")
-          from: 0.75
-          to: 1.25
-          stepSize: 0.01
-          value: Settings.data.ui.fontDefaultScale
-          defaultValue: Settings.getDefaultValue("ui.fontDefaultScale")
-          onMoved: value => Settings.data.ui.fontDefaultScale = value
-          text: Math.floor(Settings.data.ui.fontDefaultScale * 100) + "%"
-        }
-
-        // Reset button container
-        Item {
-          Layout.preferredWidth: 30 * Style.uiScaleRatio
-          Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-          NIconButton {
-            icon: "restore"
-            baseSize: Style.baseWidgetSize * 0.8
-            tooltipText: I18n.tr("panels.general.fonts-reset-scaling")
-            onClicked: Settings.data.ui.fontDefaultScale = Settings.getDefaultValue("ui.fontDefaultScale")
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-          }
-        }
+        label: I18n.tr("panels.general.fonts-default-scale-label")
+        description: I18n.tr("panels.general.fonts-default-scale-description")
+        from: 0.75
+        to: 1.25
+        stepSize: 0.01
+        showReset: true
+        value: Settings.data.ui.fontDefaultScale
+        defaultValue: Settings.getDefaultValue("ui.fontDefaultScale")
+        onMoved: value => Settings.data.ui.fontDefaultScale = value
+        text: Math.floor(Settings.data.ui.fontDefaultScale * 100) + "%"
       }
 
-      RowLayout {
-        spacing: Style.marginL
+      NValueSlider {
         Layout.fillWidth: true
-
-        NValueSlider {
-          Layout.fillWidth: true
-          label: I18n.tr("panels.general.fonts-monospace-scale-label")
-          description: I18n.tr("panels.general.fonts-monospace-scale-description")
-          from: 0.75
-          to: 1.25
-          stepSize: 0.01
-          value: Settings.data.ui.fontFixedScale
-          defaultValue: Settings.getDefaultValue("ui.fontFixedScale")
-          onMoved: value => Settings.data.ui.fontFixedScale = value
-          text: Math.floor(Settings.data.ui.fontFixedScale * 100) + "%"
-        }
-
-        // Reset button container
-        Item {
-          Layout.preferredWidth: 30 * Style.uiScaleRatio
-          Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-          NIconButton {
-            icon: "restore"
-            baseSize: Style.baseWidgetSize * 0.8
-            tooltipText: I18n.tr("panels.general.fonts-reset-scaling")
-            onClicked: Settings.data.ui.fontFixedScale = Settings.getDefaultValue("ui.fontFixedScale")
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-          }
-        }
+        label: I18n.tr("panels.general.fonts-monospace-scale-label")
+        description: I18n.tr("panels.general.fonts-monospace-scale-description")
+        from: 0.75
+        to: 1.25
+        stepSize: 0.01
+        showReset: true
+        value: Settings.data.ui.fontFixedScale
+        defaultValue: Settings.getDefaultValue("ui.fontFixedScale")
+        onMoved: value => Settings.data.ui.fontFixedScale = value
+        text: Math.floor(Settings.data.ui.fontFixedScale * 100) + "%"
       }
     }
   }

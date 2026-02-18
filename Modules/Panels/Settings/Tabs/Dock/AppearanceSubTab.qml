@@ -121,6 +121,7 @@ ColumnLayout {
       from: 0
       to: 1
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.backgroundOpacity
       defaultValue: Settings.getDefaultValue("dock.backgroundOpacity")
       onMoved: value => Settings.data.dock.backgroundOpacity = value
@@ -134,6 +135,7 @@ ColumnLayout {
       from: 0
       to: 1
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.deadOpacity
       defaultValue: Settings.getDefaultValue("dock.deadOpacity")
       onMoved: value => Settings.data.dock.deadOpacity = value
@@ -148,6 +150,7 @@ ColumnLayout {
       from: 0
       to: 4
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.floatingRatio
       defaultValue: Settings.getDefaultValue("dock.floatingRatio")
       onMoved: value => Settings.data.dock.floatingRatio = value
@@ -161,6 +164,7 @@ ColumnLayout {
       from: 0
       to: 2
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.size
       defaultValue: Settings.getDefaultValue("dock.size")
       onMoved: value => Settings.data.dock.size = value
@@ -175,6 +179,7 @@ ColumnLayout {
       from: 0.1
       to: 2.0
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.animationSpeed
       defaultValue: Settings.getDefaultValue("dock.animationSpeed")
       onMoved: value => Settings.data.dock.animationSpeed = value
