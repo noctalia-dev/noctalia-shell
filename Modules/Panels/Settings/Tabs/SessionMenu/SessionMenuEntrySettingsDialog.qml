@@ -163,6 +163,7 @@ Popup {
         description: I18n.tr("placeholders.keybind-recording")
         allowEmpty: true
         maxKeybinds: 1
+        requireModifierForNormalKeys: false
         currentKeybinds: keybindInputText ? [keybindInputText] : []
         settingsPath: "sessionMenu.powerOptions[" + root.entryIndex + "].keybind"
         onKeybindsChanged: newKeybinds => {

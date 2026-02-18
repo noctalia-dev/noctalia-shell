@@ -581,17 +581,46 @@ Item {
 
                 Row {
                   id: passwordDisplayContent
-                  spacing: Style.marginS
+                  spacing: Style.marginXXXS
                   anchors.verticalCenter: parent.verticalCenter
 
                   Repeater {
-                    model: passwordInput.text.length
+                    id: iconRepeater
+                    model: ScriptModel {
+                      values: Array(passwordInput.text.length)
+                    }
+
+                    property list<string> passwordChars: ["circle-filled", "pentagon-filled", "michelin-star-filled", "square-rounded-filled", "guitar-pick-filled", "blob-filled", "triangle-filled"]
 
                     NIcon {
-                      icon: "circle-filled"
-                      pointSize: Style.fontSizeS
+                      id: icon
+
+                      required property int index
+                      // This will be called with index = -1 when the TextInput is deleted
+                      // So we make sur index is positive to avoid warning on array accesses
+                      property bool drawCustomChar: index >= 0 && Settings.data.general.passwordChars
+
+                      icon: drawCustomChar ? iconRepeater.passwordChars[index % iconRepeater.passwordChars.length] : "circle-filled"
+                      pointSize: Style.fontSizeL
                       color: Color.mPrimary
                       opacity: 1.0
+                      scale: animationsEnabled ? 0.5 : 1
+                      ParallelAnimation {
+                        id: iconAnim
+                        NumberAnimation {
+                          target: icon
+                          properties: "scale"
+                          to: 1
+                          duration: Style.animationFast
+                          easing.type: Easing.BezierSpline
+                          easing.bezierCurve: Easing.OutInBounce
+                        }
+                      }
+                      Component.onCompleted: {
+                        if (animationsEnabled) {
+                          iconAnim.start();
+                        }
+                      }
                     }
                   }
                 }

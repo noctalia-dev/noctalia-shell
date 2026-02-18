@@ -1054,8 +1054,8 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.lock-screen.lock-on-suspend-label",
-    "descriptionKey": "panels.lock-screen.lock-on-suspend-description",
+    "labelKey": "panels.lock-screen.password-chars-label",
+    "descriptionKey": "panels.lock-screen.password-chars-description",
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
@@ -1081,60 +1081,6 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.lock-screen.auto-start-auth-label",
-    "descriptionKey": "panels.lock-screen.auto-start-auth-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.lock-screen.allow-password-with-fprintd-label",
-    "descriptionKey": "panels.lock-screen.allow-password-with-fprintd-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.lock-screen.show-session-buttons-label",
-    "descriptionKey": "panels.lock-screen.show-session-buttons-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.lock-screen.show-hibernate-label",
-    "descriptionKey": "panels.lock-screen.show-hibernate-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.session-menu.enable-countdown-label",
-    "descriptionKey": "panels.session-menu.enable-countdown-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.session-menu.countdown-duration-label",
-    "descriptionKey": "panels.session-menu.countdown-duration-description",
-    "widget": "NValueSlider",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
     "labelKey": "panels.lock-screen.lock-screen-blur-strength-label",
     "descriptionKey": "panels.lock-screen.lock-screen-blur-strength-description",
     "widget": "NValueSlider",
@@ -1151,6 +1097,69 @@
     "tabLabel": "panels.lock-screen.title",
     "subTab": 0,
     "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.lock-screen.lock-on-suspend-label",
+    "descriptionKey": "panels.lock-screen.lock-on-suspend-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.lock-screen.auto-start-auth-label",
+    "descriptionKey": "panels.lock-screen.auto-start-auth-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.lock-screen.allow-password-with-fprintd-label",
+    "descriptionKey": "panels.lock-screen.allow-password-with-fprintd-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.lock-screen.show-session-buttons-label",
+    "descriptionKey": "panels.lock-screen.show-session-buttons-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.lock-screen.show-hibernate-label",
+    "descriptionKey": "panels.lock-screen.show-hibernate-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.session-menu.enable-countdown-label",
+    "descriptionKey": "panels.session-menu.enable-countdown-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.session-menu.countdown-duration-label",
+    "descriptionKey": "panels.session-menu.countdown-duration-description",
+    "widget": "NValueSlider",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
   },
   {
     "labelKey": "panels.notifications.duration-respect-expire-label",

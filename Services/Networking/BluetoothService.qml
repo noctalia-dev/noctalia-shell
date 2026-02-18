@@ -6,6 +6,7 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import "../../Helpers/BluetoothUtils.js" as BluetoothUtils
 import qs.Commons
+import qs.Services.System
 import qs.Services.UI
 
 Singleton {
@@ -114,6 +115,16 @@ Singleton {
     }
   }
 
+  // Re-run polling once bluetoothctl availability is known
+  Connections {
+    target: ProgramCheckerService
+    function onBluetoothctlAvailableChanged() {
+      if (!adapter && ProgramCheckerService.bluetoothctlAvailable) {
+        requestCtlPoll(0);
+      }
+    }
+  }
+
   function setAirplaneMode(state) {
     if (state) {
       Quickshell.execDetached(["rfkill", "block", "wifi"]);
@@ -182,7 +193,7 @@ Singleton {
     id: ctlPollTimer
     interval: adapter ? ctlPollMs : 2000
     repeat: true
-    running: true
+    running: adapter || ProgramCheckerService.bluetoothctlAvailable
     onTriggered: {
       pollCtlState();
       var targetInterval = adapter ? ctlPollMs : 2000;
@@ -193,11 +204,17 @@ Singleton {
   }
 
   function requestCtlPoll(delayMs) {
+    if (!adapter && !ProgramCheckerService.bluetoothctlAvailable) {
+      return;
+    }
     ctlPollTimer.interval = Math.max(50, delayMs || ctlPollSoonMs);
     ctlPollTimer.restart();
   }
 
   function pollCtlState() {
+    if (!adapter && !ProgramCheckerService.bluetoothctlAvailable) {
+      return;
+    }
     if (ctlShowProcess.running) {
       return;
     }
@@ -280,6 +297,10 @@ Singleton {
 
   // Unify discovery controls
   function setScanActive(active) {
+    if (!adapter && !ProgramCheckerService.bluetoothctlAvailable) {
+      Logger.d("Bluetooth", "Scan request ignored: bluetoothctl unavailable");
+      return;
+    }
     var nativeSuccess = false;
     try {
       if (adapter && adapter.discovering !== undefined) {
@@ -309,6 +330,10 @@ Singleton {
   // Adapter power (enable/disable) via bluetoothctl
   function setBluetoothEnabled(state) {
     Logger.i("Bluetooth", "SetBluetoothEnabled", state);
+    if (!adapter && !ProgramCheckerService.bluetoothctlAvailable) {
+      Logger.i("Bluetooth", "Enable/Disable skipped: no adapter or bluetoothctl");
+      return;
+    }
     try {
       if (adapter) {
         adapter.enabled = state;
@@ -327,6 +352,10 @@ Singleton {
 
   // Toggle adapter discoverability (advertising visibility) via bluetoothctl
   function setDiscoverable(state) {
+    if (!adapter && !ProgramCheckerService.bluetoothctlAvailable) {
+      Logger.d("Bluetooth", "Discoverable change skipped: no adapter or bluetoothctl");
+      return;
+    }
     try {
       if (adapter) {
         adapter.discoverable = state;

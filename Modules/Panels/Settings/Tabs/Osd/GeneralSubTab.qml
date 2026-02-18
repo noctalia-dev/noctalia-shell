@@ -79,6 +79,7 @@ ColumnLayout {
     from: 0
     to: 100
     stepSize: 1
+    showReset: true
     value: Settings.data.osd.backgroundOpacity * 100
     defaultValue: (Settings.getDefaultValue("osd.backgroundOpacity") || 1) * 100
     onMoved: value => Settings.data.osd.backgroundOpacity = value / 100
@@ -92,6 +93,7 @@ ColumnLayout {
     from: 500
     to: 5000
     stepSize: 100
+    showReset: true
     value: Settings.data.osd.autoHideMs
     defaultValue: Settings.getDefaultValue("osd.autoHideMs")
     onMoved: value => Settings.data.osd.autoHideMs = value

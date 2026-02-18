@@ -54,7 +54,7 @@ ColumnLayout {
           icon: "restore"
           baseSize: Style.baseWidgetSize * 0.8
           tooltipText: I18n.tr("panels.general.screen-corners-radius-reset")
-          onClicked: Settings.data.general.screenRadiusRatio = 1.0
+          onClicked: Settings.data.general.screenRadiusRatio = Settings.getDefaultValue("general.screenRadiusRatio")
           anchors.right: parent.right
           anchors.verticalCenter: parent.verticalCenter
         }

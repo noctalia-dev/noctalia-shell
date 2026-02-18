@@ -113,6 +113,7 @@ ColumnLayout {
     from: 1000
     to: 30000
     stepSize: 1000
+    showReset: true
     value: Settings.data.sessionMenu.countdownDuration
     onMoved: value => Settings.data.sessionMenu.countdownDuration = value
     text: Math.round(Settings.data.sessionMenu.countdownDuration / 1000) + "s"

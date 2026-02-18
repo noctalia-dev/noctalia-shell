@@ -21,9 +21,14 @@ ColumnLayout {
       checked: subTabBar.currentIndex === 0
     }
     NTabButton {
-      text: I18n.tr("common.monitors")
+      text: I18n.tr("common.behavior")
       tabIndex: 1
       checked: subTabBar.currentIndex === 1
+    }
+    NTabButton {
+      text: I18n.tr("common.monitors")
+      tabIndex: 2
+      checked: subTabBar.currentIndex === 2
     }
   }
 
@@ -37,6 +42,7 @@ ColumnLayout {
     currentIndex: subTabBar.currentIndex
 
     AppearanceSubTab {}
+    BehaviorSubTab {}
     MonitorsSubTab {}
   }
 }
