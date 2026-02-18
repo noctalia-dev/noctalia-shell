@@ -135,8 +135,8 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
-    label: I18n.tr("panels.control-center.shortcuts-custom-button-general-tooltip-text-label")
-    description: I18n.tr("panels.control-center.shortcuts-custom-button-general-tooltip-text-description")
+    label: I18n.tr("bar.custom-button.general-tooltip-text-label")
+    description: I18n.tr("bar.custom-button.general-tooltip-text-description")
     placeholderText: I18n.tr("placeholders.enter-tooltip")
     text: _settings.generalTooltipText
     onEditingFinished: {
@@ -147,8 +147,8 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("panels.control-center.shortcuts-custom-button-show-exec-tooltip-label")
-    description: I18n.tr("panels.control-center.shortcuts-custom-button-show-exec-tooltip-description")
+    label: I18n.tr("bar.custom-button.show-exec-tooltip-label")
+    description: I18n.tr("bar.custom-button.show-exec-tooltip-description")
     checked: _settings.showExecTooltip
     onToggled: checked => {
                  _settings.showExecTooltip = checked;
@@ -158,8 +158,8 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
-    label: I18n.tr("panels.control-center.shortcuts-custom-button-on-clicked-label")
-    description: I18n.tr("panels.control-center.shortcuts-custom-button-on-clicked-description")
+    label: I18n.tr("bar.custom-button.left-click-label")
+    description: I18n.tr("bar.custom-button.left-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onClicked
     onEditingFinished: {
@@ -170,8 +170,8 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
-    label: I18n.tr("panels.control-center.shortcuts-custom-button-on-right-clicked-label")
-    description: I18n.tr("panels.control-center.shortcuts-custom-button-on-right-clicked-description")
+    label: I18n.tr("bar.custom-button.right-click-label")
+    description: I18n.tr("bar.custom-button.right-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onRightClicked
     onEditingFinished: {
@@ -182,8 +182,8 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
-    label: I18n.tr("panels.control-center.shortcuts-custom-button-on-middle-clicked-label")
-    description: I18n.tr("panels.control-center.shortcuts-custom-button-on-middle-clicked-description")
+    label: I18n.tr("bar.custom-button.middle-click-label")
+    description: I18n.tr("bar.custom-button.middle-click-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onMiddleClicked
     onEditingFinished: {

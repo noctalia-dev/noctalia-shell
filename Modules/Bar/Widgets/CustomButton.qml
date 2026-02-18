@@ -219,22 +219,22 @@ Item {
       // Add command details if enabled and available
       if (showExecTooltip && hasExec) {
         if (leftClickExec !== "") {
-          lines.push(`Left click: ${leftClickExec}.`);
+          lines.push(I18n.tr("bar.custom-button.left-click-label") + `: ${leftClickExec}`);
         }
         if (rightClickExec !== "") {
-          lines.push(`Right click: ${rightClickExec}.`);
+          lines.push(I18n.tr("bar.custom-button.right-click-label") + `: ${rightClickExec}`);
         }
         if (middleClickExec !== "") {
-          lines.push(`Middle click: ${middleClickExec}.`);
+          lines.push(I18n.tr("bar.custom-button.middle-click-label") + `: ${middleClickExec}`);
         }
         if (wheelMode === "unified" && wheelExec !== "") {
-          lines.push(`Wheel: ${wheelExec}.`);
+          lines.push(I18n.tr("bar.custom-button.wheel-label") + `: ${wheelExec}`);
         } else if (wheelMode === "separate") {
           if (wheelUpExec !== "") {
-            lines.push(`Wheel up: ${wheelUpExec}.`);
+            lines.push("bar.custom-button.wheel-up") + `: ${wheelUpExec}`);
           }
           if (wheelDownExec !== "") {
-            lines.push(`Wheel down: ${wheelDownExec}.`);
+            lines.push("bar.custom-button.wheel-down") + `Wheel down: ${wheelDownExec}`);
           }
         }
       }
