@@ -102,104 +102,50 @@ ColumnLayout {
     Layout.fillWidth: true
   }
 
-  RowLayout {
-    spacing: Style.marginL
+  NValueSlider {
     Layout.fillWidth: true
-
-    NValueSlider {
-      Layout.fillWidth: true
-      label: I18n.tr("panels.user-interface.scaling-label")
-      description: I18n.tr("panels.user-interface.scaling-description")
-      from: 0.8
-      to: 1.2
-      stepSize: 0.05
-      value: Settings.data.general.scaleRatio
-      defaultValue: Settings.getDefaultValue("general.scaleRatio")
-      onMoved: value => Settings.data.general.scaleRatio = value
-      text: Math.floor(Settings.data.general.scaleRatio * 100) + "%"
-    }
-
-    Item {
-      Layout.preferredWidth: 30 * Style.uiScaleRatio
-      Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-      NIconButton {
-        icon: "restore"
-        baseSize: Style.baseWidgetSize * 0.8
-        tooltipText: I18n.tr("panels.user-interface.scaling-reset-scaling")
-        onClicked: Settings.data.general.scaleRatio = 1.0
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-      }
-    }
+    label: I18n.tr("panels.user-interface.scaling-label")
+    description: I18n.tr("panels.user-interface.scaling-description")
+    from: 0.8
+    to: 1.2
+    stepSize: 0.05
+    showReset: true
+    value: Settings.data.general.scaleRatio
+    defaultValue: Settings.getDefaultValue("general.scaleRatio")
+    onMoved: value => Settings.data.general.scaleRatio = value
+    text: Math.floor(Settings.data.general.scaleRatio * 100) + "%"
   }
 
   NDivider {
     Layout.fillWidth: true
   }
 
-  RowLayout {
-    spacing: Style.marginL
+  NValueSlider {
     Layout.fillWidth: true
-
-    NValueSlider {
-      Layout.fillWidth: true
-      label: I18n.tr("panels.user-interface.box-border-radius-label")
-      description: I18n.tr("panels.user-interface.box-border-radius-description")
-      from: 0
-      to: 2
-      stepSize: 0.01
-      value: Settings.data.general.radiusRatio
-      defaultValue: Settings.getDefaultValue("general.radiusRatio")
-      onMoved: value => Settings.data.general.radiusRatio = value
-      text: Math.floor(Settings.data.general.radiusRatio * 100) + "%"
-    }
-
-    Item {
-      Layout.preferredWidth: 30 * Style.uiScaleRatio
-      Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-      NIconButton {
-        icon: "restore"
-        baseSize: Style.baseWidgetSize * 0.8
-        tooltipText: I18n.tr("panels.user-interface.box-border-radius-reset")
-        onClicked: Settings.data.general.radiusRatio = 1.0
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-      }
-    }
+    label: I18n.tr("panels.user-interface.box-border-radius-label")
+    description: I18n.tr("panels.user-interface.box-border-radius-description")
+    from: 0
+    to: 2
+    stepSize: 0.01
+    showReset: true
+    value: Settings.data.general.radiusRatio
+    defaultValue: Settings.getDefaultValue("general.radiusRatio")
+    onMoved: value => Settings.data.general.radiusRatio = value
+    text: Math.floor(Settings.data.general.radiusRatio * 100) + "%"
   }
 
-  RowLayout {
-    spacing: Style.marginL
+  NValueSlider {
     Layout.fillWidth: true
-
-    NValueSlider {
-      Layout.fillWidth: true
-      label: I18n.tr("panels.user-interface.control-border-radius-label")
-      description: I18n.tr("panels.user-interface.control-border-radius-description")
-      from: 0
-      to: 2
-      stepSize: 0.01
-      value: Settings.data.general.iRadiusRatio
-      defaultValue: Settings.getDefaultValue("general.iRadiusRatio")
-      onMoved: value => Settings.data.general.iRadiusRatio = value
-      text: Math.floor(Settings.data.general.iRadiusRatio * 100) + "%"
-    }
-
-    Item {
-      Layout.preferredWidth: 30 * Style.uiScaleRatio
-      Layout.preferredHeight: 30 * Style.uiScaleRatio
-
-      NIconButton {
-        icon: "restore"
-        baseSize: Style.baseWidgetSize * 0.8
-        tooltipText: I18n.tr("panels.user-interface.control-border-radius-reset")
-        onClicked: Settings.data.general.iRadiusRatio = 1.0
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-      }
-    }
+    label: I18n.tr("panels.user-interface.control-border-radius-label")
+    description: I18n.tr("panels.user-interface.control-border-radius-description")
+    from: 0
+    to: 2
+    stepSize: 0.01
+    showReset: true
+    value: Settings.data.general.iRadiusRatio
+    defaultValue: Settings.getDefaultValue("general.iRadiusRatio")
+    onMoved: value => Settings.data.general.iRadiusRatio = value
+    text: Math.floor(Settings.data.general.iRadiusRatio * 100) + "%"
   }
 
   NDivider {
@@ -248,7 +194,7 @@ ColumnLayout {
             icon: "restore"
             baseSize: Style.baseWidgetSize * 0.8
             tooltipText: I18n.tr("panels.user-interface.animation-speed-reset")
-            onClicked: Settings.data.general.animationSpeed = 1.0
+            onClicked: Settings.data.general.animationSpeed = Settings.getDefaultValue("general.animationSpeed")
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
           }

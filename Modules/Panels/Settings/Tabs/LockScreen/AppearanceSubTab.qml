@@ -134,6 +134,7 @@ ColumnLayout {
     from: 1000
     to: 30000
     stepSize: 1000
+    showReset: true
     value: Settings.data.general.lockScreenCountdownDuration
     onMoved: value => Settings.data.general.lockScreenCountdownDuration = value
     text: Math.round(Settings.data.general.lockScreenCountdownDuration / 1000) + "s"
@@ -151,6 +152,7 @@ ColumnLayout {
     from: 0.0
     to: 1.0
     stepSize: 0.01
+    showReset: true
     value: Settings.data.general.lockScreenBlur
     onMoved: value => Settings.data.general.lockScreenBlur = value
     text: ((Settings.data.general.lockScreenBlur) * 100).toFixed(0) + "%"
@@ -164,6 +166,7 @@ ColumnLayout {
     from: 0.0
     to: 1.0
     stepSize: 0.01
+    showReset: true
     value: Settings.data.general.lockScreenTint
     onMoved: value => Settings.data.general.lockScreenTint = value
     text: ((Settings.data.general.lockScreenTint) * 100).toFixed(0) + "%"

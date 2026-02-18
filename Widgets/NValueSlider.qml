@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
 
-ColumnLayout {
+RowLayout {
   id: root
 
   property real from: 0
@@ -21,13 +21,14 @@ ColumnLayout {
   property string label: ""
   property string description: ""
   property var defaultValue: undefined
+  property bool showReset: false
+
+  spacing: Style.marginL
+  Layout.fillWidth: true
 
   // Signals
   signal moved(real value)
   signal pressedChanged(bool pressed, real value)
-
-  spacing: Style.marginS
-  Layout.fillWidth: true
 
   readonly property bool isValueChanged: defaultValue !== undefined && (value !== defaultValue)
   readonly property string indicatorTooltip: {
@@ -50,43 +51,65 @@ ColumnLayout {
                    });
   }
 
-  NLabel {
-    label: root.label
-    description: root.description
-    visible: root.label !== "" || root.description !== ""
-    showIndicator: root.isValueChanged
-    indicatorTooltip: root.indicatorTooltip
-    opacity: root.enabled ? 1.0 : 0.6
-    Layout.fillWidth: true
-  }
-
-  RowLayout {
-    spacing: Style.marginL
+  ColumnLayout {
+    spacing: Style.marginS
     Layout.fillWidth: true
 
-    NSlider {
-      id: slider
+    NLabel {
+      label: root.label
+      description: root.description
+      visible: root.label !== "" || root.description !== ""
+      showIndicator: root.isValueChanged
+      indicatorTooltip: root.indicatorTooltip
+      opacity: root.enabled ? 1.0 : 0.6
       Layout.fillWidth: true
-      from: root.from
-      to: root.to
-      value: root.value
-      stepSize: root.stepSize
-      cutoutColor: root.cutoutColor
-      snapAlways: root.snapAlways
-      heightRatio: root.customHeightRatio > 0 ? root.customHeightRatio : root.heightRatio
-      onMoved: root.moved(value)
-      onPressedChanged: root.pressedChanged(pressed, value)
     }
 
-    NText {
-      visible: root.text !== ""
-      text: root.text
-      pointSize: root.textSize
-      family: Settings.data.ui.fontFixed
-      opacity: root.enabled ? 1.0 : 0.6
-      Layout.alignment: Qt.AlignVCenter
-      Layout.preferredWidth: 45 * Style.uiScaleRatio
-      horizontalAlignment: Text.AlignRight
+    RowLayout {
+      spacing: Style.marginL
+      Layout.fillWidth: true
+
+      NSlider {
+        id: slider
+        Layout.fillWidth: true
+        from: root.from
+        to: root.to
+        value: root.value
+        stepSize: root.stepSize
+        cutoutColor: root.cutoutColor
+        snapAlways: root.snapAlways
+        heightRatio: root.customHeightRatio > 0 ? root.customHeightRatio : root.heightRatio
+        onMoved: root.moved(value)
+        onPressedChanged: root.pressedChanged(pressed, value)
+      }
+
+      NText {
+        visible: root.text !== ""
+        text: root.text
+        pointSize: root.textSize
+        family: Settings.data.ui.fontFixed
+        opacity: root.enabled ? 1.0 : 0.6
+        Layout.alignment: Qt.AlignVCenter
+        Layout.preferredWidth: 45 * Style.uiScaleRatio
+        horizontalAlignment: Text.AlignRight
+      }
+    }
+  }
+
+  Item {
+    id: buttonItem
+    visible: root.showReset && root.defaultValue !== undefined
+    Layout.preferredWidth: 30 * Style.uiScaleRatio
+    Layout.preferredHeight: 30 * Style.uiScaleRatio
+
+    NIconButton {
+      icon: "restore"
+      enabled: root.enabled
+      baseSize: Style.baseWidgetSize * 0.8
+      tooltipText: I18n.tr("common.reset")
+      onClicked: root.moved(root.defaultValue)
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
     }
   }
 }
