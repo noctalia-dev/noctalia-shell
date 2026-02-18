@@ -408,7 +408,10 @@ Variants {
                               return a.identifier === "default";
                             });
                             if (hasDefault) {
-                              card.runDeferredTimer("default", false);
+                              card.runAction("default", false);
+                            } else {
+                              NotificationService.focusSenderWindow(model.appName);
+                              card.animateOut();
                             }
                           }
               onCanceled: {
@@ -497,23 +500,13 @@ Variants {
               }
             }
 
-            function runDeferredTimer(actionId, isDismissed) {
-              if (Style.animationSlow <= 0) {
-                if (!isDismissed) {
-                  NotificationService.invokeAction(notificationId, actionId);
-                } else if (Settings.data.notifications.clearDismissed) {
-                  NotificationService.removeFromHistory(notificationId);
-                }
-                card.animateOut();
-                return;
+            function runAction(actionId, isDismissed) {
+              if (!isDismissed) {
+                NotificationService.invokeAction(notificationId, actionId);
+              } else if (Settings.data.notifications.clearDismissed) {
+                NotificationService.removeFromHistory(notificationId);
               }
-
-              deferredActionTimer.stop();
-              deferredActionTimer.actionId = actionId || "";
-              deferredActionTimer.isDismissed = isDismissed;
-              deferredActionTimer.interval = Math.min(50, Math.max(1, Style.animationSlow - 1));
               card.animateOut();
-              deferredActionTimer.start();
             }
 
             Timer {
@@ -522,20 +515,6 @@ Variants {
               repeat: false
               onTriggered: {
                 NotificationService.dismissActiveNotification(notificationId);
-              }
-            }
-
-            Timer {
-              id: deferredActionTimer
-              interval: 50
-              property string actionId: ""
-              property bool isDismissed: false
-              onTriggered: {
-                if (!isDismissed) {
-                  NotificationService.invokeAction(notificationId, actionId);
-                } else if (Settings.data.notifications.clearDismissed) {
-                  NotificationService.removeFromHistory(notificationId);
-                }
               }
             }
 
@@ -722,7 +701,7 @@ Variants {
                         outlined: false
                         implicitHeight: 24
                         onClicked: {
-                          card.runDeferredTimer(actionData.identifier, false);
+                          card.runAction(actionData.identifier, false);
                         }
                       }
                     }
@@ -743,7 +722,7 @@ Variants {
               anchors.rightMargin: Style.marginM
 
               onClicked: {
-                card.runDeferredTimer("", true);
+                card.runAction("", true);
               }
             }
 
