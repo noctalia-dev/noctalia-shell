@@ -502,7 +502,7 @@ Variants {
 
             function runAction(actionId, isDismissed) {
               if (!isDismissed) {
-                NotificationService.invokeAction(notificationId, actionId);
+                NotificationService.invokeActionAndSuppressClose(notificationId, actionId);
               } else if (Settings.data.notifications.clearDismissed) {
                 NotificationService.removeFromHistory(notificationId);
               }

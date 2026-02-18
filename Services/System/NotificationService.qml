@@ -899,6 +899,18 @@ Singleton {
     quickshellIdToInternalId = {};
   }
 
+  function invokeActionAndSuppressClose(id, actionId) {
+    const notifData = activeNotifications[id];
+    if (notifData && notifData.notification && notifData.onClosed) {
+      try {
+        notifData.notification.closed.disconnect(notifData.onClosed);
+      } catch (e) {
+      }
+    }
+
+    return invokeAction(id, actionId);
+  }
+
   function invokeAction(id, actionId) {
     let invoked = false;
     const notifData = activeNotifications[id];
