@@ -792,7 +792,6 @@ Item {
             outlined: true
             backgroundColor: Color.mOnSurfaceVariant
             textColor: Color.mOnPrimary
-            hoverColor: Color.mPrimary
             fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
             iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
             horizontalAlignment: Qt.AlignHCenter
@@ -812,7 +811,6 @@ Item {
             outlined: true
             backgroundColor: Color.mOnSurfaceVariant
             textColor: Color.mOnPrimary
-            hoverColor: Color.mPrimary
             fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
             iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
             horizontalAlignment: Qt.AlignHCenter
@@ -833,7 +831,6 @@ Item {
             outlined: true
             backgroundColor: Color.mOnSurfaceVariant
             textColor: Color.mOnPrimary
-            hoverColor: Color.mPrimary
             fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
             iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
             horizontalAlignment: Qt.AlignHCenter
@@ -853,7 +850,6 @@ Item {
             outlined: true
             backgroundColor: Color.mOnSurfaceVariant
             textColor: Color.mOnPrimary
-            hoverColor: Color.mPrimary
             fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
             iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
             horizontalAlignment: Qt.AlignHCenter
@@ -873,7 +869,6 @@ Item {
             outlined: true
             backgroundColor: Color.mError
             textColor: Color.mOnError
-            hoverColor: Color.mError
             fontSize: Settings.data.general.compactLockScreen ? Style.fontSizeS : Style.fontSizeM
             iconSize: Settings.data.general.compactLockScreen ? Style.fontSizeM : Style.fontSizeL
             horizontalAlignment: Qt.AlignHCenter
