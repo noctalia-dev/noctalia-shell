@@ -306,7 +306,7 @@ Item {
               candidates.push(ws);
           }
 
-          if (candidates.length === 0)
+          if (candidates.length <= 1)
             return;
 
           var current = -1;
@@ -329,6 +329,8 @@ Item {
               return;
           }
 
+          if (next === current)
+            return;
           CompositorService.switchToWorkspace(candidates[next]);
         }
 

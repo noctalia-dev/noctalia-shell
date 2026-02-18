@@ -196,7 +196,7 @@ Item {
   }
 
   function switchByOffset(offset) {
-    if (localWorkspaces.count === 0)
+    if (localWorkspaces.count <= 1)
       return;
     var current = getFocusedLocalIndex();
     if (current < 0)
@@ -204,6 +204,8 @@ Item {
     var next = (current + offset) % localWorkspaces.count;
     if (next < 0)
       next = localWorkspaces.count - 1;
+    if (next === current)
+      return;
     const ws = localWorkspaces.get(next);
     if (ws && ws.idx !== undefined)
       CompositorService.switchToWorkspace(ws);
