@@ -38,7 +38,7 @@
 
 @define-color sidebar_bg_color {{colors.surface_container.default.hex}};
 @define-color sidebar_fg_color {{colors.on_surface.default.hex}};
-@define-color sidebar_backdrop_color @sidebar_bg_color;
+@define-color sidebar_backdrop_color @window_bg_color;
 @define-color sidebar_border_color @window_bg_color;
 
 @define-color secondary_sidebar_bg_color {{colors.surface.default.hex}};
