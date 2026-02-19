@@ -25,6 +25,8 @@ Singleton {
 
   // Expose decoded thumbnails by id and a revision to notify bindings
   property var imageDataById: ({})
+  property var _imageDataInsertOrder: [] // insertion-order IDs for LRU eviction
+  readonly property int _imageDataMaxEntries: 20 // max decoded images held in RAM at once
   property int revision: 0
 
   // Local content cache - stores full text content by ID
@@ -227,7 +229,14 @@ Singleton {
         } catch (e) {}
       }
       if (root._b64CurrentId !== "") {
-        root.imageDataById[root._b64CurrentId] = `data:${root._b64CurrentMime};base64,${b64}`;
+        const entryId = root._b64CurrentId;
+        root.imageDataById[entryId] = `data:${root._b64CurrentMime};base64,${b64}`;
+        // Track insertion order and evict oldest entries beyond the cap
+        root._imageDataInsertOrder.push(entryId);
+        while (root._imageDataInsertOrder.length > root._imageDataMaxEntries) {
+          const evicted = root._imageDataInsertOrder.shift();
+          delete root.imageDataById[evicted];
+        }
         root.revision += 1;
       }
       root._b64CurrentCb = null;
@@ -448,8 +457,12 @@ Singleton {
       return;
     }
     const idStr = String(id).trim();
-    // Remove from cache
+    // Remove from caches
     delete root.contentCache[idStr];
+    delete root.imageDataById[idStr];
+    const orderIdx = root._imageDataInsertOrder.indexOf(idStr);
+    if (orderIdx !== -1)
+      root._imageDataInsertOrder.splice(orderIdx, 1);
     deleteProc.command = ["sh", "-c", `echo ${idStr} | cliphist delete`];
     deleteProc.running = true;
   }
@@ -461,6 +474,7 @@ Singleton {
     // Clear caches
     root.contentCache = {};
     root.imageDataById = {};
+    root._imageDataInsertOrder = [];
     root._latestTextContent = "";
     root._latestTextId = "";
 
