@@ -930,6 +930,9 @@
       "weather-show-background-description": "Konteynera paşrûyê ya sepanokê rewşa bayê nîşan bide."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Xwerû",
+      "monitors-backlight-device-description": "Ji bo vê derketinê amûra ronahiya paşîn hilbijêre.",
+      "monitors-backlight-device-label": "Amûra ronahiya paşîn",
       "monitors-brightness-step-description": "Pîvana gava guhertinên ronahiyê (tekerê mişkê û kurteriyên klavyeyê) eyar bike.",
       "monitors-brightness-step-label": "Mezinahiya gava ronahiyê",
       "monitors-brightness-unavailable-ddc-disabled": "Kontrola ronahiyê peyda nabe. Ji bo kontrolkirina ronahiya vê dîmenderê, \"Piştgiriya ronahiya derveyî\" çalak bike.",

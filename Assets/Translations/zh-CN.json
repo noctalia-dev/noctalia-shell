@@ -999,6 +999,9 @@
       "weather-show-background-description": "显示天气小部件的背景容器。"
     },
     "display": {
+      "monitors-backlight-device-auto-option": "默认",
+      "monitors-backlight-device-description": "为此输出选择一个背光设备。",
+      "monitors-backlight-device-label": "背光设备",
       "monitors-brightness-step-description": "调整亮度变化的步长（滚轮和键盘快捷键）。",
       "monitors-brightness-step-label": "亮度步长",
       "monitors-brightness-unavailable-ddc-disabled": "亮度控制不可用。启用“外部亮度支持”以控制此显示器的亮度。",

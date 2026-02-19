@@ -995,6 +995,9 @@
       "weather-show-background-description": "Viser bakgrunnsilåt for miniprogrammet for vêr."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Standard",
+      "monitors-backlight-device-description": "Vel ei bakgrunnslyseining for denne utgangen.",
+      "monitors-backlight-device-label": "Bakgrunnslyseining",
       "monitors-brightness-step-description": "Endra på kor store endringane i ljosstyrke er med beinvegar og rullehjul.",
       "monitors-brightness-step-label": "Ljosstyrkesteg",
       "monitors-brightness-unavailable-ddc-disabled": "Kan ikkje endra på ljosstyrke. Slå på \"Ekstern ljosstyrkestøtte\" for å endra på ljosstyrken på denne skjermen.",

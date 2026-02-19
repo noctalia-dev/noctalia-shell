@@ -999,6 +999,9 @@
       "weather-show-background-description": "Jelenítse meg az időjárás widget háttérkonténerét."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Alapértelmezett",
+      "monitors-backlight-device-description": "Válasszon háttérvilágítási eszközt ehhez a kimenethez.",
+      "monitors-backlight-device-label": "Háttérvilágítási eszköz",
       "monitors-brightness-step-description": "Állítsa be a lépésméretet a fényerő változásokhoz (görgetőkerék és billentyűparancsok).",
       "monitors-brightness-step-label": "Fényerő lépésméret",
       "monitors-brightness-unavailable-ddc-disabled": "Fényerő vezérlés nem érhető el. Engedélyezze a \"Külső fényerő támogatás\" opciót a kijelző fényerejének szabályozásához.",

@@ -999,6 +999,9 @@
       "weather-show-background-description": "Afficher le conteneur d'arrière-plan pour le widget météo."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Par défaut",
+      "monitors-backlight-device-description": "Sélectionnez un périphérique de rétroéclairage pour cette sortie.",
+      "monitors-backlight-device-label": "Périphérique de rétroéclairage",
       "monitors-brightness-step-description": "Ajustez l'incrément pour les changements de luminosité (molette de la souris et raccourcis clavier).",
       "monitors-brightness-step-label": "Incrément de luminosité",
       "monitors-brightness-unavailable-ddc-disabled": "Contrôle de la luminosité indisponible. Activez \"Prise en charge de la luminosité externe\" pour contrôler la luminosité de cet écran.",

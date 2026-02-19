@@ -173,6 +173,13 @@
       "show-progress-ring-label": "Syn framgangsvisar."
     }
   },
+  "panels": {
+    "display": {
+      "monitors-backlight-device-auto-option": "Fyrevald",
+      "monitors-backlight-device-description": "Vel ei bakgrunnslyseining for denne utgangen.",
+      "monitors-backlight-device-label": "Bakgrunnslyseining"
+    }
+  },
   "common": {
     "brightness": "Ljosstyrke",
     "select-color-description": "Lita med hamlitene for tyngd."
