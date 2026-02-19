@@ -663,6 +663,8 @@ Singleton {
       property int brightnessStep: 5
       property bool enforceMinimum: true
       property bool enableDdcSupport: false
+      property list<var> backlightDeviceMappings: []
+      // Format: [{ "output": "eDP-1", "device": "/sys/class/backlight/intel_backlight" }]
     }
 
     property JsonObject colorSchemes: JsonObject {

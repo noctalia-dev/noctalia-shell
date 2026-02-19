@@ -25,6 +25,32 @@ ColumnLayout {
         property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)
         property real localBrightness: 0.5
         property bool localBrightnessChanging: false
+        readonly property string automaticOptionLabel: {
+          var baseLabel = I18n.tr("panels.display.monitors-backlight-device-auto-option");
+          var autoDevicePath = (BrightnessService.availableBacklightDevices && BrightnessService.availableBacklightDevices.length > 0) ? BrightnessService.availableBacklightDevices[0] : "";
+          if (autoDevicePath === "")
+            return baseLabel;
+
+          var autoDeviceName = BrightnessService.getBacklightDeviceName(autoDevicePath) || autoDevicePath;
+          return baseLabel + "(" + autoDeviceName + ")";
+        }
+        readonly property var backlightDeviceOptions: {
+          var options = [{
+                           "key": "",
+                           "name": automaticOptionLabel
+                         }];
+
+          var devices = BrightnessService.availableBacklightDevices || [];
+          for (var i = 0; i < devices.length; i++) {
+            var devicePath = devices[i];
+            var deviceName = BrightnessService.getBacklightDeviceName(devicePath) || devicePath;
+            options.push({
+                           "key": devicePath,
+                           "name": deviceName
+                         });
+          }
+          return options;
+        }
 
         onBrightnessMonitorChanged: {
           if (brightnessMonitor && !localBrightnessChanging)
@@ -160,12 +186,22 @@ ColumnLayout {
             }
 
             NText {
-              visible: brightnessMonitor && !brightnessMonitor.brightnessControlAvailable
+              visible: brightnessMonitor && !brightnessMonitor.brightnessControlAvailable && !(brightnessMonitor.method === "internal" && brightnessMonitor.initInProgress)
               text: !Settings.data.brightness.enableDdcSupport ? I18n.tr("panels.display.monitors-brightness-unavailable-ddc-disabled") : I18n.tr("panels.display.monitors-brightness-unavailable-generic")
               pointSize: Style.fontSizeXS
               color: Color.mOnSurfaceVariant
               Layout.fillWidth: true
               wrapMode: Text.WordWrap
+            }
+
+            NComboBox {
+              Layout.fillWidth: true
+              visible: brightnessMonitor && brightnessMonitor.method === "internal"
+              label: I18n.tr("panels.display.monitors-backlight-device-label")
+              description: I18n.tr("panels.display.monitors-backlight-device-description")
+              model: backlightDeviceOptions
+              currentKey: BrightnessService.getMappedBacklightDevice(modelData.name) || ""
+              onSelected: key => BrightnessService.setMappedBacklightDevice(modelData.name, key)
             }
           }
         }
