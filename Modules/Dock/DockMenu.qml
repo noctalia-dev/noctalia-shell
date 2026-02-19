@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.Commons
+import qs.Modules.Panels.Settings
 import qs.Services.UI
 import qs.Widgets
 
@@ -13,6 +14,12 @@ PopupWindow {
 
   property var toplevel: null
   property Item anchorItem: null
+  property ShellScreen targetScreen: null
+
+  property string menuMode: "app" // "app" or "launcher"
+  property string launcherWidgetSection: ""
+  property int launcherWidgetIndex: -1
+  property var launcherWidgetSettings: ({})
 
   property bool hovered: menuMouseArea.containsMouse
   property var onAppClosed: null // Callback function for when an app is closed
@@ -72,6 +79,34 @@ PopupWindow {
   }
 
   function initItems() {
+    if (menuMode === "launcher") {
+      root.items = [
+        {
+          "icon": "adjustments",
+          "text": I18n.tr("actions.dock-settings"),
+          "action": function () {
+            handleDockSettings();
+          }
+        },
+        {
+          "icon": "adjustments",
+          "text": I18n.tr("actions.launcher-settings"),
+          "action": function () {
+            handleLauncherSettings();
+          }
+        },
+        {
+          "icon": "settings",
+          "text": I18n.tr("actions.widget-settings"),
+          "action": function () {
+            handleLauncherWidgetSettings();
+          }
+        }
+      ];
+      calculateMenuWidth();
+      return;
+    }
+
     // Is this a running app?
     const isRunning = root.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(root.toplevel);
 
@@ -249,7 +284,7 @@ PopupWindow {
     }
   }
 
-  function show(item, toplevelData) {
+  function show(item, toplevelData, screen) {
     if (!item) {
       return;
     }
@@ -260,6 +295,7 @@ PopupWindow {
     // Then set up new data
     anchorItem = item;
     toplevel = toplevelData;
+    targetScreen = screen || null;
     initItems();
 
     visible = true;
@@ -312,6 +348,31 @@ PopupWindow {
       }
     }
     root.hide();
+    root.requestClose();
+  }
+
+  function handleLauncherSettings() {
+    if (targetScreen) {
+      var panel = PanelService.getPanel("settingsPanel", targetScreen);
+      panel.requestedTab = SettingsPanel.Tab.Launcher;
+      panel.toggle();
+    }
+    root.requestClose();
+  }
+
+  function handleDockSettings() {
+    if (targetScreen) {
+      var panel = PanelService.getPanel("settingsPanel", targetScreen);
+      panel.requestedTab = SettingsPanel.Tab.Dock;
+      panel.toggle();
+    }
+    root.requestClose();
+  }
+
+  function handleLauncherWidgetSettings() {
+    if (targetScreen && launcherWidgetSection && launcherWidgetIndex >= 0) {
+      BarService.openWidgetSettings(targetScreen, launcherWidgetSection, launcherWidgetIndex, "Launcher", launcherWidgetSettings || {});
+    }
     root.requestClose();
   }
 

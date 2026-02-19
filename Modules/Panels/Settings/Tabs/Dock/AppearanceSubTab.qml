@@ -218,5 +218,34 @@ ColumnLayout {
       defaultValue: Settings.getDefaultValue("dock.colorizeIcons")
       onToggled: checked => Settings.data.dock.colorizeIcons = checked
     }
+
+    NToggle {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-show-launcher-icon-label")
+      description: I18n.tr("panels.dock.appearance-show-launcher-icon-description")
+      checked: Settings.data.dock.showLauncherIcon
+      defaultValue: Settings.getDefaultValue("dock.showLauncherIcon")
+      onToggled: checked => Settings.data.dock.showLauncherIcon = checked
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.showLauncherIcon
+      label: I18n.tr("panels.dock.appearance-launcher-position-label")
+      description: I18n.tr("panels.dock.appearance-launcher-position-description")
+      model: [
+        {
+          "key": "start",
+          "name": I18n.tr("panels.dock.appearance-launcher-position-start")
+        },
+        {
+          "key": "end",
+          "name": I18n.tr("panels.dock.appearance-launcher-position-end")
+        }
+      ]
+      currentKey: Settings.data.dock.launcherPosition
+      defaultValue: Settings.getDefaultValue("dock.launcherPosition")
+      onSelected: key => Settings.data.dock.launcherPosition = key
+    }
   }
 }
