@@ -533,6 +533,7 @@ Singleton {
       property list<string> pinnedApps: [] // Desktop entry IDs pinned to the dock (e.g., "org.kde.konsole", "firefox.desktop")
       property bool colorizeIcons: false
       property bool showLauncherIcon: false
+      property string launcherPosition: "end" // "start", "end"
 
       property bool pinnedStatic: false
       property bool inactiveIndicators: false

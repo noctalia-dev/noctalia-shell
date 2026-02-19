@@ -332,6 +332,7 @@
     "pinnedApps": [],
     "colorizeIcons": false,
     "showLauncherIcon": false,
+    "launcherPosition": "end",
     "pinnedStatic": false,
     "inactiveIndicators": false,
     "deadOpacity": 0.6,

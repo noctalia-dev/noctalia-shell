@@ -132,6 +132,113 @@ Item {
         width: implicitWidth
         height: implicitHeight
 
+        Component {
+          id: launcherButtonComponent
+
+          Item {
+            id: launcherButton
+            anchors.fill: parent
+            readonly property string screenName: dockRoot.modelData ? dockRoot.modelData.name : (dockRoot.screen ? dockRoot.screen.name : "")
+            readonly property var launcherWidgetSettings: {
+              const widgetsBySection = screenName ? Settings.getBarWidgetsForScreen(screenName) : Settings.data.bar.widgets;
+              if (!widgetsBySection)
+                return {};
+              const sections = ["left", "center", "right"];
+              for (let i = 0; i < sections.length; i++) {
+                const sectionWidgets = widgetsBySection[sections[i]] || [];
+                for (let j = 0; j < sectionWidgets.length; j++) {
+                  const widget = sectionWidgets[j];
+                  if (widget && widget.id === "Launcher")
+                    return widget;
+                }
+              }
+              return {};
+            }
+            readonly property var launcherMetadata: BarWidgetRegistry.widgetMetadata["Launcher"]
+            readonly property string launcherIcon: launcherWidgetSettings.icon || (launcherMetadata && launcherMetadata.icon ? launcherMetadata.icon : "search")
+            readonly property string launcherIconColorKey: launcherWidgetSettings.iconColor !== undefined
+              ? launcherWidgetSettings.iconColor
+              : (launcherMetadata && launcherMetadata.iconColor !== undefined ? launcherMetadata.iconColor : "none")
+
+            Item {
+              id: launcherIconContainer
+              width: dockRoot.iconSize
+              height: dockRoot.iconSize
+              anchors.centerIn: parent
+
+              scale: launcherMouseArea.containsMouse ? 1.15 : 1.0
+              Behavior on scale {
+                NumberAnimation {
+                  duration: Style.animationNormal
+                  easing.type: Easing.OutBack
+                  easing.overshoot: 1.2
+                }
+              }
+
+              NIcon {
+                anchors.centerIn: parent
+                icon: launcherButton.launcherIcon
+                pointSize: dockRoot.iconSize * 0.7
+                color: Color.resolveColorKey(launcherButton.launcherIconColorKey)
+              }
+            }
+
+            MouseArea {
+              id: launcherMouseArea
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+
+              onEntered: {
+                dockRoot.anyAppHovered = true;
+                TooltipService.show(launcherButton, I18n.tr("actions.open-launcher"), "top");
+                if (dockRoot.autoHide) {
+                  dockRoot.showTimer.stop();
+                  dockRoot.hideTimer.stop();
+                  dockRoot.unloadTimer.stop();
+                  dockRoot.hidden = false;
+                }
+              }
+
+              onExited: {
+                dockRoot.anyAppHovered = false;
+                TooltipService.hide();
+                if (dockRoot.autoHide && !dockRoot.dockHovered && !dockRoot.peekHovered && !dockRoot.menuHovered && dockRoot.dragSourceIndex === -1) {
+                  dockRoot.hideTimer.restart();
+                }
+              }
+
+              onClicked: mouse => {
+                if (mouse.button !== Qt.LeftButton && mouse.button !== Qt.MiddleButton) {
+                  return;
+                }
+                const targetScreen = dockRoot.modelData || dockRoot.screen || null;
+                if (!targetScreen) {
+                  return;
+                }
+                dockRoot.closeAllContextMenus();
+                PanelService.toggleLauncher(targetScreen);
+              }
+            }
+          }
+        }
+
+        Loader {
+          id: launcherButtonStart
+          active: Settings.data.dock.showLauncherIcon && Settings.data.dock.launcherPosition === "start"
+          visible: active
+          sourceComponent: launcherButtonComponent
+          readonly property real indicatorMargin: Math.max(3, Math.round(dockRoot.iconSize * 0.18))
+          Layout.preferredWidth: active ? (dockRoot.isVertical ? dockRoot.iconSize + indicatorMargin * 2 : dockRoot.iconSize) : 0
+          Layout.preferredHeight: active ? (dockRoot.isVertical ? dockRoot.iconSize : dockRoot.iconSize + indicatorMargin * 2) : 0
+          Layout.minimumWidth: active ? Layout.preferredWidth : 0
+          Layout.minimumHeight: active ? Layout.preferredHeight : 0
+          Layout.maximumWidth: active ? Layout.preferredWidth : 0
+          Layout.maximumHeight: active ? Layout.preferredHeight : 0
+          Layout.alignment: Qt.AlignCenter
+        }
+
         Repeater {
           model: dockRoot.dockApps
 
@@ -520,6 +627,21 @@ Item {
               anchors.rightMargin: dockRoot.isVertical && dockRoot.dockPosition === "right" ? 2 : 0
             }
           }
+        }
+
+        Loader {
+          id: launcherButtonEnd
+          active: Settings.data.dock.showLauncherIcon && Settings.data.dock.launcherPosition === "end"
+          visible: active
+          sourceComponent: launcherButtonComponent
+          readonly property real indicatorMargin: Math.max(3, Math.round(dockRoot.iconSize * 0.18))
+          Layout.preferredWidth: active ? (dockRoot.isVertical ? dockRoot.iconSize + indicatorMargin * 2 : dockRoot.iconSize) : 0
+          Layout.preferredHeight: active ? (dockRoot.isVertical ? dockRoot.iconSize : dockRoot.iconSize + indicatorMargin * 2) : 0
+          Layout.minimumWidth: active ? Layout.preferredWidth : 0
+          Layout.minimumHeight: active ? Layout.preferredHeight : 0
+          Layout.maximumWidth: active ? Layout.preferredWidth : 0
+          Layout.maximumHeight: active ? Layout.preferredHeight : 0
+          Layout.alignment: Qt.AlignCenter
         }
       }
     }
