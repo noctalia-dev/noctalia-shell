@@ -6,9 +6,11 @@ import qs.Widgets
 
 ColumnLayout {
   id: root
+
   // Properties to receive data from parent
-  property var widgetData: ({}) // Expected by BarWidgetSettingsDialog
-  property var widgetMetadata: ({}) // Expected by BarWidgetSettingsDialog
+  property var screen: null
+  property var widgetData: null
+  property var widgetMetadata: null
 
   signal settingsChanged(var settings)
 
@@ -44,20 +46,18 @@ ColumnLayout {
     checked: root.valueDrawerEnabled
     onToggled: checked => {
                  root.valueDrawerEnabled = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
-  NComboBox {
+  NColorChoice {
     label: I18n.tr("bar.tray.chevron-color-label")
     description: I18n.tr("bar.tray.chevron-color-description")
-    model: Color.colorKeyModel
     currentKey: root.valueChevronColor
     onSelected: key => {
                   root.valueChevronColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
-    minimumWidth: 200
     visible: root.valueDrawerEnabled
   }
 
@@ -68,7 +68,7 @@ ColumnLayout {
     checked: root.valueColorizeIcons
     onToggled: checked => {
                  root.valueColorizeIcons = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -79,7 +79,7 @@ ColumnLayout {
     checked: root.valueHidePassive
     onToggled: checked => {
                  root.valueHidePassive = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -116,7 +116,7 @@ ColumnLayout {
                                       "rule": newRule
                                     });
               newRuleInput.text = "";
-              settingsChanged(saveSettings());
+              saveSettings();
             }
           }
         }
@@ -169,7 +169,7 @@ ColumnLayout {
           colorFgHover: Color.mOnError
           onClicked: {
             blacklistModel.remove(index);
-            settingsChanged(saveSettings());
+            saveSettings();
           }
         }
       }
@@ -190,6 +190,6 @@ ColumnLayout {
     settings.chevronColor = root.valueChevronColor;
     settings.drawerEnabled = root.valueDrawerEnabled;
     settings.hidePassive = root.valueHidePassive;
-    return settings;
+    settingsChanged(settings);
   }
 }

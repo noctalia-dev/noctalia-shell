@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -26,7 +27,7 @@ ColumnLayout {
     settings.middleClickCommand = valueMiddleClickCommand;
     settings.iconColor = valueIconColor;
     settings.textColor = valueTextColor;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -50,32 +51,25 @@ ColumnLayout {
     currentKey: valueDisplayMode
     onSelected: key => {
                   valueDisplayMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
-  NComboBox {
+  NColorChoice {
     label: I18n.tr("common.select-icon-color")
-    description: I18n.tr("common.select-color-description")
-    model: Color.colorKeyModel
     currentKey: valueIconColor
     onSelected: key => {
                   valueIconColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
-    minimumWidth: 200
   }
 
-  NComboBox {
-    label: I18n.tr("common.select-color")
-    description: I18n.tr("common.select-color-description")
-    model: Color.colorKeyModel
+  NColorChoice {
     currentKey: valueTextColor
     onSelected: key => {
                   valueTextColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
-    minimumWidth: 200
   }
 
   // Middle click command
@@ -85,6 +79,6 @@ ColumnLayout {
     placeholderText: I18n.tr("panels.audio.external-mixer-placeholder")
     text: valueMiddleClickCommand
     onTextChanged: valueMiddleClickCommand = text
-    onEditingFinished: settingsChanged(saveSettings())
+    onEditingFinished: saveSettings()
   }
 }

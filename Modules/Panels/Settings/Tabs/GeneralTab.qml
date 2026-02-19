@@ -40,7 +40,6 @@ ColumnLayout {
   NTabView {
     id: tabView
     currentIndex: subTabBar.currentIndex
-
     BasicsSubTab {}
     KeybindsSubTab {}
   }

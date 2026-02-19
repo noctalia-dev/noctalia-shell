@@ -33,6 +33,7 @@ Singleton {
         settingsWindow.visible = true;
         isWindowOpen = true;
         windowOpened();
+        settingsWindow.navigateToEntry(entry);
       }
     } else {
       if (!screen) {
@@ -61,6 +62,7 @@ Singleton {
         settingsWindow.visible = true;
         isWindowOpen = true;
         windowOpened();
+        settingsWindow.navigateTo(tabId, subTabId);
       }
     } else {
       if (!screen) {
@@ -81,6 +83,7 @@ Singleton {
       settingsWindow.visible = true;
       isWindowOpen = true;
       windowOpened();
+      settingsWindow.navigateTo(requestedTab, -1);
     }
   }
 
@@ -97,6 +100,44 @@ Singleton {
       closeWindow();
     } else {
       openWindow(tab);
+    }
+  }
+
+  // Unified toggle: opens to tab/subtab if closed, closes if open
+  // Respects settingsPanelMode setting
+  function toggle(tab, subTab, screen) {
+    const tabId = tab !== undefined ? tab : 0;
+    const subTabId = subTab !== undefined ? subTab : -1;
+
+    if (Settings.data.ui.settingsPanelMode === "window") {
+      if (isWindowOpen) {
+        closeWindow();
+      } else {
+        openToTab(tabId, subTabId);
+      }
+    } else {
+      if (!screen) {
+        Logger.w("SettingsPanelService", "Screen parameter required for panel mode");
+        return;
+      }
+      var settingsPanel = PanelService.getPanel("settingsPanel", screen);
+      if (settingsPanel?.isPanelOpen) {
+        settingsPanel.close();
+      } else {
+        settingsPanel?.openToTab(tabId, subTabId);
+      }
+    }
+  }
+
+  // Unified close for both modes
+  function close(screen) {
+    if (Settings.data.ui.settingsPanelMode === "window") {
+      closeWindow();
+    } else {
+      if (!screen)
+        return;
+      var settingsPanel = PanelService.getPanel("settingsPanel", screen);
+      settingsPanel?.close();
     }
   }
 }

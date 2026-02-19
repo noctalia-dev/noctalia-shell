@@ -38,20 +38,7 @@ NIconButton {
   readonly property string unreadBadgeColor: widgetSettings.unreadBadgeColor !== undefined ? widgetSettings.unreadBadgeColor : widgetMetadata.unreadBadgeColor
   readonly property string iconColorKey: widgetSettings.iconColor !== undefined ? widgetSettings.iconColor : widgetMetadata.iconColor
 
-  readonly property color badgeColor: {
-    switch (unreadBadgeColor) {
-    case "primary":
-      return Color.mPrimary;
-    case "secondary":
-      return Color.mSecondary;
-    case "tertiary":
-      return Color.mTertiary;
-    case "error":
-      return Color.mError;
-    default:
-      return Color.mOnSurface;
-    }
-  }
+  readonly property color badgeColor: Color.resolveColorKey(unreadBadgeColor)
 
   function computeUnreadCount() {
     var since = NotificationService.lastSeenTs;

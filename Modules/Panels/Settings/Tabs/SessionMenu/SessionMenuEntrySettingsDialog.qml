@@ -22,6 +22,7 @@ Popup {
     "suspend": "systemctl suspend || loginctl suspend",
     "hibernate": "systemctl hibernate || loginctl hibernate",
     "reboot": "systemctl reboot || loginctl reboot",
+    "rebootToUefi": "systemctl reboot --firmware-setup || loginctl reboot --firmware-setup",
     "logout": I18n.tr("panels.session-menu.entry-settings-default-command-logout"),
     "shutdown": "systemctl poweroff || loginctl poweroff"
   }
@@ -162,6 +163,7 @@ Popup {
         description: I18n.tr("placeholders.keybind-recording")
         allowEmpty: true
         maxKeybinds: 1
+        requireModifierForNormalKeys: false
         currentKeybinds: keybindInputText ? [keybindInputText] : []
         settingsPath: "sessionMenu.powerOptions[" + root.entryIndex + "].keybind"
         onKeybindsChanged: newKeybinds => {

@@ -18,6 +18,7 @@ import qs.Modules.Panels.Brightness
 import qs.Modules.Panels.Changelog
 import qs.Modules.Panels.Clock
 import qs.Modules.Panels.ControlCenter
+import qs.Modules.Panels.Dock
 import qs.Modules.Panels.Launcher
 import qs.Modules.Panels.Media
 import qs.Modules.Panels.Network
@@ -338,6 +339,12 @@ PanelWindow {
       screen: root.screen
     }
 
+    StaticDockPanel {
+      id: staticDockPanel
+      objectName: "staticDockPanel-" + (root.screen?.name || "unknown")
+      screen: root.screen
+    }
+
     // ----------------------------------------------
     // Plugin panel slots
     // ----------------------------------------------
@@ -377,7 +384,7 @@ PanelWindow {
       readonly property real barHeight: Style.getBarHeightForScreen(screen?.name)
 
       // Auto-hide properties (read by AllBackgrounds for background fade)
-      readonly property bool autoHide: Settings.data.bar.displayMode === "auto_hide"
+      readonly property bool autoHide: Settings.getBarDisplayModeForScreen(screen?.name) === "auto_hide"
       property bool isHidden: autoHide
 
       Connections {

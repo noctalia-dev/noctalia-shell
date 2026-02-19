@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import qs.Commons
 import qs.Widgets
 
@@ -9,6 +10,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -18,13 +20,17 @@ ColumnLayout {
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
   property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
   property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
+  property bool valueApplyToAllMonitors: widgetData.applyToAllMonitors !== undefined ? widgetData.applyToAllMonitors : widgetMetadata.applyToAllMonitors
+
+  readonly property bool hasMultipleMonitors: (Quickshell.screens || []).length > 1
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.displayMode = valueDisplayMode;
     settings.iconColor = valueIconColor;
     settings.textColor = valueTextColor;
-    return settings;
+    settings.applyToAllMonitors = valueApplyToAllMonitors;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -48,31 +54,37 @@ ColumnLayout {
     currentKey: valueDisplayMode
     onSelected: key => {
                   valueDisplayMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
-  NComboBox {
+  NColorChoice {
     label: I18n.tr("common.select-icon-color")
-    description: I18n.tr("common.select-color-description")
-    model: Color.colorKeyModel
     currentKey: valueIconColor
     onSelected: key => {
                   valueIconColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
-    minimumWidth: 200
   }
 
-  NComboBox {
-    label: I18n.tr("common.select-color")
-    description: I18n.tr("common.select-color-description")
-    model: Color.colorKeyModel
+  NColorChoice {
     currentKey: valueTextColor
     onSelected: key => {
                   valueTextColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
-    minimumWidth: 200
+  }
+
+  NToggle {
+    visible: hasMultipleMonitors
+    Layout.fillWidth: true
+    label: I18n.tr("bar.brightness.apply-all-label")
+    description: I18n.tr("bar.brightness.apply-all-description")
+    checked: valueApplyToAllMonitors
+    onToggled: checked => {
+                 valueApplyToAllMonitors = checked;
+                 saveSettings();
+               }
+    defaultValue: widgetMetadata.applyToAllMonitors
   }
 }

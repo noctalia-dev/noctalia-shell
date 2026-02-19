@@ -24,6 +24,7 @@ import qs.Modules.LockScreen
 import qs.Modules.MainScreen
 import qs.Modules.Notification
 import qs.Modules.OSD
+
 import qs.Modules.Panels.Launcher
 import qs.Modules.Panels.Settings
 import qs.Modules.Toast

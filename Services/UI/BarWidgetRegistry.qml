@@ -106,7 +106,8 @@ Singleton {
                                   "Brightness": {
                                     "displayMode": "onhover",
                                     "iconColor": "none",
-                                    "textColor": "none"
+                                    "textColor": "none",
+                                    "applyToAllMonitors": false
                                   },
                                   "Clock": {
                                     "clockColor": "none",
@@ -127,6 +128,9 @@ Singleton {
                                   "CustomButton": {
                                     "icon": "heart",
                                     "showIcon": true,
+                                    "showExecTooltip": true,
+                                    "showTextTooltip": true,
+                                    "generalTooltipText": "",
                                     "hideMode": "alwaysExpanded",
                                     "leftClickExec": "",
                                     "leftClickUpdateText": false,
@@ -222,6 +226,7 @@ Singleton {
                                     "iconColor": "none",
                                     "textColor": "none",
                                     "useMonospaceFont": true,
+                                    "usePadding": false,
                                     "showCpuUsage": true,
                                     "showCpuFreq": false,
                                     "showCpuTemp": true,
@@ -291,7 +296,6 @@ Singleton {
                                     "occupiedColor": "secondary",
                                     "emptyColor": "secondary",
                                     "showBadge": true,
-                                    "reverseScroll": false,
                                     "pillSize": 0.6
                                   },
                                   "Volume": {

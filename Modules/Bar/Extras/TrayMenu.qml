@@ -26,7 +26,7 @@ PopupWindow {
   readonly property bool isPinned: {
     if (!trayItem || widgetSection === "" || widgetIndex < 0)
       return false;
-    var widgets = Settings.data.bar.widgets[widgetSection];
+    var widgets = Settings.getBarWidgetsForScreen(root.screen?.name)[widgetSection];
     if (!widgets || widgetIndex >= widgets.length)
       return false;
     var widgetSettings = widgets[widgetIndex];
@@ -491,7 +491,7 @@ PopupWindow {
         visible: {
           if (widgetSection === "" || widgetIndex < 0)
             return false;
-          var widgets = Settings.data.bar.widgets[widgetSection];
+          var widgets = Settings.getBarWidgetsForScreen(root.screen?.name)[widgetSection];
           if (!widgets || widgetIndex >= widgets.length)
             return false;
           var widgetSettings = widgets[widgetIndex];
@@ -557,7 +557,8 @@ PopupWindow {
       Logger.w("TrayMenu", "Cannot pin: tray item has no name");
       return;
     }
-    var widgets = Settings.data.bar.widgets[widgetSection];
+    var screenName = root.screen?.name || "";
+    var widgets = Settings.getBarWidgetsForScreen(screenName)[widgetSection];
     if (!widgets || widgetIndex >= widgets.length) {
       Logger.w("TrayMenu", "Cannot pin: invalid widget index");
       return;
@@ -573,7 +574,15 @@ PopupWindow {
     var newSettings = Object.assign({}, widgetSettings);
     newSettings.pinned = newPinned;
     widgets[widgetIndex] = newSettings;
-    Settings.data.bar.widgets[widgetSection] = widgets;
+
+    // Write to the correct location: screen override or global
+    if (Settings.hasScreenOverride(screenName, "widgets")) {
+      var overrideWidgets = Settings.getBarWidgetsForScreen(screenName);
+      overrideWidgets[widgetSection] = widgets;
+      Settings.setScreenOverride(screenName, "widgets", overrideWidgets);
+    } else {
+      Settings.data.bar.widgets[widgetSection] = widgets;
+    }
     Settings.saveImmediate();
 
     // Close drawer when pinning (drawer needs to resize)
@@ -594,7 +603,8 @@ PopupWindow {
       Logger.w("TrayMenu", "Cannot unpin: tray item has no name");
       return;
     }
-    var widgets = Settings.data.bar.widgets[widgetSection];
+    var screenName = root.screen?.name || "";
+    var widgets = Settings.getBarWidgetsForScreen(screenName)[widgetSection];
     if (!widgets || widgetIndex >= widgets.length) {
       Logger.w("TrayMenu", "Cannot unpin: invalid widget index");
       return;
@@ -614,7 +624,15 @@ PopupWindow {
     var newSettings = Object.assign({}, widgetSettings);
     newSettings.pinned = newPinned;
     widgets[widgetIndex] = newSettings;
-    Settings.data.bar.widgets[widgetSection] = widgets;
+
+    // Write to the correct location: screen override or global
+    if (Settings.hasScreenOverride(screenName, "widgets")) {
+      var overrideWidgets = Settings.getBarWidgetsForScreen(screenName);
+      overrideWidgets[widgetSection] = widgets;
+      Settings.setScreenOverride(screenName, "widgets", overrideWidgets);
+    } else {
+      Settings.data.bar.widgets[widgetSection] = widgets;
+    }
     Settings.saveImmediate();
   }
 }

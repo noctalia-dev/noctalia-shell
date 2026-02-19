@@ -8,6 +8,7 @@ import Quickshell.Services.Notifications
 import Quickshell.Wayland
 import "../../Helpers/sha256.js" as Checksum
 import qs.Commons
+import qs.Services.Compositor
 import qs.Services.Media
 import qs.Services.Power
 import qs.Services.UI
@@ -286,7 +287,9 @@ Singleton {
 
     // Update properties (keeping original timestamp and progress)
     activeList.setProperty(index, "summary", data.summary);
+    activeList.setProperty(index, "summaryMarkdown", data.summaryMarkdown);
     activeList.setProperty(index, "body", data.body);
+    activeList.setProperty(index, "bodyMarkdown", data.bodyMarkdown);
     activeList.setProperty(index, "appName", data.appName);
     activeList.setProperty(index, "urgency", data.urgency);
     activeList.setProperty(index, "expireTimeout", data.expireTimeout);
@@ -426,8 +429,10 @@ Singleton {
 
     return {
       "id": id,
-      "summary": n.summary || "",
-      "body": stripTags(n.body || ""),
+      "summary": processNotificationText(n.summary || ""),
+      "summaryMarkdown": processNotificationMarkdown(n.summary || ""),
+      "body": processNotificationText(n.body || ""),
+      "bodyMarkdown": processNotificationMarkdown(n.body || ""),
       "appName": getAppName(n.appName || n.desktopEntry || ""),
       "urgency": n.urgency < 0 || n.urgency > 2 ? 1 : n.urgency,
       "expireTimeout": n.expireTimeout,
@@ -466,7 +471,9 @@ Singleton {
 
     // Update properties (keeping timestamp and progress)
     activeList.setProperty(index, "summary", data.summary);
+    activeList.setProperty(index, "summaryMarkdown", data.summaryMarkdown);
     activeList.setProperty(index, "body", data.body);
+    activeList.setProperty(index, "bodyMarkdown", data.bodyMarkdown);
     activeList.setProperty(index, "appName", data.appName);
     activeList.setProperty(index, "urgency", data.urgency);
     activeList.setProperty(index, "expireTimeout", data.expireTimeout);
@@ -639,12 +646,16 @@ Singleton {
         historyList.append({
                              "id": item.id || "",
                              "summary": item.summary || "",
+                             "summaryMarkdown": processNotificationMarkdown(item.summary || ""),
                              "body": item.body || "",
+                             "bodyMarkdown": processNotificationMarkdown(item.body || ""),
                              "appName": item.appName || "",
                              "urgency": item.urgency < 0 || item.urgency > 2 ? 1 : item.urgency,
                              "timestamp": time,
                              "originalImage": item.originalImage || "",
-                             "cachedImage": cachedImage
+                             "cachedImage": cachedImage,
+                             "actionsJson": item.actionsJson || "[]",
+                             "originalId": item.originalId || 0
                            });
       }
     } catch (e) {
@@ -737,8 +748,97 @@ Singleton {
     return ThemeIcons.iconFromName(icon);
   }
 
-  function stripTags(text) {
-    return text.replace(/<[^>]*>?/gm, '');
+  function escapeHtml(text) {
+    if (!text)
+      return "";
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function sanitizeMarkdownUrl(url) {
+    if (!url)
+      return "";
+    const trimmed = url.trim();
+    if (trimmed === "")
+      return "";
+    const lower = trimmed.toLowerCase();
+    if (lower.startsWith("http://") || lower.startsWith("https://") || lower.startsWith("mailto:")) {
+      return encodeURI(trimmed);
+    }
+    return "";
+  }
+
+  function sanitizeMarkdown(text) {
+    if (!text)
+      return "";
+
+    let input = String(text);
+
+    // Strip images entirely
+    input = input.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, function (match, alt) {
+      return alt ? alt : "";
+    });
+
+    // Extract links into placeholders
+    const links = [];
+    input = input.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (match, label, urlAndTitle) {
+      const urlPart = (urlAndTitle || "").trim().split(/\s+/)[0] || "";
+      const safeUrl = sanitizeMarkdownUrl(urlPart);
+      const safeLabel = escapeHtml(label);
+      if (!safeUrl)
+        return safeLabel;
+      const token = "__MDLINK_" + links.length + "__";
+      links.push({
+                   "label": safeLabel,
+                   "url": safeUrl
+                 });
+      return token;
+    });
+
+    // Escape any remaining HTML
+    input = escapeHtml(input);
+
+    // Restore sanitized links
+    for (let i = 0; i < links.length; i++) {
+      const token = "__MDLINK_" + i + "__";
+      const link = links[i];
+      input = input.split(token).join("[" + link.label + "](" + link.url + ")");
+    }
+
+    return input;
+  }
+
+  function processNotificationText(text) {
+    if (!text)
+      return "";
+
+    // Split by tags to process segments separately
+    const parts = text.split(/(<[^>]+>)/);
+    let result = "";
+    const allowedTags = ["b", "i", "u", "a", "br"];
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (part.startsWith("<") && part.endsWith(">")) {
+        const content = part.substring(1, part.length - 1);
+        const firstWord = content.split(/[\s/]/).filter(s => s.length > 0)[0]?.toLowerCase();
+
+        if (allowedTags.includes(firstWord)) {
+          // Preserve valid HTML tag
+          result += part;
+        } else {
+          // Unknown tag: drop tag without leaking attributes
+          result += "";
+        }
+      } else {
+        // Normal text: escape everything
+        result += escapeHtml(part);
+      }
+    }
+    return result;
+  }
+
+  function processNotificationMarkdown(text) {
+    return sanitizeMarkdown(text);
   }
 
   function generateImageId(notification, image) {
@@ -799,45 +899,69 @@ Singleton {
     quickshellIdToInternalId = {};
   }
 
+  function invokeActionAndSuppressClose(id, actionId) {
+    const notifData = activeNotifications[id];
+    if (notifData && notifData.notification && notifData.onClosed) {
+      try {
+        notifData.notification.closed.disconnect(notifData.onClosed);
+      } catch (e) {}
+    }
+
+    return invokeAction(id, actionId);
+  }
+
   function invokeAction(id, actionId) {
-    // 1. Try invoking via live object
     let invoked = false;
     const notifData = activeNotifications[id];
 
-    if (!notifData) {
-      // No data
-    } else if (!notifData.notification) {
-      // No notification object
-    } else {
-      // Use cached actions if live actions are empty (which happens if app closed notification)
+    if (notifData && notifData.notification) {
       const actionsToUse = (notifData.notification.actions && notifData.notification.actions.length > 0) ? notifData.notification.actions : (notifData.cachedActions || []);
 
       if (actionsToUse && actionsToUse.length > 0) {
         for (const item of actionsToUse) {
-          const id = item.identifier; // Works for both raw object and wrapper (if properties match)
-          const actionObj = item.actionObject ? item.actionObject : item; // Unwrap if wrapper
+          const itemId = item.identifier;
+          const actionObj = item.actionObject ? item.actionObject : item;
 
-          if (id === actionId) {
+          if (itemId === actionId) {
             if (actionObj.invoke) {
               try {
                 actionObj.invoke();
                 invoked = true;
               } catch (e) {
-                if (manualInvoke(notifData.metadata.originalId, id)) {
+                Logger.w("NotificationService", "invoke() failed, trying manual fallback: " + e);
+                if (manualInvoke(notifData.metadata.originalId, itemId)) {
                   invoked = true;
                 }
               }
             } else {
-              if (manualInvoke(notifData.metadata.originalId, id)) {
+              if (manualInvoke(notifData.metadata.originalId, itemId)) {
                 invoked = true;
               }
             }
+            break;
           }
+        }
+      }
+
+      if (!invoked && notifData.metadata.originalId) {
+        Logger.w("NotificationService", "Action objects exhausted, trying manual invoke for id=" + id + " action=" + actionId);
+        invoked = manualInvoke(notifData.metadata.originalId, actionId);
+      }
+    } else if (!notifData) {
+      Logger.w("NotificationService", "No active notification data for id=" + id + ", searching history for manual invoke");
+      for (var i = 0; i < historyList.count; i++) {
+        if (historyList.get(i).id === id) {
+          const histEntry = historyList.get(i);
+          if (histEntry.originalId) {
+            invoked = manualInvoke(histEntry.originalId, actionId);
+          }
+          break;
         }
       }
     }
 
     if (!invoked) {
+      Logger.w("NotificationService", "Failed to invoke action '" + actionId + "' for notification " + id);
       return false;
     }
 
@@ -865,6 +989,29 @@ Singleton {
       Logger.e("NotificationService", "Manual invoke failed: " + e);
       return false;
     }
+  }
+
+  function focusSenderWindow(appName) {
+    if (!appName || appName === "" || appName === "Unknown")
+      return false;
+
+    const normalizedName = appName.toLowerCase().replace(/\s+/g, "");
+
+    for (var i = 0; i < CompositorService.windows.count; i++) {
+      const win = CompositorService.windows.get(i);
+      const winAppId = (win.appId || "").toLowerCase();
+
+      const segments = winAppId.split(".");
+      const lastSegment = segments[segments.length - 1] || "";
+
+      if (winAppId === normalizedName || lastSegment === normalizedName || winAppId.includes(normalizedName) || normalizedName.includes(lastSegment)) {
+        CompositorService.focusWindow(win);
+        return true;
+      }
+    }
+
+    Logger.d("NotificationService", "No window found for app: " + appName);
+    return false;
   }
 
   function removeFromHistory(notificationId) {

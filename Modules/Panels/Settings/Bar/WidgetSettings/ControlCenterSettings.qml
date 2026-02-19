@@ -11,6 +11,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -30,7 +31,7 @@ ColumnLayout {
     settings.customIconPath = valueCustomIconPath;
     settings.enableColorization = valueEnableColorization;
     settings.colorizeSystemIcon = valueColorizeSystemIcon;
-    return settings;
+    settingsChanged(settings);
   }
 
   NToggle {
@@ -39,7 +40,7 @@ ColumnLayout {
     checked: valueUseDistroLogo
     onToggled: checked => {
                  valueUseDistroLogo = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -49,19 +50,18 @@ ColumnLayout {
     checked: valueEnableColorization
     onToggled: checked => {
                  valueEnableColorization = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
-  NComboBox {
+  NColorChoice {
     visible: valueEnableColorization
-    label: I18n.tr("common.select-color")
+    label: I18n.tr("common.select-icon-color")
     description: I18n.tr("bar.control-center.color-selection-description")
-    model: Color.colorKeyModel
     currentKey: valueColorizeSystemIcon
     onSelected: function (key) {
       valueColorizeSystemIcon = key;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -111,7 +111,7 @@ ColumnLayout {
     onIconSelected: iconName => {
                       valueIcon = iconName;
                       valueCustomIconPath = "";
-                      settingsChanged(saveSettings());
+                      saveSettings();
                     }
   }
 
@@ -124,7 +124,7 @@ ColumnLayout {
     onAccepted: paths => {
                   if (paths.length > 0) {
                     valueCustomIconPath = paths[0]; // Use first selected file
-                    settingsChanged(saveSettings());
+                    saveSettings();
                   }
                 }
   }

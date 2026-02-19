@@ -4,7 +4,7 @@ BindsTo=graphical-session.target
 After=graphical-session.target
 
 [Service]
-ExecStart=qs -c noctalia-shell
+ExecStart=qs -c noctalia-shell --no-duplicate
 Restart=on-failure
 RestartSec=1
 

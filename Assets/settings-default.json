@@ -98,6 +98,7 @@
     "allowPasswordWithFprintd": false,
     "clockStyle": "custom",
     "clockFormat": "hh\\nmm",
+    "passwordChars": false,
     "lockScreenMonitors": [],
     "lockScreenBlur": 0,
     "lockScreenTint": 0,
@@ -119,8 +120,12 @@
       ],
       "keyEscape": [
         "Esc"
+      ],
+      "keyRemove": [
+        "Del"
       ]
-    }
+    },
+    "reverseScroll": false
   },
   "ui": {
     "fontDefault": "",
@@ -308,13 +313,7 @@
     "diskAvailCriticalThreshold": 10,
     "batteryWarningThreshold": 20,
     "batteryCriticalThreshold": 5,
-    "cpuPollingInterval": 1000,
-    "gpuPollingInterval": 3000,
     "enableDgpuMonitoring": false,
-    "memPollingInterval": 1000,
-    "diskPollingInterval": 30000,
-    "networkPollingInterval": 1000,
-    "loadAvgPollingInterval": 3000,
     "useCustomColors": false,
     "warningColor": "",
     "criticalColor": "",
@@ -324,6 +323,7 @@
     "enabled": true,
     "position": "bottom",
     "displayMode": "auto_hide",
+    "dockType": "floating",
     "backgroundOpacity": 1,
     "floatingRatio": 1,
     "size": 1,
@@ -331,24 +331,31 @@
     "monitors": [],
     "pinnedApps": [],
     "colorizeIcons": false,
+    "showLauncherIcon": false,
+    "launcherPosition": "end",
     "pinnedStatic": false,
     "inactiveIndicators": false,
     "deadOpacity": 0.6,
-    "animationSpeed": 1
+    "animationSpeed": 1,
+    "sitOnFrame": false,
+    "showFrameIndicator": true
   },
   "network": {
     "wifiEnabled": true,
+    "airplaneModeEnabled": false,
     "bluetoothRssiPollingEnabled": false,
-    "bluetoothRssiPollIntervalMs": 10000,
+    "bluetoothRssiPollIntervalMs": 60000,
     "wifiDetailsViewMode": "grid",
     "bluetoothDetailsViewMode": "grid",
-    "bluetoothHideUnnamedDevices": false
+    "bluetoothHideUnnamedDevices": false,
+    "disableDiscoverability": false
   },
   "sessionMenu": {
     "enableCountdown": true,
     "countdownDuration": 10000,
     "position": "center",
     "showHeader": true,
+    "showKeybinds": true,
     "largeButtonsStyle": true,
     "largeButtonsLayout": "single-row",
     "powerOptions": [
@@ -381,11 +388,17 @@
         "action": "shutdown",
         "enabled": true,
         "keybind": "6"
+      },
+      {
+        "action": "rebootToUefi",
+        "enabled": true,
+        "keybind": "7"
       }
     ]
   },
   "notifications": {
     "enabled": true,
+    "enableMarkdown": false,
     "density": "default",
     "monitors": [],
     "location": "top_right",
@@ -395,6 +408,7 @@
     "lowUrgencyDuration": 3,
     "normalUrgencyDuration": 8,
     "criticalUrgencyDuration": 15,
+    "clearDismissed": true,
     "saveToHistory": {
       "low": true,
       "normal": true,

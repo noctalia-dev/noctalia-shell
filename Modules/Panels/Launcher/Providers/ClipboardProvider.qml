@@ -88,7 +88,7 @@ Item {
           {
             "name": ">clip",
             "description": I18n.tr("launcher.providers.clipboard-search-description"),
-            "icon": iconMode === "tabler" ? "clipboard" : "text-x-generic",
+            "icon": iconMode === "tabler" ? "clipboard" : "diodon",
             "isTablerIcon": true,
             "isImage": false,
             "onActivate": function () {
@@ -152,7 +152,7 @@ Item {
             {
               "name": I18n.tr("launcher.providers.clipboard-clear-history"),
               "description": I18n.tr("launcher.providers.clipboard-clear-description-full"),
-              "icon": iconMode === "tabler" ? "trash" : "delete_sweep",
+              "icon": iconMode === "tabler" ? "trash" : "user-trash",
               "isTablerIcon": true,
               "isImage": false,
               "onActivate": function () {

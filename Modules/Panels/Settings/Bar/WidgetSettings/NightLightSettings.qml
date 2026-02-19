@@ -7,6 +7,8 @@ ColumnLayout {
   id: root
   spacing: Style.marginM
 
+  // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -17,18 +19,15 @@ ColumnLayout {
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.iconColor = valueIconColor;
-    return settings;
+    settingsChanged(settings);
   }
 
-  NComboBox {
+  NColorChoice {
     label: I18n.tr("common.select-icon-color")
-    description: I18n.tr("common.select-color-description")
-    model: Color.colorKeyModel
     currentKey: valueIconColor
     onSelected: key => {
                   valueIconColor = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
-    minimumWidth: 200
   }
 }

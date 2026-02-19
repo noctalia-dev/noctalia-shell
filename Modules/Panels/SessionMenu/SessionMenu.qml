@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
-import "../../../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Modules.MainScreen
 import qs.Services.Compositor
@@ -102,6 +101,11 @@ SmartPanel {
     "reboot": {
       "icon": "reboot",
       "title": I18n.tr("common.reboot"),
+      "isShutdown": false
+    },
+    "rebootToUefi": {
+      "icon": "reboot",
+      "title": I18n.tr("common.reboot-to-uefi"),
       "isShutdown": false
     },
     "logout": {
@@ -230,6 +234,9 @@ SmartPanel {
       break;
     case "reboot":
       CompositorService.reboot();
+      break;
+    case "rebootToUefi":
+      CompositorService.rebootToUefi();
       break;
     case "logout":
       CompositorService.logout();
@@ -827,7 +834,7 @@ SmartPanel {
           color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mOnPrimary : Qt.alpha(Color.mSurfaceVariant, 0.5)
           border.width: Style.borderS
           border.color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mOnPrimary : Color.mOutline
-          visible: (buttonRoot.keybind !== "") && !buttonRoot.pending
+          visible: Settings.data.sessionMenu.showKeybinds && (buttonRoot.keybind !== "") && !buttonRoot.pending
 
           NText {
             id: labelText
@@ -1064,7 +1071,7 @@ SmartPanel {
       color: (largeButtonRoot.isSelected || largeButtonRoot.effectiveHover) ? Color.mOnPrimary : Qt.alpha(Color.mSurfaceVariant, 0.7)
       border.width: Style.borderS
       border.color: (largeButtonRoot.isSelected || largeButtonRoot.effectiveHover) ? Color.mOnPrimary : Color.mOutline
-      visible: (largeButtonRoot.keybind !== "") && !largeButtonRoot.pending
+      visible: Settings.data.sessionMenu.showKeybinds && (largeButtonRoot.keybind !== "") && !largeButtonRoot.pending
       z: 10
 
       NText {

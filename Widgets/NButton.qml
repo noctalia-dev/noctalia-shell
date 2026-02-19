@@ -63,7 +63,7 @@ Rectangle {
     if (!root.enabled)
       return Color.mOutline;
     if (root.hovered)
-      return backgroundColor;
+      return hoverColor;
     return root.outlined ? root.backgroundColor : "transparent";
   }
 

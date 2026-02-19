@@ -53,6 +53,9 @@ Item {
 
   visible: !root.hideWhenOff || (root.showCaps && LockKeysService.capsLockOn) || (root.showNum && LockKeysService.numLockOn) || (root.showScroll && LockKeysService.scrollLockOn)
 
+  Component.onCompleted: LockKeysService.registerComponent("bar-lockkeys:" + (screen?.name || "unknown"))
+  Component.onDestruction: LockKeysService.unregisterComponent("bar-lockkeys:" + (screen?.name || "unknown"))
+
   implicitHeight: contentHeight
   implicitWidth: contentWidth
 

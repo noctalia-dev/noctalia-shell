@@ -8,6 +8,23 @@ import qs.Commons
 Singleton {
   id: root
 
+  // Component registration - only poll when something needs lock key state
+  function registerComponent(componentId) {
+    root._registered[componentId] = true;
+    root._registered = Object.assign({}, root._registered);
+    Logger.d("LockKeys", "Component registered:", componentId, "- total:", root._registeredCount);
+  }
+
+  function unregisterComponent(componentId) {
+    delete root._registered[componentId];
+    root._registered = Object.assign({}, root._registered);
+    Logger.d("LockKeys", "Component unregistered:", componentId, "- total:", root._registeredCount);
+  }
+
+  property var _registered: ({})
+  readonly property int _registeredCount: Object.keys(_registered).length
+  readonly property bool shouldRun: _registeredCount > 0
+
   property bool capsLockOn: false
   property bool numLockOn: false
   property bool scrollLockOn: false
@@ -79,10 +96,18 @@ scroll=0; cat /sys/class/leds/input*::scrolllock/brightness 2>/dev/null | grep -
     }
   }
 
+  onShouldRunChanged: {
+    if (shouldRun) {
+      // Reset initial check so first poll after re-enable doesn't trigger OSD
+      root.initialCheckDone = false;
+      stateCheckProcess.running = true;
+    }
+  }
+
   Timer {
     id: pollTimer
     interval: 200
-    running: true
+    running: root.shouldRun
     repeat: true
     onTriggered: {
       if (!stateCheckProcess.running) {
@@ -92,7 +117,6 @@ scroll=0; cat /sys/class/leds/input*::scrolllock/brightness 2>/dev/null | grep -
   }
 
   Component.onCompleted: {
-    Logger.i("LockKeysService", "Service started, performing initial state check.");
-    stateCheckProcess.running = true;
+    Logger.i("LockKeysService", "Service started (polling deferred until a consumer registers).");
   }
 }

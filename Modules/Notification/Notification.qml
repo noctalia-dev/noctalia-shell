@@ -374,6 +374,9 @@ Variants {
               onReleased: mouse => {
                             if (mouse.button === Qt.RightButton) {
                               card.animateOut();
+                              if (Settings.data.notifications.clearDismissed) {
+                                NotificationService.removeFromHistory(notificationId);
+                              }
                               return;
                             }
 
@@ -385,6 +388,9 @@ Variants {
                               const threshold = card.useVerticalSwipe ? card.verticalSwipeDismissThreshold : card.swipeDismissThreshold;
                               if (dismissDistance >= threshold) {
                                 card.dismissBySwipe();
+                                if (Settings.data.notifications.clearDismissed) {
+                                  NotificationService.removeFromHistory(notificationId);
+                                }
                               } else {
                                 card.swipeOffset = 0;
                                 card.swipeOffsetY = 0;
@@ -402,9 +408,10 @@ Variants {
                               return a.identifier === "default";
                             });
                             if (hasDefault) {
+                              card.runAction("default", false);
+                            } else {
+                              NotificationService.focusSenderWindow(model.appName);
                               card.animateOut();
-                              deferredActionTimer.actionId = "default";
-                              deferredActionTimer.start();
                             }
                           }
               onCanceled: {
@@ -493,26 +500,22 @@ Variants {
               }
             }
 
+            function runAction(actionId, isDismissed) {
+              if (!isDismissed) {
+                NotificationService.focusSenderWindow(model.appName);
+                NotificationService.invokeActionAndSuppressClose(notificationId, actionId);
+              } else if (Settings.data.notifications.clearDismissed) {
+                NotificationService.removeFromHistory(notificationId);
+              }
+              card.animateOut();
+            }
+
             Timer {
               id: removalTimer
               interval: Style.animationSlow
               repeat: false
               onTriggered: {
                 NotificationService.dismissActiveNotification(notificationId);
-              }
-            }
-
-            Timer {
-              id: deferredActionTimer
-              interval: 50
-              property string actionId: ""
-              property bool isHistoryRemoval: false
-              onTriggered: {
-                if (isHistoryRemoval) {
-                  NotificationService.removeFromHistory(notificationId);
-                } else {
-                  NotificationService.invokeAction(notificationId, actionId);
-                }
               }
             }
 
@@ -636,7 +639,7 @@ Variants {
                     pointSize: Style.fontSizeM
                     font.weight: Style.fontWeightMedium
                     color: Color.mOnSurface
-                    textFormat: Text.PlainText
+                    textFormat: Text.StyledText
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     maximumLineCount: 3
                     elide: Text.ElideRight
@@ -649,7 +652,7 @@ Variants {
                     text: model.body || ""
                     pointSize: Style.fontSizeM
                     color: Color.mOnSurface
-                    textFormat: Text.PlainText
+                    textFormat: Text.StyledText
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
 
                     maximumLineCount: 5
@@ -699,10 +702,7 @@ Variants {
                         outlined: false
                         implicitHeight: 24
                         onClicked: {
-                          card.animateOut();
-                          deferredActionTimer.actionId = actionData.identifier;
-                          deferredActionTimer.isHistoryRemoval = false;
-                          deferredActionTimer.start();
+                          card.runAction(actionData.identifier, false);
                         }
                       }
                     }
@@ -715,7 +715,7 @@ Variants {
             NIconButton {
               visible: !notifWindow.isCompact
               icon: "close"
-              tooltipText: I18n.tr("common.close")
+              tooltipText: I18n.tr("tooltips.dismiss-notification")
               baseSize: Style.baseWidgetSize * 0.6
               anchors.top: cardBackground.top
               anchors.topMargin: Style.marginM
@@ -723,9 +723,7 @@ Variants {
               anchors.rightMargin: Style.marginM
 
               onClicked: {
-                card.animateOut();
-                deferredActionTimer.isHistoryRemoval = true;
-                deferredActionTimer.start();
+                card.runAction("", true);
               }
             }
 
@@ -758,7 +756,7 @@ Variants {
                   pointSize: Style.fontSizeM
                   font.weight: Style.fontWeightMedium
                   color: Color.mOnSurface
-                  textFormat: Text.PlainText
+                  textFormat: Text.StyledText
                   maximumLineCount: 1
                   elide: Text.ElideRight
                   Layout.fillWidth: true
@@ -770,7 +768,7 @@ Variants {
                   text: model.body || ""
                   pointSize: Style.fontSizeS
                   color: Color.mOnSurfaceVariant
-                  textFormat: Text.PlainText
+                  textFormat: Text.StyledText
                   wrapMode: Text.Wrap
                   maximumLineCount: 2
                   elide: Text.ElideRight

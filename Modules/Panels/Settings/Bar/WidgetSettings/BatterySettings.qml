@@ -10,6 +10,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -34,7 +35,7 @@ ColumnLayout {
     settings.hideIfNotDetected = valueHideIfNotDetected;
     settings.hideIfIdle = valueHideIfIdle;
     settings.deviceNativePath = valueDeviceNativePath;
-    return settings;
+    settingsChanged(settings);
   }
 
   NComboBox {
@@ -47,7 +48,7 @@ ColumnLayout {
     currentKey: root.valueDeviceNativePath
     onSelected: key => {
                   root.valueDeviceNativePath = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -81,7 +82,7 @@ ColumnLayout {
     currentKey: root.valueDisplayMode
     onSelected: key => {
                   root.valueDisplayMode = key;
-                  settingsChanged(saveSettings());
+                  saveSettings();
                 }
   }
 
@@ -91,7 +92,7 @@ ColumnLayout {
     checked: valueHideIfNotDetected
     onToggled: checked => {
                  valueHideIfNotDetected = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -101,7 +102,7 @@ ColumnLayout {
     checked: valueHideIfIdle
     onToggled: checked => {
                  valueHideIfIdle = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -115,7 +116,7 @@ ColumnLayout {
     checked: valueShowPowerProfiles
     onToggled: checked => {
                  valueShowPowerProfiles = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
@@ -125,7 +126,7 @@ ColumnLayout {
     checked: valueShowNoctaliaPerformance
     onToggled: checked => {
                  valueShowNoctaliaPerformance = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

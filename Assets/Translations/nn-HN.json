@@ -32,8 +32,8 @@
   "bar": {
     "active-window": {
       "colorize-icons-description": "Lita den verksame ruta med hamlitene.",
-      "hide-mode-description": "Stjornar kor nøytelen ter seg når det ikkje er ei verksam ruta.",
-      "scrolling-mode-description": "Stjorna når lange rutenomn kann bledja.",
+      "hide-mode-description": "Stjorna kor nøytelen ter seg når det ikkje er ei verksam ruta.",
+      "scrolling-mode-description": "Stjorna når lange rutenomn kann bledjast.",
       "show-app-icon-description": "Syn nøytendefråmerke attmed rutenamn.",
       "show-app-icon-label": "Syn nøytendefråmerke"
     },
@@ -158,12 +158,23 @@
     "media-mini": {
       "compact-mode-description": "Få spelnøytelsfjøli til å roma mindre.",
       "compact-mode-label": "Klemb spelnøytelen",
-      "hide-mode-description": "Stjorn framferdi åt nøytelen når ingen ting spelar av.",
+      "hide-mode-description": "Stjorna framferdi åt nøytelen når ingen ting spelar av.",
       "max-width-description": "Fastset kor mykje nøytelen kan lengjast vassbeint. Nøytelen dreg seg i hop for å røma stuttare innhald.",
-      "no-active-player": "Ingi verksame spelarar"
+      "no-active-player": "Ingi verksame spelarar",
+      "panel-section-description": "Stjorna skapnaden og framferdi åt spelnøytelsfjøli.",
+      "panel-section-label": "Spelnøytelsfjøl",
+      "scrolling-mode-description": "Stjorna når lange spelnomn kann bledjast.",
+      "scrolling-mode-label": "Bladluna",
+      "show-album-art-description": "Syn platekunsten til spelet som spelar av no.",
+      "show-album-art-label": "Syn platekunst",
+      "show-artist-first-description": "Syn spelmann - spel helder en spel - spelmann",
+      "show-artist-first-label": "Syn spelmann fyrst",
+      "show-progress-ring-description": "Syn ein ringvorden framgangsvisar.",
+      "show-progress-ring-label": "Syn framgangsvisar."
     }
   },
   "common": {
+    "brightness": "Ljosstyrke",
     "select-color-description": "Lita med hamlitene for tyngd."
   }
 }

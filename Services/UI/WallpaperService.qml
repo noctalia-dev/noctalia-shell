@@ -336,7 +336,17 @@ Singleton {
     if (Settings.data.wallpaper.useSolidColor) {
       return createSolidColorPath(Settings.data.wallpaper.solidColor.toString());
     }
-    return currentWallpapers[screenName] || root.defaultWallpaper;
+    if (currentWallpapers[screenName]) {
+      return currentWallpapers[screenName];
+    }
+
+    // Try to inherit wallpaper from another active screen
+    var inherited = _inheritWallpaperFromExistingScreen(screenName);
+    if (inherited) {
+      return inherited;
+    }
+
+    return root.defaultWallpaper;
   }
 
   // -------------------------------------------------------------------
@@ -378,6 +388,17 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
+  function _inheritWallpaperFromExistingScreen(screenName) {
+    for (var i = 0; i < Quickshell.screens.length; i++) {
+      var otherName = Quickshell.screens[i].name;
+      if (otherName !== screenName && currentWallpapers[otherName]) {
+        _setWallpaper(screenName, currentWallpapers[otherName]);
+        return currentWallpapers[otherName];
+      }
+    }
+    return "";
+  }
+
   function _setWallpaper(screenName, path) {
     if (path === "" || path === undefined) {
       return;

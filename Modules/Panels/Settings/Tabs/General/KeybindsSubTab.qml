@@ -69,4 +69,13 @@ ColumnLayout {
     settingsPath: "general.keybinds.keyEscape"
     onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyEscape = newKeybinds
   }
+
+  NKeybindRecorder {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.general.keybinds-remove")
+    currentKeybinds: Settings.data.general.keybinds.keyRemove
+    defaultKeybind: "Del"
+    settingsPath: "general.keybinds.keyRemove"
+    onKeybindsChanged: newKeybinds => Settings.data.general.keybinds.keyRemove = newKeybinds
+  }
 }

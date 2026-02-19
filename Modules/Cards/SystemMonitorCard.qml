@@ -10,6 +10,9 @@ import qs.Widgets
 NBox {
   id: root
 
+  Component.onCompleted: SystemStatService.registerComponent("card-sysmonitor")
+  Component.onDestruction: SystemStatService.unregisterComponent("card-sysmonitor")
+
   readonly property string diskPath: Settings.data.controlCenter.diskPath || "/"
   readonly property real contentScale: 0.95 * Style.uiScaleRatio
 

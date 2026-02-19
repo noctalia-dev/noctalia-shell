@@ -158,6 +158,9 @@ DraggableDesktopWidget {
     }
   }
 
+  Component.onCompleted: SystemStatService.registerComponent("desktop-sysstat:" + root.statType)
+  Component.onDestruction: SystemStatService.unregisterComponent("desktop-sysstat:" + root.statType)
+
   implicitWidth: Math.round(240 * widgetScale)
   implicitHeight: Math.round(120 * widgetScale)
   width: implicitWidth
@@ -167,15 +170,15 @@ DraggableDesktopWidget {
   readonly property int graphUpdateInterval: {
     switch (root.statType) {
     case "CPU":
-      return Settings.data.systemMonitor.cpuPollingInterval;
+      return SystemStatService.cpuIntervalMs;
     case "GPU":
-      return Settings.data.systemMonitor.gpuPollingInterval;
+      return SystemStatService.gpuIntervalMs;
     case "Memory":
-      return Settings.data.systemMonitor.memPollingInterval;
+      return SystemStatService.memIntervalMs;
     case "Disk":
-      return Settings.data.systemMonitor.diskPollingInterval;
+      return SystemStatService.diskIntervalMs;
     case "Network":
-      return Settings.data.systemMonitor.networkPollingInterval;
+      return SystemStatService.networkIntervalMs;
     default:
       return 1000;
     }

@@ -38,6 +38,12 @@ ColumnLayout {
       "required": false
     },
     {
+      "id": "rebootToUefi",
+      "text": I18n.tr("common.reboot-to-uefi"),
+      "enabled": true,
+      "required": false
+    },
+    {
       "id": "logout",
       "text": I18n.tr("common.logout"),
       "enabled": true,

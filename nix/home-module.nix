@@ -189,14 +189,14 @@ in
         PartOf = [ config.wayland.systemd.target ];
         After = [ config.wayland.systemd.target ];
         X-Restart-Triggers =
-          lib.optional (cfg.settings != { }) config.xdg.configFile."noctalia/settings.json".source
-          ++ lib.optional (cfg.colors != { }) config.xdg.configFile."noctalia/colors.json".source
-          ++ lib.optional (cfg.plugins != { }) config.xdg.configFile."noctalia/plugins.json".source
+          lib.optional (cfg.settings != { }) "${config.xdg.configFile."noctalia/settings.json".source}"
+          ++ lib.optional (cfg.colors != { }) "${config.xdg.configFile."noctalia/colors.json".source}"
+          ++ lib.optional (cfg.plugins != { }) "${config.xdg.configFile."noctalia/plugins.json".source}"
           ++ lib.optional (
             cfg.user-templates != { }
-          ) config.xdg.configFile."noctalia/user-templates.toml".source
+          ) "${config.xdg.configFile."noctalia/user-templates.toml".source}"
           ++ lib.mapAttrsToList (
-            name: value: config.xdg.configFile."noctalia/plugins/${name}/settings.json".source
+            name: _: "${config.xdg.configFile."noctalia/plugins/${name}/settings.json".source}"
           ) cfg.pluginSettings;
       };
 

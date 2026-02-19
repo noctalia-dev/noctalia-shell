@@ -488,6 +488,16 @@ Singleton {
                                     });
   }
 
+  function rebootToUefi() {
+    Logger.i("Compositor", "Reboot to UEFI firmware requested requested");
+    if (executeSessionAction("rebootToUefi"))
+      return;
+
+    HooksService.executeSessionHook("rebootToUefi", () => {
+                                      Quickshell.execDetached(["sh", "-c", "systemctl reboot --firmware-setup || loginctl reboot --firmware-setup"]);
+                                    });
+  }
+
   function suspend() {
     Logger.i("Compositor", "Suspend requested");
     if (executeSessionAction("suspend"))

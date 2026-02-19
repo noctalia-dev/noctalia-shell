@@ -19,6 +19,10 @@ ColumnLayout {
   property var moveWidgetBetweenSections
 
   signal openPluginSettings(var manifest)
+
+  // This sub-tab edits the global default widget configuration (Settings.data.bar.widgets).
+  // Per-screen widget overrides are edited in MonitorWidgetsConfig.qml (Monitors sub-tab).
+
   // determine bar orientation
   readonly property string barPosition: Settings.data.bar.position
   readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"

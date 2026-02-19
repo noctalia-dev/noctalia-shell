@@ -294,6 +294,21 @@ Singleton {
     }
   }
 
+  function resolveOnColorKey(key) {
+    switch (key) {
+    case "primary":
+      return root.mOnPrimary;
+    case "secondary":
+      return root.mOnSecondary;
+    case "tertiary":
+      return root.mOnTertiary;
+    case "error":
+      return root.mOnError;
+    default:
+      return root.mSurface;
+    }
+  }
+
   function resolveColorKeyOptional(key) {
     switch (key) {
     case "primary":

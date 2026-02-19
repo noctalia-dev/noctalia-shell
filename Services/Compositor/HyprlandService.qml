@@ -248,12 +248,30 @@ Item {
       const hlToplevels = Hyprland.toplevels.values;
       let newFocusedIndex = -1;
 
+      // Get active workspaces to filter focus
+      const activeWorkspaceIds = {};
+      if (Hyprland.workspaces && Hyprland.workspaces.values) {
+        const hlWorkspaces = Hyprland.workspaces.values;
+        for (var j = 0; j < hlWorkspaces.length; j++) {
+          if (hlWorkspaces[j].active) {
+            activeWorkspaceIds[hlWorkspaces[j].id] = true;
+          }
+        }
+      }
+
       for (var i = 0; i < hlToplevels.length; i++) {
         const toplevel = hlToplevels[i];
         if (!toplevel)
           continue;
         const windowData = extractWindowData(toplevel);
         if (windowData) {
+          // If the window claims to be focused, verify it's on an active workspace
+          if (windowData.isFocused) {
+            if (!activeWorkspaceIds[windowData.workspaceId]) {
+              windowData.isFocused = false;
+            }
+          }
+
           windowsList.push(windowData);
           windowCache[windowData.id] = windowData;
 

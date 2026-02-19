@@ -691,15 +691,7 @@ Item {
 
   function spawn(command) {
     try {
-      // mmsg's IPC protocol cannot handle spaces within arguments,
-      // fall back to direct exec when any argument contains a space.
-      const hasSpaces = command.some(arg => arg.includes(" "));
-
-      if (hasSpaces) {
-        Quickshell.execDetached(command);
-      } else {
-        Quickshell.execDetached(["mmsg", "-s", "-d", "spawn," + command.join(" ")]);
-      }
+      Quickshell.execDetached(["mmsg", "-s", "-d", "spawn_shell," + command.join(" ")]);
     } catch (e) {
       Logger.e("MangoService", "Failed to spawn command:", e);
     }

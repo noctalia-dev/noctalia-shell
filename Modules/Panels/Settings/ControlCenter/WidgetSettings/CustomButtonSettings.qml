@@ -13,6 +13,7 @@ ColumnLayout {
 
   property var widgetData: null
   property var widgetMetadata: null
+  property var rootSettings: null
 
   signal settingsChanged(var settings)
 
@@ -25,8 +26,9 @@ ColumnLayout {
     property string onMiddleClicked: (widgetData && widgetData.onMiddleClicked !== undefined) ? widgetData.onMiddleClicked : (widgetMetadata && widgetMetadata.onMiddleClicked ? widgetMetadata.onMiddleClicked : "")
     property ListModel _stateChecksListModel: ListModel {}
     property string stateChecksJson: "[]"
-    property string generalTooltipText: (widgetData && widgetData.generalTooltipText !== undefined) ? widgetData.generalTooltipText : (widgetMetadata && widgetMetadata.generalTooltipText ? widgetMetadata.generalTooltipText : "Custom Button")
+    property string generalTooltipText: (widgetData && widgetData.generalTooltipText !== undefined) ? widgetData.generalTooltipText : (widgetMetadata && widgetMetadata.generalTooltipText ? widgetMetadata.generalTooltipText : "")
     property bool enableOnStateLogic: (widgetData && widgetData.enableOnStateLogic !== undefined) ? widgetData.enableOnStateLogic : (widgetMetadata && widgetMetadata.enableOnStateLogic !== undefined ? widgetMetadata.enableOnStateLogic : false)
+    property bool showExecTooltip: (widgetData && widgetData.showExecTooltip !== undefined) ? widgetData.showExecTooltip : (widgetMetadata && widgetMetadata.showExecTooltip !== undefined ? widgetMetadata.showExecTooltip : true)
 
     function populateStateChecks() {
       try {
@@ -50,28 +52,55 @@ ColumnLayout {
     }
 
     Component.onCompleted: {
+      root.rootSettings = _settings;
       stateChecksJson = (widgetData && widgetData.stateChecksJson !== undefined) ? widgetData.stateChecksJson : (widgetMetadata && widgetMetadata.stateChecksJson ? widgetMetadata.stateChecksJson : "[]");
       Qt.callLater(populateStateChecks);
+    }
+
+    function saveSettings() {
+      var savedStateChecksArray = [];
+      for (var i = 0; i < _settings._stateChecksListModel.count; i++) {
+        savedStateChecksArray.push(_settings._stateChecksListModel.get(i));
+      }
+      _settings.stateChecksJson = JSON.stringify(savedStateChecksArray);
+
+      return {
+        "id": widgetData.id,
+        "icon": _settings.icon,
+        "onClicked": _settings.onClicked,
+        "onRightClicked": _settings.onRightClicked,
+        "onMiddleClicked": _settings.onMiddleClicked,
+        "stateChecksJson": _settings.stateChecksJson,
+        "generalTooltipText": _settings.generalTooltipText,
+        "enableOnStateLogic": _settings.enableOnStateLogic,
+        "showExecTooltip": _settings.showExecTooltip
+      };
     }
   }
 
   function saveSettings() {
-    var savedStateChecksArray = [];
-    for (var i = 0; i < _settings._stateChecksListModel.count; i++) {
-      savedStateChecksArray.push(_settings._stateChecksListModel.get(i));
-    }
-    _settings.stateChecksJson = JSON.stringify(savedStateChecksArray);
+    return _settings.saveSettings();
+  }
 
-    return {
-      "id": widgetData.id,
-      "icon": _settings.icon,
-      "onClicked": _settings.onClicked,
-      "onRightClicked": _settings.onRightClicked,
-      "onMiddleClicked": _settings.onMiddleClicked,
-      "stateChecksJson": _settings.stateChecksJson,
-      "generalTooltipText": _settings.generalTooltipText,
-      "enableOnStateLogic": _settings.enableOnStateLogic
-    };
+  function updateStateCheck(index, command, icon) {
+    _settings._stateChecksListModel.set(index, {
+                                          "command": command,
+                                          "icon": icon
+                                        });
+    _settings.saveSettings();
+  }
+
+  function removeStateCheck(index) {
+    _settings._stateChecksListModel.remove(index);
+    _settings.saveSettings();
+  }
+
+  function addStateCheck() {
+    _settings._stateChecksListModel.append({
+                                             "command": "",
+                                             "icon": ""
+                                           });
+    _settings.saveSettings();
   }
 
   RowLayout {
@@ -79,7 +108,7 @@ ColumnLayout {
 
     NLabel {
       label: I18n.tr("common.icon")
-      description: I18n.tr("bar.custom-button.icon-description")
+      description: I18n.tr("panels.control-center.shortcuts-custom-button-icon-description")
     }
 
     NIcon {
@@ -100,7 +129,7 @@ ColumnLayout {
     initialIcon: _settings.icon
     onIconSelected: function (iconName) {
       _settings.icon = iconName;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -112,43 +141,54 @@ ColumnLayout {
     text: _settings.generalTooltipText
     onEditingFinished: {
       _settings.generalTooltipText = text;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.control-center.shortcuts-custom-button-show-exec-tooltip-label")
+    description: I18n.tr("panels.control-center.shortcuts-custom-button-show-exec-tooltip-description")
+    checked: _settings.showExecTooltip
+    onToggled: checked => {
+                 _settings.showExecTooltip = checked;
+                 saveSettings();
+               }
   }
 
   NTextInput {
     Layout.fillWidth: true
     label: I18n.tr("panels.control-center.shortcuts-custom-button-on-clicked-label")
-    description: I18n.tr("bar.custom-button.left-click-description")
+    description: I18n.tr("panels.control-center.shortcuts-custom-button-on-clicked-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onClicked
     onEditingFinished: {
       _settings.onClicked = text;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
   NTextInput {
     Layout.fillWidth: true
     label: I18n.tr("panels.control-center.shortcuts-custom-button-on-right-clicked-label")
-    description: I18n.tr("bar.custom-button.right-click-description")
+    description: I18n.tr("panels.control-center.shortcuts-custom-button-on-right-clicked-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onRightClicked
     onEditingFinished: {
       _settings.onRightClicked = text;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
   NTextInput {
     Layout.fillWidth: true
     label: I18n.tr("panels.control-center.shortcuts-custom-button-on-middle-clicked-label")
-    description: I18n.tr("bar.custom-button.middle-click-description")
+    description: I18n.tr("panels.control-center.shortcuts-custom-button-on-middle-clicked-description")
     placeholderText: I18n.tr("placeholders.enter-command")
     text: _settings.onMiddleClicked
     onEditingFinished: {
       _settings.onMiddleClicked = text;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -162,25 +202,25 @@ ColumnLayout {
     checked: _settings.enableOnStateLogic
     onToggled: checked => {
                  _settings.enableOnStateLogic = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 
   ColumnLayout {
     Layout.fillWidth: true
-    visible: _settings.enableOnStateLogic
-    spacing: (Style?.marginM ?? 8) * 2
+    visible: root.rootSettings && root.rootSettings.enableOnStateLogic
+    spacing: Style?.marginM ?? 8
 
     NLabel {
       label: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-label")
     }
 
     Repeater {
-      model: _settings._stateChecksListModel
+      model: root.rootSettings ? root.rootSettings._stateChecksListModel : null
       delegate: Item {
         property int currentIndex: index
 
-        implicitHeight: contentRow.implicitHeight + ((divider.visible) ? divider.height : 0)
+        implicitHeight: contentRow.implicitHeight
         Layout.fillWidth: true
 
         RowLayout {
@@ -193,11 +233,7 @@ ColumnLayout {
             placeholderText: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-command")
             text: model.command
             onEditingFinished: {
-              _settings._stateChecksListModel.set(currentIndex, {
-                                                    "command": text,
-                                                    "icon": model.icon
-                                                  });
-              settingsChanged(saveSettings());
+              updateStateCheck(currentIndex, text, model.icon);
             }
           }
 
@@ -228,8 +264,7 @@ ColumnLayout {
               colorBgHover: Qt.alpha(Color.mError, Style.opacityMedium)
               colorFgHover: Color.mOnError
               onClicked: {
-                _settings._stateChecksListModel.remove(currentIndex);
-                settingsChanged(saveSettings());
+                removeStateCheck(currentIndex);
               }
             }
           }
@@ -239,20 +274,14 @@ ColumnLayout {
           id: iconPickerDelegate
           initialIcon: model.icon
           onIconSelected: function (iconName) {
-            _settings._stateChecksListModel.set(currentIndex, {
-                                                  "command": model.command,
-                                                  "icon": iconName
-                                                });
-            settingsChanged(saveSettings());
+            updateStateCheck(currentIndex, model.command, iconName);
           }
         }
-
-        NDivider {
-          id: divider
-          anchors.bottom: parent.bottom
-          visible: index < _settings._stateChecksListModel.count - 1 // Only show divider if not the last item
-        }
       }
+    }
+
+    Item {
+      Layout.fillWidth: true
     }
 
     RowLayout {
@@ -261,20 +290,8 @@ ColumnLayout {
 
       NButton {
         text: I18n.tr("panels.control-center.shortcuts-custom-button-state-checks-add")
-        onClicked: {
-          _settings._stateChecksListModel.append({
-                                                   "command": "",
-                                                   "icon": ""
-                                                 });
-          settingsChanged(saveSettings());
-        }
-      }
-
-      Item {
-        Layout.fillWidth: true
+        onClicked: addStateCheck()
       }
     }
   }
-
-  NDivider {}
 }

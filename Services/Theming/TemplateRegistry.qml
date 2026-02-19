@@ -62,13 +62,15 @@ Singleton {
       "id": "gtk",
       "name": "GTK",
       "category": "system",
-      "input": "gtk.css",
+      "input": "gtk4.css",
       "outputs": [
         {
-          "path": "~/.config/gtk-3.0/noctalia.css"
+          "path": "~/.config/gtk-3.0/noctalia.css",
+          "input": "gtk3.css"
         },
         {
-          "path": "~/.config/gtk-4.0/noctalia.css"
+          "path": "~/.config/gtk-4.0/noctalia.css",
+          "input": "gtk4.css"
         }
       ],
       "postProcess": mode => `python3 ${gtkRefreshScript} ${mode}`
@@ -270,7 +272,7 @@ Singleton {
         }
       ],
       "postProcess": ()
-                     => "sh -c 'CSS_CHROME=\"$HOME/.cache/noctalia/zen-browser/zen-userChrome.css\"; CSS_CONTENT=\"$HOME/.cache/noctalia/zen-browser/zen-userContent.css\"; LINE_CHROME=\"@import \\\"$CSS_CHROME\\\";\"; LINE_CONTENT=\"@import \\\"$CSS_CONTENT\\\";\"; find \"$HOME/.zen\" -mindepth 2 -maxdepth 2 -type d -name chrome -print0 | while IFS= read -r -d \"\" dir; do USER_CHROME=\"$dir/userChrome.css\"; USER_CONTENT=\"$dir/userContent.css\"; mkdir -p \"$dir\"; touch \"$USER_CHROME\" \"$USER_CONTENT\"; sed -i \"/zen-browser\\/zen-userChrome\\.css/d\" \"$USER_CHROME\"; sed -i \"/zen-browser\\/zen-userContent\\.css/d\" \"$USER_CONTENT\"; if ! grep -Fq \"$LINE_CHROME\" \"$USER_CHROME\"; then printf \"%s\\n\" \"$LINE_CHROME\" >> \"$USER_CHROME\"; fi; if ! grep -Fq \"$LINE_CONTENT\" \"$USER_CONTENT\"; then printf \"%s\\n\" \"$LINE_CONTENT\" >> \"$USER_CONTENT\"; fi; done'"
+                     => "sh -c 'CSS_CHROME=\"$HOME/.cache/noctalia/zen-browser/zen-userChrome.css\"; CSS_CONTENT=\"$HOME/.cache/noctalia/zen-browser/zen-userContent.css\"; LINE_CHROME=\"@import \\\"$CSS_CHROME\\\";\"; LINE_CONTENT=\"@import \\\"$CSS_CONTENT\\\";\"; find \"$HOME/.config/zen\" \"$HOME/.zen\" -mindepth 2 -maxdepth 2 -type d -name chrome -print0 2>/dev/null | while IFS= read -r -d \"\" dir; do USER_CHROME=\"$dir/userChrome.css\"; USER_CONTENT=\"$dir/userContent.css\"; mkdir -p \"$dir\"; touch \"$USER_CHROME\" \"$USER_CONTENT\"; sed -i \"/zen-browser\\/zen-userChrome\\.css/d\" \"$USER_CHROME\"; sed -i \"/zen-browser\\/zen-userContent\\.css/d\" \"$USER_CONTENT\"; if ! grep -Fq \"$LINE_CHROME\" \"$USER_CHROME\"; then printf \"%s\\n\" \"$LINE_CHROME\" >> \"$USER_CHROME\"; fi; if ! grep -Fq \"$LINE_CONTENT\" \"$USER_CONTENT\"; then printf \"%s\\n\" \"$LINE_CONTENT\" >> \"$USER_CONTENT\"; fi; done'"
     },
     {
       "id": "cava",
@@ -301,6 +303,18 @@ Singleton {
       "name": "Emacs",
       "category": "editor",
       "input": "emacs.el"
+    },
+    {
+      "id": "labwc",
+      "name": "Labwc",
+      "category": "compositor",
+      "input": "labwc.conf",
+      "outputs": [
+        {
+          "path": "~/.config/labwc/themerc-override"
+        }
+      ],
+      "postProcess": () => `${templateApplyScript} labwc`
     },
     {
       "id": "niri",

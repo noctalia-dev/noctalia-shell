@@ -3,7 +3,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
-import "../../../Helpers/Keybinds.js" as Keybinds
 
 import "Providers"
 import qs.Commons
@@ -749,7 +748,7 @@ Rectangle {
 
       Repeater {
         model: root.providerCategories
-        NIconTabButton {
+        NTabButton {
           required property string modelData
           required property int index
           icon: root.currentProvider.categoryIcons ? (root.currentProvider.categoryIcons[modelData] || "star") : "star"

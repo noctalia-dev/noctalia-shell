@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../Helpers/Keybinds.js" as Keybinds
 import qs.Commons
 import qs.Services.UI
 import qs.Widgets
@@ -19,6 +18,7 @@ Item {
   property string settingsPath: ""
 
   property int maxKeybinds: 2
+  property bool requireModifierForNormalKeys: true
   signal keybindsChanged(var newKeybinds)
 
   implicitHeight: contentLayout.implicitHeight
@@ -236,7 +236,7 @@ Item {
                           keyName = String.fromCharCode(event.key);
                         } else if (event.key >= Qt.Key_F1 && event.key <= Qt.Key_F12) {
                           keyName = "F" + (event.key - Qt.Key_F1 + 1);
-                        } else if (rawText && rawText.length > 0 && rawText.charCodeAt(0) > 31) {
+                        } else if (rawText && rawText.length > 0 && rawText.charCodeAt(0) > 31 && rawText.charCodeAt(0) !== 127) {
                           keyName = rawText.toUpperCase();
 
                           // Handle shifted digits
@@ -308,6 +308,23 @@ Item {
                         }
 
                         if (keyName) {
+                          // Enforce modifier requirement (Ctrl or Alt) for "normal" keys unless explicitly disabled
+                          // Allow Arrows, Nav, Function, and System keys without modifiers
+                          const isSpecialKey = (event.key >= Qt.Key_F1 && event.key <= Qt.Key_F35) || (event.key >= Qt.Key_Left && event.key <= Qt.Key_Down) || (event.key === Qt.Key_Home || event.key === Qt.Key_End || event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) || (event.key === Qt.Key_Insert || event.key === Qt.Key_Delete || event.key
+                                                                                                                                                                                                                                                                                            === Qt.Key_Backspace) || (event.key === Qt.Key_Tab || event.key
+                                                                                                                                                                                                                                                                                                                      === Qt.Key_Return || event.key === Qt.Key_Enter
+                                                                                                                                                                                                                                                                                                                      || event.key === Qt.Key_Escape || event.key
+                                                                                                                                                                                                                                                                                                                      === Qt.Key_Space);
+
+                          const hasModifier = (event.modifiers & Qt.ControlModifier) || (event.modifiers & Qt.AltModifier);
+
+                          if (root.requireModifierForNormalKeys && !hasModifier && !isSpecialKey) {
+                            hasConflict = true;
+                            ToastService.showWarning(I18n.tr("panels.general.keybinds-modifier-title"), I18n.tr("panels.general.keybinds-modifier-description"));
+                            conflictTimer.restart();
+                            return;
+                          }
+
                           root._applyKeybind(keyStr + keyName);
                         }
                         event.accepted = true;

@@ -97,6 +97,7 @@ ColumnLayout {
     from: 0
     to: 1
     stepSize: 0.01
+    showReset: true
     value: Settings.data.notifications.backgroundOpacity
     onMoved: value => Settings.data.notifications.backgroundOpacity = value
     text: Math.round(Settings.data.notifications.backgroundOpacity * 100) + "%"

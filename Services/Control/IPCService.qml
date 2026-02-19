@@ -40,9 +40,25 @@ Singleton {
     function showBar() {
       BarService.show();
     }
-    function setDisplayMode(mode: string) {
+    function setDisplayMode(mode: string, screen: string) {
       if (mode === "always_visible" || mode === "non_exclusive" || mode === "auto_hide") {
-        Settings.data.bar.displayMode = mode;
+        if (!screen || screen === "all") {
+          Settings.data.bar.displayMode = mode;
+        } else {
+          Settings.setScreenOverride(screen, "displayMode", mode);
+        }
+      }
+    }
+    function setPosition(position: string, screen: string) {
+      var valid = position === "top" || position === "bottom" || position === "left" || position === "right";
+      if (!valid) {
+        Logger.w("IPC", "Invalid bar position: " + position + ". Valid: top, bottom, left, right");
+        return;
+      }
+      if (!screen || screen === "all") {
+        Settings.data.bar.position = position;
+      } else {
+        Settings.setScreenOverride(screen, "position", position);
       }
     }
   }
@@ -63,7 +79,7 @@ Singleton {
                                             "hooks": SettingsPanel.Tab.Hooks,
                                             "launcher": SettingsPanel.Tab.Launcher,
                                             "location": SettingsPanel.Tab.Location,
-                                            "network": SettingsPanel.Tab.Network,
+                                            "connections": SettingsPanel.Tab.Connections,
                                             "notifications": SettingsPanel.Tab.Notifications,
                                             "plugins": SettingsPanel.Tab.Plugins,
                                             "sessionmenu": SettingsPanel.Tab.SessionMenu,
@@ -93,33 +109,15 @@ Singleton {
   }
 
   function _settingsToggle(tabId, subTabId) {
-    if (Settings.data.ui.settingsPanelMode === "window") {
-      if (SettingsPanelService.isWindowOpen) {
-        SettingsPanelService.closeWindow();
-      } else {
-        SettingsPanelService.openToTab(tabId, subTabId);
-      }
-    } else {
-      root.screenDetector.withCurrentScreen(screen => {
-                                              var settingsPanel = PanelService.getPanel("settingsPanel", screen);
-                                              if (settingsPanel?.isPanelOpen) {
-                                                settingsPanel.close();
-                                              } else {
-                                                settingsPanel?.openToTab(tabId, subTabId);
-                                              }
-                                            });
-    }
+    root.screenDetector.withCurrentScreen(screen => {
+                                            SettingsPanelService.toggle(tabId, subTabId, screen);
+                                          });
   }
 
   function _settingsOpen(tabId, subTabId) {
-    if (Settings.data.ui.settingsPanelMode === "window") {
-      SettingsPanelService.openToTab(tabId, subTabId);
-    } else {
-      root.screenDetector.withCurrentScreen(screen => {
-                                              var settingsPanel = PanelService.getPanel("settingsPanel", screen);
-                                              settingsPanel?.openToTab(tabId, subTabId);
-                                            });
-    }
+    root.screenDetector.withCurrentScreen(screen => {
+                                            SettingsPanelService.openToTab(tabId, subTabId, screen);
+                                          });
   }
 
   IpcHandler {

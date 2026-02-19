@@ -8,7 +8,10 @@ Rectangle {
   id: root
 
   // Public properties
+  // Public properties
   property string text: ""
+  property string icon: ""
+  property string tooltipText: ""
   property bool checked: false
   property int tabIndex: 0
   property real pointSize: Style.fontSizeM
@@ -22,7 +25,7 @@ Rectangle {
 
   // Sizing
   Layout.fillHeight: true
-  implicitWidth: tabText.implicitWidth + Style.marginXL
+  implicitWidth: contentLayout.implicitWidth + Style.marginXL
 
   topLeftRadius: isFirst ? Style.iRadiusM : Style.iRadiusXXXS
   bottomLeftRadius: isFirst ? Style.iRadiusM : Style.iRadiusXXXS
@@ -41,27 +44,57 @@ Rectangle {
     }
   }
 
-  NText {
-    id: tabText
-    y: Style.pixelAlignCenter(parent.height, height)
-    anchors {
-      left: parent.left
-      right: parent.right
-      leftMargin: Style.marginS
-      rightMargin: Style.marginS
-    }
-    text: root.text
-    pointSize: root.pointSize
-    font.weight: Style.fontWeightSemiBold
-    color: root.isHovered ? Color.mOnHover : (root.checked ? Color.mOnPrimary : Color.mOnSurface)
-    horizontalAlignment: Text.AlignHCenter
-    verticalAlignment: Text.AlignVCenter
+  // Content
+  RowLayout {
+    id: contentLayout
+    anchors.centerIn: parent
+    width: Math.min(implicitWidth, parent.width - (Style.marginS * 2))
+    spacing: (root.icon !== "" && root.text !== "") ? Style.marginXS : 0
 
-    Behavior on color {
-      enabled: !Color.isTransitioning
-      ColorAnimation {
-        duration: Style.animationFast
-        easing.type: Easing.OutCubic
+    NIcon {
+      visible: root.icon !== ""
+      Layout.alignment: Qt.AlignVCenter
+      icon: root.icon
+      pointSize: root.pointSize * 1.2
+      color: root.isHovered ? Color.mOnHover : (root.checked ? Color.mOnPrimary : Color.mOnSurface)
+
+      Behavior on color {
+        enabled: !Color.isTransitioning
+        ColorAnimation {
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
+        }
+      }
+    }
+
+    NText {
+      id: tabText
+      visible: root.text !== ""
+      Layout.alignment: Qt.AlignVCenter
+      text: root.text
+      pointSize: root.pointSize
+      font.weight: Style.fontWeightSemiBold
+      color: root.isHovered ? Color.mOnHover : (root.checked ? Color.mOnPrimary : Color.mOnSurface)
+      horizontalAlignment: Text.AlignHCenter
+      verticalAlignment: Text.AlignVCenter
+
+      Behavior on color {
+        enabled: !Color.isTransitioning
+        ColorAnimation {
+          duration: Style.animationFast
+          easing.type: Easing.OutCubic
+        }
+      }
+    }
+  }
+
+  // Tooltip
+  Timer {
+    id: tooltipTimer
+    interval: 500
+    onTriggered: {
+      if (root.isHovered && root.tooltipText !== "") {
+        TooltipService.show(root, root.tooltipText);
       }
     }
   }
@@ -70,8 +103,19 @@ Rectangle {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onEntered: root.isHovered = true
-    onExited: root.isHovered = false
+    onEntered: {
+      root.isHovered = true;
+      if (root.tooltipText !== "") {
+        tooltipTimer.start();
+      }
+    }
+    onExited: {
+      root.isHovered = false;
+      tooltipTimer.stop();
+      if (root.tooltipText !== "") {
+        TooltipService.hide();
+      }
+    }
     onClicked: {
       root.clicked();
       // Update parent NTabBar's currentIndex

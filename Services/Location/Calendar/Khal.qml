@@ -9,6 +9,8 @@ import qs.Services.Location
 Singleton {
   id: root
 
+  readonly property string khalEventsScript: Quickshell.shellDir + '/Scripts/python/src/calendar/khal-events.py'
+
   function init() {
     availabilityCheckProcess.running = true;
   }
@@ -33,7 +35,7 @@ Singleton {
   Process {
     id: availabilityCheckProcess
     running: false
-    command: ["sh", "-c", "command -v khal >/dev/null 2>&1"]
+    command: ["sh", "-c", "command -v khal >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1"]
     onExited: function (exitCode) {
       if (exitCode === 0) {
         CalendarService.available = true;
@@ -92,7 +94,7 @@ Singleton {
     property string startTime: ""
     property string duration: ""
 
-    command: ["khal", "list", "--once", "--json", "uid", "--json", "title", "--json", "start-long-full", "--json", "end-long-full", "--json", "calendar", "--json", "description", "--json", "location", startTime, duration]
+    command: ["python3", root.khalEventsScript, startTime, duration]
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -151,9 +153,7 @@ Singleton {
   }
 
   function parseTimestamp(timeStr) {
-    // The actual timeStr format depends on user's khal configuration
-    // for longdatetimeformat. Here we assume it's a reasonable to be
-    // recognized by js Date parser.
+    // expects ISO8601 format
     return Math.floor((Date.parse(timeStr)).valueOf() / 1000);
   }
 

@@ -573,11 +573,11 @@ Singleton {
     return true;
   }
 
-  // Helper function to add a widget to the bar
+  // Helper function to add a widget to the bar (global + all screen overrides)
   function addWidgetToBar(widgetId, section) {
     section = section || "right"; // Default to right section
 
-    // Check if widget already exists in any section
+    // Check if widget already exists in any section (global)
     var sections = ["left", "center", "right"];
     for (var s = 0; s < sections.length; s++) {
       var widgets = Settings.data.bar.widgets[sections[s]] || [];
@@ -589,12 +589,41 @@ Singleton {
       }
     }
 
-    // Add to specified section
-    var widgets = Settings.data.bar.widgets[section] || [];
-    widgets.push({
-                   id: widgetId
-                 });
-    Settings.data.bar.widgets[section] = widgets;
+    // Add to global
+    var globalWidgets = Settings.data.bar.widgets[section] || [];
+    globalWidgets.push({
+                         id: widgetId
+                       });
+    Settings.data.bar.widgets[section] = globalWidgets;
+
+    // Also add to any screen overrides that have widget configurations
+    var overrides = Settings.data.bar.screenOverrides || [];
+    for (var o = 0; o < overrides.length; o++) {
+      if (overrides[o] && overrides[o].widgets) {
+        var overrideWidgets = overrides[o].widgets;
+        var sectionWidgets = overrideWidgets[section] || [];
+        // Check if widget already exists in this override
+        var alreadyExists = false;
+        for (var j = 0; j < sections.length; j++) {
+          var owSec = overrideWidgets[sections[j]] || [];
+          for (var k = 0; k < owSec.length; k++) {
+            if (owSec[k].id === widgetId) {
+              alreadyExists = true;
+              break;
+            }
+          }
+          if (alreadyExists)
+            break;
+        }
+        if (!alreadyExists) {
+          sectionWidgets.push({
+                                id: widgetId
+                              });
+          overrideWidgets[section] = sectionWidgets;
+          Settings.setScreenOverride(overrides[o].name, "widgets", overrideWidgets);
+        }
+      }
+    }
 
     Logger.i("PluginService", "Added widget", widgetId, "to bar section:", section);
     return true;
@@ -623,11 +652,12 @@ Singleton {
     return true;
   }
 
-  // Helper function to remove a widget from all bar sections
+  // Helper function to remove a widget from all bar sections (global + screen overrides)
   function removeWidgetFromBar(widgetId) {
     var sections = ["left", "center", "right"];
     var changed = false;
 
+    // Remove from global
     for (var s = 0; s < sections.length; s++) {
       var section = sections[s];
       var widgets = Settings.data.bar.widgets[section] || [];
@@ -644,6 +674,35 @@ Singleton {
 
       if (changed) {
         Settings.data.bar.widgets[section] = newWidgets;
+      }
+    }
+
+    // Also remove from any screen overrides that have widget configurations
+    var overrides = Settings.data.bar.screenOverrides || [];
+    for (var o = 0; o < overrides.length; o++) {
+      if (overrides[o] && overrides[o].widgets) {
+        var overrideWidgets = overrides[o].widgets;
+        var overrideChanged = false;
+        for (var s2 = 0; s2 < sections.length; s2++) {
+          var sec = sections[s2];
+          var owWidgets = overrideWidgets[sec] || [];
+          var owNew = [];
+          for (var j = 0; j < owWidgets.length; j++) {
+            if (owWidgets[j].id !== widgetId) {
+              owNew.push(owWidgets[j]);
+            } else {
+              overrideChanged = true;
+              changed = true;
+              Logger.i("PluginService", "Removed widget", widgetId, "from screen override:", overrides[o].name, "section:", sec);
+            }
+          }
+          if (overrideChanged) {
+            overrideWidgets[sec] = owNew;
+          }
+        }
+        if (overrideChanged) {
+          Settings.setScreenOverride(overrides[o].name, "widgets", overrideWidgets);
+        }
       }
     }
 
@@ -1487,13 +1546,14 @@ Singleton {
       Logger.d("PluginService", "Plugin requires Noctalia v" + availablePlugin.minNoctaliaVersion);
     }
 
-    // Backup entire bar layout
+    // Backup entire bar layout (global + screen overrides)
     var barBackup = {
       left: JSON.parse(JSON.stringify(Settings.data.bar.widgets.left || [])),
       center: JSON.parse(JSON.stringify(Settings.data.bar.widgets.center || [])),
       right: JSON.parse(JSON.stringify(Settings.data.bar.widgets.right || []))
     };
-    Logger.d("PluginService", "Backed up bar layout");
+    var screenOverridesBackup = JSON.parse(JSON.stringify(Settings.data.bar.screenOverrides || []));
+    Logger.d("PluginService", "Backed up bar layout (global + screen overrides)");
 
     // Backup desktop widget settings (includes this plugin's widgets)
     var desktopWidgetsBackup = JSON.parse(JSON.stringify(Settings.data.desktopWidgets.monitorWidgets || []));
@@ -1533,7 +1593,8 @@ Singleton {
         Settings.data.bar.widgets.left = barBackup.left;
         Settings.data.bar.widgets.center = barBackup.center;
         Settings.data.bar.widgets.right = barBackup.right;
-        Logger.d("PluginService", "Restored bar layout");
+        Settings.data.bar.screenOverrides = screenOverridesBackup;
+        Logger.d("PluginService", "Restored bar layout (global + screen overrides)");
 
         // Restore desktop widget settings
         Settings.data.desktopWidgets.monitorWidgets = desktopWidgetsBackup;
@@ -1549,10 +1610,11 @@ Singleton {
       } else {
         Logger.e("PluginService", "Failed to update plugin:", pluginId, error);
 
-        // Restore bar layout even on failure
+        // Restore bar layout even on failure (global + screen overrides)
         Settings.data.bar.widgets.left = barBackup.left;
         Settings.data.bar.widgets.center = barBackup.center;
         Settings.data.bar.widgets.right = barBackup.right;
+        Settings.data.bar.screenOverrides = screenOverridesBackup;
 
         // Restore desktop widget settings even on failure
         Settings.data.desktopWidgets.monitorWidgets = desktopWidgetsBackup;

@@ -9,6 +9,7 @@ ColumnLayout {
   spacing: Style.marginM
 
   // Properties to receive data from parent
+  property var screen: null
   property var widgetData: null
   property var widgetMetadata: null
 
@@ -34,7 +35,7 @@ ColumnLayout {
     settings.numLockIcon = numIcon;
     settings.scrollLockIcon = scrollIcon;
     settings.hideWhenOff = valueHideWhenOff;
-    return settings;
+    settingsChanged(settings);
   }
 
   RowLayout {
@@ -46,7 +47,7 @@ ColumnLayout {
       checked: valueShowCapsLock
       onToggled: checked => {
                    valueShowCapsLock = checked;
-                   settingsChanged(saveSettings());
+                   saveSettings();
                  }
     }
 
@@ -70,7 +71,7 @@ ColumnLayout {
     query: "letter-c"
     onIconSelected: function (iconName) {
       capsIcon = iconName;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -83,7 +84,7 @@ ColumnLayout {
       checked: valueShowNumLock
       onToggled: checked => {
                    valueShowNumLock = checked;
-                   settingsChanged(saveSettings());
+                   saveSettings();
                  }
     }
 
@@ -107,7 +108,7 @@ ColumnLayout {
     query: "letter-n"
     onIconSelected: function (iconName) {
       numIcon = iconName;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -120,7 +121,7 @@ ColumnLayout {
       checked: valueShowScrollLock
       onToggled: checked => {
                    valueShowScrollLock = checked;
-                   settingsChanged(saveSettings());
+                   saveSettings();
                  }
     }
 
@@ -144,7 +145,7 @@ ColumnLayout {
     query: "letter-s"
     onIconSelected: function (iconName) {
       scrollIcon = iconName;
-      settingsChanged(saveSettings());
+      saveSettings();
     }
   }
 
@@ -159,7 +160,7 @@ ColumnLayout {
     checked: valueHideWhenOff
     onToggled: checked => {
                  valueHideWhenOff = checked;
-                 settingsChanged(saveSettings());
+                 saveSettings();
                }
   }
 }

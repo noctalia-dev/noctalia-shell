@@ -24,7 +24,9 @@ ColumnLayout {
     });
   }
 
-  // Signal functions for widgets sub-tab (global widgets only)
+  // Signal functions for widgets sub-tab (global widgets only).
+  // These intentionally edit Settings.data.bar.widgets (global defaults),
+  // not per-screen overrides. Per-screen editing is handled by MonitorWidgetsConfig.qml.
   function _addWidgetToSection(widgetId, section) {
     var newWidget = {
       "id": widgetId

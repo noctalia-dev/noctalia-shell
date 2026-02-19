@@ -496,6 +496,15 @@ Item {
     }
   }
 
+  // Some programs change title of window dependent on content
+  Connections {
+    target: ToplevelManager ? ToplevelManager.activeToplevel : null
+    enabled: initialized
+    function onTitleChanged() {
+      updateTimer.restart();
+    }
+  }
+
   Connections {
     target: I3
     enabled: initialized

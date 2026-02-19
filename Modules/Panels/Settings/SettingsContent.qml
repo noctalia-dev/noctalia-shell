@@ -9,6 +9,7 @@ import qs.Modules.Panels.Settings.Tabs.About
 import qs.Modules.Panels.Settings.Tabs.Audio
 import qs.Modules.Panels.Settings.Tabs.Bar
 import qs.Modules.Panels.Settings.Tabs.ColorScheme
+import qs.Modules.Panels.Settings.Tabs.Connections
 import qs.Modules.Panels.Settings.Tabs.ControlCenter
 import qs.Modules.Panels.Settings.Tabs.Display
 import qs.Modules.Panels.Settings.Tabs.Dock
@@ -29,6 +30,8 @@ import qs.Widgets
 
 Item {
   id: root
+
+  Component.onDestruction: SystemStatService.unregisterComponent("settings")
 
   // Screen reference for child components
   property var screen
@@ -389,6 +392,7 @@ Item {
   }
 
   Component.onCompleted: {
+    SystemStatService.registerComponent("settings");
     // Restore sidebar state
     sidebarExpanded = ShellState.getSettingsSidebarExpanded();
   }
@@ -419,8 +423,8 @@ Item {
     OsdTab {}
   }
   Component {
-    id: networkTab
-    NetworkTab {}
+    id: connectionsTab
+    ConnectionsTab {}
   }
   Component {
     id: regionTab
@@ -572,10 +576,10 @@ Item {
             "source": displayTab
           },
           {
-            "id": SettingsPanel.Tab.Network,
-            "label": "common.network",
+            "id": SettingsPanel.Tab.Connections,
+            "label": "panels.connections.title",
             "icon": "settings-network",
-            "source": networkTab
+            "source": connectionsTab
           },
           {
             "id": SettingsPanel.Tab.Location,
@@ -624,7 +628,13 @@ Item {
 
   function initialize() {
     ProgramCheckerService.checkAllPrograms();
+    // Guard _pendingSubTab during model rebuild: updateTabsModel() triggers
+    // a ListView model reset which can set currentTabIndex=0 via the sidebar
+    // sync handler, causing the wrong tab to load and consume _pendingSubTab.
+    const savedPendingSubTab = _pendingSubTab;
+    _pendingSubTab = -1;
     updateTabsModel();
+    _pendingSubTab = savedPendingSubTab;
     selectTabById(requestedTab);
     // Skip auto-focus on Nvidia GPUs - cursor blink causes UI choppiness
     const isNvidia = SystemStatService.gpuType === "nvidia";

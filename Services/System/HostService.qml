@@ -19,6 +19,9 @@ Singleton {
   readonly property string envRealName: (Quickshell.env("NOCTALIA_REALNAME") || "")
   property string realName: ""
 
+  // Machine info
+  property string hostName: ""
+
   // Internal: pending logo name for fallback after probe fails
   property string pendingLogoName: ""
 
@@ -187,5 +190,18 @@ Singleton {
       }
     }
     stderr: StdioCollector {}
+  }
+
+  // Read /etc/hostname
+  FileView {
+    id: hostName
+    path: "/etc/hostname"
+    onLoaded: {
+      const name = text().trim();
+      if (name) {
+        root.hostName = name;
+        Logger.i("HostService", "resolved hostname", name);
+      }
+    }
   }
 }

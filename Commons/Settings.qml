@@ -287,6 +287,7 @@ Singleton {
       property bool allowPasswordWithFprintd: false
       property string clockStyle: "custom"
       property string clockFormat: "hh\\nmm"
+      property bool passwordChars: false
       property list<string> lockScreenMonitors: [] // holds lock screen visibility per monitor
       property real lockScreenBlur: 0.0
       property real lockScreenTint: 0.0
@@ -297,7 +298,9 @@ Singleton {
         property list<string> keyRight: ["Right"]
         property list<string> keyEnter: ["Return"]
         property list<string> keyEscape: ["Esc"]
+        property list<string> keyRemove: ["Del"]
       }
+      property bool reverseScroll: false
     }
 
     // ui
@@ -509,13 +512,7 @@ Singleton {
       property int diskAvailCriticalThreshold: 10
       property int batteryWarningThreshold: 20
       property int batteryCriticalThreshold: 5
-      property int cpuPollingInterval: 1000
-      property int gpuPollingInterval: 3000
       property bool enableDgpuMonitoring: false // Opt-in: reading dGPU sysfs/nvidia-smi wakes it from D3cold, draining battery
-      property int memPollingInterval: 1000
-      property int diskPollingInterval: 30000
-      property int networkPollingInterval: 1000
-      property int loadAvgPollingInterval: 3000
       property bool useCustomColors: false
       property string warningColor: ""
       property string criticalColor: ""
@@ -527,6 +524,7 @@ Singleton {
       property bool enabled: true
       property string position: "bottom" // "top", "bottom", "left", "right"
       property string displayMode: "auto_hide" // "always_visible", "auto_hide", "exclusive"
+      property string dockType: "floating" // "floating", "static"
       property real backgroundOpacity: 1.0
       property real floatingRatio: 1.0
       property real size: 1
@@ -534,21 +532,27 @@ Singleton {
       property list<string> monitors: [] // holds dock visibility per monitor
       property list<string> pinnedApps: [] // Desktop entry IDs pinned to the dock (e.g., "org.kde.konsole", "firefox.desktop")
       property bool colorizeIcons: false
+      property bool showLauncherIcon: false
+      property string launcherPosition: "end" // "start", "end"
 
       property bool pinnedStatic: false
       property bool inactiveIndicators: false
       property double deadOpacity: 0.6
       property real animationSpeed: 1.0 // Speed multiplier for hide/show animations (0.1 = slowest, 2.0 = fastest)
+      property bool sitOnFrame: false
+      property bool showFrameIndicator: true
     }
 
     // network
     property JsonObject network: JsonObject {
       property bool wifiEnabled: true
+      property bool airplaneModeEnabled: false
       property bool bluetoothRssiPollingEnabled: false  // Opt-in Bluetooth RSSI polling (uses bluetoothctl)
-      property int bluetoothRssiPollIntervalMs: 10000 // Polling interval in milliseconds for RSSI queries
+      property int bluetoothRssiPollIntervalMs: 60000 // Polling interval in milliseconds for RSSI queries
       property string wifiDetailsViewMode: "grid"   // "grid" or "list"
       property string bluetoothDetailsViewMode: "grid" // "grid" or "list"
       property bool bluetoothHideUnnamedDevices: false
+      property bool disableDiscoverability: false
     }
 
     // session menu
@@ -557,6 +561,7 @@ Singleton {
       property int countdownDuration: 10000
       property string position: "center"
       property bool showHeader: true
+      property bool showKeybinds: true
       property bool largeButtonsStyle: true
       property string largeButtonsLayout: "single-row"
       property list<var> powerOptions: [
@@ -589,6 +594,11 @@ Singleton {
           "action": "shutdown",
           "enabled": true,
           "keybind": "6"
+        },
+        {
+          "action": "rebootToUefi",
+          "enabled": true,
+          "keybind": "7"
         }
       ]
     }
@@ -596,6 +606,7 @@ Singleton {
     // notifications
     property JsonObject notifications: JsonObject {
       property bool enabled: true
+      property bool enableMarkdown: false
       property string density: "default" // "default", "compact"
       property list<string> monitors: [] // holds notifications visibility per monitor
       property string location: "top_right"
@@ -605,6 +616,7 @@ Singleton {
       property int lowUrgencyDuration: 3
       property int normalUrgencyDuration: 8
       property int criticalUrgencyDuration: 15
+      property bool clearDismissed: true
       property JsonObject saveToHistory: JsonObject {
         property bool low: true
         property bool normal: true
@@ -864,6 +876,17 @@ Singleton {
       return override.density;
     }
     return data.bar.density || "default";
+  }
+
+  // -----------------------------------------------------
+  // Get effective bar display mode for a screen (with inheritance)
+  // If the screen has a displayMode override and overrides are enabled, use it; otherwise use global default
+  function getBarDisplayModeForScreen(screenName) {
+    var override = _findScreenOverride(screenName);
+    if (override && override.enabled !== false && override.displayMode !== undefined) {
+      return override.displayMode;
+    }
+    return data.bar.displayMode || "always_visible";
   }
 
   // -----------------------------------------------------
