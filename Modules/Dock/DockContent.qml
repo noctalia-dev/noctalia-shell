@@ -154,6 +154,36 @@ Item {
               }
               return {};
             }
+            readonly property string launcherWidgetSection: {
+              const widgetsBySection = screenName ? Settings.getBarWidgetsForScreen(screenName) : Settings.data.bar.widgets;
+              if (!widgetsBySection)
+                return "";
+              const sections = ["left", "center", "right"];
+              for (let i = 0; i < sections.length; i++) {
+                const sectionWidgets = widgetsBySection[sections[i]] || [];
+                for (let j = 0; j < sectionWidgets.length; j++) {
+                  const widget = sectionWidgets[j];
+                  if (widget && widget.id === "Launcher")
+                    return sections[i];
+                }
+              }
+              return "";
+            }
+            readonly property int launcherWidgetIndex: {
+              const widgetsBySection = screenName ? Settings.getBarWidgetsForScreen(screenName) : Settings.data.bar.widgets;
+              if (!widgetsBySection)
+                return -1;
+              const sections = ["left", "center", "right"];
+              for (let i = 0; i < sections.length; i++) {
+                const sectionWidgets = widgetsBySection[sections[i]] || [];
+                for (let j = 0; j < sectionWidgets.length; j++) {
+                  const widget = sectionWidgets[j];
+                  if (widget && widget.id === "Launcher")
+                    return j;
+                }
+              }
+              return -1;
+            }
             readonly property var launcherMetadata: BarWidgetRegistry.widgetMetadata["Launcher"]
             readonly property string launcherIcon: launcherWidgetSettings.icon || (launcherMetadata && launcherMetadata.icon ? launcherMetadata.icon : "search")
             readonly property string launcherIconColorKey: launcherWidgetSettings.iconColor !== undefined
@@ -188,7 +218,7 @@ Item {
               anchors.fill: parent
               hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
-              acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+              acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
 
               onEntered: {
                 dockRoot.anyAppHovered = true;
@@ -210,15 +240,67 @@ Item {
               }
 
               onClicked: mouse => {
-                if (mouse.button !== Qt.LeftButton && mouse.button !== Qt.MiddleButton) {
-                  return;
-                }
                 const targetScreen = dockRoot.modelData || dockRoot.screen || null;
                 if (!targetScreen) {
                   return;
                 }
-                dockRoot.closeAllContextMenus();
-                PanelService.toggleLauncher(targetScreen);
+
+                if (mouse.button === Qt.RightButton) {
+                  if (dockRoot.currentContextMenu === launcherContextMenu && launcherContextMenu.visible) {
+                    dockRoot.closeAllContextMenus();
+                    return;
+                  }
+                  dockRoot.closeAllContextMenus();
+                  TooltipService.hideImmediately();
+                  launcherContextMenu.show(launcherButton, null, targetScreen);
+                  return;
+                }
+
+                if (mouse.button === Qt.LeftButton || mouse.button === Qt.MiddleButton) {
+                  dockRoot.closeAllContextMenus();
+                  PanelService.toggleLauncher(targetScreen);
+                }
+              }
+            }
+
+            DockMenu {
+              id: launcherContextMenu
+              dockPosition: dockRoot.dockPosition
+              menuMode: "launcher"
+              launcherWidgetSection: launcherButton.launcherWidgetSection
+              launcherWidgetIndex: launcherButton.launcherWidgetIndex
+              launcherWidgetSettings: launcherButton.launcherWidgetSettings
+
+              onHoveredChanged: {
+                if (dockRoot.currentContextMenu === launcherContextMenu && launcherContextMenu.visible) {
+                  dockRoot.menuHovered = hovered;
+                } else {
+                  dockRoot.menuHovered = false;
+                }
+              }
+
+              Connections {
+                target: launcherContextMenu
+                function onRequestClose() {
+                  dockRoot.currentContextMenu = null;
+                  dockRoot.hideTimer.stop();
+                  launcherContextMenu.hide();
+                  dockRoot.menuHovered = false;
+                  dockRoot.anyAppHovered = false;
+                }
+              }
+
+              onVisibleChanged: {
+                if (visible) {
+                  dockRoot.currentContextMenu = launcherContextMenu;
+                } else if (dockRoot.currentContextMenu === launcherContextMenu) {
+                  dockRoot.currentContextMenu = null;
+                  dockRoot.hideTimer.stop();
+                  dockRoot.menuHovered = false;
+                  if (dockRoot.autoHide && !dockRoot.dockHovered && !dockRoot.anyAppHovered && !dockRoot.peekHovered && !dockRoot.menuHovered) {
+                    dockRoot.hideTimer.restart();
+                  }
+                }
               }
             }
           }
@@ -529,6 +611,7 @@ Item {
 
               onClicked: mouse => {
                            if (mouse.button === Qt.RightButton) {
+                            const targetScreen = dockRoot.modelData || dockRoot.screen || null;
                              // If right-clicking on the same app with an open context menu, close it
                              if (dockRoot.currentContextMenu === contextMenu && contextMenu.visible) {
                                dockRoot.closeAllContextMenus();
@@ -538,7 +621,7 @@ Item {
                              dockRoot.closeAllContextMenus();
                              // Hide tooltip when showing context menu
                              TooltipService.hideImmediately();
-                             contextMenu.show(appButton, modelData.toplevel || modelData);
+                             contextMenu.show(appButton, modelData.toplevel || modelData, targetScreen);
                              return;
                            }
 
