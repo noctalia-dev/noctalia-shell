@@ -325,13 +325,29 @@ Item {
     highlightOverlay.opacity = 0;
   }
 
-  // Find and highlight a widget by its label key
+  function isEffectivelyVisible(item) {
+    var current = item;
+    while (current) {
+      if (current.visible === false)
+        return false;
+      if (current.opacity !== undefined && current.opacity <= 0)
+        return false;
+      current = current.parent;
+    }
+    return true;
+  }
+
+  // Find and highlight a widget by its label key.
   function findAndHighlightWidget(item, labelKey) {
     if (!item)
       return null;
 
-    // Check if this item has a matching label
-    if (item.hasOwnProperty("label") && item.label === I18n.tr(labelKey)) {
+    // Skip hidden branches to avoid highlighting controls that are not on screen.
+    if (!isEffectivelyVisible(item))
+      return null;
+
+    // Check if this item has a matching label.
+    if (item.hasOwnProperty("label") && item.label === I18n.tr(labelKey) && item.width > 0 && item.height > 0) {
       return item;
     }
 
