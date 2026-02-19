@@ -50,6 +50,9 @@ Loader {
         function onOnlySameOutputChanged() {
           updateDockApps();
         }
+        function onGroupAppsChanged() {
+          updateDockApps();
+        }
       }
 
       // Initial update when component is ready
@@ -125,6 +128,7 @@ Loader {
 
       // Combined model of running apps and pinned apps
       property var dockApps: []
+      property var groupCycleIndices: ({})
 
       // Track the session order of apps (transient reordering)
       property var sessionAppOrder: []
@@ -159,6 +163,10 @@ Loader {
       function getAppKey(appData) {
         if (!appData)
           return null;
+
+        if (Settings.data.dock.groupApps) {
+          return appData.appId;
+        }
 
         // Use stable appId for pinned apps to maintain their slot regardless of running state
         if (appData.type === "pinned" || appData.type === "pinned-running") {
@@ -291,6 +299,91 @@ Loader {
         return appId;
       }
 
+      function getToplevelsForEntry(appData) {
+        if (!appData)
+          return [];
+
+        if (appData.toplevels && appData.toplevels.length > 0) {
+          return appData.toplevels.filter(toplevel => toplevel && (!Settings.data.dock.onlySameOutput || !toplevel.screens || toplevel.screens.includes(modelData)));
+        }
+
+        if (!appData.toplevel)
+          return [];
+
+        if (Settings.data.dock.onlySameOutput && appData.toplevel.screens && !appData.toplevel.screens.includes(modelData))
+          return [];
+
+        return [appData.toplevel];
+      }
+
+      function getPrimaryToplevelForEntry(appData) {
+        const toplevels = getToplevelsForEntry(appData);
+        if (toplevels.length === 0)
+          return null;
+
+        if (ToplevelManager && ToplevelManager.activeToplevel && toplevels.includes(ToplevelManager.activeToplevel))
+          return ToplevelManager.activeToplevel;
+
+        return toplevels[0];
+      }
+
+      // Build grouped render model without mutating the raw toplevel list.
+      function buildGroupedDockApps(apps) {
+        if (!Settings.data.dock.groupApps) {
+          return apps.map(app => {
+                            const entry = Object.assign({}, app);
+                            entry.toplevels = getToplevelsForEntry(app);
+                            return entry;
+                          });
+        }
+
+        const grouped = [];
+        const groupedById = new Map();
+
+        apps.forEach(app => {
+                     const appId = app.appId;
+                     const toplevels = getToplevelsForEntry(app);
+                     const existing = groupedById.get(appId);
+
+                     if (existing) {
+                       toplevels.forEach(toplevel => {
+                                          if (!existing.toplevels.includes(toplevel)) {
+                                            existing.toplevels.push(toplevel);
+                                          }
+                                        });
+                       if (app.type === "pinned" || app.type === "pinned-running") {
+                         existing.isPinned = true;
+                       }
+                     } else {
+                       const entry = {
+                         "type": app.type,
+                         "appId": appId,
+                         "title": app.title,
+                         "toplevels": toplevels.slice(),
+                         "isPinned": app.type === "pinned" || app.type === "pinned-running"
+                       };
+                       grouped.push(entry);
+                       groupedById.set(appId, entry);
+                     }
+                   });
+
+        grouped.forEach(entry => {
+                          entry.toplevel = getPrimaryToplevelForEntry(entry);
+                          if (entry.toplevels.length > 0 && entry.isPinned) {
+                            entry.type = "pinned-running";
+                          } else if (entry.toplevels.length > 0) {
+                            entry.type = "running";
+                          } else {
+                            entry.type = "pinned";
+                          }
+                          if (entry.toplevel && entry.toplevel.title && entry.toplevel.title.trim() !== "") {
+                            entry.title = entry.toplevel.title;
+                          }
+                        });
+
+        return grouped;
+      }
+
       // Function to update the combined dock apps model
       function updateDockApps() {
         const runningApps = ToplevelManager ? (ToplevelManager.toplevels.values || []) : [];
@@ -315,6 +408,7 @@ Loader {
             combined.push({
                             "type": appType,
                             "toplevel": toplevel,
+                            "toplevels": toplevel ? [toplevel] : [],
                             "appId": canonicalId,
                             "title": title
                           });
@@ -327,6 +421,7 @@ Loader {
             combined.push({
                             "type": appType,
                             "toplevel": toplevel,
+                            "toplevels": [],
                             "appId": canonicalId,
                             "title": title
                           });
@@ -375,7 +470,16 @@ Loader {
           pushPinned();
         }
 
-        dockApps = sortDockApps(combined);
+        const sortedApps = sortDockApps(combined);
+        dockApps = buildGroupedDockApps(sortedApps);
+        const cycleState = root.groupCycleIndices || {};
+        const nextCycleState = {};
+        dockApps.forEach(app => {
+                           if (app && app.appId && cycleState[app.appId] !== undefined) {
+                             nextCycleState[app.appId] = cycleState[app.appId];
+                           }
+                         });
+        root.groupCycleIndices = nextCycleState;
 
         // Sync session order if needed
         // Instead of resetting everything when length changes, we reconcile the keys

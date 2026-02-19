@@ -13,6 +13,7 @@ PopupWindow {
   id: root
 
   property var toplevel: null
+  property var appData: null
   property Item anchorItem: null
   property ShellScreen targetScreen: null
 
@@ -21,7 +22,7 @@ PopupWindow {
   property int launcherWidgetIndex: -1
   property var launcherWidgetSettings: ({})
 
-  property bool hovered: menuMouseArea.containsMouse
+  property bool hovered: menuHoverHandler.hovered
   property var onAppClosed: null // Callback function for when an app is closed
   property bool canAutoClose: false
 
@@ -33,9 +34,37 @@ PopupWindow {
   signal requestClose
 
   property real menuContentWidth: 160
+  property real menuMinWidth: 120
+  property real menuMaxWidth: 360
+  property real menuMaxHeight: Math.max(180, Math.min(420, Math.round((targetScreen ? targetScreen.height : 600) * 0.3)))
+  property int separatorCompactHeight: 8
+  property string forcedGroupMenuMode: ""
+  readonly property int separatorIndex: {
+    for (let i = 0; i < root.items.length; i++) {
+      if (root.items[i] && root.items[i].separator === true)
+        return i;
+    }
+    return -1;
+  }
+  readonly property bool splitExtendedLayout: separatorIndex >= 0
+  readonly property var scrollItems: splitExtendedLayout ? root.items.slice(0, separatorIndex) : root.items
+  readonly property var fixedItems: splitExtendedLayout ? root.items.slice(separatorIndex + 1) : []
+  readonly property real menuInnerHeight: Math.max(0, implicitHeight - Style.marginXL)
+  readonly property real fixedActionsHeight: listHeight(fixedItems)
+  readonly property real separatorBlockHeight: splitExtendedLayout ? separatorCompactHeight : 0
+  readonly property real scrollAreaHeight: splitExtendedLayout
+    ? Math.max(0, menuInnerHeight - fixedActionsHeight - separatorBlockHeight)
+    : menuInnerHeight
+  readonly property bool listOverflowing: menuFlick && menuFlick.contentHeight > menuFlick.height
+  readonly property real menuBodyHeight: {
+    if (splitExtendedLayout) {
+      return listHeight(scrollItems) + separatorBlockHeight + fixedActionsHeight;
+    }
+    return listHeight(root.items);
+  }
 
   implicitWidth: menuContentWidth + (Style.marginXL)
-  implicitHeight: (root.items.length * 32) + (Style.marginXL)
+  implicitHeight: Math.min(menuBodyHeight + (Style.marginXL), menuMaxHeight)
   color: "transparent"
   visible: false
 
@@ -74,8 +103,50 @@ PopupWindow {
         }
       }
     }
-    // Apply a reasonable minimum width (like 120px)
-    menuContentWidth = Math.max(120, Math.ceil(maxWidth));
+    // Keep menu readable without allowing extremely wide labels.
+    menuContentWidth = Math.max(menuMinWidth, Math.min(menuMaxWidth, Math.ceil(maxWidth)));
+  }
+
+  function getCurrentAppId() {
+    return appData?.appId || toplevel?.appId || "";
+  }
+
+  function getValidToplevels() {
+    if (!ToplevelManager || !ToplevelManager.toplevels)
+      return [];
+    const source = appData?.toplevels && appData.toplevels.length > 0 ? appData.toplevels : (toplevel ? [toplevel] : []);
+    const allToplevels = ToplevelManager.toplevels.values || [];
+    return source.filter(window => window && allToplevels.includes(window));
+  }
+
+  function getPrimaryToplevel() {
+    const windows = getValidToplevels();
+    if (windows.length === 0)
+      return null;
+    if (ToplevelManager && ToplevelManager.activeToplevel && windows.includes(ToplevelManager.activeToplevel))
+      return ToplevelManager.activeToplevel;
+    return windows[0];
+  }
+
+  function isItemActionable(index) {
+    if (index < 0 || index >= root.items.length)
+      return false;
+    const item = root.items[index];
+    return item && typeof item.action === "function";
+  }
+
+  function rowHeightForItem(item) {
+    return item && item.separator === true ? 16 : 32;
+  }
+
+  function listHeight(items) {
+    let total = 0;
+    if (!items)
+      return total;
+    for (let i = 0; i < items.length; i++) {
+      total += rowHeightForItem(items[i]);
+    }
+    return total;
   }
 
   function initItems() {
@@ -107,47 +178,90 @@ PopupWindow {
       return;
     }
 
-    // Is this a running app?
-    const isRunning = root.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(root.toplevel);
-
-    // Is this a pinned app?
-    const isPinned = root.toplevel && root.isAppPinned(root.toplevel.appId);
+    const windows = getValidToplevels();
+    const primaryToplevel = getPrimaryToplevel();
+    const appId = getCurrentAppId();
+    const isRunning = windows.length > 0;
+    const isPinned = isAppPinned(appId);
+    const grouped = Settings.data.dock.groupApps && windows.length > 1;
+    const rawGroupMenuMode = forcedGroupMenuMode || Settings.data.dock.groupContextMenuMode || "extended";
+    const menuModeForGroup = grouped ? ((rawGroupMenuMode === "list" || rawGroupMenuMode === "extended") ? rawGroupMenuMode : "extended") : "single";
 
     var next = [];
-    if (isRunning) {
-      // Focus item
+
+    if (!grouped || menuModeForGroup === "single") {
+      if (isRunning) {
+        next.push({
+                    "icon": "eye",
+                    "text": I18n.tr("common.focus"),
+                    "action": function () {
+                      handleFocus(primaryToplevel);
+                    }
+                  });
+      }
+
       next.push({
-                  "icon": "eye",
-                  "text": I18n.tr("common.focus"),
+                  "icon": !isPinned ? "pin" : "unpin",
+                  "text": !isPinned ? I18n.tr("common.pin") : I18n.tr("common.unpin"),
                   "action": function () {
-                    handleFocus();
+                    handlePin(appId);
                   }
                 });
+
+      if (isRunning) {
+        next.push({
+                    "icon": "close",
+                    "text": I18n.tr("common.close"),
+                    "action": function () {
+                      handleClose(primaryToplevel);
+                    }
+                  });
+      }
+    } else {
+      windows.forEach((window, index) => {
+        const windowTitle = (window.title && window.title.trim() !== "") ? window.title : (appId || ("Window " + (index + 1)));
+        next.push({
+                    "icon": window === ToplevelManager?.activeToplevel ? "circle-filled" : "square-rounded",
+                    "text": windowTitle,
+                    "action": function () {
+                      handleFocus(window);
+                    }
+                  });
+      });
+
+      if (menuModeForGroup === "extended") {
+        next.push({
+                    "separator": true
+                  });
+        next.push({
+                    "icon": "eye",
+                    "text": I18n.tr("common.focus"),
+                    "action": function () {
+                      handleFocus(primaryToplevel);
+                    }
+                  });
+        next.push({
+                    "icon": !isPinned ? "pin" : "unpin",
+                    "text": !isPinned ? I18n.tr("common.pin") : I18n.tr("common.unpin"),
+                    "action": function () {
+                      handlePin(appId);
+                    }
+                  });
+        next.push({
+                    "icon": "close",
+                    "text": I18n.tr("common.close") + " All",
+                    "action": function () {
+                      handleCloseAll(windows);
+                    }
+                  });
+      }
     }
 
-    // Pin/Unpin item
-    next.push({
-                "icon": !isPinned ? "pin" : "unpin",
-                "text": !isPinned ? I18n.tr("common.pin") : I18n.tr("common.unpin"),
-                "action": function () {
-                  handlePin();
-                }
-              });
+    // Keep grouped list mode as a clean window switcher.
+    const canAddDesktopActions = !grouped || menuModeForGroup === "extended";
 
-    if (isRunning) {
-      // Close item
-      next.push({
-                  "icon": "close",
-                  "text": I18n.tr("common.close"),
-                  "action": function () {
-                    handleClose();
-                  }
-                });
-    }
-
-    // Create a menu entry for each app-specific action definied in its .desktop file
-    if (typeof DesktopEntries !== 'undefined' && DesktopEntries.byId && root.toplevel?.appId) {
-      const appId = root.toplevel.appId;
+    // Create a menu entry for each app-specific action defined in its .desktop file
+    if (canAddDesktopActions && typeof DesktopEntries !== 'undefined' && DesktopEntries.byId && appId) {
       const entry = (DesktopEntries.heuristicLookup) ? DesktopEntries.heuristicLookup(appId) : DesktopEntries.byId(appId);
       if (entry != null) {
         entry.actions.forEach(function (action) {
@@ -284,7 +398,7 @@ PopupWindow {
     }
   }
 
-  function show(item, toplevelData, screen) {
+  function show(item, toplevelData, screen, groupModeOverride) {
     if (!item) {
       return;
     }
@@ -294,8 +408,19 @@ PopupWindow {
 
     // Then set up new data
     anchorItem = item;
-    toplevel = toplevelData;
+    if (toplevelData && typeof toplevelData === "object" && (toplevelData.appId !== undefined || toplevelData.toplevels !== undefined)) {
+      appData = toplevelData;
+      toplevel = toplevelData.toplevel || null;
+    } else {
+      appData = toplevelData ? {
+        "appId": toplevelData.appId,
+        "toplevel": toplevelData,
+        "toplevels": toplevelData ? [toplevelData] : []
+      } : null;
+      toplevel = toplevelData;
+    }
     targetScreen = screen || null;
+    forcedGroupMenuMode = groupModeOverride || "";
     initItems();
 
     visible = true;
@@ -303,52 +428,117 @@ PopupWindow {
     gracePeriodTimer.restart();
   }
 
-  function hide() {
-    visible = false;
-    root.items.length = 0;
-    menuContentWidth = 120; // Reset to minimum
-  }
-
   // Helper function to determine which menu item is under the mouse
   function getHoveredItem(mouseY) {
-    const itemHeight = 32;
     const startY = Style.marginM;
-    const relativeY = mouseY - startY;
+    const localY = mouseY - startY;
 
-    if (relativeY < 0)
+    if (localY < 0)
       return -1;
 
-    const itemIndex = Math.floor(relativeY / itemHeight);
-    return itemIndex >= 0 && itemIndex < root.items.length ? itemIndex : -1;
+    function findIndexInList(items, relativeY, baseIndex) {
+      let offset = 0;
+      for (let i = 0; i < items.length; i++) {
+        const h = rowHeightForItem(items[i]);
+        if (relativeY >= offset && relativeY < offset + h)
+          return baseIndex + i;
+        offset += h;
+      }
+      return -1;
+    }
+
+    if (splitExtendedLayout) {
+      if (localY < scrollAreaHeight) {
+        return findIndexInList(scrollItems, localY + (menuFlick ? menuFlick.contentY : 0), 0);
+      }
+      if (localY < scrollAreaHeight + separatorBlockHeight) {
+        return -1;
+      }
+      return findIndexInList(fixedItems, localY - scrollAreaHeight - separatorBlockHeight, separatorIndex + 1);
+    } else {
+      return findIndexInList(scrollItems, localY + (menuFlick ? menuFlick.contentY : 0), 0);
+    }
   }
 
-  function handleFocus() {
-    if (root.toplevel?.activate) {
-      root.toplevel.activate();
-    }
+  function fixedItemGlobalIndex(localIndex) {
+    if (!splitExtendedLayout)
+      return localIndex;
+    return separatorIndex + 1 + localIndex;
+  }
+
+  function isScrollableHovered(mouseY) {
+    const localY = mouseY - Style.marginM;
+    return localY >= 0 && localY < scrollAreaHeight;
+  }
+
+  function onWheelScroll(deltaY) {
+    if (!menuFlick || menuFlick.contentHeight <= menuFlick.height)
+      return;
+    const nextY = menuFlick.contentY - deltaY;
+    menuFlick.contentY = Math.max(0, Math.min(nextY, menuFlick.contentHeight - menuFlick.height));
+  }
+
+  function resetMenuState() {
+    root.items.length = 0;
+    root.appData = null;
+    root.toplevel = null;
+    root.forcedGroupMenuMode = "";
+    menuContentWidth = menuMinWidth;
+    hoveredItem = -1;
+    if (menuFlick)
+      menuFlick.contentY = 0;
+  }
+
+  function hide() {
+    visible = false;
+    resetMenuState();
+  }
+
+  function hideWithoutReset() {
+    visible = false;
+  }
+
+  function closeAndReset() {
+    hide();
     root.requestClose();
   }
 
-  function handlePin() {
-    if (root.toplevel?.appId) {
-      root.toggleAppPin(root.toplevel.appId);
+  function handleFocus(targetToplevel) {
+    if (targetToplevel?.activate) {
+      targetToplevel.activate();
     }
-    root.requestClose();
+    closeAndReset();
   }
 
-  function handleClose() {
-    // Check if toplevel is still valid before trying to close it
-    const isValidToplevel = root.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(root.toplevel);
+  function handlePin(appId) {
+    if (appId) {
+      root.toggleAppPin(appId);
+    }
+    closeAndReset();
+  }
 
-    if (isValidToplevel && root.toplevel.close) {
-      root.toplevel.close();
-      // Trigger immediate dock update callback if provided
+  function handleClose(targetToplevel) {
+    const isValidToplevel = targetToplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(targetToplevel);
+
+    if (isValidToplevel && targetToplevel.close) {
+      targetToplevel.close();
       if (root.onAppClosed && typeof root.onAppClosed === "function") {
         Qt.callLater(root.onAppClosed);
       }
     }
-    root.hide();
-    root.requestClose();
+    closeAndReset();
+  }
+
+  function handleCloseAll(windows) {
+    windows.forEach(window => {
+                    if (window && ToplevelManager && ToplevelManager.toplevels.values.includes(window) && window.close) {
+                      window.close();
+                    }
+                  });
+    if (root.onAppClosed && typeof root.onAppClosed === "function") {
+      Qt.callLater(root.onAppClosed);
+    }
+    closeAndReset();
   }
 
   function handleLauncherSettings() {
@@ -357,7 +547,7 @@ PopupWindow {
       panel.requestedTab = SettingsPanel.Tab.Launcher;
       panel.toggle();
     }
-    root.requestClose();
+    closeAndReset();
   }
 
   function handleDockSettings() {
@@ -366,14 +556,14 @@ PopupWindow {
       panel.requestedTab = SettingsPanel.Tab.Dock;
       panel.toggle();
     }
-    root.requestClose();
+    closeAndReset();
   }
 
   function handleLauncherWidgetSettings() {
     if (targetScreen && launcherWidgetSection && launcherWidgetIndex >= 0) {
       BarService.openWidgetSettings(targetScreen, launcherWidgetSection, launcherWidgetIndex, "Launcher", launcherWidgetSettings || {});
     }
-    root.requestClose();
+    closeAndReset();
   }
 
   // Short delay to ignore spurious events
@@ -383,7 +573,7 @@ PopupWindow {
     repeat: false
     onTriggered: {
       root.canAutoClose = true;
-      if (!menuMouseArea.containsMouse) {
+      if (!menuHoverHandler.hovered) {
         closeTimer.start();
       }
     }
@@ -395,7 +585,7 @@ PopupWindow {
     repeat: false
     running: false
     onTriggered: {
-      root.hide();
+      root.hideWithoutReset();
     }
   }
 
@@ -406,56 +596,164 @@ PopupWindow {
     border.color: Color.mOutline
     border.width: Style.borderS
 
-    // Single MouseArea to handle both auto-close and menu interactions
-    MouseArea {
-      id: menuMouseArea
-      anchors.fill: parent
-      hoverEnabled: true
-      cursorShape: root.hoveredItem >= 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
-
-      onEntered: {
-        closeTimer.stop();
-      }
-
-      onExited: {
-        root.hoveredItem = -1;
-        if (root.canAutoClose) {
-          // Only close if grace period has passed
-          closeTimer.start();
+    HoverHandler {
+      id: menuHoverHandler
+      acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+      onHoveredChanged: {
+        if (hovered) {
+          closeTimer.stop();
+        } else {
+          root.hoveredItem = -1;
+          if (root.canAutoClose) {
+            closeTimer.start();
+          }
         }
       }
-
-      onPositionChanged: mouse => {
-                           root.hoveredItem = root.getHoveredItem(mouse.y);
-                         }
-
-      onClicked: mouse => {
-                   const clickedItem = root.getHoveredItem(mouse.y);
-                   if (clickedItem >= 0) {
-                     root.items[clickedItem].action.call();
-                   }
-                 }
     }
 
-    ColumnLayout {
-      id: contextMenuColumn
+    WheelHandler {
+      acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+      onWheel: event => {
+                 if (!root.isScrollableHovered(event.y))
+                   return;
+                 const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
+                 root.onWheelScroll(delta);
+                 event.accepted = true;
+               }
+    }
+
+    Flickable {
+      id: menuFlick
       anchors.left: parent.left
       anchors.right: parent.right
       anchors.top: parent.top
-      anchors.margins: Style.marginM
+      anchors.leftMargin: Style.marginM
+      anchors.rightMargin: Style.marginM
+      anchors.topMargin: Style.marginM
+      height: root.scrollAreaHeight
+      clip: true
+      contentWidth: width
+      contentHeight: scrollColumn.height
+      flickableDirection: Flickable.VerticalFlick
+      boundsBehavior: Flickable.StopAtBounds
+      interactive: contentHeight > height
+
+      ScrollBar.vertical: ScrollBar {
+        id: menuScrollBar
+        policy: ScrollBar.AsNeeded
+        visible: root.listOverflowing
+        interactive: true
+        hoverEnabled: true
+      }
+
+      Column {
+        id: scrollColumn
+        width: menuFlick.width 
+        spacing: 0
+
+        Repeater {
+          model: root.scrollItems
+
+          Rectangle {
+            readonly property bool isSeparator: modelData && modelData.separator === true
+            width: scrollColumn.width
+            height: root.rowHeightForItem(modelData)
+            color: (!isSeparator && root.hoveredItem === index) ? Color.mHover : "transparent"
+            radius: Style.radiusXS
+
+            Row {
+              id: rowLayout
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.verticalCenter: parent.verticalCenter
+              anchors.leftMargin: Style.marginS
+              anchors.rightMargin: Style.marginS
+              spacing: Style.marginS
+              visible: !isSeparator
+
+              NIcon {
+                icon: modelData.icon
+                pointSize: Style.fontSizeL
+                color: root.hoveredItem === index ? Color.mOnHover : Color.mOnSurfaceVariant
+                visible: icon !== ""
+                anchors.verticalCenter: parent.verticalCenter
+              }
+
+              NText {
+                text: modelData.text
+                pointSize: Style.fontSizeS
+                color: root.hoveredItem === index ? Color.mOnHover : Color.mOnSurfaceVariant
+                anchors.verticalCenter: parent.verticalCenter
+                width: rowLayout.width - ((modelData.icon && modelData.icon !== "") ? (Style.fontSizeL + Style.marginS) : 0)
+                elide: Text.ElideRight
+              }
+            }
+
+            MouseArea {
+              anchors.fill: parent
+              enabled: !parent.isSeparator && root.isItemActionable(index)
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              acceptedButtons: Qt.LeftButton
+
+              onEntered: {
+                root.hoveredItem = index;
+              }
+
+              onExited: {
+                if (root.hoveredItem === index) {
+                  root.hoveredItem = -1;
+                }
+              }
+
+              onClicked: {
+                if (root.isItemActionable(index)) {
+                  root.items[index].action.call();
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    Rectangle {
+      visible: root.splitExtendedLayout
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: menuFlick.bottom
+      anchors.leftMargin: Style.marginS
+      anchors.rightMargin: Style.marginS
+      height: Style.borderS
+      color: Qt.alpha(Color.mOutline, 0.7)
+      radius: Style.radiusXS
+    }
+
+    Column {
+      id: fixedColumn
+      visible: root.splitExtendedLayout && root.fixedItems.length > 0
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      anchors.leftMargin: Style.marginM
+      anchors.rightMargin: Style.marginM
+      anchors.bottomMargin: Style.marginM
+      anchors.top: menuFlick.bottom
+      anchors.topMargin: root.separatorBlockHeight
       spacing: 0
 
       Repeater {
-        model: root.items
+        model: root.fixedItems
 
         Rectangle {
-          Layout.fillWidth: true
-          height: 32
-          color: root.hoveredItem === index ? Color.mHover : "transparent"
+          readonly property int globalIndex: root.fixedItemGlobalIndex(index)
+          width: fixedColumn.width
+          height: root.rowHeightForItem(modelData)
+          color: root.hoveredItem === globalIndex ? Color.mHover : "transparent"
           radius: Style.radiusXS
 
           Row {
-            id: rowLayout
+            id: fixedRowLayout
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
@@ -466,7 +764,7 @@ PopupWindow {
             NIcon {
               icon: modelData.icon
               pointSize: Style.fontSizeL
-              color: root.hoveredItem === index ? Color.mOnHover : Color.mOnSurfaceVariant
+              color: root.hoveredItem === parent.globalIndex ? Color.mOnHover : Color.mOnSurfaceVariant
               visible: icon !== ""
               anchors.verticalCenter: parent.verticalCenter
             }
@@ -474,8 +772,34 @@ PopupWindow {
             NText {
               text: modelData.text
               pointSize: Style.fontSizeS
-              color: root.hoveredItem === index ? Color.mOnHover : Color.mOnSurfaceVariant
+              color: root.hoveredItem === parent.globalIndex ? Color.mOnHover : Color.mOnSurfaceVariant
               anchors.verticalCenter: parent.verticalCenter
+              width: fixedRowLayout.width - ((modelData.icon && modelData.icon !== "") ? (Style.fontSizeL + Style.marginS) : 0)
+              elide: Text.ElideRight
+            }
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            enabled: root.isItemActionable(parent.globalIndex)
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            acceptedButtons: Qt.LeftButton
+
+            onEntered: {
+              root.hoveredItem = parent.globalIndex;
+            }
+
+            onExited: {
+              if (root.hoveredItem === parent.globalIndex) {
+                root.hoveredItem = -1;
+              }
+            }
+
+            onClicked: {
+              if (root.isItemActionable(parent.globalIndex)) {
+                root.items[parent.globalIndex].action.call();
+              }
             }
           }
         }
