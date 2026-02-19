@@ -1,0 +1,7 @@
+:root {
+    --theme-color: "Matugen";
+    --hue-rotate: 220deg;
+    <* for name, value in colors *>
+    --md-sys-color-{{name | replace: "_", "-" }}: {{value.default.rgb}};
+    <* endfor *>
+}
