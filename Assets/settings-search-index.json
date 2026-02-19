@@ -692,6 +692,24 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.dock.appearance-show-launcher-icon-label",
+    "descriptionKey": "panels.dock.appearance-show-launcher-icon-description",
+    "widget": "NToggle",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-launcher-position-label",
+    "descriptionKey": "panels.dock.appearance-launcher-position-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.general.profile-picture-label",
     "descriptionKey": "panels.general.profile-picture-description",
     "widget": "NTextInputButton",
