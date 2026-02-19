@@ -331,6 +331,7 @@
     "monitors": [],
     "pinnedApps": [],
     "colorizeIcons": false,
+    "showLauncherIcon": false,
     "pinnedStatic": false,
     "inactiveIndicators": false,
     "deadOpacity": 0.6,

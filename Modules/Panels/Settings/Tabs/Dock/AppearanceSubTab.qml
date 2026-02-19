@@ -218,5 +218,14 @@ ColumnLayout {
       defaultValue: Settings.getDefaultValue("dock.colorizeIcons")
       onToggled: checked => Settings.data.dock.colorizeIcons = checked
     }
+
+    NToggle {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-show-launcher-icon-label")
+      description: I18n.tr("panels.dock.appearance-show-launcher-icon-description")
+      checked: Settings.data.dock.showLauncherIcon
+      defaultValue: Settings.getDefaultValue("dock.showLauncherIcon")
+      onToggled: checked => Settings.data.dock.showLauncherIcon = checked
+    }
   }
 }

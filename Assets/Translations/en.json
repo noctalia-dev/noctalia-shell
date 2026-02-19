@@ -1039,6 +1039,8 @@
       "appearance-border-radius-label": "Border radius",
       "appearance-colorize-icons-description": "Apply theme colors to dock app icons (non-focused apps only).",
       "appearance-colorize-icons-label": "Colorize icons",
+      "appearance-show-launcher-icon-description": "Show the application launcher icon in the dock.",
+      "appearance-show-launcher-icon-label": "Show App Launcher",
       "appearance-dead-opacity-description": "Adjust the opacity of app icons that are not running.",
       "appearance-dead-opacity-label": "Dead opacity",
       "appearance-desc": "Customize the dock's behavior and appearance.",
