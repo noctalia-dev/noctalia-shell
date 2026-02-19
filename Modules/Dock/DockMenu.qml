@@ -81,28 +81,28 @@ PopupWindow {
   function initItems() {
     if (menuMode === "launcher") {
       root.items = [
-        {
-          "icon": "adjustments",
-          "text": I18n.tr("actions.dock-settings"),
-          "action": function () {
-            handleDockSettings();
-          }
-        },
-        {
-          "icon": "adjustments",
-          "text": I18n.tr("actions.launcher-settings"),
-          "action": function () {
-            handleLauncherSettings();
-          }
-        },
-        {
-          "icon": "settings",
-          "text": I18n.tr("actions.widget-settings"),
-          "action": function () {
-            handleLauncherWidgetSettings();
-          }
-        }
-      ];
+            {
+              "icon": "adjustments",
+              "text": I18n.tr("actions.dock-settings"),
+              "action": function () {
+                handleDockSettings();
+              }
+            },
+            {
+              "icon": "adjustments",
+              "text": I18n.tr("actions.launcher-settings"),
+              "action": function () {
+                handleLauncherSettings();
+              }
+            },
+            {
+              "icon": "settings",
+              "text": I18n.tr("actions.widget-settings"),
+              "action": function () {
+                handleLauncherWidgetSettings();
+              }
+            }
+          ];
       calculateMenuWidth();
       return;
     }

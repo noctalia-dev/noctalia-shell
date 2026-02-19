@@ -186,9 +186,7 @@ Item {
             }
             readonly property var launcherMetadata: BarWidgetRegistry.widgetMetadata["Launcher"]
             readonly property string launcherIcon: launcherWidgetSettings.icon || (launcherMetadata && launcherMetadata.icon ? launcherMetadata.icon : "search")
-            readonly property string launcherIconColorKey: launcherWidgetSettings.iconColor !== undefined
-              ? launcherWidgetSettings.iconColor
-              : (launcherMetadata && launcherMetadata.iconColor !== undefined ? launcherMetadata.iconColor : "none")
+            readonly property string launcherIconColorKey: launcherWidgetSettings.iconColor !== undefined ? launcherWidgetSettings.iconColor : (launcherMetadata && launcherMetadata.iconColor !== undefined ? launcherMetadata.iconColor : "none")
 
             Item {
               id: launcherIconContainer
@@ -240,27 +238,27 @@ Item {
               }
 
               onClicked: mouse => {
-                const targetScreen = dockRoot.modelData || dockRoot.screen || null;
-                if (!targetScreen) {
-                  return;
-                }
+                           const targetScreen = dockRoot.modelData || dockRoot.screen || null;
+                           if (!targetScreen) {
+                             return;
+                           }
 
-                if (mouse.button === Qt.RightButton) {
-                  if (dockRoot.currentContextMenu === launcherContextMenu && launcherContextMenu.visible) {
-                    dockRoot.closeAllContextMenus();
-                    return;
-                  }
-                  dockRoot.closeAllContextMenus();
-                  TooltipService.hideImmediately();
-                  launcherContextMenu.show(launcherButton, null, targetScreen);
-                  return;
-                }
+                           if (mouse.button === Qt.RightButton) {
+                             if (dockRoot.currentContextMenu === launcherContextMenu && launcherContextMenu.visible) {
+                               dockRoot.closeAllContextMenus();
+                               return;
+                             }
+                             dockRoot.closeAllContextMenus();
+                             TooltipService.hideImmediately();
+                             launcherContextMenu.show(launcherButton, null, targetScreen);
+                             return;
+                           }
 
-                if (mouse.button === Qt.LeftButton || mouse.button === Qt.MiddleButton) {
-                  dockRoot.closeAllContextMenus();
-                  PanelService.toggleLauncher(targetScreen);
-                }
-              }
+                           if (mouse.button === Qt.LeftButton || mouse.button === Qt.MiddleButton) {
+                             dockRoot.closeAllContextMenus();
+                             PanelService.toggleLauncher(targetScreen);
+                           }
+                         }
             }
 
             DockMenu {
@@ -611,7 +609,7 @@ Item {
 
               onClicked: mouse => {
                            if (mouse.button === Qt.RightButton) {
-                            const targetScreen = dockRoot.modelData || dockRoot.screen || null;
+                             const targetScreen = dockRoot.modelData || dockRoot.screen || null;
                              // If right-clicking on the same app with an open context menu, close it
                              if (dockRoot.currentContextMenu === contextMenu && contextMenu.visible) {
                                dockRoot.closeAllContextMenus();
