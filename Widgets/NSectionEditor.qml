@@ -20,6 +20,7 @@ NBox {
   property bool barIsVertical: false // When true, map left/right to top/bottom in labels
   property int maxWidgets: -1 // -1 means unlimited
   property bool draggable: true // Enable/disable drag reordering
+  property bool crossSectionDraggable: false
   property alias dropTargetArea: gridContainer
 
   // Get display label for a section
@@ -680,7 +681,7 @@ NBox {
         id: flowDragArea
         anchors.fill: parent
         z: 100 // Above widgets to ensure it captures events first
-        enabled: root.draggable
+        enabled: root.draggable || root.crossSectionDraggable
 
         acceptedButtons: Qt.LeftButton
         preventStealing: true // Always prevent stealing to ensure we get all events
@@ -890,7 +891,7 @@ NBox {
                            }
 
         onReleased: mouse => {
-                      if (dragStarted && dropTargetIndex !== -1 && dropTargetIndex !== draggedIndex) {
+                      if (root.draggable && dragStarted && dropTargetIndex !== -1 && dropTargetIndex !== draggedIndex) {
                         // Perform the reorder
                         reorderWidget(sectionId, draggedIndex, dropTargetIndex);
                       } else if (dragStarted && draggedIndex !== -1) {

@@ -90,6 +90,7 @@ ColumnLayout {
         sectionLabels: root.getScreenLabels()
         sectionIcons: root.getScreenIcons()
         draggable: false // Desktop widgets are positioned by X,Y, not list order
+        crossSectionDraggable: true
         maxWidgets: -1
         onAddWidget: (widgetId, section) => _addWidgetToMonitor(modelData.name, widgetId)
         onRemoveWidget: (section, index) => _removeWidgetFromMonitor(modelData.name, index)
