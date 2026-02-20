@@ -315,5 +315,14 @@ ColumnLayout {
       defaultValue: Settings.getDefaultValue("dock.launcherPosition")
       onSelected: key => Settings.data.dock.launcherPosition = key
     }
+
+    NColorChoice {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.showLauncherIcon
+      label: I18n.tr("common.select-icon-color")
+      currentKey: Settings.data.dock.launcherIconColor
+      defaultValue: Settings.getDefaultValue("dock.launcherIconColor")
+      onSelected: key => Settings.data.dock.launcherIconColor = key
+    }
   }
 }

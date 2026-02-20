@@ -165,13 +165,6 @@ PopupWindow {
               "action": function () {
                 handleLauncherSettings();
               }
-            },
-            {
-              "icon": "settings",
-              "text": I18n.tr("actions.widget-settings"),
-              "action": function () {
-                handleLauncherWidgetSettings();
-              }
             }
           ];
       calculateMenuWidth();

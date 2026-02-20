@@ -246,8 +246,16 @@ Item {
             }
             readonly property var launcherMetadata: BarWidgetRegistry.widgetMetadata["Launcher"]
             readonly property string launcherIcon: launcherWidgetSettings.icon || (launcherMetadata && launcherMetadata.icon ? launcherMetadata.icon : "search")
-            readonly property string launcherIconColorKey: launcherWidgetSettings.iconColor !== undefined ? launcherWidgetSettings.iconColor : (launcherMetadata && launcherMetadata.iconColor !== undefined ? launcherMetadata.iconColor : "none")
-
+            readonly property string launcherIconColorKey: {
+              if (Settings.data.dock.launcherIconColor !== undefined)
+                return Settings.data.dock.launcherIconColor;
+              if (launcherWidgetSettings.iconColor !== undefined)
+                return launcherWidgetSettings.iconColor;
+              if (launcherMetadata && launcherMetadata.iconColor !== undefined)
+                return launcherMetadata.iconColor;
+              return "none";
+            }
+            
             Item {
               id: launcherIconContainer
               width: dockRoot.iconSize

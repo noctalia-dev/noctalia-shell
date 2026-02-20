@@ -410,6 +410,17 @@ Singleton {
         }
       ],
       "postProcess": () => `${templateApplyScript} zathura`
+    },
+    {
+      "id": "steam",
+      "name": "Steam",
+      "category": "misc",
+      "input": "steam.css",
+      "outputs": [
+        {
+          "path": "~/.steam/steam/steamui/skins/Material-Theme/css/main/colors/matugen.css"
+        }
+      ]
     }
   ]
 

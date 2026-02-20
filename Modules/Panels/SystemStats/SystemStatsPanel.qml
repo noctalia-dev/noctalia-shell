@@ -140,7 +140,7 @@ SmartPanel {
             color2: Color.mSecondary
             fill: true
             fillOpacity: 0.15
-            updateInterval: SystemStatService.cpuIntervalMs
+            updateInterval: SystemStatService.cpuUsageIntervalMs
           }
         }
       }

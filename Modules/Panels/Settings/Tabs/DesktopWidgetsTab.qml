@@ -36,29 +36,80 @@ ColumnLayout {
     onToggled: checked => Settings.data.desktopWidgets.enabled = checked
   }
 
-  NButton {
+  ColumnLayout {
     enabled: Settings.data.desktopWidgets.enabled
-    Layout.fillWidth: true
-    text: DesktopWidgetRegistry.editMode ? I18n.tr("panels.desktop-widgets.edit-mode-exit-button") : I18n.tr("panels.desktop-widgets.edit-mode-button-label")
-    icon: "edit"
-    onClicked: {
-      DesktopWidgetRegistry.editMode = !DesktopWidgetRegistry.editMode;
-      if (DesktopWidgetRegistry.editMode && Settings.data.ui.settingsPanelMode !== "window") {
-        var item = root.parent;
-        while (item) {
-          if (item.closeRequested !== undefined) {
-            item.closeRequested();
-            break;
+
+    NLabel {
+      description: I18n.tr("panels.desktop-widgets.cpu-intensive-note")
+    }
+
+    NButton {
+      Layout.fillWidth: true
+      Layout.topMargin: Style.marginM
+      Layout.bottomMargin: Style.marginM
+      text: DesktopWidgetRegistry.editMode ? I18n.tr("panels.desktop-widgets.edit-mode-exit-button") : I18n.tr("panels.desktop-widgets.edit-mode-button-label")
+      icon: "edit"
+      onClicked: {
+        DesktopWidgetRegistry.editMode = !DesktopWidgetRegistry.editMode;
+        if (DesktopWidgetRegistry.editMode && Settings.data.ui.settingsPanelMode !== "window") {
+          var item = root.parent;
+          while (item) {
+            if (item.closeRequested !== undefined) {
+              item.closeRequested();
+              break;
+            }
+            item = item.parent;
           }
-          item = item.parent;
         }
+      }
+    }
+
+    // One NSectionEditor per monitor
+    Repeater {
+      model: Quickshell.screens
+
+      NSectionEditor {
+        required property var modelData
+
+        Layout.fillWidth: true
+        sectionName: modelData.name
+        sectionSubtitle: {
+          var compositorScale = CompositorService.getDisplayScale(modelData.name);
+          // Format scale to 2 decimal places to prevent overly long text
+          var formattedScale = compositorScale.toFixed(2);
+          return "(" + modelData.width + "x" + modelData.height + " @ " + formattedScale + "x)";
+        }
+
+        sectionId: modelData.name
+        screen: modelData
+        settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/DesktopWidgets/DesktopWidgetSettingsDialog.qml")
+        widgetRegistry: DesktopWidgetRegistry
+        widgetModel: getWidgetsForMonitor(modelData.name)
+        availableWidgets: root.availableWidgetsModel
+        availableSections: root.getScreenNames()
+        sectionLabels: root.getScreenLabels()
+        sectionIcons: root.getScreenIcons()
+        draggable: false // Desktop widgets are positioned by X,Y, not list order
+        maxWidgets: -1
+        onAddWidget: (widgetId, section) => _addWidgetToMonitor(modelData.name, widgetId)
+        onRemoveWidget: (section, index) => _removeWidgetFromMonitor(modelData.name, index)
+        onMoveWidget: (fromSection, index, toSection) => _moveWidgetToMonitor(fromSection, index, toSection)
+        onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsForMonitor(modelData.name, index, settings)
+        onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
       }
     }
   }
 
-  NDivider {
-    visible: Settings.data.desktopWidgets.enabled
-    Layout.fillWidth: true
+  // Shared Plugin Settings Popup
+  NPluginSettingsPopup {
+    id: pluginSettingsDialog
+    parent: Overlay.overlay
+    showToastOnSave: false
+  }
+
+  Component.onCompleted: {
+    // Use Qt.callLater to ensure DesktopWidgetRegistry is ready
+    Qt.callLater(updateAvailableWidgetsModel);
   }
 
   // Helper to get screen names array
@@ -87,54 +138,6 @@ ColumnLayout {
       icons[Quickshell.screens[i].name] = "device-desktop";
     }
     return icons;
-  }
-
-  // One NSectionEditor per monitor
-  Repeater {
-    model: Quickshell.screens
-
-    NSectionEditor {
-      enabled: Settings.data.desktopWidgets.enabled
-      required property var modelData
-
-      Layout.fillWidth: true
-      sectionName: modelData.name
-      sectionSubtitle: {
-        var compositorScale = CompositorService.getDisplayScale(modelData.name);
-        // Format scale to 2 decimal places to prevent overly long text
-        var formattedScale = compositorScale.toFixed(2);
-        return "(" + modelData.width + "x" + modelData.height + " @ " + formattedScale + "x)";
-      }
-
-      sectionId: modelData.name
-      screen: modelData
-      settingsDialogComponent: Qt.resolvedUrl(Quickshell.shellDir + "/Modules/Panels/Settings/DesktopWidgets/DesktopWidgetSettingsDialog.qml")
-      widgetRegistry: DesktopWidgetRegistry
-      widgetModel: getWidgetsForMonitor(modelData.name)
-      availableWidgets: root.availableWidgetsModel
-      availableSections: root.getScreenNames()
-      sectionLabels: root.getScreenLabels()
-      sectionIcons: root.getScreenIcons()
-      draggable: false // Desktop widgets are positioned by X,Y, not list order
-      maxWidgets: -1
-      onAddWidget: (widgetId, section) => _addWidgetToMonitor(modelData.name, widgetId)
-      onRemoveWidget: (section, index) => _removeWidgetFromMonitor(modelData.name, index)
-      onMoveWidget: (fromSection, index, toSection) => _moveWidgetToMonitor(fromSection, index, toSection)
-      onUpdateWidgetSettings: (section, index, settings) => _updateWidgetSettingsForMonitor(modelData.name, index, settings)
-      onOpenPluginSettingsRequested: manifest => pluginSettingsDialog.openPluginSettings(manifest)
-    }
-  }
-
-  // Shared Plugin Settings Popup
-  NPluginSettingsPopup {
-    id: pluginSettingsDialog
-    parent: Overlay.overlay
-    showToastOnSave: false
-  }
-
-  Component.onCompleted: {
-    // Use Qt.callLater to ensure DesktopWidgetRegistry is ready
-    Qt.callLater(updateAvailableWidgetsModel);
   }
 
   function updateAvailableWidgetsModel() {
@@ -176,6 +179,12 @@ ColumnLayout {
         if (isPlugin) {
           badges.push({
                         "icon": "plugin",
+                        "color": Color.mSecondary
+                      });
+        }
+        if (DesktopWidgetRegistry.isCpuIntensive(widgetId)) {
+          badges.push({
+                        "icon": "cpu-intensive",
                         "color": Color.mSecondary
                       });
         }
