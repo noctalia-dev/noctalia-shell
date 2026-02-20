@@ -30,6 +30,7 @@ import qs.Modules.Panels.Settings
 import qs.Modules.Toast
 import qs.Services.Control
 import qs.Services.Hardware
+import qs.Services.Keyboard
 import qs.Services.Location
 import qs.Services.Networking
 import qs.Services.Noctalia
@@ -115,6 +116,12 @@ ShellRoot {
           SupporterService.init();
           CustomButtonIPCService.init();
           IPCService.init(screenDetector);
+
+          // Force ClipboardService initialization so clipboard watchers
+          // start immediately instead of waiting for first launcher open
+          if (Settings.data.appLauncher.enableClipboardHistory) {
+            ClipboardService.checkCliphistAvailability();
+          }
         });
 
         delayedInitTimer.running = true;
