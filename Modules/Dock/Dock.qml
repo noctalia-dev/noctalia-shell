@@ -100,13 +100,12 @@ Loader {
           return !panel.isPanelOpen;
         return hidden;
       }
+      readonly property int dockItemCount: dockApps.length + (Settings.data.dock.showLauncherIcon ? 1 : 0)
       readonly property int frameIndicatorLength: {
-        const launcherCount = Settings.data.dock.showLauncherIcon ? 1 : 0;
-        const count = dockApps.length + launcherCount;
-        if (count <= 0)
+        if (dockItemCount <= 0)
           return 0;
         const spacing = Style.marginS;
-        const layoutLength = (iconSize * count) + (spacing * Math.max(0, count - 1));
+        const layoutLength = (iconSize * dockItemCount) + (spacing * Math.max(0, dockItemCount - 1));
         const padded = layoutLength + Style.marginXL;
         return Math.min(padded, isVertical ? maxHeight : maxWidth);
       }
@@ -471,6 +470,8 @@ Loader {
         onTriggered: {
           if (autoHide) {
             if (isStaticMode) {
+              if (dockItemCount <= 0)
+                return;
               const panel = getStaticDockPanel();
               if (panel && !panel.isPanelOpen)
                 panel.open();
@@ -550,6 +551,8 @@ Loader {
             onEntered: {
               peekHovered = true;
               if (isStaticMode && !autoHide) {
+                if (dockItemCount <= 0)
+                  return;
                 const panel = getStaticDockPanel();
                 if (panel && !panel.isPanelOpen)
                   panel.open();
