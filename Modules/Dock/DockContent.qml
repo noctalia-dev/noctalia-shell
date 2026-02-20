@@ -401,6 +401,8 @@ Item {
             property bool isActive: ToplevelManager && ToplevelManager.activeToplevel && toplevels.includes(ToplevelManager.activeToplevel)
             property bool hovered: appMouseArea.containsMouse
             property string appId: modelData ? modelData.appId : ""
+            // Tracks whether this app's menu was opened by hover-auto-open (not by click/right-click).
+            property bool hoverListOpened: false
             property int groupedCount: toplevels.length
             property int focusedWindowIndex: {
               if (!ToplevelManager || !ToplevelManager.activeToplevel)
@@ -633,6 +635,7 @@ Item {
                   dockRoot.currentContextMenu = null;
                   dockRoot.hideTimer.stop();
                   dockRoot.menuHovered = false;
+                  appButton.hoverListOpened = false;
                   // Restart hide timer after menu closes
                   if (dockRoot.autoHide && !dockRoot.dockHovered && !dockRoot.anyAppHovered && !dockRoot.peekHovered && !dockRoot.menuHovered) {
                     dockRoot.hideTimer.restart();
@@ -675,6 +678,17 @@ Item {
                 if (!contextMenu.visible) {
                   TooltipService.show(appButton, tooltipText, "top");
                 }
+                const canOpenGroupedHoverList = Settings.data.dock.groupApps
+                                             && Settings.data.dock.groupHoverWindowList
+                                             && appButton.groupedCount > 1
+                                             && appButton.isRunning;
+                if (canOpenGroupedHoverList) {
+                  // Keep only one hover-opened grouped list visible at a time while moving across dock items.
+                  if (dockRoot.currentContextMenu && dockRoot.currentContextMenu !== contextMenu && dockRoot.currentContextMenu.visible) {
+                    dockRoot.closeAllContextMenus();
+                  }
+                  hoverListTimer.restart();
+                }
                 if (dockRoot.autoHide) {
                   dockRoot.showTimer.stop();
                   dockRoot.hideTimer.stop();
@@ -685,6 +699,12 @@ Item {
 
               onExited: {
                 dockRoot.anyAppHovered = false;
+                hoverListTimer.stop();
+                // Auto-close only menus opened by hover so click/right-click menus keep their current behavior.
+                if (appButton.hoverListOpened && dockRoot.currentContextMenu === contextMenu && contextMenu.visible) {
+                  contextMenu.hide();
+                  appButton.hoverListOpened = false;
+                }
                 TooltipService.hide();
                 // Clear menuHovered if no current menu or menu not visible
                 if (!dockRoot.currentContextMenu || !dockRoot.currentContextMenu.visible) {
@@ -741,6 +761,7 @@ Item {
                                TooltipService.hideImmediately();
                                // Left-click list should always open the grouped window list view.
                                contextMenu.show(appButton, modelData, targetScreen, "list");
+                               appButton.hoverListOpened = false;
                              } else {
                                const appKey = modelData?.appId || "";
                                const state = dockRoot.groupCycleIndices || {};
@@ -757,6 +778,24 @@ Item {
                              }
                            }
                          }
+            }
+
+            Timer {
+              id: hoverListTimer
+              interval: 280
+              repeat: false
+              onTriggered: {
+                // Delay prevents accidental open when cursor just passes over grouped apps.
+                if (!appMouseArea.containsMouse || iconContainer.dragging)
+                  return;
+                const runningToplevels = dock.getValidToplevels(modelData);
+                if (!Settings.data.dock.groupApps || !Settings.data.dock.groupHoverWindowList || runningToplevels.length <= 1)
+                  return;
+                const targetScreen = dockRoot.modelData || dockRoot.screen || null;
+                TooltipService.hideImmediately();
+                contextMenu.show(appButton, modelData, targetScreen, "list");
+                appButton.hoverListOpened = true;
+              }
             }
 
             // Active indicator - positioned at the edge of the delegate area
