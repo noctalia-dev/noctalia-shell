@@ -43,18 +43,7 @@ NIconButton {
   readonly property color iconColor: {
     if (!enableColorization)
       return Color.mOnSurface;
-    switch (colorizeSystemIcon) {
-    case "primary":
-      return Color.mPrimary;
-    case "secondary":
-      return Color.mSecondary;
-    case "tertiary":
-      return Color.mTertiary;
-    case "error":
-      return Color.mError;
-    default:
-      return Color.mOnSurface;
-    }
+    return Color.resolveColorKey(colorizeSystemIcon);
   }
 
   // If we have a custom path and not using distro logo, use the theme icon.
