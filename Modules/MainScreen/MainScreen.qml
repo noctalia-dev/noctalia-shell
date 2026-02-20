@@ -492,22 +492,81 @@ PanelWindow {
 
       // Panel background geometry (from the currently open panel on this screen)
       readonly property var panelBg: {
-        if (!root.isPanelOpen)
+        var op = PanelService.openedPanel;
+        if (!op || op.screen !== root.screen)
           return null;
-        var region = PanelService.openedPanel?.panelRegion;
+        var region = op.panelRegion;
         return (region && region.visible) ? region.panelItem : null;
       }
 
+      // Panel background geometry for the closing panel (may coexist with panelBg)
+      readonly property var closingPanelBg: {
+        var cp = PanelService.closingPanel;
+        if (!cp || cp.screen !== root.screen)
+          return null;
+        var region = cp.panelRegion;
+        return (region && region.visible) ? region.panelItem : null;
+      }
+
+      // Framed bar: inner hole boundary (where the hole begins on each axis)
+      // These are the x/y coordinates of the 4 inner hole corners
+      readonly property real frameHoleX: barPlaceholder.barPosition === "left" ? barPlaceholder.barHeight : barPlaceholder.frameThickness
+      readonly property real frameHoleY: barPlaceholder.barPosition === "top" ? barPlaceholder.barHeight : barPlaceholder.frameThickness
+      readonly property real frameHoleX2: root.width - (barPlaceholder.barPosition === "right" ? barPlaceholder.barHeight : barPlaceholder.frameThickness)
+      readonly property real frameHoleY2: root.height - (barPlaceholder.barPosition === "bottom" ? barPlaceholder.barHeight : barPlaceholder.frameThickness)
+      readonly property real frameR: Settings.data.bar.frameRadius ?? 20
+
       blurRegion: Region {
-        // Bar blur region (simple rectangle)
+        // ── Non-framed bar (simple/floating): single rectangle with bar corner states ──
         Region {
-          x: root.barShouldShow ? barPlaceholder.x : 0
-          y: root.barShouldShow ? barPlaceholder.y : 0
-          width: root.barShouldShow ? barPlaceholder.width : 0
-          height: root.barShouldShow ? barPlaceholder.height : 0
+          x: (!barPlaceholder.isFramed && root.barShouldShow) ? barPlaceholder.x : 0
+          y: (!barPlaceholder.isFramed && root.barShouldShow) ? barPlaceholder.y : 0
+          width: (!barPlaceholder.isFramed && root.barShouldShow) ? barPlaceholder.width : 0
+          height: (!barPlaceholder.isFramed && root.barShouldShow) ? barPlaceholder.height : 0
+          radius: Style.radiusL
+          topLeftCorner: barPlaceholder.topLeftCornerState
+          topRightCorner: barPlaceholder.topRightCornerState
+          bottomLeftCorner: barPlaceholder.bottomLeftCornerState
+          bottomRightCorner: barPlaceholder.bottomRightCornerState
         }
 
-        // Panel blur region (with per-corner radius)
+        // ── Framed bar: frame body (4 strips) + rounded hole subtraction ──
+        // The 4 strips cover the entire frame area including straight-edge inner
+        // corners. A nested Subtract region then removes the hole with correct
+        // frameRadius rounding, leaving the blur boundary exactly matching the
+        // visual frame shape.
+
+        // Top strip (covers full width above hole)
+        Region {
+          x: 0
+          y: 0
+          width: (barPlaceholder.isFramed && root.barShouldShow) ? root.width : 0
+          height: (barPlaceholder.isFramed && root.barShouldShow) ? backgroundBlur.frameHoleY : 0
+        }
+        // Bottom strip
+        Region {
+          x: 0
+          y: (barPlaceholder.isFramed && root.barShouldShow) ? backgroundBlur.frameHoleY2 : 0
+          width: (barPlaceholder.isFramed && root.barShouldShow) ? root.width : 0
+          height: (barPlaceholder.isFramed && root.barShouldShow) ? (root.height - backgroundBlur.frameHoleY2) : 0
+        }
+        // Left strip (only at hole height - top/bottom strips already cover those rows)
+        Region {
+          x: 0
+          y: (barPlaceholder.isFramed && root.barShouldShow) ? backgroundBlur.frameHoleY : 0
+          width: (barPlaceholder.isFramed && root.barShouldShow) ? backgroundBlur.frameHoleX : 0
+          height: (barPlaceholder.isFramed && root.barShouldShow) ? (backgroundBlur.frameHoleY2 - backgroundBlur.frameHoleY) : 0
+        }
+        // Right strip
+        Region {
+          x: (barPlaceholder.isFramed && root.barShouldShow) ? backgroundBlur.frameHoleX2 : 0
+          y: (barPlaceholder.isFramed && root.barShouldShow) ? backgroundBlur.frameHoleY : 0
+          width: (barPlaceholder.isFramed && root.barShouldShow) ? (root.width - backgroundBlur.frameHoleX2) : 0
+          height: (barPlaceholder.isFramed && root.barShouldShow) ? (backgroundBlur.frameHoleY2 - backgroundBlur.frameHoleY) : 0
+        }
+
+        // ── Panel blur regions ──
+        // Opening panel
         Region {
           x: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.x) : 0
           y: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.y) : 0
@@ -518,6 +577,19 @@ PanelWindow {
           topRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topRightCornerState : CornerState.Normal
           bottomLeftCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.bottomLeftCornerState : CornerState.Normal
           bottomRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.bottomRightCornerState : CornerState.Normal
+        }
+
+        // Closing panel (coexists with opening panel during transition)
+        Region {
+          x: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.x) : 0
+          y: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.y) : 0
+          width: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.width) : 0
+          height: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.height) : 0
+          radius: Style.radiusL
+          topLeftCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.topLeftCornerState : CornerState.Normal
+          topRightCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.topRightCornerState : CornerState.Normal
+          bottomLeftCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.bottomLeftCornerState : CornerState.Normal
+          bottomRightCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.bottomRightCornerState : CornerState.Normal
         }
       }
     }
