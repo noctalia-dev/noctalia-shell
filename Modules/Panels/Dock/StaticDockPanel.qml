@@ -36,6 +36,9 @@ SmartPanel {
   // Combined model of running apps and pinned apps
   property var dockApps: []
   property var groupCycleIndices: ({})
+  // manual window ordering per grouped appId.
+  property var groupWindowOrders: ({})
+  // Track the group that is being actively hovered
   property string activeHoverGroupAppId: ""
 
   // Track the session order of apps (transient reordering)

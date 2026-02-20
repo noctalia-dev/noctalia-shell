@@ -25,14 +25,27 @@ PopupWindow {
   property bool hovered: menuHoverHandler.hovered
   property var onAppClosed: null // Callback function for when an app is closed
   property bool canAutoClose: false
+  // When true, keep popup open until DockContent explicitly closes it (used by grouped list hover mode).
   property bool disableAutoClose: false
 
   // Track which menu item is hovered
   property int hoveredItem: -1 // -1: none, otherwise the index of the item in `items`
 
   property var items: []
+  // True only while building a grouped app window list ("list" / "extended" modes).
+  property bool groupedWindowListMode: false
+  // Drag-reorder state for grouped window rows.
+  property int dragFromIndex: -1
+  property int dragInsertIndex: -1
+  property bool dragReorderActive: false
+  // Last drag pointer Y in menuFlick space. Used for edge auto-scroll while reordering.
+  property real dragPointerYInFlick: NaN
+  property real dragAutoScrollEdge: 28
+  property real dragAutoScrollStep: 10
 
   signal requestClose
+  // Emits manual grouped-window order back to DockContent for session ordering.
+  signal groupedWindowsReordered(string appId, var orderedWindows)
 
   property real menuContentWidth: 160
   property real menuMinWidth: 120
@@ -151,7 +164,94 @@ PopupWindow {
     return total;
   }
 
+  function scrollInsertionIndexForY(y) {
+    if (!scrollItems || scrollItems.length === 0)
+      return 0;
+    let offset = 0;
+    for (let i = 0; i < scrollItems.length; i++) {
+      const h = rowHeightForItem(scrollItems[i]);
+      if (y < offset + (h / 2))
+        return i;
+      offset += h;
+    }
+    return scrollItems.length;
+  }
+
+  function reorderWindowRows(fromLocalIndex, insertLocalIndex) {
+    // Reorder grouped window list rows using insertion-index semantics.
+    if (!groupedWindowListMode)
+      return;
+    if (fromLocalIndex < 0 || fromLocalIndex >= scrollItems.length)
+      return;
+    if (insertLocalIndex < 0 || insertLocalIndex > scrollItems.length)
+      return;
+    if (!scrollItems[fromLocalIndex] || !scrollItems[fromLocalIndex].windowEntry)
+      return;
+    let toLocalIndex = insertLocalIndex;
+    if (toLocalIndex > fromLocalIndex)
+      toLocalIndex -= 1;
+    if (fromLocalIndex === toLocalIndex)
+      return;
+
+    const next = root.items.slice();
+    const moved = next.splice(fromLocalIndex, 1)[0];
+    next.splice(toLocalIndex, 0, moved);
+    root.items = next;
+    calculateMenuWidth();
+
+    if (appData && appData.appId) {
+      const orderedWindows = root.scrollItems.filter(item => item && item.windowEntry && item.window).map(item => item.window);
+      root.groupedWindowsReordered(appData.appId, orderedWindows);
+    }
+    resetDragReorderState();
+  }
+
+  function updateDragInsertIndexFromPointer() {
+    if (!menuFlick || !scrollColumn)
+      return;
+    if (!isFinite(dragPointerYInFlick))
+      return;
+    const y = dragPointerYInFlick;
+    const mapped = menuFlick.mapToItem(scrollColumn, 0, y);
+    dragInsertIndex = scrollInsertionIndexForY(mapped.y);
+  }
+
+  function applyDragAutoScrollStep() {
+    if (!dragReorderActive || !listOverflowing || !menuFlick)
+      return;
+    if (!isFinite(dragPointerYInFlick))
+      return;
+
+    const maxY = menuFlick.contentHeight - menuFlick.height;
+    if (maxY <= 0)
+      return;
+
+    let delta = 0;
+    if (dragPointerYInFlick <= dragAutoScrollEdge)
+      delta = -dragAutoScrollStep;
+    else if (dragPointerYInFlick >= menuFlick.height - dragAutoScrollEdge)
+      delta = dragAutoScrollStep;
+
+    if (delta === 0)
+      return;
+
+    const nextY = Math.max(0, Math.min(menuFlick.contentY + delta, maxY));
+    if (Math.abs(nextY - menuFlick.contentY) < 0.01)
+      return;
+    menuFlick.contentY = nextY;
+    updateDragInsertIndexFromPointer();
+  }
+
+  function resetDragReorderState() {
+    dragFromIndex = -1;
+    dragInsertIndex = -1;
+    dragReorderActive = false;
+    dragPointerYInFlick = NaN;
+  }
+
   function initItems() {
+    groupedWindowListMode = false;
+    resetDragReorderState();
     if (menuMode === "launcher") {
       root.items = [
             {
@@ -181,6 +281,7 @@ PopupWindow {
     const grouped = Settings.data.dock.groupApps && windows.length > 1;
     const rawGroupMenuMode = forcedGroupMenuMode || Settings.data.dock.groupContextMenuMode || "extended";
     const menuModeForGroup = grouped ? ((rawGroupMenuMode === "list" || rawGroupMenuMode === "extended") ? rawGroupMenuMode : "extended") : "single";
+    groupedWindowListMode = grouped && (menuModeForGroup === "list" || menuModeForGroup === "extended");
 
     var next = [];
 
@@ -218,6 +319,9 @@ PopupWindow {
         next.push({
                     "icon": window === ToplevelManager?.activeToplevel ? "circle-filled" : "square-rounded",
                     "text": windowTitle,
+                    "window": window,
+                    // Marks entries that are reorderable window rows (not actions/separators).
+                    "windowEntry": true,
                     "action": function () {
                       handleFocus(window);
                     }
@@ -484,6 +588,7 @@ PopupWindow {
     root.appData = null;
     root.toplevel = null;
     root.forcedGroupMenuMode = "";
+    resetDragReorderState();
     menuContentWidth = menuMinWidth;
     hoveredItem = -1;
     if (menuFlick)
@@ -594,6 +699,16 @@ PopupWindow {
     }
   }
 
+  Timer {
+    id: dragAutoScrollTimer
+    interval: 16
+    repeat: true
+    running: root.dragReorderActive && root.groupedWindowListMode && root.listOverflowing
+    onTriggered: {
+      root.applyDragAutoScrollStep();
+    }
+  }
+
   Rectangle {
     id: menuSurface
     anchors.fill: parent
@@ -679,10 +794,49 @@ PopupWindow {
 
           Rectangle {
             readonly property bool isSeparator: modelData && modelData.separator === true
+            readonly property bool isDraggableWindowRow: root.groupedWindowListMode && modelData && modelData.windowEntry === true
+            readonly property var popupRoot: root
+            property bool movedDuringDrag: false
+            // Suppresses click action that may fire right after a drag release.
+            property bool suppressNextClick: false
+            property real pressY: 0
             width: scrollColumn.width
             height: root.rowHeightForItem(modelData)
             color: (!isSeparator && root.hoveredItem === index) ? Color.mHover : "transparent"
             radius: Style.radiusXS
+            z: root.dragFromIndex === index ? 10 : 0
+
+            // Drop indicator shown when dragging a window row to 
+            // indicate the potential new position of the dragged item.
+            Rectangle {
+              visible: root.groupedWindowListMode
+                       && root.dragFromIndex >= 0
+                       && root.dragReorderActive
+                       && root.dragInsertIndex === index
+                       && root.dragInsertIndex !== root.dragFromIndex
+              anchors.left: parent.left
+              anchors.right: parent.right
+              anchors.top: parent.top
+              anchors.leftMargin: Style.marginS
+              anchors.rightMargin: Style.marginS
+              height: Math.max(2, Style.borderS + 1)
+              radius: Style.radiusXS
+              color: Qt.alpha(Color.mPrimary, 0.95)
+              z: 30
+            }
+
+            Rectangle {
+              // Highlight the source row while reordering so users can track what is being moved.
+              visible: root.groupedWindowListMode
+                       && root.dragReorderActive
+                       && root.dragFromIndex === index
+              anchors.fill: parent
+              radius: Style.radiusXS
+              color: Qt.alpha(Color.mPrimary, 0.16)
+              border.width: Style.borderS
+              border.color: Qt.alpha(Color.mPrimary, 0.9)
+              z: 20
+            }
 
             Row {
               id: rowLayout
@@ -713,11 +867,25 @@ PopupWindow {
             }
 
             MouseArea {
+              id: dragArea
               anchors.fill: parent
               enabled: !parent.isSeparator && root.isItemActionable(index)
               hoverEnabled: true
               cursorShape: Qt.PointingHandCursor
               acceptedButtons: Qt.LeftButton
+              preventStealing: true
+
+              onPressed: mouse => {
+                           parent.pressY = mouse.y;
+                           parent.movedDuringDrag = false;
+                           const flickPos = dragArea.mapToItem(menuFlick, mouse.x, mouse.y);
+                           root.dragPointerYInFlick = flickPos.y;
+                           if (parent.isDraggableWindowRow) {
+                             root.dragFromIndex = index;
+                             root.dragInsertIndex = index;
+                             root.dragReorderActive = false;
+                           }
+                         }
 
               onEntered: {
                 root.hoveredItem = index;
@@ -730,12 +898,64 @@ PopupWindow {
               }
 
               onClicked: {
+                if (parent.suppressNextClick) {
+                  parent.suppressNextClick = false;
+                  parent.movedDuringDrag = false;
+                  return;
+                }
+                if (parent.movedDuringDrag) {
+                  parent.movedDuringDrag = false;
+                  return;
+                }
                 if (root.isItemActionable(index)) {
                   root.items[index].action.call();
                 }
               }
+
+              onPositionChanged: function(mouse) {
+                if (pressed && parent.isDraggableWindowRow) {
+                  const flickPos = dragArea.mapToItem(menuFlick, mouse.x, mouse.y);
+                  parent.popupRoot.dragPointerYInFlick = flickPos.y;
+                  if (Math.abs(mouse.y - parent.pressY) > 3) {
+                    parent.movedDuringDrag = true;
+                    parent.popupRoot.dragReorderActive = true;
+                  }
+                  parent.popupRoot.updateDragInsertIndexFromPointer();
+                }
+              }
+
+              onReleased: function(mouse) {
+                if (!parent.isDraggableWindowRow)
+                  return;
+                if (parent.movedDuringDrag) {
+                  const flickPos = dragArea.mapToItem(menuFlick, mouse.x, mouse.y);
+                  parent.popupRoot.dragPointerYInFlick = flickPos.y;
+                  parent.popupRoot.updateDragInsertIndexFromPointer();
+                  const targetIndex = parent.popupRoot.dragInsertIndex;
+                  parent.popupRoot.reorderWindowRows(index, targetIndex);
+                  parent.suppressNextClick = true;
+                }
+                parent.popupRoot.resetDragReorderState();
+              }
+
+              onCanceled: function() {
+                parent.popupRoot.resetDragReorderState();
+                parent.suppressNextClick = false;
+                parent.movedDuringDrag = false;
+              }
             }
           }
+        }
+
+        Rectangle {
+          visible: root.groupedWindowListMode
+                   && root.dragFromIndex >= 0
+                   && root.dragReorderActive
+                   && root.dragInsertIndex === root.scrollItems.length
+          width: scrollColumn.width
+          height: Math.max(2, Style.borderS + 1)
+          radius: Style.radiusXS
+          color: Qt.alpha(Color.mPrimary, 0.95)
         }
       }
     }
