@@ -52,9 +52,7 @@ PopupWindow {
   readonly property real menuInnerHeight: Math.max(0, implicitHeight - Style.marginXL)
   readonly property real fixedActionsHeight: listHeight(fixedItems)
   readonly property real separatorBlockHeight: splitExtendedLayout ? separatorCompactHeight : 0
-  readonly property real scrollAreaHeight: splitExtendedLayout
-    ? Math.max(0, menuInnerHeight - fixedActionsHeight - separatorBlockHeight)
-    : menuInnerHeight
+  readonly property real scrollAreaHeight: splitExtendedLayout ? Math.max(0, menuInnerHeight - fixedActionsHeight - separatorBlockHeight) : menuInnerHeight
   readonly property bool listOverflowing: menuFlick && menuFlick.contentHeight > menuFlick.height
   readonly property real menuBodyHeight: {
     if (splitExtendedLayout) {
@@ -212,15 +210,15 @@ PopupWindow {
       }
     } else {
       windows.forEach((window, index) => {
-        const windowTitle = (window.title && window.title.trim() !== "") ? window.title : (appId || ("Window " + (index + 1)));
-        next.push({
-                    "icon": window === ToplevelManager?.activeToplevel ? "circle-filled" : "square-rounded",
-                    "text": windowTitle,
-                    "action": function () {
-                      handleFocus(window);
-                    }
-                  });
-      });
+                        const windowTitle = (window.title && window.title.trim() !== "") ? window.title : (appId || ("Window " + (index + 1)));
+                        next.push({
+                                    "icon": window === ToplevelManager?.activeToplevel ? "circle-filled" : "square-rounded",
+                                    "text": windowTitle,
+                                    "action": function () {
+                                      handleFocus(window);
+                                    }
+                                  });
+                      });
 
       if (menuModeForGroup === "extended") {
         next.push({
@@ -406,10 +404,10 @@ PopupWindow {
       toplevel = toplevelData.toplevel || null;
     } else {
       appData = toplevelData ? {
-        "appId": toplevelData.appId,
-        "toplevel": toplevelData,
-        "toplevels": toplevelData ? [toplevelData] : []
-      } : null;
+                                 "appId": toplevelData.appId,
+                                 "toplevel": toplevelData,
+                                 "toplevels": toplevelData ? [toplevelData] : []
+                               } : null;
       toplevel = toplevelData;
     }
     targetScreen = screen || null;
@@ -524,10 +522,10 @@ PopupWindow {
 
   function handleCloseAll(windows) {
     windows.forEach(window => {
-                    if (window && ToplevelManager && ToplevelManager.toplevels.values.includes(window) && window.close) {
-                      window.close();
-                    }
-                  });
+                      if (window && ToplevelManager && ToplevelManager.toplevels.values.includes(window) && window.close) {
+                        window.close();
+                      }
+                    });
     if (root.onAppClosed && typeof root.onAppClosed === "function") {
       Qt.callLater(root.onAppClosed);
     }
@@ -608,7 +606,7 @@ PopupWindow {
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onWheel: event => {
                  if (!root.isScrollableHovered(event.y))
-                   return;
+                 return;
                  const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;
                  root.onWheelScroll(delta);
                  event.accepted = true;
@@ -641,7 +639,7 @@ PopupWindow {
 
       Column {
         id: scrollColumn
-        width: menuFlick.width 
+        width: menuFlick.width
         spacing: 0
 
         Repeater {
