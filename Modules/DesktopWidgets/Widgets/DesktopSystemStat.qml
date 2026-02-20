@@ -170,7 +170,7 @@ DraggableDesktopWidget {
   readonly property int graphUpdateInterval: {
     switch (root.statType) {
     case "CPU":
-      return SystemStatService.cpuIntervalMs;
+      return SystemStatService.cpuUsageIntervalMs;
     case "GPU":
       return SystemStatService.gpuIntervalMs;
     case "Memory":

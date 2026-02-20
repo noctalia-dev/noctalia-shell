@@ -33,6 +33,7 @@ Singleton {
     "media-next": "player-skip-forward-filled",
     "download-speed": "download",
     "upload-speed": "upload",
+    "cpu-intensive": "alert-octagon",
     "cpu-usage": "brand-speedtest",
     "cpu-temperature": "flame",
     "gpu-temperature": "device-desktop",

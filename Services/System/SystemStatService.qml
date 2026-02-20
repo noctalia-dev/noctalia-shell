@@ -29,7 +29,8 @@ Singleton {
   readonly property bool shouldRun: _registeredCount > 0 && !_lockScreenActive
 
   // Polling intervals (hardcoded to sensible values per stat type)
-  readonly property int cpuIntervalMs: 3000
+  readonly property int cpuUsageIntervalMs: 1000
+  readonly property int cpuFreqIntervalMs: 3000
   readonly property int memIntervalMs: 5000
   readonly property int networkIntervalMs: 3000
   readonly property int loadAvgIntervalMs: 10000
@@ -71,7 +72,7 @@ Singleton {
   readonly property int historyDurationMs: (1 * 60 * 1000) // 1 minute
 
   // Computed history lengths based on polling intervals
-  readonly property int cpuHistoryLength: Math.ceil(historyDurationMs / cpuIntervalMs)
+  readonly property int cpuHistoryLength: Math.ceil(historyDurationMs / cpuUsageIntervalMs)
   readonly property int gpuHistoryLength: Math.ceil(historyDurationMs / gpuIntervalMs)
   readonly property int memHistoryLength: Math.ceil(historyDurationMs / memIntervalMs)
   readonly property int diskHistoryLength: Math.ceil(historyDurationMs / diskIntervalMs)
@@ -350,18 +351,27 @@ Singleton {
   }
 
   // --------------------------------------------
-  // Timer for CPU usage, frequency, and temperature
+  // Timer for CPU usage and temperature
   Timer {
     id: cpuTimer
-    interval: root.cpuIntervalMs
+    interval: root.cpuUsageIntervalMs
     repeat: true
     running: root.shouldRun
     triggeredOnStart: true
     onTriggered: {
       cpuStatFile.reload();
-      cpuInfoFile.reload();
       updateCpuTemperature();
     }
+  }
+
+  // Timer for CPU frequency (slower — /proc/cpuinfo is large and freq changes infrequently)
+  Timer {
+    id: cpuFreqTimer
+    interval: root.cpuFreqIntervalMs
+    repeat: true
+    running: root.shouldRun
+    triggeredOnStart: true
+    onTriggered: cpuInfoFile.reload()
   }
 
   // Timer for load average

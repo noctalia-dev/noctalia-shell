@@ -475,6 +475,14 @@ Singleton {
     return id.startsWith("plugin:");
   }
 
+  property var cpuIntensiveWidgets: ["AudioVisualizer"]
+
+  function isCpuIntensive(id) {
+    if (pluginWidgetMetadata[id]?.cpuIntensive)
+      return true;
+    return cpuIntensiveWidgets.indexOf(id) >= 0;
+  }
+
   // Get list of plugin widget IDs
   function getPluginWidgets() {
     return Object.keys(pluginWidgets);
