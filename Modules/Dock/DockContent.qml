@@ -427,6 +427,15 @@ Item {
             readonly property bool baseIndicatorVisible: Settings.data.dock.inactiveIndicators ? isRunning : isActive
             // Grouped indicators should be visible whenever grouped windows are running, even if none is focused.
             readonly property bool showGroupedIndicator: Settings.data.dock.groupApps && groupedCount > 1 && isRunning
+            onFocusedWindowIndexChanged: {
+              if (!Settings.data.dock.groupApps || focusedWindowIndex < 0 || !appId)
+                return;
+              const state = dockRoot.groupCycleIndices || {};
+              if (state[appId] === focusedWindowIndex)
+                return;
+              state[appId] = focusedWindowIndex;
+              dockRoot.groupCycleIndices = Object.assign({}, state);
+            }
 
             // Store index for drag-and-drop
             property int modelIndex: index
@@ -735,12 +744,15 @@ Item {
                              } else {
                                const appKey = modelData?.appId || "";
                                const state = dockRoot.groupCycleIndices || {};
-                               const nextIndex = (state[appKey] || 0) % runningToplevels.length;
+                               const focusedIndex = ToplevelManager && ToplevelManager.activeToplevel ? runningToplevels.indexOf(ToplevelManager.activeToplevel) : -1;
+                               const storedIndex = state[appKey] !== undefined ? state[appKey] : 0;
+                               const nextIndex = focusedIndex >= 0 ? ((focusedIndex + 1) % runningToplevels.length) : (storedIndex % runningToplevels.length);
                                const nextToplevel = runningToplevels[nextIndex];
                                if (nextToplevel && nextToplevel.activate) {
                                  nextToplevel.activate();
                                }
-                               state[appKey] = (nextIndex + 1) % runningToplevels.length;
+                               // Store the last focused index so returning to this group restores it first.
+                               state[appKey] = nextIndex;
                                dockRoot.groupCycleIndices = Object.assign({}, state);
                              }
                            }
