@@ -120,6 +120,66 @@ Item {
         return ThemeIcons.iconForAppId(appData.appId?.toLowerCase());
       }
 
+      function getValidToplevels(appData) {
+        if (!appData || !ToplevelManager || !ToplevelManager.toplevels)
+          return [];
+        const source = appData.toplevels && appData.toplevels.length > 0 ? appData.toplevels : (appData.toplevel ? [appData.toplevel] : []);
+        const allToplevels = ToplevelManager.toplevels.values || [];
+        return source.filter(toplevel => toplevel && allToplevels.includes(toplevel));
+      }
+
+      function getPrimaryToplevel(appData) {
+        const toplevels = getValidToplevels(appData);
+        if (toplevels.length === 0)
+          return null;
+        if (ToplevelManager && ToplevelManager.activeToplevel && toplevels.includes(ToplevelManager.activeToplevel))
+          return ToplevelManager.activeToplevel;
+        return toplevels[0];
+      }
+
+      function launchAppById(appId) {
+        if (!appId)
+          return;
+
+        const app = ThemeIcons.findAppEntry(appId);
+        if (!app) {
+          Logger.w("Dock", `Could not find desktop entry for pinned app: ${appId}`);
+          return;
+        }
+
+        if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
+          const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
+
+          if (app.runInTerminal) {
+            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+            const command = prefix.concat(terminal.concat(app.command));
+            Quickshell.execDetached(command);
+          } else {
+            const command = prefix.concat(app.command);
+            Quickshell.execDetached(command);
+          }
+        } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
+          Logger.d("Dock", `Using app2unit for: ${app.id}`);
+          if (app.runInTerminal)
+            Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
+          else
+            Quickshell.execDetached(["app2unit", "--"].concat(app.command));
+        } else {
+          if (app.runInTerminal) {
+            Logger.d("Dock", "Executing terminal app manually: " + app.name);
+            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
+            const command = terminal.concat(app.command);
+            CompositorService.spawn(command);
+          } else if (app.command && app.command.length > 0) {
+            CompositorService.spawn(app.command);
+          } else if (app.execute) {
+            app.execute();
+          } else {
+            Logger.w("Dock", `Could not launch: ${app.name}. No valid launch method.`);
+          }
+        }
+      }
+
       // Use GridLayout for flexible horizontal/vertical arrangement
       GridLayout {
         id: dockLayout
@@ -186,7 +246,15 @@ Item {
             }
             readonly property var launcherMetadata: BarWidgetRegistry.widgetMetadata["Launcher"]
             readonly property string launcherIcon: launcherWidgetSettings.icon || (launcherMetadata && launcherMetadata.icon ? launcherMetadata.icon : "search")
-            readonly property string launcherIconColorKey: launcherWidgetSettings.iconColor !== undefined ? launcherWidgetSettings.iconColor : (launcherMetadata && launcherMetadata.iconColor !== undefined ? launcherMetadata.iconColor : "none")
+            readonly property string launcherIconColorKey: {
+              if (Settings.data.dock.launcherIconColor !== undefined)
+                return Settings.data.dock.launcherIconColor;
+              if (launcherWidgetSettings.iconColor !== undefined)
+                return launcherWidgetSettings.iconColor;
+              if (launcherMetadata && launcherMetadata.iconColor !== undefined)
+                return launcherMetadata.iconColor;
+              return "none";
+            }
 
             Item {
               id: launcherIconContainer
@@ -329,15 +397,23 @@ Item {
             Layout.preferredHeight: dockRoot.isVertical ? dockRoot.iconSize : dockRoot.iconSize + indicatorMargin * 2
             Layout.alignment: Qt.AlignCenter
 
-            property bool isActive: modelData.toplevel && ToplevelManager.activeToplevel && ToplevelManager.activeToplevel === modelData.toplevel
+            property var toplevels: dock.getValidToplevels(modelData)
+            property bool isActive: ToplevelManager && ToplevelManager.activeToplevel && toplevels.includes(ToplevelManager.activeToplevel)
             property bool hovered: appMouseArea.containsMouse
             property string appId: modelData ? modelData.appId : ""
+            property int groupedCount: toplevels.length
+            property int focusedWindowIndex: {
+              if (!ToplevelManager || !ToplevelManager.activeToplevel)
+                return -1;
+              return toplevels.indexOf(ToplevelManager.activeToplevel);
+            }
+            property string groupedIndicatorText: focusedWindowIndex >= 0 ? (focusedWindowIndex + 1) + "/" + groupedCount : groupedCount.toString()
             property string appTitle: {
               if (!modelData)
                 return "";
-              // For running apps, use the toplevel title directly (reactive)
-              if (modelData.toplevel) {
-                const toplevelTitle = modelData.toplevel.title || "";
+              const primaryToplevel = dock.getPrimaryToplevel(modelData);
+              if (primaryToplevel) {
+                const toplevelTitle = primaryToplevel.title || "";
                 // If title is "Loading..." or empty, use desktop entry name
                 if (!toplevelTitle || toplevelTitle === "Loading..." || toplevelTitle.trim() === "") {
                   return dockRoot.getAppNameFromDesktopEntry(modelData.appId) || modelData.appId;
@@ -347,7 +423,10 @@ Item {
               // For pinned apps that aren't running, use the stored title
               return modelData.title || modelData.appId || "";
             }
-            property bool isRunning: modelData && (modelData.type === "running" || modelData.type === "pinned-running")
+            property bool isRunning: toplevels.length > 0
+            readonly property bool baseIndicatorVisible: Settings.data.dock.inactiveIndicators ? isRunning : isActive
+            // Grouped indicators should be visible whenever grouped windows are running, even if none is focused.
+            readonly property bool showGroupedIndicator: Settings.data.dock.groupApps && groupedCount > 1 && isRunning
 
             // Store index for drag-and-drop
             property int modelIndex: index
@@ -619,66 +698,50 @@ Item {
                              dockRoot.closeAllContextMenus();
                              // Hide tooltip when showing context menu
                              TooltipService.hideImmediately();
-                             contextMenu.show(appButton, modelData.toplevel || modelData, targetScreen);
+                             contextMenu.show(appButton, modelData, targetScreen);
                              return;
                            }
 
                            // Close any existing context menu for non-right-click actions
                            dockRoot.closeAllContextMenus();
 
-                           // Check if toplevel is still valid (not a stale reference)
-                           const isValidToplevel = modelData?.toplevel && ToplevelManager && ToplevelManager.toplevels.values.includes(modelData.toplevel);
+                           const runningToplevels = dock.getValidToplevels(modelData);
+                           const primaryToplevel = dock.getPrimaryToplevel(modelData);
 
-                           if (mouse.button === Qt.MiddleButton && isValidToplevel && modelData.toplevel.close) {
-                             modelData.toplevel.close();
-                             Qt.callLater(dockRoot.updateDockApps); // Force immediate dock update
+                           if (mouse.button === Qt.MiddleButton) {
+                             if (primaryToplevel && primaryToplevel.close) {
+                               primaryToplevel.close();
+                               Qt.callLater(dockRoot.updateDockApps);
+                             }
                            } else if (mouse.button === Qt.LeftButton) {
-                             if (isValidToplevel && modelData.toplevel.activate) {
-                               // Running app - activate it
-                               modelData.toplevel.activate();
-                             } else if (modelData?.appId) {
-                               // Pinned app not running - launch it
-                               // Use ThemeIcons to robustly find the desktop entry
-                               const app = ThemeIcons.findAppEntry(modelData.appId);
+                             if (runningToplevels.length === 0) {
+                               dock.launchAppById(modelData?.appId);
+                               return;
+                             }
 
-                               if (!app) {
-                                 Logger.w("Dock", `Could not find desktop entry for pinned app: ${modelData.appId}`);
-                                 return;
+                             if (!Settings.data.dock.groupApps || runningToplevels.length <= 1) {
+                               if (primaryToplevel && primaryToplevel.activate) {
+                                 primaryToplevel.activate();
                                }
+                               return;
+                             }
 
-                               if (Settings.data.appLauncher.customLaunchPrefixEnabled && Settings.data.appLauncher.customLaunchPrefix) {
-                                 // Use custom launch prefix
-                                 const prefix = Settings.data.appLauncher.customLaunchPrefix.split(" ");
-
-                                 if (app.runInTerminal) {
-                                   const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
-                                   const command = prefix.concat(terminal.concat(app.command));
-                                   Quickshell.execDetached(command);
-                                 } else {
-                                   const command = prefix.concat(app.command);
-                                   Quickshell.execDetached(command);
-                                 }
-                               } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
-                                 Logger.d("Dock", `Using app2unit for: ${app.id}`);
-                                 if (app.runInTerminal)
-                                 Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
-                                 else
-                                 Quickshell.execDetached(["app2unit", "--"].concat(app.command));
-                               } else {
-                                 // Fallback logic when app2unit is not used
-                                 if (app.runInTerminal) {
-                                   Logger.d("Dock", "Executing terminal app manually: " + app.name);
-                                   const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
-                                   const command = terminal.concat(app.command);
-                                   CompositorService.spawn(command);
-                                 } else if (app.command && app.command.length > 0) {
-                                   CompositorService.spawn(app.command);
-                                 } else if (app.execute) {
-                                   app.execute();
-                                 } else {
-                                   Logger.w("Dock", `Could not launch: ${app.name}. No valid launch method.`);
-                                 }
+                             const clickAction = Settings.data.dock.groupClickAction || "cycle";
+                             if (clickAction === "list") {
+                               const targetScreen = dockRoot.modelData || dockRoot.screen || null;
+                               TooltipService.hideImmediately();
+                               // Left-click list should always open the grouped window list view.
+                               contextMenu.show(appButton, modelData, targetScreen, "list");
+                             } else {
+                               const appKey = modelData?.appId || "";
+                               const state = dockRoot.groupCycleIndices || {};
+                               const nextIndex = (state[appKey] || 0) % runningToplevels.length;
+                               const nextToplevel = runningToplevels[nextIndex];
+                               if (nextToplevel && nextToplevel.activate) {
+                                 nextToplevel.activate();
                                }
+                               state[appKey] = (nextIndex + 1) % runningToplevels.length;
+                               dockRoot.groupCycleIndices = Object.assign({}, state);
                              }
                            }
                          }
@@ -686,7 +749,7 @@ Item {
 
             // Active indicator - positioned at the edge of the delegate area
             Rectangle {
-              visible: Settings.data.dock.inactiveIndicators ? isRunning : isActive
+              visible: baseIndicatorVisible && !showGroupedIndicator
               width: dockRoot.isVertical ? indicatorMargin * 0.6 : dockRoot.iconSize * 0.2
               height: dockRoot.isVertical ? dockRoot.iconSize * 0.2 : indicatorMargin * 0.6
               color: Color.mPrimary
@@ -706,6 +769,83 @@ Item {
               anchors.topMargin: !dockRoot.isVertical && dockRoot.dockPosition === "top" ? 2 : 0
               anchors.leftMargin: dockRoot.isVertical && dockRoot.dockPosition === "left" ? 2 : 0
               anchors.rightMargin: dockRoot.isVertical && dockRoot.dockPosition === "right" ? 2 : 0
+            }
+
+            Loader {
+              id: groupedIndicatorLoader
+              active: showGroupedIndicator
+              anchors.bottom: !dockRoot.isVertical && dockRoot.dockPosition === "bottom" ? parent.bottom : undefined
+              anchors.top: !dockRoot.isVertical && dockRoot.dockPosition === "top" ? parent.top : undefined
+              anchors.left: dockRoot.isVertical && dockRoot.dockPosition === "left" ? parent.left : undefined
+              anchors.right: dockRoot.isVertical && dockRoot.dockPosition === "right" ? parent.right : undefined
+              anchors.horizontalCenter: dockRoot.isVertical ? undefined : parent.horizontalCenter
+              anchors.verticalCenter: dockRoot.isVertical ? parent.verticalCenter : undefined
+              anchors.bottomMargin: !dockRoot.isVertical && dockRoot.dockPosition === "bottom" ? 1 : 0
+              anchors.topMargin: !dockRoot.isVertical && dockRoot.dockPosition === "top" ? 1 : 0
+              anchors.leftMargin: dockRoot.isVertical && dockRoot.dockPosition === "left" ? 1 : 0
+              anchors.rightMargin: dockRoot.isVertical && dockRoot.dockPosition === "right" ? 1 : 0
+
+              sourceComponent: Settings.data.dock.groupIndicatorStyle === "dots" ? groupDotsIndicatorComponent : groupNumberIndicatorComponent
+            }
+
+            Component {
+              id: groupNumberIndicatorComponent
+              Rectangle {
+                radius: Style.radiusS
+                color: Qt.alpha(Color.mSurface, 0.9)
+                border.color: Qt.alpha(Color.mOutline, 0.7)
+                border.width: Style.borderS
+                width: Math.max(14, numberLabel.implicitWidth + Style.marginXS)
+                height: Math.max(10, numberLabel.implicitHeight + 2)
+
+                NText {
+                  id: numberLabel
+                  anchors.centerIn: parent
+                  text: appButton.groupedIndicatorText
+                  pointSize: Style.fontSizeXS
+                  color: appButton.focusedWindowIndex >= 0 ? Color.mPrimary : Color.mOnSurfaceVariant
+                }
+              }
+            }
+
+            Component {
+              id: groupDotsIndicatorComponent
+              Item {
+                readonly property int maxVisibleDots: 5
+                readonly property int totalCount: Math.max(0, appButton.groupedCount)
+                readonly property int focusedIndex: appButton.focusedWindowIndex >= 0 ? appButton.focusedWindowIndex : 0
+                readonly property int visibleCount: Math.min(totalCount, maxVisibleDots)
+                readonly property int dotSize: Math.max(2, Math.round(dockRoot.iconSize * 0.1))
+                readonly property int dotSpacing: Math.max(1, Math.round(dotSize * 0.7))
+                readonly property int pitch: dotSize + dotSpacing
+                readonly property int windowStart: {
+                  if (totalCount <= maxVisibleDots)
+                    return 0;
+                  const centeredStart = focusedIndex - Math.floor(maxVisibleDots / 2);
+                  const maxStart = totalCount - maxVisibleDots;
+                  return Math.max(0, Math.min(maxStart, centeredStart));
+                }
+                readonly property bool hasHiddenLeft: windowStart > 0
+                readonly property bool hasHiddenRight: (windowStart + visibleCount) < totalCount
+                width: dockRoot.isVertical ? dotSize : (visibleCount * dotSize + Math.max(0, visibleCount - 1) * dotSpacing)
+                height: dockRoot.isVertical ? (visibleCount * dotSize + Math.max(0, visibleCount - 1) * dotSpacing) : dotSize
+
+                Repeater {
+                  model: parent.visibleCount
+                  delegate: Rectangle {
+                    readonly property int absoluteIndex: parent.windowStart + index
+                    readonly property bool isFocusedDot: appButton.focusedWindowIndex >= 0 && absoluteIndex === appButton.focusedWindowIndex
+                    readonly property bool isOverflowHint: (index === 0 && parent.hasHiddenLeft) || (index === parent.visibleCount - 1 && parent.hasHiddenRight)
+                    width: isOverflowHint && !isFocusedDot ? Math.max(2, Math.round(parent.dotSize * 0.72)) : parent.dotSize
+                    height: width
+                    radius: width / 2
+                    x: dockRoot.isVertical ? Math.round((parent.dotSize - width) / 2) : (index * parent.pitch + Math.round((parent.dotSize - width) / 2))
+                    y: dockRoot.isVertical ? (index * parent.pitch + Math.round((parent.dotSize - width) / 2)) : Math.round((parent.dotSize - width) / 2)
+                    color: isFocusedDot ? Color.mPrimary : Qt.alpha(Color.mOutline, 0.9)
+                    opacity: isOverflowHint && !isFocusedDot ? 0.55 : 1.0
+                  }
+                }
+              }
             }
           }
         }

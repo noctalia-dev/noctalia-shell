@@ -292,12 +292,13 @@ Item {
                          }
                          // Click is on empty bar background - open control center
                          var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-                         if (Settings.data.controlCenter.position === "close_to_bar_button") {
-                           // Will attempt to open the panel next to the bar button if any.
-                           controlCenterPanel?.toggle(null, "ControlCenter");
-                         } else {
-                           controlCenterPanel?.toggle();
-                         }
+
+                         // Map click position to screen-relative coordinates
+                         // We need to map from bar coordinates to screen coordinates
+                         var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
+
+                         // Pass click position directly
+                         controlCenterPanel?.toggle(null, screenRelativePos);
                          mouse.accepted = true;
                        }
                      }
