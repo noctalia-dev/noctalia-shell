@@ -64,6 +64,10 @@
       "show-power-profile-description": "Viser veljaren for energiprofil i batterifanen.",
       "show-power-profile-label": "Vis kontrollane for energiprofil"
     },
+    "brightness": {
+      "apply-all-description": "Endra på ljosstyrken for alle skjermar når ein brukar rullehjulet. ",
+      "apply-all-label": "Gjev rulleendringar til alle skjermar"
+    },
     "clock": {
       "clock-display-description": "Måtar klokkevisninga ved å leggja til merke frå lista. For å bruka 12-timeformat må du ha med 'AP'-merket.",
       "clock-display-label": "Klokkevisar",
@@ -1004,6 +1008,8 @@
       "monitors-enforce-minimum-label": "Set minimum ljosstyrke til 1%",
       "monitors-external-brightness-description": "Slår på støtte for DDCUtil for å styra ljosstyrke på eksterne skjermar med DDC/CI-protokol.",
       "monitors-external-brightness-label": "Ekstern ljosstyrkestøtte",
+      "monitors-global-brightness-description": "Endra på ljosstyrke for alle skjermar samstundes. ",
+      "monitors-global-brightness-label": "Alle skjermar",
       "monitors-title": "Innstillingar for kvar skjerm for seg",
       "night-light-auto-schedule-description": "Utifrå solglad og solrenning der du er (<i>{location}</i>) — råd.",
       "night-light-auto-schedule-label": "Automatisk timeplan",
