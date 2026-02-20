@@ -203,6 +203,74 @@ ColumnLayout {
     }
 
     NToggle {
+      label: I18n.tr("panels.dock.appearance-group-apps-label")
+      description: I18n.tr("panels.dock.appearance-group-apps-description")
+      checked: Settings.data.dock.groupApps
+      defaultValue: Settings.getDefaultValue("dock.groupApps")
+      onToggled: checked => Settings.data.dock.groupApps = checked
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.groupApps
+      label: I18n.tr("panels.dock.appearance-group-click-action-label")
+      description: I18n.tr("panels.dock.appearance-group-click-action-description")
+      model: [
+        {
+          "key": "cycle",
+          "name": I18n.tr("panels.dock.appearance-group-click-action-cycle")
+        },
+        {
+          "key": "list",
+          "name": I18n.tr("panels.dock.appearance-group-click-action-list")
+        }
+      ]
+      currentKey: Settings.data.dock.groupClickAction
+      defaultValue: Settings.getDefaultValue("dock.groupClickAction")
+      onSelected: key => Settings.data.dock.groupClickAction = key
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.groupApps
+      label: I18n.tr("panels.dock.appearance-group-context-menu-mode-label")
+      description: I18n.tr("panels.dock.appearance-group-context-menu-mode-description")
+      model: [
+        {
+          "key": "list",
+          "name": I18n.tr("panels.dock.appearance-group-context-menu-mode-list")
+        },
+        {
+          "key": "extended",
+          "name": I18n.tr("panels.dock.appearance-group-context-menu-mode-extended")
+        }
+      ]
+      currentKey: Settings.data.dock.groupContextMenuMode
+      defaultValue: Settings.getDefaultValue("dock.groupContextMenuMode")
+      onSelected: key => Settings.data.dock.groupContextMenuMode = key
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.groupApps
+      label: I18n.tr("panels.dock.appearance-group-indicator-style-label")
+      description: I18n.tr("panels.dock.appearance-group-indicator-style-description")
+      model: [
+        {
+          "key": "number",
+          "name": I18n.tr("panels.dock.appearance-group-indicator-style-number")
+        },
+        {
+          "key": "dots",
+          "name": I18n.tr("panels.dock.appearance-group-indicator-style-dots")
+        }
+      ]
+      currentKey: Settings.data.dock.groupIndicatorStyle
+      defaultValue: Settings.getDefaultValue("dock.groupIndicatorStyle")
+      onSelected: key => Settings.data.dock.groupIndicatorStyle = key
+    }
+
+    NToggle {
       label: I18n.tr("panels.dock.monitors-only-same-monitor-label")
       description: I18n.tr("panels.dock.monitors-only-same-monitor-description")
       checked: Settings.data.dock.onlySameOutput

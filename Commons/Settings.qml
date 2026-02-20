@@ -538,6 +538,10 @@ Singleton {
 
       property bool pinnedStatic: false
       property bool inactiveIndicators: false
+      property bool groupApps: false
+      property string groupContextMenuMode: "extended" // "list", "extended"
+      property string groupClickAction: "cycle" // "cycle", "list"
+      property string groupIndicatorStyle: "dots" // "number", "dots"
       property double deadOpacity: 0.6
       property real animationSpeed: 1.0 // Speed multiplier for hide/show animations (0.1 = slowest, 2.0 = fastest)
       property bool sitOnFrame: false
