@@ -94,13 +94,6 @@ PopupWindow {
               "action": function () {
                 handleLauncherSettings();
               }
-            },
-            {
-              "icon": "settings",
-              "text": I18n.tr("actions.widget-settings"),
-              "action": function () {
-                handleLauncherWidgetSettings();
-              }
             }
           ];
       calculateMenuWidth();
@@ -365,13 +358,6 @@ PopupWindow {
       var panel = PanelService.getPanel("settingsPanel", targetScreen);
       panel.requestedTab = SettingsPanel.Tab.Dock;
       panel.toggle();
-    }
-    root.requestClose();
-  }
-
-  function handleLauncherWidgetSettings() {
-    if (targetScreen && launcherWidgetSection && launcherWidgetIndex >= 0) {
-      BarService.openWidgetSettings(targetScreen, launcherWidgetSection, launcherWidgetIndex, "Launcher", launcherWidgetSettings || {});
     }
     root.requestClose();
   }
