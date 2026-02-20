@@ -362,31 +362,31 @@ Loader {
         const groupedById = new Map();
 
         apps.forEach(app => {
-                     const appId = app.appId;
-                     const toplevels = getToplevelsForEntry(app);
-                     const existing = groupedById.get(appId);
+                       const appId = app.appId;
+                       const toplevels = getToplevelsForEntry(app);
+                       const existing = groupedById.get(appId);
 
-                     if (existing) {
-                       toplevels.forEach(toplevel => {
-                                          if (!existing.toplevels.includes(toplevel)) {
-                                            existing.toplevels.push(toplevel);
-                                          }
-                                        });
-                       if (app.type === "pinned" || app.type === "pinned-running") {
-                         existing.isPinned = true;
+                       if (existing) {
+                         toplevels.forEach(toplevel => {
+                                             if (!existing.toplevels.includes(toplevel)) {
+                                               existing.toplevels.push(toplevel);
+                                             }
+                                           });
+                         if (app.type === "pinned" || app.type === "pinned-running") {
+                           existing.isPinned = true;
+                         }
+                       } else {
+                         const entry = {
+                           "type": app.type,
+                           "appId": appId,
+                           "title": app.title,
+                           "toplevels": toplevels.slice(),
+                           "isPinned": app.type === "pinned" || app.type === "pinned-running"
+                         };
+                         grouped.push(entry);
+                         groupedById.set(appId, entry);
                        }
-                     } else {
-                       const entry = {
-                         "type": app.type,
-                         "appId": appId,
-                         "title": app.title,
-                         "toplevels": toplevels.slice(),
-                         "isPinned": app.type === "pinned" || app.type === "pinned-running"
-                       };
-                       grouped.push(entry);
-                       groupedById.set(appId, entry);
-                     }
-                   });
+                     });
 
         grouped.forEach(entry => {
                           entry.toplevel = getPrimaryToplevelForEntry(entry);

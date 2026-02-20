@@ -274,7 +274,7 @@ Item {
                 return launcherMetadata.iconColor;
               return "none";
             }
-            
+
             Item {
               id: launcherIconContainer
               width: dockRoot.iconSize
