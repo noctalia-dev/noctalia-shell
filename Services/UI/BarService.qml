@@ -183,6 +183,43 @@ Singleton {
     }
   }
 
+  // Track last workspace ID to detect actual workspace changes
+  property var lastWorkspaceId: null
+
+  // Workspace switch handler - directly show bar on the focused workspace screen
+  Connections {
+    target: CompositorService
+    function onWorkspaceChanged() {
+      if (!Settings.data.bar.showOnWorkspaceSwitch)
+        return;
+      if (Settings.data.bar.displayMode !== "auto_hide")
+        return;
+
+      var ws = CompositorService.getCurrentWorkspace();
+      if (!ws || !ws.output) {
+        return;
+      }
+
+      // Only trigger if workspace actually changed
+      var currentWsId = ws.id;
+      if (currentWsId === root.lastWorkspaceId) {
+        return;
+      }
+      root.lastWorkspaceId = currentWsId;
+
+      var screenName = ws.output || "";
+      Logger.d("BarService", "Workspace switched to:", currentWsId, "on screen:", screenName);
+
+      // Show bar immediately
+      setScreenHidden(screenName, false);
+
+      // Only trigger hideTimer if not already hovered (e.g., mouse on trigger zone)
+      if (!root.isBarHovered(screenName)) {
+        barHoverStateChanged(screenName, false);
+      }
+    }
+  }
+
   // Function for the Bar to call when it's ready
   function registerBar(screenName) {
     if (!readyBars[screenName]) {

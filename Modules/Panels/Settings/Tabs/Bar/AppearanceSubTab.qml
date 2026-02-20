@@ -339,5 +339,14 @@ ColumnLayout {
       onMoved: value => Settings.data.bar.autoShowDelay = value
       text: Settings.data.bar.autoShowDelay + "ms"
     }
+
+    NToggle {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.bar.appearance-show-on-workspace-switch-label")
+      description: I18n.tr("panels.bar.appearance-show-on-workspace-switch-description")
+      checked: Settings.data.bar.showOnWorkspaceSwitch
+      defaultValue: Settings.getDefaultValue("bar.showOnWorkspaceSwitch")
+      onToggled: checked => Settings.data.bar.showOnWorkspaceSwitch = checked
+    }
   }
 }
