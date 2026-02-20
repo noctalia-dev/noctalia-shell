@@ -965,6 +965,7 @@
       "clock-style-label": "Clock style",
       "clock-style-minimal": "Minimal",
       "clock-width-description": "Width of the clock widget in pixels.",
+      "cpu-intensive-note": "Widgets marked with ! use more CPU and should be enabled mindfully.",
       "edit-mode-button-label": "Enter edit mode",
       "edit-mode-controls-explanation": "Left-click & drag: Move or resize the widget.\nRight-click: Open the context menu options.",
       "edit-mode-description": "Enable edit mode to move and reposition desktop widgets. When enabled, widgets show a drag outline and can be repositioned.",

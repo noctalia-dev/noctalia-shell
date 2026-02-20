@@ -37,6 +37,8 @@ Singleton {
                                   }
                                 })
 
+  property var cpuIntensiveWidgets: ["SystemStat"]
+
   // Component definitions - these are loaded once at startup
   property Component airplaneModeComponent: Component {
     AirplaneMode {}
@@ -151,5 +153,11 @@ Singleton {
   // Get list of plugin widget IDs
   function getPluginWidgets() {
     return Object.keys(pluginWidgets);
+  }
+
+  function isCpuIntensive(id) {
+    if (pluginWidgetMetadata[id]?.cpuIntensive)
+      return true;
+    return cpuIntensiveWidgets.indexOf(id) >= 0;
   }
 }

@@ -81,6 +81,8 @@ Singleton {
                                   }
                                 })
 
+  property var cpuIntensiveWidgets: ["SystemStat"]
+
   // Plugin widget storage (mirroring BarWidgetRegistry pattern)
   property var pluginWidgets: ({})
   property var pluginWidgetMetadata: ({})
@@ -109,6 +111,12 @@ Singleton {
   // Helper function to check if widget has user settings
   function widgetHasUserSettings(id) {
     return widgetMetadata[id] !== undefined;
+  }
+
+  function isCpuIntensive(id) {
+    if (pluginWidgetMetadata[id]?.cpuIntensive)
+      return true;
+    return cpuIntensiveWidgets.indexOf(id) >= 0;
   }
 
   // Check if a widget is a plugin widget
