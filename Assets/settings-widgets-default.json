@@ -142,6 +142,9 @@
     "SessionMenu": {
       "iconColor": "error"
     },
+    "Settings": {
+      "iconColor": "none"
+    },
     "Spacer": {
       "width": 20
     },
