@@ -33,6 +33,7 @@ Singleton {
                            "NotificationHistory": notificationHistoryComponent,
                            "PowerProfile": powerProfileComponent,
                            "SessionMenu": sessionMenuComponent,
+                           "Settings": settingsComponent,
                            "Spacer": spacerComponent,
                            "SystemMonitor": systemMonitorComponent,
                            "Taskbar": taskbarComponent,
@@ -65,6 +66,7 @@ Singleton {
                                      "NotificationHistory": "WidgetSettings/NotificationHistorySettings.qml",
                                      "PowerProfile": "WidgetSettings/PowerProfileSettings.qml",
                                      "SessionMenu": "WidgetSettings/SessionMenuSettings.qml",
+                                     "Settings": "WidgetSettings/SettingsSettings.qml",
                                      "Spacer": "WidgetSettings/SpacerSettings.qml",
                                      "SystemMonitor": "WidgetSettings/SystemMonitorSettings.qml",
                                      "Taskbar": "WidgetSettings/TaskbarSettings.qml",
@@ -218,6 +220,9 @@ Singleton {
                                   "SessionMenu": {
                                     "iconColor": "error"
                                   },
+                                  "Settings": {
+                                    "iconColor": "non"
+                                  },
                                   "Spacer": {
                                     "width": 20
                                   },
@@ -366,6 +371,9 @@ Singleton {
   }
   property Component sessionMenuComponent: Component {
     SessionMenu {}
+  }
+  property Component settingsComponent: Component {
+    Settings {}
   }
   property Component controlCenterComponent: Component {
     ControlCenter {}
