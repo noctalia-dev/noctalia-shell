@@ -648,9 +648,7 @@ Loader {
           implicitWidth: isVertical ? ((showFrameIndicator || barAtSameEdge) ? indicatorThickness : peekHeight) : peekEdgeLength
 
           Rectangle {
-            anchors.centerIn: parent
-            width: isVertical ? indicatorThickness : frameIndicatorLength
-            height: isVertical ? frameIndicatorLength : indicatorThickness
+            anchors.fill: parent
             radius: indicatorThickness
             color: Qt.alpha(Color.mPrimary, 0.6)
             opacity: showFrameIndicator && frameIndicatorLength > 0 ? 1 : 0
