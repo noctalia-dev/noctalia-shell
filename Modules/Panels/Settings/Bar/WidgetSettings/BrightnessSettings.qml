@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import qs.Commons
 import qs.Widgets
 
@@ -19,12 +20,16 @@ ColumnLayout {
   property string valueDisplayMode: widgetData.displayMode !== undefined ? widgetData.displayMode : widgetMetadata.displayMode
   property string valueIconColor: widgetData.iconColor !== undefined ? widgetData.iconColor : widgetMetadata.iconColor
   property string valueTextColor: widgetData.textColor !== undefined ? widgetData.textColor : widgetMetadata.textColor
+  property bool valueApplyToAllMonitors: widgetData.applyToAllMonitors !== undefined ? widgetData.applyToAllMonitors : widgetMetadata.applyToAllMonitors
+
+  readonly property bool hasMultipleMonitors: (Quickshell.screens || []).length > 1
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
     settings.displayMode = valueDisplayMode;
     settings.iconColor = valueIconColor;
     settings.textColor = valueTextColor;
+    settings.applyToAllMonitors = valueApplyToAllMonitors;
     settingsChanged(settings);
   }
 
@@ -68,5 +73,18 @@ ColumnLayout {
                   valueTextColor = key;
                   saveSettings();
                 }
+  }
+
+  NToggle {
+    visible: hasMultipleMonitors
+    Layout.fillWidth: true
+    label: I18n.tr("bar.brightness.apply-all-label")
+    description: I18n.tr("bar.brightness.apply-all-description")
+    checked: valueApplyToAllMonitors
+    onToggled: checked => {
+                 valueApplyToAllMonitors = checked;
+                 saveSettings();
+               }
+    defaultValue: widgetMetadata.applyToAllMonitors
   }
 }

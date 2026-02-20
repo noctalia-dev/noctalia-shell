@@ -494,7 +494,7 @@ Singleton {
       return;
 
     HooksService.executeSessionHook("rebootToUefi", () => {
-                                      Quickshell.execDetached(["sh", "-c", "systemctl reboot --firmware-setup"]);
+                                      Quickshell.execDetached(["sh", "-c", "systemctl reboot --firmware-setup || loginctl reboot --firmware-setup"]);
                                     });
   }
 

@@ -43,7 +43,7 @@ PanelWindow {
   readonly property real barHeight: Style.getBarHeightForScreen(barWindow.screen?.name)
 
   // Auto-hide properties
-  readonly property bool autoHide: Settings.data.bar.displayMode === "auto_hide"
+  readonly property bool autoHide: Settings.getBarDisplayModeForScreen(barWindow.screen?.name) === "auto_hide"
   readonly property int hideDelay: Settings.data.bar.autoHideDelay || 500
   readonly property int showDelay: Settings.data.bar.autoShowDelay || 100
   property bool isHidden: autoHide

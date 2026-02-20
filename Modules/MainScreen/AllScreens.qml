@@ -85,7 +85,7 @@ Variants {
           return false;
         if (!BarService.effectivelyVisible)
           return false;
-        if (Settings.data.bar.displayMode !== "auto_hide")
+        if (Settings.getBarDisplayModeForScreen(modelData?.name) !== "auto_hide")
           return false;
 
         // Check if bar is configured for this screen

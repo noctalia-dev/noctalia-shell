@@ -51,6 +51,26 @@ ColumnLayout {
 
     NComboBox {
       Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-type-label")
+      description: I18n.tr("panels.dock.appearance-type-description")
+      model: [
+        {
+          "key": "floating",
+          "name": I18n.tr("panels.dock.appearance-type-floating")
+        },
+        {
+          "key": "static",
+          "name": I18n.tr("panels.dock.appearance-type-static")
+        }
+      ]
+      currentKey: Settings.data.dock.dockType
+      defaultValue: Settings.getDefaultValue("dock.dockType")
+      onSelected: key => Settings.data.dock.dockType = key
+    }
+
+    NComboBox {
+      visible: Settings.data.dock.dockType === "floating"
+      Layout.fillWidth: true
       label: I18n.tr("panels.display.title")
       description: I18n.tr("panels.dock.appearance-display-description")
       model: [
@@ -74,6 +94,26 @@ ColumnLayout {
                   }
     }
 
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "static" && Settings.data.bar.barType === "framed"
+      label: I18n.tr("panels.dock.appearance-sit-on-frame-label")
+      description: I18n.tr("panels.dock.appearance-sit-on-frame-description")
+      checked: Settings.data.dock.sitOnFrame
+      defaultValue: Settings.getDefaultValue("dock.sitOnFrame")
+      onToggled: checked => Settings.data.dock.sitOnFrame = checked
+    }
+
+    NToggle {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "static" && Settings.data.bar.barType === "framed"
+      label: I18n.tr("panels.dock.appearance-frame-indicator-label")
+      description: I18n.tr("panels.dock.appearance-frame-indicator-description")
+      checked: Settings.data.dock.showFrameIndicator
+      defaultValue: Settings.getDefaultValue("dock.showFrameIndicator")
+      onToggled: checked => Settings.data.dock.showFrameIndicator = checked
+    }
+
     NValueSlider {
       Layout.fillWidth: true
       label: I18n.tr("panels.osd.background-opacity-label")
@@ -81,6 +121,7 @@ ColumnLayout {
       from: 0
       to: 1
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.backgroundOpacity
       defaultValue: Settings.getDefaultValue("dock.backgroundOpacity")
       onMoved: value => Settings.data.dock.backgroundOpacity = value
@@ -94,6 +135,7 @@ ColumnLayout {
       from: 0
       to: 1
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.deadOpacity
       defaultValue: Settings.getDefaultValue("dock.deadOpacity")
       onMoved: value => Settings.data.dock.deadOpacity = value
@@ -102,11 +144,13 @@ ColumnLayout {
 
     NValueSlider {
       Layout.fillWidth: true
+      visible: Settings.data.dock.dockType === "floating"
       label: I18n.tr("panels.dock.appearance-floating-distance-label")
       description: I18n.tr("panels.dock.appearance-floating-distance-description")
       from: 0
       to: 4
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.floatingRatio
       defaultValue: Settings.getDefaultValue("dock.floatingRatio")
       onMoved: value => Settings.data.dock.floatingRatio = value
@@ -120,6 +164,7 @@ ColumnLayout {
       from: 0
       to: 2
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.size
       defaultValue: Settings.getDefaultValue("dock.size")
       onMoved: value => Settings.data.dock.size = value
@@ -127,13 +172,14 @@ ColumnLayout {
     }
 
     NValueSlider {
-      visible: Settings.data.dock.displayMode === "auto_hide"
+      visible: Settings.data.dock.dockType === "floating" && Settings.data.dock.displayMode === "auto_hide"
       Layout.fillWidth: true
       label: I18n.tr("panels.dock.appearance-hide-show-speed-label")
       description: I18n.tr("panels.dock.appearance-hide-show-speed-description")
       from: 0.1
       to: 2.0
       stepSize: 0.01
+      showReset: true
       value: Settings.data.dock.animationSpeed
       defaultValue: Settings.getDefaultValue("dock.animationSpeed")
       onMoved: value => Settings.data.dock.animationSpeed = value
@@ -157,6 +203,74 @@ ColumnLayout {
     }
 
     NToggle {
+      label: I18n.tr("panels.dock.appearance-group-apps-label")
+      description: I18n.tr("panels.dock.appearance-group-apps-description")
+      checked: Settings.data.dock.groupApps
+      defaultValue: Settings.getDefaultValue("dock.groupApps")
+      onToggled: checked => Settings.data.dock.groupApps = checked
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.groupApps
+      label: I18n.tr("panels.dock.appearance-group-click-action-label")
+      description: I18n.tr("panels.dock.appearance-group-click-action-description")
+      model: [
+        {
+          "key": "cycle",
+          "name": I18n.tr("panels.dock.appearance-group-click-action-cycle")
+        },
+        {
+          "key": "list",
+          "name": I18n.tr("panels.dock.appearance-group-click-action-list")
+        }
+      ]
+      currentKey: Settings.data.dock.groupClickAction
+      defaultValue: Settings.getDefaultValue("dock.groupClickAction")
+      onSelected: key => Settings.data.dock.groupClickAction = key
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.groupApps
+      label: I18n.tr("panels.dock.appearance-group-context-menu-mode-label")
+      description: I18n.tr("panels.dock.appearance-group-context-menu-mode-description")
+      model: [
+        {
+          "key": "list",
+          "name": I18n.tr("panels.dock.appearance-group-context-menu-mode-list")
+        },
+        {
+          "key": "extended",
+          "name": I18n.tr("panels.dock.appearance-group-context-menu-mode-extended")
+        }
+      ]
+      currentKey: Settings.data.dock.groupContextMenuMode
+      defaultValue: Settings.getDefaultValue("dock.groupContextMenuMode")
+      onSelected: key => Settings.data.dock.groupContextMenuMode = key
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.groupApps
+      label: I18n.tr("panels.dock.appearance-group-indicator-style-label")
+      description: I18n.tr("panels.dock.appearance-group-indicator-style-description")
+      model: [
+        {
+          "key": "number",
+          "name": I18n.tr("panels.dock.appearance-group-indicator-style-number")
+        },
+        {
+          "key": "dots",
+          "name": I18n.tr("panels.dock.appearance-group-indicator-style-dots")
+        }
+      ]
+      currentKey: Settings.data.dock.groupIndicatorStyle
+      defaultValue: Settings.getDefaultValue("dock.groupIndicatorStyle")
+      onSelected: key => Settings.data.dock.groupIndicatorStyle = key
+    }
+
+    NToggle {
       label: I18n.tr("panels.dock.monitors-only-same-monitor-label")
       description: I18n.tr("panels.dock.monitors-only-same-monitor-description")
       checked: Settings.data.dock.onlySameOutput
@@ -171,6 +285,44 @@ ColumnLayout {
       checked: Settings.data.dock.colorizeIcons
       defaultValue: Settings.getDefaultValue("dock.colorizeIcons")
       onToggled: checked => Settings.data.dock.colorizeIcons = checked
+    }
+
+    NToggle {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.dock.appearance-show-launcher-icon-label")
+      description: I18n.tr("panels.dock.appearance-show-launcher-icon-description")
+      checked: Settings.data.dock.showLauncherIcon
+      defaultValue: Settings.getDefaultValue("dock.showLauncherIcon")
+      onToggled: checked => Settings.data.dock.showLauncherIcon = checked
+    }
+
+    NComboBox {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.showLauncherIcon
+      label: I18n.tr("panels.dock.appearance-launcher-position-label")
+      description: I18n.tr("panels.dock.appearance-launcher-position-description")
+      model: [
+        {
+          "key": "start",
+          "name": I18n.tr("panels.dock.appearance-launcher-position-start")
+        },
+        {
+          "key": "end",
+          "name": I18n.tr("panels.dock.appearance-launcher-position-end")
+        }
+      ]
+      currentKey: Settings.data.dock.launcherPosition
+      defaultValue: Settings.getDefaultValue("dock.launcherPosition")
+      onSelected: key => Settings.data.dock.launcherPosition = key
+    }
+
+    NColorChoice {
+      Layout.fillWidth: true
+      visible: Settings.data.dock.showLauncherIcon
+      label: I18n.tr("common.select-icon-color")
+      currentKey: Settings.data.dock.launcherIconColor
+      defaultValue: Settings.getDefaultValue("dock.launcherIconColor")
+      onSelected: key => Settings.data.dock.launcherIconColor = key
     }
   }
 }

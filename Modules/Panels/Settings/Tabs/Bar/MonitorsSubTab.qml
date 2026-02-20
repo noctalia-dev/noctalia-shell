@@ -191,6 +191,34 @@ ColumnLayout {
               }
             }
 
+            // DisplayMode override
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
+
+              NComboBox {
+                Layout.fillWidth: true
+                label: I18n.tr("common.display-mode")
+                description: I18n.tr("panels.bar.appearance-display-mode-description")
+                model: [
+                  {
+                    "key": "always_visible",
+                    "name": I18n.tr("hide-modes.visible")
+                  },
+                  {
+                    "key": "non_exclusive",
+                    "name": I18n.tr("hide-modes.non-exclusive")
+                  },
+                  {
+                    "key": "auto_hide",
+                    "name": I18n.tr("hide-modes.auto-hide")
+                  }
+                ]
+                currentKey: Settings.getBarDisplayModeForScreen(monitorCard.screenName)
+                onSelected: key => Settings.setScreenOverride(monitorCard.screenName, "displayMode", key)
+              }
+            }
+
             // Widgets configuration button and Reset all
             RowLayout {
               Layout.fillWidth: true

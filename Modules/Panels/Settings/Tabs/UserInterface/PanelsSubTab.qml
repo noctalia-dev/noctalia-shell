@@ -34,6 +34,7 @@ ColumnLayout {
     from: 0.4
     to: 1
     stepSize: 0.01
+    showReset: true
     value: Settings.data.ui.panelBackgroundOpacity
     defaultValue: Settings.getDefaultValue("ui.panelBackgroundOpacity")
     onMoved: value => Settings.data.ui.panelBackgroundOpacity = value
@@ -47,6 +48,7 @@ ColumnLayout {
     from: 0
     to: 1
     stepSize: 0.01
+    showReset: true
     value: Settings.data.general.dimmerOpacity
     defaultValue: Settings.getDefaultValue("general.dimmerOpacity")
     onMoved: value => Settings.data.general.dimmerOpacity = value

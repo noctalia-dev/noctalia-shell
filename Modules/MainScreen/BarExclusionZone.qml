@@ -18,8 +18,8 @@ PanelWindow {
   property string edge: Settings.getBarPositionForScreen(screen?.name)
   property real thickness: (edge === Settings.getBarPositionForScreen(screen?.name)) ? Style.getBarHeightForScreen(screen?.name) : (Settings.data.bar.frameThickness ?? 12)
 
-  readonly property bool autoHide: Settings.data.bar.displayMode === "auto_hide"
-  readonly property bool nonExclusive: Settings.data.bar.displayMode === "non_exclusive"
+  readonly property bool autoHide: Settings.getBarDisplayModeForScreen(screen?.name) === "auto_hide"
+  readonly property bool nonExclusive: Settings.getBarDisplayModeForScreen(screen?.name) === "non_exclusive"
   readonly property bool barFloating: Settings.data.bar.floating || false
   readonly property real barMarginH: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
   readonly property real barMarginV: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0

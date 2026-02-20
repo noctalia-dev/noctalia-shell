@@ -190,7 +190,15 @@ Item {
     boundsBehavior: Flickable.StopAtBounds
 
     WheelHandler {
-      enabled: root.wheelScrollMultiplier !== 1.0
+      enabled: !root.contentOverflows
+      acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+      onWheel: event => {
+                 event.accepted = true;
+               }
+    }
+
+    WheelHandler {
+      enabled: root.wheelScrollMultiplier !== 1.0 && root.contentOverflows
       acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
       onWheel: event => {
                  const delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2;

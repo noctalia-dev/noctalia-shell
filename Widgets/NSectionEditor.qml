@@ -494,6 +494,16 @@ NBox {
                 Layout.preferredHeight: Style.baseWidgetSize * 0.5
               }
 
+              // CPU-intensive indicator icon
+              NIcon {
+                visible: root.widgetRegistry && root.widgetRegistry.isCpuIntensive(modelData.id)
+                icon: "cpu-intensive"
+                pointSize: Style.fontSizeXXS
+                color: root.getWidgetColor(modelData)[1]
+                Layout.preferredWidth: visible ? Style.baseWidgetSize * 0.5 : 0
+                Layout.preferredHeight: Style.baseWidgetSize * 0.5
+              }
+
               RowLayout {
                 spacing: 0
                 Layout.preferredWidth: buttonsCount * buttonsWidth * Style.uiScaleRatio

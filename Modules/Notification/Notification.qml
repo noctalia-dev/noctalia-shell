@@ -374,6 +374,9 @@ Variants {
               onReleased: mouse => {
                             if (mouse.button === Qt.RightButton) {
                               card.animateOut();
+                              if (Settings.data.notifications.clearDismissed) {
+                                NotificationService.removeFromHistory(notificationId);
+                              }
                               return;
                             }
 
@@ -385,6 +388,9 @@ Variants {
                               const threshold = card.useVerticalSwipe ? card.verticalSwipeDismissThreshold : card.swipeDismissThreshold;
                               if (dismissDistance >= threshold) {
                                 card.dismissBySwipe();
+                                if (Settings.data.notifications.clearDismissed) {
+                                  NotificationService.removeFromHistory(notificationId);
+                                }
                               } else {
                                 card.swipeOffset = 0;
                                 card.swipeOffsetY = 0;
@@ -402,7 +408,10 @@ Variants {
                               return a.identifier === "default";
                             });
                             if (hasDefault) {
-                              card.runDeferredAction("default", false);
+                              card.runAction("default", false);
+                            } else {
+                              NotificationService.focusSenderWindow(model.appName);
+                              card.animateOut();
                             }
                           }
               onCanceled: {
@@ -491,23 +500,14 @@ Variants {
               }
             }
 
-            function runDeferredAction(actionId, isHistoryRemoval) {
-              if (Style.animationSlow <= 0) {
-                if (isHistoryRemoval) {
-                  NotificationService.removeFromHistory(notificationId);
-                } else {
-                  NotificationService.invokeAction(notificationId, actionId);
-                }
-                card.animateOut();
-                return;
+            function runAction(actionId, isDismissed) {
+              if (!isDismissed) {
+                NotificationService.focusSenderWindow(model.appName);
+                NotificationService.invokeActionAndSuppressClose(notificationId, actionId);
+              } else if (Settings.data.notifications.clearDismissed) {
+                NotificationService.removeFromHistory(notificationId);
               }
-
-              deferredActionTimer.stop();
-              deferredActionTimer.actionId = actionId || "";
-              deferredActionTimer.isHistoryRemoval = isHistoryRemoval;
-              deferredActionTimer.interval = Math.min(50, Math.max(1, Style.animationSlow - 1));
               card.animateOut();
-              deferredActionTimer.start();
             }
 
             Timer {
@@ -516,20 +516,6 @@ Variants {
               repeat: false
               onTriggered: {
                 NotificationService.dismissActiveNotification(notificationId);
-              }
-            }
-
-            Timer {
-              id: deferredActionTimer
-              interval: 50
-              property string actionId: ""
-              property bool isHistoryRemoval: false
-              onTriggered: {
-                if (isHistoryRemoval) {
-                  NotificationService.removeFromHistory(notificationId);
-                } else {
-                  NotificationService.invokeAction(notificationId, actionId);
-                }
               }
             }
 
@@ -716,7 +702,7 @@ Variants {
                         outlined: false
                         implicitHeight: 24
                         onClicked: {
-                          card.runDeferredAction(actionData.identifier, false);
+                          card.runAction(actionData.identifier, false);
                         }
                       }
                     }
@@ -729,7 +715,7 @@ Variants {
             NIconButton {
               visible: !notifWindow.isCompact
               icon: "close"
-              tooltipText: I18n.tr("common.close")
+              tooltipText: I18n.tr("tooltips.dismiss-notification")
               baseSize: Style.baseWidgetSize * 0.6
               anchors.top: cardBackground.top
               anchors.topMargin: Style.marginM
@@ -737,7 +723,7 @@ Variants {
               anchors.rightMargin: Style.marginM
 
               onClicked: {
-                card.runDeferredAction("", true);
+                card.runAction("", true);
               }
             }
 

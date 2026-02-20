@@ -15,8 +15,10 @@ Item {
   property string onMiddleClickedCommand: ""
   property string stateChecksJson: "[]" // Store state checks as JSON string
 
-  property string generalTooltipText: "Custom Button"
+  property string generalTooltipText: ""
   property bool enableOnStateLogic: false
+  property bool showExecTooltip: true
+  property bool _hasCustomTooltip: false
 
   property string _currentIcon: "heart" // Default icon
   property bool _isHot: false
@@ -46,8 +48,10 @@ Item {
         Logger.e("CustomButton", "Failed to parse stateChecksJson:", e.message);
         _parsedStateChecks = [];
       }
-      generalTooltipText = widgetSettings.generalTooltipText || "Custom Button";
+      generalTooltipText = widgetSettings.generalTooltipText || "";
+      _hasCustomTooltip = !!(widgetSettings.generalTooltipText && widgetSettings.generalTooltipText.trim() !== "");
       enableOnStateLogic = widgetSettings.enableOnStateLogic || false;
+      showExecTooltip = widgetSettings.showExecTooltip !== undefined ? widgetSettings.showExecTooltip : true;
 
       updateState();
     }
@@ -120,15 +124,28 @@ Item {
   }
 
   function _buildTooltipText() {
-    let tooltip = generalTooltipText;
-    if (onClickedCommand) {
-      tooltip += `\nLeft click: ${onClickedCommand}`;
+    // Build tooltip based on settings
+    let tooltip = "";
+
+    // If user set custom text, always show it
+    // If no custom text and showExecTooltip is off, show i18n default
+    if (_hasCustomTooltip) {
+      tooltip = generalTooltipText;
+    } else if (!showExecTooltip) {
+      tooltip = I18n.tr("panels.control-center.shortcuts-custom-button-default-tooltip");
     }
-    if (onRightClickedCommand) {
-      tooltip += `\nRight click: ${onRightClickedCommand}`;
-    }
-    if (onMiddleClickedCommand) {
-      tooltip += `\nMiddle click: ${onMiddleClickedCommand}`;
+
+    // Add command details if enabled
+    if (showExecTooltip) {
+      if (onClickedCommand) {
+        tooltip += tooltip ? `\nLeft click: ${onClickedCommand}` : `Left click: ${onClickedCommand}`;
+      }
+      if (onRightClickedCommand) {
+        tooltip += tooltip ? `\nRight click: ${onRightClickedCommand}` : `Right click: ${onRightClickedCommand}`;
+      }
+      if (onMiddleClickedCommand) {
+        tooltip += tooltip ? `\nMiddle click: ${onMiddleClickedCommand}` : `Middle click: ${onMiddleClickedCommand}`;
+      }
     }
 
     return tooltip;

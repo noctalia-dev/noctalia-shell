@@ -32,8 +32,8 @@
   "bar": {
     "active-window": {
       "colorize-icons-description": "Lita den verksame ruta med hamlitene.",
-      "hide-mode-description": "Stjornar kor nøytelen ter seg når det ikkje er ei verksam ruta.",
-      "scrolling-mode-description": "Stjorna når lange rutenomn kann bledja.",
+      "hide-mode-description": "Stjorna kor nøytelen ter seg når det ikkje er ei verksam ruta.",
+      "scrolling-mode-description": "Stjorna når lange rutenomn kann bledjast.",
       "show-app-icon-description": "Syn nøytendefråmerke attmed rutenamn.",
       "show-app-icon-label": "Syn nøytendefråmerke"
     },
@@ -63,6 +63,10 @@
       "show-noctalia-performance-label": "Syn brjotaren for Ytestoda frå Noctalia",
       "show-power-profile-description": "Syn veljaren for straumhått i batterifjøli.",
       "show-power-profile-label": "Syn straumhåttstoli"
+    },
+    "brightness": {
+      "apply-all-description": "Brigd på ljosstyrke på kvar skjerm når ein nyttar bladhjulet.",
+      "apply-all-label": "Gjev bladbrigde åt kvar skjerm"
     },
     "clock": {
       "clock-display-description": "Legg til merke frå skråi her for å måta til klokka. 'AP'-merket lyt vera med um klokka berre skal hava 12 timar.",
@@ -97,12 +101,15 @@
       "collapse-condition-description": "Knappen løynest um utskrifti er lik dette.",
       "collapse-condition-label": "Løyningsvilkor",
       "color-selection-description": "Lita fråmerket og teksti med hamlitene.",
+      "default-tooltip": "Sjølvgjord knapp, stjorna i innstillingane.",
       "display-command-output-description": "Skriv inn eit styrebod som skal køyra jamlege. Syner fyrste utskriftsradi som tekst.",
       "display-command-output-label": "Syn utskrift frå styrebod",
       "display-command-output-stream-description": "Skriv inn styrebod som skal køyra heile tidi.",
       "dynamic-text": "Kvikskrift",
       "enable-colorization-description": "Lita fråmerket og teksti på den sjølvgjorde knappen med hamlitene.",
       "enable-colorization-label": "Lita",
+      "general-tooltip-text-description": "Sjølvvald tekst å syna i hjelpeteksti åt knappen.",
+      "general-tooltip-text-label": "Sjølvvald hjelpetekst",
       "hide-mode-always-expanded": "Stødt vidka",
       "hide-mode-description": "Stjornar um nøytelen er til å sjå når styrebodet ikkje kjem med utskrift.",
       "hide-mode-expand-with-output": "Vidka ved utskrift",
@@ -128,8 +135,12 @@
       "right-click-description": "Styrebod som køyrer ved høgretrykk.",
       "right-click-label": "Høgretrykk",
       "right-click-update-text": "Før upp ny tekst ved midtrykk",
+      "show-exec-tooltip-description": "Syn hjelpetekst med styrebodsupplysningar (vinstre/høgre/midtrykk, hjul).",
+      "show-exec-tooltip-label": "Syn hjelpetekst med styrebod",
       "show-icon-description": "Skifter um nøytelfråmerket er synlegt eller ikkje.",
       "show-icon-label": "Syn fråmerke",
+      "show-text-tooltip-description": "Syn hjelpetekst med utskrifti or styrebodet.",
+      "show-text-tooltip-label": "Syn kvikskrift hjelpeskrift",
       "text-stream-description": "Strøymde utfallssegner frå styrebodet syner seg som tekst på knappen.",
       "text-stream-label": "Strøym",
       "wheel-description": "Styrebod som køyrer når ein bled hjulet på musi.<br>Nytta $delta i styrebodet for hjulsbrigdi.",
@@ -158,12 +169,46 @@
     "media-mini": {
       "compact-mode-description": "Få spelnøytelsfjøli til å roma mindre.",
       "compact-mode-label": "Klemb spelnøytelen",
-      "hide-mode-description": "Stjorn framferdi åt nøytelen når ingen ting spelar av.",
+      "hide-mode-description": "Stjorna framferdi åt nøytelen når ingen ting spelar av.",
       "max-width-description": "Fastset kor mykje nøytelen kan lengjast vassbeint. Nøytelen dreg seg i hop for å røma stuttare innhald.",
-      "no-active-player": "Ingi verksame spelarar"
+      "no-active-player": "Ingi verksame spelarar",
+      "panel-section-description": "Stjorna skapnaden og framferdi åt spelnøytelsfjøli.",
+      "panel-section-label": "Spelnøytelsfjøl",
+      "scrolling-mode-description": "Stjorna når lange spelnomn kann bledjast.",
+      "scrolling-mode-label": "Bladluna",
+      "show-album-art-description": "Syn platekunsten til spelet som spelar av no.",
+      "show-album-art-label": "Syn platekunst",
+      "show-artist-first-description": "Syn spelmann - spel helder en spel - spelmann",
+      "show-artist-first-label": "Syn spelmann fyrst",
+      "show-progress-ring-description": "Syn ein ringvorden framgangsvisar.",
+      "show-progress-ring-label": "Syn framgangsvisar",
+      "show-visualizer-description": "Syn ljodframsyning når eitkvart spelar av.",
+      "show-visualizer-label": "Syn framsyning",
+      "use-fixed-width-description": "Nøytelen ruvar so mykje råd er helder en å høva seg til innhald, når dette er på.",
+      "use-fixed-width-label": "Nytta fast breidd",
+      "visualizer-type-description": "Vel eit slag for ljodframsyningi.",
+      "visualizer-type-label": "Framsyningsslag"
+    },
+    "notification-history": {
+      "hide-widget-when-zero-description": "Løyn varselteikn når det ikkje er varsel.",
+      "hide-widget-when-zero-label": "Løyn teikn når inkje varsel",
+      "hide-widget-when-zero-unread-description": "Løyn varselteikn når det ikkje er ulesne varsel.",
+      "hide-widget-when-zero-unread-label": "Løyn teikn når inkje ulesne varsel",
+      "show-unread-badge-description": "Syn eit merke med kor mange ulesne varsel det er.",
+      "show-unread-badge-label": "Syn \"ulesne\"-merke",
+      "unread-badge-color-description": "Kjos lit for merket som syner kor mange ulesne varsel det er.",
+      "unread-badge-color-label": "\"Ulesne\"-merkelit"
+    },
+    "section-editor": {
+      "placeholder": "Kjos ein nøytel å leggja til ...",
+      "search-placeholder": "Leita etter nøytel ..."
+    },
+    "spacer": {
+      "width-description": "Rombreidd i molar."
     }
   },
   "common": {
+    "brightness": "Ljosstyrke",
     "select-color-description": "Lita med hamlitene for tyngd."
   }
 }

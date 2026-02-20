@@ -202,21 +202,6 @@ Item {
           radius: parent.radius
           color: miniGauge.statColor
           anchors.bottom: parent.bottom
-
-          Behavior on fillHeight {
-            enabled: !Settings.data.general.animationDisabled
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.OutCubic
-            }
-          }
-
-          Behavior on color {
-            ColorAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.OutCubic
-            }
-          }
         }
       }
     }

@@ -86,6 +86,14 @@ SmartPanel {
                       }
                     }
 
+    function parseActions(actions) {
+      try {
+        return JSON.parse(actions || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
     function moveSelection(dir) {
       var m = NotificationService.historyList;
       if (!m || m.count === 0)
@@ -135,11 +143,7 @@ SmartPanel {
       if (!item)
         return;
 
-      // Parse actions
-      var actions = [];
-      try {
-        actions = JSON.parse(item.actionsJson || "[]");
-      } catch (e) {}
+      var actions = parseActions(item.actionsJson);
 
       if (actions.length === 0)
         return;
@@ -163,11 +167,7 @@ SmartPanel {
         return;
 
       if (actionIndex >= 0) {
-        // Invoke action
-        var actions = [];
-        try {
-          actions = JSON.parse(item.actionsJson || "[]");
-        } catch (e) {}
+        var actions = parseActions(item.actionsJson);
         if (actionIndex < actions.length) {
           NotificationService.invokeAction(item.id, actions[actionIndex].identifier);
         }
@@ -677,13 +677,7 @@ SmartPanel {
                     }
 
                     // Parse actions safely
-                    property var actionsList: {
-                      try {
-                        return JSON.parse(model.actionsJson || "[]");
-                      } catch (e) {
-                        return [];
-                      }
-                    }
+                    property var actionsList: parseActions(model.actionsJson)
 
                     property bool isFocused: index === panelContent.focusIndex
 

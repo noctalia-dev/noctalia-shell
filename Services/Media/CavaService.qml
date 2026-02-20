@@ -46,8 +46,12 @@ Singleton {
   property int _crashCount: 0
   property int _maxCrashes: 5
 
-  // Pre-allocated array for quick parsing
-  property var _parseBuffer: new Array(barsCount)
+  // Pre-allocated double buffer to avoid per-frame GC pressure.
+  // We alternate between two arrays so the reference always changes (triggering QML bindings)
+  // without allocating a new array on every audio frame.
+  property var _buf0: new Array(barsCount).fill(0)
+  property var _buf1: new Array(barsCount).fill(0)
+  property bool _bufToggle: false
 
   // Simple config
   property var config: ({
@@ -142,8 +146,8 @@ Singleton {
         if (root._crashCount > 0)
         root._crashCount = 0;
 
-        // Optimized parsing directly into pre-allocated buffer
-        const buffer = root._parseBuffer;
+        // Optimized parsing directly into pre-allocated buffer (alternating to trigger bindings)
+        const buffer = root._bufToggle ? root._buf0 : root._buf1;
         let idx = 0;
         let num = 0;
         let allZero = true;
@@ -194,9 +198,10 @@ Singleton {
           }
         }
 
-        // Update values only if not idle - copy buffer to trigger binding updates
+        // Update values only if not idle - swap to the other buffer to trigger binding updates
         if (!root.isIdle) {
-          root.values = buffer.slice(0, idx);
+          root._bufToggle = !root._bufToggle;
+          root.values = buffer;
         }
       }
     }

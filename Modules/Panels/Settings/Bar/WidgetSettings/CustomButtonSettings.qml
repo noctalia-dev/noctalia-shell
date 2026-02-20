@@ -24,9 +24,12 @@ ColumnLayout {
   property int valueMaxTextLengthVertical: widgetData?.maxTextLength?.vertical ?? widgetMetadata?.maxTextLength?.vertical
   property string valueHideMode: (widgetData.hideMode !== undefined) ? widgetData.hideMode : widgetMetadata.hideMode
   property bool valueShowIcon: (widgetData.showIcon !== undefined) ? widgetData.showIcon : widgetMetadata.showIcon
+  property bool valueShowExecTooltip: widgetData.showExecTooltip !== undefined ? widgetData.showExecTooltip : (widgetMetadata.showExecTooltip !== undefined ? widgetMetadata.showExecTooltip : true)
+  property bool valueShowTextTooltip: widgetData.showTextTooltip !== undefined ? widgetData.showTextTooltip : (widgetMetadata.showTextTooltip !== undefined ? widgetMetadata.showTextTooltip : true)
   property bool valueEnableColorization: widgetData.enableColorization || false
   property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon || "none"
   property string valueIpcIdentifier: widgetData.ipcIdentifier !== undefined ? widgetData.ipcIdentifier : widgetMetadata.ipcIdentifier || ""
+  property string valueGeneralTooltipText: widgetData.generalTooltipText !== undefined ? widgetData.generalTooltipText : widgetMetadata.generalTooltipText || ""
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -49,6 +52,8 @@ ColumnLayout {
     settings.textStream = valueTextStream;
     settings.parseJson = valueParseJson;
     settings.showIcon = valueShowIcon;
+    settings.showExecTooltip = valueShowExecTooltip;
+    settings.showTextTooltip = valueShowTextTooltip;
     settings.hideMode = valueHideMode;
     settings.maxTextLength = {
       "horizontal": valueMaxTextLengthHorizontal,
@@ -58,6 +63,7 @@ ColumnLayout {
     settings.enableColorization = valueEnableColorization;
     settings.colorizeSystemIcon = valueColorizeSystemIcon;
     settings.ipcIdentifier = valueIpcIdentifier;
+    settings.generalTooltipText = valueGeneralTooltipText;
     settingsChanged(settings);
   }
 
@@ -93,8 +99,8 @@ ColumnLayout {
 
   NToggle {
     id: showIconToggle
-    label: I18n.tr("bar.custom-button.show-icon-label", "Show icon")
-    description: I18n.tr("bar.custom-button.show-icon-description", "Toggles the visibility of the widget's icon.")
+    label: I18n.tr("bar.custom-button.show-icon-label")
+    description: I18n.tr("bar.custom-button.show-icon-description")
     checked: valueShowIcon
     onToggled: checked => {
                  valueShowIcon = checked;
@@ -126,6 +132,38 @@ ColumnLayout {
 
   NTextInput {
     Layout.fillWidth: true
+    label: I18n.tr("bar.custom-button.general-tooltip-text-label")
+    description: I18n.tr("bar.custom-button.general-tooltip-text-description")
+    placeholderText: I18n.tr("placeholders.enter-tooltip")
+    text: valueGeneralTooltipText
+    onTextChanged: valueGeneralTooltipText = text
+    onEditingFinished: saveSettings()
+  }
+
+  NToggle {
+    id: showExecTooltipToggle
+    label: I18n.tr("bar.custom-button.show-exec-tooltip-label")
+    description: I18n.tr("bar.custom-button.show-exec-tooltip-description")
+    checked: valueShowExecTooltip
+    onToggled: checked => {
+                 valueShowExecTooltip = checked;
+                 saveSettings();
+               }
+  }
+
+  NToggle {
+    id: showTextTooltipToggle
+    label: I18n.tr("bar.custom-button.show-text-tooltip-label")
+    description: I18n.tr("bar.custom-button.show-text-tooltip-description")
+    checked: valueShowTextTooltip
+    onToggled: checked => {
+                 valueShowTextTooltip = checked;
+                 saveSettings();
+               }
+  }
+
+  NTextInput {
+    Layout.fillWidth: true
     label: I18n.tr("bar.custom-button.ipc-identifier-label")
     description: I18n.tr("bar.custom-button.ipc-identifier-description")
     placeholderText: I18n.tr("placeholders.enter-ipc-identifier")
@@ -152,7 +190,7 @@ ColumnLayout {
       enabled: !valueTextStream
       Layout.alignment: Qt.AlignRight | Qt.AlignBottom
       Layout.bottomMargin: Style.marginS
-      onEntered: TooltipService.show(leftClickUpdateText, I18n.tr("bar.custom-button.left-click-update-text"), "auto")
+      onEntered: TooltipService.show(leftClickUpdateText, I18n.tr("bar.custom-button.left-click-update-text"))
       onExited: TooltipService.hide()
       checked: widgetData?.leftClickUpdateText ?? widgetMetadata.leftClickUpdateText
       onToggled: isChecked => {
@@ -180,7 +218,7 @@ ColumnLayout {
       enabled: !valueTextStream
       Layout.alignment: Qt.AlignRight | Qt.AlignBottom
       Layout.bottomMargin: Style.marginS
-      onEntered: TooltipService.show(rightClickUpdateText, I18n.tr("bar.custom-button.right-click-update-text"), "auto")
+      onEntered: TooltipService.show(rightClickUpdateText, I18n.tr("bar.custom-button.right-click-update-text"))
       onExited: TooltipService.hide()
       checked: widgetData?.rightClickUpdateText ?? widgetMetadata.rightClickUpdateText
       onToggled: isChecked => {
@@ -208,7 +246,7 @@ ColumnLayout {
       enabled: !valueTextStream
       Layout.alignment: Qt.AlignRight | Qt.AlignBottom
       Layout.bottomMargin: Style.marginS
-      onEntered: TooltipService.show(middleClickUpdateText, I18n.tr("bar.custom-button.middle-click-update-text"), "auto")
+      onEntered: TooltipService.show(middleClickUpdateText, I18n.tr("bar.custom-button.middle-click-update-text"))
       onExited: TooltipService.hide()
       checked: widgetData?.middleClickUpdateText ?? widgetMetadata.middleClickUpdateText
       onToggled: isChecked => {
@@ -222,8 +260,8 @@ ColumnLayout {
   NToggle {
     id: separateWheelToggle
     Layout.fillWidth: true
-    label: I18n.tr("bar.custom-button.wheel-mode-separate-label", "Separate wheel commands")
-    description: I18n.tr("bar.custom-button.wheel-mode-separate-description", "Enable separate commands for wheel up and down")
+    label: I18n.tr("bar.custom-button.wheel-mode-separate-label")
+    description: I18n.tr("bar.custom-button.wheel-mode-separate-description")
     property bool internalChecked: (widgetData?.wheelMode || widgetMetadata?.wheelMode) === "separate"
     checked: internalChecked
     onToggled: checked => {
@@ -255,7 +293,7 @@ ColumnLayout {
         enabled: !valueTextStream
         Layout.alignment: Qt.AlignRight | Qt.AlignBottom
         Layout.bottomMargin: Style.marginS
-        onEntered: TooltipService.show(wheelUpdateText, I18n.tr("bar.custom-button.wheel-update-text"), "auto")
+        onEntered: TooltipService.show(wheelUpdateText, I18n.tr("bar.custom-button.wheel-update-text"))
         onExited: TooltipService.hide()
         checked: widgetData?.wheelUpdateText ?? widgetMetadata?.wheelUpdateText
         onToggled: isChecked => {
@@ -288,7 +326,7 @@ ColumnLayout {
           enabled: !valueTextStream
           Layout.alignment: Qt.AlignRight | Qt.AlignBottom
           Layout.bottomMargin: Style.marginS
-          onEntered: TooltipService.show(wheelUpUpdateText, I18n.tr("bar.custom-button.wheel-update-text"), "auto")
+          onEntered: TooltipService.show(wheelUpUpdateText, I18n.tr("bar.custom-button.wheel-update-text"))
           onExited: TooltipService.hide()
           checked: (widgetData?.wheelUpUpdateText !== undefined) ? widgetData.wheelUpUpdateText : widgetMetadata?.wheelUpUpdateText
           onToggled: isChecked => {
@@ -316,7 +354,7 @@ ColumnLayout {
           enabled: !valueTextStream
           Layout.alignment: Qt.AlignRight | Qt.AlignBottom
           Layout.bottomMargin: Style.marginS
-          onEntered: TooltipService.show(wheelDownUpdateText, I18n.tr("bar.custom-button.wheel-update-text"), "auto")
+          onEntered: TooltipService.show(wheelDownUpdateText, I18n.tr("bar.custom-button.wheel-update-text"))
           onExited: TooltipService.hide()
           checked: (widgetData?.wheelDownUpdateText !== undefined) ? widgetData.wheelDownUpdateText : widgetMetadata?.wheelDownUpdateText
           onToggled: isChecked => {
@@ -337,8 +375,8 @@ ColumnLayout {
   }
 
   NSpinBox {
-    label: I18n.tr("bar.custom-button.max-text-length-horizontal-label", "Max text length (horizontal)")
-    description: I18n.tr("bar.custom-button.max-text-length-horizontal-description", "Maximum number of characters to show in horizontal bar (0 to hide text)")
+    label: I18n.tr("bar.custom-button.max-text-length-horizontal-label")
+    description: I18n.tr("bar.custom-button.max-text-length-horizontal-description")
     from: 0
     to: 100
     value: valueMaxTextLengthHorizontal
@@ -349,8 +387,8 @@ ColumnLayout {
   }
 
   NSpinBox {
-    label: I18n.tr("bar.custom-button.max-text-length-vertical-label", "Max text length (vertical)")
-    description: I18n.tr("bar.custom-button.max-text-length-vertical-description", "Maximum number of characters to show in vertical bar (0 to hide text)")
+    label: I18n.tr("bar.custom-button.max-text-length-vertical-label")
+    description: I18n.tr("bar.custom-button.max-text-length-vertical-description")
     from: 0
     to: 100
     value: valueMaxTextLengthVertical
@@ -373,8 +411,8 @@ ColumnLayout {
 
   NToggle {
     id: parseJsonInput
-    label: I18n.tr("bar.custom-button.parse-json-label", "Parse output as JSON")
-    description: I18n.tr("bar.custom-button.parse-json-description", "Parse the command output as a JSON object to dynamically set text and icon.")
+    label: I18n.tr("bar.custom-button.parse-json-label")
+    description: I18n.tr("bar.custom-button.parse-json-description")
     checked: valueParseJson
     onToggled: checked => {
                  valueParseJson = checked;
@@ -416,19 +454,19 @@ ColumnLayout {
 
   NComboBox {
     id: hideModeComboBox
-    label: I18n.tr("bar.custom-button.hide-mode-label", "Hide mode")
-    description: I18n.tr("bar.custom-button.hide-mode-description", "Controls widget visibility when the command has no output.")
+    label: I18n.tr("bar.custom-button.hide-mode-label")
+    description: I18n.tr("bar.custom-button.hide-mode-description")
     model: [
       {
-        name: I18n.tr("bar.custom-button.hide-mode-always-expanded", "Always expanded"),
+        name: I18n.tr("bar.custom-button.hide-mode-always-expanded"),
         key: "alwaysExpanded"
       },
       {
-        name: I18n.tr("bar.custom-button.hide-mode-expand-with-output", "Expand when has output"),
+        name: I18n.tr("bar.custom-button.hide-mode-expand-with-output"),
         key: "expandWithOutput"
       },
       {
-        name: I18n.tr("bar.custom-button.hide-mode-max-transparent", "Max expanded but transparent"),
+        name: I18n.tr("bar.custom-button.hide-mode-max-transparent"),
         key: "maxTransparent"
       }
     ]

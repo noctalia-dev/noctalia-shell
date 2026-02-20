@@ -8,7 +8,7 @@ NIconButtonHot {
   property ShellScreen screen
 
   icon: PowerProfileService.noctaliaPerformanceMode ? "rocket" : "rocket-off"
-  tooltipText: PowerProfileService.noctaliaPerformanceMode ? I18n.tr("toast.noctalia-performance.enabled") : I18n.tr("toast.noctalia-performance.disabled")
+  tooltipText: I18n.tr("tooltips.noctalia-performance-enabled")
   hot: PowerProfileService.noctaliaPerformanceMode
   onClicked: PowerProfileService.toggleNoctaliaPerformance()
 }

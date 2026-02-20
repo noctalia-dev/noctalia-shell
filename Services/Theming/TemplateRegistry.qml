@@ -62,13 +62,15 @@ Singleton {
       "id": "gtk",
       "name": "GTK",
       "category": "system",
-      "input": "gtk.css",
+      "input": "gtk4.css",
       "outputs": [
         {
-          "path": "~/.config/gtk-3.0/noctalia.css"
+          "path": "~/.config/gtk-3.0/noctalia.css",
+          "input": "gtk3.css"
         },
         {
-          "path": "~/.config/gtk-4.0/noctalia.css"
+          "path": "~/.config/gtk-4.0/noctalia.css",
+          "input": "gtk4.css"
         }
       ],
       "postProcess": mode => `python3 ${gtkRefreshScript} ${mode}`
@@ -303,6 +305,18 @@ Singleton {
       "input": "emacs.el"
     },
     {
+      "id": "labwc",
+      "name": "Labwc",
+      "category": "compositor",
+      "input": "labwc.conf",
+      "outputs": [
+        {
+          "path": "~/.config/labwc/themerc-override"
+        }
+      ],
+      "postProcess": () => `${templateApplyScript} labwc`
+    },
+    {
       "id": "niri",
       "name": "Niri",
       "category": "compositor",
@@ -396,6 +410,17 @@ Singleton {
         }
       ],
       "postProcess": () => `${templateApplyScript} zathura`
+    },
+    {
+      "id": "steam",
+      "name": "Steam",
+      "category": "misc",
+      "input": "steam.css",
+      "outputs": [
+        {
+          "path": "~/.steam/steam/steamui/skins/Material-Theme/css/main/colors/matugen.css"
+        }
+      ]
     }
   ]
 

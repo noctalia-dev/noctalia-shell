@@ -106,7 +106,8 @@ Singleton {
                                   "Brightness": {
                                     "displayMode": "onhover",
                                     "iconColor": "none",
-                                    "textColor": "none"
+                                    "textColor": "none",
+                                    "applyToAllMonitors": false
                                   },
                                   "Clock": {
                                     "clockColor": "none",
@@ -127,6 +128,9 @@ Singleton {
                                   "CustomButton": {
                                     "icon": "heart",
                                     "showIcon": true,
+                                    "showExecTooltip": true,
+                                    "showTextTooltip": true,
+                                    "generalTooltipText": "",
                                     "hideMode": "alwaysExpanded",
                                     "leftClickExec": "",
                                     "leftClickUpdateText": false,
@@ -469,6 +473,14 @@ Singleton {
   // Check if a widget is a plugin widget
   function isPluginWidget(id) {
     return id.startsWith("plugin:");
+  }
+
+  property var cpuIntensiveWidgets: ["AudioVisualizer"]
+
+  function isCpuIntensive(id) {
+    if (pluginWidgetMetadata[id]?.cpuIntensive)
+      return true;
+    return cpuIntensiveWidgets.indexOf(id) >= 0;
   }
 
   // Get list of plugin widget IDs

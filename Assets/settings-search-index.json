@@ -575,9 +575,36 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.dock.appearance-type-label",
+    "descriptionKey": "panels.dock.appearance-type-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.display.title",
     "descriptionKey": "panels.dock.appearance-display-description",
     "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-sit-on-frame-label",
+    "descriptionKey": "panels.dock.appearance-sit-on-frame-description",
+    "widget": "NToggle",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-frame-indicator-label",
+    "descriptionKey": "panels.dock.appearance-frame-indicator-description",
+    "widget": "NToggle",
     "tab": 5,
     "tabLabel": "panels.dock.title",
     "subTab": 0,
@@ -647,6 +674,42 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.dock.appearance-group-apps-label",
+    "descriptionKey": "panels.dock.appearance-group-apps-description",
+    "widget": "NToggle",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-group-click-action-label",
+    "descriptionKey": "panels.dock.appearance-group-click-action-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-group-context-menu-mode-label",
+    "descriptionKey": "panels.dock.appearance-group-context-menu-mode-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-group-indicator-style-label",
+    "descriptionKey": "panels.dock.appearance-group-indicator-style-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.dock.monitors-only-same-monitor-label",
     "descriptionKey": "panels.dock.monitors-only-same-monitor-description",
     "widget": "NToggle",
@@ -659,6 +722,24 @@
     "labelKey": "panels.dock.appearance-colorize-icons-label",
     "descriptionKey": "panels.dock.appearance-colorize-icons-description",
     "widget": "NToggle",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-show-launcher-icon-label",
+    "descriptionKey": "panels.dock.appearance-show-launcher-icon-description",
+    "widget": "NToggle",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-launcher-position-label",
+    "descriptionKey": "panels.dock.appearance-launcher-position-description",
+    "widget": "NComboBox",
     "tab": 5,
     "tabLabel": "panels.dock.title",
     "subTab": 0,
@@ -705,17 +786,17 @@
     "subTab": null
   },
   {
-    "labelKey": "panels.general.keybinds-title",
-    "descriptionKey": "panels.general.keybinds-description",
-    "widget": "NLabel",
+    "labelKey": "panels.general.reverse-scrolling-label",
+    "descriptionKey": "panels.general.reverse-scrolling-description",
+    "widget": "NToggle",
     "tab": 0,
     "tabLabel": "common.general",
     "subTab": null
   },
   {
-    "labelKey": "panels.general.reverse-scrolling-label",
-    "descriptionKey": "panels.general.reverse-scrolling-description",
-    "widget": "NToggle",
+    "labelKey": "panels.general.keybinds-title",
+    "descriptionKey": "panels.general.keybinds-description",
+    "widget": "NLabel",
     "tab": 0,
     "tabLabel": "common.general",
     "subTab": null
@@ -1027,8 +1108,8 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.lock-screen.lock-on-suspend-label",
-    "descriptionKey": "panels.lock-screen.lock-on-suspend-description",
+    "labelKey": "panels.lock-screen.password-chars-label",
+    "descriptionKey": "panels.lock-screen.password-chars-description",
     "widget": "NToggle",
     "tab": 11,
     "tabLabel": "panels.lock-screen.title",
@@ -1054,60 +1135,6 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.lock-screen.auto-start-auth-label",
-    "descriptionKey": "panels.lock-screen.auto-start-auth-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.lock-screen.allow-password-with-fprintd-label",
-    "descriptionKey": "panels.lock-screen.allow-password-with-fprintd-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.lock-screen.show-session-buttons-label",
-    "descriptionKey": "panels.lock-screen.show-session-buttons-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.lock-screen.show-hibernate-label",
-    "descriptionKey": "panels.lock-screen.show-hibernate-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.session-menu.enable-countdown-label",
-    "descriptionKey": "panels.session-menu.enable-countdown-description",
-    "widget": "NToggle",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.session-menu.countdown-duration-label",
-    "descriptionKey": "panels.session-menu.countdown-duration-description",
-    "widget": "NValueSlider",
-    "tab": 11,
-    "tabLabel": "panels.lock-screen.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
     "labelKey": "panels.lock-screen.lock-screen-blur-strength-label",
     "descriptionKey": "panels.lock-screen.lock-screen-blur-strength-description",
     "widget": "NValueSlider",
@@ -1124,6 +1151,69 @@
     "tabLabel": "panels.lock-screen.title",
     "subTab": 0,
     "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.lock-screen.lock-on-suspend-label",
+    "descriptionKey": "panels.lock-screen.lock-on-suspend-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.lock-screen.auto-start-auth-label",
+    "descriptionKey": "panels.lock-screen.auto-start-auth-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.lock-screen.allow-password-with-fprintd-label",
+    "descriptionKey": "panels.lock-screen.allow-password-with-fprintd-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.lock-screen.show-session-buttons-label",
+    "descriptionKey": "panels.lock-screen.show-session-buttons-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.lock-screen.show-hibernate-label",
+    "descriptionKey": "panels.lock-screen.show-hibernate-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.session-menu.enable-countdown-label",
+    "descriptionKey": "panels.session-menu.enable-countdown-description",
+    "widget": "NToggle",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.session-menu.countdown-duration-label",
+    "descriptionKey": "panels.session-menu.countdown-duration-description",
+    "widget": "NValueSlider",
+    "tab": 11,
+    "tabLabel": "panels.lock-screen.title",
+    "subTab": 1,
+    "subTabLabel": "common.behavior"
   },
   {
     "labelKey": "panels.notifications.duration-respect-expire-label",
@@ -1196,6 +1286,15 @@
     "tabLabel": "common.notifications",
     "subTab": 0,
     "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.notifications.history-clear-dismiss-label",
+    "descriptionKey": "panels.notifications.history-clear-dismiss-description",
+    "widget": "NToggle",
+    "tab": 9,
+    "tabLabel": "common.notifications",
+    "subTab": 2,
+    "subTabLabel": "common.history"
   },
   {
     "labelKey": "panels.notifications.settings-markdown-label",

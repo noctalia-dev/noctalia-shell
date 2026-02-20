@@ -10,6 +10,7 @@ Singleton {
 
   // Widget registry object mapping widget names to components
   property var widgets: ({
+                           "AirplaneMode": airplaneModeComponent,
                            "Bluetooth": bluetoothComponent,
                            "CustomButton": customButtonComponent,
                            "DarkMode": darkModeComponent,
@@ -29,13 +30,19 @@ Singleton {
                                     "onClicked": "",
                                     "onRightClicked": "",
                                     "onMiddleClicked": "",
-                                    "stateChecks": [],
-                                    "generalTooltipText": "Custom Button",
-                                    "enableOnStateLogic": false
+                                    "stateChecksJson": "[]",
+                                    "generalTooltipText": "",
+                                    "enableOnStateLogic": false,
+                                    "showExecTooltip": true
                                   }
                                 })
 
+  property var cpuIntensiveWidgets: ["SystemStat"]
+
   // Component definitions - these are loaded once at startup
+  property Component airplaneModeComponent: Component {
+    AirplaneMode {}
+  }
   property Component bluetoothComponent: Component {
     Bluetooth {}
   }
@@ -146,5 +153,11 @@ Singleton {
   // Get list of plugin widget IDs
   function getPluginWidgets() {
     return Object.keys(pluginWidgets);
+  }
+
+  function isCpuIntensive(id) {
+    if (pluginWidgetMetadata[id]?.cpuIntensive)
+      return true;
+    return cpuIntensiveWidgets.indexOf(id) >= 0;
   }
 }

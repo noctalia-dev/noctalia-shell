@@ -132,6 +132,7 @@ ColumnLayout {
     from: 0
     to: 1
     stepSize: 0.01
+    showReset: true
     value: Settings.data.bar.backgroundOpacity
     defaultValue: Settings.getDefaultValue("bar.backgroundOpacity")
     onMoved: value => Settings.data.bar.backgroundOpacity = value
@@ -175,6 +176,7 @@ ColumnLayout {
     from: 0
     to: 1
     stepSize: 0.01
+    showReset: true
     value: Settings.data.bar.capsuleOpacity
     defaultValue: Settings.getDefaultValue("bar.capsuleOpacity")
     onMoved: value => Settings.data.bar.capsuleOpacity = value
@@ -221,6 +223,7 @@ ColumnLayout {
         from: 4
         to: 24
         stepSize: 1
+        showReset: true
         value: Settings.data.bar.frameThickness
         defaultValue: Settings.getDefaultValue("bar.frameThickness")
         onMoved: value => Settings.data.bar.frameThickness = value
@@ -233,6 +236,7 @@ ColumnLayout {
         from: 4
         to: 24
         stepSize: 1
+        showReset: true
         value: Settings.data.bar.frameRadius
         defaultValue: Settings.getDefaultValue("bar.frameRadius")
         onMoved: value => Settings.data.bar.frameRadius = value
@@ -261,6 +265,7 @@ ColumnLayout {
         from: 0
         to: 18
         stepSize: 1
+        showReset: true
         value: Settings.data.bar.marginVertical
         defaultValue: Settings.getDefaultValue("bar.marginVertical")
         onMoved: value => Settings.data.bar.marginVertical = value
@@ -273,6 +278,7 @@ ColumnLayout {
         from: 0
         to: 18
         stepSize: 1
+        showReset: true
         value: Settings.data.bar.marginHorizontal
         defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
         onMoved: value => Settings.data.bar.marginHorizontal = value
@@ -299,6 +305,7 @@ ColumnLayout {
       from: 100
       to: 2000
       stepSize: 100
+      showReset: true
       value: Settings.data.bar.autoHideDelay
       defaultValue: Settings.getDefaultValue("bar.autoHideDelay")
       onMoved: value => Settings.data.bar.autoHideDelay = value
@@ -312,6 +319,7 @@ ColumnLayout {
       from: 0
       to: 500
       stepSize: 50
+      showReset: true
       value: Settings.data.bar.autoShowDelay
       defaultValue: Settings.getDefaultValue("bar.autoShowDelay")
       onMoved: value => Settings.data.bar.autoShowDelay = value

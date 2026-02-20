@@ -40,9 +40,13 @@ Singleton {
     function showBar() {
       BarService.show();
     }
-    function setDisplayMode(mode: string) {
+    function setDisplayMode(mode: string, screen: string) {
       if (mode === "always_visible" || mode === "non_exclusive" || mode === "auto_hide") {
-        Settings.data.bar.displayMode = mode;
+        if (!screen || screen === "all") {
+          Settings.data.bar.displayMode = mode;
+        } else {
+          Settings.setScreenOverride(screen, "displayMode", mode);
+        }
       }
     }
     function setPosition(position: string, screen: string) {

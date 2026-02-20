@@ -33,6 +33,7 @@ Singleton {
         settingsWindow.visible = true;
         isWindowOpen = true;
         windowOpened();
+        settingsWindow.navigateToEntry(entry);
       }
     } else {
       if (!screen) {
@@ -61,6 +62,7 @@ Singleton {
         settingsWindow.visible = true;
         isWindowOpen = true;
         windowOpened();
+        settingsWindow.navigateTo(tabId, subTabId);
       }
     } else {
       if (!screen) {
@@ -81,6 +83,7 @@ Singleton {
       settingsWindow.visible = true;
       isWindowOpen = true;
       windowOpened();
+      settingsWindow.navigateTo(requestedTab, -1);
     }
   }
 
