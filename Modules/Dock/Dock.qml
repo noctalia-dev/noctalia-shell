@@ -101,7 +101,8 @@ Loader {
         return hidden;
       }
       readonly property int frameIndicatorLength: {
-        const count = dockApps.length;
+        const launcherCount = Settings.data.dock.showLauncherIcon ? 1 : 0;
+        const count = dockApps.length + launcherCount;
         if (count <= 0)
           return 0;
         const spacing = Style.marginS;
