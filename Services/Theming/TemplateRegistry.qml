@@ -420,7 +420,7 @@ Singleton {
         {
           "path": "~/.steam/steam/steamui/skins/Material-Theme/css/main/colors/matugen.css"
         }
-      ],
+      ]
     }
   ]
 
