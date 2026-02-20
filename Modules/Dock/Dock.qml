@@ -92,6 +92,23 @@ Loader {
       readonly property bool hasBar: modelData && modelData.name ? (Settings.data.bar.monitors.includes(modelData.name) || (Settings.data.bar.monitors.length === 0)) : false
       readonly property bool barAtSameEdge: hasBar && Settings.getBarPositionForScreen(modelData?.name) === dockPosition
       readonly property int barHeight: Style.getBarHeightForScreen(modelData?.name)
+      readonly property int peekEdgeLength: {
+        const edgeSize = isVertical ? Math.round(modelData?.height || maxHeight) : Math.round(modelData?.width || maxWidth);
+        const minLength = Math.max(1, Math.round(edgeSize * 0.1));
+        return Math.max(minLength, frameIndicatorLength);
+      }
+      readonly property int peekCenterOffsetX: {
+        if (isVertical)
+          return 0;
+        const edgeSize = Math.round(modelData?.width || maxWidth);
+        return Math.max(0, Math.round((edgeSize - peekEdgeLength) / 2));
+      }
+      readonly property int peekCenterOffsetY: {
+        if (!isVertical)
+          return 0;
+        const edgeSize = Math.round(modelData?.height || maxHeight);
+        return Math.max(0, Math.round((edgeSize - peekEdgeLength) / 2));
+      }
       readonly property bool showFrameIndicator: {
         if (!isStaticMode || !Settings.data.dock.showFrameIndicator || Settings.data.bar.barType !== "framed" || !hasBar)
           return false;
@@ -508,23 +525,23 @@ Loader {
           screen: modelData
           // Dynamic anchors based on dock position
           anchors.top: dockPosition === "top" || isVertical
-          anchors.bottom: dockPosition === "bottom" || isVertical
+          anchors.bottom: dockPosition === "bottom"
           anchors.left: dockPosition === "left" || !isVertical
-          anchors.right: dockPosition === "right" || !isVertical
+          anchors.right: dockPosition === "right"
           focusable: false
           color: "transparent"
 
           // When bar is at same edge, position peek window past the bar so it receives mouse events
-          margins.top: dockPosition === "top" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0)) : 0
+          margins.top: isVertical ? peekCenterOffsetY : (dockPosition === "top" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0)) : 0)
           margins.bottom: dockPosition === "bottom" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0)) : 0
-          margins.left: dockPosition === "left" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginHorizontal : 0)) : 0
+          margins.left: !isVertical ? peekCenterOffsetX : (dockPosition === "left" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginHorizontal : 0)) : 0)
           margins.right: dockPosition === "right" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginHorizontal : 0)) : 0
 
           WlrLayershell.namespace: "noctalia-dock-peek-" + (screen?.name || "unknown")
           WlrLayershell.exclusionMode: ExclusionMode.Ignore
           // Larger peek area when bar is at same edge, normal 1px otherwise
-          implicitHeight: showFrameIndicator ? (isVertical ? Math.round(modelData?.height || 0) : indicatorThickness) : (barAtSameEdge && !isVertical ? indicatorThickness : peekHeight)
-          implicitWidth: showFrameIndicator ? (isVertical ? indicatorThickness : Math.round(modelData?.width || 0)) : (barAtSameEdge && isVertical ? indicatorThickness : peekHeight)
+          implicitHeight: isVertical ? peekEdgeLength : ((showFrameIndicator || barAtSameEdge) ? indicatorThickness : peekHeight)
+          implicitWidth: isVertical ? ((showFrameIndicator || barAtSameEdge) ? indicatorThickness : peekHeight) : peekEdgeLength
 
           Rectangle {
             anchors.centerIn: parent
