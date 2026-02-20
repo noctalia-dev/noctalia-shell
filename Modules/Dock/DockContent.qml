@@ -403,6 +403,7 @@ Item {
             property string appId: modelData ? modelData.appId : ""
             // Tracks whether this app's menu was opened by hover-auto-open (not by click/right-click).
             property bool hoverListOpened: false
+            property bool hoverListPendingOpen: false
             property int groupedCount: toplevels.length
             property int focusedWindowIndex: {
               if (!ToplevelManager || !ToplevelManager.activeToplevel)
@@ -614,6 +615,13 @@ Item {
                 } else {
                   dockRoot.menuHovered = false;
                 }
+                if (appButton.hoverListOpened) {
+                  if (hovered) {
+                    hoverListCloseTimer.stop();
+                  } else if (!appMouseArea.containsMouse) {
+                    hoverListCloseTimer.restart();
+                  }
+                }
               }
 
               Connections {
@@ -631,11 +639,18 @@ Item {
               onVisibleChanged: {
                 if (visible) {
                   dockRoot.currentContextMenu = contextMenu;
+                  if (appButton.hoverListOpened) {
+                    dockRoot.activeHoverGroupAppId = appButton.appId;
+                  }
                 } else if (dockRoot.currentContextMenu === contextMenu) {
                   dockRoot.currentContextMenu = null;
                   dockRoot.hideTimer.stop();
                   dockRoot.menuHovered = false;
                   appButton.hoverListOpened = false;
+                  if (dockRoot.activeHoverGroupAppId === appButton.appId) {
+                    dockRoot.activeHoverGroupAppId = "";
+                  }
+                  hoverListCloseTimer.stop();
                   // Restart hide timer after menu closes
                   if (dockRoot.autoHide && !dockRoot.dockHovered && !dockRoot.anyAppHovered && !dockRoot.peekHovered && !dockRoot.menuHovered) {
                     dockRoot.hideTimer.restart();
@@ -673,6 +688,7 @@ Item {
 
               onEntered: {
                 dockRoot.anyAppHovered = true;
+                hoverListCloseTimer.stop();
                 const appName = appButton.appTitle || appButton.appId || "Unknown";
                 const tooltipText = appName.length > 40 ? appName.substring(0, 37) + "..." : appName;
                 if (!contextMenu.visible) {
@@ -683,11 +699,18 @@ Item {
                                              && appButton.groupedCount > 1
                                              && appButton.isRunning;
                 if (canOpenGroupedHoverList) {
-                  // Keep only one hover-opened grouped list visible at a time while moving across dock items.
-                  if (dockRoot.currentContextMenu && dockRoot.currentContextMenu !== contextMenu && dockRoot.currentContextMenu.visible) {
+                  // Single-owner model: only one group can own hover-opened list at a time.
+                  if (dockRoot.activeHoverGroupAppId !== "" && dockRoot.activeHoverGroupAppId !== appButton.appId
+                      && dockRoot.currentContextMenu && dockRoot.currentContextMenu.visible) {
                     dockRoot.closeAllContextMenus();
                   }
-                  hoverListTimer.restart();
+                  dockRoot.activeHoverGroupAppId = appButton.appId;
+                  if (dockRoot.currentContextMenu === contextMenu && contextMenu.visible) {
+                    appButton.hoverListPendingOpen = false;
+                  } else {
+                    appButton.hoverListPendingOpen = true;
+                    hoverListTimer.restart();
+                  }
                 }
                 if (dockRoot.autoHide) {
                   dockRoot.showTimer.stop();
@@ -700,10 +723,9 @@ Item {
               onExited: {
                 dockRoot.anyAppHovered = false;
                 hoverListTimer.stop();
-                // Auto-close only menus opened by hover so click/right-click menus keep their current behavior.
+                appButton.hoverListPendingOpen = false;
                 if (appButton.hoverListOpened && dockRoot.currentContextMenu === contextMenu && contextMenu.visible) {
-                  contextMenu.hide();
-                  appButton.hoverListOpened = false;
+                  hoverListCloseTimer.restart();
                 }
                 TooltipService.hide();
                 // Clear menuHovered if no current menu or menu not visible
@@ -716,9 +738,24 @@ Item {
               }
 
               onClicked: mouse => {
+                           // Click interaction takes priority over delayed hover-open behavior.
+                           hoverListTimer.stop();
+                           hoverListCloseTimer.stop();
+                           appButton.hoverListPendingOpen = false;
+                           dockRoot.activeHoverGroupAppId = "";
+
                            if (mouse.button === Qt.RightButton) {
                              const targetScreen = dockRoot.modelData || dockRoot.screen || null;
-                             // If right-clicking on the same app with an open context menu, close it
+                             // If this menu was hover-opened, right-click should promote it to regular context behavior,
+                             // not require a second click.
+                             if (dockRoot.currentContextMenu === contextMenu && contextMenu.visible && appButton.hoverListOpened) {
+                               appButton.hoverListOpened = false;
+                               dockRoot.activeHoverGroupAppId = "";
+                               TooltipService.hideImmediately();
+                               contextMenu.show(appButton, modelData, targetScreen, "", false);
+                               return;
+                             }
+                             // Toggle close only for right-click-opened menus.
                              if (dockRoot.currentContextMenu === contextMenu && contextMenu.visible) {
                                dockRoot.closeAllContextMenus();
                                return;
@@ -727,7 +764,7 @@ Item {
                              dockRoot.closeAllContextMenus();
                              // Hide tooltip when showing context menu
                              TooltipService.hideImmediately();
-                             contextMenu.show(appButton, modelData, targetScreen);
+                             contextMenu.show(appButton, modelData, targetScreen, "", false);
                              return;
                            }
 
@@ -760,8 +797,12 @@ Item {
                                const targetScreen = dockRoot.modelData || dockRoot.screen || null;
                                TooltipService.hideImmediately();
                                // Left-click list should always open the grouped window list view.
-                               contextMenu.show(appButton, modelData, targetScreen, "list");
-                               appButton.hoverListOpened = false;
+                               if (!(dockRoot.currentContextMenu === contextMenu && contextMenu.visible)) {
+                                 contextMenu.show(appButton, modelData, targetScreen, "list", true);
+                               }
+                               // Keep list-mode close behavior consistent: close when leaving icon/menu focus.
+                               appButton.hoverListOpened = true;
+                               dockRoot.activeHoverGroupAppId = appButton.appId;
                              } else {
                                const appKey = modelData?.appId || "";
                                const state = dockRoot.groupCycleIndices || {};
@@ -775,6 +816,11 @@ Item {
                                // Store the last focused index so returning to this group restores it first.
                                state[appKey] = nextIndex;
                                dockRoot.groupCycleIndices = Object.assign({}, state);
+                               // In cycle mode, reopen hover list after a short delay if pointer is still on this group.
+                               if (Settings.data.dock.groupHoverWindowList && appMouseArea.containsMouse && appButton.groupedCount > 1) {
+                                 appButton.hoverListPendingOpen = true;
+                                 hoverListTimer.restart();
+                               }
                              }
                            }
                          }
@@ -786,15 +832,40 @@ Item {
               repeat: false
               onTriggered: {
                 // Delay prevents accidental open when cursor just passes over grouped apps.
-                if (!appMouseArea.containsMouse || iconContainer.dragging)
+                if (!appButton.hoverListPendingOpen || !appMouseArea.containsMouse || iconContainer.dragging)
                   return;
                 const runningToplevels = dock.getValidToplevels(modelData);
                 if (!Settings.data.dock.groupApps || !Settings.data.dock.groupHoverWindowList || runningToplevels.length <= 1)
                   return;
+                // Switch menu only after hover intent is confirmed by timer.
+                if (dockRoot.currentContextMenu && dockRoot.currentContextMenu !== contextMenu && dockRoot.currentContextMenu.visible) {
+                  dockRoot.closeAllContextMenus();
+                }
                 const targetScreen = dockRoot.modelData || dockRoot.screen || null;
                 TooltipService.hideImmediately();
-                contextMenu.show(appButton, modelData, targetScreen, "list");
+                contextMenu.show(appButton, modelData, targetScreen, "list", true);
                 appButton.hoverListOpened = true;
+                appButton.hoverListPendingOpen = false;
+                dockRoot.activeHoverGroupAppId = appButton.appId;
+              }
+            }
+
+            Timer {
+              id: hoverListCloseTimer
+              interval: 220
+              repeat: false
+              onTriggered: {
+                if (!appButton.hoverListOpened)
+                  return;
+                if (appMouseArea.containsMouse || contextMenu.hovered)
+                  return;
+                if (dockRoot.currentContextMenu === contextMenu && contextMenu.visible) {
+                  contextMenu.hide();
+                }
+                appButton.hoverListOpened = false;
+                if (dockRoot.activeHoverGroupAppId === appButton.appId) {
+                  dockRoot.activeHoverGroupAppId = "";
+                }
               }
             }
 

@@ -25,6 +25,7 @@ PopupWindow {
   property bool hovered: menuHoverHandler.hovered
   property var onAppClosed: null // Callback function for when an app is closed
   property bool canAutoClose: false
+  property bool disableAutoClose: false
 
   // Track which menu item is hovered
   property int hoveredItem: -1 // -1: none, otherwise the index of the item in `items`
@@ -37,6 +38,7 @@ PopupWindow {
   property real menuMinWidth: 120
   property real menuMaxWidth: 360
   property real menuMaxHeight: Math.max(180, Math.min(420, Math.round((targetScreen ? targetScreen.height : 600) * 0.3)))
+  property real revealProgress: visible ? 1 : 0
   property int separatorCompactHeight: 8
   property string forcedGroupMenuMode: ""
   readonly property int separatorIndex: {
@@ -391,7 +393,7 @@ PopupWindow {
     }
   }
 
-  function show(item, toplevelData, screen, groupModeOverride) {
+  function show(item, toplevelData, screen, groupModeOverride, disableAutoCloseMode) {
     if (!item) {
       return;
     }
@@ -414,11 +416,17 @@ PopupWindow {
     }
     targetScreen = screen || null;
     forcedGroupMenuMode = groupModeOverride || "";
+    disableAutoClose = disableAutoCloseMode === true;
     initItems();
 
     visible = true;
     canAutoClose = false;
-    gracePeriodTimer.restart();
+    closeTimer.stop();
+    if (disableAutoClose) {
+      gracePeriodTimer.stop();
+    } else {
+      gracePeriodTimer.restart();
+    }
   }
 
   // Helper function to determine which menu item is under the mouse
@@ -565,6 +573,8 @@ PopupWindow {
     interval: 1500
     repeat: false
     onTriggered: {
+      if (root.disableAutoClose)
+        return;
       root.canAutoClose = true;
       if (!menuHoverHandler.hovered) {
         closeTimer.start();
@@ -578,16 +588,36 @@ PopupWindow {
     repeat: false
     running: false
     onTriggered: {
+      if (root.disableAutoClose)
+        return;
       root.hideWithoutReset();
     }
   }
 
   Rectangle {
+    id: menuSurface
     anchors.fill: parent
     color: Color.mSurfaceVariant
     radius: Style.radiusS
     border.color: Color.mOutline
     border.width: Style.borderS
+    opacity: revealProgress
+    scale: 0.97 + (0.03 * revealProgress)
+    transformOrigin: Item.Center
+
+    Behavior on opacity {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutQuad
+      }
+    }
+
+    Behavior on scale {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutQuad
+      }
+    }
 
     HoverHandler {
       id: menuHoverHandler
@@ -597,7 +627,7 @@ PopupWindow {
           closeTimer.stop();
         } else {
           root.hoveredItem = -1;
-          if (root.canAutoClose) {
+          if (root.canAutoClose && !root.disableAutoClose) {
             closeTimer.start();
           }
         }

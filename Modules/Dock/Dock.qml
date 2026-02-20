@@ -146,6 +146,7 @@ Loader {
       // Combined model of running apps and pinned apps
       property var dockApps: []
       property var groupCycleIndices: ({})
+      property string activeHoverGroupAppId: ""
 
       // Track the session order of apps (transient reordering)
       property var sessionAppOrder: []
