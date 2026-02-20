@@ -9,6 +9,7 @@
     "showCapsule": true,
     "capsuleOpacity": 1,
     "capsuleColorKey": "none",
+	"widgetSpacing": 6,
     "backgroundOpacity": 0.93,
     "useSeparateOpacity": false,
     "floating": false,

@@ -813,6 +813,8 @@
       "appearance-outer-corners-label": "Outer corners",
       "appearance-position-description": "Choose where to place the bar on the screen.",
       "appearance-position-label": "Bar position",
+      "appearance-widget-spacing-description": "Adjust the spacing between each widget in the bar.",
+      "appearance-widget-spacing-label": "Widget spacing",
       "appearance-show-capsule-description": "Show widget backgrounds.",
       "appearance-show-capsule-label": "Show capsule",
       "appearance-show-outline-description": "Displays a visible border around every widget.",

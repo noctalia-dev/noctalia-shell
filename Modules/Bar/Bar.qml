@@ -345,7 +345,7 @@ Item {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.top: parent.top
         anchors.topMargin: verticalBarMargin
-        spacing: Style.marginS
+        spacing: Settings.data.bar.widgetSpacing
 
         Repeater {
           model: root.leftWidgetsModel
@@ -370,7 +370,7 @@ Item {
       ColumnLayout {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.verticalCenter: parent.verticalCenter
-        spacing: Style.marginS
+        spacing: Settings.data.bar.widgetSpacing
 
         Repeater {
           model: root.centerWidgetsModel
@@ -396,7 +396,7 @@ Item {
         x: Style.pixelAlignCenter(parent.width, width)
         anchors.bottom: parent.bottom
         anchors.bottomMargin: verticalBarMargin
-        spacing: Style.marginS
+        spacing: Settings.data.bar.widgetSpacing
 
         Repeater {
           model: root.rightWidgetsModel
@@ -454,7 +454,7 @@ Item {
         anchors.left: parent.left
         anchors.leftMargin: horizontalBarMargin
         y: Style.pixelAlignCenter(parent.height, height)
-        spacing: Style.marginS
+        spacing: Settings.data.bar.widgetSpacing
 
         Repeater {
           model: root.leftWidgetsModel
@@ -481,7 +481,7 @@ Item {
         objectName: "centerSection"
         anchors.horizontalCenter: parent.horizontalCenter
         y: Style.pixelAlignCenter(parent.height, height)
-        spacing: Style.marginS
+        spacing: Settings.data.bar.widgetSpacing
 
         Repeater {
           model: root.centerWidgetsModel
@@ -509,7 +509,7 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: horizontalBarMargin
         y: Style.pixelAlignCenter(parent.height, height)
-        spacing: Style.marginS
+        spacing: Settings.data.bar.widgetSpacing
 
         Repeater {
           model: root.rightWidgetsModel
