@@ -674,6 +674,42 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.dock.appearance-group-apps-label",
+    "descriptionKey": "panels.dock.appearance-group-apps-description",
+    "widget": "NToggle",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-group-click-action-label",
+    "descriptionKey": "panels.dock.appearance-group-click-action-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-group-context-menu-mode-label",
+    "descriptionKey": "panels.dock.appearance-group-context-menu-mode-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.dock.appearance-group-indicator-style-label",
+    "descriptionKey": "panels.dock.appearance-group-indicator-style-description",
+    "widget": "NComboBox",
+    "tab": 5,
+    "tabLabel": "panels.dock.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.dock.monitors-only-same-monitor-label",
     "descriptionKey": "panels.dock.monitors-only-same-monitor-description",
     "widget": "NToggle",

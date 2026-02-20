@@ -181,7 +181,7 @@ Item {
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
     onEntered: {
-      if (!PanelService.getPanel("clockPanel", screen)?.active) {
+      if (!PanelService.getPanel("clockPanel", screen)?.isPanelOpen) {
         TooltipService.show(root, buildTooltipText(), BarService.getTooltipDirection(root.screen?.name));
         tooltipRefreshTimer.start();
       }
@@ -205,7 +205,7 @@ Item {
     interval: 1000
     repeat: true
     onTriggered: {
-      if (clockMouseArea.containsMouse && !PanelService.getPanel("clockPanel", screen)?.active) {
+      if (clockMouseArea.containsMouse && !PanelService.getPanel("clockPanel", screen)?.isPanelOpen) {
         TooltipService.updateText(buildTooltipText());
       }
     }
