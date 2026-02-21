@@ -236,13 +236,13 @@ SmartPanel {
     // Calculate content height based on header + tabs (if visible) + content
     property real calculatedHeight: {
       if (NotificationService.historyList.count === 0) {
-        return headerBox.implicitHeight + scrollView.implicitHeight + (Style.marginL * 2) + Style.marginM;
+        return headerBox.implicitHeight + scrollView.implicitHeight + Style.margin2L + Style.marginM;
       }
-      return headerBox.implicitHeight + scrollView.implicitHeight + (Style.marginL * 2) + Style.marginM;
+      return headerBox.implicitHeight + scrollView.implicitHeight + Style.margin2L + Style.marginM;
     }
     property real contentPreferredHeight: Math.min(root.preferredHeight, Math.ceil(calculatedHeight))
 
-    property real layoutWidth: Math.max(1, root.preferredWidth - (Style.marginL * 2))
+    property real layoutWidth: Math.max(1, root.preferredWidth - Style.margin2L)
 
     // State (lazy-loaded with panelContent)
     property var rangeCounts: [0, 0, 0, 0]
@@ -377,7 +377,7 @@ SmartPanel {
       NBox {
         id: headerBox
         Layout.fillWidth: true
-        implicitHeight: header.implicitHeight + Style.marginXL
+        implicitHeight: header.implicitHeight + Style.margin2M
 
         ColumnLayout {
           id: header
@@ -556,7 +556,7 @@ SmartPanel {
                     id: notificationDelegate
                     width: parent.width
                     visible: panelContent.isInCurrentRange(model.timestamp)
-                    height: visible && !isRemoving ? contentColumn.height + Style.marginXL : 0
+                    height: visible && !isRemoving ? contentColumn.height + Style.margin2M : 0
 
                     property int listIndex: index
                     property string notificationId: model.id
@@ -833,7 +833,7 @@ SmartPanel {
 
                         // Content
                         Column {
-                          width: parent.width - notificationDelegate.iconSize - notificationDelegate.buttonClusterWidth - (Style.marginM * 2)
+                          width: parent.width - notificationDelegate.iconSize - notificationDelegate.buttonClusterWidth - Style.margin2M
                           spacing: Style.marginXS
 
                           // Header row with app name and timestamp

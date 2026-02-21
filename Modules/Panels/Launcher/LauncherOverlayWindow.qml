@@ -92,7 +92,7 @@ Variants {
       // Launcher panel with position-based anchoring
       Item {
         id: launcherPanel
-        width: Math.round(Math.max(parent.width * 0.25, launcherWindow.listPanelWidth + (Style.marginL * 2)))
+        width: Math.round(Math.max(parent.width * 0.25, launcherWindow.listPanelWidth + Style.margin2L * 2))
         height: Math.round(Math.max(parent.height * 0.5, 600 * Style.uiScaleRatio))
         clip: false
 

@@ -254,13 +254,13 @@ SmartPanel {
                 Rectangle {
                   Layout.fillWidth: true
                   Layout.topMargin: Style.marginL
-                  Layout.preferredHeight: childrenRect.height + Style.marginXL
+                  Layout.preferredHeight: childrenRect.height + Style.margin2M
                   color: Color.mSurfaceVariant
                   radius: Style.radiusL
 
                   NText {
                     anchors.centerIn: parent
-                    width: parent.width - Style.marginL * 2
+                    width: parent.width - Style.margin2L
                     text: root.telemetryOnlyMode ? I18n.tr("setup.telemetry-wizard-note") : I18n.tr("setup.welcome-note")
                     pointSize: Style.fontSizeM
                     color: Color.mOnSurfaceVariant

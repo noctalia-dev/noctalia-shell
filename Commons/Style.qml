@@ -55,6 +55,15 @@ Singleton {
   readonly property int marginL: Math.round(13 * uiScaleRatio)
   readonly property int marginXL: Math.round(18 * uiScaleRatio)
 
+  // Double margins, for proper container sizing only (e.g. height: id.implicitHeight + Style.margin2M)
+  readonly property int margin2XXXS: marginXXXS * 2
+  readonly property int margin2XXS: marginXXS * 2
+  readonly property int margin2XS: marginXS * 2
+  readonly property int margin2S: marginS * 2
+  readonly property int margin2M: marginM * 2
+  readonly property int margin2L: marginL * 2
+  readonly property int margin2XL: marginXL * 2
+
   // Opacity
   readonly property real opacityNone: 0.0
   readonly property real opacityLight: 0.25
@@ -138,7 +147,7 @@ Singleton {
 
   // The base/default font size for all texts in the bar
   readonly property real _barBaseFontSize: Math.max(1, (Style.barHeight / Style.capsuleHeight) * Style.fontSizeXXS)
-  readonly property real barFontSize: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? _barBaseFontSize * 0.9 : _barBaseFontSize
+  readonly property real barFontSize: (Settings.data.bar.position === "left" || Settings.data.bar.position === "right") ? _barBaseFontSize * 0.9 * Settings.data.bar.fontScale : _barBaseFontSize * Settings.data.bar.fontScale
 
   readonly property color capsuleColor: Settings.data.bar.showCapsule ? Qt.alpha(Settings.data.bar.capsuleColorKey !== "none" ? Color.resolveColorKey(Settings.data.bar.capsuleColorKey) : Color.mSurfaceVariant, Settings.data.bar.capsuleOpacity) : "transparent"
 
@@ -211,7 +220,7 @@ Singleton {
   // Get bar font size for a specific bar height, capsule height, and orientation
   function getBarFontSizeForDensity(barHeight, capsuleHeight, isVertical) {
     const baseFontSize = Math.max(1, (barHeight / capsuleHeight) * Style.fontSizeXXS);
-    return isVertical ? baseFontSize * 0.9 : baseFontSize;
+    return isVertical ? baseFontSize * 0.9 * Settings.data.bar.fontScale : baseFontSize * Settings.data.bar.fontScale;
   }
 
   // Convenience functions for per-screen bar sizing

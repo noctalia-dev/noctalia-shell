@@ -138,7 +138,7 @@ ColumnLayout {
       color: Color.mSurface
       border.color: Color.mOutline
       border.width: Style.borderS
-      implicitHeight: contentCol.implicitHeight + Style.marginL * 2
+      implicitHeight: contentCol.implicitHeight + Style.margin2L
       clip: true
 
       ColumnLayout {

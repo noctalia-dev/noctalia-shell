@@ -93,7 +93,7 @@ SmartPanel {
       id: layout
       x: Style.marginL
       y: Style.marginL
-      width: parent.width - (Style.marginL * 2)
+      width: parent.width - Style.margin2L
       spacing: Style.marginL
 
       Repeater {

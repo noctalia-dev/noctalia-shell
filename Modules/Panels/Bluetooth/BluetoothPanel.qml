@@ -22,18 +22,18 @@ SmartPanel {
     id: panelContent
     color: "transparent"
 
-    property real contentPreferredHeight: Math.min(root.preferredHeight, mainColumn.implicitHeight + Style.marginL * 2)
+    property real contentPreferredHeight: Math.min(root.preferredHeight, mainColumn.implicitHeight + Style.margin2L)
 
     ColumnLayout {
       id: mainColumn
       anchors.fill: parent
-      anchors.margins: Style.marginM
+      anchors.margins: Style.marginL
       spacing: Style.marginM
 
       // Header
       NBox {
         Layout.fillWidth: true
-        Layout.preferredHeight: headerRow.implicitHeight + Style.marginXL
+        Layout.preferredHeight: headerRow.implicitHeight + Style.margin2M
 
         RowLayout {
           id: headerRow
@@ -96,7 +96,7 @@ SmartPanel {
             id: disabledBox
             visible: !BluetoothService.enabled
             Layout.fillWidth: true
-            Layout.preferredHeight: disabledColumn.implicitHeight + Style.marginXL
+            Layout.preferredHeight: disabledColumn.implicitHeight + Style.margin2M
 
             ColumnLayout {
               id: disabledColumn
@@ -147,7 +147,7 @@ SmartPanel {
               return (btSource.pairedDevices.length === 0 && btSource.connectedDevices.length === 0);
             }
             Layout.fillWidth: true
-            Layout.preferredHeight: emptyColumn.implicitHeight + Style.marginXL
+            Layout.preferredHeight: emptyColumn.implicitHeight + Style.margin2M
 
             ColumnLayout {
               id: emptyColumn

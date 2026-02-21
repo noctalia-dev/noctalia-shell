@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
+import qs.Services.UI
 import qs.Widgets
 
 Rectangle {
@@ -25,7 +26,7 @@ Rectangle {
 
   // Sizing
   Layout.fillHeight: true
-  implicitWidth: contentLayout.implicitWidth + Style.marginXL
+  implicitWidth: contentLayout.implicitWidth + Style.margin2M
 
   topLeftRadius: isFirst ? Style.iRadiusM : Style.iRadiusXXXS
   bottomLeftRadius: isFirst ? Style.iRadiusM : Style.iRadiusXXXS
@@ -48,7 +49,7 @@ Rectangle {
   RowLayout {
     id: contentLayout
     anchors.centerIn: parent
-    width: Math.min(implicitWidth, parent.width - (Style.marginS * 2))
+    width: Math.min(implicitWidth, parent.width - Style.margin2S)
     spacing: (root.icon !== "" && root.text !== "") ? Style.marginXS : 0
 
     NIcon {

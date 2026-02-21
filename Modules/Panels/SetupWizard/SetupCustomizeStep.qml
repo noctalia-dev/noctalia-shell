@@ -263,7 +263,7 @@ ColumnLayout {
               radius: Style.radiusM
               border.width: Style.borderS
               Layout.preferredHeight: 32
-              Layout.preferredWidth: Math.max(90, densityText.implicitWidth + Style.marginXL * 2)
+              Layout.preferredWidth: Math.max(90, densityText.implicitWidth + Style.margin2XL)
 
               property bool isActive: Settings.data.bar.density === modelData.key
 

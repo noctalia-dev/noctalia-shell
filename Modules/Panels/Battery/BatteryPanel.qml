@@ -20,7 +20,7 @@ SmartPanel {
   panelContent: Item {
     id: panelContent
 
-    property real contentPreferredHeight: mainLayout.implicitHeight + Style.marginL * 2
+    property real contentPreferredHeight: mainLayout.implicitHeight + Style.margin2L
 
     property var batteryWidgetInstance: BarService.lookupWidget("Battery", screen ? screen.name : null)
     readonly property var batteryWidgetSettings: batteryWidgetInstance ? batteryWidgetInstance.widgetSettings : null
@@ -80,7 +80,7 @@ SmartPanel {
       // HEADER
       NBox {
         Layout.fillWidth: true
-        implicitHeight: headerRow.implicitHeight + (Style.marginXL)
+        implicitHeight: headerRow.implicitHeight + Style.margin2M
 
         RowLayout {
           id: headerRow
@@ -120,7 +120,7 @@ SmartPanel {
       // Charge level + health/time
       NBox {
         Layout.fillWidth: true
-        implicitHeight: chargeLayout.implicitHeight + Style.marginL * 2
+        implicitHeight: chargeLayout.implicitHeight + Style.margin2L
         visible: BatteryService.laptopBatteries.length > 0 || BatteryService.bluetoothBatteries.length > 0
 
         ColumnLayout {
@@ -292,7 +292,7 @@ SmartPanel {
 
       NBox {
         Layout.fillWidth: true
-        height: controlsLayout.implicitHeight + Style.marginL * 2
+        height: controlsLayout.implicitHeight + Style.margin2L
         visible: showPowerProfiles || showNoctaliaPerformance
 
         ColumnLayout {

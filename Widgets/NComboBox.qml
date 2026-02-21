@@ -247,7 +247,7 @@ RowLayout {
     popup: Popup {
       y: combo.height + Style.marginS
       implicitWidth: combo.width
-      implicitHeight: Math.min(Math.round(root.popupHeight * Style.uiScaleRatio), listView.contentHeight + Style.marginXL)
+      implicitHeight: Math.min(Math.round(root.popupHeight * Style.uiScaleRatio), listView.contentHeight + Style.margin2M)
       padding: Style.marginM
 
       onOpened: {
@@ -268,7 +268,7 @@ RowLayout {
           property bool isHighlighted: listView.currentIndex === index
 
           width: listView.availableWidth
-          height: delegateText.implicitHeight + Style.marginS * 2
+          height: delegateText.implicitHeight + Style.margin2S
           radius: Style.iRadiusS
           color: isHighlighted ? Color.mHover : "transparent"
 

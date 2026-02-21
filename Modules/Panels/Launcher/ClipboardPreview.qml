@@ -14,7 +14,7 @@ Item {
   property bool loadingFullContent: false
   property bool isImageContent: false
 
-  implicitHeight: contentArea.implicitHeight + Style.marginL * 2
+  implicitHeight: contentArea.implicitHeight + Style.margin2L
 
   function loadContent() {
     if (!currentItem || !currentItem.clipboardId)

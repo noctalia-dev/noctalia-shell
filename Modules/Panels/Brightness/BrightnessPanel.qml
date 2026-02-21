@@ -18,7 +18,7 @@ SmartPanel {
 
   panelContent: Item {
     id: panelContent
-    property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
+    property real contentPreferredHeight: mainColumn.implicitHeight + Style.margin2L
 
     property var brightnessWidgetInstance: BarService.lookupWidget("Brightness", screen ? screen.name : null)
     readonly property var brightnessWidgetSettings: brightnessWidgetInstance ? brightnessWidgetInstance.widgetSettings : null
@@ -105,7 +105,7 @@ SmartPanel {
       // HEADER
       NBox {
         Layout.fillWidth: true
-        implicitHeight: headerRow.implicitHeight + (Style.marginXL)
+        implicitHeight: headerRow.implicitHeight + Style.margin2M
 
         RowLayout {
           id: headerRow
@@ -215,7 +215,7 @@ SmartPanel {
             model: Quickshell.screens || []
             delegate: NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: outputColumn.implicitHeight + (Style.marginXL)
+              Layout.preferredHeight: outputColumn.implicitHeight + Style.margin2M
 
               property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)
 

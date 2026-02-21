@@ -396,6 +396,12 @@ Singleton {
   // skipCollisionCheck: set to true when updating an existing plugin
   function installPlugin(pluginMetadata, skipCollisionCheck, callback) {
     var pluginId = pluginMetadata.id;
+    // Do not include hash for 3rd party plugins
+    var pluginIdRegex = /^[a-f0-9]{6}:/;
+    if (pluginIdRegex.test(pluginId)) {
+      pluginId = pluginId.substring(7);
+    }
+
     var source = pluginMetadata.source;
 
     // Check for collision first (skip when updating)

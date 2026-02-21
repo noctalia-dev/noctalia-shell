@@ -23,7 +23,7 @@ ColumnLayout {
   Rectangle {
     id: headerContainer
     Layout.fillWidth: true
-    Layout.preferredHeight: headerContent.implicitHeight + (Style.marginXL)
+    Layout.preferredHeight: headerContent.implicitHeight + Style.margin2M
     color: root.expanded ? Color.mSecondary : Color.mPrimary
     radius: Style.iRadiusM
     border.color: root.expanded ? Color.mOnSecondary : Color.mOutline
@@ -159,7 +159,7 @@ ColumnLayout {
     border.width: Style.borderS
 
     // Dynamic height based on content
-    Layout.preferredHeight: expanded ? contentLayout.implicitHeight + (Style.marginL * 2) : 0
+    Layout.preferredHeight: expanded ? contentLayout.implicitHeight + Style.margin2L : 0
 
     // Smooth height animation
     Behavior on Layout.preferredHeight {

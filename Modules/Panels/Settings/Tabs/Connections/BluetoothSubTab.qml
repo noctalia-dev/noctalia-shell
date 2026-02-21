@@ -113,10 +113,10 @@ Item {
       }
     } else {
       Logger.d("BluetoothPrefs", "Panel/tab inactive");
-      if (isScanningActive) {
+      if (isScanningActive && !showOnlyLists) {
         BluetoothService.setScanActive(false);
       }
-      if (isDiscoverable) {
+      if (isDiscoverable && !showOnlyLists) {
         BluetoothService.setDiscoverable(false);
       }
     }
@@ -124,11 +124,11 @@ Item {
 
   Component.onDestruction: {
     // Ensure scanning is stopped when component is closed
-    if (isScanningActive) {
+    if (isScanningActive && !showOnlyLists) {
       BluetoothService.setScanActive(false);
     }
     // Ensure discoverable is disabled when component is closed
-    if (isDiscoverable) {
+    if (isDiscoverable && !showOnlyLists) {
       BluetoothService.setDiscoverable(false);
     }
     Logger.d("BluetoothPrefs", "Panel closed");
@@ -144,7 +144,7 @@ Item {
     NBox {
       visible: !root.showOnlyLists
       Layout.fillWidth: true
-      Layout.preferredHeight: masterControlCol.implicitHeight + (Style.marginL * 2)
+      Layout.preferredHeight: masterControlCol.implicitHeight + Style.margin2L
       color: Color.mSurface
 
       ColumnLayout {
@@ -204,8 +204,8 @@ Item {
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
-        anchors.leftMargin: showOnlyLists ? Style.marginM : 0
-        anchors.rightMargin: showOnlyLists ? Style.marginM : 0
+        anchors.leftMargin: showOnlyLists ? Style.marginL : 0
+        anchors.rightMargin: showOnlyLists ? Style.marginL : 0
         spacing: Style.marginM
 
         NLabel {
@@ -234,8 +234,8 @@ Item {
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
-        anchors.leftMargin: showOnlyLists ? Style.marginM : 0
-        anchors.rightMargin: showOnlyLists ? Style.marginM : 0
+        anchors.leftMargin: showOnlyLists ? Style.marginL : 0
+        anchors.rightMargin: showOnlyLists ? Style.marginL : 0
         spacing: Style.marginM
 
         NLabel {
@@ -264,8 +264,6 @@ Item {
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
-        anchors.leftMargin: showOnlyLists ? Style.marginM : 0
-        anchors.rightMargin: showOnlyLists ? Style.marginM : 0
         spacing: Style.marginM
 
         RowLayout {
@@ -306,7 +304,7 @@ Item {
       id: miscSettingsBox
       visible: !root.showOnlyLists && BluetoothService.enabled
       Layout.fillWidth: true
-      Layout.preferredHeight: miscSettingsCol.implicitHeight + (Style.marginXL * 2)
+      Layout.preferredHeight: miscSettingsCol.implicitHeight + Style.margin2XL
       color: Color.mSurface
 
       ColumnLayout {
@@ -519,7 +517,7 @@ Item {
         Rectangle {
           visible: device.isExpanded
           Layout.fillWidth: true
-          implicitHeight: infoColumn.implicitHeight + Style.marginS * 2
+          implicitHeight: infoColumn.implicitHeight + Style.margin2S
           radius: Style.radiusS
           color: Color.mSurfaceVariant
           border.width: Style.borderS
@@ -646,7 +644,7 @@ Item {
     visible: !root.showOnlyLists && BluetoothService.pinRequired
     anchors.centerIn: parent
     width: Math.min(parent.width * 0.9, 400)
-    height: pinCol.implicitHeight + Style.marginL * 2
+    height: pinCol.implicitHeight + Style.margin2L
     color: Color.mSurface
     radius: Style.radiusM
     border.color: Style.boxBorderColor

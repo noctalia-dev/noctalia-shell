@@ -44,7 +44,7 @@ Rectangle {
     id: contentRow
     anchors.fill: parent
     anchors.margins: Style.marginL
-    spacing: Style.marginXL * 2
+    spacing: Style.margin2XL
 
     // Left side: Avatar
     Rectangle {

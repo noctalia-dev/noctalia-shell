@@ -345,8 +345,8 @@ Variants {
           x: panelInternal.isDragging ? panelInternal.dragOffsetX : panelInternal.baseX
           y: panelInternal.isDragging ? panelInternal.dragOffsetY : panelInternal.baseY
 
-          width: controlsLayout.implicitWidth + (Style.marginXL * 2)
-          height: controlsLayout.implicitHeight + (Style.marginXL * 2)
+          width: controlsLayout.implicitWidth + Style.margin2XL
+          height: controlsLayout.implicitHeight + Style.margin2XL
 
           color: Qt.rgba(Color.mSurface.r, Color.mSurface.g, Color.mSurface.b, 0.85)
           radius: Style.radiusL

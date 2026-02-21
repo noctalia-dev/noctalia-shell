@@ -67,6 +67,7 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("bar.density")
     onSelected: key => Settings.data.bar.density = key
   }
+
   NComboBox {
     Layout.fillWidth: true
     label: I18n.tr("panels.bar.appearance-type-label")
@@ -137,6 +138,34 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("bar.backgroundOpacity")
     onMoved: value => Settings.data.bar.backgroundOpacity = value
     text: Math.floor(Settings.data.bar.backgroundOpacity * 100) + "%"
+  }
+
+  NValueSlider {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.appearance-font-scale-label")
+    description: I18n.tr("panels.bar.appearance-font-scale-description")
+    from: 0.5
+    to: 2.0
+    stepSize: 0.01
+    showReset: true
+    value: Settings.data.bar.fontScale
+    defaultValue: Settings.getDefaultValue("bar.fontScale")
+    onMoved: value => Settings.data.bar.fontScale = value
+    text: Math.floor(Settings.data.bar.fontScale * 100) + "%"
+  }
+
+  NValueSlider {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.appearance-widget-spacing-label")
+    description: I18n.tr("panels.bar.appearance-widget-spacing-description")
+    from: 0
+    to: 30
+    stepSize: 1
+    showReset: true
+    value: Settings.data.bar.widgetSpacing
+    defaultValue: Settings.getDefaultValue("bar.widgetSpacing")
+    onMoved: value => Settings.data.bar.widgetSpacing = value
+    text: Settings.data.bar.widgetSpacing + "px"
   }
 
   NToggle {
@@ -324,6 +353,15 @@ ColumnLayout {
       defaultValue: Settings.getDefaultValue("bar.autoShowDelay")
       onMoved: value => Settings.data.bar.autoShowDelay = value
       text: Settings.data.bar.autoShowDelay + "ms"
+    }
+
+    NToggle {
+      Layout.fillWidth: true
+      label: I18n.tr("panels.bar.appearance-show-on-workspace-switch-label")
+      description: I18n.tr("panels.bar.appearance-show-on-workspace-switch-description")
+      checked: Settings.data.bar.showOnWorkspaceSwitch
+      defaultValue: Settings.getDefaultValue("bar.showOnWorkspaceSwitch")
+      onToggled: checked => Settings.data.bar.showOnWorkspaceSwitch = checked
     }
   }
 }

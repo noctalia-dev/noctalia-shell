@@ -39,8 +39,8 @@ Item {
   readonly property real capsuleHeight: Style.getCapsuleHeightForScreen(screenName)
 
   // Content dimensions for implicit sizing
-  readonly property real contentWidth: isVertical ? capsuleHeight : Math.round(layout.implicitWidth + Style.marginXL)
-  readonly property real contentHeight: isVertical ? Math.round(layout.implicitHeight + Style.marginXL) : capsuleHeight
+  readonly property real contentWidth: isVertical ? capsuleHeight : Math.round(layout.implicitWidth + Style.margin2M)
+  readonly property real contentHeight: isVertical ? Math.round(layout.implicitHeight + Style.margin2M) : capsuleHeight
 
   readonly property bool hideWhenOff: (widgetSettings.hideWhenOff !== undefined) ? widgetSettings.hideWhenOff : (widgetMetadata.hideWhenOff !== undefined ? widgetMetadata.hideWhenOff : false)
 

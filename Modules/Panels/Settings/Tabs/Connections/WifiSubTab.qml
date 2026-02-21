@@ -21,7 +21,7 @@ ColumnLayout {
 
   NBox {
     Layout.fillWidth: true
-    Layout.preferredHeight: masterControlCol.implicitHeight + (Style.marginL * 2)
+    Layout.preferredHeight: masterControlCol.implicitHeight + Style.margin2L
     color: Color.mSurface
 
     ColumnLayout {

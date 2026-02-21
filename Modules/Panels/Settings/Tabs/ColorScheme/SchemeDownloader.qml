@@ -33,8 +33,8 @@ Popup {
   property string cachedBranch: "main"
   property string cachedBranchSha: ""
 
-  width: Math.max(500, contentColumn.implicitWidth + (Style.marginXL * 2))
-  height: Math.min(800, contentColumn.implicitHeight + (Style.marginXL * 2))
+  width: Math.max(500, contentColumn.implicitWidth + Style.margin2XL)
+  height: Math.min(800, contentColumn.implicitHeight + Style.margin2XL)
   padding: Style.marginXL
   modal: true
   dim: false

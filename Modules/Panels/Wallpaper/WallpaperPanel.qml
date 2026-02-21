@@ -264,7 +264,7 @@ SmartPanel {
       // Header
       NBox {
         Layout.fillWidth: true
-        Layout.preferredHeight: headerColumn.implicitHeight + Style.marginL * 2
+        Layout.preferredHeight: headerColumn.implicitHeight + Style.margin2L
         color: Color.mSurfaceVariant
 
         ColumnLayout {

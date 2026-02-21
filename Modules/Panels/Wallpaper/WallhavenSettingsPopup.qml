@@ -19,8 +19,8 @@ Popup {
   }
 
   // Dynamic width: use measured ENV placeholder width + input padding, or fallback to 440
-  width: Math.max(440, Math.round(envPlaceholderMetrics.width + (Style.marginL * 4)), Math.round(contentColumn.implicitWidth + (Style.marginL * 2)))
-  height: Math.round(contentColumn.implicitHeight + (Style.marginL * 2))
+  width: Math.max(440, Math.round(envPlaceholderMetrics.width + (Style.marginL * 4)), Math.round(contentColumn.implicitWidth + Style.margin2L))
+  height: Math.round(contentColumn.implicitHeight + Style.margin2L)
   padding: Style.marginL
   modal: true
   dim: false

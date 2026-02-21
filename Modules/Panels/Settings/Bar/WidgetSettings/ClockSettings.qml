@@ -25,20 +25,7 @@ ColumnLayout {
   property string valueFormatVertical: widgetData.formatVertical !== undefined ? widgetData.formatVertical : (widgetMetadata.formatVertical !== undefined ? widgetMetadata.formatVertical : "")
   property string valueTooltipFormat: widgetData.tooltipFormat !== undefined ? widgetData.tooltipFormat : (widgetMetadata.tooltipFormat !== undefined ? widgetMetadata.tooltipFormat : "")
 
-  readonly property color textColor: {
-    switch (valueClockColor) {
-    case "primary":
-      return Color.mPrimary;
-    case "secondary":
-      return Color.mSecondary;
-    case "tertiary":
-      return Color.mTertiary;
-    case "error":
-      return Color.mError;
-    default:
-      return Color.mOnSurface;
-    }
-  }
+  readonly property color textColor: Color.resolveColorKey(valueClockColor)
 
   // Track the currently focused input field
   property var focusedInput: null

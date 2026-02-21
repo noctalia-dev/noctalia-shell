@@ -22,7 +22,7 @@ ColumnLayout {
 
       delegate: NBox {
         Layout.fillWidth: true
-        implicitHeight: sourceRow.implicitHeight + Style.marginL * 2
+        implicitHeight: sourceRow.implicitHeight + Style.margin2L
         color: Color.mSurface
 
         RowLayout {

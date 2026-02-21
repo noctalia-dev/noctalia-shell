@@ -103,7 +103,7 @@ SmartPanel {
   panelContent: Rectangle {
     color: "transparent"
 
-    property real contentPreferredHeight: Math.min(root.preferredHeight, mainColumn.implicitHeight + Style.marginL * 2)
+    property real contentPreferredHeight: Math.min(root.preferredHeight, mainColumn.implicitHeight + Style.margin2L)
 
     ColumnLayout {
       id: mainColumn
@@ -114,7 +114,7 @@ SmartPanel {
       // Header
       NBox {
         Layout.fillWidth: true
-        Layout.preferredHeight: Math.round(header.implicitHeight + Style.marginM * 2 + 1)
+        Layout.preferredHeight: header.implicitHeight + Style.margin2M
 
         ColumnLayout {
           id: header
@@ -228,7 +228,7 @@ SmartPanel {
         Rectangle {
           visible: panelViewMode === "wifi" && NetworkService.lastError.length > 0
           Layout.fillWidth: true
-          Layout.preferredHeight: errorRow.implicitHeight + (Style.marginXL)
+          Layout.preferredHeight: errorRow.implicitHeight + Style.margin2M
           color: Qt.alpha(Color.mError, 0.1)
           radius: Style.radiusS
           border.width: Style.borderS
@@ -274,7 +274,7 @@ SmartPanel {
 
           ColumnLayout {
             id: contentColumn
-            width: Math.round(contentScroll.availableWidth)
+            width: contentScroll.availableWidth
             spacing: Style.marginM
 
             // Wi‑Fi disabled state
@@ -282,7 +282,7 @@ SmartPanel {
               id: disabledBox
               visible: panelViewMode === "wifi" && !Settings.data.network.wifiEnabled
               Layout.fillWidth: true
-              Layout.preferredHeight: Math.round(disabledColumn.implicitHeight + Style.marginM * 2 + 1)
+              Layout.preferredHeight: disabledColumn.implicitHeight + Style.margin2M
 
               ColumnLayout {
                 id: disabledColumn
@@ -328,7 +328,7 @@ SmartPanel {
               id: scanningBox
               visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && Object.keys(NetworkService.networks).length === 0 && NetworkService.scanning
               Layout.fillWidth: true
-              Layout.preferredHeight: Math.round(scanningColumn.implicitHeight + Style.marginM * 2 + 1)
+              Layout.preferredHeight: scanningColumn.implicitHeight + Style.margin2M
 
               ColumnLayout {
                 id: scanningColumn
@@ -365,7 +365,7 @@ SmartPanel {
               id: emptyBox
               visible: panelViewMode === "wifi" && Settings.data.network.wifiEnabled && !NetworkService.scanning && Object.keys(NetworkService.networks).length === 0 && !NetworkService.scanning
               Layout.fillWidth: true
-              Layout.preferredHeight: Math.round(emptyColumn.implicitHeight + Style.marginM * 2 + 1)
+              Layout.preferredHeight: emptyColumn.implicitHeight + Style.margin2M
 
               ColumnLayout {
                 id: emptyColumn
@@ -474,7 +474,7 @@ SmartPanel {
               NBox {
                 visible: !(NetworkService.ethernetInterfaces && NetworkService.ethernetInterfaces.length > 0)
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.round(emptyEthColumn.implicitHeight + Style.marginM * 2 + 1)
+                Layout.preferredHeight: emptyEthColumn.implicitHeight + Style.margin2M
 
                 ColumnLayout {
                   id: emptyEthColumn
@@ -521,7 +521,7 @@ SmartPanel {
                     Layout.fillWidth: true
                     Layout.leftMargin: Style.marginXS
                     Layout.rightMargin: Style.marginXS
-                    implicitHeight: Math.round(ethItemColumn.implicitHeight + (Style.marginXL))
+                    implicitHeight: ethItemColumn.implicitHeight + Style.margin2M
                     radius: Style.radiusM
                     border.width: Style.borderS
                     border.color: modelData.connected ? Color.mPrimary : Color.mOutline
@@ -529,7 +529,7 @@ SmartPanel {
 
                     ColumnLayout {
                       id: ethItemColumn
-                      width: parent.width - (Style.marginXL)
+                      width: parent.width - Style.margin2M
                       x: Style.marginM
                       y: Style.marginM
                       spacing: Style.marginS
@@ -570,8 +570,8 @@ SmartPanel {
                               visible: modelData.connected
                               color: Color.mPrimary
                               radius: height * 0.5
-                              width: ethConnectedText.implicitWidth + (Style.marginS * 2)
-                              height: ethConnectedText.implicitHeight + (Style.marginXS)
+                              width: ethConnectedText.implicitWidth + Style.margin2S
+                              height: ethConnectedText.implicitHeight + (Style.margin2XXS)
 
                               NText {
                                 id: ethConnectedText
@@ -631,7 +631,7 @@ SmartPanel {
                         radius: Style.radiusS
                         border.width: Style.borderS
                         border.color: Color.mOutline
-                        implicitHeight: ethInfoGrid.implicitHeight + Style.marginS * 2
+                        implicitHeight: ethInfoGrid.implicitHeight + Style.margin2S
                         clip: true
                         Layout.topMargin: Style.marginXS
 

@@ -18,13 +18,13 @@ SmartPanel {
     anchors.fill: parent
 
     readonly property real contentPreferredWidth: Math.round((Settings.data.location.showWeekNumberInCalendar ? 440 : 420) * Style.uiScaleRatio)
-    readonly property real contentPreferredHeight: content.implicitHeight + (Style.marginL * 2)
+    readonly property real contentPreferredHeight: content.implicitHeight + Style.margin2L
 
     ColumnLayout {
       id: content
       x: Style.marginL
       y: Style.marginL
-      width: parent.width - (Style.marginL * 2)
+      width: parent.width - Style.margin2L
       spacing: Style.marginL
 
       // All clock panel cards

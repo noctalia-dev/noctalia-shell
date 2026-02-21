@@ -178,6 +178,8 @@ Singleton {
       property bool showCapsule: true
       property real capsuleOpacity: 1.0
       property string capsuleColorKey: "none"
+      property int widgetSpacing: 6
+      property real fontScale: 1.0
 
       // Bar background opacity settings
       property real backgroundOpacity: 0.93
@@ -202,6 +204,7 @@ Singleton {
       property string displayMode: "always_visible"
       property int autoHideDelay: 500 // ms before hiding after mouse leaves
       property int autoShowDelay: 150 // ms before showing when mouse enters
+      property bool showOnWorkspaceSwitch: true // show bar briefly on workspace switch
 
       // Widget configuration for modular bar system
       property JsonObject widgets
@@ -535,7 +538,6 @@ Singleton {
       property bool showLauncherIcon: false
       property string launcherPosition: "end" // "start", "end"
       property string launcherIconColor: "none"
-
       property bool pinnedStatic: false
       property bool inactiveIndicators: false
       property bool groupApps: false

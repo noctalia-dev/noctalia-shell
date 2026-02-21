@@ -257,7 +257,7 @@ ColumnLayout {
   NBox {
     visible: Settings.data.colorSchemes.useWallpaperColors
     Layout.fillWidth: true
-    implicitHeight: descriptionColumn.implicitHeight + Style.marginL * 2
+    implicitHeight: descriptionColumn.implicitHeight + Style.margin2L
     color: Color.mSurface
 
     Column {

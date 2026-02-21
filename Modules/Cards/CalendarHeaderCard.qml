@@ -10,9 +10,9 @@ import qs.Widgets
 Rectangle {
   id: root
   Layout.fillWidth: true
-  Layout.minimumHeight: (60 * Style.uiScaleRatio) + (Style.marginXL)
-  Layout.preferredHeight: (60 * Style.uiScaleRatio) + (Style.marginXL)
-  implicitHeight: (60 * Style.uiScaleRatio) + (Style.marginXL)
+  Layout.minimumHeight: (60 * Style.uiScaleRatio) + Style.margin2M
+  Layout.preferredHeight: (60 * Style.uiScaleRatio) + Style.margin2M
+  implicitHeight: (60 * Style.uiScaleRatio) + Style.margin2M
   radius: Style.radiusL
   color: Color.mPrimary
 
@@ -31,7 +31,7 @@ Rectangle {
     anchors.bottom: parent.bottom
     anchors.topMargin: Style.marginM
     anchors.bottomMargin: Style.marginM
-    anchors.rightMargin: clockLoader.width + (Style.marginXL * 2)
+    anchors.rightMargin: clockLoader.width + Style.margin2XL
     anchors.leftMargin: Style.marginXL
     spacing: 0
 
