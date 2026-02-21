@@ -179,6 +179,7 @@ Singleton {
       property real capsuleOpacity: 1.0
       property string capsuleColorKey: "none"
       property int widgetSpacing: 6
+      property real fontScale: 1.0
 
       // Bar background opacity settings
       property real backgroundOpacity: 0.93
@@ -537,7 +538,6 @@ Singleton {
       property bool showLauncherIcon: false
       property string launcherPosition: "end" // "start", "end"
       property string launcherIconColor: "none"
-
       property bool pinnedStatic: false
       property bool inactiveIndicators: false
       property bool groupApps: false
