@@ -210,10 +210,12 @@ Singleton {
 
     function invokeDefault(index: string): bool {
       var notif = root._getNotificationByIndex(index, "notifications invokeDefault");
-      if (!notif) return false;
+      if (!notif)
+        return false;
 
       var actions = JSON.parse(notif.actionsJson || "[]");
-      if (actions.length === 0) return false;
+      if (actions.length === 0)
+        return false;
 
       var actionId = actions.find(a => a.identifier === "default")?.identifier ?? actions[0].identifier;
       return NotificationService.invokeAction(notif.id, actionId);
@@ -221,7 +223,8 @@ Singleton {
 
     function invokeDefaultAndDismiss(index: string): bool {
       var notif = root._getNotificationByIndex(index, "notifications invokeDefaultAndDismiss");
-      if (!notif) return false;
+      if (!notif)
+        return false;
 
       var actions = JSON.parse(notif.actionsJson || "[]");
       if (actions.length === 0) {
@@ -245,7 +248,8 @@ Singleton {
 
     function getActions(index: string): string {
       var notif = root._getNotificationByIndex(index, "notifications getActions");
-      if (!notif) return "[]";
+      if (!notif)
+        return "[]";
       return notif.actionsJson || "[]";
     }
   }
