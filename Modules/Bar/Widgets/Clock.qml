@@ -48,7 +48,7 @@ Item {
   readonly property color textColor: Color.resolveColorKey(clockColor)
 
   // Content dimensions for implicit sizing
-  readonly property real contentWidth: isBarVertical ? capsuleHeight : Math.round((isBarVertical ? verticalLoader.implicitWidth : horizontalLoader.implicitWidth) + Style.marginXL)
+  readonly property real contentWidth: isBarVertical ? capsuleHeight : Math.round((isBarVertical ? verticalLoader.implicitWidth : horizontalLoader.implicitWidth) + Style.margin2M)
   readonly property real contentHeight: isBarVertical ? Math.round(verticalLoader.implicitHeight + Style.marginS * 2) : capsuleHeight
 
   // Size: use implicit width/height

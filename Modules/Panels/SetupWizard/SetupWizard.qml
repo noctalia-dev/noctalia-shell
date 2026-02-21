@@ -254,7 +254,7 @@ SmartPanel {
                 Rectangle {
                   Layout.fillWidth: true
                   Layout.topMargin: Style.marginL
-                  Layout.preferredHeight: childrenRect.height + Style.marginXL
+                  Layout.preferredHeight: childrenRect.height + Style.margin2M
                   color: Color.mSurfaceVariant
                   radius: Style.radiusL
 

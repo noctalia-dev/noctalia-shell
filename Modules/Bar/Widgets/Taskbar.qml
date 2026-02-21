@@ -68,7 +68,7 @@ Item {
     if (smartWidth && combinedModel.length > 0) {
       if (maxTaskbarWidth > 0) {
         var entriesCount = combinedModel.length;
-        var maxWidthPerEntry = (maxTaskbarWidth / entriesCount) - itemSize - Style.marginS - Style.marginXL;
+        var maxWidthPerEntry = (maxTaskbarWidth / entriesCount) - itemSize - Style.marginS - Style.margin2M;
         calculatedWidth = Math.min(calculatedWidth, maxWidthPerEntry);
       }
 
@@ -598,7 +598,7 @@ Item {
     if (isVerticalBar)
       return barHeight;
 
-    var calculatedWidth = showTitle ? taskbarLayout.implicitWidth : taskbarLayout.implicitWidth + Style.marginXL;
+    var calculatedWidth = showTitle ? taskbarLayout.implicitWidth : taskbarLayout.implicitWidth + Style.margin2M;
 
     // Apply maximum width constraint when smartWidth is enabled
     if (smartWidth && maxTaskbarWidth > 0) {
@@ -659,7 +659,7 @@ Item {
           readonly property color titleBgColor: (isHovered || isFocused) ? Color.mHover : Style.capsuleColor
           readonly property color titleFgColor: (isHovered || isFocused) ? Color.mOnHover : Color.mOnSurface
 
-          Layout.preferredWidth: root.isVerticalBar ? root.barHeight : (root.showTitle ? Math.round(contentWidth + Style.marginXL) : Math.round(contentWidth)) // Add margins for both pinned and running apps
+          Layout.preferredWidth: root.isVerticalBar ? root.barHeight : (root.showTitle ? Math.round(contentWidth + Style.margin2M) : Math.round(contentWidth)) // Add margins for both pinned and running apps
           Layout.preferredHeight: root.isVerticalBar ? root.itemSize : root.barHeight
           Layout.alignment: Qt.AlignCenter
 

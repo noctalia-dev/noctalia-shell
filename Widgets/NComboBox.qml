@@ -247,7 +247,7 @@ RowLayout {
     popup: Popup {
       y: combo.height + Style.marginS
       implicitWidth: combo.width
-      implicitHeight: Math.min(Math.round(root.popupHeight * Style.uiScaleRatio), listView.contentHeight + Style.marginXL)
+      implicitHeight: Math.min(Math.round(root.popupHeight * Style.uiScaleRatio), listView.contentHeight + Style.margin2M)
       padding: Style.marginM
 
       onOpened: {

@@ -10,9 +10,9 @@ import qs.Widgets
 Rectangle {
   id: root
   Layout.fillWidth: true
-  Layout.minimumHeight: (60 * Style.uiScaleRatio) + (Style.marginXL)
-  Layout.preferredHeight: (60 * Style.uiScaleRatio) + (Style.marginXL)
-  implicitHeight: (60 * Style.uiScaleRatio) + (Style.marginXL)
+  Layout.minimumHeight: (60 * Style.uiScaleRatio) + Style.margin2M
+  Layout.preferredHeight: (60 * Style.uiScaleRatio) + Style.margin2M
+  implicitHeight: (60 * Style.uiScaleRatio) + Style.margin2M
   radius: Style.radiusL
   color: Color.mPrimary
 

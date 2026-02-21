@@ -149,7 +149,7 @@ SmartPanel {
     readonly property var appStreams: AudioService.appStreams
 
     // Use implicitHeight from content + margins to avoid binding loops
-    property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
+    property real contentPreferredHeight: mainColumn.implicitHeight + Style.margin2L
 
     ColumnLayout {
       id: mainColumn
@@ -160,7 +160,7 @@ SmartPanel {
       // HEADER
       NBox {
         Layout.fillWidth: true
-        implicitHeight: header.implicitHeight + (Style.marginXL)
+        implicitHeight: header.implicitHeight + Style.margin2M
 
         ColumnLayout {
           id: header
@@ -238,7 +238,7 @@ SmartPanel {
             // Output Volume
             NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: outputVolumeColumn.implicitHeight + (Style.marginXL)
+              Layout.preferredHeight: outputVolumeColumn.implicitHeight + Style.margin2M
 
               ColumnLayout {
                 id: outputVolumeColumn
@@ -313,7 +313,7 @@ SmartPanel {
             // Input Volume
             NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: inputVolumeColumn.implicitHeight + (Style.marginXL)
+              Layout.preferredHeight: inputVolumeColumn.implicitHeight + Style.margin2M
 
               ColumnLayout {
                 id: inputVolumeColumn
@@ -398,7 +398,7 @@ SmartPanel {
                 id: appBox
                 required property PwNode modelData
                 Layout.fillWidth: true
-                Layout.preferredHeight: appRow.implicitHeight + (Style.marginXL)
+                Layout.preferredHeight: appRow.implicitHeight + Style.margin2M
                 visible: !isCaptureStream
 
                 // Track individual node to ensure properties are bound
@@ -698,7 +698,7 @@ SmartPanel {
 
             NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: outputColumn.implicitHeight + (Style.marginXL)
+              Layout.preferredHeight: outputColumn.implicitHeight + Style.margin2M
 
               ColumnLayout {
                 id: outputColumn
@@ -740,7 +740,7 @@ SmartPanel {
 
             NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: inputColumn.implicitHeight + (Style.marginXL)
+              Layout.preferredHeight: inputColumn.implicitHeight + Style.margin2M
 
               ColumnLayout {
                 id: inputColumn

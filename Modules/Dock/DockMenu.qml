@@ -61,8 +61,8 @@ PopupWindow {
     return listHeight(root.items);
   }
 
-  implicitWidth: menuContentWidth + (Style.marginXL)
-  implicitHeight: Math.min(menuBodyHeight + (Style.marginXL), menuMaxHeight)
+  implicitWidth: menuContentWidth + Style.margin2M
+  implicitHeight: Math.min(menuBodyHeight + Style.margin2M, menuMaxHeight)
   color: "transparent"
   visible: false
 

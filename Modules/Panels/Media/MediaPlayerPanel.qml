@@ -100,7 +100,7 @@ SmartPanel {
 
       NBox {
         Layout.fillWidth: true
-        Layout.preferredHeight: headerRow.implicitHeight + Style.marginXL
+        Layout.preferredHeight: headerRow.implicitHeight + Style.margin2M
 
         RowLayout {
           id: headerRow

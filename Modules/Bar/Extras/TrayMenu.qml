@@ -276,7 +276,7 @@ PopupWindow {
 
           NDivider {
             anchors.centerIn: parent
-            width: parent.width - (Style.marginXL)
+            width: parent.width - Style.margin2M
             visible: modelData?.isSeparator ?? false
           }
 

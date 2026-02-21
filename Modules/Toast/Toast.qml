@@ -23,7 +23,7 @@ Item {
   readonly property int shadowPadding: Style.shadowBlurMax + Style.marginL
 
   width: notificationWidth + shadowPadding * 2
-  height: Math.round(contentLayout.implicitHeight + Style.marginXL * 2 + shadowPadding * 2)
+  height: Math.round(contentLayout.implicitHeight + Style.margin2M * 2 + shadowPadding * 2)
   visible: true
   opacity: 0
   scale: initialScale
@@ -287,8 +287,8 @@ Item {
     anchors.fill: background
     anchors.topMargin: Style.marginM
     anchors.bottomMargin: Style.marginM
-    anchors.leftMargin: Style.marginXL
-    anchors.rightMargin: Style.marginXL
+    anchors.leftMargin: Style.margin2M
+    anchors.rightMargin: Style.margin2M
     spacing: Style.marginL
 
     // Icon

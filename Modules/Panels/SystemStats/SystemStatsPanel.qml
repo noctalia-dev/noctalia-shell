@@ -39,7 +39,7 @@ SmartPanel {
       // HEADER
       NBox {
         Layout.fillWidth: true
-        implicitHeight: headerRow.implicitHeight + (Style.marginXL)
+        implicitHeight: headerRow.implicitHeight + Style.margin2M
 
         RowLayout {
           id: headerRow
@@ -277,7 +277,7 @@ SmartPanel {
       // Detailed Stats section
       NBox {
         Layout.fillWidth: true
-        implicitHeight: detailsColumn.implicitHeight + Style.marginXL
+        implicitHeight: detailsColumn.implicitHeight + Style.margin2M
 
         ColumnLayout {
           id: detailsColumn

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
+import qs.Services.UI
 import qs.Widgets
 
 Rectangle {
@@ -25,7 +26,7 @@ Rectangle {
 
   // Sizing
   Layout.fillHeight: true
-  implicitWidth: contentLayout.implicitWidth + Style.marginXL
+  implicitWidth: contentLayout.implicitWidth + Style.margin2M
 
   topLeftRadius: isFirst ? Style.iRadiusM : Style.iRadiusXXXS
   bottomLeftRadius: isFirst ? Style.iRadiusM : Style.iRadiusXXXS

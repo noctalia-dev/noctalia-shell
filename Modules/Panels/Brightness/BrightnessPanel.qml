@@ -105,7 +105,7 @@ SmartPanel {
       // HEADER
       NBox {
         Layout.fillWidth: true
-        implicitHeight: headerRow.implicitHeight + (Style.marginXL)
+        implicitHeight: headerRow.implicitHeight + Style.margin2M
 
         RowLayout {
           id: headerRow
@@ -215,7 +215,7 @@ SmartPanel {
             model: Quickshell.screens || []
             delegate: NBox {
               Layout.fillWidth: true
-              Layout.preferredHeight: outputColumn.implicitHeight + (Style.marginXL)
+              Layout.preferredHeight: outputColumn.implicitHeight + Style.margin2M
 
               property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)
 

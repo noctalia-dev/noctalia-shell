@@ -203,8 +203,8 @@ ColumnLayout {
       model: Math.max(0, root.contributors.length - root.topContributorsCount)
 
       delegate: Rectangle {
-        width: nameText.implicitWidth + Style.marginXL
-        height: nameText.implicitHeight + Style.marginS * 2
+        width: nameText.implicitWidth + Style.margin2M
+        height: nameText.implicitHeight + Style.margin2S
         radius: Style.radiusS
         color: nameArea.containsMouse ? Color.mHover : "transparent"
         border.width: Style.borderS

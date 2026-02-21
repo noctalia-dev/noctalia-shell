@@ -12,7 +12,7 @@ import qs.Widgets
 NBox {
   id: root
   Layout.fillWidth: true
-  implicitHeight: calendarContent.implicitHeight + Style.marginXL
+  implicitHeight: calendarContent.implicitHeight + Style.margin2M
 
   // Internal state - independent from header
   readonly property var now: Time.now

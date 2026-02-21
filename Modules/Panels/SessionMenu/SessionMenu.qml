@@ -828,8 +828,8 @@ SmartPanel {
           anchors.left: countdownText.visible ? countdownText.right : parent.left
           anchors.leftMargin: countdownText.visible ? Style.marginXS : 0
           anchors.verticalCenter: parent.verticalCenter
-          width: Math.max(Style.marginXL, labelText.implicitWidth + Style.marginM)
-          height: Style.marginXL
+          width: labelText.implicitWidth + Style.margin2M
+          height: labelText.height + Style.margin2XS
           radius: Math.min(Style.radiusM, height / 2)
           color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mOnPrimary : Qt.alpha(Color.mSurfaceVariant, 0.5)
           border.width: Style.borderS
@@ -840,9 +840,8 @@ SmartPanel {
             id: labelText
             anchors.centerIn: parent
             text: buttonRoot.keybind
-            pointSize: Style.fontSizeS
-            font.weight: Style.fontWeightBold
-            color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mPrimary : Color.mOnSurface
+            pointSize: Style.fontSizeXS
+            color: (buttonRoot.isSelected || buttonRoot.effectiveHover) ? Color.mPrimary : Color.mOnSurfaceVariant
 
             Behavior on color {
               ColorAnimation {
@@ -1065,8 +1064,8 @@ SmartPanel {
       anchors.top: parent.top
       anchors.right: parent.right
       anchors.margins: Style.marginM
-      width: Math.max(Style.fontSizeM * 2, largeNumberText.implicitWidth + Style.marginM)
-      height: Style.fontSizeM * 2
+      width: largeNumberText.implicitWidth + Style.margin2M
+      height: largeNumberText.implicitHeight + Style.margin2XS
       radius: Math.min(Style.radiusM, height / 2)
       color: (largeButtonRoot.isSelected || largeButtonRoot.effectiveHover) ? Color.mOnPrimary : Qt.alpha(Color.mSurfaceVariant, 0.7)
       border.width: Style.borderS
@@ -1078,12 +1077,11 @@ SmartPanel {
         id: largeNumberText
         anchors.centerIn: parent
         text: largeButtonRoot.keybind
-        pointSize: Style.fontSizeM
-        font.weight: Style.fontWeightBold
+        pointSize: Style.fontSizeS
         color: {
           if (largeButtonRoot.isSelected || largeButtonRoot.effectiveHover)
             return Color.mPrimary;
-          return Color.mOnSurface;
+          return Color.mOnSurfaceVariant;
         }
 
         Behavior on color {

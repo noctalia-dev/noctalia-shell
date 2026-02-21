@@ -377,7 +377,7 @@ SmartPanel {
       NBox {
         id: headerBox
         Layout.fillWidth: true
-        implicitHeight: header.implicitHeight + Style.marginXL
+        implicitHeight: header.implicitHeight + Style.margin2M
 
         ColumnLayout {
           id: header
@@ -556,7 +556,7 @@ SmartPanel {
                     id: notificationDelegate
                     width: parent.width
                     visible: panelContent.isInCurrentRange(model.timestamp)
-                    height: visible && !isRemoving ? contentColumn.height + Style.marginXL : 0
+                    height: visible && !isRemoving ? contentColumn.height + Style.margin2M : 0
 
                     property int listIndex: index
                     property string notificationId: model.id
