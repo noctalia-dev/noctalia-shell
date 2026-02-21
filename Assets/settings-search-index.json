@@ -171,8 +171,8 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-font-scale-label",
-    "descriptionKey": "panels.bar.appearance-font-scale-description",
+    "labelKey": "panels.bar.appearance-background-opacity-label",
+    "descriptionKey": "panels.bar.appearance-background-opacity-description",
     "widget": "NValueSlider",
     "tab": 4,
     "tabLabel": "panels.bar.title",
@@ -180,8 +180,8 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-background-opacity-label",
-    "descriptionKey": "panels.bar.appearance-background-opacity-description",
+    "labelKey": "panels.bar.appearance-font-scale-label",
+    "descriptionKey": "panels.bar.appearance-font-scale-description",
     "widget": "NValueSlider",
     "tab": 4,
     "tabLabel": "panels.bar.title",

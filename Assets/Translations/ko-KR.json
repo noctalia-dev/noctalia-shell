@@ -908,10 +908,10 @@
       "bluetooth-rssi-polling-description": "bluetoothctl을 통해 연결된 장치의 RSSI를 주기적으로 샘플링합니다. 모든 장치에서 사용 가능하지 않을 수 있으며, 활성화 시 최소한의 리소스를 사용합니다.",
       "bluetooth-rssi-polling-interval-description": "연결된 장치의 신호 강도를 얼마나 자주 업데이트할지 구성합니다.",
       "bluetooth-rssi-polling-interval-label": "폴링 간격",
-      "bluetooth-rssi-polling-label": "Bluetooth 신호 폴링",
-      "disable-discoverability-description": "주변 Bluetooth 장치에서 장치를 숨깁니다.",
+      "bluetooth-rssi-polling-label": "블루투스 신호 폴링",
+      "disable-discoverability-description": "주변 블루투스 장치에서 장치를 숨깁니다.",
       "disable-discoverability-label": "장치 가시성 비활성화",
-      "hide-unnamed-devices-description": "Bluetooth 주소로만 표시되는 장치를 숨깁니다.",
+      "hide-unnamed-devices-description": "블루투스 주소로만 표시되는 장치를 숨깁니다.",
       "hide-unnamed-devices-label": "이름 없는 장치 숨기기",
       "pin-instructions": "기기에 표시된 PIN 코드를 입력해주세요.",
       "title": "연결"

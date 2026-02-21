@@ -800,7 +800,7 @@
       "appearance-floating-description": "Display the bar as a floating 'pill'.",
       "appearance-floating-label": "Floating bar",
       "appearance-font-scale-description": "Adjust the font size scale for text displayed in the bar.",
-      "appearance-font-scale-label": " Font Scale",
+      "appearance-font-scale-label": "Font scale",
       "appearance-frame-radius": "Inner Radius",
       "appearance-frame-settings-description": "Adjust frame thickness and inner corner radius",
       "appearance-frame-settings-label": "Frame Settings",
