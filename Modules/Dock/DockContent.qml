@@ -19,6 +19,7 @@ Item {
   required property int extraRight
   property alias dockContainer: dockContainer
   readonly property bool isStaticMode: Settings.data.dock.dockType === "static"
+  readonly property string tooltipDirection: dockRoot.dockPosition === "top" ? "bottom" : "top"
 
   Rectangle {
     id: dockContainer
@@ -288,7 +289,7 @@ Item {
 
               onEntered: {
                 dockRoot.anyAppHovered = true;
-                TooltipService.show(launcherButton, I18n.tr("actions.open-launcher"), "top");
+                TooltipService.show(launcherButton, I18n.tr("actions.open-launcher"), tooltipDirection);
                 if (dockRoot.autoHide) {
                   dockRoot.showTimer.stop();
                   dockRoot.hideTimer.stop();
@@ -664,7 +665,7 @@ Item {
                 const appName = appButton.appTitle || appButton.appId || "Unknown";
                 const tooltipText = appName.length > 40 ? appName.substring(0, 37) + "..." : appName;
                 if (!contextMenu.visible) {
-                  TooltipService.show(appButton, tooltipText, "top");
+                  TooltipService.show(appButton, tooltipText, tooltipDirection);
                 }
                 if (dockRoot.autoHide) {
                   dockRoot.showTimer.stop();

@@ -94,6 +94,11 @@ Loader {
       // Bar detection and positioning properties
       readonly property bool hasBar: modelData && modelData.name ? (Settings.data.bar.monitors.includes(modelData.name) || (Settings.data.bar.monitors.length === 0)) : false
       readonly property bool barAtSameEdge: hasBar && Settings.getBarPositionForScreen(modelData?.name) === dockPosition
+      readonly property string barPosition: Settings.getBarPositionForScreen(modelData?.name)
+      readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
+      readonly property bool barIsFramed: Settings.data.bar.barType === "framed" && hasBar
+      readonly property real barMarginH: Settings.data.bar.floating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
+      readonly property real barMarginV: Settings.data.bar.floating ? Math.ceil(Settings.data.bar.marginVertical) : 0
       readonly property int barHeight: Style.getBarHeightForScreen(modelData?.name)
       readonly property int peekEdgeLength: {
         const edgeSize = isVertical ? Math.round(modelData?.height || maxHeight) : Math.round(modelData?.width || maxWidth);
@@ -104,12 +109,34 @@ Loader {
         if (isVertical)
           return 0;
         const edgeSize = Math.round(modelData?.width || maxWidth);
+        if (barIsVertical) {
+          if (barPosition === "left") {
+            const availableStart = (barIsFramed ? 0 : barMarginH) + barHeight;
+            const availableWidth = edgeSize - availableStart - (barIsFramed ? Settings.data.bar.frameThickness : 0);
+            return Math.max(0, Math.round(availableStart + (availableWidth - peekEdgeLength) / 2));
+          }
+          if (barPosition === "right") {
+            const availableWidth = edgeSize - (barIsFramed ? 0 : barMarginH) - barHeight - (barIsFramed ? Settings.data.bar.frameThickness : 0);
+            return Math.max(0, Math.round((barIsFramed ? Settings.data.bar.frameThickness : 0) + (availableWidth - peekEdgeLength) / 2));
+          }
+        }
         return Math.max(0, Math.round((edgeSize - peekEdgeLength) / 2));
       }
       readonly property int peekCenterOffsetY: {
         if (!isVertical)
           return 0;
         const edgeSize = Math.round(modelData?.height || maxHeight);
+        if (!barIsVertical) {
+          if (barPosition === "top") {
+            const availableStart = (barIsFramed ? 0 : barMarginV) + barHeight;
+            const availableHeight = edgeSize - availableStart - (barIsFramed ? Settings.data.bar.frameThickness : 0);
+            return Math.max(0, Math.round(availableStart + (availableHeight - peekEdgeLength) / 2));
+          }
+          if (barPosition === "bottom") {
+            const availableHeight = edgeSize - (barIsFramed ? 0 : barMarginV) - barHeight - (barIsFramed ? Settings.data.bar.frameThickness : 0);
+            return Math.max(0, Math.round((barIsFramed ? Settings.data.bar.frameThickness : 0) + (availableHeight - peekEdgeLength) / 2));
+          }
+        }
         return Math.max(0, Math.round((edgeSize - peekEdgeLength) / 2));
       }
       readonly property bool showFrameIndicator: {
@@ -648,9 +675,7 @@ Loader {
           implicitWidth: isVertical ? ((showFrameIndicator || barAtSameEdge) ? indicatorThickness : peekHeight) : peekEdgeLength
 
           Rectangle {
-            anchors.centerIn: parent
-            width: isVertical ? indicatorThickness : frameIndicatorLength
-            height: isVertical ? frameIndicatorLength : indicatorThickness
+            anchors.fill: parent
             radius: indicatorThickness
             color: Qt.alpha(Color.mPrimary, 0.6)
             opacity: showFrameIndicator && frameIndicatorLength > 0 ? 1 : 0

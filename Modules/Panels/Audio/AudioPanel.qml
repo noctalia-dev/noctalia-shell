@@ -287,7 +287,7 @@ SmartPanel {
                   }
 
                   NText {
-                    text: Math.round(localOutputVolume * 100) + "%"
+                    text: Math.round((localOutputVolumeChanging ? localOutputVolume : AudioService.volume) * 100) + "%"
                     pointSize: Style.fontSizeM
                     family: Settings.data.ui.fontFixed
                     color: Color.mOnSurface
@@ -362,7 +362,7 @@ SmartPanel {
                   }
 
                   NText {
-                    text: Math.round(localInputVolume * 100) + "%"
+                    text: Math.round((localInputVolumeChanging ? localInputVolume : AudioService.inputVolume) * 100) + "%"
                     pointSize: Style.fontSizeM
                     family: Settings.data.ui.fontFixed
                     color: Color.mOnSurface
