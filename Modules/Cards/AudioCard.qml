@@ -155,11 +155,7 @@ NBox {
           colorBg: "transparent"
           colorBgHover: Color.mHover
           colorFgHover: Color.mOnHover
-          onClicked: {
-            if (AudioService.sink && AudioService.sink.audio) {
-              AudioService.sink.audio.muted = !AudioService.muted;
-            }
-          }
+          onClicked: AudioService.setOutputMuted(!AudioService.muted)
         }
 
         NText {

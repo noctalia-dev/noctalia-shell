@@ -67,11 +67,7 @@ ColumnLayout {
       label: I18n.tr("panels.audio.volumes-mute-output-label")
       description: I18n.tr("panels.audio.volumes-mute-output-description")
       checked: AudioService.muted
-      onToggled: checked => {
-                   if (AudioService.sink && AudioService.sink.audio) {
-                     AudioService.sink.audio.muted = checked;
-                   }
-                 }
+      onToggled: checked => AudioService.setOutputMuted(checked)
     }
   }
 
