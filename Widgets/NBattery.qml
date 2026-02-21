@@ -38,7 +38,20 @@ Item {
 
   // Internal sizing calculations based on baseSize
   readonly property real scaleFactor: baseSize / Style.fontSizeM
-  readonly property real bodyWidth: Style.toOdd(22 * scaleFactor)
+  readonly property real bodyWidth: {
+    const min = Style.toOdd(22 * scaleFactor);
+    if (!showPercentageText) {
+      return min;
+    }
+
+    // increase length when showing 100%
+    if (percentage > 99) {
+      const max = Style.toOdd(30 * scaleFactor);
+      return max;
+    }
+    return min;
+  }
+
   readonly property real bodyHeight: Style.toOdd(14 * scaleFactor)
   readonly property real terminalWidth: Math.round(2.5 * scaleFactor)
   readonly property real terminalHeight: Math.round(7 * scaleFactor)
