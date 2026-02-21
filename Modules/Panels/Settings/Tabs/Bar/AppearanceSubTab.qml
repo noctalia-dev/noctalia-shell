@@ -127,20 +127,6 @@ ColumnLayout {
 
   NValueSlider {
     Layout.fillWidth: true
-    label: I18n.tr("panels.bar.appearance-font-scale-label")
-    description: I18n.tr("panels.bar.appearance-font-scale-description")
-    from: 0.5
-    to: 2.0
-    stepSize: 0.01
-    showReset: true
-    value: Settings.data.bar.fontScale
-    defaultValue: Settings.getDefaultValue("bar.fontScale")
-    onMoved: value => Settings.data.bar.fontScale = value
-    text: Math.floor(Settings.data.bar.fontScale * 100) + "%"
-  }
-
-  NValueSlider {
-    Layout.fillWidth: true
     visible: Settings.data.bar.useSeparateOpacity
     label: I18n.tr("panels.bar.appearance-background-opacity-label")
     description: I18n.tr("panels.bar.appearance-background-opacity-description")
@@ -152,6 +138,20 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("bar.backgroundOpacity")
     onMoved: value => Settings.data.bar.backgroundOpacity = value
     text: Math.floor(Settings.data.bar.backgroundOpacity * 100) + "%"
+  }
+
+  NValueSlider {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.appearance-font-scale-label")
+    description: I18n.tr("panels.bar.appearance-font-scale-description")
+    from: 0.5
+    to: 2.0
+    stepSize: 0.01
+    showReset: true
+    value: Settings.data.bar.fontScale
+    defaultValue: Settings.getDefaultValue("bar.fontScale")
+    onMoved: value => Settings.data.bar.fontScale = value
+    text: Math.floor(Settings.data.bar.fontScale * 100) + "%"
   }
 
   NValueSlider {
