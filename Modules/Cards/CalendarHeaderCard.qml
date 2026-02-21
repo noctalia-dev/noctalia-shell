@@ -31,7 +31,7 @@ Rectangle {
     anchors.bottom: parent.bottom
     anchors.topMargin: Style.marginM
     anchors.bottomMargin: Style.marginM
-    anchors.rightMargin: clockLoader.width + (Style.marginXL * 2)
+    anchors.rightMargin: clockLoader.width + Style.margin2XL
     anchors.leftMargin: Style.marginXL
     spacing: 0
 

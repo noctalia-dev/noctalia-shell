@@ -33,7 +33,7 @@ PopupWindow {
   signal triggered(string action, var item)
 
   implicitWidth: calculatedWidth
-  implicitHeight: Math.min(600, flickable.contentHeight + (Style.marginS * 2))
+  implicitHeight: Math.min(600, flickable.contentHeight + Style.margin2S)
   visible: false
   color: "transparent"
 
@@ -82,7 +82,7 @@ PopupWindow {
         }
       }
     }
-    calculatedWidth = Math.max(maxWidth + (Style.marginS * 2), minWidth);
+    calculatedWidth = Math.max(maxWidth + Style.margin2S, minWidth);
   }
 
   anchor.item: anchorItem

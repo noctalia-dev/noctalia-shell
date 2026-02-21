@@ -159,7 +159,7 @@ ColumnLayout {
     border.width: Style.borderS
 
     // Dynamic height based on content
-    Layout.preferredHeight: expanded ? contentLayout.implicitHeight + (Style.marginL * 2) : 0
+    Layout.preferredHeight: expanded ? contentLayout.implicitHeight + Style.margin2L : 0
 
     // Smooth height animation
     Behavior on Layout.preferredHeight {

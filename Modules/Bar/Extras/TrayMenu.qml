@@ -46,7 +46,7 @@ PopupWindow {
   implicitWidth: menuWidth
 
   // Use the content height of the Flickable for implicit height
-  implicitHeight: Math.min(screen?.height * 0.9, flickable.contentHeight + (Style.marginS * 2))
+  implicitHeight: Math.min(screen?.height * 0.9, flickable.contentHeight + Style.margin2S)
 
   // When implicitHeight changes (menu content loads), force anchor recalculation
   onImplicitHeightChanged: {
@@ -267,7 +267,7 @@ PopupWindow {
             } else {
               // Calculate based on text content
               const textHeight = text.contentHeight || (Style.fontSizeS * 1.2);
-              return Math.max(28, textHeight + (Style.marginS * 2));
+              return Math.max(28, textHeight + Style.margin2S);
             }
           }
 

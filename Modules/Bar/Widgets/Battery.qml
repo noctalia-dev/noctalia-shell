@@ -153,8 +153,8 @@ Item {
     id: capsule
     visible: root.useGraphicMode
     anchors.centerIn: nBattery
-    width: root.isBarVertical ? root.capsuleHeight : nBattery.width + Style.marginS * 2
-    height: root.isBarVertical ? nBattery.height + Style.marginS * 2 : root.capsuleHeight
+    width: root.isBarVertical ? root.capsuleHeight : nBattery.width + Style.margin2S
+    height: root.isBarVertical ? nBattery.height + Style.margin2S : root.capsuleHeight
     radius: Math.min(Style.radiusL, width / 2)
     color: graphicMouseArea.containsMouse ? Color.mHover : Style.capsuleColor
     border.color: Style.capsuleBorderColor

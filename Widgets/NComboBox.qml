@@ -268,7 +268,7 @@ RowLayout {
           property bool isHighlighted: listView.currentIndex === index
 
           width: listView.availableWidth
-          height: delegateText.implicitHeight + Style.marginS * 2
+          height: delegateText.implicitHeight + Style.margin2S
           radius: Style.iRadiusS
           color: isHighlighted ? Color.mHover : "transparent"
 

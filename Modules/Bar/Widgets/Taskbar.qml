@@ -607,7 +607,7 @@ Item {
 
     return Math.round(calculatedWidth);
   }
-  readonly property real contentHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.marginS * 2) : capsuleHeight) : 0
+  readonly property real contentHeight: visible ? (isVerticalBar ? Math.round(taskbarLayout.implicitHeight + Style.margin2S) : capsuleHeight) : 0
 
   implicitWidth: contentWidth
   implicitHeight: contentHeight

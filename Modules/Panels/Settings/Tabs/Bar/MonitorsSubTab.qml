@@ -28,7 +28,7 @@ ColumnLayout {
     delegate: NBox {
       id: monitorCard
       Layout.fillWidth: true
-      implicitHeight: cardContent.implicitHeight + Style.marginL * 2
+      implicitHeight: cardContent.implicitHeight + Style.margin2L
       color: Color.mSurface
 
       required property var modelData

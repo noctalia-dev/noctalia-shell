@@ -46,7 +46,7 @@ SmartPanel {
 
   // Panel sizing
   readonly property int listPanelWidth: Math.round(500 * Style.uiScaleRatio)
-  readonly property int totalBaseWidth: listPanelWidth + (Style.marginL * 2)
+  readonly property int totalBaseWidth: listPanelWidth + Style.margin2L
 
   preferredWidth: totalBaseWidth
   preferredHeight: Math.round(600 * Style.uiScaleRatio)

@@ -34,7 +34,7 @@ SmartPanel {
     var buttonSpacing = Style.marginS;
     var enabledCount = powerOptions.length;
 
-    var headerSpacing = Settings.data.sessionMenu.showHeader ? (Style.marginL * 2) : 0;
+    var headerSpacing = Settings.data.sessionMenu.showHeader ? Style.margin2L : 0;
     var baseHeight = (Style.marginL * 4) + headerHeight + dividerHeight + headerSpacing;
     var buttonsHeight = enabledCount > 0 ? (buttonHeight * enabledCount) + (buttonSpacing * (enabledCount - 1)) : 0;
 
@@ -567,8 +567,8 @@ SmartPanel {
       anchors.bottom: largeButtonsContainer.top
       anchors.horizontalCenter: largeButtonsContainer.horizontalCenter
       anchors.bottomMargin: Style.marginM
-      width: timerText.width + Style.marginXL * 2
-      height: timerText.height + Style.marginL * 2
+      width: timerText.width + Style.margin2XL
+      height: timerText.height + Style.margin2L
       radius: Style.radiusM
       color: Qt.alpha(Color.mSurface, Settings.data.ui.panelBackgroundOpacity)
       border.color: Color.mOutline

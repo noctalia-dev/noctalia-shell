@@ -18,7 +18,7 @@ SmartPanel {
 
   panelContent: Item {
     id: panelContent
-    property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
+    property real contentPreferredHeight: mainColumn.implicitHeight + Style.margin2L
 
     property var brightnessWidgetInstance: BarService.lookupWidget("Brightness", screen ? screen.name : null)
     readonly property var brightnessWidgetSettings: brightnessWidgetInstance ? brightnessWidgetInstance.widgetSettings : null

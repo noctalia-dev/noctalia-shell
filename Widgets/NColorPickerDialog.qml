@@ -134,7 +134,7 @@ Popup {
     // Main Box
     NBox {
       Layout.fillWidth: true
-      Layout.preferredHeight: controlsOutterColumn.implicitHeight + Style.marginL * 2
+      Layout.preferredHeight: controlsOutterColumn.implicitHeight + Style.margin2L
 
       ButtonGroup {
         id: colorValues

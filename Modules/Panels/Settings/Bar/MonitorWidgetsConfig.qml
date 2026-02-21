@@ -20,7 +20,7 @@ NBox {
 
   color: Color.mSurfaceVariant
   Layout.fillWidth: true
-  implicitHeight: content.implicitHeight + Style.marginL * 2
+  implicitHeight: content.implicitHeight + Style.margin2L
 
   // Helper to get widgets for this screen (ensures override exists)
   function _getWidgetsContainer() {

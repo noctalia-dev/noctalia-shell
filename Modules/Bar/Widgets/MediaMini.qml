@@ -127,7 +127,7 @@ Item {
       iconWidth = artSize;
     }
 
-    var margins = isVertical ? 0 : (Style.marginS * 2);
+    var margins = isVertical ? 0 : Style.margin2S;
 
     // Add spacing and text width
     var textWidth = 0;

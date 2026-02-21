@@ -103,7 +103,7 @@ SmartPanel {
   panelContent: Rectangle {
     color: "transparent"
 
-    property real contentPreferredHeight: Math.min(root.preferredHeight, mainColumn.implicitHeight + Style.marginL * 2)
+    property real contentPreferredHeight: Math.min(root.preferredHeight, mainColumn.implicitHeight + Style.margin2L)
 
     ColumnLayout {
       id: mainColumn
@@ -570,7 +570,7 @@ SmartPanel {
                               visible: modelData.connected
                               color: Color.mPrimary
                               radius: height * 0.5
-                              width: ethConnectedText.implicitWidth + (Style.marginS * 2)
+                              width: ethConnectedText.implicitWidth + Style.margin2S
                               height: ethConnectedText.implicitHeight + (Style.margin2XXS)
 
                               NText {
@@ -631,7 +631,7 @@ SmartPanel {
                         radius: Style.radiusS
                         border.width: Style.borderS
                         border.color: Color.mOutline
-                        implicitHeight: ethInfoGrid.implicitHeight + Style.marginS * 2
+                        implicitHeight: ethInfoGrid.implicitHeight + Style.margin2S
                         clip: true
                         Layout.topMargin: Style.marginXS
 

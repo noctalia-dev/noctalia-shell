@@ -93,7 +93,7 @@ Item {
   function calculateContentWidth() {
     // Calculate the actual content width based on visible elements
     var contentWidth = 0;
-    var margins = Style.marginS * 2; // Left and right margins
+    var margins = Style.margin2S; // Left and right margins
 
     // Icon width (if visible)
     if (showIcon) {

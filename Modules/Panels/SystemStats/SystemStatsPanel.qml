@@ -18,7 +18,7 @@ SmartPanel {
 
   panelContent: Item {
     id: panelContent
-    property real contentPreferredHeight: mainColumn.implicitHeight + Style.marginL * 2
+    property real contentPreferredHeight: mainColumn.implicitHeight + Style.margin2L
     readonly property real cardHeight: 90 * Style.uiScaleRatio
 
     // Get diskPath from bar's SystemMonitor widget if available, otherwise use "/"

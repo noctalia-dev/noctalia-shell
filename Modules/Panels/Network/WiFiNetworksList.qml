@@ -154,7 +154,7 @@ NBox {
                   visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
                   color: NetworkService.internetConnectivity ? Color.mPrimary : Color.mError
                   radius: height * 0.5
-                  width: Math.round(connectedText.implicitWidth + Style.marginS * 2)
+                  width: Math.round(connectedText.implicitWidth + Style.margin2S)
                   height: Math.round(connectedText.implicitHeight + Style.margin2XXS)
 
                   NText {
@@ -184,7 +184,7 @@ NBox {
                   visible: NetworkService.disconnectingFrom === modelData.ssid
                   color: Color.mError
                   radius: height * 0.5
-                  width: Math.round(disconnectingText.implicitWidth + Style.marginS * 2)
+                  width: Math.round(disconnectingText.implicitWidth + Style.margin2S)
                   height: Math.round(disconnectingText.implicitHeight + Style.margin2XXS)
 
                   NText {
@@ -200,7 +200,7 @@ NBox {
                   visible: NetworkService.forgettingNetwork === modelData.ssid
                   color: Color.mError
                   radius: height * 0.5
-                  width: Math.round(forgettingText.implicitWidth + Style.marginS * 2)
+                  width: Math.round(forgettingText.implicitWidth + Style.margin2S)
                   height: math.round(forgettingText.implicitHeight + Style.margin2XXS)
 
                   NText {
@@ -218,7 +218,7 @@ NBox {
                   border.color: Color.mOutline
                   border.width: Style.borderS
                   radius: height * 0.5
-                  width: savedText.implicitWidth + (Style.marginS * 2)
+                  width: savedText.implicitWidth + Style.margin2S
                   height: savedText.implicitHeight + (Style.margin2XXS)
 
                   NText {
@@ -307,7 +307,7 @@ NBox {
             radius: Style.radiusS
             border.width: Style.borderS
             border.color: Color.mOutline
-            implicitHeight: infoGrid.implicitHeight + Style.marginS * 2
+            implicitHeight: infoGrid.implicitHeight + Style.margin2S
             clip: true
             onVisibleChanged: {
               if (visible && infoGrid && infoGrid.forceLayout) {
@@ -587,7 +587,7 @@ NBox {
           Rectangle {
             visible: root.passwordSsid === modelData.ssid && NetworkService.disconnectingFrom !== modelData.ssid && NetworkService.forgettingNetwork !== modelData.ssid
             Layout.fillWidth: true
-            height: passwordRow.implicitHeight + Style.marginS * 2
+            height: passwordRow.implicitHeight + Style.margin2S
             color: Color.mSurfaceVariant
             border.color: Color.mOutline
             border.width: Style.borderS
@@ -660,7 +660,7 @@ NBox {
           Rectangle {
             visible: root.expandedSsid === modelData.ssid && NetworkService.disconnectingFrom !== modelData.ssid && NetworkService.forgettingNetwork !== modelData.ssid
             Layout.fillWidth: true
-            height: forgetRow.implicitHeight + Style.marginS * 2
+            height: forgetRow.implicitHeight + Style.margin2S
             color: Color.mSurfaceVariant
             radius: Style.radiusS
             border.width: Style.borderS

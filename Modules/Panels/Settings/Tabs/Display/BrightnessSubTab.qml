@@ -19,7 +19,7 @@ ColumnLayout {
       model: Quickshell.screens || []
       delegate: NBox {
         Layout.fillWidth: true
-        implicitHeight: Math.round(contentCol.implicitHeight + Style.marginL * 2)
+        implicitHeight: Math.round(contentCol.implicitHeight + Style.margin2L)
         color: Color.mSurface
 
         property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)

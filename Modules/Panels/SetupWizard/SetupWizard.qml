@@ -260,7 +260,7 @@ SmartPanel {
 
                   NText {
                     anchors.centerIn: parent
-                    width: parent.width - Style.marginL * 2
+                    width: parent.width - Style.margin2L
                     text: root.telemetryOnlyMode ? I18n.tr("setup.telemetry-wizard-note") : I18n.tr("setup.welcome-note")
                     pointSize: Style.fontSizeM
                     color: Color.mOnSurfaceVariant

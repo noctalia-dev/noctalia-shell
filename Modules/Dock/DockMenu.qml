@@ -84,7 +84,7 @@ PopupWindow {
         const item = root.items[i];
         if (item && item.text) {
           // Calculate width: margins + icon (if present) + spacing + text width
-          let itemWidth = Style.marginS * 2; // left and right margins
+          let itemWidth = Style.margin2S; // left and right margins
 
           if (item.icon && item.icon !== "") {
             itemWidth += Style.fontSizeL + Style.marginS; // icon + spacing

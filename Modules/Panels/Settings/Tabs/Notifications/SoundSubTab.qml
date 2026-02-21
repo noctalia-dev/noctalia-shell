@@ -20,7 +20,7 @@ ColumnLayout {
   NBox {
     Layout.fillWidth: true
     visible: !SoundService.multimediaAvailable
-    implicitHeight: unavailableContent.implicitHeight + Style.marginL * 2
+    implicitHeight: unavailableContent.implicitHeight + Style.margin2L
 
     RowLayout {
       id: unavailableContent

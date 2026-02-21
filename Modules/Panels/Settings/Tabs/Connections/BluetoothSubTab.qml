@@ -144,7 +144,7 @@ Item {
     NBox {
       visible: !root.showOnlyLists
       Layout.fillWidth: true
-      Layout.preferredHeight: masterControlCol.implicitHeight + (Style.marginL * 2)
+      Layout.preferredHeight: masterControlCol.implicitHeight + Style.margin2L
       color: Color.mSurface
 
       ColumnLayout {
@@ -304,7 +304,7 @@ Item {
       id: miscSettingsBox
       visible: !root.showOnlyLists && BluetoothService.enabled
       Layout.fillWidth: true
-      Layout.preferredHeight: miscSettingsCol.implicitHeight + (Style.marginXL * 2)
+      Layout.preferredHeight: miscSettingsCol.implicitHeight + Style.margin2XL
       color: Color.mSurface
 
       ColumnLayout {
@@ -517,7 +517,7 @@ Item {
         Rectangle {
           visible: device.isExpanded
           Layout.fillWidth: true
-          implicitHeight: infoColumn.implicitHeight + Style.marginS * 2
+          implicitHeight: infoColumn.implicitHeight + Style.margin2S
           radius: Style.radiusS
           color: Color.mSurfaceVariant
           border.width: Style.borderS
@@ -644,7 +644,7 @@ Item {
     visible: !root.showOnlyLists && BluetoothService.pinRequired
     anchors.centerIn: parent
     width: Math.min(parent.width * 0.9, 400)
-    height: pinCol.implicitHeight + Style.marginL * 2
+    height: pinCol.implicitHeight + Style.margin2L
     color: Color.mSurface
     radius: Style.radiusM
     border.color: Style.boxBorderColor

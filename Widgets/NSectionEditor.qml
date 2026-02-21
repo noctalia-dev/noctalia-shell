@@ -160,7 +160,7 @@ NBox {
 
   Layout.minimumHeight: {
     // header + minimal content area
-    var absoluteMin = (Style.marginL * 2) + (Style.fontSizeL * 2) + Style.marginM + (65 * Style.uiScaleRatio);
+    var absoluteMin = Style.margin2L + (Style.fontSizeL * 2) + Style.marginM + (65 * Style.uiScaleRatio);
 
     var widgetCount = widgetModel.length;
     if (widgetCount === 0) {
@@ -169,7 +169,7 @@ NBox {
 
     // Calculate rows based on grid layout
     // Use actual parent width if available, otherwise estimate
-    var availableWidth = (parent && parent.width > 0) ? (parent.width - (Style.marginL * 2)) : 400;
+    var availableWidth = (parent && parent.width > 0) ? (parent.width - Style.margin2L) : 400;
     var rows = Math.ceil(widgetCount / root.gridColumns);
 
     // Calculate widget width for height calculation
@@ -183,7 +183,7 @@ NBox {
     var gridBottomMargin = Style.marginL;
     var widgetAreaHeight = gridTopMargin + (rows * widgetItemHeight) + ((rows - 1) * Style.marginL) + gridBottomMargin;
 
-    return Math.max(absoluteMin, (Style.marginL * 2) + headerHeight + Style.marginM + widgetAreaHeight);
+    return Math.max(absoluteMin, Style.margin2L + headerHeight + Style.marginM + widgetAreaHeight);
   }
 
   // Generate widget color from name checksum
@@ -404,7 +404,7 @@ NBox {
         var calculatedHeight = gridTopMargin + (rows * root.widgetItemHeight) + ((rows - 1) * Style.marginS) + gridBottomMargin;
         return calculatedHeight;
       }
-      Layout.minimumHeight: widgetModel.length === 0 ? (65 * Style.uiScaleRatio) : ((Style.marginS * 2) + root.widgetItemHeight)
+      Layout.minimumHeight: widgetModel.length === 0 ? (65 * Style.uiScaleRatio) : (Style.margin2S + root.widgetItemHeight)
       clip: !flowDragArea.dragStarted
 
       Rectangle {

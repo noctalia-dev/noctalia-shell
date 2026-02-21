@@ -371,8 +371,8 @@ Item {
             const overlayPos = widget.mapToItem(tabContentArea, 0, 0);
             highlightOverlay.x = overlayPos.x - Style.marginM;
             highlightOverlay.y = overlayPos.y - Style.marginM;
-            highlightOverlay.width = widget.width + Style.marginM * 2;
-            highlightOverlay.height = widget.height + Style.marginM * 2;
+            highlightOverlay.width = widget.width + Style.margin2M;
+            highlightOverlay.height = widget.height + Style.margin2M;
             highlightAnimation.restart();
           });
         }
@@ -762,11 +762,11 @@ Item {
           Item {
             id: toggleContainer
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.round(toggleRow.implicitHeight + Style.marginS * 2)
+            Layout.preferredHeight: Math.round(toggleRow.implicitHeight + Style.margin2S)
 
             Rectangle {
               id: sidebarToggle
-              width: Math.round(toggleRow.implicitWidth + Style.marginS * 2)
+              width: Math.round(toggleRow.implicitWidth + Style.margin2S)
               height: parent.height
               anchors.left: parent.left
               radius: Style.radiusS
@@ -817,7 +817,7 @@ Item {
           Item {
             id: searchContainerWrapper
             Layout.fillWidth: true
-            Layout.preferredHeight: searchInput.implicitHeight > 0 ? searchInput.implicitHeight : (Style.fontSizeXL + Style.marginM * 2)
+            Layout.preferredHeight: searchInput.implicitHeight > 0 ? searchInput.implicitHeight : (Style.fontSizeXL + Style.margin2M)
 
             // Search input
             NTextInput {
@@ -850,7 +850,7 @@ Item {
               anchors.left: parent.left
               anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
-              height: Math.round(searchCollapsedRow.implicitHeight + Style.marginS * 2)
+              height: Math.round(searchCollapsedRow.implicitHeight + Style.margin2S)
               visible: opacity > 0
               opacity: !root.sidebarExpanded ? 1.0 : 0.0
 
@@ -863,7 +863,7 @@ Item {
 
               Rectangle {
                 id: searchCollapsedButton
-                width: Math.round(searchCollapsedRow.implicitWidth + Style.marginS * 2)
+                width: Math.round(searchCollapsedRow.implicitWidth + Style.margin2S)
                 height: parent.height
                 anchors.left: parent.left
                 radius: Style.radiusS
@@ -950,7 +950,7 @@ Item {
               delegate: Rectangle {
                 id: resultItem
                 width: searchResultsList.width - (searchResultsList.verticalScrollBarActive ? Style.marginM : 0)
-                height: resultColumn.implicitHeight + Style.marginM * 2
+                height: resultColumn.implicitHeight + Style.margin2M
                 radius: Style.iRadiusS
                 readonly property bool selected: index === root.searchSelectedIndex
                 readonly property bool effectiveHover: !root.ignoreMouseHover && resultMouseArea.containsMouse
@@ -1032,7 +1032,7 @@ Item {
               delegate: Rectangle {
                 id: tabItem
                 width: sidebarList.width
-                height: tabEntryRow.implicitHeight + Style.marginS * 2
+                height: tabEntryRow.implicitHeight + Style.margin2S
                 radius: Style.iRadiusS
                 color: selected ? Color.mPrimary : (tabItem.hovering ? Color.mHover : "transparent")
                 readonly property bool selected: index === root.currentTabIndex
