@@ -77,7 +77,7 @@ Loader {
           Loader {
             anchors.fill: parent
             active: true
-            sourceComponent: (Settings.data.general.lockScreenMonitors.length === 0 || Settings.data.general.lockScreenMonitors.includes(lockSurface.screen.name)) ? fullLockScreenComponent : blackScreenComponent
+            sourceComponent: (Settings.data.general.lockScreenMonitors.length === 0 || (lockSurface.screen && Settings.data.general.lockScreenMonitors.includes(lockSurface.screen.name))) ? fullLockScreenComponent : blackScreenComponent
           }
 
           Component {
