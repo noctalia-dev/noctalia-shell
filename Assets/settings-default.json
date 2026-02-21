@@ -105,6 +105,8 @@
     "lockScreenMonitors": [],
     "lockScreenBlur": 0,
     "lockScreenTint": 0,
+    "lockScreenExcludedMonitorMode": "color",
+    "lockScreenExcludedMonitorColor": "#000000",
     "keybinds": {
       "keyUp": [
         "Up"

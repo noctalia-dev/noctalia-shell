@@ -77,7 +77,17 @@ Loader {
           Loader {
             anchors.fill: parent
             active: true
-            sourceComponent: (Settings.data.general.lockScreenMonitors.length === 0 || (lockSurface.screen && Settings.data.general.lockScreenMonitors.includes(lockSurface.screen.name))) ? fullLockScreenComponent : blackScreenComponent
+            sourceComponent: {
+              const isLockScreenEnabled = Settings.data.general.lockScreenMonitors.length === 0
+                                       || (lockSurface.screen && Settings.data.general.lockScreenMonitors.includes(lockSurface.screen.name));
+              if (isLockScreenEnabled)
+                return fullLockScreenComponent;
+
+              const mode = Settings.data.general.lockScreenExcludedMonitorMode;
+              if (mode === "background")
+                return backgroundModeScreenComponent;
+              return colorModeScreenComponent;
+            }
           }
 
           Component {
@@ -304,11 +314,19 @@ Loader {
           }
 
           Component {
-            id: blackScreenComponent
+            id: backgroundModeScreenComponent
+
+            LockScreenBackground {
+              screen: lockSurface.screen
+            }
+          }
+
+          Component {
+            id: colorModeScreenComponent
 
             Rectangle {
               anchors.fill: parent
-              color: "black"
+              color: Settings.data.general.lockScreenExcludedMonitorColor
             }
           }
         }
