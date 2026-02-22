@@ -230,6 +230,15 @@ ColumnLayout {
       onSelected: key => Settings.data.dock.groupClickAction = key
     }
 
+    NToggle {
+      visible: Settings.data.dock.groupApps
+      label: I18n.tr("panels.dock.appearance-group-hover-window-list-label")
+      description: I18n.tr("panels.dock.appearance-group-hover-window-list-description")
+      checked: Settings.data.dock.groupHoverWindowList
+      defaultValue: Settings.getDefaultValue("dock.groupHoverWindowList")
+      onToggled: checked => Settings.data.dock.groupHoverWindowList = checked
+    }
+
     NComboBox {
       Layout.fillWidth: true
       visible: Settings.data.dock.groupApps

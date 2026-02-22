@@ -1059,6 +1059,8 @@
       "appearance-group-click-action-description": "Choose what left-click does for grouped apps.",
       "appearance-group-click-action-label": "Grouped app click action",
       "appearance-group-click-action-list": "Open window list",
+      "appearance-group-hover-window-list-label": "Open window list on hover",
+      "appearance-group-hover-window-list-description": "Automatically open a grouped app's window list when hovering over it.",
       "appearance-group-context-menu-mode-description": "Choose how the context menu behaves for grouped apps.",
       "appearance-group-context-menu-mode-extended": "Extended",
       "appearance-group-context-menu-mode-label": "Grouped app menu mode",

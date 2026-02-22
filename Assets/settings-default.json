@@ -342,6 +342,7 @@
     "groupApps": false,
     "groupContextMenuMode": "extended",
     "groupClickAction": "cycle",
+    "groupHoverWindowList": false,
     "groupIndicatorStyle": "dots",
     "deadOpacity": 0.6,
     "animationSpeed": 1,
