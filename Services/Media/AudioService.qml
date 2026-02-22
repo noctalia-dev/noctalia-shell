@@ -70,7 +70,7 @@ Singleton {
     }
 
     if (!sink?.audio)
-      return 0;
+    return 0;
 
     return clampOutputVolume(sink.audio.volume);
   }
