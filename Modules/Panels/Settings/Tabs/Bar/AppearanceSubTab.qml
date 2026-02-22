@@ -169,6 +169,28 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.bar.appearance-use-separate-font-size-label")
+    description: I18n.tr("panels.bar.appearance-use-separate-font-size-description")
+    checked: Settings.data.bar.useSeparateFontSize
+    defaultValue: Settings.getDefaultValue("bar.useSeparateFontSize")
+    onToggled: checked => Settings.data.bar.useSeparateFontSize = checked
+ }
+
+ NValueSlider {
+    Layout.fillWidth: true
+    visible: Settings.data.bar.useSeparateFontSize
+    label: I18n.tr("panels.bar.appearance-separate-font-size-label")
+    description: I18n.tr("panels.bar.appearance-separate-font-size-description")
+    from: 0.75
+    to: 1.25
+    stepSize: 0.01
+    value: Settings.data.bar.fontSize
+    defaultValue: Settings.getDefaultValue("bar.fontSize")
+    onMoved: value => Settings.data.bar.fontSize = value
+    text: Math.floor(Settings.data.bar.fontSize * 100) + "%"
+  }
+
+  NToggle {
     Layout.fillWidth: true
     label: I18n.tr("panels.bar.appearance-show-outline-label")
     description: I18n.tr("panels.bar.appearance-show-outline-description")
