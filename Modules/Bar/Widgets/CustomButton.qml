@@ -205,6 +205,7 @@ Item {
     rotateText: isVerticalBar && currentMaxTextLength > 0
     autoHide: false
     forceOpen: _pillForceOpen
+    forceClose: !_pillForceOpen
     customTextIconColor: iconColor
 
     // Helper function to build tooltip content
