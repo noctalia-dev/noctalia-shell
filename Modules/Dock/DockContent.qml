@@ -41,9 +41,6 @@ Item {
     border.width: Style.borderS
     border.color: Qt.alpha(Color.mOutline, (isStaticMode ? 0 : Settings.data.dock.backgroundOpacity))
 
-    // Enable layer caching to reduce GPU usage from continuous animations
-    layer.enabled: true
-
     MouseArea {
       id: dockMouseArea
       anchors.fill: parent
