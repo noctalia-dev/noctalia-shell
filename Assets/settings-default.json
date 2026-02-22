@@ -317,6 +317,8 @@
     "batteryWarningThreshold": 20,
     "batteryCriticalThreshold": 5,
     "enableDgpuMonitoring": false,
+    "gpuSelectionMode": "auto",
+    "selectedGpuId": "",
     "useCustomColors": false,
     "warningColor": "",
     "criticalColor": "",
