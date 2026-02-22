@@ -501,6 +501,7 @@
   },
   "desktopWidgets": {
     "enabled": false,
+    "overviewEnabled": true,
     "gridSnap": false,
     "monitorWidgets": []
   }

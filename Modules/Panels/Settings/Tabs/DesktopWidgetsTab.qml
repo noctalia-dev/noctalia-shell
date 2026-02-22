@@ -36,6 +36,16 @@ ColumnLayout {
     onToggled: checked => Settings.data.desktopWidgets.enabled = checked
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    enabled: Settings.data.desktopWidgets.enabled
+    label: I18n.tr("panels.desktop-widgets.overview-enabled-label")
+    description: I18n.tr("panels.desktop-widgets.overview-enabled-description")
+    checked: Settings.data.desktopWidgets.overviewEnabled
+    defaultValue: Settings.getDefaultValue("desktopWidgets.overviewEnabled")
+    onToggled: checked => Settings.data.desktopWidgets.overviewEnabled = checked
+  }
+
   ColumnLayout {
     enabled: Settings.data.desktopWidgets.enabled
 
