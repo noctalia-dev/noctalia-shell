@@ -15,7 +15,7 @@ Item {
   property color borderColor: "transparent"
   property int imageFillMode: Image.PreserveAspectCrop
 
-  readonly property bool showFallback: (fallbackIcon !== undefined && fallbackIcon !== "") && (imagePath === undefined || imagePath === "")
+  readonly property bool showFallback: (fallbackIcon !== undefined && fallbackIcon !== "") && (imagePath === undefined || imagePath === "" || imageSource.status === Image.Error)
   readonly property int status: imageSource.status
 
   Rectangle {
