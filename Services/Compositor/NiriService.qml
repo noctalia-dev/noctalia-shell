@@ -456,6 +456,15 @@ Item {
     }
   }
 
+  function scrollWorkspaceContent(direction) {
+    try {
+      var action = direction < 0 ? "focus-column-left" : "focus-column-right";
+      Quickshell.execDetached(["niri", "msg", "action", action]);
+    } catch (e) {
+      Logger.e("NiriService", "Failed to scroll workspace content:", e);
+    }
+  }
+
   function focusWindow(window) {
     try {
       Quickshell.execDetached(["niri", "msg", "action", "focus-window", "--id", window.id.toString()]);

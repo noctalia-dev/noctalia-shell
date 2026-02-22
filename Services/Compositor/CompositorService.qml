@@ -375,6 +375,13 @@ Singleton {
     }
   }
 
+  // Scrollable workspace content (Niri)
+  function scrollWorkspaceContent(direction) {
+    if (backend && backend.scrollWorkspaceContent) {
+      backend.scrollWorkspaceContent(direction);
+    }
+  }
+
   // Get current workspace
   function getCurrentWorkspace() {
     for (var i = 0; i < workspaces.count; i++) {

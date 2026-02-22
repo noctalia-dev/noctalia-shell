@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import qs.Commons
 import qs.Modules.Bar.Extras
 import qs.Modules.Notification
+import qs.Services.Compositor
 import qs.Services.UI
 import qs.Widgets
 
@@ -180,6 +181,13 @@ Item {
       Item {
         id: bar
 
+        // Wheel scroll handling (empty bar area)
+        property int barWheelAccumulatedDelta: 0
+        property bool barWheelCooldown: false
+        readonly property string barWheelAction: {
+          return Settings.data.bar.mouseWheelAction || "none";
+        }
+
         // Position and size the bar content based on orientation
         x: (root.barPosition === "right") ? (parent.width - root.barHeight) : 0
         y: (root.barPosition === "bottom") ? (parent.height - root.barHeight) : 0
@@ -263,6 +271,69 @@ Item {
           return -1;
         }
 
+        function isPointOverWidget(xPos, yPos) {
+          var widgets = BarService.getAllWidgetInstances(null, screen.name);
+          for (var i = 0; i < widgets.length; i++) {
+            var widget = widgets[i];
+            if (!widget || !widget.visible || widget.widgetId === "Spacer") {
+              continue;
+            }
+            var localPos = mapToItem(widget, xPos, yPos);
+
+            if (root.barIsVertical) {
+              if (localPos.y >= -Style.marginS && localPos.y <= widget.height + Style.marginS) {
+                return true;
+              }
+            } else {
+              if (localPos.x >= -Style.marginS && localPos.x <= widget.width + Style.marginS) {
+                return true;
+              }
+            }
+          }
+          return false;
+        }
+
+        function switchWorkspaceByOffset(offset) {
+          if (!root.screen || CompositorService.workspaces.count === 0)
+            return;
+
+          var screenName = root.screen.name.toLowerCase();
+          var candidates = [];
+          for (var i = 0; i < CompositorService.workspaces.count; i++) {
+            var ws = CompositorService.workspaces.get(i);
+            var matchesScreen = CompositorService.globalWorkspaces || (ws.output && ws.output.toLowerCase() === screenName);
+            if (matchesScreen)
+              candidates.push(ws);
+          }
+
+          if (candidates.length <= 1)
+            return;
+
+          var current = -1;
+          for (var j = 0; j < candidates.length; j++) {
+            if (candidates[j].isFocused) {
+              current = j;
+              break;
+            }
+          }
+          if (current < 0)
+            current = 0;
+
+          var next = current + offset;
+          if (Settings.data.bar.mouseWheelWrap) {
+            next = next % candidates.length;
+            if (next < 0)
+              next = candidates.length - 1;
+          } else {
+            if (next < 0 || next >= candidates.length)
+              return;
+          }
+
+          if (next === current)
+            return;
+          CompositorService.switchToWorkspace(candidates[next]);
+        }
+
         MouseArea {
           anchors.fill: parent
           acceptedButtons: Qt.RightButton
@@ -270,26 +341,8 @@ Item {
           preventStealing: true
           onClicked: mouse => {
                        if (mouse.button === Qt.RightButton) {
-                         // Check if click is over any widget
-                         var widgets = BarService.getAllWidgetInstances(null, screen.name);
-                         for (var i = 0; i < widgets.length; i++) {
-                           var widget = widgets[i];
-                           if (!widget || !widget.visible || widget.widgetId === "Spacer") {
-                             continue;
-                           }
-                           // Map click position to widget's coordinate space
-                           var localPos = mapToItem(widget, mouse.x, mouse.y);
-
-                           if (root.barIsVertical) {
-                             if (localPos.y >= -Style.marginS && localPos.y <= widget.height + Style.marginS) {
-                               return;
-                             }
-                           } else {
-                             if (localPos.x >= -Style.marginS && localPos.x <= widget.width + Style.marginS) {
-                               return;
-                             }
-                           }
-                         }
+                         if (bar.isPointOverWidget(mouse.x, mouse.y))
+                          return;
                          // Click is on empty bar background - open control center
                          var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
 
@@ -302,6 +355,54 @@ Item {
                          mouse.accepted = true;
                        }
                      }
+        }
+
+        // Debounce timer for wheel interactions
+        Timer {
+          id: barWheelDebounce
+          interval: 150
+          repeat: false
+          onTriggered: {
+            bar.barWheelCooldown = false;
+            bar.barWheelAccumulatedDelta = 0;
+          }
+        }
+
+        // Scroll on empty bar area to switch workspaces
+        WheelHandler {
+          id: barWheelHandler
+          target: bar
+          acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+          enabled: bar.barWheelAction !== "none"
+          
+          onWheel: function (event) {
+            if (bar.barWheelCooldown)
+              return;
+            if (bar.isPointOverWidget(event.x, event.y))
+              return;
+
+            var dy = event.angleDelta.y;
+            var dx = event.angleDelta.x;
+            var useDy = Math.abs(dy) >= Math.abs(dx);
+            var delta = useDy ? dy : dx;
+
+            bar.barWheelAccumulatedDelta += delta;
+            var step = 120;
+            if (Math.abs(bar.barWheelAccumulatedDelta) >= step) {
+              var direction = bar.barWheelAccumulatedDelta > 0 ? -1 : 1;
+              if (Settings.data.bar.reverseScroll)
+                direction *= -1;
+              if (bar.barWheelAction === "workspace") {
+                bar.switchWorkspaceByOffset(direction);
+              } else if (bar.barWheelAction === "content") {
+                CompositorService.scrollWorkspaceContent(direction);
+              }
+              bar.barWheelCooldown = true;
+              barWheelDebounce.restart();
+              bar.barWheelAccumulatedDelta = 0;
+              event.accepted = true;
+            }
+          }
         }
 
         Loader {

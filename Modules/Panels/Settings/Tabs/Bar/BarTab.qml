@@ -189,9 +189,14 @@ ColumnLayout {
       checked: subTabBar.currentIndex === 1
     }
     NTabButton {
-      text: I18n.tr("common.monitors")
+      text: I18n.tr("common.behavior")
       tabIndex: 2
       checked: subTabBar.currentIndex === 2
+    }
+    NTabButton {
+      text: I18n.tr("common.monitors")
+      tabIndex: 3
+      checked: subTabBar.currentIndex === 3
     }
   }
 
@@ -214,6 +219,7 @@ ColumnLayout {
       moveWidgetBetweenSections: root._moveWidgetBetweenSections
       onOpenPluginSettings: manifest => pluginSettingsDialog.openPluginSettings(manifest)
     }
+    BehaviorSubTab {}
     MonitorsSubTab {
       addMonitor: root.addMonitor
       removeMonitor: root.removeMonitor
