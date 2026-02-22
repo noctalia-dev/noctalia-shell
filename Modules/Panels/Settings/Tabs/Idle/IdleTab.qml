@@ -91,5 +91,19 @@ ColumnLayout {
       defaultValue: 0
       onValueChanged: Settings.data.idle.suspendTimeout = value
     }
+
+    NDivider {
+      Layout.fillWidth: true
+    }
+
+    NSpinBox {
+      label: I18n.tr("panels.idle.fade-duration-label")
+      description: I18n.tr("panels.idle.fade-duration-description")
+      from: 1
+      to: 60
+      value: Settings.data.idle.fadeDuration
+      defaultValue: Settings.getDefaultValue("idle.fadeDuration")
+      onValueChanged: Settings.data.idle.fadeDuration = value
+    }
   }
 }

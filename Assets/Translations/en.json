@@ -1200,7 +1200,9 @@
       "lock-label": "Lock screen",
       "lock-description": "Minutes of inactivity before the lock screen activates.",
       "suspend-label": "Suspend",
-      "suspend-description": "Minutes of inactivity before the system suspends."
+      "suspend-description": "Minutes of inactivity before the system suspends.",
+      "fade-duration-label": "Fade duration",
+      "fade-duration-description": "Seconds for the fade-to-black animation before each action fires. Any mouse movement cancels the fade."
     },
     "indicator": {
       "default-value": "Default: {value}",

@@ -725,6 +725,7 @@ Singleton {
       property int screenOffTimeout: 0   // minutes, 0 = disabled
       property int lockTimeout: 0        // minutes, 0 = disabled
       property int suspendTimeout: 0     // minutes, 0 = disabled
+      property int fadeDuration: 5       // seconds of fade-to-black before action fires
     }
 
     // desktop widgets

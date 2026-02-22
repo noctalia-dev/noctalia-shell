@@ -967,6 +967,14 @@
     "subTab": null
   },
   {
+    "labelKey": "panels.idle.fade-duration-label",
+    "descriptionKey": "panels.idle.fade-duration-description",
+    "widget": "NSpinBox",
+    "tab": 13,
+    "tabLabel": "panels.idle.title",
+    "subTab": null
+  },
+  {
     "labelKey": "panels.launcher.settings-clipboard-history-label",
     "descriptionKey": "panels.launcher.settings-clipboard-history-description",
     "widget": "NToggle",

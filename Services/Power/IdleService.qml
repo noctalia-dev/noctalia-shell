@@ -14,11 +14,13 @@ import qs.Services.UI
 *   2. Lock screen        — activates the session lock
 *   3. Suspend            — systemctl suspend
 *
-* IdleMonitor instances are created with Qt.createQmlObject() so the shell does
-* not crash on compositors that lack the protocol.
+* Each stage shows a fade-to-black overlay for a configurable grace period
+* before executing the action. Any mouse movement cancels the fade.
+*
+* IdleMonitor instances are created with Qt.createQmlObject() so the shell
+* does not crash on compositors that lack the protocol.
 *
 * Timeouts come from Settings.data.idle (in minutes). 0 = disabled.
-*
 * NOTE: IdleMonitor.timeout is in seconds.
 */
 Singleton {
@@ -30,11 +32,15 @@ Singleton {
   // Live idle time in seconds (updated by the 1s heartbeat monitor)
   property int idleSeconds: 0
 
+  // Fade overlay state — "" means no fade in progress
+  property string fadePending: ""
+  readonly property int fadeDuration: Settings.data.idle.fadeDuration
+
   property bool _monitorsCreated: false
   property var _screenOffMonitor: null
   property var _lockMonitor: null
   property var _suspendMonitor: null
-  property var _heartbeatMonitor: null  // 1s monitor for live idle tracking
+  property var _heartbeatMonitor: null
 
   // Signals for external listeners (plugins, modules)
   signal screenOffRequested
@@ -47,6 +53,61 @@ Singleton {
     _applyTimeouts();
   }
 
+  // Grace period timer — fires when fade completes without cancellation
+  Timer {
+    id: graceTimer
+    interval: root.fadeDuration * 1000
+    repeat: false
+    onTriggered: {
+      const action = root.fadePending;
+      root.fadePending = "";
+      root._executeAction(action);
+    }
+  }
+
+  // Counts up idleSeconds while the heartbeat monitor reports idle
+  Timer {
+    id: idleCounter
+    interval: 1000
+    repeat: true
+    onTriggered: root.idleSeconds++
+  }
+
+  // -------------------------------------------------------
+  function cancelFade() {
+    if (fadePending === "")
+      return;
+    Logger.i("IdleService", "Fade cancelled for:", fadePending);
+    fadePending = "";
+    graceTimer.stop();
+  }
+
+  function _onIdle(stage) {
+    // Don't re-trigger if already fading something
+    if (fadePending !== "")
+      return;
+    Logger.i("IdleService", "Idle fired:", stage);
+    fadePending = stage;
+    graceTimer.restart();
+  }
+
+  function _executeAction(stage) {
+    Logger.i("IdleService", "Executing action:", stage);
+    if (stage === "screenOff") {
+      CompositorService.turnOffMonitors();
+      root.screenOffRequested();
+    } else if (stage === "lock") {
+      if (PanelService.lockScreen && !PanelService.lockScreen.active) {
+        PanelService.lockScreen.active = true;
+      }
+      root.lockRequested();
+    } else if (stage === "suspend") {
+      CompositorService.suspend();
+      root.suspendRequested();
+    }
+  }
+
+  // -------------------------------------------------------
   // Re-apply when settings change
   Connections {
     target: Settings
@@ -55,7 +116,6 @@ Singleton {
     }
   }
 
-  // Watch for timeout changes at runtime
   Connections {
     target: Settings.data.idle
     function onScreenOffTimeoutChanged() {
@@ -72,15 +132,6 @@ Singleton {
     }
   }
 
-  // Counts up idleSeconds while the heartbeat monitor reports idle
-  Timer {
-    id: idleCounter
-    interval: 1000
-    repeat: true
-    onTriggered: root.idleSeconds++
-  }
-
-  // -------------------------------------------------------
   function _applyTimeouts() {
     const idle = Settings.data.idle;
     const globalEnabled = idle.enabled;
@@ -91,10 +142,6 @@ Singleton {
     _ensureHeartbeat();
   }
 
-  /**
-  * Create, update, or destroy a stage IdleMonitor.
-  * timeoutSec: seconds (already converted from minutes by caller). 0 = disabled.
-  */
   function _setMonitor(stage, timeoutSec) {
     const propName = "_" + stage + "Monitor";
     const existing = root[propName];
@@ -109,11 +156,12 @@ Singleton {
     }
 
     if (existing) {
-      if (existing.timeout !== timeoutSec) {
-        existing.timeout = timeoutSec;
-        Logger.d("IdleService", stage + " monitor timeout updated to", timeoutSec, "s");
-      }
-      return;
+      if (existing.timeout === timeoutSec)
+        return;
+      // ext-idle-notify-v1 has no update-timeout request — must recreate
+      existing.destroy();
+      root[propName] = null;
+      Logger.d("IdleService", stage + " monitor timeout changed to", timeoutSec, "s, recreating");
     }
 
     try {
@@ -124,9 +172,10 @@ Singleton {
 
       const monitor = Qt.createQmlObject(qml, root, "IdleMonitor_" + stage);
       monitor.isIdleChanged.connect(function () {
-        if (monitor.isIdle) {
+        if (monitor.isIdle)
           root._onIdle(stage);
-        }
+        else
+          root.cancelFade();
       });
       root[propName] = monitor;
       root._monitorsCreated = true;
@@ -137,8 +186,6 @@ Singleton {
     }
   }
 
-  // 1-second heartbeat monitor for live idle time tracking.
-  // Always active so the settings panel can display current idle time.
   function _ensureHeartbeat() {
     if (_heartbeatMonitor)
       return;
@@ -155,6 +202,7 @@ Singleton {
         } else {
           idleCounter.stop();
           root.idleSeconds = 0;
+          root.cancelFade();
         }
       });
       _heartbeatMonitor = monitor;
@@ -162,22 +210,6 @@ Singleton {
       Logger.d("IdleService", "Heartbeat monitor created");
     } catch (e) {
       Logger.w("IdleService", "Heartbeat monitor failed:", e);
-    }
-  }
-
-  function _onIdle(stage) {
-    Logger.i("IdleService", "Idle fired:", stage);
-    if (stage === "screenOff") {
-      CompositorService.turnOffMonitors();
-      root.screenOffRequested();
-    } else if (stage === "lock") {
-      if (PanelService.lockScreen && !PanelService.lockScreen.active) {
-        PanelService.lockScreen.active = true;
-      }
-      root.lockRequested();
-    } else if (stage === "suspend") {
-      CompositorService.suspend();
-      root.suspendRequested();
     }
   }
 }
