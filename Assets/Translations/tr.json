@@ -1001,6 +1001,9 @@
       "weather-show-background-description": "Hava durumu widget'ı için arka plan konteynerini göster."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Varsayılan",
+      "monitors-backlight-device-description": "Bu çıkış için bir arka aydınlatma aygıtı seçin.",
+      "monitors-backlight-device-label": "Arka aydınlatma aygıtı",
       "monitors-brightness-step-description": "Parlaklık değişimleri için adım boyutunu ayarlayın (tekerlek ve klavye kısayolları).",
       "monitors-brightness-step-label": "Parlaklık adım boyutu",
       "monitors-brightness-unavailable-ddc-disabled": "Parlaklık kontrolü kullanılamıyor. Bu ekranın parlaklığını kontrol etmek için \"Harici parlaklık desteği\"ni etkinleştirin.",

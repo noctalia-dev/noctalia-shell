@@ -1001,6 +1001,9 @@
       "weather-show-background-description": "Zeige den Hintergrundcontainer für das Wetter-Widget an."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Standard",
+      "monitors-backlight-device-description": "Wählen Sie ein Backlight-Gerät für diesen Ausgang.",
+      "monitors-backlight-device-label": "Backlight-Gerät",
       "monitors-brightness-step-description": "Schrittgröße für Helligkeitsänderungen anpassen (Mausrad und Tastenkürzel).",
       "monitors-brightness-step-label": "Helligkeits-Schrittgröße",
       "monitors-brightness-unavailable-ddc-disabled": "Helligkeitssteuerung nicht verfügbar. Aktivieren Sie \"Externe Helligkeitsunterstützung\", um die Helligkeit dieses Displays zu steuern.",

@@ -1001,6 +1001,9 @@
       "weather-show-background-description": "Visa bakgrundsbehållaren för väderwidgeten."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Standard",
+      "monitors-backlight-device-description": "Välj en bakgrundsbelysningsenhet för den här utgången.",
+      "monitors-backlight-device-label": "Bakgrundsbelysningsenhet",
       "monitors-brightness-step-description": "Justera stegstorleken för ljusstyrkeändringar (rullhjul och kortkommandon).",
       "monitors-brightness-step-label": "Ljusstyrkestegstorlek",
       "monitors-brightness-unavailable-ddc-disabled": "Ljusstyrkekontroll otillgänglig. Aktivera \"Extern ljusstyrkestöd\"för att kontrollera ljusstyrkan på denna skärm.",

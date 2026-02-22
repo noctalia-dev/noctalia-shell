@@ -460,7 +460,8 @@
   "brightness": {
     "brightnessStep": 5,
     "enforceMinimum": true,
-    "enableDdcSupport": false
+    "enableDdcSupport": false,
+    "backlightDeviceMappings": []
   },
   "colorSchemes": {
     "useWallpaperColors": false,

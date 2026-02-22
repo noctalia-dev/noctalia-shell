@@ -1004,6 +1004,9 @@
       "weather-show-background-description": "Show the background container for the weather widget."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Default",
+      "monitors-backlight-device-description": "Select a backlight device for this output.",
+      "monitors-backlight-device-label": "Backlight device",
       "monitors-brightness-step-description": "Adjust the step size for brightness changes (scroll wheel and keyboard shortcuts).",
       "monitors-brightness-step-label": "Brightness step size",
       "monitors-brightness-unavailable-ddc-disabled": "Brightness control unavailable. Enable \"External brightness support\" to control this display's brightness.",

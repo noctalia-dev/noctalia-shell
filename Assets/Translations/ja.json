@@ -1001,6 +1001,9 @@
       "weather-show-background-description": "天気ウィジェットの背景コンテナを表示します。"
     },
     "display": {
+      "monitors-backlight-device-auto-option": "デフォルト",
+      "monitors-backlight-device-description": "この出力に使用するバックライトデバイスを選択します。",
+      "monitors-backlight-device-label": "バックライトデバイス",
       "monitors-brightness-step-description": "明るさの変化量（スクロールホイールやショートカットキー）を調整します。",
       "monitors-brightness-step-label": "明るさの調整ステップ",
       "monitors-brightness-unavailable-ddc-disabled": "明るさ調整を利用できません。このディスプレイを操作するには「外部ディスプレイの明るさ制御」を有効にしてください。",

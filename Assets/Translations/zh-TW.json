@@ -1001,6 +1001,9 @@
       "weather-show-background-description": "顯示天氣小工具的填充背景"
     },
     "display": {
+      "monitors-backlight-device-auto-option": "預設",
+      "monitors-backlight-device-description": "為此輸出選擇一個背光裝置。",
+      "monitors-backlight-device-label": "背光裝置",
       "monitors-brightness-step-description": "微調亮度調整一格的大小 (滾輪及鍵盤快捷鍵)",
       "monitors-brightness-step-label": "亮度步進大小",
       "monitors-brightness-unavailable-ddc-disabled": "無法使用亮度控制, 啟用 \"外部亮度調整支援\" 來控制這個顯示器的亮度",

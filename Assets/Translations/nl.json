@@ -1001,6 +1001,9 @@
       "weather-show-background-description": "Toon de achtergrondcontainer voor de weerwidget."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Standaard",
+      "monitors-backlight-device-description": "Selecteer een backlightapparaat voor deze uitgang.",
+      "monitors-backlight-device-label": "Backlightapparaat",
       "monitors-brightness-step-description": "Pas de stapgrootte voor helderheidswijzigingen aan (scrollwiel en sneltoetsen).",
       "monitors-brightness-step-label": "Stapgrootte helderheid",
       "monitors-brightness-unavailable-ddc-disabled": "Helderheidsregeling niet beschikbaar. Schakel \"Ondersteuning voor externe helderheid\" in om de helderheid van dit scherm te regelen.",

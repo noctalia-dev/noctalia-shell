@@ -1001,6 +1001,9 @@
       "weather-show-background-description": "Pokaż tło dla widżetu pogody."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Domyślny",
+      "monitors-backlight-device-description": "Wybierz urządzenie podświetlenia dla tego wyjścia.",
+      "monitors-backlight-device-label": "Urządzenie podświetlenia",
       "monitors-brightness-step-description": "Dostosuj skok zmiany jasności (kółko myszy i skróty klawiszowe).",
       "monitors-brightness-step-label": "Skok jasności",
       "monitors-brightness-unavailable-ddc-disabled": "Sterowanie jasnością niedostępne. Włącz \"Obsługa zewnętrznej jasności\", aby sterować jasnością tego ekranu.",

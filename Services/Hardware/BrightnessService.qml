@@ -11,6 +11,7 @@ Singleton {
   property list<var> ddcMonitors: []
   readonly property list<Monitor> monitors: variants.instances
   property bool appleDisplayPresent: false
+  property list<var> availableBacklightDevices: []
 
   function getMonitorForScreen(screen: ShellScreen): var {
     return monitors.find(m => m.modelData === screen);
@@ -47,10 +48,109 @@ Singleton {
     return detectedDisplays;
   }
 
+  function normalizeBacklightDevicePath(devicePath): string {
+    if (devicePath === undefined || devicePath === null)
+      return "";
+
+    var normalized = String(devicePath).trim();
+    if (normalized === "")
+      return "";
+
+    if (normalized.startsWith("/sys/class/backlight/"))
+      return normalized;
+
+    if (normalized.indexOf("/") === -1)
+      return "/sys/class/backlight/" + normalized;
+
+    return normalized;
+  }
+
+  function getBacklightDeviceName(devicePath): string {
+    var normalized = normalizeBacklightDevicePath(devicePath);
+    if (normalized === "")
+      return "";
+
+    var parts = normalized.split("/");
+    while (parts.length > 0 && parts[parts.length - 1] === "") {
+      parts.pop();
+    }
+    return parts.length > 0 ? parts[parts.length - 1] : "";
+  }
+
+  function getMappedBacklightDevice(outputName): string {
+    var normalizedOutput = String(outputName || "").trim();
+    if (normalizedOutput === "")
+      return "";
+
+    var mappings = Settings.data.brightness.backlightDeviceMappings || [];
+    for (var i = 0; i < mappings.length; i++) {
+      var mapping = mappings[i];
+      if (!mapping || typeof mapping !== "object")
+        continue;
+
+      if (String(mapping.output || "").trim() === normalizedOutput)
+        return normalizeBacklightDevicePath(mapping.device || "");
+    }
+
+    return "";
+  }
+
+  function setMappedBacklightDevice(outputName, devicePath): void {
+    var normalizedOutput = String(outputName || "").trim();
+    if (normalizedOutput === "")
+      return;
+
+    var normalizedDevicePath = normalizeBacklightDevicePath(devicePath);
+    var mappings = Settings.data.brightness.backlightDeviceMappings || [];
+    var nextMappings = [];
+    var replaced = false;
+
+    for (var i = 0; i < mappings.length; i++) {
+      var mapping = mappings[i];
+      if (!mapping || typeof mapping !== "object")
+        continue;
+
+      var mappingOutput = String(mapping.output || "").trim();
+      var mappingDevice = normalizeBacklightDevicePath(mapping.device || "");
+      if (mappingOutput === "" || mappingDevice === "")
+        continue;
+
+      if (mappingOutput === normalizedOutput) {
+        if (!replaced && normalizedDevicePath !== "") {
+          nextMappings.push({
+            "output": normalizedOutput,
+            "device": normalizedDevicePath
+          });
+        }
+        replaced = true;
+      } else {
+        nextMappings.push({
+          "output": mappingOutput,
+          "device": mappingDevice
+        });
+      }
+    }
+
+    if (!replaced && normalizedDevicePath !== "") {
+      nextMappings.push({
+        "output": normalizedOutput,
+        "device": normalizedDevicePath
+      });
+    }
+
+    Settings.data.brightness.backlightDeviceMappings = nextMappings;
+  }
+
+  function scanBacklightDevices(): void {
+    if (!scanBacklightProc.running)
+      scanBacklightProc.running = true;
+  }
+
   reloadableId: "brightness"
 
   Component.onCompleted: {
     Logger.i("Brightness", "Service started");
+    scanBacklightDevices();
     if (Settings.data.brightness.enableDdcSupport) {
       ddcProc.running = true;
     }
@@ -58,6 +158,7 @@ Singleton {
 
   onMonitorsChanged: {
     ddcMonitors = [];
+    scanBacklightDevices();
     if (Settings.data.brightness.enableDdcSupport) {
       ddcProc.running = true;
     }
@@ -75,6 +176,14 @@ Singleton {
         ddcMonitors = [];
       }
     }
+    function onBacklightDeviceMappingsChanged() {
+      scanBacklightDevices();
+      for (var i = 0; i < monitors.length; i++) {
+        var m = monitors[i];
+        if (m && !m.isDdc && !m.isAppleDisplay)
+          m.initBrightness();
+      }
+    }
   }
 
   Variants {
@@ -89,6 +198,34 @@ Singleton {
     command: ["sh", "-c", "which asdbctl >/dev/null 2>&1 && asdbctl get || echo ''"]
     stdout: StdioCollector {
       onStreamFinished: root.appleDisplayPresent = text.trim().length > 0
+    }
+  }
+
+  // Detect available internal backlight devices
+  Process {
+    id: scanBacklightProc
+    command: ["sh", "-c", "for dev in /sys/class/backlight/*; do if [ -f \"$dev/brightness\" ] && [ -f \"$dev/max_brightness\" ]; then echo \"$dev\"; fi; done"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        var data = text.trim();
+        if (data === "") {
+          root.availableBacklightDevices = [];
+          return;
+        }
+
+        var lines = data.split("\n");
+        var found = [];
+        var seen = ({});
+        for (var i = 0; i < lines.length; i++) {
+          var path = root.normalizeBacklightDevicePath(lines[i]);
+          if (path === "" || seen[path])
+            continue;
+          seen[path] = true;
+          found.push(path);
+        }
+
+        root.availableBacklightDevices = found;
+      }
     }
   }
 
@@ -152,6 +289,7 @@ Singleton {
     property string maxBrightnessPath: ""
     property int maxBrightness: 100
     property bool ignoreNextChange: false
+    property bool initInProgress: false
 
     // Signal for brightness changes
     signal brightnessUpdated(real newBrightness)
@@ -296,13 +434,21 @@ Singleton {
                 Logger.d("Brightness", "Internal brightness:", current + "/" + max + " =", monitor.brightness);
                 Logger.d("Brightness", "Using backlight device:", monitor.backlightDevice);
               }
+            } else {
+              monitor.backlightDevice = "";
+              monitor.brightnessPath = "";
+              monitor.maxBrightnessPath = "";
             }
           }
 
           // Always update
           monitor.brightnessUpdated(monitor.brightness);
           root.monitorBrightnessChanged(monitor, monitor.brightness);
+          monitor.initInProgress = false;
         }
+      }
+      onExited: (exitCode, exitStatus) => {
+        monitor.initInProgress = false;
       }
     }
 
@@ -379,12 +525,18 @@ Singleton {
       } else if (!isDdc) {
         monitor.commandRunning = true;
         monitor.ignoreNextChange = true;
-        setBrightnessProc.command = ["brightnessctl", "s", rounded + "%"];
+        var backlightDeviceName = root.getBacklightDeviceName(monitor.backlightDevice);
+        if (backlightDeviceName !== "") {
+          setBrightnessProc.command = ["brightnessctl", "-d", backlightDeviceName, "s", rounded + "%"];
+        } else {
+          setBrightnessProc.command = ["brightnessctl", "s", rounded + "%"];
+        }
         setBrightnessProc.running = true;
       }
     }
 
     function initBrightness(): void {
+      monitor.initInProgress = true;
       if (isAppleDisplay) {
         initProc.command = ["asdbctl", "get"];
         initProc.running = true;
@@ -392,16 +544,24 @@ Singleton {
         initProc.command = ["ddcutil", "-b", busNum, "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
         initProc.running = true;
       } else if (!isDdc) {
-        // Internal backlight - find the first available backlight device and get its info
-        // This now returns: device_path, current_brightness, max_brightness (on separate lines)
-        initProc.command = ["sh", "-c", "for dev in /sys/class/backlight/*; do " + "  if [ -f \"$dev/brightness\" ] && [ -f \"$dev/max_brightness\" ]; then " + "    echo \"$dev\"; " + "    cat \"$dev/brightness\"; " + "    cat \"$dev/max_brightness\"; " + "    break; " + "  fi; " + "done"];
+        // Internal backlight: first try explicit output mapping, then fall back to first available.
+        var preferredDevicePath = root.getMappedBacklightDevice(modelData.name);
+        var probeScript = [
+          "preferred=\"$1\"",
+          "if [ -n \"$preferred\" ] && [ ! -d \"$preferred\" ]; then preferred=\"/sys/class/backlight/$preferred\"; fi",
+          "selected=\"\"",
+          "if [ -n \"$preferred\" ] && [ -f \"$preferred/brightness\" ] && [ -f \"$preferred/max_brightness\" ]; then selected=\"$preferred\"; else for dev in /sys/class/backlight/*; do if [ -f \"$dev/brightness\" ] && [ -f \"$dev/max_brightness\" ]; then selected=\"$dev\"; break; fi; done; fi",
+          "if [ -n \"$selected\" ]; then echo \"$selected\"; cat \"$selected/brightness\"; cat \"$selected/max_brightness\"; fi"
+        ].join("; ");
+        initProc.command = ["sh", "-c", probeScript, "sh", preferredDevicePath];
         initProc.running = true;
+      } else {
+        monitor.initInProgress = false;
       }
     }
 
     onBusNumChanged: initBrightness()
-    onIsDdcChanged: if (isDdc)
-    initBrightness()
+    onIsDdcChanged: initBrightness()
     Component.onCompleted: initBrightness()
   }
 }

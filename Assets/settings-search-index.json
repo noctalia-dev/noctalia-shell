@@ -529,6 +529,15 @@
     "subTabLabel": "common.brightness"
   },
   {
+    "labelKey": "panels.display.monitors-backlight-device-label",
+    "descriptionKey": "panels.display.monitors-backlight-device-description",
+    "widget": "NComboBox",
+    "tab": 14,
+    "tabLabel": "panels.display.title",
+    "subTab": 0,
+    "subTabLabel": "common.brightness"
+  },
+  {
     "labelKey": "panels.display.monitors-enforce-minimum-label",
     "descriptionKey": "panels.display.monitors-enforce-minimum-description",
     "widget": "NToggle",

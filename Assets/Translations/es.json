@@ -1001,6 +1001,9 @@
       "weather-show-background-description": "Mostrar el contenedor de fondo para el widget del clima."
     },
     "display": {
+      "monitors-backlight-device-auto-option": "Predeterminado",
+      "monitors-backlight-device-description": "Selecciona un dispositivo de retroiluminación para esta salida.",
+      "monitors-backlight-device-label": "Dispositivo de retroiluminación",
       "monitors-brightness-step-description": "Ajusta el tamaño del paso para los cambios de brillo (rueda de desplazamiento y atajos de teclado).",
       "monitors-brightness-step-label": "Tamaño del paso de brillo",
       "monitors-brightness-unavailable-ddc-disabled": "Control de brillo no disponible. Habilita \"Soporte de brillo externo\" para controlar el brillo de esta pantalla.",
