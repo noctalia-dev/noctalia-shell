@@ -162,8 +162,11 @@ Singleton {
       return;
     }
 
-    // File paths are used directly, not cached
-    if (imageUri.startsWith("/") || imageUri.startsWith("file://")) {
+    // Resolve bare file path for temp check
+    const filePath = imageUri.startsWith("file://") ? imageUri.substring(7) : imageUri;
+
+    // File paths in persistent locations are used directly, not cached
+    if ((imageUri.startsWith("/") || imageUri.startsWith("file://")) && !isTemporaryPath(filePath)) {
       callback(imageUri, false);
       return;
     }
@@ -171,9 +174,56 @@ Singleton {
     const cacheKey = generateNotificationKey(imageUri, appName, summary);
     const cachedPath = notificationsDir + cacheKey + ".png";
 
+    // Temporary file paths are copied to cache before the source is cleaned up
+    if (imageUri.startsWith("/") || imageUri.startsWith("file://")) {
+      processRequest(cacheKey, cachedPath, imageUri, callback, function () {
+        copyTempFileToCache(filePath, cachedPath, cacheKey);
+      });
+      return;
+    }
+
     processRequest(cacheKey, cachedPath, imageUri, callback, function () {
       // Notifications always use Qt fallback (image:// URIs can't be read by ImageMagick)
       queueFallbackProcessing(imageUri, cachedPath, cacheKey, 64);
+    });
+  }
+
+  // Check if a path is in a temporary directory that may be cleaned up
+  function isTemporaryPath(path) {
+    return path.startsWith("/tmp/");
+  }
+
+  // Copy a temporary file to the cache directory
+  function copyTempFileToCache(sourcePath, destPath, cacheKey) {
+    const srcEsc = sourcePath.replace(/'/g, "'\\''");
+    const dstEsc = destPath.replace(/'/g, "'\\''");
+
+    const processString = `
+      import QtQuick
+      import Quickshell.Io
+      Process {
+        command: ["cp", "--", "${srcEsc}", "${dstEsc}"]
+        stdout: StdioCollector {}
+        stderr: StdioCollector {}
+      }
+    `;
+
+    queueUtilityProcess({
+      name: "CopyTempFile_" + cacheKey,
+      processString: processString,
+      onComplete: function (exitCode) {
+        if (exitCode === 0) {
+          Logger.d("ImageCache", "Temp file cached:", destPath);
+          notifyCallbacks(cacheKey, destPath, true);
+        } else {
+          Logger.w("ImageCache", "Failed to cache temp file:", sourcePath);
+          notifyCallbacks(cacheKey, "", false);
+        }
+      },
+      onError: function () {
+        Logger.e("ImageCache", "Error caching temp file:", sourcePath);
+        notifyCallbacks(cacheKey, "", false);
+      }
     });
   }
 

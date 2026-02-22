@@ -547,7 +547,15 @@ Singleton {
 
   // Image handling
   function queueImage(path, appName, summary, notificationId) {
-    if (!path || !path.startsWith("image://") || !notificationId)
+    if (!path || !notificationId)
+      return;
+
+    // Cache image:// URIs and temporary file paths (e.g. /tmp/ from Chromium)
+    const filePath = path.startsWith("file://") ? path.substring(7) : path;
+    const isImageUri = path.startsWith("image://");
+    const isTempFile = (path.startsWith("/") || path.startsWith("file://")) && filePath.startsWith("/tmp/");
+
+    if (!isImageUri && !isTempFile)
       return;
 
     ImageCacheService.getNotificationIcon(path, appName, summary, function (cachedPath, success) {
