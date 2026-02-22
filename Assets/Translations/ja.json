@@ -102,7 +102,7 @@
       "collapse-condition-description": "出力テキストがこの値と一致する場合、ボタンを折りたたみます。",
       "collapse-condition-label": "折りたたみ条件",
       "color-selection-description": "テーマカラーをアイコンとテキストに適用します。",
-      "default-tooltip": "カスタムボタン、設定で構成。",
+      "default-tooltip": "カスタムボタン、設定で構成",
       "display-command-output-description": "定期的に実行するコマンドを入力します。出力の最初の行がテキストとして表示されます。",
       "display-command-output-label": "コマンド出力を表示",
       "display-command-output-stream-description": "継続的に実行するコマンドを入力します。",

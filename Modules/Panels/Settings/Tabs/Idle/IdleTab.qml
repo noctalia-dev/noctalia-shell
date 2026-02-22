@@ -83,7 +83,7 @@ ColumnLayout {
     }
 
     NSpinBox {
-      label: I18n.tr("panels.idle.suspend-label")
+      label: I18n.tr("common.suspend")
       description: I18n.tr("panels.idle.suspend-description")
       from: 0
       to: 999

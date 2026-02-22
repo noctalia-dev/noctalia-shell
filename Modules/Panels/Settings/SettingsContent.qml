@@ -570,7 +570,7 @@ Item {
           },
           {
             "id": SettingsPanel.Tab.Idle,
-            "label": "panels.idle.title",
+            "label": "common.idle",
             "icon": "settings-idle",
             "source": idleTab
           },

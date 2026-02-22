@@ -101,7 +101,7 @@
       "collapse-condition-description": "Dersom utskrifta er lik dette, skyler knappen seg.",
       "collapse-condition-label": "Skylevilkår",
       "color-selection-description": "Gjev ikon og tekst temafargane.",
-      "default-tooltip": "Eigendefinert knapp, styr i innstillingane.",
+      "default-tooltip": "Eigendefinert knapp, styr i innstillingane",
       "display-command-output-description": "Gjev kommando for å køyra regelrett. Fyrste utskriftslinja vert vist som tekst.",
       "display-command-output-label": "Vis kommando utskrift",
       "display-command-output-stream-description": "Gjev kommando for å køyra heile tida.",

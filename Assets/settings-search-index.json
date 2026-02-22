@@ -923,7 +923,7 @@
     "descriptionKey": "panels.idle.enable-description",
     "widget": "NToggle",
     "tab": 13,
-    "tabLabel": "panels.idle.title",
+    "tabLabel": "common.idle",
     "subTab": null
   },
   {
@@ -931,7 +931,7 @@
     "descriptionKey": "panels.idle.status-description",
     "widget": "NLabel",
     "tab": 13,
-    "tabLabel": "panels.idle.title",
+    "tabLabel": "common.idle",
     "subTab": null
   },
   {
@@ -939,7 +939,7 @@
     "descriptionKey": "panels.idle.timeouts-description",
     "widget": "NLabel",
     "tab": 13,
-    "tabLabel": "panels.idle.title",
+    "tabLabel": "common.idle",
     "subTab": null
   },
   {
@@ -947,7 +947,7 @@
     "descriptionKey": "panels.idle.screen-off-description",
     "widget": "NSpinBox",
     "tab": 13,
-    "tabLabel": "panels.idle.title",
+    "tabLabel": "common.idle",
     "subTab": null
   },
   {
@@ -955,15 +955,15 @@
     "descriptionKey": "panels.idle.lock-description",
     "widget": "NSpinBox",
     "tab": 13,
-    "tabLabel": "panels.idle.title",
+    "tabLabel": "common.idle",
     "subTab": null
   },
   {
-    "labelKey": "panels.idle.suspend-label",
+    "labelKey": "common.suspend",
     "descriptionKey": "panels.idle.suspend-description",
     "widget": "NSpinBox",
     "tab": 13,
-    "tabLabel": "panels.idle.title",
+    "tabLabel": "common.idle",
     "subTab": null
   },
   {
@@ -971,7 +971,7 @@
     "descriptionKey": "panels.idle.fade-duration-description",
     "widget": "NSpinBox",
     "tab": 13,
-    "tabLabel": "panels.idle.title",
+    "tabLabel": "common.idle",
     "subTab": null
   },
   {

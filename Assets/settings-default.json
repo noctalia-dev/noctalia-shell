@@ -499,6 +499,13 @@
   "plugins": {
     "autoUpdate": false
   },
+  "idle": {
+    "enabled": false,
+    "screenOffTimeout": 0,
+    "lockTimeout": 0,
+    "suspendTimeout": 0,
+    "fadeDuration": 5
+  },
   "desktopWidgets": {
     "enabled": false,
     "gridSnap": false,
