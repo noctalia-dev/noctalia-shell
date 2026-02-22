@@ -327,13 +327,15 @@ SmartPanel {
       newCol = newCol - 1 < 0 ? grid.itemsInRow(newRow) - 1 : newCol - 1;
       break;
     case "right":
-      newCol = newCol + 1 >= grid.itemsInRow(newRow) ? 0 : newCol + 1;
+      // We already moved to newCol to 0 if grid.currentCol was negative
+      newCol = grid.currentCol < 0 ? newRow : newCol + 1 >= grid.itemsInRow(newRow) ? 0 : newCol + 1;
       break;
     case "up":
       newRow = newRow - 1 < 0 ? grid.rows - 1 : newRow - 1;
       break;
     case "down":
-      newRow = newRow + 1 >= grid.rows ? 0 : newRow + 1;
+      // We already moved to newRow to 0 if grid.currentRow was negative
+      newRow = grid.currentRow < 0 ? newRow : newRow + 1 >= grid.rows ? 0 : newRow + 1;
       break;
     }
 
