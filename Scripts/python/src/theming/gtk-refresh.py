@@ -71,7 +71,11 @@ async def apply_gtk4_colors(config_dir: Path):
         print(f"Error: GTK4 noctalia.css not found at {colors_file}", file=sys.stderr)
         return False
 
-    gtk_css.write_text(gtk4_import)
+    if not gtk_css.exists():
+        gtk_css.write_text(gtk4_import)
+    elif gtk4_import not in gtk_css.read_text():
+        gtk_css.write_text(gtk_css.read_text() + "\n" + gtk4_import)
+
     print("Updated GTK4 CSS import")
     return True
 
