@@ -157,11 +157,16 @@ SmartPanel {
 
   // Lifecycle handlers
   onOpened: {
-    selectedIndex = -1;
-    ignoreMouseHover = true;
-    globalMouseInitialized = false;
-    mouseTrackingReady = false;
-    mouseTrackingDelayTimer.restart();
+    if (powerOptions.length > 0) {
+      selectedIndex = -1;
+      ignoreMouseHover = true;
+      globalMouseInitialized = false;
+      mouseTrackingReady = false;
+      mouseTrackingDelayTimer.restart();
+    } else {
+      Logger.w("SessionMenu", "Trying to open an empty session menu");
+      root.closeImmediately();
+    }
   }
 
   onClosed: {
