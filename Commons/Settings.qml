@@ -570,6 +570,8 @@ Singleton {
       property bool showHeader: true
       property bool showKeybinds: true
       property bool largeButtonsStyle: true
+      property bool showBlurBackground: false
+      property string blurColor: "mSurface"
       property string largeButtonsLayout: "single-row"
       property list<var> powerOptions: [
         {

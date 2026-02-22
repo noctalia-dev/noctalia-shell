@@ -119,4 +119,89 @@ ColumnLayout {
     text: Math.round(Settings.data.sessionMenu.countdownDuration / 1000) + "s"
     defaultValue: Settings.getDefaultValue("sessionMenu.countdownDuration")
   }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.session-menu.show-blur-background-label")
+    description: I18n.tr("panels.session-menu.show-blur-background-description")
+    checked: Settings.data.sessionMenu.showBlurBackground
+    onToggled: checked => Settings.data.sessionMenu.showBlurBackground = checked
+  }
+
+  NComboBox {
+    label: I18n.tr("panels.session-menu.blur-color-label")
+    description: I18n.tr("panels.session-menu.blur-color-description")
+    Layout.fillWidth: true
+    model: [
+      {
+        "key": "mPrimary",
+        "name": I18n.tr("common.primary")
+      },
+      {
+        "key": "mOnPrimary",
+        "name": I18n.tr("common.on-primary")
+      },
+      {
+        "key": "mSecondary",
+        "name": I18n.tr("common.secondary")
+      },
+      {
+        "key": "mOnSecondary",
+        "name": I18n.tr("common.on-secondary")
+      },
+      {
+        "key": "mTertiary",
+        "name": I18n.tr("common.tertiary")
+      },
+      {
+        "key": "mOnTertiary",
+        "name": I18n.tr("common.on-tertiary")
+      },
+      {
+        "key": "mError",
+        "name": I18n.tr("common.error")
+      },
+      {
+        "key": "mOnError",
+        "name": I18n.tr("common.on-error")
+      },
+      {
+        "key": "mSurface",
+        "name": I18n.tr("common.surface")
+      },
+      {
+        "key": "mOnSurface",
+        "name": I18n.tr("common.on-surface")
+      },
+      {
+        "key": "mSurfaceVariant",
+        "name": I18n.tr("common.surface-variant")
+      },
+      {
+        "key": "mOnSurfaceVariant",
+        "name": I18n.tr("common.on-surface-variant")
+      },
+      {
+        "key": "mOutline",
+        "name": I18n.tr("common.outline")
+      },
+      {
+        "key": "mShadow",
+        "name": I18n.tr("common.shadow")
+      },
+      {
+        "key": "mHover",
+        "name": I18n.tr("common.hover")
+      },
+      {
+        "key": "mOnHover",
+        "name": I18n.tr("common.on-hover")
+      }
+    ]
+
+    currentKey: Settings.data.sessionMenu.blurColor
+    onSelected: key => Settings.data.sessionMenu.blurColor = key
+    visible: Settings.data.sessionMenu.showBlurBackground
+    defaultValue: Settings.getDefaultValue("sessionMenu.blurColor")
+  }
 }

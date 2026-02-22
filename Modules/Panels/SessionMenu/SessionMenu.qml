@@ -17,9 +17,10 @@ SmartPanel {
 
   readonly property bool largeButtonsStyle: Settings.data.sessionMenu.largeButtonsStyle || false
   readonly property bool largeButtonsLayout: Settings.data.sessionMenu.largeButtonsLayout || "grid"
+  readonly property bool showBlurBackground: Settings.data.sessionMenu.showBlurBackground || false
 
   // Make panel background transparent for large buttons style
-  panelBackgroundColor: largeButtonsStyle ? "transparent" : Color.mSurface
+  panelBackgroundColor: (largeButtonsStyle || showBlurBackground) ? "transparent" : Color.mSurface
 
   preferredWidth: largeButtonsStyle ? 0 : Math.round(440 * Style.uiScaleRatio)
   preferredWidthRatio: largeButtonsStyle ? 1.0 : 0
@@ -481,9 +482,27 @@ SmartPanel {
     color: "transparent"
     focus: true
 
-    // For large buttons style, use full screen dimensions
-    readonly property var contentPreferredWidth: largeButtonsStyle ? (root.screen?.width || root.width || 0) : undefined
-    readonly property var contentPreferredHeight: largeButtonsStyle ? (root.screen?.height || root.height || 0) : undefined
+    width: (largeButtonsStyle || showBlurBackground) ? (root.screen?.width || root.width || 2560) : undefined
+    height: (largeButtonsStyle || showBlurBackground) ? (root.screen?.height || root.height || 1440) : undefined
+
+    readonly property var contentPreferredWidth: (largeButtonsStyle || showBlurBackground) ? (root.screen?.width || root.width || 0) : undefined
+    readonly property var contentPreferredHeight: (largeButtonsStyle || showBlurBackground) ? (root.screen?.height || root.height || 0) : undefined
+    readonly property color blurColor: Color[Settings.data.sessionMenu.blurColor] ?? Color.mSurface
+
+    Rectangle {
+      id: blurBackground
+      anchors.fill: parent
+      anchors.margins: -100
+      z: -10
+      visible: showBlurBackground
+
+      gradient: Gradient {
+        GradientStop {
+          position: 0.0
+          color: Qt.alpha(blurColor, 0.4)
+        }
+      }
+    }
 
     // Focus management
     Connections {
@@ -636,8 +655,25 @@ SmartPanel {
     // Normal style layout
     NBox {
       visible: !largeButtonsStyle
-      anchors.fill: parent
-      anchors.margins: Style.marginL
+      anchors.fill: showBlurBackground ? undefined : parent
+      anchors.margins: showBlurBackground ? -100 : Style.marginL
+      anchors.centerIn: showBlurBackground ? parent : undefined
+
+      // Calculate height for normal style only when background overlay is shown
+      readonly property int normalStyleHeight: {
+        var headerHeight = Settings.data.sessionMenu.showHeader ? Style.baseWidgetSize * 0.6 : 0;
+        var dividerHeight = Settings.data.sessionMenu.showHeader ? Style.marginS : 0;
+        var buttonHeight = Style.baseWidgetSize * 1.3 * Style.uiScaleRatio;
+        var buttonSpacing = Style.marginS;
+        var enabledCount = powerOptions.length;
+        var headerSpacing = Settings.data.sessionMenu.showHeader ? (Style.marginL * 2) : 0;
+        var baseHeight = (Style.marginL * 4) + headerHeight + dividerHeight + headerSpacing;
+        var buttonsHeight = enabledCount > 0 ? (buttonHeight * enabledCount) + (buttonSpacing * (enabledCount - 1)) : 0;
+        return Math.round(baseHeight + buttonsHeight);
+      }
+
+      width: showBlurBackground ? Math.round(440 * Style.uiScaleRatio) : undefined
+      height: showBlurBackground ? normalStyleHeight : undefined
 
       ColumnLayout {
         anchors.fill: parent
