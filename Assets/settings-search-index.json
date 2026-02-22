@@ -512,6 +512,14 @@
     "subTab": null
   },
   {
+    "labelKey": "panels.desktop-widgets.overview-enabled-label",
+    "descriptionKey": "panels.desktop-widgets.overview-enabled-description",
+    "widget": "NToggle",
+    "tab": 6,
+    "tabLabel": "panels.desktop-widgets.title",
+    "subTab": null
+  },
+  {
     "labelKey": "panels.display.monitors-brightness-step-label",
     "descriptionKey": "panels.display.monitors-brightness-step-description",
     "widget": "NSpinBox",

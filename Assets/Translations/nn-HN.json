@@ -101,7 +101,7 @@
       "collapse-condition-description": "Knappen løynest um utskrifti er lik dette.",
       "collapse-condition-label": "Løyningsvilkor",
       "color-selection-description": "Lita fråmerket og teksti med hamlitene.",
-      "default-tooltip": "Sjølvgjord knapp, stjorna i innstillingane.",
+      "default-tooltip": "Sjølvgjord knapp, stjorna i innstillingane",
       "display-command-output-description": "Skriv inn eit styrebod som skal køyra jamlege. Syner fyrste utskriftsradi som tekst.",
       "display-command-output-label": "Syn utskrift frå styrebod",
       "display-command-output-stream-description": "Skriv inn styrebod som skal køyra heile tidi.",
