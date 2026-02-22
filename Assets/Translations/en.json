@@ -1311,6 +1311,8 @@
       "clock-style-label": "Clock style",
       "compact-lockscreen-description": "Show only the login input and system controls, hiding weather and media widgets.",
       "compact-lockscreen-label": "Compact lock screen",
+      "enable-lockscreen-media-controls-description": "Show interactive media playback controls on the lock screen.",
+      "enable-lockscreen-media-controls-label": "Lock screen media controls",
       "lock-on-suspend-description": "Automatically lock the screen when suspending the system.",
       "lock-on-suspend-label": "Lock on suspend",
       "lock-screen-animations-description": "Enable or disable lockscreen animations.",
