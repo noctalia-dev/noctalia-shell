@@ -110,6 +110,8 @@ RowLayout {
       acceptedButtons: Qt.NoButton
       hoverEnabled: true
       onEntered: {
+        if (!root.enabled)
+          return;
         root.hovering = true;
         root.entered();
       }
@@ -327,14 +329,13 @@ RowLayout {
     }
 
     // Center value display with separate prefix, value, and suffix
-    Rectangle {
+    Item {
       id: valueContainer
       anchors.left: decreaseButton.right
       anchors.right: increaseButton.left
       anchors.verticalCenter: parent.verticalCenter
       anchors.margins: 4
       height: parent.height
-      color: "transparent"
 
       RowLayout {
         anchors.centerIn: parent
@@ -346,7 +347,7 @@ RowLayout {
           family: Settings.data.ui.fontFixed
           pointSize: Style.fontSizeM
           font.weight: Style.fontWeightMedium
-          color: Color.mOnSurface
+          color: Qt.alpha(Color.mOnSurface, root.enabled ? 1.0 : 0.6)
           verticalAlignment: Text.AlignVCenter
           Layout.alignment: Qt.AlignVCenter
           visible: root.prefix !== ""
@@ -359,7 +360,7 @@ RowLayout {
           font.family: Settings.data.ui.fontFixed
           font.pointSize: Style.fontSizeM
           font.weight: Style.fontWeightMedium
-          color: Color.mOnSurface
+          color: Qt.alpha(Color.mOnSurface, root.enabled ? 1.0 : 0.6)
           verticalAlignment: Text.AlignVCenter
           Layout.alignment: Qt.AlignVCenter
           selectByMouse: true
@@ -405,7 +406,7 @@ RowLayout {
           family: Settings.data.ui.fontFixed
           pointSize: Style.fontSizeM
           font.weight: Style.fontWeightMedium
-          color: Color.mOnSurface
+          color: Qt.alpha(Color.mOnSurface, root.enabled ? 1.0 : 0.6)
           verticalAlignment: Text.AlignVCenter
           Layout.alignment: Qt.AlignVCenter
           visible: root.suffix !== ""

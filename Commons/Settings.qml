@@ -719,6 +719,14 @@ Singleton {
       property bool autoUpdate: false
     }
 
+    // idle management
+    property JsonObject idle: JsonObject {
+      property bool enabled: false
+      property int screenOffTimeout: 0   // minutes, 0 = disabled
+      property int lockTimeout: 0        // minutes, 0 = disabled
+      property int suspendTimeout: 0     // minutes, 0 = disabled
+    }
+
     // desktop widgets
     property JsonObject desktopWidgets: JsonObject {
       property bool enabled: false

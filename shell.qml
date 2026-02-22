@@ -110,6 +110,7 @@ ShellRoot {
           HooksService.init();
           BluetoothService.init();
           IdleInhibitorService.init();
+          IdleService.init();
           PowerProfileService.init();
           HostService.init();
           GitHubService.init();

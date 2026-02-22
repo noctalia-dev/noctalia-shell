@@ -670,6 +670,14 @@ Item {
     }
   }
 
+  function turnOffMonitors() {
+    try {
+      Quickshell.execDetached(["wlr-randr", "--off"]);
+    } catch (e) {
+      Logger.e("MangoService", "Failed to turn off monitors:", e);
+    }
+  }
+
   function logout() {
     Quickshell.execDetached(["mmsg", "-s", "-q"]);
   }

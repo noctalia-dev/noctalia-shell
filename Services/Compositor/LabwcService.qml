@@ -268,6 +268,14 @@ Item {
     }
   }
 
+  function turnOffMonitors() {
+    try {
+      Quickshell.execDetached(["wlr-randr", "--off"]);
+    } catch (e) {
+      Logger.e("LabwcService", "Failed to turn off monitors:", e);
+    }
+  }
+
   function logout() {
     stopWorkspaceHelper();
     try {

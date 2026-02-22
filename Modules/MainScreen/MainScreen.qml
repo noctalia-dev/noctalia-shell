@@ -30,6 +30,7 @@ import qs.Modules.Panels.SystemStats
 import qs.Modules.Panels.Tray
 import qs.Modules.Panels.Wallpaper
 import qs.Services.Compositor
+import qs.Services.Power
 import qs.Services.UI
 
 /**
@@ -484,6 +485,19 @@ PanelWindow {
 
     // Screen Corners
     ScreenCorners {}
+
+    // Native idle inhibitor — one per active MainScreen window.
+    // Multiple inhibitors bound to the same enabled state are harmless;
+    // having one per screen is more robust than picking a "primary" screen.
+    IdleInhibitor {
+      window: root
+      enabled: IdleInhibitorService.isInhibited
+
+      Component.onCompleted: {
+        IdleInhibitorService.nativeInhibitorAvailable = true;
+        Logger.d("IdleInhibitor", "Native IdleInhibitor active on screen:", root.screen?.name);
+      }
+    }
   }
 
   // Centralized Keyboard Shortcuts

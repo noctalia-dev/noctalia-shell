@@ -498,6 +498,15 @@ Singleton {
                                     });
   }
 
+  function turnOffMonitors() {
+    Logger.i("Compositor", "Turn off monitors requested");
+    if (backend && backend.turnOffMonitors) {
+      backend.turnOffMonitors();
+    } else {
+      Logger.w("Compositor", "No backend available for turnOffMonitors");
+    }
+  }
+
   function suspend() {
     Logger.i("Compositor", "Suspend requested");
     if (executeSessionAction("suspend"))

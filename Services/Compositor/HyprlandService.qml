@@ -482,6 +482,14 @@ Item {
     }
   }
 
+  function turnOffMonitors() {
+    try {
+      Quickshell.execDetached(["hyprctl", "dispatch", "dpms", "off"]);
+    } catch (e) {
+      Logger.e("HyprlandService", "Failed to turn off monitors:", e);
+    }
+  }
+
   function logout() {
     try {
       Quickshell.execDetached(["hyprctl", "dispatch", "exit"]);

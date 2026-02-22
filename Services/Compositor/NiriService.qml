@@ -472,6 +472,14 @@ Item {
     }
   }
 
+  function turnOffMonitors() {
+    try {
+      Quickshell.execDetached(["niri", "msg", "action", "power-off-monitors"]);
+    } catch (e) {
+      Logger.e("NiriService", "Failed to turn off monitors:", e);
+    }
+  }
+
   function logout() {
     try {
       Quickshell.execDetached(["niri", "msg", "action", "quit", "--skip-confirmation"]);

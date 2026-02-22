@@ -14,41 +14,12 @@ Singleton {
   property var activeInhibitors: []
   property var timeout: null // in seconds
 
-  // Different inhibitor strategies
-  property string strategy: "systemd" // "systemd", "wayland", or "auto"
+  // True when the native Wayland IdleInhibitor is handling inhibition
+  // (set by the IdleInhibitor element in MainScreen via the nativeInhibitor property)
+  property bool nativeInhibitorAvailable: false
 
   function init() {
     Logger.i("IdleInhibitor", "Service started");
-    detectStrategy();
-  }
-
-  // Auto-detect the best strategy
-  function detectStrategy() {
-    if (strategy === "auto") {
-      // Check if systemd-inhibit is available
-      try {
-        var systemdResult = Quickshell.execDetached(["sh", "-c", "command -v systemd-inhibit"]);
-        strategy = "systemd";
-        Logger.d("IdleInhibitor", "Using systemd-inhibit strategy");
-        return;
-      } catch (e)
-
-        // systemd-inhibit not found, try Wayland tools
-      {}
-
-      try {
-        var waylandResult = Quickshell.execDetached(["sh", "-c", "command -v wayhibitor"]);
-        strategy = "wayland";
-        Logger.d("IdleInhibitor", "Using wayhibitor strategy");
-        return;
-      } catch (e)
-
-        // wayhibitor not found
-      {}
-
-      Logger.w("IdleInhibitor", "No suitable inhibitor found - will try systemd as fallback");
-      strategy = "systemd"; // Fallback to systemd even if not detected
-    }
   }
 
   // Add an inhibitor
@@ -98,13 +69,11 @@ Singleton {
   function startInhibition(newReason) {
     reason = newReason;
 
-    if (strategy === "systemd") {
-      startSystemdInhibition();
-    } else if (strategy === "wayland") {
-      startWaylandInhibition();
+    if (nativeInhibitorAvailable) {
+      // Native IdleInhibitor in MainScreen handles it via isInhibited binding
+      Logger.d("IdleInhibitor", "Native inhibitor active");
     } else {
-      Logger.w("IdleInhibitor", "No inhibition strategy available");
-      return;
+      startSubprocessInhibition();
     }
 
     isInhibited = true;
@@ -115,7 +84,8 @@ Singleton {
   function stopInhibition() {
     if (!isInhibited)
       return;
-    if (inhibitorProcess.running) {
+
+    if (!nativeInhibitorAvailable && inhibitorProcess.running) {
       inhibitorProcess.signal(15); // SIGTERM
     }
 
@@ -123,19 +93,13 @@ Singleton {
     Logger.i("IdleInhibitor", "Stopped inhibition");
   }
 
-  // Systemd inhibition using systemd-inhibit
-  function startSystemdInhibition() {
+  // Subprocess fallback using systemd-inhibit
+  function startSubprocessInhibition() {
     inhibitorProcess.command = ["systemd-inhibit", "--what=idle", "--why=" + reason, "--mode=block", "sleep", "infinity"];
     inhibitorProcess.running = true;
   }
 
-  // Wayland inhibition using wayhibitor or similar
-  function startWaylandInhibition() {
-    inhibitorProcess.command = ["wayhibitor"];
-    inhibitorProcess.running = true;
-  }
-
-  // Process for maintaining the inhibition
+  // Process for maintaining the inhibition (subprocess fallback only)
   Process {
     id: inhibitorProcess
     running: false

@@ -82,6 +82,7 @@ SmartPanel {
     Dock,
     General,
     Hooks,
+    Idle,
     Launcher,
     Location,
     Connections,

@@ -129,6 +129,7 @@ Singleton {
     "settings-notifications": "bell",
     "settings-osd": "picture-in-picture",
     "settings-about": "info-square-rounded",
+    "settings-idle": "moon",
     "settings-lock-screen": "lock",
     "settings-session-menu": "power",
     "settings-system-monitor": "activity",
