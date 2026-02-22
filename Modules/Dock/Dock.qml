@@ -791,8 +791,9 @@ Loader {
             readonly property int extraLeft: (!isVertical && !exclusive && barOnLeft) ? barHeight : 0
             readonly property int extraRight: (!isVertical && !exclusive && barOnRight) ? barHeight : 0
 
-            width: dockContent.dockContainer.width + extraLeft + extraRight
-            height: dockContent.dockContainer.height + extraTop + extraBottom
+            // Add +2 buffer for fractional scaling issues
+            width: dockContent.dockContainer.width + extraLeft + extraRight + (root.isVertical ? 2 : Style.margin2XL * 6)
+            height: dockContent.dockContainer.height + extraTop + extraBottom + 2
 
             anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
             anchors.verticalCenter: isVertical ? parent.verticalCenter : undefined
@@ -801,6 +802,9 @@ Loader {
             anchors.bottom: dockPosition === "bottom" ? parent.bottom : undefined
             anchors.left: dockPosition === "left" ? parent.left : undefined
             anchors.right: dockPosition === "right" ? parent.right : undefined
+
+            // Enable layer caching to reduce GPU usage from continuous animations
+            layer.enabled: true
 
             opacity: hidden ? 0 : 1
             scale: hidden ? 0.85 : 1
