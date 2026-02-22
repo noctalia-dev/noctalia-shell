@@ -201,7 +201,7 @@ NBox {
                   color: Color.mError
                   radius: height * 0.5
                   width: Math.round(forgettingText.implicitWidth + Style.margin2S)
-                  height: math.round(forgettingText.implicitHeight + Style.margin2XXS)
+                  height: Math.round(forgettingText.implicitHeight + Style.margin2XXS)
 
                   NText {
                     id: forgettingText
