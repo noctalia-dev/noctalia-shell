@@ -792,7 +792,7 @@ Loader {
             readonly property int extraRight: (!isVertical && !exclusive && barOnRight) ? barHeight : 0
 
             // Add +2 buffer for fractional scaling issues
-            width: dockContent.dockContainer.width + extraLeft + extraRight + (root.isVertical ? 2 : Style.margin2XL * 6)
+            width: dockContent.dockContainer.width + extraLeft + extraRight + 2
             height: dockContent.dockContainer.height + extraTop + extraBottom + 2
 
             anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
