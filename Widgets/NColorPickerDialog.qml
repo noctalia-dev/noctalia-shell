@@ -29,10 +29,16 @@ Popup {
     if (selectedColor.hsvHue >= 0) {
       stableHue = selectedColor.hsvHue;
     }
+    if (liveMode && visible) {
+      colorSelected(selectedColor);
+    }
   }
   readonly property real displayHue: selectedColor.hsvHue < 0 ? stableHue : selectedColor.hsvHue
 
   signal colorSelected(color color)
+
+  // When true: hides Cancel/Apply, emits colorSelected on every color change
+  property bool liveMode: false
 
   width: 580
   padding: Style.marginXL
@@ -734,6 +740,7 @@ Popup {
     }
 
     RowLayout {
+      visible: !root.liveMode
       Layout.fillWidth: true
       Layout.topMargin: 1
       Layout.bottomMargin: 1
