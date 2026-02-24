@@ -251,11 +251,19 @@ Singleton {
     id: watchText
     stdout: StdioCollector {}
     onExited: (exitCode, exitStatus) => {
-      if (root.autoWatch && root.watchersStarted) {
-        Qt.callLater(() => {
-                       watchText.running = true;
-                     });
+      if (root.autoWatch && root.watchersStarted && Settings.data.appLauncher.clipboardWatchTextCommand.trim() !== "") {
+        watchTextRestartTimer.restart();
       }
+    }
+  }
+
+  Timer {
+    id: watchTextRestartTimer
+    interval: 1000
+    repeat: false
+    onTriggered: {
+      if (root.autoWatch && root.watchersStarted)
+      watchText.running = true;
     }
   }
 
@@ -264,11 +272,19 @@ Singleton {
     id: watchImage
     stdout: StdioCollector {}
     onExited: (exitCode, exitStatus) => {
-      if (root.autoWatch && root.watchersStarted) {
-        Qt.callLater(() => {
-                       watchImage.running = true;
-                     });
+      if (root.autoWatch && root.watchersStarted && Settings.data.appLauncher.clipboardWatchImageCommand.trim() !== "") {
+        watchImageRestartTimer.restart();
       }
+    }
+  }
+
+  Timer {
+    id: watchImageRestartTimer
+    interval: 1000
+    repeat: false
+    onTriggered: {
+      if (root.autoWatch && root.watchersStarted)
+      watchImage.running = true;
     }
   }
 

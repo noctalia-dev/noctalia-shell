@@ -49,7 +49,7 @@ Item {
   readonly property var availableDevices: {
     var list = root.unnamedAvailableDevices;
 
-    if (Settings.data && Settings.data.ui && Settings.data.network.bluetoothHideUnnamedDevices) {
+    if (Settings.data.network.bluetoothHideUnnamedDevices) {
       list = list.filter(function (dev) {
         var dn = dev.name || dev.deviceName || "";
         var s = String(dn).trim();
@@ -78,7 +78,7 @@ Item {
 
   // For managing expanded device details
   property string expandedDeviceKey: ""
-  property bool detailsGrid: (Settings.data && Settings.data.ui && Settings.data.network.bluetoothDetailsViewMode !== undefined) ? (Settings.data.network.bluetoothDetailsViewMode === "grid") : true
+  property bool detailsGrid: (Settings.data.network.bluetoothDetailsViewMode === "grid")
 
   // Combined visibility check: tab must be visible AND the window must be visible
   readonly property bool effectivelyVisible: root.visible && Window.window && Window.window.visible
@@ -533,9 +533,7 @@ Item {
             baseSize: Style.baseWidgetSize * 0.8
             onClicked: {
               root.detailsGrid = !root.detailsGrid;
-              if (Settings.data && Settings.data.ui) {
-                Settings.data.network.bluetoothDetailsViewMode = root.detailsGrid ? "grid" : "list";
-              }
+              Settings.data.network.bluetoothDetailsViewMode = root.detailsGrid ? "grid" : "list";
             }
             z: 1
           }

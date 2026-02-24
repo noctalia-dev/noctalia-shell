@@ -1845,6 +1845,15 @@
     "subTabLabel": "common.panels"
   },
   {
+    "labelKey": "panels.user-interface.settings-panel-sidebar-card-style-label",
+    "descriptionKey": "panels.user-interface.settings-panel-sidebar-card-style-description",
+    "widget": "NToggle",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 1,
+    "subTabLabel": "common.panels"
+  },
+  {
     "labelKey": "panels.general.screen-corners-show-corners-label",
     "descriptionKey": "panels.general.screen-corners-show-corners-description",
     "widget": "NToggle",

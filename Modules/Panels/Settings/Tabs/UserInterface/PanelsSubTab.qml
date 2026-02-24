@@ -31,7 +31,7 @@ ColumnLayout {
     Layout.fillWidth: true
     label: I18n.tr("panels.user-interface.panel-background-opacity-label")
     description: I18n.tr("panels.user-interface.panel-background-opacity-description")
-    from: 0.4
+    from: 0
     to: 1
     stepSize: 0.01
     showReset: true
@@ -59,6 +59,10 @@ ColumnLayout {
     Layout.fillWidth: true
   }
 
+  NHeader {
+    label: I18n.tr("panels.user-interface.settings-panel-header")
+  }
+
   NComboBox {
     label: I18n.tr("panels.user-interface.settings-panel-mode-label")
     description: I18n.tr("panels.user-interface.settings-panel-mode-description")
@@ -80,5 +84,14 @@ ColumnLayout {
     currentKey: Settings.data.ui.settingsPanelMode
     defaultValue: Settings.getDefaultValue("ui.settingsPanelMode")
     onSelected: key => Settings.data.ui.settingsPanelMode = key
+    minimumWidth: 220 * Style.uiScaleRatio
+  }
+
+  NToggle {
+    label: I18n.tr("panels.user-interface.settings-panel-sidebar-card-style-label")
+    description: I18n.tr("panels.user-interface.settings-panel-sidebar-card-style-description")
+    checked: Settings.data.ui.settingsPanelSideBarCardStyle
+    defaultValue: Settings.getDefaultValue("ui.settingsPanelSideBarCardStyle")
+    onToggled: checked => Settings.data.ui.settingsPanelSideBarCardStyle = checked
   }
 }

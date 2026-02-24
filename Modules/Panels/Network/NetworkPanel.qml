@@ -18,10 +18,10 @@ SmartPanel {
   property string passwordSsid: ""
   property string expandedSsid: ""
 
-  // Info panel collapsed by default, view mode persisted under Settings.data.ui.wifiDetailsViewMode
+  // Info panel collapsed by default, view mode persisted in settings
   // Ethernet details UI state (mirrors Wi‑Fi info behavior)
   property bool ethernetInfoExpanded: false
-  property bool ethernetDetailsGrid: (Settings.data && Settings.data.ui && Settings.data.network.wifiDetailsViewMode !== undefined) ? (Settings.data.network.wifiDetailsViewMode === "grid") : true
+  property bool ethernetDetailsGrid: (Settings.data.network.wifiDetailsViewMode === "grid")
 
   // Unified panel view mode: "wifi" | "ethernet" (persisted)
   property string panelViewMode: "wifi"
@@ -29,8 +29,9 @@ SmartPanel {
 
   onPanelViewModeChanged: {
     // Persist last view (only after restored the initial value)
-    if (panelViewPersistEnabled && Settings.data && Settings.data.ui && Settings.data.ui.networkPanelView !== undefined)
+    if (panelViewPersistEnabled) {
       Settings.data.ui.networkPanelView = panelViewMode;
+    }
     // Reset transient states to avoid layout artifacts
     passwordSsid = "";
     expandedSsid = "";
@@ -71,7 +72,7 @@ SmartPanel {
     // Also fetch Ethernet details if connected
     NetworkService.refreshActiveEthernetDetails();
     // Restore last view if valid, otherwise choose what's available (prefer Wi‑Fi when both exist)
-    if (Settings.data && Settings.data.ui && Settings.data.ui.networkPanelView) {
+    if (Settings.data.ui.networkPanelView) {
       const last = Settings.data.ui.networkPanelView;
       if (last === "ethernet" && NetworkService.hasEthernet()) {
         panelViewMode = "ethernet";
@@ -645,9 +646,7 @@ SmartPanel {
                           baseSize: Style.baseWidgetSize * 0.8
                           onClicked: {
                             ethernetDetailsGrid = !ethernetDetailsGrid;
-                            if (Settings.data && Settings.data.ui) {
-                              Settings.data.ui.wifiDetailsViewMode = ethernetDetailsGrid ? "grid" : "list";
-                            }
+                            Settings.data.network.wifiDetailsViewMode = ethernetDetailsGrid ? "grid" : "list";
                           }
                           z: 1
                         }

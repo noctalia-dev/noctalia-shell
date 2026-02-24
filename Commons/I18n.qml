@@ -14,7 +14,7 @@ Singleton {
   property string systemDetectedLangCode: ""
   property string fullLocaleCode: "" // Preserves regional locale variants
   // Static list of available translations — update when adding/removing translation files
-  property var availableLanguages: ["en", "de", "es", "fr", "hu", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "zh-CN", "zh-TW"]
+  property var availableLanguages: ["en", "de", "es", "fr", "hu", "it", "ja", "ko-KR", "ku", "nl", "nn-HN", "nn-NO", "pl", "pt", "ru", "sv", "tr", "uk-UA", "zh-CN", "zh-TW"]
   property var translations: ({})
   property var fallbackTranslations: ({})
 

@@ -62,7 +62,7 @@ Item {
   property real _lastMouseY: 0
   property bool _mouseInitialized: false
 
-  readonly property bool panelVeryTransparent: Settings.data.ui.panelBackgroundOpacity <= 0.75
+  readonly property bool sidebarCardStyle: Settings.data.ui.settingsPanelSideBarCardStyle
 
   onSearchResultsChanged: {
     searchSelectedIndex = 0;
@@ -753,13 +753,13 @@ Item {
         id: sidebar
 
         clip: true
-        Layout.preferredWidth: Math.round(root.sidebarExpanded ? 200 * Style.uiScaleRatio : sidebarToggle.width + (root.panelVeryTransparent ? Style.margin2M : 0) + (sidebarList.verticalScrollBarActive ? Style.marginM : 0))
+        Layout.preferredWidth: Math.round(root.sidebarExpanded ? 200 * Style.uiScaleRatio : sidebarToggle.width + (root.sidebarCardStyle ? Style.margin2M : 0) + (sidebarList.verticalScrollBarActive ? Style.marginM : 0))
         Layout.fillHeight: true
         Layout.alignment: Qt.AlignTop
 
-        radius: root.panelVeryTransparent ? Style.radiusM : 0
-        color: root.panelVeryTransparent ? Color.mSurfaceVariant : "transparent"
-        border.color: root.panelVeryTransparent ? Style.boxBorderColor : "transparent"
+        radius: root.sidebarCardStyle ? Style.radiusM : 0
+        color: root.sidebarCardStyle ? Color.mSurfaceVariant : "transparent"
+        border.color: root.sidebarCardStyle ? Style.boxBorderColor : "transparent"
 
         Behavior on Layout.preferredWidth {
           NumberAnimation {
@@ -772,7 +772,7 @@ Item {
         ColumnLayout {
           anchors.fill: parent
           spacing: Style.marginS
-          anchors.margins: root.panelVeryTransparent ? Style.marginM : 0
+          anchors.margins: root.sidebarCardStyle ? Style.marginM : 0
 
           // Sidebar toggle button
           Item {
