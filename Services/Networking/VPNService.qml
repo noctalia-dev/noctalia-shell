@@ -17,6 +17,9 @@ Singleton {
   property string disconnectingUuid: ""
   property string lastError: ""
   property bool refreshPending: false
+  property bool importing: false
+  property bool deleting: false
+  property bool initialLoadDone: false
 
   readonly property var activeConnections: {
     const result = [];
@@ -129,6 +132,31 @@ Singleton {
     }
   }
 
+  function importConnection(filePath) {
+    if (importing || !filePath) {
+      return;
+    }
+    importing = true;
+    lastError = "";
+    importProcess.filePath = filePath;
+    importProcess.running = true;
+  }
+
+  function deleteConnection(uuid) {
+    if (deleting || !uuid) {
+      return;
+    }
+    const conn = connections[uuid];
+    if (!conn) {
+      return;
+    }
+    deleting = true;
+    lastError = "";
+    deleteProcess.uuid = uuid;
+    deleteProcess.name = conn.name;
+    deleteProcess.running = true;
+  }
+
   function scheduleRefresh(interval) {
     delayedRefreshTimer.interval = interval;
     delayedRefreshTimer.restart();
@@ -176,6 +204,7 @@ Singleton {
           map[uuid] = {
             "uuid": uuid,
             "name": name,
+            "type": type,
             "device": device,
             "active": active
           };
@@ -184,6 +213,8 @@ Singleton {
         const pending = refreshPending;
         refreshing = false;
         refreshPending = false;
+        if (!initialLoadDone)
+          initialLoadDone = true;
         if (pending) {
           scheduleRefresh(200);
         }
@@ -216,7 +247,7 @@ Singleton {
     stdout: StdioCollector {
       onStreamFinished: {
         const output = text.trim();
-        if (!output || (!output.includes("successfully activated") && !output.includes("Connection successfully"))) {
+        if (!output) {
           return;
         }
         setConnection(connectProcess.uuid, {
@@ -239,7 +270,11 @@ Singleton {
         if (trimmed) {
           lastError = trimmed.split("\n")[0].trim();
           Logger.w("VPN", "Connect error: " + trimmed);
-          ToastService.showWarning(connectProcess.name, lastError);
+          ToastService.showError(I18n.tr("toast.vpn.connect-failed.title", {
+                                           "name": connectProcess.name
+                                         }), I18n.tr("toast.vpn.connect-failed.desc", {
+                                                       "error": lastError
+                                                     }));
         }
         connecting = false;
         connectingUuid = "";
@@ -277,10 +312,88 @@ Singleton {
         if (trimmed) {
           lastError = trimmed.split("\n")[0].trim();
           Logger.w("VPN", "Disconnect error: " + trimmed);
-          ToastService.showWarning(disconnectProcess.name, lastError);
+          ToastService.showError(I18n.tr("toast.vpn.disconnect-failed.title", {
+                                           "name": disconnectProcess.name
+                                         }), I18n.tr("toast.vpn.disconnect-failed.desc", {
+                                                       "error": lastError
+                                                     }));
         }
         disconnecting = false;
         disconnectingUuid = "";
+      }
+    }
+  }
+
+  Process {
+    id: importProcess
+    property string filePath: ""
+    running: false
+    command: ["nmcli", "connection", "import", "type", filePath.endsWith(".conf") ? "wireguard" : "openvpn", "file", filePath]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const output = text.trim();
+        importing = false;
+        lastError = "";
+        Logger.i("VPN", "Imported connection from " + importProcess.filePath);
+        const fileName = importProcess.filePath.split("/").pop();
+        ToastService.showNotice(fileName, I18n.tr("toast.vpn.imported", {
+                                                    "name": fileName
+                                                  }), "shield-plus");
+        scheduleRefresh(500);
+      }
+    }
+
+    stderr: StdioCollector {
+      onStreamFinished: {
+        const trimmed = text.trim();
+        if (trimmed) {
+          lastError = trimmed.split("\n")[0].trim();
+          Logger.w("VPN", "Import error: " + trimmed);
+          const fileName = importProcess.filePath.split("/").pop();
+          ToastService.showError(I18n.tr("toast.vpn.import-failed.title", {
+                                           "name": fileName
+                                         }), I18n.tr("toast.vpn.import-failed.desc", {
+                                                       "error": lastError
+                                                     }));
+        }
+        importing = false;
+      }
+    }
+  }
+
+  Process {
+    id: deleteProcess
+    property string uuid: ""
+    property string name: ""
+    running: false
+    command: ["nmcli", "connection", "delete", "uuid", uuid]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        Logger.i("VPN", "Deleted connection " + deleteProcess.name);
+        deleting = false;
+        lastError = "";
+        ToastService.showNotice(deleteProcess.name, I18n.tr("toast.vpn.deleted", {
+                                                             "name": deleteProcess.name
+                                                           }), "shield-x");
+        scheduleRefresh(500);
+      }
+    }
+
+    stderr: StdioCollector {
+      onStreamFinished: {
+        const trimmed = text.trim();
+        if (trimmed) {
+          lastError = trimmed.split("\n")[0].trim();
+          Logger.w("VPN", "Delete error: " + trimmed);
+          ToastService.showError(I18n.tr("toast.vpn.delete-failed.title", {
+                                           "name": deleteProcess.name
+                                         }), I18n.tr("toast.vpn.delete-failed.desc", {
+                                                       "error": lastError
+                                                     }));
+        }
+        deleting = false;
       }
     }
   }

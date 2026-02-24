@@ -431,6 +431,7 @@
     "icon": "Icon",
     "idle": "Idle",
     "info": "Info",
+    "import": "Import",
     "input": "Input",
     "install": "Install",
     "installed": "Installed",
@@ -523,6 +524,7 @@
     "visualizer": "Visualizer",
     "volume": "Volume",
     "volumes": "Volumes",
+    "vpn": "VPN",
     "wallpaper": "Wallpaper",
     "weather": "Weather",
     "weather-loading": "Loading weather...",
@@ -917,7 +919,19 @@
       "hide-unnamed-devices-description": "Hide devices that appear only as Bluetooth addresses.",
       "hide-unnamed-devices-label": "Hide unnamed devices",
       "pin-instructions": "Please enter the PIN code displayed on your device.",
-      "title": "Connections"
+      "title": "Connections",
+      "vpn-active": "Active connections",
+      "vpn-add-openvpn": "Add OpenVPN",
+      "vpn-add-title": "Add VPN connection",
+      "vpn-add-wireguard": "Add WireGuard",
+      "vpn-available": "Available connections",
+      "vpn-connected-type": "Connected · {type}",
+      "vpn-delete": "Delete connection",
+      "vpn-empty": "No VPN connections configured",
+      "vpn-empty-hint": "Import a WireGuard (.conf) or OpenVPN (.ovpn) configuration file to get started.",
+      "vpn-importing": "Importing configuration...",
+      "vpn-select-openvpn": "Select OpenVPN config (.ovpn)",
+      "vpn-select-wireguard": "Select WireGuard config (.conf)"
     },
     "control-center": {
       "cards-desc": "Customize which controls appear in the control center and in what order.",
@@ -1823,7 +1837,25 @@
     },
     "vpn": {
       "connected": "Connected to '{name}'",
-      "disconnected": "Disconnected from '{name}'"
+      "connect-failed": {
+        "desc": "{error}",
+        "title": "Failed to connect to '{name}'"
+      },
+      "deleted": "Deleted '{name}'",
+      "delete-failed": {
+        "desc": "{error}",
+        "title": "Failed to delete '{name}'"
+      },
+      "disconnected": "Disconnected from '{name}'",
+      "disconnect-failed": {
+        "desc": "{error}",
+        "title": "Failed to disconnect from '{name}'"
+      },
+      "imported": "Imported '{name}'",
+      "import-failed": {
+        "desc": "{error}",
+        "title": "Failed to import '{name}'"
+      }
     },
     "wallpaper-colors": {
       "disabled": "Wallpaper colors disabled",
