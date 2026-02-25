@@ -8,6 +8,7 @@ import qs.Widgets
 ColumnLayout {
   id: root
   spacing: Style.marginL
+  Layout.fillWidth: true
   function insertToken(token) {
     if (formatInput.inputItem) {
       var input = formatInput.inputItem;
@@ -110,5 +111,40 @@ ColumnLayout {
     onMoved: value => Settings.data.general.lockScreenTint = value
     text: ((Settings.data.general.lockScreenTint) * 100).toFixed(0) + "%"
     defaultValue: Settings.getDefaultValue("general.lockScreenTint")
+  }
+
+  NComboBox {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.lock-screen.excluded-monitor-mode-label")
+    description: I18n.tr("panels.lock-screen.excluded-monitor-mode-description")
+    model: [
+      {
+        "key": "color",
+        "name": I18n.tr("panels.lock-screen.excluded-monitor-mode-color")
+      },
+      {
+        "key": "background",
+        "name": I18n.tr("panels.lock-screen.excluded-monitor-mode-background")
+      }
+    ]
+    currentKey: Settings.data.general.lockScreenExcludedMonitorMode
+    onSelected: key => Settings.data.general.lockScreenExcludedMonitorMode = key
+    defaultValue: Settings.getDefaultValue("general.lockScreenExcludedMonitorMode")
+  }
+
+  RowLayout {
+    Layout.fillWidth: true
+    visible: Settings.data.general.lockScreenExcludedMonitorMode === "color"
+
+    NLabel {
+      label: I18n.tr("panels.lock-screen.excluded-monitor-color-label")
+      description: I18n.tr("panels.lock-screen.excluded-monitor-color-description")
+      Layout.alignment: Qt.AlignTop
+    }
+
+    NColorPicker {
+      selectedColor: Settings.data.general.lockScreenExcludedMonitorColor
+      onColorSelected: color => Settings.data.general.lockScreenExcludedMonitorColor = color
+    }
   }
 }
