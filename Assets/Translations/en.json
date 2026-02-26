@@ -911,6 +911,8 @@
     },
     "connections": {
       "authentication-required": "Authentication required",
+      "bluetooth-auto-connect-description": "Automatically connect to trusted paired devices when Bluetooth is enabled.",
+      "bluetooth-auto-connect-label": "Auto-connect paired devices",
       "bluetooth-devices-unnamed": "Unnamed devices are not shown.",
       "bluetooth-discoverable": "This device is discoverable as <b>{hostName}</b> while this settings tab is open.",
       "bluetooth-rssi-polling-description": "Periodically sample RSSI for connected devices via bluetoothctl. May not be available for all devices; uses minimal resources when enabled.",
@@ -1777,6 +1779,9 @@
     },
     "bluetooth": {
       "address-copied": "Address copied to clipboard",
+      "auto-connect-disabled": "Auto-connect disabled",
+      "auto-connect-enabled": "Auto-connect enabled",
+      "auto-connecting": "Connecting to {count} device(s)...",
       "confirm-code": "Confirm code {value} on the other device.",
       "connect-failed": "Failed to connect to device",
       "disconnect-failed": "Failed to disconnect from device",
@@ -1849,6 +1854,8 @@
   },
   "tooltips": {
     "add-widget": "Add widget",
+    "bluetooth-auto-connect-off": "Auto-connect is off — click to enable",
+    "bluetooth-auto-connect-on": "Auto-connect is on — click to disable",
     "bluetooth-devices": "Bluetooth devices",
     "brightness-at": "Brightness: {brightness}%",
     "click-to-start-recording": "Screen recorder (start recording)",

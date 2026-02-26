@@ -67,12 +67,46 @@ Singleton {
   // Internal: temporarily pause discovery during pair/connect to reduce HCI churn
   property bool _discoveryWasRunning: false
   property bool _ctlInit: false
+  property bool _autoConnectInProgress: false
+
+  // Mirror the setting so we can react to changes via onAutoConnectEnabledChanged
+  property bool autoConnectEnabled: Settings?.data?.network?.bluetoothAutoConnect ?? true
+  onAutoConnectEnabledChanged: {
+    if (autoConnectEnabled && adapter && adapter.enabled) {
+      autoConnectTimer.restart();
+    } else {
+      autoConnectTimer.stop();
+    }
+  }
 
   Timer {
     id: initDelayTimer
     interval: 3000
     running: true
     repeat: false
+  }
+
+  Timer {
+    id: autoConnectTimer
+    interval: 2000
+    repeat: false
+    onTriggered: root.attemptAutoConnect()
+  }
+
+  Instantiator {
+    id: deviceWatcher
+    active: root.autoConnectEnabled && root.adapter !== null
+    model: root.adapter ? root.adapter.devices : null
+    delegate: Connections {
+      required property var modelData
+      target: modelData
+      function onPairedChanged() {
+        if (modelData.paired && !modelData.trusted) {
+          Logger.i("Bluetooth", "Auto-trusting newly paired device:", modelData.name || modelData.deviceName);
+          modelData.trusted = true;
+        }
+      }
+    }
   }
 
   function init() {
@@ -85,6 +119,10 @@ Singleton {
     if (root.airplaneModeEnabled) {
       Quickshell.execDetached(["rfkill", "block", "wifi"]);
       Quickshell.execDetached(["rfkill", "block", "bluetooth"]);
+    }
+    // Auto-connect on startup if BT is already enabled
+    if (root.autoConnectEnabled && adapter && adapter.enabled) {
+      autoConnectTimer.restart();
     }
   }
 
@@ -105,6 +143,11 @@ Singleton {
         return;
       }
       checkAirplaneMode.running = true;
+    }
+    function onEnabledChanged() {
+      if (adapter && adapter.enabled && root.autoConnectEnabled) {
+        autoConnectTimer.restart();
+      }
     }
   }
 
@@ -595,6 +638,33 @@ Singleton {
 
   function unpairDevice(device) {
     forgetDevice(device);
+  }
+
+  function attemptAutoConnect() {
+    if (_autoConnectInProgress) return;
+    if (airplaneModeEnabled) return;
+    if (!adapter || !adapter.enabled) return;
+    if (!autoConnectEnabled) return;
+
+    _autoConnectInProgress = true;
+
+    var devList = adapter.devices.values.filter(function(dev) {
+      return dev && dev.paired && !dev.connected && !dev.blocked;
+    });
+
+    var count = devList.length;
+    for (var i = 0; i < devList.length; i++) {
+      Logger.i("Bluetooth", "Auto-connecting to:", devList[i].name || devList[i].deviceName);
+      connectDeviceWithTrust(devList[i]);
+    }
+
+    if (count > 0) {
+      ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("toast.bluetooth.auto-connecting", {
+                                count: count
+                              }), "bluetooth");
+    }
+
+    _autoConnectInProgress = false;
   }
 
   function connectDeviceWithTrust(device) {
