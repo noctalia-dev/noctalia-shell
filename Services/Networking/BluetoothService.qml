@@ -93,22 +93,6 @@ Singleton {
     onTriggered: root.attemptAutoConnect()
   }
 
-  Instantiator {
-    id: deviceWatcher
-    active: root.autoConnectEnabled && root.adapter !== null
-    model: root.adapter ? root.adapter.devices : null
-    delegate: Connections {
-      required property var modelData
-      target: modelData
-      function onPairedChanged() {
-        if (modelData.paired && !modelData.trusted) {
-          Logger.i("Bluetooth", "Auto-trusting newly paired device:", modelData.name || modelData.deviceName);
-          modelData.trusted = true;
-        }
-      }
-    }
-  }
-
   function init() {
     Logger.i("Bluetooth", "Service started");
   }
