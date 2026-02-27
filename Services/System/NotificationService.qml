@@ -888,6 +888,9 @@ Singleton {
     if (index >= 0) {
       activeList.remove(index);
     }
+    if (Settings.data.notifications.clearDismissed) {
+      removeFromHistory(id);
+    }
   }
 
   function dismissOldestActive() {
@@ -901,6 +904,9 @@ Singleton {
     for (const id in activeNotifications) {
       activeNotifications[id].notification?.dismiss();
       activeNotifications[id].watcher?.destroy();
+      if (activeNotifications[id].notification && Settings.data.notifications.clearDismissed) {
+        removeFromHistory(activeNotifications[id].notification.id);
+      }
     }
     activeList.clear();
     activeNotifications = {};
