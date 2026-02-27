@@ -22,6 +22,7 @@ ColumnLayout {
 
   // Grouped mode settings
   property bool valueShowApplications: widgetData.showApplications !== undefined ? widgetData.showApplications : widgetMetadata.showApplications
+  property bool valueShowApplicationsHover: widgetData.showApplicationsHover !== undefined ? widgetData.showApplicationsHover : widgetMetadata.showApplicationsHover
   property bool valueShowLabelsOnlyWhenOccupied: widgetData.showLabelsOnlyWhenOccupied !== undefined ? widgetData.showLabelsOnlyWhenOccupied : widgetMetadata.showLabelsOnlyWhenOccupied
   property bool valueColorizeIcons: widgetData.colorizeIcons !== undefined ? widgetData.colorizeIcons : widgetMetadata.colorizeIcons
   property real valueUnfocusedIconsOpacity: widgetData.unfocusedIconsOpacity !== undefined ? widgetData.unfocusedIconsOpacity : widgetMetadata.unfocusedIconsOpacity
@@ -41,6 +42,7 @@ ColumnLayout {
     settings.characterCount = valueCharacterCount;
     settings.followFocusedScreen = valueFollowFocusedScreen;
     settings.showApplications = valueShowApplications;
+    settings.showApplicationsHover = valueShowApplicationsHover;
     settings.showLabelsOnlyWhenOccupied = valueShowLabelsOnlyWhenOccupied;
     settings.colorizeIcons = valueColorizeIcons;
     settings.unfocusedIconsOpacity = valueUnfocusedIconsOpacity;
@@ -167,6 +169,17 @@ ColumnLayout {
                  valueShowApplications = checked;
                  saveSettings();
                }
+  }
+
+  NToggle {
+    label: I18n.tr("bar.workspace.show-applications-hover-label")
+    description: I18n.tr("bar.workspace.show-applications-hover-description")
+    checked: valueShowApplicationsHover
+    onToggled: checked => {
+                 valueShowApplicationsHover = checked;
+                 saveSettings();
+               }
+    visible: valueShowApplications
   }
 
   NToggle {

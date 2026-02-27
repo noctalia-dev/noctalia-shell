@@ -307,6 +307,8 @@
       "reverse-scrolling-label": "Reverse scrolling",
       "show-applications-description": "Display application icons inside each workspace.",
       "show-applications-label": "Show applications",
+      "show-applications-hover-description": "Display application icons inside each workspace when the workspace is hovered.",
+      "show-applications-hover-label": "Show applications when hovered",
       "show-badge-description": "Show the workspace number badge in grouped mode.",
       "show-badge-label": "Show workspace badge",
       "show-labels-only-when-occupied-description": "Only show workspace labels when they contain windows.",
