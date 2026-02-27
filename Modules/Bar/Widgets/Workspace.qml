@@ -107,7 +107,6 @@ Item {
   }
 
   property bool isDestroying: false
-  property bool hovered: false
 
   // Revision counter to force icon re-evaluation
   property int iconRevision: 0
@@ -133,6 +132,7 @@ Item {
 
   HoverHandler {
     id: hoverHandler
+    enabled: showApplications && showApplicationsHover
     onHoveredChanged: {
       if(hovered) {
         hoverEval.stop();
@@ -747,8 +747,6 @@ Item {
           delegate: Item {
             id: groupedTaskbarItem
 
-            property bool itemHovered: false
-
             width: root.iconSize
             height: root.iconSize
 
@@ -808,11 +806,9 @@ Item {
                             }
                           }
               onEntered: {
-                groupedTaskbarItem.itemHovered = true;
                 TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
               }
               onExited: {
-                groupedTaskbarItem.itemHovered = false;
                 TooltipService.hide();
               }
             }
