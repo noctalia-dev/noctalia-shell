@@ -154,7 +154,7 @@ SmartPanel {
               onClicked: playerContextMenu.open()
             }
 
-            Popup {
+            NPopup {
               id: playerContextMenu
               x: 0
               y: parent.height
