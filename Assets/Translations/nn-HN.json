@@ -224,6 +224,12 @@
     "brightness": "Ljosstyrke",
     "select-color-description": "Lita med hamlitene for tyngd."
   },
+  "launcher": {
+    "date-filter-all-time": "Heile tida",
+    "date-filter-previous-7-days": "Siste 7 dagar",
+    "date-filter-today": "I dag",
+    "date-filter-yesterday": "I går"
+  },
   "options": {
     "bar": {
       "density-compact": "Klembd"
@@ -237,5 +243,8 @@
   },
   "system": {
     "welcome-back": "Velkomen attende,"
+  },
+  "tooltips": {
+    "date-filter": "Dato-filter"
   }
 }

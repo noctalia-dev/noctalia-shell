@@ -575,6 +575,10 @@
       "system": "System",
       "webbrowser": "Nettlesar"
     },
+    "date-filter-all-time": "Heile tida",
+    "date-filter-previous-7-days": "Siste 7 dagar",
+    "date-filter-today": "I dag",
+    "date-filter-yesterday": "I går",
     "providers": {
       "applications": "Applikasjonar",
       "calculator": "Kalkulator",
@@ -1782,6 +1786,7 @@
     "click-to-stop-recording": "Skjermopptak (stogg opptak)",
     "collapse": "Gøym sidestolpen",
     "copy-address": "Kopier adresse",
+    "date-filter": "Dato-filter",
     "delete-notification": "Slett varsel",
     "dismiss-notification": "Avvis varsel",
     "do-not-disturb-enabled": "Ikkje forstyrr",

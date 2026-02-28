@@ -583,6 +583,10 @@
       "system": "システム",
       "webbrowser": "ウェブブラウザ"
     },
+    "date-filter-all-time": "すべての期間",
+    "date-filter-previous-7-days": "過去 7 日間",
+    "date-filter-today": "今日",
+    "date-filter-yesterday": "昨日",
     "providers": {
       "applications": "アプリケーション",
       "calculator": "電卓",
@@ -1856,6 +1860,7 @@
     "click-to-stop-recording": "画面録画（録画停止）",
     "collapse": "サイドバーを折りたたむ",
     "copy-address": "アドレスをコピー",
+    "date-filter": "日付フィルター",
     "delete-notification": "通知を削除",
     "dismiss-notification": "通知を閉じる",
     "do-not-disturb-enabled": "おやすみモード",
