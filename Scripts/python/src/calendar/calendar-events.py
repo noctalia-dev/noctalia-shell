@@ -101,15 +101,19 @@ for source in sources:
                 summary = getattr(obj, "get_summary", lambda: "(No title)")()
                 dtstart = getattr(obj, "get_dtstart", lambda: None)()
                 dtend = getattr(obj, "get_dtend", lambda: None)()
+                location = getattr(obj, "get_location", lambda: "")() or ""
+                description = getattr(obj, "get_description", lambda: "")() or ""
                 start_ts, all_day = safe_get_time(dtstart)
                 end_ts, _ = safe_get_time(dtend)
                 if start_ts:
                     if end_ts is None:
                         end_ts = start_ts + 3600
-                    add_event(summary, calendar_name, start_ts, end_ts)
+                    add_event(summary, calendar_name, start_ts, end_ts, location, description)
                 continue
 
             summary = getattr(comp, "get_summary", lambda: "(No title)")()
+            location = getattr(comp, "get_location", lambda: "")() or ""
+            description = getattr(comp, "get_description", lambda: "")() or ""
             dtstart = getattr(comp, "get_dtstart", lambda: None)()
             dtend = getattr(comp, "get_dtend", lambda: None)()
             start_ts, all_day = safe_get_time(dtstart)
@@ -138,7 +142,7 @@ for source in sources:
 
             # --- normal event ---
             if not rrule_prop and not rdates:
-                add_event(summary, calendar_name, start_ts, end_ts)
+                add_event(summary, calendar_name, start_ts, end_ts, location, description)
                 continue
 
             # --- recurrent events ---
@@ -221,7 +225,7 @@ for source in sources:
 
                 # --- add occurences to all_events ---
                 for occ_start, occ_end in occurrences:
-                    add_event(summary, calendar_name, occ_start, occ_end)
+                    add_event(summary, calendar_name, occ_start, occ_end, location, description)
 
 
     except Exception as e:
