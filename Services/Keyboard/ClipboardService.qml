@@ -160,7 +160,13 @@ Singleton {
                         contentType = "link";
                     } else if (/^(\/|~\/|file:\/\/)/i.test(t) && !t.startsWith('//') && !t.includes('\n')) {
                         contentType = "file";
-                    } else if ((t.includes('{') && t.includes('}') && (t.includes(';') || t.includes('='))) || t.includes('</') || t.includes('/>') || t.includes('function') || t.includes('import ') || t.includes('export ')) {
+                    } else if (
+                        (t.includes('{') && t.includes('}') && (t.includes(';') || t.includes('='))) || 
+                        t.includes('</') || t.includes('/>') || t.includes('=>') || t.includes('===') || t.includes('!==') || t.includes('::') || t.includes('->') ||
+                        /^(?:const|let|var|function|class|struct|interface|type|enum|import|export|func|fn|pub|def|using|namespace|property|public|private|protected)\b/i.test(t) ||
+                        /^(?:#include|#define|#\[|@|\/\/|\/\*|<\?|<html|<body|<!DOCTYPE)/i.test(t) ||
+                        /\b(?:require\(|module\.exports)\b/i.test(t)
+                    ) {
                         contentType = "code";
                     }
                 }

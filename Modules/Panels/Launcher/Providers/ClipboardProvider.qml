@@ -39,28 +39,44 @@ Item {
     }
 
     // Date Filtering
-    property bool hasDateFilter: true
+    property bool hasDateFilter: Settings.data.appLauncher.enableClipboardDateHeaders
     property string dateFilter: "all"
     property var availableDateFilters: [
         {
-            get label() { return I18n.tr("launcher.date-filter-all-time"); },
+            get label() {
+                return I18n.tr("launcher.date-filter-all-time");
+            },
             "action": "all",
-            get icon() { return iconMode === "tabler" ? "calendar" : "x-office-calendar"; }
+            get icon() {
+                return iconMode === "tabler" ? "calendar" : "x-office-calendar";
+            }
         },
         {
-            get label() { return I18n.tr("launcher.date-filter-today"); },
+            get label() {
+                return I18n.tr("launcher.date-filter-today");
+            },
             "action": "today",
-            get icon() { return iconMode === "tabler" ? "calendar-event" : "view-calendar-timeline"; }
+            get icon() {
+                return iconMode === "tabler" ? "calendar-event" : "view-calendar-timeline";
+            }
         },
         {
-            get label() { return I18n.tr("launcher.date-filter-yesterday"); },
+            get label() {
+                return I18n.tr("launcher.date-filter-yesterday");
+            },
             "action": "yesterday",
-            get icon() { return iconMode === "tabler" ? "calendar-time" : "view-calendar"; }
+            get icon() {
+                return iconMode === "tabler" ? "calendar-time" : "view-calendar";
+            }
         },
         {
-            get label() { return I18n.tr("launcher.date-filter-previous-7-days"); },
+            get label() {
+                return I18n.tr("launcher.date-filter-previous-7-days");
+            },
             "action": "week",
-            get icon() { return iconMode === "tabler" ? "calendar-week" : "view-calendar-week"; }
+            get icon() {
+                return iconMode === "tabler" ? "calendar-week" : "view-calendar-week";
+            }
         }
     ]
 
