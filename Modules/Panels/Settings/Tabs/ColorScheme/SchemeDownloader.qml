@@ -8,7 +8,7 @@ import qs.Services.Theming
 import qs.Services.UI
 import qs.Widgets
 
-Popup {
+NPopup {
   id: root
 
   property var availableSchemes: []

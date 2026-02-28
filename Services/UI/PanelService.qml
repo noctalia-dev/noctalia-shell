@@ -45,6 +45,24 @@ Singleton {
     }
   }
 
+  // Used when a component appears above a panel
+  // See NPopup and TrayMenu
+  function childrenVisible(visible) {
+    if(openedPanel){
+      openedPanel.isChildrenVisible = visible;
+      openedPanel.hoveringCheck(visible);
+    }
+  }
+
+  // Used when hovering a component like notifications
+  // See Toast/Notification
+  function childrenHovered(hovered) {
+    if(openedPanel){
+      openedPanel.isChildrenHovered = hovered;
+      openedPanel.hoveringCheck(hovered);
+    }
+  }
+
   // Popup menu windows (one per screen) - used for both tray menus and context menus
   property var popupMenuWindows: ({})
   signal popupMenuWindowRegistered(var screen)
