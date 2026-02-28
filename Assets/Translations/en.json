@@ -607,7 +607,11 @@
       "emoji-search-description": "Search and copy emojis",
       "settings-search-description": "Search and navigate to settings",
       "windows-search-description": "Search and focus open windows"
-    }
+    },
+    "date-filter-all-time": "All Time",
+    "date-filter-today": "Today",
+    "date-filter-yesterday": "Yesterday",
+    "date-filter-previous-7-days": "Previous 7 Days"
   },
   "lock-screen": {
     "authenticating": "Authenticating...",
@@ -1862,6 +1866,7 @@
     "click-to-stop-recording": "Screen recorder (stop recording)",
     "collapse": "Collapse sidebar",
     "copy-address": "Copy address",
+    "date-filter": "Date filter",
     "delete-notification": "Delete notification",
     "dismiss-notification": "Dismiss notification",
     "do-not-disturb-enabled": "Do Not Disturb",

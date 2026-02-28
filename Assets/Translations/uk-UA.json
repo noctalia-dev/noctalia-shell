@@ -583,6 +583,10 @@
       "system": "Система",
       "webbrowser": "Веб-браузер"
     },
+    "date-filter-all-time": "Весь час",
+    "date-filter-previous-7-days": "Останні 7 днів",
+    "date-filter-today": "Сьогодні",
+    "date-filter-yesterday": "Вчора",
     "providers": {
       "applications": "Застосунки",
       "calculator": "Калькулятор",
@@ -1856,6 +1860,7 @@
     "click-to-stop-recording": "Запис екрана (зупинити запис)",
     "collapse": "Згорнути бічну панель",
     "copy-address": "Копіювати адресу",
+    "date-filter": "Фільтр за датою",
     "delete-notification": "Видалити сповіщення",
     "dismiss-notification": "Відхилити сповіщення",
     "do-not-disturb-enabled": "Не турбувати",

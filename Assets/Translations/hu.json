@@ -583,6 +583,10 @@
       "system": "Rendszer",
       "webbrowser": "Webböngésző"
     },
+    "date-filter-all-time": "Minden idő",
+    "date-filter-previous-7-days": "Elmúlt 7 nap",
+    "date-filter-today": "Ma",
+    "date-filter-yesterday": "Tegnap",
     "providers": {
       "applications": "Alkalmazások",
       "calculator": "Számológép",
@@ -1856,6 +1860,7 @@
     "click-to-stop-recording": "Képernyőfelvevő (felvétel leállítása)",
     "collapse": "Oldalsáv összecsukása",
     "copy-address": "Cím másolása",
+    "date-filter": "Dátum szűrő",
     "delete-notification": "Értesítés törlése",
     "dismiss-notification": "Értesítés elvetése",
     "do-not-disturb-enabled": "Ne zavarjanak",

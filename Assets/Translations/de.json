@@ -583,6 +583,10 @@
       "system": "System",
       "webbrowser": "Webbrowser"
     },
+    "date-filter-all-time": "Gesamte Zeit",
+    "date-filter-previous-7-days": "Letzte 7 Tage",
+    "date-filter-today": "Heute",
+    "date-filter-yesterday": "Gestern",
     "providers": {
       "applications": "Anwendungen",
       "calculator": "Rechner",
@@ -1856,6 +1860,7 @@
     "click-to-stop-recording": "Bildschirmrekorder (Aufnahme stoppen)",
     "collapse": "Seitenleiste einklappen",
     "copy-address": "Adresse kopieren",
+    "date-filter": "Datumsfilter",
     "delete-notification": "Benachrichtigung löschen",
     "dismiss-notification": "Benachrichtigung schließen",
     "do-not-disturb-enabled": "Nicht stören",

@@ -43,24 +43,24 @@ Item {
     property string dateFilter: "all"
     property var availableDateFilters: [
         {
-            "label": "All Time",
+            get label() { return I18n.tr("launcher.date-filter-all-time"); },
             "action": "all",
-            "icon": iconMode === "tabler" ? "calendar" : "x-office-calendar"
+            get icon() { return iconMode === "tabler" ? "calendar" : "x-office-calendar"; }
         },
         {
-            "label": "Today",
+            get label() { return I18n.tr("launcher.date-filter-today"); },
             "action": "today",
-            "icon": iconMode === "tabler" ? "calendar-event" : "view-calendar-timeline"
+            get icon() { return iconMode === "tabler" ? "calendar-event" : "view-calendar-timeline"; }
         },
         {
-            "label": "Yesterday",
+            get label() { return I18n.tr("launcher.date-filter-yesterday"); },
             "action": "yesterday",
-            "icon": iconMode === "tabler" ? "calendar-time" : "view-calendar"
+            get icon() { return iconMode === "tabler" ? "calendar-time" : "view-calendar"; }
         },
         {
-            "label": "Previous 7 Days",
+            get label() { return I18n.tr("launcher.date-filter-previous-7-days"); },
             "action": "week",
-            "icon": iconMode === "tabler" ? "calendar-week" : "view-calendar-week"
+            get icon() { return iconMode === "tabler" ? "calendar-week" : "view-calendar-week"; }
         }
     ]
 
@@ -304,13 +304,13 @@ Item {
 
             // Check date group logic
             if (headersEnabled && !searchTerm && root.selectedCategory === "All" && root.dateFilter === "all") {
-                let groupName = "Older";
+                let groupName = I18n.tr("launcher.date-filter-all-time");
                 if (firstSeen >= todayStartTs) {
-                    groupName = "Today";
+                    groupName = I18n.tr("launcher.date-filter-today");
                 } else if (firstSeen >= yesterdayStartTs) {
-                    groupName = "Yesterday";
+                    groupName = I18n.tr("launcher.date-filter-yesterday");
                 } else if (firstSeen >= todayStartTs - (86400 * 7)) {
-                    groupName = "Previous 7 Days";
+                    groupName = I18n.tr("launcher.date-filter-previous-7-days");
                 }
 
                 if (groupName !== currentGroup) {

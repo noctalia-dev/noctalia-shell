@@ -583,6 +583,10 @@
       "system": "Система",
       "webbrowser": "Веб-браузер"
     },
+    "date-filter-all-time": "Все время",
+    "date-filter-previous-7-days": "Последние 7 дней",
+    "date-filter-today": "Сегодня",
+    "date-filter-yesterday": "Вчера",
     "providers": {
       "applications": "Приложения",
       "calculator": "Калькулятор",
@@ -1856,6 +1860,7 @@
     "click-to-stop-recording": "Запись экрана (остановить запись)",
     "collapse": "Свернуть боковую панель",
     "copy-address": "Копировать адрес",
+    "date-filter": "Фильтр по дате",
     "delete-notification": "Удалить уведомление",
     "dismiss-notification": "Отклонить уведомление",
     "do-not-disturb-enabled": "Не беспокоить",
