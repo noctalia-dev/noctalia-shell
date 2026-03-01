@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "제어 센터에 표시될 컨트롤과 순서를 사용자 지정합니다.",
       "desc": "제어 센터 패널의 위치와 동작을 구성합니다.",
+      "open-at-mouse-description": "바의 빈 공간을 오른쪽 클릭하면 커서 근처에 제어 센터를 엽니다. 비활성화된 경우, 대신 위의 위치 설정이 사용됩니다.",
+      "open-at-mouse-label": "마우스 오른쪽 클릭 시 커서 위치에 열기",
       "position-description": "제어 센터 패널이 열릴 때 나타날 위치를 선택하세요.",
       "shortcuts-custom-button-command-description": "버튼을 클릭했을 때 실행할 명령입니다.",
       "shortcuts-custom-button-enable-on-state-logic-description": "검사 명령에 따라 두 번째 아이콘과 '켜짐(hot)' 상태를 활성화합니다.",

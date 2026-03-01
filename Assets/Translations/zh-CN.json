@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "自定义在控制中心显示的控制项及其顺序。",
       "desc": "配置控制中心面板的位置和行为。",
+      "open-at-mouse-description": "右键点击栏的空白区域时，在光标附近打开控制中心。禁用时，将使用上方的位置设置。",
+      "open-at-mouse-label": "右键点击时在光标处打开",
       "position-description": "选择打开控制中心时面板出现的位置。",
       "shortcuts-custom-button-command-description": "单击按钮时执行的命令。",
       "shortcuts-custom-button-enable-on-state-logic-description": "根据检查命令启用第二个图标和“高亮”状态。",

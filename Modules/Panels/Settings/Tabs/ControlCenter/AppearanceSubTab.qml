@@ -63,6 +63,14 @@ ColumnLayout {
       defaultValue: Settings.getDefaultValue("controlCenter.position")
     }
 
+    NToggle {
+      label: I18n.tr("panels.control-center.open-at-mouse-label")
+      description: I18n.tr("panels.control-center.open-at-mouse-description")
+      checked: Settings.data.controlCenter.openAtMouseOnBarRightClick
+      onToggled: checked => Settings.data.controlCenter.openAtMouseOnBarRightClick = checked
+      defaultValue: Settings.getDefaultValue("controlCenter.openAtMouseOnBarRightClick")
+    }
+
     NComboBox {
       id: diskPathComboBox
       Layout.fillWidth: true

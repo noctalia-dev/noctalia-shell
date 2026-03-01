@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "Mely vezérlők jelenjenek meg a vezérlőközpontban és milyen sorrendben.",
       "desc": "A vezérlőközpont panel pozicionálásának és viselkedésének konfigurálása.",
+      "open-at-mouse-description": "Ha jobb egérgombbal kattintasz a Sáv egy üres területére, nyisd meg a Vezérlőközpontot a kurzor közelében. Ha le van tiltva, a fenti pozícióbeállítás lesz használva helyette.",
+      "open-at-mouse-label": "Megnyitás a kurzornál jobb kattintásra",
       "position-description": "Hol jelenjen meg a vezérlőközpont panel megnyitáskor.",
       "shortcuts-custom-button-command-description": "A gombra kattintáskor végrehajtandó parancs.",
       "shortcuts-custom-button-enable-on-state-logic-description": "Második ikon és „aktív” állapot engedélyezése ellenőrző parancs alapján.",

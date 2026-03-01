@@ -343,15 +343,13 @@ Item {
                        if (mouse.button === Qt.RightButton) {
                          if (bar.isPointOverWidget(mouse.x, mouse.y))
                          return;
-                         // Click is on empty bar background - open control center
                          var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-
-                         // Map click position to screen-relative coordinates
-                         // We need to map from bar coordinates to screen coordinates
-                         var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
-
-                         // Pass click position directly
-                         controlCenterPanel?.toggle(null, screenRelativePos);
+                         if (Settings.data.controlCenter.openAtMouseOnBarRightClick) {
+                           var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
+                           controlCenterPanel?.toggle(null, screenRelativePos);
+                         } else {
+                           controlCenterPanel?.toggle();
+                         }
                          mouse.accepted = true;
                        }
                      }

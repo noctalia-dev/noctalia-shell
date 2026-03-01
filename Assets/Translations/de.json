@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "Passen Sie an, welche Steuerelemente im Kontrollzentrum angezeigt werden und in welcher Reihenfolge.",
       "desc": "Konfigurieren Sie die Positionierung und das Verhalten des Kontrollzentrum-Panels.",
+      "open-at-mouse-description": "Beim Rechtsklick auf einen leeren Bereich der Leiste, öffne das Kontrollzentrum nahe dem Cursor. Wenn deaktiviert, wird stattdessen die obige Positionseinstellung verwendet.",
+      "open-at-mouse-label": "Am Mauszeiger bei Rechtsklick öffnen",
       "position-description": "Wählen Sie aus, wo das Kontrollzentrum-Panel angezeigt wird, wenn es geöffnet wird.",
       "shortcuts-custom-button-command-description": "Der Befehl, der ausgeführt werden soll, wenn die Schaltfläche geklickt wird.",
       "shortcuts-custom-button-enable-on-state-logic-description": "Aktiviert ein zweites Symbol und 'Aktiv'-Zustand basierend auf einem Prüfbefehl.",

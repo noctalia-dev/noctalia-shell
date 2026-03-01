@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "コントロールセンターに表示する項目と、その順序をカスタマイズします。",
       "desc": "コントロールセンターの位置や挙動を設定します。",
+      "open-at-mouse-description": "バーの空いている領域を右クリックすると、カーソル付近にコントロールセンターを開きます。無効になっている場合、代わりに上記の配置設定が使用されます。",
+      "open-at-mouse-label": "右クリックでカーソル位置に開く",
       "position-description": "コントロールセンターを開いたときの表示位置を選択します。",
       "shortcuts-custom-button-command-description": "ボタンをクリックした際に実行するコマンド。",
       "shortcuts-custom-button-enable-on-state-logic-description": "チェックコマンドに基づいて、別のアイコンや「ON」状態を有効にします。",

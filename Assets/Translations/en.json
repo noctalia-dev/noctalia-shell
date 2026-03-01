@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "Customize which controls appear in the control center and in what order.",
       "desc": "Configure the control center panel positioning and behavior.",
+      "open-at-mouse-description": "When right-clicking an empty area of the bar, open the control center near the cursor. When disabled, the position setting above is used instead.",
+      "open-at-mouse-label": "Open at cursor on right-click",
       "position-description": "Choose where the control center panel appears when opened.",
       "shortcuts-custom-button-command-description": "The command to execute when the button is clicked.",
       "shortcuts-custom-button-enable-on-state-logic-description": "Enable a second icon and 'hot' state based on a check command.",

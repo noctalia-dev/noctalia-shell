@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "自訂控制中心出現的控制項目及排序",
       "desc": "設定控制中心面板的位置和行為",
+      "open-at-mouse-description": "當右鍵點擊欄的空白區域時，在游標附近開啟控制中心。若已停用，則改用上方的位置設定。",
+      "open-at-mouse-label": "右鍵點擊時在游標處開啟",
       "position-description": "選擇當開啟控制中心時該從哪裡出現",
       "shortcuts-custom-button-command-description": "在按鈕按下時要執行的命令",
       "shortcuts-custom-button-enable-on-state-logic-description": "啟用第二個圖示與「熱區」狀態，並根據檢查命令判斷。",

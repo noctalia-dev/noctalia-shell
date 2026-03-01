@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "Pas aan welke bedieningselementen in het bedieningscentrum verschijnen en in welke volgorde.",
       "desc": "Configureer de positie en het gedrag van het bedieningscentrumpaneel.",
+      "open-at-mouse-description": "Bij een rechtermuisklik op een leeg gedeelte van de Bar, open het Controlecentrum dicht bij de cursor. Indien uitgeschakeld, wordt de bovenstaande positie-instelling gebruikt.",
+      "open-at-mouse-label": "Openen bij cursor met rechtermuisklik",
       "position-description": "Kies waar het bedieningscentrumpaneel verschijnt wanneer het wordt geopend.",
       "shortcuts-custom-button-command-description": "Het commando dat wordt uitgevoerd wanneer op de knop wordt geklikt.",
       "shortcuts-custom-button-enable-on-state-logic-description": "Schakel een tweede pictogram en aan-status in op basis van een controlecommando.",

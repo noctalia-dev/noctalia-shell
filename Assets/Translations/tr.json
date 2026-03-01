@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "Kontrol merkezinde hangi kontrollerin ve hangi sırada görüneceğini özelleştirin.",
       "desc": "Kontrol merkezi paneli konumunu ve davranışını yapılandırın.",
+      "open-at-mouse-description": "Bar'ın boş bir alanına sağ tıkladığınızda, Kontrol Merkezi'ni imlecin yakınında açın. Devre dışı bırakıldığında, bunun yerine yukarıdaki konum ayarı kullanılır.",
+      "open-at-mouse-label": "Sağ tıklamada imleç konumunda aç",
       "position-description": "Kontrol merkezi paneli açıldığında nerede görüneceğini seçin.",
       "shortcuts-custom-button-command-description": "Düğmeye tıklandığında çalıştırılacak komut.",
       "shortcuts-custom-button-enable-on-state-logic-description": "Bir kontrol komutuna bağlı olarak ikinci bir simgeyi ve 'etkin' durumunu etkinleştir.",

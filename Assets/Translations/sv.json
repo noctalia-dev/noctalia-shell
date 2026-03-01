@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "Anpassa vilka kontroller som ska visas i kontrollcentret och i vilken ordning.",
       "desc": "Konfigurera kontrollpanelens placering och beteende.",
+      "open-at-mouse-description": "När du högerklickar på ett tomt område av Fältet, öppna Kontrollcentret nära markören. Om inaktiverat används istället positioneringsinställningen ovan.",
+      "open-at-mouse-label": "Öppna vid markören med högerklick",
       "position-description": "Välj var kontrollpanelen ska visas när den öppnas.",
       "shortcuts-custom-button-command-description": "Kommandot som ska utföras när knappen klickas på.",
       "shortcuts-custom-button-enable-on-state-logic-description": "Aktivera en andra ikon och 'aktivt' tillstånd baserat på ett kontrollkommando.",

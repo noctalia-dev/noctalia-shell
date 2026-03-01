@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "Dostosuj, które kontrolki pojawiają się w centrum sterowania i w jakiej kolejności.",
       "desc": "Konfiguruj pozycjonowanie i zachowanie panelu centrum sterowania.",
+      "open-at-mouse-description": "Po kliknięciu prawym przyciskiem myszy na pusty obszar Bar, otwórz Centrum Sterowania blisko kursora. Gdy wyłączone, zamiast tego używane jest powyższe ustawienie pozycji.",
+      "open-at-mouse-label": "Otwórz w miejscu kursora po prawym kliknięciu",
       "position-description": "Wybierz, gdzie pojawia się panel centrum sterowania po otwarciu.",
       "shortcuts-custom-button-command-description": "Polecenie do wykonania po kliknięciu przycisku.",
       "shortcuts-custom-button-enable-on-state-logic-description": "Włącz drugą ikonę i stan 'aktywny' na podstawie polecenia sprawdzającego.",

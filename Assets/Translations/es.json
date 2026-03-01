@@ -933,6 +933,8 @@
     "control-center": {
       "cards-desc": "Personaliza qué controles aparecen en el centro de control y en qué orden.",
       "desc": "Configurar el posicionamiento y el comportamiento del panel del centro de control.",
+      "open-at-mouse-description": "Al hacer clic derecho en un área vacía de la Bar, abre el Centro de Control cerca del cursor. Cuando está deshabilitado, se usa la configuración de posición anterior en su lugar.",
+      "open-at-mouse-label": "Abrir en el cursor al hacer clic derecho",
       "position-description": "Elige dónde aparece el panel del centro de control cuando se abre.",
       "shortcuts-custom-button-command-description": "El comando a ejecutar cuando se hace clic en el botón.",
       "shortcuts-custom-button-enable-on-state-logic-description": "Habilita un segundo icono y un estado 'caliente' basado en un comando de comprobación.",
