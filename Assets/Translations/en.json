@@ -709,6 +709,7 @@
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "Installed version:",
       "noctalia-latest-version": "Latest version:",
+      "noctalia-qs-version": "Noctalia QS version:",
       "noctalia-title": "Noctalia shell",
       "privacy-policy": "Privacy policy",
       "support": "Support us",

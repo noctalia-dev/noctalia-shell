@@ -709,6 +709,7 @@
       "noctalia-git-commit": "Git коммит:",
       "noctalia-installed-version": "Установленная версия:",
       "noctalia-latest-version": "Последняя версия:",
+      "noctalia-qs-version": "Noctalia QS версия:",
       "noctalia-title": "Оболочка Noctalia",
       "privacy-policy": "Политика конфиденциальности",
       "support": "Поддержать нас",

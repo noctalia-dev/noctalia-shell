@@ -709,6 +709,7 @@
       "noctalia-git-commit": "Git 커밋:",
       "noctalia-installed-version": "설치된 버전:",
       "noctalia-latest-version": "최신 버전:",
+      "noctalia-qs-version": "Noctalia QS 버전:",
       "noctalia-title": "Noctalia 셸",
       "privacy-policy": "개인정보 처리방침",
       "support": "후원하기",

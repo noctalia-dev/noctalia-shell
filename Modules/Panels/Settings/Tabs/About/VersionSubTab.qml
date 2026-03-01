@@ -31,6 +31,7 @@ ColumnLayout {
   property string latestVersion: GitHubService.latestVersion
   property string currentVersion: UpdateService.currentVersion
   property string commitInfo: ""
+  property string qsVersion: ""
 
   readonly property bool isGitVersion: root.currentVersion.endsWith("-git")
   readonly property int gigaB: (1024 * 1024 * 1024)
@@ -121,6 +122,9 @@ ColumnLayout {
     if (root.isGitVersion && root.commitInfo) {
       info += "Git commit: " + root.commitInfo + "\n";
     }
+    if (root.qsVersion) {
+      info += "noctalia-qs version: " + root.qsVersion + "\n";
+    }
     info += "\nSystem Information\n";
     info += "==================\n";
     if (root.systemInfo) {
@@ -163,6 +167,7 @@ ColumnLayout {
   Component.onCompleted: {
     // Check if fastfetch is available before trying to run it
     checkFastfetchProcess.running = true;
+    qsVersionProcess.running = true;
 
     Logger.d("VersionSubTab", "Current version:", root.currentVersion);
     Logger.d("VersionSubTab", "Is git version:", root.isGitVersion);
@@ -297,6 +302,27 @@ ColumnLayout {
         }
       } else {
         Logger.d("VersionSubTab", "gitProcess - Git command failed. Exit code:", exitCode);
+      }
+    }
+
+    stdout: StdioCollector {}
+    stderr: StdioCollector {}
+  }
+
+  Process {
+    id: qsVersionProcess
+    command: ["qs", "--version"]
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        var output = stdout.text.trim();
+        // Format: "noctalia-qs 0.3.0, revision abc12345, distributed by: ..."
+        // Only set if this is actually noctalia-qs; leave empty for upstream quickshell
+        var match = output.match(/noctalia-qs\s+(\S+),\s+revision\s+([0-9a-f]+)/i);
+        if (match) {
+          root.qsVersion = match[1] + " (" + match[2] + ")";
+        }
       }
     }
 
@@ -508,6 +534,21 @@ ColumnLayout {
               }
             }
           }
+        }
+
+        NText {
+          visible: root.qsVersion !== ""
+          text: I18n.tr("panels.about.noctalia-qs-version")
+          color: Color.mOnSurfaceVariant
+          Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+        }
+
+        NText {
+          visible: root.qsVersion !== ""
+          text: root.qsVersion
+          color: Color.mOnSurface
+          font.weight: Style.fontWeightBold
+          pointSize: Style.fontSizeXS
         }
       }
     }
