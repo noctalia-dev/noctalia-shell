@@ -203,64 +203,64 @@ PanelWindow {
   }
 
   // Blur behind the bar and open panels — attached to PanelWindow (required by BackgroundEffect API)
-  // BackgroundEffect.blurRegion: Region {
-  //   // ── Non-framed bar (simple/floating): single rectangle with bar corner states ──
-  //   Region {
-  //     x: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.x : 0
-  //     y: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.y : 0
-  //     width: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.width : 0
-  //     height: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.height : 0
-  //     radius: Style.radiusL
-  //     topLeftCorner: barPlaceholder.topLeftCornerState
-  //     topRightCorner: barPlaceholder.topRightCornerState
-  //     bottomLeftCorner: barPlaceholder.bottomLeftCornerState
-  //     bottomRightCorner: barPlaceholder.bottomRightCornerState
-  //   }
+  BackgroundEffect.blurRegion: Region {
+    // ── Non-framed bar (simple/floating): single rectangle with bar corner states ──
+    Region {
+      x: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.x : 0
+      y: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.y : 0
+      width: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.width : 0
+      height: (!barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? barPlaceholder.height : 0
+      radius: Style.radiusL
+      topLeftCorner: barPlaceholder.topLeftCornerState
+      topRightCorner: barPlaceholder.topRightCornerState
+      bottomLeftCorner: barPlaceholder.bottomLeftCornerState
+      bottomRightCorner: barPlaceholder.bottomRightCornerState
+    }
 
-  //   // ── Framed bar: full screen minus rounded hole ──
-  //   Region {
-  //     x: 0
-  //     y: 0
-  //     width: (barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? root.width : 0
-  //     height: (barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? root.height : 0
+    // ── Framed bar: full screen minus rounded hole ──
+    Region {
+      x: 0
+      y: 0
+      width: (barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? root.width : 0
+      height: (barPlaceholder.isFramed && root.barShouldShow && !barPlaceholder.isHidden) ? root.height : 0
 
-  //     Region {
-  //       intersection: Intersection.Subtract
-  //       x: backgroundBlur.frameHoleX
-  //       y: backgroundBlur.frameHoleY
-  //       width: backgroundBlur.frameHoleX2 - backgroundBlur.frameHoleX
-  //       height: backgroundBlur.frameHoleY2 - backgroundBlur.frameHoleY
-  //       radius: backgroundBlur.frameR
-  //     }
-  //   }
+      Region {
+        intersection: Intersection.Subtract
+        x: backgroundBlur.frameHoleX
+        y: backgroundBlur.frameHoleY
+        width: backgroundBlur.frameHoleX2 - backgroundBlur.frameHoleX
+        height: backgroundBlur.frameHoleY2 - backgroundBlur.frameHoleY
+        radius: backgroundBlur.frameR
+      }
+    }
 
-  //   // ── Panel blur regions ──
-  //   // Opening panel
-  //   Region {
-  //     x: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.x) : 0
-  //     y: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.y) : 0
-  //     width: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.width) : 0
-  //     height: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.height) : 0
-  //     radius: Style.radiusL
-  //     topLeftCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topLeftCornerState : CornerState.Normal
-  //     topRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topRightCornerState : CornerState.Normal
-  //     bottomLeftCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.bottomLeftCornerState : CornerState.Normal
-  //     bottomRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.bottomRightCornerState : CornerState.Normal
-  //   }
+    // ── Panel blur regions ──
+    // Opening panel
+    Region {
+      x: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.x) : 0
+      y: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.y) : 0
+      width: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.width) : 0
+      height: backgroundBlur.panelBg ? Math.round(backgroundBlur.panelBg.height) : 0
+      radius: Style.radiusL
+      topLeftCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topLeftCornerState : CornerState.Normal
+      topRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.topRightCornerState : CornerState.Normal
+      bottomLeftCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.bottomLeftCornerState : CornerState.Normal
+      bottomRightCorner: backgroundBlur.panelBg ? backgroundBlur.panelBg.bottomRightCornerState : CornerState.Normal
+    }
 
-  //   // Closing panel (coexists with opening panel during transition)
-  //   Region {
-  //     x: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.x) : 0
-  //     y: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.y) : 0
-  //     width: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.width) : 0
-  //     height: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.height) : 0
-  //     radius: Style.radiusL
-  //     topLeftCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.topLeftCornerState : CornerState.Normal
-  //     topRightCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.topRightCornerState : CornerState.Normal
-  //     bottomLeftCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.bottomLeftCornerState : CornerState.Normal
-  //     bottomRightCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.bottomRightCornerState : CornerState.Normal
-  //   }
-  // }
+    // Closing panel (coexists with opening panel during transition)
+    Region {
+      x: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.x) : 0
+      y: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.y) : 0
+      width: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.width) : 0
+      height: backgroundBlur.closingPanelBg ? Math.round(backgroundBlur.closingPanelBg.height) : 0
+      radius: Style.radiusL
+      topLeftCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.topLeftCornerState : CornerState.Normal
+      topRightCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.topRightCornerState : CornerState.Normal
+      bottomLeftCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.bottomLeftCornerState : CornerState.Normal
+      bottomRightCorner: backgroundBlur.closingPanelBg ? backgroundBlur.closingPanelBg.bottomRightCornerState : CornerState.Normal
+    }
+  }
 
   // --------------------------------------
   // Container for all UI elements
@@ -548,35 +548,35 @@ PanelWindow {
 
     // Blur behind the bar and open panels
     // Helper object holding computed properties for blur regions
-    // QtObject {
-    //   id: backgroundBlur
+    QtObject {
+      id: backgroundBlur
 
-    //   // Panel background geometry (from the currently open panel on this screen)
-    //   readonly property var panelBg: {
-    //     var op = PanelService.openedPanel;
-    //     if (!op || op.screen !== root.screen || op.blurEnabled === false)
-    //       return null;
-    //     var region = op.panelRegion;
-    //     return (region && region.visible) ? region.panelItem : null;
-    //   }
+      // Panel background geometry (from the currently open panel on this screen)
+      readonly property var panelBg: {
+        var op = PanelService.openedPanel;
+        if (!op || op.screen !== root.screen || op.blurEnabled === false)
+          return null;
+        var region = op.panelRegion;
+        return (region && region.visible) ? region.panelItem : null;
+      }
 
-    //   // Panel background geometry for the closing panel (may coexist with panelBg)
-    //   readonly property var closingPanelBg: {
-    //     var cp = PanelService.closingPanel;
-    //     if (!cp || cp.screen !== root.screen || cp.blurEnabled === false)
-    //       return null;
-    //     var region = cp.panelRegion;
-    //     return (region && region.visible) ? region.panelItem : null;
-    //   }
+      // Panel background geometry for the closing panel (may coexist with panelBg)
+      readonly property var closingPanelBg: {
+        var cp = PanelService.closingPanel;
+        if (!cp || cp.screen !== root.screen || cp.blurEnabled === false)
+          return null;
+        var region = cp.panelRegion;
+        return (region && region.visible) ? region.panelItem : null;
+      }
 
-    //   // Framed bar: inner hole boundary (where the hole begins on each axis)
-    //   // These are the x/y coordinates of the 4 inner hole corners
-    //   readonly property real frameHoleX: barPlaceholder.barPosition === "left" ? barPlaceholder.barHeight : barPlaceholder.frameThickness
-    //   readonly property real frameHoleY: barPlaceholder.barPosition === "top" ? barPlaceholder.barHeight : barPlaceholder.frameThickness
-    //   readonly property real frameHoleX2: root.width - (barPlaceholder.barPosition === "right" ? barPlaceholder.barHeight : barPlaceholder.frameThickness)
-    //   readonly property real frameHoleY2: root.height - (barPlaceholder.barPosition === "bottom" ? barPlaceholder.barHeight : barPlaceholder.frameThickness)
-    //   readonly property real frameR: Settings.data.bar.frameRadius ?? 20
-    // }
+      // Framed bar: inner hole boundary (where the hole begins on each axis)
+      // These are the x/y coordinates of the 4 inner hole corners
+      readonly property real frameHoleX: barPlaceholder.barPosition === "left" ? barPlaceholder.barHeight : barPlaceholder.frameThickness
+      readonly property real frameHoleY: barPlaceholder.barPosition === "top" ? barPlaceholder.barHeight : barPlaceholder.frameThickness
+      readonly property real frameHoleX2: root.width - (barPlaceholder.barPosition === "right" ? barPlaceholder.barHeight : barPlaceholder.frameThickness)
+      readonly property real frameHoleY2: root.height - (barPlaceholder.barPosition === "bottom" ? barPlaceholder.barHeight : barPlaceholder.frameThickness)
+      readonly property real frameR: Settings.data.bar.frameRadius ?? 20
+    }
 
     // Native idle inhibitor — one per active MainScreen window.
     // Multiple inhibitors bound to the same enabled state are harmless;
