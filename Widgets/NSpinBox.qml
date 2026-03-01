@@ -372,7 +372,7 @@ RowLayout {
             top: root.to
           }
 
-          Keys.onReturnPressed: {
+          onAccepted: {
             applyValue();
             focus = false;
           }

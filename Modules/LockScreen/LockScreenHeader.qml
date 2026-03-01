@@ -125,6 +125,7 @@ Rectangle {
             "es": "dddd, d 'de' MMMM",
             "fr": "dddd d MMMM",
             "hu": "dddd, MMMM d.",
+            "it": "dddd d MMMM",
             "ja": "yyyy年M月d日 dddd",
             "ko": "yyyy년 M월 d일 dddd",
             "ku": "dddd, dê MMMM",

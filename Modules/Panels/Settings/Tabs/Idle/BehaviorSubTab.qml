@@ -37,10 +37,10 @@ ColumnLayout {
 
     NText {
       Layout.alignment: Qt.AlignBottom | Qt.AlignRight
-      text: IdleService.idleSeconds > 0 ? I18n.trp("common.second", IdleService.idleSeconds) : I18n.tr("common.active")
+      text: IdleService.idleSeconds >= 5 ? I18n.trp("common.second", Math.floor(IdleService.idleSeconds / 5) * 5) : I18n.tr("common.active")
       family: Settings.data.ui.fontFixed
       pointSize: Style.fontSizeM
-      color: IdleService.idleSeconds > 0 ? Color.mPrimary : Color.mOnSurfaceVariant
+      color: IdleService.idleSeconds >= 5 ? Color.mPrimary : Color.mOnSurfaceVariant
     }
   }
 

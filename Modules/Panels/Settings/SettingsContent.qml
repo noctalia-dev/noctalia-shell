@@ -586,7 +586,7 @@ Item {
           },
           {
             "id": SettingsPanel.Tab.Idle,
-            "label": "common.idle",
+            "label": "panels.idle.title",
             "icon": "settings-idle",
             "source": idleTab
           },
