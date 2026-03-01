@@ -593,6 +593,14 @@ Item {
     x: horizontalPadding
     y: 0
     visible: !isVertical && !appVisible
+    scale: visible ? 1.0 : 0.8
+    Behavior on scale {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutBack
+        easing.overshoot: 1.2
+      }
+    }
 
     Repeater {
       id: workspaceRepeaterHorizontal
@@ -628,6 +636,14 @@ Item {
     x: 0
     y: horizontalPadding
     visible: isVertical && !appVisible
+    scale : visible ? 1.0 : 0.8
+    Behavior on scale {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutBack
+        easing.overshoot: 1.2
+      }
+    }
 
     Repeater {
       id: workspaceRepeaterVertical
@@ -938,6 +954,14 @@ Item {
   Flow {
     id: groupedGrid
     visible: appVisible
+    scale: visible ? 1.0 : 0.8
+    Behavior on scale {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutBack
+        easing.overshoot: 1.2
+      }
+    }
 
     x: root.isVertical ? Style.pixelAlignCenter(parent.width, width) : Math.round(horizontalPadding * root.hasLabel)
     y: root.isVertical ? Math.round(horizontalPadding * 0.4 * root.hasLabel) : Style.pixelAlignCenter(parent.height, height)
