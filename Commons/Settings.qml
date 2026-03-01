@@ -257,6 +257,7 @@ Singleton {
         ]
       }
       property string mouseWheelAction: "none"
+      property string rightClickAction: "controlCenter"
       property bool reverseScroll: false
       property bool mouseWheelWrap: true
       // Per-screen overrides for position and widgets

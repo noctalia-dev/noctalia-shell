@@ -70,6 +70,7 @@
       ]
     },
     "mouseWheelAction": "none",
+    "rightClickAction": "controlCenter",
     "reverseScroll": false,
     "mouseWheelWrap": true,
     "screenOverrides": []

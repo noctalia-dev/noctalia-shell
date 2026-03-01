@@ -11,6 +11,7 @@ ColumnLayout {
   Layout.fillWidth: true
 
   readonly property string effectiveWheelAction: Settings.data.bar.mouseWheelAction || "none"
+  readonly property string effectiveRightClickAction: Settings.data.bar.rightClickAction || "controlCenter"
 
   NComboBox {
     Layout.fillWidth: true
@@ -58,5 +59,28 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("bar.mouseWheelWrap")
     onToggled: checked => Settings.data.bar.mouseWheelWrap = checked
     visible: Settings.data.bar.mouseWheelAction === "workspace"
+  }
+
+  NComboBox {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.behavior-right-click-label")
+    description: I18n.tr("panels.bar.behavior-right-click-description")
+    model: [
+      {
+        "key": "none",
+        "name": I18n.tr("common.none")
+      },
+      {
+        "key": "controlCenter",
+        "name": I18n.tr("tooltips.open-control-center")
+      },
+      {
+        "key": "settings",
+        "name": I18n.tr("tooltips.open-settings")
+      }
+    ]
+    currentKey: root.effectiveRightClickAction
+    defaultValue: Settings.getDefaultValue("bar.rightClickAction")
+    onSelected: key => Settings.data.bar.rightClickAction = key
   }
 }

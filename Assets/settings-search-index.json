@@ -378,6 +378,15 @@
     "subTabLabel": "common.behavior"
   },
   {
+    "labelKey": "panels.bar.behavior-right-click-label",
+    "descriptionKey": "panels.bar.behavior-right-click-description",
+    "widget": "NComboBox",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
     "labelKey": "panels.bar.monitor-override-settings",
     "descriptionKey": "panels.bar.monitor-override-settings-description",
     "widget": "NToggle",

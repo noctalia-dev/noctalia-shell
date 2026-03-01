@@ -842,6 +842,8 @@
       "behavior-wheel-wrap-label": "Wrap around",
       "behavior-workspace-scroll-description": "Choose what the mouse wheel does on empty areas of the bar.",
       "behavior-workspace-scroll-label": "Bar mouse wheel action",
+      "behavior-right-click-description": "Choose what right click does on empty areas of the bar.",
+      "behavior-right-click-label": "Bar right click action",
       "monitor-configure-widgets": "Configure widgets",
       "monitor-override-settings": "Override global settings",
       "monitor-override-settings-description": "Use custom settings for this monitor.",
