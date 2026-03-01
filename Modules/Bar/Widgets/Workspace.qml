@@ -770,11 +770,23 @@ Item {
             width: root.iconSize
             height: root.iconSize
 
+            HoverHandler {
+              id: hoverHandler
+            }
+
             IconImage {
               id: groupedAppIcon
 
               width: parent.width
               height: parent.height
+              scale: hoverHandler.hovered ? (root.isVertical ? 1.1 : 1.2) : (root.isVertical ? 0.9 : 1.0)
+              Behavior on scale {
+                NumberAnimation {
+                  duration: Style.animationNormal
+                  easing.type: Easing.OutBack
+                }
+              }
+
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
                 return ThemeIcons.iconForAppId(modelData.appId?.toLowerCase());
