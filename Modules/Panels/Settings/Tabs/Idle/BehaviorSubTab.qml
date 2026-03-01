@@ -95,7 +95,7 @@ ColumnLayout {
       actionName: I18n.tr("panels.idle.screen-off-label")
       actionDescription: I18n.tr("panels.idle.screen-off-description")
       timeoutValue: Settings.data.idle.screenOffTimeout
-      defaultValue: 0
+      defaultValue: Settings.getDefaultValue("idle.screenOffTimeout")
       command: Settings.data.idle.screenOffCommand
       resumeCommand: Settings.data.idle.resumeScreenOffCommand
       onActionTimeoutChanged: val => Settings.data.idle.screenOffTimeout = val
@@ -113,7 +113,7 @@ ColumnLayout {
       actionName: I18n.tr("panels.idle.lock-label")
       actionDescription: I18n.tr("panels.idle.lock-description")
       timeoutValue: Settings.data.idle.lockTimeout
-      defaultValue: 0
+      defaultValue: Settings.getDefaultValue("idle.lockTimeout")
       command: Settings.data.idle.lockCommand
       resumeCommand: Settings.data.idle.resumeLockCommand
       onActionTimeoutChanged: val => Settings.data.idle.lockTimeout = val
@@ -131,7 +131,7 @@ ColumnLayout {
       actionName: I18n.tr("common.suspend")
       actionDescription: I18n.tr("panels.idle.suspend-description")
       timeoutValue: Settings.data.idle.suspendTimeout
-      defaultValue: 0
+      defaultValue: Settings.getDefaultValue("idle.suspendTimeout")
       command: Settings.data.idle.suspendCommand
       resumeCommand: Settings.data.idle.resumeSuspendCommand
       onActionTimeoutChanged: val => Settings.data.idle.suspendTimeout = val
