@@ -547,7 +547,9 @@ Rectangle {
       if (showProviderCategories) {
         var cats = providerCategories;
         var idx = cats.indexOf(currentProvider.selectedCategory);
-        currentProvider.selectCategory(cats[(idx + 1) % cats.length]);
+        var nextIdx = (idx + 1) % cats.length;
+        currentProvider.selectCategory(cats[nextIdx]);
+        categoryTabs.currentIndex = nextIdx;
       } else {
         selectNextWrapped();
       }
@@ -557,7 +559,9 @@ Rectangle {
       if (showProviderCategories) {
         var cats2 = providerCategories;
         var idx2 = cats2.indexOf(currentProvider.selectedCategory);
-        currentProvider.selectCategory(cats2[((idx2 - 1) % cats2.length + cats2.length) % cats2.length]);
+        var prevIdx = ((idx2 - 1) % cats2.length + cats2.length) % cats2.length;
+        currentProvider.selectCategory(cats2[prevIdx]);
+        categoryTabs.currentIndex = prevIdx;
       } else {
         selectPreviousWrapped();
       }
