@@ -131,7 +131,7 @@ Item {
       PanelService.showContextMenu(contextMenu, pill, screen);
     }
     tooltipText: {
-      if (PanelService.getPanel("networkPanel", screen)) {
+      if (PanelService.getPanel("networkPanel", screen)?.isPanelOpen) {
         return "";
       }
       try {
