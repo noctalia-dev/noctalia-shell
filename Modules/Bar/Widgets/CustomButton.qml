@@ -511,7 +511,6 @@ Item {
       Logger.i("CustomButton", `Executing command: ${leftClickExec}`);
     } else if (!leftClickUpdateText) {
       BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
-      //SettingsPanelService.openToTab(SettingsPanel.Tab.Bar, 1, screen);
     }
     if (!textStream && leftClickUpdateText) {
       runTextCommand();
@@ -522,8 +521,7 @@ Item {
     if (rightClickExec) {
       Quickshell.execDetached(["sh", "-lc", rightClickExec]);
       Logger.i("CustomButton", `Executing command: ${rightClickExec}`);
-    }
-    if (!rightClickUpdateText) {
+    } else if (!rightClickUpdateText) {
       BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
     }
     if (!textStream && rightClickUpdateText) {
@@ -535,8 +533,7 @@ Item {
     if (middleClickExec) {
       Quickshell.execDetached(["sh", "-lc", middleClickExec]);
       Logger.i("CustomButton", `Executing command: ${middleClickExec}`);
-    }
-    if (!middleClickUpdateText) {
+    } else if (!middleClickUpdateText) {
       BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
     }
     if (!textStream && middleClickUpdateText) {
