@@ -1213,6 +1213,11 @@ Singleton {
 
       Logger.d("Wallpaper", "Loaded wallpapers from cache file:", Object.keys(root.currentWallpapers).length, "screens");
       root.isInitialized = true;
+
+      if (Settings.data.wallpaper.themedWallpapers.enabled) {
+        Qt.callLater(() => {
+          root.applyThemedWallpaperForCurrentMode();
+      });}
     }
 
     onLoadFailed: error => {
