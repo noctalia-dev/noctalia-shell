@@ -67,6 +67,7 @@ Loader {
         target: DesktopEntries.applications
         function onValuesChanged() {
           root.iconRevision++;
+          root._desktopEntryIdCache = {};
           updateDockApps();
         }
       }
@@ -321,7 +322,40 @@ Loader {
         if (!appId || !pinnedApps || pinnedApps.length === 0)
           return false;
         const normalizedId = normalizeAppId(appId);
-        return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+        // Direct match
+        if (pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId))
+          return true;
+        // Resolve via desktop entry lookup (handles StartupWMClass != .desktop filename)
+        const resolved = resolveToDesktopEntryId(appId);
+        if (resolved !== appId) {
+          const normalizedResolved = normalizeAppId(resolved);
+          return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedResolved);
+        }
+        return false;
+      }
+
+      // Desktop entry ID resolution cache (cleared when DesktopEntries change)
+      property var _desktopEntryIdCache: ({})
+
+      // Resolve a toplevel appId to its canonical .desktop entry ID via heuristic lookup.
+      // This handles cases where the Wayland appId (e.g. "zen" from StartupWMClass)
+      // differs from the .desktop filename (e.g. "zen-browser-bin").
+      function resolveToDesktopEntryId(appId) {
+        if (!appId)
+          return appId;
+        if (_desktopEntryIdCache.hasOwnProperty(appId))
+          return _desktopEntryIdCache[appId];
+        try {
+          if (typeof DesktopEntries !== 'undefined' && DesktopEntries.heuristicLookup) {
+            const entry = DesktopEntries.heuristicLookup(appId);
+            if (entry && entry.id) {
+              _desktopEntryIdCache[appId] = entry.id;
+              return entry.id;
+            }
+          }
+        } catch (e) {}
+        _desktopEntryIdCache[appId] = appId;
+        return appId;
       }
 
       // Helper function to get app name from desktop entry
@@ -497,7 +531,17 @@ Loader {
         function pushPinned() {
           pinnedApps.forEach(pinnedAppId => {
                                // Find all running instances of this pinned app using robust matching
-                               const matchingToplevels = runningApps.filter(app => app && normalizeAppId(app.appId) === normalizeAppId(pinnedAppId));
+                               // Also resolve toplevel appId via desktop entry lookup to handle
+                               // StartupWMClass != .desktop filename (e.g. zen -> zen-browser-bin)
+                               const normalizedPinned = normalizeAppId(pinnedAppId);
+                               const matchingToplevels = runningApps.filter(app => {
+                                                                              if (!app)
+                                                                              return false;
+                                                                              if (normalizeAppId(app.appId) === normalizedPinned)
+                                                                              return true;
+                                                                              const resolved = resolveToDesktopEntryId(app.appId);
+                                                                              return resolved !== app.appId && normalizeAppId(resolved) === normalizedPinned;
+                                                                            });
 
                                if (matchingToplevels.length > 0) {
                                  // Add all running instances as pinned-running
