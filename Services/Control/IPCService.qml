@@ -575,6 +575,26 @@ Singleton {
       }
     }
 
+    function get(screen: string): string {
+      if (screen === "all" || screen === "") {
+        if (Quickshell.screens.length > 1) {
+          var map = {};
+          Quickshell.screens.forEach(s => {
+                                       map[s.name] = WallpaperService.currentWallpapers[s.name] ?? "";
+                                     });
+          return JSON.stringify(map);
+        }
+        return WallpaperService.currentWallpapers[Quickshell.screens[0].name] ?? "";
+      } else {
+        var found = Quickshell.screens.find(s => s.name === screen);
+        if (!found) {
+          Logger.w("IPC", "wallpaper get: unknown screen: " + screen);
+          return "";
+        }
+        return WallpaperService.currentWallpapers[screen] ?? "";
+      }
+    }
+
     function set(path: string, screen: string) {
       if (screen === "all" || screen === "") {
         screen = undefined;
