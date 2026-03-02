@@ -360,6 +360,11 @@ Item {
                         } else if (bar.barRightClickAction === "settings") {
                           SettingsPanelService.toggle(SettingsPanel.Tab.General, -1, screen);
                           mouse.accepted = true;
+                        } else if (bar.barRightClickAction === "launcherPanel") {
+                          var launcherPanel = PanelService.getPanel("launcherPanel", screen);
+                          var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
+                          launcherPanel?.toggle(null, screenRelativePos);
+                          mouse.accepted = true;
                         }
                       }
           }

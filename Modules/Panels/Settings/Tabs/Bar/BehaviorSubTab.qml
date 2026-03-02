@@ -77,6 +77,10 @@ ColumnLayout {
       {
         "key": "settings",
         "name": I18n.tr("tooltips.open-settings")
+      },
+      {
+        "key": "launcherPanel",
+        "name": I18n.tr("actions.open-launcher")
       }
     ]
     currentKey: root.effectiveRightClickAction
