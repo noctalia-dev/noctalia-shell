@@ -143,6 +143,10 @@ Singleton {
       if (!Settings.data.wallpaper.themedWallpapers.enabled)
         return;
       if (Settings.data.wallpaper.automationEnabled) {
+        ToastService.showNotice(
+          I18n.tr("panels.wallpaper.settings-theme-toggle-label"),
+          I18n.tr("panels.wallpaper.settings-theme-automation-disabled")
+        );
         Settings.data.wallpaper.automationEnabled = false;
       }
       root.applyThemedWallpaperForCurrentMode();

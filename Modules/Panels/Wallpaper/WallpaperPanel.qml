@@ -855,6 +855,10 @@ SmartPanel {
         return;
       }
       if (Settings.data.wallpaper.themedWallpapers.enabled) {
+        ToastService.showNotice(
+          I18n.tr("panels.wallpaper.settings-theme-toggle-label"),
+          I18n.tr("panels.wallpaper.settings-theme-select-item-notice")
+        );
         return;
       }
       var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
@@ -1446,9 +1450,6 @@ SmartPanel {
               TapHandler {
                 onTapped: {
                   wallpaperGridView.forceActiveFocus();
-                  if (Settings.data.wallpaper.themedWallpapers.enabled) {
-                    return;
-                  }
                   wallpaperGridView.currentIndex = index;
                   selectItem(wallpaperItem.wallpaperPath, wallpaperItem.isDirectory);
                 }
