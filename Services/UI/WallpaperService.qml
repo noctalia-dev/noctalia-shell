@@ -1081,7 +1081,7 @@ Singleton {
   Timer {
     id: randomWallpaperTimer
     interval: Settings.data.wallpaper.randomIntervalSec * 1000
-    running: Settings.data.wallpaper.automationEnabled
+    running: Settings.data.wallpaper.automationEnabled && !PowerProfileService.noctaliaPerformanceMode
     repeat: true
     onTriggered: setNextWallpaper()
     triggeredOnStart: false

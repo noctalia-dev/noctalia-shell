@@ -19,8 +19,7 @@ Item {
 
   signal hidden
 
-  readonly property bool isCompact: Settings.data.notifications?.density === "compact"
-  readonly property int notificationWidth: Math.round((isCompact ? 320 : 440) * Style.uiScaleRatio)
+  readonly property int notificationWidth: Math.round(440 * Style.uiScaleRatio)
   readonly property int shadowPadding: Style.shadowBlurMax + Style.marginL
 
   width: notificationWidth + shadowPadding * 2
@@ -283,11 +282,11 @@ Item {
   RowLayout {
     id: contentLayout
     anchors.fill: background
-    anchors.topMargin: isCompact ? Style.marginS : Style.marginM
-    anchors.bottomMargin: isCompact ? Style.marginS : Style.marginM
-    anchors.leftMargin: isCompact ? Style.marginM : Style.margin2M
-    anchors.rightMargin: isCompact ? Style.marginM : Style.margin2M
-    spacing: isCompact ? Style.marginM : Style.marginL
+    anchors.topMargin: Style.marginM
+    anchors.bottomMargin: Style.marginM
+    anchors.leftMargin: Style.margin2M
+    anchors.rightMargin: Style.margin2M
+    spacing: Style.marginL
 
     // Icon
     NIcon {
@@ -310,7 +309,7 @@ Item {
           return Color.mOnSurface;
         }
       }
-      pointSize: isCompact ? Style.fontSizeXL : Style.fontSizeXXL * 1.5
+      pointSize: Style.fontSizeXXL * 1.5
       Layout.alignment: Qt.AlignVCenter
     }
 
@@ -324,7 +323,7 @@ Item {
         Layout.fillWidth: true
         text: root.title
         color: Color.mOnSurface
-        pointSize: isCompact ? Style.fontSizeM : Style.fontSizeL
+        pointSize: Style.fontSizeL
         font.weight: Style.fontWeightBold
         wrapMode: Text.WordWrap
         visible: text.length > 0
@@ -334,10 +333,8 @@ Item {
         Layout.fillWidth: true
         text: root.description
         color: Color.mOnSurface
-        pointSize: isCompact ? Style.fontSizeS : Style.fontSizeM
+        pointSize: Style.fontSizeM
         wrapMode: Text.WordWrap
-        maximumLineCount: isCompact ? 2 : 20
-        elide: isCompact ? Text.ElideRight : Text.ElideNone
         visible: text.length > 0
       }
 
