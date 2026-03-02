@@ -221,19 +221,19 @@ Item {
       if (showExecTooltip && hasExec) {
         if (leftClickExec !== "") {
           lines.push(I18n.tr("bar.custom-button.left-click-label") + `: ${leftClickExec}`);
-        } else {
+        } else if (!leftClickUpdateText) {
           lines.push(I18n.tr("bar.custom-button.left-click-label") + ": " + I18n.tr("actions.widget-settings"));
         }
 
         if (rightClickExec !== "") {
           lines.push(I18n.tr("bar.custom-button.right-click-label") + `: ${rightClickExec}`);
-        } else {
+        } else if (!rightClickUpdateText) {
           lines.push(I18n.tr("bar.custom-button.right-click-label") + ": " + I18n.tr("actions.widget-settings"));
         }
 
         if (middleClickExec !== "") {
           lines.push(I18n.tr("bar.custom-button.middle-click-label") + `: ${middleClickExec}`);
-        } else {
+        } else if (!middleClickUpdateText) {
           lines.push(I18n.tr("bar.custom-button.middle-click-label") + ": " + I18n.tr("actions.widget-settings"));
         }
 
