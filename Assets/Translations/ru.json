@@ -1694,7 +1694,6 @@
       "settings-view-mode-label": "Режим просмотра",
       "settings-theme-toggle-label": "Тематические обои",
       "settings-theme-toggle-description": "Автоматически переключать обои при смене светлой или тёмной темы.",
-      "settings-theme-toggle-note": "После включения назначьте обои для каждой темы через выбор обоев.",
       "settings-theme-assigned-title": "Назначенные обои по теме",
       "settings-theme-light-label": "Обои светлой темы",
       "settings-theme-dark-label": "Обои тёмной темы",

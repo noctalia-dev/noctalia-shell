@@ -191,12 +191,6 @@ ColumnLayout {
       onToggled: checked => Settings.data.wallpaper.themedWallpapers.enabled = checked
     }
 
-    NText {
-      // text: I18n.tr("panels.wallpaper.settings-theme-toggle-note")
-      wrapMode: Text.WordWrap
-      color: Color.mOnSurfaceVariant
-    }
-
     NBox {
       Layout.fillWidth: true
       radius: Style.radiusM
