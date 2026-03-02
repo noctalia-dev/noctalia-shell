@@ -95,6 +95,6 @@ ColumnLayout {
     checked: Settings.data.bar.rightClickFollowMouse
     defaultValue: Settings.getDefaultValue("bar.rightClickFollowMouse")
     onToggled: checked => Settings.data.bar.rightClickFollowMouse = checked
-    visible: Settings.data.bar.rightClickAction !== "none" && Settings.data.bar.rightClickAction !== "settings"
+    visible: Settings.data.bar.rightClickAction !== "none" && !(Settings.data.bar.rightClickAction === "settings" && Settings.data.ui.settingsPanelMode === "window")
   }
 }

@@ -347,23 +347,16 @@ Item {
                         if (bar.isPointOverWidget(mouse.x, mouse.y))
                           return;
                         if (bar.barRightClickAction === "controlCenter") {
-                          // Click is on empty bar background - open control center
                           var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-
-                          // Map click position to screen-relative coordinates
-                          // We need to map from bar coordinates to screen coordinates
-                          var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
-
-                          // Pass click position directly
-                          controlCenterPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? screenRelativePos : "ControlCenter");
+                          controlCenterPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? mapToItem(null, mouse.x, mouse.y) : "ControlCenter");
                           mouse.accepted = true;
                         } else if (bar.barRightClickAction === "settings") {
-                          SettingsPanelService.toggle(SettingsPanel.Tab.General, -1, screen);
+                          var settingsPanel = PanelService.getPanel("settingsPanel", screen);
+                          settingsPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? mapToItem(null, mouse.x, mouse.y) : null);
                           mouse.accepted = true;
                         } else if (bar.barRightClickAction === "launcherPanel") {
                           var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                          var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
-                          launcherPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? screenRelativePos : null);
+                          launcherPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? mapToItem(null, mouse.x, mouse.y) : null);
                           mouse.accepted = true;
                         }
                       }
