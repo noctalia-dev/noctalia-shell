@@ -1367,9 +1367,9 @@ Rectangle {
                     return Style.fontSizeS * Style.uiScaleRatio;
                   }
                   // Scale font size relative to cell width for low res, but cap at maximum
-                  const cellBasedSize = gridEntry.width * 0.12;
-                  const baseSize = Style.fontSizeS * Style.uiScaleRatio;
-                  const maxSize = Style.fontSizeM * Style.uiScaleRatio;
+                  const cellBasedSize = gridEntry.width * 0.1;
+                  const baseSize = Style.fontSizeXS * Style.uiScaleRatio;
+                  const maxSize = Style.fontSizeS * Style.uiScaleRatio;
                   return Math.min(Math.max(cellBasedSize, baseSize), maxSize);
                 }
                 font.weight: Style.fontWeightSemiBold
