@@ -852,11 +852,14 @@ SmartPanel {
     function selectItem(path, isDirectory) {
       if (isDirectory) {
         WallpaperService.setBrowsePath(targetScreen.name, path);
-      } else {
-        var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
-        WallpaperService.changeWallpaper(path, screen);
-        WallpaperService.applyFavoriteTheme(path, screen);
+        return;
       }
+      if (Settings.data.wallpaper.themedWallpapers.enabled) {
+        return;
+      }
+      var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
+      WallpaperService.changeWallpaper(path, screen);
+      WallpaperService.applyFavoriteTheme(path, screen);
     }
 
     // Helper function to cycle view modes
@@ -1171,10 +1174,16 @@ SmartPanel {
                 imagePath: wallpaperItem.cachedPath
                 radius: Style.radiusM
                 borderColor: {
+                  if (wallpaperItem.darkMode) {
+                    return Color.resolveColorKey("primary");
+                  }
+                  if (wallpaperItem.lightMode) {
+                    return Color.resolveOnColorKey("primary");
+                  }
                   if (wallpaperItem.isSelected) {
                     return Color.mSecondary;
                   }
-                  if (wallpaperGridView.currentIndex === index) {
+                  if (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index) {
                     return Color.mHover;
                   }
                   return Color.mSurface;
@@ -1337,13 +1346,12 @@ SmartPanel {
                 }
               }
 
-              // Themed wallpaper markers (Bottom-right)
+              // Themed wallpaper markers (Top-center)
               Rectangle {
                 id: themedMarker
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: Style.marginXS * 0.5
-                anchors.rightMargin: Style.marginS
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: Style.marginS
                 radius: Style.radiusL
                 color: Color.mSurfaceVariant
                 border.color: Color.mOutline
@@ -1351,7 +1359,8 @@ SmartPanel {
                 z: 5
                 implicitWidth: themedRow.implicitWidth + Style.marginXS * 2
                 implicitHeight: themedRow.implicitHeight + Style.marginXS * 2
-                visible: !wallpaperItem.isDirectory && (hoverHandler.hovered || wallpaperGridView.currentIndex === index)
+                visible: !wallpaperItem.isDirectory &&
+                  (hoverHandler.hovered || (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index))
 
                 RowLayout {
                   id: themedRow
@@ -1387,7 +1396,8 @@ SmartPanel {
                 height: imageContainer.imageHeight
                 color: Color.mSurface
                 radius: Style.radiusM
-                opacity: (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index) ? 0 : 0.3
+                opacity: Settings.data.wallpaper.themedWallpapers.enabled ? 0 :
+                  (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index ? 0 : 0.3)
                 Behavior on opacity {
                   NumberAnimation {
                     duration: Style.animationFast
@@ -1402,6 +1412,9 @@ SmartPanel {
               TapHandler {
                 onTapped: {
                   wallpaperGridView.forceActiveFocus();
+                  if (Settings.data.wallpaper.themedWallpapers.enabled) {
+                    return;
+                  }
                   wallpaperGridView.currentIndex = index;
                   selectItem(wallpaperItem.wallpaperPath, wallpaperItem.isDirectory);
                 }
@@ -1411,7 +1424,10 @@ SmartPanel {
             NText {
               text: wallpaperItem.filename
               visible: !Settings.data.wallpaper.hideWallpaperFilenames
-              color: (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index) ? Color.mOnSurface : Color.mOnSurfaceVariant
+              color: (hoverHandler.hovered || wallpaperItem.isSelected ||
+                (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index))
+                ? Color.mOnSurface
+                : Color.mOnSurfaceVariant
               pointSize: Style.fontSizeXS
               Layout.fillWidth: true
               Layout.leftMargin: Style.marginS
@@ -1421,6 +1437,14 @@ SmartPanel {
               elide: Text.ElideRight
             }
           }
+        }
+      }
+
+      Connections {
+        target: Settings.data.wallpaper.themedWallpapers
+        function onEnabledChanged() {
+          if (wallpaperGridView)
+            wallpaperGridView.currentIndex = -1;
         }
       }
 
