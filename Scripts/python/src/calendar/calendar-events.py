@@ -48,14 +48,16 @@ def safe_get_time(ical_time):
     except:
         return None, False
 
-def add_event(summary, calendar_name, start_ts, end_ts, location="", description="", all_day=False):
+def add_event(summary, calendar_name, start_ts, end_ts, location="", description="", all_day=False, calendar_uid="", uid=""):
     all_events.append({
         'calendar': calendar_name,
         'summary': summary,
         'start': start_ts,
         'end': end_ts,
         'location': location,
-        'description': description
+        'description': description,
+        'calendar_uid': calendar_uid,
+        'uid': uid
     })
 
 registry = EDataServer.SourceRegistry.new_sync(None)
@@ -69,7 +71,7 @@ for source in sources:
     print(f"\nProcessing calendar: {calendar_name}", file=sys.stderr)
 
     try:
-        client = ECal.Client.connect_sync(source, ECal.ClientSourceType.EVENTS, 30, None)
+        client = ECal.Client.connect_sync(source, ECal.ClientSourceType.EVENTS, 1, None)
 
         start_dt = datetime.fromtimestamp(start_time)
         end_dt = datetime.fromtimestamp(end_time)
@@ -108,7 +110,9 @@ for source in sources:
                 if start_ts:
                     if end_ts is None:
                         end_ts = start_ts + 3600
-                    add_event(summary, calendar_name, start_ts, end_ts, location, description)
+                    event_uid = getattr(obj, "get_uid", lambda: "")() or ""
+                    add_event(summary, calendar_name, start_ts, end_ts, location, description,
+                              calendar_uid=source.get_uid(), uid=event_uid)
                 continue
 
             summary = getattr(comp, "get_summary", lambda: "(No title)")()
@@ -142,7 +146,8 @@ for source in sources:
 
             # --- normal event ---
             if not rrule_prop and not rdates:
-                add_event(summary, calendar_name, start_ts, end_ts, location, description)
+                add_event(summary, calendar_name, start_ts, end_ts, location, description,
+                          calendar_uid=source.get_uid(), uid=comp.get_uid() or "")
                 continue
 
             # --- recurrent events ---
@@ -225,7 +230,8 @@ for source in sources:
 
                 # --- add occurences to all_events ---
                 for occ_start, occ_end in occurrences:
-                    add_event(summary, calendar_name, occ_start, occ_end, location, description)
+                    add_event(summary, calendar_name, occ_start, occ_end, location, description,
+                              calendar_uid=source.get_uid(), uid=comp.get_uid() or "")
 
 
     except Exception as e:
