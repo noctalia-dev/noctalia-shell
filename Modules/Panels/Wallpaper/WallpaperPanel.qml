@@ -1240,20 +1240,35 @@ SmartPanel {
 
               // Favorite star button (top-left)
               Rectangle {
+                id: favoriteStarRect
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.margins: Style.marginS
                 width: 28
                 height: 28
                 radius: width / 2
-                visible: !wallpaperItem.isDirectory && (wallpaperItem.isFavorited || hoverHandler.hovered || wallpaperGridView.currentIndex === index)
+                property bool starActive: !wallpaperItem.isDirectory &&
+                  (wallpaperItem.isFavorited ||
+                    (typeof hoverHandler !== "undefined" && hoverHandler.hovered) ||
+                    wallpaperGridView.currentIndex === index)
                 color: {
                   if (wallpaperItem.isFavorited)
                     return starHoverHandler.hovered ? Color.mHover : Color.mPrimary;
                   return starHoverHandler.hovered ? Color.mSurfaceVariant : Color.mSurface;
                 }
-                opacity: wallpaperItem.isFavorited || starHoverHandler.hovered ? 1.0 : 0.7
+                opacity: starActive ? 1.0 : 0.0
+                enabled: starActive
                 z: 5
+                transform: Translate {
+                  id: starTranslate
+                  y: favoriteStarRect.starActive ? 0 : -Style.marginS
+                  Behavior on y {
+                    NumberAnimation {
+                      duration: Style.animationFast
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
 
                 Behavior on color {
                   ColorAnimation {
@@ -1282,6 +1297,7 @@ SmartPanel {
                 }
 
                 TapHandler {
+                  enabled: favoriteStarRect.starActive
                   onTapped: {
                     WallpaperService.toggleFavorite(wallpaperItem.wallpaperPath);
                   }
@@ -1359,8 +1375,26 @@ SmartPanel {
                 z: 5
                 implicitWidth: themedRow.implicitWidth + Style.marginXS * 2
                 implicitHeight: themedRow.implicitHeight + Style.marginXS * 2
-                visible: !wallpaperItem.isDirectory &&
-                  (hoverHandler.hovered || (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index))
+                property bool isThemedActive: !wallpaperItem.isDirectory &&
+                  ((typeof hoverHandler !== "undefined" && hoverHandler.hovered) ||
+                    (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index))
+                transform: Translate {
+                  id: themedMarkerTranslate
+                  y: themedMarker.isThemedActive ? 0 : -Style.marginS
+                  Behavior on y {
+                    NumberAnimation {
+                      duration: Style.animationFast
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+                opacity: themedMarker.isThemedActive ? 1 : 0
+                Behavior on opacity {
+                  NumberAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+                enabled: themedMarker.isThemedActive
 
                 RowLayout {
                   id: themedRow
