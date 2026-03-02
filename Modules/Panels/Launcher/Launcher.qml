@@ -66,12 +66,12 @@ SmartPanel {
       return Settings.data.appLauncher.position;
     }
   }
-  panelAnchorHorizontalCenter: panelPosition === "center" || panelPosition.endsWith("_center")
-  panelAnchorVerticalCenter: panelPosition === "center"
-  panelAnchorLeft: panelPosition !== "center" && panelPosition.endsWith("_left")
-  panelAnchorRight: panelPosition !== "center" && panelPosition.endsWith("_right")
-  panelAnchorBottom: panelPosition.startsWith("bottom_")
-  panelAnchorTop: panelPosition.startsWith("top_")
+  panelAnchorHorizontalCenter: !root.useButtonPosition && (panelPosition === "center" || panelPosition.endsWith("_center"))
+  panelAnchorVerticalCenter: !root.useButtonPosition && panelPosition === "center"
+  panelAnchorLeft: !root.useButtonPosition && panelPosition !== "center" && panelPosition.endsWith("_left")
+  panelAnchorRight: !root.useButtonPosition && panelPosition !== "center" && panelPosition.endsWith("_right")
+  panelAnchorBottom: !root.useButtonPosition && panelPosition.startsWith("bottom_")
+  panelAnchorTop: !root.useButtonPosition && panelPosition.startsWith("top_")
 
   panelContent: Rectangle {
     id: ui
