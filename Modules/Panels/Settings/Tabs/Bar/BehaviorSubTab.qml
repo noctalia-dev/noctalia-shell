@@ -87,4 +87,14 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("bar.rightClickAction")
     onSelected: key => Settings.data.bar.rightClickAction = key
   }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.behavior-right-click-follow-mouse-label")
+    description: I18n.tr("panels.bar.behavior-right-click-follow-mouse-description")
+    checked: Settings.data.bar.rightClickFollowMouse
+    defaultValue: Settings.getDefaultValue("bar.rightClickFollowMouse")
+    onToggled: checked => Settings.data.bar.rightClickFollowMouse = checked
+    visible: Settings.data.bar.rightClickAction !== "none" && Settings.data.bar.rightClickAction !== "settings"
+  }
 }

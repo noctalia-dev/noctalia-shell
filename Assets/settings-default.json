@@ -71,6 +71,7 @@
     },
     "mouseWheelAction": "none",
     "rightClickAction": "controlCenter",
+    "rightClickFollowMouse": true,
     "reverseScroll": false,
     "mouseWheelWrap": true,
     "screenOverrides": []

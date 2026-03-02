@@ -355,7 +355,7 @@ Item {
                           var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
 
                           // Pass click position directly
-                          controlCenterPanel?.toggle(null, screenRelativePos);
+                          controlCenterPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? screenRelativePos : "ControlCenter");
                           mouse.accepted = true;
                         } else if (bar.barRightClickAction === "settings") {
                           SettingsPanelService.toggle(SettingsPanel.Tab.General, -1, screen);
@@ -363,7 +363,7 @@ Item {
                         } else if (bar.barRightClickAction === "launcherPanel") {
                           var launcherPanel = PanelService.getPanel("launcherPanel", screen);
                           var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
-                          launcherPanel?.toggle(null, screenRelativePos);
+                          launcherPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? screenRelativePos : null);
                           mouse.accepted = true;
                         }
                       }
