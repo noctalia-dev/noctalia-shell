@@ -1181,7 +1181,7 @@
       "info-parameters-description": "• Wallpaper hook: $1 = wallpaper path, $2 = screen name<br>• Theme toggle hook: $1 = true/false (Dark Mode state)<br>• Screen lock/unlock hooks: No parameters<br>• Performance mode hooks: No parameters<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Available parameters",
       "noctalia-started-description": "Command to execute when Noctalia has finished loading.",
-      "noctalia-started-label": "Noctalia Started",
+      "noctalia-started-label": "Noctalia started",
       "noctalia-started-placeholder": "e.g. notify-send 'Noctalia Loaded'",
       "performance-mode-disabled-description": "Command to be executed when Noctalia Performance Mode is disabled.",
       "performance-mode-disabled-label": "Performance mode disabled",
@@ -1745,7 +1745,7 @@
     },
     "skip-setup": "Skip Setup",
     "telemetry-wizard-done": "Got it!",
-    "telemetry-wizard-note": "You're in control — enable or disable this anytime in settings",
+    "telemetry-wizard-note": "You're in control - enable or disable this anytime in settings",
     "telemetry-wizard-subtitle": "We've added anonymous analytics to help improve Noctalia",
     "telemetry-wizard-title": "Privacy Update",
     "wallpaper": {

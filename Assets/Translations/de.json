@@ -1227,7 +1227,7 @@
       "enable-description": "Automatisch den Bildschirm ausschalten, sperren oder in den Energiesparmodus versetzen nach einer Zeit der Inaktivität.",
       "enable-label": "Inaktivitätsverwaltung aktivieren",
       "fade-duration-description": "Sekunden für die Schwarzblende-Animation, bevor jede Aktion ausgelöst wird. Jede Mausbewegung bricht die Überblendung ab.",
-      "fade-duration-label": "Einblendedauer",
+      "fade-duration-label": "Einblenddauer",
       "lock-description": "Sekunden der Inaktivität, bevor der Sperrbildschirm aktiviert wird.",
       "lock-label": "Bildschirmsperre",
       "resume-command-label": "Befehl fortsetzen",
@@ -1745,7 +1745,7 @@
     },
     "skip-setup": "Einrichtung überspringen",
     "telemetry-wizard-done": "Verstanden!",
-    "telemetry-wizard-note": "Sie haben die Kontrolle — aktivieren oder deaktivieren Sie dies jederzeit in den Einstellungen",
+    "telemetry-wizard-note": "Du hast die Kontrolle – aktiviere oder deaktiviere dies jederzeit in den Einstellungen.",
     "telemetry-wizard-subtitle": "Wir haben anonyme Analysen hinzugefügt, um Noctalia zu verbessern",
     "telemetry-wizard-title": "Datenschutz-Update",
     "wallpaper": {

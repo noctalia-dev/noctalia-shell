@@ -1217,7 +1217,7 @@
       "custom-entry-delete": "Supprimer",
       "custom-entry-edit": "Modifier la Commande Personnalisée",
       "custom-entry-name": "Nom",
-      "custom-entry-name-placeholder": "ex. Éteindre les lumières",
+      "custom-entry-name-placeholder": "ex : Éteindre les lumières",
       "custom-entry-new": "Nouvelle Commande Personnalisée",
       "custom-entry-timeout": "Temps d'inactivité",
       "custom-entry-timeout-format": "{count} seconde",
@@ -1745,7 +1745,7 @@
     },
     "skip-setup": "Ignorer la configuration",
     "telemetry-wizard-done": "Bien reçu !",
-    "telemetry-wizard-note": "Vous avez le contrôle — activez ou désactivez cette option à tout moment dans les paramètres",
+    "telemetry-wizard-note": "Vous avez le contrôle – activez ou désactivez ceci à tout moment dans les paramètres.",
     "telemetry-wizard-subtitle": "Nous avons ajouté des analyses anonymes pour aider à améliorer Noctalia",
     "telemetry-wizard-title": "Mise à jour de la confidentialité",
     "wallpaper": {

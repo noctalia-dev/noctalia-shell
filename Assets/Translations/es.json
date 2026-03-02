@@ -61,7 +61,7 @@
       "hide-if-not-detected-label": "Ocultar si no se detecta",
       "low-battery-threshold-label": "Umbral de advertencia de batería baja",
       "show-noctalia-performance-description": "Muestra el interruptor del modo de rendimiento Noctalia en el panel de batería.<br>Desactiva sombras y animaciones en Noctalia para reducir el uso de recursos.",
-      "show-noctalia-performance-label": "Mostrar interruptor de Noctalia Rendimiento",
+      "show-noctalia-performance-label": "Mostrar interruptor Noctalia Rendimiento",
       "show-power-profile-description": "Muestra la selección de perfil de energía en el panel de batería.",
       "show-power-profile-label": "Mostrar controles de perfil de energía"
     },
@@ -1181,7 +1181,7 @@
       "info-parameters-description": "• Hook de fondo de pantalla: $1 = ruta del fondo de pantalla, $2 = nombre de la pantalla<br>• Hook de alternancia de tema: $1 = verdadero/falso (estado del modo oscuro)<br>• Hooks de bloqueo/desbloqueo de pantalla: Sin parámetros<br>• Hooks de modo de rendimiento: Sin parámetros<br>• Hook de sesión: $1 = acción (apagado/reinicio)",
       "info-parameters-label": "Parámetros disponibles",
       "noctalia-started-description": "Comando para ejecutar cuando Noctalia ha terminado de cargarse.",
-      "noctalia-started-label": "Noctalia Iniciado",
+      "noctalia-started-label": "Noctalia iniciado",
       "noctalia-started-placeholder": "p. ej. notify-send 'Noctalia cargado'",
       "performance-mode-disabled-description": "Comando a ejecutar cuando se deshabilita el modo de rendimiento de Noctalia.",
       "performance-mode-disabled-label": "Modo de rendimiento deshabilitado",
@@ -1745,7 +1745,7 @@
     },
     "skip-setup": "Omitir la configuración",
     "telemetry-wizard-done": "¡Entendido!",
-    "telemetry-wizard-note": "Tienes el control — activa o desactiva esto cuando quieras en los ajustes",
+    "telemetry-wizard-note": "Tienes el control: actívalo o desactívalo en cualquier momento desde los ajustes.",
     "telemetry-wizard-subtitle": "Hemos añadido analíticas anónimas para ayudar a mejorar Noctalia",
     "telemetry-wizard-title": "Actualización de privacidad",
     "wallpaper": {

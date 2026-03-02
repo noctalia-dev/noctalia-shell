@@ -1745,7 +1745,7 @@
     },
     "skip-setup": "설정 건너뛰기",
     "telemetry-wizard-done": "알겠습니다!",
-    "telemetry-wizard-note": "언제든지 설정에서 활성화하거나 비활성화할 수 있습니다",
+    "telemetry-wizard-note": "설정에서 언제든지 이 기능을 켜거나 끌 수 있습니다.",
     "telemetry-wizard-subtitle": "Noctalia 개선을 돕기 위해 익명 분석을 추가했습니다",
     "telemetry-wizard-title": "개인정보 보호 업데이트",
     "wallpaper": {

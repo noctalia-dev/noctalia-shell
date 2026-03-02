@@ -60,8 +60,8 @@
       "hide-if-not-detected-description": "Nasconde il widget quando non viene rilevata alcuna batteria nel sistema.",
       "hide-if-not-detected-label": "Nascondi se non rilevata",
       "low-battery-threshold-label": "Soglia avviso batteria scarica",
-      "show-noctalia-performance-description": "Mostra l’interruttore Modalità Prestazioni Noctalia nel pannello batteria.<br>Disattiva ombre e animazioni in Noctalia per ridurre l’uso di risorse.",
-      "show-noctalia-performance-label": "Mostra interruttore Prestazioni Noctalia",
+      "show-noctalia-performance-description": "Mostra l’interruttore modalità prestazioni Noctalia nel pannello batteria.<br>Disattiva ombre e animazioni in Noctalia per ridurre l’uso di risorse.",
+      "show-noctalia-performance-label": "Mostra interruttore Noctalia Prestazioni",
       "show-power-profile-description": "Mostra la selezione del profilo energetico nel pannello batteria.",
       "show-power-profile-label": "Mostra controlli profilo energetico"
     },
@@ -1183,10 +1183,10 @@
       "noctalia-started-description": "Comando da eseguire quando Noctalia ha finito il caricamento.",
       "noctalia-started-label": "Noctalia avviata",
       "noctalia-started-placeholder": "es. notify-send 'Noctalia caricata'",
-      "performance-mode-disabled-description": "Comando da eseguire quando Modalità Prestazioni Noctalia è disabilitata.",
+      "performance-mode-disabled-description": "Comando da eseguire quando modalità prestazioni Noctalia è disabilitata.",
       "performance-mode-disabled-label": "Modalità prestazioni disabilitata",
       "performance-mode-disabled-placeholder": "es. notify-send \"Prestazioni\" \"Modalità disabilitata\"",
-      "performance-mode-enabled-description": "Comando da eseguire quando Modalità Prestazioni Noctalia è abilitata.",
+      "performance-mode-enabled-description": "Comando da eseguire quando modalità prestazioni Noctalia è abilitata.",
       "performance-mode-enabled-label": "Modalità prestazioni abilitata",
       "performance-mode-enabled-placeholder": "es. notify-send \"Prestazioni\" \"Modalità abilitata\"",
       "screen-lock-description": "Comando da eseguire quando lo schermo viene bloccato.",
@@ -1745,7 +1745,7 @@
     },
     "skip-setup": "Salta configurazione",
     "telemetry-wizard-done": "Capito!",
-    "telemetry-wizard-note": "Hai il controllo: puoi attivarla o disattivarla quando vuoi nelle impostazioni",
+    "telemetry-wizard-note": "Hai il controllo – abilita o disabilita questa opzione in qualsiasi momento nelle impostazioni.",
     "telemetry-wizard-subtitle": "Abbiamo aggiunto analisi anonime per migliorare Noctalia",
     "telemetry-wizard-title": "Aggiornamento privacy",
     "wallpaper": {
@@ -1842,9 +1842,9 @@
       "not-installed": "wlsunset not installed"
     },
     "noctalia-performance": {
-      "disabled": "Performance mode disabled",
-      "enabled": "Performance mode enabled",
-      "label": "Noctalia Performance"
+      "disabled": "Modalità prestazioni disabilitata",
+      "enabled": "Modalità prestazioni abilitata",
+      "label": "Noctalia Prestazioni"
     },
     "power-profile": {
       "changed": "Power profile changed",

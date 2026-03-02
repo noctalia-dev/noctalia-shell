@@ -1181,7 +1181,7 @@
       "info-parameters-description": "• Duvar kağıdı kancası: $1 = duvar kağıdı yolu, $2 = ekran adı<br>• Tema değiştirme kancası: $1 = doğru/yanlış (Karanlık Mod durumu)<br>• Ekran kilitleme/kilidi açma kancaları: Parametre yok<br>• Performans modu kancaları: Parametre yok<br>• Oturum kancası: $1 = eylem (kapatma/yeniden başlatma)",
       "info-parameters-label": "Kullanılabilir parametreler",
       "noctalia-started-description": "Noctalia yüklendiğinde çalıştırılacak komut.",
-      "noctalia-started-label": "Noctalia Başladı",
+      "noctalia-started-label": "Noctalia başladı",
       "noctalia-started-placeholder": "örn. notify-send 'Noctalia Yüklendi'",
       "performance-mode-disabled-description": "Noctalia performans modu devre dışı bırakıldığında çalıştırılacak komut.",
       "performance-mode-disabled-label": "Performans modu devre dışı bırakıldı",
@@ -1745,7 +1745,7 @@
     },
     "skip-setup": "Kurulumu Atla",
     "telemetry-wizard-done": "Anlaşıldı!",
-    "telemetry-wizard-note": "Kontrol sizde — istediğiniz zaman ayarlar'dan etkinleştirebilir veya devre dışı bırakabilirsiniz",
+    "telemetry-wizard-note": "Kontrol sende – bunu istediğin zaman ayarlardan açıp kapatabilirsin.",
     "telemetry-wizard-subtitle": "Noctalia'yı geliştirmeye yardımcı olmak için anonim analizler ekledik",
     "telemetry-wizard-title": "Gizlilik Güncellemesi",
     "wallpaper": {
