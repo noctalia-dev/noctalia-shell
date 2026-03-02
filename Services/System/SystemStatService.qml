@@ -920,15 +920,31 @@ Singleton {
   }
 
   // ----
-  // #2 - Read GPU sensor value (AMD/Intel via sysfs)
-  FileView {
-    id: gpuTempReader
-    printErrors: false
-
-    onLoaded: {
-      const data = text().trim();
-      root.gpuTemp = Math.round(parseInt(data) / 1000.0);
-      root.pushGpuHistory();
+  // #2 - Read GPU temperature and memory via sysfs (AMD/Intel only)
+  Process {
+    id: amdIntelStatsProcess
+    running: false
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const parts = text.trim().split(',');
+        if (parts.length >= 1) {
+          const temp = parseInt(parts[0].trim());
+          if (!isNaN(temp)) {
+            root.gpuTemp = Math.round(temp / 1000.0);
+            root.pushGpuHistory();
+          }
+        }
+        if (parts.length >= 3) {
+          const usedBytes = parseInt(parts[1].trim());
+          const totalBytes = parseInt(parts[2].trim());
+          if (!isNaN(usedBytes) && !isNaN(totalBytes) && totalBytes > 0) {
+            root.gpuMemGb = parseFloat((usedBytes / (1024 * 1024 * 1024)).toFixed(1));
+            root.gpuMemTotalGb = parseFloat((totalBytes / (1024 * 1024 * 1024)).toFixed(1));
+            root.gpuMemPercent = Math.round((usedBytes / totalBytes) * 100);
+            root.pushGpuMemHistory();
+          }
+        }
+      }
     }
   }
 
@@ -1767,8 +1783,8 @@ Singleton {
     if (root.gpuType === "nvidia") {
       nvidiaStatsProcess.running = true;
     } else if (root.gpuType === "amd" || root.gpuType === "intel") {
-      gpuTempReader.path = `${root.gpuTempHwmonPath}/temp1_input`;
-      gpuTempReader.reload();
+      amdIntelStatsProcess.command = ["sh", "-c", `paste -d, ${root.gpuTempHwmonPath}/temp1_input ${root.gpuTempHwmonPath}/device/mem_info_vram_used ${root.gpuTempHwmonPath}/device/mem_info_vram_total`];
+      amdIntelStatsProcess.running = true;
     } else if (root.gpuType === "thermal_zone") {
       if (root.gpuThermalZonePaths && root.gpuThermalZonePaths.length > 0) {
         // Multiple GPU zones (no gpu-avg), read all and take max
