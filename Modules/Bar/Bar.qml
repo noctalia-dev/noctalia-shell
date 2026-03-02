@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import qs.Commons
 import qs.Modules.Bar.Extras
 import qs.Modules.Notification
+import qs.Modules.Panels.Settings
 import qs.Services.Compositor
 import qs.Services.UI
 import qs.Widgets
@@ -187,6 +188,7 @@ Item {
         readonly property string barWheelAction: {
           return Settings.data.bar.mouseWheelAction || "none";
         }
+        readonly property string barRightClickAction: Settings.data.bar.rightClickAction || "controlCenter"
 
         // Position and size the bar content based on orientation
         x: (root.barPosition === "right") ? (parent.width - root.barHeight) : 0
@@ -337,22 +339,30 @@ Item {
         MouseArea {
           anchors.fill: parent
           acceptedButtons: Qt.RightButton
+          enabled: bar.barRightClickAction !== "none"
           hoverEnabled: false
           preventStealing: true
           onClicked: mouse => {
-                       if (mouse.button === Qt.RightButton) {
-                         if (bar.isPointOverWidget(mouse.x, mouse.y))
-                         return;
-                         var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-                         if (Settings.data.controlCenter.openAtMouseOnBarRightClick) {
-                           var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
-                           controlCenterPanel?.toggle(null, screenRelativePos);
-                         } else {
-                           controlCenterPanel?.toggle();
-                         }
-                         mouse.accepted = true;
-                       }
-                     }
+                      if (mouse.button === Qt.RightButton) {
+                        if (bar.isPointOverWidget(mouse.x, mouse.y))
+                          return;
+                        if (bar.barRightClickAction === "controlCenter") {
+                          // Click is on empty bar background - open control center
+                          var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
+
+                          // Map click position to screen-relative coordinates
+                          // We need to map from bar coordinates to screen coordinates
+                          var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
+
+                          // Pass click position directly
+                          controlCenterPanel?.toggle(null, screenRelativePos);
+                          mouse.accepted = true;
+                        } else if (bar.barRightClickAction === "settings") {
+                          SettingsPanelService.toggle(SettingsPanel.Tab.General, -1, screen);
+                          mouse.accepted = true;
+                        }
+                      }
+          }
         }
 
         // Debounce timer for wheel interactions
