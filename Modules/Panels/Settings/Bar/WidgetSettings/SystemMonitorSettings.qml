@@ -207,6 +207,7 @@ ColumnLayout {
                  saveSettings();
                }
     visible: SystemStatService.gpuAvailable
+    defaultValue: widgetMetadata.showGpuMem
   }
 
   NToggle {
@@ -220,6 +221,7 @@ ColumnLayout {
                  saveSettings();
                }
     visible: valueShowGpuMem && SystemStatService.gpuAvailable
+    defaultValue: widgetMetadata.showGpuMemAsPercent
   }
 
   NToggle {
