@@ -47,7 +47,7 @@ Rectangle {
 
   Timer {
     id: mouseTrackingDelayTimer
-    interval: Style.animationNormal + 50 // Wait for panel animation to complete + safety margin
+    interval: Style.animationNormal === 0 ? 0 : (Style.animationNormal + 50) // Wait for panel animation to complete + safety margin
     repeat: false
     onTriggered: {
       root.mouseTrackingReady = true;

@@ -1312,7 +1312,13 @@ Item {
 
           // Make panel visible, now only the intended dimension will animate
           root.isPanelVisible = true;
-          opacityTrigger.start();
+
+          if (Style.animationNormal === 0) {
+            // Skip delay when animations are disabled
+            root.sizeAnimationComplete = true;
+          } else {
+            opacityTrigger.start();
+          }
 
           // Start open watchdog timer
           root.openWatchdogActive = true;
