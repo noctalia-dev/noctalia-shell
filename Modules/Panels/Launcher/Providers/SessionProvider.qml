@@ -41,6 +41,12 @@ Item {
       "keywords": ["reboot", "restart", "reload"]
     },
     {
+      "action": "userspace-reboot",
+      "labelKey": "common.userspace-reboot",
+      "icon": iconMode === "tabler" ? "rotate" : "system-reboot",
+      "keywords": ["reboot", "restart", "soft", "userspace"]
+    },
+    {
       "action": "logout",
       "labelKey": "common.logout",
       "icon": iconMode === "tabler" ? "logout" : "system-log-out",
@@ -167,6 +173,9 @@ Item {
       break;
     case "reboot":
       CompositorService.reboot();
+      break;
+    case "userspace-reboot":
+      CompositorService.userspaceReboot();
       break;
     case "logout":
       CompositorService.logout();

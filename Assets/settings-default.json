@@ -409,6 +409,11 @@
         "action": "rebootToUefi",
         "enabled": true,
         "keybind": "7"
+      },
+      {
+        "action": "userspace-reboot",
+        "enabled": false,
+        "keybind": "8"
       }
     ]
   },

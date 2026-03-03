@@ -24,7 +24,8 @@ Popup {
     "reboot": "systemctl reboot || loginctl reboot",
     "rebootToUefi": "systemctl reboot --firmware-setup || loginctl reboot --firmware-setup",
     "logout": I18n.tr("panels.session-menu.entry-settings-default-command-logout"),
-    "shutdown": "systemctl poweroff || loginctl poweroff"
+    "shutdown": "systemctl poweroff || loginctl poweroff",
+    "userspace-reboot": "systemctl soft-reboot"
   }
 
   readonly property string defaultCommand: defaultCommands[entryId] || ""

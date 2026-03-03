@@ -495,6 +495,16 @@ Singleton {
                                     });
   }
 
+  function userspaceReboot() {
+    Logger.i("Compositor", "Userspace reboot requested");
+    if (executeSessionAction("userspace-reboot"))
+      return;
+
+    HooksService.executeSessionHook("userspace-reboot", () => {
+                                      Quickshell.execDetached(["sh", "-c", "systemctl soft-reboot"]);
+                                    });
+  }
+
   function rebootToUefi() {
     Logger.i("Compositor", "Reboot to UEFI firmware requested requested");
     if (executeSessionAction("rebootToUefi"))
