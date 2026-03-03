@@ -11,6 +11,7 @@ Singleton {
   id: root
 
   // Version properties
+  readonly property string majorVersion: "4.6"
   readonly property string baseVersion: "4.6.2"
   readonly property bool isDevelopment: true
   readonly property string developmentSuffix: "-git"

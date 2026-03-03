@@ -16,6 +16,7 @@ ColumnLayout {
     checked: Settings.data.ui.panelsAttachedToBar
     defaultValue: Settings.getDefaultValue("ui.panelsAttachedToBar")
     onToggled: checked => Settings.data.ui.panelsAttachedToBar = checked
+    version: "4.6"
   }
 
   NToggle {

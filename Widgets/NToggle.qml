@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
+import qs.Services.Noctalia
 
 RowLayout {
   id: root
@@ -14,7 +15,10 @@ RowLayout {
   property bool hovering: false
   property int baseSize: Math.round(Style.baseWidgetSize * 0.8 * Style.uiScaleRatio)
   property var defaultValue: undefined
+  property string version: ""
   property string settingsPath: ""
+
+  readonly property bool isNew: root.version && root.version >= UpdateService.majorVersion
 
   signal toggled(bool checked)
   signal entered
@@ -39,6 +43,7 @@ RowLayout {
     visible: root.label !== "" || root.description !== ""
     showIndicator: root.isValueChanged
     indicatorTooltip: root.indicatorTooltip
+    isNew: root.isNew
   }
 
   Rectangle {

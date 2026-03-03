@@ -10,10 +10,12 @@ ColumnLayout {
   property string description: ""
   property string icon: ""
   property color labelColor: Color.mOnSurface
+  property color labelNewColor: Color.mPrimary
   property color descriptionColor: Color.mOnSurfaceVariant
   property color iconColor: Color.mOnSurface
   property bool showIndicator: false
   property string indicatorTooltip: ""
+  property bool isNew: false
 
   opacity: enabled ? 1.0 : 0.6
   spacing: Style.marginXXS
@@ -36,10 +38,10 @@ ColumnLayout {
 
     NText {
       Layout.fillWidth: !root.showIndicator
-      text: root.label
+      text: root.label + (root.isNew ? " (" + I18n.tr("common.new") + ")" : "")
       pointSize: Style.fontSizeL
       font.weight: Style.fontWeightSemiBold
-      color: labelColor
+      color: root.isNew ? labelNewColor : labelColor
       wrapMode: Text.WordWrap
     }
 
