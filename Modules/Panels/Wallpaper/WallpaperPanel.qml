@@ -956,8 +956,8 @@ SmartPanel {
             if (sortOrder === "name_desc")
               return I18n.tr("wallpaper.panel.sort-name-desc");
             if (sortOrder === "random")
-              return return I18n.tr("wallpaper.panel.sort-random");
-            return return I18n.tr("wallpaper.panel.sort-name-asc");
+              return I18n.tr("wallpaper.panel.sort-random");
+            return I18n.tr("wallpaper.panel.sort-name-asc");
           }
           baseSize: Style.baseWidgetSize * 0.8
           onClicked: {
