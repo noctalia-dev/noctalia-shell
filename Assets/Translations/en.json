@@ -842,6 +842,8 @@
       "behavior-wheel-wrap-label": "Wrap around",
       "behavior-workspace-scroll-description": "Choose what the mouse wheel does on empty areas of the bar.",
       "behavior-workspace-scroll-label": "Bar mouse wheel action",
+      "behavior-workspace-scroll-option-content": "Content",
+      "behavior-workspace-scroll-option-workspace": "Workspace",
       "behavior-middle-click-description": "Choose what middle click does on empty areas of the bar.",
       "behavior-middle-click-label": "Bar middle click action",
       "behavior-middle-click-follow-mouse-description": "Open the selected middle-click panel at the cursor position.",

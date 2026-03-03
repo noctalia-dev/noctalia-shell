@@ -22,17 +22,17 @@ ColumnLayout {
       var items = [
             {
               "key": "none",
-              "name": "Nothing"
+              "name": I18n.tr("common.none")
             },
             {
               "key": "workspace",
-              "name": "Workspace"
+              "name": I18n.tr("panels.bar.behavior-workspace-scroll-option-workspace")
             }
           ];
       if (CompositorService.isNiri) {
         items.push({
                      "key": "content",
-                     "name": "Content"
+                     "name": I18n.tr("panels.bar.behavior-workspace-scroll-option-content")
                    });
       }
       return items;
