@@ -163,13 +163,13 @@ Rectangle {
     globalMouseInitialized = false;
     mouseTrackingReady = false;
     mouseTrackingDelayTimer.restart();
-    syncPluginProviders();
 
     // Show launcher immediately, results will populate asynchronously
     resultsReady = true;
     focusSearchInput();
 
     Qt.callLater(() => {
+                   syncPluginProviders();
                    for (let provider of providers) {
                      if (provider.onOpened)
                      provider.onOpened();
@@ -217,6 +217,7 @@ Rectangle {
 
   function syncPluginProviders() {
     var registeredIds = LauncherProviderRegistry.getPluginProviders();
+    var changed = false;
 
     // Remove providers that are no longer registered
     for (var existingId in pluginProviderInstances) {
@@ -227,6 +228,7 @@ Rectangle {
         pluginProviderInstances[existingId].destroy();
         delete pluginProviderInstances[existingId];
         Logger.d("Launcher", "Removed plugin provider:", existingId);
+        changed = true;
       }
     }
 
@@ -245,13 +247,14 @@ Rectangle {
             pluginProviderInstances[providerId] = instance;
             registerProvider(instance);
             Logger.d("Launcher", "Registered plugin provider:", providerId);
+            changed = true;
           }
         }
       }
     }
 
-    // Update results if launcher is open
-    if (root.isOpen) {
+    // Update results only if providers changed
+    if (changed && root.isOpen) {
       updateResults();
     }
   }
