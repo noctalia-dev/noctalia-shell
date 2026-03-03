@@ -11,6 +11,7 @@ ColumnLayout {
   Layout.fillWidth: true
 
   readonly property string effectiveWheelAction: Settings.data.bar.mouseWheelAction || "none"
+  readonly property string effectiveMiddleClickAction: Settings.data.bar.middleClickAction || "none"
   readonly property string effectiveRightClickAction: Settings.data.bar.rightClickAction || "controlCenter"
 
   NComboBox {
@@ -59,6 +60,43 @@ ColumnLayout {
     defaultValue: Settings.getDefaultValue("bar.mouseWheelWrap")
     onToggled: checked => Settings.data.bar.mouseWheelWrap = checked
     visible: Settings.data.bar.mouseWheelAction === "workspace"
+  }
+
+  NComboBox {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.behavior-middle-click-label")
+    description: I18n.tr("panels.bar.behavior-middle-click-description")
+    model: [
+      {
+        "key": "none",
+        "name": I18n.tr("common.none")
+      },
+      {
+        "key": "controlCenter",
+        "name": I18n.tr("tooltips.open-control-center")
+      },
+      {
+        "key": "settings",
+        "name": I18n.tr("tooltips.open-settings")
+      },
+      {
+        "key": "launcherPanel",
+        "name": I18n.tr("actions.open-launcher")
+      }
+    ]
+    currentKey: root.effectiveMiddleClickAction
+    defaultValue: Settings.getDefaultValue("bar.middleClickAction")
+    onSelected: key => Settings.data.bar.middleClickAction = key
+  }
+
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.behavior-middle-click-follow-mouse-label")
+    description: I18n.tr("panels.bar.behavior-middle-click-follow-mouse-description")
+    checked: Settings.data.bar.middleClickFollowMouse
+    defaultValue: Settings.getDefaultValue("bar.middleClickFollowMouse")
+    onToggled: checked => Settings.data.bar.middleClickFollowMouse = checked
+    visible: Settings.data.bar.middleClickAction !== "none" && !(Settings.data.bar.middleClickAction === "settings" && Settings.data.ui.settingsPanelMode === "window")
   }
 
   NComboBox {

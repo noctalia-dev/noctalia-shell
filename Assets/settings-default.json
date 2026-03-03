@@ -70,6 +70,8 @@
       ]
     },
     "mouseWheelAction": "none",
+    "middleClickAction": "none",
+    "middleClickFollowMouse": false,
     "rightClickAction": "controlCenter",
     "rightClickFollowMouse": true,
     "reverseScroll": false,

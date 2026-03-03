@@ -336,29 +336,42 @@ Item {
           CompositorService.switchToWorkspace(candidates[next]);
         }
 
+        function handleEmptyBarClick(action, followMouse, mouse) {
+          if (action === "none")
+            return;
+          if (action === "controlCenter") {
+            var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
+            controlCenterPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : "ControlCenter");
+            mouse.accepted = true;
+          } else if (action === "settings") {
+            var settingsPanel = PanelService.getPanel("settingsPanel", screen);
+            settingsPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : null);
+            mouse.accepted = true;
+          } else if (action === "launcherPanel") {
+            var launcherPanel = PanelService.getPanel("launcherPanel", screen);
+            launcherPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : null);
+            mouse.accepted = true;
+          }
+        }
+
         MouseArea {
           anchors.fill: parent
-          acceptedButtons: Qt.RightButton
-          enabled: bar.barRightClickAction !== "none"
+          acceptedButtons: Qt.RightButton | Qt.MiddleButton
+          enabled: bar.barRightClickAction !== "none" || Settings.data.bar.middleClickAction !== "none"
           hoverEnabled: false
           preventStealing: true
           onClicked: mouse => {
                       if (mouse.button === Qt.RightButton) {
                         if (bar.isPointOverWidget(mouse.x, mouse.y))
                           return;
-                        if (bar.barRightClickAction === "controlCenter") {
-                          var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-                          controlCenterPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? mapToItem(null, mouse.x, mouse.y) : "ControlCenter");
-                          mouse.accepted = true;
-                        } else if (bar.barRightClickAction === "settings") {
-                          var settingsPanel = PanelService.getPanel("settingsPanel", screen);
-                          settingsPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? mapToItem(null, mouse.x, mouse.y) : null);
-                          mouse.accepted = true;
-                        } else if (bar.barRightClickAction === "launcherPanel") {
-                          var launcherPanel = PanelService.getPanel("launcherPanel", screen);
-                          launcherPanel?.toggle(null, Settings.data.bar.rightClickFollowMouse ? mapToItem(null, mouse.x, mouse.y) : null);
-                          mouse.accepted = true;
-                        }
+                        bar.handleEmptyBarClick(bar.barRightClickAction, Settings.data.bar.rightClickFollowMouse, mouse);
+                        return;
+                      }
+                      if (mouse.button === Qt.MiddleButton) {
+                        if (bar.isPointOverWidget(mouse.x, mouse.y))
+                          return;
+                        bar.handleEmptyBarClick(Settings.data.bar.middleClickAction || "none", Settings.data.bar.middleClickFollowMouse, mouse);
+                        return;
                       }
           }
         }

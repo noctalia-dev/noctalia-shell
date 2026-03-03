@@ -259,6 +259,8 @@ Singleton {
       property string mouseWheelAction: "none"
       property bool reverseScroll: false
       property bool mouseWheelWrap: true
+      property string middleClickAction: "none"
+      property bool middleClickFollowMouse: false
       property string rightClickAction: "controlCenter"
       property bool rightClickFollowMouse: true
       // Per-screen overrides for position and widgets
