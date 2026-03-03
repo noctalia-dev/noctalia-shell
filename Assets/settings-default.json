@@ -72,8 +72,10 @@
     "mouseWheelAction": "none",
     "middleClickAction": "none",
     "middleClickFollowMouse": false,
+    "middleClickCommand": "",
     "rightClickAction": "controlCenter",
     "rightClickFollowMouse": true,
+    "rightClickCommand": "",
     "reverseScroll": false,
     "mouseWheelWrap": true,
     "screenOverrides": []

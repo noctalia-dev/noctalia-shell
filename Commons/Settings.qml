@@ -261,8 +261,10 @@ Singleton {
       property bool mouseWheelWrap: true
       property string middleClickAction: "none"
       property bool middleClickFollowMouse: false
+      property string middleClickCommand: ""
       property string rightClickAction: "controlCenter"
       property bool rightClickFollowMouse: true
+      property string rightClickCommand: ""
       // Per-screen overrides for position and widgets
       // Format: [{ "name": "HDMI-1", "position": "left" }, { "name": "DP-1", "position": "bottom", "widgets": {...} }]
       property list<var> screenOverrides: []

@@ -336,7 +336,7 @@ Item {
           CompositorService.switchToWorkspace(candidates[next]);
         }
 
-        function handleEmptyBarClick(action, followMouse, mouse) {
+        function handleEmptyBarClick(action, followMouse, command, mouse) {
           if (action === "none")
             return;
           if (action === "controlCenter") {
@@ -351,6 +351,46 @@ Item {
             var launcherPanel = PanelService.getPanel("launcherPanel", screen);
             launcherPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : null);
             mouse.accepted = true;
+          } else if (action === "command") {
+            runCustomCommand(command);
+            mouse.accepted = true;
+          }
+        }
+
+        function runCustomCommand(command) {
+          if (!command || command.trim() === "")
+            return;
+
+          const processString = "import QtQuick; import Quickshell.Io; Process { command: [\"sh\", \"-lc\", \"\"] }";
+
+          try {
+            const processObj = Qt.createQmlObject(processString, root, "BarCommandProcess_" + Date.now());
+            processObj.command = ["sh", "-lc", command];
+
+            processObj.exited.connect(function (exitCode) {
+              if (exitCode !== 0) {
+                ToastService.showError(
+                  I18n.tr("toast.custom-command-failed.title"),
+                  I18n.tr("toast.custom-command-failed.description", {
+                             command: command,
+                             code: exitCode
+                           })
+                );
+              }
+              processObj.destroy();
+            });
+
+            processObj.running = true;
+            Logger.i("Bar", `Executing command: ${command}`);
+          } catch (e) {
+            Logger.e("Bar", "Failed to start custom command:", e);
+            ToastService.showError(
+              I18n.tr("toast.custom-command-failed.title"),
+              I18n.tr("toast.custom-command-failed.description", {
+                         command: command,
+                         code: "start_error"
+                       })
+            );
           }
         }
 
@@ -364,13 +404,13 @@ Item {
                       if (mouse.button === Qt.RightButton) {
                         if (bar.isPointOverWidget(mouse.x, mouse.y))
                           return;
-                        bar.handleEmptyBarClick(bar.barRightClickAction, Settings.data.bar.rightClickFollowMouse, mouse);
+                        bar.handleEmptyBarClick(bar.barRightClickAction, Settings.data.bar.rightClickFollowMouse, Settings.data.bar.rightClickCommand, mouse);
                         return;
                       }
                       if (mouse.button === Qt.MiddleButton) {
                         if (bar.isPointOverWidget(mouse.x, mouse.y))
                           return;
-                        bar.handleEmptyBarClick(Settings.data.bar.middleClickAction || "none", Settings.data.bar.middleClickFollowMouse, mouse);
+                        bar.handleEmptyBarClick(Settings.data.bar.middleClickAction || "none", Settings.data.bar.middleClickFollowMouse, Settings.data.bar.middleClickCommand, mouse);
                         return;
                       }
           }

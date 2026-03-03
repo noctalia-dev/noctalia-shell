@@ -82,11 +82,26 @@ ColumnLayout {
       {
         "key": "launcherPanel",
         "name": I18n.tr("actions.open-launcher")
+      },
+      {
+        "key": "command",
+        "name": I18n.tr("actions.run-custom-command")
       }
     ]
     currentKey: root.effectiveMiddleClickAction
     defaultValue: Settings.getDefaultValue("bar.middleClickAction")
     onSelected: key => Settings.data.bar.middleClickAction = key
+  }
+
+  NTextInput {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.behavior-middle-click-command-label")
+    description: I18n.tr("panels.bar.behavior-middle-click-command-description")
+    placeholderText: I18n.tr("panels.bar.behavior-middle-click-command-placeholder")
+    text: Settings.data.bar.middleClickCommand
+    fontFamily: Settings.data.ui.fontFixed
+    onTextChanged: Settings.data.bar.middleClickCommand = text
+    visible: Settings.data.bar.middleClickAction === "command"
   }
 
   NToggle {
@@ -96,7 +111,7 @@ ColumnLayout {
     checked: Settings.data.bar.middleClickFollowMouse
     defaultValue: Settings.getDefaultValue("bar.middleClickFollowMouse")
     onToggled: checked => Settings.data.bar.middleClickFollowMouse = checked
-    visible: Settings.data.bar.middleClickAction !== "none" && !(Settings.data.bar.middleClickAction === "settings" && Settings.data.ui.settingsPanelMode === "window")
+    visible: Settings.data.bar.middleClickAction !== "none" && Settings.data.bar.middleClickAction !== "command" && !(Settings.data.bar.middleClickAction === "settings" && Settings.data.ui.settingsPanelMode === "window")
   }
 
   NComboBox {
@@ -119,11 +134,26 @@ ColumnLayout {
       {
         "key": "launcherPanel",
         "name": I18n.tr("actions.open-launcher")
+      },
+      {
+        "key": "command",
+        "name": I18n.tr("actions.run-custom-command")
       }
     ]
     currentKey: root.effectiveRightClickAction
     defaultValue: Settings.getDefaultValue("bar.rightClickAction")
     onSelected: key => Settings.data.bar.rightClickAction = key
+  }
+
+  NTextInput {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.bar.behavior-right-click-command-label")
+    description: I18n.tr("panels.bar.behavior-right-click-command-description")
+    placeholderText: I18n.tr("panels.bar.behavior-right-click-command-placeholder")
+    text: Settings.data.bar.rightClickCommand
+    fontFamily: Settings.data.ui.fontFixed
+    onTextChanged: Settings.data.bar.rightClickCommand = text
+    visible: Settings.data.bar.rightClickAction === "command"
   }
 
   NToggle {
@@ -133,6 +163,6 @@ ColumnLayout {
     checked: Settings.data.bar.rightClickFollowMouse
     defaultValue: Settings.getDefaultValue("bar.rightClickFollowMouse")
     onToggled: checked => Settings.data.bar.rightClickFollowMouse = checked
-    visible: Settings.data.bar.rightClickAction !== "none" && !(Settings.data.bar.rightClickAction === "settings" && Settings.data.ui.settingsPanelMode === "window")
+    visible: Settings.data.bar.rightClickAction !== "none" && Settings.data.bar.rightClickAction !== "command" && !(Settings.data.bar.rightClickAction === "settings" && Settings.data.ui.settingsPanelMode === "window")
   }
 }

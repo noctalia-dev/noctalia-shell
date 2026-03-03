@@ -396,6 +396,15 @@
     "subTabLabel": "common.behavior"
   },
   {
+    "labelKey": "panels.bar.behavior-middle-click-command-label",
+    "descriptionKey": "panels.bar.behavior-middle-click-command-description",
+    "widget": "NTextInput",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
     "labelKey": "panels.bar.behavior-right-click-label",
     "descriptionKey": "panels.bar.behavior-right-click-description",
     "widget": "NComboBox",
@@ -408,6 +417,15 @@
     "labelKey": "panels.bar.behavior-right-click-follow-mouse-label",
     "descriptionKey": "panels.bar.behavior-right-click-follow-mouse-description",
     "widget": "NToggle",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.bar.behavior-right-click-command-label",
+    "descriptionKey": "panels.bar.behavior-right-click-command-description",
+    "widget": "NTextInput",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 2,
