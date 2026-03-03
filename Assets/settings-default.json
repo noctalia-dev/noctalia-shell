@@ -248,7 +248,6 @@
   },
   "controlCenter": {
     "position": "close_to_bar_button",
-    "openAtMouseOnBarRightClick": true,
     "diskPath": "/",
     "shortcuts": {
       "left": [
