@@ -347,23 +347,23 @@ SmartPanel {
             model: [
               {
                 "icon": "sparkles",
-                "label": "Welcome"
+                "label": I18n.tr("setup.welcome")
               },
               {
                 "icon": "image",
-                "label": "Wallpaper"
+                "label": I18n.tr("common.wallpaper")
               },
               {
                 "icon": "palette",
-                "label": "Appearance"
+                "label": I18n.tr("common.appearance")
               },
               {
                 "icon": "settings",
-                "label": "Customize"
+                "label": I18n.tr("common.customize")
               },
               {
                 "icon": "device-desktop",
-                "label": "Dock"
+                "label": I18n.tr("panels.dock.title")
               }
             ]
             delegate: RowLayout {

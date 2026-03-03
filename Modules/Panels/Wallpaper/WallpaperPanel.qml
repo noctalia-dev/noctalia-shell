@@ -950,14 +950,14 @@ SmartPanel {
           }
           tooltipText: {
             if (sortOrder === "date_desc")
-              return "Sort: Newest First";
+              return I18n.tr("wallpaper.panel.sort-date-desc");
             if (sortOrder === "date_asc")
-              return "Sort: Oldest First";
+              return I18n.tr("wallpaper.panel.sort-date-asc");
             if (sortOrder === "name_desc")
-              return "Sort: Name (Z-A)";
+              return I18n.tr("wallpaper.panel.sort-name-desc");
             if (sortOrder === "random")
-              return "Sort: Random";
-            return "Sort: Name (A-Z)";
+              return return I18n.tr("wallpaper.panel.sort-random");
+            return return I18n.tr("wallpaper.panel.sort-name-asc");
           }
           baseSize: Style.baseWidgetSize * 0.8
           onClicked: {
