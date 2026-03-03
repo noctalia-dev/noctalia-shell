@@ -170,11 +170,20 @@ Rectangle {
 
     Qt.callLater(() => {
                    syncPluginProviders();
-                   for (let provider of providers) {
-                     if (provider.onOpened)
-                     provider.onOpened();
-                   }
+
+                   // Call ApplicationsProvider.onOpened() first (sets category)
+                   if (appsProvider.onOpened)
+                     appsProvider.onOpened();
+
                    updateResults();
+
+                   // Defer other provider initialization until after results are shown
+                   Qt.callLater(() => {
+                     for (let provider of providers) {
+                       if (provider !== appsProvider && provider.onOpened)
+                         provider.onOpened();
+                     }
+                   });
                  });
   }
 
