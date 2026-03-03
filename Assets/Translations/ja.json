@@ -401,6 +401,7 @@
     "contributors": "貢献者",
     "copied-to-clipboard": "クリップボードにコピーしました",
     "countdown": "カウントダウン",
+    "customize": "カスタマイズ",
     "date": "日付",
     "default": "デフォルト",
     "delete": "削除",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "セットアップをスキップ",
     "telemetry-wizard-done": "了解しました！",
-    "telemetry-wizard-note": "いつでも設定で有効/無効を切り替えられます。",
+    "telemetry-wizard-note": "設定でいつでも有効または無効にできます。",
     "telemetry-wizard-subtitle": "Noctaliaの改善に役立つ匿名分析を追加しました",
     "telemetry-wizard-title": "プライバシーアップデート",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "以下から壁紙を選択します",
       "subheader": "美しい背景で雰囲気を演出しましょう。"
     },
+    "welcome": "ようこそ",
     "welcome-note": "まずは基本設定から始めましょう。詳細なオプションは「設定」にあります。",
     "welcome-subtitle": "デスクトップをあなただけのものにしましょう",
     "welcome-title": "Noctaliaへようこそ！"
@@ -1970,6 +1972,11 @@
       "resolution-label": "解像度",
       "resolution-mode-label": "モード",
       "solid-color-tooltip": "無地",
+      "sort-date-asc": "古い順に並べ替え",
+      "sort-date-desc": "新しい順に並べ替え",
+      "sort-name-asc": "名前でソート (A-Z)",
+      "sort-name-desc": "名前順に並べ替え (Z-A)",
+      "sort-random": "ランダムで並べ替え",
       "sorting-date-added": "追加日",
       "sorting-favorites": "お気に入り数",
       "sorting-label": "並べ替え",

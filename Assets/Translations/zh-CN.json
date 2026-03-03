@@ -401,6 +401,7 @@
     "contributors": "贡献者",
     "copied-to-clipboard": "已复制到剪贴板",
     "countdown": "倒计时",
+    "customize": "自定义",
     "date": "日期",
     "default": "默认",
     "delete": "删除",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "跳过设置",
     "telemetry-wizard-done": "明白了！",
-    "telemetry-wizard-note": "尽在掌控 – 随时可在设置中启用或禁用此功能。",
+    "telemetry-wizard-note": "尽在掌控——您随时可在设置中启用或禁用此功能",
     "telemetry-wizard-subtitle": "我们添加了匿名分析功能以帮助改进 Noctalia",
     "telemetry-wizard-title": "隐私权更新",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "在下方选择一张壁纸",
       "subheader": "用精美壁纸营造氛围。"
     },
+    "welcome": "欢迎",
     "welcome-note": "先进行一些基础设置——更多选项可在“设置”中找到",
     "welcome-subtitle": "让我们一起打造独一无二的桌面",
     "welcome-title": "欢迎来到 Noctalia！"
@@ -1970,6 +1972,11 @@
       "resolution-label": "分辨率",
       "resolution-mode-label": "匹配模式",
       "solid-color-tooltip": "纯色背景",
+      "sort-date-asc": "按最早排序",
+      "sort-date-desc": "按最新排序",
+      "sort-name-asc": "按名称排序 (A-Z)",
+      "sort-name-desc": "按名称排序 (Z-A)",
+      "sort-random": "随机排序",
       "sorting-date-added": "上传日期",
       "sorting-favorites": "收藏量",
       "sorting-label": "排序方式",

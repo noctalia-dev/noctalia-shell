@@ -401,6 +401,7 @@
     "contributors": "Közreműködők",
     "copied-to-clipboard": "Vágólapra másolva",
     "countdown": "Visszaszámlálás",
+    "customize": "Testreszabás",
     "date": "Dátum",
     "default": "Alapértelmezett",
     "delete": "Törlés",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "Beállítás kihagyása",
     "telemetry-wizard-done": "Értettem!",
-    "telemetry-wizard-note": "Te irányítasz – bármikor engedélyezheted vagy letilthatod ezt a beállításokban.",
+    "telemetry-wizard-note": "Te irányítasz — bármikor engedélyezheted vagy letilthatod a beállításokban",
     "telemetry-wizard-subtitle": "Anonim analitikát adtunk hozzá, hogy segítsük a Noctalia fejlesztését",
     "telemetry-wizard-title": "Adatvédelmi frissítés",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "Válassz egy háttérképet alább",
       "subheader": "Teremts hangulatot egy gyönyörű háttérrel."
     },
+    "welcome": "Üdvözöljük",
     "welcome-note": "Csak néhány alapvető dolog az induláshoz — a teljes beállítási lehetőség a beállításokban található",
     "welcome-subtitle": "Tegyük egyedivé az asztalod",
     "welcome-title": "Üdvözöl a Noctalia!"
@@ -1970,6 +1972,11 @@
       "resolution-label": "Felbontás",
       "resolution-mode-label": "Mód",
       "solid-color-tooltip": "Egyszínű háttér",
+      "sort-date-asc": "Rendezés a legrégebbiek elöl",
+      "sort-date-desc": "Rendezés a legújabbak elöl",
+      "sort-name-asc": "Rendezés név szerint (A-Z)",
+      "sort-name-desc": "Rendezés név szerint (Z-A)",
+      "sort-random": "Rendezés véletlenszerűen",
       "sorting-date-added": "Hozzáadás dátuma",
       "sorting-favorites": "Kedvencek",
       "sorting-label": "Rendezés",

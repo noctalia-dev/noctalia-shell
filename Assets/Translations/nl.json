@@ -401,6 +401,7 @@
     "contributors": "Medewerkers",
     "copied-to-clipboard": "Gekopieerd naar klembord",
     "countdown": "Aftellen",
+    "customize": "Aanpassen",
     "date": "Datum",
     "default": "Standaard",
     "delete": "Verwijderen",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "Setup overslaan",
     "telemetry-wizard-done": "Begrepen!",
-    "telemetry-wizard-note": "Jij hebt de controle – schakel dit op elk moment in of uit via de instellingen.",
+    "telemetry-wizard-note": "Je hebt de controle — schakel dit op elk moment in of uit in de instellingen",
     "telemetry-wizard-subtitle": "We hebben anonieme analyses toegevoegd om Noctalia te helpen verbeteren",
     "telemetry-wizard-title": "Privacy-update",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "Selecteer hieronder een achtergrond",
       "subheader": "Zet de toon met een mooie achtergrond."
     },
+    "welcome": "Welkom",
     "welcome-note": "Een paar basisinstellingen om je op weg te helpen — alle opties vind je in instellingen",
     "welcome-subtitle": "Laten we uw bureaublad uniek maken",
     "welcome-title": "Welkom bij Noctalia!"
@@ -1970,6 +1972,11 @@
       "resolution-label": "Resolutie",
       "resolution-mode-label": "Modus",
       "solid-color-tooltip": "Effen kleur achtergrond",
+      "sort-date-asc": "Sorteren op oudste eerst",
+      "sort-date-desc": "Sorteren op nieuwste eerst",
+      "sort-name-asc": "Sorteren op naam (A-Z)",
+      "sort-name-desc": "Sorteren op naam (Z-A)",
+      "sort-random": "Sorteer willekeurig",
       "sorting-date-added": "Datum toegevoegd",
       "sorting-favorites": "Favorieten",
       "sorting-label": "Sorteren op",

@@ -401,6 +401,7 @@
     "contributors": "Bidragsgivare",
     "copied-to-clipboard": "Kopierat till urklipp",
     "countdown": "Nedräkning",
+    "customize": "Anpassa",
     "date": "Datum",
     "default": "Standard",
     "delete": "Ta bort",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "Hoppa över inställningar",
     "telemetry-wizard-done": "Jag fattar!",
-    "telemetry-wizard-note": "Du har kontrollen – aktivera eller inaktivera detta när som helst i inställningarna.",
+    "telemetry-wizard-note": "Du har kontrollen — aktivera eller inaktivera detta när som helst i inställningar",
     "telemetry-wizard-subtitle": "Vi har lagt till anonym analys för att förbättra Noctalia",
     "telemetry-wizard-title": "Uppdatering av integritet",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "Välj en bakgrundsbild nedan",
       "subheader": "Skapa stämning med en vacker bakgrund."
     },
+    "welcome": "Välkommen",
     "welcome-note": "Bara några grundläggande tips för att komma igång — alla alternativ finns i inställningarna",
     "welcome-subtitle": "Låt oss göra ditt skrivbord unikt för dig",
     "welcome-title": "Välkommen till Noctalia!"
@@ -1970,6 +1972,11 @@
       "resolution-label": "Upplösning",
       "resolution-mode-label": "Läge",
       "solid-color-tooltip": "Enfärgad bakgrund",
+      "sort-date-asc": "Sortera efter äldst först",
+      "sort-date-desc": "Sortera efter nyast först",
+      "sort-name-asc": "Sortera efter namn (A-Z)",
+      "sort-name-desc": "Sortera efter namn (Z-A)",
+      "sort-random": "Sortera slumpmässigt",
       "sorting-date-added": "Datum tillagt",
       "sorting-favorites": "Favoriter",
       "sorting-label": "Sortera efter",

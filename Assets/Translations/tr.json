@@ -401,6 +401,7 @@
     "contributors": "Katkıda bulunanlar",
     "copied-to-clipboard": "Panoya kopyalandı",
     "countdown": "Geri sayım",
+    "customize": "Özelleştir",
     "date": "Tarih",
     "default": "Varsayılan",
     "delete": "Sil",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "Kurulumu Atla",
     "telemetry-wizard-done": "Anlaşıldı!",
-    "telemetry-wizard-note": "Kontrol sende – bunu istediğin zaman ayarlardan açıp kapatabilirsin.",
+    "telemetry-wizard-note": "Kontrol sizde — istediğiniz zaman ayarlar'dan etkinleştirebilir veya devre dışı bırakabilirsiniz",
     "telemetry-wizard-subtitle": "Noctalia'yı geliştirmeye yardımcı olmak için anonim analizler ekledik",
     "telemetry-wizard-title": "Gizlilik Güncellemesi",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "Aşağıdan bir duvar kâğıdı seçin",
       "subheader": "Güzel bir arka planla ortamı ayarlayın."
     },
+    "welcome": "Hoş Geldiniz",
     "welcome-note": "Başlamanız için birkaç temel ayar — tam seçenekler ayarlar'da",
     "welcome-subtitle": "Masaüstünüzü size özel yapalım",
     "welcome-title": "Noctalia'ya hoş geldiniz!"
@@ -1970,6 +1972,11 @@
       "resolution-label": "Çözünürlük",
       "resolution-mode-label": "Mod",
       "solid-color-tooltip": "Düz renk arka plan",
+      "sort-date-asc": "En eskiden en yeniye sırala",
+      "sort-date-desc": "En yeniden en eskiye sırala",
+      "sort-name-asc": "Ada göre sırala (A-Z)",
+      "sort-name-desc": "Ada göre sırala (Z-A)",
+      "sort-random": "Rastgele sırala",
       "sorting-date-added": "Eklenme tarihi",
       "sorting-favorites": "Favoriler",
       "sorting-label": "Sırala",

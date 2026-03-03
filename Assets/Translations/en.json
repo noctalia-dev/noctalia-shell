@@ -401,6 +401,7 @@
     "contributors": "Contributors",
     "copied-to-clipboard": "Copied to clipboard",
     "countdown": "Countdown",
+    "customize": "Customize",
     "date": "Date",
     "default": "Default",
     "delete": "Delete",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "Skip Setup",
     "telemetry-wizard-done": "Got it!",
-    "telemetry-wizard-note": "You're in control - enable or disable this anytime in settings",
+    "telemetry-wizard-note": "You're in control — enable or disable this anytime in settings",
     "telemetry-wizard-subtitle": "We've added anonymous analytics to help improve Noctalia",
     "telemetry-wizard-title": "Privacy Update",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "Select a wallpaper below",
       "subheader": "Set the mood with a beautiful background."
     },
+    "welcome": "Welcome",
     "welcome-note": "Just a few basics to get you started — full options are in the settings",
     "welcome-subtitle": "Let's make your desktop uniquely yours",
     "welcome-title": "Welcome to Noctalia!"
@@ -1970,6 +1972,11 @@
       "resolution-label": "Resolution",
       "resolution-mode-label": "Mode",
       "solid-color-tooltip": "Solid color background",
+      "sort-date-asc": "Sort by oldest first",
+      "sort-date-desc": "Sort by newest first",
+      "sort-name-asc": "Sort by name (A-Z)",
+      "sort-name-desc": "Sort by name (Z-A)",
+      "sort-random": "Sort by random",
       "sorting-date-added": "Date added",
       "sorting-favorites": "Favorites",
       "sorting-label": "Sort by",

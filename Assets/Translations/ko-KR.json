@@ -401,6 +401,7 @@
     "contributors": "기여자",
     "copied-to-clipboard": "클립보드에 복사됨",
     "countdown": "카운트다운",
+    "customize": "사용자 지정",
     "date": "날짜",
     "default": "기본값",
     "delete": "삭제",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "설정 건너뛰기",
     "telemetry-wizard-done": "알겠습니다!",
-    "telemetry-wizard-note": "설정에서 언제든지 이 기능을 켜거나 끌 수 있습니다.",
+    "telemetry-wizard-note": "언제든지 설정에서 활성화하거나 비활성화할 수 있습니다",
     "telemetry-wizard-subtitle": "Noctalia 개선을 돕기 위해 익명 분석을 추가했습니다",
     "telemetry-wizard-title": "개인정보 보호 업데이트",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "아래에서 배경화면을 선택하세요",
       "subheader": "아름다운 배경으로 분위기를 설정하세요."
     },
+    "welcome": "환영합니다",
     "welcome-note": "시작하기 위한 몇 가지 기본 사항입니다 — 전체 옵션은 설정에 있습니다",
     "welcome-subtitle": "당신만의 독특한 데스크톱을 만들어 보세요",
     "welcome-title": "Noctalia에 오신 것을 환영합니다!"
@@ -1970,6 +1972,11 @@
       "resolution-label": "해상도",
       "resolution-mode-label": "모드",
       "solid-color-tooltip": "단색 배경",
+      "sort-date-asc": "오래된 순으로 정렬",
+      "sort-date-desc": "최신 순으로 정렬",
+      "sort-name-asc": "이름으로 정렬 (A-Z)",
+      "sort-name-desc": "이름으로 정렬 (Z-A)",
+      "sort-random": "무작위로 정렬",
       "sorting-date-added": "추가된 날짜",
       "sorting-favorites": "즐겨찾기",
       "sorting-label": "정렬 기준",

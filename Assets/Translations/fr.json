@@ -401,6 +401,7 @@
     "contributors": "Contributeurs",
     "copied-to-clipboard": "Copié dans le presse-papier",
     "countdown": "Compte à rebours",
+    "customize": "Personnaliser",
     "date": "Date",
     "default": "Par défaut",
     "delete": "Supprimer",
@@ -1745,7 +1746,7 @@
     },
     "skip-setup": "Ignorer la configuration",
     "telemetry-wizard-done": "Bien reçu !",
-    "telemetry-wizard-note": "Vous avez le contrôle – activez ou désactivez ceci à tout moment dans les paramètres.",
+    "telemetry-wizard-note": "Vous avez le contrôle — activez ou désactivez cette option à tout moment dans les paramètres",
     "telemetry-wizard-subtitle": "Nous avons ajouté des analyses anonymes pour aider à améliorer Noctalia",
     "telemetry-wizard-title": "Mise à jour de la confidentialité",
     "wallpaper": {
@@ -1762,6 +1763,7 @@
       "select-prompt": "Sélectionnez un fond ci-dessous",
       "subheader": "Définissez l'ambiance avec un joli fond."
     },
+    "welcome": "Bienvenue",
     "welcome-note": "Quelques réglages de base pour démarrer — toutes les options sont dans paramètres",
     "welcome-subtitle": "Personnalisons votre bureau pour qu'il soit unique",
     "welcome-title": "Bienvenue dans Noctalia !"
@@ -1970,6 +1972,11 @@
       "resolution-label": "Résolution",
       "resolution-mode-label": "Mode",
       "solid-color-tooltip": "Fond uni",
+      "sort-date-asc": "Trier du plus ancien au plus récent",
+      "sort-date-desc": "Trier du plus récent au plus ancien",
+      "sort-name-asc": "Trier par nom (A-Z)",
+      "sort-name-desc": "Trier par nom (Z-A)",
+      "sort-random": "Trier aléatoirement",
       "sorting-date-added": "Date d'ajout",
       "sorting-favorites": "Favoris",
       "sorting-label": "Trier par",
