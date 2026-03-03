@@ -134,7 +134,7 @@ ColumnLayout {
       NLabel {
         Layout.fillWidth: true
         label: entryDelegate.name || I18n.tr("panels.idle.custom-entry-unnamed")
-        description: I18n.trp("panels.idle.custom-entry-timeout-format", entryDelegate.timeout)
+        description: I18n.trp("common.second", entryDelegate.timeout)
         labelColor: (entryDelegate.command || entryDelegate.resumeCommand) ? Color.mPrimary : Color.mOnSurface
       }
 
