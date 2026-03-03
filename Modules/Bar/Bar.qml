@@ -381,7 +381,6 @@ Item {
             });
 
             processObj.running = true;
-            Logger.i("Bar", `Executing command: ${command}`);
           } catch (e) {
             Logger.e("Bar", "Failed to start custom command:", e);
             ToastService.showError(
