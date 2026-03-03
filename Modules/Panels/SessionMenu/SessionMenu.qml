@@ -589,7 +589,7 @@ SmartPanel {
         id: timerText
         anchors.centerIn: parent
         text: I18n.tr("session-menu.action-in-seconds", {
-                        "action": I18n.tr("common." + pendingAction),
+                        "action": root.actionMetadata[pendingAction] ? root.actionMetadata[pendingAction].title : "",
                         "seconds": Math.ceil(timeRemaining / 1000)
                       })
         font.weight: Style.fontWeightBold
@@ -656,7 +656,7 @@ SmartPanel {
 
           NText {
             text: timerActive ? I18n.tr("session-menu.action-in-seconds", {
-                                          "action": I18n.tr("common." + pendingAction),
+                                          "action": root.actionMetadata[pendingAction] ? root.actionMetadata[pendingAction].title : "",
                                           "seconds": Math.ceil(timeRemaining / 1000)
                                         }) : I18n.tr("session-menu.title")
             font.weight: Style.fontWeightBold
