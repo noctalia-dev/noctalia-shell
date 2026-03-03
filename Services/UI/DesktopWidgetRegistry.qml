@@ -19,6 +19,9 @@ Singleton {
   property Component clockComponent: Component {
     DesktopClock {}
   }
+  property Component customStickerComponent: Component {
+    DesktopCustomSticker {}
+  }
   property Component mediaPlayerComponent: Component {
     DesktopMediaPlayer {}
   }
@@ -37,6 +40,7 @@ Singleton {
     // Initialize widgets object after Components are ready
     var widgetsObj = {};
     widgetsObj["Clock"] = clockComponent;
+    widgetsObj["CustomSticker"] = customStickerComponent;
     widgetsObj["MediaPlayer"] = mediaPlayerComponent;
     widgetsObj["Weather"] = weatherComponent;
     widgetsObj["SystemStat"] = systemStatComponent;
@@ -47,6 +51,7 @@ Singleton {
 
   property var widgetSettingsMap: ({
                                      "Clock": "WidgetSettings/ClockSettings.qml",
+                                     "CustomSticker": "WidgetSettings/CustomStickerSettings.qml",
                                      "MediaPlayer": "WidgetSettings/MediaPlayerSettings.qml",
                                      "Weather": "WidgetSettings/WeatherSettings.qml",
                                      "SystemStat": "WidgetSettings/SystemStatSettings.qml"
@@ -61,6 +66,10 @@ Singleton {
                                     "useCustomFont": false,
                                     "customFont": "",
                                     "format": "HH:mm\\nd MMMM yyyy"
+                                  },
+                                  "CustomSticker": {
+                                    "showBackground": false,
+                                    "roundedCorners": true
                                   },
                                   "MediaPlayer": {
                                     "showBackground": true,

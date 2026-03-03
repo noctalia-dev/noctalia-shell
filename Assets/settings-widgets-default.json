@@ -258,6 +258,10 @@
       "customFont": "",
       "format": "HH:mm\\nd MMMM yyyy"
     },
+    "CustomSticker": {
+      "showBackground": false,
+      "roundedCorners": true
+    },
     "MediaPlayer": {
       "showBackground": true,
       "roundedCorners": true,
