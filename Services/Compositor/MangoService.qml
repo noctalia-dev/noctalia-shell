@@ -671,40 +671,24 @@ Item {
   }
 
   function turnOffMonitors() {
-    try {
-      const outputs = Object.keys(internal.monitorScales);
-      if (outputs.length === 0) {
-        if (root.selectedMonitor) {
-          Quickshell.execDetached(["mmsg", "-s", "-d", "disable_monitor," + root.selectedMonitor]);
-        } else {
-          Logger.w("MangoService", "Cannot turn off monitors: No outputs known and selectedMonitor is empty");
-        }
-      } else {
-        for (let i = 0; i < outputs.length; i++) {
-          Quickshell.execDetached(["mmsg", "-s", "-d", "disable_monitor," + outputs[i]]);
-        }
-      }
-    } catch (e) {
-      Logger.e("MangoService", "Failed to turn off monitors:", e);
+    const screens = Quickshell.screens;
+    const cmds = [];
+    for (let i = 0; i < screens.length; i++) {
+      cmds.push("mmsg -s -d disable_monitor," + screens[i].name);
+    }
+    if (cmds.length > 0) {
+      Quickshell.execDetached(["sh", "-c", cmds.join(" && ")]);
     }
   }
 
   function turnOnMonitors() {
-    try {
-      const outputs = Object.keys(internal.monitorScales);
-      if (outputs.length === 0) {
-        if (root.selectedMonitor) {
-          Quickshell.execDetached(["mmsg", "-s", "-d", "enable_monitor," + root.selectedMonitor]);
-        } else {
-          Logger.w("MangoService", "Cannot turn on monitors: No outputs known and selectedMonitor is empty");
-        }
-      } else {
-        for (let i = 0; i < outputs.length; i++) {
-          Quickshell.execDetached(["mmsg", "-s", "-d", "enable_monitor," + outputs[i]]);
-        }
-      }
-    } catch (e) {
-      Logger.e("MangoService", "Failed to turn on monitors:", e);
+    const screens = Quickshell.screens;
+    const cmds = [];
+    for (let i = 0; i < screens.length; i++) {
+      cmds.push("mmsg -s -d enable_monitor," + screens[i].name);
+    }
+    if (cmds.length > 0) {
+      Quickshell.execDetached(["sh", "-c", cmds.join(" && ")]);
     }
   }
 

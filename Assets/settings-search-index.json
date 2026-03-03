@@ -549,6 +549,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.control-center.open-at-mouse-label",
+    "descriptionKey": "panels.control-center.open-at-mouse-description",
+    "widget": "NToggle",
+    "tab": 7,
+    "tabLabel": "panels.control-center.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.control-center.system-monitor-disk-path-label",
     "descriptionKey": "panels.control-center.system-monitor-disk-path-description",
     "widget": "NComboBox",
@@ -1022,7 +1031,7 @@
     "descriptionKey": "panels.idle.enable-description",
     "widget": "NToggle",
     "tab": 13,
-    "tabLabel": "common.idle",
+    "tabLabel": "panels.idle.title",
     "subTab": 0,
     "subTabLabel": "panels.idle.tab-behavior"
   },
@@ -1031,7 +1040,7 @@
     "descriptionKey": "panels.idle.status-description",
     "widget": "NLabel",
     "tab": 13,
-    "tabLabel": "common.idle",
+    "tabLabel": "panels.idle.title",
     "subTab": 0,
     "subTabLabel": "panels.idle.tab-behavior"
   },
@@ -1040,7 +1049,7 @@
     "descriptionKey": "panels.idle.timeouts-description",
     "widget": "NLabel",
     "tab": 13,
-    "tabLabel": "common.idle",
+    "tabLabel": "panels.idle.title",
     "subTab": 0,
     "subTabLabel": "panels.idle.tab-behavior"
   },
@@ -1049,7 +1058,7 @@
     "descriptionKey": "panels.idle.fade-duration-description",
     "widget": "NSpinBox",
     "tab": 13,
-    "tabLabel": "common.idle",
+    "tabLabel": "panels.idle.title",
     "subTab": 0,
     "subTabLabel": "panels.idle.tab-behavior"
   },
@@ -1058,7 +1067,7 @@
     "descriptionKey": "panels.idle.custom-description",
     "widget": "NLabel",
     "tab": 13,
-    "tabLabel": "common.idle",
+    "tabLabel": "panels.idle.title",
     "subTab": 1,
     "subTabLabel": "panels.idle.tab-custom"
   },

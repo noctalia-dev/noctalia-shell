@@ -244,6 +244,7 @@
   },
   "controlCenter": {
     "position": "close_to_bar_button",
+    "openAtMouseOnBarRightClick": true,
     "diskPath": "/",
     "shortcuts": {
       "left": [
@@ -519,6 +520,12 @@
     "lockTimeout": 660,
     "suspendTimeout": 1800,
     "fadeDuration": 5,
+    "screenOffCommand": "",
+    "lockCommand": "",
+    "suspendCommand": "",
+    "resumeScreenOffCommand": "",
+    "resumeLockCommand": "",
+    "resumeSuspendCommand": "",
     "customCommands": "[]"
   },
   "desktopWidgets": {

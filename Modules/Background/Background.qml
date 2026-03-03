@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.Commons
 import qs.Services.Compositor
+import qs.Services.Power
 import qs.Services.UI
 
 Variants {
@@ -13,7 +14,7 @@ Variants {
 
     required property ShellScreen modelData
 
-    active: modelData && Settings.data.wallpaper.enabled
+    active: modelData && Settings.data.wallpaper.enabled && !PowerProfileService.noctaliaPerformanceMode
 
     sourceComponent: PanelWindow {
       id: root

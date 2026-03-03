@@ -505,7 +505,7 @@ PopupWindow {
     if (appId) {
       root.toggleAppPin(appId);
     }
-    closeAndReset();
+    Qt.callLater(() => closeAndReset());
   }
 
   function handleClose(targetToplevel) {

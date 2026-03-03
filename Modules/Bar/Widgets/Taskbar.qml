@@ -203,7 +203,38 @@ Item {
     if (!appId || !pinnedApps || pinnedApps.length === 0)
       return false;
     const normalizedId = normalizeAppId(appId);
-    return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+    // Direct match
+    if (pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId))
+      return true;
+    // Resolve via desktop entry lookup (handles StartupWMClass != .desktop filename)
+    const resolved = resolveToDesktopEntryId(appId);
+    if (resolved !== appId) {
+      const normalizedResolved = normalizeAppId(resolved);
+      return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedResolved);
+    }
+    return false;
+  }
+
+  // Desktop entry ID resolution cache (cleared when DesktopEntries change)
+  property var _desktopEntryIdCache: ({})
+
+  // Resolve a toplevel appId to its canonical .desktop entry ID via heuristic lookup.
+  function resolveToDesktopEntryId(appId) {
+    if (!appId)
+      return appId;
+    if (_desktopEntryIdCache.hasOwnProperty(appId))
+      return _desktopEntryIdCache[appId];
+    try {
+      if (typeof DesktopEntries !== 'undefined' && DesktopEntries.heuristicLookup) {
+        const entry = DesktopEntries.heuristicLookup(appId);
+        if (entry && entry.id) {
+          _desktopEntryIdCache[appId] = entry.id;
+          return entry.id;
+        }
+      }
+    } catch (e) {}
+    _desktopEntryIdCache[appId] = appId;
+    return appId;
   }
 
   // Helper function to get app name from desktop entry
@@ -272,7 +303,14 @@ Item {
       return false;
     const pinnedApps = Settings.data.dock.pinnedApps || [];
     const normalizedId = normalizeAppId(appId);
-    return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+    if (pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId))
+      return true;
+    const resolved = resolveToDesktopEntryId(appId);
+    if (resolved !== appId) {
+      const normalizedResolved = normalizeAppId(resolved);
+      return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedResolved);
+    }
+    return false;
   }
 
   // Helper function to toggle app pin/unpin
@@ -331,6 +369,10 @@ Item {
                                 "title": w.title || getAppNameFromDesktopEntry(w.appId)
                               });
           processedAppIds.add(normalizeAppId(w.appId));
+          // Also track the resolved desktop entry ID so pinned app matching works
+          const resolvedId = resolveToDesktopEntryId(w.appId);
+          if (resolvedId !== w.appId)
+            processedAppIds.add(normalizeAppId(resolvedId));
         }
       }
     } catch (e)

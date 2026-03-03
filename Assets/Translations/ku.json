@@ -1036,7 +1036,7 @@
       "info-parameters-description": "• Hooka dîwêr: $1 = rêya dîwêr, $2 = navê ekranê<br>• Hooka guherîna mijarê: $1 = rast/derew (rewşa moda tarî)<br>• Hookên kilîtkirin/vekirina ekranê: Parametre tune<br>• Hookên moda performansê: Parametre tune<br>• Hooka danişînê: $1 = çalakî (girtin/ji nû ve destpêkirin)",
       "info-parameters-label": "Parametreyên berdest",
       "noctalia-started-description": "Fermana ku dema Noctalia barkirina xwe qedand pêk were.",
-      "noctalia-started-label": "Noctalia Hêla Destpêkirin",
+      "noctalia-started-label": "Noctalia hêla destpêkirin",
       "noctalia-started-placeholder": "mînakî notify-send 'Noctalia hate barkirin'",
       "performance-mode-disabled-description": "Fermana ku dema moda performansê ya Noctalia bêbandor dibe, tê meşandin.",
       "performance-mode-disabled-label": "Rewaya kar rawestayî ye",
@@ -1517,7 +1517,7 @@
     },
     "skip-setup": "Sazkirinê Derbas Bike",
     "telemetry-wizard-done": "Gihîşt!",
-    "telemetry-wizard-note": "Hûn di kontrolê de ne - hûn dikarin vê yekê di mîhengan de her dem çalak an neçalak bikin",
+    "telemetry-wizard-note": "Hûn di kontrolê de ne — hûn dikarin vê yekê di mîhengan de her dem çalak an neçalak bikin",
     "telemetry-wizard-subtitle": "Me analîtîkên anonîm zêde kirin da ku alîkariya başkirina Noctalia bikin",
     "telemetry-wizard-title": "Nûkirina Nepenîtiyê",
     "wallpaper": {
