@@ -159,20 +159,22 @@ Rectangle {
   }
 
   function onOpened() {
-    resultsReady = false;
     ignoreMouseHover = true;
     globalMouseInitialized = false;
     mouseTrackingReady = false;
     mouseTrackingDelayTimer.restart();
     syncPluginProviders();
+
+    // Show launcher immediately, results will populate asynchronously
+    resultsReady = true;
+    focusSearchInput();
+
     Qt.callLater(() => {
                    for (let provider of providers) {
                      if (provider.onOpened)
                      provider.onOpened();
                    }
                    updateResults();
-                   resultsReady = true;
-                   focusSearchInput();
                  });
   }
 
