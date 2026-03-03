@@ -52,10 +52,19 @@ Item {
   property bool isPanelVisible: false
 
   // Track if the panel is hovered or any popup
-  property bool isHovered: false
   property bool isDirectlyHovered: false
   property bool isChildrenVisible: false
   property bool isChildrenHovered: false
+  property bool isHovered: isDirectlyHovered || isChildrenVisible || isChildrenHovered
+
+  onIsHoveredChanged: {
+    if(isHovered) {
+      hoverEval.stop();
+    } else {
+        hoverEval.interval = Settings.data.ui.panelsHideDelay;
+        hoverEval.restart();
+    }
+  }
 
   // Track size animation completion for sequential opacity animation
   property bool sizeAnimationComplete: false
@@ -278,7 +287,6 @@ Item {
     closeWatchdogTimer.stop();
 
     // Reset hovering status
-    isHovered = false;
     isDirectlyHovered = false;
     isChildrenVisible = false;
     isChildrenHovered = false;
@@ -314,7 +322,6 @@ Item {
     closeWatchdogTimer.stop();
 
     // Reset hovering
-    isHovered = false;
     isDirectlyHovered = false;
     isChildrenVisible = false;
     isChildrenHovered = false;
@@ -787,19 +794,6 @@ Item {
         Logger.w("SmartPanel", "Close watchdog timeout - forcing panel close", root.objectName);
         // Force finalization
         Qt.callLater(root.finalizeClose);
-      }
-    }
-  }
-
-  function hoveringCheck(hovered){
-    if(hovered) {
-      hoverEval.stop();
-      isHovered = true;
-    } else {
-      isHovered = isDirectlyHovered || isChildrenVisible || isChildrenHovered;
-      if (!isHovered) {
-        hoverEval.interval = Settings.data.ui.panelsHideDelay;
-        hoverEval.restart();
       }
     }
   }
@@ -1348,10 +1342,7 @@ Item {
 
       HoverHandler {
         id: hoverHandler
-        onHoveredChanged: {
-          isDirectlyHovered = hovered;
-          root.hoveringCheck(hovered);
-        }
+        onHoveredChanged: isDirectlyHovered = hovered
       }
 
       onLoaded: {

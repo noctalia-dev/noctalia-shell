@@ -50,7 +50,6 @@ Singleton {
   function childrenVisible(visible) {
     if(openedPanel){
       openedPanel.isChildrenVisible = visible;
-      openedPanel.hoveringCheck(visible);
     }
   }
 
@@ -59,7 +58,6 @@ Singleton {
   function childrenHovered(hovered) {
     if(openedPanel){
       openedPanel.isChildrenHovered = hovered;
-      openedPanel.hoveringCheck(hovered);
     }
   }
 
