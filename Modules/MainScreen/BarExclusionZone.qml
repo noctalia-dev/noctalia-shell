@@ -23,7 +23,7 @@ PanelWindow {
   readonly property bool barFloating: Settings.data.bar.floating || false
   readonly property real barMarginH: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
   readonly property real barMarginV: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0
-  // Allow users to adjust the exclusion zone if they need window borders to bleed under the bar
+  // Allow users to enable a 1-physical-pixel inset for the exclusion zone so window borders can bleed under the bar
   readonly property real bleedOffset: Settings.data.bar.exclusionZoneOffset ? 1.0 : 0.0
   readonly property real bleedInset: bleedOffset / (CompositorService.getDisplayScale(screen?.name) || 1.0)
 
