@@ -20,8 +20,8 @@ Rectangle {
     readonly property real clampedRatio: Math.min(1, Math.max(0, root.ratio))
     readonly property real rawWidth: root.width * clampedRatio
     readonly property real rawHeight: root.height * clampedRatio
-    width: orientation === Qt.Vertical ? root.width : (rawWidth < 2 * root.radius ? 0 : rawWidth)
-    height: orientation === Qt.Vertical ? (rawHeight < 2 * root.radius ? 0 : rawHeight) : root.height
+    width: orientation === Qt.Vertical ? root.width : (rawWidth < 1 ? 0 : rawWidth)
+    height: orientation === Qt.Vertical ? (rawHeight < 1 ? 0 : rawHeight) : root.height
     radius: root.radius
     color: root.fillColor
     anchors.bottom: orientation === Qt.Vertical ? parent.bottom : undefined
