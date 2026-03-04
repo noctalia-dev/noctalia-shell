@@ -811,6 +811,8 @@
       "appearance-density-label": "Bar density",
       "appearance-desc": "Customize the bar's appearance and position.",
       "appearance-display-mode-description": "Choose when the bar is visible.",
+      "appearance-exclusion-zone-offset-description": "Reduce the exclusion zone by 1px so flush windows bleed perfectly under the bar edge.",
+      "appearance-exclusion-zone-offset-label": "Bleed exclusion zone",
       "appearance-floating-description": "Display the bar as a floating 'pill'.",
       "appearance-floating-label": "Floating bar",
       "appearance-font-scale-description": "Adjust the font size scale for text displayed in the bar.",
@@ -1901,8 +1903,6 @@
   },
   "tooltips": {
     "add-widget": "Add widget",
-    "bluetooth-auto-connect-off": "Auto-connect is off — click to enable",
-    "bluetooth-auto-connect-on": "Auto-connect is on — click to disable",
     "bluetooth-devices": "Bluetooth devices",
     "brightness-at": "Brightness: {brightness}%",
     "click-to-start-recording": "Screen recorder (start recording)",
