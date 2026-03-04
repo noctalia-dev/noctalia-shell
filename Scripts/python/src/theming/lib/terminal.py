@@ -46,7 +46,7 @@ class TerminalColors:
     visual_bell: str
     indexed: dict[int, str]
     tab_bar: dict
-    
+
     # Kitty border colors
     active_border: str
     inactive_border: str
@@ -127,7 +127,7 @@ class TerminalGenerator:
     def generate_foot(self) -> str:
         """Generate foot terminal theme (INI format, no # prefix)."""
         c = self.colors
-        lines = ["[colors]"]
+        lines = ["[colors-dark]"]
 
         # Primary colors
         lines.append(f"foreground={self._strip_hash(c.foreground)}")
