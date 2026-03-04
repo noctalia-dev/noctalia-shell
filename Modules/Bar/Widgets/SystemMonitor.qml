@@ -97,8 +97,8 @@ Item {
     rows.push([I18n.tr("system-monitor.cpu-usage"), `${Math.round(SystemStatService.cpuUsage)}% (${SystemStatService.cpuFreq.replace(/[^0-9.]/g, "")} GHz)`]);
     if (showCpuCores) {
       SystemStatService.coresUsage.forEach((usage, core) => rows.push(["  " + I18n.tr("system-monitor.core-usage", {
-                                                                                 "id": core
-                                                                               }), `${Math.round(usage)}%`]));
+                                                                                        "id": core
+                                                                                      }), `${Math.round(usage)}%`]));
     }
 
     if (SystemStatService.cpuTemp > 0) {
