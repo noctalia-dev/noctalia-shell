@@ -228,11 +228,11 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("panels.bar.appearance-exclusion-zone-offset-label")
-    description: I18n.tr("panels.bar.appearance-exclusion-zone-offset-description")
-    checked: Settings.data.bar.exclusionZoneOffset
-    defaultValue: Settings.getDefaultValue("bar.exclusionZoneOffset")
-    onToggled: checked => Settings.data.bar.exclusionZoneOffset = checked
+    label: I18n.tr("panels.bar.appearance-enable-Exclusion-Zone-Inset-label")
+    description: I18n.tr("panels.bar.appearance-enable-Exclusion-Zone-Inset-description")
+    checked: Settings.data.bar.enableExclusionZoneInset
+    defaultValue: Settings.getDefaultValue("bar.enableExclusionZoneInset")
+    onToggled: checked => Settings.data.bar.enableExclusionZoneInset = checked
   }
 
   NToggle {

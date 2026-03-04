@@ -252,8 +252,8 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-exclusion-zone-offset-label",
-    "descriptionKey": "panels.bar.appearance-exclusion-zone-offset-description",
+    "labelKey": "panels.bar.appearance-enable-Exclusion-Zone-Inset-label",
+    "descriptionKey": "panels.bar.appearance-enable-Exclusion-Zone-Inset-description",
     "widget": "NToggle",
     "tab": 4,
     "tabLabel": "panels.bar.title",
