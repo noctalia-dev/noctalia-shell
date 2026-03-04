@@ -566,6 +566,7 @@ Singleton {
       property string bluetoothDetailsViewMode: "grid" // "grid" or "list"
       property bool bluetoothHideUnnamedDevices: false
       property bool disableDiscoverability: false
+      property bool bluetoothAutoConnect: true
     }
 
     // session menu
