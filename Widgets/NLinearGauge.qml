@@ -9,7 +9,7 @@ Rectangle {
   required property int orientation // Qt.Vertical || Qt.Horizontal
   required property real ratio // 0..1
 
-  radius: width / 2
+  radius: orientation === Qt.Vertical ? width / 2 : height / 2
   color: Color.mOutline
   property color fillColor: Color.mPrimary
 
