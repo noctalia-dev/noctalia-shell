@@ -45,6 +45,8 @@ Rectangle {
   property bool globalMouseInitialized: false
   property bool mouseTrackingReady: false // Delay tracking until panel is settled
 
+  readonly property bool animationsDisabled: Settings.data.general.animationDisabled
+
   Timer {
     id: mouseTrackingDelayTimer
     interval: root.animationsDisabled ? 0 : (Style.animationNormal + 50) // Wait for panel animation to complete + safety margin
@@ -57,7 +59,6 @@ Rectangle {
 
   readonly property var defaultProvider: appsProvider
   readonly property var currentProvider: activeProvider || defaultProvider
-  readonly property bool animationsDisabled: Settings.data.general.animationDisabled
 
   readonly property string launcherDensity: (currentProvider && currentProvider.ignoreDensity === false) ? (Settings.data.appLauncher.density || "default") : "comfortable"
   readonly property int effectiveIconSize: launcherDensity === "comfortable" ? 48 : (launcherDensity === "default" ? 36 : 24)
@@ -171,20 +172,11 @@ Rectangle {
 
     Qt.callLater(() => {
                    syncPluginProviders();
-
-                   // Call ApplicationsProvider.onOpened() first (sets category)
-                   if (appsProvider.onOpened)
-                     appsProvider.onOpened();
-
+                   for (let provider of providers) {
+                     if (provider.onOpened)
+                     provider.onOpened();
+                   }
                    updateResults();
-
-                   // Defer other provider initialization until after results are shown
-                   Qt.callLater(() => {
-                     for (let provider of providers) {
-                       if (provider !== appsProvider && provider.onOpened)
-                         provider.onOpened();
-                     }
-                   });
                  });
   }
 
