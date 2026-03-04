@@ -71,7 +71,7 @@ for source in sources:
     print(f"\nProcessing calendar: {calendar_name}", file=sys.stderr)
 
     try:
-        client = ECal.Client.connect_sync(source, ECal.ClientSourceType.EVENTS, 1, None)
+        client = ECal.Client.connect_sync(source, ECal.ClientSourceType.EVENTS, 5, None)
 
         start_dt = datetime.fromtimestamp(start_time)
         end_dt = datetime.fromtimestamp(end_time)
