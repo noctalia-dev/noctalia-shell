@@ -129,10 +129,7 @@ Singleton {
   }
 
   function executePredefinedScheme(schemeData, mode, wallpaperPath) {
-    // 1. Handle terminal themes (runtime generation or pre-rendered file copy)
-    handleTerminalThemes(schemeData, mode);
-
-    // 2. Build TOML config for application templates
+    // 1. Build TOML config for application templates (including terminals)
     const tomlContent = buildPredefinedTemplateConfig(mode);
     if (!tomlContent) {
       Logger.d("TemplateProcessor", "No application templates enabled for predefined scheme");
@@ -178,6 +175,20 @@ Singleton {
   */
   function buildPredefinedTemplateConfig(mode) {
     var lines = [];
+    const homeDir = Quickshell.env("HOME");
+
+    // Add terminal templates
+    TemplateRegistry.terminals.forEach(terminal => {
+                                         if (isTemplateEnabled(terminal.id)) {
+                                           lines.push(`\n[templates.${terminal.id}]`);
+                                           lines.push(`input_path = "${Quickshell.shellDir}/Assets/Templates/${terminal.predefinedTemplatePath}"`);
+                                           const outputPath = terminal.outputPath.replace("~", homeDir);
+                                           lines.push(`output_path = "${outputPath}"`);
+                                           const postHookEsc = escapeTomlString(terminal.postHook);
+                                           lines.push(`post_hook = "${postHookEsc}"`);
+                                         }
+                                       });
+
     addApplicationTheming(lines, mode);
 
     if (lines.length > 0) {
@@ -338,162 +349,7 @@ Singleton {
     return script + "\n";
   }
 
-  // ================================================================================
-  // PREDEFINED COLOR SCHEMES
-  // TERMINAL THEMES (dual-path: runtime generation or legacy pre-rendered file copy)
-  // ================================================================================
-  function escapeShellPath(path) {
-    // Escape single quotes by ending the quoted string, adding an escaped quote, and starting a new quoted string
-    return "'" + path.replace(/'/g, "'\\''") + "'";
-  }
 
-  function handleTerminalThemes(schemeData, mode) {
-    const homeDir = Quickshell.env("HOME");
-
-    // Check if scheme has terminal section (new format)
-    const modeData = schemeData[mode] || schemeData;
-    const hasTerminalSection = modeData && modeData.terminal;
-
-    if (hasTerminalSection) {
-      // New path: runtime generation from JSON terminal colors
-      handleTerminalThemesGenerate(schemeData, mode, homeDir);
-    } else {
-      // Old path: copy pre-rendered files (backward compatibility for DLC schemes)
-      handleTerminalThemesCopy(mode, homeDir);
-    }
-  }
-
-  /**
-  * New path: Generate terminal themes at runtime from scheme's terminal section
-  */
-  function handleTerminalThemesGenerate(schemeData, mode, homeDir) {
-    // Build terminal output mapping for enabled terminals
-    const terminalOutputs = {};
-    TemplateRegistry.terminals.forEach(terminal => {
-                                         if (isTemplateEnabled(terminal.id)) {
-                                           const outputPath = terminal.outputPath.replace("~", homeDir);
-                                           terminalOutputs[terminal.id] = outputPath;
-                                         }
-                                       });
-
-    if (Object.keys(terminalOutputs).length === 0) {
-      Logger.d("TemplateProcessor", "No terminal templates enabled for generation");
-      return;
-    }
-
-    // Write scheme JSON to temp file and call Python with --terminal-output
-    const schemeJsonPathEsc = schemeJsonPath.replace(/'/g, "'\\''");
-    const schemeDelimiter = "SCHEME_JSON_EOF_" + Math.random().toString(36).substr(2, 9);
-
-    let script = "";
-
-    // Write scheme JSON
-    script += `cat > '${schemeJsonPathEsc}' << '${schemeDelimiter}'\n`;
-    script += JSON.stringify(schemeData, null, 2) + "\n";
-    script += `${schemeDelimiter}\n`;
-
-    // Create output directories
-    Object.values(terminalOutputs).forEach(path => {
-                                             const dir = path.substring(0, path.lastIndexOf('/'));
-                                             script += `mkdir -p ${escapeShellPath(dir)}; `;
-                                           });
-
-    // Run Python with terminal generation
-    const terminalOutputsJson = JSON.stringify(terminalOutputs).replace(/'/g, "'\\''");
-    script += `python3 "${templateProcessorScript}" --scheme '${schemeJsonPathEsc}' --default-mode ${mode} --terminal-output '${terminalOutputsJson}'; `;
-
-    // Run post-hooks for enabled terminals
-    TemplateRegistry.terminals.forEach(terminal => {
-                                         if (isTemplateEnabled(terminal.id)) {
-                                           script += `${terminal.postHook}; `;
-                                         }
-                                       });
-
-    copyProcess.command = ["sh", "-c", script];
-    copyProcess.running = true;
-  }
-
-  /**
-  * Old path: Copy pre-rendered terminal files (backward compatibility)
-  * Should be removed in late february 2026
-  */
-  function handleTerminalThemesCopy(mode, homeDir) {
-    const commands = [];
-
-    TemplateRegistry.terminals.forEach(terminal => {
-                                         if (isTemplateEnabled(terminal.id)) {
-                                           const outputPath = terminal.outputPath.replace("~", homeDir);
-                                           const outputDir = outputPath.substring(0, outputPath.lastIndexOf('/'));
-                                           const templatePaths = getTerminalColorsTemplate(terminal.id, mode);
-
-                                           commands.push(`mkdir -p ${escapeShellPath(outputDir)}`);
-                                           // Try hyphen first (most common), then space (for schemes like "Rosey AMOLED")
-                                           const hyphenPath = escapeShellPath(templatePaths.hyphen);
-                                           const spacePath = escapeShellPath(templatePaths.space);
-                                           commands.push(`if [ -f ${hyphenPath} ]; then cp -f ${hyphenPath} ${escapeShellPath(outputPath)}; elif [ -f ${spacePath} ]; then cp -f ${spacePath} ${escapeShellPath(outputPath)}; else echo "ERROR: Template file not found for ${terminal.id} (tried both hyphen and space patterns)"; fi`);
-
-                                           // Always use the apply script to set the theme and attempt hot reloading
-                                           commands.push(terminal.postHook);
-                                         }
-                                       });
-
-    if (commands.length > 0) {
-      copyProcess.command = ["sh", "-c", commands.join('; ')];
-      copyProcess.running = true;
-    }
-  }
-
-  function getTerminalColorsTemplate(terminal, mode) {
-    const schemeNameMap = ({
-                             "Noctalia (default)": "Noctalia-default",
-                             "Noctalia (legacy)": "Noctalia-legacy",
-                             "Tokyo Night": "Tokyo-Night",
-                             "Rose Pine": "Rosepine"
-                           });
-
-    let colorScheme = Settings.data.colorSchemes.predefinedScheme;
-    colorScheme = schemeNameMap[colorScheme] || colorScheme;
-
-    let extension = "";
-    if (terminal === 'kitty') {
-      extension = ".conf";
-    } else if (terminal === 'wezterm') {
-      extension = ".toml";
-    }
-
-    // Support both naming conventions: "SchemeName-dark" (hyphen) and "SchemeName dark" (space)
-    const fileNameHyphen = `${colorScheme}-${mode}${extension}`;
-    const fileNameSpace = `${colorScheme} ${mode}${extension}`;
-    const relativePathHyphen = `terminal/${terminal}/${fileNameHyphen}`;
-    const relativePathSpace = `terminal/${terminal}/${fileNameSpace}`;
-
-    // Try to find the scheme in the loaded schemes list to determine which directory it's in
-    for (let i = 0; i < ColorSchemeService.schemes.length; i++) {
-      const schemeJsonPath = ColorSchemeService.schemes[i];
-      // Check if this is the scheme we're looking for
-      if (schemeJsonPath.indexOf(`/${colorScheme}/`) !== -1 || schemeJsonPath.indexOf(`/${colorScheme}.json`) !== -1) {
-        // Extract the scheme directory from the JSON path
-        // JSON path is like: /path/to/scheme/SchemeName/SchemeName.json
-        // We need: /path/to/scheme/SchemeName/terminal/...
-        const schemeDir = schemeJsonPath.substring(0, schemeJsonPath.lastIndexOf('/'));
-        return {
-          hyphen: `${schemeDir}/${relativePathHyphen}`,
-          space: `${schemeDir}/${relativePathSpace}`
-        };
-      }
-    }
-
-    // Fallback: try downloaded first, then preinstalled
-    const downloadedPathHyphen = `${ColorSchemeService.downloadedSchemesDirectory}/${colorScheme}/${relativePathHyphen}`;
-    const downloadedPathSpace = `${ColorSchemeService.downloadedSchemesDirectory}/${colorScheme}/${relativePathSpace}`;
-    const preinstalledPathHyphen = `${ColorSchemeService.schemesDirectory}/${colorScheme}/${relativePathHyphen}`;
-    const preinstalledPathSpace = `${ColorSchemeService.schemesDirectory}/${colorScheme}/${relativePathSpace}`;
-
-    return {
-      hyphen: preinstalledPathHyphen,
-      space: preinstalledPathSpace
-    };
-  }
 
   // ================================================================================
   // USER TEMPLATES, advanced usage
@@ -611,17 +467,5 @@ Singleton {
     }
   }
 
-  // ------------
-  Process {
-    id: copyProcess
-    workingDirectory: Quickshell.shellDir
-    running: false
-    stderr: StdioCollector {
-      onStreamFinished: {
-        if (this.text) {
-          Logger.e("TemplateProcessor", "copyProcess stderr:", this.text);
-        }
-      }
-    }
-  }
+
 }
