@@ -369,13 +369,10 @@ Item {
 
             processObj.exited.connect(function (exitCode) {
               if (exitCode !== 0) {
-                ToastService.showError(
-                  I18n.tr("toast.custom-command-failed.title"),
-                  I18n.tr("toast.custom-command-failed.description", {
-                             command: command,
-                             code: exitCode
-                           })
-                );
+                ToastService.showError(I18n.tr("toast.custom-command-failed.title"), I18n.tr("toast.custom-command-failed.description", {
+                                                                                               command: command,
+                                                                                               code: exitCode
+                                                                                             }));
               }
               processObj.destroy();
             });
@@ -383,13 +380,10 @@ Item {
             processObj.running = true;
           } catch (e) {
             Logger.e("Bar", "Failed to start custom command:", e);
-            ToastService.showError(
-              I18n.tr("toast.custom-command-failed.title"),
-              I18n.tr("toast.custom-command-failed.description", {
-                         command: command,
-                         code: "start_error"
-                       })
-            );
+            ToastService.showError(I18n.tr("toast.custom-command-failed.title"), I18n.tr("toast.custom-command-failed.description", {
+                                                                                           command: command,
+                                                                                           code: "start_error"
+                                                                                         }));
           }
         }
 
@@ -400,19 +394,19 @@ Item {
           hoverEnabled: false
           preventStealing: true
           onClicked: mouse => {
-                      if (mouse.button === Qt.RightButton) {
-                        if (bar.isPointOverWidget(mouse.x, mouse.y))
-                          return;
-                        bar.handleEmptyBarClick(bar.barRightClickAction, Settings.data.bar.rightClickFollowMouse, Settings.data.bar.rightClickCommand, mouse);
-                        return;
-                      }
-                      if (mouse.button === Qt.MiddleButton) {
-                        if (bar.isPointOverWidget(mouse.x, mouse.y))
-                          return;
-                        bar.handleEmptyBarClick(Settings.data.bar.middleClickAction || "none", Settings.data.bar.middleClickFollowMouse, Settings.data.bar.middleClickCommand, mouse);
-                        return;
-                      }
-          }
+                       if (mouse.button === Qt.RightButton) {
+                         if (bar.isPointOverWidget(mouse.x, mouse.y))
+                         return;
+                         bar.handleEmptyBarClick(bar.barRightClickAction, Settings.data.bar.rightClickFollowMouse, Settings.data.bar.rightClickCommand, mouse);
+                         return;
+                       }
+                       if (mouse.button === Qt.MiddleButton) {
+                         if (bar.isPointOverWidget(mouse.x, mouse.y))
+                         return;
+                         bar.handleEmptyBarClick(Settings.data.bar.middleClickAction || "none", Settings.data.bar.middleClickFollowMouse, Settings.data.bar.middleClickCommand, mouse);
+                         return;
+                       }
+                     }
         }
 
         // Debounce timer for wheel interactions
