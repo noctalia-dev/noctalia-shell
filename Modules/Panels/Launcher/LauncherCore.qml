@@ -47,7 +47,7 @@ Rectangle {
 
   Timer {
     id: mouseTrackingDelayTimer
-    interval: Style.animationNormal + 50 // Wait for panel animation to complete + safety margin
+    interval: root.animationsDisabled ? 0 : (Style.animationNormal + 50) // Wait for panel animation to complete + safety margin
     repeat: false
     onTriggered: {
       root.mouseTrackingReady = true;
@@ -57,6 +57,7 @@ Rectangle {
 
   readonly property var defaultProvider: appsProvider
   readonly property var currentProvider: activeProvider || defaultProvider
+  readonly property bool animationsDisabled: Settings.data.general.animationDisabled
 
   readonly property string launcherDensity: (currentProvider && currentProvider.ignoreDensity === false) ? (Settings.data.appLauncher.density || "default") : "comfortable"
   readonly property int effectiveIconSize: launcherDensity === "comfortable" ? 48 : (launcherDensity === "default" ? 36 : 24)
@@ -159,20 +160,31 @@ Rectangle {
   }
 
   function onOpened() {
-    resultsReady = false;
     ignoreMouseHover = true;
     globalMouseInitialized = false;
     mouseTrackingReady = false;
     mouseTrackingDelayTimer.restart();
-    syncPluginProviders();
+
+    // Show launcher immediately, results will populate asynchronously
+    resultsReady = true;
+    focusSearchInput();
+
     Qt.callLater(() => {
-                   for (let provider of providers) {
-                     if (provider.onOpened)
-                     provider.onOpened();
-                   }
+                   syncPluginProviders();
+
+                   // Call ApplicationsProvider.onOpened() first (sets category)
+                   if (appsProvider.onOpened)
+                     appsProvider.onOpened();
+
                    updateResults();
-                   resultsReady = true;
-                   focusSearchInput();
+
+                   // Defer other provider initialization until after results are shown
+                   Qt.callLater(() => {
+                     for (let provider of providers) {
+                       if (provider !== appsProvider && provider.onOpened)
+                         provider.onOpened();
+                     }
+                   });
                  });
   }
 
@@ -215,6 +227,7 @@ Rectangle {
 
   function syncPluginProviders() {
     var registeredIds = LauncherProviderRegistry.getPluginProviders();
+    var changed = false;
 
     // Remove providers that are no longer registered
     for (var existingId in pluginProviderInstances) {
@@ -225,6 +238,7 @@ Rectangle {
         pluginProviderInstances[existingId].destroy();
         delete pluginProviderInstances[existingId];
         Logger.d("Launcher", "Removed plugin provider:", existingId);
+        changed = true;
       }
     }
 
@@ -243,13 +257,14 @@ Rectangle {
             pluginProviderInstances[providerId] = instance;
             registerProvider(instance);
             Logger.d("Launcher", "Registered plugin provider:", providerId);
+            changed = true;
           }
         }
       }
     }
 
-    // Update results if launcher is open
-    if (root.isOpen) {
+    // Update results only if providers changed
+    if (changed && root.isOpen) {
       updateResults();
     }
   }
