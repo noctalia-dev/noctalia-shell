@@ -10,6 +10,7 @@ import qs.Commons
 import qs.Modules.Panels.Settings
 import qs.Services.Compositor
 import qs.Services.Hardware
+import qs.Services.Location
 import qs.Services.Media
 import qs.Services.Networking
 import qs.Services.Noctalia
@@ -835,6 +836,7 @@ Singleton {
     }
     function set(name: string) {
       Settings.data.location.name = name;
+      LocationService.update();
     }
   }
 
