@@ -80,13 +80,6 @@ Singleton {
   }
 
   Timer {
-    id: initDelayTimer
-    interval: 3000
-    running: true
-    repeat: false
-  }
-
-  Timer {
     id: autoConnectTimer
     interval: 2000
     repeat: false
@@ -104,10 +97,8 @@ Singleton {
       Quickshell.execDetached(["rfkill", "block", "wifi"]);
       Quickshell.execDetached(["rfkill", "block", "bluetooth"]);
     }
-    // Auto-connect on startup if BT is already enabled
-    if (Settings.data.network.bluetoothAutoConnect && adapter && adapter.enabled) {
-      autoConnectTimer.restart();
-    }
+    // Auto-connect on startup
+    autoConnectTimer.restart();
   }
 
   // Handle system wakeup to force-poll and ensure state is up-to-date
@@ -625,12 +616,9 @@ Singleton {
   }
 
   function attemptAutoConnect() {
-    if (airplaneModeEnabled)
+    if (airplaneModeEnabled || !adapter || !adapter.enabled || !Settings.data.network.bluetoothAutoConnect) {
       return;
-    if (!adapter || !adapter.enabled)
-      return;
-    if (!Settings.data.network.bluetoothAutoConnect)
-      return;
+    }
 
     var devList = adapter.devices.values.filter(function (dev) {
       return dev && dev.paired && !dev.connected && !dev.blocked;
