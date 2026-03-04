@@ -41,6 +41,7 @@ Singleton {
   property var _suspendMonitor: null
   property var _heartbeatMonitor: null
   property var _customMonitors: ({})
+  property var _queuedStages: []
   property bool _screenOffActive: false
 
   // Signals for external listeners (plugins, modules)
@@ -70,7 +71,10 @@ Singleton {
     id: overlayCleanupTimer
     interval: 500
     repeat: false
-    onTriggered: root.fadePending = ""
+    onTriggered: {
+      root.fadePending = "";
+      root._runNextQueuedStage();
+    }
   }
 
   // Counts up idleSeconds while the heartbeat monitor reports idle
@@ -84,11 +88,13 @@ Singleton {
   // -------------------------------------------------------
   function cancelFade() {
     if (fadePending === "") {
+      _queuedStages = [];
       _restoreMonitors();
       return;
     }
     Logger.i("IdleService", "Fade cancelled for:", fadePending);
     fadePending = "";
+    _queuedStages = [];
     graceTimer.stop();
     overlayCleanupTimer.stop();
     _restoreMonitors();
@@ -107,9 +113,73 @@ Singleton {
     }
   }
 
-  function _onIdle(stage) {
+  function _queueStage(stage) {
+    if (!_isValidStage(stage)) {
+      Logger.w("IdleService", "Ignoring unknown queued stage:", stage);
+      return;
+    }
+    if (stage === fadePending)
+      return;
+    if (_queuedStages.indexOf(stage) !== -1)
+      return;
+    _queuedStages.push(stage);
+    Logger.d("IdleService", "Queued idle stage while fade is active:", stage);
+  }
+
+  function _isValidStage(stage) {
+    return stage === "screenOff" || stage === "lock" || stage === "suspend";
+  }
+
+  function _isStageEnabled(stage) {
+    const idle = Settings.data.idle;
+    if (stage === "screenOff")
+      return idle.screenOffTimeout > 0;
+    if (stage === "lock")
+      return idle.lockTimeout > 0;
+    if (stage === "suspend")
+      return idle.suspendTimeout > 0;
+    return false;
+  }
+
+  function _runNextQueuedStage() {
     if (fadePending !== "")
       return;
+    if (idleSeconds <= 0) {
+      _queuedStages = [];
+      return;
+    }
+
+    while (_queuedStages.length > 0) {
+      const nextStage = _queuedStages.shift();
+      if (!_isValidStage(nextStage)) {
+        Logger.w("IdleService", "Dropping queued unknown stage:", nextStage);
+        continue;
+      }
+      if (!_isStageEnabled(nextStage)) {
+        Logger.d("IdleService", "Dropping queued disabled stage:", nextStage);
+        continue;
+      }
+
+      Logger.i("IdleService", "Running queued idle stage:", nextStage);
+      _onIdle(nextStage);
+      return;
+    }
+  }
+
+  function _onIdle(stage) {
+    if (!_isValidStage(stage)) {
+      Logger.w("IdleService", "Idle fired with unknown stage:", stage);
+      return;
+    }
+    if (!_isStageEnabled(stage)) {
+      Logger.d("IdleService", "Ignoring idle stage because it is disabled:", stage);
+      return;
+    }
+
+    if (fadePending !== "") {
+      _queueStage(stage);
+      return;
+    }
     Logger.i("IdleService", "Idle fired:", stage);
     fadePending = stage;
     graceTimer.restart();
@@ -135,6 +205,8 @@ Singleton {
         Quickshell.execDetached(["sh", "-c", Settings.data.idle.suspendCommand]);
       CompositorService.suspend();
       root.suspendRequested();
+    } else {
+      Logger.w("IdleService", "Unknown idle stage action:", stage);
     }
   }
 
