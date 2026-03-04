@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "Statistieken weergeven als mini-staafdiagrammen in plaats van tekstwaarden. Voorkomt lay-outverschuiving.",
       "compact-mode-label": "Compacte modus",
+      "cpu-cores-description": "Het gebruik van CPU-kernen individueel weergeven.",
+      "cpu-cores-label": "CPU-kernen",
       "cpu-frequency-description": "De huidige CPU-kloksnelheid in GHz weergeven.",
       "cpu-frequency-label": "CPU-frequentie weergeven",
       "cpu-temperature-description": "Toon CPU-temperatuur indien beschikbaar.",
@@ -520,6 +522,7 @@
     "unpin": "Losmaken",
     "update": "Update",
     "upload": "Uploaden",
+    "userspace-reboot": "Herstart Gebruikersruimte",
     "version": "Versie",
     "vibrant": "Levendig",
     "visualizer": "Visualiseerder",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "Authenticatie vereist",
+      "bluetooth-auto-connect-description": "Automatisch verbinding maken met vertrouwde gekoppelde apparaten wanneer Bluetooth is ingeschakeld.",
+      "bluetooth-auto-connect-label": "Gekoppelde apparaten automatisch verbinden",
       "bluetooth-devices-unnamed": "Naamloze apparaten worden niet getoond.",
       "bluetooth-discoverable": "Dit apparaat is vindbaar als <b>{hostName}</b> zolang dit instellingen-tabblad geopend is.",
       "bluetooth-rssi-polling-description": "Periodiek RSSI van verbonden apparaten via bluetoothctl samplen. Mogelijk niet beschikbaar voor alle apparaten; gebruikt minimale middelen wanneer ingeschakeld.",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "Instellingen voor {widget}"
   },
   "system-monitor": {
+    "core-usage": "Kern {id} gebruik",
     "cpu-temp": "CPU-temperatuur",
     "cpu-usage": "CPU-gebruik",
     "disk": "Schijf",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "Adres gekopieerd naar klembord",
+      "auto-connect-disabled": "Automatisch verbinden uitgeschakeld",
+      "auto-connect-enabled": "Automatisch verbinden ingeschakeld",
+      "auto-connecting": "Verbinding maken met {count} appara(a)t(en)...",
       "confirm-code": "Bevestig code {value} op het andere apparaat.",
       "connect-failed": "Verbinding met apparaat mislukt",
       "disconnect-failed": "Verbinding verbreken met apparaat mislukt",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "Widget toevoegen",
+    "bluetooth-auto-connect-off": "Automatisch verbinden is uitgeschakeld — klik om in te schakelen",
+    "bluetooth-auto-connect-on": "Automatisch verbinden is aan — klik om uit te schakelen",
     "bluetooth-devices": "Bluetooth-apparaten",
     "brightness-at": "Helderheid: {brightness}%",
     "click-to-start-recording": "Schermrecorder (opname starten)",

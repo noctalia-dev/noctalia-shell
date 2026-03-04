@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "İstatistikleri metin değerleri yerine mini çubuk grafikler olarak görüntüleyin. Düzen kaymasını önler.",
       "compact-mode-label": "Kompakt mod",
+      "cpu-cores-description": "CPU çekirdeklerinin kullanımını ayrı ayrı görüntüle.",
+      "cpu-cores-label": "CPU Çekirdekleri",
       "cpu-frequency-description": "Mevcut CPU saat hızını GHz cinsinden görüntüle.",
       "cpu-frequency-label": "CPU frekansını göster",
       "cpu-temperature-description": "Mevcut işlemci sıcaklık okumalarını gösterir.",
@@ -520,6 +522,7 @@
     "unpin": "Sabitlemeyi kaldır",
     "update": "Güncelleme",
     "upload": "Yükle",
+    "userspace-reboot": "Kullanıcı Alanı Yeniden Başlatma",
     "version": "Sürüm",
     "vibrant": "Canlı",
     "visualizer": "Görselleştirici",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "Kimlik doğrulama gerekli",
+      "bluetooth-auto-connect-description": "Bluetooth etkinleştirildiğinde güvenilir eşleştirilmiş cihazlara otomatik olarak bağlan.",
+      "bluetooth-auto-connect-label": "Eşleştirilmiş cihazları otomatik bağla",
       "bluetooth-devices-unnamed": "Adlandırılmamış cihazlar gösterilmez.",
       "bluetooth-discoverable": "Bu ayarlar sekmesi açıkken bu cihaz <b>{hostName}</b> olarak keşfedilebilir.",
       "bluetooth-rssi-polling-description": "bluetoothctl aracılığıyla bağlı cihazların RSSI değerini periyodik olarak örnekler. Tüm cihazlar için mevcut olmayabilir; etkinleştirildiğinde minimum kaynak kullanır.",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "{widget} ayarları"
   },
   "system-monitor": {
+    "core-usage": "Çekirdek {id} kullanımı",
     "cpu-temp": "CPU sıcaklığı",
     "cpu-usage": "CPU kullanımı",
     "disk": "Disk",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "Adres panoya kopyalandı",
+      "auto-connect-disabled": "Otomatik bağlantı devre dışı",
+      "auto-connect-enabled": "Otomatik bağlanma etkin",
+      "auto-connecting": "{count} cihaza bağlanılıyor...",
       "confirm-code": "Diğer cihazdaki {value} kodunu onayla.",
       "connect-failed": "Cihaza bağlanılamadı",
       "disconnect-failed": "Cihazla bağlantı kesilemedi",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "Araç takımı ekle",
+    "bluetooth-auto-connect-off": "Otomatik bağlantı kapalı — etkinleştirmek için tıklayın",
+    "bluetooth-auto-connect-on": "Otomatik bağlantı açık — devre dışı bırakmak için tıklayın",
     "bluetooth-devices": "Bluetooth cihazları",
     "brightness-at": "Parlaklık: %{brightness}",
     "click-to-start-recording": "Ekran kaydedici (kaydı başlat)",

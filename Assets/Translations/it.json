@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "Mostra statistiche come mini grafici a barre invece di valori testuali. Evita spostamenti del layout.",
       "compact-mode-label": "Modalità compatta",
+      "cpu-cores-description": "Mostra l'utilizzo dei core della CPU individualmente.",
+      "cpu-cores-label": "Core CPU",
       "cpu-frequency-description": "Mostra la frequenza corrente della CPU in GHz.",
       "cpu-frequency-label": "Mostra frequenza CPU",
       "cpu-temperature-description": "Mostra le letture della temperatura CPU se disponibili.",
@@ -520,6 +522,7 @@
     "unpin": "Sblocca",
     "update": "Aggiorna",
     "upload": "Carica",
+    "userspace-reboot": "Riavvio dello Spazio Utente",
     "version": "Versione",
     "vibrant": "Vivace",
     "visualizer": "Visualizzatore",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "Autenticazione richiesta",
+      "bluetooth-auto-connect-description": "Connettiti automaticamente ai dispositivi accoppiati fidati quando il Bluetooth è abilitato.",
+      "bluetooth-auto-connect-label": "Connetti automaticamente i dispositivi accoppiati",
       "bluetooth-devices-unnamed": "I dispositivi senza nome non sono mostrati.",
       "bluetooth-discoverable": "Questo dispositivo è visibile come <b>{hostName}</b> mentre questa scheda impostazioni è aperta.",
       "bluetooth-rssi-polling-description": "Campiona periodicamente l’RSSI dei dispositivi connessi tramite bluetoothctl. Potrebbe non essere disponibile per tutti i dispositivi; usa risorse minime quando attivo.",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "Impostazioni {widget}"
   },
   "system-monitor": {
+    "core-usage": "Utilizzo del core {id}",
     "cpu-temp": "Temperatura CPU",
     "cpu-usage": "Uso CPU",
     "disk": "Disco",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "Address copied to clipboard",
+      "auto-connect-disabled": "Connessione automatica disabilitata",
+      "auto-connect-enabled": "Connessione automatica abilitata",
+      "auto-connecting": "Connessione a {count} dispositivo/i...",
       "confirm-code": "Confirm code {value} on the other device.",
       "connect-failed": "Failed to connect to device",
       "disconnect-failed": "Failed to disconnect from device",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "Aggiungi widget",
+    "bluetooth-auto-connect-off": "Connessione automatica disattivata — clicca per abilitare",
+    "bluetooth-auto-connect-on": "Connessione automatica attiva — clicca per disabilitare",
     "bluetooth-devices": "Dispositivi Bluetooth",
     "brightness-at": "Luminosità: {brightness}%",
     "click-to-start-recording": "Registratore schermo (avvia registrazione)",

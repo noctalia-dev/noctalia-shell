@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "Statistiken als Mini-Balkendiagramme anstelle von Textwerten anzeigen. Verhindert Layoutverschiebungen.",
       "compact-mode-label": "Kompaktmodus",
+      "cpu-cores-description": "Die Nutzung der CPU-Kerne einzeln anzeigen.",
+      "cpu-cores-label": "CPU-Kerne",
       "cpu-frequency-description": "Die aktuelle CPU-Taktrate in GHz anzeigen.",
       "cpu-frequency-label": "CPU-Frequenz anzeigen",
       "cpu-temperature-description": "CPU-Temperaturwerte anzeigen, falls verfügbar.",
@@ -520,6 +522,7 @@
     "unpin": "Loslösen",
     "update": "Aktualisieren",
     "upload": "Hochladen",
+    "userspace-reboot": "Userspace-Neustart",
     "version": "Version",
     "vibrant": "Lebhaft",
     "visualizer": "Visualisierer",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "Authentifizierung erforderlich",
+      "bluetooth-auto-connect-description": "Automatisch mit vertrauenswürdigen gekoppelten Geräten verbinden, wenn Bluetooth aktiviert ist.",
+      "bluetooth-auto-connect-label": "Gekoppelte Geräte automatisch verbinden",
       "bluetooth-devices-unnamed": "Unbenannte Geräte werden nicht angezeigt.",
       "bluetooth-discoverable": "Dieses Gerät ist auffindbar als <b>{hostName}</b>, solange dieser Einstellungs-Tab geöffnet ist.",
       "bluetooth-rssi-polling-description": "Periodisch RSSI für verbundene Geräte über bluetoothctl abfragen. Möglicherweise nicht für alle Geräte verfügbar; verbraucht bei Aktivierung minimale Ressourcen.",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "{widget} Einstellungen"
   },
   "system-monitor": {
+    "core-usage": "Kern {id} Nutzung",
     "cpu-temp": "CPU-Temperatur",
     "cpu-usage": "CPU-Auslastung",
     "disk": "Festplatte",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "Adresse in die Zwischenablage kopiert",
+      "auto-connect-disabled": "Automatische Verbindung deaktiviert",
+      "auto-connect-enabled": "Automatisch verbinden aktiviert",
+      "auto-connecting": "Verbinde mit {count} Gerät(en)...",
       "confirm-code": "Bestätigungscode {value} auf dem anderen Gerät bestätigen.",
       "connect-failed": "Verbindung mit dem Gerät fehlgeschlagen",
       "disconnect-failed": "Trennen vom Gerät fehlgeschlagen",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "Widget hinzufügen",
+    "bluetooth-auto-connect-off": "Auto-Verbindung ist aus — klicken, um zu aktivieren",
+    "bluetooth-auto-connect-on": "Automatische Verbindung ist an — klicken, um zu deaktivieren",
     "bluetooth-devices": "Bluetooth-Geräte",
     "brightness-at": "Helligkeit: {brightness}%",
     "click-to-start-recording": "Bildschirmrekorder (Aufnahme starten)",

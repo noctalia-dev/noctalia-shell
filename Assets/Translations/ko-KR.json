@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "텍스트 값 대신 미니 막대 차트로 통계를 표시합니다. 레이아웃이 변경되는 것을 방지합니다.",
       "compact-mode-label": "소형 모드",
+      "cpu-cores-description": "CPU 코어 사용량을 개별적으로 표시합니다.",
+      "cpu-cores-label": "CPU 코어",
       "cpu-frequency-description": "현재 CPU 클럭 속도를 GHz 단위로 표시합니다.",
       "cpu-frequency-label": "CPU 주파수 표시",
       "cpu-temperature-description": "가능한 경우 CPU 온도를 표시합니다.",
@@ -520,6 +522,7 @@
     "unpin": "고정 해제",
     "update": "업데이트",
     "upload": "업로드",
+    "userspace-reboot": "사용자 공간 재부팅",
     "version": "버전",
     "vibrant": "선명하게",
     "visualizer": "비주얼라이저",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "인증 필요",
+      "bluetooth-auto-connect-description": "Bluetooth가 활성화되면 신뢰할 수 있는 페어링된 장치에 자동으로 연결합니다.",
+      "bluetooth-auto-connect-label": "페어링된 기기 자동 연결",
       "bluetooth-devices-unnamed": "이름 없는 장치는 표시되지 않습니다.",
       "bluetooth-discoverable": "이 장치는 이 설정 탭이 열려 있는 동안 <b>{hostName}</b>으로 검색될 수 있습니다.",
       "bluetooth-rssi-polling-description": "bluetoothctl을 통해 연결된 장치의 RSSI를 주기적으로 샘플링합니다. 모든 장치에서 사용 가능하지 않을 수 있으며, 활성화 시 최소한의 리소스를 사용합니다.",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "{widget} 설정"
   },
   "system-monitor": {
+    "core-usage": "코어 {id} 사용량",
     "cpu-temp": "CPU 온도",
     "cpu-usage": "CPU 사용량",
     "disk": "디스크",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "주소가 클립보드에 복사됨",
+      "auto-connect-disabled": "자동 연결 비활성화됨",
+      "auto-connect-enabled": "자동 연결 활성화됨",
+      "auto-connecting": "{count}개의 장치에 연결 중...",
       "confirm-code": "다른 장치에서 코드 {value}를 확인하세요.",
       "connect-failed": "장치 연결 실패",
       "disconnect-failed": "장치 연결 해제 실패",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "위젯 추가",
+    "bluetooth-auto-connect-off": "자동 연결이 꺼져 있습니다 — 클릭하여 활성화",
+    "bluetooth-auto-connect-on": "자동 연결 켜짐 — 클릭하여 비활성화",
     "bluetooth-devices": "블루투스 장치",
     "brightness-at": "밝기: {brightness}%",
     "click-to-start-recording": "화면 녹화 (녹화 시작)",

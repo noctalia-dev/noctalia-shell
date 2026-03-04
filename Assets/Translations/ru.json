@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "Отображать статистику в виде мини-диаграмм вместо текстовых значений. Предотвращает сдвиг макета.",
       "compact-mode-label": "Компактный режим",
+      "cpu-cores-description": "Отображать использование ядер CPU по отдельности.",
+      "cpu-cores-label": "Ядра CPU",
       "cpu-frequency-description": "Отобразить текущую тактовую частоту CPU в ГГц.",
       "cpu-frequency-label": "Показать частоту CPU",
       "cpu-temperature-description": "Показывать показания температуры процессора, если доступны.",
@@ -520,6 +522,7 @@
     "unpin": "Открепить",
     "update": "Обновление",
     "upload": "Загрузить",
+    "userspace-reboot": "Перезагрузка Пользовательского Пространства",
     "version": "Версия",
     "vibrant": "Яркий",
     "visualizer": "Визуализатор",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "Требуется аутентификация",
+      "bluetooth-auto-connect-description": "Автоматически подключаться к доверенным сопряженным устройствам при включении Bluetooth.",
+      "bluetooth-auto-connect-label": "Автоматически подключать сопряженные устройства",
       "bluetooth-devices-unnamed": "Безымянные устройства не отображаются.",
       "bluetooth-discoverable": "Это устройство обнаруживаемо как <b>{hostName}</b>, пока открыта эта вкладка настроек.",
       "bluetooth-rssi-polling-description": "Периодически опрашивает RSSI для подключенных устройств через bluetoothctl. Может быть недоступно для всех устройств; при включении использует минимальные ресурсы.",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "Настройки виджета {widget}"
   },
   "system-monitor": {
+    "core-usage": "Использование ядра {id}",
     "cpu-temp": "Температура ЦП",
     "cpu-usage": "Использование ЦП",
     "disk": "Диск",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "Адрес скопирован в буфер обмена",
+      "auto-connect-disabled": "Автоподключение отключено",
+      "auto-connect-enabled": "Автоподключение включено",
+      "auto-connecting": "Подключение к {count} устройству(ам)...",
       "confirm-code": "Подтвердите код {value} на другом устройстве.",
       "connect-failed": "Не удалось подключиться к устройству",
       "disconnect-failed": "Не удалось отключиться от устройства",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "Добавить виджет",
+    "bluetooth-auto-connect-off": "Автоподключение отключено — нажмите, чтобы включить",
+    "bluetooth-auto-connect-on": "Автоподключение включено — нажмите, чтобы отключить",
     "bluetooth-devices": "Устройства Bluetooth",
     "brightness-at": "Яркость: {brightness}%",
     "click-to-start-recording": "Запись экрана (начать запись)",

@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "Afficher les statistiques sous forme de mini-graphiques à barres au lieu de valeurs textuelles. Empêche les décalages de mise en page.",
       "compact-mode-label": "Mode compact",
+      "cpu-cores-description": "Afficher l'utilisation des cœurs du CPU individuellement.",
+      "cpu-cores-label": "Cœurs de CPU",
       "cpu-frequency-description": "Afficher la vitesse d'horloge actuelle du CPU en GHz.",
       "cpu-frequency-label": "Afficher la fréquence du CPU",
       "cpu-temperature-description": "Afficher les lectures de température du CPU si disponibles.",
@@ -520,6 +522,7 @@
     "unpin": "Détacher",
     "update": "Mise à jour",
     "upload": "Téléverser",
+    "userspace-reboot": "Redémarrage de l'Espace Utilisateur",
     "version": "Version",
     "vibrant": "Vibrant",
     "visualizer": "Visualiseur",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "Authentification requise",
+      "bluetooth-auto-connect-description": "Se connecter automatiquement aux appareils appairés de confiance lorsque le Bluetooth est activé.",
+      "bluetooth-auto-connect-label": "Connecter automatiquement les appareils appairés",
       "bluetooth-devices-unnamed": "Les appareils sans nom ne sont pas affichés.",
       "bluetooth-discoverable": "Cet appareil est détectable en tant que <b>{hostName}</b> tant que cet onglet de paramètres est ouvert.",
       "bluetooth-rssi-polling-description": "Échantillonne périodiquement le RSSI des appareils connectés via bluetoothctl. Peut ne pas être disponible pour tous les appareils ; utilise des ressources minimales lorsqu'il est activé.",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "Paramètres de {widget}"
   },
   "system-monitor": {
+    "core-usage": "Utilisation du cœur {id}",
     "cpu-temp": "Température du processeur",
     "cpu-usage": "Utilisation du processeur",
     "disk": "Disque",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "Adresse copiée dans le presse-papiers",
+      "auto-connect-disabled": "Connexion automatique désactivée",
+      "auto-connect-enabled": "Connexion automatique activée",
+      "auto-connecting": "Connexion à {count} appareil(s)...",
       "confirm-code": "Confirmer le code {value} sur l'autre appareil.",
       "connect-failed": "Échec de la connexion à l’appareil",
       "disconnect-failed": "Échec de la déconnexion de l’appareil",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "Ajouter un widget",
+    "bluetooth-auto-connect-off": "Connexion automatique désactivée — cliquez pour activer",
+    "bluetooth-auto-connect-on": "Connexion automatique activée — cliquez pour désactiver",
     "bluetooth-devices": "Appareils Bluetooth",
     "brightness-at": "Luminosité : {brightness}%",
     "click-to-start-recording": "Enregistreur d'écran (démarrer l'enregistrement)",

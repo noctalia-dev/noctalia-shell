@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "Wyświetlaj statystyki jako mini wykresy słupkowe zamiast wartości tekstowych. Zapobiega przesunięciom układu.",
       "compact-mode-label": "Tryb kompaktowy",
+      "cpu-cores-description": "Wyświetlaj użycie rdzeni CPU indywidualnie.",
+      "cpu-cores-label": "Rdzenie CPU",
       "cpu-frequency-description": "Wyświetl aktualną prędkość zegara CPU w GHz.",
       "cpu-frequency-label": "Pokaż częstotliwość CPU",
       "cpu-temperature-description": "Pokaż odczyty temperatury procesora (jeśli dostępne).",
@@ -520,6 +522,7 @@
     "unpin": "Odepnij",
     "update": "Aktualizacja",
     "upload": "Wyślij",
+    "userspace-reboot": "Ponowne Uruchomienie Przestrzeni Użytkownika",
     "version": "Wersja",
     "vibrant": "Żywy",
     "visualizer": "Wizualizator",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "Wymagana autentykacja",
+      "bluetooth-auto-connect-description": "Automatycznie łącz się z zaufanymi sparowanymi urządzeniami, gdy Bluetooth jest włączony.",
+      "bluetooth-auto-connect-label": "Automatyczne łączenie sparowanych urządzeń",
       "bluetooth-devices-unnamed": "Nienazwane urządzenia nie są wyświetlane.",
       "bluetooth-discoverable": "To urządzenie jest wykrywalne jako <b>{hostName}</b>, dopóki ta zakładka ustawień jest otwarta.",
       "bluetooth-rssi-polling-description": "Okresowo próbkuje RSSI dla podłączonych urządzeń za pośrednictwem bluetoothctl. Może nie być dostępne dla wszystkich urządzeń; zużywa minimalne zasoby po włączeniu.",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "Ustawienia {widget}"
   },
   "system-monitor": {
+    "core-usage": "Użycie rdzenia {id}",
     "cpu-temp": "Temperatura CPU",
     "cpu-usage": "Użycie CPU",
     "disk": "Dysk",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "Adres skopiowany do schowka",
+      "auto-connect-disabled": "Automatyczne łączenie wyłączone",
+      "auto-connect-enabled": "Automatyczne łączenie włączone",
+      "auto-connecting": "Łączenie z {count} urządzeniem/urządzeniami...",
       "confirm-code": "Potwierdź kod {value} na drugim urządzeniu.",
       "connect-failed": "Nie udało się połączyć z urządzeniem",
       "disconnect-failed": "Nie udało się rozłączyć z urządzeniem",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "Dodaj widżet",
+    "bluetooth-auto-connect-off": "Automatyczne łączenie jest wyłączone — kliknij, aby włączyć",
+    "bluetooth-auto-connect-on": "Automatyczne łączenie włączone — kliknij, aby wyłączyć",
     "bluetooth-devices": "Urządzenia Bluetooth",
     "brightness-at": "Jasność: {brightness}%",
     "click-to-start-recording": "Nagrywanie ekranu (start)",

@@ -212,6 +212,8 @@
     "system-monitor": {
       "compact-mode-description": "用迷你長條來取代文字數值, 可以避免佈局跑版",
       "compact-mode-label": "緊湊模式",
+      "cpu-cores-description": "個別顯示 CPU 核心使用率。",
+      "cpu-cores-label": "CPU 核心",
       "cpu-frequency-description": "顯示目前 CPU 時脈速度（GHz）。",
       "cpu-frequency-label": "顯示 CPU 頻率",
       "cpu-temperature-description": "如果可用即顯示 CPU 溫度",
@@ -520,6 +522,7 @@
     "unpin": "解除釘選",
     "update": "更新",
     "upload": "上傳",
+    "userspace-reboot": "使用者空間重新啟動",
     "version": "版本",
     "vibrant": "鮮明",
     "visualizer": "視覺效果",
@@ -918,6 +921,8 @@
     },
     "connections": {
       "authentication-required": "需要驗證",
+      "bluetooth-auto-connect-description": "當 Bluetooth 啟用時，自動連接到受信任的已配對裝置。",
+      "bluetooth-auto-connect-label": "自動連接已配對裝置",
       "bluetooth-devices-unnamed": "未命名裝置不顯示。",
       "bluetooth-discoverable": "當此設定分頁開啟時，此裝置可被發現為 <b>{hostName}</b>。",
       "bluetooth-rssi-polling-description": "透過 bluetoothctl 定期取樣已連接裝置的 RSSI。可能並非所有裝置都可用；啟用時佔用最少資源。",
@@ -1783,6 +1788,7 @@
     "widget-settings-title": "{widget} 設定"
   },
   "system-monitor": {
+    "core-usage": "核心 {id} 使用率",
     "cpu-temp": "CPU 溫度",
     "cpu-usage": "CPU 使用率",
     "disk": "磁碟已用",
@@ -1804,6 +1810,9 @@
     },
     "bluetooth": {
       "address-copied": "已複製位址至剪貼簿",
+      "auto-connect-disabled": "自動連線已停用",
+      "auto-connect-enabled": "自動連線已啟用",
+      "auto-connecting": "正在連接 {count} 個裝置...",
       "confirm-code": "在另一個裝置上確認配對碼: {value}",
       "connect-failed": "裝置連接失敗",
       "disconnect-failed": "裝置中斷連接失敗",
@@ -1876,6 +1885,8 @@
   },
   "tooltips": {
     "add-widget": "新增小工具",
+    "bluetooth-auto-connect-off": "自動連線已關閉 — 點擊以啟用",
+    "bluetooth-auto-connect-on": "自動連線已開啟 — 點擊以停用",
     "bluetooth-devices": "藍牙裝置",
     "brightness-at": "亮度: {brightness}%",
     "click-to-start-recording": "螢幕錄影 (開始錄製)",
