@@ -152,7 +152,6 @@ ColumnLayout {
                  saveSettings();
                }
     visible: valueCompactMode
-    enabled: valueShowCpuUsage
   }
 
   NToggle {
