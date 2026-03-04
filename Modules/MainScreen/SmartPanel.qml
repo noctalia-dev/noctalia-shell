@@ -72,6 +72,8 @@ Item {
   property bool cachedAnimateFromBottom: false
   property bool cachedAnimateFromLeft: false
   property bool cachedAnimateFromRight: false
+
+  readonly property bool animationsDisabled: Settings.data.general.animationDisabled
   property bool cachedShouldAnimateWidth: false
   property bool cachedShouldAnimateHeight: false
 
@@ -1313,7 +1315,7 @@ Item {
           // Make panel visible, now only the intended dimension will animate
           root.isPanelVisible = true;
 
-          if (Style.animationNormal === 0) {
+          if (root.animationsDisabled) {
             // Skip delay when animations are disabled
             root.sizeAnimationComplete = true;
           } else {

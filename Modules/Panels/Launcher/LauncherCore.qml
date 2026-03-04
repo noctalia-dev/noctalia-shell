@@ -47,7 +47,7 @@ Rectangle {
 
   Timer {
     id: mouseTrackingDelayTimer
-    interval: Style.animationNormal === 0 ? 0 : (Style.animationNormal + 50) // Wait for panel animation to complete + safety margin
+    interval: root.animationsDisabled ? 0 : (Style.animationNormal + 50) // Wait for panel animation to complete + safety margin
     repeat: false
     onTriggered: {
       root.mouseTrackingReady = true;
@@ -57,6 +57,7 @@ Rectangle {
 
   readonly property var defaultProvider: appsProvider
   readonly property var currentProvider: activeProvider || defaultProvider
+  readonly property bool animationsDisabled: Settings.data.general.animationDisabled
 
   readonly property string launcherDensity: (currentProvider && currentProvider.ignoreDensity === false) ? (Settings.data.appLauncher.density || "default") : "comfortable"
   readonly property int effectiveIconSize: launcherDensity === "comfortable" ? 48 : (launcherDensity === "default" ? 36 : 24)
