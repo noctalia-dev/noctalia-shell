@@ -497,10 +497,10 @@ Singleton {
 
   function userspaceReboot() {
     Logger.i("Compositor", "Userspace reboot requested");
-    if (executeSessionAction("userspace-reboot"))
+    if (executeSessionAction("userspaceReboot"))
       return;
 
-    HooksService.executeSessionHook("userspace-reboot", () => {
+    HooksService.executeSessionHook("userspaceReboot", () => {
                                       Quickshell.execDetached(["sh", "-c", "systemctl soft-reboot"]);
                                     });
   }

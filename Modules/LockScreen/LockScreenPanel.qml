@@ -88,7 +88,7 @@ Item {
     case "reboot":
       CompositorService.reboot();
       break;
-    case "userspace-reboot":
+    case "userspaceReboot":
       CompositorService.userspaceReboot();
       break;
     case "shutdown":

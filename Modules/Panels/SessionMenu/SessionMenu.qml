@@ -106,6 +106,11 @@ SmartPanel {
       "title": I18n.tr("common.reboot"),
       "isShutdown": false
     },
+    "userspaceReboot": {
+      "icon": "rotate",
+      "title": I18n.tr("common.userspace-reboot"),
+      "isShutdown": false
+    },
     "rebootToUefi": {
       "icon": "reboot",
       "title": I18n.tr("common.reboot-to-uefi"),
@@ -120,11 +125,6 @@ SmartPanel {
       "icon": "shutdown",
       "title": I18n.tr("common.shutdown"),
       "isShutdown": true
-    },
-    "userspace-reboot": {
-      "icon": "rotate",
-      "title": I18n.tr("common.userspace-reboot"),
-      "isShutdown": false
     }
   }
 
@@ -248,7 +248,7 @@ SmartPanel {
     case "reboot":
       CompositorService.reboot();
       break;
-    case "userspace-reboot":
+    case "userspaceReboot":
       CompositorService.userspaceReboot();
       break;
     case "rebootToUefi":

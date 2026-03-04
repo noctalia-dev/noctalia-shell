@@ -38,7 +38,7 @@ ColumnLayout {
       "required": false
     },
     {
-      "id": "userspace-reboot",
+      "id": "userspaceReboot",
       "text": I18n.tr("common.userspace-reboot"),
       "enabled": false,
       "required": false
