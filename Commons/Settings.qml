@@ -184,7 +184,7 @@ Singleton {
       property int widgetSpacing: 6
       property int contentPadding: 2
       property real fontScale: 1.0
-      property bool exclusionZoneOffset: false
+      property bool exclusionZoneOffset: true
 
       // Bar background opacity settings
       property real backgroundOpacity: 0.93

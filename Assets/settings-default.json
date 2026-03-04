@@ -15,7 +15,7 @@
     "backgroundOpacity": 0.93,
     "useSeparateOpacity": false,
     "floating": false,
-    "exclusionZoneOffset": false,
+    "exclusionZoneOffset": true,
     "marginVertical": 4,
     "marginHorizontal": 4,
     "frameThickness": 8,
