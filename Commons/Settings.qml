@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 54
+  readonly property int settingsVersion: 55
   property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -259,6 +259,12 @@ Singleton {
       property string mouseWheelAction: "none"
       property bool reverseScroll: false
       property bool mouseWheelWrap: true
+      property string middleClickAction: "none"
+      property bool middleClickFollowMouse: false
+      property string middleClickCommand: ""
+      property string rightClickAction: "controlCenter"
+      property bool rightClickFollowMouse: true
+      property string rightClickCommand: ""
       // Per-screen overrides for position and widgets
       // Format: [{ "name": "HDMI-1", "position": "left" }, { "name": "DP-1", "position": "bottom", "widgets": {...} }]
       property list<var> screenOverrides: []
@@ -438,7 +444,6 @@ Singleton {
     property JsonObject controlCenter: JsonObject {
       // Position: close_to_bar_button, center, top_left, top_right, bottom_left, bottom_right, bottom_center, top_center
       property string position: "close_to_bar_button"
-      property bool openAtMouseOnBarRightClick: true
       property string diskPath: "/"
       property JsonObject shortcuts
       shortcuts: JsonObject {

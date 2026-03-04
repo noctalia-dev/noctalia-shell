@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import qs.Commons
 import qs.Modules.Bar.Extras
 import qs.Modules.Notification
+import qs.Modules.Panels.Settings
 import qs.Services.Compositor
 import qs.Services.UI
 import qs.Widgets
@@ -187,6 +188,7 @@ Item {
         readonly property string barWheelAction: {
           return Settings.data.bar.mouseWheelAction || "none";
         }
+        readonly property string barRightClickAction: Settings.data.bar.rightClickAction || "controlCenter"
 
         // Position and size the bar content based on orientation
         x: (root.barPosition === "right") ? (parent.width - root.barHeight) : 0
@@ -334,25 +336,83 @@ Item {
           CompositorService.switchToWorkspace(candidates[next]);
         }
 
+        function handleEmptyBarClick(action, followMouse, command, mouse) {
+          if (action === "none")
+            return;
+          if (action === "controlCenter") {
+            var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
+            controlCenterPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : "ControlCenter");
+            mouse.accepted = true;
+          } else if (action === "settings") {
+            var settingsPanel = PanelService.getPanel("settingsPanel", screen);
+            settingsPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : null);
+            mouse.accepted = true;
+          } else if (action === "launcherPanel") {
+            var launcherPanel = PanelService.getPanel("launcherPanel", screen);
+            launcherPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : null);
+            mouse.accepted = true;
+          } else if (action === "command") {
+            runCustomCommand(command);
+            mouse.accepted = true;
+          }
+        }
+
+        function runCustomCommand(command) {
+          if (!command || command.trim() === "")
+            return;
+
+          const processString = "import QtQuick; import Quickshell.Io; Process { command: [\"sh\", \"-lc\", \"\"] }";
+
+          try {
+            const processObj = Qt.createQmlObject(processString, root, "BarCommandProcess_" + Date.now());
+            processObj.command = ["sh", "-lc", command];
+
+            processObj.exited.connect(function (exitCode) {
+              if (exitCode !== 0) {
+                ToastService.showError(
+                  I18n.tr("toast.custom-command-failed.title"),
+                  I18n.tr("toast.custom-command-failed.description", {
+                             command: command,
+                             code: exitCode
+                           })
+                );
+              }
+              processObj.destroy();
+            });
+
+            processObj.running = true;
+          } catch (e) {
+            Logger.e("Bar", "Failed to start custom command:", e);
+            ToastService.showError(
+              I18n.tr("toast.custom-command-failed.title"),
+              I18n.tr("toast.custom-command-failed.description", {
+                         command: command,
+                         code: "start_error"
+                       })
+            );
+          }
+        }
+
         MouseArea {
           anchors.fill: parent
-          acceptedButtons: Qt.RightButton
+          acceptedButtons: Qt.RightButton | Qt.MiddleButton
+          enabled: bar.barRightClickAction !== "none" || Settings.data.bar.middleClickAction !== "none"
           hoverEnabled: false
           preventStealing: true
           onClicked: mouse => {
-                       if (mouse.button === Qt.RightButton) {
-                         if (bar.isPointOverWidget(mouse.x, mouse.y))
-                         return;
-                         var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-                         if (Settings.data.controlCenter.openAtMouseOnBarRightClick) {
-                           var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
-                           controlCenterPanel?.toggle(null, screenRelativePos);
-                         } else {
-                           controlCenterPanel?.toggle();
-                         }
-                         mouse.accepted = true;
-                       }
-                     }
+                      if (mouse.button === Qt.RightButton) {
+                        if (bar.isPointOverWidget(mouse.x, mouse.y))
+                          return;
+                        bar.handleEmptyBarClick(bar.barRightClickAction, Settings.data.bar.rightClickFollowMouse, Settings.data.bar.rightClickCommand, mouse);
+                        return;
+                      }
+                      if (mouse.button === Qt.MiddleButton) {
+                        if (bar.isPointOverWidget(mouse.x, mouse.y))
+                          return;
+                        bar.handleEmptyBarClick(Settings.data.bar.middleClickAction || "none", Settings.data.bar.middleClickFollowMouse, Settings.data.bar.middleClickCommand, mouse);
+                        return;
+                      }
+          }
         }
 
         // Debounce timer for wheel interactions

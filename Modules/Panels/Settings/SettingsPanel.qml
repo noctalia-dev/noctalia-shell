@@ -25,12 +25,12 @@ SmartPanel {
   readonly property real barMarginV: barFloating ? Math.ceil(Settings.data.bar.marginVertical) : 0
 
   forceAttachToBar: attachToBar
-  panelAnchorHorizontalCenter: attachToBar ? (barPosition === "top" || barPosition === "bottom") : true
-  panelAnchorVerticalCenter: attachToBar ? (barPosition === "left" || barPosition === "right") : true
-  panelAnchorTop: attachToBar && barPosition === "top"
-  panelAnchorBottom: attachToBar && barPosition === "bottom"
-  panelAnchorLeft: attachToBar && barPosition === "left"
-  panelAnchorRight: attachToBar && barPosition === "right"
+  panelAnchorHorizontalCenter: !root.useButtonPosition && (attachToBar ? (barPosition === "top" || barPosition === "bottom") : true)
+  panelAnchorVerticalCenter: !root.useButtonPosition && (attachToBar ? (barPosition === "left" || barPosition === "right") : true)
+  panelAnchorTop: !root.useButtonPosition && attachToBar && barPosition === "top"
+  panelAnchorBottom: !root.useButtonPosition && attachToBar && barPosition === "bottom"
+  panelAnchorLeft: !root.useButtonPosition && attachToBar && barPosition === "left"
+  panelAnchorRight: !root.useButtonPosition && attachToBar && barPosition === "right"
 
   onAttachToBarChanged: {
     if (isPanelOpen) {
@@ -129,7 +129,15 @@ SmartPanel {
 
     // Panel mode: replicate SmartPanel.open() logic
     if (!buttonItem && buttonName) {
-      buttonItem = BarService.lookupWidget(buttonName, screen.name);
+      if (typeof buttonName === "object" && buttonName.x !== undefined && buttonName.y !== undefined) {
+        root.buttonItem = null;
+        root.buttonPosition = buttonName;
+        root.buttonWidth = 0;
+        root.buttonHeight = 0;
+        root.useButtonPosition = true;
+      } else {
+        buttonItem = BarService.lookupWidget(buttonName, screen.name);
+      }
     }
 
     if (buttonItem) {
@@ -139,7 +147,7 @@ SmartPanel {
       root.buttonWidth = buttonItem.width;
       root.buttonHeight = buttonItem.height;
       root.useButtonPosition = true;
-    } else {
+    } else if (!(buttonName && typeof buttonName === "object" && buttonName.x !== undefined && buttonName.y !== undefined)) {
       root.buttonItem = null;
       root.useButtonPosition = false;
     }
