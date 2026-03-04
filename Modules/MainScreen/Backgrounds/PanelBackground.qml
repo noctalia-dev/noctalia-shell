@@ -91,7 +91,7 @@ ShapePath {
   startX: panelX + tlRadius * tlMultX
   startY: panelY
 
-  fillColor: effectiveBackgroundColor
+  fillColor: (assignedPanel && panelBg && panelWidth > 0 && panelHeight > 0) ? effectiveBackgroundColor : "transparent"
 
   // ========== PATH DEFINITION ==========
   // Draws a rectangle with potentially inverted corners

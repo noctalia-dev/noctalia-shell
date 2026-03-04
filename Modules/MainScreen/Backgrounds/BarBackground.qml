@@ -124,7 +124,7 @@ ShapePath {
 
   // ShapePath configuration
   strokeWidth: -1 // No stroke, fill only
-  fillColor: Qt.rgba(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a * opacityFactor)
+  fillColor: shouldShow ? Qt.rgba(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a * opacityFactor) : "transparent"
   fillRule: isFramed ? ShapePath.OddEvenFill : ShapePath.WindingFill
 
   // Starting position
