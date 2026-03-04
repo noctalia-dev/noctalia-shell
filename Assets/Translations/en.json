@@ -1847,6 +1847,10 @@
       "unavailable": "Clipboard history unavailable",
       "unavailable-desc": "The 'cliphist' application is not installed. Please install it to use clipboard history features"
     },
+    "custom-command-failed": {
+      "description": "Command failed: {command}\nExit code: {code}",
+      "title": "Custom command failed"
+    },
     "do-not-disturb": {
       "disabled": "Do Not Disturb disabled",
       "disabled-desc": "Showing all notifications",
