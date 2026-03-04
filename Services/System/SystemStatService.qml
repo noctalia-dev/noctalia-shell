@@ -1161,15 +1161,17 @@ Singleton {
       root.coresUsage = new Array(nbCores).fill(0);
 
     let coresStats = [];
+    let newCoresUsage = root.coresUsage.slice();
     for (let i = 0; i < nbCores; i++) {
       const coreCpuLine = lines[i + 1];
       const currCoreStats = calculateLineUsage(coreCpuLine);
       const coreUsage = computeUsage(root.prevCpuCoresStats?.[i], currCoreStats);
       if (coreUsage >= 0) {
-        root.coresUsage[i] = coreUsage;
+        newCoresUsage[i] = coreUsage;
       }
       coresStats.push(currCoreStats);
     }
+    root.coresUsage = newCoresUsage;
     root.prevCpuCoresStats = coresStats;
   }
 
