@@ -486,6 +486,15 @@
     "subTabLabel": "common.bluetooth"
   },
   {
+    "labelKey": "panels.connections.bluetooth-auto-connect-label",
+    "descriptionKey": "panels.connections.bluetooth-auto-connect-description",
+    "widget": "NToggle",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
     "labelKey": "panels.connections.hide-unnamed-devices-label",
     "descriptionKey": "panels.connections.hide-unnamed-devices-description",
     "widget": "NToggle",

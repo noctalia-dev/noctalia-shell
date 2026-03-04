@@ -71,7 +71,7 @@ Singleton {
   Connections {
     target: Settings.data.network
     function onBluetoothAutoConnectChanged() {
-      if ((Settings?.data?.network?.bluetoothAutoConnect ?? true) && adapter && adapter.enabled) {
+      if (Settings.data.network.bluetoothAutoConnect && adapter && adapter.enabled) {
         autoConnectTimer.restart();
       } else {
         autoConnectTimer.stop();
@@ -105,7 +105,7 @@ Singleton {
       Quickshell.execDetached(["rfkill", "block", "bluetooth"]);
     }
     // Auto-connect on startup if BT is already enabled
-    if ((Settings?.data?.network?.bluetoothAutoConnect ?? true) && adapter && adapter.enabled) {
+    if (Settings.data.network.bluetoothAutoConnect && adapter && adapter.enabled) {
       autoConnectTimer.restart();
     }
   }
@@ -129,7 +129,7 @@ Singleton {
       checkAirplaneMode.running = true;
     }
     function onEnabledChanged() {
-      if (adapter && adapter.enabled && (Settings?.data?.network?.bluetoothAutoConnect ?? true)) {
+      if (adapter && adapter.enabled && Settings.data.network.bluetoothAutoConnect) {
         autoConnectTimer.restart();
       }
     }
@@ -625,11 +625,14 @@ Singleton {
   }
 
   function attemptAutoConnect() {
-    if (airplaneModeEnabled) return;
-    if (!adapter || !adapter.enabled) return;
-    if (!(Settings?.data?.network?.bluetoothAutoConnect ?? true)) return;
+    if (airplaneModeEnabled)
+      return;
+    if (!adapter || !adapter.enabled)
+      return;
+    if (!Settings.data.network.bluetoothAutoConnect)
+      return;
 
-    var devList = adapter.devices.values.filter(function(dev) {
+    var devList = adapter.devices.values.filter(function (dev) {
       return dev && dev.paired && !dev.connected && !dev.blocked;
     });
 
@@ -640,8 +643,8 @@ Singleton {
 
     if (devList.length > 0) {
       ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("toast.bluetooth.auto-connecting", {
-                                count: devList.length
-                              }), "bluetooth");
+                                                                     count: devList.length
+                                                                   }), "bluetooth");
     }
   }
 
