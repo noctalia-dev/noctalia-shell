@@ -218,6 +218,8 @@
       "cpu-temperature-label": "CPU temperature",
       "cpu-usage-description": "Display current CPU usage percentage.",
       "cpu-usage-label": "CPU usage",
+      "cpu-cores-description": "Display CPU cores usage individually.",
+      "cpu-cores-label": "CPU Cores",
       "disk-path-description": "Select which disk mount point to monitor.",
       "disk-path-label": "Disk path",
       "gpu-temperature-description": "Show GPU temperature readings if available.",
@@ -1788,6 +1790,7 @@
   "system-monitor": {
     "cpu-temp": "CPU temp",
     "cpu-usage": "CPU usage",
+    "core-usage": "Core {id} usage",
     "disk": "Disk",
     "download-speed": "Download speed",
     "gpu-temp": "GPU temp",

@@ -39,6 +39,7 @@ Singleton {
 
   // Public values
   property real cpuUsage: 0
+  property list<real> coresUsage: []
   property real cpuTemp: 0
   property string cpuFreq: "0.0GHz"
   property real cpuFreqRatio: 0
@@ -231,6 +232,14 @@ Singleton {
   readonly property color memColor: memCritical ? criticalColor : (memWarning ? warningColor : Color.mPrimary)
   readonly property color swapColor: swapCritical ? criticalColor : (swapWarning ? warningColor : Color.mPrimary)
 
+  function getCoreUsageColor(usage) {
+    if (usage >= cpuCriticalThreshold)
+      return criticalColor;
+    if (usage >= cpuWarningThreshold)
+      return warningColor;
+    return Color.mPrimary;
+  }
+
   function getDiskColor(diskPath, available = false) {
     return isDiskCritical(diskPath, available) ? criticalColor : (isDiskWarning(diskPath, available) ? warningColor : Color.mPrimary);
   }
@@ -246,6 +255,7 @@ Singleton {
 
   // Internal state for CPU calculation
   property var prevCpuStats: null
+  property var prevCpuCoresStats: null
 
   // Internal state for network speed calculation
   // Previous Bytes need to be stored as 'real' as they represent the total of bytes transfered
@@ -299,6 +309,7 @@ Singleton {
     if (shouldRun) {
       // Reset differential state so first readings after resume are clean
       root.prevCpuStats = null;
+      root.prevCpuCoresStats = null;
       root.prevTime = 0;
 
       // Trigger initial reads
@@ -332,6 +343,7 @@ Singleton {
     function onResumed() {
       Logger.i("SystemStat", "System resumed - resetting differential state");
       root.prevCpuStats = null;
+      root.prevCpuCoresStats = null;
       root.prevTime = 0;
     }
   }
@@ -1079,16 +1091,9 @@ Singleton {
 
   // -------------------------------------------------------
   // Calculate CPU usage from /proc/stat
-  function calculateCpuUsage(text) {
-    if (!text)
-      return;
-    const lines = text.split('\n');
-    const cpuLine = lines[0];
 
-    // First line is total CPU
-    if (!cpuLine.startsWith('cpu '))
-      return;
-    const parts = cpuLine.split(/\s+/);
+  function calculateLineUsage(line) {
+    const parts = line.split(/\s+/);
     const stats = {
       "user": parseInt(parts[1]) || 0,
       "nice": parseInt(parts[2]) || 0,
@@ -1101,23 +1106,71 @@ Singleton {
       "guest": parseInt(parts[9]) || 0,
       "guestNice": parseInt(parts[10]) || 0
     };
-    const totalIdle = stats.idle + stats.iowait;
-    const total = Object.values(stats).reduce((sum, val) => sum + val, 0);
+    return stats;
+  }
 
-    if (root.prevCpuStats) {
-      const prevTotalIdle = root.prevCpuStats.idle + root.prevCpuStats.iowait;
-      const prevTotal = Object.values(root.prevCpuStats).reduce((sum, val) => sum + val, 0);
+  function computeUsage(prev, curr) {
+    if (!prev || !curr)
+      return -1;
+    const currTotalIdle = curr.idle + curr.iowait;
+    const currTotal = Object.values(curr).reduce((sum, val) => sum + val, 0);
+    const prevTotalIdle = prev.idle + prev.iowait;
+    const prevTotal = Object.values(prev).reduce((sum, val) => sum + val, 0);
 
-      const diffTotal = total - prevTotal;
-      const diffIdle = totalIdle - prevTotalIdle;
+    const diffTotal = currTotal - prevTotal;
+    const diffIdle = currTotalIdle - prevTotalIdle;
+    if (diffTotal > 0) {
+      return (((diffTotal - diffIdle) / diffTotal) * 100).toFixed(1);
+    }
+    return -1;
+  }
 
-      if (diffTotal > 0) {
-        root.cpuUsage = (((diffTotal - diffIdle) / diffTotal) * 100).toFixed(1);
-      }
+  function calculateCpuUsage(text) {
+    if (!text)
+      return;
+    const lines = text.split('\n');
+    const cpuLine = lines[0];
+
+    // First line is total CPU
+    if (!cpuLine.startsWith('cpu '))
+      return;
+
+    const currCpuStats = calculateLineUsage(cpuLine);
+    const usage = computeUsage(root.prevCpuStats, currCpuStats);
+
+    if (usage >= 0) {
+      root.cpuUsage = usage;
       root.pushCpuHistory();
     }
+    root.prevCpuStats = currCpuStats;
 
-    root.prevCpuStats = stats;
+    // Find the number of CPU cores
+    let nbCores = 0;
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].startsWith('cpu'))
+        break;
+      nbCores++;
+    }
+
+    // Fallback if we did not find any cores
+    if (nbCores === 0)
+      return;
+
+    // If we found more cores than before, we reset our stats
+    if (root.coresUsage.length < nbCores)
+      root.coresUsage = new Array(nbCores).fill(0);
+
+    let coresStats = [];
+    for (let i = 0; i < nbCores; i++) {
+      const coreCpuLine = lines[i + 1];
+      const currCoreStats = calculateLineUsage(coreCpuLine);
+      const coreUsage = computeUsage(root.prevCpuCoresStats?.[i], currCoreStats);
+      if (coreUsage >= 0) {
+        root.coresUsage[i] = coreUsage;
+      }
+      coresStats.push(currCoreStats);
+    }
+    root.prevCpuCoresStats = coresStats;
   }
 
   // -------------------------------------------------------

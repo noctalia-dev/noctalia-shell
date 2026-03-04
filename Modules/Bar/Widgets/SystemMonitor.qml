@@ -47,6 +47,7 @@ Item {
   readonly property bool usePadding: !compactMode && !isVertical && useMonospaceFont && ((widgetSettings.usePadding !== undefined) ? widgetSettings.usePadding : widgetMetadata.usePadding)
 
   readonly property bool showCpuUsage: (widgetSettings.showCpuUsage !== undefined) ? widgetSettings.showCpuUsage : widgetMetadata.showCpuUsage
+  readonly property bool showCpuCores: (widgetSettings.showCpuCores !== undefined) ? widgetSettings.showCpuCores : widgetMetadata.showCpuCores
   readonly property bool showCpuFreq: (widgetSettings.showCpuFreq !== undefined) ? widgetSettings.showCpuFreq : widgetMetadata.showCpuFreq
   readonly property bool showCpuTemp: (widgetSettings.showCpuTemp !== undefined) ? widgetSettings.showCpuTemp : widgetMetadata.showCpuTemp
   readonly property bool showGpuTemp: (widgetSettings.showGpuTemp !== undefined) ? widgetSettings.showGpuTemp : widgetMetadata.showGpuTemp
@@ -94,6 +95,11 @@ Item {
 
     // CPU
     rows.push([I18n.tr("system-monitor.cpu-usage"), `${Math.round(SystemStatService.cpuUsage)}% (${SystemStatService.cpuFreq.replace(/[^0-9.]/g, "")} GHz)`]);
+    if (showCpuCores) {
+      SystemStatService.coresUsage.forEach((usage, core) => rows.push(["  " + I18n.tr("system-monitor.core-usage", {
+                                                                                 "id": core
+                                                                               }), `${Math.round(usage)}%`]));
+    }
 
     if (SystemStatService.cpuTemp > 0) {
       rows.push([I18n.tr("system-monitor.cpu-temp"), `${Math.round(SystemStatService.cpuTemp)}°C`]);
@@ -153,6 +159,11 @@ Item {
 
     model: [
       {
+        "label": I18n.tr("system-monitor.title"),
+        "action": "sysmon-settings",
+        "icon": "settings"
+      },
+      {
         "label": I18n.tr("actions.widget-settings"),
         "action": "widget-settings",
         "icon": "settings"
@@ -163,7 +174,9 @@ Item {
                    contextMenu.close();
                    PanelService.closeContextMenu(screen);
 
-                   if (action === "widget-settings") {
+                   if (action === "sysmon-settings") {
+                     SettingsPanelService.openToTab(SettingsPanel.Tab.SystemMonitor, 0, screen);
+                   } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }
                  }
@@ -184,25 +197,12 @@ Item {
     Component {
       id: miniGaugeComponent
 
-      Rectangle {
-        id: miniGauge
-        property real ratio: 0 // 0..1
-        property color statColor: Color.mPrimary // Color based on warning/critical state
-
+      NLinearGauge {
+        ratio: 0
+        orientation: Qt.Vertical
+        fillColor: Color.mPrimary
         width: miniGaugeWidth
         height: iconSize
-        radius: width / 2
-        color: Color.mOutline
-
-        // Fill that grows from bottom
-        Rectangle {
-          property real fillHeight: parent.height * Math.min(1, Math.max(0, miniGauge.ratio))
-          width: parent.width
-          height: fillHeight
-          radius: parent.radius
-          color: miniGauge.statColor
-          anchors.bottom: parent.bottom
-        }
       }
     }
 
@@ -213,7 +213,7 @@ Item {
       rows: isVertical ? -1 : 1
       columns: isVertical ? 1 : -1
       rowSpacing: isVertical ? (compactMode ? Style.marginL : Style.marginXL) : 0
-      columnSpacing: isVertical ? 0 : (Style.marginM)
+      columnSpacing: isVertical ? 0 : Style.marginM
 
       // CPU Usage Component
       Item {
@@ -228,10 +228,12 @@ Item {
         GridLayout {
           id: cpuUsageContent
           anchors.centerIn: parent
-          flow: (isVertical && !compactMode) ? GridLayout.TopToBottom : GridLayout.LeftToRight
-          rows: (isVertical && !compactMode) ? 2 : 1
-          columns: (isVertical && !compactMode) ? 1 : 2
-          rowSpacing: Style.marginXXS
+
+          property bool verticalDisplay: isVertical && (!compactMode || showCpuCores)
+          flow: verticalDisplay ? GridLayout.TopToBottom : GridLayout.LeftToRight
+          rows: verticalDisplay ? -1 : 1
+          columns: verticalDisplay ? 1 : -1
+          rowSpacing: compactMode ? 3 : Style.marginXS
           columnSpacing: compactMode ? 3 : Style.marginXS
 
           Item {
@@ -266,10 +268,10 @@ Item {
             Layout.column: isVertical ? 0 : 1
           }
 
-          // Compact mode
+          // Compact mode general cpu
           Loader {
-            active: compactMode
-            visible: compactMode
+            active: compactMode && !showCpuCores
+            visible: compactMode && !showCpuCores
             sourceComponent: miniGaugeComponent
             Layout.alignment: Qt.AlignCenter
             Layout.row: 0
@@ -277,7 +279,21 @@ Item {
 
             onLoaded: {
               item.ratio = Qt.binding(() => SystemStatService.cpuUsage / 100);
-              item.statColor = Qt.binding(() => SystemStatService.cpuColor);
+              item.fillColor = Qt.binding(() => SystemStatService.cpuColor);
+            }
+          }
+
+          // Compact mode for cores
+          Repeater {
+            model: (compactMode && showCpuCores) ? SystemStatService.coresUsage : []
+
+            delegate: NLinearGauge {
+              required property var modelData
+              width: isVertical ? iconSize : miniGaugeWidth
+              height: isVertical ? miniGaugeWidth : iconSize
+              orientation: isVertical ? Qt.Horizontal : Qt.Vertical
+              ratio: modelData / 100
+              fillColor: SystemStatService.getCoreUsageColor(modelData)
             }
           }
         }
@@ -345,7 +361,6 @@ Item {
 
             onLoaded: {
               item.ratio = Qt.binding(() => SystemStatService.cpuFreqRatio);
-              item.statColor = Qt.binding(() => Color.mPrimary);
             }
           }
         }
@@ -413,7 +428,7 @@ Item {
 
             onLoaded: {
               item.ratio = Qt.binding(() => SystemStatService.cpuTemp / 100);
-              item.statColor = Qt.binding(() => SystemStatService.tempColor);
+              item.fillColor = Qt.binding(() => SystemStatService.tempColor);
             }
           }
         }
@@ -481,7 +496,7 @@ Item {
 
             onLoaded: {
               item.ratio = Qt.binding(() => SystemStatService.gpuTemp / 100);
-              item.statColor = Qt.binding(() => SystemStatService.gpuColor);
+              item.fillColor = Qt.binding(() => SystemStatService.gpuColor);
             }
           }
         }
@@ -549,7 +564,6 @@ Item {
 
             onLoaded: {
               item.ratio = Qt.binding(() => Math.min(1, SystemStatService.loadAvg1 / SystemStatService.nproc));
-              item.statColor = Qt.binding(() => Color.mPrimary);
             }
           }
         }
@@ -620,7 +634,7 @@ Item {
 
             onLoaded: {
               item.ratio = Qt.binding(() => SystemStatService.memPercent / 100);
-              item.statColor = Qt.binding(() => SystemStatService.memColor);
+              item.fillColor = Qt.binding(() => SystemStatService.memColor);
             }
           }
         }
@@ -692,7 +706,7 @@ Item {
 
             onLoaded: {
               item.ratio = Qt.binding(() => SystemStatService.swapPercent / 100);
-              item.statColor = Qt.binding(() => SystemStatService.swapColor);
+              item.fillColor = Qt.binding(() => SystemStatService.swapColor);
             }
           }
         }
@@ -896,7 +910,7 @@ Item {
 
             onLoaded: {
               item.ratio = Qt.binding(() => (showDiskAvailable ? SystemStatService.diskAvailPercents[diskPath] : SystemStatService.diskPercents[diskPath] ?? 0) / 100);
-              item.statColor = Qt.binding(() => SystemStatService.getDiskColor(diskPath, showDiskAvailable));
+              item.fillColor = Qt.binding(() => SystemStatService.getDiskColor(diskPath, showDiskAvailable));
             }
           }
         }
