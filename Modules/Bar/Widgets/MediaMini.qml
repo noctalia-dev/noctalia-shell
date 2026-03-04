@@ -75,7 +75,7 @@ Item {
 
   // CavaService registration for visualizer
   readonly property string cavaComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
-  readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none"
+  readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && !root.isHidden
 
   Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
   Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
@@ -90,10 +90,14 @@ Item {
     }
   }
 
-  Component.onDestruction: {
+  Component.onCompleted: {
     if (root.needsCava) {
-      CavaService.unregisterComponent(root.cavaComponentId);
+      CavaService.registerComponent(root.cavaComponentId);
     }
+  }
+
+  Component.onDestruction: {
+    CavaService.unregisterComponent(root.cavaComponentId);
   }
 
   // Layout
