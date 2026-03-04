@@ -45,9 +45,11 @@ Rectangle {
   property bool globalMouseInitialized: false
   property bool mouseTrackingReady: false // Delay tracking until panel is settled
 
+  readonly property bool animationsDisabled: Settings.data.general.animationDisabled
+
   Timer {
     id: mouseTrackingDelayTimer
-    interval: Style.animationNormal + 50 // Wait for panel animation to complete + safety margin
+    interval: root.animationsDisabled ? 0 : (Style.animationNormal + 50) // Wait for panel animation to complete + safety margin
     repeat: false
     onTriggered: {
       root.mouseTrackingReady = true;
@@ -159,20 +161,22 @@ Rectangle {
   }
 
   function onOpened() {
-    resultsReady = false;
     ignoreMouseHover = true;
     globalMouseInitialized = false;
     mouseTrackingReady = false;
     mouseTrackingDelayTimer.restart();
-    syncPluginProviders();
+
+    // Show launcher immediately, results will populate asynchronously
+    resultsReady = true;
+    focusSearchInput();
+
     Qt.callLater(() => {
+                   syncPluginProviders();
                    for (let provider of providers) {
                      if (provider.onOpened)
                      provider.onOpened();
                    }
                    updateResults();
-                   resultsReady = true;
-                   focusSearchInput();
                  });
   }
 
@@ -215,6 +219,7 @@ Rectangle {
 
   function syncPluginProviders() {
     var registeredIds = LauncherProviderRegistry.getPluginProviders();
+    var changed = false;
 
     // Remove providers that are no longer registered
     for (var existingId in pluginProviderInstances) {
@@ -225,6 +230,7 @@ Rectangle {
         pluginProviderInstances[existingId].destroy();
         delete pluginProviderInstances[existingId];
         Logger.d("Launcher", "Removed plugin provider:", existingId);
+        changed = true;
       }
     }
 
@@ -243,13 +249,14 @@ Rectangle {
             pluginProviderInstances[providerId] = instance;
             registerProvider(instance);
             Logger.d("Launcher", "Registered plugin provider:", providerId);
+            changed = true;
           }
         }
       }
     }
 
-    // Update results if launcher is open
-    if (root.isOpen) {
+    // Update results only if providers changed
+    if (changed && root.isOpen) {
       updateResults();
     }
   }

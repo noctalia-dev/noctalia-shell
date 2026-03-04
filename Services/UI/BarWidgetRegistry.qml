@@ -234,6 +234,7 @@ Singleton {
                                     "useMonospaceFont": true,
                                     "usePadding": false,
                                     "showCpuUsage": true,
+                                    "showCpuCores": false,
                                     "showCpuFreq": false,
                                     "showCpuTemp": true,
                                     "showGpuTemp": false,

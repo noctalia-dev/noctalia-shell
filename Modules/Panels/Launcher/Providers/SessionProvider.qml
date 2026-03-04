@@ -41,6 +41,18 @@ Item {
       "keywords": ["reboot", "restart", "reload"]
     },
     {
+      "action": "rebootToUefi",
+      "labelKey": "common.reboot-to-uefi",
+      "icon": iconMode === "tabler" ? "reboot" : "system-reboot",
+      "keywords": ["reboot", "uefi", "firmware", "bios"]
+    },
+    {
+      "action": "userspaceReboot",
+      "labelKey": "common.userspace-reboot",
+      "icon": iconMode === "tabler" ? "rotate" : "system-reboot",
+      "keywords": ["reboot", "restart", "soft", "userspace"]
+    },
+    {
       "action": "logout",
       "labelKey": "common.logout",
       "icon": iconMode === "tabler" ? "logout" : "system-log-out",
@@ -167,6 +179,12 @@ Item {
       break;
     case "reboot":
       CompositorService.reboot();
+      break;
+    case "rebootToUefi":
+      CompositorService.rebootToUefi();
+      break;
+    case "userspaceReboot":
+      CompositorService.userspaceReboot();
       break;
     case "logout":
       CompositorService.logout();

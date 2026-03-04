@@ -26,6 +26,7 @@ ColumnLayout {
   property bool valueUseMonospaceFont: widgetData.useMonospaceFont !== undefined ? widgetData.useMonospaceFont : widgetMetadata.useMonospaceFont
   property bool valueUsePadding: widgetData.usePadding !== undefined ? widgetData.usePadding : widgetMetadata.usePadding
   property bool valueShowCpuUsage: widgetData.showCpuUsage !== undefined ? widgetData.showCpuUsage : widgetMetadata.showCpuUsage
+  property bool valueShowCpuCores: widgetData.showCpuCores !== undefined ? widgetData.showCpuCores : widgetMetadata.showCpuCores
   property bool valueShowCpuFreq: widgetData.showCpuFreq !== undefined ? widgetData.showCpuFreq : widgetMetadata.showCpuFreq
   property bool valueShowCpuTemp: widgetData.showCpuTemp !== undefined ? widgetData.showCpuTemp : widgetMetadata.showCpuTemp
   property bool valueShowGpuTemp: widgetData.showGpuTemp !== undefined ? widgetData.showGpuTemp : widgetMetadata.showGpuTemp
@@ -47,6 +48,7 @@ ColumnLayout {
     settings.useMonospaceFont = valueUseMonospaceFont;
     settings.usePadding = valueUsePadding;
     settings.showCpuUsage = valueShowCpuUsage;
+    settings.showCpuCores = valueShowCpuCores;
     settings.showCpuFreq = valueShowCpuFreq;
     settings.showCpuTemp = valueShowCpuTemp;
     settings.showGpuTemp = valueShowGpuTemp;
@@ -137,6 +139,19 @@ ColumnLayout {
                  saveSettings();
                }
     defaultValue: widgetMetadata.showCpuUsage
+  }
+
+  NToggle {
+    id: showCpuCores
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.cpu-cores-label")
+    description: I18n.tr("bar.system-monitor.cpu-cores-description")
+    checked: valueShowCpuCores
+    onToggled: checked => {
+                 valueShowCpuCores = checked;
+                 saveSettings();
+               }
+    visible: valueCompactMode
   }
 
   NToggle {

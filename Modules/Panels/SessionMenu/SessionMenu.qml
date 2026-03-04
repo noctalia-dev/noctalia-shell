@@ -106,6 +106,11 @@ SmartPanel {
       "title": I18n.tr("common.reboot"),
       "isShutdown": false
     },
+    "userspaceReboot": {
+      "icon": "rotate",
+      "title": I18n.tr("common.userspace-reboot"),
+      "isShutdown": false
+    },
     "rebootToUefi": {
       "icon": "reboot",
       "title": I18n.tr("common.reboot-to-uefi"),
@@ -242,6 +247,9 @@ SmartPanel {
       break;
     case "reboot":
       CompositorService.reboot();
+      break;
+    case "userspaceReboot":
+      CompositorService.userspaceReboot();
       break;
     case "rebootToUefi":
       CompositorService.rebootToUefi();

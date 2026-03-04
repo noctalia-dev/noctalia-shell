@@ -387,6 +387,60 @@
     "subTabLabel": "common.behavior"
   },
   {
+    "labelKey": "panels.bar.behavior-middle-click-label",
+    "descriptionKey": "panels.bar.behavior-middle-click-description",
+    "widget": "NComboBox",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.bar.behavior-middle-click-command-label",
+    "descriptionKey": "panels.bar.behavior-middle-click-command-description",
+    "widget": "NTextInput",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.bar.behavior-middle-click-follow-mouse-label",
+    "descriptionKey": "panels.bar.behavior-middle-click-follow-mouse-description",
+    "widget": "NToggle",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.bar.behavior-right-click-label",
+    "descriptionKey": "panels.bar.behavior-right-click-description",
+    "widget": "NComboBox",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.bar.behavior-right-click-command-label",
+    "descriptionKey": "panels.bar.behavior-right-click-command-description",
+    "widget": "NTextInput",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
+    "labelKey": "panels.bar.behavior-right-click-follow-mouse-label",
+    "descriptionKey": "panels.bar.behavior-right-click-follow-mouse-description",
+    "widget": "NToggle",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 2,
+    "subTabLabel": "common.behavior"
+  },
+  {
     "labelKey": "panels.bar.monitor-override-settings",
     "descriptionKey": "panels.bar.monitor-override-settings-description",
     "widget": "NToggle",
@@ -495,6 +549,15 @@
     "subTabLabel": "common.bluetooth"
   },
   {
+    "labelKey": "panels.connections.bluetooth-auto-connect-label",
+    "descriptionKey": "panels.connections.bluetooth-auto-connect-description",
+    "widget": "NToggle",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth"
+  },
+  {
     "labelKey": "panels.connections.hide-unnamed-devices-label",
     "descriptionKey": "panels.connections.hide-unnamed-devices-description",
     "widget": "NToggle",
@@ -552,15 +615,6 @@
     "labelKey": "common.position",
     "descriptionKey": "panels.control-center.position-description",
     "widget": "NComboBox",
-    "tab": 7,
-    "tabLabel": "panels.control-center.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
-    "labelKey": "panels.control-center.open-at-mouse-label",
-    "descriptionKey": "panels.control-center.open-at-mouse-description",
-    "widget": "NToggle",
     "tab": 7,
     "tabLabel": "panels.control-center.title",
     "subTab": 0,

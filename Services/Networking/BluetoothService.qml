@@ -68,11 +68,29 @@ Singleton {
   property bool _discoveryWasRunning: false
   property bool _ctlInit: false
 
+  Connections {
+    target: Settings.data.network
+    function onBluetoothAutoConnectChanged() {
+      if (Settings.data.network.bluetoothAutoConnect && adapter && adapter.enabled) {
+        autoConnectTimer.restart();
+      } else {
+        autoConnectTimer.stop();
+      }
+    }
+  }
+
   Timer {
     id: initDelayTimer
     interval: 3000
     running: true
     repeat: false
+  }
+
+  Timer {
+    id: autoConnectTimer
+    interval: 2000
+    repeat: false
+    onTriggered: root.attemptAutoConnect()
   }
 
   function init() {
@@ -85,6 +103,10 @@ Singleton {
     if (root.airplaneModeEnabled) {
       Quickshell.execDetached(["rfkill", "block", "wifi"]);
       Quickshell.execDetached(["rfkill", "block", "bluetooth"]);
+    }
+    // Auto-connect on startup if BT is already enabled
+    if (Settings.data.network.bluetoothAutoConnect && adapter && adapter.enabled) {
+      autoConnectTimer.restart();
     }
   }
 
@@ -105,6 +127,11 @@ Singleton {
         return;
       }
       checkAirplaneMode.running = true;
+    }
+    function onEnabledChanged() {
+      if (adapter && adapter.enabled && Settings.data.network.bluetoothAutoConnect) {
+        autoConnectTimer.restart();
+      }
     }
   }
 
@@ -595,6 +622,30 @@ Singleton {
 
   function unpairDevice(device) {
     forgetDevice(device);
+  }
+
+  function attemptAutoConnect() {
+    if (airplaneModeEnabled)
+      return;
+    if (!adapter || !adapter.enabled)
+      return;
+    if (!Settings.data.network.bluetoothAutoConnect)
+      return;
+
+    var devList = adapter.devices.values.filter(function (dev) {
+      return dev && dev.paired && !dev.connected && !dev.blocked;
+    });
+
+    for (var i = 0; i < devList.length; i++) {
+      Logger.i("Bluetooth", "Auto-connecting to:", devList[i].name || devList[i].deviceName);
+      connectDeviceWithTrust(devList[i]);
+    }
+
+    if (devList.length > 0) {
+      ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("toast.bluetooth.auto-connecting", {
+                                                                     count: devList.length
+                                                                   }), "bluetooth");
+    }
   }
 
   function connectDeviceWithTrust(device) {

@@ -63,8 +63,8 @@ Item {
   }
 
   function onOpened() {
-    // Refresh apps when launcher opens
-    loadApplications();
+    // Just update available categories in case pinned apps changed
+    updateAvailableCategories();
     // Default to Pinned if there are pinned apps, otherwise all
     if (availableCategories.includes("Pinned")) {
       selectedCategory = "Pinned";
@@ -73,6 +73,15 @@ Item {
     }
     // Set category mode initially (will be updated when getResults is called)
     showsCategories = true;
+  }
+
+  // Reload applications when desktop entries change on disk
+  Connections {
+    target: typeof DesktopEntries !== 'undefined' ? DesktopEntries.applications : null
+    function onValuesChanged() {
+      Logger.d("ApplicationsProvider", "Desktop entries changed, reloading applications");
+      loadApplications();
+    }
   }
 
   function selectCategory(category) {

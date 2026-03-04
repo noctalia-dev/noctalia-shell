@@ -314,6 +314,13 @@ Item {
         spacing: Style.marginM
 
         NToggle {
+          label: I18n.tr("panels.connections.bluetooth-auto-connect-label")
+          description: I18n.tr("panels.connections.bluetooth-auto-connect-description")
+          checked: Settings.data.network.bluetoothAutoConnect
+          onToggled: checked => Settings.data.network.bluetoothAutoConnect = checked
+        }
+
+        NToggle {
           label: I18n.tr("panels.connections.hide-unnamed-devices-label")
           description: I18n.tr("panels.connections.hide-unnamed-devices-description")
           checked: Settings.data.network.bluetoothHideUnnamedDevices

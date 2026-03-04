@@ -374,8 +374,8 @@ Singleton {
     const srcEsc = sourcePath.replace(/'/g, "'\\''");
     const dstEsc = outputPath.replace(/'/g, "'\\''");
 
-    // Use Lanczos filter for high-quality downscaling, subtle unsharp mask, and PNG for lossless output
-    const command = `magick '${srcEsc}' -auto-orient -filter Lanczos -resize '${width}x${height}^' -unsharp 0x0.5 '${dstEsc}'`;
+    // Use Lanczos filter for high-quality downscaling and PNG for lossless output
+    const command = `magick '${srcEsc}' -auto-orient -filter Lanczos -resize '${width}x${height}^' '${dstEsc}'`;
 
     runProcess(command, cacheKey, outputPath, sourcePath);
   }

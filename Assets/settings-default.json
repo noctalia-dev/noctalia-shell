@@ -71,6 +71,12 @@
       ]
     },
     "mouseWheelAction": "none",
+    "middleClickAction": "none",
+    "middleClickFollowMouse": false,
+    "middleClickCommand": "",
+    "rightClickAction": "controlCenter",
+    "rightClickFollowMouse": true,
+    "rightClickCommand": "",
     "reverseScroll": false,
     "mouseWheelWrap": true,
     "screenOverrides": []
@@ -245,7 +251,6 @@
   },
   "controlCenter": {
     "position": "close_to_bar_button",
-    "openAtMouseOnBarRightClick": true,
     "diskPath": "/",
     "shortcuts": {
       "left": [

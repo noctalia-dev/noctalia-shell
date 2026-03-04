@@ -653,6 +653,15 @@ Singleton {
                                               bluetoothPanel?.toggle(null, "Bluetooth");
                                             });
     }
+    function toggleAutoConnect() {
+      Settings.data.network.bluetoothAutoConnect = !Settings.data.network.bluetoothAutoConnect;
+    }
+    function enableAutoConnect() {
+      Settings.data.network.bluetoothAutoConnect = true;
+    }
+    function disableAutoConnect() {
+      Settings.data.network.bluetoothAutoConnect = false;
+    }
   }
 
   IpcHandler {
