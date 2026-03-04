@@ -41,7 +41,6 @@ Singleton {
   property var _suspendMonitor: null
   property var _heartbeatMonitor: null
   property var _customMonitors: ({})
-  property real _suppressUntil: 0
   property bool _screenOffActive: false
 
   // Signals for external listeners (plugins, modules)
@@ -111,8 +110,6 @@ Singleton {
   function _onIdle(stage) {
     if (fadePending !== "")
       return;
-    if (Date.now() < _suppressUntil)
-      return;
     Logger.i("IdleService", "Idle fired:", stage);
     fadePending = stage;
     graceTimer.restart();
@@ -123,7 +120,6 @@ Singleton {
     if (stage === "screenOff") {
       if (Settings.data.idle.screenOffCommand)
         Quickshell.execDetached(["sh", "-c", Settings.data.idle.screenOffCommand]);
-      root._suppressUntil = Date.now() + (Settings.data.idle.screenOffTimeout * 1000);
       CompositorService.turnOffMonitors();
       root._screenOffActive = true;
       root.screenOffRequested();
