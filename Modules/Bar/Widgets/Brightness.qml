@@ -46,11 +46,16 @@ Item {
   implicitWidth: pill.width
   implicitHeight: pill.height
 
-  // Track the brightness monitor reactively; explicitly update on screen/monitors changes
-  property var brightnessMonitor: null
-
-  function updateMonitor() {
-    brightnessMonitor = BrightnessService.getMonitorForScreen(screen) || null;
+  // Track the brightness monitor reactively via declarative binding so it
+  // updates atomically when monitors change, avoiding a transient undefined
+  // state that occurs when Monitor QtObjects are destroyed before the
+  // imperative updateMonitor() call would run.
+  property var brightnessMonitor: {
+    var _ = BrightnessService.monitors; // reactive dependency
+    var __ = BrightnessService.ddcMonitors; // reactive dependency
+    if (!screen)
+      return null;
+    return BrightnessService.getMonitorForScreen(screen) ?? null;
   }
 
   function getControllableMonitorCount() {
@@ -61,18 +66,6 @@ Item {
         count++;
     }
     return count;
-  }
-
-  onScreenChanged: updateMonitor()
-
-  Connections {
-    target: BrightnessService
-    function onMonitorsChanged() {
-      root.updateMonitor();
-    }
-    function onDdcMonitorsChanged() {
-      root.updateMonitor();
-    }
   }
 
   visible: brightnessMonitor !== null

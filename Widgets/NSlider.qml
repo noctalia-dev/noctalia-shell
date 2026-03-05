@@ -120,7 +120,7 @@ Slider {
     Shape {
       width: bgContainer.fillWidth
       height: bgContainer.height
-      visible: bgContainer.fillWidth > 0
+      visible: bgContainer.fillWidth > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
       clip: true
 
