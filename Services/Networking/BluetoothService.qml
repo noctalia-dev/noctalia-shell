@@ -68,6 +68,46 @@ Singleton {
   property bool _discoveryWasRunning: false
   property bool _ctlInit: false
 
+  // Persistent cache for per-device auto-connect toggle
+  property string cacheFile: Settings.cacheDir + "bluetooth_devices.json"
+
+  FileView {
+    id: cacheFileView
+    path: root.cacheFile
+    printErrors: false
+
+    JsonAdapter {
+      id: cacheAdapter
+      property var autoConnectSettings: ({})
+    }
+  }
+
+  function getDeviceAutoConnect(mac) {
+    if (!mac || !cacheAdapter.autoConnectSettings) {
+      return false;
+    }
+    const settings = cacheAdapter.autoConnectSettings[mac];
+    return settings ? !!settings.autoConnect : false;
+  }
+
+  function setDeviceAutoConnect(device, enabled) {
+    if (!device || !device.address) {
+      return;
+    }
+    const mac = device.address;
+    let settings = cacheAdapter.autoConnectSettings || ({});
+    if (enabled) {
+      settings[mac] = {
+        autoConnect: true,
+        deviceName: device.name || device.deviceName || ""
+      };
+    } else {
+      delete settings[mac];
+    }
+    cacheAdapter.autoConnectSettings = settings;
+    cacheFileView.writeAdapter();
+  }
+
   Connections {
     target: Settings.data.network
     function onBluetoothAutoConnectChanged() {
@@ -620,9 +660,7 @@ Singleton {
       return;
     }
 
-    var devList = adapter.devices.values.filter(function (dev) {
-      return dev && dev.paired && !dev.connected && !dev.blocked;
-    });
+    var devList = adapter.devices.values.filter(function (dev) { return dev && dev.paired && !dev.connected && !dev.blocked && getDeviceAutoConnect(dev.address) === true; });
 
     for (var i = 0; i < devList.length; i++) {
       Logger.i("Bluetooth", "Auto-connecting to:", devList[i].name || devList[i].deviceName);
