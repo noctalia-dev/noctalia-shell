@@ -76,7 +76,7 @@ Singleton {
   readonly property int cpuHistoryLength: Math.ceil(historyDurationMs / cpuUsageIntervalMs)
   readonly property int gpuHistoryLength: Math.ceil(historyDurationMs / gpuIntervalMs)
   readonly property int memHistoryLength: Math.ceil(historyDurationMs / memIntervalMs)
-  readonly property int diskHistoryLength: Math.ceil(historyDurationMs / diskIntervalMs)
+  readonly property int diskHistoryLength: Math.max(10, Math.ceil(historyDurationMs / diskIntervalMs))
   readonly property int networkHistoryLength: Math.ceil(historyDurationMs / networkIntervalMs)
 
   property var cpuHistory: new Array(cpuHistoryLength).fill(0)
