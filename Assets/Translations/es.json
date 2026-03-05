@@ -709,6 +709,7 @@
       "debug-disabled": "Modo de depuración deshabilitado",
       "debug-enabled": "Modo de depuración activado",
       "info-copied": "Información copiada al portapapeles",
+      "noctalia-available": "Disponible:",
       "noctalia-desc": "Un shell de escritorio elegante y minimalista cuidadosamente diseñado para Wayland, construido con Quickshell.",
       "noctalia-git-commit": "Commit de Git:",
       "noctalia-installed-version": "Versión instalada:",
@@ -1846,6 +1847,10 @@
       "long-text": "Texto largo",
       "unavailable": "Historial del portapapeles no disponible",
       "unavailable-desc": "La aplicación 'cliphist' no está instalada. Por favor, instálala para usar las funciones de historial del portapapeles"
+    },
+    "custom-command-failed": {
+      "description": "El comando falló: {command}\\nCódigo de salida: {code}",
+      "title": "Comando personalizado falló"
     },
     "do-not-disturb": {
       "disabled": "'No molestar' desactivado",

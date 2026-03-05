@@ -709,6 +709,7 @@
       "debug-disabled": "Modo de depuração desativado",
       "debug-enabled": "Modo de depuração ativado",
       "info-copied": "Informação copiada para a área de transferência",
+      "noctalia-available": "Disponível:",
       "noctalia-desc": "Um shell de desktop elegante e minimalista, cuidadosamente criado para Wayland, construído com Quickshell.",
       "noctalia-git-commit": "Commit Git:",
       "noctalia-installed-version": "Versão instalada:",
@@ -1846,6 +1847,10 @@
       "long-text": "Texto longo",
       "unavailable": "Histórico da área de transferência indisponível",
       "unavailable-desc": "O aplicativo 'cliphist' não está instalado. Por favor, instale-o para usar os recursos do histórico da área de transferência"
+    },
+    "custom-command-failed": {
+      "description": "Comando falhou: {command}\\nCódigo de saída: {code}",
+      "title": "Comando personalizado falhou"
     },
     "do-not-disturb": {
       "disabled": "'Não perturbe' desativado",

@@ -709,6 +709,7 @@
       "debug-disabled": "偵錯模式已停用",
       "debug-enabled": "偵錯模式已啟用",
       "info-copied": "資訊已複製至剪貼簿",
+      "noctalia-available": "可用:",
       "noctalia-desc": "一個為 Wayland 精心打造, 兼具簡潔及流暢的桌面介面, 使用 Quickshell 建置",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "安裝版本:",
@@ -1846,6 +1847,10 @@
       "long-text": "長串文字",
       "unavailable": "無法使用剪貼簿歷史",
       "unavailable-desc": "尚未安裝 cliphist 套件, 要使用剪貼簿歷史請安裝套件"
+    },
+    "custom-command-failed": {
+      "description": "指令失敗: {command}\\n結束代碼: {code}",
+      "title": "自訂指令失敗"
     },
     "do-not-disturb": {
       "disabled": "勿擾模式已停用",

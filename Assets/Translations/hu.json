@@ -709,6 +709,7 @@
       "debug-disabled": "Hibakeresési mód letiltva",
       "debug-enabled": "Hibakeresési mód engedélyezve",
       "info-copied": "Információ a vágólapra másolva",
+      "noctalia-available": "Elérhető:",
       "noctalia-desc": "Egy elegáns és minimalista asztali felület, Waylandra tervezve, Quickshell-en alapulva.",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "Telepített verzió:",
@@ -1846,6 +1847,10 @@
       "long-text": "Hosszú szöveg",
       "unavailable": "A vágólapelőzmények nem elérhetők",
       "unavailable-desc": "A 'cliphist' alkalmazás nincs telepítve. Telepítsd a vágólapelőzmények funkcióinak használatához"
+    },
+    "custom-command-failed": {
+      "description": "A parancs sikertelen: {command}\\nKilépési kód: {code}",
+      "title": "Egyéni parancs sikertelen"
     },
     "do-not-disturb": {
       "disabled": "Ne zavarjanak letiltása",

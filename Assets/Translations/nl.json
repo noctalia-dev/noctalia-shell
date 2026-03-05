@@ -709,6 +709,7 @@
       "debug-disabled": "Foutopsporingsmodus uitgeschakeld",
       "debug-enabled": "Foutopsporingsmodus ingeschakeld",
       "info-copied": "Info gekopieerd naar klembord",
+      "noctalia-available": "Beschikbaar:",
       "noctalia-desc": "Een strakke en minimale desktopshell, met zorg gemaakt voor Wayland en gebouwd met Quickshell.",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "Geïnstalleerde versie:",
@@ -1846,6 +1847,10 @@
       "long-text": "Lange tekst",
       "unavailable": "Klembordgeschiedenis niet beschikbaar",
       "unavailable-desc": "De toepassing 'cliphist' is niet geïnstalleerd. Installeer deze om functies voor klembordgeschiedenis te gebruiken"
+    },
+    "custom-command-failed": {
+      "description": "Commando mislukt: {command}\\nExitcode: {code}",
+      "title": "Aangepaste opdracht mislukt"
     },
     "do-not-disturb": {
       "disabled": "'Niet storen' uitgeschakeld",

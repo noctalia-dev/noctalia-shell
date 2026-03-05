@@ -709,6 +709,7 @@
       "debug-disabled": "Debug-Modus deaktiviert",
       "debug-enabled": "Debug-Modus aktiviert",
       "info-copied": "Info in die Zwischenablage kopiert",
+      "noctalia-available": "Verfügbar:",
       "noctalia-desc": "Eine elegante und minimalistische Desktop-Shell, sorgfältig für Wayland entwickelt, gebaut mit Quickshell.",
       "noctalia-git-commit": "Git-Commit:",
       "noctalia-installed-version": "Installierte Version:",
@@ -1846,6 +1847,10 @@
       "long-text": "Langer Text",
       "unavailable": "Zwischenablageverlauf nicht verfügbar",
       "unavailable-desc": "Die 'cliphist' Anwendung ist nicht installiert. Bitte installieren Sie sie, um Zwischenablageverlauf-Features zu nutzen"
+    },
+    "custom-command-failed": {
+      "description": "Befehl fehlgeschlagen: {command}\\nExit-Code: {code}",
+      "title": "Benutzerdefinierter Befehl fehlgeschlagen"
     },
     "do-not-disturb": {
       "disabled": "'Nicht stören' deaktiviert",

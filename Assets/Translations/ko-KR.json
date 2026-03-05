@@ -709,6 +709,7 @@
       "debug-disabled": "디버그 모드 비활성화됨",
       "debug-enabled": "디버그 모드 활성화됨",
       "info-copied": "정보가 클립보드에 복사됨",
+      "noctalia-available": "사용 가능:",
       "noctalia-desc": "Wayland를 위해 세심하게 제작된 매끄럽고 미니멀한 데스크톱 셸로, Quickshell로 빌드되었습니다.",
       "noctalia-git-commit": "Git 커밋:",
       "noctalia-installed-version": "설치된 버전:",
@@ -1846,6 +1847,10 @@
       "long-text": "긴 텍스트",
       "unavailable": "클립보드 기록 사용 불가",
       "unavailable-desc": "'cliphist' 애플리케이션이 설치되어 있지 않습니다. 클립보드 기록 기능을 사용하려면 설치하세요"
+    },
+    "custom-command-failed": {
+      "description": "명령 실패: {command}\\n종료 코드: {code}",
+      "title": "사용자 지정 명령 실패"
     },
     "do-not-disturb": {
       "disabled": "방해 금지 모드 비활성화됨",

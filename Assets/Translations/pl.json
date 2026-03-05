@@ -709,6 +709,7 @@
       "debug-disabled": "Tryb debugowania wyłączony",
       "debug-enabled": "Tryb debugowania włączony",
       "info-copied": "Informacje skopiowane do schowka",
+      "noctalia-available": "Dostępne:",
       "noctalia-desc": "Elegancka i minimalistyczna powłoka pulpitu stworzona dla Wayland, zbudowana w Quickshell.",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "Zainstalowana wersja:",
@@ -1846,6 +1847,10 @@
       "long-text": "Długi tekst",
       "unavailable": "Historia schowka niedostępna",
       "unavailable-desc": "Aplikacja 'cliphist' nie jest zainstalowana. Zainstaluj ją, aby korzystać z historii schowka"
+    },
+    "custom-command-failed": {
+      "description": "Polecenie nie powiodło się: {command}\\nKod wyjścia: {code}",
+      "title": "Niestandardowe polecenie nie powiodło się"
     },
     "do-not-disturb": {
       "disabled": "Nie przeszkadzać wyłączone",

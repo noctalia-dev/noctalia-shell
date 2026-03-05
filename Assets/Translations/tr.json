@@ -709,6 +709,7 @@
       "debug-disabled": "Hata ayıklama modu devre dışı bırakıldı",
       "debug-enabled": "Hata ayıklama modu etkinleştirildi",
       "info-copied": "Bilgi panoya kopyalandı",
+      "noctalia-available": "Mevcut:",
       "noctalia-desc": "Wayland için düşünülmüş, Quickshell ile inşa edilmiş şık ve minimal masaüstü kabuğu.",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "Yüklü sürüm:",
@@ -1846,6 +1847,10 @@
       "long-text": "Uzun metin",
       "unavailable": "Panoya geçmişi kullanılamıyor",
       "unavailable-desc": "'cliphist' uygulaması kurulu değil. Lütfen panoya geçmişi özelliklerini kullanmak için kurun"
+    },
+    "custom-command-failed": {
+      "description": "Komut başarısız oldu: {command}\\nÇıkış kodu: {code}",
+      "title": "Özel komut başarısız oldu"
     },
     "do-not-disturb": {
       "disabled": "'Rahatsız etme' devre dışı",

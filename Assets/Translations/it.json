@@ -709,6 +709,7 @@
       "debug-disabled": "Modalità debug disattivata",
       "debug-enabled": "Modalità debug attivata",
       "info-copied": "Info copiate negli appunti",
+      "noctalia-available": "Disponibile:",
       "noctalia-desc": "Una shell desktop elegante e minimale, progettata con cura per Wayland, costruita con Quickshell.",
       "noctalia-git-commit": "Commit Git:",
       "noctalia-installed-version": "Versione installata:",
@@ -1846,6 +1847,10 @@
       "long-text": "Long text",
       "unavailable": "Clipboard history unavailable",
       "unavailable-desc": "The 'cliphist' application is not installed. Please install it to use clipboard history features"
+    },
+    "custom-command-failed": {
+      "description": "Comando fallito: {command}\\nCodice di uscita: {code}",
+      "title": "Comando personalizzato fallito"
     },
     "do-not-disturb": {
       "disabled": "'Non disturbare' disattivato",

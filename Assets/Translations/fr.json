@@ -709,6 +709,7 @@
       "debug-disabled": "Mode débogage désactivé",
       "debug-enabled": "Mode débogage activé",
       "info-copied": "Info copiée dans le presse-papiers",
+      "noctalia-available": "Disponible :",
       "noctalia-desc": "Un shell de bureau élégant et minimaliste, conçu avec soin pour Wayland et bâti avec Quickshell.",
       "noctalia-git-commit": "Commit Git :",
       "noctalia-installed-version": "Version installée :",
@@ -1846,6 +1847,10 @@
       "long-text": "Texte long",
       "unavailable": "Historique du presse-papiers indisponible",
       "unavailable-desc": "L'application 'cliphist' n'est pas installée. Veuillez l'installer pour utiliser les fonctionnalités d'historique du presse-papiers"
+    },
+    "custom-command-failed": {
+      "description": "La commande a échoué : {command}\\nCode de sortie : {code}",
+      "title": "La commande personnalisée a échoué"
     },
     "do-not-disturb": {
       "disabled": "'Ne pas déranger' désactivé",

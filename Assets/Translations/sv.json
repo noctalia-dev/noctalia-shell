@@ -709,6 +709,7 @@
       "debug-disabled": "Felsökningsläge inaktiverat",
       "debug-enabled": "Felsökningsläge aktiverat",
       "info-copied": "Info kopierad till urklipp",
+      "noctalia-available": "Tillgänglig:",
       "noctalia-desc": "Ett elegant och minimalistiskt skrivbordsskal som är noggrant utformat för Wayland och byggt med Quickshell.",
       "noctalia-git-commit": "Git-commit:",
       "noctalia-installed-version": "Installerad version:",
@@ -1846,6 +1847,10 @@
       "long-text": "Lång text",
       "unavailable": "Urklippshistorik otillgänglig",
       "unavailable-desc": "Applikationen 'cliphist' är inte installerad. Installera den för att kunna använda klippbordshistorikfunktionerna"
+    },
+    "custom-command-failed": {
+      "description": "Kommando misslyckades: {command}\\nAvslutningskod: {code}",
+      "title": "Anpassat kommando misslyckades"
     },
     "do-not-disturb": {
       "disabled": "'Stör inte' inaktiverat",

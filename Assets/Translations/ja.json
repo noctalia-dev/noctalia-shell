@@ -709,6 +709,7 @@
       "debug-disabled": "デバッグモードが無効になりました",
       "debug-enabled": "デバッグモードが有効です",
       "info-copied": "クリップボードにコピーしました",
+      "noctalia-available": "利用可能:",
       "noctalia-desc": "Wayland のために丁寧に作り込まれた、Quickshell 製の洗練されたミニマルなデスクトップシェル。",
       "noctalia-git-commit": "Git コミット：",
       "noctalia-installed-version": "現在のバージョン：",
@@ -1846,6 +1847,10 @@
       "long-text": "長いテキスト",
       "unavailable": "クリップボード履歴を利用できません",
       "unavailable-desc": "cliphist がインストールされていません。クリップボード履歴機能を使用するにはインストールしてください"
+    },
+    "custom-command-failed": {
+      "description": "コマンドが失敗しました: {command}\\n終了コード: {code}",
+      "title": "カスタムコマンドが失敗しました"
     },
     "do-not-disturb": {
       "disabled": "おやすみモードを無効化",

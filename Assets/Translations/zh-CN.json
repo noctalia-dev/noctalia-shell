@@ -709,6 +709,7 @@
       "debug-disabled": "调试模式已禁用",
       "debug-enabled": "调试模式已启用",
       "info-copied": "信息已复制到剪贴板",
+      "noctalia-available": "可用:",
       "noctalia-desc": "一款为 Wayland 精心打造的时尚简约桌面 shell，基于 Quickshell 构建。",
       "noctalia-git-commit": "Git 提交:",
       "noctalia-installed-version": "已安装版本：",
@@ -1846,6 +1847,10 @@
       "long-text": "长文本",
       "unavailable": "剪贴板历史记录不可用",
       "unavailable-desc": "未安装 'cliphist' 应用程序。请安装它以使用剪贴板历史记录功能"
+    },
+    "custom-command-failed": {
+      "description": "命令失败: {command}\\n退出代码: {code}",
+      "title": "自定义命令失败"
     },
     "do-not-disturb": {
       "disabled": "'勿扰模式'已禁用",
