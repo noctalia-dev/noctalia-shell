@@ -1906,8 +1906,8 @@
   },
   "tooltips": {
     "add-widget": "Add widget",
-    "bluetooth-auto-connect-off": "Auto-connect is off — click to enable",
-    "bluetooth-auto-connect-on": "Auto-connect is on — click to disable",
+    "bluetooth-auto-connect-off": "Auto-connect is off",
+    "bluetooth-auto-connect-on": "Auto-connect is on",
     "bluetooth-devices": "Bluetooth devices",
     "brightness-at": "Brightness: {brightness}%",
     "click-to-start-recording": "Screen recorder (start recording)",
