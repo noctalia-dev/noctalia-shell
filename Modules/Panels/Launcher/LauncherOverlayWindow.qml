@@ -198,6 +198,7 @@ Variants {
           y: -radius
           width: launcherPanel.width + radius * 2
           height: launcherPanel.height + radius * 2
+          visible: panelW > 0 && panelH > 0
           opacity: launcherPanel.opacity
           layer.enabled: true
 
