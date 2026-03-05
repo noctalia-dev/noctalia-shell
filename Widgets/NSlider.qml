@@ -41,6 +41,7 @@ Slider {
     // Background track
     Shape {
       anchors.fill: parent
+      visible: bgContainer.width > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
 
       ShapePath {
