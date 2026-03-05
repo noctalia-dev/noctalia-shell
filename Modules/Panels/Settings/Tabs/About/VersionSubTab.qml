@@ -128,15 +128,21 @@ ColumnLayout {
   }
 
   function copyInfoToClipboard() {
-    let info = "Noctalia Shell\n";
-    info += "==============\n";
-    info += "Installed version: " + root.currentVersion + "\n";
+    let info = "Noctalia Shell: " + root.currentVersion;
     if (root.isGitVersion && root.commitInfo) {
-      info += "Git commit: " + root.commitInfo + "\n";
+      info += " (" + root.commitInfo + ")";
     }
+    info += "\n";
+
     if (root.qsVersion) {
-      info += "noctalia-qs version: " + root.qsVersion + "\n";
+      let qsV = root.qsVersion.startsWith("v") ? root.qsVersion : "v" + root.qsVersion;
+      info += "Noctalia QS: " + qsV;
+      if (root.qsRevision) {
+        info += " (" + root.qsRevision + ")";
+      }
+      info += "\n";
     }
+
     info += "\nSystem Information\n";
     info += "==================\n";
     if (root.systemInfo) {
