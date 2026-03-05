@@ -628,12 +628,6 @@ Singleton {
       Logger.i("Bluetooth", "Auto-connecting to:", devList[i].name || devList[i].deviceName);
       connectDeviceWithTrust(devList[i]);
     }
-
-    if (devList.length > 0) {
-      ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("toast.bluetooth.auto-connecting", {
-                                                                     count: devList.length
-                                                                   }), "bluetooth");
-    }
   }
 
   function connectDeviceWithTrust(device) {
