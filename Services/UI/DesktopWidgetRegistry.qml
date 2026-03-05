@@ -248,7 +248,7 @@ Singleton {
     if (root.isPluginWidget(widgetId)) {
       var pluginId = widgetId.replace("plugin:", "");
       var manifest = PluginRegistry.getPluginManifest(pluginId);
-      if (manifest && manifest.entryPoints && manifest.entryPoints.settings) {
+      if (manifest && manifest.entryPoints && (manifest.entryPoints.desktopWidgetSettings || manifest.entryPoints.settings)) {
         hasSettings = true;
       }
     } else {
