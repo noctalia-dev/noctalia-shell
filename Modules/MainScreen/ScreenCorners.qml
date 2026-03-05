@@ -26,6 +26,7 @@ Item {
       anchors.fill: parent
       preferredRendererType: Shape.CurveRenderer
       enabled: false // Disable mouse input
+      visible: cornersPath.cornerRadius > 0 && width > 0 && height > 0
 
       ShapePath {
         id: cornersPath
