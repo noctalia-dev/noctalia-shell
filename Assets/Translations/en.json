@@ -378,6 +378,7 @@
     "apply": "Apply",
     "automation": "Automation",
     "available": "Available",
+    "auto-connect": "Auto-Connect",
     "back": "Back",
     "battery": "Battery",
     "behavior": "Behavior",
@@ -1906,6 +1907,7 @@
   },
   "tooltips": {
     "add-widget": "Add widget",
+    "auto-connect": "Toggle auto-connection for this device",
     "bluetooth-auto-connect-off": "Auto-connect is off",
     "bluetooth-auto-connect-on": "Auto-connect is on",
     "bluetooth-devices": "Bluetooth devices",
