@@ -154,6 +154,12 @@ Popup {
         saveTimer.start();
       }
     }
+
+    function onSettingsSaved(newSettings) {
+      if (newSettings) {
+        root.updateWidgetSettings(root.sectionId, root.widgetIndex, newSettings);
+      }
+    }
   }
 
   function saveAndClose() {
@@ -176,13 +182,13 @@ Popup {
       var loadVersion = PluginRegistry.pluginLoadVersions[pluginId] || 0;
       var api = PluginService.getPluginAPI(pluginId);
 
+      var settingsPath;
       if (manifest && manifest.entryPoints && manifest.entryPoints.desktopWidgetSettings) {
-        var settingsPath = "file://" + pluginDir + "/" + manifest.entryPoints.desktopWidgetSettings;
-        var currentWidgetData = widgetData || {};
+        settingsPath = "file://" + pluginDir + "/" + manifest.entryPoints.desktopWidgetSettings;
 
         settingsLoader.setSource(settingsPath + "?v=" + loadVersion, {
                                    "pluginApi": api,
-                                   "widgetData": currentWidgetData,
+                                   "widgetData": widgetData || {},
                                    "widgetMetadata": DesktopWidgetRegistry.widgetMetadata[widgetId]
                                  });
       } else {
@@ -190,7 +196,7 @@ Popup {
 
         // Fallback to the plugin settings
         if (manifest && manifest.entryPoints && manifest.entryPoints.settings) {
-          var settingsPath = "file://" + pluginDir + "/" + manifest.entryPoints.settings;
+          settingsPath = "file://" + pluginDir + "/" + manifest.entryPoints.settings;
 
           settingsLoader.setSource(settingsPath + "?v=" + loadVersion, {
                                      "pluginApi": api
