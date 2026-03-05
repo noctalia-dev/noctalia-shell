@@ -176,15 +176,19 @@ Item {
     return height - normalized * height;
   }
 
+  // Safe degenerate-path fallback: a valid off-screen line that renders nothing visible.
+  // "M 0 0" (bare moveto) crashes Qt's CurveRenderer — never use it.
+  readonly property string _safeFallbackPath: "M -1 -1 L -1 0"
+
   // Build SVG path with cubic bezier curves (Catmull-Rom → Bezier conversion)
   function buildSvg(vals, pred, minVal, maxVal, t, closeFill) {
     if (!vals || vals.length < 4 || width <= 0 || height <= 0)
-      return "M 0 0";
+      return _safeFallbackPath;
 
     const n = vals.length;
     const step = width / (n - 3);
     if (!isFinite(step) || step <= 0)
-      return "M 0 0";
+      return _safeFallbackPath;
 
     // Build raw data points
     let raw = [];
@@ -207,6 +211,12 @@ Item {
                y: valueToY(pred, minVal, maxVal)
              });
 
+    // Validate all points — NaN/Infinity in any coordinate crashes CurveRenderer
+    for (let i = 0; i < raw.length; i++) {
+      if (!isFinite(raw[i].x) || !isFinite(raw[i].y))
+        return _safeFallbackPath;
+    }
+
     // Start at first point
     let svg = `M ${raw[0].x} ${raw[0].y}`;
 
@@ -222,6 +232,9 @@ Item {
       const cp2x = p2.x - (p3.x - p1.x) / 6;
       const cp2y = p2.y - (p3.y - p1.y) / 6;
 
+      if (!isFinite(cp1x) || !isFinite(cp1y) || !isFinite(cp2x) || !isFinite(cp2y))
+        return _safeFallbackPath;
+
       svg += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
     }
 
@@ -235,15 +248,18 @@ Item {
 
   // Reactive SVG paths — re-evaluated when any dependency changes
   readonly property string _strokeSvg1: buildSvg(values, _pred1, minValue, _effectiveMax1, _t1, false)
-  readonly property string _fillSvg1: fill ? buildSvg(values, _pred1, minValue, _effectiveMax1, _t1, true) : "M 0 0"
+  readonly property string _fillSvg1: fill ? buildSvg(values, _pred1, minValue, _effectiveMax1, _t1, true) : _safeFallbackPath
   readonly property string _strokeSvg2: buildSvg(values2, _pred2, minValue2, _effectiveMax2, _t2, false)
-  readonly property string _fillSvg2: fill ? buildSvg(values2, _pred2, minValue2, _effectiveMax2, _t2, true) : "M 0 0"
+  readonly property string _fillSvg2: fill ? buildSvg(values2, _pred2, minValue2, _effectiveMax2, _t2, true) : _safeFallbackPath
 
+  // Primary line — only rendered when there is enough data to form a valid path.
+  // Keeping primary and secondary in separate Shapes allows independent visibility
+  // gating, so neither ever receives a degenerate path from the other's dataset.
   Shape {
     anchors.fill: parent
     preferredRendererType: Shape.CurveRenderer
+    visible: root.hasData
 
-    // Fill for primary line
     ShapePath {
       fillGradient: LinearGradient {
         y1: 0
@@ -267,7 +283,6 @@ Item {
       }
     }
 
-    // Stroke for primary line
     ShapePath {
       strokeColor: root.color
       strokeWidth: root.strokeWidth
@@ -279,8 +294,14 @@ Item {
         path: root._strokeSvg1
       }
     }
+  }
 
-    // Fill for secondary line
+  // Secondary line — only rendered when there is enough secondary data.
+  Shape {
+    anchors.fill: parent
+    preferredRendererType: Shape.CurveRenderer
+    visible: root.hasData2
+
     ShapePath {
       fillGradient: LinearGradient {
         y1: 0
@@ -304,7 +325,6 @@ Item {
       }
     }
 
-    // Stroke for secondary line
     ShapePath {
       strokeColor: root.color2
       strokeWidth: root.strokeWidth
