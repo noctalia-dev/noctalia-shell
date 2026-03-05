@@ -678,7 +678,7 @@ Item {
               }
 
               NText {
-                text: I18n.tr("common.auto-connect")
+                text: I18n.tr("common.auto-connect") + " " + (BluetoothService.getDeviceAutoConnect(modelData.address) ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))
                 pointSize: Style.fontSizeXS
                 color: BluetoothService.getDeviceAutoConnect(modelData.address) ? Color.mOnSurface : Color.mOnSurfaceVariant
                 Layout.fillWidth: true
