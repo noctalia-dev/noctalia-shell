@@ -23,6 +23,7 @@ Singleton {
       "id": "foot",
       "name": "Foot",
       "templatePath": "terminal/foot",
+      "predefinedTemplatePath": "terminal/foot-predefined",
       "outputPath": "~/.config/foot/themes/noctalia",
       "postHook": `${templateApplyScript} foot`
     },
@@ -30,6 +31,7 @@ Singleton {
       "id": "ghostty",
       "name": "Ghostty",
       "templatePath": "terminal/ghostty",
+      "predefinedTemplatePath": "terminal/ghostty-predefined",
       "outputPath": "~/.config/ghostty/themes/noctalia",
       "postHook": `${templateApplyScript} ghostty`
     },
@@ -37,6 +39,7 @@ Singleton {
       "id": "kitty",
       "name": "Kitty",
       "templatePath": "terminal/kitty.conf",
+      "predefinedTemplatePath": "terminal/kitty-predefined.conf",
       "outputPath": "~/.config/kitty/themes/noctalia.conf",
       "postHook": `${templateApplyScript} kitty`
     },
@@ -44,6 +47,7 @@ Singleton {
       "id": "alacritty",
       "name": "Alacritty",
       "templatePath": "terminal/alacritty.toml",
+      "predefinedTemplatePath": "terminal/alacritty-predefined.toml",
       "outputPath": "~/.config/alacritty/themes/noctalia.toml",
       "postHook": `${templateApplyScript} alacritty`
     },
@@ -51,6 +55,7 @@ Singleton {
       "id": "wezterm",
       "name": "Wezterm",
       "templatePath": "terminal/wezterm.toml",
+      "predefinedTemplatePath": "terminal/wezterm-predefined.toml",
       "outputPath": "~/.config/wezterm/colors/Noctalia.toml",
       "postHook": `${templateApplyScript} wezterm`
     }
