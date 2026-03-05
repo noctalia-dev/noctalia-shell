@@ -53,6 +53,7 @@ ShapePath {
   readonly property real panelY: panelBg ? panelBg.y : 0
   readonly property real panelWidth: panelBg ? panelBg.width : 0
   readonly property real panelHeight: panelBg ? panelBg.height : 0
+  readonly property bool isRenderable: assignedPanel && panelBg && panelWidth > 0 && panelHeight > 0
 
   // Flatten corners if panel is too small
   readonly property bool shouldFlatten: panelBg ? ShapeCornerHelper.shouldFlatten(panelWidth, panelHeight, radius) : false
@@ -87,11 +88,11 @@ ShapePath {
   // ShapePath configuration
   strokeWidth: -1 // No stroke, fill only
 
-  // Starting position (top-left corner, after the arc)
-  startX: panelX + tlRadius * tlMultX
-  startY: panelY
+  // Start point - use tiny off-screen non-degenerate fallback when not renderable.
+  startX: isRenderable ? (panelX + tlRadius * tlMultX) : -1
+  startY: isRenderable ? panelY : -1
 
-  fillColor: (assignedPanel && panelBg && panelWidth > 0 && panelHeight > 0) ? effectiveBackgroundColor : "transparent"
+  fillColor: isRenderable ? effectiveBackgroundColor : "transparent"
 
   // ========== PATH DEFINITION ==========
   // Draws a rectangle with potentially inverted corners
@@ -99,61 +100,61 @@ ShapePath {
 
   // Top edge (moving right)
   PathLine {
-    relativeX: root.panelWidth - root.tlRadius * root.tlMultX - root.trRadius * root.trMultX
+    relativeX: root.isRenderable ? (root.panelWidth - root.tlRadius * root.tlMultX - root.trRadius * root.trMultX) : 1
     relativeY: 0
   }
 
   // Top-right corner arc
   PathArc {
-    relativeX: root.trRadius * root.trMultX
-    relativeY: root.trRadius * root.trMultY
-    radiusX: root.trRadius
-    radiusY: root.trRadius
+    relativeX: root.isRenderable ? (root.trRadius * root.trMultX) : 0
+    relativeY: root.isRenderable ? (root.trRadius * root.trMultY) : 0
+    radiusX: root.isRenderable ? root.trRadius : 0
+    radiusY: root.isRenderable ? root.trRadius : 0
     direction: ShapeCornerHelper.getArcDirection(root.trMultX, root.trMultY)
   }
 
   // Right edge (moving down)
   PathLine {
     relativeX: 0
-    relativeY: root.panelHeight - root.trRadius * root.trMultY - root.brRadius * root.brMultY
+    relativeY: root.isRenderable ? (root.panelHeight - root.trRadius * root.trMultY - root.brRadius * root.brMultY) : 1
   }
 
   // Bottom-right corner arc
   PathArc {
-    relativeX: -root.brRadius * root.brMultX
-    relativeY: root.brRadius * root.brMultY
-    radiusX: root.brRadius
-    radiusY: root.brRadius
+    relativeX: root.isRenderable ? (-root.brRadius * root.brMultX) : 0
+    relativeY: root.isRenderable ? (root.brRadius * root.brMultY) : 0
+    radiusX: root.isRenderable ? root.brRadius : 0
+    radiusY: root.isRenderable ? root.brRadius : 0
     direction: ShapeCornerHelper.getArcDirection(root.brMultX, root.brMultY)
   }
 
   // Bottom edge (moving left)
   PathLine {
-    relativeX: -(root.panelWidth - root.brRadius * root.brMultX - root.blRadius * root.blMultX)
+    relativeX: root.isRenderable ? (-(root.panelWidth - root.brRadius * root.brMultX - root.blRadius * root.blMultX)) : -1
     relativeY: 0
   }
 
   // Bottom-left corner arc
   PathArc {
-    relativeX: -root.blRadius * root.blMultX
-    relativeY: -root.blRadius * root.blMultY
-    radiusX: root.blRadius
-    radiusY: root.blRadius
+    relativeX: root.isRenderable ? (-root.blRadius * root.blMultX) : 0
+    relativeY: root.isRenderable ? (-root.blRadius * root.blMultY) : 0
+    radiusX: root.isRenderable ? root.blRadius : 0
+    radiusY: root.isRenderable ? root.blRadius : 0
     direction: ShapeCornerHelper.getArcDirection(root.blMultX, root.blMultY)
   }
 
   // Left edge (moving up) - closes the path back to start
   PathLine {
     relativeX: 0
-    relativeY: -(root.panelHeight - root.blRadius * root.blMultY - root.tlRadius * root.tlMultY)
+    relativeY: root.isRenderable ? (-(root.panelHeight - root.blRadius * root.blMultY - root.tlRadius * root.tlMultY)) : -1
   }
 
   // Top-left corner arc (back to start)
   PathArc {
-    relativeX: root.tlRadius * root.tlMultX
-    relativeY: -root.tlRadius * root.tlMultY
-    radiusX: root.tlRadius
-    radiusY: root.tlRadius
+    relativeX: root.isRenderable ? (root.tlRadius * root.tlMultX) : 0
+    relativeY: root.isRenderable ? (-root.tlRadius * root.tlMultY) : 0
+    radiusX: root.isRenderable ? root.tlRadius : 0
+    radiusY: root.isRenderable ? root.tlRadius : 0
     direction: ShapeCornerHelper.getArcDirection(root.tlMultX, root.tlMultY)
   }
 }
