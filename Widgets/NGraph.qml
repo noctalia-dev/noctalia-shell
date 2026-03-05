@@ -258,7 +258,7 @@ Item {
   Shape {
     anchors.fill: parent
     preferredRendererType: Shape.CurveRenderer
-    visible: root.hasData
+    visible: root.hasData && width > 0 && height > 0
 
     ShapePath {
       fillGradient: LinearGradient {
@@ -300,7 +300,7 @@ Item {
   Shape {
     anchors.fill: parent
     preferredRendererType: Shape.CurveRenderer
-    visible: root.hasData2
+    visible: root.hasData2 && width > 0 && height > 0
 
     ShapePath {
       fillGradient: LinearGradient {
