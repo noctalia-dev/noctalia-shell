@@ -164,6 +164,8 @@ Item {
   }
 
   // Convert a value to Y coordinate (with padding to keep values from touching edges)
+  // Clamps normalized range to [-10, 10] so coordinates stay within ~10× widget bounds,
+  // preventing extreme values that crash Qt's CurveRenderer triangulator.
   function valueToY(val, minVal, maxVal) {
     let range = maxVal - minVal;
     if (range <= 0)
@@ -172,7 +174,7 @@ Item {
     let paddedMin = minVal - padding;
     let paddedMax = maxVal + padding;
     let paddedRange = paddedMax - paddedMin;
-    let normalized = (val - paddedMin) / paddedRange;
+    let normalized = Math.max(-10, Math.min(10, (val - paddedMin) / paddedRange));
     return height - normalized * height;
   }
 
@@ -180,17 +182,13 @@ Item {
   // "M 0 0" (bare moveto) crashes Qt's CurveRenderer — never use it.
   readonly property string _safeFallbackPath: "M -1 -1 L -1 0"
 
-  // Build SVG path with cubic bezier curves (Catmull-Rom → Bezier conversion)
-  function buildSvg(vals, pred, minVal, maxVal, t, closeFill) {
-    if (!vals || vals.length < 4 || width <= 0 || height <= 0)
-      return _safeFallbackPath;
-
+  // Build raw data points for both stroke and fill paths
+  function _buildRawPoints(vals, pred, minVal, maxVal, t) {
     const n = vals.length;
     const step = width / (n - 3);
     if (!isFinite(step) || step <= 0)
-      return _safeFallbackPath;
+      return null;
 
-    // Build raw data points
     let raw = [];
     raw.push({
                x: (-2 - t) * step,
@@ -214,10 +212,20 @@ Item {
     // Validate all points — NaN/Infinity in any coordinate crashes CurveRenderer
     for (let i = 0; i < raw.length; i++) {
       if (!isFinite(raw[i].x) || !isFinite(raw[i].y))
-        return _safeFallbackPath;
+        return null;
     }
+    return raw;
+  }
 
-    // Start at first point
+  // Build SVG stroke path with cubic bezier curves (Catmull-Rom → Bezier)
+  function buildStrokeSvg(vals, pred, minVal, maxVal, t) {
+    if (!vals || vals.length < 4 || width <= 0 || height <= 0)
+      return _safeFallbackPath;
+
+    const raw = _buildRawPoints(vals, pred, minVal, maxVal, t);
+    if (!raw)
+      return _safeFallbackPath;
+
     let svg = `M ${raw[0].x} ${raw[0].y}`;
 
     // Catmull-Rom to cubic bezier: cp1 = p1 + (p2-p0)/6, cp2 = p2 - (p3-p1)/6
@@ -238,19 +246,40 @@ Item {
       svg += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
     }
 
-    if (closeFill) {
-      const last = raw[raw.length - 1];
-      svg += ` L ${last.x} ${height} L ${raw[0].x} ${height} Z`;
+    return svg;
+  }
+
+  // Build SVG fill path with LINEAR segments only.
+  // CurveRenderer's processFill falls back to qTriangulate for complex curves,
+  // and Qt's ComplexToSimple::removeUnwantedEdgesAndConnect crashes on
+  // self-intersecting cubic bezier fill polygons. Linear segments produce a
+  // simple polygon that the triangulator handles safely. The smooth cubic
+  // stroke overlays this fill, so the linear edges are invisible.
+  function buildFillSvg(vals, pred, minVal, maxVal, t) {
+    if (!vals || vals.length < 4 || width <= 0 || height <= 0)
+      return _safeFallbackPath;
+
+    const raw = _buildRawPoints(vals, pred, minVal, maxVal, t);
+    if (!raw)
+      return _safeFallbackPath;
+
+    let svg = `M ${raw[0].x} ${raw[0].y}`;
+    for (let i = 1; i < raw.length; i++) {
+      svg += ` L ${raw[i].x} ${raw[i].y}`;
     }
 
+    const last = raw[raw.length - 1];
+    svg += ` L ${last.x} ${height} L ${raw[0].x} ${height} Z`;
     return svg;
   }
 
   // Reactive SVG paths — re-evaluated when any dependency changes
-  readonly property string _strokeSvg1: buildSvg(values, _pred1, minValue, _effectiveMax1, _t1, false)
-  readonly property string _fillSvg1: fill ? buildSvg(values, _pred1, minValue, _effectiveMax1, _t1, true) : _safeFallbackPath
-  readonly property string _strokeSvg2: buildSvg(values2, _pred2, minValue2, _effectiveMax2, _t2, false)
-  readonly property string _fillSvg2: fill ? buildSvg(values2, _pred2, minValue2, _effectiveMax2, _t2, true) : _safeFallbackPath
+  // Stroke uses smooth cubic bezier curves; fill uses linear segments to avoid
+  // crashing Qt's CurveRenderer triangulator (QTBUG: qTriangulate SEGV).
+  readonly property string _strokeSvg1: buildStrokeSvg(values, _pred1, minValue, _effectiveMax1, _t1)
+  readonly property string _fillSvg1: fill ? buildFillSvg(values, _pred1, minValue, _effectiveMax1, _t1) : _safeFallbackPath
+  readonly property string _strokeSvg2: buildStrokeSvg(values2, _pred2, minValue2, _effectiveMax2, _t2)
+  readonly property string _fillSvg2: fill ? buildFillSvg(values2, _pred2, minValue2, _effectiveMax2, _t2) : _safeFallbackPath
 
   // Primary line — only rendered when there is enough data to form a valid path.
   // Keeping primary and secondary in separate Shapes allows independent visibility
