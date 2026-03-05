@@ -460,14 +460,14 @@ PanelWindow {
       // Use screen dimensions directly
       x: {
         if (barPosition === "right")
-          return screen.width - barHeight - barMarginH;
+          return (screen?.width ?? 0) - barHeight - barMarginH;
         if (isFramed && !barIsVertical)
           return frameThickness;
         return barMarginH;
       }
       y: {
         if (barPosition === "bottom")
-          return screen.height - barHeight - barMarginV;
+          return (screen?.height ?? 0) - barHeight - barMarginV;
         if (isFramed && barIsVertical)
           return frameThickness;
         return barMarginV;
@@ -477,16 +477,16 @@ PanelWindow {
           return barHeight;
         }
         if (isFramed)
-          return screen.width - frameThickness * 2;
-        return screen.width - barMarginH * 2;
+          return (screen?.width ?? 0) - frameThickness * 2;
+        return (screen?.width ?? 0) - barMarginH * 2;
       }
       height: {
         if (!barIsVertical) {
           return barHeight;
         }
         if (isFramed)
-          return screen.height - frameThickness * 2;
-        return screen.height - barMarginV * 2;
+          return (screen?.height ?? 0) - frameThickness * 2;
+        return (screen?.height ?? 0) - barMarginV * 2;
       }
 
       // Corner states (same as Bar.qml)
