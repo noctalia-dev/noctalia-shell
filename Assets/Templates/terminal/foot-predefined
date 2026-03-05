@@ -1,4 +1,4 @@
-[colors]
+[colors-dark]
 foreground={{colors.terminal_foreground.default.hex_stripped}}
 background={{colors.terminal_background.default.hex_stripped}}
 regular0={{colors.terminal_normal_black.default.hex_stripped}}
