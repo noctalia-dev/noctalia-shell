@@ -17,6 +17,7 @@ Singleton {
 
   // Public properties for easy access
   property string latestVersion: I18n.tr("common.unknown")
+  property string latestQSVersion: I18n.tr("common.unknown")
   property var contributors: []
 
   // Avatar caching properties (simplified - uses ImageCacheService)
@@ -51,6 +52,7 @@ Singleton {
       id: adapter
 
       property string version: I18n.tr("common.unknown")
+      property string qsVersion: I18n.tr("common.unknown")
       property var contributors: []
       property real timestamp: 0
     }
@@ -73,11 +75,14 @@ Singleton {
       needsRefetch = true;
       Logger.i("GitHub", "Cache expired or missing, scheduling fetch (update frequency:", Math.round(githubUpdateFrequency / 60), "minutes)");
     } else {
-      Logger.i("GitHub", "Cache is fresh, using cached data (age:", Math.round((now - data.timestamp) / 60), "minutes)");
+      Logger.i("GitHub", "Cache is fresh, using cached data (age:", Math.round((now - data.timestamp) / 60) + " minutes)");
     }
 
     if (data.version) {
       root.latestVersion = data.version;
+    }
+    if (data.qsVersion) {
+      root.latestQSVersion = data.qsVersion;
     }
     if (data.contributors && data.contributors.length > 0) {
       root.contributors = data.contributors;
@@ -98,6 +103,7 @@ Singleton {
 
     isFetchingData = true;
     versionProcess.running = true;
+    qsVersionProcess.running = true;
     contributorsProcess.running = true;
   }
 
@@ -105,7 +111,7 @@ Singleton {
   function saveData() {
     data.timestamp = Time.timestamp;
     Logger.d("GitHub", "Saving data to cache file:", githubDataFile, "with timestamp:", data.timestamp);
-    Logger.d("GitHub", "Data to save - version:", data.version, "contributors:", data.contributors.length);
+    Logger.d("GitHub", "Data to save - version:", data.version, "qsVersion:", data.qsVersion, "contributors:", data.contributors.length);
 
     // Ensure cache directory exists
     Quickshell.execDetached(["mkdir", "-p", Settings.cacheDir]);
@@ -122,12 +128,12 @@ Singleton {
   // --------------------------------
   function checkAndSaveData() {
     // Only save when all processes are finished
-    if (!versionProcess.running && !contributorsProcess.running) {
+    if (!versionProcess.running && !qsVersionProcess.running && !contributorsProcess.running) {
       root.isFetchingData = false;
 
       // Check results
-      var anySucceeded = versionProcess.fetchSucceeded || contributorsProcess.fetchSucceeded;
-      var wasRateLimited = versionProcess.wasRateLimited || contributorsProcess.wasRateLimited;
+      var anySucceeded = versionProcess.fetchSucceeded || qsVersionProcess.fetchSucceeded || contributorsProcess.fetchSucceeded;
+      var wasRateLimited = versionProcess.wasRateLimited || qsVersionProcess.wasRateLimited || contributorsProcess.wasRateLimited;
 
       if (anySucceeded) {
         root.saveData();
@@ -142,6 +148,8 @@ Singleton {
       // Reset fetch flags for next time
       versionProcess.fetchSucceeded = false;
       versionProcess.wasRateLimited = false;
+      qsVersionProcess.fetchSucceeded = false;
+      qsVersionProcess.wasRateLimited = false;
       contributorsProcess.fetchSucceeded = false;
       contributorsProcess.wasRateLimited = false;
     }
@@ -150,6 +158,7 @@ Singleton {
   // --------------------------------
   function resetCache() {
     data.version = I18n.tr("common.unknown");
+    data.qsVersion = I18n.tr("common.unknown");
     data.contributors = [];
     data.timestamp = 0;
 
@@ -239,7 +248,46 @@ Singleton {
           Logger.e("GitHub", "Failed to parse version response:", e);
         }
 
-        // Check if both processes are done
+        // Check if all processes are done
+        checkAndSaveData();
+      }
+    }
+  }
+
+  Process {
+    id: qsVersionProcess
+
+    property bool fetchSucceeded: false
+    property bool wasRateLimited: false
+
+    command: ["curl", "-s", "https://api.github.com/repos/noctalia-dev/noctalia-qs/releases/latest"]
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try {
+          const response = text;
+          if (response && response.trim()) {
+            const data = JSON.parse(response);
+            if (data.tag_name) {
+              const version = data.tag_name;
+              root.data.qsVersion = version;
+              root.latestQSVersion = version;
+              qsVersionProcess.fetchSucceeded = true;
+              Logger.d("GitHub", "Latest QS version fetched:", version);
+            } else if (data.message) {
+              // Check if it's a rate limit error
+              if (data.message.includes("rate limit")) {
+                qsVersionProcess.wasRateLimited = true;
+              } else {
+                Logger.w("GitHub", "QS Version API error:", data.message);
+              }
+            }
+          }
+        } catch (e) {
+          Logger.e("GitHub", "Failed to parse QS version response:", e);
+        }
+
+        // Check if all processes are done
         checkAndSaveData();
       }
     }
@@ -280,7 +328,7 @@ Singleton {
           Logger.e("GitHub", "Failed to parse contributors response:", e);
         }
 
-        // Check if both processes are done
+        // Check if all processes are done
         checkAndSaveData();
       }
     }
