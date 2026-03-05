@@ -509,6 +509,13 @@ class TemplateRenderer:
         base = parts[0].strip()
         filters = [p.strip() for p in parts[1:]]
 
+        # Handle {{mode}} tag - resolves to current theme mode
+        if base == "mode":
+            result_str = self.default_mode
+            for filter_str in filters:
+                result_str = self._apply_string_or_color_filter(result_str, filter_str, expr)
+            return result_str
+
         # Try scope resolution first
         resolved = self._resolve_from_scope(base, scope)
         if resolved is not None:
