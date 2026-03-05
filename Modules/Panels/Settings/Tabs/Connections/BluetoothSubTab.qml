@@ -662,6 +662,7 @@ Item {
               Layout.row: detailsGrid ? 2 : 5
               Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
+              visible: Settings.data.network.bluetoothAutoConnect
 
               NIcon {
                 icon: BluetoothService.getDeviceAutoConnect(modelData.address) ? "repeat" : "repeat-off"
