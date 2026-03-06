@@ -40,6 +40,31 @@ Variants {
       WlrLayershell.layer: WlrLayer.Overlay
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
+      BackgroundEffect.blurRegion: Settings.data.general.enableBlurBehind ? launcherBlurRegion : null
+      Region {
+        id: launcherBlurRegion
+
+        Region {
+          x: Math.round(launcherPanel.x)
+          y: Math.round(launcherPanel.y)
+          width: Math.round(launcherPanel.width)
+          height: Math.round(launcherPanel.height)
+          radius: Style.radiusL
+          topLeftCorner: launcherPanel.topLeftCornerState
+          topRightCorner: launcherPanel.topRightCornerState
+          bottomLeftCorner: launcherPanel.bottomLeftCornerState
+          bottomRightCorner: launcherPanel.bottomRightCornerState
+        }
+
+        Region {
+          x: Math.round(previewBox.visible ? launcherPanel.x + previewBox.x : 0)
+          y: Math.round(previewBox.visible ? launcherPanel.y + previewBox.y : 0)
+          width: Math.round(previewBox.visible ? previewBox.width : 0)
+          height: Math.round(previewBox.visible ? previewBox.height : 0)
+          radius: Style.radiusL
+        }
+      }
+
       // Positioning logic (respects settings but doesn't attach to bar)
       readonly property string barPosition: Settings.data.bar.position
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
@@ -230,7 +255,7 @@ Variants {
 
           ShapePath {
             strokeWidth: -1
-            fillColor: Color.mSurfaceVariant
+            fillColor: Qt.alpha(Color.mSurfaceVariant, Settings.data.ui.panelBackgroundOpacity)
 
             // Offset by radius to account for Shape's extended bounds
             startX: panelShape.radius + panelShape.radius * panelShape.tlMultX
