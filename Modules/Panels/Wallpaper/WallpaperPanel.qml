@@ -297,6 +297,7 @@ SmartPanel {
               baseSize: Style.baseWidgetSize * 0.8
               colorBg: Settings.data.wallpaper.useSolidColor ? Color.mPrimary : Color.mSurfaceVariant
               colorFg: Settings.data.wallpaper.useSolidColor ? Color.mOnPrimary : Color.mPrimary
+              enabled: !Settings.data.wallpaper.themedWallpapers.enabled
               onClicked: solidColorPicker.open()
             }
 
@@ -1179,15 +1180,15 @@ SmartPanel {
                 radius: Style.radiusM
                 borderColor: {
                   if (wallpaperItem.darkMode) {
-                    return Color.resolveColorKey("primary");
+                    return Color.mSecondary;
                   }
                   if (wallpaperItem.lightMode) {
-                    return Color.resolveOnColorKey("primary");
+                    return Color.mTertiary;
                   }
                   if (wallpaperItem.isSelected) {
                     return Color.mSecondary;
                   }
-                  if (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index) {
+                  if (wallpaperGridView.currentIndex === index) {
                     return Color.mHover;
                   }
                   return Color.mSurface;
