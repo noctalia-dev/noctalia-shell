@@ -530,6 +530,12 @@ Singleton {
       property string externalMonitor: "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
     }
 
+    // performance
+    property JsonObject noctaliaPerformance: JsonObject {
+      property bool disableWallpaper: true
+      property bool disableDesktopWidgets: true
+    }
+
     // dock
     property JsonObject dock: JsonObject {
       property bool enabled: true

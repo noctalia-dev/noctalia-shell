@@ -469,6 +469,7 @@
     "paired": "Paired",
     "pairing": "Pairing...",
     "panels": "Panels",
+    "performance": "Performance",
     "password": "Password",
     "pause": "Pause",
     "pin": "Pin",
@@ -1600,6 +1601,14 @@
       "show-header-label": "Show header",
       "show-keybinds-description": "Display keybind hints on session options.",
       "show-keybinds-label": "Show keybinds"
+    },
+    "system": {
+      "noctalia-performance-desc": "Configure what stays enabled while Noctalia Performance Mode is active.",
+      "noctalia-performance-disable-desktop-widgets-description": "Keep desktop widgets visible while Noctalia Performance Mode is enabled.",
+      "noctalia-performance-disable-desktop-widgets-label": "Enable desktop widgets in performance mode",
+      "noctalia-performance-disable-wallpaper-description": "Keep desktop, overview, and lock screen wallpapers visible while Noctalia Performance Mode is enabled.",
+      "noctalia-performance-disable-wallpaper-label": "Enable wallpaper rendering in performance mode",
+      "title": "System"
     },
     "system-monitor": {
       "critical-color-label": "Critical color",

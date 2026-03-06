@@ -89,7 +89,7 @@ SmartPanel {
     Notifications,
     Plugins,
     SessionMenu,
-    SystemMonitor,
+    System,
     UserInterface,
     Wallpaper
   }
