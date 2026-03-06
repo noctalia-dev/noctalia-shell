@@ -150,6 +150,7 @@ ColumnLayout {
       const kernel = root.getModule("Kernel");
       const title = root.getModule("Title");
       const product = root.getModule("Host");
+      const board = root.getModule("Board");
       const cpu = root.getModule("CPU");
       const gpu = root.getModule("GPU");
       const mem = root.getModule("Memory");
@@ -158,6 +159,7 @@ ColumnLayout {
       info += "Kernel: " + (kernel?.result?.release || "N/A") + "\n";
       info += "Host: " + (title?.result?.hostName || "N/A") + "\n";
       info += "Product: " + (product?.result?.name || "N/A") + "\n";
+      info += "Board: " + (board?.result?.name || "N/A") + "\n";
       info += "CPU: " + (cpu?.result?.cpu || "N/A") + "\n";
       if (gpu?.result && Array.isArray(gpu.result) && gpu.result.length > 0) {
         info += "GPU: " + gpu.result.map(g => g.name || "Unknown").join(", ") + "\n";
@@ -712,6 +714,23 @@ ColumnLayout {
     NText {
       text: {
         const title = root.getModule("Host");
+        return title?.result?.name || "N/A";
+      }
+      color: Color.mOnSurface
+      pointSize: sysInfo.textSize
+      Layout.fillWidth: true
+      wrapMode: Text.Wrap
+    }
+
+    // Board name
+    NText {
+      text: I18n.tr("panels.about.system-board")
+      color: Color.mOnSurfaceVariant
+      pointSize: sysInfo.textSize
+    }
+    NText {
+      text: {
+        const title = root.getModule("Board");
         return title?.result?.name || "N/A";
       }
       color: Color.mOnSurface

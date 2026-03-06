@@ -736,6 +736,7 @@
       "system-os": "Betriebssystem:",
       "system-packages": "Pakete:",
       "system-product": "Produkt:",
+      "system-board": "Board:",
       "system-title": "Systeminformationen",
       "system-uptime": "Betriebszeit:",
       "system-wm": "WM:",
