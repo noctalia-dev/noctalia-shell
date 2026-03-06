@@ -228,8 +228,8 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
-    label: I18n.tr("panels.bar.appearance-enable-Exclusion-Zone-Inset-label")
-    description: I18n.tr("panels.bar.appearance-enable-Exclusion-Zone-Inset-description")
+    label: I18n.tr("panels.bar.appearance-enable-exclusion-zone-inset-label")
+    description: I18n.tr("panels.bar.appearance-enable-exclusion-zone-inset-description")
     checked: Settings.data.bar.enableExclusionZoneInset
     defaultValue: Settings.getDefaultValue("bar.enableExclusionZoneInset")
     onToggled: checked => Settings.data.bar.enableExclusionZoneInset = checked
