@@ -661,8 +661,8 @@ Item {
       MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        enabled: !groupedContainer.hasWindows
-        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        enabled: true
+        cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         preventStealing: true
         onPressed: mouse => {
