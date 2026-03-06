@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Animatiesnelheid",
       "animation-speed-reset": "Animatiesnelheid resetten",
       "appearance-desc": "Pas visuele elementen aan, zoals tooltips, randen en schaduwen.",
+      "blur-behind-description": "Vervaagt het gebied achter balken en panelen met behulp van het compositor-vervagingsprotocol.",
+      "blur-behind-label": "Achtergrond vervagen",
       "box-border-description": "Toon een omlijning rond inhoudsgebieden.",
       "box-border-label": "Containeromtrek",
       "box-border-radius-description": "Past de hoekronding aan van belangrijke lay-outsecties, zoals zijbalken, kaarten en inhoudspanelen.",

@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Prędkość animacji",
       "animation-speed-reset": "Resetuj prędkość animacji",
       "appearance-desc": "Dostosuj elementy wizualne, takie jak podpowiedzi, obramowania i cienie.",
+      "blur-behind-description": "Rozmywa obszar za paskami i panelami, używając protokołu rozmycia kompozytora.",
+      "blur-behind-label": "Rozmycie tła",
       "box-border-description": "Wyświetla obrys wokół obszarów zawartości.",
       "box-border-label": "Obrys kontenera",
       "box-border-radius-description": "Dostosowuje zaokrąglenie narożników głównych sekcji układu, takich jak paski boczne, karty i panele treści.",

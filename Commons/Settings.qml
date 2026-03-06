@@ -290,6 +290,7 @@ Singleton {
       property bool showHibernateOnLockScreen: false
       property bool enableLockScreenMediaControls: false
       property bool enableShadows: true
+      property bool enableBlurBehind: true
       property string shadowDirection: "bottom_right"
       property int shadowOffsetX: 2
       property int shadowOffsetY: 3

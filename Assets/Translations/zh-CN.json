@@ -1633,6 +1633,8 @@
       "animation-speed-label": "动画速度",
       "animation-speed-reset": "重置动画速度",
       "appearance-desc": "自定义视觉元素，如提示信息、边框和阴影。",
+      "blur-behind-description": "使用合成器模糊协议，模糊栏和面板后面的区域。",
+      "blur-behind-label": "背景模糊",
       "box-border-description": "显示内容区域周围的轮廓。",
       "box-border-label": "容器轮廓",
       "box-border-radius-description": "调整主要布局部分（如侧边栏、卡片和内容面板）的圆角程度。",

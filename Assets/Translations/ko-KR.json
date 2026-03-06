@@ -1633,6 +1633,8 @@
       "animation-speed-label": "애니메이션 속도",
       "animation-speed-reset": "애니메이션 속도 초기화",
       "appearance-desc": "툴팁, 테두리, 그림자와 같은 시각적 요소를 사용자 지정합니다.",
+      "blur-behind-description": "컴포지터 블러 프로토콜을 사용하여 바와 패널 뒤 영역을 흐리게 처리합니다.",
+      "blur-behind-label": "배경 흐림",
       "box-border-description": "콘텐츠 영역 주위에 윤곽선을 표시합니다.",
       "box-border-label": "컨테이너 윤곽선",
       "box-border-radius-description": "사이드바, 카드, 콘텐츠 패널과 같은 주요 레이아웃 섹션의 모서리 둥글기를 조정합니다.",

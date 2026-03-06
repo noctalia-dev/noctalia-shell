@@ -1945,6 +1945,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.user-interface.blur-behind-label",
+    "descriptionKey": "panels.user-interface.blur-behind-description",
+    "widget": "NToggle",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.user-interface.shadows-direction-label",
     "descriptionKey": "panels.user-interface.shadows-direction-description",
     "widget": "NComboBox",

@@ -1633,6 +1633,8 @@
       "animation-speed-label": "アニメーション速度",
       "animation-speed-reset": "アニメーション速度をリセット",
       "appearance-desc": "ツールチップ、境界線、影などの視覚要素をカスタマイズします。",
+      "blur-behind-description": "バーとパネルの背後の領域を、コンポジターのぼかしプロトコルを使用してぼかします。",
+      "blur-behind-label": "背景ぼかし",
       "box-border-description": "コンテンツ領域の周りにアウトラインを表示します。",
       "box-border-label": "コンテナの輪郭",
       "box-border-radius-description": "サイドバー、カード、コンテンツパネルなど、主要なレイアウト部分の角の丸みを調整します。",

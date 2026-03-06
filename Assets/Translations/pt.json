@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Velocidade da animação",
       "animation-speed-reset": "Redefinir velocidade da animação",
       "appearance-desc": "Personalize elementos visuais como dicas de ferramentas, bordas e sombras.",
+      "blur-behind-description": "Desfoca a área atrás das barras e painéis usando o protocolo de desfoque do compositor.",
+      "blur-behind-label": "Desfoque de fundo",
       "box-border-description": "Exibe um contorno ao redor das áreas de conteúdo.",
       "box-border-label": "Contorno do recipiente",
       "box-border-radius-description": "Ajusta o arredondamento dos cantos das principais seções do layout, como barras laterais, cards e painéis de conteúdo.",

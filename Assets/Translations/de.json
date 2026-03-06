@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Animationsgeschwindigkeit",
       "animation-speed-reset": "Animationsgeschwindigkeit zurücksetzen",
       "appearance-desc": "Visuelle Elemente wie Tooltips, Rahmen und Schatten anpassen.",
+      "blur-behind-description": "Verwischt den Bereich hinter Leisten und Panels mithilfe des Compositor-Unschärfeprotokolls.",
+      "blur-behind-label": "Hintergrundunschärfe",
       "box-border-description": "Zeige eine Umrandung um Inhaltsbereiche an.",
       "box-border-label": "Containerumriss",
       "box-border-radius-description": "Passt die Eckenrundung wichtiger Layoutbereiche an, wie z. B. Seitenleisten, Karten und Inhaltsbereiche.",

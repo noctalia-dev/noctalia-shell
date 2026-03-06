@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Animációs sebesség",
       "animation-speed-reset": "Animációs sebesség visszaállítása",
       "appearance-desc": "Testreszabhatod a vizuális elemeket, például az eszköztippeket, a szegélyeket és az árnyékokat.",
+      "blur-behind-description": "Elhomályosítja a sávok és panelek mögötti területet a kompozitor elmosási protokolljának használatával.",
+      "blur-behind-label": "Háttér elmosása",
       "box-border-description": "Tartalomterületek köré vázlatot jelenít meg.",
       "box-border-label": "Konténer körvonal",
       "box-border-radius-description": "A fő elrendezési szakaszok (például oldalsávok, kártyák és tartalompanelek) saroklekerekítése.",

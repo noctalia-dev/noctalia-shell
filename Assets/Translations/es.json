@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Velocidad de animación",
       "animation-speed-reset": "Restablecer la velocidad de la animación",
       "appearance-desc": "Personaliza elementos visuales como texto emergente, bordes y sombras.",
+      "blur-behind-description": "Difumina el área detrás de las barras y los paneles usando el protocolo de desenfoque del compositor.",
+      "blur-behind-label": "Desenfoque de fondo",
       "box-border-description": "Muestra un contorno alrededor de las áreas de contenido.",
       "box-border-label": "Contorno del contenedor",
       "box-border-radius-description": "Ajusta la redondez de las esquinas de las secciones principales del diseño, como barras laterales, tarjetas y paneles de contenido.",

@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Animation speed",
       "animation-speed-reset": "Reset animation speed",
       "appearance-desc": "Customize visual elements like tooltips, borders, and shadows.",
+      "blur-behind-description": "Blurs the area behind bars and panels using the compositor blur protocol.",
+      "blur-behind-label": "Blur behind",
       "box-border-description": "Display an outline around content areas.",
       "box-border-label": "Container outline",
       "box-border-radius-description": "Adjusts the corner roundness of major layout sections, such as sidebars, cards, and content panels.",

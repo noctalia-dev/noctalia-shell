@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Vitesse d'animation",
       "animation-speed-reset": "Réinitialiser la vitesse de l'animation",
       "appearance-desc": "Personnaliser les éléments visuels tels que les infobulles, les bordures et les ombres.",
+      "blur-behind-description": "Floute la zone derrière les barres et les panneaux en utilisant le protocole de flou du compositeur.",
+      "blur-behind-label": "Flou d'arrière-plan",
       "box-border-description": "Affiche un contour autour des zones de contenu.",
       "box-border-label": "Contour du conteneur",
       "box-border-radius-description": "Ajuste de l'arrondi des coins des principales sections de la mise en page, telles que les barres latérales, les cartes et les panneaux de contenu.",

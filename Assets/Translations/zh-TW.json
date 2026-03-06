@@ -1633,6 +1633,8 @@
       "animation-speed-label": "動畫速度",
       "animation-speed-reset": "重設動畫速度",
       "appearance-desc": "自訂視覺元素, 如提示框, 邊框及陰影",
+      "blur-behind-description": "使用合成器模糊協定，模糊欄位和面板後方的區域。",
+      "blur-behind-label": "背景模糊",
       "box-border-description": "在內容區塊的外圍顯示外框",
       "box-border-label": "頁面容器外框",
       "box-border-radius-description": "調整主要版面區塊（例如側邊欄、卡片與內容面板）的圓角弧度。",

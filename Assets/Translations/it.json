@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Velocità animazione",
       "animation-speed-reset": "Reimposta velocità animazione",
       "appearance-desc": "Personalizza elementi visivi come tooltip, bordi e ombre.",
+      "blur-behind-description": "Sfoca l'area dietro le barre e i pannelli utilizzando il protocollo di sfocatura del compositore.",
+      "blur-behind-label": "Sfocatura dello sfondo",
       "box-border-description": "Mostra un contorno attorno alle aree contenuto.",
       "box-border-label": "Contorno contenitore",
       "box-border-radius-description": "Regola l’arrotondamento degli angoli delle principali sezioni layout, come sidebar, schede e pannelli contenuto.",

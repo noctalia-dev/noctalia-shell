@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Animasyon hızı",
       "animation-speed-reset": "Animasyon hızını sıfırla",
       "appearance-desc": "Araç ipuçları, kenarlıklar ve gölgeler gibi görsel öğeleri özelleştirin.",
+      "blur-behind-description": "Çubukların ve panellerin arkasındaki alanı kompozitör bulanıklık protokolünü kullanarak bulanıklaştırır.",
+      "blur-behind-label": "Arka plan bulanıklığı",
       "box-border-description": "İçerik alanlarının etrafında bir çerçeve görüntüler.",
       "box-border-label": "Konteyner ana hattı",
       "box-border-radius-description": "Kenar çubukları, kartlar ve içerik panelleri gibi ana düzen bölümlerinin köşe yuvarlaklığını ayarlar.",

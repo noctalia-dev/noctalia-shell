@@ -1633,6 +1633,8 @@
       "animation-speed-label": "Animationshastighet",
       "animation-speed-reset": "Återställ animationshastighet",
       "appearance-desc": "Anpassa visuella element som verktygstips, kantlinjer och skuggor.",
+      "blur-behind-description": "Suddar ut området bakom fält och paneler med hjälp av kompositorns suddighetsprotokoll.",
+      "blur-behind-label": "Bakgrundsoskärpa",
       "box-border-description": "Visa en kontur runt innehållsområden.",
       "box-border-label": "Behållarkontur",
       "box-border-radius-description": "Justerar hörnrundningen för större layoutsektioner, såsom sidofält, kort och innehållspaneler.",
