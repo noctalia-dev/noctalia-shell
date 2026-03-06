@@ -33,6 +33,7 @@ ColumnLayout {
   property string commitInfo: ""
   property string qsVersion: ""
   property string qsRevision: ""
+  property string boardNameFallback: ""
 
   readonly property bool isGitVersion: root.currentVersion.endsWith("-git")
   readonly property int gigaB: (1024 * 1024 * 1024)
@@ -157,7 +158,8 @@ ColumnLayout {
       info += "OS: " + (os?.result?.prettyName || "N/A") + "\n";
       info += "Kernel: " + (kernel?.result?.release || "N/A") + "\n";
       info += "Host: " + (title?.result?.hostName || "N/A") + "\n";
-      info += "Product: " + (product?.result?.name || "N/A") + "\n";
+      const productName = product?.result?.name;
+      info += "Product: " + ((!productName || productName === "N/A") ? (root.boardNameFallback || "N/A") : productName) + "\n";
       info += "CPU: " + (cpu?.result?.cpu || "N/A") + "\n";
       if (gpu?.result && Array.isArray(gpu.result) && gpu.result.length > 0) {
         info += "GPU: " + gpu.result.map(g => g.name || "Unknown").join(", ") + "\n";
@@ -186,6 +188,9 @@ ColumnLayout {
     // Check if fastfetch is available before trying to run it
     checkFastfetchProcess.running = true;
     qsVersionProcess.running = true;
+    boardNameProcess.running = true;
+
+
 
     Logger.d("VersionSubTab", "Current version:", root.currentVersion);
     Logger.d("VersionSubTab", "Is git version:", root.isGitVersion);
@@ -268,6 +273,24 @@ ColumnLayout {
 
     stdout: StdioCollector {}
     stderr: StdioCollector {}
+  }
+
+  Process {
+      id: boardNameProcess
+      command: ["cat", "/sys/class/dmi/id/board_name"]
+      running: false
+
+      onExited: function(exitCode) {
+          if (exitCode === 0) {
+              var output = stdout.text.trim();
+              if (output && output !== "" && output !== "N/A") {
+                  root.boardNameFallback = output;
+              }
+          }
+      }
+
+      stdout: StdioCollector {}
+      stderr: StdioCollector {}
   }
 
   // Check if fastfetch is available before attempting to run it
@@ -711,8 +734,12 @@ ColumnLayout {
     }
     NText {
       text: {
-        const title = root.getModule("Host");
-        return title?.result?.name || "N/A";
+          const host = root.getModule("Host");
+          const name = host?.result?.name;
+          if (!name || name === "N/A" || name === "") {
+              return root.boardNameFallback || "N/A";
+          }
+          return name;
       }
       color: Color.mOnSurface
       pointSize: sysInfo.textSize
