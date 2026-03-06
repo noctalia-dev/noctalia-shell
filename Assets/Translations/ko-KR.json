@@ -471,6 +471,7 @@
     "panels": "패널",
     "password": "비밀번호",
     "pause": "일시 정지",
+    "performance": "성능",
     "pin": "고정",
     "play": "재생",
     "polling": "폴링",
@@ -723,6 +724,7 @@
       "supporters-desc": "멋진 후원자분께 진심으로 감사드립니다!",
       "supporters-desc-plural": "저희의 <b>{count}명의 멋진</b> 후원자분들께 진심으로 감사드립니다!",
       "supporters-loading": "후원자 불러오는 중...",
+      "system-board": "메인보드:",
       "system-cpu": "CPU:",
       "system-disk": "디스크:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "세션 옵션에 키 바인딩 힌트를 표시합니다.",
       "show-keybinds-label": "단축키 표시"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia Performance Mode가 활성화된 동안 데스크톱 위젯을 계속 표시합니다.",
+      "noctalia-performance-disable-desktop-widgets-label": "성능 모드에서 데스크톱 위젯 활성화.",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia Performance Mode가 활성화된 동안 데스크톱, 개요, 잠금 화면 배경화면을 계속 표시합니다.",
+      "noctalia-performance-disable-wallpaper-label": "성능 모드에서 배경화면 렌더링 활성화",
+      "title": "시스템"
+    },
     "system-monitor": {
       "critical-color-label": "위험 색상",
       "custom-highlight-colors-title-label": "사용자 지정 강조 색상",
@@ -1909,9 +1918,9 @@
   },
   "tooltips": {
     "add-widget": "위젯 추가",
-    "auto-connect": "이 장치의 자동 연결 전환",
-    "bluetooth-auto-connect-off": "자동 연결이 꺼져 있습니다",
-    "bluetooth-auto-connect-on": "자동 연결 켜짐",
+    "auto-connect": "이 장치의 자동 연결 토글",
+    "bluetooth-auto-connect-off": "자동 연결 비활성화됨",
+    "bluetooth-auto-connect-on": "자동 연결 활성화됨",
     "bluetooth-devices": "블루투스 장치",
     "brightness-at": "밝기: {brightness}%",
     "click-to-start-recording": "화면 녹화 (녹화 시작)",

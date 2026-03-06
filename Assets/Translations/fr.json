@@ -471,6 +471,7 @@
     "panels": "Panneaux",
     "password": "Mot de passe",
     "pause": "Pause",
+    "performance": "Performances",
     "pin": "Épingle",
     "play": "Lire",
     "polling": "Interrogation",
@@ -723,6 +724,7 @@
       "supporters-desc": "Un immense merci à notre incroyable soutien !",
       "supporters-desc-plural": "Un grand merci à nos <b>{count} incroyables</b> supporters !",
       "supporters-loading": "Chargement des contributeurs...",
+      "system-board": "Carte mère :",
       "system-cpu": "Processeur :",
       "system-disk": "Disque :",
       "system-gpu": "GPU :",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Afficher les indices de raccourcis clavier sur les options de session.",
       "show-keybinds-label": "Afficher les raccourcis clavier"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Garder les widgets de bureau visibles tant que Noctalia Performance Mode est activé.",
+      "noctalia-performance-disable-desktop-widgets-label": "Activer les widgets de bureau en mode performance.",
+      "noctalia-performance-disable-wallpaper-description": "Gardez les fonds d'écran du bureau, de l'aperçu et de l'écran de verrouillage visibles lorsque le Noctalia Performance Mode est activé.",
+      "noctalia-performance-disable-wallpaper-label": "Activer le rendu du fond d'écran en mode performance",
+      "title": "Système"
+    },
     "system-monitor": {
       "critical-color-label": "Couleur critique",
       "custom-highlight-colors-title-label": "Couleurs de surbrillance personnalisées",
@@ -1909,9 +1918,9 @@
   },
   "tooltips": {
     "add-widget": "Ajouter un widget",
-    "auto-connect": "Basculer la connexion automatique pour cet appareil",
+    "auto-connect": "Activer/désactiver la connexion automatique pour cet appareil",
     "bluetooth-auto-connect-off": "Connexion automatique désactivée",
-    "bluetooth-auto-connect-on": "La connexion automatique est activée",
+    "bluetooth-auto-connect-on": "Connexion automatique activée",
     "bluetooth-devices": "Appareils Bluetooth",
     "brightness-at": "Luminosité : {brightness}%",
     "click-to-start-recording": "Enregistreur d'écran (démarrer l'enregistrement)",

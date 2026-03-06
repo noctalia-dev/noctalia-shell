@@ -376,7 +376,7 @@
     "add": "Ekle",
     "appearance": "Görünüm",
     "apply": "Uygula",
-    "auto-connect": "Otomatik Bağlan",
+    "auto-connect": "Otomatik bağlan",
     "automation": "Otomasyon",
     "available": "Mevcut",
     "back": "Geri",
@@ -471,6 +471,7 @@
     "panels": "Paneller",
     "password": "Şifre",
     "pause": "Duraklat",
+    "performance": "Performans",
     "pin": "Sabitle",
     "play": "Oynat",
     "polling": "Yoklama",
@@ -723,6 +724,7 @@
       "supporters-desc": "Harika destekçimize kocaman bir teşekkür!",
       "supporters-desc-plural": "<b>{count} harika</b> destekçimize kocaman teşekkürler!",
       "supporters-loading": "Destekçiler yükleniyor...",
+      "system-board": "Anakart:",
       "system-cpu": "İşlemci:",
       "system-disk": "Disk:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Oturum seçeneklerinde tuş kombinasyonu ipuçlarını görüntüle.",
       "show-keybinds-label": "Klavye kısayollarını göster"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia Performance Mode etkinleştirildiğinde masaüstü widget'larını görünür tut.",
+      "noctalia-performance-disable-desktop-widgets-label": "Performans modunda masaüstü widget'larını etkinleştir.",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia Performance Mode etkinleştirildiğinde masaüstü, genel bakış ve kilit ekranı duvar kağıtlarını görünür tutun.",
+      "noctalia-performance-disable-wallpaper-label": "Performans modunda duvar kağıdı oluşturmayı etkinleştir",
+      "title": "Sistem"
+    },
     "system-monitor": {
       "critical-color-label": "Kritik renk",
       "custom-highlight-colors-title-label": "Özel vurgulama renkleri",
@@ -1909,7 +1918,7 @@
   },
   "tooltips": {
     "add-widget": "Araç takımı ekle",
-    "auto-connect": "Bu cihaz için otomatik bağlantıyı aç/kapa",
+    "auto-connect": "Bu cihaz için otomatik bağlanmayı aç/kapa",
     "bluetooth-auto-connect-off": "Otomatik bağlanma kapalı",
     "bluetooth-auto-connect-on": "Otomatik bağlanma açık",
     "bluetooth-devices": "Bluetooth cihazları",

@@ -471,6 +471,7 @@
     "panels": "面板",
     "password": "密码",
     "pause": "暂停",
+    "performance": "性能",
     "pin": "固定",
     "play": "播放",
     "polling": "数据轮询",
@@ -723,6 +724,7 @@
       "supporters-desc": "非常感谢我们出色的支持者！",
       "supporters-desc-plural": "非常感谢我们的<b>{count}位出色</b>支持者！",
       "supporters-loading": "正在加载支持者...",
+      "system-board": "主板:",
       "system-cpu": "中央处理器：",
       "system-disk": "磁盘：",
       "system-gpu": "图形处理器：",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "在会话选项上显示快捷键提示。",
       "show-keybinds-label": "显示快捷键"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "在 Noctalia Performance Mode 启用时保持桌面小部件可见。",
+      "noctalia-performance-disable-desktop-widgets-label": "在性能模式下启用桌面小部件。",
+      "noctalia-performance-disable-wallpaper-description": "在启用 Noctalia Performance Mode 时，保持桌面、概览和锁屏壁纸可见。",
+      "noctalia-performance-disable-wallpaper-label": "在性能模式下启用壁纸渲染",
+      "title": "系统"
+    },
     "system-monitor": {
       "critical-color-label": "严重颜色",
       "custom-highlight-colors-title-label": "自定义高亮颜色",
@@ -1910,8 +1919,8 @@
   "tooltips": {
     "add-widget": "添加小部件",
     "auto-connect": "切换此设备的自动连接",
-    "bluetooth-auto-connect-off": "自动连接已关闭",
-    "bluetooth-auto-connect-on": "自动连接已开启",
+    "bluetooth-auto-connect-off": "自动连接已禁用",
+    "bluetooth-auto-connect-on": "自动连接已启用",
     "bluetooth-devices": "蓝牙设备",
     "brightness-at": "亮度：{brightness}%",
     "click-to-start-recording": "屏幕录制器（开始录制）",

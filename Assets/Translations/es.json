@@ -471,6 +471,7 @@
     "panels": "Paneles",
     "password": "Contraseña",
     "pause": "Pausa",
+    "performance": "Rendimiento",
     "pin": "Anclar",
     "play": "Reproducir",
     "polling": "Sondeo",
@@ -723,6 +724,7 @@
       "supporters-desc": "¡Un enorme agradecimiento a nuestro increíble colaborador!",
       "supporters-desc-plural": "¡Muchísimas gracias a nuestros <b>{count} increíbles</b> seguidores!",
       "supporters-loading": "Cargando patrocinadores...",
+      "system-board": "Placa:",
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Mostrar sugerencias de atajos de teclado en las opciones de sesión.",
       "show-keybinds-label": "Mostrar atajos de teclado"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Mantener los widgets de escritorio visibles mientras Noctalia Performance Mode esté habilitado.",
+      "noctalia-performance-disable-desktop-widgets-label": "Habilitar widgets de escritorio en modo rendimiento.",
+      "noctalia-performance-disable-wallpaper-description": "Mantén visibles los fondos de pantalla del escritorio, la vista general y la pantalla de bloqueo mientras el Noctalia Performance Mode esté activado.",
+      "noctalia-performance-disable-wallpaper-label": "Habilitar el renderizado de fondo de pantalla en modo de rendimiento",
+      "title": "Sistema"
+    },
     "system-monitor": {
       "critical-color-label": "Color crítico",
       "custom-highlight-colors-title-label": "Colores de resaltado personalizados",
@@ -1911,7 +1920,7 @@
     "add-widget": "Añadir widget",
     "auto-connect": "Alternar conexión automática para este dispositivo",
     "bluetooth-auto-connect-off": "Conexión automática desactivada",
-    "bluetooth-auto-connect-on": "Conexión automática está activada",
+    "bluetooth-auto-connect-on": "Conexión automática activada",
     "bluetooth-devices": "Dispositivos Bluetooth",
     "brightness-at": "Brillo: {brightness}%",
     "click-to-start-recording": "Grabadora de pantalla (iniciar grabación)",

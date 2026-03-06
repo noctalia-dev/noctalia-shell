@@ -471,6 +471,7 @@
     "panels": "Панели",
     "password": "Пароль",
     "pause": "Пауза",
+    "performance": "Производительность",
     "pin": "Закрепить",
     "play": "Воспроизвести",
     "polling": "Опрашивание",
@@ -723,6 +724,7 @@
       "supporters-desc": "Огромное спасибо нашему замечательному стороннику!",
       "supporters-desc-plural": "Огромное спасибо нашим <b>{count} замечательным</b> сторонникам!",
       "supporters-loading": "Загрузка спонсоров...",
+      "system-board": "Материнская плата:",
       "system-cpu": "ЦП:",
       "system-disk": "Диск:",
       "system-gpu": "Графический процессор",
@@ -1600,6 +1602,13 @@
       "show-header-label": "Показывать заголовок",
       "show-keybinds-description": "Отображать подсказки по горячим клавишам в параметрах сеанса.",
       "show-keybinds-label": "Показать сочетания клавиш"
+    },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Оставлять виджеты рабочего стола видимыми, пока Noctalia Performance Mode включен.",
+      "noctalia-performance-disable-desktop-widgets-label": "Включить виджеты рабочего стола в режиме производительности.",
+      "noctalia-performance-disable-wallpaper-description": "Сохраняйте видимыми обои рабочего стола, обзора и экрана блокировки, пока Noctalia Performance Mode включен.",
+      "noctalia-performance-disable-wallpaper-label": "Включить рендеринг обоев в режиме производительности",
+      "title": "Система"
     },
     "system-monitor": {
       "critical-color-label": "Критический цвет",

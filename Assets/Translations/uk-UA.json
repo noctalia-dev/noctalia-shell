@@ -471,6 +471,7 @@
     "panels": "Панелі",
     "password": "Пароль",
     "pause": "Пауза",
+    "performance": "Продуктивність",
     "pin": "Закріпити",
     "play": "Відтворити",
     "polling": "Опитування",
@@ -723,6 +724,7 @@
       "supporters-desc": "Величезне дякую нашому чудовому прихильнику!",
       "supporters-desc-plural": "Величезна подяка нашим <b>{count} чудовим</b> прихильникам!",
       "supporters-loading": "Завантаження прихильників...",
+      "system-board": "Материнська плата:",
       "system-cpu": "ЦП:",
       "system-disk": "Диск:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Показувати підказки щодо комбінацій клавіш у параметрах сеансу.",
       "show-keybinds-label": "Показати комбінації клавіш"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Залишати віджети робочого столу видимими, поки Noctalia Performance Mode увімкнено.",
+      "noctalia-performance-disable-desktop-widgets-label": "Увімкнути віджети робочого столу в режимі продуктивності.",
+      "noctalia-performance-disable-wallpaper-description": "Залишайте шпалери робочого столу, огляду та екрана блокування видимими, коли Noctalia Performance Mode увімкнено.",
+      "noctalia-performance-disable-wallpaper-label": "Увімкнути відтворення шпалер у режимі продуктивності",
+      "title": "Система"
+    },
     "system-monitor": {
       "critical-color-label": "Критичний колір",
       "custom-highlight-colors-title-label": "Власні кольори підсвічування",
@@ -1911,7 +1920,7 @@
     "add-widget": "Додати віджет",
     "auto-connect": "Перемкнути автопідключення для цього пристрою",
     "bluetooth-auto-connect-off": "Автоматичне підключення вимкнено",
-    "bluetooth-auto-connect-on": "Автопідключення увімкнено",
+    "bluetooth-auto-connect-on": "Автоматичне підключення увімкнено",
     "bluetooth-devices": "Пристрої Bluetooth",
     "brightness-at": "Яскравість: {brightness}%",
     "click-to-start-recording": "Запис екрана (почати запис)",

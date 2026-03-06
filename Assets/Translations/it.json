@@ -471,6 +471,7 @@
     "panels": "Pannelli",
     "password": "Password",
     "pause": "Pausa",
+    "performance": "Prestazioni",
     "pin": "Fissa",
     "play": "Riproduci",
     "polling": "Interrogazione",
@@ -723,6 +724,7 @@
       "supporters-desc": "Un enorme grazie al nostro fantastico sostenitore!",
       "supporters-desc-plural": "Un enorme grazie ai nostri <b>{count} fantastici</b> sostenitori!",
       "supporters-loading": "Caricamento sostenitori...",
+      "system-board": "Scheda madre:",
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Mostra suggerimenti scorciatoie nelle opzioni sessione.",
       "show-keybinds-label": "Mostra scorciatoie"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Mantenere visibili i widget del desktop mentre Noctalia Performance Mode è abilitato.",
+      "noctalia-performance-disable-desktop-widgets-label": "Abilita i widget desktop in modalità prestazioni.",
+      "noctalia-performance-disable-wallpaper-description": "Mantieni visibili gli sfondi del desktop, della panoramica e della schermata di blocco mentre il Noctalia Performance Mode è abilitato.",
+      "noctalia-performance-disable-wallpaper-label": "Abilita il rendering dello sfondo in modalità prestazioni",
+      "title": "Sistema"
+    },
     "system-monitor": {
       "critical-color-label": "Colore critico",
       "custom-highlight-colors-title-label": "Colori evidenziazione personalizzati",
@@ -1911,7 +1920,7 @@
     "add-widget": "Aggiungi widget",
     "auto-connect": "Attiva/disattiva la connessione automatica per questo dispositivo",
     "bluetooth-auto-connect-off": "Connessione automatica disattivata",
-    "bluetooth-auto-connect-on": "Connessione automatica è attiva",
+    "bluetooth-auto-connect-on": "Connessione automatica attiva",
     "bluetooth-devices": "Dispositivi Bluetooth",
     "brightness-at": "Luminosità: {brightness}%",
     "click-to-start-recording": "Registratore schermo (avvia registrazione)",
