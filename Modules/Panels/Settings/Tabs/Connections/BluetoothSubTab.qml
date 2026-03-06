@@ -669,17 +669,10 @@ Item {
                 pointSize: Style.fontSizeXS
                 color: BluetoothService.getDeviceAutoConnect(modelData.address) ? Color.mPrimary : Color.mOnSurface
                 Layout.alignment: Qt.AlignVCenter
-
-                MouseArea {
-                  anchors.fill: parent
-                  hoverEnabled: true
-                  onEntered: TooltipService.show(parent, I18n.tr("tooltips.auto-connect"))
-                  onExited: TooltipService.hide()
-                }
               }
 
               NText {
-                text: I18n.tr("common.auto-connect") + " " + (BluetoothService.getDeviceAutoConnect(modelData.address) ? I18n.tr("common.enabled") : I18n.tr("common.disabled"))
+                text: I18n.tr("common.auto-connect")
                 pointSize: Style.fontSizeXS
                 color: BluetoothService.getDeviceAutoConnect(modelData.address) ? Color.mOnSurface : Color.mOnSurfaceVariant
                 Layout.fillWidth: true

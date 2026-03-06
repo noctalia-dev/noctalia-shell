@@ -64,9 +64,10 @@ Singleton {
   property int connectAttempts: 5
   property int connectRetryIntervalMs: 2000
 
-  // Internal: temporarily pause discovery during pair/connect to reduce HCI churn
+  // Internal variables
   property bool _discoveryWasRunning: false
   property bool _ctlInit: false
+  property var _autoConnectQueue: []
 
   // Persistent cache for per-device auto-connect toggle
   property string cacheFile: Settings.cacheDir + "bluetooth_devices.json"
@@ -121,9 +122,25 @@ Singleton {
 
   Timer {
     id: autoConnectTimer
-    interval: 2000
+    interval: 1500
     repeat: false
     onTriggered: root.attemptAutoConnect()
+  }
+
+  Timer {
+    id: autoConnectStepTimer
+    interval: 500
+    repeat: false
+    onTriggered: {
+      var device = root._autoConnectQueue.shift();
+      if (device && device.paired && !device.connected && !device.blocked) {
+        Logger.i("Bluetooth", "Auto-connecting to:", device.name || device.deviceName);
+        connectDeviceWithTrust(device);
+      }
+      if (root._autoConnectQueue.length > 0) {
+        autoConnectStepTimer.restart();
+      }
+    }
   }
 
   function init() {
@@ -615,7 +632,7 @@ Singleton {
     const intervalMs = Math.max(500, Number(root.connectRetryIntervalMs) | 0);
     const intervalSec = Math.max(1, Math.round(intervalMs / 1000));
 
-    // Pause discovery during pair/connect to avoid interference
+    // Temporarily pause discovery during pair/connect to reduce HCI churn
     root._discoveryWasRunning = root.scanningActive;
     if (root.scanningActive) {
       root.setScanActive(false);
@@ -662,13 +679,10 @@ Singleton {
       return;
     }
 
-    var devList = adapter.devices.values.filter(function (dev) {
-      return dev && dev.paired && !dev.connected && !dev.blocked && getDeviceAutoConnect(dev.address) === true;
-    });
+    _autoConnectQueue = adapter.devices.values.filter(dev => dev && dev.paired && !dev.connected && !dev.blocked && getDeviceAutoConnect(dev.address) === true);
 
-    for (var i = 0; i < devList.length; i++) {
-      Logger.i("Bluetooth", "Auto-connecting to:", devList[i].name || devList[i].deviceName);
-      connectDeviceWithTrust(devList[i]);
+    if (root._autoConnectQueue.length > 0) {
+      autoConnectStepTimer.restart();
     }
   }
 
