@@ -186,10 +186,18 @@ Popup {
       if (manifest && manifest.entryPoints && manifest.entryPoints.desktopWidgetSettings) {
         settingsPath = "file://" + pluginDir + "/" + manifest.entryPoints.desktopWidgetSettings;
 
+        var widgetSettings = {};
+        widgetSettings.data = widgetData || {};
+        widgetSettings.metadata = DesktopWidgetRegistry.widgetMetadata[widgetId] || {};
+        widgetSettings.save = function () {
+            var newSettings = Object.assign({}, widgetData || {});
+            root.settingsCache = newSettings;
+            saveTimer.start();
+        };
+
         settingsLoader.setSource(settingsPath + "?v=" + loadVersion, {
                                    "pluginApi": api,
-                                   "widgetData": widgetData || {},
-                                   "widgetMetadata": DesktopWidgetRegistry.widgetMetadata[widgetId]
+                                   "widgetSettings": widgetSettings,
                                  });
       } else {
         Logger.w("DesktopWidgetSettingsDialog", "Plugin does not have desktop widget settings:", pluginId);
