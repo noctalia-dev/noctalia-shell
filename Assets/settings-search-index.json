@@ -1895,27 +1895,45 @@
     "descriptionKey": "panels.system-monitor.enable-dgpu-monitoring-description",
     "widget": "NToggle",
     "tab": 18,
-    "tabLabel": "system-monitor.title",
+    "tabLabel": "panels.system.title",
     "subTab": 0,
-    "subTabLabel": "common.general"
+    "subTabLabel": "system-monitor.title"
   },
   {
     "labelKey": "panels.system-monitor.use-custom-highlight-colors-label",
     "descriptionKey": "panels.system-monitor.use-custom-highlight-colors-description",
     "widget": "NToggle",
     "tab": 18,
-    "tabLabel": "system-monitor.title",
+    "tabLabel": "panels.system.title",
     "subTab": 0,
-    "subTabLabel": "common.general"
+    "subTabLabel": "system-monitor.title"
   },
   {
     "labelKey": "panels.system-monitor.external-monitor-label",
     "descriptionKey": "panels.system-monitor.external-monitor-description",
     "widget": "NTextInput",
     "tab": 18,
-    "tabLabel": "system-monitor.title",
+    "tabLabel": "panels.system.title",
     "subTab": 0,
-    "subTabLabel": "common.general"
+    "subTabLabel": "system-monitor.title"
+  },
+  {
+    "labelKey": "panels.system.noctalia-performance-disable-wallpaper-label",
+    "descriptionKey": "panels.system.noctalia-performance-disable-wallpaper-description",
+    "widget": "NToggle",
+    "tab": 18,
+    "tabLabel": "panels.system.title",
+    "subTab": 2,
+    "subTabLabel": "common.performance"
+  },
+  {
+    "labelKey": "panels.system.noctalia-performance-disable-desktop-widgets-label",
+    "descriptionKey": "panels.system.noctalia-performance-disable-desktop-widgets-description",
+    "widget": "NToggle",
+    "tab": 18,
+    "tabLabel": "panels.system.title",
+    "subTab": 2,
+    "subTabLabel": "common.performance"
   },
   {
     "labelKey": "panels.user-interface.tooltips-label",

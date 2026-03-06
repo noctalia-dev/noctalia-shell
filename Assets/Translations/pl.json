@@ -471,6 +471,7 @@
     "panels": "Panele",
     "password": "Hasło",
     "pause": "Pauza",
+    "performance": "Wydajność",
     "pin": "Przypnij",
     "play": "Odtwórz",
     "polling": "Odpytywanie",
@@ -723,6 +724,7 @@
       "supporters-desc": "Ogromne podziękowania dla naszego wspaniałego wspierającego!",
       "supporters-desc-plural": "Ogromne podziękowania dla naszych <b>{count} wspaniałych</b> wspierających!",
       "supporters-loading": "Ładowanie wspierających...",
+      "system-board": "Płyta główna:",
       "system-cpu": "Procesor:",
       "system-disk": "Dysk:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Wyświetl podpowiedzi skrótów klawiszowych w opcjach sesji.",
       "show-keybinds-label": "Pokaż skróty klawiszowe"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Zachowaj widoczność widżetów pulpitu, gdy Noctalia Performance Mode jest włączony.",
+      "noctalia-performance-disable-desktop-widgets-label": "Włącz widżety pulpitu w trybie wydajności.",
+      "noctalia-performance-disable-wallpaper-description": "Zachowaj widoczne tapety pulpitu, przeglądu i ekranu blokady, gdy Noctalia Performance Mode jest włączony.",
+      "noctalia-performance-disable-wallpaper-label": "Włącz renderowanie tapety w trybie wydajności",
+      "title": "System"
+    },
     "system-monitor": {
       "critical-color-label": "Kolor krytyczny",
       "custom-highlight-colors-title-label": "Własne kolory podświetlenia",
@@ -1909,8 +1918,8 @@
   },
   "tooltips": {
     "add-widget": "Dodaj widżet",
-    "auto-connect": "Przełącz automatyczne połączenie dla tego urządzenia",
-    "bluetooth-auto-connect-off": "Automatyczne łączenie jest wyłączone",
+    "auto-connect": "Przełącz automatyczne łączenie dla tego urządzenia",
+    "bluetooth-auto-connect-off": "Automatyczne łączenie wyłączone",
     "bluetooth-auto-connect-on": "Automatyczne łączenie włączone",
     "bluetooth-devices": "Urządzenia Bluetooth",
     "brightness-at": "Jasność: {brightness}%",

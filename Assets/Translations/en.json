@@ -471,6 +471,7 @@
     "panels": "Panels",
     "password": "Password",
     "pause": "Pause",
+    "performance": "Performance",
     "pin": "Pin",
     "play": "Play",
     "polling": "Polling",
@@ -723,6 +724,7 @@
       "supporters-desc": "A huge thank you to our amazing supporter!",
       "supporters-desc-plural": "A huge thank you to our <b>{count} amazing</b> supporters!",
       "supporters-loading": "Loading supporters...",
+      "system-board": "Board:",
       "system-cpu": "CPU:",
       "system-disk": "Disk:",
       "system-gpu": "GPU:",
@@ -736,7 +738,6 @@
       "system-os": "OS:",
       "system-packages": "Packages:",
       "system-product": "Product:",
-      "system-board": "Board:",
       "system-title": "System Information",
       "system-uptime": "Uptime:",
       "system-wm": "WM:",
@@ -1601,6 +1602,13 @@
       "show-header-label": "Show header",
       "show-keybinds-description": "Display keybind hints on session options.",
       "show-keybinds-label": "Show keybinds"
+    },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Keep desktop widgets visible while Noctalia Performance Mode is enabled.",
+      "noctalia-performance-disable-desktop-widgets-label": "Enable desktop widgets in performance mode",
+      "noctalia-performance-disable-wallpaper-description": "Keep desktop, overview, and lock screen wallpapers visible while Noctalia Performance Mode is enabled.",
+      "noctalia-performance-disable-wallpaper-label": "Enable wallpaper rendering in performance mode",
+      "title": "System"
     },
     "system-monitor": {
       "critical-color-label": "Critical color",

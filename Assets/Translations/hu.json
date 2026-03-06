@@ -471,6 +471,7 @@
     "panels": "Panelek",
     "password": "Jelszó",
     "pause": "Szünet",
+    "performance": "Teljesítmény",
     "pin": "Rögzítés",
     "play": "Lejátszás",
     "polling": "Lekérdezés",
@@ -723,6 +724,7 @@
       "supporters-desc": "Hatalmas köszönet csodálatos támogatóinknak!",
       "supporters-desc-plural": "Hatalmas köszönet a <b>{count} csodálatos</b> támogatóinknak!",
       "supporters-loading": "Támogatók betöltése...",
+      "system-board": "Alaplap:",
       "system-cpu": "CPU:",
       "system-disk": "Lemez:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Gyorsbillentyű tippek megjelenítése a munkamenet-opcióknál.",
       "show-keybinds-label": "Gyorsbillentyűk megjelenítése"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Tartsa láthatóan az asztali widgeteket, amíg a Noctalia Performance Mode engedélyezve van.",
+      "noctalia-performance-disable-desktop-widgets-label": "Engedélyezze az asztali widgeteket teljesítmény módban.",
+      "noctalia-performance-disable-wallpaper-description": "Tartsa láthatóan az asztali, áttekintő és zárolási képernyő háttérképeket, amíg a Noctalia Performance Mode engedélyezve van.",
+      "noctalia-performance-disable-wallpaper-label": "Engedélyezze a háttérkép renderelését teljesítmény módban",
+      "title": "Rendszer"
+    },
     "system-monitor": {
       "critical-color-label": "Kritikus szín",
       "custom-highlight-colors-title-label": "Egyéni kiemelőszínek",
@@ -1910,8 +1919,8 @@
   "tooltips": {
     "add-widget": "Widget hozzáadása",
     "auto-connect": "Automatikus csatlakozás váltása ehhez az eszközhöz",
-    "bluetooth-auto-connect-off": "Az automatikus csatlakozás ki van kapcsolva",
-    "bluetooth-auto-connect-on": "Automatikus csatlakozás bekapcsolva",
+    "bluetooth-auto-connect-off": "Automatikus csatlakozás kikapcsolva",
+    "bluetooth-auto-connect-on": "Automatikus csatlakozás engedélyezve",
     "bluetooth-devices": "Bluetooth eszközök",
     "brightness-at": "Fényerő: {brightness}%",
     "click-to-start-recording": "Képernyőfelvevő (felvétel indítása)",

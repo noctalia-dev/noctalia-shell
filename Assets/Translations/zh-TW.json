@@ -471,6 +471,7 @@
     "panels": "面板",
     "password": "密碼",
     "pause": "暫停",
+    "performance": "效能",
     "pin": "釘選",
     "play": "播放",
     "polling": "輪詢",
@@ -723,6 +724,7 @@
       "supporters-desc": "非常感謝我們出色的支持者！",
       "supporters-desc-plural": "非常感謝我們的<b>{count}位出色</b>支持者！",
       "supporters-loading": "正在載入支持者...",
+      "system-board": "主機板:",
       "system-cpu": "CPU:",
       "system-disk": "磁碟:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "在工作階段選項上顯示快捷鍵提示。",
       "show-keybinds-label": "顯示快捷鍵"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "當 Noctalia Performance Mode 啟用時保持桌面小工具可見。",
+      "noctalia-performance-disable-desktop-widgets-label": "在效能模式下啟用桌面小工具。",
+      "noctalia-performance-disable-wallpaper-description": "在啟用 Noctalia Performance Mode 時，保持桌面、概覽和鎖定畫面桌布可見。",
+      "noctalia-performance-disable-wallpaper-label": "在效能模式下啟用桌布渲染",
+      "title": "系統"
+    },
     "system-monitor": {
       "critical-color-label": "危急顏色",
       "custom-highlight-colors-title-label": "自訂突出色",
@@ -1910,8 +1919,8 @@
   "tooltips": {
     "add-widget": "新增小工具",
     "auto-connect": "切換此裝置的自動連線",
-    "bluetooth-auto-connect-off": "自動連線已關閉",
-    "bluetooth-auto-connect-on": "自動連線已開啟",
+    "bluetooth-auto-connect-off": "自動連線已停用",
+    "bluetooth-auto-connect-on": "自動連線已啟用",
     "bluetooth-devices": "藍牙裝置",
     "brightness-at": "亮度: {brightness}%",
     "click-to-start-recording": "螢幕錄影 (開始錄製)",

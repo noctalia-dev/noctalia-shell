@@ -471,6 +471,7 @@
     "panels": "Panels",
     "password": "Passwort",
     "pause": "Pause",
+    "performance": "Leistung",
     "pin": "Anpinnen",
     "play": "Wiedergabe",
     "polling": "Abfrageintervall",
@@ -723,6 +724,7 @@
       "supporters-desc": "Ein riesiges Dankeschön an unseren großartigen Unterstützer!",
       "supporters-desc-plural": "Ein riesiges Dankeschön an unsere <b>{count} großartigen</b> Unterstützer!",
       "supporters-loading": "Supporter werden geladen...",
+      "system-board": "Platine:",
       "system-cpu": "CPU:",
       "system-disk": "Festplatte:",
       "system-gpu": "GPU:",
@@ -736,7 +738,6 @@
       "system-os": "Betriebssystem:",
       "system-packages": "Pakete:",
       "system-product": "Produkt:",
-      "system-board": "Board:",
       "system-title": "Systeminformationen",
       "system-uptime": "Betriebszeit:",
       "system-wm": "WM:",
@@ -1602,6 +1603,13 @@
       "show-keybinds-description": "Tastenkombinationshinweise bei den Sitzungsoptionen anzeigen.",
       "show-keybinds-label": "Tastenkombinationen anzeigen"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Desktop-Widgets sichtbar lassen, während Noctalia Performance Mode aktiviert ist.",
+      "noctalia-performance-disable-desktop-widgets-label": "Aktiviere Desktop-Widgets im Leistungsmodus.",
+      "noctalia-performance-disable-wallpaper-description": "Halte Desktop-, Übersicht- und Sperrbildschirm-Hintergrundbilder sichtbar, während der Noctalia Performance Mode aktiviert ist.",
+      "noctalia-performance-disable-wallpaper-label": "Hintergrundbild-Rendering im Leistungsmodus aktivieren",
+      "title": "System"
+    },
     "system-monitor": {
       "critical-color-label": "Kritische Farbe",
       "custom-highlight-colors-title-label": "Benutzerdefinierte Hervorhebungsfarben",
@@ -1634,7 +1642,7 @@
       "animation-speed-label": "Animationsgeschwindigkeit",
       "animation-speed-reset": "Animationsgeschwindigkeit zurücksetzen",
       "appearance-desc": "Visuelle Elemente wie Tooltips, Rahmen und Schatten anpassen.",
-      "blur-behind-description": "Verwischt den Bereich hinter Leisten und Panels mithilfe des Compositor-Unschärfeprotokolls.",
+      "blur-behind-description": "Macht den Bereich hinter Leisten und Panels unscharf mithilfe des Compositor-Blur-Protokolls.",
       "blur-behind-label": "Hintergrundunschärfe",
       "box-border-description": "Zeige eine Umrandung um Inhaltsbereiche an.",
       "box-border-label": "Containerumriss",
@@ -1911,8 +1919,8 @@
   "tooltips": {
     "add-widget": "Widget hinzufügen",
     "auto-connect": "Automatisches Verbinden für dieses Gerät umschalten",
-    "bluetooth-auto-connect-off": "Automatisches Verbinden ist aus",
-    "bluetooth-auto-connect-on": "Automatisches Verbinden ist an",
+    "bluetooth-auto-connect-off": "Automatisches Verbinden deaktiviert",
+    "bluetooth-auto-connect-on": "Automatisches Verbinden aktiviert",
     "bluetooth-devices": "Bluetooth-Geräte",
     "brightness-at": "Helligkeit: {brightness}%",
     "click-to-start-recording": "Bildschirmrekorder (Aufnahme starten)",

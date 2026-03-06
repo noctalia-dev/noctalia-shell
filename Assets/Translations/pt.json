@@ -376,7 +376,7 @@
     "add": "Adicionar",
     "appearance": "Aparência",
     "apply": "Aplicar",
-    "auto-connect": "Conexão Automática",
+    "auto-connect": "Conexão automática",
     "automation": "Automação",
     "available": "Disponível",
     "back": "Voltar",
@@ -471,6 +471,7 @@
     "panels": "Painéis",
     "password": "Senha",
     "pause": "Pausar",
+    "performance": "Desempenho",
     "pin": "Fixar",
     "play": "Reproduzir",
     "polling": "Sondagem",
@@ -723,6 +724,7 @@
       "supporters-desc": "Um enorme obrigado ao nosso incrível apoiador!",
       "supporters-desc-plural": "Um enorme obrigado aos nossos <b>{count} incríveis</b> apoiadores!",
       "supporters-loading": "Carregando apoiadores...",
+      "system-board": "Placa-mãe:",
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Exibir dicas de atalhos de teclado nas opções de sessão.",
       "show-keybinds-label": "Mostrar atalhos de teclado"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Manter os widgets da área de trabalho visíveis enquanto o Noctalia Performance Mode estiver ativado.",
+      "noctalia-performance-disable-desktop-widgets-label": "Ativar widgets de ambiente de trabalho no modo de desempenho.",
+      "noctalia-performance-disable-wallpaper-description": "Mantenha os papéis de parede da área de trabalho, da visão geral e da tela de bloqueio visíveis enquanto o Noctalia Performance Mode estiver ativado.",
+      "noctalia-performance-disable-wallpaper-label": "Ativar renderização de papel de parede no modo de desempenho",
+      "title": "Sistema"
+    },
     "system-monitor": {
       "critical-color-label": "Cor crítica",
       "custom-highlight-colors-title-label": "Cores de destaque personalizadas",
@@ -1911,7 +1920,7 @@
     "add-widget": "Adicionar widget",
     "auto-connect": "Alternar conexão automática para este dispositivo",
     "bluetooth-auto-connect-off": "Conexão automática desativada",
-    "bluetooth-auto-connect-on": "Conexão automática está ativada",
+    "bluetooth-auto-connect-on": "Conexão automática ativada",
     "bluetooth-devices": "Dispositivos Bluetooth",
     "brightness-at": "Brilho: {brightness}%",
     "click-to-start-recording": "Gravador de tela (iniciar gravação)",

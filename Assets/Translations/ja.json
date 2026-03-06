@@ -471,6 +471,7 @@
     "panels": "パネル",
     "password": "パスワード",
     "pause": "一時停止",
+    "performance": "パフォーマンス",
     "pin": "ピン留め",
     "play": "再生",
     "polling": "ポーリング",
@@ -723,6 +724,7 @@
       "supporters-desc": "素晴らしいサポーターに心からの感謝を！",
       "supporters-desc-plural": "<b>{count}名の素晴らしい</b>サポーターの皆様に心より感謝いたします！",
       "supporters-loading": "サポーターを読み込み中...",
+      "system-board": "マザーボード:",
       "system-cpu": "CPU：",
       "system-disk": "ディスク：",
       "system-gpu": "GPU：",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "セッションオプションにキーバインドのヒントを表示する。",
       "show-keybinds-label": "キーバインドを表示"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia Performance Modeが有効な間、デスクトップウィジェットを表示したままにする。",
+      "noctalia-performance-disable-desktop-widgets-label": "パフォーマンスモードでデスクトップウィジェットを有効にする。",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia Performance Modeが有効な間、デスクトップ、概要、ロック画面の壁紙を表示したままにします。",
+      "noctalia-performance-disable-wallpaper-label": "パフォーマンスモードで壁紙のレンダリングを有効にする",
+      "title": "システム"
+    },
     "system-monitor": {
       "critical-color-label": "危険時の色",
       "custom-highlight-colors-title-label": "カスタムハイライト色",
@@ -1910,8 +1919,8 @@
   "tooltips": {
     "add-widget": "ウィジェットを追加",
     "auto-connect": "このデバイスの自動接続を切り替える",
-    "bluetooth-auto-connect-off": "自動接続はオフです",
-    "bluetooth-auto-connect-on": "自動接続はオンです",
+    "bluetooth-auto-connect-off": "自動接続が無効です",
+    "bluetooth-auto-connect-on": "自動接続が有効です",
     "bluetooth-devices": "Bluetooth デバイス",
     "brightness-at": "画面の明るさ：{brightness}%",
     "click-to-start-recording": "画面録画（録画開始）",

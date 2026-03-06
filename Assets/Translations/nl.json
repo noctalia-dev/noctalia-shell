@@ -471,6 +471,7 @@
     "panels": "Panelen",
     "password": "Wachtwoord",
     "pause": "Pauze",
+    "performance": "Prestaties",
     "pin": "Vastmaken",
     "play": "Afspelen",
     "polling": "Polling",
@@ -723,6 +724,7 @@
       "supporters-desc": "Een enorme dank aan onze geweldige supporter!",
       "supporters-desc-plural": "Enorm bedankt aan onze <b>{count} geweldige</b> supporters!",
       "supporters-loading": "Donateurs laden...",
+      "system-board": "Moederbord:",
       "system-cpu": "CPU:",
       "system-disk": "Schijf:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Toon toetscombinatiehints bij sessie-opties.",
       "show-keybinds-label": "Toetsencombinaties weergeven"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Houd desktopwidgets zichtbaar terwijl Noctalia Performance Mode is ingeschakeld.",
+      "noctalia-performance-disable-desktop-widgets-label": "Schakel desktopwidgets in prestatiemodus in.",
+      "noctalia-performance-disable-wallpaper-description": "Houd bureaublad-, overzicht- en vergrendelschermachtergronden zichtbaar terwijl Noctalia Performance Mode is ingeschakeld.",
+      "noctalia-performance-disable-wallpaper-label": "Achtergrondweergave inschakelen in prestatiemodus",
+      "title": "Systeem"
+    },
     "system-monitor": {
       "critical-color-label": "Kritische kleur",
       "custom-highlight-colors-title-label": "Aangepaste markeerkleuren",
@@ -1633,7 +1642,7 @@
       "animation-speed-label": "Animatiesnelheid",
       "animation-speed-reset": "Animatiesnelheid resetten",
       "appearance-desc": "Pas visuele elementen aan, zoals tooltips, randen en schaduwen.",
-      "blur-behind-description": "Vervaagt het gebied achter balken en panelen met behulp van het compositor-vervagingsprotocol.",
+      "blur-behind-description": "Vervaagt het gebied achter balken en panelen met behulp van het compositor-blurprotocol.",
       "blur-behind-label": "Achtergrond vervagen",
       "box-border-description": "Toon een omlijning rond inhoudsgebieden.",
       "box-border-label": "Containeromtrek",
@@ -1909,9 +1918,9 @@
   },
   "tooltips": {
     "add-widget": "Widget toevoegen",
-    "auto-connect": "Automatische verbinding voor dit apparaat in-/uitschakelen",
-    "bluetooth-auto-connect-off": "Automatisch verbinden is uit",
-    "bluetooth-auto-connect-on": "Automatisch verbinden is ingeschakeld",
+    "auto-connect": "Automatisch verbinden voor dit apparaat in-/uitschakelen",
+    "bluetooth-auto-connect-off": "Automatisch verbinden uitgeschakeld",
+    "bluetooth-auto-connect-on": "Automatisch verbinden ingeschakeld",
     "bluetooth-devices": "Bluetooth-apparaten",
     "brightness-at": "Helderheid: {brightness}%",
     "click-to-start-recording": "Schermrecorder (opname starten)",

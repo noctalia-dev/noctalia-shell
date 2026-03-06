@@ -471,6 +471,7 @@
     "panels": "Paneler",
     "password": "Lösenord",
     "pause": "Paus",
+    "performance": "Prestanda",
     "pin": "Fäst",
     "play": "Spela upp",
     "polling": "Pollning",
@@ -723,6 +724,7 @@
       "supporters-desc": "Ett stort tack till vår fantastiska supporter!",
       "supporters-desc-plural": "Ett stort tack till våra <b>{count} fantastiska</b> supportrar!",
       "supporters-loading": "Laddar supportrar...",
+      "system-board": "Moderkort:",
       "system-cpu": "CPU:",
       "system-disk": "Disk:",
       "system-gpu": "GPU:",
@@ -1601,6 +1603,13 @@
       "show-keybinds-description": "Visa kortkommando-tips på sessionsalternativ.",
       "show-keybinds-label": "Visa kortkommandon"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Håll skrivbordswidgets synliga medan Noctalia Performance Mode är aktiverat.",
+      "noctalia-performance-disable-desktop-widgets-label": "Aktivera skrivbordswidgetar i prestandaläge.",
+      "noctalia-performance-disable-wallpaper-description": "Behåll skrivbords-, översikts- och låsskärmsbakgrundsbilder synliga när Noctalia Performance Mode är aktiverat.",
+      "noctalia-performance-disable-wallpaper-label": "Aktivera bakgrundsbildsåtergivning i prestandaläge",
+      "title": "System"
+    },
     "system-monitor": {
       "critical-color-label": "Kritisk färg",
       "custom-highlight-colors-title-label": "Anpassade markeringsfärger",
@@ -1910,8 +1919,8 @@
   "tooltips": {
     "add-widget": "Lägg till widget",
     "auto-connect": "Växla automatisk anslutning för denna enhet",
-    "bluetooth-auto-connect-off": "Automatisk anslutning är avstängd",
-    "bluetooth-auto-connect-on": "Automatisk anslutning är på",
+    "bluetooth-auto-connect-off": "Automatisk anslutning inaktiverad",
+    "bluetooth-auto-connect-on": "Automatisk anslutning aktiverad",
     "bluetooth-devices": "Bluetooth-enheter",
     "brightness-at": "Ljusstyrka: {brightness}%",
     "click-to-start-recording": "Skärminspelare (starta inspelning)",

@@ -624,8 +624,8 @@ Item {
             "source": regionTab
           },
           {
-            "id": SettingsPanel.Tab.SystemMonitor,
-            "label": "system-monitor.title",
+            "id": SettingsPanel.Tab.System,
+            "label": "panels.system.title",
             "icon": "settings-system-monitor",
             "source": systemMonitorTab
           },
