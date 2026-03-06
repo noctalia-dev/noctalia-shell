@@ -1264,6 +1264,7 @@ Item {
                   anchors.fill: parent
                   horizontalPolicy: ScrollBar.AlwaysOff
                   verticalPolicy: ScrollBar.AsNeeded
+                  showScrollbarWhenScrollable: true
                   leftPadding: Style.marginL
                   topPadding: Style.marginL
                   bottomPadding: Style.marginL
