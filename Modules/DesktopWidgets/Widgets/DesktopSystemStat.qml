@@ -198,7 +198,9 @@ DraggableDesktopWidget {
       color2: root.color2
       fill: true
       updateInterval: root.graphUpdateInterval
+      strokeWidth: 1.5 * Style.uiScaleRatio * root.widgetScale
       animateScale: root.statType === "Network"
+      antialiasing: 0.5 * root.widgetScale
     }
   }
 
