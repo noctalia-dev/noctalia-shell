@@ -125,8 +125,10 @@ Loader {
                   anchors.fill: parent
                   hoverEnabled: true
                   acceptedButtons: Qt.NoButton
-                  onPositionChanged: {
-                    if (passwordInput) {
+                  onEntered: {
+                    // Avoid repeatedly forcing focus on every mouse move.
+                    // This can churn text-input surface state during monitor/suspend transitions.
+                    if (passwordInput && !passwordInput.activeFocus) {
                       passwordInput.forceActiveFocus();
                     }
                   }
