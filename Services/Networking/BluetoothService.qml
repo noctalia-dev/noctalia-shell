@@ -660,7 +660,9 @@ Singleton {
       return;
     }
 
-    var devList = adapter.devices.values.filter(function (dev) { return dev && dev.paired && !dev.connected && !dev.blocked && getDeviceAutoConnect(dev.address) === true; });
+    var devList = adapter.devices.values.filter(function (dev) {
+      return dev && dev.paired && !dev.connected && !dev.blocked && getDeviceAutoConnect(dev.address) === true;
+    });
 
     for (var i = 0; i < devList.length; i++) {
       Logger.i("Bluetooth", "Auto-connecting to:", devList[i].name || devList[i].deviceName);
