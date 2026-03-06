@@ -1604,7 +1604,6 @@
       "show-keybinds-label": "Show keybinds"
     },
     "system": {
-      "noctalia-performance-desc": "Configure what stays enabled while Noctalia Performance Mode is active.",
       "noctalia-performance-disable-desktop-widgets-description": "Keep desktop widgets visible while Noctalia Performance Mode is enabled.",
       "noctalia-performance-disable-desktop-widgets-label": "Enable desktop widgets in performance mode",
       "noctalia-performance-disable-wallpaper-description": "Keep desktop, overview, and lock screen wallpapers visible while Noctalia Performance Mode is enabled.",

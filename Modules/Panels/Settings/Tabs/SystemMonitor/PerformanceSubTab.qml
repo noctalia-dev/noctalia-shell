@@ -9,11 +9,6 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-  NLabel {
-    Layout.fillWidth: true
-    description: I18n.tr("panels.system.noctalia-performance-desc")
-  }
-
   NToggle {
     Layout.fillWidth: true
     label: I18n.tr("panels.system.noctalia-performance-disable-wallpaper-label")
