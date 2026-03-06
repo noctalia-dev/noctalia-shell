@@ -247,11 +247,13 @@ Singleton {
   }
 
   // Periodic state polling
+  readonly property bool _lockScreenActive: PanelService.lockScreen?.active ?? false
+
   Timer {
     id: ctlPollTimer
     interval: adapter ? ctlPollMs : 2000
     repeat: true
-    running: adapter || ProgramCheckerService.bluetoothctlAvailable
+    running: (adapter || ProgramCheckerService.bluetoothctlAvailable) && !_lockScreenActive
     onTriggered: {
       pollCtlState();
       var targetInterval = adapter ? ctlPollMs : 2000;
