@@ -682,7 +682,7 @@ Item {
                   anchors.fill: parent
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
-                  onEntered: TooltipService.show(parent, I18n.tr("tooltips.auto-connect"))
+                  onEntered: TooltipService.show(parent, BluetoothService.getDeviceAutoConnect(modelData.address) ? I18n.tr("tooltips.bluetooth-auto-connect-on") : I18n.tr("tooltips.bluetooth-auto-connect-off"))
                   onExited: TooltipService.hide()
                   onClicked: BluetoothService.setDeviceAutoConnect(modelData, !BluetoothService.getDeviceAutoConnect(modelData.address))
                 }
