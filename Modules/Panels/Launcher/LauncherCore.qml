@@ -159,6 +159,12 @@ Rectangle {
     }
   }
 
+  onSearchTextChanged: {
+    if (isOpen) {
+      updateResults();
+    }
+  }
+
   function onOpened() {
     ignoreMouseHover = true;
     globalMouseInitialized = false;
@@ -186,11 +192,6 @@ Rectangle {
       if (provider.onClosed)
         provider.onClosed();
     }
-  }
-
-  onSearchTextChanged: {
-    if (isOpen)
-      updateResults();
   }
 
   function close() {
@@ -783,7 +784,7 @@ Rectangle {
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AlwaysOff
         reserveScrollbarSpace: false
-        gradientColor: Color.mSurfaceVariant
+        gradientColor: Settings.data.ui.panelBackgroundOpacity < 1 ? "transparent" : Color.mSurfaceVariant
         wheelScrollMultiplier: 4.0
 
         width: parent.width
@@ -806,6 +807,12 @@ Rectangle {
 
           property bool isSelected: (!root.ignoreMouseHover && mouseArea.containsMouse) || (index === root.selectedIndex)
 
+          width: resultsList.availableWidth
+          implicitHeight: root.entryHeight
+          clip: true
+          color: entry.isSelected ? Color.mHover : Color.mSurface
+          forceOpaque: entry.isSelected
+
           // Prepare item when it becomes visible (e.g., decode images)
           Component.onCompleted: {
             var provider = modelData.provider;
@@ -813,11 +820,6 @@ Rectangle {
               provider.prepareItem(modelData);
             }
           }
-
-          width: resultsList.availableWidth
-          implicitHeight: root.entryHeight
-          clip: true
-          color: entry.isSelected ? Color.mHover : Color.mSurface
 
           Behavior on color {
             ColorAnimation {
@@ -1086,6 +1088,7 @@ Rectangle {
         NBox {
           anchors.fill: parent
           color: Color.mSurfaceVariant
+          forceOpaque: true
           Layout.fillWidth: true
           Layout.fillHeight: true
 
@@ -1131,7 +1134,7 @@ Rectangle {
       }
     }
 
-    // --------------------------
+    // // --------------------------
     // GRID VIEW
     Component {
       id: gridViewComponent
@@ -1141,7 +1144,7 @@ Rectangle {
         horizontalPolicy: ScrollBar.AlwaysOff
         verticalPolicy: ScrollBar.AlwaysOff
         reserveScrollbarSpace: false
-        gradientColor: Color.mSurfaceVariant
+        gradientColor: Settings.data.ui.panelBackgroundOpacity < 1 ? "transparent" : Color.mSurfaceVariant
         wheelScrollMultiplier: 4.0
         trackedSelectionIndex: root.selectedIndex
 
@@ -1211,6 +1214,7 @@ Rectangle {
             anchors.fill: parent
             anchors.margins: Style.marginXXS
             color: gridEntryContainer.isSelected ? Color.mHover : Color.mSurface
+            forceOpaque: gridEntryContainer.isSelected
 
             Behavior on color {
               ColorAnimation {
