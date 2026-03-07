@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Commons
 import qs.Widgets
+import qs.Services.System
 
 ColumnLayout {
   id: root
@@ -19,6 +20,91 @@ ColumnLayout {
     checked: Settings.data.systemMonitor.enableDgpuMonitoring
     defaultValue: Settings.getDefaultValue("systemMonitor.enableDgpuMonitoring")
     onToggled: checked => Settings.data.systemMonitor.enableDgpuMonitoring = checked
+  }
+
+  NDivider {
+    Layout.fillWidth: true
+    visible: SystemStatService.availableGpus.length > 0
+  }
+
+  // GPU Selection Section
+  NHeader {
+    visible: SystemStatService.availableGpus.length > 0
+    label: I18n.tr("panels.system-monitor.gpu-selection-label")
+    description: I18n.tr("panels.system-monitor.gpu-selection-description")
+  }
+
+  ColumnLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginS
+    visible: SystemStatService.availableGpus.length > 0
+
+    // Auto selection radio button
+    NRadioButton {
+      id: autoRadio
+      text: I18n.tr("panels.system-monitor.gpu-selection-auto")
+      checked: Settings.data.systemMonitor.gpuSelectionMode === "auto"
+      onClicked: {
+        Settings.data.systemMonitor.gpuSelectionMode = "auto";
+      }
+    }
+
+    // Manual selection radio button
+    NRadioButton {
+      id: manualRadio
+      text: I18n.tr("panels.system-monitor.gpu-selection-manual")
+      checked: Settings.data.systemMonitor.gpuSelectionMode === "manual"
+      onClicked: {
+        Settings.data.systemMonitor.gpuSelectionMode = "manual";
+      }
+    }
+
+    // GPU list (visible when manual mode is selected)
+    ColumnLayout {
+      Layout.fillWidth: true
+      Layout.leftMargin: Style.marginXL
+      spacing: Style.marginS
+      visible: Settings.data.systemMonitor.gpuSelectionMode === "manual"
+
+      Repeater {
+        model: SystemStatService.availableGpus
+
+        ColumnLayout {
+          required property var modelData
+          Layout.fillWidth: true
+          spacing: Style.marginXS
+
+          NRadioButton {
+            text: modelData.name
+            checked: Settings.data.systemMonitor.selectedGpuId === modelData.id
+            onClicked: {
+              Settings.data.systemMonitor.selectedGpuId = modelData.id;
+            }
+          }
+
+          NText {
+            Layout.leftMargin: Style.marginXL
+            text: {
+              if (modelData.isDgpu && !Settings.data.systemMonitor.enableDgpuMonitoring) {
+                return I18n.tr("panels.system-monitor.gpu-dgpu-warning-disabled");
+              } else if (modelData.isDgpu) {
+                return I18n.tr("panels.system-monitor.gpu-dgpu-warning");
+              }
+              return "";
+            }
+            pointSize: Style.fontSizeXS
+            color: Color.mTertiary
+            visible: modelData.isDgpu
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+          }
+        }
+      }
+    }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
   }
 
   // Colors Section
