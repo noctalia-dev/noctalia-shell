@@ -45,8 +45,7 @@ Item {
   readonly property string labelMode: (widgetSettings.labelMode !== undefined) ? widgetSettings.labelMode : widgetMetadata.labelMode
   readonly property bool hasLabel: (labelMode !== "none")
   readonly property string fontWeight: {
-    var fontWeightSetting = (widgetSettings.fontWeight !== undefined) ?
-      widgetSettings.fontWeight : widgetMetadata.fontWeight;
+    var fontWeightSetting = (widgetSettings.fontWeight !== undefined) ? widgetSettings.fontWeight : widgetMetadata.fontWeight;
 
     if (fontWeightSetting === "regular")
       return Style.fontWeightRegular;

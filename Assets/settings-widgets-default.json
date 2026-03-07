@@ -279,6 +279,15 @@
       "statType": "CPU",
       "diskPath": "/",
       "layout": "bottom"
+    },
+    "AudioVisualizer": {
+      "showBackground": true,
+      "roundedCorners": true,
+      "width": 320,
+      "height": 72,
+      "visualizerType": "linear",
+      "hideWhenIdle": false,
+      "colorName": "primary"
     }
   }
 }
