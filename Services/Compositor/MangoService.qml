@@ -136,9 +136,11 @@ Item {
       let newFocusedIdx = -1;
       const currentWindows = new Set();
 
-      // Build focused window lookup from DWL outputs
+      // Build per-output state from DWL
       // Map<outputName, { title, appId, activeTagId }>
-      const focusedByOutput = {};
+      // Always populated (activeTagId needed for visible-window inference),
+      // title/appId may be empty if no window is focused.
+      const outputState = {};
       for (const outputName in outputMap) {
         const output = outputMap[outputName];
 
@@ -152,13 +154,11 @@ Item {
           }
         }
 
-        if (output.title || output.appId) {
-          focusedByOutput[outputName] = {
-            title: output.title,
-            appId: output.appId,
-            activeTagId: activeTagId
-          };
-        }
+        outputState[outputName] = {
+          title: output.title || "",
+          appId: output.appId || "",
+          activeTagId: activeTagId
+        };
 
         // Ensure output index exists
         if (internal.outputIndices[outputName] === undefined) {
@@ -190,11 +190,11 @@ Item {
         // Determine output
         let outputName;
 
-        // Priority 1: Focused window matched to DWL output
-        if (isFocused) {
-          for (const oName in focusedByOutput) {
-            const focused = focusedByOutput[oName];
-            if (title === focused.title && appId === focused.appId) {
+        // Priority 1: Focused window matched to DWL output metadata
+        if (isFocused && (title || appId)) {
+          for (const oName in outputState) {
+            const os = outputState[oName];
+            if ((os.title || os.appId) && title === os.title && appId === os.appId) {
               outputName = oName;
               internal.windowOutputMap[windowId] = oName;
               break;
@@ -207,9 +207,9 @@ Item {
           outputName = internal.windowOutputMap[windowId];
         }
 
-        // Priority 3: toplevel.outputs
-        if (!outputName && toplevel.outputs && toplevel.outputs.length > 0) {
-          outputName = toplevel.outputs[0].name;
+        // Priority 3: toplevel.screens (wlr-foreign-toplevel visible screens)
+        if (!outputName && toplevel.screens && toplevel.screens.length > 0) {
+          outputName = toplevel.screens[0].name;
         }
 
         // Fallback: selected monitor
@@ -220,13 +220,19 @@ Item {
         // Determine tag
         let tagId = null;
 
-        if (isFocused && focusedByOutput[outputName] && title === focusedByOutput[outputName].title && appId === focusedByOutput[outputName].appId) {
-          tagId = focusedByOutput[outputName].activeTagId;
+        const os = outputState[outputName];
+        if (isFocused && os && (os.title || os.appId) && title === os.title && appId === os.appId) {
+          // Focused window: assign to the active tag from DWL metadata
+          tagId = os.activeTagId;
           internal.windowTagMap[windowId] = tagId;
         } else if (internal.windowTagMap[windowId] !== undefined) {
+          // Previously seen window: use remembered tag
           tagId = internal.windowTagMap[windowId];
-        } else {
-          // Unknown window - skip until we know its tag
+        }
+
+        if (tagId === null) {
+          // DWL only reports the focused window per output, so we can't
+          // determine the tag for unfocused windows until they gain focus.
           continue;
         }
 
