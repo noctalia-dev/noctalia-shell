@@ -878,22 +878,25 @@ Singleton {
 
   // Public API
   function dismissActiveNotification(id) {
-    userDismissNotification(id);
-  }
-
-  // User dismissed from active view (e.g. clicked close, or swipe)
-  // This behaves like "overflow" - removes from active list but KEEPS data for history
-  function userDismissNotification(id) {
     const index = findNotificationIndex(id);
     if (index >= 0) {
       activeList.remove(index);
     }
   }
 
+  // User dismissed from active view (e.g. clicked close, or swipe)
+  // This behaves like "overflow" - removes from active list but KEEPS data for history
+  function userDismissNotification(id) {
+    dismissActiveNotification(id);
+    if (Settings.data.notifications.clearDismissed) {
+      removeFromHistory(id);
+    }
+  }
+
   function dismissOldestActive() {
     if (activeList.count > 0) {
       const lastNotif = activeList.get(activeList.count - 1);
-      dismissActiveNotification(lastNotif.id);
+      userDismissNotification(lastNotif.id);
     }
   }
 
@@ -901,6 +904,9 @@ Singleton {
     for (const id in activeNotifications) {
       activeNotifications[id].notification?.dismiss();
       activeNotifications[id].watcher?.destroy();
+      if (Settings.data.notifications.clearDismissed) {
+        userDismissNotification(id);
+      }
     }
     activeList.clear();
     activeNotifications = {};

@@ -230,13 +230,13 @@ Singleton {
 
       var actions = JSON.parse(notif.actionsJson || "[]");
       if (actions.length === 0) {
-        NotificationService.dismissActiveNotification(notif.id);
+        NotificationService.userDismissNotification(notif.id);
         return false;
       }
 
       var actionId = actions.find(a => a.identifier === "default")?.identifier ?? actions[0].identifier;
       var result = NotificationService.invokeAction(notif.id, actionId);
-      NotificationService.dismissActiveNotification(notif.id);
+      NotificationService.userDismissNotification(notif.id);
       return result;
     }
 
