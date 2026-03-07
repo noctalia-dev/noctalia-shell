@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Выберите цвет для визуализатора.",
       "color-name-label": "Цвет заливки",
+      "height-description": "Пользовательская ширина компонента.",
       "hide-when-idle-description": "Если включено, визуализатор скрыт, пока плеер не начнёт воспроизведение.",
       "hide-when-idle-label": "Скрывать, когда медиа не воспроизводится",
       "width-description": "Пользовательская ширина компонента."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "Интервал опроса",
       "polling-section-description": "Настройте частоту обновления каждой системной метрики.",
       "polling-section-label": "Интервалы опроса",
-      "threshold-critical": "Критический порог",
-      "threshold-warning": "Предупредительный порог",
+      "threshold-critical": "Критический",
+      "threshold-warning": "Предупреждение",
       "thresholds-section-description": "Настройте пороги предупреждения/критические пороги и интервалы опроса для каждой системной метрики.",
       "use-custom-highlight-colors-description": "Если отключено, используются цвета выделения по умолчанию темы.",
       "use-custom-highlight-colors-label": "Использовать пользовательские цвета выделения",

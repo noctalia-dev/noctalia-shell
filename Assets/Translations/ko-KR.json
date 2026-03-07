@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "비주얼라이저의 색상을 선택합니다.",
       "color-name-label": "색으로 채우기",
+      "height-description": "사용자 지정 구성 요소 너비.",
       "hide-when-idle-description": "활성화하면 재생기가 재생 중이지 않을 때 비주얼라이저를 숨깁니다.",
       "hide-when-idle-label": "미디어 재생 중이 아닐 때 숨기기",
       "width-description": "구성 요소의 너비를 사용자 지정합니다."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "폴링 간격",
       "polling-section-description": "각 시스템 값을 갱신하는 빈도를 정합니다.",
       "polling-section-label": "폴링 간격",
-      "threshold-critical": "위험 임계값",
-      "threshold-warning": "경고 임계값",
+      "threshold-critical": "심각",
+      "threshold-warning": "경고",
       "thresholds-section-description": "각 시스템 값에 대한 경고/위험 임계값을 조정합니다.",
       "use-custom-highlight-colors-description": "비활성화하면 테마 기본 강조 색상이 사용됩니다.",
       "use-custom-highlight-colors-label": "사용자 지정 강조 색상 사용",

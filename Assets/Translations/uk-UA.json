@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Вибрати колір для візуалізатора.",
       "color-name-label": "Колір заповнення",
+      "height-description": "Користувацька ширина компонента.",
       "hide-when-idle-description": "Коли увімкнено, візуалізатор приховано, якщо плеєр активно не відтворює.",
       "hide-when-idle-label": "Приховати, коли медіа не відтворюється",
       "width-description": "Власна ширина компонента."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "Інтервал опитування",
       "polling-section-description": "Налаштуйте, як часто оновлюється кожна системна метрика.",
       "polling-section-label": "Інтервали опитування",
-      "threshold-critical": "Критичний поріг",
-      "threshold-warning": "Порогове значення попередження",
+      "threshold-critical": "Критичний",
+      "threshold-warning": "Попередження",
       "thresholds-section-description": "Налаштуйте пороги попередження/критичні пороги та інтервали опитування для кожного системного показника.",
       "use-custom-highlight-colors-description": "Якщо вимкнено, використовуються кольори підсвічування за замовчуванням теми.",
       "use-custom-highlight-colors-label": "Використовувати власні кольори підсвічування",

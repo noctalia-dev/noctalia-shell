@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Wybierz kolor dla wizualizatora.",
       "color-name-label": "Kolor wypełnienia",
+      "height-description": "Niestandardowa szerokość komponentu.",
       "hide-when-idle-description": "Gdy włączone, wizualizator jest ukryty, chyba że odtwarzacz jest aktywny.",
       "hide-when-idle-label": "Ukryj, gdy nic nie jest odtwarzane",
       "width-description": "Niestandardowa szerokość komponentu."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "Interwał odświeżania",
       "polling-section-description": "Skonfiguruj, jak często każda metryka systemowa jest aktualizowana.",
       "polling-section-label": "Interwały odpytywania",
-      "threshold-critical": "Próg krytyczny",
-      "threshold-warning": "Próg ostrzegawczy",
+      "threshold-critical": "Krytyczny",
+      "threshold-warning": "Ostrzeżenie",
       "thresholds-section-description": "Dostosuj progi ostrzegawcze/krytyczne oraz interwały odświeżania dla każdej metryki systemu.",
       "use-custom-highlight-colors-description": "Gdy wyłączone, używane są domyślne kolory podświetlenia motywu.",
       "use-custom-highlight-colors-label": "Użyj własnych kolorów podświetlenia",

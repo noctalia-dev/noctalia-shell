@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Seleziona il colore del visualizzatore.",
       "color-name-label": "Colore riempimento",
+      "height-description": "Larghezza componente personalizzata.",
       "hide-when-idle-description": "Se attivo, il visualizzatore viene nascosto quando nessun player è in riproduzione.",
       "hide-when-idle-label": "Nascondi quando non è in riproduzione nulla",
       "width-description": "Larghezza personalizzata del componente."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "Intervallo polling",
       "polling-section-description": "Configura la frequenza di aggiornamento di ogni metrica di sistema.",
       "polling-section-label": "Intervalli polling",
-      "threshold-critical": "Soglia critica",
-      "threshold-warning": "Soglia avviso",
+      "threshold-critical": "Critico",
+      "threshold-warning": "Avviso",
       "thresholds-section-description": "Regola soglie avviso/critiche per ogni metrica di sistema.",
       "use-custom-highlight-colors-description": "Quando disattivato, vengono usati i colori evidenziazione predefiniti del tema.",
       "use-custom-highlight-colors-label": "Usa colori evidenziazione personalizzati",

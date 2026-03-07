@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Selecteer de kleur voor de visualizer.",
       "color-name-label": "Vulkleur",
+      "height-description": "Aangepaste componentbreedte.",
       "hide-when-idle-description": "Indien ingeschakeld wordt de visualizer verborgen, tenzij een speler actief afspeelt.",
       "hide-when-idle-label": "Verbergen wanneer geen media speelt",
       "width-description": "Aangepaste componentbreedte."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "Peilingsinterval",
       "polling-section-description": "Configureer hoe vaak elke systeemmetriek wordt bijgewerkt.",
       "polling-section-label": "Peilingsintervallen",
-      "threshold-critical": "Kritische drempel",
-      "threshold-warning": "Waarschuwingsdrempel",
+      "threshold-critical": "Kritiek",
+      "threshold-warning": "Waarschuwing",
       "thresholds-section-description": "Pas de waarschuwing/kritieke drempels en de pollingsintervallen voor elke systeemmetriek aan.",
       "use-custom-highlight-colors-description": "Indien uitgeschakeld, worden de standaard markeerkleuren van het thema gebruikt.",
       "use-custom-highlight-colors-label": "Gebruik aangepaste markeerkleuren",

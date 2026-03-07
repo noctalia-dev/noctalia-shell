@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Sélectionnez la couleur du visualiseur.",
       "color-name-label": "Couleur de remplissage",
+      "height-description": "Largeur de composant personnalisée.",
       "hide-when-idle-description": "Si activé, le visualiseur est masqué sauf lorsqu'un lecteur est en lecture.",
       "hide-when-idle-label": "Masquer lorsqu'aucun média n'est en lecture",
       "width-description": "Largeur personnalisée du composant."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "Intervalle d'interrogation",
       "polling-section-description": "Configurer la fréquence de mise à jour de chaque métrique système.",
       "polling-section-label": "Intervalles d'interrogation",
-      "threshold-critical": "Seuil critique",
-      "threshold-warning": "Seuil d'alerte",
+      "threshold-critical": "Critique",
+      "threshold-warning": "Avertissement",
       "thresholds-section-description": "Ajustez les seuils d’avertissement/critiques et les intervalles d’interrogation pour chaque métrique système.",
       "use-custom-highlight-colors-description": "Lorsque cette option est désactivée, les couleurs de surbrillance par défaut du thème sont utilisées.",
       "use-custom-highlight-colors-label": "Utiliser des couleurs de surlignage personnalisées",

@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Välj färg för visualiseraren.",
       "color-name-label": "Fyllningsfärg",
+      "height-description": "Anpassad komponentbredd.",
       "hide-when-idle-description": "När denna funktion är aktiverad döljs visualiseraren om ingen spelare är aktiv.",
       "hide-when-idle-label": "Dölj när ingen media spelas upp",
       "width-description": "Anpassad komponentbredd."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "Pollningsintervall",
       "polling-section-description": "Konfigurera hur ofta varje systemmetrik uppdateras.",
       "polling-section-label": "Pollningsintervall",
-      "threshold-critical": "Kritisk tröskel",
-      "threshold-warning": "Varningsgräns",
+      "threshold-critical": "Kritisk",
+      "threshold-warning": "Varning",
       "thresholds-section-description": "Justera varnings-/kritiska trösklar för varje systemmetrik.",
       "use-custom-highlight-colors-description": "När denna funktion är inaktiverad används standardfärgerna för markeringar. ",
       "use-custom-highlight-colors-label": "Använd anpassade markeringsfärger",

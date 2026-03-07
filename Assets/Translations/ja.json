@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "ビジュアライザーの色を選択します。",
       "color-name-label": "塗りつぶし色",
+      "height-description": "カスタムコンポーネントの幅。",
       "hide-when-idle-description": "有効にすると、再生中のプレーヤーがない場合にビジュアライザーを隠します。",
       "hide-when-idle-label": "メディア停止時は隠す",
       "width-description": "コンポーネントの幅をカスタム設定します。"
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "ポーリング間隔",
       "polling-section-description": "各システムメトリクスの更新頻度を設定します。",
       "polling-section-label": "ポーリング間隔",
-      "threshold-critical": "危険閾値",
-      "threshold-warning": "警告閾値",
+      "threshold-critical": "重大",
+      "threshold-warning": "警告",
       "thresholds-section-description": "各システムメトリックの警告/危険しきい値とポーリング間隔を調整します。",
       "use-custom-highlight-colors-description": "無効にすると、テーマのデフォルト強調色が使用されます。",
       "use-custom-highlight-colors-label": "カスタム強調色を使用する",

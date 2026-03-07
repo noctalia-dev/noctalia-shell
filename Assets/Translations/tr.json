@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Görselleştirici için renk seçin.",
       "color-name-label": "Dolgu rengi",
+      "height-description": "Özel bileşen genişliği.",
       "hide-when-idle-description": "Etkinleştirildiğinde, çalar aktif bir şekilde çalmadığı sürece görselleştirici gizlidir.",
       "hide-when-idle-label": "Boşken gizle",
       "width-description": "Özel bileşen genişliği."
@@ -1626,8 +1627,8 @@
       "polling-interval-label": "Yoklama aralığı",
       "polling-section-description": "Her bir sistem metriğinin ne sıklıkta güncelleneceğini yapılandırın.",
       "polling-section-label": "Yoklama aralıkları",
-      "threshold-critical": "Kritik eşik",
-      "threshold-warning": "Uyarı eşiği",
+      "threshold-critical": "Kritik",
+      "threshold-warning": "Uyarı",
       "thresholds-section-description": "Her sistem ölçüsü için uyarı/kritik eşiklerini ve yoklama aralıklarını ayarlayın.",
       "use-custom-highlight-colors-description": "Devre dışı bırakıldığında, tema varsayılan vurgulama renkleri kullanılır.",
       "use-custom-highlight-colors-label": "Özel vurgulama renklerini kullan",
