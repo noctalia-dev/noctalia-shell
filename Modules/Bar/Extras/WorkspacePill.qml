@@ -14,6 +14,7 @@ Item {
   required property real capsuleHeight
   required property real barHeight
   required property string labelMode
+  required property int fontWeight
   required property int characterCount
   required property real textRatio
   required property bool showLabelsOnlyWhenOccupied
@@ -119,7 +120,7 @@ Item {
           pointSize: (isVertical ? pillContainer.pillWidth : pillContainer.pillHeight) * textRatio
           applyUiScale: false
           font.capitalization: Font.AllUppercase
-          font.weight: Style.fontWeightBold
+          font.weight: fontWeight
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           wrapMode: Text.Wrap
