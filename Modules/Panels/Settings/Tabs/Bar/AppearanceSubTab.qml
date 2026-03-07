@@ -228,6 +228,15 @@ ColumnLayout {
 
   NToggle {
     Layout.fillWidth: true
+    label: I18n.tr("panels.bar.appearance-enable-exclusion-zone-inset-label")
+    description: I18n.tr("panels.bar.appearance-enable-exclusion-zone-inset-description")
+    checked: Settings.data.bar.enableExclusionZoneInset
+    defaultValue: Settings.getDefaultValue("bar.enableExclusionZoneInset")
+    onToggled: checked => Settings.data.bar.enableExclusionZoneInset = checked
+  }
+
+  NToggle {
+    Layout.fillWidth: true
     visible: CompositorService.isNiri
     label: I18n.tr("panels.bar.appearance-hide-on-overview-label")
     description: I18n.tr("panels.bar.appearance-hide-on-overview-description")

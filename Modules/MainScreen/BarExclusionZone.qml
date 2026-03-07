@@ -23,8 +23,9 @@ PanelWindow {
   readonly property bool barFloating: Settings.data.bar.floating || false
   readonly property real barMarginH: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
   readonly property real barMarginV: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0
-  // Reduce exclusion zone by 1 physical pixel so app windows blend flush against the bar edge
-  readonly property real bleedInset: 1.0 / (CompositorService.getDisplayScale(screen?.name) || 1.0)
+  // Allow users to enable a 1-physical-pixel inset for the exclusion zone so window borders can bleed under the bar
+  readonly property real bleedOffset: Settings.data.bar.enableExclusionZoneInset ? 1.0 : 0.0
+  readonly property real bleedInset: bleedOffset / (CompositorService.getDisplayScale(screen?.name) || 1.0)
 
   // Invisible - just reserves space
   color: "transparent"

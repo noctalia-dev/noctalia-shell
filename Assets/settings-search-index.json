@@ -252,6 +252,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.bar.appearance-enable-exclusion-zone-inset-label",
+    "descriptionKey": "panels.bar.appearance-enable-exclusion-zone-inset-description",
+    "widget": "NToggle",
+    "tab": 4,
+    "tabLabel": "panels.bar.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.bar.appearance-hide-on-overview-label",
     "descriptionKey": "panels.bar.appearance-hide-on-overview-description",
     "widget": "NToggle",
