@@ -8,6 +8,11 @@ import qs.Commons
 Singleton {
   id: root
 
+  Component.onCompleted: {
+    if (Settings.data.templates.enableUserTheming)
+    writeUserTemplatesToml();
+  }
+
   readonly property string templateApplyScript: Quickshell.shellDir + '/Scripts/bash/template-apply.sh'
   readonly property string gtkRefreshScript: Quickshell.shellDir + '/Scripts/python/src/theming/gtk-refresh.py'
   readonly property string vscodeHelperScript: Quickshell.shellDir + '/Scripts/python/src/theming/vscode-helper.py'
@@ -547,7 +552,7 @@ Singleton {
     var userConfigPath = Settings.configDir + "user-templates.toml";
 
     // Check if file already exists
-    fileCheckProcess.command = ["test", "-f", userConfigPath];
+    fileCheckProcess.command = ["test", "-s", userConfigPath];
     fileCheckProcess.running = true;
   }
 
@@ -555,17 +560,14 @@ Singleton {
     var userConfigPath = Settings.configDir + "user-templates.toml";
     var configContent = buildUserTemplatesToml();
     var userConfigPathEsc = userConfigPath.replace(/'/g, "'\\''");
+    var configDirEsc = Settings.configDir.replace(/'/g, "'\\''");
 
-    // Ensure directory exists (should already exist but just in case)
-    Quickshell.execDetached(["mkdir", "-p", Settings.configDir]);
-
-    // Write the config file using heredoc to avoid escaping issues
-    var script = `cat > '${userConfigPathEsc}' << 'EOF'\n`;
+    // Combine mkdir and write in a single script to avoid race condition
+    var script = `mkdir -p '${configDirEsc}' && cat > '${userConfigPathEsc}' << 'EOF'\n`;
     script += configContent;
     script += "EOF\n";
-    Quickshell.execDetached(["sh", "-c", script]);
-
-    Logger.d("TemplateRegistry", "User templates config written to:", userConfigPath);
+    fileWriteProcess.command = ["sh", "-c", script];
+    fileWriteProcess.running = true;
   }
 
   // Extract Emacs clients for ProgramCheckerService compatibility
@@ -584,18 +586,32 @@ Singleton {
     }
   ]
 
-  // Process for checking if user templates file exists
+  // Process for checking if user templates file exists and is non-empty
   Process {
     id: fileCheckProcess
     running: false
 
     onExited: function (exitCode) {
       if (exitCode === 0) {
-        // File exists, skip creation
+        // File exists and is non-empty, skip creation
         Logger.d("TemplateRegistry", "User templates config already exists, skipping creation");
       } else {
-        // File doesn't exist, create it
+        // File doesn't exist or is empty, create it
         doWriteUserTemplatesToml();
+      }
+    }
+  }
+
+  // Process for writing user templates file with error reporting
+  Process {
+    id: fileWriteProcess
+    running: false
+
+    onExited: function (exitCode) {
+      if (exitCode === 0) {
+        Logger.d("TemplateRegistry", "User templates config written to:", Settings.configDir + "user-templates.toml");
+      } else {
+        Logger.e("TemplateRegistry", "Failed to write user templates config (exit code:", exitCode + ")");
       }
     }
   }
