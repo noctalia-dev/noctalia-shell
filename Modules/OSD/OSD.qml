@@ -35,6 +35,7 @@ Variants {
     property int currentOSDType: -1 // OSD.Type enum value, -1 means none
     property bool startupComplete: false
     property real currentBrightness: 0
+    property bool suppressInputOSD: false
 
     // Lock Key States
     property string lastLockKeyChanged: ""  // "caps", "num", "scroll", or ""
@@ -258,11 +259,15 @@ Variants {
       }
 
       function onInputVolumeChanged() {
+        if (suppressInputOSD)
+          return;
         if (AudioService.hasInput)
           showOSD(OSD.Type.InputVolume);
       }
 
       function onInputMutedChanged() {
+        if (suppressInputOSD)
+          return;
         if (!AudioService.hasInput)
           return;
         if (AudioService.consumeInputOSDSuppression())
@@ -272,6 +277,8 @@ Variants {
 
       // Refresh OSD when device changes to ensure correct volume is displayed
       function onSinkChanged() {
+        suppressInputOSD = true;
+        inputSuppressionTimer.restart();
         // If volume OSD is currently showing, refresh it to show new device's volume
         if (root.currentOSDType === OSD.Type.Volume) {
           Qt.callLater(() => {
@@ -342,6 +349,14 @@ Variants {
         connectBrightnessMonitors();
         root.startupComplete = true;
       }
+    }
+
+    // Timer to reset the input volume OSD suppression
+    Timer {
+      id: inputSuppressionTimer
+      interval: 300
+      repeat: false
+      onTriggered: root.suppressInputOSD = false
     }
 
     Component.onDestruction: {
