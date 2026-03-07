@@ -435,6 +435,17 @@ Singleton {
           "path": "~/.steam/steam/steamui/skins/Material-Theme/css/main/colors/matugen.css"
         }
       ]
+    },
+    {
+      "id": "qimgv",
+      "name": "qimgv",
+      "category": "misc",
+      "input": "qimgv.conf",
+      "outputs": [
+        {
+          "path": "~/.config/qimgv/theme.conf"
+        }
+      ]
     }
   ]
 
