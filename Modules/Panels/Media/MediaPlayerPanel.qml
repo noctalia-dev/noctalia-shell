@@ -49,24 +49,24 @@ SmartPanel {
 
   readonly property bool isSideBySide: root.compactMode && root.showAlbumArt
 
-  readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && root.isPanelOpen
+  readonly property bool needsSpectrum: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && root.isPanelOpen
 
-  onNeedsCavaChanged: {
-    if (root.needsCava) {
-      CavaService.registerComponent("mediaplayerpanel");
+  onNeedsSpectrumChanged: {
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent("mediaplayerpanel");
     } else {
-      CavaService.unregisterComponent("mediaplayerpanel");
+      SpectrumService.unregisterComponent("mediaplayerpanel");
     }
   }
 
   Component.onCompleted: {
-    if (root.needsCava) {
-      CavaService.registerComponent("mediaplayerpanel");
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent("mediaplayerpanel");
     }
   }
 
   Component.onDestruction: {
-    CavaService.unregisterComponent("mediaplayerpanel");
+    SpectrumService.unregisterComponent("mediaplayerpanel");
   }
 
   panelContent: Item {
@@ -238,7 +238,7 @@ SmartPanel {
         Loader {
           anchors.fill: parent
           z: 0
-          active: !!(root.needsCava && !root.showAlbumArt)
+          active: !!(root.needsSpectrum && !root.showAlbumArt)
           sourceComponent: visualizerSource
         }
 
@@ -276,7 +276,7 @@ SmartPanel {
               anchors.fill: parent
               anchors.margins: Style.marginS
               z: 2
-              active: !!(root.needsCava && root.showAlbumArt)
+              active: !!(root.needsSpectrum && root.showAlbumArt)
               sourceComponent: visualizerSource
             }
           }
@@ -492,7 +492,7 @@ SmartPanel {
     NLinearSpectrum {
       width: parent.width - Style.marginS
       height: 20
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: Color.mPrimary
       opacity: 0.4
       barPosition: Settings.getBarPositionForScreen(root.screen?.name)
@@ -504,7 +504,7 @@ SmartPanel {
     NMirroredSpectrum {
       width: parent.width - Style.marginS
       height: parent.height - Style.marginS
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: Color.mPrimary
       opacity: 0.4
     }
@@ -515,7 +515,7 @@ SmartPanel {
     NWaveSpectrum {
       width: parent.width - Style.marginS
       height: parent.height - Style.marginS
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: Color.mPrimary
       opacity: 0.4
     }

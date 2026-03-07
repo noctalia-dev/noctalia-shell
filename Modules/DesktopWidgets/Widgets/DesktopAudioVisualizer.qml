@@ -25,29 +25,29 @@ DraggableDesktopWidget {
 
   readonly property bool shouldShow: visualizerType !== "" && visualizerType !== "none" && (!hideWhenIdle || MediaService.isPlaying)
   readonly property bool isHidden: !shouldShow
-  readonly property bool shouldRegisterCava: shouldShow
+  readonly property bool shouldRegisterSpectrum: shouldShow
 
   // Keep widget visible in edit mode so users can move/configure it
   visible: !root.isHidden || DesktopWidgetRegistry.editMode
 
-  readonly property string cavaComponentId: "desktop:audiovisualizer:" + (root.screen ? root.screen.name : "unknown") + ":" + root.widgetIndex
+  readonly property string spectrumComponentId: "desktop:audiovisualizer:" + (root.screen ? root.screen.name : "unknown") + ":" + root.widgetIndex
 
-  onShouldRegisterCavaChanged: {
-    if (root.shouldRegisterCava) {
-      CavaService.registerComponent(root.cavaComponentId);
+  onShouldRegisterSpectrumChanged: {
+    if (root.shouldRegisterSpectrum) {
+      SpectrumService.registerComponent(root.spectrumComponentId);
     } else {
-      CavaService.unregisterComponent(root.cavaComponentId);
+      SpectrumService.unregisterComponent(root.spectrumComponentId);
     }
   }
 
   Component.onCompleted: {
-    if (root.shouldRegisterCava) {
-      CavaService.registerComponent(root.cavaComponentId);
+    if (root.shouldRegisterSpectrum) {
+      SpectrumService.registerComponent(root.spectrumComponentId);
     }
   }
 
   Component.onDestruction: {
-    CavaService.unregisterComponent(root.cavaComponentId);
+    SpectrumService.unregisterComponent(root.spectrumComponentId);
   }
 
   implicitWidth: Math.round(visualizerWidth * widgetScale)
@@ -88,7 +88,7 @@ DraggableDesktopWidget {
     id: linearComponent
     NLinearSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
     }
@@ -98,7 +98,7 @@ DraggableDesktopWidget {
     id: mirroredComponent
     NMirroredSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
     }
@@ -108,7 +108,7 @@ DraggableDesktopWidget {
     id: waveComponent
     NWaveSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
     }

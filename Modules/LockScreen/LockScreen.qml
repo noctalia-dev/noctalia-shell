@@ -17,13 +17,13 @@ Loader {
   active: false
 
   // Track if the visualizer should be shown (lockscreen active + media playing + non-compact mode)
-  readonly property bool needsCava: root.active && !Settings.data.general.compactLockScreen && Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
+  readonly property bool needsSpectrum: root.active && !Settings.data.general.compactLockScreen && Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
 
   onActiveChanged: {
-    if (root.active && root.needsCava) {
-      CavaService.registerComponent("lockscreen");
+    if (root.active && root.needsSpectrum) {
+      SpectrumService.registerComponent("lockscreen");
     } else {
-      CavaService.unregisterComponent("lockscreen");
+      SpectrumService.unregisterComponent("lockscreen");
     }
 
     if (root.active) {
@@ -33,11 +33,11 @@ Loader {
     }
   }
 
-  onNeedsCavaChanged: {
-    if (root.needsCava) {
-      CavaService.registerComponent("lockscreen");
+  onNeedsSpectrumChanged: {
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent("lockscreen");
     } else {
-      CavaService.unregisterComponent("lockscreen");
+      SpectrumService.unregisterComponent("lockscreen");
     }
   }
 
@@ -47,7 +47,7 @@ Loader {
   }
 
   Component.onDestruction: {
-    CavaService.unregisterComponent("lockscreen");
+    SpectrumService.unregisterComponent("lockscreen");
     LockKeysService.unregisterComponent("lockscreen");
   }
 

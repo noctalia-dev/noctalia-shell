@@ -268,7 +268,7 @@ Item {
             z: 0
             sourceComponent: NLinearSpectrum {
               anchors.fill: parent
-              values: CavaService.values
+              values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
             }
@@ -281,7 +281,7 @@ Item {
             z: 0
             sourceComponent: NMirroredSpectrum {
               anchors.fill: parent
-              values: CavaService.values
+              values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
             }
@@ -294,7 +294,7 @@ Item {
             z: 0
             sourceComponent: NWaveSpectrum {
               anchors.fill: parent
-              values: CavaService.values
+              values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
             }
