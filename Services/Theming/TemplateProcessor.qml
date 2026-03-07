@@ -98,8 +98,8 @@ Singleton {
   function executeWallpaperColors(wallpaperPath, mode) {
     Logger.d("TemplateProcessor", `executeWallpaperColors: path=${wallpaperPath}, mode=${mode}`);
     const content = buildThemeConfig();
-    if (!content) {
-      Logger.d("TemplateProcessor", "executeWallpaperColors: no config content, aborting");
+    if (!content && !Settings.data.templates.enableUserTheming) {
+      Logger.d("TemplateProcessor", "executeWallpaperColors: no config content and no user theming, aborting");
       return;
     }
     const wp = wallpaperPath.replace(/'/g, "'\\''");
@@ -131,37 +131,39 @@ Singleton {
   function executePredefinedScheme(schemeData, mode, wallpaperPath) {
     // 1. Build TOML config for application templates (including terminals)
     const tomlContent = buildPredefinedTemplateConfig(mode);
-    if (!tomlContent) {
+    if (!tomlContent && !Settings.data.templates.enableUserTheming) {
       Logger.d("TemplateProcessor", "No application templates enabled for predefined scheme");
       return;
     }
 
     // 3. Build script to write files and run Python
     const schemeJsonPathEsc = schemeJsonPath.replace(/'/g, "'\\''");
-    const configPathEsc = predefinedConfigPath.replace(/'/g, "'\\''");
-
-    // Use heredoc delimiters for safe JSON/TOML content
-    const schemeDelimiter = "SCHEME_JSON_EOF_" + Math.random().toString(36).substr(2, 9);
-    const tomlDelimiter = "TOML_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
 
     let script = "";
 
-    // Write scheme JSON
+    // Write scheme JSON (needed by both built-in and user templates)
+    const schemeDelimiter = "SCHEME_JSON_EOF_" + Math.random().toString(36).substr(2, 9);
     script += `cat > '${schemeJsonPathEsc}' << '${schemeDelimiter}'\n`;
     script += JSON.stringify(schemeData, null, 2) + "\n";
     script += `${schemeDelimiter}\n`;
 
-    // Write TOML config
-    script += `cat > '${configPathEsc}' << '${tomlDelimiter}'\n`;
-    script += tomlContent + "\n";
-    script += `${tomlDelimiter}\n`;
+    // Run built-in template processor only if there are templates configured
+    if (tomlContent) {
+      const configPathEsc = predefinedConfigPath.replace(/'/g, "'\\''");
+      const tomlDelimiter = "TOML_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
 
-    // Run Python template processor with --scheme flag
-    // Don't pass --mode so templates get both dark and light colors (e.g., zed.json needs both)
-    // Pass --default-mode so "default" in templates resolves to the current theme mode
-    // Pass wallpaper as positional arg so image_path is available in templates (no extraction occurs when --scheme is used)
-    const wpArg = wallpaperPath ? `'${wallpaperPath.replace(/'/g, "'\\''")}'` : "";
-    script += `python3 "${templateProcessorScript}" ${wpArg} --scheme '${schemeJsonPathEsc}' --config '${configPathEsc}' --default-mode ${mode}\n`;
+      // Write TOML config
+      script += `cat > '${configPathEsc}' << '${tomlDelimiter}'\n`;
+      script += tomlContent + "\n";
+      script += `${tomlDelimiter}\n`;
+
+      // Run Python template processor with --scheme flag
+      // Don't pass --mode so templates get both dark and light colors (e.g., zed.json needs both)
+      // Pass --default-mode so "default" in templates resolves to the current theme mode
+      // Pass wallpaper as positional arg so image_path is available in templates (no extraction occurs when --scheme is used)
+      const wpArg = wallpaperPath ? `'${wallpaperPath.replace(/'/g, "'\\''")}'` : "";
+      script += `python3 "${templateProcessorScript}" ${wpArg} --scheme '${schemeJsonPathEsc}' --config '${configPathEsc}' --default-mode ${mode}\n`;
+    }
 
     // Add user templates if enabled
     script += buildUserTemplateCommandForPredefined(schemeData, mode, wallpaperPath);
@@ -330,19 +332,23 @@ Singleton {
   }
 
   function buildGenerationScript(content, wallpaper, mode) {
-    const delimiter = "THEME_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
     const pathEsc = dynamicConfigPath.replace(/'/g, "'\\''");
     const wpDelimiter = "WALLPAPER_PATH_EOF_" + Math.random().toString(36).substr(2, 9);
 
     // Use heredoc for wallpaper path to avoid all escaping issues
-    let script = `cat > '${pathEsc}' << '${delimiter}'\n${content}\n${delimiter}\n`;
-    script += `NOCTALIA_WP_PATH=$(cat << '${wpDelimiter}'\n${wallpaper}\n${wpDelimiter}\n)\n`;
+    let script = `NOCTALIA_WP_PATH=$(cat << '${wpDelimiter}'\n${wallpaper}\n${wpDelimiter}\n)\n`;
 
-    // Use template-processor.py (Python implementation)
-    // Don't pass --mode so templates get both dark and light colors (e.g., zed.json needs both)
-    // Pass --default-mode so "default" in templates resolves to the current theme mode
-    const schemeType = getSchemeType();
-    script += `python3 "${templateProcessorScript}" "$NOCTALIA_WP_PATH" --scheme-type ${schemeType} --config '${pathEsc}' --default-mode ${mode} `;
+    // Run built-in template processor only if there are templates configured
+    if (content) {
+      const delimiter = "THEME_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
+      script += `cat > '${pathEsc}' << '${delimiter}'\n${content}\n${delimiter}\n`;
+
+      // Use template-processor.py (Python implementation)
+      // Don't pass --mode so templates get both dark and light colors (e.g., zed.json needs both)
+      // Pass --default-mode so "default" in templates resolves to the current theme mode
+      const schemeType = getSchemeType();
+      script += `python3 "${templateProcessorScript}" "$NOCTALIA_WP_PATH" --scheme-type ${schemeType} --config '${pathEsc}' --default-mode ${mode}\n`;
+    }
 
     script += buildUserTemplateCommand("$NOCTALIA_WP_PATH", mode);
 
