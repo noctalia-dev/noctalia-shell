@@ -20,7 +20,7 @@ Item {
 
   // Reactive path that updates when values change
   readonly property string svgPath: {
-    if (!values || !Array.isArray(values) || values.length === 0) {
+    if (!values || values.length === undefined || values.length === 0) {
       return _safeFallbackPath;
     }
 
