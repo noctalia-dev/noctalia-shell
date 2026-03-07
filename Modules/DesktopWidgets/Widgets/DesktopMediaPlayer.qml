@@ -34,9 +34,10 @@ DraggableDesktopWidget {
 
   // CavaService registration for visualizer
   readonly property string cavaComponentId: "desktopmediaplayer:" + (root.screen ? root.screen.name : "unknown")
+  readonly property bool needsCava: root.shouldShowVisualizer && !root.isHidden
 
-  onShouldShowVisualizerChanged: {
-    if (root.shouldShowVisualizer) {
+  onNeedsCavaChanged: {
+    if (root.needsCava) {
       CavaService.registerComponent(root.cavaComponentId);
     } else {
       CavaService.unregisterComponent(root.cavaComponentId);
@@ -44,7 +45,7 @@ DraggableDesktopWidget {
   }
 
   Component.onCompleted: {
-    if (root.shouldShowVisualizer) {
+    if (root.needsCava) {
       CavaService.registerComponent(root.cavaComponentId);
     }
   }
@@ -81,7 +82,7 @@ DraggableDesktopWidget {
     anchors.bottomMargin: 0
     z: 0
     clip: true
-    active: shouldShowVisualizer
+    active: needsCava
     layer.enabled: true
     layer.smooth: true
     layer.effect: MultiEffect {

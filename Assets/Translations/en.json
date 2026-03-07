@@ -43,7 +43,8 @@
       "color-name-label": "Fill color",
       "hide-when-idle-description": "When enabled, the visualizer is hidden unless a player is actively playing.",
       "hide-when-idle-label": "Hide when no media is playing",
-      "width-description": "Custom component width."
+      "width-description": "Custom component width.",
+      "height-description": "Custom component width."
     },
     "battery": {
       "device-default": "Default (Display Device)",

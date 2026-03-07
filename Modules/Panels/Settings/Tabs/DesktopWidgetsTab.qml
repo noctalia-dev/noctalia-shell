@@ -266,6 +266,9 @@ ColumnLayout {
     } else if (widgetId === "MediaPlayer") {
       newWidget.x = 100;
       newWidget.y = 200;
+    } else if (widgetId === "AudioVisualizer") {
+      newWidget.x = 120;
+      newWidget.y = 280;
     } else if (widgetId === "Weather") {
       newWidget.x = 100;
       newWidget.y = 300;
