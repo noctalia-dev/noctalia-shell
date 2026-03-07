@@ -69,6 +69,7 @@ Item {
 
   // Grouped mode (show applications) settings
   readonly property bool showApplications: (widgetSettings.showApplications !== undefined) ? widgetSettings.showApplications : widgetMetadata.showApplications
+  readonly property bool showApplicationsHover: (widgetSettings.showApplicationsHover !== undefined) ? widgetSettings.showApplicationsHover : widgetMetadata.showApplicationsHover
   readonly property bool showLabelsOnlyWhenOccupied: (widgetSettings.showLabelsOnlyWhenOccupied !== undefined) ? widgetSettings.showLabelsOnlyWhenOccupied : widgetMetadata.showLabelsOnlyWhenOccupied
   readonly property bool colorizeIcons: (widgetSettings.colorizeIcons !== undefined) ? widgetSettings.colorizeIcons : widgetMetadata.colorizeIcons
   readonly property real unfocusedIconsOpacity: (widgetSettings.unfocusedIconsOpacity !== undefined) ? widgetSettings.unfocusedIconsOpacity : widgetMetadata.unfocusedIconsOpacity
@@ -106,7 +107,6 @@ Item {
   }
 
   property bool isDestroying: false
-  property bool hovered: false
 
   // Revision counter to force icon re-evaluation
   property int iconRevision: 0
@@ -128,8 +128,34 @@ Item {
 
   signal workspaceChanged(int workspaceId, color accentColor)
 
-  implicitWidth: showApplications ? (isVertical ? groupedGrid.implicitWidth : Math.round(groupedGrid.implicitWidth + horizontalPadding * hasLabel)) : (isVertical ? barHeight : computeWidth())
-  implicitHeight: showApplications ? (isVertical ? Math.round(groupedGrid.implicitHeight + horizontalPadding * 0.6 * hasLabel) : barHeight) : (isVertical ? computeHeight() : barHeight)
+  property bool isHovered: false
+
+  HoverHandler {
+    id: hoverHandler
+    enabled: showApplications && showApplicationsHover
+    onHoveredChanged: {
+      if(hovered) {
+        hoverEval.stop();
+        isHovered = true;
+      } else {
+        hoverEval.restart();
+      }
+    }
+  }
+
+  Timer {
+    id: hoverEval
+    interval: 50
+    repeat: false
+    onTriggered: {
+      isHovered = hoverHandler.hovered || contextMenu.visible;
+    }
+  }
+
+  readonly property bool appVisible: showApplications && (!showApplicationsHover || root.isHovered)
+
+  implicitWidth: appVisible  ? (isVertical ? groupedGrid.implicitWidth : Math.round(groupedGrid.implicitWidth + horizontalPadding * hasLabel)) : (isVertical ? barHeight : computeWidth())
+  implicitHeight: appVisible ? (isVertical ? Math.round(groupedGrid.implicitHeight + horizontalPadding * 0.6 * hasLabel) : barHeight) : (isVertical ? computeHeight() : barHeight)
 
   function getWorkspaceWidth(ws, activeOverride) {
     const d = Math.round(capsuleHeight * root.baseDimensionRatio);
@@ -256,7 +282,7 @@ Item {
   onScreenChanged: refreshWorkspaces()
   onScreenNameChanged: refreshWorkspaces()
   onHideUnoccupiedChanged: refreshWorkspaces()
-  onShowApplicationsChanged: refreshWorkspaces()
+  onAppVisibleChanged: refreshWorkspaces()
 
   Connections {
     target: CompositorService
@@ -264,13 +290,13 @@ Item {
       refreshWorkspaces();
     }
     function onWindowListChanged() {
-      if (showApplications || showLabelsOnlyWhenOccupied) {
+      if (appVisible || showLabelsOnlyWhenOccupied) {
         root.windowRevision++;
         refreshWorkspaces();
       }
     }
     function onActiveWindowChanged() {
-      if (showApplications) {
+      if (appVisible) {
         root.windowRevision++;
         refreshWorkspaces();
       }
@@ -408,6 +434,15 @@ Item {
   NPopupContextMenu {
     id: contextMenu
 
+    onVisibleChanged: {
+      if (visible) {
+        hoverEval.stop();
+        root.isHovered = true;
+      } else {
+        hoverEval.restart();
+      }
+    }
+
     model: {
       var items = [];
       if (root.selectedWindowId) {
@@ -484,7 +519,7 @@ Item {
 
   Rectangle {
     id: workspaceBackground
-    visible: !showApplications
+    visible: !appVisible
     width: isVertical ? capsuleHeight : parent.width
     height: isVertical ? parent.height : capsuleHeight
     radius: Style.radiusM
@@ -555,7 +590,15 @@ Item {
     spacing: spacingBetweenPills
     x: horizontalPadding
     y: 0
-    visible: !isVertical && !showApplications
+    visible: !isVertical && !appVisible
+    scale: visible ? 1.0 : 0.8
+    Behavior on scale {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutBack
+        easing.overshoot: 1.2
+      }
+    }
 
     Repeater {
       id: workspaceRepeaterHorizontal
@@ -590,7 +633,15 @@ Item {
     spacing: spacingBetweenPills
     x: 0
     y: horizontalPadding
-    visible: isVertical && !showApplications
+    visible: isVertical && !appVisible
+    scale : visible ? 1.0 : 0.8
+    Behavior on scale {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutBack
+        easing.overshoot: 1.2
+      }
+    }
 
     Repeater {
       id: workspaceRepeaterVertical
@@ -620,7 +671,7 @@ Item {
   }
 
   // ========================================
-  // Grouped mode (showApplications = true)
+  // Grouped mode (appVisible = true)
   // ========================================
   Component {
     id: groupedWorkspaceDelegate
@@ -653,11 +704,15 @@ Item {
         }
       }
 
+      HoverHandler {
+        id: hoverHandler
+      }
+
       width: Style.toOdd((hasWindows ? groupedIconsFlow.implicitWidth : root.iconSize) + (root.isVertical ? (root.baseItemSize - root.iconSize + Style.marginXS) : Style.marginXL))
       height: Style.toOdd((hasWindows ? groupedIconsFlow.implicitHeight : root.iconSize) + (root.isVertical ? Style.marginL : (root.baseItemSize - root.iconSize + Style.marginXS)))
       color: Style.capsuleColor
       radius: Style.radiusS
-      border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : Color.mOutline), root.groupedBorderOpacity)
+      border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : (hoverHandler.hovered ? Color.mHover : Color.mOutline)), root.groupedBorderOpacity)
       border.width: Style.borderS
 
       Behavior on width {
@@ -710,16 +765,26 @@ Item {
           delegate: Item {
             id: groupedTaskbarItem
 
-            property bool itemHovered: false
-
             width: root.iconSize
             height: root.iconSize
+
+            HoverHandler {
+              id: hoverHandler
+            }
 
             IconImage {
               id: groupedAppIcon
 
               width: parent.width
               height: parent.height
+              scale: hoverHandler.hovered ? (root.isVertical ? 1.1 : 1.2) : (root.isVertical ? 0.9 : 1.0)
+              Behavior on scale {
+                NumberAnimation {
+                  duration: Style.animationNormal
+                  easing.type: Easing.OutBack
+                }
+              }
+
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
                 return ThemeIcons.iconForAppId(modelData.appId?.toLowerCase());
@@ -771,11 +836,9 @@ Item {
                             }
                           }
               onEntered: {
-                groupedTaskbarItem.itemHovered = true;
                 TooltipService.show(groupedTaskbarItem, modelData.title || modelData.appId || "Unknown app.", BarService.getTooltipDirection(root.screenName));
               }
               onExited: {
-                groupedTaskbarItem.itemHovered = false;
                 TooltipService.hide();
               }
             }
@@ -904,7 +967,15 @@ Item {
 
   Flow {
     id: groupedGrid
-    visible: showApplications
+    visible: appVisible
+    scale: visible ? 1.0 : 0.8
+    Behavior on scale {
+      NumberAnimation {
+        duration: Style.animationFast
+        easing.type: Easing.OutBack
+        easing.overshoot: 1.2
+      }
+    }
 
     x: root.isVertical ? Style.pixelAlignCenter(parent.width, width) : Math.round(horizontalPadding * root.hasLabel)
     y: root.isVertical ? Math.round(horizontalPadding * 0.4 * root.hasLabel) : Style.pixelAlignCenter(parent.height, height)
@@ -913,7 +984,7 @@ Item {
     flow: root.isVertical ? Flow.TopToBottom : Flow.LeftToRight
 
     Repeater {
-      model: showApplications ? localWorkspaces : null
+      model: appVisible ? localWorkspaces : null
       delegate: groupedWorkspaceDelegate
     }
   }
