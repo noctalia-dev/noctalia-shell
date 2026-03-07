@@ -103,8 +103,8 @@ Item {
             }
           }
 
-          // If this is a container with app_id or class (i.e., a window)
-          if (node.type === "con" && (node.app_id || node.window_properties)) {
+          // If this is a regular or floating container with app_id/class (i.e., a window)
+          if ((node.type === "con" || node.type === "floating_con") && (node.app_id || node.window_properties)) {
             const appId = node.app_id || (node.window_properties ? node.window_properties.class : null);
             const title = node.name || "";
             const id = node.id;
