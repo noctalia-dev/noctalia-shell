@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Выберите цвет для визуализатора.",
       "color-name-label": "Цвет заливки",
+      "height-description": "Пользовательская ширина компонента.",
       "hide-when-idle-description": "Если включено, визуализатор скрыт, пока плеер не начнёт воспроизведение.",
       "hide-when-idle-label": "Скрывать, когда медиа не воспроизводится",
       "width-description": "Пользовательская ширина компонента."

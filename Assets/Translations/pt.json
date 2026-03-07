@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Selecione a cor para o visualizador.",
       "color-name-label": "Cor de preenchimento",
+      "height-description": "Largura de componente personalizada.",
       "hide-when-idle-description": "Quando ativado, o visualizador fica oculto a menos que haja reprodução ativa.",
       "hide-when-idle-label": "Ocultar quando não houver reprodução",
       "width-description": "Largura do componente personalizado."

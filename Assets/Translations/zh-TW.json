@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "選取視覺效果的顏色",
       "color-name-label": "填充顏色",
+      "height-description": "自訂元件寬度。",
       "hide-when-idle-description": "當啟用時, 如果沒有正在播放的媒體就隱藏視覺效果",
       "hide-when-idle-label": "無任何媒體播放時隱藏",
       "width-description": "自訂部件寬度"

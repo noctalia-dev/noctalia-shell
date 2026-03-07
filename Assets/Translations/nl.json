@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Selecteer de kleur voor de visualizer.",
       "color-name-label": "Vulkleur",
+      "height-description": "Aangepaste componentbreedte.",
       "hide-when-idle-description": "Indien ingeschakeld wordt de visualizer verborgen, tenzij een speler actief afspeelt.",
       "hide-when-idle-label": "Verbergen wanneer geen media speelt",
       "width-description": "Aangepaste componentbreedte."

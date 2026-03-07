@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Wybierz kolor dla wizualizatora.",
       "color-name-label": "Kolor wypełnienia",
+      "height-description": "Niestandardowa szerokość komponentu.",
       "hide-when-idle-description": "Gdy włączone, wizualizator jest ukryty, chyba że odtwarzacz jest aktywny.",
       "hide-when-idle-label": "Ukryj, gdy nic nie jest odtwarzane",
       "width-description": "Niestandardowa szerokość komponentu."

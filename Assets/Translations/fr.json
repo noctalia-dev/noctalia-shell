@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Sélectionnez la couleur du visualiseur.",
       "color-name-label": "Couleur de remplissage",
+      "height-description": "Largeur de composant personnalisée.",
       "hide-when-idle-description": "Si activé, le visualiseur est masqué sauf lorsqu'un lecteur est en lecture.",
       "hide-when-idle-label": "Masquer lorsqu'aucun média n'est en lecture",
       "width-description": "Largeur personnalisée du composant."

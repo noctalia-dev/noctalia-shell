@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Välj färg för visualiseraren.",
       "color-name-label": "Fyllningsfärg",
+      "height-description": "Anpassad komponentbredd.",
       "hide-when-idle-description": "När denna funktion är aktiverad döljs visualiseraren om ingen spelare är aktiv.",
       "hide-when-idle-label": "Dölj när ingen media spelas upp",
       "width-description": "Anpassad komponentbredd."

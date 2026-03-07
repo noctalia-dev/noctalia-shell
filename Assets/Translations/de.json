@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Wählen Sie die Farbe für den Visualisierer aus.",
       "color-name-label": "Füllfarbe",
+      "height-description": "Benutzerdefinierte Komponentenbreite.",
       "hide-when-idle-description": "Wenn aktiviert, wird der Visualizer ausgeblendet, sofern keine Wiedergabe läuft.",
       "hide-when-idle-label": "Ausblenden, wenn keine Medien wiedergegeben werden",
       "width-description": "Benutzerdefinierte Komponentenbreite."

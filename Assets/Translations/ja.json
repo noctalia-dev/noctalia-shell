@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "ビジュアライザーの色を選択します。",
       "color-name-label": "塗りつぶし色",
+      "height-description": "カスタムコンポーネントの幅。",
       "hide-when-idle-description": "有効にすると、再生中のプレーヤーがない場合にビジュアライザーを隠します。",
       "hide-when-idle-label": "メディア停止時は隠す",
       "width-description": "コンポーネントの幅をカスタム設定します。"

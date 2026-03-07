@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "选择可视化工具的颜色。",
       "color-name-label": "填充颜色",
+      "height-description": "自定义组件宽度。",
       "hide-when-idle-description": "启用后，除非正在播放媒体，否则隐藏可视化显示。",
       "hide-when-idle-label": "无媒体播放时隐藏",
       "width-description": "自定义组件的宽度。"

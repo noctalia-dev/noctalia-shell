@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "A vizualizátor színe.",
       "color-name-label": "Kitöltési szín",
+      "height-description": "Egyéni komponensszélesség.",
       "hide-when-idle-description": "Ha engedélyezve van, a vizualizátor el van rejtve, kivéve, ha egy lejátszó aktívan játszik.",
       "hide-when-idle-label": "Elrejtés, ha nincs média lejátszva",
       "width-description": "Egyéni komponens szélessége."

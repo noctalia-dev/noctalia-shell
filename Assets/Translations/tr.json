@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Görselleştirici için renk seçin.",
       "color-name-label": "Dolgu rengi",
+      "height-description": "Özel bileşen genişliği.",
       "hide-when-idle-description": "Etkinleştirildiğinde, çalar aktif bir şekilde çalmadığı sürece görselleştirici gizlidir.",
       "hide-when-idle-label": "Boşken gizle",
       "width-description": "Özel bileşen genişliği."

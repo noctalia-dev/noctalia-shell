@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Вибрати колір для візуалізатора.",
       "color-name-label": "Колір заповнення",
+      "height-description": "Користувацька ширина компонента.",
       "hide-when-idle-description": "Коли увімкнено, візуалізатор приховано, якщо плеєр активно не відтворює.",
       "hide-when-idle-label": "Приховати, коли медіа не відтворюється",
       "width-description": "Власна ширина компонента."
