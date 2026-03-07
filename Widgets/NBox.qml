@@ -14,7 +14,7 @@ Item {
   Rectangle {
     id: bg
     anchors.fill: parent
-    color: forceOpaque ? root.color : Qt.alpha(root.color, root.color.a * Settings.data.ui.panelBackgroundOpacity)
+    color: forceOpaque ? root.color : Qt.alpha(root.color, Math.max(0, root.color.a - (1.0 - Settings.data.ui.panelBackgroundOpacity) * 0.33))
     radius: Style.radiusM
     border.color: Style.boxBorderColor
     border.width: Style.borderS
