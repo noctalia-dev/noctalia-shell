@@ -190,7 +190,7 @@ Popup {
         widgetSettings.data = widgetData || {};
         widgetSettings.metadata = DesktopWidgetRegistry.widgetMetadata[widgetId] || {};
         widgetSettings.save = function () {
-          var newSettings = Object.assign({}, widgetData || {});
+          var newSettings = Object.assign({}, widgetSettings.data);
           root.settingsCache = newSettings;
           saveTimer.start();
         };
