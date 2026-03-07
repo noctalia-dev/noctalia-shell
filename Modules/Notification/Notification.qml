@@ -8,6 +8,7 @@ import Quickshell.Widgets
 import qs.Commons
 import qs.Services.System
 import qs.Widgets
+import qs.Services.UI
 
 // Simple notification popup - displays multiple notifications
 Variants {
@@ -423,6 +424,7 @@ Variants {
                   } else {
                     resumeTimer.start();
                   }
+                  PanelService.childrenHovered(hovered);
                 }
               }
 

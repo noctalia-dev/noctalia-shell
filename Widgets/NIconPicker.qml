@@ -5,7 +5,7 @@ import QtQuick.Window
 import qs.Commons
 import qs.Widgets
 
-Popup {
+NPopup {
   id: root
   modal: true
 

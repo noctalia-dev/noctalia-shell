@@ -55,6 +55,59 @@ ColumnLayout {
     text: Math.floor(Settings.data.general.dimmerOpacity * 100) + "%"
   }
 
+  NComboBox {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.user-interface.panels-auto-hide-label")
+    description: I18n.tr("panels.user-interface.panels-auto-hide-description")
+    model: [
+      {
+        "key": "never",
+        "name": I18n.tr("options.settings-panel-auto-hide.never")
+      },
+      {
+        "key": "once-entered",
+        "name": I18n.tr("options.settings-panel-auto-hide.once-entered")
+      },
+      {
+        "key": "always",
+        "name": I18n.tr("options.settings-panel-auto-hide.always")
+      }
+    ]
+    currentKey: Settings.data.ui.panelsAutoHide
+    onSelected: key => Settings.data.ui.panelsAutoHide = key
+    defaultValue: Settings.getDefaultValue("ui.panelsAutoHide")
+  }
+
+  NValueSlider {
+    Layout.fillWidth: true
+    visible: Settings.data.ui.panelsAutoHide !== "never"
+    label: I18n.tr("panels.user-interface.panels-auto-hide-delay-label")
+    description: I18n.tr("panels.user-interface.panels-auto-hide-delay-description")
+    from: 100
+    to: 2000
+    stepSize: 100
+    showReset: true
+    value: Settings.data.ui.panelsHideDelay
+    defaultValue: Settings.getDefaultValue("ui.panelsHideDelay")
+    onMoved: value => Settings.data.ui.panelsHideDelay = value
+    text: Settings.data.ui.panelsHideDelay + "ms"
+  }
+
+  NValueSlider {
+    Layout.fillWidth: true
+    visible: Settings.data.ui.panelsAutoHide === "always"
+    label: I18n.tr("panels.user-interface.panels-auto-hide-delay-before-enter-label")
+    description: I18n.tr("panels.user-interface.panels-auto-hide-delay-before-enter-description")
+    from: 200
+    to: 4000
+    stepSize: 100
+    showReset: true
+    value: Settings.data.ui.panelsHideBeforeEnterDelay
+    defaultValue: Settings.getDefaultValue("ui.panelsHideBeforeEnterDelay")
+    onMoved: value => Settings.data.ui.panelsHideBeforeEnterDelay = value
+    text: Settings.data.ui.panelsHideBeforeEnterDelay + "ms"
+  }
+
   NDivider {
     Layout.fillWidth: true
   }

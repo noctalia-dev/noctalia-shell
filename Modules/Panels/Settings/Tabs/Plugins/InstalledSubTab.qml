@@ -421,7 +421,7 @@ ColumnLayout {
   }
 
   // Uninstall confirmation dialog
-  Popup {
+  NPopup {
     id: uninstallDialog
     parent: Overlay.overlay
     modal: true
