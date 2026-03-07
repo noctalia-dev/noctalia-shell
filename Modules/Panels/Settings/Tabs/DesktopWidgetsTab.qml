@@ -80,11 +80,14 @@ ColumnLayout {
 
       NSectionEditor {
         required property var modelData
+        readonly property real compositorScale: {
+          const info = CompositorService.displayScales[modelData.name];
+          return (info && info.scale) ? info.scale : 1.0;
+        }
 
         Layout.fillWidth: true
         sectionName: modelData.name
         sectionSubtitle: {
-          var compositorScale = CompositorService.getDisplayScale(modelData.name);
           // Format scale to 2 decimal places to prevent overly long text
           var formattedScale = compositorScale.toFixed(2);
           return "(" + modelData.width + "x" + modelData.height + " @ " + formattedScale + "x)";

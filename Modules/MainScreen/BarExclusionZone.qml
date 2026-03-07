@@ -24,7 +24,11 @@ PanelWindow {
   readonly property real barMarginH: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
   readonly property real barMarginV: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0
   // Reduce exclusion zone by 1 physical pixel so app windows blend flush against the bar edge
-  readonly property real bleedInset: 1.0 / (CompositorService.getDisplayScale(screen?.name) || 1.0)
+  readonly property real bleedInset: {
+    const info = CompositorService.displayScales[screen?.name];
+    const scale = (info && info.scale) ? info.scale : 1.0;
+    return 1.0 / scale;
+  }
 
   // Invisible - just reserves space
   color: "transparent"
