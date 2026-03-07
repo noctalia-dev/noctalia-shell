@@ -3,6 +3,7 @@ import qs.Commons
 
 // Rounded group container using the variant surface color.
 // To be used in side panels and settings panes to group fields or buttons.
+// Use a reduced opacity (1/3 of panel's opactity) to ensure readability
 Item {
   id: root
 
