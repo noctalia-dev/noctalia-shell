@@ -151,8 +151,11 @@ ColumnLayout {
               }
             ]
             delegate: RowLayout {
+              id: cornerRow
               spacing: Style.marginM
               Layout.fillWidth: true
+
+              property string commandDraft: Settings.getHotCornerCommandForScreen(screenName, modelData.key)
 
               RowLayout {
                 Layout.alignment: Qt.AlignVCenter
@@ -181,12 +184,23 @@ ColumnLayout {
                 label: ""
                 description: ""
                 placeholderText: I18n.tr("panels.general.screen-corners-hot-corner-command-placeholder")
-                text: Settings.getHotCornerCommandForScreen(screenName, modelData.key)
+                text: cornerRow.commandDraft
                 fontFamily: Settings.data.ui.fontFixed
                 enabled: Settings.getHotCornerEnabledForScreen(screenName, modelData.key)
                 opacity: Settings.getHotCornerEnabledForScreen(screenName, modelData.key) ? 1 : 0
-                onAccepted: Settings.setHotCornerCommandForScreen(screenName, modelData.key, text)
-                onEditingFinished: Settings.setHotCornerCommandForScreen(screenName, modelData.key, text)
+                onTextChanged: {
+                  cornerRow.commandDraft = text;
+                  saveTimer.restart();
+                }
+              }
+
+              Timer {
+                id: saveTimer
+                interval: 500
+                repeat: false
+                onTriggered: {
+                  Settings.setHotCornerCommandForScreen(screenName, modelData.key, cornerRow.commandDraft);
+                }
               }
 
               NToggle {
