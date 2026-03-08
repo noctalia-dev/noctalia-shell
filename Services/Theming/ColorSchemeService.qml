@@ -272,4 +272,87 @@ Singleton {
     colorsWriter.path = colorsJsonFilePath;
     colorsWriter.writeAdapter();
   }
+
+  // ---- Colorscheme installation from remote sources ----
+
+  readonly property string mainColorSchemeSourceUrl: "https://github.com/noctalia-dev/noctalia-colorschemes"
+
+  property var installingColorSchemes: ({})
+
+  function installColorScheme(schemeName, sourceUrl, callback) {
+    var repoUrl = sourceUrl || mainColorSchemeSourceUrl;
+    Logger.i("ColorScheme", "Installing colorscheme:", schemeName, "from", repoUrl);
+
+    var schemeDir = downloadedSchemesDirectory + "/" + schemeName;
+
+    var downloadCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '"
+        + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set '"
+        + schemeName + "' 2>/dev/null && mkdir -p '"
+        + schemeDir + "' && cp -r \"$temp_dir/" + schemeName + "/.\" '"
+        + schemeDir + "/'; exit_code=$?; rm -rf \"$temp_dir\"; exit $exit_code";
+
+    var newInstalling = Object.assign({}, root.installingColorSchemes);
+    newInstalling[schemeName] = true;
+    root.installingColorSchemes = newInstalling;
+
+    var downloadProcess = Qt.createQmlObject(
+      'import QtQuick; import Quickshell.Io; Process { command: ["sh", "-c", "'
+        + downloadCmd.replace(/"/g, '\\"') + '"] }',
+      root, "DownloadColorScheme_" + schemeName
+    );
+
+    downloadProcess.exited.connect(function (exitCode) {
+      var currentInstalling = Object.assign({}, root.installingColorSchemes);
+      delete currentInstalling[schemeName];
+      root.installingColorSchemes = currentInstalling;
+
+      if (exitCode === 0) {
+        Logger.i("ColorScheme", "Downloaded colorscheme:", schemeName);
+        loadColorSchemes();
+        ToastService.showNotice(
+          I18n.tr("panels.color-scheme.title"),
+          I18n.tr("common.installed") + ": " + schemeName,
+          "settings-color-scheme"
+        );
+        if (callback) callback(true, null);
+      } else {
+        Logger.e("ColorScheme", "Failed to download colorscheme:", schemeName);
+        ToastService.showError(
+          I18n.tr("panels.color-scheme.title"),
+          I18n.tr("common.error") + ": " + schemeName
+        );
+        if (callback) callback(false, "Download failed");
+      }
+      downloadProcess.destroy();
+    });
+
+    downloadProcess.running = true;
+  }
+
+  function uninstallColorScheme(schemeName, callback) {
+    var schemeDir = downloadedSchemesDirectory + "/" + schemeName;
+    Logger.i("ColorScheme", "Uninstalling colorscheme:", schemeName);
+
+    var removeProcess = Qt.createQmlObject(`
+      import QtQuick
+      import Quickshell.Io
+      Process {
+        command: ["rm", "-rf", "${schemeDir}"]
+      }
+    `, root, "RemoveColorScheme_" + schemeName);
+
+    removeProcess.exited.connect(function (exitCode) {
+      if (exitCode === 0) {
+        Logger.i("ColorScheme", "Uninstalled colorscheme:", schemeName);
+        loadColorSchemes();
+        if (callback) callback(true, null);
+      } else {
+        Logger.e("ColorScheme", "Failed to uninstall colorscheme:", schemeName);
+        if (callback) callback(false, "Failed to remove colorscheme files");
+      }
+      removeProcess.destroy();
+    });
+
+    removeProcess.running = true;
+  }
 }
