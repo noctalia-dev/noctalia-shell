@@ -469,6 +469,58 @@ Singleton {
         Logger.w("IPC", "Invalid generation method received: " + method);
       }
     }
+
+    // Install a colorscheme from a remote source (used by noctalia:// URL scheme)
+    function install(schemeName: string, sourceUrl: string) {
+      Logger.i("IPC", "Install colorscheme requested:", schemeName, "source:", sourceUrl || "official");
+
+      // Check if a custom source is registered
+      if (sourceUrl && sourceUrl !== ColorSchemeService.mainColorSchemeSourceUrl) {
+        var sourceRegistered = false;
+        for (var i = 0; i < PluginRegistry.pluginSources.length; i++) {
+          if (PluginRegistry.pluginSources[i].url === sourceUrl) {
+            sourceRegistered = true;
+            break;
+          }
+        }
+        if (!sourceRegistered) {
+          Logger.w("IPC", "Rejected colorscheme install from unregistered source:", sourceUrl);
+          ToastService.showError(I18n.tr("panels.color-scheme.title"), "Source not registered: " + sourceUrl);
+          return;
+        }
+      }
+
+      // Check if already installed
+      for (var j = 0; j < ColorSchemeService.schemes.length; j++) {
+        if (ColorSchemeService.getBasename(ColorSchemeService.schemes[j]) === schemeName) {
+          Logger.i("IPC", "Colorscheme already installed:", schemeName);
+          ToastService.showNotice(I18n.tr("panels.color-scheme.title"), schemeName + " " + I18n.tr("common.already-installed"));
+          return;
+        }
+      }
+
+      // Check if the colorscheme exists in the fetched registry
+      if (!ColorSchemeService.isColorSchemeInRegistry(schemeName)) {
+        Logger.w("IPC", "Colorscheme not found in registry:", schemeName);
+        ToastService.showError(I18n.tr("panels.color-scheme.title"), "\"" + schemeName + "\" " + I18n.tr("common.not-found"));
+        return;
+      }
+
+      // Confirmation toast — user must click "Install" to proceed
+      ToastService.showWarning(
+        I18n.tr("panels.color-scheme.title"),
+        "Install \"" + schemeName + "\"?",
+        8000,
+        I18n.tr("common.install"),
+        function() {
+          ColorSchemeService.installColorScheme(schemeName, sourceUrl || "", function(success, error) {
+            if (!success) {
+              Logger.e("IPC", "Failed to install colorscheme:", schemeName, error);
+            }
+          });
+        }
+      );
+    }
   }
 
   IpcHandler {
@@ -853,6 +905,95 @@ Singleton {
 
   IpcHandler {
     target: "plugin"
+    // Install a plugin from a remote source (used by noctalia:// URL scheme)
+    function install(pluginId: string, sourceUrl: string) {
+      var source = sourceUrl || PluginRegistry.mainSourceUrl;
+      Logger.i("IPC", "Install plugin requested:", pluginId, "source:", source);
+
+      // Check if the source is registered
+      var sourceRegistered = PluginRegistry.isMainSource(source);
+      if (!sourceRegistered) {
+        for (var i = 0; i < PluginRegistry.pluginSources.length; i++) {
+          if (PluginRegistry.pluginSources[i].url === source) {
+            sourceRegistered = true;
+            break;
+          }
+        }
+      }
+      if (!sourceRegistered) {
+        Logger.w("IPC", "Rejected plugin install from unregistered source:", source);
+        ToastService.showError(I18n.tr("panels.plugins.title"), "Source not registered: " + source);
+        return;
+      }
+
+      // Check if already installed
+      var compositeKey = PluginRegistry.generateCompositeKey(pluginId, source);
+      if (PluginRegistry.isPluginDownloaded(compositeKey)) {
+        Logger.i("IPC", "Plugin already installed:", compositeKey);
+        ToastService.showNotice(I18n.tr("panels.plugins.title"), pluginId + " " + I18n.tr("common.already-installed"));
+        return;
+      }
+
+      // Check if the plugin exists in any fetched registry
+      var foundInRegistry = false;
+      for (var k = 0; k < PluginService.availablePlugins.length; k++) {
+        var ap = PluginService.availablePlugins[k];
+        if (ap.id === pluginId && (!sourceUrl || ap.source.url === sourceUrl)) {
+          foundInRegistry = true;
+          break;
+        }
+      }
+      if (!foundInRegistry) {
+        Logger.w("IPC", "Plugin not found in registry:", pluginId);
+        ToastService.showError(I18n.tr("panels.plugins.title"), "\"" + pluginId + "\" " + I18n.tr("common.not-found"));
+        return;
+      }
+
+      // Look up metadata from available plugins or build minimal metadata
+      var pluginMetadata = null;
+      for (var j = 0; j < PluginService.availablePlugins.length; j++) {
+        var p = PluginService.availablePlugins[j];
+        if (p.id === pluginId && (!sourceUrl || p.source.url === sourceUrl)) {
+          pluginMetadata = p;
+          break;
+        }
+      }
+      if (!pluginMetadata) {
+        pluginMetadata = {
+          id: pluginId,
+          name: pluginId,
+          source: {
+            url: source,
+            name: PluginRegistry.getSourceNameByUrl(source) || "Custom"
+          }
+        };
+      }
+
+      // Confirmation toast — user must click "Install" to proceed
+      var sourceName = PluginRegistry.getSourceNameByUrl(source) || source;
+      ToastService.showWarning(
+        I18n.tr("panels.plugins.title"),
+        "Install \"" + pluginId + "\" from " + sourceName + "?",
+        8000,
+        I18n.tr("common.install"),
+        function() {
+          PluginService.installPlugin(pluginMetadata, false, function(success, error, registeredKey) {
+            if (success) {
+              ToastService.showNotice(
+                I18n.tr("panels.plugins.title"),
+                I18n.tr("panels.plugins.install-success", { "plugin": registeredKey || pluginId })
+              );
+            } else {
+              ToastService.showError(
+                I18n.tr("panels.plugins.title"),
+                error || I18n.tr("common.error")
+              );
+            }
+          });
+        }
+      );
+    }
+
     function openSettings(key: string) {
       var manifest = PluginRegistry.getPluginManifest(key);
       if (!manifest) {
@@ -917,162 +1058,4 @@ Singleton {
     }
   }
 
-  // ---- URL scheme handler ----
-  // Handles noctalia:// URL actions dispatched via `noctalia-qs url <url>`
-  IpcHandler {
-    target: "url"
-
-    // Handle a noctalia:// URL
-    // Format: noctalia://install/plugin/<pluginId>[?source=<repoUrl>]
-    //         noctalia://install/colorscheme/<schemeName>[?source=<repoUrl>]
-    //         noctalia://apply/colorscheme/<schemeName>
-    function handle(url: string) {
-      Logger.i("IPC", "Handling noctalia:// URL:", url);
-
-      // Strip the scheme
-      var path = url;
-      if (path.startsWith("noctalia://")) {
-        path = path.substring(11);
-      }
-
-      // Split query string
-      var queryString = "";
-      var queryIdx = path.indexOf("?");
-      if (queryIdx !== -1) {
-        queryString = path.substring(queryIdx + 1);
-        path = path.substring(0, queryIdx);
-      }
-
-      // Parse query params
-      var params = {};
-      if (queryString) {
-        var pairs = queryString.split("&");
-        for (var i = 0; i < pairs.length; i++) {
-          var kv = pairs[i].split("=");
-          if (kv.length === 2) {
-            params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1]);
-          }
-        }
-      }
-
-      // Strip trailing slash
-      if (path.endsWith("/")) {
-        path = path.substring(0, path.length - 1);
-      }
-
-      var segments = path.split("/").filter(function(s) { return s.length > 0; });
-
-      if (segments.length < 2) {
-        Logger.w("IPC", "Invalid noctalia:// URL - not enough path segments:", url);
-        ToastService.showError("Noctalia", "Invalid URL: " + url);
-        return;
-      }
-
-      var action = segments[0];
-      var type = segments[1];
-      var name = segments.slice(2).join("/");
-
-      if (!name) {
-        Logger.w("IPC", "Invalid noctalia:// URL - missing name:", url);
-        ToastService.showError("Noctalia", "Invalid URL: missing name");
-        return;
-      }
-
-      if (action === "install") {
-        if (type === "plugin") {
-          _installPluginFromUrl(name, params.source || "");
-        } else if (type === "colorscheme") {
-          _installColorSchemeFromUrl(name, params.source || "");
-        } else {
-          Logger.w("IPC", "Unknown install type:", type);
-          ToastService.showError("Noctalia", "Unknown type: " + type);
-        }
-      } else if (action === "apply") {
-        if (type === "colorscheme") {
-          ColorSchemeService.setPredefinedScheme(name);
-        } else {
-          Logger.w("IPC", "Unknown apply type:", type);
-          ToastService.showError("Noctalia", "Unknown type: " + type);
-        }
-      } else {
-        Logger.w("IPC", "Unknown URL action:", action);
-        ToastService.showError("Noctalia", "Unknown action: " + action);
-      }
-    }
-
-    function _installPluginFromUrl(pluginId: string, sourceUrl: string) {
-      var source = sourceUrl || PluginRegistry.mainSourceUrl;
-      Logger.i("IPC", "Installing plugin from URL:", pluginId, "source:", source);
-
-      // Find plugin in available list or build metadata
-      var pluginMetadata = null;
-      for (var i = 0; i < PluginService.availablePlugins.length; i++) {
-        var p = PluginService.availablePlugins[i];
-        if (p.id === pluginId && (!sourceUrl || p.source.url === sourceUrl)) {
-          pluginMetadata = p;
-          break;
-        }
-      }
-
-      if (!pluginMetadata) {
-        // Build minimal metadata for direct install
-        pluginMetadata = {
-          id: pluginId,
-          name: pluginId,
-          source: {
-            url: source,
-            name: sourceUrl ? "Custom" : "Noctalia Plugins"
-          }
-        };
-      }
-
-      // Check if already installed
-      var compositeKey = PluginRegistry.generateCompositeKey(pluginId, source);
-      if (PluginRegistry.isPluginDownloaded(compositeKey)) {
-        Logger.i("IPC", "Plugin already installed:", compositeKey);
-        ToastService.showNotice(
-          I18n.tr("panels.plugins.title"),
-          pluginId + " " + I18n.tr("common.already-installed")
-        );
-        return;
-      }
-
-      PluginService.installPlugin(pluginMetadata, false, function(success, error, registeredKey) {
-        if (success) {
-          ToastService.showNotice(
-            I18n.tr("panels.plugins.title"),
-            I18n.tr("panels.plugins.install-success", { "plugin": registeredKey || pluginId })
-          );
-        } else {
-          ToastService.showError(
-            I18n.tr("panels.plugins.title"),
-            error || I18n.tr("common.error")
-          );
-        }
-      });
-    }
-
-    function _installColorSchemeFromUrl(schemeName: string, sourceUrl: string) {
-      Logger.i("IPC", "Installing colorscheme from URL:", schemeName, "source:", sourceUrl || "official");
-
-      // Check if already exists
-      var existing = ColorSchemeService.resolveSchemePath(schemeName);
-      for (var i = 0; i < ColorSchemeService.schemes.length; i++) {
-        if (ColorSchemeService.getBasename(ColorSchemeService.schemes[i]) === schemeName) {
-          Logger.i("IPC", "Colorscheme already installed:", schemeName);
-          ToastService.showNotice(
-            I18n.tr("panels.color-scheme.title"),
-            schemeName + " " + I18n.tr("common.already-installed")
-          );
-          return;
-        }
-      }
-
-      ColorSchemeService.installColorScheme(schemeName, sourceUrl || "", function(success, error) {
-        if (!success) {
-          Logger.e("IPC", "Failed to install colorscheme:", schemeName, error);
-        }
-      });
-    }
-  }
 }

@@ -34,10 +34,9 @@ Singleton {
 
   // --------------------------------
   function init() {
-    // does nothing but ensure the singleton is created
-    // do not remove
     Logger.i("ColorScheme", "Service started");
     loadColorSchemes();
+    fetchColorSchemeRegistry();
   }
 
   function loadColorSchemes() {
@@ -278,6 +277,61 @@ Singleton {
   readonly property string mainColorSchemeSourceUrl: "https://github.com/noctalia-dev/noctalia-colorschemes"
 
   property var installingColorSchemes: ({})
+  property var availableColorSchemes: ([])
+
+  function fetchColorSchemeRegistry(sourceUrl) {
+    var repoUrl = sourceUrl || mainColorSchemeSourceUrl;
+    Logger.d("ColorScheme", "Fetching colorscheme registry from:", repoUrl);
+
+    var fetchCmd = "temp_dir=$(mktemp -d) && GIT_TERMINAL_PROMPT=0 git clone --filter=blob:none --sparse --depth=1 --quiet '"
+        + repoUrl + "' \"$temp_dir\" 2>/dev/null && cd \"$temp_dir\" && git sparse-checkout set --no-cone /registry.json 2>/dev/null && cat \"$temp_dir/registry.json\"; rm -rf \"$temp_dir\"";
+
+    var fetchProcess = Qt.createQmlObject(
+      'import QtQuick; import Quickshell.Io; Process { command: ["sh", "-c", "'
+        + fetchCmd.replace(/"/g, '\\"') + '"]; stdout: StdioCollector {} }',
+      root, "FetchColorSchemeRegistry_" + Date.now()
+    );
+
+    fetchProcess.stdout.onStreamFinished.connect(function () {
+      var response = fetchProcess.stdout.text;
+      if (!response || response.trim() === "") {
+        Logger.e("ColorScheme", "Empty registry response from", repoUrl);
+        fetchProcess.destroy();
+        return;
+      }
+      try {
+        var registry = JSON.parse(response);
+        if (registry && registry.themes && Array.isArray(registry.themes)) {
+          for (var i = 0; i < registry.themes.length; i++) {
+            registry.themes[i].sourceUrl = repoUrl;
+            root.availableColorSchemes.push(registry.themes[i]);
+          }
+          Logger.i("ColorScheme", "Parsed", registry.themes.length, "colorschemes from registry");
+        }
+      } catch (e) {
+        Logger.e("ColorScheme", "Failed to parse colorscheme registry:", e);
+      }
+      fetchProcess.destroy();
+    });
+
+    fetchProcess.exited.connect(function (exitCode) {
+      if (exitCode !== 0) {
+        Logger.e("ColorScheme", "Failed to fetch colorscheme registry - exit code:", exitCode);
+        fetchProcess.destroy();
+      }
+    });
+
+    fetchProcess.running = true;
+  }
+
+  function isColorSchemeInRegistry(schemeName) {
+    for (var i = 0; i < root.availableColorSchemes.length; i++) {
+      if (root.availableColorSchemes[i].name === schemeName || root.availableColorSchemes[i].path === schemeName) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   function installColorScheme(schemeName, sourceUrl, callback) {
     var repoUrl = sourceUrl || mainColorSchemeSourceUrl;
