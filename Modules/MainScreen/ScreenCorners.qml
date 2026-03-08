@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import Quickshell
 import qs.Commons
+import qs.Services.UI
 
 /**
 * ScreenCorners - Shape component for rendering screen corners
@@ -349,8 +350,36 @@ Item {
 
   function triggerHotCorner(cornerKey) {
     var command = Settings.getHotCornerCommandForScreen(root.screenName, cornerKey);
-    if (command && command.trim() !== "") {
-      Quickshell.execDetached(["sh", "-c", command]);
+    runHotCornerCommand(command);
+  }
+
+  function runHotCornerCommand(command) {
+    if (!command || command.trim() === "")
+      return;
+
+    const processString = "import QtQuick; import Quickshell.Io; Process { command: [\"sh\", \"-lc\", \"\"] }";
+
+    try {
+      const processObj = Qt.createQmlObject(processString, root, "HotCornerCommandProcess_" + Date.now());
+      processObj.command = ["sh", "-lc", command];
+
+      processObj.exited.connect(function (exitCode) {
+        if (exitCode !== 0) {
+          ToastService.showError(I18n.tr("toast.custom-command-failed.title"), I18n.tr("toast.custom-command-failed.description", {
+                                                                                         command: command,
+                                                                                         code: exitCode
+                                                                                       }));
+        }
+        processObj.destroy();
+      });
+
+      processObj.running = true;
+    } catch (e) {
+      Logger.e("HotCorner", "Failed to start hot corner command:", e);
+      ToastService.showError(I18n.tr("toast.custom-command-failed.title"), I18n.tr("toast.custom-command-failed.description", {
+                                                                                     command: command,
+                                                                                     code: "start_error"
+                                                                                   }));
     }
   }
 
