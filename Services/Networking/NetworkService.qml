@@ -44,11 +44,11 @@ Singleton {
     { key: "open", name: I18n.tr("wifi.panel.security-open") },
     { key: "wep", name: I18n.tr("wifi.panel.security-wep") },
     { key: "wpa-psk", name: I18n.tr("wifi.panel.security-wpa") },
-    { key: "wpa2-psk", name: "WPA2/WPA3" },
-    { key: "sae", name: "WPA3" },
-    { key: "wpa-eap", name: "WPA Enterprise" },
-    { key: "wpa2-eap", name: "WPA2 Enterprise" },
-    { key: "wpa3-eap", name: "WPA3 Enterprise" }
+    { key: "wpa2-psk", name: I18n.tr("wifi.panel.security-wpa23") },
+    { key: "sae", name: I18n.tr("wifi.panel.security-wpa3") },
+    { key: "wpa-eap", name: I18n.tr("wifi.panel.security-wpa-ent") },
+    { key: "wpa2-eap", name: I18n.tr("wifi.panel.security-wpa2-ent") },
+    { key: "wpa3-eap", name: I18n.tr("wifi.panel.security-wpa3-ent") }
   ]
 
   // Active Wi‑Fi connection details (for info panel)

@@ -2144,9 +2144,14 @@
       "searching": "Searching for networks...",
       "add-hidden-network": "Add hidden network",
       "network-name-ssid": "Network name (SSID)",
-      "security-open": "Open",
-      "security-wpa": "WPA/WPA2/WPA3 Personal",
-      "security-wep": "WEP"
+      "security-open": "None",
+      "security-wpa": "WPA",
+      "security-wep": "WEP",
+      "security-wpa23": "WPA2/WPA3",
+      "security-wpa3": "WPA3",
+      "security-wpa-ent": "WPA Enterprise",
+      "security-wpa2-ent": "WPA2 Enterprise",
+      "security-wpa3-ent": "WPA3 Enterprise"
     },
     "signal": {
       "excellent": "Excellent",
