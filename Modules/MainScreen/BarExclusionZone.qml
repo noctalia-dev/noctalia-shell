@@ -25,7 +25,11 @@ PanelWindow {
   readonly property real barMarginV: (barFloating && edge === Settings.getBarPositionForScreen(screen?.name)) ? Math.ceil(Settings.data.bar.marginVertical) : 0
   // Allow users to enable a 1-physical-pixel inset for the exclusion zone so window borders can bleed under the bar
   readonly property real bleedOffset: Settings.data.bar.enableExclusionZoneInset ? 1.0 : 0.0
-  readonly property real bleedInset: bleedOffset / (CompositorService.getDisplayScale(screen?.name) || 1.0)
+  readonly property real bleedInset: {
+    const info = CompositorService.displayScales[screen?.name];
+    const scale = (info && info.scale) ? info.scale : 1.0;
+    return bleedOffset / scale;
+  }
 
   // Invisible - just reserves space
   color: "transparent"
