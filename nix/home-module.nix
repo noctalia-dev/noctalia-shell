@@ -179,6 +179,27 @@ in
         or filepath, to be written to ~/.config/noctalia/plugins/plugin-name/settings.json.
       '';
     };
+
+    pluginPackages = lib.mkOption {
+      type = with lib.types; attrsOf (either package path);
+      default = { };
+      example = lib.literalExpression ''
+        {
+          catwalk = pkgs.callPackage ./plugins/catwalk { };
+        }
+      '';
+      description = ''
+        Declarative plugin packages. Maps plugin names to derivations or paths
+        containing plugin files (QML, assets, manifest.json).
+
+        Each entry is symlinked into ~/.config/noctalia/plugins/{name}/ with
+        settings.json excluded so that runtime settings remain mutable.
+
+        Plugins are discovered automatically by the shell's PluginRegistry
+        if they contain a valid manifest.json. Use plugins.states to
+        pre-enable them if desired.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -197,7 +218,10 @@ in
           ) "${config.xdg.configFile."noctalia/user-templates.toml".source}"
           ++ lib.mapAttrsToList (
             name: _: "${config.xdg.configFile."noctalia/plugins/${name}/settings.json".source}"
-          ) cfg.pluginSettings;
+          ) cfg.pluginSettings
+          ++ lib.mapAttrsToList (
+            name: _: "${config.xdg.configFile."noctalia/plugins/${name}".source}"
+          ) cfg.pluginPackages;
       };
 
       Service = {
@@ -235,7 +259,24 @@ in
       lib.nameValuePair "noctalia/plugins/${name}/settings.json" {
         source = generateJson "${name}-settings" value;
       }
-    ) cfg.pluginSettings;
+    ) cfg.pluginSettings
+    // lib.mapAttrs' (
+      name: pkg:
+      let
+        filtered = pkgs.runCommand "noctalia-plugin-${name}" { } ''
+          mkdir -p $out
+          for f in ${pkg}/*; do
+            if [ "$(basename "$f")" != "settings.json" ]; then
+              ln -s "$f" "$out/$(basename "$f")"
+            fi
+          done
+        '';
+      in
+      lib.nameValuePair "noctalia/plugins/${name}" {
+        source = filtered;
+        recursive = true;
+      }
+    ) cfg.pluginPackages;
 
     assertions = [
       {
