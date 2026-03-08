@@ -1226,6 +1226,8 @@
       "screen-corners-hot-corners-header": "Hot corners",
       "screen-corners-hot-corner-command-placeholder": "notify-send 'Hot Corner' 'Triggered'",
       "screen-corners-hot-corner-monitor-toggle-description": "Enable or disable hot corners on this monitor.",
+      "screen-corners-feedback-label": "Hot corner feedback",
+      "screen-corners-feedback-description": "Show a visual hint when a hot corner is triggered.",
       "screen-corners-title": "Screen corners",
       "settings-copied": "Settings copied to clipboard",
       "tab-basics": "Basics",

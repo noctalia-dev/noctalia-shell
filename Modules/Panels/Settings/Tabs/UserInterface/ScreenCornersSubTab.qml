@@ -18,6 +18,20 @@ ColumnLayout {
     return screen.name || I18n.tr("common.unknown");
   }
 
+  function anyHotCornerEnabled() {
+    const screens = Quickshell.screens || [];
+    for (let i = 0; i < screens.length; i++) {
+      const name = screens[i]?.name || "";
+      if (Settings.getHotCornerEnabledForScreen(name, "TopLeft")
+          || Settings.getHotCornerEnabledForScreen(name, "TopRight")
+          || Settings.getHotCornerEnabledForScreen(name, "BottomLeft")
+          || Settings.getHotCornerEnabledForScreen(name, "BottomRight")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   NToggle {
     label: I18n.tr("panels.general.screen-corners-show-corners-label")
     description: I18n.tr("panels.general.screen-corners-show-corners-description")
@@ -32,6 +46,15 @@ ColumnLayout {
     checked: Settings.data.general.forceBlackScreenCorners
     defaultValue: Settings.getDefaultValue("general.forceBlackScreenCorners")
     onToggled: checked => Settings.data.general.forceBlackScreenCorners = checked
+  }
+
+  NToggle {
+    label: I18n.tr("panels.general.screen-corners-feedback-label")
+    description: I18n.tr("panels.general.screen-corners-feedback-description")
+    checked: Settings.data.general.showScreenCornersFeedback
+    defaultValue: Settings.getDefaultValue("general.showScreenCornersFeedback")
+    enabled: Settings.data.general.showScreenCorners && root.anyHotCornerEnabled()
+    onToggled: checked => Settings.data.general.showScreenCornersFeedback = checked
   }
 
   ColumnLayout {
