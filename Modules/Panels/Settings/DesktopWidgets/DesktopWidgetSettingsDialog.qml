@@ -136,6 +136,40 @@ Popup {
     }
   }
 
+  // Mouse area for a draggable popup
+  MouseArea {
+    x: titleRow.x
+    y: titleRow.y
+    width: titleRow.width
+    height: titleRow.height
+    z: -1
+
+    cursorShape: Qt.OpenHandCursor
+
+    property real pressX: 0
+    property real pressY: 0
+
+    onPressed: mouse => {
+                 pressX = mouse.x;
+                 pressY = mouse.y;
+                 cursorShape = Qt.ClosedHandCursor;
+               }
+
+    onReleased: {
+      cursorShape = Qt.OpenHandCursor;
+    }
+
+    onPositionChanged: mouse => {
+                         if (pressed) {
+                           var deltaX = mouse.x - pressX;
+                           var deltaY = mouse.y - pressY;
+
+                           root.x += deltaX;
+                           root.y += deltaY;
+                         }
+                       }
+  }
+
   Timer {
     id: saveTimer
     running: false
