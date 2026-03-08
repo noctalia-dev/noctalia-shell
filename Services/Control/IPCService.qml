@@ -499,11 +499,14 @@ Singleton {
         }
       }
 
-      // Check if the colorscheme exists in the fetched registry
-      if (!ColorSchemeService.isColorSchemeInRegistry(schemeName)) {
-        Logger.w("IPC", "Colorscheme not found in registry:", schemeName);
-        ToastService.showError(I18n.tr("panels.color-scheme.title"), "\"" + schemeName + "\" " + I18n.tr("common.not-found"));
-        return;
+      // Check if the colorscheme exists in the fetched registry (official source only)
+      // Custom sources are already gated by the source-registration check above
+      if (!sourceUrl || sourceUrl === ColorSchemeService.mainColorSchemeSourceUrl) {
+        if (!ColorSchemeService.isColorSchemeInRegistry(schemeName)) {
+          Logger.w("IPC", "Colorscheme not found in registry:", schemeName);
+          ToastService.showError(I18n.tr("panels.color-scheme.title"), "\"" + schemeName + "\" " + I18n.tr("common.not-found"));
+          return;
+        }
       }
 
       // Confirmation toast — user must click "Install" to proceed
@@ -514,7 +517,10 @@ Singleton {
         I18n.tr("common.install"),
         function() {
           ColorSchemeService.installColorScheme(schemeName, sourceUrl || "", function(success, error) {
-            if (!success) {
+            if (success) {
+              // Auto-apply the installed colorscheme
+              ColorSchemeService.setPredefinedScheme(schemeName);
+            } else {
               Logger.e("IPC", "Failed to install colorscheme:", schemeName, error);
             }
           });
