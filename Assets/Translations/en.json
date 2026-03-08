@@ -553,10 +553,6 @@
     "power-profile": {
       "tooltip-action": "Power Profile",
       "tooltip-disabled": "Install power-profiles-daemon to use power profiles"
-    },
-    "wifi": {
-      "label-disconnected": "Wi-Fi disconnected",
-      "label-ethernet": "Ethernet"
     }
   },
   "display-modes": {
@@ -1410,9 +1406,7 @@
     "network": {
       "bluetooth-description": "Activate Bluetooth management.",
       "bluetooth-rssi-polling-description": "Periodically sample RSSI for connected devices via bluetoothctl. May not be available for all devices; uses minimal resources when enabled.",
-      "bluetooth-rssi-polling-label": "Bluetooth signal polling",
-      "desc": "Manage Wi-Fi and Bluetooth connections.",
-      "wifi-description": "Manage wireless networks (requires NetworkManager)."
+      "bluetooth-rssi-polling-label": "Bluetooth signal polling"
     },
     "notifications": {
       "duration-critical-urgency-description": "How long critical priority notifications stay visible.",
@@ -1952,7 +1946,6 @@
     "keyboard-layout": "{layout} keyboard layout",
     "list-view": "List view",
     "manage-vpn": "VPN connections",
-    "manage-wifi": "Wi-Fi",
     "max-widgets-reached": "Maximum widgets reached",
     "microphone-volume-at": "Microphone volume: {volume}%",
     "move-to-section": "Move to {section}",
@@ -2148,9 +2141,7 @@
       "no-ethernet-devices": "No Ethernet devices detected",
       "no-networks": "No Wi‑Fi networks found",
       "saved": "Saved",
-      "scan-again": "Scan again",
       "searching": "Searching for networks...",
-      "title": "Wi‑Fi",
       "add-hidden-network": "Add hidden network",
       "network-name-ssid": "Network name (SSID)",
       "security-open": "Open",
