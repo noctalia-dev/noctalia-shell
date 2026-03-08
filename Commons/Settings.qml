@@ -299,6 +299,7 @@ Singleton {
       property bool allowPanelsOnScreenWithoutBar: true
       property bool showChangelogOnStartup: true
       property bool telemetryEnabled: false
+      property list<var> hotCornerOverrides: []
       property bool enableLockScreenCountdown: true
       property int lockScreenCountdownDuration: 10000
       property bool autoStartAuth: false
@@ -949,6 +950,100 @@ Singleton {
       return override.displayMode;
     }
     return data.bar.displayMode || "always_visible";
+  }
+
+  // -----------------------------------------------------
+  // Hot corner overrides per screen
+  function _findHotCornerOverride(screenName) {
+    var overrides = data.general.hotCornerOverrides;
+    if (!screenName || !overrides || overrides.length === undefined) {
+      return null;
+    }
+    for (var i = 0; i < overrides.length; i++) {
+      if (overrides[i] && overrides[i].name === screenName) {
+        return overrides[i];
+      }
+    }
+    return null;
+  }
+
+  function _hotCornerBaseKey(cornerKey) {
+    if (!cornerKey) {
+      return "";
+    }
+    return cornerKey.charAt(0).toLowerCase() + cornerKey.slice(1);
+  }
+
+  function setHotCornerOverride(screenName, property, value) {
+    if (!screenName)
+      return;
+
+    var overrides = JSON.parse(JSON.stringify(data.general.hotCornerOverrides || []));
+    if (overrides.length === undefined) {
+      overrides = [];
+    }
+
+    var index = -1;
+    for (var i = 0; i < overrides.length; i++) {
+      if (overrides[i] && overrides[i].name === screenName) {
+        index = i;
+        break;
+      }
+    }
+
+    if (index === -1) {
+      var newEntry = {
+        "name": screenName
+      };
+      newEntry[property] = value;
+      overrides.push(newEntry);
+    } else {
+      overrides[index][property] = value;
+    }
+    data.general.hotCornerOverrides = overrides;
+  }
+
+  function getHotCornerMonitorEnabledForScreen(screenName) {
+    var override = _findHotCornerOverride(screenName);
+    if (override && override.hotCornersEnabled !== undefined) {
+      return override.hotCornersEnabled;
+    }
+    return true;
+  }
+
+  function setHotCornerMonitorEnabledForScreen(screenName, enabled) {
+    setHotCornerOverride(screenName, "hotCornersEnabled", enabled);
+  }
+
+  function getHotCornerEnabledForScreen(screenName, cornerKey) {
+    if (!getHotCornerMonitorEnabledForScreen(screenName)) {
+      return false;
+    }
+    var baseKey = _hotCornerBaseKey(cornerKey);
+    var override = _findHotCornerOverride(screenName);
+    if (override && override[baseKey + "Enabled"] !== undefined) {
+      return override[baseKey + "Enabled"];
+    }
+    return false;
+  }
+
+  function setHotCornerEnabledForScreen(screenName, cornerKey, enabled) {
+    var baseKey = _hotCornerBaseKey(cornerKey);
+    setHotCornerOverride(screenName, baseKey + "Enabled", enabled);
+  }
+
+  function getHotCornerCommandForScreen(screenName, cornerKey) {
+    var baseKey = _hotCornerBaseKey(cornerKey);
+    var override = _findHotCornerOverride(screenName);
+    if (override && override[baseKey + "Command"] !== undefined) {
+      return override[baseKey + "Command"];
+    }
+    return "";
+  }
+
+  function setHotCornerCommandForScreen(screenName, cornerKey, command) {
+    var baseKey = _hotCornerBaseKey(cornerKey);
+    setHotCornerOverride(screenName, baseKey + "Command", command);
   }
 
   // -----------------------------------------------------
