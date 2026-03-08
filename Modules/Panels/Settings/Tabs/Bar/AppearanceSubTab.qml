@@ -302,52 +302,28 @@ ColumnLayout {
       Layout.fillWidth: true
       spacing: Style.marginL
 
-      Timer {
-        id: marginVerticalTimer
-        interval: 150
-        property int pendingValue
-        onTriggered: Settings.data.bar.marginVertical = pendingValue
-      }
-
-      Timer {
-        id: marginHorizontalTimer
-        interval: 150
-        property int pendingValue
-        onTriggered: Settings.data.bar.marginHorizontal = pendingValue
-      }
-
-      NValueSlider {
-        id: marginVertical
-        Layout.fillWidth: true
+      NSpinBox {
         label: I18n.tr("panels.bar.appearance-margins-vertical")
         from: 0
         to: 500
-        stepSize: 1
-        showReset: true
+        suffix: "px"
         value: Settings.data.bar.marginVertical
         defaultValue: Settings.getDefaultValue("bar.marginVertical")
-        onMoved: value => {
-                   marginVerticalTimer.pendingValue = value;
-                   marginVerticalTimer.restart();
-                 }
-        text: Settings.data.bar.marginVertical + "px"
+        onValueChanged: Settings.data.bar.marginVertical = value
       }
 
-      NValueSlider {
-        id: marginHorizontal
+      Item {
         Layout.fillWidth: true
+      }
+
+      NSpinBox {
         label: I18n.tr("panels.bar.appearance-margins-horizontal")
         from: 0
         to: 500
-        stepSize: 1
-        showReset: true
+        suffix: "px"
         value: Settings.data.bar.marginHorizontal
         defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
-        onMoved: value => {
-                   marginHorizontalTimer.pendingValue = value;
-                   marginHorizontalTimer.restart();
-                 }
-        text: Settings.data.bar.marginHorizontal + "px"
+        onValueChanged: Settings.data.bar.marginHorizontal = value
       }
     }
   }

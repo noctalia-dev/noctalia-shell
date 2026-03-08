@@ -308,7 +308,7 @@
   {
     "labelKey": "panels.bar.appearance-margins-vertical",
     "descriptionKey": null,
-    "widget": "NValueSlider",
+    "widget": "NSpinBox",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 0,
@@ -317,7 +317,7 @@
   {
     "labelKey": "panels.bar.appearance-margins-horizontal",
     "descriptionKey": null,
-    "widget": "NValueSlider",
+    "widget": "NSpinBox",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 0,
