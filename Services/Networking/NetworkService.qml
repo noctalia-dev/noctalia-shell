@@ -41,38 +41,14 @@ Singleton {
 
   // Supported Wi-Fi security types
   property var supportedSecurityTypes: [
-    {
-      key: "open",
-      name: "None"
-    },
-    {
-      key: "wep",
-      name: "WEP"
-    },
-    {
-      key: "wpa-psk",
-      name: "WPA"
-    },
-    {
-      key: "wpa2-psk",
-      name: "WPA2/WPA3"
-    },
-    {
-      key: "sae",
-      name: "WPA3"
-    },
-    {
-      key: "wpa-eap",
-      name: "WPA Enterprise"
-    },
-    {
-      key: "wpa2-eap",
-      name: "WPA2 Enterprise"
-    },
-    {
-      key: "wpa3-eap",
-      name: "WPA3 Enterprise"
-    }
+    { key: "open", name: I18n.tr("wifi.panel.security-open") },
+    { key: "wep", name: I18n.tr("wifi.panel.security-wep") },
+    { key: "wpa-psk", name: I18n.tr("wifi.panel.security-wpa") },
+    { key: "wpa2-psk", name: "WPA2/WPA3" },
+    { key: "sae", name: "WPA3" },
+    { key: "wpa-eap", name: "WPA Enterprise" },
+    { key: "wpa2-eap", name: "WPA2 Enterprise" },
+    { key: "wpa3-eap", name: "WPA3 Enterprise" }
   ]
 
   // Active Wi‑Fi connection details (for info panel)
