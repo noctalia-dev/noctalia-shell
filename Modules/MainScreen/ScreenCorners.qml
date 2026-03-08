@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
+import Quickshell
 import qs.Commons
 
 /**
@@ -10,6 +11,8 @@ import qs.Commons
 */
 Item {
   id: root
+
+  property string screenName: ""
 
   anchors.fill: parent
 
@@ -225,6 +228,59 @@ Item {
           relativeX: 0
           relativeY: cornersPath.cornerSize
         }
+      }
+    }
+  }
+
+  function triggerHotCorner(cornerKey) {
+    var command = Settings.getHotCornerCommandForScreen(root.screenName, cornerKey);
+    if (command && command.trim() !== "") {
+      Quickshell.execDetached(["sh", "-c", command]);
+    }
+  }
+
+  Repeater {
+    model: [
+      {
+        "key": "TopLeft",
+        "top": true,
+        "left": true
+      },
+      {
+        "key": "TopRight",
+        "top": true,
+        "right": true
+      },
+      {
+        "key": "BottomLeft",
+        "bottom": true,
+        "left": true
+      },
+      {
+        "key": "BottomRight",
+        "bottom": true,
+        "right": true
+      }
+    ]
+    delegate: MouseArea {
+      anchors.top: modelData.top ? parent.top : undefined
+      anchors.bottom: modelData.bottom ? parent.bottom : undefined
+      anchors.left: modelData.left ? parent.left : undefined
+      anchors.right: modelData.right ? parent.right : undefined
+      width: 3
+      height: 3
+      hoverEnabled: true
+      enabled: Settings.getHotCornerEnabledForScreen(root.screenName, modelData.key)
+      property int cooldownMs: 500
+      property double lastTriggeredMs: 0
+
+      onEntered: {
+        var now = Date.now();
+        if (now - lastTriggeredMs < cooldownMs) {
+          return;
+        }
+        lastTriggeredMs = now;
+        triggerHotCorner(modelData.key);
       }
     }
   }
