@@ -1612,9 +1612,9 @@
       "show-keybinds-label": "단축키 표시"
     },
     "system": {
-      "noctalia-performance-disable-desktop-widgets-description": "Noctalia Performance Mode가 활성화된 동안 데스크톱 위젯을 계속 표시합니다.",
-      "noctalia-performance-disable-desktop-widgets-label": "성능 모드에서 데스크톱 위젯 활성화.",
-      "noctalia-performance-disable-wallpaper-description": "Noctalia Performance Mode가 활성화된 동안 데스크톱, 개요, 잠금 화면 배경화면을 계속 표시합니다.",
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia 성능 모드가 활성화된 동안 데스크톱 위젯을 계속 표시합니다.",
+      "noctalia-performance-disable-desktop-widgets-label": "성능 모드에서 데스크톱 위젯 활성화",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia 성능 모드가 활성화된 동안 데스크톱, 개요, 잠금 화면 배경화면을 계속 표시합니다.",
       "noctalia-performance-disable-wallpaper-label": "성능 모드에서 배경화면 렌더링 활성화",
       "title": "시스템"
     },

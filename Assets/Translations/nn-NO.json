@@ -60,7 +60,7 @@
       "hide-if-not-detected-label": "Gøym når ikkje funnen",
       "low-battery-threshold-label": "Varslingsterskel for lågt batterinivå",
       "show-noctalia-performance-description": "Viser ytingsmodusbrytaren for Noctalia i batterifanen.<br>Slår av skuggar og animasjonar i Noctalia for å minka ressursbruk.",
-      "show-noctalia-performance-label": "Vis ytingsmodusbrytaren for Noctalia",
+      "show-noctalia-performance-label": "Vis Noctalia Yting-brytaren",
       "show-power-profile-description": "Viser veljaren for energiprofil i batterifanen.",
       "show-power-profile-label": "Vis kontrollane for energiprofil"
     },

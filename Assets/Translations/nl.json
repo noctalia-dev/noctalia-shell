@@ -1612,9 +1612,9 @@
       "show-keybinds-label": "Toetsencombinaties weergeven"
     },
     "system": {
-      "noctalia-performance-disable-desktop-widgets-description": "Houd desktopwidgets zichtbaar terwijl Noctalia Performance Mode is ingeschakeld.",
-      "noctalia-performance-disable-desktop-widgets-label": "Schakel desktopwidgets in prestatiemodus in.",
-      "noctalia-performance-disable-wallpaper-description": "Houd bureaublad-, overzicht- en vergrendelschermachtergronden zichtbaar terwijl Noctalia Performance Mode is ingeschakeld.",
+      "noctalia-performance-disable-desktop-widgets-description": "Houd desktopwidgets zichtbaar terwijl de Noctalia prestatiemodus is ingeschakeld.",
+      "noctalia-performance-disable-desktop-widgets-label": "Desktopwidgets inschakelen in prestatiemodus",
+      "noctalia-performance-disable-wallpaper-description": "Houd bureaublad-, overzicht- en vergrendelschermachtergronden zichtbaar terwijl de Noctalia prestatiemodus is ingeschakeld.",
       "noctalia-performance-disable-wallpaper-label": "Achtergrondweergave inschakelen in prestatiemodus",
       "title": "Systeem"
     },

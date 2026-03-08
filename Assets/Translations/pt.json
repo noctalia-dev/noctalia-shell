@@ -295,7 +295,7 @@
       "follow-focused-screen-description": "Exibir áreas de trabalho da tela atualmente em foco, em vez da tela onde a barra está localizada.",
       "follow-focused-screen-label": "Seguir tela em foco",
       "font-weight-description": "Definir o peso visual para o texto na área de trabalho.",
-      "font-weight-label": "Peso da Fonte",
+      "font-weight-label": "Peso da fonte",
       "grouped-border-opacity-description": "Definir o nível de opacidade para as bordas do contêiner do espaço de trabalho.",
       "grouped-border-opacity-label": "Opacidade da borda",
       "hide-unoccupied-description": "Não exibir áreas de trabalho sem janelas.",
@@ -431,7 +431,7 @@
     "faithful": "Fiel",
     "focus": "Foco",
     "font-weight-bold": "Negrito",
-    "font-weight-light": "Claro",
+    "font-weight-light": "Leve",
     "font-weight-medium": "Médio",
     "font-weight-regular": "Regular",
     "font-weight-semibold": "Seminegrito",
@@ -1612,9 +1612,9 @@
       "show-keybinds-label": "Mostrar atalhos de teclado"
     },
     "system": {
-      "noctalia-performance-disable-desktop-widgets-description": "Manter os widgets da área de trabalho visíveis enquanto o Noctalia Performance Mode estiver ativado.",
-      "noctalia-performance-disable-desktop-widgets-label": "Ativar widgets de ambiente de trabalho no modo de desempenho.",
-      "noctalia-performance-disable-wallpaper-description": "Mantenha os papéis de parede da área de trabalho, da visão geral e da tela de bloqueio visíveis enquanto o Noctalia Performance Mode estiver ativado.",
+      "noctalia-performance-disable-desktop-widgets-description": "Manter os widgets da área de trabalho visíveis enquanto o modo de desempenho Noctalia estiver ativado.",
+      "noctalia-performance-disable-desktop-widgets-label": "Ativar widgets de ambiente de trabalho no modo de desempenho",
+      "noctalia-performance-disable-wallpaper-description": "Mantenha os papéis de parede da área de trabalho, da visão geral e da tela de bloqueio visíveis enquanto o modo de desempenho Noctalia estiver ativado.",
       "noctalia-performance-disable-wallpaper-label": "Ativar renderização de papel de parede no modo de desempenho",
       "title": "Sistema"
     },

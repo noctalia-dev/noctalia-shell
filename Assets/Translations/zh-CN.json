@@ -431,7 +431,7 @@
     "faithful": "忠实",
     "focus": "专注",
     "font-weight-bold": "粗体",
-    "font-weight-light": "浅色",
+    "font-weight-light": "细",
     "font-weight-medium": "中",
     "font-weight-regular": "常规",
     "font-weight-semibold": "半粗体",
@@ -1612,9 +1612,9 @@
       "show-keybinds-label": "显示快捷键"
     },
     "system": {
-      "noctalia-performance-disable-desktop-widgets-description": "在 Noctalia Performance Mode 启用时保持桌面小部件可见。",
-      "noctalia-performance-disable-desktop-widgets-label": "在性能模式下启用桌面小部件。",
-      "noctalia-performance-disable-wallpaper-description": "在启用 Noctalia Performance Mode 时，保持桌面、概览和锁屏壁纸可见。",
+      "noctalia-performance-disable-desktop-widgets-description": "在 Noctalia 性能模式启用时保持桌面小部件可见。",
+      "noctalia-performance-disable-desktop-widgets-label": "在性能模式下启用桌面小部件",
+      "noctalia-performance-disable-wallpaper-description": "在启用 Noctalia 性能模式时，保持桌面、概览和锁屏壁纸可见。",
       "noctalia-performance-disable-wallpaper-label": "在性能模式下启用壁纸渲染",
       "title": "系统"
     },

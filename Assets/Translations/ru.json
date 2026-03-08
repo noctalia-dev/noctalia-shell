@@ -295,7 +295,7 @@
       "follow-focused-screen-description": "Отображать рабочие пространства с текущего активного экрана, а не с экрана, на котором расположена панель.",
       "follow-focused-screen-label": "Следовать за активным экраном",
       "font-weight-description": "Установить визуальный вес текста в рабочем пространстве.",
-      "font-weight-label": "Толщина Шрифта",
+      "font-weight-label": "Толщина шрифта",
       "grouped-border-opacity-description": "Установить уровень прозрачности для границ контейнера рабочей области.",
       "grouped-border-opacity-label": "Прозрачность границы",
       "hide-unoccupied-description": "Не отображать рабочие пространства без окон.",
@@ -431,7 +431,7 @@
     "faithful": "Верный",
     "focus": "Фокус",
     "font-weight-bold": "Жирный",
-    "font-weight-light": "Светлый",
+    "font-weight-light": "Тонкий",
     "font-weight-medium": "Средний",
     "font-weight-regular": "Обычный",
     "font-weight-semibold": "Полужирный",
@@ -1612,9 +1612,9 @@
       "show-keybinds-label": "Показать сочетания клавиш"
     },
     "system": {
-      "noctalia-performance-disable-desktop-widgets-description": "Оставлять виджеты рабочего стола видимыми, пока Noctalia Performance Mode включен.",
-      "noctalia-performance-disable-desktop-widgets-label": "Включить виджеты рабочего стола в режиме производительности.",
-      "noctalia-performance-disable-wallpaper-description": "Сохраняйте видимыми обои рабочего стола, обзора и экрана блокировки, пока Noctalia Performance Mode включен.",
+      "noctalia-performance-disable-desktop-widgets-description": "Оставлять виджеты рабочего стола видимыми, пока режим производительности Noctalia включен.",
+      "noctalia-performance-disable-desktop-widgets-label": "Включить виджеты рабочего стола в режиме производительности",
+      "noctalia-performance-disable-wallpaper-description": "Сохраняйте видимыми обои рабочего стола, обзора и экрана блокировки, пока режим производительности Noctalia включен.",
       "noctalia-performance-disable-wallpaper-label": "Включить рендеринг обоев в режиме производительности",
       "title": "Система"
     },

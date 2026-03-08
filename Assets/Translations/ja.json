@@ -1612,9 +1612,9 @@
       "show-keybinds-label": "キーバインドを表示"
     },
     "system": {
-      "noctalia-performance-disable-desktop-widgets-description": "Noctalia Performance Modeが有効な間、デスクトップウィジェットを表示したままにする。",
-      "noctalia-performance-disable-desktop-widgets-label": "パフォーマンスモードでデスクトップウィジェットを有効にする。",
-      "noctalia-performance-disable-wallpaper-description": "Noctalia Performance Modeが有効な間、デスクトップ、概要、ロック画面の壁紙を表示したままにします。",
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia パフォーマンスモードが有効な間、デスクトップウィジェットを表示したままにする。",
+      "noctalia-performance-disable-desktop-widgets-label": "パフォーマンスモードでデスクトップウィジェットを有効にする",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia パフォーマンスモードが有効な間、デスクトップ、概要、ロック画面の壁紙を表示したままにします。",
       "noctalia-performance-disable-wallpaper-label": "パフォーマンスモードで壁紙のレンダリングを有効にする",
       "title": "システム"
     },

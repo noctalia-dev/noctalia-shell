@@ -60,7 +60,7 @@
       "hide-if-not-detected-label": "Dema ku neyê dîtin veşêre",
       "low-battery-threshold-label": "Asta hişyariya betarî ya kêm",
       "show-noctalia-performance-description": "Guhêrbarê awaya performansê ya Noctalia di hundirê destgeha betariyê de nîşan bide.<br>Sî û anîmasyonan di Noctalia de neçalak dike da ku bikaranîna çavkaniyan kêm bike.",
-      "show-noctalia-performance-label": "Guhêrbarê performansa Noctalia nîşan bide",
+      "show-noctalia-performance-label": "Guhêrbarê Performansa Noctalia nîşan bide",
       "show-power-profile-description": "Hilbijartina profîla hêzê di hundirê destgeha betariyê de nîşan bide.",
       "show-power-profile-label": "Kontrolên profîla hêzê nîşan bide"
     },
@@ -1614,7 +1614,7 @@
     "noctalia-performance": {
       "disabled": "Rewşa performansê hat betalkirin",
       "enabled": "Rewşa performansê çalak bû",
-      "label": "Performansa Noctalîa"
+      "label": "Performansa Noctalia"
     },
     "power-profile": {
       "changed": "Profîla hêzê hate guhertin",

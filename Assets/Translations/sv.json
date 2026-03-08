@@ -431,7 +431,7 @@
     "faithful": "Trogen",
     "focus": "Fokus",
     "font-weight-bold": "Fet",
-    "font-weight-light": "Ljus",
+    "font-weight-light": "Lätt",
     "font-weight-medium": "Mellan",
     "font-weight-regular": "Vanlig",
     "font-weight-semibold": "Halvfet",
@@ -1612,9 +1612,9 @@
       "show-keybinds-label": "Visa kortkommandon"
     },
     "system": {
-      "noctalia-performance-disable-desktop-widgets-description": "Håll skrivbordswidgets synliga medan Noctalia Performance Mode är aktiverat.",
-      "noctalia-performance-disable-desktop-widgets-label": "Aktivera skrivbordswidgetar i prestandaläge.",
-      "noctalia-performance-disable-wallpaper-description": "Behåll skrivbords-, översikts- och låsskärmsbakgrundsbilder synliga när Noctalia Performance Mode är aktiverat.",
+      "noctalia-performance-disable-desktop-widgets-description": "Håll skrivbordswidgets synliga medan Noctalia prestandaläget är aktiverat.",
+      "noctalia-performance-disable-desktop-widgets-label": "Aktivera skrivbordswidgetar i prestandaläge",
+      "noctalia-performance-disable-wallpaper-description": "Behåll skrivbords-, översikts- och låsskärmsbakgrundsbilder synliga när Noctalia prestandaläget är aktiverat.",
       "noctalia-performance-disable-wallpaper-label": "Aktivera bakgrundsbildsåtergivning i prestandaläge",
       "title": "System"
     },

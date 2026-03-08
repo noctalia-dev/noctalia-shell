@@ -295,7 +295,7 @@
       "follow-focused-screen-description": "Çubuğun bulunduğu ekran yerine, şu anda odaklanmış ekrandaki çalışma alanlarını göster.",
       "follow-focused-screen-label": "Odaklanmış ekranı takip et",
       "font-weight-description": "Çalışma alanı içindeki metin için görsel ağırlığı ayarlayın.",
-      "font-weight-label": "Yazı Tipi Ağırlığı",
+      "font-weight-label": "Yazı tipi ağırlığı",
       "grouped-border-opacity-description": "Çalışma alanı kapsayıcı kenarlıklarının opaklık düzeyini ayarlayın.",
       "grouped-border-opacity-label": "Kenarlık opaklığı",
       "hide-unoccupied-description": "Penceresi olmayan çalışma alanlarını gösterme.",
@@ -431,7 +431,7 @@
     "faithful": "Sadık",
     "focus": "Odaklanma",
     "font-weight-bold": "Kalın",
-    "font-weight-light": "Açık",
+    "font-weight-light": "İnce",
     "font-weight-medium": "Orta",
     "font-weight-regular": "Normal",
     "font-weight-semibold": "Yarı kalın",
@@ -1612,9 +1612,9 @@
       "show-keybinds-label": "Klavye kısayollarını göster"
     },
     "system": {
-      "noctalia-performance-disable-desktop-widgets-description": "Noctalia Performance Mode etkinleştirildiğinde masaüstü widget'larını görünür tut.",
-      "noctalia-performance-disable-desktop-widgets-label": "Performans modunda masaüstü widget'larını etkinleştir.",
-      "noctalia-performance-disable-wallpaper-description": "Noctalia Performance Mode etkinleştirildiğinde masaüstü, genel bakış ve kilit ekranı duvar kağıtlarını görünür tutun.",
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia performans modu etkinleştirildiğinde masaüstü widget'larını görünür tut.",
+      "noctalia-performance-disable-desktop-widgets-label": "Performans modunda masaüstü widget'larını etkinleştir",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia performans modu etkinleştirildiğinde masaüstü, genel bakış ve kilit ekranı duvar kağıtlarını görünür tutun.",
       "noctalia-performance-disable-wallpaper-label": "Performans modunda duvar kağıdı oluşturmayı etkinleştir",
       "title": "Sistem"
     },
