@@ -173,7 +173,7 @@ Item {
     id: nBattery
     visible: root.useGraphicMode
     anchors.centerIn: parent
-    baseSize: Style.barFontSize
+    baseSize: root.capsuleHeight * 0.45
     showPercentageText: root.displayMode !== "graphic-clean"
     vertical: root.isBarVertical
     percentage: root.percent
