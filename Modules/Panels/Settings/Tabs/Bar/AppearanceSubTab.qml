@@ -306,7 +306,7 @@ ColumnLayout {
         Layout.fillWidth: true
         label: I18n.tr("panels.bar.appearance-margins-vertical")
         from: 0
-        to: 18
+        to: 500
         stepSize: 1
         showReset: true
         value: Settings.data.bar.marginVertical
@@ -319,7 +319,7 @@ ColumnLayout {
         Layout.fillWidth: true
         label: I18n.tr("panels.bar.appearance-margins-horizontal")
         from: 0
-        to: 18
+        to: 500
         stepSize: 1
         showReset: true
         value: Settings.data.bar.marginHorizontal
