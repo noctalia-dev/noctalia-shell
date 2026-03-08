@@ -302,7 +302,22 @@ ColumnLayout {
       Layout.fillWidth: true
       spacing: Style.marginL
 
+      Timer {
+        id: marginVerticalTimer
+        interval: 150
+        property int pendingValue
+        onTriggered: Settings.data.bar.marginVertical = pendingValue
+      }
+
+      Timer {
+        id: marginHorizontalTimer
+        interval: 150
+        property int pendingValue
+        onTriggered: Settings.data.bar.marginHorizontal = pendingValue
+      }
+
       NValueSlider {
+        id: marginVertical
         Layout.fillWidth: true
         label: I18n.tr("panels.bar.appearance-margins-vertical")
         from: 0
@@ -311,11 +326,15 @@ ColumnLayout {
         showReset: true
         value: Settings.data.bar.marginVertical
         defaultValue: Settings.getDefaultValue("bar.marginVertical")
-        onMoved: value => Settings.data.bar.marginVertical = value
+        onMoved: value => {
+                   marginVerticalTimer.pendingValue = value;
+                   marginVerticalTimer.restart();
+                 }
         text: Settings.data.bar.marginVertical + "px"
       }
 
       NValueSlider {
+        id: marginHorizontal
         Layout.fillWidth: true
         label: I18n.tr("panels.bar.appearance-margins-horizontal")
         from: 0
@@ -324,7 +343,10 @@ ColumnLayout {
         showReset: true
         value: Settings.data.bar.marginHorizontal
         defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
-        onMoved: value => Settings.data.bar.marginHorizontal = value
+        onMoved: value => {
+                   marginHorizontalTimer.pendingValue = value;
+                   marginHorizontalTimer.restart();
+                 }
         text: Settings.data.bar.marginHorizontal + "px"
       }
     }
