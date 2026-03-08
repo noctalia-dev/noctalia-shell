@@ -21,6 +21,7 @@ Item {
 
   // State properties
   property string passwordSsid: ""
+  property string identity: ""
   property string expandedSsid: ""
   property string infoSsid: ""
   property int ipVersion: 4
@@ -91,10 +92,11 @@ Item {
   // Actions
   function requestPassword(ssid) {
     passwordSsid = ssid;
+    identity = "";
     expandedSsid = "";
   }
-  function submitPassword(ssid, password) {
-    NetworkService.connect(ssid, password);
+  function submitPassword(ssid, password, identity = "") {
+    NetworkService.connect(ssid, password, false, identity);
     passwordSsid = "";
   }
   function cancelPassword() {
@@ -355,6 +357,7 @@ Item {
 
     property string customSsid: ""
     property string customPassword: ""
+    property string customIdentity: ""
     property string customSecurityKey: "wpa2-psk"
 
     onOpened: {
@@ -425,7 +428,7 @@ Item {
         onTextChanged: addNetworkPopup.customSsid = text
         onAccepted: {
           if (addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0)) {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity);
             addNetworkPopup.close();
           }
         }
@@ -441,6 +444,17 @@ Item {
       }
 
       NTextInput {
+        id: customIdentityInput
+        Layout.fillWidth: true
+        inputIconName: "user"
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        placeholderText: I18n.tr("wifi.enterprise.username")
+        label: I18n.tr("wifi.enterprise.username")
+        text: addNetworkPopup.customIdentity
+        onTextChanged: addNetworkPopup.customIdentity = text
+      }
+
+      NTextInput {
         id: customPasswordInput
         Layout.fillWidth: true
         inputIconName: "key"
@@ -452,7 +466,7 @@ Item {
         inputItem.echoMode: TextInput.Password
         onAccepted: {
           if (addNetworkPopup.customSsid.length > 0 && addNetworkPopup.customPassword.length > 0) {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity);
             addNetworkPopup.close();
           }
         }
@@ -480,9 +494,9 @@ Item {
           text: I18n.tr("common.connect")
           backgroundColor: Color.mPrimary
           textColor: Color.mOnPrimary
-          enabled: addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0)
+          enabled: addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0) && (addNetworkPopup.customSecurityKey.indexOf("-eap") === -1 || addNetworkPopup.customIdentity.length > 0)
           onClicked: {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity);
             addNetworkPopup.close();
           }
         }
@@ -498,6 +512,7 @@ Item {
 
       readonly property bool isBusy: NetworkService.connectingTo === modelData.ssid || NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid
       readonly property bool isExpanded: root.infoSsid === modelData.ssid
+      readonly property bool isEnterprise: NetworkService.isEnterprise(modelData.security)
 
       function getContentColor(defaultColor = Color.mOnSurface) {
         if (root.passwordSsid === modelData.ssid || NetworkService.connectingTo === modelData.ssid) {
@@ -987,72 +1002,126 @@ Item {
         Rectangle {
           visible: root.passwordSsid === modelData.ssid && !networkItem.isBusy
           Layout.fillWidth: true
-          height: passwordRow.implicitHeight + Style.margin2S
+          height: passwordLayout.implicitHeight + Style.margin2S
           color: Color.mSurfaceVariant
           border.color: Color.mOutline
           border.width: Style.borderS
           radius: Style.iRadiusXS
 
-          RowLayout {
-            id: passwordRow
+          ColumnLayout {
+            id: passwordLayout
             anchors.fill: parent
             anchors.margins: Style.marginS
-            spacing: Style.marginM
+            spacing: Style.marginS
 
-            Rectangle {
+            // Inputs Container
+            ColumnLayout {
               Layout.fillWidth: true
-              Layout.fillHeight: true
-              radius: Style.iRadiusXS
-              color: Color.mSurface
-              border.color: pwdInput.activeFocus ? Color.mSecondary : Color.mOutline
-              border.width: Style.borderS
+              spacing: Style.marginS
 
-              TextInput {
-                id: pwdInput
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.margins: Style.marginS
-                font.family: Settings.data.ui.fontFixed
-                font.pointSize: Style.fontSizeS
-                color: Color.mOnSurface
-                echoMode: TextInput.Password
-                selectByMouse: true
-                focus: visible
-                passwordCharacter: "●"
-                onVisibleChanged: {
-                  if (visible) {
-                    forceActiveFocus();
-                  }
-                }
-                onAccepted: {
-                  if (text && !NetworkService.connecting) {
-                    root.submitPassword(modelData.ssid, text);
-                  }
-                }
+              // Identity field (Enterprise only)
+              Rectangle {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: identityInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
 
-                NText {
-                  visible: parent.text.length === 0
+                TextInput {
+                  id: identityInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
                   anchors.verticalCenter: parent.verticalCenter
-                  text: I18n.tr("wifi.panel.enter-password")
-                  color: Color.mOnSurfaceVariant
-                  pointSize: Style.fontSizeS
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  selectByMouse: true
+                  onVisibleChanged: {
+                    if (visible) {
+                      forceActiveFocus();
+                    }
+                  }
+                  onAccepted: pwdInput.forceActiveFocus()
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: I18n.tr("wifi.enterprise.username")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
+                }
+              }
+
+              // Password field
+              Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: pwdInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
+
+                TextInput {
+                  id: pwdInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  echoMode: TextInput.Password
+                  selectByMouse: true
+                  passwordCharacter: "●"
+                  onVisibleChanged: {
+                    if (visible && !networkItem.isEnterprise) {
+                      forceActiveFocus();
+                    }
+                  }
+                  onAccepted: {
+                    if (text && !NetworkService.connecting) {
+                      if (!networkItem.isEnterprise || identityInput.text.length > 0) {
+                        root.submitPassword(modelData.ssid, text, identityInput.text);
+                      }
+                    }
+                  }
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: networkItem.isEnterprise ? I18n.tr("wifi.enterprise.password") : I18n.tr("wifi.panel.enter-password")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
                 }
               }
             }
 
-            NButton {
-              text: I18n.tr("common.connect")
-              fontSize: Style.fontSizeS
-              enabled: pwdInput.text.length > 0 && !NetworkService.connecting
-              outlined: true
-              onClicked: root.submitPassword(modelData.ssid, pwdInput.text)
-            }
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
 
-            NIconButton {
-              icon: "close"
-              baseSize: Style.baseWidgetSize * 0.8
-              onClicked: root.cancelPassword()
+              Item {
+                Layout.fillWidth: true
+              }
+
+              NButton {
+                text: I18n.tr("common.connect")
+                fontSize: Style.fontSizeS
+                enabled: pwdInput.text.length > 0 && (!networkItem.isEnterprise || identityInput.text.length > 0) && !NetworkService.connecting
+                outlined: true
+                onClicked: root.submitPassword(modelData.ssid, pwdInput.text, identityInput.text)
+              }
+
+              NIconButton {
+                icon: "close"
+                baseSize: Style.baseWidgetSize * 0.8
+                onClicked: root.cancelPassword()
+              }
             }
           }
         }

@@ -546,7 +546,8 @@
     "width": "Width",
     "wifi": "Wi-Fi",
     "windows": "Windows",
-    "yes": "Yes"
+    "yes": "Yes",
+    "username": "Username"
   },
   "control-center": {
     "power-profile": {
@@ -2161,6 +2162,10 @@
       "fair": "Fair",
       "good": "Good",
       "poor": "Poor"
+    },
+    "enterprise": {
+      "username": "Identity / Username",
+      "password": "User password"
     }
   }
 }

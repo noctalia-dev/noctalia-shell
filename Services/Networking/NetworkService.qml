@@ -342,10 +342,18 @@ Singleton {
     refreshActiveEthernetDetails();
   }
 
-  function connect(ssid, password = "", isHidden = false) {
+  function connect(ssid, password = "", isHidden = false, identity = "") {
     if (!ProgramCheckerService.nmcliAvailable || connecting) {
       return;
     }
+
+    // For enterprise networks, use the robust manual connection logic (profile creation)
+    // as it handles 802.1X parameters much more reliably than 'device wifi connect'.
+    if (isEnterprise(networks[ssid] ? networks[ssid].security : "")) {
+      connectManual(ssid, password, "wpa-eap", identity);
+      return;
+    }
+
     connecting = true;
     connectingTo = ssid;
     lastError = "";
@@ -366,7 +374,7 @@ Singleton {
     connectProcess.running = true;
   }
 
-  function connectManual(ssid, password, securityKey) {
+  function connectManual(ssid, password, securityKey, identity = "") {
     if (!ProgramCheckerService.nmcliAvailable || connecting) {
       return;
     }
@@ -377,6 +385,7 @@ Singleton {
     manualConnectProcess.ssid = ssid;
     manualConnectProcess.password = password;
     manualConnectProcess.securityKey = securityKey;
+    manualConnectProcess.identity = identity;
     manualConnectProcess.running = true;
   }
 
@@ -466,6 +475,14 @@ Singleton {
 
   function isSecured(security) {
     return security && security !== "--" && security.trim() !== "";
+  }
+
+  function isEnterprise(security) {
+    if (!security) {
+      return false;
+    }
+    const s = security.toUpperCase();
+    return s.indexOf("802.1X") !== -1 || s.indexOf("EAP") !== -1 || s.indexOf("ENTERPRISE") !== -1;
   }
 
   function getSignalStrengthLabel(signal) {
@@ -1434,6 +1451,7 @@ Singleton {
     property string ssid: ""
     property string password: ""
     property string securityKey: ""
+    property string identity: ""
     running: false
 
     command: {
@@ -1441,6 +1459,7 @@ Singleton {
 SSID="$1"
 PWD="$2"
 SEC="$3"
+IDENT="$4"
 
 # Remove existing profile to avoid conflict
 nmcli connection delete id "$SSID" 2>/dev/null || true
@@ -1453,9 +1472,8 @@ elif [ "$SEC" = "sae" ]; then
 elif [ "$SEC" = "wep" ]; then
     nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt none wifi-sec.wep-key0 "$PWD" 802-11-wireless.hidden yes
 elif [[ "$SEC" == *-eap ]]; then
-    # Enterprise not fully supported in Stage 1
-    echo "Enterprise networks not supported yet"
-    exit 1
+    # WPA Enterprise (PEAP-MSCHAPv2 default)
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-eap 802-1x.eap peap 802-1x.phase2-auth mschapv2 802-1x.identity "$IDENT" 802-1x.password "$PWD" 802-11-wireless.hidden yes
 else
     nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- 802-11-wireless.hidden yes
 fi
@@ -1464,7 +1482,7 @@ fi
 nmcli connection up id "$SSID"
 `;
 
-      return ["sh", "-c", script, "--", ssid, password, securityKey];
+      return ["sh", "-c", script, "--", ssid, password, securityKey, identity];
     }
 
     stdout: StdioCollector {
