@@ -2544,6 +2544,15 @@
     "subTabLabel": "common.screen-corners"
   },
   {
+    "labelKey": "panels.general.screen-corners-hot-corners-header",
+    "descriptionKey": "panels.general.screen-corners-desc",
+    "widget": "NLabel",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 2,
+    "subTabLabel": "common.screen-corners"
+  },
+  {
     "labelKey": "panels.wallpaper.automation-scheduled-change-label",
     "descriptionKey": "panels.wallpaper.automation-scheduled-change-description",
     "widget": "NToggle",
