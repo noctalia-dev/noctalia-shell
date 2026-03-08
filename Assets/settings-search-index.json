@@ -297,17 +297,8 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-margins-label",
-    "descriptionKey": "panels.bar.appearance-margins-description",
-    "widget": "NLabel",
-    "tab": 4,
-    "tabLabel": "panels.bar.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
     "labelKey": "panels.bar.appearance-margins-vertical",
-    "descriptionKey": null,
+    "descriptionKey": "panels.bar.appearance-margins-description",
     "widget": "NSpinBox",
     "tab": 4,
     "tabLabel": "panels.bar.title",
@@ -316,7 +307,7 @@
   },
   {
     "labelKey": "panels.bar.appearance-margins-horizontal",
-    "descriptionKey": null,
+    "descriptionKey": "panels.bar.appearance-margins-description",
     "widget": "NSpinBox",
     "tab": 4,
     "tabLabel": "panels.bar.title",

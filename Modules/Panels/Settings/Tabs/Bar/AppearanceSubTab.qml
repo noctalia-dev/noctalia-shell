@@ -290,41 +290,33 @@ ColumnLayout {
 
   ColumnLayout {
     visible: Settings.data.bar.barType === "floating"
-    spacing: Style.marginS
+    spacing: Style.marginL
     Layout.fillWidth: true
 
-    NLabel {
-      label: I18n.tr("panels.bar.appearance-margins-label")
-      description: I18n.tr("panels.bar.appearance-margins-description")
+    NDivider {
+      Layout.fillWidth: true
     }
 
-    RowLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginL
+    NSpinBox {
+      label: I18n.tr("panels.bar.appearance-margins-vertical")
+      description: I18n.tr("panels.bar.appearance-margins-description")
+      from: 0
+      to: 500
+      suffix: "px"
+      value: Settings.data.bar.marginVertical
+      defaultValue: Settings.getDefaultValue("bar.marginVertical")
+      onValueChanged: Settings.data.bar.marginVertical = value
+    }
 
-      NSpinBox {
-        label: I18n.tr("panels.bar.appearance-margins-vertical")
-        from: 0
-        to: 500
-        suffix: "px"
-        value: Settings.data.bar.marginVertical
-        defaultValue: Settings.getDefaultValue("bar.marginVertical")
-        onValueChanged: Settings.data.bar.marginVertical = value
-      }
-
-      Item {
-        Layout.fillWidth: true
-      }
-
-      NSpinBox {
-        label: I18n.tr("panels.bar.appearance-margins-horizontal")
-        from: 0
-        to: 500
-        suffix: "px"
-        value: Settings.data.bar.marginHorizontal
-        defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
-        onValueChanged: Settings.data.bar.marginHorizontal = value
-      }
+    NSpinBox {
+      label: I18n.tr("panels.bar.appearance-margins-horizontal")
+      description: I18n.tr("panels.bar.appearance-margins-description")
+      from: 0
+      to: 500
+      suffix: "px"
+      value: Settings.data.bar.marginHorizontal
+      defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
+      onValueChanged: Settings.data.bar.marginHorizontal = value
     }
   }
 
