@@ -39,6 +39,18 @@ Singleton {
   property bool ignoreScanResults: false
   property bool scanPending: false
 
+  // Supported Wi-Fi security types
+  property var supportedSecurityTypes: [
+    { key: "open", name: I18n.tr("wifi.panel.security-open") },
+    { key: "wep", name: I18n.tr("wifi.panel.security-wep") },
+    { key: "wpa-psk", name: I18n.tr("wifi.panel.security-wpa") },
+    { key: "wpa2-psk", name: I18n.tr("wifi.panel.security-wpa23") },
+    { key: "sae", name: I18n.tr("wifi.panel.security-wpa3") },
+    { key: "wpa-eap", name: I18n.tr("wifi.panel.security-wpa-ent") },
+    { key: "wpa2-eap", name: I18n.tr("wifi.panel.security-wpa2-ent") },
+    { key: "wpa3-eap", name: I18n.tr("wifi.panel.security-wpa3-ent") }
+  ]
+
   // Active Wi‑Fi connection details (for info panel)
   property var activeWifiDetails: ({})
   property string activeWifiIf: ""
@@ -145,16 +157,23 @@ Singleton {
   Process {
     id: capabilityDetectProcess
     running: false
-    command: ["nmcli", "-t", "-f", "TYPE", "device"]
+    command: ["nmcli", "-t", "-f", "DEVICE,TYPE", "device"]
     stdout: StdioCollector {
       onStreamFinished: {
         var lines = text.trim().split("\n");
         var wifi = false;
         var eth = false;
+        var wifiDev = "";
         for (var i = 0; i < lines.length; i++) {
-          var type = lines[i].trim();
+          var parts = lines[i].split(":");
+          if (parts.length < 2)
+          continue;
+          var dev = parts[0].trim();
+          var type = parts[1].trim();
           if (type === "wifi") {
             wifi = true;
+            if (!wifiDev)
+            wifiDev = dev;
           } else if (type === "ethernet") {
             eth = true;
           }
@@ -162,6 +181,10 @@ Singleton {
         root._wifiAvailable = wifi;
         root._ethernetAvailable = eth;
         Logger.d("Network", "Detected capabilities - WiFi:", wifi, "Ethernet:", eth);
+
+        if (wifi && wifiDev) {
+          // Additional initialization if needed
+        }
       }
     }
   }
@@ -182,8 +205,9 @@ Singleton {
     }
 
     // Use cached details if they are fresh
-    if (activeWifiIf && activeWifiDetails && (now - activeWifiDetailsTimestamp) < activeWifiDetailsTtlMs)
+    if (activeWifiIf && activeWifiDetails && (now - activeWifiDetailsTimestamp) < activeWifiDetailsTtlMs) {
       return;
+    }
 
     detailsLoading = true;
     wifiDeviceListProcess.running = true;
@@ -224,8 +248,9 @@ Singleton {
       return;
     }
     // If we have fresh details for the same iface, skip
-    if (activeEthernetIf && activeEthernetDetails && (now - activeEthernetDetailsTimestamp) < activeEthernetDetailsTtlMs)
+    if (activeEthernetIf && activeEthernetDetails && (now - activeEthernetDetailsTimestamp) < activeEthernetDetailsTtlMs) {
       return;
+    }
 
     ethernetDetailsLoading = true;
     ethernetDeviceListProcess.running = true;
@@ -293,10 +318,18 @@ Singleton {
     refreshActiveEthernetDetails();
   }
 
-  function connect(ssid, password = "") {
+  function connect(ssid, password = "", isHidden = false, identity = "") {
     if (!ProgramCheckerService.nmcliAvailable || connecting) {
       return;
     }
+
+    // For enterprise networks, use the robust manual connection logic (profile creation)
+    // as it handles 802.1X parameters much more reliably than 'device wifi connect'.
+    if (isEnterprise(networks[ssid] ? networks[ssid].security : "")) {
+      connectManual(ssid, password, "wpa-eap", identity);
+      return;
+    }
+
     connecting = true;
     connectingTo = ssid;
     lastError = "";
@@ -306,13 +339,30 @@ Singleton {
       connectProcess.mode = "saved";
       connectProcess.ssid = ssid;
       connectProcess.password = "";
+      connectProcess.isHidden = false;
     } else {
       connectProcess.mode = "new";
       connectProcess.ssid = ssid;
       connectProcess.password = password;
+      connectProcess.isHidden = isHidden;
     }
 
     connectProcess.running = true;
+  }
+
+  function connectManual(ssid, password, securityKey, identity = "") {
+    if (!ProgramCheckerService.nmcliAvailable || connecting) {
+      return;
+    }
+    connecting = true;
+    connectingTo = ssid;
+    lastError = "";
+
+    manualConnectProcess.ssid = ssid;
+    manualConnectProcess.password = password;
+    manualConnectProcess.securityKey = securityKey;
+    manualConnectProcess.identity = identity;
+    manualConnectProcess.running = true;
   }
 
   function disconnect(ssid) {
@@ -403,6 +453,14 @@ Singleton {
     return security && security !== "--" && security.trim() !== "";
   }
 
+  function isEnterprise(security) {
+    if (!security) {
+      return false;
+    }
+    const s = security.toUpperCase();
+    return s.indexOf("802.1X") !== -1 || s.indexOf("EAP") !== -1 || s.indexOf("ENTERPRISE") !== -1;
+  }
+
   function getSignalStrengthLabel(signal) {
     switch (true) {
     case (signal >= 80):
@@ -414,6 +472,55 @@ Singleton {
     default:
       return I18n.tr("wifi.signal.poor");
     }
+  }
+
+  function parseIpDetails(text) {
+    const details = {
+      ipv4: "",
+      gateway4: "",
+      ipv6: "",
+      gateway6: "",
+      dns4: [],
+      dns6: [],
+      dns: "",
+      connectionName: ""
+    };
+    const lines = text.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) {
+        continue;
+      }
+      const idx = line.indexOf(":");
+      if (idx === -1) {
+        continue;
+      }
+      const key = line.substring(0, idx);
+      const val = line.substring(idx + 1);
+      if (key === "GENERAL.CONNECTION") {
+        details.connectionName = val;
+      } else if (key.indexOf("IP4.ADDRESS") === 0) {
+        details.ipv4 = val.split("/")[0];
+      } else if (key === "IP4.GATEWAY") {
+        details.gateway4 = val;
+      } else if (key.indexOf("IP6.ADDRESS") === 0) {
+        details.ipv6 = val.split("/")[0];
+      } else if (key === "IP6.GATEWAY") {
+        details.gateway6 = val;
+      } else if (key.indexOf("IP4.DNS") === 0) {
+        if (val && details.dns4.indexOf(val) === -1) {
+          details.dns4.push(val);
+        }
+      } else if (key.indexOf("IP6.DNS") === 0) {
+        if (val && details.dns6.indexOf(val) === -1) {
+          details.dns6.push(val);
+        }
+      }
+    }
+    details.dns4 = details.dns4.join(", ");
+    details.dns6 = details.dns6.join(", ");
+    details.dns = [].concat(details.dns4 ? [details.dns4] : [], details.dns6 ? [details.dns6] : []).join(", ");
+    return details;
   }
 
   // Processes
@@ -430,7 +537,7 @@ Singleton {
         var ethList = [];
         for (var i = 0; i < lines.length; i++) {
           var parts = lines[i].split(":");
-          if (parts.length >= 3 && parts[1] === "ethernet") {
+          if (parts.length >= 3 && parts[1] === "ethernet" && parts[2] !== "unmanaged") {
             var ifname = parts[0];
             var state = parts[2];
             var isConn = state === "connected";
@@ -447,8 +554,9 @@ Singleton {
         }
         // Sort interfaces: connected first, then by name
         ethList.sort(function (a, b) {
-          if (a.connected !== b.connected)
+          if (a.connected !== b.connected) {
             return a.connected ? -1 : 1;
+          }
           return a.ifname.localeCompare(b.ifname);
         });
         root.ethernetInterfaces = ethList;
@@ -497,6 +605,9 @@ Singleton {
             const dev = parts[0];
             const type = parts[1];
             const state = parts[2];
+            if (state === "unmanaged") {
+              continue;
+            }
             if (type === "ethernet" && state === "connected") {
               ifname = dev;
             }
@@ -510,8 +621,9 @@ Singleton {
           }
         }
         ethList.sort(function (a, b) {
-          if (a.connected !== b.connected)
+          if (a.connected !== b.connected) {
             return a.connected ? -1 : 1;
+          }
           return a.ifname.localeCompare(b.ifname);
         });
         root.ethernetInterfaces = ethList;
@@ -551,42 +663,20 @@ Singleton {
     stdout: StdioCollector {
       onStreamFinished: {
         const details = root.activeEthernetDetails || ({});
-        let connName = "";
-        let ipv4 = "";
-        let gw4 = "";
-        let dnsServers = [];
-        const lines = text.split("\n");
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) {
-            continue;
-          }
-          const idx = line.indexOf(":");
-          if (idx === -1) {
-            continue;
-          }
-          const key = line.substring(0, idx);
-          const val = line.substring(idx + 1);
-          if (key === "GENERAL.CONNECTION") {
-            connName = val;
-          } else if (key.indexOf("IP4.ADDRESS") === 0) {
-            ipv4 = val.split("/")[0];
-          } else if (key === "IP4.GATEWAY") {
-            gw4 = val;
-          } else if (key.indexOf("IP4.DNS") === 0) {
-            if (val && dnsServers.indexOf(val) === -1) {
-              dnsServers.push(val);
-            }
-          }
-        }
+        const parsed = root.parseIpDetails(text);
+
         details.ifname = ethernetDeviceShowProcess.ifname;
-        details.connectionName = connName;
+        details.connectionName = parsed.connectionName;
         // No speed from nmcli: keep empty so ethtool fallback below fills it
         details.speed = details.speed && details.speed.length > 0 ? details.speed : "";
-        details.ipv4 = ipv4;
-        details.gateway4 = gw4;
-        details.dnsServers = dnsServers;
-        details.dns = dnsServers.join(", ");
+        details.ipv4 = parsed.ipv4;
+        details.gateway4 = parsed.gateway4;
+        details.ipv6 = parsed.ipv6;
+        details.gateway6 = parsed.gateway6;
+        details.dns4 = parsed.dns4;
+        details.dns6 = parsed.dns6;
+        details.dns = parsed.dns;
+
         root.activeEthernetDetails = details;
         // If speed missing, try sysfs first, then fallback to ethtool
         if (!details.speed || details.speed.length === 0) {
@@ -696,6 +786,9 @@ Singleton {
             const dev = parts[0];
             const type = parts[1];
             const state = parts[2];
+            if (state === "unmanaged") {
+              continue;
+            }
             if (type === "wifi" && state === "connected") {
               ifname = dev;
               break;
@@ -727,45 +820,25 @@ Singleton {
     }
   }
 
-  // Fetch IPv4 and gateway for the interface
+  // Fetch IP info for the interface
   Process {
     id: wifiDeviceShowProcess
     property string ifname: ""
     running: false
-    command: ["nmcli", "-t", "-f", "IP4.ADDRESS,IP4.GATEWAY,IP4.DNS", "device", "show", ifname]
+    command: ["nmcli", "-t", "-f", "IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS", "device", "show", ifname]
 
     stdout: StdioCollector {
       onStreamFinished: {
         const details = root.activeWifiDetails || ({});
-        let ipv4 = "";
-        let gw4 = "";
-        let dnsServers = [];
-        const lines = text.split("\n");
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) {
-            continue;
-          }
-          const idx = line.indexOf(":");
-          if (idx === -1) {
-            continue;
-          }
-          const key = line.substring(0, idx);
-          const val = line.substring(idx + 1);
-          if (key.indexOf("IP4.ADDRESS") === 0) {
-            ipv4 = val.split("/")[0];
-          } else if (key === "IP4.GATEWAY") {
-            gw4 = val;
-          } else if (key.indexOf("IP4.DNS") === 0) {
-            if (val && dnsServers.indexOf(val) === -1) {
-              dnsServers.push(val);
-            }
-          }
-        }
-        details.ipv4 = ipv4;
-        details.gateway4 = gw4;
-        details.dnsServers = dnsServers;
-        details.dns = dnsServers.join(", ");
+        const parsed = root.parseIpDetails(text);
+
+        details.ipv4 = parsed.ipv4;
+        details.gateway4 = parsed.gateway4;
+        details.ipv6 = parsed.ipv6;
+        details.gateway6 = parsed.gateway6;
+        details.dns4 = parsed.dns4;
+        details.dns6 = parsed.dns6;
+        details.dns = parsed.dns;
         root.activeWifiDetails = details;
 
         // Try to get link rate (best effort)
@@ -784,18 +857,20 @@ Singleton {
     }
   }
 
-  // Optional: query Wi‑Fi bitrate via iw if available
+  // Optional: query Wi‑Fi bitrate and link info via iw if available
   Process {
     id: wifiIwLinkProcess
     property string ifname: ""
     running: false
-    command: ["sh", "-c", "iw dev '" + ifname + "' link 2>/dev/null || true"]
+    command: ["sh", "-c", "iw dev '" + ifname + "' link 2>/dev/null; iw dev '" + ifname + "' info 2>/dev/null || true"]
 
     stdout: StdioCollector {
       onStreamFinished: {
         const details = root.activeWifiDetails || ({});
         let rate = "";
         let freq = "";
+        let iwChannel = "";
+        let iwWidth = "";
         const lines = text.split("\n");
         for (var k = 0; k < lines.length; k++) {
           var line2 = lines[k].trim();
@@ -804,12 +879,23 @@ Singleton {
             rate = line2.substring(11).trim();
           } else if (low.indexOf("freq:") === 0) {
             freq = line2.substring(5).trim();
+          } else if (low.indexOf("channel") === 0) {
+            // Parse "channel 9 (2452 MHz), width: 20 MHz, center1: 2452 MHz"
+            var chanMatch = line2.match(/channel\s+(\d+)/i);
+            if (chanMatch) {
+              iwChannel = chanMatch[1];
+            }
+            var widthMatchInfo = line2.match(/width:\s+(\d+)\s+MHz/i);
+            if (widthMatchInfo) {
+              iwWidth = widthMatchInfo[1] + " MHz";
+            }
           }
         }
 
-        // Determine band from frequency
+        // Determine band and channel from frequency
         // https://en.wikipedia.org/wiki/List_of_WLAN_channels
         let band = "";
+        let channel = iwChannel;
         if (freq) {
           const f = +freq;
           if (f) {
@@ -817,14 +903,27 @@ Singleton {
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#6_GHz_(802.11ax_and_802.11be)
               case (f >= 5925 && f < 7125):
               band = "6 GHz";
+              if (!channel) {
+                channel = Math.round((f - 5940) / 5).toString();
+              }
               break;
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#5_GHz_(802.11a/h/n/ac/ax/be)
               case (f >= 5150 && f < 5925):
               band = "5 GHz";
+              if (!channel) {
+                channel = Math.round((f - 5000) / 5).toString();
+              }
               break;
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#2.4_GHz_(802.11b/g/n/ax/be)
               case (f >= 2400 && f < 2500):
               band = "2.4 GHz";
+              if (!channel) {
+                if (f === 2484) {
+                  channel = "14";
+                } else {
+                  channel = Math.round((f - 2407) / 5).toString();
+                }
+              }
               break;
               default:
               band = `${f} MHz`;
@@ -834,7 +933,16 @@ Singleton {
 
         // Shorten verbose bitrate strings like: "360.0 MBit/s VHT-MCS 8 40MHz short GI"
         let rateShort = "";
+        let width = iwWidth;
         if (rate) {
+          // Extract width from bitrate if not already found in info (fallback)
+          if (!width) {
+            var widthMatchBitrate = rate.match(/(\d+)MHz/i);
+            if (widthMatchBitrate) {
+              width = widthMatchBitrate[1] + " MHz";
+            }
+          }
+
           var parts = rate.trim().split(" ");
           // compact consecutive spaces
           var compact = [];
@@ -866,9 +974,20 @@ Singleton {
             rateShort = compact.slice(0, 2).join(" ");
           }
         }
+
+        // Enhance band string with channel and width: "Band / Ch Channel (Width)"
+        let enhancedBand = band;
+        if (channel && width) {
+          enhancedBand = `${band} / Ch ${channel} (${width})`;
+        } else if (channel) {
+          enhancedBand = `${band} / Ch ${channel}`;
+        }
+
         details.rate = rate;
         details.rateShort = rateShort;
-        details.band = band;
+        details.band = enhancedBand;
+        details.channel = channel;
+        details.width = width;
         root.activeWifiDetails = details;
         root.activeWifiDetailsTimestamp = Date.now();
         root.detailsLoading = false;
@@ -1210,6 +1329,7 @@ Singleton {
     property string mode: "new"
     property string ssid: ""
     property string password: ""
+    property bool isHidden: false
     running: false
 
     command: {
@@ -1217,8 +1337,14 @@ Singleton {
         return ["nmcli", "connection", "up", "id", ssid];
       } else {
         var cmd = ["nmcli", "device", "wifi", "connect", ssid];
+        if (isHidden) {
+          cmd.push("hidden", "yes");
+        }
         if (password) {
           cmd.push("password", password);
+        }
+        if (root.activeWifiIf) {
+          cmd.push("ifname", root.activeWifiIf);
         }
         return cmd;
       }
@@ -1291,6 +1417,90 @@ Singleton {
           Logger.w("Network", "Connect error: " + text);
           // Notify user about the failure
           ToastService.showWarning(I18n.tr("common.wifi"), root.lastError || I18n.tr("toast.wifi.connection-failed"));
+        }
+      }
+    }
+  }
+
+  Process {
+    id: manualConnectProcess
+    property string ssid: ""
+    property string password: ""
+    property string securityKey: ""
+    property string identity: ""
+    running: false
+
+    command: {
+      var script = `
+SSID="$1"
+PWD="$2"
+SEC="$3"
+IDENT="$4"
+
+# Remove existing profile to avoid conflict
+nmcli connection delete id "$SSID" 2>/dev/null || true
+
+# Create profile based on security key
+if [ "$SEC" = "wpa-psk" ] || [ "$SEC" = "wpa2-psk" ]; then
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
+elif [ "$SEC" = "sae" ]; then
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt sae wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
+elif [ "$SEC" = "wep" ]; then
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt none wifi-sec.wep-key0 "$PWD" 802-11-wireless.hidden yes
+elif [[ "$SEC" == *-eap ]]; then
+    # WPA Enterprise (PEAP-MSCHAPv2 default)
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-eap 802-1x.eap peap 802-1x.phase2-auth mschapv2 802-1x.identity "$IDENT" 802-1x.password "$PWD" 802-11-wireless.hidden yes
+else
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- 802-11-wireless.hidden yes
+fi
+
+# Bring up the connection
+nmcli connection up id "$SSID"
+`;
+
+      return ["sh", "-c", script, "--", ssid, password, securityKey, identity];
+    }
+
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const output = text.trim();
+        if (output.indexOf("successfully activated") === -1) {
+          return;
+        }
+
+        // Success - update cache
+        let known = cacheAdapter.knownNetworks;
+        known[manualConnectProcess.ssid] = {
+          "profileName": manualConnectProcess.ssid,
+          "lastConnected": Date.now()
+        };
+        cacheAdapter.knownNetworks = known;
+        cacheAdapter.lastConnected = manualConnectProcess.ssid;
+        saveCache();
+
+        root.updateNetworkStatus(manualConnectProcess.ssid, true);
+        root.refreshActiveWifiDetails();
+
+        root.connecting = false;
+        root.connectingTo = "";
+        Logger.i("Network", "Manually connected to hidden network: '" + manualConnectProcess.ssid + "'");
+        ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.wifi.connected", {
+                                                                  "ssid": manualConnectProcess.ssid
+                                                                }), "wifi");
+
+        delayedScanTimer.interval = 5000;
+        delayedScanTimer.restart();
+      }
+    }
+
+    stderr: StdioCollector {
+      onStreamFinished: {
+        root.connecting = false;
+        root.connectingTo = "";
+        if (text.trim()) {
+          root.lastError = I18n.tr("toast.wifi.connection-failed");
+          Logger.w("Network", "Manual connect error: " + text);
+          ToastService.showWarning(I18n.tr("common.wifi"), root.lastError);
         }
       }
     }

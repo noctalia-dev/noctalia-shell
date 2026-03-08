@@ -546,16 +546,13 @@
     "width": "Width",
     "wifi": "Wi-Fi",
     "windows": "Windows",
-    "yes": "Yes"
+    "yes": "Yes",
+    "username": "Username"
   },
   "control-center": {
     "power-profile": {
       "tooltip-action": "Power Profile",
       "tooltip-disabled": "Install power-profiles-daemon to use power profiles"
-    },
-    "wifi": {
-      "label-disconnected": "Wi-Fi disconnected",
-      "label-ethernet": "Ethernet"
     }
   },
   "display-modes": {
@@ -962,7 +959,8 @@
       "hide-unnamed-devices-description": "Hide devices that appear only as Bluetooth addresses.",
       "hide-unnamed-devices-label": "Hide unnamed devices",
       "pin-instructions": "Please enter the PIN code displayed on your device.",
-      "title": "Connections"
+      "title": "Connections",
+      "wifi-header-text": "Use Wi-Fi to see available networks and connect to the internet."
     },
     "control-center": {
       "cards-desc": "Customize which controls appear in the control center and in what order.",
@@ -1408,9 +1406,7 @@
     "network": {
       "bluetooth-description": "Activate Bluetooth management.",
       "bluetooth-rssi-polling-description": "Periodically sample RSSI for connected devices via bluetoothctl. May not be available for all devices; uses minimal resources when enabled.",
-      "bluetooth-rssi-polling-label": "Bluetooth signal polling",
-      "desc": "Manage Wi-Fi and Bluetooth connections.",
-      "wifi-description": "Manage wireless networks (requires NetworkManager)."
+      "bluetooth-rssi-polling-label": "Bluetooth signal polling"
     },
     "notifications": {
       "duration-critical-urgency-description": "How long critical priority notifications stay visible.",
@@ -1837,7 +1833,8 @@
   },
   "toast": {
     "airplane-mode": {
-      "title": "Airplane Mode"
+      "title": "Airplane Mode",
+      "description": "Disable all wireless communications."
     },
     "battery": {
       "critical": "Critical battery",
@@ -1949,7 +1946,6 @@
     "keyboard-layout": "{layout} keyboard layout",
     "list-view": "List view",
     "manage-vpn": "VPN connections",
-    "manage-wifi": "Wi-Fi",
     "max-widgets-reached": "Maximum widgets reached",
     "microphone-volume-at": "Microphone volume: {volume}%",
     "move-to-section": "Move to {section}",
@@ -2139,20 +2135,33 @@
       "internet-limited": "No internet",
       "internet-status": "Internet status",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Known networks",
       "link-speed": "Link speed",
       "no-ethernet-devices": "No Ethernet devices detected",
       "no-networks": "No Wi‑Fi networks found",
       "saved": "Saved",
-      "scan-again": "Scan again",
       "searching": "Searching for networks...",
-      "title": "Wi‑Fi"
+      "add-hidden-network": "Add hidden network",
+      "network-name-ssid": "Network name (SSID)",
+      "security-open": "None",
+      "security-wpa": "WPA",
+      "security-wep": "WEP",
+      "security-wpa23": "WPA2/WPA3",
+      "security-wpa3": "WPA3",
+      "security-wpa-ent": "WPA Enterprise",
+      "security-wpa2-ent": "WPA2 Enterprise",
+      "security-wpa3-ent": "WPA3 Enterprise"
     },
     "signal": {
       "excellent": "Excellent",
       "fair": "Fair",
       "good": "Good",
       "poor": "Poor"
+    },
+    "enterprise": {
+      "username": "Identity / Username",
+      "password": "User password"
     }
   }
 }

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import "../Settings/Tabs/Connections" as WifiPrefs
 import qs.Commons
 import qs.Modules.MainScreen
 import qs.Modules.Panels.Settings
@@ -15,9 +16,6 @@ SmartPanel {
   preferredWidth: Math.round(440 * Style.uiScaleRatio)
   preferredHeight: Math.round(500 * Style.uiScaleRatio)
 
-  property string passwordSsid: ""
-  property string expandedSsid: ""
-
   // Info panel collapsed by default, view mode persisted in settings
   // Ethernet details UI state (mirrors Wi‑Fi info behavior)
   property bool ethernetInfoExpanded: false
@@ -30,15 +28,13 @@ SmartPanel {
   onPanelViewModeChanged: {
     // Persist last view (only after restored the initial value)
     if (panelViewPersistEnabled) {
-      Settings.data.ui.networkPanelView = panelViewMode;
+      Settings.data.network.networkPanelView = panelViewMode;
     }
-    // Reset transient states to avoid layout artifacts
-    passwordSsid = "";
-    expandedSsid = "";
     if (panelViewMode === "wifi") {
       ethernetInfoExpanded = false;
-      if (Settings.data.network.wifiEnabled && !NetworkService.scanning && Object.keys(NetworkService.networks).length === 0)
+      if (Settings.data.network.wifiEnabled && !NetworkService.scanning) {
         NetworkService.scan();
+      }
     } else {
       if (NetworkService.ethernetConnected) {
         NetworkService.refreshActiveEthernetDetails();
@@ -48,23 +44,6 @@ SmartPanel {
     }
   }
 
-  // Computed network lists
-  readonly property var knownNetworks: {
-    if (!Settings.data.network.wifiEnabled)
-      return [];
-
-    var nets = Object.values(NetworkService.networks);
-    var known = nets.filter(n => n.connected || n.existing || n.cached);
-
-    // Sort: connected first, then by signal strength
-    known.sort((a, b) => {
-                 if (a.connected !== b.connected)
-                 return b.connected - a.connected;
-                 return b.signal - a.signal;
-               });
-
-    return known;
-  }
   onOpened: {
     NetworkService.scan();
     // Preload active Wi‑Fi details so Info shows instantly
@@ -72,33 +51,21 @@ SmartPanel {
     // Also fetch Ethernet details if connected
     NetworkService.refreshActiveEthernetDetails();
     // Restore last view if valid, otherwise choose what's available (prefer Wi‑Fi when both exist)
-    if (Settings.data.ui.networkPanelView) {
-      const last = Settings.data.ui.networkPanelView;
+    if (Settings.data.network.networkPanelView) {
+      const last = Settings.data.network.networkPanelView;
       if (last === "ethernet" && NetworkService.hasEthernet()) {
         panelViewMode = "ethernet";
       } else {
         panelViewMode = "wifi";
       }
     } else {
-      if (!Settings.data.network.wifiEnabled && NetworkService.hasEthernet())
+      if (!Settings.data.network.wifiEnabled && NetworkService.hasEthernet()) {
         panelViewMode = "ethernet";
-      else
+      } else {
         panelViewMode = "wifi";
+      }
     }
     panelViewPersistEnabled = true;
-  }
-
-  readonly property var availableNetworks: {
-    if (!Settings.data.network.wifiEnabled)
-      return [];
-
-    var nets = Object.values(NetworkService.networks);
-    var available = nets.filter(n => !n.connected && !n.existing && !n.cached);
-
-    // Sort by signal strength
-    available.sort((a, b) => b.signal - a.signal);
-
-    return available;
   }
 
   panelContent: Rectangle {
@@ -151,19 +118,6 @@ SmartPanel {
             NLabel {
               label: panelViewMode === "wifi" ? I18n.tr("common.wifi") : I18n.tr("common.ethernet")
               Layout.fillWidth: true
-            }
-
-            NIconButton {
-              icon: "refresh"
-              tooltipText: I18n.tr("common.refresh")
-              baseSize: Style.baseWidgetSize * 0.8
-              enabled: panelViewMode === "wifi" ? (Settings.data.network.wifiEnabled && !NetworkService.scanning) : true
-              onClicked: {
-                if (panelViewMode === "wifi")
-                  NetworkService.scan();
-                else
-                  NetworkService.refreshEthernet();
-              }
             }
 
             NToggle {
@@ -392,13 +346,6 @@ SmartPanel {
                   Layout.alignment: Qt.AlignHCenter
                 }
 
-                NButton {
-                  text: I18n.tr("wifi.panel.scan-again")
-                  icon: "refresh"
-                  Layout.alignment: Qt.AlignHCenter
-                  onClicked: NetworkService.scan()
-                }
-
                 Item {
                   Layout.fillHeight: true
                 }
@@ -412,48 +359,8 @@ SmartPanel {
               width: parent.width
               spacing: Style.marginM
 
-              WiFiNetworksList {
-                label: I18n.tr("wifi.panel.known-networks")
-                model: root.knownNetworks
-                passwordSsid: root.passwordSsid
-                expandedSsid: root.expandedSsid
-                onPasswordRequested: ssid => {
-                                       root.passwordSsid = ssid;
-                                       root.expandedSsid = "";
-                                     }
-                onPasswordSubmitted: (ssid, password) => {
-                                       NetworkService.connect(ssid, password);
-                                       root.passwordSsid = "";
-                                     }
-                onPasswordCancelled: root.passwordSsid = ""
-                onForgetRequested: ssid => root.expandedSsid = root.expandedSsid === ssid ? "" : ssid
-                onForgetConfirmed: ssid => {
-                                     NetworkService.forget(ssid);
-                                     root.expandedSsid = "";
-                                   }
-                onForgetCancelled: root.expandedSsid = ""
-              }
-
-              WiFiNetworksList {
-                label: I18n.tr("wifi.panel.available-networks")
-                model: root.availableNetworks
-                passwordSsid: root.passwordSsid
-                expandedSsid: root.expandedSsid
-                onPasswordRequested: ssid => {
-                                       root.passwordSsid = ssid;
-                                       root.expandedSsid = "";
-                                     }
-                onPasswordSubmitted: (ssid, password) => {
-                                       NetworkService.connect(ssid, password);
-                                       root.passwordSsid = "";
-                                     }
-                onPasswordCancelled: root.passwordSsid = ""
-                onForgetRequested: ssid => root.expandedSsid = root.expandedSsid === ssid ? "" : ssid
-                onForgetConfirmed: ssid => {
-                                     NetworkService.forget(ssid);
-                                     root.expandedSsid = "";
-                                   }
-                onForgetCancelled: root.expandedSsid = ""
+              WifiPrefs.WifiSubTab {
+                showOnlyLists: true
               }
             }
 
