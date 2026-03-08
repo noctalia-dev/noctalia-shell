@@ -13,6 +13,13 @@ ColumnLayout {
   Layout.fillWidth: true
 
   property var screen
+  function openWallpaperPanel() {
+    PanelService.getPanel("wallpaperPanel", screen)?.toggle();
+  }
+
+  function clearThemedWallpaper(mode) {
+    Settings.data.wallpaper.themedWallpapers[mode] = "";
+  }
 
   signal openMainFolderPicker
   signal openMonitorFolderPicker(string monitorName)
@@ -166,6 +173,106 @@ ColumnLayout {
               Layout.fillWidth: true
               onInputEditingFinished: WallpaperService.setMonitorDirectory(modelData.name, text)
               onButtonClicked: root.openMonitorFolderPicker(modelData.name)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  ColumnLayout {
+    Layout.fillWidth: true
+    spacing: Style.marginS
+
+    NToggle {
+      label: I18n.tr("panels.wallpaper.settings-theme-toggle-label")
+      description: I18n.tr("panels.wallpaper.settings-theme-toggle-description")
+      checked: Settings.data.wallpaper.themedWallpapers.enabled
+      onToggled: checked => Settings.data.wallpaper.themedWallpapers.enabled = checked
+    }
+
+    NBox {
+      Layout.fillWidth: true
+      radius: Style.radiusM
+      color: Color.mSurface
+      border.color: Color.mOutline
+      border.width: Style.borderS
+      enabled: Settings.data.wallpaper.themedWallpapers.enabled
+      opacity: Settings.data.wallpaper.themedWallpapers.enabled ? 1.0 : 0.6
+
+      ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: Style.marginL
+        spacing: Style.marginS
+
+        ListModel {
+          id: themedModesModel
+          ListElement { mode: "light"; icon: "sun"; labelKey: "panels.wallpaper.settings-theme-light-label" }
+          ListElement { mode: "dark"; icon: "moon"; labelKey: "panels.wallpaper.settings-theme-dark-label" }
+        }
+
+        Repeater {
+          model: themedModesModel
+          delegate: ColumnLayout {
+            Layout.fillWidth: true
+            spacing: Style.marginXS
+            property string assignedPath: Settings.data.wallpaper.themedWallpapers[model.mode] || ""
+
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
+
+              NIcon {
+                icon: model.icon
+                pointSize: Style.fontSizeXL
+                color: Color.mPrimary
+              }
+
+              ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Style.marginXS
+
+                NText {
+                  text: I18n.tr(model.labelKey)
+                  pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  font.weight: Style.fontWeightMedium
+                }
+
+                NTextInput {
+                  text: assignedPath
+                  readOnly: true
+                  placeholderText: I18n.tr("panels.wallpaper.settings-theme-unassigned")
+                  Layout.fillWidth: true
+                  radius: Style.radiusM
+                }
+              }
+            }
+
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
+
+              Item {
+                Layout.fillWidth: true
+              }
+
+              NIconButton {
+                icon: "wallpaper-selector"
+                tooltipText: I18n.tr("panels.wallpaper.settings-theme-open-picker-tooltip")
+                baseSize: Style.baseWidgetSize * 0.8
+                onClicked: openWallpaperPanel()
+              }
+
+              NIconButton {
+                icon: "trash"
+                tooltipText: I18n.tr("panels.wallpaper.settings-theme-clear-tooltip")
+                enabled: assignedPath !== ""
+                colorFg: Color.mError
+                colorBg: "transparent"
+                baseSize: Style.baseWidgetSize * 0.8
+                onClicked: clearThemedWallpaper(model.mode)
+              }
             }
           }
         }
