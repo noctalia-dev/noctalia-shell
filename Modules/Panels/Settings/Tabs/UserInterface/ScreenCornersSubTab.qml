@@ -54,7 +54,7 @@ ColumnLayout {
   }
 
   NDivider {
-    Layout.fillWidth: trues
+    Layout.fillWidth: true
   }
 
   NHeader {
