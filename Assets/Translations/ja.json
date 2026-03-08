@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "ビジュアライザーの色を選択します。",
       "color-name-label": "塗りつぶし色",
+      "height-description": "カスタムコンポーネントの幅。",
       "hide-when-idle-description": "有効にすると、再生中のプレーヤーがない場合にビジュアライザーを隠します。",
       "hide-when-idle-label": "メディア停止時は隠す",
       "width-description": "コンポーネントの幅をカスタム設定します。"
@@ -293,6 +294,8 @@
       "focused-color-label": "フォーカスされたワークスペースの色",
       "follow-focused-screen-description": "バーが配置されている画面ではなく、現在フォーカスされている画面のワークスペースを表示します。",
       "follow-focused-screen-label": "フォーカス中の画面に追従",
+      "font-weight-description": "ワークスペース内のテキストの視覚的ウェイトを設定します。",
+      "font-weight-label": "フォントの太さ",
       "grouped-border-opacity-description": "ワークスペースコンテナのボーダーの不透明度を設定します。",
       "grouped-border-opacity-label": "境界線の不透明度",
       "hide-unoccupied-description": "ウィンドウがないワークスペースを表示しません。",
@@ -376,6 +379,7 @@
     "add": "追加",
     "appearance": "外観",
     "apply": "適用",
+    "auto-connect": "自動接続",
     "automation": "自動化",
     "available": "利用可能",
     "back": "戻る",
@@ -426,6 +430,11 @@
     "execute": "実行",
     "faithful": "忠実",
     "focus": "集中",
+    "font-weight-bold": "太字",
+    "font-weight-light": "ライト",
+    "font-weight-medium": "中",
+    "font-weight-regular": "標準",
+    "font-weight-semibold": "セミボールド",
     "frequency": "頻度",
     "gateway": "ゲートウェイ",
     "general": "一般",
@@ -470,6 +479,7 @@
     "panels": "パネル",
     "password": "パスワード",
     "pause": "一時停止",
+    "performance": "パフォーマンス",
     "pin": "ピン留め",
     "play": "再生",
     "polling": "ポーリング",
@@ -709,6 +719,7 @@
       "debug-disabled": "デバッグモードが無効になりました",
       "debug-enabled": "デバッグモードが有効です",
       "info-copied": "クリップボードにコピーしました",
+      "noctalia-available": "利用可能:",
       "noctalia-desc": "Wayland のために丁寧に作り込まれた、Quickshell 製の洗練されたミニマルなデスクトップシェル。",
       "noctalia-git-commit": "Git コミット：",
       "noctalia-installed-version": "現在のバージョン：",
@@ -721,6 +732,7 @@
       "supporters-desc": "素晴らしいサポーターに心からの感謝を！",
       "supporters-desc-plural": "<b>{count}名の素晴らしい</b>サポーターの皆様に心より感謝いたします！",
       "supporters-loading": "サポーターを読み込み中...",
+      "system-board": "マザーボード:",
       "system-cpu": "CPU：",
       "system-disk": "ディスク：",
       "system-gpu": "GPU：",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "セッションオプションにキーバインドのヒントを表示する。",
       "show-keybinds-label": "キーバインドを表示"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia パフォーマンスモードが有効な間、デスクトップウィジェットを表示したままにする。",
+      "noctalia-performance-disable-desktop-widgets-label": "パフォーマンスモードでデスクトップウィジェットを有効にする",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia パフォーマンスモードが有効な間、デスクトップ、概要、ロック画面の壁紙を表示したままにします。",
+      "noctalia-performance-disable-wallpaper-label": "パフォーマンスモードで壁紙のレンダリングを有効にする",
+      "title": "システム"
+    },
     "system-monitor": {
       "critical-color-label": "危険時の色",
       "custom-highlight-colors-title-label": "カスタムハイライト色",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "ポーリング間隔",
       "polling-section-description": "各システムメトリクスの更新頻度を設定します。",
       "polling-section-label": "ポーリング間隔",
-      "threshold-critical": "危険閾値",
-      "threshold-warning": "警告閾値",
+      "threshold-critical": "重大",
+      "threshold-warning": "警告",
       "thresholds-section-description": "各システムメトリックの警告/危険しきい値とポーリング間隔を調整します。",
       "use-custom-highlight-colors-description": "無効にすると、テーマのデフォルト強調色が使用されます。",
       "use-custom-highlight-colors-label": "カスタム強調色を使用する",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "アニメーション速度",
       "animation-speed-reset": "アニメーション速度をリセット",
       "appearance-desc": "ツールチップ、境界線、影などの視覚要素をカスタマイズします。",
+      "blur-behind-description": "バーとパネルの背後の領域を、コンポジターのぼかしプロトコルを使用してぼかします。",
+      "blur-behind-label": "背景ぼかし",
       "box-border-description": "コンテンツ領域の周りにアウトラインを表示します。",
       "box-border-label": "コンテナの輪郭",
       "box-border-radius-description": "サイドバー、カード、コンテンツパネルなど、主要なレイアウト部分の角の丸みを調整します。",
@@ -1847,6 +1868,10 @@
       "unavailable": "クリップボード履歴を利用できません",
       "unavailable-desc": "cliphist がインストールされていません。クリップボード履歴機能を使用するにはインストールしてください"
     },
+    "custom-command-failed": {
+      "description": "コマンドが失敗しました: {command}\\n終了コード: {code}",
+      "title": "カスタムコマンドが失敗しました"
+    },
     "do-not-disturb": {
       "disabled": "おやすみモードを無効化",
       "disabled-desc": "すべての通知を表示します",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "ウィジェットを追加",
-    "bluetooth-auto-connect-off": "自動接続はオフです — クリックして有効にする",
-    "bluetooth-auto-connect-on": "自動接続がオンです — クリックして無効にする",
+    "auto-connect": "このデバイスの自動接続を切り替える",
+    "bluetooth-auto-connect-off": "自動接続が無効です",
+    "bluetooth-auto-connect-on": "自動接続が有効です",
     "bluetooth-devices": "Bluetooth デバイス",
     "brightness-at": "画面の明るさ：{brightness}%",
     "click-to-start-recording": "画面録画（録画開始）",

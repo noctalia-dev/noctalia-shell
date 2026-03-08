@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Вибрати колір для візуалізатора.",
       "color-name-label": "Колір заповнення",
+      "height-description": "Користувацька ширина компонента.",
       "hide-when-idle-description": "Коли увімкнено, візуалізатор приховано, якщо плеєр активно не відтворює.",
       "hide-when-idle-label": "Приховати, коли медіа не відтворюється",
       "width-description": "Власна ширина компонента."
@@ -293,6 +294,8 @@
       "focused-color-label": "Колір сфокусованого робочого столу",
       "follow-focused-screen-description": "Відображати робочі простори з поточного активного екрана, а не з екрана, на якому розташована панель.",
       "follow-focused-screen-label": "Слідувати за активним екраном",
+      "font-weight-description": "Встановити візуальну вагу тексту в робочому просторі.",
+      "font-weight-label": "Товщина шрифту",
       "grouped-border-opacity-description": "Встановити рівень непрозорості для меж контейнерів робочої області.",
       "grouped-border-opacity-label": "Прозорість межі",
       "hide-unoccupied-description": "Не відображати робочі простори без вікон.",
@@ -376,6 +379,7 @@
     "add": "Додати",
     "appearance": "Зовнішній вигляд",
     "apply": "Подати заявку",
+    "auto-connect": "Автоматичне підключення",
     "automation": "Автоматизація",
     "available": "Доступний",
     "back": "Назад",
@@ -426,6 +430,11 @@
     "execute": "Виконати",
     "faithful": "Вірний",
     "focus": "Зосередженість",
+    "font-weight-bold": "Жирний",
+    "font-weight-light": "Тонкий",
+    "font-weight-medium": "Середній",
+    "font-weight-regular": "Звичайний",
+    "font-weight-semibold": "Напівжирний",
     "frequency": "Частота",
     "gateway": "Шлюз",
     "general": "Загальне",
@@ -470,6 +479,7 @@
     "panels": "Панелі",
     "password": "Пароль",
     "pause": "Пауза",
+    "performance": "Продуктивність",
     "pin": "Закріпити",
     "play": "Відтворити",
     "polling": "Опитування",
@@ -709,6 +719,7 @@
       "debug-disabled": "Режим налагодження вимкнено",
       "debug-enabled": "Режим налагодження увімкнено",
       "info-copied": "Інформацію скопійовано до буфера обміну",
+      "noctalia-available": "Доступно:",
       "noctalia-desc": "Елегантна та мінімалістична оболонка робочого столу, ретельно створена для Wayland, побудована на Quickshell.",
       "noctalia-git-commit": "Git коміт:",
       "noctalia-installed-version": "Встановлена версія:",
@@ -721,6 +732,7 @@
       "supporters-desc": "Величезне дякую нашому чудовому прихильнику!",
       "supporters-desc-plural": "Величезна подяка нашим <b>{count} чудовим</b> прихильникам!",
       "supporters-loading": "Завантаження прихильників...",
+      "system-board": "Материнська плата:",
       "system-cpu": "ЦП:",
       "system-disk": "Диск:",
       "system-gpu": "GPU:",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "Показувати підказки щодо комбінацій клавіш у параметрах сеансу.",
       "show-keybinds-label": "Показати комбінації клавіш"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Залишати віджети робочого столу видимими, поки режим продуктивності Noctalia увімкнено.",
+      "noctalia-performance-disable-desktop-widgets-label": "Увімкнути віджети робочого столу в режимі продуктивності",
+      "noctalia-performance-disable-wallpaper-description": "Залишайте шпалери робочого столу, огляду та екрана блокування видимими, коли режим продуктивності Noctalia увімкнено.",
+      "noctalia-performance-disable-wallpaper-label": "Увімкнути відтворення шпалер у режимі продуктивності",
+      "title": "Система"
+    },
     "system-monitor": {
       "critical-color-label": "Критичний колір",
       "custom-highlight-colors-title-label": "Власні кольори підсвічування",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "Інтервал опитування",
       "polling-section-description": "Налаштуйте, як часто оновлюється кожна системна метрика.",
       "polling-section-label": "Інтервали опитування",
-      "threshold-critical": "Критичний поріг",
-      "threshold-warning": "Порогове значення попередження",
+      "threshold-critical": "Критичний",
+      "threshold-warning": "Попередження",
       "thresholds-section-description": "Налаштуйте пороги попередження/критичні пороги та інтервали опитування для кожного системного показника.",
       "use-custom-highlight-colors-description": "Якщо вимкнено, використовуються кольори підсвічування за замовчуванням теми.",
       "use-custom-highlight-colors-label": "Використовувати власні кольори підсвічування",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "Швидкість анімації",
       "animation-speed-reset": "Скинути швидкість анімації",
       "appearance-desc": "Налаштовуйте візуальні елементи, такі як підказки, рамки та тіні.",
+      "blur-behind-description": "Розмиває область за панелями та спливаючими вікнами, використовуючи протокол розмиття композитора.",
+      "blur-behind-label": "Розмиття фону",
       "box-border-description": "Відображає контур навколо областей вмісту.",
       "box-border-label": "Контур контейнера",
       "box-border-radius-description": "Налаштовує заокруглення кутів основних розділів макета, таких як бічні панелі, картки та панелі контенту.",
@@ -1847,6 +1868,10 @@
       "unavailable": "Історія буфера обміну недоступна",
       "unavailable-desc": "Застосунок 'cliphist' не встановлений. Будь ласка, встановіть його для використання функцій історії буфера обміну"
     },
+    "custom-command-failed": {
+      "description": "Команда не виконана: {command}\\nКод виходу: {code}",
+      "title": "Користувацька команда не виконана"
+    },
     "do-not-disturb": {
       "disabled": "'Не турбувати' вимкнено",
       "disabled-desc": "Показ усіх сповіщень",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "Додати віджет",
-    "bluetooth-auto-connect-off": "Автоматичне підключення вимкнено — натисніть, щоб увімкнути",
-    "bluetooth-auto-connect-on": "Автопідключення увімкнено — натисніть, щоб вимкнути",
+    "auto-connect": "Перемкнути автопідключення для цього пристрою",
+    "bluetooth-auto-connect-off": "Автоматичне підключення вимкнено",
+    "bluetooth-auto-connect-on": "Автоматичне підключення увімкнено",
     "bluetooth-devices": "Пристрої Bluetooth",
     "brightness-at": "Яскравість: {brightness}%",
     "click-to-start-recording": "Запис екрана (почати запис)",

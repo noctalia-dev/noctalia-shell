@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 55
+  readonly property int settingsVersion: 57
   property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -291,6 +291,7 @@ Singleton {
       property bool showHibernateOnLockScreen: false
       property bool enableLockScreenMediaControls: false
       property bool enableShadows: true
+      property bool enableBlurBehind: true
       property string shadowDirection: "bottom_right"
       property int shadowOffsetX: 2
       property int shadowOffsetY: 3
@@ -530,6 +531,12 @@ Singleton {
       property string externalMonitor: "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
     }
 
+    // performance
+    property JsonObject noctaliaPerformance: JsonObject {
+      property bool disableWallpaper: true
+      property bool disableDesktopWidgets: true
+    }
+
     // dock
     property JsonObject dock: JsonObject {
       property bool enabled: true
@@ -671,7 +678,7 @@ Singleton {
     property JsonObject audio: JsonObject {
       property int volumeStep: 5
       property bool volumeOverdrive: false
-      property int cavaFrameRate: 30
+      property int spectrumFrameRate: 30
       property string visualizerType: "linear"
       property list<string> mprisBlacklist: []
       property string preferredPlayer: ""

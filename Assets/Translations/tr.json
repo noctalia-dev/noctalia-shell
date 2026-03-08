@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Görselleştirici için renk seçin.",
       "color-name-label": "Dolgu rengi",
+      "height-description": "Özel bileşen genişliği.",
       "hide-when-idle-description": "Etkinleştirildiğinde, çalar aktif bir şekilde çalmadığı sürece görselleştirici gizlidir.",
       "hide-when-idle-label": "Boşken gizle",
       "width-description": "Özel bileşen genişliği."
@@ -293,6 +294,8 @@
       "focused-color-label": "Odaklanılan çalışma alanı rengi",
       "follow-focused-screen-description": "Çubuğun bulunduğu ekran yerine, şu anda odaklanmış ekrandaki çalışma alanlarını göster.",
       "follow-focused-screen-label": "Odaklanmış ekranı takip et",
+      "font-weight-description": "Çalışma alanı içindeki metin için görsel ağırlığı ayarlayın.",
+      "font-weight-label": "Yazı tipi ağırlığı",
       "grouped-border-opacity-description": "Çalışma alanı kapsayıcı kenarlıklarının opaklık düzeyini ayarlayın.",
       "grouped-border-opacity-label": "Kenarlık opaklığı",
       "hide-unoccupied-description": "Penceresi olmayan çalışma alanlarını gösterme.",
@@ -376,6 +379,7 @@
     "add": "Ekle",
     "appearance": "Görünüm",
     "apply": "Uygula",
+    "auto-connect": "Otomatik bağlan",
     "automation": "Otomasyon",
     "available": "Mevcut",
     "back": "Geri",
@@ -426,6 +430,11 @@
     "execute": "Yürüt",
     "faithful": "Sadık",
     "focus": "Odaklanma",
+    "font-weight-bold": "Kalın",
+    "font-weight-light": "İnce",
+    "font-weight-medium": "Orta",
+    "font-weight-regular": "Normal",
+    "font-weight-semibold": "Yarı kalın",
     "frequency": "Sıklık",
     "gateway": "Geçit",
     "general": "Genel",
@@ -470,6 +479,7 @@
     "panels": "Paneller",
     "password": "Şifre",
     "pause": "Duraklat",
+    "performance": "Performans",
     "pin": "Sabitle",
     "play": "Oynat",
     "polling": "Yoklama",
@@ -709,6 +719,7 @@
       "debug-disabled": "Hata ayıklama modu devre dışı bırakıldı",
       "debug-enabled": "Hata ayıklama modu etkinleştirildi",
       "info-copied": "Bilgi panoya kopyalandı",
+      "noctalia-available": "Mevcut:",
       "noctalia-desc": "Wayland için düşünülmüş, Quickshell ile inşa edilmiş şık ve minimal masaüstü kabuğu.",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "Yüklü sürüm:",
@@ -721,6 +732,7 @@
       "supporters-desc": "Harika destekçimize kocaman bir teşekkür!",
       "supporters-desc-plural": "<b>{count} harika</b> destekçimize kocaman teşekkürler!",
       "supporters-loading": "Destekçiler yükleniyor...",
+      "system-board": "Anakart:",
       "system-cpu": "İşlemci:",
       "system-disk": "Disk:",
       "system-gpu": "GPU:",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "Oturum seçeneklerinde tuş kombinasyonu ipuçlarını görüntüle.",
       "show-keybinds-label": "Klavye kısayollarını göster"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia performans modu etkinleştirildiğinde masaüstü widget'larını görünür tut.",
+      "noctalia-performance-disable-desktop-widgets-label": "Performans modunda masaüstü widget'larını etkinleştir",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia performans modu etkinleştirildiğinde masaüstü, genel bakış ve kilit ekranı duvar kağıtlarını görünür tutun.",
+      "noctalia-performance-disable-wallpaper-label": "Performans modunda duvar kağıdı oluşturmayı etkinleştir",
+      "title": "Sistem"
+    },
     "system-monitor": {
       "critical-color-label": "Kritik renk",
       "custom-highlight-colors-title-label": "Özel vurgulama renkleri",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "Yoklama aralığı",
       "polling-section-description": "Her bir sistem metriğinin ne sıklıkta güncelleneceğini yapılandırın.",
       "polling-section-label": "Yoklama aralıkları",
-      "threshold-critical": "Kritik eşik",
-      "threshold-warning": "Uyarı eşiği",
+      "threshold-critical": "Kritik",
+      "threshold-warning": "Uyarı",
       "thresholds-section-description": "Her sistem ölçüsü için uyarı/kritik eşiklerini ve yoklama aralıklarını ayarlayın.",
       "use-custom-highlight-colors-description": "Devre dışı bırakıldığında, tema varsayılan vurgulama renkleri kullanılır.",
       "use-custom-highlight-colors-label": "Özel vurgulama renklerini kullan",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "Animasyon hızı",
       "animation-speed-reset": "Animasyon hızını sıfırla",
       "appearance-desc": "Araç ipuçları, kenarlıklar ve gölgeler gibi görsel öğeleri özelleştirin.",
+      "blur-behind-description": "Çubukların ve panellerin arkasındaki alanı kompozitör bulanıklık protokolünü kullanarak bulanıklaştırır.",
+      "blur-behind-label": "Arka plan bulanıklığı",
       "box-border-description": "İçerik alanlarının etrafında bir çerçeve görüntüler.",
       "box-border-label": "Konteyner ana hattı",
       "box-border-radius-description": "Kenar çubukları, kartlar ve içerik panelleri gibi ana düzen bölümlerinin köşe yuvarlaklığını ayarlar.",
@@ -1847,6 +1868,10 @@
       "unavailable": "Panoya geçmişi kullanılamıyor",
       "unavailable-desc": "'cliphist' uygulaması kurulu değil. Lütfen panoya geçmişi özelliklerini kullanmak için kurun"
     },
+    "custom-command-failed": {
+      "description": "Komut başarısız oldu: {command}\\nÇıkış kodu: {code}",
+      "title": "Özel komut başarısız oldu"
+    },
     "do-not-disturb": {
       "disabled": "'Rahatsız etme' devre dışı",
       "disabled-desc": "Tüm bildirimler gösteriliyor",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "Araç takımı ekle",
-    "bluetooth-auto-connect-off": "Otomatik bağlantı kapalı — etkinleştirmek için tıklayın",
-    "bluetooth-auto-connect-on": "Otomatik bağlantı açık — devre dışı bırakmak için tıklayın",
+    "auto-connect": "Bu cihaz için otomatik bağlanmayı aç/kapa",
+    "bluetooth-auto-connect-off": "Otomatik bağlanma kapalı",
+    "bluetooth-auto-connect-on": "Otomatik bağlanma açık",
     "bluetooth-devices": "Bluetooth cihazları",
     "brightness-at": "Parlaklık: %{brightness}",
     "click-to-start-recording": "Ekran kaydedici (kaydı başlat)",

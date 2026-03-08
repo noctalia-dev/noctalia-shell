@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Выберите цвет для визуализатора.",
       "color-name-label": "Цвет заливки",
+      "height-description": "Пользовательская ширина компонента.",
       "hide-when-idle-description": "Если включено, визуализатор скрыт, пока плеер не начнёт воспроизведение.",
       "hide-when-idle-label": "Скрывать, когда медиа не воспроизводится",
       "width-description": "Пользовательская ширина компонента."
@@ -293,6 +294,8 @@
       "focused-color-label": "Цвет активного рабочего пространства",
       "follow-focused-screen-description": "Отображать рабочие пространства с текущего активного экрана, а не с экрана, на котором расположена панель.",
       "follow-focused-screen-label": "Следовать за активным экраном",
+      "font-weight-description": "Установить визуальный вес текста в рабочем пространстве.",
+      "font-weight-label": "Толщина шрифта",
       "grouped-border-opacity-description": "Установить уровень прозрачности для границ контейнера рабочей области.",
       "grouped-border-opacity-label": "Прозрачность границы",
       "hide-unoccupied-description": "Не отображать рабочие пространства без окон.",
@@ -376,6 +379,7 @@
     "add": "Добавить",
     "appearance": "Внешний вид",
     "apply": "Применить",
+    "auto-connect": "Автоматическое подключение",
     "automation": "Автоматизация",
     "available": "Доступно",
     "back": "Назад",
@@ -426,6 +430,11 @@
     "execute": "Выполнить",
     "faithful": "Верный",
     "focus": "Фокус",
+    "font-weight-bold": "Жирный",
+    "font-weight-light": "Тонкий",
+    "font-weight-medium": "Средний",
+    "font-weight-regular": "Обычный",
+    "font-weight-semibold": "Полужирный",
     "frequency": "Частота",
     "gateway": "Шлюз",
     "general": "Общее",
@@ -470,6 +479,7 @@
     "panels": "Панели",
     "password": "Пароль",
     "pause": "Пауза",
+    "performance": "Производительность",
     "pin": "Закрепить",
     "play": "Воспроизвести",
     "polling": "Опрашивание",
@@ -709,6 +719,7 @@
       "debug-disabled": "Режим отладки отключен",
       "debug-enabled": "Режим отладки включен",
       "info-copied": "Информация скопирована в буфер обмена",
+      "noctalia-available": "Доступно:",
       "noctalia-desc": "Изящная и минималистичная оболочка рабочего стола, тщательно разработанная для Wayland, созданная с помощью Quickshell.",
       "noctalia-git-commit": "Git коммит:",
       "noctalia-installed-version": "Установленная версия:",
@@ -721,6 +732,7 @@
       "supporters-desc": "Огромное спасибо нашему замечательному стороннику!",
       "supporters-desc-plural": "Огромное спасибо нашим <b>{count} замечательным</b> сторонникам!",
       "supporters-loading": "Загрузка спонсоров...",
+      "system-board": "Материнская плата:",
       "system-cpu": "ЦП:",
       "system-disk": "Диск:",
       "system-gpu": "Графический процессор",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "Отображать подсказки по горячим клавишам в параметрах сеанса.",
       "show-keybinds-label": "Показать сочетания клавиш"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Оставлять виджеты рабочего стола видимыми, пока режим производительности Noctalia включен.",
+      "noctalia-performance-disable-desktop-widgets-label": "Включить виджеты рабочего стола в режиме производительности",
+      "noctalia-performance-disable-wallpaper-description": "Сохраняйте видимыми обои рабочего стола, обзора и экрана блокировки, пока режим производительности Noctalia включен.",
+      "noctalia-performance-disable-wallpaper-label": "Включить рендеринг обоев в режиме производительности",
+      "title": "Система"
+    },
     "system-monitor": {
       "critical-color-label": "Критический цвет",
       "custom-highlight-colors-title-label": "Пользовательские цвета выделения",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "Интервал опроса",
       "polling-section-description": "Настройте частоту обновления каждой системной метрики.",
       "polling-section-label": "Интервалы опроса",
-      "threshold-critical": "Критический порог",
-      "threshold-warning": "Предупредительный порог",
+      "threshold-critical": "Критический",
+      "threshold-warning": "Предупреждение",
       "thresholds-section-description": "Настройте пороги предупреждения/критические пороги и интервалы опроса для каждой системной метрики.",
       "use-custom-highlight-colors-description": "Если отключено, используются цвета выделения по умолчанию темы.",
       "use-custom-highlight-colors-label": "Использовать пользовательские цвета выделения",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "Скорость анимации",
       "animation-speed-reset": "Сбросить скорость анимации",
       "appearance-desc": "Настройте визуальные элементы, такие как всплывающие подсказки, границы и тени.",
+      "blur-behind-description": "Размывает область за панелями и всплывающими окнами, используя протокол размытия композитора.",
+      "blur-behind-label": "Размытие фона",
       "box-border-description": "Отображает контур вокруг областей содержимого.",
       "box-border-label": "Контур контейнера",
       "box-border-radius-description": "Настраивает скругление углов основных разделов макета, таких как боковые панели, карточки и панели контента.",
@@ -1847,6 +1868,10 @@
       "unavailable": "История буфера обмена недоступна",
       "unavailable-desc": "Приложение 'cliphist' не установлено. Пожалуйста, установите его, чтобы использовать функции истории буфера обмена"
     },
+    "custom-command-failed": {
+      "description": "Команда не выполнена: {command}\\nКод выхода: {code}",
+      "title": "Пользовательская команда не выполнена"
+    },
     "do-not-disturb": {
       "disabled": "Режим 'Не беспокоить' отключен",
       "disabled-desc": "Отображаются все уведомления",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "Добавить виджет",
-    "bluetooth-auto-connect-off": "Автоподключение отключено — нажмите, чтобы включить",
-    "bluetooth-auto-connect-on": "Автоподключение включено — нажмите, чтобы отключить",
+    "auto-connect": "Переключить автоподключение для этого устройства",
+    "bluetooth-auto-connect-off": "Автоподключение отключено",
+    "bluetooth-auto-connect-on": "Автоподключение включено",
     "bluetooth-devices": "Устройства Bluetooth",
     "brightness-at": "Яркость: {brightness}%",
     "click-to-start-recording": "Запись экрана (начать запись)",

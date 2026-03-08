@@ -44,10 +44,6 @@
       --zen-primary-color: {{colors.primary.default.hex}} !important;
     }
 
-    groupbox , moz-card{
-      background: {{colors.surface_container.default.hex}} !important;
-    }
-
     button,
     groupbox menulist {
       background: {{colors.surface_container_high.default.hex}} !important;

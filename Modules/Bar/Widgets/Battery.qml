@@ -80,7 +80,7 @@ Item {
       }
 
       let rateText = BatteryService.getRateText(selectedDevice);
-      if (rateText) {
+      if (!isPluggedIn && rateText) {
         const colonIdx = rateText.indexOf(":");
         if (colonIdx >= 0) {
           rows.push([rateText.substring(0, colonIdx).trim(), rateText.substring(colonIdx + 1).trim()]);

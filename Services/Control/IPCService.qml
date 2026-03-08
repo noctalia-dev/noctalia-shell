@@ -10,6 +10,7 @@ import qs.Commons
 import qs.Modules.Panels.Settings
 import qs.Services.Compositor
 import qs.Services.Hardware
+import qs.Services.Location
 import qs.Services.Media
 import qs.Services.Networking
 import qs.Services.Noctalia
@@ -97,7 +98,8 @@ Singleton {
                                             "notifications": SettingsPanel.Tab.Notifications,
                                             "plugins": SettingsPanel.Tab.Plugins,
                                             "sessionmenu": SettingsPanel.Tab.SessionMenu,
-                                            "systemmonitor": SettingsPanel.Tab.SystemMonitor,
+                                            "system": SettingsPanel.Tab.System,
+                                            "systemmonitor": SettingsPanel.Tab.System,
                                             "userinterface": SettingsPanel.Tab.UserInterface,
                                             "wallpaper": SettingsPanel.Tab.Wallpaper
                                           })
@@ -602,6 +604,10 @@ Singleton {
       WallpaperService.changeWallpaper(path, screen);
     }
 
+    function refresh() {
+      WallpaperService.refreshWallpapersList();
+    }
+
     function toggleAutomation() {
       Settings.data.wallpaper.automationEnabled = !Settings.data.wallpaper.automationEnabled;
     }
@@ -835,6 +841,7 @@ Singleton {
     }
     function set(name: string) {
       Settings.data.location.name = name;
+      LocationService.update();
     }
   }
 

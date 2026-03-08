@@ -73,27 +73,31 @@ Item {
     return showArtistFirst ? (artist ? `${artist} - ${track}` : track) : (artist ? `${track} - ${artist}` : track);
   }
 
-  // CavaService registration for visualizer
-  readonly property string cavaComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
-  readonly property bool needsCava: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none"
+  // SpectrumService registration for visualizer
+  readonly property string spectrumComponentId: "bar:mediamini:" + root.screen?.name + ":" + root.section + ":" + root.sectionWidgetIndex
+  readonly property bool needsSpectrum: root.showVisualizer && root.visualizerType !== "" && root.visualizerType !== "none" && !root.isHidden
 
   Layout.preferredHeight: isVertical ? -1 : Style.getBarHeightForScreen(screenName)
   Layout.preferredWidth: isVertical ? Style.getBarHeightForScreen(screenName) : -1
   Layout.fillHeight: false
   Layout.fillWidth: false
 
-  onNeedsCavaChanged: {
-    if (root.needsCava) {
-      CavaService.registerComponent(root.cavaComponentId);
+  onNeedsSpectrumChanged: {
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent(root.spectrumComponentId);
     } else {
-      CavaService.unregisterComponent(root.cavaComponentId);
+      SpectrumService.unregisterComponent(root.spectrumComponentId);
+    }
+  }
+
+  Component.onCompleted: {
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent(root.spectrumComponentId);
     }
   }
 
   Component.onDestruction: {
-    if (root.needsCava) {
-      CavaService.unregisterComponent(root.cavaComponentId);
-    }
+    SpectrumService.unregisterComponent(root.spectrumComponentId);
   }
 
   // Layout
@@ -416,7 +420,7 @@ Item {
     NLinearSpectrum {
       width: parent.width - Style.marginS
       height: 20
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: Color.mPrimary
       opacity: 0.4
       barPosition: root.barPosition
@@ -428,7 +432,7 @@ Item {
     NMirroredSpectrum {
       width: parent.width - Style.marginS
       height: parent.height - Style.marginS
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: Color.mPrimary
       opacity: 0.4
     }
@@ -439,7 +443,7 @@ Item {
     NWaveSpectrum {
       width: parent.width - Style.marginS
       height: parent.height - Style.marginS
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: Color.mPrimary
       opacity: 0.4
     }

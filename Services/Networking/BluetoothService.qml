@@ -64,9 +64,50 @@ Singleton {
   property int connectAttempts: 5
   property int connectRetryIntervalMs: 2000
 
-  // Internal: temporarily pause discovery during pair/connect to reduce HCI churn
+  // Internal variables
   property bool _discoveryWasRunning: false
   property bool _ctlInit: false
+  property var _autoConnectQueue: []
+
+  // Persistent cache for per-device auto-connect toggle
+  property string cacheFile: Settings.cacheDir + "bluetooth_devices.json"
+
+  FileView {
+    id: cacheFileView
+    path: root.cacheFile
+    printErrors: false
+
+    JsonAdapter {
+      id: cacheAdapter
+      property var autoConnectSettings: ({})
+    }
+  }
+
+  function getDeviceAutoConnect(mac) {
+    if (!mac || !cacheAdapter.autoConnectSettings) {
+      return false;
+    }
+    const settings = cacheAdapter.autoConnectSettings[mac];
+    return settings ? !!settings.autoConnect : false;
+  }
+
+  function setDeviceAutoConnect(device, enabled) {
+    if (!device || !device.address) {
+      return;
+    }
+    const mac = device.address;
+    let settings = cacheAdapter.autoConnectSettings || ({});
+    if (enabled) {
+      settings[mac] = {
+        autoConnect: true,
+        deviceName: device.name || device.deviceName || ""
+      };
+    } else {
+      delete settings[mac];
+    }
+    cacheAdapter.autoConnectSettings = settings;
+    cacheFileView.writeAdapter();
+  }
 
   Connections {
     target: Settings.data.network
@@ -80,17 +121,26 @@ Singleton {
   }
 
   Timer {
-    id: initDelayTimer
-    interval: 3000
-    running: true
+    id: autoConnectTimer
+    interval: 1500
     repeat: false
+    onTriggered: root.attemptAutoConnect()
   }
 
   Timer {
-    id: autoConnectTimer
-    interval: 2000
+    id: autoConnectStepTimer
+    interval: 500
     repeat: false
-    onTriggered: root.attemptAutoConnect()
+    onTriggered: {
+      var device = root._autoConnectQueue.shift();
+      if (device && device.paired && !device.connected && !device.blocked) {
+        Logger.i("Bluetooth", "Auto-connecting to:", device.name || device.deviceName);
+        connectDeviceWithTrust(device);
+      }
+      if (root._autoConnectQueue.length > 0) {
+        autoConnectStepTimer.restart();
+      }
+    }
   }
 
   function init() {
@@ -104,10 +154,8 @@ Singleton {
       Quickshell.execDetached(["rfkill", "block", "wifi"]);
       Quickshell.execDetached(["rfkill", "block", "bluetooth"]);
     }
-    // Auto-connect on startup if BT is already enabled
-    if (Settings.data.network.bluetoothAutoConnect && adapter && adapter.enabled) {
-      autoConnectTimer.restart();
-    }
+    // Auto-connect on startup
+    autoConnectTimer.restart();
   }
 
   // Handle system wakeup to force-poll and ensure state is up-to-date
@@ -216,11 +264,13 @@ Singleton {
   }
 
   // Periodic state polling
+  readonly property bool _lockScreenActive: PanelService.lockScreen?.active ?? false
+
   Timer {
     id: ctlPollTimer
     interval: adapter ? ctlPollMs : 2000
     repeat: true
-    running: adapter || ProgramCheckerService.bluetoothctlAvailable
+    running: (adapter || ProgramCheckerService.bluetoothctlAvailable) && !_lockScreenActive
     onTriggered: {
       pollCtlState();
       var targetInterval = adapter ? ctlPollMs : 2000;
@@ -582,7 +632,7 @@ Singleton {
     const intervalMs = Math.max(500, Number(root.connectRetryIntervalMs) | 0);
     const intervalSec = Math.max(1, Math.round(intervalMs / 1000));
 
-    // Pause discovery during pair/connect to avoid interference
+    // Temporarily pause discovery during pair/connect to reduce HCI churn
     root._discoveryWasRunning = root.scanningActive;
     if (root.scanningActive) {
       root.setScanActive(false);
@@ -625,26 +675,14 @@ Singleton {
   }
 
   function attemptAutoConnect() {
-    if (airplaneModeEnabled)
+    if (airplaneModeEnabled || !adapter || !adapter.enabled || !Settings.data.network.bluetoothAutoConnect) {
       return;
-    if (!adapter || !adapter.enabled)
-      return;
-    if (!Settings.data.network.bluetoothAutoConnect)
-      return;
-
-    var devList = adapter.devices.values.filter(function (dev) {
-      return dev && dev.paired && !dev.connected && !dev.blocked;
-    });
-
-    for (var i = 0; i < devList.length; i++) {
-      Logger.i("Bluetooth", "Auto-connecting to:", devList[i].name || devList[i].deviceName);
-      connectDeviceWithTrust(devList[i]);
     }
 
-    if (devList.length > 0) {
-      ToastService.showNotice(I18n.tr("common.bluetooth"), I18n.tr("toast.bluetooth.auto-connecting", {
-                                                                     count: devList.length
-                                                                   }), "bluetooth");
+    _autoConnectQueue = adapter.devices.values.filter(dev => dev && dev.paired && !dev.connected && !dev.blocked && getDeviceAutoConnect(dev.address) === true);
+
+    if (root._autoConnectQueue.length > 0) {
+      autoConnectStepTimer.restart();
     }
   }
 

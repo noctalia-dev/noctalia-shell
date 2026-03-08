@@ -4,6 +4,7 @@
     "os",
     "kernel",
     "title",
+    "board",
     "host",
     "uptime",
     "cpu",

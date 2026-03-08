@@ -624,8 +624,8 @@ Item {
             "source": regionTab
           },
           {
-            "id": SettingsPanel.Tab.SystemMonitor,
-            "label": "system-monitor.title",
+            "id": SettingsPanel.Tab.System,
+            "label": "panels.system.title",
             "icon": "settings-system-monitor",
             "source": systemMonitorTab
           },
@@ -1264,6 +1264,7 @@ Item {
                   anchors.fill: parent
                   horizontalPolicy: ScrollBar.AlwaysOff
                   verticalPolicy: ScrollBar.AsNeeded
+                  showScrollbarWhenScrollable: true
                   leftPadding: Style.marginL
                   topPadding: Style.marginL
                   bottomPadding: Style.marginL

@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "选择可视化工具的颜色。",
       "color-name-label": "填充颜色",
+      "height-description": "自定义组件宽度。",
       "hide-when-idle-description": "启用后，除非正在播放媒体，否则隐藏可视化显示。",
       "hide-when-idle-label": "无媒体播放时隐藏",
       "width-description": "自定义组件的宽度。"
@@ -293,6 +294,8 @@
       "focused-color-label": "聚焦工作区颜色",
       "follow-focused-screen-description": "显示当前焦点屏幕的工作区，而不是任务栏所在屏幕的工作区。",
       "follow-focused-screen-label": "跟随焦点屏幕",
+      "font-weight-description": "设置工作区内文本的视觉权重。",
+      "font-weight-label": "字体粗细",
       "grouped-border-opacity-description": "设置工作区容器边框的不透明度级别。",
       "grouped-border-opacity-label": "边框不透明度",
       "hide-unoccupied-description": "不显示没有窗口的工作区。",
@@ -376,6 +379,7 @@
     "add": "添加",
     "appearance": "外观",
     "apply": "应用",
+    "auto-connect": "自动连接",
     "automation": "自动化",
     "available": "可用",
     "back": "返回",
@@ -426,6 +430,11 @@
     "execute": "执行",
     "faithful": "忠实",
     "focus": "专注",
+    "font-weight-bold": "粗体",
+    "font-weight-light": "细",
+    "font-weight-medium": "中",
+    "font-weight-regular": "常规",
+    "font-weight-semibold": "半粗体",
     "frequency": "频率",
     "gateway": "网关",
     "general": "通用",
@@ -470,6 +479,7 @@
     "panels": "面板",
     "password": "密码",
     "pause": "暂停",
+    "performance": "性能",
     "pin": "固定",
     "play": "播放",
     "polling": "数据轮询",
@@ -709,6 +719,7 @@
       "debug-disabled": "调试模式已禁用",
       "debug-enabled": "调试模式已启用",
       "info-copied": "信息已复制到剪贴板",
+      "noctalia-available": "可用:",
       "noctalia-desc": "一款为 Wayland 精心打造的时尚简约桌面 shell，基于 Quickshell 构建。",
       "noctalia-git-commit": "Git 提交:",
       "noctalia-installed-version": "已安装版本：",
@@ -721,6 +732,7 @@
       "supporters-desc": "非常感谢我们出色的支持者！",
       "supporters-desc-plural": "非常感谢我们的<b>{count}位出色</b>支持者！",
       "supporters-loading": "正在加载支持者...",
+      "system-board": "主板:",
       "system-cpu": "中央处理器：",
       "system-disk": "磁盘：",
       "system-gpu": "图形处理器：",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "在会话选项上显示快捷键提示。",
       "show-keybinds-label": "显示快捷键"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "在 Noctalia 性能模式启用时保持桌面小部件可见。",
+      "noctalia-performance-disable-desktop-widgets-label": "在性能模式下启用桌面小部件",
+      "noctalia-performance-disable-wallpaper-description": "在启用 Noctalia 性能模式时，保持桌面、概览和锁屏壁纸可见。",
+      "noctalia-performance-disable-wallpaper-label": "在性能模式下启用壁纸渲染",
+      "title": "系统"
+    },
     "system-monitor": {
       "critical-color-label": "严重颜色",
       "custom-highlight-colors-title-label": "自定义高亮颜色",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "轮询间隔",
       "polling-section-description": "配置每个系统指标的更新频率。",
       "polling-section-label": "轮询间隔",
-      "threshold-critical": "临界阈值",
-      "threshold-warning": "警告阈值",
+      "threshold-critical": "严重",
+      "threshold-warning": "警告",
       "thresholds-section-description": "为每个系统指标调整警告/严重阈值和轮询间隔。",
       "use-custom-highlight-colors-description": "禁用时将使用主题默认高亮颜色。",
       "use-custom-highlight-colors-label": "使用自定义高亮颜色",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "动画速度",
       "animation-speed-reset": "重置动画速度",
       "appearance-desc": "自定义视觉元素，如提示信息、边框和阴影。",
+      "blur-behind-description": "使用合成器模糊协议，模糊栏和面板后面的区域。",
+      "blur-behind-label": "背景模糊",
       "box-border-description": "显示内容区域周围的轮廓。",
       "box-border-label": "容器轮廓",
       "box-border-radius-description": "调整主要布局部分（如侧边栏、卡片和内容面板）的圆角程度。",
@@ -1847,6 +1868,10 @@
       "unavailable": "剪贴板历史记录不可用",
       "unavailable-desc": "未安装 'cliphist' 应用程序。请安装它以使用剪贴板历史记录功能"
     },
+    "custom-command-failed": {
+      "description": "命令失败: {command}\\n退出代码: {code}",
+      "title": "自定义命令失败"
+    },
     "do-not-disturb": {
       "disabled": "'勿扰模式'已禁用",
       "disabled-desc": "显示所有通知",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "添加小部件",
-    "bluetooth-auto-connect-off": "自动连接已关闭 — 点击启用",
-    "bluetooth-auto-connect-on": "自动连接已开启 — 点击禁用",
+    "auto-connect": "切换此设备的自动连接",
+    "bluetooth-auto-connect-off": "自动连接已禁用",
+    "bluetooth-auto-connect-on": "自动连接已启用",
     "bluetooth-devices": "蓝牙设备",
     "brightness-at": "亮度：{brightness}%",
     "click-to-start-recording": "屏幕录制器（开始录制）",

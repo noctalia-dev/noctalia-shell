@@ -218,6 +218,10 @@ SmartPanel {
               Layout.preferredHeight: outputColumn.implicitHeight + Style.margin2M
 
               property var brightnessMonitor: BrightnessService.getMonitorForScreen(modelData)
+              readonly property real compositorScale: {
+                const info = CompositorService.displayScales[modelData.name];
+                return (info && info.scale) ? info.scale : 1.0;
+              }
 
               ColumnLayout {
                 id: outputColumn
@@ -231,7 +235,6 @@ SmartPanel {
                   label: modelData.name || "Unknown"
                   labelColor: Color.mPrimary
                   description: {
-                    const compositorScale = CompositorService.getDisplayScale(modelData.name);
                     I18n.tr("system.monitor-description", {
                               "model": modelData.model,
                               "width": modelData.width * compositorScale,

@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "비주얼라이저의 색상을 선택합니다.",
       "color-name-label": "색으로 채우기",
+      "height-description": "사용자 지정 구성 요소 너비.",
       "hide-when-idle-description": "활성화하면 재생기가 재생 중이지 않을 때 비주얼라이저를 숨깁니다.",
       "hide-when-idle-label": "미디어 재생 중이 아닐 때 숨기기",
       "width-description": "구성 요소의 너비를 사용자 지정합니다."
@@ -293,6 +294,8 @@
       "focused-color-label": "포커스된 작업 공간 색상",
       "follow-focused-screen-description": "바가 위치한 화면 대신 현재 포커스된 화면의 작업 공간을 표시합니다.",
       "follow-focused-screen-label": "포커스된 화면 따르기",
+      "font-weight-description": "작업 공간 내 텍스트의 시각적 가중치를 설정합니다.",
+      "font-weight-label": "글꼴 두께",
       "grouped-border-opacity-description": "작업 공간 컨테이너 테두리의 불투명도 수준을 설정합니다.",
       "grouped-border-opacity-label": "테두리 불투명도",
       "hide-unoccupied-description": "창이 없는 작업 공간을 표시하지 않습니다.",
@@ -376,6 +379,7 @@
     "add": "추가",
     "appearance": "모양",
     "apply": "적용",
+    "auto-connect": "자동 연결",
     "automation": "자동화",
     "available": "사용 가능",
     "back": "뒤로",
@@ -426,6 +430,11 @@
     "execute": "실행",
     "faithful": "충실하게",
     "focus": "포커스",
+    "font-weight-bold": "굵게",
+    "font-weight-light": "라이트",
+    "font-weight-medium": "중간",
+    "font-weight-regular": "보통",
+    "font-weight-semibold": "세미볼드",
     "frequency": "빈도",
     "gateway": "게이트웨이",
     "general": "일반",
@@ -470,6 +479,7 @@
     "panels": "패널",
     "password": "비밀번호",
     "pause": "일시 정지",
+    "performance": "성능",
     "pin": "고정",
     "play": "재생",
     "polling": "폴링",
@@ -709,6 +719,7 @@
       "debug-disabled": "디버그 모드 비활성화됨",
       "debug-enabled": "디버그 모드 활성화됨",
       "info-copied": "정보가 클립보드에 복사됨",
+      "noctalia-available": "사용 가능:",
       "noctalia-desc": "Wayland를 위해 세심하게 제작된 매끄럽고 미니멀한 데스크톱 셸로, Quickshell로 빌드되었습니다.",
       "noctalia-git-commit": "Git 커밋:",
       "noctalia-installed-version": "설치된 버전:",
@@ -721,6 +732,7 @@
       "supporters-desc": "멋진 후원자분께 진심으로 감사드립니다!",
       "supporters-desc-plural": "저희의 <b>{count}명의 멋진</b> 후원자분들께 진심으로 감사드립니다!",
       "supporters-loading": "후원자 불러오는 중...",
+      "system-board": "메인보드:",
       "system-cpu": "CPU:",
       "system-disk": "디스크:",
       "system-gpu": "GPU:",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "세션 옵션에 키 바인딩 힌트를 표시합니다.",
       "show-keybinds-label": "단축키 표시"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Noctalia 성능 모드가 활성화된 동안 데스크톱 위젯을 계속 표시합니다.",
+      "noctalia-performance-disable-desktop-widgets-label": "성능 모드에서 데스크톱 위젯 활성화",
+      "noctalia-performance-disable-wallpaper-description": "Noctalia 성능 모드가 활성화된 동안 데스크톱, 개요, 잠금 화면 배경화면을 계속 표시합니다.",
+      "noctalia-performance-disable-wallpaper-label": "성능 모드에서 배경화면 렌더링 활성화",
+      "title": "시스템"
+    },
     "system-monitor": {
       "critical-color-label": "위험 색상",
       "custom-highlight-colors-title-label": "사용자 지정 강조 색상",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "폴링 간격",
       "polling-section-description": "각 시스템 값을 갱신하는 빈도를 정합니다.",
       "polling-section-label": "폴링 간격",
-      "threshold-critical": "위험 임계값",
-      "threshold-warning": "경고 임계값",
+      "threshold-critical": "심각",
+      "threshold-warning": "경고",
       "thresholds-section-description": "각 시스템 값에 대한 경고/위험 임계값을 조정합니다.",
       "use-custom-highlight-colors-description": "비활성화하면 테마 기본 강조 색상이 사용됩니다.",
       "use-custom-highlight-colors-label": "사용자 지정 강조 색상 사용",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "애니메이션 속도",
       "animation-speed-reset": "애니메이션 속도 초기화",
       "appearance-desc": "툴팁, 테두리, 그림자와 같은 시각적 요소를 사용자 지정합니다.",
+      "blur-behind-description": "컴포지터 블러 프로토콜을 사용하여 바와 패널 뒤 영역을 흐리게 처리합니다.",
+      "blur-behind-label": "배경 흐림",
       "box-border-description": "콘텐츠 영역 주위에 윤곽선을 표시합니다.",
       "box-border-label": "컨테이너 윤곽선",
       "box-border-radius-description": "사이드바, 카드, 콘텐츠 패널과 같은 주요 레이아웃 섹션의 모서리 둥글기를 조정합니다.",
@@ -1847,6 +1868,10 @@
       "unavailable": "클립보드 기록 사용 불가",
       "unavailable-desc": "'cliphist' 애플리케이션이 설치되어 있지 않습니다. 클립보드 기록 기능을 사용하려면 설치하세요"
     },
+    "custom-command-failed": {
+      "description": "명령 실패: {command}\\n종료 코드: {code}",
+      "title": "사용자 지정 명령 실패"
+    },
     "do-not-disturb": {
       "disabled": "방해 금지 모드 비활성화됨",
       "disabled-desc": "모든 알림 표시 중",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "위젯 추가",
-    "bluetooth-auto-connect-off": "자동 연결이 꺼져 있습니다 — 클릭하여 활성화",
-    "bluetooth-auto-connect-on": "자동 연결 켜짐 — 클릭하여 비활성화",
+    "auto-connect": "이 장치의 자동 연결 토글",
+    "bluetooth-auto-connect-off": "자동 연결 비활성화됨",
+    "bluetooth-auto-connect-on": "자동 연결 활성화됨",
     "bluetooth-devices": "블루투스 장치",
     "brightness-at": "밝기: {brightness}%",
     "click-to-start-recording": "화면 녹화 (녹화 시작)",

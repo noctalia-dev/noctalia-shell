@@ -142,6 +142,11 @@ Singleton {
 
       isFetchingWeather = false;
       Logger.i("Location", "Coordinates ready");
+
+      if (locationChanged) {
+        adapter.weatherLastFetch = 0;
+        updateWeatherData();
+      }
     }, errorCallback);
   }
 

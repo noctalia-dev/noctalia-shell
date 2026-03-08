@@ -93,6 +93,7 @@ Slider {
       anchors.centerIn: parent
       width: root.trackWidth
       height: bgContainer.height
+      visible: root.trackWidth > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
 
       ShapePath {

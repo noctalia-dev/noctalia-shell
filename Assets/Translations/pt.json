@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Selecione a cor para o visualizador.",
       "color-name-label": "Cor de preenchimento",
+      "height-description": "Largura de componente personalizada.",
       "hide-when-idle-description": "Quando ativado, o visualizador fica oculto a menos que haja reprodução ativa.",
       "hide-when-idle-label": "Ocultar quando não houver reprodução",
       "width-description": "Largura do componente personalizado."
@@ -293,6 +294,8 @@
       "focused-color-label": "Cor do workspace focado",
       "follow-focused-screen-description": "Exibir áreas de trabalho da tela atualmente em foco, em vez da tela onde a barra está localizada.",
       "follow-focused-screen-label": "Seguir tela em foco",
+      "font-weight-description": "Definir o peso visual para o texto na área de trabalho.",
+      "font-weight-label": "Peso da fonte",
       "grouped-border-opacity-description": "Definir o nível de opacidade para as bordas do contêiner do espaço de trabalho.",
       "grouped-border-opacity-label": "Opacidade da borda",
       "hide-unoccupied-description": "Não exibir áreas de trabalho sem janelas.",
@@ -376,6 +379,7 @@
     "add": "Adicionar",
     "appearance": "Aparência",
     "apply": "Aplicar",
+    "auto-connect": "Conexão automática",
     "automation": "Automação",
     "available": "Disponível",
     "back": "Voltar",
@@ -426,6 +430,11 @@
     "execute": "Executar",
     "faithful": "Fiel",
     "focus": "Foco",
+    "font-weight-bold": "Negrito",
+    "font-weight-light": "Leve",
+    "font-weight-medium": "Médio",
+    "font-weight-regular": "Regular",
+    "font-weight-semibold": "Seminegrito",
     "frequency": "Frequência",
     "gateway": "Porta de entrada",
     "general": "Geral",
@@ -470,6 +479,7 @@
     "panels": "Painéis",
     "password": "Senha",
     "pause": "Pausar",
+    "performance": "Desempenho",
     "pin": "Fixar",
     "play": "Reproduzir",
     "polling": "Sondagem",
@@ -709,6 +719,7 @@
       "debug-disabled": "Modo de depuração desativado",
       "debug-enabled": "Modo de depuração ativado",
       "info-copied": "Informação copiada para a área de transferência",
+      "noctalia-available": "Disponível:",
       "noctalia-desc": "Um shell de desktop elegante e minimalista, cuidadosamente criado para Wayland, construído com Quickshell.",
       "noctalia-git-commit": "Commit Git:",
       "noctalia-installed-version": "Versão instalada:",
@@ -721,6 +732,7 @@
       "supporters-desc": "Um enorme obrigado ao nosso incrível apoiador!",
       "supporters-desc-plural": "Um enorme obrigado aos nossos <b>{count} incríveis</b> apoiadores!",
       "supporters-loading": "Carregando apoiadores...",
+      "system-board": "Placa-mãe:",
       "system-cpu": "CPU:",
       "system-disk": "Disco:",
       "system-gpu": "GPU:",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "Exibir dicas de atalhos de teclado nas opções de sessão.",
       "show-keybinds-label": "Mostrar atalhos de teclado"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Manter os widgets da área de trabalho visíveis enquanto o modo de desempenho Noctalia estiver ativado.",
+      "noctalia-performance-disable-desktop-widgets-label": "Ativar widgets de ambiente de trabalho no modo de desempenho",
+      "noctalia-performance-disable-wallpaper-description": "Mantenha os papéis de parede da área de trabalho, da visão geral e da tela de bloqueio visíveis enquanto o modo de desempenho Noctalia estiver ativado.",
+      "noctalia-performance-disable-wallpaper-label": "Ativar renderização de papel de parede no modo de desempenho",
+      "title": "Sistema"
+    },
     "system-monitor": {
       "critical-color-label": "Cor crítica",
       "custom-highlight-colors-title-label": "Cores de destaque personalizadas",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "Intervalo de pesquisa",
       "polling-section-description": "Configure a frequência com que cada métrica do sistema é atualizada.",
       "polling-section-label": "Intervalos de pesquisa",
-      "threshold-critical": "Limiar crítico",
-      "threshold-warning": "Limite de alerta",
+      "threshold-critical": "Crítico",
+      "threshold-warning": "Aviso",
       "thresholds-section-description": "Ajuste os limites de aviso/crítico e os intervalos de consulta para cada métrica do sistema.",
       "use-custom-highlight-colors-description": "Quando desativado, são usadas as cores de destaque padrão do tema.",
       "use-custom-highlight-colors-label": "Usar cores de destaque personalizadas",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "Velocidade da animação",
       "animation-speed-reset": "Redefinir velocidade da animação",
       "appearance-desc": "Personalize elementos visuais como dicas de ferramentas, bordas e sombras.",
+      "blur-behind-description": "Desfoca a área atrás das barras e painéis usando o protocolo de desfoque do compositor.",
+      "blur-behind-label": "Desfoque de fundo",
       "box-border-description": "Exibe um contorno ao redor das áreas de conteúdo.",
       "box-border-label": "Contorno do recipiente",
       "box-border-radius-description": "Ajusta o arredondamento dos cantos das principais seções do layout, como barras laterais, cards e painéis de conteúdo.",
@@ -1847,6 +1868,10 @@
       "unavailable": "Histórico da área de transferência indisponível",
       "unavailable-desc": "O aplicativo 'cliphist' não está instalado. Por favor, instale-o para usar os recursos do histórico da área de transferência"
     },
+    "custom-command-failed": {
+      "description": "Comando falhou: {command}\\nCódigo de saída: {code}",
+      "title": "Comando personalizado falhou"
+    },
     "do-not-disturb": {
       "disabled": "'Não perturbe' desativado",
       "disabled-desc": "Mostrando todas as notificações",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "Adicionar widget",
-    "bluetooth-auto-connect-off": "Conexão automática desativada — clique para ativar",
-    "bluetooth-auto-connect-on": "Conexão automática ativada — clique para desativar",
+    "auto-connect": "Alternar conexão automática para este dispositivo",
+    "bluetooth-auto-connect-off": "Conexão automática desativada",
+    "bluetooth-auto-connect-on": "Conexão automática ativada",
     "bluetooth-devices": "Dispositivos Bluetooth",
     "brightness-at": "Brilho: {brightness}%",
     "click-to-start-recording": "Gravador de tela (iniciar gravação)",

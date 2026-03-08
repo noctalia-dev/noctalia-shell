@@ -71,14 +71,14 @@
       ]
     },
     "mouseWheelAction": "none",
+    "reverseScroll": false,
+    "mouseWheelWrap": true,
     "middleClickAction": "none",
     "middleClickFollowMouse": false,
     "middleClickCommand": "",
     "rightClickAction": "controlCenter",
     "rightClickFollowMouse": true,
     "rightClickCommand": "",
-    "reverseScroll": false,
-    "mouseWheelWrap": true,
     "screenOverrides": []
   },
   "general": {
@@ -100,6 +100,7 @@
     "showHibernateOnLockScreen": false,
     "enableLockScreenMediaControls": false,
     "enableShadows": true,
+    "enableBlurBehind": true,
     "shadowDirection": "bottom_right",
     "shadowOffsetX": 2,
     "shadowOffsetY": 3,
@@ -332,6 +333,10 @@
     "criticalColor": "",
     "externalMonitor": "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
   },
+  "noctaliaPerformance": {
+    "disableWallpaper": true,
+    "disableDesktopWidgets": true
+  },
   "dock": {
     "enabled": true,
     "position": "bottom",
@@ -370,7 +375,8 @@
     "wifiDetailsViewMode": "grid",
     "bluetoothDetailsViewMode": "grid",
     "bluetoothHideUnnamedDevices": false,
-    "disableDiscoverability": false
+    "disableDiscoverability": false,
+    "bluetoothAutoConnect": true
   },
   "sessionMenu": {
     "enableCountdown": true,
@@ -465,7 +471,7 @@
   "audio": {
     "volumeStep": 5,
     "volumeOverdrive": false,
-    "cavaFrameRate": 30,
+    "spectrumFrameRate": 30,
     "visualizerType": "linear",
     "mprisBlacklist": [],
     "preferredPlayer": "",

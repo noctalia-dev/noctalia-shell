@@ -44,6 +44,19 @@ Item {
 
   readonly property string labelMode: (widgetSettings.labelMode !== undefined) ? widgetSettings.labelMode : widgetMetadata.labelMode
   readonly property bool hasLabel: (labelMode !== "none")
+  readonly property string fontWeight: {
+    var fontWeightSetting = (widgetSettings.fontWeight !== undefined) ? widgetSettings.fontWeight : widgetMetadata.fontWeight;
+
+    if (fontWeightSetting === "regular")
+      return Style.fontWeightRegular;
+    if (fontWeightSetting === "medium")
+      return Style.fontWeightMedium;
+    if (fontWeightSetting === "semibold")
+      return Style.fontWeightSemiBold;
+    if (fontWeightSetting === "bold")
+      return Style.fontWeightBold;
+    return Style.fontWeightBold;
+  }
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
   readonly property bool followFocusedScreen: (widgetSettings.followFocusedScreen !== undefined) ? widgetSettings.followFocusedScreen : widgetMetadata.followFocusedScreen
   readonly property int characterCount: isVertical ? 2 : ((widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount)
@@ -555,6 +568,7 @@ Item {
         capsuleHeight: root.capsuleHeight
         barHeight: root.barHeight
         labelMode: root.labelMode
+        fontWeight: root.fontWeight
         characterCount: root.characterCount
         textRatio: root.textRatio
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
@@ -589,6 +603,7 @@ Item {
         capsuleHeight: root.capsuleHeight
         barHeight: root.barHeight
         labelMode: root.labelMode
+        fontWeight: root.fontWeight
         characterCount: root.characterCount
         textRatio: root.textRatio
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
@@ -661,8 +676,8 @@ Item {
       MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        enabled: !groupedContainer.hasWindows
-        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        enabled: true
+        cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         preventStealing: true
         onPressed: mouse => {
@@ -853,7 +868,7 @@ Item {
           family: Settings.data.ui.fontFixed
           font {
             pointSize: barFontSize * 0.75
-            weight: Style.fontWeightBold
+            weight: fontWeight
             capitalization: Font.AllUppercase
           }
           applyUiScale: false

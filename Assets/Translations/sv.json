@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Välj färg för visualiseraren.",
       "color-name-label": "Fyllningsfärg",
+      "height-description": "Anpassad komponentbredd.",
       "hide-when-idle-description": "När denna funktion är aktiverad döljs visualiseraren om ingen spelare är aktiv.",
       "hide-when-idle-label": "Dölj när ingen media spelas upp",
       "width-description": "Anpassad komponentbredd."
@@ -293,6 +294,8 @@
       "focused-color-label": "Fokuserad arbetsområdesfärg",
       "follow-focused-screen-description": "Visa arbetsområden från den skärm som för närvarande är fokuserad, snarare än den skärm där fältet finns.",
       "follow-focused-screen-label": "Följ fokuserad skärm",
+      "font-weight-description": "Ställ in den visuella vikten för text inom arbetsytan.",
+      "font-weight-label": "Teckensnittsvikt",
       "grouped-border-opacity-description": "Ställ in opacitetsnivån för arbetsytans behållargränser.",
       "grouped-border-opacity-label": "Ramopacitet",
       "hide-unoccupied-description": "Visa inte arbetsytor utan fönster.",
@@ -376,6 +379,7 @@
     "add": "Lägg till",
     "appearance": "Utseende",
     "apply": "Tillämpa",
+    "auto-connect": "Automatisk anslutning",
     "automation": "Automation",
     "available": "Tillgänglig",
     "back": "Tillbaka",
@@ -426,6 +430,11 @@
     "execute": "Exekvera",
     "faithful": "Trogen",
     "focus": "Fokus",
+    "font-weight-bold": "Fet",
+    "font-weight-light": "Lätt",
+    "font-weight-medium": "Mellan",
+    "font-weight-regular": "Vanlig",
+    "font-weight-semibold": "Halvfet",
     "frequency": "Frekvens",
     "gateway": "Gateway",
     "general": "Allmänt",
@@ -470,6 +479,7 @@
     "panels": "Paneler",
     "password": "Lösenord",
     "pause": "Paus",
+    "performance": "Prestanda",
     "pin": "Fäst",
     "play": "Spela upp",
     "polling": "Pollning",
@@ -709,6 +719,7 @@
       "debug-disabled": "Felsökningsläge inaktiverat",
       "debug-enabled": "Felsökningsläge aktiverat",
       "info-copied": "Info kopierad till urklipp",
+      "noctalia-available": "Tillgänglig:",
       "noctalia-desc": "Ett elegant och minimalistiskt skrivbordsskal som är noggrant utformat för Wayland och byggt med Quickshell.",
       "noctalia-git-commit": "Git-commit:",
       "noctalia-installed-version": "Installerad version:",
@@ -721,6 +732,7 @@
       "supporters-desc": "Ett stort tack till vår fantastiska supporter!",
       "supporters-desc-plural": "Ett stort tack till våra <b>{count} fantastiska</b> supportrar!",
       "supporters-loading": "Laddar supportrar...",
+      "system-board": "Moderkort:",
       "system-cpu": "CPU:",
       "system-disk": "Disk:",
       "system-gpu": "GPU:",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "Visa kortkommando-tips på sessionsalternativ.",
       "show-keybinds-label": "Visa kortkommandon"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Håll skrivbordswidgets synliga medan Noctalia prestandaläget är aktiverat.",
+      "noctalia-performance-disable-desktop-widgets-label": "Aktivera skrivbordswidgetar i prestandaläge",
+      "noctalia-performance-disable-wallpaper-description": "Behåll skrivbords-, översikts- och låsskärmsbakgrundsbilder synliga när Noctalia prestandaläget är aktiverat.",
+      "noctalia-performance-disable-wallpaper-label": "Aktivera bakgrundsbildsåtergivning i prestandaläge",
+      "title": "System"
+    },
     "system-monitor": {
       "critical-color-label": "Kritisk färg",
       "custom-highlight-colors-title-label": "Anpassade markeringsfärger",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "Pollningsintervall",
       "polling-section-description": "Konfigurera hur ofta varje systemmetrik uppdateras.",
       "polling-section-label": "Pollningsintervall",
-      "threshold-critical": "Kritisk tröskel",
-      "threshold-warning": "Varningsgräns",
+      "threshold-critical": "Kritisk",
+      "threshold-warning": "Varning",
       "thresholds-section-description": "Justera varnings-/kritiska trösklar för varje systemmetrik.",
       "use-custom-highlight-colors-description": "När denna funktion är inaktiverad används standardfärgerna för markeringar. ",
       "use-custom-highlight-colors-label": "Använd anpassade markeringsfärger",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "Animationshastighet",
       "animation-speed-reset": "Återställ animationshastighet",
       "appearance-desc": "Anpassa visuella element som verktygstips, kantlinjer och skuggor.",
+      "blur-behind-description": "Suddar ut området bakom fält och paneler med hjälp av kompositorns suddighetsprotokoll.",
+      "blur-behind-label": "Bakgrundsoskärpa",
       "box-border-description": "Visa en kontur runt innehållsområden.",
       "box-border-label": "Behållarkontur",
       "box-border-radius-description": "Justerar hörnrundningen för större layoutsektioner, såsom sidofält, kort och innehållspaneler.",
@@ -1847,6 +1868,10 @@
       "unavailable": "Urklippshistorik otillgänglig",
       "unavailable-desc": "Applikationen 'cliphist' är inte installerad. Installera den för att kunna använda klippbordshistorikfunktionerna"
     },
+    "custom-command-failed": {
+      "description": "Kommando misslyckades: {command}\\nAvslutningskod: {code}",
+      "title": "Anpassat kommando misslyckades"
+    },
     "do-not-disturb": {
       "disabled": "'Stör inte' inaktiverat",
       "disabled-desc": "Visar alla aviseringar",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "Lägg till widget",
-    "bluetooth-auto-connect-off": "Automatisk anslutning är avstängd — klicka för att aktivera",
-    "bluetooth-auto-connect-on": "Automatisk anslutning är på — klicka för att inaktivera",
+    "auto-connect": "Växla automatisk anslutning för denna enhet",
+    "bluetooth-auto-connect-off": "Automatisk anslutning inaktiverad",
+    "bluetooth-auto-connect-on": "Automatisk anslutning aktiverad",
     "bluetooth-devices": "Bluetooth-enheter",
     "brightness-at": "Ljusstyrka: {brightness}%",
     "click-to-start-recording": "Skärminspelare (starta inspelning)",

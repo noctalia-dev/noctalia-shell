@@ -14,14 +14,12 @@ Rectangle {
   property color fillColor: Color.mPrimary
 
   // Fill that grows from bottom if vertical and left if horizontal.
-  // Snap to zero if the computed pixel length is smaller than 2*radius
-  // (the minimum needed to render a clean pill), rather than clamping to a minimum.
+  // Snap to zero if the computed pixel length is sub-pixel (< 1px).
   Rectangle {
     readonly property real clampedRatio: Math.min(1, Math.max(0, root.ratio))
-    readonly property real rawWidth: root.width * clampedRatio
-    readonly property real rawHeight: root.height * clampedRatio
-    width: orientation === Qt.Vertical ? root.width : (rawWidth < 1 ? 0 : rawWidth)
-    height: orientation === Qt.Vertical ? (rawHeight < 1 ? 0 : rawHeight) : root.height
+    readonly property real rawFill: (orientation === Qt.Vertical ? root.height : root.width) * clampedRatio
+    width: orientation === Qt.Vertical ? root.width : (rawFill < 1 ? 0 : rawFill)
+    height: orientation === Qt.Vertical ? (rawFill < 1 ? 0 : rawFill) : root.height
     radius: root.radius
     color: root.fillColor
     anchors.bottom: orientation === Qt.Vertical ? parent.bottom : undefined

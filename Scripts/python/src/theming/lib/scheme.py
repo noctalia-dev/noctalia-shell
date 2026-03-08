@@ -308,3 +308,44 @@ def expand_predefined_scheme(scheme_data: dict[str, str], mode: ThemeMode) -> di
         "background": background.to_hex(),
         "on_background": on_background.to_hex(),
     }
+
+
+def inject_terminal_colors(result: dict[str, str], scheme_mode_data: dict) -> dict[str, str]:
+    """Flatten scheme's terminal section into template-ready color keys.
+
+    Adds keys like terminal_foreground, terminal_normal_black, terminal_bright_red, etc.
+    so predefined terminal templates can reference them as
+    {{colors.terminal_foreground.default.hex_stripped}}.
+
+    Args:
+        result: Expanded color palette dict to augment.
+        scheme_mode_data: Raw scheme JSON mode data (e.g., scheme_data["dark"]).
+
+    Returns:
+        The same result dict with terminal_ keys added.
+    """
+    terminal = scheme_mode_data.get("terminal")
+    if not terminal:
+        return result
+
+    # Map of JSON keys to flattened key names
+    direct_keys = {
+        "foreground": "terminal_foreground",
+        "background": "terminal_background",
+        "cursor": "terminal_cursor",
+        "cursorText": "terminal_cursor_text",
+        "selectionFg": "terminal_selection_fg",
+        "selectionBg": "terminal_selection_bg",
+    }
+
+    for json_key, flat_key in direct_keys.items():
+        if json_key in terminal:
+            result[flat_key] = terminal[json_key]
+
+    # ANSI normal/bright color groups
+    for group in ("normal", "bright"):
+        if group in terminal:
+            for name, hex_val in terminal[group].items():
+                result[f"terminal_{group}_{name}"] = hex_val
+
+    return result

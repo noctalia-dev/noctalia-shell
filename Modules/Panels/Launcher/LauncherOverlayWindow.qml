@@ -40,6 +40,31 @@ Variants {
       WlrLayershell.layer: WlrLayer.Overlay
       WlrLayershell.exclusionMode: ExclusionMode.Ignore
 
+      BackgroundEffect.blurRegion: Settings.data.general.enableBlurBehind ? launcherBlurRegion : null
+      Region {
+        id: launcherBlurRegion
+
+        Region {
+          x: Math.round(launcherPanel.x)
+          y: Math.round(launcherPanel.y)
+          width: Math.round(launcherPanel.width)
+          height: Math.round(launcherPanel.height)
+          radius: Style.radiusL
+          topLeftCorner: launcherPanel.topLeftCornerState
+          topRightCorner: launcherPanel.topRightCornerState
+          bottomLeftCorner: launcherPanel.bottomLeftCornerState
+          bottomRightCorner: launcherPanel.bottomRightCornerState
+        }
+
+        Region {
+          x: Math.round(previewBox.visible ? previewBox.x : 0)
+          y: Math.round(previewBox.visible ? previewBox.y : 0)
+          width: Math.round(previewBox.visible ? previewBox.width : 0)
+          height: Math.round(previewBox.visible ? previewBox.height : 0)
+          radius: Style.radiusL
+        }
+      }
+
       // Positioning logic (respects settings but doesn't attach to bar)
       readonly property string barPosition: Settings.data.bar.position
       readonly property bool barIsVertical: barPosition === "left" || barPosition === "right"
@@ -198,6 +223,7 @@ Variants {
           y: -radius
           width: launcherPanel.width + radius * 2
           height: launcherPanel.height + radius * 2
+          visible: panelW > 0 && panelH > 0
           opacity: launcherPanel.opacity
           layer.enabled: true
 
@@ -229,7 +255,7 @@ Variants {
 
           ShapePath {
             strokeWidth: -1
-            fillColor: Color.mSurfaceVariant
+            fillColor: Qt.alpha(Color.mSurfaceVariant, Settings.data.ui.panelBackgroundOpacity)
 
             // Offset by radius to account for Shape's extended bounds
             startX: panelShape.radius + panelShape.radius * panelShape.tlMultX
@@ -311,83 +337,88 @@ Variants {
           Component.onCompleted: PanelService.overlayLauncherCore = launcherCore
           Component.onDestruction: PanelService.overlayLauncherCore = null
         }
+      }
 
-        // Preview Panel - clipboard preview positioned outside panel bounds
-        NDropShadow {
-          source: previewBox
-          anchors.fill: previewBox
-          autoPaddingEnabled: true
-          visible: previewBox.visible
+      // Preview Panel - positioned as sibling of launcherPanel to avoid shadow bleed
+      NDropShadow {
+        source: previewBox
+        anchors.fill: previewBox
+        autoPaddingEnabled: true
+        visible: previewBox.visible
+        z: previewBox.z - 1
+      }
+
+      NBox {
+        id: previewBox
+        visible: launcherWindow.previewActive
+        width: launcherWindow.previewPanelWidth
+        height: Math.round(400 * Style.uiScaleRatio)
+        forceOpaque: true
+        x: {
+          if (panelPosition.endsWith("_right"))
+            return launcherPanel.x - launcherWindow.previewPanelWidth - Style.marginM;
+          return launcherPanel.x + launcherPanel.width + Style.marginM;
+        }
+        y: {
+          var view = launcherCore.resultsView;
+          if (!view)
+            return launcherPanel.y + Style.marginL;
+          var row = launcherCore.isGridView ? Math.floor(launcherCore.selectedIndex / launcherCore.gridColumns) : launcherCore.selectedIndex;
+          var gridCellSize = Math.floor((launcherWindow.listPanelWidth - (2 * Style.marginXS) - ((launcherCore.targetGridColumns - 1) * Style.marginS)) / launcherCore.targetGridColumns);
+          var itemHeight = launcherCore.isGridView ? (gridCellSize + Style.marginXXS) : (launcherCore.entryHeight + (view.spacing || 0));
+          var yPos = row * itemHeight - (view.contentY || 0);
+          var mapped = view.mapToItem(launcherWindow.contentItem, 0, yPos);
+          return Math.max(launcherPanel.y + Style.marginL, Math.min(mapped.y, launcherPanel.y + launcherPanel.height - previewBox.height - Style.marginL));
         }
 
-        NBox {
-          id: previewBox
-          visible: launcherWindow.previewActive
-          width: launcherWindow.previewPanelWidth
-          height: Math.round(400 * Style.uiScaleRatio)
-          x: panelPosition.endsWith("_right") ? -(launcherWindow.previewPanelWidth + Style.marginM) : launcherPanel.width + Style.marginM
-          y: {
-            var view = launcherCore.resultsView;
-            if (!view)
-              return Style.marginL;
-            var row = launcherCore.isGridView ? Math.floor(launcherCore.selectedIndex / launcherCore.gridColumns) : launcherCore.selectedIndex;
-            var gridCellSize = Math.floor((launcherWindow.listPanelWidth - (2 * Style.marginXS) - ((launcherCore.targetGridColumns - 1) * Style.marginS)) / launcherCore.targetGridColumns);
-            var itemHeight = launcherCore.isGridView ? (gridCellSize + Style.marginXXS) : (launcherCore.entryHeight + (view.spacing || 0));
-            var yPos = row * itemHeight - (view.contentY || 0);
-            var mapped = view.mapToItem(launcherPanel, 0, yPos);
-            return Math.max(Style.marginL, Math.min(mapped.y, launcherPanel.height - previewBox.height - Style.marginL));
+        opacity: visible ? 1.0 : 0.0
+        Behavior on opacity {
+          NumberAnimation {
+            duration: Style.animationFast
           }
-          z: -1
+        }
+        Behavior on y {
+          NumberAnimation {
+            duration: Style.animationFast
+            easing.type: Easing.OutCubic
+          }
+        }
 
-          opacity: visible ? 1.0 : 0.0
-          Behavior on opacity {
-            NumberAnimation {
-              duration: Style.animationFast
-            }
-          }
-          Behavior on y {
-            NumberAnimation {
-              duration: Style.animationFast
-              easing.type: Easing.OutCubic
-            }
-          }
-
-          Loader {
-            id: previewLoader
-            anchors.fill: parent
-            active: launcherWindow.previewActive
-            source: {
-              if (!active)
-                return "";
-              var provider = launcherCore.activeProvider;
-              if (provider && provider.previewComponentPath)
-                return provider.previewComponentPath;
+        Loader {
+          id: previewLoader
+          anchors.fill: parent
+          active: launcherWindow.previewActive
+          source: {
+            if (!active)
               return "";
-            }
+            var provider = launcherCore.activeProvider;
+            if (provider && provider.previewComponentPath)
+              return provider.previewComponentPath;
+            return "";
+          }
 
-            onLoaded: updatePreviewItem()
-            onItemChanged: updatePreviewItem()
+          onLoaded: updatePreviewItem()
+          onItemChanged: updatePreviewItem()
 
-            function updatePreviewItem() {
-              if (!item || launcherCore.selectedIndex < 0 || !launcherCore.results[launcherCore.selectedIndex])
-                return;
-              var provider = launcherCore.activeProvider;
-              if (provider && provider.getPreviewData) {
-                item.currentItem = provider.getPreviewData(launcherCore.results[launcherCore.selectedIndex]);
-              } else {
-                item.currentItem = launcherCore.results[launcherCore.selectedIndex];
-              }
+          function updatePreviewItem() {
+            if (!item || launcherCore.selectedIndex < 0 || !launcherCore.results[launcherCore.selectedIndex])
+              return;
+            var provider = launcherCore.activeProvider;
+            if (provider && provider.getPreviewData) {
+              item.currentItem = provider.getPreviewData(launcherCore.results[launcherCore.selectedIndex]);
+            } else {
+              item.currentItem = launcherCore.results[launcherCore.selectedIndex];
             }
           }
         }
+      }
 
-        // Update preview when selection changes
-        Connections {
-          target: launcherCore
-          function onSelectedIndexChanged() {
-            if (previewLoader.item)
-              previewLoader.updatePreviewItem();
-          }
+      // Update preview when selection changes
+      Connections {
+        target: launcherCore
+        function onSelectedIndexChanged() {
+          if (previewLoader.item)
+            previewLoader.updatePreviewItem();
         }
       }
     }

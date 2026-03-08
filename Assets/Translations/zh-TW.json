@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "選取視覺效果的顏色",
       "color-name-label": "填充顏色",
+      "height-description": "自訂元件寬度。",
       "hide-when-idle-description": "當啟用時, 如果沒有正在播放的媒體就隱藏視覺效果",
       "hide-when-idle-label": "無任何媒體播放時隱藏",
       "width-description": "自訂部件寬度"
@@ -293,6 +294,8 @@
       "focused-color-label": "聚焦的工作區顏色",
       "follow-focused-screen-description": "顯示正在聚焦的螢幕所擁有的工作區, 而不是工具列所在的螢幕擁有的工作區",
       "follow-focused-screen-label": "跟隨焦點所在的螢幕",
+      "font-weight-description": "設定工作區內文字的視覺權重。",
+      "font-weight-label": "字體粗細",
       "grouped-border-opacity-description": "設定工作區邊框的不透明度",
       "grouped-border-opacity-label": "邊框不透明度",
       "hide-unoccupied-description": "如果工作區沒有任何視窗則不要顯示",
@@ -376,6 +379,7 @@
     "add": "新增",
     "appearance": "外觀",
     "apply": "套用",
+    "auto-connect": "自動連線",
     "automation": "自動化",
     "available": "可用",
     "back": "返回",
@@ -426,6 +430,11 @@
     "execute": "執行",
     "faithful": "忠實",
     "focus": "關注",
+    "font-weight-bold": "粗體",
+    "font-weight-light": "細",
+    "font-weight-medium": "中",
+    "font-weight-regular": "一般",
+    "font-weight-semibold": "半粗體",
     "frequency": "頻率",
     "gateway": "網路閘道",
     "general": "一般",
@@ -470,6 +479,7 @@
     "panels": "面板",
     "password": "密碼",
     "pause": "暫停",
+    "performance": "效能",
     "pin": "釘選",
     "play": "播放",
     "polling": "輪詢",
@@ -709,6 +719,7 @@
       "debug-disabled": "偵錯模式已停用",
       "debug-enabled": "偵錯模式已啟用",
       "info-copied": "資訊已複製至剪貼簿",
+      "noctalia-available": "可用:",
       "noctalia-desc": "一個為 Wayland 精心打造, 兼具簡潔及流暢的桌面介面, 使用 Quickshell 建置",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "安裝版本:",
@@ -721,6 +732,7 @@
       "supporters-desc": "非常感謝我們出色的支持者！",
       "supporters-desc-plural": "非常感謝我們的<b>{count}位出色</b>支持者！",
       "supporters-loading": "正在載入支持者...",
+      "system-board": "主機板:",
       "system-cpu": "CPU:",
       "system-disk": "磁碟:",
       "system-gpu": "GPU:",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "在工作階段選項上顯示快捷鍵提示。",
       "show-keybinds-label": "顯示快捷鍵"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "當 Noctalia 效能模式啟用時保持桌面小工具可見。",
+      "noctalia-performance-disable-desktop-widgets-label": "在效能模式下啟用桌面小工具",
+      "noctalia-performance-disable-wallpaper-description": "在啟用 Noctalia 效能模式時，保持桌面、概覽和鎖定畫面桌布可見。",
+      "noctalia-performance-disable-wallpaper-label": "在效能模式下啟用桌布渲染",
+      "title": "系統"
+    },
     "system-monitor": {
       "critical-color-label": "危急顏色",
       "custom-highlight-colors-title-label": "自訂突出色",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "輪詢間隔",
       "polling-section-description": "設定該多久更新一次系統計量值",
       "polling-section-label": "輪詢間隔",
-      "threshold-critical": "危急門檻",
-      "threshold-warning": "警告門檻",
+      "threshold-critical": "嚴重",
+      "threshold-warning": "警告",
       "thresholds-section-description": "調整每個系統量測值的警告/危急門檻",
       "use-custom-highlight-colors-description": "當停用時, 將會使用主題預設的突出色",
       "use-custom-highlight-colors-label": "使用自訂的突出色",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "動畫速度",
       "animation-speed-reset": "重設動畫速度",
       "appearance-desc": "自訂視覺元素, 如提示框, 邊框及陰影",
+      "blur-behind-description": "使用合成器模糊協定，模糊欄位和面板後方的區域。",
+      "blur-behind-label": "背景模糊",
       "box-border-description": "在內容區塊的外圍顯示外框",
       "box-border-label": "頁面容器外框",
       "box-border-radius-description": "調整主要版面區塊（例如側邊欄、卡片與內容面板）的圓角弧度。",
@@ -1847,6 +1868,10 @@
       "unavailable": "無法使用剪貼簿歷史",
       "unavailable-desc": "尚未安裝 cliphist 套件, 要使用剪貼簿歷史請安裝套件"
     },
+    "custom-command-failed": {
+      "description": "指令失敗: {command}\\n結束代碼: {code}",
+      "title": "自訂指令失敗"
+    },
     "do-not-disturb": {
       "disabled": "勿擾模式已停用",
       "disabled-desc": "顯示所有通知",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "新增小工具",
-    "bluetooth-auto-connect-off": "自動連線已關閉 — 點擊以啟用",
-    "bluetooth-auto-connect-on": "自動連線已開啟 — 點擊以停用",
+    "auto-connect": "切換此裝置的自動連線",
+    "bluetooth-auto-connect-off": "自動連線已停用",
+    "bluetooth-auto-connect-on": "自動連線已啟用",
     "bluetooth-devices": "藍牙裝置",
     "brightness-at": "亮度: {brightness}%",
     "click-to-start-recording": "螢幕錄影 (開始錄製)",

@@ -45,20 +45,20 @@ Item {
 
   readonly property bool shouldShow: (currentVisualizerType !== "" && currentVisualizerType !== "none") && (!hideWhenIdle || MediaService.isPlaying)
 
-  // Register/unregister with CavaService based on visibility
-  readonly property string cavaComponentId: "bar:audiovisualizer:" + root.screen.name + ":" + root.section + ":" + root.sectionWidgetIndex
+  // Register/unregister with SpectrumService based on visibility
+  readonly property string spectrumComponentId: "bar:audiovisualizer:" + root.screen.name + ":" + root.section + ":" + root.sectionWidgetIndex
 
   onShouldShowChanged: {
     if (root.shouldShow) {
-      CavaService.registerComponent(root.cavaComponentId);
+      SpectrumService.registerComponent(root.spectrumComponentId);
     } else {
-      CavaService.unregisterComponent(root.cavaComponentId);
+      SpectrumService.unregisterComponent(root.spectrumComponentId);
     }
   }
 
   Component.onDestruction: {
     if (root.shouldShow) {
-      CavaService.unregisterComponent(root.cavaComponentId);
+      SpectrumService.unregisterComponent(root.spectrumComponentId);
     }
   }
 
@@ -177,7 +177,7 @@ Item {
     id: linearComponent
     NLinearSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
       vertical: root.isVerticalBar
@@ -189,7 +189,7 @@ Item {
     id: mirroredComponent
     NMirroredSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
       vertical: root.isVerticalBar
@@ -200,7 +200,7 @@ Item {
     id: waveComponent
     NWaveSpectrum {
       anchors.fill: parent
-      values: CavaService.values
+      values: SpectrumService.values
       fillColor: root.fillColor
       showMinimumSignal: true
       vertical: root.isVerticalBar

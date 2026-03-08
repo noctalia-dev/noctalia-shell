@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Selecteer de kleur voor de visualizer.",
       "color-name-label": "Vulkleur",
+      "height-description": "Aangepaste componentbreedte.",
       "hide-when-idle-description": "Indien ingeschakeld wordt de visualizer verborgen, tenzij een speler actief afspeelt.",
       "hide-when-idle-label": "Verbergen wanneer geen media speelt",
       "width-description": "Aangepaste componentbreedte."
@@ -293,6 +294,8 @@
       "focused-color-label": "Kleur van de gefocuste Workspace",
       "follow-focused-screen-description": "Werkruimten weergeven van het momenteel gefocuste scherm, in plaats van het scherm waar de balk zich bevindt.",
       "follow-focused-screen-label": "Gefocust scherm volgen",
+      "font-weight-description": "Stel het visuele gewicht in voor tekst binnen de werkruimte.",
+      "font-weight-label": "Lettertypegewicht",
       "grouped-border-opacity-description": "Stel het dekkingsniveau in voor de randen van de werkruimtecontainer.",
       "grouped-border-opacity-label": "Randdekking",
       "hide-unoccupied-description": "Werkruimten zonder vensters niet weergeven.",
@@ -376,6 +379,7 @@
     "add": "Toevoegen",
     "appearance": "Uiterlijk",
     "apply": "Toepassen",
+    "auto-connect": "Automatisch verbinden",
     "automation": "Automatisering",
     "available": "Beschikbaar",
     "back": "Terug",
@@ -426,6 +430,11 @@
     "execute": "Uitvoeren",
     "faithful": "Getrouw",
     "focus": "Focus",
+    "font-weight-bold": "Vet",
+    "font-weight-light": "Licht",
+    "font-weight-medium": "Medium",
+    "font-weight-regular": "Normaal",
+    "font-weight-semibold": "Semi-vet",
     "frequency": "Frequentie",
     "gateway": "Poort",
     "general": "Algemeen",
@@ -470,6 +479,7 @@
     "panels": "Panelen",
     "password": "Wachtwoord",
     "pause": "Pauze",
+    "performance": "Prestaties",
     "pin": "Vastmaken",
     "play": "Afspelen",
     "polling": "Polling",
@@ -709,6 +719,7 @@
       "debug-disabled": "Foutopsporingsmodus uitgeschakeld",
       "debug-enabled": "Foutopsporingsmodus ingeschakeld",
       "info-copied": "Info gekopieerd naar klembord",
+      "noctalia-available": "Beschikbaar:",
       "noctalia-desc": "Een strakke en minimale desktopshell, met zorg gemaakt voor Wayland en gebouwd met Quickshell.",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "Geïnstalleerde versie:",
@@ -721,6 +732,7 @@
       "supporters-desc": "Een enorme dank aan onze geweldige supporter!",
       "supporters-desc-plural": "Enorm bedankt aan onze <b>{count} geweldige</b> supporters!",
       "supporters-loading": "Donateurs laden...",
+      "system-board": "Moederbord:",
       "system-cpu": "CPU:",
       "system-disk": "Schijf:",
       "system-gpu": "GPU:",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "Toon toetscombinatiehints bij sessie-opties.",
       "show-keybinds-label": "Toetsencombinaties weergeven"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Houd desktopwidgets zichtbaar terwijl de Noctalia prestatiemodus is ingeschakeld.",
+      "noctalia-performance-disable-desktop-widgets-label": "Desktopwidgets inschakelen in prestatiemodus",
+      "noctalia-performance-disable-wallpaper-description": "Houd bureaublad-, overzicht- en vergrendelschermachtergronden zichtbaar terwijl de Noctalia prestatiemodus is ingeschakeld.",
+      "noctalia-performance-disable-wallpaper-label": "Achtergrondweergave inschakelen in prestatiemodus",
+      "title": "Systeem"
+    },
     "system-monitor": {
       "critical-color-label": "Kritische kleur",
       "custom-highlight-colors-title-label": "Aangepaste markeerkleuren",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "Peilingsinterval",
       "polling-section-description": "Configureer hoe vaak elke systeemmetriek wordt bijgewerkt.",
       "polling-section-label": "Peilingsintervallen",
-      "threshold-critical": "Kritische drempel",
-      "threshold-warning": "Waarschuwingsdrempel",
+      "threshold-critical": "Kritiek",
+      "threshold-warning": "Waarschuwing",
       "thresholds-section-description": "Pas de waarschuwing/kritieke drempels en de pollingsintervallen voor elke systeemmetriek aan.",
       "use-custom-highlight-colors-description": "Indien uitgeschakeld, worden de standaard markeerkleuren van het thema gebruikt.",
       "use-custom-highlight-colors-label": "Gebruik aangepaste markeerkleuren",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "Animatiesnelheid",
       "animation-speed-reset": "Animatiesnelheid resetten",
       "appearance-desc": "Pas visuele elementen aan, zoals tooltips, randen en schaduwen.",
+      "blur-behind-description": "Vervaagt het gebied achter balken en panelen met behulp van het compositor-blurprotocol.",
+      "blur-behind-label": "Achtergrond vervagen",
       "box-border-description": "Toon een omlijning rond inhoudsgebieden.",
       "box-border-label": "Containeromtrek",
       "box-border-radius-description": "Past de hoekronding aan van belangrijke lay-outsecties, zoals zijbalken, kaarten en inhoudspanelen.",
@@ -1847,6 +1868,10 @@
       "unavailable": "Klembordgeschiedenis niet beschikbaar",
       "unavailable-desc": "De toepassing 'cliphist' is niet geïnstalleerd. Installeer deze om functies voor klembordgeschiedenis te gebruiken"
     },
+    "custom-command-failed": {
+      "description": "Commando mislukt: {command}\\nExitcode: {code}",
+      "title": "Aangepaste opdracht mislukt"
+    },
     "do-not-disturb": {
       "disabled": "'Niet storen' uitgeschakeld",
       "disabled-desc": "Alle meldingen worden weergegeven",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "Widget toevoegen",
-    "bluetooth-auto-connect-off": "Automatisch verbinden is uitgeschakeld — klik om in te schakelen",
-    "bluetooth-auto-connect-on": "Automatisch verbinden is aan — klik om uit te schakelen",
+    "auto-connect": "Automatisch verbinden voor dit apparaat in-/uitschakelen",
+    "bluetooth-auto-connect-off": "Automatisch verbinden uitgeschakeld",
+    "bluetooth-auto-connect-on": "Automatisch verbinden ingeschakeld",
     "bluetooth-devices": "Bluetooth-apparaten",
     "brightness-at": "Helderheid: {brightness}%",
     "click-to-start-recording": "Schermrecorder (opname starten)",

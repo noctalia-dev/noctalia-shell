@@ -103,6 +103,10 @@ ShapePath {
   readonly property real blMultY: bar ? ShapeCornerHelper.getMultY(bar.bottomLeftCornerState) : 1
   readonly property real blRadius: bar ? getCornerRadius(bar.bottomLeftCornerState) : 0
 
+  // True when the bar path has valid, non-degenerate geometry to render.
+  // Mirrors PanelBackground.isRenderable — prevents CurveRenderer crash on zero-area paths.
+  readonly property bool isRenderable: bar !== null && shouldShow && (isFramed ? (screenWidth > 0 && screenHeight > 0) : (barWidth > 0 && barHeight > 0))
+
   // Extend bar background beyond screen edges where both adjacent corners are flat,
   // to prevent CurveRenderer antialiasing artifacts on screen-flush edges
   readonly property real screenEdgeOvershoot: 2
@@ -124,160 +128,147 @@ ShapePath {
 
   // ShapePath configuration
   strokeWidth: -1 // No stroke, fill only
-  fillColor: Qt.rgba(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a * opacityFactor)
+  fillColor: isRenderable ? Qt.rgba(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a * opacityFactor) : "transparent"
   fillRule: isFramed ? ShapePath.OddEvenFill : ShapePath.WindingFill
 
-  // Starting position
-  // In framed mode, we start at (0,0) to draw the screen rectangle first
-  startX: isFramed ? 0 : (barMappedPos.x + leftEdgeOvs + tlRadius * tlMultX)
-  startY: isFramed ? 0 : (barMappedPos.y + topEdgeOvs)
+  // Starting position — falls back to off-screen (-1,-1) when not renderable so that
+  // all subsequent path elements form a valid non-degenerate 1×1 off-screen square,
+  // preventing CurveRenderer triangulation crashes on zero-area or bare-moveto paths.
+  startX: isRenderable ? (isFramed ? 0 : (barMappedPos.x + leftEdgeOvs + tlRadius * tlMultX)) : -1
+  startY: isRenderable ? (isFramed ? 0 : (barMappedPos.y + topEdgeOvs)) : -1
 
   // ========== PATH DEFINITION ==========
 
   // 1. Main Bar / Outer Screen Rectangle
+  // When !isRenderable all elements use fallback coordinates forming a valid 1×1
+  // off-screen square ((-1,-1)→(0,-1)→(0,0)→(-1,0)→(-1,-1)) so CurveRenderer
+  // never receives a zero-area or bare-moveto path.
   PathLine {
-    x: {
-      if (!root.shouldShow)
-        return 0;
-      if (root.isFramed)
-        return root.screenWidth;
-      return root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.trRadius * root.trMultX;
-    }
-    y: root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs)
+    x: root.isRenderable ? (root.isFramed ? root.screenWidth : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.trRadius * root.trMultX)) : 0
+    y: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs)) : -1
   }
 
   // Bar top-right corner (only if not framed)
   PathArc {
-    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs)
-    y: root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs + root.trRadius * root.trMultY)
-    radiusX: root.isFramed ? 0 : root.trRadius
-    radiusY: root.isFramed ? 0 : root.trRadius
+    x: root.isRenderable ? (root.isFramed ? root.screenWidth : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs)) : 0
+    y: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs + root.trRadius * root.trMultY)) : -1
+    radiusX: root.isRenderable ? (root.isFramed ? 0 : root.trRadius) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? 0 : root.trRadius) : 0
     direction: ShapeCornerHelper.getArcDirection(root.trMultX, root.trMultY)
   }
 
   PathLine {
-    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs)
-    y: {
-      if (!root.shouldShow)
-        return 0;
-      if (root.isFramed)
-        return root.screenHeight;
-      return root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.brRadius * root.brMultY;
-    }
+    x: root.isRenderable ? (root.isFramed ? root.screenWidth : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs)) : 0
+    y: root.isRenderable ? (root.isFramed ? root.screenHeight : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.brRadius * root.brMultY)) : 0
   }
 
   // Bar bottom-right corner (only if not framed)
   PathArc {
-    x: root.isFramed ? (root.shouldShow ? root.screenWidth : 0) : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.brRadius * root.brMultX)
-    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs)
-    radiusX: root.isFramed ? 0 : root.brRadius
-    radiusY: root.isFramed ? 0 : root.brRadius
+    x: root.isRenderable ? (root.isFramed ? root.screenWidth : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.brRadius * root.brMultX)) : 0
+    y: root.isRenderable ? (root.isFramed ? root.screenHeight : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs)) : 0
+    radiusX: root.isRenderable ? (root.isFramed ? 0 : root.brRadius) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? 0 : root.brRadius) : 0
     direction: ShapeCornerHelper.getArcDirection(root.brMultX, root.brMultY)
   }
 
   PathLine {
-    x: {
-      if (!root.shouldShow)
-        return 0;
-      if (root.isFramed)
-        return 0;
-      return root.barMappedPos.x + root.leftEdgeOvs + root.blRadius * root.blMultX;
-    }
-    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs)
+    x: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs + root.blRadius * root.blMultX)) : -1
+    y: root.isRenderable ? (root.isFramed ? root.screenHeight : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs)) : 0
   }
 
   // Bar bottom-left corner (only if not framed)
   PathArc {
-    x: root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs)
-    y: root.isFramed ? (root.shouldShow ? root.screenHeight : 0) : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.blRadius * root.blMultY)
-    radiusX: root.isFramed ? 0 : root.blRadius
-    radiusY: root.isFramed ? 0 : root.blRadius
+    x: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs)) : -1
+    y: root.isRenderable ? (root.isFramed ? root.screenHeight : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.blRadius * root.blMultY)) : 0
+    radiusX: root.isRenderable ? (root.isFramed ? 0 : root.blRadius) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? 0 : root.blRadius) : 0
     direction: ShapeCornerHelper.getArcDirection(root.blMultX, root.blMultY)
   }
 
   PathLine {
-    x: root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs)
-    y: {
-      if (!root.shouldShow)
-        return 0;
-      if (root.isFramed)
-        return 0;
-      return root.barMappedPos.y + root.topEdgeOvs + root.tlRadius * root.tlMultY;
-    }
+    x: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs)) : -1
+    y: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs + root.tlRadius * root.tlMultY)) : -1
   }
 
   // Bar top-left corner (only if not framed, back to start)
   PathArc {
-    x: root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs + root.tlRadius * root.tlMultX)
-    y: root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs)
-    radiusX: root.isFramed ? 0 : root.tlRadius
-    radiusY: root.isFramed ? 0 : root.tlRadius
+    x: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs + root.tlRadius * root.tlMultX)) : -1
+    y: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs)) : -1
+    radiusX: root.isRenderable ? (root.isFramed ? 0 : root.tlRadius) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? 0 : root.tlRadius) : 0
     direction: ShapeCornerHelper.getArcDirection(root.tlMultX, root.tlMultY)
   }
 
   // 2. Inner Hole for Framed Mode (Clockwise)
+  // When !isFramed, draws a tiny 1x1 rectangle inside the bar as a non-degenerate WindingFill
+  // no-op to prevent a zero-area degenerate subpath crashing qTriangulate.
+  // Note: an exact duplicate of the outer path cannot be used here because Qt's CurveRenderer
+  // has issues with exactly coincident subpaths, causing the fill to not render on some systems.
+  // When !isRenderable, falls back to a valid 1×1 off-screen square at (-3,-3)→(-2,-2).
+  readonly property real _nhX: barMappedPos.x + barWidth / 2
+  readonly property real _nhY: barMappedPos.y + barHeight / 2
   PathMove {
-    x: (root.isFramed && root.shouldShow) ? (root.holeX + root.frameRadius) : root.startX
-    y: (root.isFramed && root.shouldShow) ? root.holeY : root.startY
+    x: root.isRenderable ? (root.isFramed ? (root.holeX + root.frameRadius) : root._nhX) : -3
+    y: root.isRenderable ? (root.isFramed ? root.holeY : root._nhY) : -3
   }
 
   // Top edge
   PathLine {
-    x: (root.isFramed && root.shouldShow) ? (root.holeX + root.holeWidth - root.frameRadius) : ((root.isFramed && root.shouldShow) ? (root.holeX + root.frameRadius) : root.startX)
-    y: (root.isFramed && root.shouldShow) ? root.holeY : ((root.isFramed && root.shouldShow) ? root.holeY : root.startY)
+    x: root.isRenderable ? (root.isFramed ? (root.holeX + root.holeWidth - root.frameRadius) : (root._nhX + 1)) : -2
+    y: root.isRenderable ? (root.isFramed ? root.holeY : root._nhY) : -3
   }
 
   // Top-right corner
   PathArc {
-    x: (root.isFramed && root.shouldShow) ? (root.holeX + root.holeWidth) : ((root.isFramed && root.shouldShow) ? (root.holeX + root.holeWidth - root.frameRadius) : root.startX)
-    y: (root.isFramed && root.shouldShow) ? (root.holeY + root.frameRadius) : ((root.isFramed && root.shouldShow) ? root.holeY : root.startY)
-    radiusX: (root.isFramed && root.shouldShow) ? root.frameRadius : 0
-    radiusY: (root.isFramed && root.shouldShow) ? root.frameRadius : 0
+    x: root.isRenderable ? (root.isFramed ? (root.holeX + root.holeWidth) : (root._nhX + 1)) : -2
+    y: root.isRenderable ? (root.isFramed ? (root.holeY + root.frameRadius) : root._nhY) : -3
+    radiusX: root.isRenderable ? (root.isFramed ? root.frameRadius : 0) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? root.frameRadius : 0) : 0
     direction: PathArc.Clockwise
   }
 
   // Right edge
   PathLine {
-    x: (root.isFramed && root.shouldShow) ? (root.holeX + root.holeWidth) : root.startX
-    y: (root.isFramed && root.shouldShow) ? (root.holeY + root.holeHeight - root.frameRadius) : root.startY
+    x: root.isRenderable ? (root.isFramed ? (root.holeX + root.holeWidth) : (root._nhX + 1)) : -2
+    y: root.isRenderable ? (root.isFramed ? (root.holeY + root.holeHeight - root.frameRadius) : (root._nhY + 1)) : -2
   }
 
   // Bottom-right corner
   PathArc {
-    x: (root.isFramed && root.shouldShow) ? (root.holeX + root.holeWidth - root.frameRadius) : root.startX
-    y: (root.isFramed && root.shouldShow) ? (root.holeY + root.holeHeight) : root.startY
-    radiusX: (root.isFramed && root.shouldShow) ? root.frameRadius : 0
-    radiusY: (root.isFramed && root.shouldShow) ? root.frameRadius : 0
+    x: root.isRenderable ? (root.isFramed ? (root.holeX + root.holeWidth - root.frameRadius) : (root._nhX + 1)) : -2
+    y: root.isRenderable ? (root.isFramed ? (root.holeY + root.holeHeight) : (root._nhY + 1)) : -2
+    radiusX: root.isRenderable ? (root.isFramed ? root.frameRadius : 0) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? root.frameRadius : 0) : 0
     direction: PathArc.Clockwise
   }
 
   // Bottom edge
   PathLine {
-    x: (root.isFramed && root.shouldShow) ? (root.holeX + root.frameRadius) : root.startX
-    y: (root.isFramed && root.shouldShow) ? (root.holeY + root.holeHeight) : root.startY
+    x: root.isRenderable ? (root.isFramed ? (root.holeX + root.frameRadius) : root._nhX) : -3
+    y: root.isRenderable ? (root.isFramed ? (root.holeY + root.holeHeight) : (root._nhY + 1)) : -2
   }
 
   // Bottom-left corner
   PathArc {
-    x: (root.isFramed && root.shouldShow) ? root.holeX : root.startX
-    y: (root.isFramed && root.shouldShow) ? (root.holeY + root.holeHeight - root.frameRadius) : root.startY
-    radiusX: (root.isFramed && root.shouldShow) ? root.frameRadius : 0
-    radiusY: (root.isFramed && root.shouldShow) ? root.frameRadius : 0
+    x: root.isRenderable ? (root.isFramed ? root.holeX : root._nhX) : -3
+    y: root.isRenderable ? (root.isFramed ? (root.holeY + root.holeHeight - root.frameRadius) : (root._nhY + 1)) : -2
+    radiusX: root.isRenderable ? (root.isFramed ? root.frameRadius : 0) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? root.frameRadius : 0) : 0
     direction: PathArc.Clockwise
   }
 
   // Left edge
   PathLine {
-    x: (root.isFramed && root.shouldShow) ? root.holeX : root.startX
-    y: (root.isFramed && root.shouldShow) ? (root.holeY + root.frameRadius) : root.startY
+    x: root.isRenderable ? (root.isFramed ? root.holeX : root._nhX) : -3
+    y: root.isRenderable ? (root.isFramed ? (root.holeY + root.frameRadius) : root._nhY) : -3
   }
 
   // Top-left corner (back to start)
   PathArc {
-    x: (root.isFramed && root.shouldShow) ? (root.holeX + root.frameRadius) : root.startX
-    y: (root.isFramed && root.shouldShow) ? root.holeY : root.startY
-    radiusX: (root.isFramed && root.shouldShow) ? root.frameRadius : 0
-    radiusY: (root.isFramed && root.shouldShow) ? root.frameRadius : 0
+    x: root.isRenderable ? (root.isFramed ? (root.holeX + root.frameRadius) : root._nhX) : -3
+    y: root.isRenderable ? (root.isFramed ? root.holeY : root._nhY) : -3
+    radiusX: root.isRenderable ? (root.isFramed ? root.frameRadius : 0) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? root.frameRadius : 0) : 0
     direction: PathArc.Clockwise
   }
 }

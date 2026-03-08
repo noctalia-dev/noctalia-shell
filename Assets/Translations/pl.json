@@ -41,6 +41,7 @@
     "audio-visualizer": {
       "color-name-description": "Wybierz kolor dla wizualizatora.",
       "color-name-label": "Kolor wypełnienia",
+      "height-description": "Niestandardowa szerokość komponentu.",
       "hide-when-idle-description": "Gdy włączone, wizualizator jest ukryty, chyba że odtwarzacz jest aktywny.",
       "hide-when-idle-label": "Ukryj, gdy nic nie jest odtwarzane",
       "width-description": "Niestandardowa szerokość komponentu."
@@ -61,7 +62,7 @@
       "hide-if-not-detected-label": "Ukryj się, jeśli nie wykryto",
       "low-battery-threshold-label": "Próg ostrzegania o niskim poziomie baterii",
       "show-noctalia-performance-description": "Wyświetl przełącznik trybu wydajności Noctalia w panelu baterii.<br>Wyłącza cienie i animacje w Noctalia, aby zmniejszyć zużycie zasobów.",
-      "show-noctalia-performance-label": "Pokaż przełącznik wydajności Noctalia",
+      "show-noctalia-performance-label": "Pokaż przełącznik Wydajności Noctalia",
       "show-power-profile-description": "Wyświetl wybór profilu zasilania w panelu baterii.",
       "show-power-profile-label": "Pokaż kontrolki profilu zasilania"
     },
@@ -293,6 +294,8 @@
       "focused-color-label": "Kolor aktywnego obszaru roboczego",
       "follow-focused-screen-description": "Wyświetl obszary robocze z aktualnie aktywnego ekranu, zamiast ekranu, na którym znajduje się pasek.",
       "follow-focused-screen-label": "Podążaj za skupionym ekranem",
+      "font-weight-description": "Ustaw wizualną wagę tekstu w obszarze roboczym.",
+      "font-weight-label": "Grubość czcionki",
       "grouped-border-opacity-description": "Ustaw poziom krycia dla obramowań kontenerów obszaru roboczego.",
       "grouped-border-opacity-label": "Krycie obramowania",
       "hide-unoccupied-description": "Nie wyświetlaj obszarów roboczych bez okien.",
@@ -376,6 +379,7 @@
     "add": "Dodaj",
     "appearance": "Wygląd",
     "apply": "Zastosuj",
+    "auto-connect": "Automatyczne łączenie",
     "automation": "Automatyzacja",
     "available": "Dostępne",
     "back": "Powrót",
@@ -426,6 +430,11 @@
     "execute": "Wykonaj",
     "faithful": "Wierny",
     "focus": "Skupienie",
+    "font-weight-bold": "Pogrubienie",
+    "font-weight-light": "Cienka",
+    "font-weight-medium": "Średni",
+    "font-weight-regular": "Zwykły",
+    "font-weight-semibold": "Półgruby",
     "frequency": "Częstotliwość",
     "gateway": "Brama",
     "general": "Ogólne",
@@ -470,6 +479,7 @@
     "panels": "Panele",
     "password": "Hasło",
     "pause": "Pauza",
+    "performance": "Wydajność",
     "pin": "Przypnij",
     "play": "Odtwórz",
     "polling": "Odpytywanie",
@@ -709,6 +719,7 @@
       "debug-disabled": "Tryb debugowania wyłączony",
       "debug-enabled": "Tryb debugowania włączony",
       "info-copied": "Informacje skopiowane do schowka",
+      "noctalia-available": "Dostępne:",
       "noctalia-desc": "Elegancka i minimalistyczna powłoka pulpitu stworzona dla Wayland, zbudowana w Quickshell.",
       "noctalia-git-commit": "Git commit:",
       "noctalia-installed-version": "Zainstalowana wersja:",
@@ -721,6 +732,7 @@
       "supporters-desc": "Ogromne podziękowania dla naszego wspaniałego wspierającego!",
       "supporters-desc-plural": "Ogromne podziękowania dla naszych <b>{count} wspaniałych</b> wspierających!",
       "supporters-loading": "Ładowanie wspierających...",
+      "system-board": "Płyta główna:",
       "system-cpu": "Procesor:",
       "system-disk": "Dysk:",
       "system-gpu": "GPU:",
@@ -1599,6 +1611,13 @@
       "show-keybinds-description": "Wyświetl podpowiedzi skrótów klawiszowych w opcjach sesji.",
       "show-keybinds-label": "Pokaż skróty klawiszowe"
     },
+    "system": {
+      "noctalia-performance-disable-desktop-widgets-description": "Zachowaj widoczność widżetów pulpitu, gdy tryb wydajności Noctalia jest włączony.",
+      "noctalia-performance-disable-desktop-widgets-label": "Włącz widżety pulpitu w trybie wydajności",
+      "noctalia-performance-disable-wallpaper-description": "Zachowaj widoczne tapety pulpitu, przeglądu i ekranu blokady, gdy tryb wydajności Noctalia jest włączony.",
+      "noctalia-performance-disable-wallpaper-label": "Włącz renderowanie tapety w trybie wydajności",
+      "title": "System"
+    },
     "system-monitor": {
       "critical-color-label": "Kolor krytyczny",
       "custom-highlight-colors-title-label": "Własne kolory podświetlenia",
@@ -1615,8 +1634,8 @@
       "polling-interval-label": "Interwał odświeżania",
       "polling-section-description": "Skonfiguruj, jak często każda metryka systemowa jest aktualizowana.",
       "polling-section-label": "Interwały odpytywania",
-      "threshold-critical": "Próg krytyczny",
-      "threshold-warning": "Próg ostrzegawczy",
+      "threshold-critical": "Krytyczny",
+      "threshold-warning": "Ostrzeżenie",
       "thresholds-section-description": "Dostosuj progi ostrzegawcze/krytyczne oraz interwały odświeżania dla każdej metryki systemu.",
       "use-custom-highlight-colors-description": "Gdy wyłączone, używane są domyślne kolory podświetlenia motywu.",
       "use-custom-highlight-colors-label": "Użyj własnych kolorów podświetlenia",
@@ -1631,6 +1650,8 @@
       "animation-speed-label": "Prędkość animacji",
       "animation-speed-reset": "Resetuj prędkość animacji",
       "appearance-desc": "Dostosuj elementy wizualne, takie jak podpowiedzi, obramowania i cienie.",
+      "blur-behind-description": "Rozmywa obszar za paskami i panelami, używając protokołu rozmycia kompozytora.",
+      "blur-behind-label": "Rozmycie tła",
       "box-border-description": "Wyświetla obrys wokół obszarów zawartości.",
       "box-border-label": "Obrys kontenera",
       "box-border-radius-description": "Dostosowuje zaokrąglenie narożników głównych sekcji układu, takich jak paski boczne, karty i panele treści.",
@@ -1847,6 +1868,10 @@
       "unavailable": "Historia schowka niedostępna",
       "unavailable-desc": "Aplikacja 'cliphist' nie jest zainstalowana. Zainstaluj ją, aby korzystać z historii schowka"
     },
+    "custom-command-failed": {
+      "description": "Polecenie nie powiodło się: {command}\\nKod wyjścia: {code}",
+      "title": "Niestandardowe polecenie nie powiodło się"
+    },
     "do-not-disturb": {
       "disabled": "Nie przeszkadzać wyłączone",
       "disabled-desc": "Pokazywanie wszystkich powiadomień",
@@ -1901,8 +1926,9 @@
   },
   "tooltips": {
     "add-widget": "Dodaj widżet",
-    "bluetooth-auto-connect-off": "Automatyczne łączenie jest wyłączone — kliknij, aby włączyć",
-    "bluetooth-auto-connect-on": "Automatyczne łączenie włączone — kliknij, aby wyłączyć",
+    "auto-connect": "Przełącz automatyczne łączenie dla tego urządzenia",
+    "bluetooth-auto-connect-off": "Automatyczne łączenie wyłączone",
+    "bluetooth-auto-connect-on": "Automatyczne łączenie włączone",
     "bluetooth-devices": "Urządzenia Bluetooth",
     "brightness-at": "Jasność: {brightness}%",
     "click-to-start-recording": "Nagrywanie ekranu (start)",
