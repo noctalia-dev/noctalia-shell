@@ -129,18 +129,29 @@ Item {
     target: BarService
     function onWidgetsRevisionChanged() {
       Logger.d("Bar", "onWidgetsRevisionChanged, revision:", BarService.widgetsRevision, "screen:", root.screen?.name);
-      var widgets = Settings.getBarWidgetsForScreen(root.screen?.name);
-      if (widgets) {
-        root.syncWidgetModel(root.leftWidgetsModel, widgets.left);
-        root.syncWidgetModel(root.centerWidgetsModel, widgets.center);
-        root.syncWidgetModel(root.rightWidgetsModel, widgets.right);
-      }
+      Qt.callLater(root._syncFromRevision);
     }
   }
 
-  // Initialize models
+  function _syncFromRevision() {
+    var widgets = Settings.getBarWidgetsForScreen(screen?.name);
+    if (widgets) {
+      syncWidgetModel(leftWidgetsModel, widgets.left);
+      syncWidgetModel(centerWidgetsModel, widgets.center);
+      syncWidgetModel(rightWidgetsModel, widgets.right);
+    }
+  }
+
+  // Initialize models — deferred to next event-loop tick via Qt.callLater to avoid
+  // re-entrant incubation: Component.onCompleted fires during QQmlObjectCreator::finalize,
+  // and ListModel.append synchronously creates Repeater delegates whose own finalization
+  // can corrupt the V4 heap (SIGSEGV in QV4::Object::insertMember).
   Component.onCompleted: {
     Logger.d("Bar", "Bar Component.onCompleted for screen:", screen?.name);
+    Qt.callLater(root._initModels);
+  }
+
+  function _initModels() {
     var widgets = Settings.getBarWidgetsForScreen(screen?.name);
     if (widgets) {
       syncWidgetModel(leftWidgetsModel, widgets.left);
