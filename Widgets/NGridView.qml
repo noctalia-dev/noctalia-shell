@@ -30,6 +30,9 @@ Item {
   property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
 
+  // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
+  property bool showScrollbarWhenScrollable: Settings.data.ui.scrollbarAlwaysVisible
+
   // Available width for content (excludes scrollbar space when reserveScrollbarSpace is true)
   // Note: Always reserves space when enabled to avoid binding loops with cellWidth calculations
   readonly property real availableWidth: width - (reserveScrollbarSpace ? handleWidth + Style.marginXS : 0)
@@ -311,7 +314,7 @@ Item {
         implicitHeight: 100
         radius: root.handleRadius
         color: parent.pressed ? root.handlePressedColor : parent.hovered ? root.handleHoverColor : root.handleColor
-        opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollBarActive ? (parent.active ? 1.0 : 0.0) : 0.0
+        opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollBarActive ? ((root.showScrollbarWhenScrollable || parent.active) ? 1.0 : 0.0) : 0.0
 
         Behavior on opacity {
           NumberAnimation {
@@ -330,7 +333,7 @@ Item {
         implicitWidth: root.handleWidth
         implicitHeight: 100
         color: root.trackColor
-        opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollBarActive ? (parent.active ? 0.3 : 0.0) : 0.0
+        opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollBarActive ? ((root.showScrollbarWhenScrollable || parent.active) ? 0.3 : 0.0) : 0.0
         radius: root.handleRadius / 2
 
         Behavior on opacity {

@@ -290,43 +290,33 @@ ColumnLayout {
 
   ColumnLayout {
     visible: Settings.data.bar.barType === "floating"
-    spacing: Style.marginS
+    spacing: Style.marginL
     Layout.fillWidth: true
 
-    NLabel {
-      label: I18n.tr("panels.bar.appearance-margins-label")
-      description: I18n.tr("panels.bar.appearance-margins-description")
+    NDivider {
+      Layout.fillWidth: true
     }
 
-    RowLayout {
-      Layout.fillWidth: true
-      spacing: Style.marginL
+    NSpinBox {
+      label: I18n.tr("panels.bar.appearance-margins-vertical")
+      description: I18n.tr("panels.bar.appearance-margins-description")
+      from: 0
+      to: 500
+      suffix: "px"
+      value: Settings.data.bar.marginVertical
+      defaultValue: Settings.getDefaultValue("bar.marginVertical")
+      onValueChanged: Settings.data.bar.marginVertical = value
+    }
 
-      NValueSlider {
-        Layout.fillWidth: true
-        label: I18n.tr("panels.bar.appearance-margins-vertical")
-        from: 0
-        to: 18
-        stepSize: 1
-        showReset: true
-        value: Settings.data.bar.marginVertical
-        defaultValue: Settings.getDefaultValue("bar.marginVertical")
-        onMoved: value => Settings.data.bar.marginVertical = value
-        text: Settings.data.bar.marginVertical + "px"
-      }
-
-      NValueSlider {
-        Layout.fillWidth: true
-        label: I18n.tr("panels.bar.appearance-margins-horizontal")
-        from: 0
-        to: 18
-        stepSize: 1
-        showReset: true
-        value: Settings.data.bar.marginHorizontal
-        defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
-        onMoved: value => Settings.data.bar.marginHorizontal = value
-        text: Settings.data.bar.marginHorizontal + "px"
-      }
+    NSpinBox {
+      label: I18n.tr("panels.bar.appearance-margins-horizontal")
+      description: I18n.tr("panels.bar.appearance-margins-description")
+      from: 0
+      to: 500
+      suffix: "px"
+      value: Settings.data.bar.marginHorizontal
+      defaultValue: Settings.getDefaultValue("bar.marginHorizontal")
+      onValueChanged: Settings.data.bar.marginHorizontal = value
     }
   }
 

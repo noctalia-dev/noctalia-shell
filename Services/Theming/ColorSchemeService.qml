@@ -193,7 +193,7 @@ Singleton {
         Logger.i("ColorScheme", "Applying color scheme:", getBasename(path));
 
         // Generate templates for predefined color schemes
-        if (hasEnabledTemplates()) {
+        if (hasEnabledTemplates() || Settings.data.templates.enableUserTheming) {
           AppThemeService.generateFromPredefinedScheme(data);
         }
       } catch (e) {
