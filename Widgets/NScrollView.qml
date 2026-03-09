@@ -24,7 +24,7 @@ ScrollView {
   property bool reserveScrollbarSpace: true
   property real userRightPadding: 0
   // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
-  property bool showScrollbarWhenScrollable: false
+  property bool showScrollbarWhenScrollable: Settings.data.ui.scrollbarAlwaysVisible
 
   // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
   property real wheelScrollMultiplier: 2.0

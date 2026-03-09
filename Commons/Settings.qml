@@ -327,6 +327,7 @@ Singleton {
       property real fontDefaultScale: 1.0
       property real fontFixedScale: 1.0
       property bool tooltipsEnabled: true
+      property bool scrollbarAlwaysVisible: true
       property bool boxBorderEnabled: false
       property real panelBackgroundOpacity: 0.93
       property bool panelsAttachedToBar: true

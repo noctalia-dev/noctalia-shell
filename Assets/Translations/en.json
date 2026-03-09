@@ -1671,6 +1671,8 @@
       "panels-overlay-label": "Keep panels & bar on top",
       "scaling-description": "Changes the size of the general user interface, excluding the bar.",
       "scaling-label": "Interface scaling",
+      "scrollbar-always-visible-description": "Keep scrollbars visible whenever content is scrollable, instead of only showing them on hover.",
+      "scrollbar-always-visible-label": "Always show scrollbars",
       "settings-panel-header": "Settings panel",
       "settings-panel-mode-description": "Choose settings layout (may require reopening).",
       "settings-panel-mode-label": "Settings panel mode",

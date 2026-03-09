@@ -1945,6 +1945,15 @@
     "subTabLabel": "common.appearance"
   },
   {
+    "labelKey": "panels.user-interface.scrollbar-always-visible-label",
+    "descriptionKey": "panels.user-interface.scrollbar-always-visible-description",
+    "widget": "NToggle",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
     "labelKey": "panels.user-interface.shadows-label",
     "descriptionKey": "panels.user-interface.shadows-description",
     "widget": "NToggle",
