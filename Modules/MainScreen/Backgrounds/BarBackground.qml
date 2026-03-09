@@ -77,13 +77,18 @@ ShapePath {
   readonly property bool shouldFlatten: bar ? ShapeCornerHelper.shouldFlatten(barWidth, barHeight, radius) : false
   readonly property real effectiveRadius: shouldFlatten ? (bar ? ShapeCornerHelper.getFlattenedRadius(Math.min(barWidth, barHeight), radius) : 0) : radius
 
+  // Minimum safe arc radius — prevents zero-displacement zero-radius PathArcs
+  // that crash qTriangulate in CurveRenderer. 0.01px is sub-pixel and invisible.
+  readonly property real _minR: 0.01
+
   // Helper function for getting corner radius based on state
   function getCornerRadius(cornerState) {
-    // State -1 = no radius (flat corner)
+    // State -1 = flat corner — use minimum safe radius instead of 0
+    // to prevent degenerate PathArc (zero displacement + zero radius)
     if (cornerState === -1)
-      return 0;
-    // All other states use effectiveRadius
-    return effectiveRadius;
+      return _minR;
+    // All other states use effectiveRadius (clamped to safe minimum)
+    return Math.max(_minR, effectiveRadius);
   }
 
   // Per-corner multipliers and radii based on bar's corner states (handle null bar)
@@ -107,13 +112,14 @@ ShapePath {
   // Mirrors PanelBackground.isRenderable — prevents CurveRenderer crash on zero-area paths.
   readonly property bool isRenderable: bar !== null && shouldShow && (isFramed ? (screenWidth > 0 && screenHeight > 0) : (barWidth > 0 && barHeight > 0))
 
-  // Extend bar background beyond screen edges where both adjacent corners are flat,
-  // to prevent CurveRenderer antialiasing artifacts on screen-flush edges
+  // Edge overshoot: extend bar background beyond screen edges where both adjacent
+  // corners are flat (state -1) to prevent CurveRenderer antialiasing artifacts.
+  // Uses corner state checks instead of radius === 0 since flat corners now have _minR.
   readonly property real screenEdgeOvershoot: 2
-  readonly property real topEdgeOvs: (!isFramed && shouldShow && tlRadius === 0 && trRadius === 0 && barMappedPos.y <= 0) ? -screenEdgeOvershoot : 0
-  readonly property real bottomEdgeOvs: (!isFramed && shouldShow && blRadius === 0 && brRadius === 0 && (barMappedPos.y + barHeight) >= screenHeight) ? screenEdgeOvershoot : 0
-  readonly property real leftEdgeOvs: (!isFramed && shouldShow && tlRadius === 0 && blRadius === 0 && barMappedPos.x <= 0) ? -screenEdgeOvershoot : 0
-  readonly property real rightEdgeOvs: (!isFramed && shouldShow && trRadius === 0 && brRadius === 0 && (barMappedPos.x + barWidth) >= screenWidth) ? screenEdgeOvershoot : 0
+  readonly property real topEdgeOvs: (!isFramed && shouldShow && bar && bar.topLeftCornerState === -1 && bar.topRightCornerState === -1 && barMappedPos.y <= 0) ? -screenEdgeOvershoot : 0
+  readonly property real bottomEdgeOvs: (!isFramed && shouldShow && bar && bar.bottomLeftCornerState === -1 && bar.bottomRightCornerState === -1 && (barMappedPos.y + barHeight) >= screenHeight) ? screenEdgeOvershoot : 0
+  readonly property real leftEdgeOvs: (!isFramed && shouldShow && bar && bar.topLeftCornerState === -1 && bar.bottomLeftCornerState === -1 && barMappedPos.x <= 0) ? -screenEdgeOvershoot : 0
+  readonly property real rightEdgeOvs: (!isFramed && shouldShow && bar && bar.topRightCornerState === -1 && bar.bottomRightCornerState === -1 && (barMappedPos.x + barWidth) >= screenWidth) ? screenEdgeOvershoot : 0
 
   // Auto-hide opacity factor for background fade
   property real opacityFactor: (bar && bar.isHidden) ? 0 : 1
