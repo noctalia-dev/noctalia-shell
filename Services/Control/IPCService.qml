@@ -604,6 +604,10 @@ Singleton {
       WallpaperService.changeWallpaper(path, screen);
     }
 
+    function refresh() {
+      WallpaperService.refreshWallpapersList();
+    }
+
     function toggleAutomation() {
       Settings.data.wallpaper.automationEnabled = !Settings.data.wallpaper.automationEnabled;
     }

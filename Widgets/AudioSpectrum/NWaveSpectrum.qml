@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Shapes
+import Quickshell
 import qs.Commons
 
 Item {
@@ -14,115 +14,57 @@ Item {
   property bool showMinimumSignal: false
   property real minimumSignalValue: 0.05 // Default to 5% of height
 
-  // Safe degenerate-path fallback: valid off-screen line that renders nothing visible.
-  // Bare move-to paths like "M 0 0" can crash Qt's CurveRenderer triangulation.
-  readonly property string _safeFallbackPath: "M -1 -1 L -1 0"
+  readonly property int valuesCount: (values && Array.isArray(values)) ? values.length : 0
+  readonly property bool hasData: valuesCount >= 2
 
-  // Reactive path that updates when values change
-  readonly property string svgPath: {
-    if (!values || !Array.isArray(values) || values.length === 0) {
-      return _safeFallbackPath;
-    }
+  // Data texture: one pixel per value, R channel = amplitude
+  Item {
+    id: dataRow
+    width: Math.max(root.valuesCount, 4)
+    height: 1
 
-    if (!isFinite(width) || !isFinite(height) || width <= 0 || height <= 0)
-      return _safeFallbackPath;
+    Repeater {
+      model: dataRow.width
 
-    // Apply minimum signal if enabled
-    const processedValues = showMinimumSignal ? values.map(v => v === 0 ? minimumSignalValue : v) : values;
-
-    // Create the mirrored values
-    const partToMirror = processedValues.slice(1).reverse();
-    const mirroredValues = partToMirror.concat(processedValues);
-
-    if (mirroredValues.length < 2) {
-      return _safeFallbackPath;
-    }
-
-    const count = mirroredValues.length;
-
-    for (let i = 0; i < count; i++) {
-      if (!isFinite(mirroredValues[i]))
-        return _safeFallbackPath;
-    }
-
-    if (vertical) {
-      const stepY = height / (count - 1);
-      const centerX = width / 2;
-      const amplitude = width / 2;
-
-      if (!isFinite(stepY) || !isFinite(centerX) || !isFinite(amplitude))
-        return _safeFallbackPath;
-
-      let xOffset = mirroredValues[0] * amplitude;
-      if (!isFinite(xOffset))
-        return _safeFallbackPath;
-      let path = `M ${centerX - xOffset} 0`;
-
-      for (let i = 1; i < count; i++) {
-        const y = i * stepY;
-        xOffset = mirroredValues[i] * amplitude;
-        if (!isFinite(y) || !isFinite(xOffset))
-          return _safeFallbackPath;
-        path += ` L ${centerX - xOffset} ${y}`;
+      Rectangle {
+        required property int index
+        x: index
+        width: 1
+        height: 1
+        color: {
+          if (index >= root.valuesCount)
+            return Qt.rgba(0, 0, 0, 1);
+          var v = root.values[index];
+          if (v === undefined || v === null || !isFinite(v))
+            v = 0;
+          if (root.showMinimumSignal && v === 0)
+            v = root.minimumSignalValue;
+          return Qt.rgba(Math.max(0, Math.min(1, v)), 0, 0, 1);
+        }
       }
-
-      for (let i = count - 1; i >= 0; i--) {
-        const y = i * stepY;
-        xOffset = mirroredValues[i] * amplitude;
-        if (!isFinite(y) || !isFinite(xOffset))
-          return _safeFallbackPath;
-        path += ` L ${centerX + xOffset} ${y}`;
-      }
-
-      return path + " Z";
-    } else {
-      const stepX = width / (count - 1);
-      const centerY = height / 2;
-      const amplitude = height / 2;
-
-      if (!isFinite(stepX) || !isFinite(centerY) || !isFinite(amplitude))
-        return _safeFallbackPath;
-
-      let yOffset = mirroredValues[0] * amplitude;
-      if (!isFinite(yOffset))
-        return _safeFallbackPath;
-      let path = `M 0 ${centerY - yOffset}`;
-
-      for (let i = 1; i < count; i++) {
-        const x = i * stepX;
-        yOffset = mirroredValues[i] * amplitude;
-        if (!isFinite(x) || !isFinite(yOffset))
-          return _safeFallbackPath;
-        path += ` L ${x} ${centerY - yOffset}`;
-      }
-
-      for (let i = count - 1; i >= 0; i--) {
-        const x = i * stepX;
-        yOffset = mirroredValues[i] * amplitude;
-        if (!isFinite(x) || !isFinite(yOffset))
-          return _safeFallbackPath;
-        path += ` L ${x} ${centerY + yOffset}`;
-      }
-
-      return path + " Z";
     }
   }
 
-  Shape {
-    id: shape
+  ShaderEffectSource {
+    id: dataTex
+    sourceItem: dataRow
+    textureSize: Qt.size(dataRow.width, 1)
+    live: true
+    smooth: false
+    hideSource: true
+  }
+
+  ShaderEffect {
     anchors.fill: parent
-    preferredRendererType: Shape.CurveRenderer
-    containsMode: Shape.FillContains
+    visible: root.hasData && root.width > 0 && root.height > 0
 
-    ShapePath {
-      id: shapePath
-      fillColor: root.fillColor
-      strokeColor: root.strokeWidth > 0 ? root.strokeColor : "transparent"
-      strokeWidth: root.strokeWidth
+    property variant dataSource: dataTex
+    property color fillColor: root.fillColor
+    property real count: root.valuesCount
+    property real texWidth: dataRow.width
+    property real vertical: root.vertical ? 1.0 : 0.0
 
-      PathSvg {
-        path: root.svgPath
-      }
-    }
+    fragmentShader: Qt.resolvedUrl(Quickshell.shellDir + "/Shaders/qsb/wave_spectrum.frag.qsb")
+    blending: true
   }
 }

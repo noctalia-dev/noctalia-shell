@@ -529,7 +529,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: (modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid) ? Qt.alpha(Color.mPrimary, 0.15) : Color.mSurface
+      color: (modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Settings.data.ui.panelBackgroundOpacity, 0.75)) : Color.mSurface
 
       ColumnLayout {
         id: deviceColumn

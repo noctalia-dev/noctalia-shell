@@ -134,7 +134,7 @@ Rectangle {
   readonly property int gridContentWidth: listPanelWidth - (2 * Style.marginXS)
   readonly property int gridCellSize: Math.floor((gridContentWidth - ((targetGridColumns - 1) * Style.marginS)) / targetGridColumns)
 
-  property int gridColumns: 5
+  readonly property int gridColumns: targetGridColumns
 
   // Check if current provider allows wrap navigation (default true)
   readonly property bool allowWrapNavigation: {
@@ -1039,7 +1039,7 @@ Rectangle {
                     baseSize: Style.baseWidgetSize * 0.75
                     tooltipText: modelData.tooltip
                     z: 1
-                    allowScroll: true
+                    handleWheel: true
                     onClicked: {
                       if (modelData.action) {
                         modelData.action();
@@ -1171,10 +1171,6 @@ Rectangle {
 
         // Completely disable GridView key handling
         Keys.enabled: false
-
-        Component.onCompleted: root.gridColumns = root.targetGridColumns
-        onWidthChanged: root.gridColumns = root.targetGridColumns
-        onModelChanged: {}
 
         // Handle scrolling to show selected item when it changes
         Connections {
@@ -1418,7 +1414,7 @@ Rectangle {
                   baseSize: Style.baseWidgetSize * 0.75
                   tooltipText: modelData.tooltip
                   z: 11
-                  allowScroll: true
+                  handleWheel: true
                   onClicked: {
                     if (modelData.action) {
                       modelData.action();

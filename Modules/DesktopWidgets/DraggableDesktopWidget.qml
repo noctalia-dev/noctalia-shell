@@ -22,8 +22,9 @@ Item {
   readonly property bool isScaling: internal.isScaling
 
   // All Desktop widgets have these settings, but fallback just in case
-  property bool showBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : (widgetMetadata?.showBackground ?? true)
-  property bool roundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : (widgetMetadata?.roundedCorners ?? true)
+  readonly property var _metadata: widgetData?.id ? DesktopWidgetRegistry.widgetMetadata[widgetData.id] : null
+  property bool showBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : (_metadata?.showBackground ?? true)
+  property bool roundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : (_metadata?.roundedCorners ?? true)
 
   property real widgetScale: 1.0
   property real minScale: 0.5

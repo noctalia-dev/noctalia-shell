@@ -163,11 +163,41 @@ Item {
     // Reset to default - fixes panel being stuck in one position
     root.useButtonPosition = false;
 
+    // Calculate the bar window's position on screen based on bar settings
+    // The BarContentWindow uses anchors + margins, so we need to compute its origin
+    var barWindowX = 0;
+    var barWindowY = 0;
+    var screenWidth = root.screen?.width || 0;
+    var screenHeight = root.screen?.height || 0;
+
+    if (root.barPosition === "right") {
+      barWindowX = screenWidth - root.barMarginH - root.barHeight;
+    } else if (root.barPosition === "left") {
+      barWindowX = root.barMarginH;
+    } else if (root.isFramed) {
+      barWindowX = root.frameThickness;
+    } else {
+      // Horizontal floating bars: BarContentWindow has margins.left = barMarginH
+      barWindowX = root.barMarginH;
+    }
+
+    if (root.barPosition === "bottom") {
+      barWindowY = screenHeight - root.barMarginV - root.barHeight;
+    } else if (root.barPosition === "top") {
+      barWindowY = root.barMarginV;
+    } else if (root.isFramed) {
+      barWindowY = root.frameThickness;
+    } else {
+      // Vertical floating bars: BarContentWindow has margins.top = barMarginV
+      barWindowY = root.barMarginV;
+    }
+
     if (!buttonItem && buttonName) {
       // Check if buttonName is actually a point object (click coordinates)
       if (typeof buttonName === "object" && buttonName.x !== undefined && buttonName.y !== undefined) {
         root.buttonItem = null;
-        root.buttonPosition = buttonName;
+        // Click coordinates are in BarContentWindow-local space, offset to screen space
+        root.buttonPosition = Qt.point(barWindowX + buttonName.x, barWindowY + buttonName.y);
         root.buttonWidth = 0;
         root.buttonHeight = 0;
         root.useButtonPosition = true;
@@ -181,33 +211,8 @@ Item {
     if (buttonItem && typeof buttonItem.mapToItem === "function") {
       try {
         root.buttonItem = buttonItem;
-        // Map button position within its window
+        // Map button position within its window (BarContentWindow-local coordinates)
         var buttonLocal = buttonItem.mapToItem(null, 0, 0);
-
-        // Calculate the bar window's position on screen based on bar settings
-        // The BarContentWindow uses anchors, so we need to compute its position
-        var barWindowX = 0;
-        var barWindowY = 0;
-        var screenWidth = root.screen?.width || 0;
-        var screenHeight = root.screen?.height || 0;
-
-        if (root.barPosition === "right") {
-          barWindowX = screenWidth - root.barMarginH - root.barHeight;
-        } else if (root.barPosition === "left") {
-          barWindowX = root.barMarginH;
-        } else if (root.isFramed) {
-          barWindowX = root.frameThickness;
-        }
-        // For top/bottom bars, barWindowX stays 0 (full width window) unless framed
-
-        if (root.barPosition === "bottom") {
-          barWindowY = screenHeight - root.barMarginV - root.barHeight;
-        } else if (root.barPosition === "top") {
-          barWindowY = root.barMarginV;
-        } else if (root.isFramed) {
-          barWindowY = root.frameThickness;
-        }
-        // For left/right bars, barWindowY stays 0 (full height window) unless framed
 
         root.buttonPosition = Qt.point(barWindowX + buttonLocal.x, barWindowY + buttonLocal.y);
         root.buttonWidth = buttonItem.width;
