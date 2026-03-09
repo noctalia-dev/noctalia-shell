@@ -84,6 +84,8 @@
       "tooltip-format-label": "Tooltip format",
       "use-custom-font-description": "Override the default font selection with a custom font for the clock.",
       "use-custom-font-label": "Use custom font",
+      "clock-color-as-capsule-description": "Use the color selected as the capsule color instead of the text color.",
+      "clock-color-as-capsule-label": "Use color for capsule",
       "use-monospaced-font-description": "When enabled, the clock will use the monospaced font.",
       "use-monospaced-font-label": "Use monospaced font",
       "vertical-bar-description": "Use a space to separate each part onto a new line.",

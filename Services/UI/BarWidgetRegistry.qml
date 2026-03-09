@@ -113,6 +113,7 @@ Singleton {
                                   },
                                   "Clock": {
                                     "clockColor": "none",
+                                    "clockColorAsCapsule": false,
                                     "useCustomFont": false,
                                     "customFont": "",
                                     "formatHorizontal": "HH:mm ddd, MMM dd",
