@@ -297,18 +297,9 @@
     "subTabLabel": "common.appearance"
   },
   {
-    "labelKey": "panels.bar.appearance-margins-label",
-    "descriptionKey": "panels.bar.appearance-margins-description",
-    "widget": "NLabel",
-    "tab": 4,
-    "tabLabel": "panels.bar.title",
-    "subTab": 0,
-    "subTabLabel": "common.appearance"
-  },
-  {
     "labelKey": "panels.bar.appearance-margins-vertical",
-    "descriptionKey": null,
-    "widget": "NValueSlider",
+    "descriptionKey": "panels.bar.appearance-margins-description",
+    "widget": "NSpinBox",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 0,
@@ -316,8 +307,8 @@
   },
   {
     "labelKey": "panels.bar.appearance-margins-horizontal",
-    "descriptionKey": null,
-    "widget": "NValueSlider",
+    "descriptionKey": "panels.bar.appearance-margins-description",
+    "widget": "NSpinBox",
     "tab": 4,
     "tabLabel": "panels.bar.title",
     "subTab": 0,
@@ -1947,6 +1938,15 @@
   {
     "labelKey": "panels.user-interface.box-border-label",
     "descriptionKey": "panels.user-interface.box-border-description",
+    "widget": "NToggle",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.user-interface.scrollbar-always-visible-label",
+    "descriptionKey": "panels.user-interface.scrollbar-always-visible-description",
     "widget": "NToggle",
     "tab": 1,
     "tabLabel": "panels.user-interface.title",

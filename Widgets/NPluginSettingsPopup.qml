@@ -14,7 +14,8 @@ Popup {
   property var screen: null
   readonly property real maxHeight: (screen ? screen.height : (parent ? parent.height : 800)) * 0.8
 
-  width: Math.max(settingsContent.implicitWidth + padding * 2, 600 * Style.uiScaleRatio)
+  property real _minWidth: 600 * Style.uiScaleRatio
+  width: _minWidth
   height: Math.min(settingsContent.implicitHeight + padding * 2, maxHeight)
   padding: Style.marginXL
 
@@ -143,6 +144,8 @@ Popup {
                                "pluginApi": currentPluginApi
                              });
 
+    var preferred = (settingsLoader.item && settingsLoader.item.preferredWidth !== undefined) ? settingsLoader.item.preferredWidth + padding * 2 : 0;
+    width = Math.max(preferred, _minWidth);
     open();
   }
 }
