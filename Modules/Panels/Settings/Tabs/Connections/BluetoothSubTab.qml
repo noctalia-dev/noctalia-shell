@@ -370,6 +370,10 @@ Item {
     NBox {
       id: device
 
+      HoverHandler {
+        id: itemHover
+      }
+
       readonly property bool canConnect: BluetoothService.canConnect(modelData)
       readonly property bool canDisconnect: BluetoothService.canDisconnect(modelData)
       readonly property bool canPair: BluetoothService.canPair(modelData)
@@ -471,7 +475,7 @@ Item {
             spacing: Style.marginS
 
             NIconButton {
-              visible: modelData.connected
+              visible: itemHover.hovered && modelData.connected
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
@@ -482,7 +486,7 @@ Item {
             }
 
             NIconButton {
-              visible: !root.showOnlyLists && (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
+              visible: itemHover.hovered && !root.showOnlyLists && (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
               icon: "trash"
               tooltipText: I18n.tr("common.unpair")
               baseSize: Style.baseWidgetSize * 0.8
@@ -491,7 +495,7 @@ Item {
 
             NButton {
               id: button
-              visible: (modelData.state !== BluetoothDeviceState.Connecting)
+              visible: itemHover.hovered && (modelData.state !== BluetoothDeviceState.Connecting)
               enabled: (canConnect || canDisconnect || (root.showOnlyLists ? false : canPair)) && !isBusy
               outlined: !button.hovered
               fontSize: Style.fontSizeS
@@ -552,6 +556,8 @@ Item {
             id: infoColumn
             anchors.fill: parent
             anchors.margins: Style.marginS
+            flow: root.detailsGrid ? GridLayout.TopToBottom : GridLayout.LeftToRight
+            rows: root.detailsGrid ? 3 : 6
             columns: root.detailsGrid ? 2 : 1
             columnSpacing: Style.marginM
             rowSpacing: Style.marginXS
@@ -561,8 +567,6 @@ Item {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
-              Layout.row: detailsGrid ? 0 : 0
-              Layout.column: 0
               NIcon {
                 icon: BluetoothService.getSignalIcon(modelData)
                 pointSize: Style.fontSizeXS
@@ -580,8 +584,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 0 : 1
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: {
@@ -605,8 +607,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 1 : 2
-              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "link"
@@ -624,8 +624,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 1 : 3
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "shield-check"
@@ -643,8 +641,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 2 : 4
-              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "hash"
@@ -662,8 +658,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 2 : 5
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               visible: Settings.data.network.bluetoothAutoConnect
 

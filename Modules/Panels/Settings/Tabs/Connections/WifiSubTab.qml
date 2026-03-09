@@ -510,6 +510,10 @@ Item {
     NBox {
       id: networkItem
 
+      HoverHandler {
+        id: itemHover
+      }
+
       readonly property bool isBusy: NetworkService.connectingTo === modelData.ssid || NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid
       readonly property bool isExpanded: root.infoSsid === modelData.ssid
       readonly property bool isEnterprise: NetworkService.isEnterprise(modelData.security)
@@ -606,7 +610,15 @@ Item {
                   return NetworkService.isSecured(modelData.security) ? modelData.security : "Open";
                 }
                 pointSize: Style.fontSizeXXS
-                color: networkItem.getContentColor(Color.mOnSurfaceVariant)
+                color: {
+                  if (modelData.connected) {
+                    return (NetworkService.networkConnectivity === "full") ? Color.mPrimary : Color.mError;
+                  }
+                  if (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) {
+                    return Color.mError;
+                  }
+                  return networkItem.getContentColor(Color.mOnSurfaceVariant);
+                }
               }
 
               // Network speed indicators (visible when connected and speed > 0)
@@ -614,6 +626,7 @@ Item {
                 visible: modelData.connected && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
                 spacing: 2
                 Layout.leftMargin: Style.marginXS
+                Layout.fillWidth: false
 
                 NIcon {
                   visible: SystemStatService.rxSpeed > 0
@@ -627,6 +640,7 @@ Item {
                   text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
                   pointSize: Style.fontSizeXXS
                   color: networkItem.getContentColor(Color.mOnSurfaceVariant)
+                  elide: Text.ElideNone
                 }
 
                 Item {
@@ -647,6 +661,7 @@ Item {
                   text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
                   pointSize: Style.fontSizeXXS
                   color: networkItem.getContentColor(Color.mOnSurfaceVariant)
+                  elide: Text.ElideNone
                 }
               }
             }
@@ -667,7 +682,7 @@ Item {
             }
 
             NIconButton {
-              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
@@ -682,7 +697,7 @@ Item {
             }
 
             NIconButton {
-              visible: !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
+              visible: itemHover.hovered && !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.8
@@ -691,7 +706,7 @@ Item {
 
             NButton {
               id: button
-              visible: !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid
+              visible: itemHover.hovered && !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid
               enabled: !NetworkService.connecting && !networkItem.isBusy
               outlined: !button.hovered
               fontSize: Style.fontSizeS
@@ -708,7 +723,7 @@ Item {
 
             NButton {
               id: disconnectButton
-              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               text: I18n.tr("common.disconnect")
               outlined: !disconnectButton.hovered
               fontSize: Style.fontSizeS
@@ -755,6 +770,8 @@ Item {
             id: infoColumn
             anchors.fill: parent
             anchors.margins: Style.marginS
+            flow: root.detailsGrid ? GridLayout.TopToBottom : GridLayout.LeftToRight
+            rows: root.detailsGrid ? 3 : 6
             columns: root.detailsGrid ? 2 : 1
             columnSpacing: Style.marginM
             rowSpacing: Style.marginXS
@@ -771,8 +788,6 @@ Item {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
-              Layout.row: 0
-              Layout.column: 0
               NIcon {
                 icon: "network"
                 pointSize: Style.fontSizeXS
@@ -815,8 +830,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 1 : 1
-              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "router"
@@ -839,8 +852,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 2 : 2
-              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "gauge"
@@ -864,8 +875,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 0 : 3
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "network"
@@ -883,7 +892,7 @@ Item {
                 }
               }
               NText {
-                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "-") : (NetworkService.activeWifiDetails.ipv6 || "-")
+                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "-") : ((NetworkService.activeWifiDetails.ipv6 || []).join(", ") || "-")
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
@@ -896,7 +905,7 @@ Item {
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
                   onExited: TooltipService.hide()
                   onClicked: {
-                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "") : (NetworkService.activeWifiDetails.ipv6 || "");
+                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "") : ((NetworkService.activeWifiDetails.ipv6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
                       ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
@@ -909,8 +918,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 1 : 4
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "world"
@@ -928,7 +935,7 @@ Item {
                 }
               }
               NText {
-                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.dns4 || "-") : (NetworkService.activeWifiDetails.dns6 || "-")
+                text: root.ipVersion === 4 ? ((NetworkService.activeWifiDetails.dns4 || []).join(", ") || "-") : ((NetworkService.activeWifiDetails.dns6 || []).join(", ") || "-")
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
@@ -941,7 +948,7 @@ Item {
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
                   onExited: TooltipService.hide()
                   onClicked: {
-                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.dns4 || "") : (NetworkService.activeWifiDetails.dns6 || "");
+                    const value = root.ipVersion === 4 ? ((NetworkService.activeWifiDetails.dns4 || []).join(", ") || "") : ((NetworkService.activeWifiDetails.dns6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
                       ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
@@ -954,8 +961,6 @@ Item {
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.row: detailsGrid ? 2 : 5
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "router"
@@ -973,7 +978,7 @@ Item {
                 }
               }
               NText {
-                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "-") : (NetworkService.activeWifiDetails.gateway6 || "-")
+                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "-") : ((NetworkService.activeWifiDetails.gateway6 || []).join(", ") || "-")
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
@@ -986,7 +991,7 @@ Item {
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
                   onExited: TooltipService.hide()
                   onClicked: {
-                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "") : (NetworkService.activeWifiDetails.gateway6 || "");
+                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "") : ((NetworkService.activeWifiDetails.gateway6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
                       ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");

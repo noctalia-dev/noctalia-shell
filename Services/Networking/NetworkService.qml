@@ -41,14 +41,38 @@ Singleton {
 
   // Supported Wi-Fi security types
   property var supportedSecurityTypes: [
-    { key: "open", name: I18n.tr("wifi.panel.security-open") },
-    { key: "wep", name: I18n.tr("wifi.panel.security-wep") },
-    { key: "wpa-psk", name: I18n.tr("wifi.panel.security-wpa") },
-    { key: "wpa2-psk", name: I18n.tr("wifi.panel.security-wpa23") },
-    { key: "sae", name: I18n.tr("wifi.panel.security-wpa3") },
-    { key: "wpa-eap", name: I18n.tr("wifi.panel.security-wpa-ent") },
-    { key: "wpa2-eap", name: I18n.tr("wifi.panel.security-wpa2-ent") },
-    { key: "wpa3-eap", name: I18n.tr("wifi.panel.security-wpa3-ent") }
+    {
+      key: "open",
+      name: I18n.tr("wifi.panel.security-open")
+    },
+    {
+      key: "wep",
+      name: I18n.tr("wifi.panel.security-wep")
+    },
+    {
+      key: "wpa-psk",
+      name: I18n.tr("wifi.panel.security-wpa")
+    },
+    {
+      key: "wpa2-psk",
+      name: I18n.tr("wifi.panel.security-wpa23")
+    },
+    {
+      key: "sae",
+      name: I18n.tr("wifi.panel.security-wpa3")
+    },
+    {
+      key: "wpa-eap",
+      name: I18n.tr("wifi.panel.security-wpa-ent")
+    },
+    {
+      key: "wpa2-eap",
+      name: I18n.tr("wifi.panel.security-wpa2-ent")
+    },
+    {
+      key: "wpa3-eap",
+      name: I18n.tr("wifi.panel.security-wpa3-ent")
+    }
   ]
 
   // Active Wi‑Fi connection details (for info panel)
@@ -476,14 +500,45 @@ Singleton {
 
   function parseIpDetails(text) {
     const details = {
+      connectionName: "",
       ipv4: "",
       gateway4: "",
-      ipv6: "",
-      gateway6: "",
       dns4: [],
+      ipv6: [],
+      gateway6: [],
       dns6: [],
-      dns: "",
-      connectionName: ""
+      hwAddr: ""
+    };
+    const addUnique = (arr, val) => {
+      if (val && arr.indexOf(val) === -1) {
+        arr.push(val);
+      }
+    };
+    const handlers = {
+      "GENERAL.CONNECTION": v => {
+        details.connectionName = v;
+      },
+      "GENERAL.HWADDR": v => {
+        details.hwAddr = v;
+      },
+      "IP4.ADDRESS": v => {
+        details.ipv4 = v.split("/")[0];
+      },
+      "IP4.GATEWAY": v => {
+        details.gateway4 = v;
+      },
+      "IP6.ADDRESS": v => {
+        addUnique(details.ipv6, v.split("/")[0]);
+      },
+      "IP6.GATEWAY": v => {
+        addUnique(details.gateway6, v);
+      },
+      "IP4.DNS": v => {
+        addUnique(details.dns4, v);
+      },
+      "IP6.DNS": v => {
+        addUnique(details.dns6, v);
+      }
     };
     const lines = text.split("\n");
     for (let i = 0; i < lines.length; i++) {
@@ -495,31 +550,12 @@ Singleton {
       if (idx === -1) {
         continue;
       }
-      const key = line.substring(0, idx);
-      const val = line.substring(idx + 1);
-      if (key === "GENERAL.CONNECTION") {
-        details.connectionName = val;
-      } else if (key.indexOf("IP4.ADDRESS") === 0) {
-        details.ipv4 = val.split("/")[0];
-      } else if (key === "IP4.GATEWAY") {
-        details.gateway4 = val;
-      } else if (key.indexOf("IP6.ADDRESS") === 0) {
-        details.ipv6 = val.split("/")[0];
-      } else if (key === "IP6.GATEWAY") {
-        details.gateway6 = val;
-      } else if (key.indexOf("IP4.DNS") === 0) {
-        if (val && details.dns4.indexOf(val) === -1) {
-          details.dns4.push(val);
-        }
-      } else if (key.indexOf("IP6.DNS") === 0) {
-        if (val && details.dns6.indexOf(val) === -1) {
-          details.dns6.push(val);
-        }
+      const key = line.substring(0, idx).replace(/\[\d+\]$/, "");
+      const val = line.substring(idx + 1).trim();
+      if (handlers[key]) {
+        handlers[key](val);
       }
     }
-    details.dns4 = details.dns4.join(", ");
-    details.dns6 = details.dns6.join(", ");
-    details.dns = [].concat(details.dns4 ? [details.dns4] : [], details.dns6 ? [details.dns6] : []).join(", ");
     return details;
   }
 
@@ -527,7 +563,7 @@ Singleton {
   Process {
     id: ethernetStateProcess
     running: ProgramCheckerService.nmcliAvailable
-    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device"]
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -540,11 +576,13 @@ Singleton {
           if (parts.length >= 3 && parts[1] === "ethernet" && parts[2] !== "unmanaged") {
             var ifname = parts[0];
             var state = parts[2];
+            var conName = parts.slice(3).join(":") || "";
             var isConn = state === "connected";
             ethList.push({
                            ifname: ifname,
                            state: state,
-                           connected: isConn
+                           connected: isConn,
+                           connectionName: conName
                          });
             if (isConn && !connected) {
               connected = true;
@@ -592,7 +630,7 @@ Singleton {
   Process {
     id: ethernetDeviceListProcess
     running: false
-    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"]
+    command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device"]
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -605,6 +643,7 @@ Singleton {
             const dev = parts[0];
             const type = parts[1];
             const state = parts[2];
+            const conName = parts.slice(3).join(":") || "";
             if (state === "unmanaged") {
               continue;
             }
@@ -615,7 +654,8 @@ Singleton {
               ethList.push({
                              ifname: dev,
                              state: state,
-                             connected: state === "connected"
+                             connected: state === "connected",
+                             connectionName: conName
                            });
             }
           }
@@ -658,7 +698,7 @@ Singleton {
     property string ifname: ""
     running: false
     // Speed is resolved via ethtool fallback below to avoid stderr warnings
-    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS", "device", "show", ifname]
+    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,GENERAL.HWADDR,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS", "device", "show", ifname]
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -675,7 +715,7 @@ Singleton {
         details.gateway6 = parsed.gateway6;
         details.dns4 = parsed.dns4;
         details.dns6 = parsed.dns6;
-        details.dns = parsed.dns;
+        details.hwAddr = parsed.hwAddr;
 
         root.activeEthernetDetails = details;
         // If speed missing, try sysfs first, then fallback to ethtool
@@ -825,20 +865,20 @@ Singleton {
     id: wifiDeviceShowProcess
     property string ifname: ""
     running: false
-    command: ["nmcli", "-t", "-f", "IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS", "device", "show", ifname]
+    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS", "device", "show", ifname]
 
     stdout: StdioCollector {
       onStreamFinished: {
         const details = root.activeWifiDetails || ({});
         const parsed = root.parseIpDetails(text);
 
+        details.connectionName = parsed.connectionName;
         details.ipv4 = parsed.ipv4;
         details.gateway4 = parsed.gateway4;
         details.ipv6 = parsed.ipv6;
         details.gateway6 = parsed.gateway6;
         details.dns4 = parsed.dns4;
         details.dns6 = parsed.dns6;
-        details.dns = parsed.dns;
         root.activeWifiDetails = details;
 
         // Try to get link rate (best effort)

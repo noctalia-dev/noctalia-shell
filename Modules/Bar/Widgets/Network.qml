@@ -105,20 +105,24 @@ Item {
       }
     }
     text: {
-      try {
-        if (NetworkService.ethernetConnected) {
-          return "";
+      let parts = [];
+      if (NetworkService.ethernetConnected) {
+        const d = NetworkService.activeEthernetDetails;
+        const name = d.connectionName || NetworkService.ethernetInterfaces[0]?.connectionName || "";
+        const speed = d.speed || "";
+        if (name) {
+          parts.push(speed ? (name + " - " + speed) : name);
         }
-        for (const net in NetworkService.networks) {
-          if (NetworkService.networks[net].connected) {
-            return net;
-          }
-        }
-        return "";
-      } catch (error) {
-        Logger.e("Wi-Fi", "Error getting ssid:", error);
-        return "error";
       }
+      if (NetworkService.activeWifiIf) {
+        const d = NetworkService.activeWifiDetails;
+        const name = d.connectionName || "";
+        const speed = d.rateShort || d.rate || "";
+        if (name) {
+          parts.push(speed ? (name + " - " + speed) : name);
+        }
+      }
+      return parts.join(isBarVertical ? "\n" : " | ");
     }
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow"
@@ -135,30 +139,16 @@ Item {
         return "";
       }
       try {
-        if (NetworkService.ethernetConnected) {
-          const d = NetworkService.activeEthernetDetails || ({});
-          let base = "";
-          if (d.ifname && d.ifname.length > 0)
-            base = d.ifname;
-          else if (d.connectionName && d.connectionName.length > 0)
-            base = d.connectionName;
-          else if (NetworkService.activeEthernetIf && NetworkService.activeEthernetIf.length > 0)
-            base = NetworkService.activeEthernetIf;
-          else
-            base = I18n.tr("common.ethernet");
-          const speed = (d.speed && d.speed.length > 0) ? d.speed : "";
-          return speed ? (base + " — " + speed) : base;
+        const name = pill.text;
+        if (!name) {
+          return I18n.tr("common.wifi");
         }
-        // Wi‑Fi tooltip: SSID — link speed (if available)
-        if (pill.text !== "") {
-          const w = NetworkService.activeWifiDetails || ({});
-          const rate = (w.rateShort && w.rateShort.length > 0) ? w.rateShort : (w.rate || "");
-          return rate && rate.length > 0 ? (pill.text + " — " + rate) : pill.text;
-        }
+        const d = NetworkService.ethernetConnected ? NetworkService.activeEthernetDetails : NetworkService.activeWifiDetails;
+        const speed = (d.speed && d.speed.length > 0) ? d.speed : ((d.rateShort && d.rateShort.length > 0) ? d.rateShort : (d.rate || ""));
+        return speed ? (name + " — " + speed) : name;
       } catch (e) {
-        // noop
+        return I18n.tr("common.wifi");
       }
-      return I18n.tr("common.wifi");
     }
   }
 }
