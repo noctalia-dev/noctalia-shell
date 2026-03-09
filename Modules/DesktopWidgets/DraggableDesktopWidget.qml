@@ -116,7 +116,7 @@ Item {
   }
 
   function snapScaleToGrid(scale) {
-    if (!Settings.data.desktopWidgets.gridSnap) {
+    if (!Settings.data.desktopWidgets.gridSnap || !Settings.data.desktopWidgets.gridSnapScale) {
       return scale;
     }
 
