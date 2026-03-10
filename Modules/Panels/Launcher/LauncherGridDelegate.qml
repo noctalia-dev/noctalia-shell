@@ -30,7 +30,7 @@ Item {
     id: gridEntry
     anchors.fill: parent
     anchors.margins: Style.marginXXS
-    color: gridEntryContainer.isSelected ? Color.mHover : Color.mSurface
+    color: gridEntryContainer.isSelected ? Color.mHover : Color.mSurfaceVariant
     forceOpaque: gridEntryContainer.isSelected
 
     Behavior on color {
