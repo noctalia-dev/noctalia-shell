@@ -43,6 +43,7 @@ Slider {
       anchors.fill: parent
       visible: bgContainer.width > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
+      asynchronous: true
 
       ShapePath {
         id: bgPath
@@ -122,6 +123,7 @@ Slider {
       height: bgContainer.height
       visible: bgContainer.fillWidth > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
+      asynchronous: true
       clip: true
 
       ShapePath {

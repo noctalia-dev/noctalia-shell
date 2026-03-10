@@ -17,7 +17,7 @@ Item {
   property bool handleWheel: false
   property bool hovering: false
 
-  property color colorBg: Color.mSurfaceVariant
+  property color colorBg: Color.smartAlpha(Color.mSurfaceVariant)
   property color colorFg: Color.mPrimary
   property color colorBgHover: Color.mHover
   property color colorFgHover: Color.mOnHover

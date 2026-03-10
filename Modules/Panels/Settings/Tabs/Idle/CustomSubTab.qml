@@ -58,7 +58,7 @@ ColumnLayout {
     _saveFromModel();
   }
 
-  Component.onCompleted: _loadToModel()
+  Component.onCompleted: Qt.callLater(_loadToModel)
 
   Connections {
     target: Settings.data.idle

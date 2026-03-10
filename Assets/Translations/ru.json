@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Стать спонсором",
       "changelog": "Посмотреть список изменений",
+      "changelog-on-startup": "Показывать журнал изменений при обновлении",
+      "changelog-on-startup-desc": "Автоматически показывать журнал изменений при обновлении Noctalia.",
       "contributors-description": "Благодарим нашего <b>замечательного</b> участника: {count}!",
       "contributors-description-plural": "Благодарим наших <b>замечательных</b> участников: {count}!",
       "copy-info": "Копировать информацию",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Отбрасываемые тени",
       "title": "Пользовательский интерфейс",
       "tooltips-description": "Включить или отключить всплывающие подсказки во всем интерфейсе.",
-      "tooltips-label": "Показывать всплывающие подсказки"
+      "tooltips-label": "Показывать всплывающие подсказки",
+      "translucent-widgets-description": "Сделайте кнопки, вкладки и другие виджеты внутри панелей полупрозрачными.",
+      "translucent-widgets-label": "Полупрозрачные виджеты"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Алфавитный",

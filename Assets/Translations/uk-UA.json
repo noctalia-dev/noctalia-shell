@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Стати прихильником",
       "changelog": "Переглянути журнал змін",
+      "changelog-on-startup": "Показувати журнал змін під час оновлення",
+      "changelog-on-startup-desc": "Автоматично показувати журнал змін при оновленні Noctalia.",
       "contributors-description": "Подяка нашому {count} <b>чудовому</b> учаснику!",
       "contributors-description-plural": "Подяка нашим {count} <b>чудовим</b> учасникам!",
       "copy-info": "Копіювати інформацію",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Тіні",
       "title": "Користувацький інтерфейс",
       "tooltips-description": "Увімкнути або вимкнути підказки в інтерфейсі.",
-      "tooltips-label": "Показувати підказки"
+      "tooltips-label": "Показувати підказки",
+      "translucent-widgets-description": "Зробіть кнопки, вкладки та інші віджети всередині панелей напівпрозорими.",
+      "translucent-widgets-label": "Напівпрозорі віджети"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Алфавітний",

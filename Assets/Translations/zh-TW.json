@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "成為支持者",
       "changelog": "檢視更新日誌",
+      "changelog-on-startup": "更新時顯示變更日誌",
+      "changelog-on-startup-desc": "Noctalia 更新時自動顯示更新日誌。",
       "contributors-description": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
       "contributors-description-plural": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
       "copy-info": "複製資訊",
@@ -1684,7 +1686,9 @@
       "shadows-label": "陰影",
       "title": "使用者介面",
       "tooltips-description": "在整個介面啟用或停用提示框",
-      "tooltips-label": "顯示提示框"
+      "tooltips-label": "顯示提示框",
+      "translucent-widgets-description": "使面板內的按鈕、分頁和其他小部件半透明。",
+      "translucent-widgets-label": "半透明小工具"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "照字母排序",

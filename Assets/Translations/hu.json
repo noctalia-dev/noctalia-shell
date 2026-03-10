@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Legyél támogató",
       "changelog": "Változások megtekintése",
+      "changelog-on-startup": "Változási napló megjelenítése frissítéskor",
+      "changelog-on-startup-desc": "Automatikusan mutassa a változási naplót, amikor a Noctalia frissül.",
       "contributors-description": "Köszönet a(z) {count} <b>fantasztikus</b> közreműködőnknek!",
       "contributors-description-plural": "Köszönet a(z) {count} <b>fantasztikus</b> közreműködőnknek!",
       "copy-info": "Információk másolása",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Árnyékok",
       "title": "Felhasználói felület",
       "tooltips-description": "Engedélyezi vagy letiltja az eszköztippeket a felületen.",
-      "tooltips-label": "Eszköztippek megjelenítése"
+      "tooltips-label": "Eszköztippek megjelenítése",
+      "translucent-widgets-description": "Tedd a gombokat, füleket és egyéb widgeteket a paneleken belül félig átlátszóvá.",
+      "translucent-widgets-label": "Áttetsző widgetek"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Ábécérend",

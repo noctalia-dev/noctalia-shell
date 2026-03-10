@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Hazte patrocinador",
       "changelog": "Ver registro de cambios",
+      "changelog-on-startup": "Mostrar registro de cambios al actualizar",
+      "changelog-on-startup-desc": "Mostrar automáticamente el registro de cambios cuando Noctalia se actualice.",
       "contributors-description": "¡Un saludo a nuestro <b>increíble</b> colaborador número {count}!",
       "contributors-description-plural": "¡Un saludo a nuestros {count} <b>increíbles</b> colaboradores!",
       "copy-info": "Copiar información",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Sombras paralelas",
       "title": "Interfaz de usuario",
       "tooltips-description": "Activar o desactivar los avisos emergentes en toda la interfaz.",
-      "tooltips-label": "Mostrar textos emergentes"
+      "tooltips-label": "Mostrar textos emergentes",
+      "translucent-widgets-description": "Haz que los botones, pestañas y otros widgets dentro de los paneles sean semitransparentes.",
+      "translucent-widgets-label": "Widgets translúcidos"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabético",

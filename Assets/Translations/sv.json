@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Bli supporter",
       "changelog": "Visa ändringslogg",
+      "changelog-on-startup": "Visa ändringslogg vid uppdatering",
+      "changelog-on-startup-desc": "Visa ändringsloggen automatiskt när Noctalia uppdateras.",
       "contributors-description": "Tack till våra {count} <b>fantastiska</b> bidragsgivare!",
       "contributors-description-plural": "Tack till våra {count} <b>fantastiska</b> bidragsgivare!",
       "copy-info": "Kopiera info",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Fallskugga",
       "title": "Användargränssnitt",
       "tooltips-description": "Aktivera eller inaktivera verktygstips i hela gränssnittet.",
-      "tooltips-label": "Visa verktygstips"
+      "tooltips-label": "Visa verktygstips",
+      "translucent-widgets-description": "Gör knappar, flikar och andra widgets inuti paneler halvtransparenta.",
+      "translucent-widgets-label": "Genomskinliga widgetar"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetiskt",

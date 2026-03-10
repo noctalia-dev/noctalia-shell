@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Werde Unterstützer",
       "changelog": "Änderungsprotokoll anzeigen",
+      "changelog-on-startup": "Änderungsprotokoll bei Update anzeigen",
+      "changelog-on-startup-desc": "Automatisch den Changelog anzeigen, wenn Noctalia aktualisiert wird.",
       "contributors-description": "Ein Dankeschön an unseren {count} <b>großartigen</b> Mitwirkenden!",
       "contributors-description-plural": "Ein Dankeschön an unsere {count} <b>großartigen</b> Mitwirkenden!",
       "copy-info": "Informationen kopieren",
@@ -1671,8 +1673,8 @@
       "panels-overlay-label": "Panels & Leiste oben behalten",
       "scaling-description": "Ändert die Größe der allgemeinen Benutzeroberfläche, mit Ausnahme der Leiste.",
       "scaling-label": "Oberflächenskalierung",
-      "scrollbar-always-visible-description": "Scrollbalken immer sichtbar lassen, wenn Inhalte scrollbar sind, anstatt sie nur beim Darüberfahren anzuzeigen.",
-      "scrollbar-always-visible-label": "Immer Bildlaufleisten anzeigen",
+      "scrollbar-always-visible-description": "Bildlaufleisten immer sichtbar lassen, wenn Inhalte scrollbar sind, anstatt sie nur beim Darüberfahren anzuzeigen.",
+      "scrollbar-always-visible-label": "Bildlaufleisten immer anzeigen",
       "settings-panel-header": "Einstellungs-Panel",
       "settings-panel-mode-description": "Wählen Sie das Layout der Einstellungen (möglicherweise ist ein Neustart erforderlich).",
       "settings-panel-mode-label": "Einstellungs-Panel-Modus",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Schlagschatten",
       "title": "Benutzeroberfläche",
       "tooltips-description": "Tooltips in der gesamten Benutzeroberfläche aktivieren oder deaktivieren.",
-      "tooltips-label": "Tooltips anzeigen"
+      "tooltips-label": "Tooltips anzeigen",
+      "translucent-widgets-description": "Mache Schaltflächen, Tabs und andere Widgets in Panels halbtransparent.",
+      "translucent-widgets-label": "Transluzente Widgets"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alphabetisch",
