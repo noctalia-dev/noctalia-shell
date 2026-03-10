@@ -1684,7 +1684,9 @@
       "shadows-label": "Sombras projetadas",
       "title": "Interface do usuário",
       "tooltips-description": "Ativar ou desativar dicas de ferramentas em toda a interface.",
-      "tooltips-label": "Mostrar dicas de ferramenta"
+      "tooltips-label": "Mostrar dicas de ferramenta",
+      "translucent-widgets-description": "Torne botões, abas e outros widgets dentro dos painéis semitransparentes.",
+      "translucent-widgets-label": "Widgets translúcidos"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabético",

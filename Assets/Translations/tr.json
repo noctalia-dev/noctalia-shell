@@ -1684,7 +1684,9 @@
       "shadows-label": "Gölge efektleri",
       "title": "Kullanıcı arayüzü",
       "tooltips-description": "Arayüz genelindeki ipuçlarını etkinleştirin veya devre dışı bırakın.",
-      "tooltips-label": "İpuçlarını göster"
+      "tooltips-label": "İpuçlarını göster",
+      "translucent-widgets-description": "Panellerin içindeki düğmeleri, sekmeleri ve diğer widget'ları yarı saydam yapın.",
+      "translucent-widgets-label": "Yarı saydam widget'lar"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetik",

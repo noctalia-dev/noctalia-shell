@@ -2053,6 +2053,15 @@
     "subTabLabel": "common.panels"
   },
   {
+    "labelKey": "panels.user-interface.translucent-widgets-label",
+    "descriptionKey": "panels.user-interface.translucent-widgets-description",
+    "widget": "NToggle",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 1,
+    "subTabLabel": "common.panels"
+  },
+  {
     "labelKey": "panels.user-interface.dimmer-opacity-label",
     "descriptionKey": "panels.user-interface.dimmer-opacity-description",
     "widget": "NValueSlider",

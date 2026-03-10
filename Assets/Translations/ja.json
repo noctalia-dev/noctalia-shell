@@ -1684,7 +1684,9 @@
       "shadows-label": "ドロップシャドウ",
       "title": "ユーザーインターフェース",
       "tooltips-description": "インターフェース全体のツールチップの有効・無効を切り替えます。",
-      "tooltips-label": "ツールチップを表示"
+      "tooltips-label": "ツールチップを表示",
+      "translucent-widgets-description": "パネル内のボタン、タブ、その他のウィジェットを半透明にする。",
+      "translucent-widgets-label": "半透明のウィジェット"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "アルファベット順",

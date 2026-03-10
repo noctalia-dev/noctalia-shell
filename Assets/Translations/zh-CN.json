@@ -1684,7 +1684,9 @@
       "shadows-label": "阴影",
       "title": "用户界面",
       "tooltips-description": "启用或禁用整个界面的提示信息。",
-      "tooltips-label": "显示提示信息（Tooltip）"
+      "tooltips-label": "显示提示信息（Tooltip）",
+      "translucent-widgets-description": "使面板内的按钮、选项卡和其他小部件半透明。",
+      "translucent-widgets-label": "半透明小部件"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "按字母顺序",

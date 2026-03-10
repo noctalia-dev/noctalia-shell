@@ -1684,7 +1684,9 @@
       "shadows-label": "그림자",
       "title": "사용자 인터페이스",
       "tooltips-description": "인터페이스 전반에 툴팁을 활성화하거나 비활성화합니다.",
-      "tooltips-label": "툴팁 표시"
+      "tooltips-label": "툴팁 표시",
+      "translucent-widgets-description": "패널 내의 버튼, 탭 및 기타 위젯을 반투명하게 만듭니다.",
+      "translucent-widgets-label": "반투명 위젯"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "알파벳순",

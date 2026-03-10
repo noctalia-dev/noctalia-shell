@@ -1684,7 +1684,9 @@
       "shadows-label": "Cienie",
       "title": "Interfejs użytkownika",
       "tooltips-description": "Włącz lub wyłącz podpowiedzi w całym interfejsie.",
-      "tooltips-label": "Pokaż podpowiedzi"
+      "tooltips-label": "Pokaż podpowiedzi",
+      "translucent-widgets-description": "Spraw, aby przyciski, zakładki i inne widżety w panelach były półprzezroczyste.",
+      "translucent-widgets-label": "Półprzezroczyste widżety"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetyczny",

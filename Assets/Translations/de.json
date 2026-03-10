@@ -1684,7 +1684,9 @@
       "shadows-label": "Schlagschatten",
       "title": "Benutzeroberfläche",
       "tooltips-description": "Tooltips in der gesamten Benutzeroberfläche aktivieren oder deaktivieren.",
-      "tooltips-label": "Tooltips anzeigen"
+      "tooltips-label": "Tooltips anzeigen",
+      "translucent-widgets-description": "Mache Schaltflächen, Tabs und andere Widgets in Panels halbtransparent.",
+      "translucent-widgets-label": "Transluzente Widgets"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alphabetisch",

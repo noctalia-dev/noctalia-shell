@@ -1684,7 +1684,9 @@
       "shadows-label": "陰影",
       "title": "使用者介面",
       "tooltips-description": "在整個介面啟用或停用提示框",
-      "tooltips-label": "顯示提示框"
+      "tooltips-label": "顯示提示框",
+      "translucent-widgets-description": "使面板內的按鈕、分頁和其他小部件半透明。",
+      "translucent-widgets-label": "半透明小工具"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "照字母排序",

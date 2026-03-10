@@ -1684,7 +1684,9 @@
       "shadows-label": "Ombres portées",
       "title": "Interface utilisateur",
       "tooltips-description": "Activer ou désactiver les infobulles dans toute l'interface.",
-      "tooltips-label": "Afficher les infobulles"
+      "tooltips-label": "Afficher les infobulles",
+      "translucent-widgets-description": "Rendre les boutons, onglets et autres widgets à l'intérieur des panneaux semi-transparents.",
+      "translucent-widgets-label": "Widgets translucides"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alphabétique",

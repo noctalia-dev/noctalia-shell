@@ -1684,7 +1684,9 @@
       "shadows-label": "Sombras paralelas",
       "title": "Interfaz de usuario",
       "tooltips-description": "Activar o desactivar los avisos emergentes en toda la interfaz.",
-      "tooltips-label": "Mostrar textos emergentes"
+      "tooltips-label": "Mostrar textos emergentes",
+      "translucent-widgets-description": "Haz que los botones, pestañas y otros widgets dentro de los paneles sean semitransparentes.",
+      "translucent-widgets-label": "Widgets translúcidos"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabético",

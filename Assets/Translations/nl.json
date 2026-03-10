@@ -1684,7 +1684,9 @@
       "shadows-label": "Slagschaduwen",
       "title": "Gebruikersinterface",
       "tooltips-description": "Schakel tooltips in of uit in de hele interface.",
-      "tooltips-label": "Tooltips tonen"
+      "tooltips-label": "Tooltips tonen",
+      "translucent-widgets-description": "Maak knoppen, tabbladen en andere widgets in panelen semi-transparant.",
+      "translucent-widgets-label": "Doorzichtige widgets"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetisch",

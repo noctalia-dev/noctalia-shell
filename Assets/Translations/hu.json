@@ -1684,7 +1684,9 @@
       "shadows-label": "Árnyékok",
       "title": "Felhasználói felület",
       "tooltips-description": "Engedélyezi vagy letiltja az eszköztippeket a felületen.",
-      "tooltips-label": "Eszköztippek megjelenítése"
+      "tooltips-label": "Eszköztippek megjelenítése",
+      "translucent-widgets-description": "Tedd a gombokat, füleket és egyéb widgeteket a paneleken belül félig átlátszóvá.",
+      "translucent-widgets-label": "Áttetsző widgetek"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Ábécérend",

@@ -1684,7 +1684,9 @@
       "shadows-label": "Drop shadows",
       "title": "User Interface",
       "tooltips-description": "Enable or disable tooltips throughout the interface.",
-      "tooltips-label": "Show tooltips"
+      "tooltips-label": "Show tooltips",
+      "translucent-widgets-description": "Make buttons, tabs, and other widgets inside panels semi-transparent.",
+      "translucent-widgets-label": "Translucent widgets"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alphabetical",

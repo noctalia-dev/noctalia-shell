@@ -41,6 +41,14 @@ ColumnLayout {
     text: Math.floor(Settings.data.ui.panelBackgroundOpacity * 100) + "%"
   }
 
+  NToggle {
+    label: I18n.tr("panels.user-interface.translucent-widgets-label")
+    description: I18n.tr("panels.user-interface.translucent-widgets-description")
+    checked: Settings.data.ui.translucentWidgets
+    defaultValue: Settings.getDefaultValue("ui.translucentWidgets")
+    onToggled: checked => Settings.data.ui.translucentWidgets = checked
+  }
+
   NValueSlider {
     Layout.fillWidth: true
     label: I18n.tr("panels.user-interface.dimmer-opacity-label")

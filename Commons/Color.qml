@@ -326,6 +326,9 @@ Singleton {
 
   // Smart alpha calculation: automatically makes light mode more transparent
   function smartAlpha(baseColor, minAlpha = 0.4) {
+    if (!Settings.data.ui.translucentWidgets)
+      return baseColor;
+
     let baseOpacity = Settings.data.ui.panelBackgroundOpacity;
     let targetOpacity = Settings.data.colorSchemes.darkMode ? baseOpacity : Math.pow(baseOpacity, 2);
     let alpha = Math.max(targetOpacity, minAlpha);

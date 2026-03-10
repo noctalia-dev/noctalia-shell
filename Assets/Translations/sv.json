@@ -1684,7 +1684,9 @@
       "shadows-label": "Fallskugga",
       "title": "Användargränssnitt",
       "tooltips-description": "Aktivera eller inaktivera verktygstips i hela gränssnittet.",
-      "tooltips-label": "Visa verktygstips"
+      "tooltips-label": "Visa verktygstips",
+      "translucent-widgets-description": "Gör knappar, flikar och andra widgets inuti paneler halvtransparenta.",
+      "translucent-widgets-label": "Genomskinliga widgetar"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetiskt",
