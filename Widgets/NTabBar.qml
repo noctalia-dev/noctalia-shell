@@ -66,6 +66,7 @@ Rectangle {
   }
 
   // Styling
+  Layout.margins: Style.borderS
   implicitWidth: tabRow.implicitWidth + (margins * 2)
   implicitHeight: tabHeight + (margins * 2)
   color: Color.mSurfaceVariant

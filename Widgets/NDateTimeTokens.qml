@@ -10,6 +10,7 @@ Rectangle {
 
   signal tokenClicked(string token)
 
+  Layout.margins: Style.borderS
   color: Color.mSurface
   border.color: Color.mOutline
   border.width: Style.borderS
