@@ -56,7 +56,7 @@ ColumnLayout {
 
     Layout.fillWidth: true
     Layout.minimumWidth: root.minimumInputWidth
-    Layout.margins: Math.ceil(Style.borderS)
+    Layout.margins: Style.borderS
     implicitHeight: Style.baseWidgetSize * 1.1 * Style.uiScaleRatio
 
     // This is important - makes the control accept focus

@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Torne-se um apoiador",
       "changelog": "Ver histórico de alterações",
+      "changelog-on-startup": "Mostrar changelog na atualização",
+      "changelog-on-startup-desc": "Mostrar automaticamente o registo de alterações quando o Noctalia for atualizado.",
       "contributors-description": "Agradecimentos ao nosso <b>incrível</b> colaborador!",
       "contributors-description-plural": "Agradecimentos aos nossos {count} <b>incríveis</b> colaboradores!",
       "copy-info": "Copiar informações",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Sombras projetadas",
       "title": "Interface do usuário",
       "tooltips-description": "Ativar ou desativar dicas de ferramentas em toda a interface.",
-      "tooltips-label": "Mostrar dicas de ferramenta"
+      "tooltips-label": "Mostrar dicas de ferramenta",
+      "translucent-widgets-description": "Torne botões, abas e outros widgets dentro dos painéis semitransparentes.",
+      "translucent-widgets-label": "Widgets translúcidos"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabético",

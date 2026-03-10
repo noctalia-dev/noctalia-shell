@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "후원자 되기",
       "changelog": "변경 로그 보기",
+      "changelog-on-startup": "업데이트 시 변경 로그 표시",
+      "changelog-on-startup-desc": "Noctalia 업데이트 시 변경 로그를 자동으로 표시합니다.",
       "contributors-description": "{count}명의 <b>멋진</b> 기여자에게 감사를 전합니다!",
       "contributors-description-plural": "{count}명의 <b>멋진</b> 기여자들에게 감사를 전합니다!",
       "copy-info": "정보 복사",
@@ -1684,7 +1686,9 @@
       "shadows-label": "그림자",
       "title": "사용자 인터페이스",
       "tooltips-description": "인터페이스 전반에 툴팁을 활성화하거나 비활성화합니다.",
-      "tooltips-label": "툴팁 표시"
+      "tooltips-label": "툴팁 표시",
+      "translucent-widgets-description": "패널 내의 버튼, 탭 및 기타 위젯을 반투명하게 만듭니다.",
+      "translucent-widgets-label": "반투명 위젯"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "알파벳순",

@@ -1,5 +1,14 @@
 [
   {
+    "labelKey": "panels.about.changelog-on-startup",
+    "descriptionKey": "panels.about.changelog-on-startup-desc",
+    "widget": "NToggle",
+    "tab": 21,
+    "tabLabel": "panels.about.title",
+    "subTab": 0,
+    "subTabLabel": "common.info"
+  },
+  {
     "labelKey": "panels.about.telemetry-enabled",
     "descriptionKey": "panels.about.telemetry-desc",
     "widget": "NToggle",
@@ -1965,6 +1974,15 @@
   {
     "labelKey": "panels.user-interface.blur-behind-label",
     "descriptionKey": "panels.user-interface.blur-behind-description",
+    "widget": "NToggle",
+    "tab": 1,
+    "tabLabel": "panels.user-interface.title",
+    "subTab": 0,
+    "subTabLabel": "common.appearance"
+  },
+  {
+    "labelKey": "panels.user-interface.translucent-widgets-label",
+    "descriptionKey": "panels.user-interface.translucent-widgets-description",
     "widget": "NToggle",
     "tab": 1,
     "tabLabel": "panels.user-interface.title",

@@ -49,6 +49,14 @@ ColumnLayout {
     onToggled: checked => Settings.data.general.enableBlurBehind = checked
   }
 
+  NToggle {
+    label: I18n.tr("panels.user-interface.translucent-widgets-label")
+    description: I18n.tr("panels.user-interface.translucent-widgets-description")
+    checked: Settings.data.ui.translucentWidgets
+    defaultValue: Settings.getDefaultValue("ui.translucentWidgets")
+    onToggled: checked => Settings.data.ui.translucentWidgets = checked
+  }
+
   NComboBox {
     visible: Settings.data.general.enableShadows
     label: I18n.tr("panels.user-interface.shadows-direction-label")

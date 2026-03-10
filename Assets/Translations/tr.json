@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Destekçi ol",
       "changelog": "Değişiklik günlüğünü görüntüle",
+      "changelog-on-startup": "Güncellemede değişiklik günlüğünü göster",
+      "changelog-on-startup-desc": "Noctalia güncellendiğinde değişiklik günlüğünü otomatik olarak göster.",
       "contributors-description": "{count} <b>harika</b> katılımcımıza <b>teşekkürler</b>!",
       "contributors-description-plural": "{count} <b>harika</b> katılımcımıza <b>teşekkürler</b>!",
       "copy-info": "Bilgileri kopyala",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Gölge efektleri",
       "title": "Kullanıcı arayüzü",
       "tooltips-description": "Arayüz genelindeki ipuçlarını etkinleştirin veya devre dışı bırakın.",
-      "tooltips-label": "İpuçlarını göster"
+      "tooltips-label": "İpuçlarını göster",
+      "translucent-widgets-description": "Panellerin içindeki düğmeleri, sekmeleri ve diğer widget'ları yarı saydam yapın.",
+      "translucent-widgets-label": "Yarı saydam widget'lar"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetik",

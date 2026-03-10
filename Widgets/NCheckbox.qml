@@ -36,6 +36,7 @@ RowLayout {
   Rectangle {
     id: box
 
+    Layout.margins: Style.borderS
     implicitWidth: Math.round(root.baseSize)
     implicitHeight: Math.round(root.baseSize)
     radius: Style.iRadiusXS

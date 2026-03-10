@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Become a supporter",
       "changelog": "View changelog",
+      "changelog-on-startup": "Show changelog on update",
+      "changelog-on-startup-desc": "Automatically show the changelog when Noctalia is updated",
       "contributors-description": "Shout-out to our {count} <b>awesome</b> contributor!",
       "contributors-description-plural": "Shout-out to our {count} <b>awesome</b> contributors!",
       "copy-info": "Copy info",
@@ -1021,7 +1023,6 @@
       "edit-mode-description": "Enable edit mode to move and reposition desktop widgets. When enabled, widgets show a drag outline and can be repositioned.",
       "edit-mode-exit-button": "Exit edit mode",
       "edit-mode-grid-snap-label": "Grid snap",
-      "edit-mode-grid-snap-scale-label": "Snap scale",
       "edit-mode-label": "Edit mode",
       "enabled-description": "Enable or disable desktop widgets entirely.",
       "enabled-label": "Enable desktop widgets",
@@ -1686,7 +1687,9 @@
       "shadows-label": "Drop shadows",
       "title": "User Interface",
       "tooltips-description": "Enable or disable tooltips throughout the interface.",
-      "tooltips-label": "Show tooltips"
+      "tooltips-label": "Show tooltips",
+      "translucent-widgets-description": "Make buttons, tabs, and other widgets inside panels semi-transparent.",
+      "translucent-widgets-label": "Translucent widgets"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alphabetical",

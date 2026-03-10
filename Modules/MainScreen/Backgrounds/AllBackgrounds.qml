@@ -44,6 +44,7 @@ Item {
         id: unifiedBackgroundsShape
         anchors.fill: parent
         preferredRendererType: Shape.CurveRenderer
+        asynchronous: true
         enabled: false
 
         Component.onCompleted: {
@@ -111,6 +112,7 @@ Item {
           id: panelBackgroundsShape
           anchors.fill: parent
           preferredRendererType: Shape.CurveRenderer
+          asynchronous: true
           enabled: false
 
           /**
@@ -159,6 +161,7 @@ Item {
           id: barBackgroundShape
           anchors.fill: parent
           preferredRendererType: Shape.CurveRenderer
+          asynchronous: true
           enabled: false
 
           BarBackground {

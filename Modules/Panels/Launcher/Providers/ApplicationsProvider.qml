@@ -61,6 +61,7 @@ Item {
 
   function init() {
     loadApplications();
+    migrateLegacyUsageKeys();
   }
 
   function onOpened() {
@@ -639,32 +640,22 @@ Item {
     return String(app && app.name ? app.name : "unknown");
   }
 
-  // Returns the usage count for an app, checking both the canonical key (app.id)
-  // and the legacy command-based key. If a legacy key has usage but the canonical
-  // key doesn't, the counts are migrated automatically.
   function getUsageCount(app) {
-    const key = getAppKey(app);
-    let count = ShellState.getLauncherUsageCount(key);
+    return ShellState.getLauncherUsageCount(getAppKey(app));
+  }
 
-    // Check for legacy command-based key if the primary key is the app ID
-    if (app && app.id && app.command && app.command.join) {
-      const legacyKey = app.command.join(" ");
-      if (legacyKey !== key) {
-        const legacyCount = ShellState.getLauncherUsageCount(legacyKey);
-        if (legacyCount > 0) {
-          // Migrate: merge legacy count into the canonical key
-          count += legacyCount;
-          ShellState.recordLauncherUsageMerge(key, count);
-          ShellState.clearLauncherUsage(legacyKey);
-          Logger.d("ApplicationsProvider", `Migrated usage: "${legacyKey}" (${legacyCount}) → "${key}" (${count})`);
+  // Migrate legacy command-based usage keys to canonical app-id keys at startup
+  function migrateLegacyUsageKeys() {
+    for (let i = 0; i < entries.length; i++) {
+      const app = entries[i];
+      if (app && app.id && app.command && app.command.join) {
+        const key = getAppKey(app);
+        const legacyKey = app.command.join(" ");
+        if (legacyKey !== key && ShellState.getLauncherUsageCount(legacyKey) > 0) {
+          ShellState.migrateLauncherUsage(legacyKey, key);
+          Logger.d("ApplicationsProvider", `Migrated usage: "${legacyKey}" → "${key}"`);
         }
       }
     }
-
-    return count;
-  }
-
-  function recordUsage(app) {
-    ShellState.recordLauncherUsage(getAppKey(app));
   }
 }

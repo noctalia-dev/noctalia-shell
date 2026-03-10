@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Diventa sostenitore",
       "changelog": "Visualizza changelog",
+      "changelog-on-startup": "Mostra il changelog all'aggiornamento",
+      "changelog-on-startup-desc": "Mostra automaticamente il changelog quando Noctalia viene aggiornato.",
       "contributors-description": "Un ringraziamento al nostro {count} contributore <b>fantastico</b>!",
       "contributors-description-plural": "Un ringraziamento ai nostri {count} contributori <b>fantastici</b>!",
       "copy-info": "Copia info",
@@ -1684,7 +1686,9 @@
       "shadows-label": "Ombre esterne",
       "title": "Interfaccia utente",
       "tooltips-description": "Abilita o disabilita i tooltip in tutta l’interfaccia.",
-      "tooltips-label": "Mostra tooltip"
+      "tooltips-label": "Mostra tooltip",
+      "translucent-widgets-description": "Rendi semitrasparenti i pulsanti, le schede e gli altri widget all'interno dei pannelli.",
+      "translucent-widgets-label": "Widget traslucidi"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetico",

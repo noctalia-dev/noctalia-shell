@@ -107,7 +107,6 @@ ShellRoot {
         Qt.callLater(function () {
           LocationService.init();
           NightLightService.apply();
-          HooksService.init();
           BluetoothService.init();
           IdleInhibitorService.init();
           IdleService.init();
@@ -179,6 +178,7 @@ ShellRoot {
     running: false
     interval: 1500
     onTriggered: {
+      HooksService.init();
       FontService.init();
       UpdateService.init();
       showWizardOrChangelog();

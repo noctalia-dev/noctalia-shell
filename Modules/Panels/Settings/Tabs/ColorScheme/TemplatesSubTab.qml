@@ -279,7 +279,7 @@ ColumnLayout {
           onClicked: root.toggleTemplate(chip.modelData.id)
           onEntered: {
             if (chip.modelData.tooltip) {
-              TooltipService.show(chip, chip.modelData.tooltip, "auto");
+              TooltipService.show(chip, chip.modelData.tooltip, "bottom");
             }
           }
           onExited: {
