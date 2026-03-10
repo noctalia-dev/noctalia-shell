@@ -154,7 +154,7 @@ ColumnLayout {
   }
 
   Component.onCompleted: {
-    updateAvailableWidgetsModel();
+    Qt.callLater(updateAvailableWidgetsModel);
   }
 
   Connections {
