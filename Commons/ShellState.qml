@@ -109,18 +109,13 @@ Singleton {
     save();
   }
 
-  // Set a usage count directly (used for migration/merging)
-  function recordLauncherUsageMerge(key, count) {
+  // Migrate usage from one key to another, merging counts in a single save
+  function migrateLauncherUsage(fromKey, toKey) {
     let counts = Object.assign({}, adapter.launcherUsage || {});
-    counts[key] = count;
-    adapter.launcherUsage = counts;
-    save();
-  }
-
-  // Remove a usage key (used for cleaning up legacy keys after migration)
-  function clearLauncherUsage(key) {
-    let counts = Object.assign({}, adapter.launcherUsage || {});
-    delete counts[key];
+    const fromCount = typeof counts[fromKey] === 'number' && isFinite(counts[fromKey]) ? counts[fromKey] : 0;
+    const toCount = typeof counts[toKey] === 'number' && isFinite(counts[toKey]) ? counts[toKey] : 0;
+    counts[toKey] = toCount + fromCount;
+    delete counts[fromKey];
     adapter.launcherUsage = counts;
     save();
   }
