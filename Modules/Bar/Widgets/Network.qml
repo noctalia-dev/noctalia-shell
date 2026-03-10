@@ -41,6 +41,46 @@ Item {
   implicitWidth: pill.width
   implicitHeight: pill.height
 
+  function getStatustxt() {
+    if (NetworkService.connecting) {
+      return NetworkService.connectingTo ? I18n.tr("common.connecting") + " " + NetworkService.connectingTo : I18n.tr("common.connecting"); // Im hoping for the best :P
+    }
+
+    let p = [];
+
+    // Ethernet
+    if (NetworkService.ethernetConnected) {
+      const eth = NetworkService.activeEthernetDetails;
+      const name = eth.connectionName || (NetworkService.ethernetInterfaces.length > 0 ? NetworkService.ethernetInterfaces[0].connectionName : "") || NetworkService.activeEthernetIf || "";
+      const speed = eth.speed || "";
+      const s = name ? (speed ? name + " - " + speed : name) : "";
+      if (s) {
+        p.push(s);
+      }
+    }
+
+    // Wi-Fi
+    if (NetworkService.activeWifiIf) {
+      const wl = NetworkService.activeWifiDetails;
+      const speed = wl.rateShort || wl.rate || "";
+      const connectedNet = Object.values(NetworkService.networks).find(net => net.connected);
+      const name = connectedNet ? connectedNet.ssid : (wl.connectionName || NetworkService.activeWifiIf || "");
+      const s = name ? (speed ? name + " - " + speed : name) : "";
+      if (s) {
+        p.push(s);
+      }
+    }
+    return p.join(isBarVertical ? "\n" : " | ");
+  }
+
+  function getIcon() {
+    if (NetworkService.ethernetConnected) {
+      return NetworkService.internetConnectivity ? "ethernet" : "ethernet-off";
+    }
+    const connectedNet = Object.values(NetworkService.networks).find(net => net.connected);
+    return connectedNet ? NetworkService.signalIcon(connectedNet.signal, true) : "wifi-off";
+  }
+
   NPopupContextMenu {
     id: contextMenu
 
@@ -79,51 +119,12 @@ Item {
 
   BarPill {
     id: pill
-
     screen: root.screen
     oppositeDirection: BarService.getPillDirection(root)
     customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
     customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
-    icon: {
-      try {
-        if (NetworkService.ethernetConnected) {
-          return NetworkService.internetConnectivity ? "ethernet" : "ethernet-off";
-        }
-        let connected = false;
-        let signalStrength = 0;
-        for (const net in NetworkService.networks) {
-          if (NetworkService.networks[net].connected) {
-            connected = true;
-            signalStrength = NetworkService.networks[net].signal;
-            break;
-          }
-        }
-        return connected ? NetworkService.signalIcon(signalStrength, true) : "wifi-off";
-      } catch (error) {
-        Logger.e("Wi-Fi", "Error getting icon:", error);
-        return "wifi-off";
-      }
-    }
-    text: {
-      let parts = [];
-      if (NetworkService.ethernetConnected) {
-        const d = NetworkService.activeEthernetDetails;
-        const name = d.connectionName || NetworkService.ethernetInterfaces[0]?.connectionName || "";
-        const speed = d.speed || "";
-        if (name) {
-          parts.push(speed ? (name + " - " + speed) : name);
-        }
-      }
-      if (NetworkService.activeWifiIf) {
-        const d = NetworkService.activeWifiDetails;
-        const name = d.connectionName || "";
-        const speed = d.rateShort || d.rate || "";
-        if (name) {
-          parts.push(speed ? (name + " - " + speed) : name);
-        }
-      }
-      return parts.join(isBarVertical ? "\n" : " | ");
-    }
+    icon: getIcon()
+    text: getStatustxt()
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow"
     forceClose: isBarVertical || root.displayMode === "alwaysHide" || text === ""
@@ -138,17 +139,7 @@ Item {
       if (PanelService.getPanel("networkPanel", screen)?.isPanelOpen) {
         return "";
       }
-      try {
-        const name = pill.text;
-        if (!name) {
-          return I18n.tr("common.wifi");
-        }
-        const d = NetworkService.ethernetConnected ? NetworkService.activeEthernetDetails : NetworkService.activeWifiDetails;
-        const speed = (d.speed && d.speed.length > 0) ? d.speed : ((d.rateShort && d.rateShort.length > 0) ? d.rateShort : (d.rate || ""));
-        return speed ? (name + " — " + speed) : name;
-      } catch (e) {
-        return I18n.tr("common.wifi");
-      }
+      return pill.text; // pill.text is exact copy of getStatustxt
     }
   }
 }
