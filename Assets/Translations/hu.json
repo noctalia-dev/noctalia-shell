@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Legyél támogató",
       "changelog": "Változások megtekintése",
+      "changelog-on-startup": "Változási napló megjelenítése frissítéskor",
+      "changelog-on-startup-desc": "Automatikusan mutassa a változási naplót, amikor a Noctalia frissül.",
       "contributors-description": "Köszönet a(z) {count} <b>fantasztikus</b> közreműködőnknek!",
       "contributors-description-plural": "Köszönet a(z) {count} <b>fantasztikus</b> közreműködőnknek!",
       "copy-info": "Információk másolása",

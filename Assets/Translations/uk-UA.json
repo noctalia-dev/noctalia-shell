@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Стати прихильником",
       "changelog": "Переглянути журнал змін",
+      "changelog-on-startup": "Показувати журнал змін під час оновлення",
+      "changelog-on-startup-desc": "Автоматично показувати журнал змін при оновленні Noctalia.",
       "contributors-description": "Подяка нашому {count} <b>чудовому</b> учаснику!",
       "contributors-description-plural": "Подяка нашим {count} <b>чудовим</b> учасникам!",
       "copy-info": "Копіювати інформацію",

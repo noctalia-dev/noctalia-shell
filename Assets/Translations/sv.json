@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Bli supporter",
       "changelog": "Visa ändringslogg",
+      "changelog-on-startup": "Visa ändringslogg vid uppdatering",
+      "changelog-on-startup-desc": "Visa ändringsloggen automatiskt när Noctalia uppdateras.",
       "contributors-description": "Tack till våra {count} <b>fantastiska</b> bidragsgivare!",
       "contributors-description-plural": "Tack till våra {count} <b>fantastiska</b> bidragsgivare!",
       "copy-info": "Kopiera info",

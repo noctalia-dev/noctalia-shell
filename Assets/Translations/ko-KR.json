@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "후원자 되기",
       "changelog": "변경 로그 보기",
+      "changelog-on-startup": "업데이트 시 변경 로그 표시",
+      "changelog-on-startup-desc": "Noctalia 업데이트 시 변경 로그를 자동으로 표시합니다.",
       "contributors-description": "{count}명의 <b>멋진</b> 기여자에게 감사를 전합니다!",
       "contributors-description-plural": "{count}명의 <b>멋진</b> 기여자들에게 감사를 전합니다!",
       "copy-info": "정보 복사",

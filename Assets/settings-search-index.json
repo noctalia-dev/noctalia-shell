@@ -1,5 +1,14 @@
 [
   {
+    "labelKey": "panels.about.changelog-on-startup",
+    "descriptionKey": "panels.about.changelog-on-startup-desc",
+    "widget": "NToggle",
+    "tab": 21,
+    "tabLabel": "panels.about.title",
+    "subTab": 0,
+    "subTabLabel": "common.info"
+  },
+  {
     "labelKey": "panels.about.telemetry-enabled",
     "descriptionKey": "panels.about.telemetry-desc",
     "widget": "NToggle",

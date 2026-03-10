@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Destekçi ol",
       "changelog": "Değişiklik günlüğünü görüntüle",
+      "changelog-on-startup": "Güncellemede değişiklik günlüğünü göster",
+      "changelog-on-startup-desc": "Noctalia güncellendiğinde değişiklik günlüğünü otomatik olarak göster.",
       "contributors-description": "{count} <b>harika</b> katılımcımıza <b>teşekkürler</b>!",
       "contributors-description-plural": "{count} <b>harika</b> katılımcımıza <b>teşekkürler</b>!",
       "copy-info": "Bilgileri kopyala",

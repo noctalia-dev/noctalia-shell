@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "サポーターになる",
       "changelog": "変更履歴を見る",
+      "changelog-on-startup": "アップデート時に変更履歴を表示",
+      "changelog-on-startup-desc": "Noctaliaが更新されたときに、自動的に変更履歴を表示する。",
       "contributors-description": "{count}人の<b>素晴らしい</b>コントリビューターに感謝！",
       "contributors-description-plural": "{count}人の<b>素晴らしい</b>コントリビューターに感謝！",
       "copy-info": "情報をコピー",

@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Word supporter",
       "changelog": "Bekijk wijzigingslogboek",
+      "changelog-on-startup": "Toon wijzigingslogboek bij update",
+      "changelog-on-startup-desc": "Toon automatisch de changelog wanneer Noctalia wordt bijgewerkt.",
       "contributors-description": "Een shout-out naar onze {count} <b>geweldige</b> bijdrager!",
       "contributors-description-plural": "Een shout-out naar onze {count} <b>geweldige</b> bijdragers!",
       "copy-info": "Kopieer info",

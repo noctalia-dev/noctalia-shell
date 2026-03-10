@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "Werde Unterstützer",
       "changelog": "Änderungsprotokoll anzeigen",
+      "changelog-on-startup": "Änderungsprotokoll bei Update anzeigen",
+      "changelog-on-startup-desc": "Automatisch den Changelog anzeigen, wenn Noctalia aktualisiert wird.",
       "contributors-description": "Ein Dankeschön an unseren {count} <b>großartigen</b> Mitwirkenden!",
       "contributors-description-plural": "Ein Dankeschön an unsere {count} <b>großartigen</b> Mitwirkenden!",
       "copy-info": "Informationen kopieren",

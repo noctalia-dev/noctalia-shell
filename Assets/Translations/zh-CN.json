@@ -714,6 +714,8 @@
     "about": {
       "become-supporter": "成为支持者",
       "changelog": "查看更改日志",
+      "changelog-on-startup": "更新时显示更新日志",
+      "changelog-on-startup-desc": "Noctalia 更新时自动显示更新日志。",
       "contributors-description": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
       "contributors-description-plural": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
       "copy-info": "复制信息",

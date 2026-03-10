@@ -616,6 +616,14 @@ ColumnLayout {
     }
   }
 
+  NToggle {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.about.changelog-on-startup")
+    description: I18n.tr("panels.about.changelog-on-startup-desc")
+    checked: Settings.data.general.showChangelogOnStartup
+    onToggled: checked => Settings.data.general.showChangelogOnStartup = checked
+  }
+
   // System Information Section
   NDivider {
     Layout.fillWidth: true
