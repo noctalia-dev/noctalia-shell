@@ -88,17 +88,6 @@ function evaluate(expression) {
             throw new Error("Invalid characters in expression");
         }
 
-        // Block dangerous identifiers (prototype chain traversal, code execution)
-        if (/\b(constructor|prototype|__proto__|__defineGetter__|__defineSetter__|__lookupGetter__|__lookupSetter__|Function|eval|require|import|process|global|window|this|self|globalThis|String|Object|Array|RegExp|Proxy|Reflect|setTimeout|setInterval)\b/.test(processed)) {
-            throw new Error("Invalid expression");
-        }
-
-        // Only allow Math.method property access - block any other dot-property chains
-        var withoutMathCalls = processed.replace(/\bMath\.\w+/g, '0');
-        if (/\./.test(withoutMathCalls)) {
-            throw new Error("Invalid expression");
-        }
-
         // Evaluate the processed expression
         var result = eval(processed);
         
