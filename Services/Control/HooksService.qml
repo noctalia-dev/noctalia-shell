@@ -159,7 +159,8 @@ Singleton {
     }
 
     try {
-      Quickshell.execDetached(["sh", "-lc", script]);
+      // Pass "lock" as $1 via shell arguments so the script receives it
+      Quickshell.execDetached(["sh", "-lc", script, "lock-hook", "lock"]);
       Logger.d("HooksService", `Executed screen lock hook: ${script}`);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute screen lock hook: ${e}`);
@@ -178,7 +179,8 @@ Singleton {
     }
 
     try {
-      Quickshell.execDetached(["sh", "-lc", script]);
+      // Pass "unlock" as $1 via shell arguments so the script receives it
+      Quickshell.execDetached(["sh", "-lc", script, "unlock-hook", "unlock"]);
       Logger.d("HooksService", `Executed screen unlock hook: ${script}`);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute screen unlock hook: ${e}`);

@@ -319,6 +319,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Tüm bataryalar (birleşik)",
     "battery-health": "Pil sağlığı",
     "battery-level": "Pil seviyesi",
     "capacity-level": "Kapasite: {level}",
@@ -1214,7 +1215,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Komutlar kabuk (sh -lc) ile yürütülür<br>• Komutlar arka planda yürütülür (ayrık)<br>• Test düğmeleri mevcut değerlerle yürütülür",
-      "info-parameters-description": "• Duvar kağıdı kancası: $1 = duvar kağıdı yolu, $2 = ekran adı<br>• Tema değiştirme kancası: $1 = doğru/yanlış (Karanlık Mod durumu)<br>• Ekran kilitleme/kilidi açma kancaları: Parametre yok<br>• Performans modu kancaları: Parametre yok<br>• Oturum kancası: $1 = eylem (kapatma/yeniden başlatma)",
+      "info-parameters-description": "• Duvar Kağıdı Kancası: $1 = duvar kağıdı yolu, $2 = ekran adı<br>• Tema Geçiş Kancası: $1 = true/false (Dark Mode durumu)<br>• Ekran Kilitleme/Kilit Açma Kancaları: $1 = lock/unlock (ekran kilidi durumu)<br>• Performans Modu Kancaları: Parametre yok<br>• Oturum Kancası: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Kullanılabilir parametreler",
       "noctalia-started-description": "Noctalia yüklendiğinde çalıştırılacak komut.",
       "noctalia-started-label": "Noctalia başladı",
