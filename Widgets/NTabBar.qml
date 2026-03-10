@@ -68,7 +68,7 @@ Rectangle {
   // Styling
   implicitWidth: tabRow.implicitWidth + (margins * 2)
   implicitHeight: tabHeight + (margins * 2)
-  color: Color.mSurfaceVariant
+  color: Color.smartAlpha(Color.mSurfaceVariant)
   radius: Style.iRadiusM
 
   RowLayout {
