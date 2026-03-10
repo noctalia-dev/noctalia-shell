@@ -189,7 +189,7 @@ Singleton {
       // Logger.e("BatteryDebug", "Available Battery count: " + laptopBatteries.length); // can be useful for debugging
       if (laptopBatteries.length > 1 && device.nativePath) {
         if (device.nativePath === "DisplayDevice") {
-          return "All batteries (combined)"; // TODO: i18n
+          return I18n.tr("battery.all-batteries")
         }
         var match = device.nativePath.match(/(\d+)$/);
         if (match) {

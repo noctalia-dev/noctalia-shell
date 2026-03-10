@@ -389,7 +389,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Settings.data.ui.panelBackgroundOpacity, 0.75)) : Color.mSurface
+      color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
 
       ColumnLayout {
         id: deviceColumn
