@@ -329,8 +329,7 @@ Singleton {
     if (!Settings.data.ui.translucentWidgets)
       return baseColor;
 
-    let targetOpacity = root.panelBackgroundOpacity
-    let alpha = Math.max(targetOpacity, minAlpha);
+    let alpha = Math.max(root.panelBackgroundOpacity, minAlpha);
 
     // Combine with the base color's existing alpha
     let resultAlpha = Math.max(0, baseColor.a - (1.0 - alpha));
