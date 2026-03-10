@@ -59,13 +59,18 @@ ShapePath {
   readonly property bool shouldFlatten: panelBg ? ShapeCornerHelper.shouldFlatten(panelWidth, panelHeight, radius) : false
   readonly property real effectiveRadius: shouldFlatten ? ShapeCornerHelper.getFlattenedRadius(Math.min(panelWidth, panelHeight), radius) : radius
 
+  // Minimum safe arc radius — prevents zero-displacement zero-radius PathArcs
+  // that crash qTriangulate in CurveRenderer. 0.01px is sub-pixel and invisible.
+  readonly property real _minR: 0.01
+
   // Helper function for getting corner radius based on state
   function getCornerRadius(cornerState) {
-    // State -1 = no radius (flat corner)
+    // State -1 = flat corner — use minimum safe radius instead of 0
+    // to prevent degenerate PathArc (zero displacement + zero radius)
     if (cornerState === -1)
-      return 0;
-    // All other states use effectiveRadius
-    return effectiveRadius;
+      return _minR;
+    // All other states use effectiveRadius (clamped to safe minimum)
+    return Math.max(_minR, effectiveRadius);
   }
 
   // Per-corner multipliers and radii based on panelBg's corner states

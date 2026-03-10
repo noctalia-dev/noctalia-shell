@@ -14,6 +14,7 @@ Item {
   property string supportedLayouts: "both"
   property bool isDefaultProvider: true // This provider handles empty search
   property bool ignoreDensity: false // Apps should scale with launcher density
+  property bool trackUsage: true // Track usage frequency for "most used" sorting
 
   // Category support
   property string selectedCategory: "all"
@@ -516,6 +517,7 @@ Item {
   function createResultEntry(app, score) {
     return {
       "appId": getAppKey(app),
+      "usageKey": getAppKey(app),
       "name": app.name || "Unknown",
       "description": app.genericName || app.comment || "",
       "icon": app.icon || "application-x-executable",
@@ -523,10 +525,6 @@ Item {
       "_score": (score !== undefined ? score : 0),
       "provider": root,
       "onActivate": function () {
-        if (Settings.data.appLauncher.sortByMostUsed) {
-          root.recordUsage(app);
-        }
-
         // Close the launcher/SmartPanel immediately without any animations.
         // Ensures we are not preventing the future focusing of the app
         launcher.closeImmediately();
@@ -641,8 +639,29 @@ Item {
     return String(app && app.name ? app.name : "unknown");
   }
 
+  // Returns the usage count for an app, checking both the canonical key (app.id)
+  // and the legacy command-based key. If a legacy key has usage but the canonical
+  // key doesn't, the counts are migrated automatically.
   function getUsageCount(app) {
-    return ShellState.getLauncherUsageCount(getAppKey(app));
+    const key = getAppKey(app);
+    let count = ShellState.getLauncherUsageCount(key);
+
+    // Check for legacy command-based key if the primary key is the app ID
+    if (app && app.id && app.command && app.command.join) {
+      const legacyKey = app.command.join(" ");
+      if (legacyKey !== key) {
+        const legacyCount = ShellState.getLauncherUsageCount(legacyKey);
+        if (legacyCount > 0) {
+          // Migrate: merge legacy count into the canonical key
+          count += legacyCount;
+          ShellState.recordLauncherUsageMerge(key, count);
+          ShellState.clearLauncherUsage(legacyKey);
+          Logger.d("ApplicationsProvider", `Migrated usage: "${legacyKey}" (${legacyCount}) → "${key}" (${count})`);
+        }
+      }
+    }
+
+    return count;
   }
 
   function recordUsage(app) {

@@ -77,13 +77,18 @@ ShapePath {
   readonly property bool shouldFlatten: bar ? ShapeCornerHelper.shouldFlatten(barWidth, barHeight, radius) : false
   readonly property real effectiveRadius: shouldFlatten ? (bar ? ShapeCornerHelper.getFlattenedRadius(Math.min(barWidth, barHeight), radius) : 0) : radius
 
+  // Minimum safe arc radius — prevents zero-displacement zero-radius PathArcs
+  // that crash qTriangulate in CurveRenderer. 0.01px is sub-pixel and invisible.
+  readonly property real _minR: 0.01
+
   // Helper function for getting corner radius based on state
   function getCornerRadius(cornerState) {
-    // State -1 = no radius (flat corner)
+    // State -1 = flat corner — use minimum safe radius instead of 0
+    // to prevent degenerate PathArc (zero displacement + zero radius)
     if (cornerState === -1)
-      return 0;
-    // All other states use effectiveRadius
-    return effectiveRadius;
+      return _minR;
+    // All other states use effectiveRadius (clamped to safe minimum)
+    return Math.max(_minR, effectiveRadius);
   }
 
   // Per-corner multipliers and radii based on bar's corner states (handle null bar)
@@ -107,13 +112,14 @@ ShapePath {
   // Mirrors PanelBackground.isRenderable — prevents CurveRenderer crash on zero-area paths.
   readonly property bool isRenderable: bar !== null && shouldShow && (isFramed ? (screenWidth > 0 && screenHeight > 0) : (barWidth > 0 && barHeight > 0))
 
-  // Extend bar background beyond screen edges where both adjacent corners are flat,
-  // to prevent CurveRenderer antialiasing artifacts on screen-flush edges
+  // Edge overshoot: extend bar background beyond screen edges where both adjacent
+  // corners are flat (state -1) to prevent CurveRenderer antialiasing artifacts.
+  // Uses corner state checks instead of radius === 0 since flat corners now have _minR.
   readonly property real screenEdgeOvershoot: 2
-  readonly property real topEdgeOvs: (!isFramed && shouldShow && tlRadius === 0 && trRadius === 0 && barMappedPos.y <= 0) ? -screenEdgeOvershoot : 0
-  readonly property real bottomEdgeOvs: (!isFramed && shouldShow && blRadius === 0 && brRadius === 0 && (barMappedPos.y + barHeight) >= screenHeight) ? screenEdgeOvershoot : 0
-  readonly property real leftEdgeOvs: (!isFramed && shouldShow && tlRadius === 0 && blRadius === 0 && barMappedPos.x <= 0) ? -screenEdgeOvershoot : 0
-  readonly property real rightEdgeOvs: (!isFramed && shouldShow && trRadius === 0 && brRadius === 0 && (barMappedPos.x + barWidth) >= screenWidth) ? screenEdgeOvershoot : 0
+  readonly property real topEdgeOvs: (!isFramed && shouldShow && bar && bar.topLeftCornerState === -1 && bar.topRightCornerState === -1 && barMappedPos.y <= 0) ? -screenEdgeOvershoot : 0
+  readonly property real bottomEdgeOvs: (!isFramed && shouldShow && bar && bar.bottomLeftCornerState === -1 && bar.bottomRightCornerState === -1 && (barMappedPos.y + barHeight) >= screenHeight) ? screenEdgeOvershoot : 0
+  readonly property real leftEdgeOvs: (!isFramed && shouldShow && bar && bar.topLeftCornerState === -1 && bar.bottomLeftCornerState === -1 && barMappedPos.x <= 0) ? -screenEdgeOvershoot : 0
+  readonly property real rightEdgeOvs: (!isFramed && shouldShow && bar && bar.topRightCornerState === -1 && bar.bottomRightCornerState === -1 && (barMappedPos.x + barWidth) >= screenWidth) ? screenEdgeOvershoot : 0
 
   // Auto-hide opacity factor for background fade
   property real opacityFactor: (bar && bar.isHidden) ? 0 : 1
@@ -135,7 +141,9 @@ ShapePath {
   // all subsequent path elements form a valid non-degenerate off-screen square.
   // Each edge is split between PathLine and PathArc so no arc has zero displacement,
   // preventing CurveRenderer triangulation crashes on degenerate arcs.
-  startX: isRenderable ? (isFramed ? 0 : (barMappedPos.x + leftEdgeOvs + tlRadius * tlMultX)) : -0.75
+  // For framed mode the outer path is a full-screen rectangle; _minR offsets at each
+  // corner prevent zero-displacement zero-radius arcs that crash qTriangulate.
+  startX: isRenderable ? (isFramed ? _minR : (barMappedPos.x + leftEdgeOvs + tlRadius * tlMultX)) : -0.75
   startY: isRenderable ? (isFramed ? 0 : (barMappedPos.y + topEdgeOvs)) : -1
 
   // ========== PATH DEFINITION ==========
@@ -145,58 +153,58 @@ ShapePath {
   // off-screen square with non-degenerate arcs so CurveRenderer never receives
   // a zero-area, bare-moveto, or zero-displacement arc path.
   PathLine {
-    x: root.isRenderable ? (root.isFramed ? root.screenWidth : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.trRadius * root.trMultX)) : 0
+    x: root.isRenderable ? (root.isFramed ? (root.screenWidth - root._minR) : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.trRadius * root.trMultX)) : 0
     y: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs)) : -1
   }
 
-  // Bar top-right corner (only if not framed)
+  // Top-right corner
   PathArc {
     x: root.isRenderable ? (root.isFramed ? root.screenWidth : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs)) : 0
-    y: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs + root.trRadius * root.trMultY)) : -0.75
-    radiusX: root.isRenderable ? (root.isFramed ? 0 : root.trRadius) : 0
-    radiusY: root.isRenderable ? (root.isFramed ? 0 : root.trRadius) : 0
+    y: root.isRenderable ? (root.isFramed ? root._minR : (root.barMappedPos.y + root.topEdgeOvs + root.trRadius * root.trMultY)) : -0.75
+    radiusX: root.isRenderable ? (root.isFramed ? root._minR : root.trRadius) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? root._minR : root.trRadius) : 0
     direction: ShapeCornerHelper.getArcDirection(root.trMultX, root.trMultY)
   }
 
   PathLine {
     x: root.isRenderable ? (root.isFramed ? root.screenWidth : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs)) : 0
-    y: root.isRenderable ? (root.isFramed ? root.screenHeight : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.brRadius * root.brMultY)) : 0
+    y: root.isRenderable ? (root.isFramed ? (root.screenHeight - root._minR) : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.brRadius * root.brMultY)) : 0
   }
 
-  // Bar bottom-right corner (only if not framed)
+  // Bottom-right corner
   PathArc {
-    x: root.isRenderable ? (root.isFramed ? root.screenWidth : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.brRadius * root.brMultX)) : -0.25
+    x: root.isRenderable ? (root.isFramed ? (root.screenWidth - root._minR) : (root.barMappedPos.x + root.barWidth + root.rightEdgeOvs - root.brRadius * root.brMultX)) : -0.25
     y: root.isRenderable ? (root.isFramed ? root.screenHeight : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs)) : 0
-    radiusX: root.isRenderable ? (root.isFramed ? 0 : root.brRadius) : 0
-    radiusY: root.isRenderable ? (root.isFramed ? 0 : root.brRadius) : 0
+    radiusX: root.isRenderable ? (root.isFramed ? root._minR : root.brRadius) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? root._minR : root.brRadius) : 0
     direction: ShapeCornerHelper.getArcDirection(root.brMultX, root.brMultY)
   }
 
   PathLine {
-    x: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs + root.blRadius * root.blMultX)) : -1
+    x: root.isRenderable ? (root.isFramed ? root._minR : (root.barMappedPos.x + root.leftEdgeOvs + root.blRadius * root.blMultX)) : -1
     y: root.isRenderable ? (root.isFramed ? root.screenHeight : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs)) : 0
   }
 
-  // Bar bottom-left corner (only if not framed)
+  // Bottom-left corner
   PathArc {
     x: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs)) : -1
-    y: root.isRenderable ? (root.isFramed ? root.screenHeight : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.blRadius * root.blMultY)) : -0.25
-    radiusX: root.isRenderable ? (root.isFramed ? 0 : root.blRadius) : 0
-    radiusY: root.isRenderable ? (root.isFramed ? 0 : root.blRadius) : 0
+    y: root.isRenderable ? (root.isFramed ? (root.screenHeight - root._minR) : (root.barMappedPos.y + root.barHeight + root.bottomEdgeOvs - root.blRadius * root.blMultY)) : -0.25
+    radiusX: root.isRenderable ? (root.isFramed ? root._minR : root.blRadius) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? root._minR : root.blRadius) : 0
     direction: ShapeCornerHelper.getArcDirection(root.blMultX, root.blMultY)
   }
 
   PathLine {
     x: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs)) : -1
-    y: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs + root.tlRadius * root.tlMultY)) : -1
+    y: root.isRenderable ? (root.isFramed ? root._minR : (root.barMappedPos.y + root.topEdgeOvs + root.tlRadius * root.tlMultY)) : -1
   }
 
-  // Bar top-left corner (only if not framed, back to start)
+  // Top-left corner (back to start)
   PathArc {
-    x: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.x + root.leftEdgeOvs + root.tlRadius * root.tlMultX)) : -0.75
+    x: root.isRenderable ? (root.isFramed ? root._minR : (root.barMappedPos.x + root.leftEdgeOvs + root.tlRadius * root.tlMultX)) : -0.75
     y: root.isRenderable ? (root.isFramed ? 0 : (root.barMappedPos.y + root.topEdgeOvs)) : -1
-    radiusX: root.isRenderable ? (root.isFramed ? 0 : root.tlRadius) : 0
-    radiusY: root.isRenderable ? (root.isFramed ? 0 : root.tlRadius) : 0
+    radiusX: root.isRenderable ? (root.isFramed ? root._minR : root.tlRadius) : 0
+    radiusY: root.isRenderable ? (root.isFramed ? root._minR : root.tlRadius) : 0
     direction: ShapeCornerHelper.getArcDirection(root.tlMultX, root.tlMultY)
   }
 
