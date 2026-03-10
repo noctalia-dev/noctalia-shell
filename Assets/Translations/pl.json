@@ -319,6 +319,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Wszystkie baterie (łącznie)",
     "battery-health": "Stan baterii",
     "battery-level": "Poziom baterii",
     "capacity-level": "Pojemność: {level}",
@@ -1214,7 +1215,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Polecenia są wykonywane przez powłokę (sh -lc)<br>• Polecenia działają w tle (detached)<br>• Przyciski testowe wykonują się z aktualnymi wartościami",
-      "info-parameters-description": "• Hak do tapety: $1 = ścieżka do tapety, $2 = nazwa ekranu<br>• Hak przełączania motywu: $1 = prawda/fałsz (stan trybu ciemnego)<br>• Haki blokowania/odblokowywania ekranu: Brak parametrów<br>• Haki trybu wydajności: Brak parametrów<br>• Hak sesji: $1 = akcja (zamknięcie/ponowne uruchomienie))",
+      "info-parameters-description": "• Hook tapety: $1 = ścieżka tapety, $2 = nazwa ekranu<br>• Hook przełączania motywu: $1 = true/false (stan Dark Mode)<br>• Hooki blokowania/odblokowywania ekranu: $1 = lock/unlock (stan blokady ekranu)<br>• Hooki trybu wydajności: Brak parametrów<br>• Hook sesji: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Dostępne parametry",
       "noctalia-started-description": "Polecenie do wykonania po zakończeniu ładowania Noctalii.",
       "noctalia-started-label": "Noctalia uruchomiona",

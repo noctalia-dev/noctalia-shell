@@ -319,6 +319,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Összes akkumulátor (kombinálva)",
     "battery-health": "Akkumulátor állapota",
     "battery-level": "Akkumulátor töltöttségi szintje",
     "capacity-level": "Kapacitás: {level}",
@@ -1214,7 +1215,7 @@
     },
     "hooks": {
       "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -lc)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
-      "info-parameters-description": "• Háttérkép horog: $1 = háttérkép útvonala, $2 = képernyő neve<br>• Téma váltó horog: $1 = igaz/hamis (Sötét mód állapota)<br>• Képernyő zárolás/feloldás horgok: Nincsenek paraméterek<br>• Teljesítmény mód horgok: Nincsenek paraméterek<br>• Munkamenet horog: $1 = művelet (leállítás/újraindítás)",
+      "info-parameters-description": "• Háttérkép hook: $1 = háttérkép útvonala, $2 = képernyő neve<br>• Téma váltó hook: $1 = true/false (Dark Mode állapot)<br>• Képernyő zár/feloldó hookok: $1 = lock/unlock (képernyőzár állapota)<br>• Teljesítmény mód hookok: Nincs paraméter<br>• Munkamenet hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Elérhető paraméterek",
       "noctalia-started-description": "Parancs, ami akkor fut le, amikor a Noctalia betöltése befejeződött.",
       "noctalia-started-label": "Noctalia elindult",

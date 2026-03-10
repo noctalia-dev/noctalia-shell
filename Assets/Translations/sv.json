@@ -319,6 +319,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Alla batterier (kombinerat)",
     "battery-health": "Batteriets hälsa",
     "battery-level": "Batterinivå",
     "capacity-level": "Kapacitet: {level}",
@@ -1214,7 +1215,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Kommandon exekveras via shell (sh -lc)<br>• Kommandon körs i bakgrunden (fristående)<br>• Testknappar exekveras med aktuella värden",
-      "info-parameters-description": "• Bakgrundsbildskrok: $1 = bakgrundsbildens sökväg, $2 = skärmnamn<br>• Temaväxlingskrok: $1 = sant/falskt (mörkt läge)<br>• Skärmlåsnings-/upplåsningskrokar: Inga parametrar<br>• Prestandalägeskrokar: Inga parametrar<br>• Sessionskrok: $1 = åtgärd (stänga av/starta om)",
+      "info-parameters-description": "• Bakgrundsbildskrok: $1 = bakgrundsbildens sökväg, $2 = skärmnamn<br>• Temaväxlingskrok: $1 = true/false (Dark Mode-status)<br>• Skärmlås/upplåsningskrokar: $1 = lock/unlock (skärmlåsets status)<br>• Prestandalägeskrokar: Inga parametrar<br>• Sessionskrok: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Tillgängliga parametrar",
       "noctalia-started-description": "Kommando som ska utföras när Noctalia har laddats klart.",
       "noctalia-started-label": "Noctalia startat",

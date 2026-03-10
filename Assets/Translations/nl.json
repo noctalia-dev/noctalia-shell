@@ -319,6 +319,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Alle accu's (gecombineerd)",
     "battery-health": "Accuconditie",
     "battery-level": "Accuniveau",
     "capacity-level": "Capaciteit: {level}",
@@ -1214,7 +1215,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Commando's worden uitgevoerd via shell (sh -lc)<br>• Commando's draaien op de achtergrond (losgekoppeld)<br>• Testknoppen worden uitgevoerd met de huidige waarden",
-      "info-parameters-description": "• Achtergrond-hook: $1 = pad naar achtergrond, $2 = schermnaam<br>• Thema-schakel-hook: $1 = true/false (Dark Mode-status)<br>• Schermvergrendeling/ontgrendeling-hooks: Geen parameters<br>• Prestatiemodus-hooks: Geen parameters<br>• Sessie-hook: $1 = actie (afsluiten/opnieuw opstarten)",
+      "info-parameters-description": "• Achtergrond-hook: $1 = achtergrondpad, $2 = schermnaam<br>• Themawissel-hook: $1 = true/false (Dark Mode-status)<br>• Schermvergrendeling/ontgrendeling-hooks: $1 = lock/unlock (schermvergrendelingsstatus)<br>• Prestatie-modus-hooks: Geen parameters<br>• Sessie-hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Beschikbare parameters",
       "noctalia-started-description": "Opdracht die moet worden uitgevoerd wanneer Noctalia volledig is geladen.",
       "noctalia-started-label": "Noctalia gestart",

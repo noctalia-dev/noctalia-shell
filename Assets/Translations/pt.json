@@ -319,6 +319,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Todas as baterias (combinadas)",
     "battery-health": "Estado da bateria",
     "battery-level": "Nível da bateria",
     "capacity-level": "Capacidade: {level}",
@@ -1214,7 +1215,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Comandos são executados via shell (sh -lc)<br>• Comandos rodam em segundo plano (desanexados)<br>• Botões de teste executam com os valores atuais",
-      "info-parameters-description": "• Hook de papel de parede: $1 = caminho do papel de parede, $2 = nome da tela<br>• Hook de alternância de tema: $1 = verdadeiro/falso (estado do modo escuro)<br>• Hooks de bloqueio/desbloqueio de tela: Sem parâmetros<br>• Hooks de modo de desempenho: Sem parâmetros<br>• Hook de sessão: $1 = ação (desligamento/reinicialização)",
+      "info-parameters-description": "• Hook de papel de parede: $1 = caminho do papel de parede, $2 = nome da tela<br>• Hook de alternância de tema: $1 = true/false (estado do Dark Mode)<br>• Hooks de bloqueio/desbloqueio de tela: $1 = lock/unlock (estado de bloqueio de tela)<br>• Hooks de modo de desempenho: Sem parâmetros<br>• Hook de sessão: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Parâmetros disponíveis",
       "noctalia-started-description": "Comando para executar quando o Noctalia terminar de carregar.",
       "noctalia-started-label": "Noctalia iniciado",
