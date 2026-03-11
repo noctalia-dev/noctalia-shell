@@ -309,7 +309,7 @@ SmartPanel {
                 }
 
                 NBusyIndicator {
-                  running: true
+                  running: visible
                   color: Color.mPrimary
                   size: Style.baseWidgetSize
                   Layout.alignment: Qt.AlignHCenter
