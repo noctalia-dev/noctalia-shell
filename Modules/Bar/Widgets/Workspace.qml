@@ -131,7 +131,7 @@ Item {
   property bool isHovered: false
 
   HoverHandler {
-    id: hoverHandler
+    id: workspaceHoverHandler
     enabled: showApplications && showApplicationsHover
     onHoveredChanged: {
       if(hovered) {
@@ -145,10 +145,10 @@ Item {
 
   Timer {
     id: hoverEval
-    interval: 50
+    interval: 150
     repeat: false
     onTriggered: {
-      isHovered = hoverHandler.hovered || contextMenu.visible;
+      isHovered = workspaceHoverHandler.hovered || contextMenu.visible;
     }
   }
 
@@ -284,7 +284,11 @@ Item {
   onScreenChanged: Qt.callLater(refreshWorkspaces)
   onScreenNameChanged: Qt.callLater(refreshWorkspaces)
   onHideUnoccupiedChanged: Qt.callLater(refreshWorkspaces)
-  onAppVisibleChanged: Qt.callLater(refreshWorkspaces)
+  onAppVisibleChanged: {
+    if (appVisible) {
+       Qt.callLater(refreshWorkspaces)
+    }
+  }
 
   Connections {
     target: CompositorService
@@ -707,14 +711,14 @@ Item {
       }
 
       HoverHandler {
-        id: hoverHandler
+        id: groupHoverHandler
       }
 
       width: Style.toOdd((hasWindows ? groupedIconsFlow.implicitWidth : root.iconSize) + (root.isVertical ? (root.baseItemSize - root.iconSize + Style.marginXS) : Style.marginXL))
       height: Style.toOdd((hasWindows ? groupedIconsFlow.implicitHeight : root.iconSize) + (root.isVertical ? Style.marginL : (root.baseItemSize - root.iconSize + Style.marginXS)))
       color: Style.capsuleColor
       radius: Style.radiusS
-      border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : (hoverHandler.hovered ? Color.mHover : Color.mOutline)), root.groupedBorderOpacity)
+      border.color: Settings.data.bar.showOutline ? Style.capsuleBorderColor : Qt.alpha((workspaceModel.isFocused ? Color.mPrimary : (groupHoverHandler.hovered ? Color.mHover : Color.mOutline)), root.groupedBorderOpacity)
       border.width: Style.borderS
 
       Behavior on width {
@@ -771,7 +775,7 @@ Item {
             height: root.iconSize
 
             HoverHandler {
-              id: hoverHandler
+              id: windowHoverHandler
             }
 
             IconImage {
@@ -779,13 +783,6 @@ Item {
 
               width: parent.width
               height: parent.height
-              scale: hoverHandler.hovered ? (root.isVertical ? 1.1 : 1.2) : (root.isVertical ? 0.9 : 1.0)
-              Behavior on scale {
-                NumberAnimation {
-                  duration: Style.animationNormal
-                  easing.type: Easing.OutBack
-                }
-              }
 
               source: {
                 root.iconRevision; // Force re-evaluation when revision changes
@@ -798,13 +795,13 @@ Item {
 
               Rectangle {
                 id: groupedFocusIndicator
-                visible: modelData.isFocused
+                visible: modelData.isFocused || windowHoverHandler.hovered
                 anchors.bottomMargin: -2
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Style.toOdd(root.iconSize * 0.25)
                 height: 4
-                color: Color.mPrimary
+                color: modelData.isFocused ? Color.mPrimary : Color.mHover
                 radius: Math.min(Style.radiusXXS, width / 2)
               }
 
