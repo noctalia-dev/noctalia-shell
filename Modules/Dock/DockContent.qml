@@ -19,7 +19,7 @@ Item {
   required property int extraRight
   property alias dockContainer: dockContainer
   readonly property bool isStaticMode: Settings.data.dock.dockType === "static"
-  readonly property string tooltipDirection: dockRoot.dockPosition === "top" ? "bottom" : "top"
+  readonly property string tooltipDirection: dockRoot.dockPosition === "left" ? "right" : (dockRoot.dockPosition === "right" ? "left" : (dockRoot.dockPosition === "top" ? "bottom" : "top"))
 
   Rectangle {
     id: dockContainer

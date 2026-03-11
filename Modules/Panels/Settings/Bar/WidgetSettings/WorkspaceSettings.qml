@@ -33,6 +33,7 @@ ColumnLayout {
   property string valueEmptyColor: widgetData.emptyColor !== undefined ? widgetData.emptyColor : widgetMetadata.emptyColor
   property bool valueShowBadge: widgetData.showBadge !== undefined ? widgetData.showBadge : widgetMetadata.showBadge
   property real valuePillSize: widgetData.pillSize !== undefined ? widgetData.pillSize : widgetMetadata.pillSize
+  property string valueFontWeight: widgetData.fontWeight !== undefined ? widgetData.fontWeight : widgetMetadata.fontWeight
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -52,6 +53,7 @@ ColumnLayout {
     settings.emptyColor = valueEmptyColor;
     settings.showBadge = valueShowBadge;
     settings.pillSize = valuePillSize;
+    settings.fontWeight = valueFontWeight;
     settingsChanged(settings);
   }
 
@@ -113,6 +115,36 @@ ColumnLayout {
              }
     text: Math.round(valuePillSize * 100) + "%"
     visible: !valueShowApplications
+  }
+
+  NComboBox {
+    id: fontWeightCombo
+    label: I18n.tr("bar.workspace.font-weight-label")
+    description: I18n.tr("bar.workspace.font-weight-description")
+    model: [
+      {
+        "key": "regular",
+        "name": I18n.tr("common.font-weight-regular")
+      },
+      {
+        "key": "medium",
+        "name": I18n.tr("common.font-weight-medium")
+      },
+      {
+        "key": "semibold",
+        "name": I18n.tr("common.font-weight-semibold")
+      },
+      {
+        "key": "bold",
+        "name": I18n.tr("common.font-weight-bold")
+      },
+    ]
+    currentKey: widgetData.fontWeight || widgetMetadata.fontWeight
+    onSelected: key => {
+                  valueFontWeight = key;
+                  saveSettings();
+                }
+    minimumWidth: 200
   }
 
   NToggle {
@@ -197,7 +229,9 @@ ColumnLayout {
     from: 0
     to: 1
     stepSize: 0.01
+    showReset: true
     value: valueUnfocusedIconsOpacity
+    defaultValue: widgetMetadata.unfocusedIconsOpacity
     onMoved: value => {
                valueUnfocusedIconsOpacity = value;
                saveSettings();
@@ -212,7 +246,9 @@ ColumnLayout {
     from: 0
     to: 1
     stepSize: 0.01
+    showReset: true
     value: valueGroupedBorderOpacity
+    defaultValue: widgetMetadata.groupedBorderOpacity
     onMoved: value => {
                valueGroupedBorderOpacity = value;
                saveSettings();
@@ -227,7 +263,9 @@ ColumnLayout {
     from: 0.5
     to: 1
     stepSize: 0.01
+    showReset: true
     value: valueIconScale
+    defaultValue: widgetMetadata.iconScale
     onMoved: value => {
                valueIconScale = value;
                saveSettings();

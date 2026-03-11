@@ -15,26 +15,26 @@ NBox {
   // Track whether we have an active media player
   readonly property bool hasActivePlayer: MediaService.currentPlayer && MediaService.canPlay
 
-  // CavaService registration for visualizer
-  readonly property bool needsCava: Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
+  // SpectrumService registration for visualizer
+  readonly property bool needsSpectrum: Settings.data.audio.visualizerType !== "" && Settings.data.audio.visualizerType !== "none"
 
-  onNeedsCavaChanged: {
-    if (root.needsCava) {
-      CavaService.registerComponent("mediacard");
+  onNeedsSpectrumChanged: {
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent("mediacard");
     } else {
-      CavaService.unregisterComponent("mediacard");
+      SpectrumService.unregisterComponent("mediacard");
     }
   }
 
   Component.onCompleted: {
-    if (root.needsCava) {
-      CavaService.registerComponent("mediacard");
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent("mediacard");
     }
     updateCachedWallpaper();
   }
 
   Component.onDestruction: {
-    CavaService.unregisterComponent("mediacard");
+    SpectrumService.unregisterComponent("mediacard");
   }
 
   property string wallpaper: WallpaperService.getWallpaper(screen.name)
@@ -157,7 +157,7 @@ NBox {
         id: linearComponent
         NLinearSpectrum {
           anchors.fill: parent
-          values: CavaService.values
+          values: SpectrumService.values
           fillColor: Color.mPrimary
           opacity: 0.8
         }
@@ -167,7 +167,7 @@ NBox {
         id: mirroredComponent
         NMirroredSpectrum {
           anchors.fill: parent
-          values: CavaService.values
+          values: SpectrumService.values
           fillColor: Color.mPrimary
           opacity: 0.8
         }
@@ -177,7 +177,7 @@ NBox {
         id: waveComponent
         NWaveSpectrum {
           anchors.fill: parent
-          values: CavaService.values
+          values: SpectrumService.values
           fillColor: Color.mPrimary
           opacity: 0.8
         }
@@ -268,7 +268,7 @@ NBox {
     // No media player detected - centered disc icon
     NIcon {
       anchors.centerIn: parent
-      visible: !root.hasActivePlayer && CavaService.isIdle
+      visible: !root.hasActivePlayer && SpectrumService.isIdle
       icon: "disc"
       pointSize: Style.fontSizeXXXL * 3
       color: Color.mOnSurfaceVariant

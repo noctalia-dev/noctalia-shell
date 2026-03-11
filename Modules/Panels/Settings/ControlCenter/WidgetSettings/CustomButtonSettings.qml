@@ -20,15 +20,15 @@ ColumnLayout {
   QtObject {
     id: _settings
 
-    property string icon: (widgetData && widgetData.icon !== undefined) ? widgetData.icon : (widgetMetadata && widgetMetadata.icon ? widgetMetadata.icon : "")
-    property string onClicked: (widgetData && widgetData.onClicked !== undefined) ? widgetData.onClicked : (widgetMetadata && widgetMetadata.onClicked ? widgetMetadata.onClicked : "")
-    property string onRightClicked: (widgetData && widgetData.onRightClicked !== undefined) ? widgetData.onRightClicked : (widgetMetadata && widgetMetadata.onRightClicked ? widgetMetadata.onRightClicked : "")
-    property string onMiddleClicked: (widgetData && widgetData.onMiddleClicked !== undefined) ? widgetData.onMiddleClicked : (widgetMetadata && widgetMetadata.onMiddleClicked ? widgetMetadata.onMiddleClicked : "")
+    property string icon: widgetData.icon !== undefined ? widgetData.icon : widgetMetadata.icon
+    property string onClicked: widgetData.onClicked !== undefined ? widgetData.onClicked : widgetMetadata.onClicked
+    property string onRightClicked: widgetData.onRightClicked !== undefined ? widgetData.onRightClicked : widgetMetadata.onRightClicked
+    property string onMiddleClicked: widgetData.onMiddleClicked !== undefined ? widgetData.onMiddleClicked : widgetMetadata.onMiddleClicked
     property ListModel _stateChecksListModel: ListModel {}
     property string stateChecksJson: "[]"
-    property string generalTooltipText: (widgetData && widgetData.generalTooltipText !== undefined) ? widgetData.generalTooltipText : (widgetMetadata && widgetMetadata.generalTooltipText ? widgetMetadata.generalTooltipText : "")
-    property bool enableOnStateLogic: (widgetData && widgetData.enableOnStateLogic !== undefined) ? widgetData.enableOnStateLogic : (widgetMetadata && widgetMetadata.enableOnStateLogic !== undefined ? widgetMetadata.enableOnStateLogic : false)
-    property bool showExecTooltip: (widgetData && widgetData.showExecTooltip !== undefined) ? widgetData.showExecTooltip : (widgetMetadata && widgetMetadata.showExecTooltip !== undefined ? widgetMetadata.showExecTooltip : true)
+    property string generalTooltipText: widgetData.generalTooltipText !== undefined ? widgetData.generalTooltipText : widgetMetadata.generalTooltipText
+    property bool enableOnStateLogic: widgetData.enableOnStateLogic !== undefined ? widgetData.enableOnStateLogic : widgetMetadata.enableOnStateLogic
+    property bool showExecTooltip: widgetData.showExecTooltip !== undefined ? widgetData.showExecTooltip : widgetMetadata.showExecTooltip
 
     function populateStateChecks() {
       try {
@@ -143,6 +143,7 @@ ColumnLayout {
       _settings.generalTooltipText = text;
       saveSettings();
     }
+    defaultValue: widgetMetadata.generalTooltipText
   }
 
   NToggle {
@@ -154,6 +155,7 @@ ColumnLayout {
                  _settings.showExecTooltip = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showExecTooltip
   }
 
   NTextInput {
@@ -166,6 +168,7 @@ ColumnLayout {
       _settings.onClicked = text;
       saveSettings();
     }
+    defaultValue: widgetMetadata.onClicked
   }
 
   NTextInput {
@@ -178,6 +181,7 @@ ColumnLayout {
       _settings.onRightClicked = text;
       saveSettings();
     }
+    defaultValue: widgetMetadata.onRightClicked
   }
 
   NTextInput {
@@ -190,6 +194,7 @@ ColumnLayout {
       _settings.onMiddleClicked = text;
       saveSettings();
     }
+    defaultValue: widgetMetadata.onMiddleClicked
   }
 
   NDivider {}
@@ -204,6 +209,7 @@ ColumnLayout {
                  _settings.enableOnStateLogic = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.enableOnStateLogic
   }
 
   ColumnLayout {

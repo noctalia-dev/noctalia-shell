@@ -82,8 +82,8 @@ ColumnLayout {
                         })
       }
     ]
-    currentKey: Settings.data.audio.cavaFrameRate
-    defaultValue: Settings.getDefaultValue("audio.cavaFrameRate")
-    onSelected: key => Settings.data.audio.cavaFrameRate = key
+    currentKey: Settings.data.audio.spectrumFrameRate
+    defaultValue: Settings.getDefaultValue("audio.spectrumFrameRate")
+    onSelected: key => Settings.data.audio.spectrumFrameRate = key
   }
 }

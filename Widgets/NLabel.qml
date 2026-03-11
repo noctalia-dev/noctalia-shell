@@ -35,21 +35,23 @@ ColumnLayout {
     }
 
     NText {
-      Layout.fillWidth: !root.showIndicator
+      id: labelText
+      Layout.fillWidth: true
       text: root.label
       pointSize: Style.fontSizeL
       font.weight: Style.fontWeightSemiBold
       color: labelColor
       wrapMode: Text.WordWrap
-    }
 
-    // Settings indicator
-    Loader {
-      active: root.showIndicator
-      sourceComponent: NSettingsIndicator {
-        show: true
-        tooltipText: root.indicatorTooltip || ""
-        Layout.alignment: Qt.AlignVCenter
+      // Settings indicator dot positioned right after the text content
+      Loader {
+        active: root.showIndicator
+        x: labelText.contentWidth + Style.marginXS
+        anchors.verticalCenter: parent.verticalCenter
+        sourceComponent: NSettingsIndicator {
+          show: true
+          tooltipText: root.indicatorTooltip || ""
+        }
       }
     }
   }

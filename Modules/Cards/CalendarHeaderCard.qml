@@ -104,7 +104,7 @@ Rectangle {
           }
 
           NText {
-            text: root.weatherReady && !Settings.data.location.hideWeatherTimezone ? ` (${LocationService.data.weather.timezone_abbreviation})` : ""
+            text: root.weatherReady && !Settings.data.location.hideWeatherTimezone ? `${Settings.data.location.hideWeatherCityName ? "" : " "}(${LocationService.data.weather.timezone_abbreviation})` : ""
             pointSize: Style.fontSizeXS
             color: Qt.alpha(Color.mOnPrimary, 0.7)
           }

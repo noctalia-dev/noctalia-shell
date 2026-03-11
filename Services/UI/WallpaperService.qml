@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Services.Power
 import qs.Services.Theming
 import qs.Services.UI
 
@@ -430,18 +431,27 @@ Singleton {
   }
 
   // -------------------------------------------------------------------
-  function setRandomWallpaper() {
+  function setRandomWallpaper(screen) {
     Logger.d("Wallpaper", "setRandomWallpaper");
 
     if (Settings.data.wallpaper.enableMultiMonitorDirectories) {
-      // Pick a random wallpaper per screen
-      for (var i = 0; i < Quickshell.screens.length; i++) {
-        var screenName = Quickshell.screens[i].name;
-        var wallpaperList = getWallpapersList(screenName);
+      if (screen === undefined) {
+        // Pick a random wallpaper per screen
+        for (var i = 0; i < Quickshell.screens.length; i++) {
+          var screenName = Quickshell.screens[i].name;
+          var wallpaperList = getWallpapersList(screenName);
 
+          if (wallpaperList.length > 0) {
+            var randomPath = _pickUnusedRandom(screenName, wallpaperList);
+            changeWallpaper(randomPath, screenName);
+          }
+        }
+      } else {
+        // Pick a random wallpaper for the specified screen
+        var wallpaperList = getWallpapersList(screen);
         if (wallpaperList.length > 0) {
-          var randomPath = _pickUnusedRandom(screenName, wallpaperList);
-          changeWallpaper(randomPath, screenName);
+          var randomPath = _pickUnusedRandom(screen, wallpaperList);
+          changeWallpaper(randomPath, screen);
         }
       }
     } else {
@@ -450,7 +460,7 @@ Singleton {
       var wallpaperList = getWallpapersList(Screen.name);
       if (wallpaperList.length > 0) {
         var randomPath = _pickUnusedRandom("all", wallpaperList);
-        changeWallpaper(randomPath, undefined);
+        changeWallpaper(randomPath, screen);
       }
     }
   }
@@ -1072,7 +1082,7 @@ Singleton {
   Timer {
     id: randomWallpaperTimer
     interval: Settings.data.wallpaper.randomIntervalSec * 1000
-    running: Settings.data.wallpaper.automationEnabled
+    running: Settings.data.wallpaper.automationEnabled && !PowerProfileService.noctaliaPerformanceMode
     repeat: true
     onTriggered: setNextWallpaper()
     triggeredOnStart: false

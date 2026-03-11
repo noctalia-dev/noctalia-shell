@@ -110,6 +110,9 @@ Item {
       PanelService.showContextMenu(contextMenu, pill, screen);
     }
     tooltipText: {
+      if (PanelService.getPanel("bluetoothPanel", screen)?.isPanelOpen) {
+        return "";
+      }
       if (pill.text !== "") {
         return pill.text;
       }

@@ -8,6 +8,7 @@
     ddcutil
     wlsunset
     wl-clipboard
+    wlr-randr
     imagemagick
     wget
     (python3.withPackages (pp: lib.optional calendarSupport pp.pygobject3))
@@ -25,6 +26,7 @@
   ddcutil,
   wlsunset,
   wl-clipboard,
+  wlr-randr,
   imagemagick,
   wget,
   python3,

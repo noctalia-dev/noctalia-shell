@@ -2,6 +2,8 @@
 
 <!-- If this is a color scheme PR, please create it in https://github.com/noctalia-dev/noctalia-colorschemes instead -->
 
+If this PR is not ready for review yet, please mark it as **Draft** until it's good to be reviewed.
+
 ## Motivation
 Provide a clear and concise explanation of what this PR does and why it is needed.
 

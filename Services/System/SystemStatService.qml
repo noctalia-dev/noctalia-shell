@@ -39,6 +39,7 @@ Singleton {
 
   // Public values
   property real cpuUsage: 0
+  property list<real> coresUsage: []
   property real cpuTemp: 0
   property string cpuFreq: "0.0GHz"
   property real cpuFreqRatio: 0
@@ -75,7 +76,7 @@ Singleton {
   readonly property int cpuHistoryLength: Math.ceil(historyDurationMs / cpuUsageIntervalMs)
   readonly property int gpuHistoryLength: Math.ceil(historyDurationMs / gpuIntervalMs)
   readonly property int memHistoryLength: Math.ceil(historyDurationMs / memIntervalMs)
-  readonly property int diskHistoryLength: Math.ceil(historyDurationMs / diskIntervalMs)
+  readonly property int diskHistoryLength: Math.max(10, Math.ceil(historyDurationMs / diskIntervalMs))
   readonly property int networkHistoryLength: Math.ceil(historyDurationMs / networkIntervalMs)
 
   property var cpuHistory: new Array(cpuHistoryLength).fill(0)
@@ -172,11 +173,11 @@ Singleton {
   // Minimum floor of 1 MB/s so graph doesn't fluctuate at low speeds
   readonly property real rxMaxSpeed: {
     const max = Math.max(...rxSpeedHistory);
-    return Math.max(max, 1048576); // 1 MB/s floor
+    return Math.max(max, 1000000); // 1 MB/s floor
   }
   readonly property real txMaxSpeed: {
     const max = Math.max(...txSpeedHistory);
-    return Math.max(max, 524288); // 512 KB/s floor
+    return Math.max(max, 512000); // 512 KB/s floor
   }
 
   // Ready-to-use ratios based on current maximums (0..1 range)
@@ -231,6 +232,14 @@ Singleton {
   readonly property color memColor: memCritical ? criticalColor : (memWarning ? warningColor : Color.mPrimary)
   readonly property color swapColor: swapCritical ? criticalColor : (swapWarning ? warningColor : Color.mPrimary)
 
+  function getCoreUsageColor(usage) {
+    if (usage >= cpuCriticalThreshold)
+      return criticalColor;
+    if (usage >= cpuWarningThreshold)
+      return warningColor;
+    return Color.mPrimary;
+  }
+
   function getDiskColor(diskPath, available = false) {
     return isDiskCritical(diskPath, available) ? criticalColor : (isDiskWarning(diskPath, available) ? warningColor : Color.mPrimary);
   }
@@ -246,6 +255,7 @@ Singleton {
 
   // Internal state for CPU calculation
   property var prevCpuStats: null
+  property var prevCpuCoresStats: null
 
   // Internal state for network speed calculation
   // Previous Bytes need to be stored as 'real' as they represent the total of bytes transfered
@@ -299,6 +309,7 @@ Singleton {
     if (shouldRun) {
       // Reset differential state so first readings after resume are clean
       root.prevCpuStats = null;
+      root.prevCpuCoresStats = null;
       root.prevTime = 0;
 
       // Trigger initial reads
@@ -332,6 +343,7 @@ Singleton {
     function onResumed() {
       Logger.i("SystemStat", "System resumed - resetting differential state");
       root.prevCpuStats = null;
+      root.prevCpuCoresStats = null;
       root.prevTime = 0;
     }
   }
@@ -501,7 +513,7 @@ Singleton {
         const newUsedGb = {};
         const newSizeGb = {};
         const newAvailableGb = {};
-        const bytesPerGb = 1024 * 1024 * 1024;
+        const bytesPerGb = 1000 * 1000 * 1000;
         // Start from line 1 (skip header)
         for (var i = 1; i < lines.length; i++) {
           const parts = lines[i].trim().split(/\s+/);
@@ -1079,16 +1091,9 @@ Singleton {
 
   // -------------------------------------------------------
   // Calculate CPU usage from /proc/stat
-  function calculateCpuUsage(text) {
-    if (!text)
-      return;
-    const lines = text.split('\n');
-    const cpuLine = lines[0];
 
-    // First line is total CPU
-    if (!cpuLine.startsWith('cpu '))
-      return;
-    const parts = cpuLine.split(/\s+/);
+  function calculateLineUsage(line) {
+    const parts = line.split(/\s+/);
     const stats = {
       "user": parseInt(parts[1]) || 0,
       "nice": parseInt(parts[2]) || 0,
@@ -1101,23 +1106,73 @@ Singleton {
       "guest": parseInt(parts[9]) || 0,
       "guestNice": parseInt(parts[10]) || 0
     };
-    const totalIdle = stats.idle + stats.iowait;
-    const total = Object.values(stats).reduce((sum, val) => sum + val, 0);
+    return stats;
+  }
 
-    if (root.prevCpuStats) {
-      const prevTotalIdle = root.prevCpuStats.idle + root.prevCpuStats.iowait;
-      const prevTotal = Object.values(root.prevCpuStats).reduce((sum, val) => sum + val, 0);
+  function computeUsage(prev, curr) {
+    if (!prev || !curr)
+      return -1;
+    const currTotalIdle = curr.idle + curr.iowait;
+    const currTotal = Object.values(curr).reduce((sum, val) => sum + val, 0);
+    const prevTotalIdle = prev.idle + prev.iowait;
+    const prevTotal = Object.values(prev).reduce((sum, val) => sum + val, 0);
 
-      const diffTotal = total - prevTotal;
-      const diffIdle = totalIdle - prevTotalIdle;
+    const diffTotal = currTotal - prevTotal;
+    const diffIdle = currTotalIdle - prevTotalIdle;
+    if (diffTotal > 0) {
+      return (((diffTotal - diffIdle) / diffTotal) * 100).toFixed(1);
+    }
+    return -1;
+  }
 
-      if (diffTotal > 0) {
-        root.cpuUsage = (((diffTotal - diffIdle) / diffTotal) * 100).toFixed(1);
-      }
+  function calculateCpuUsage(text) {
+    if (!text)
+      return;
+    const lines = text.split('\n');
+    const cpuLine = lines[0];
+
+    // First line is total CPU
+    if (!cpuLine.startsWith('cpu '))
+      return;
+
+    const currCpuStats = calculateLineUsage(cpuLine);
+    const usage = computeUsage(root.prevCpuStats, currCpuStats);
+
+    if (usage >= 0) {
+      root.cpuUsage = usage;
       root.pushCpuHistory();
     }
+    root.prevCpuStats = currCpuStats;
 
-    root.prevCpuStats = stats;
+    // Find the number of CPU cores
+    let nbCores = 0;
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].startsWith('cpu'))
+        break;
+      nbCores++;
+    }
+
+    // Fallback if we did not find any cores
+    if (nbCores === 0)
+      return;
+
+    // If we found more cores than before, we reset our stats
+    if (root.coresUsage.length < nbCores)
+      root.coresUsage = new Array(nbCores).fill(0);
+
+    let coresStats = [];
+    let newCoresUsage = root.coresUsage.slice();
+    for (let i = 0; i < nbCores; i++) {
+      const coreCpuLine = lines[i + 1];
+      const currCoreStats = calculateLineUsage(coreCpuLine);
+      const coreUsage = computeUsage(root.prevCpuCoresStats?.[i], currCoreStats);
+      if (coreUsage >= 0) {
+        newCoresUsage[i] = coreUsage;
+      }
+      coresStats.push(currCoreStats);
+    }
+    root.coresUsage = newCoresUsage;
+    root.prevCpuCoresStats = coresStats;
   }
 
   // -------------------------------------------------------
@@ -1209,11 +1264,11 @@ Singleton {
   // Helper function to format network speeds
   function formatSpeed(bytesPerSecond) {
     const units = ["KB", "MB", "GB"];
-    let value = bytesPerSecond / 1024;
+    let value = bytesPerSecond / 1000;
     let unitIndex = 0;
 
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value /= 1024;
+    while (value >= 1000 && unitIndex < units.length - 1) {
+      value /= 1000;
       unitIndex++;
     }
 
@@ -1232,13 +1287,13 @@ Singleton {
     const units = ["", "K", "M", "G"];
     let value = bytesPerSecond;
     let unitIndex = 0;
-    while (value >= 1024 && unitIndex < units.length - 1) {
-      value = value / 1024.0;
+    while (value >= 1000 && unitIndex < units.length - 1) {
+      value = value / 1000.0;
       unitIndex++;
     }
     // Promote at ~100 of current unit (e.g., 100k -> ~0.1M shown as 0.1M or 0M if rounded)
     if (unitIndex < units.length - 1 && value >= 100) {
-      value = value / 1024.0;
+      value = value / 1000.0;
       unitIndex++;
     }
     const display = Math.round(value).toString();

@@ -375,6 +375,13 @@ Singleton {
     }
   }
 
+  // Scrollable workspace content (Niri)
+  function scrollWorkspaceContent(direction) {
+    if (backend && backend.scrollWorkspaceContent) {
+      backend.scrollWorkspaceContent(direction);
+    }
+  }
+
   // Get current workspace
   function getCurrentWorkspace() {
     for (var i = 0; i < workspaces.count; i++) {
@@ -488,6 +495,16 @@ Singleton {
                                     });
   }
 
+  function userspaceReboot() {
+    Logger.i("Compositor", "Userspace reboot requested");
+    if (executeSessionAction("userspaceReboot"))
+      return;
+
+    HooksService.executeSessionHook("userspaceReboot", () => {
+                                      Quickshell.execDetached(["sh", "-c", "systemctl soft-reboot"]);
+                                    });
+  }
+
   function rebootToUefi() {
     Logger.i("Compositor", "Reboot to UEFI firmware requested requested");
     if (executeSessionAction("rebootToUefi"))
@@ -504,6 +521,15 @@ Singleton {
       backend.turnOffMonitors();
     } else {
       Logger.w("Compositor", "No backend available for turnOffMonitors");
+    }
+  }
+
+  function turnOnMonitors() {
+    Logger.i("Compositor", "Turn on monitors requested");
+    if (backend && backend.turnOnMonitors) {
+      backend.turnOnMonitors();
+    } else {
+      Logger.w("Compositor", "No backend available for turnOnMonitors");
     }
   }
 

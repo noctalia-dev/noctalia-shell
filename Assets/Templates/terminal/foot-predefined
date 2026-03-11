@@ -1,0 +1,22 @@
+[colors-dark]
+foreground={{colors.terminal_foreground.default.hex_stripped}}
+background={{colors.terminal_background.default.hex_stripped}}
+regular0={{colors.terminal_normal_black.default.hex_stripped}}
+regular1={{colors.terminal_normal_red.default.hex_stripped}}
+regular2={{colors.terminal_normal_green.default.hex_stripped}}
+regular3={{colors.terminal_normal_yellow.default.hex_stripped}}
+regular4={{colors.terminal_normal_blue.default.hex_stripped}}
+regular5={{colors.terminal_normal_magenta.default.hex_stripped}}
+regular6={{colors.terminal_normal_cyan.default.hex_stripped}}
+regular7={{colors.terminal_normal_white.default.hex_stripped}}
+bright0={{colors.terminal_bright_black.default.hex_stripped}}
+bright1={{colors.terminal_bright_red.default.hex_stripped}}
+bright2={{colors.terminal_bright_green.default.hex_stripped}}
+bright3={{colors.terminal_bright_yellow.default.hex_stripped}}
+bright4={{colors.terminal_bright_blue.default.hex_stripped}}
+bright5={{colors.terminal_bright_magenta.default.hex_stripped}}
+bright6={{colors.terminal_bright_cyan.default.hex_stripped}}
+bright7={{colors.terminal_bright_white.default.hex_stripped}}
+selection-foreground={{colors.terminal_selection_fg.default.hex_stripped}}
+selection-background={{colors.terminal_selection_bg.default.hex_stripped}}
+cursor={{colors.terminal_cursor_text.default.hex_stripped}} {{colors.terminal_cursor.default.hex_stripped}}

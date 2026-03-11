@@ -22,7 +22,6 @@
         system:
         nixpkgs.legacyPackages.${system}.appendOverlays [
           self.overlays.default
-          noctalia-qs.overlays.default
         ]
       );
     in
@@ -47,12 +46,15 @@
                   ];
               in
               mkDate (self.lastModifiedDate or "19700101") + "_" + (self.shortRev or "dirty");
+            quickshell = noctalia-qs.packages.${prev.stdenv.hostPlatform.system}.default;
           };
         };
       };
 
       devShells = eachSystem (system: {
-        default = pkgsFor.${system}.callPackage ./nix/shell.nix { };
+        default = pkgsFor.${system}.callPackage ./nix/shell.nix {
+          quickshell = noctalia-qs.packages.${system}.default;
+        };
       });
 
       homeModules.default =

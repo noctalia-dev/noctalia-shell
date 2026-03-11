@@ -29,8 +29,10 @@ ColumnLayout {
     }
     for (var i = 0; i < entries.length; i++) {
       entriesModel.append({
+                            "name": String(entries[i].name || ""),
                             "timeout": parseInt(entries[i].timeout) || 60,
-                            "command": String(entries[i].command || "")
+                            "command": String(entries[i].command || ""),
+                            "resumeCommand": String(entries[i].resumeCommand || "")
                           });
     }
   }
@@ -41,21 +43,67 @@ ColumnLayout {
     for (var i = 0; i < entriesModel.count; i++) {
       var item = entriesModel.get(i);
       arr.push({
+                 "name": item.name,
                  "timeout": item.timeout,
-                 "command": item.command
+                 "command": item.command,
+                 "resumeCommand": item.resumeCommand
                });
     }
     Settings.data.idle.customCommands = JSON.stringify(arr);
     _saving = false;
   }
 
-  Component.onCompleted: _loadToModel()
+  function _removeEntry(index) {
+    entriesModel.remove(index, 1);
+    _saveFromModel();
+  }
+
+  Component.onCompleted: Qt.callLater(_loadToModel)
 
   Connections {
     target: Settings.data.idle
     function onCustomCommandsChanged() {
       root._loadToModel();
     }
+  }
+
+  // Shared Edit Popup
+  IdleCommandEditPopup {
+    id: editPopup
+    parent: Overlay.overlay
+  }
+
+  function openEdit(index, nameVal, timeoutVal, cmdVal, resumeCmdVal) {
+    editPopup.editIndex = index;
+    editPopup.nameValue = nameVal;
+    editPopup.timeoutValue = timeoutVal;
+    editPopup.commandValue = cmdVal;
+    editPopup.resumeCommandValue = resumeCmdVal;
+    editPopup.showName = true;
+
+    try {
+      editPopup.saved.disconnect(editPopup._savedSlot);
+    } catch (e) {}
+
+    editPopup._savedSlot = function (timeout, cmd, resumeCmd, name) {
+      if (index >= 0 && index < entriesModel.count) {
+        entriesModel.setProperty(index, "name", name);
+        entriesModel.setProperty(index, "timeout", timeout);
+        entriesModel.setProperty(index, "command", cmd);
+        entriesModel.setProperty(index, "resumeCommand", resumeCmd);
+      } else {
+        entriesModel.append({
+                              "name": name,
+                              "timeout": timeout,
+                              "command": cmd,
+                              "resumeCommand": resumeCmd
+                            });
+      }
+      root._saveFromModel();
+    };
+
+    editPopup.saved.connect(editPopup._savedSlot);
+    editPopup.open();
   }
 
   NLabel {
@@ -72,73 +120,34 @@ ColumnLayout {
   Repeater {
     model: entriesModel
 
-    delegate: ColumnLayout {
+    delegate: RowLayout {
       id: entryDelegate
       required property int index
+      required property string name
       required property int timeout
       required property string command
+      required property string resumeCommand
 
       spacing: Style.marginM
       Layout.fillWidth: true
 
-      property bool _initialized: false
-
-      Component.onCompleted: {
-        commandInput.text = entryDelegate.command;
-        _initialized = false;
-        timeoutSpinBox.value = entryDelegate.timeout;
-        _initialized = true;
+      NLabel {
+        Layout.fillWidth: true
+        label: entryDelegate.name || I18n.tr("panels.idle.custom-entry-unnamed")
+        description: I18n.trp("common.second", entryDelegate.timeout)
+        labelColor: (entryDelegate.command || entryDelegate.resumeCommand) ? Color.mPrimary : Color.mOnSurface
       }
 
-      RowLayout {
-        Layout.fillWidth: true
-        spacing: Style.marginM
-
-        NSpinBox {
-          id: timeoutSpinBox
-          Layout.fillWidth: true
-          label: I18n.tr("panels.idle.custom-entry-timeout")
-          from: 1
-          to: 86400
-          suffix: "s"
-          onValueChanged: {
-            if (entryDelegate._initialized && !root._saving) {
-              entriesModel.setProperty(entryDelegate.index, "timeout", value);
-              root._saveFromModel();
-            }
-          }
-        }
-
-        NIconButton {
-          icon: "trash"
-          tooltipText: I18n.tr("panels.idle.custom-entry-delete")
-          Layout.alignment: Qt.AlignBottom
-          onClicked: {
-            entriesModel.remove(entryDelegate.index, 1);
-            root._saveFromModel();
-          }
-        }
+      NIconButton {
+        icon: "settings"
+        tooltipText: I18n.tr("common.edit")
+        onClicked: root.openEdit(entryDelegate.index, entryDelegate.name, entryDelegate.timeout, entryDelegate.command, entryDelegate.resumeCommand)
       }
 
-      NTextInput {
-        id: commandInput
-        Layout.fillWidth: true
-        label: I18n.tr("panels.idle.custom-entry-command")
-        placeholderText: "notify-send \"Idle\""
-        fontFamily: Settings.data.ui.fontFixed
-        onTextChanged: {
-          if (entryDelegate._initialized && !root._saving) {
-            entriesModel.setProperty(entryDelegate.index, "command", text);
-            root._saveFromModel();
-          }
-        }
-      }
-
-      NDivider {
-        Layout.fillWidth: true
-        Layout.topMargin: Style.marginS
-        Layout.bottomMargin: Style.marginS
-        visible: entryDelegate.index < entriesModel.count - 1
+      NIconButton {
+        icon: "trash"
+        tooltipText: I18n.tr("panels.idle.custom-entry-delete")
+        onClicked: root._removeEntry(entryDelegate.index)
       }
     }
   }
@@ -148,11 +157,7 @@ ColumnLayout {
     icon: "add"
     enabled: Settings.data.idle.enabled
     onClicked: {
-      entriesModel.append({
-                            "timeout": 60,
-                            "command": ""
-                          });
-      root._saveFromModel();
+      root.openEdit(-1, "", 60, "", "");
     }
   }
 }

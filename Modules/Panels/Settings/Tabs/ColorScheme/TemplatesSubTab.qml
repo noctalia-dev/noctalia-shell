@@ -47,6 +47,18 @@ ColumnLayout {
           paths.push(app.outputs[k].path);
         }
         path = paths.join("\n");
+      } else if (app.id === "emacs") {
+        // Emacs clients are detected dynamically by ProgramCheckerService
+        var emacsClients = ProgramCheckerService.availableEmacsClients;
+        if (emacsClients && emacsClients.length > 0) {
+          var emacsPaths = [];
+          for (var k = 0; k < emacsClients.length; k++) {
+            emacsPaths.push(emacsClients[k].path);
+          }
+          path = emacsPaths.join("\n");
+        } else {
+          path = I18n.tr("panels.color-scheme.templates-none-detected");
+        }
       } else if (app.clients && app.clients.length > 0) {
         var validClients = [];
         for (var k = 0; k < app.clients.length; k++) {
@@ -267,7 +279,7 @@ ColumnLayout {
           onClicked: root.toggleTemplate(chip.modelData.id)
           onEntered: {
             if (chip.modelData.tooltip) {
-              TooltipService.show(chip, chip.modelData.tooltip, "auto");
+              TooltipService.show(chip, chip.modelData.tooltip, "bottom");
             }
           }
           onExited: {

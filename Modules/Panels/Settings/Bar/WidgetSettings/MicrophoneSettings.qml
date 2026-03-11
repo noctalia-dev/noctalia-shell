@@ -53,6 +53,7 @@ ColumnLayout {
                   valueDisplayMode = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.displayMode
   }
 
   NColorChoice {
@@ -62,6 +63,7 @@ ColumnLayout {
                   valueIconColor = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.iconColor
   }
 
   NColorChoice {
@@ -70,6 +72,7 @@ ColumnLayout {
                   valueTextColor = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.textColor
   }
 
   // Middle click command
@@ -80,5 +83,6 @@ ColumnLayout {
     text: valueMiddleClickCommand
     onTextChanged: valueMiddleClickCommand = text
     onEditingFinished: saveSettings()
+    defaultValue: widgetMetadata.middleClickCommand
   }
 }

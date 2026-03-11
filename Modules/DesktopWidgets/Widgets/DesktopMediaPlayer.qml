@@ -32,25 +32,26 @@ DraggableDesktopWidget {
   readonly property bool isHidden: (shouldHideIdle || shouldHideEmpty) && !DesktopWidgetRegistry.editMode
   visible: !isHidden
 
-  // CavaService registration for visualizer
-  readonly property string cavaComponentId: "desktopmediaplayer:" + (root.screen ? root.screen.name : "unknown")
+  // SpectrumService registration for visualizer
+  readonly property string spectrumComponentId: "desktopmediaplayer:" + (root.screen ? root.screen.name : "unknown")
+  readonly property bool needsSpectrum: root.shouldShowVisualizer && !root.isHidden
 
-  onShouldShowVisualizerChanged: {
-    if (root.shouldShowVisualizer) {
-      CavaService.registerComponent(root.cavaComponentId);
+  onNeedsSpectrumChanged: {
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent(root.spectrumComponentId);
     } else {
-      CavaService.unregisterComponent(root.cavaComponentId);
+      SpectrumService.unregisterComponent(root.spectrumComponentId);
     }
   }
 
   Component.onCompleted: {
-    if (root.shouldShowVisualizer) {
-      CavaService.registerComponent(root.cavaComponentId);
+    if (root.needsSpectrum) {
+      SpectrumService.registerComponent(root.spectrumComponentId);
     }
   }
 
   Component.onDestruction: {
-    CavaService.unregisterComponent(root.cavaComponentId);
+    SpectrumService.unregisterComponent(root.spectrumComponentId);
   }
 
   readonly property bool showPrev: hasPlayer && MediaService.canGoPrevious
@@ -81,7 +82,7 @@ DraggableDesktopWidget {
     anchors.bottomMargin: 0
     z: 0
     clip: true
-    active: shouldShowVisualizer
+    active: needsSpectrum
     layer.enabled: true
     layer.smooth: true
     layer.effect: MultiEffect {
@@ -113,7 +114,7 @@ DraggableDesktopWidget {
       id: linearComponent
       NLinearSpectrum {
         anchors.fill: parent
-        values: CavaService.values
+        values: SpectrumService.values
         fillColor: Color.mPrimary
         opacity: 0.5
       }
@@ -123,7 +124,7 @@ DraggableDesktopWidget {
       id: mirroredComponent
       NMirroredSpectrum {
         anchors.fill: parent
-        values: CavaService.values
+        values: SpectrumService.values
         fillColor: Color.mPrimary
         opacity: 0.5
       }
@@ -133,7 +134,7 @@ DraggableDesktopWidget {
       id: waveComponent
       NWaveSpectrum {
         anchors.fill: parent
-        values: CavaService.values
+        values: SpectrumService.values
         fillColor: Color.mPrimary
         opacity: 0.5
       }

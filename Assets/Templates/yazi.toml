@@ -76,9 +76,9 @@ selected = { reversed = true }
 # : Tabs [[[
 
 [tabs]
-active = { fg = "{{colors.primary.default.hex}}", bold = true, bg = "{{colors.surface.default.hex}}" }
+active = { fg = "{{colors.surface.default.hex}}", bold = true, bg = "{{colors.primary.default.hex}}" }
 inactive = { fg = "{{colors.secondary.default.hex}}", bg = "{{colors.surface.default.hex}}" }
-sep_inner = { open = "[", close = "]" }
+sep_inner = { open = "", close = "" }
 
 # : ]]]
 

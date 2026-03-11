@@ -32,6 +32,7 @@ WIDGET_TYPES = (
     "NTextInput",
     "NCheckbox",
     "NLabel",
+    "NColorChoice",
     "HookRow",
 )
 

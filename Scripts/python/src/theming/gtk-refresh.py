@@ -40,40 +40,53 @@ def theme_exists(theme_name: str) -> bool:
     return False
 
 
+GTK_IMPORT = '@import url("noctalia.css");'
+
+
+def ensure_gtk_css_import(gtk_css: Path, colors_file: Path, label: str) -> bool:
+    """
+    Append the noctalia.css import to gtk.css if not already present.
+    If gtk.css doesn't exist, create it with the import.
+    Does not overwrite user modifications (similar to niri template).
+    """
+    if not colors_file.exists():
+        print(f"Error: {label} noctalia.css not found at {colors_file}", file=sys.stderr)
+        return False
+
+    # If gtk.css is a symlink, replace it with a regular file
+    if gtk_css.is_symlink():
+        gtk_css.unlink()
+
+    if gtk_css.exists():
+        content = gtk_css.read_text()
+        # Already has the import (flexible: allow optional whitespace / different quoting)
+        if "noctalia.css" in content and "@import" in content:
+            return True
+        # Append import to the end
+        new_content = content.rstrip()
+        if new_content and not new_content.endswith("\n"):
+            new_content += "\n"
+        new_content += "\n" + GTK_IMPORT + "\n"
+        gtk_css.write_text(new_content)
+        print(f"Appended {label} noctalia.css import to gtk.css")
+    else:
+        gtk_css.write_text(GTK_IMPORT + "\n")
+        print(f"Created {label} gtk.css with noctalia.css import")
+    return True
+
+
 async def apply_gtk3_colors(config_dir: Path):
     gtk3_dir = config_dir / "gtk-3.0"
     colors_file = gtk3_dir / "noctalia.css"
     gtk_css = gtk3_dir / "gtk.css"
-
-    if not colors_file.exists():
-        print(f"Error: noctalia.css not found at {colors_file}", file=sys.stderr)
-        return False
-
-    if gtk_css.is_symlink():
-        gtk_css.unlink()
-    elif gtk_css.exists():
-        backup_name = f"gtk.css.backup.{int(os.path.getmtime(gtk_css))}"
-        gtk_css.rename(gtk3_dir / backup_name)
-        print(f"Backed up existing gtk.css to {backup_name}")
-
-    gtk_css.symlink_to("noctalia.css")
-    print(f"Created symlink: {gtk_css} -> noctalia.css")
-    return True
+    return ensure_gtk_css_import(gtk_css, colors_file, "GTK3")
 
 
 async def apply_gtk4_colors(config_dir: Path):
     gtk4_dir = config_dir / "gtk-4.0"
     colors_file = gtk4_dir / "noctalia.css"
     gtk_css = gtk4_dir / "gtk.css"
-    gtk4_import = '@import url("noctalia.css");'
-
-    if not colors_file.exists():
-        print(f"Error: GTK4 noctalia.css not found at {colors_file}", file=sys.stderr)
-        return False
-
-    gtk_css.write_text(gtk4_import)
-    print("Updated GTK4 CSS import")
-    return True
+    return ensure_gtk_css_import(gtk_css, colors_file, "GTK4")
 
 
 async def refresh_theme():

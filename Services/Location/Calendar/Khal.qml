@@ -131,21 +131,37 @@ Singleton {
 
   function parseEvents(text) {
     const result = [];
+    const duplicates = new Set();
 
     for (const line of text.split("\n")) {
       if (!line.trim())
         continue;
       const dayEvents = JSON.parse(line);
       for (const event of dayEvents) {
-        result.push({
-                      uid: event.uid,
-                      calendar: event.calendar,
-                      summary: event.title,
-                      start: parseTimestamp(event["start-long-full"]),
-                      end: parseTimestamp(event["end-long-full"]),
-                      location: event.location,
-                      description: event.description
-                    });
+        if (event["repeat-pattern"] !== "") {
+          // if there is a repeat pattern, the event must be included each time
+          result.push({
+                        uid: event.uid,
+                        calendar: event.calendar,
+                        summary: event.title,
+                        start: parseTimestamp(event["start-long-full"]),
+                        end: parseTimestamp(event["end-long-full"]),
+                        location: event.location,
+                        description: event.description
+                      });
+        } else if (!duplicates.has(event.uid)) {
+          // in any other cases, we must remove duplicates using the uid of the event
+          result.push({
+                        uid: event.uid,
+                        calendar: event.calendar,
+                        summary: event.title,
+                        start: parseTimestamp(event["start-long-full"]),
+                        end: parseTimestamp(event["end-long-full"]),
+                        location: event.location,
+                        description: event.description
+                      });
+          duplicates.add(event.uid);
+        }
       }
     }
 

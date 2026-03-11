@@ -28,6 +28,9 @@ Singleton {
   property Component systemStatComponent: Component {
     DesktopSystemStat {}
   }
+  property Component audioVisualizerComponent: Component {
+    DesktopAudioVisualizer {}
+  }
 
   // Widget registry object mapping widget names to components
   // Created in Component.onCompleted to ensure Components are ready
@@ -40,6 +43,7 @@ Singleton {
     widgetsObj["MediaPlayer"] = mediaPlayerComponent;
     widgetsObj["Weather"] = weatherComponent;
     widgetsObj["SystemStat"] = systemStatComponent;
+    widgetsObj["AudioVisualizer"] = audioVisualizerComponent;
     widgets = widgetsObj;
 
     Logger.i("DesktopWidgetRegistry", "Service started");
@@ -49,39 +53,52 @@ Singleton {
                                      "Clock": "WidgetSettings/ClockSettings.qml",
                                      "MediaPlayer": "WidgetSettings/MediaPlayerSettings.qml",
                                      "Weather": "WidgetSettings/WeatherSettings.qml",
-                                     "SystemStat": "WidgetSettings/SystemStatSettings.qml"
+                                     "SystemStat": "WidgetSettings/SystemStatSettings.qml",
+                                     "AudioVisualizer": "WidgetSettings/AudioVisualizerSettings.qml"
                                    })
 
   property var widgetMetadata: ({
                                   "Clock": {
                                     "showBackground": true,
+                                    "roundedCorners": true,
                                     "clockStyle": "digital",
                                     "clockColor": "none",
                                     "useCustomFont": false,
+                                    "customFont": "",
                                     "format": "HH:mm\\nd MMMM yyyy"
                                   },
                                   "MediaPlayer": {
                                     "showBackground": true,
+                                    "roundedCorners": true,
                                     "visualizerType": "linear",
                                     "hideMode": "visible",
                                     "showButtons": true,
                                     "showAlbumArt": true,
-                                    "showVisualizer": true,
-                                    "roundedCorners": true
+                                    "showVisualizer": true
                                   },
                                   "Weather": {
-                                    "showBackground": true
+                                    "showBackground": true,
+                                    "roundedCorners": true
                                   },
                                   "SystemStat": {
                                     "showBackground": true,
+                                    "roundedCorners": true,
                                     "statType": "CPU",
                                     "diskPath": "/",
-                                    "roundedCorners": true,
                                     "layout": "bottom"
+                                  },
+                                  "AudioVisualizer": {
+                                    "showBackground": true,
+                                    "roundedCorners": true,
+                                    "width": 320,
+                                    "height": 72,
+                                    "visualizerType": "linear",
+                                    "hideWhenIdle": false,
+                                    "colorName": "primary"
                                   }
                                 })
 
-  property var cpuIntensiveWidgets: ["SystemStat"]
+  property var cpuIntensiveWidgets: ["SystemStat", "AudioVisualizer"]
 
   // Plugin widget storage (mirroring BarWidgetRegistry pattern)
   property var pluginWidgets: ({})
@@ -245,7 +262,7 @@ Singleton {
     if (root.isPluginWidget(widgetId)) {
       var pluginId = widgetId.replace("plugin:", "");
       var manifest = PluginRegistry.getPluginManifest(pluginId);
-      if (manifest && manifest.entryPoints && manifest.entryPoints.settings) {
+      if (manifest && manifest.entryPoints && (manifest.entryPoints.desktopWidgetSettings || manifest.entryPoints.settings)) {
         hasSettings = true;
       }
     } else {

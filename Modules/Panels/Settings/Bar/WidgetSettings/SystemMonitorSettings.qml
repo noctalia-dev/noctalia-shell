@@ -26,6 +26,7 @@ ColumnLayout {
   property bool valueUseMonospaceFont: widgetData.useMonospaceFont !== undefined ? widgetData.useMonospaceFont : widgetMetadata.useMonospaceFont
   property bool valueUsePadding: widgetData.usePadding !== undefined ? widgetData.usePadding : widgetMetadata.usePadding
   property bool valueShowCpuUsage: widgetData.showCpuUsage !== undefined ? widgetData.showCpuUsage : widgetMetadata.showCpuUsage
+  property bool valueShowCpuCores: widgetData.showCpuCores !== undefined ? widgetData.showCpuCores : widgetMetadata.showCpuCores
   property bool valueShowCpuFreq: widgetData.showCpuFreq !== undefined ? widgetData.showCpuFreq : widgetMetadata.showCpuFreq
   property bool valueShowCpuTemp: widgetData.showCpuTemp !== undefined ? widgetData.showCpuTemp : widgetMetadata.showCpuTemp
   property bool valueShowGpuTemp: widgetData.showGpuTemp !== undefined ? widgetData.showGpuTemp : widgetMetadata.showGpuTemp
@@ -47,6 +48,7 @@ ColumnLayout {
     settings.useMonospaceFont = valueUseMonospaceFont;
     settings.usePadding = valueUsePadding;
     settings.showCpuUsage = valueShowCpuUsage;
+    settings.showCpuCores = valueShowCpuCores;
     settings.showCpuFreq = valueShowCpuFreq;
     settings.showCpuTemp = valueShowCpuTemp;
     settings.showGpuTemp = valueShowGpuTemp;
@@ -72,6 +74,7 @@ ColumnLayout {
                  valueCompactMode = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.compactMode
   }
 
   NColorChoice {
@@ -81,6 +84,7 @@ ColumnLayout {
                   valueIconColor = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.iconColor
   }
 
   NColorChoice {
@@ -90,6 +94,7 @@ ColumnLayout {
                   saveSettings();
                 }
     visible: !valueCompactMode
+    defaultValue: widgetMetadata.textColor
   }
 
   NToggle {
@@ -102,6 +107,7 @@ ColumnLayout {
                  saveSettings();
                }
     visible: !valueCompactMode
+    defaultValue: widgetMetadata.useMonospaceFont
   }
 
   NToggle {
@@ -115,6 +121,7 @@ ColumnLayout {
                }
     visible: !valueCompactMode
     enabled: !isVerticalBar && valueUseMonospaceFont
+    defaultValue: widgetMetadata.usePadding
   }
 
   NDivider {
@@ -131,6 +138,20 @@ ColumnLayout {
                  valueShowCpuUsage = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showCpuUsage
+  }
+
+  NToggle {
+    id: showCpuCores
+    Layout.fillWidth: true
+    label: I18n.tr("bar.system-monitor.cpu-cores-label")
+    description: I18n.tr("bar.system-monitor.cpu-cores-description")
+    checked: valueShowCpuCores
+    onToggled: checked => {
+                 valueShowCpuCores = checked;
+                 saveSettings();
+               }
+    visible: valueCompactMode
   }
 
   NToggle {
@@ -143,6 +164,7 @@ ColumnLayout {
                  valueShowCpuFreq = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showCpuFreq
   }
 
   NToggle {
@@ -155,6 +177,7 @@ ColumnLayout {
                  valueShowCpuTemp = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showCpuTemp
   }
 
   NToggle {
@@ -167,6 +190,7 @@ ColumnLayout {
                  valueShowLoadAverage = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showLoadAverage
   }
 
   NToggle {
@@ -180,6 +204,7 @@ ColumnLayout {
                  saveSettings();
                }
     visible: SystemStatService.gpuAvailable
+    defaultValue: widgetMetadata.showGpuTemp
   }
 
   NToggle {
@@ -192,6 +217,7 @@ ColumnLayout {
                  valueShowMemoryUsage = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showMemoryUsage
   }
 
   NToggle {
@@ -205,6 +231,7 @@ ColumnLayout {
                  saveSettings();
                }
     visible: valueShowMemoryUsage
+    defaultValue: widgetMetadata.showMemoryAsPercent
   }
 
   NToggle {
@@ -217,6 +244,7 @@ ColumnLayout {
                  valueShowSwapUsage = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showSwapUsage
   }
 
   NToggle {
@@ -229,6 +257,7 @@ ColumnLayout {
                  valueShowNetworkStats = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showNetworkStats
   }
 
   NDivider {
@@ -245,6 +274,7 @@ ColumnLayout {
                  valueShowDiskUsage = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showDiskUsage
   }
 
   NToggle {
@@ -257,6 +287,7 @@ ColumnLayout {
                  valueShowDiskUsageAsPercent = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showDiskUsageAsPercent
   }
 
   NToggle {
@@ -269,6 +300,7 @@ ColumnLayout {
                  valueShowDiskAvailable = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showDiskAvailable
   }
 
   NComboBox {
@@ -288,5 +320,6 @@ ColumnLayout {
                   valueDiskPath = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.diskPath
   }
 }

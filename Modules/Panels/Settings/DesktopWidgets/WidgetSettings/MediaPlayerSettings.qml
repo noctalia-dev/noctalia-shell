@@ -14,12 +14,12 @@ ColumnLayout {
   signal settingsChanged(var settings)
 
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
-  property string valueVisualizerType: (widgetData.visualizerType && widgetData.visualizerType !== "") ? widgetData.visualizerType : (widgetMetadata.visualizerType || "linear")
+  property string valueVisualizerType: widgetData.visualizerType ? widgetData.visualizerType : widgetMetadata.visualizerType
   property string valueHideMode: widgetData.hideMode !== undefined ? widgetData.hideMode : widgetMetadata.hideMode
-  property bool valueShowButtons: widgetData.showButtons !== undefined ? widgetData.showButtons : (widgetMetadata.showButtons !== undefined ? widgetMetadata.showButtons : true)
-  property bool valueShowAlbumArt: widgetData.showAlbumArt !== undefined ? widgetData.showAlbumArt : (widgetMetadata.showAlbumArt !== undefined ? widgetMetadata.showAlbumArt : true)
-  property bool valueShowVisualizer: widgetData.showVisualizer !== undefined ? widgetData.showVisualizer : (widgetMetadata.showVisualizer !== undefined ? widgetMetadata.showVisualizer : true)
-  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : (widgetMetadata.roundedCorners !== undefined ? widgetMetadata.roundedCorners : true)
+  property bool valueShowButtons: widgetData.showButtons !== undefined ? widgetData.showButtons : widgetMetadata.showButtons
+  property bool valueShowAlbumArt: widgetData.showAlbumArt !== undefined ? widgetData.showAlbumArt : widgetMetadata.showAlbumArt
+  property bool valueShowVisualizer: widgetData.showVisualizer !== undefined ? widgetData.showVisualizer : widgetMetadata.showVisualizer
+  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : widgetMetadata.roundedCorners
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -42,6 +42,7 @@ ColumnLayout {
                  valueShowBackground = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showBackground
   }
 
   NToggle {
@@ -53,6 +54,7 @@ ColumnLayout {
                  valueRoundedCorners = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.roundedCorners
   }
 
   NToggle {
@@ -64,6 +66,7 @@ ColumnLayout {
                  valueShowAlbumArt = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showAlbumArt
   }
 
   NToggle {
@@ -75,6 +78,7 @@ ColumnLayout {
                  valueShowVisualizer = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showVisualizer
   }
 
   NToggle {
@@ -86,6 +90,7 @@ ColumnLayout {
                  valueShowButtons = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showButtons
   }
 
   NComboBox {
@@ -112,6 +117,7 @@ ColumnLayout {
                   valueVisualizerType = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.visualizerType
   }
 
   NComboBox {
@@ -137,5 +143,6 @@ ColumnLayout {
                   valueHideMode = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.hideMode
   }
 }

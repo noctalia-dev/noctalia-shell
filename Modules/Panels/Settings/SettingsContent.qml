@@ -398,6 +398,15 @@ Item {
     }
   }
 
+  // Clear highlight when the user scrolls so the outline doesn't stay in place
+  Connections {
+    target: root.activeScrollView ? root.activeScrollView.contentItem : null
+    enabled: root.highlightLabelKey !== "" && !highlightScrollTimer.running
+    function onContentYChanged() {
+      root.clearHighlightImmediately();
+    }
+  }
+
   // Save sidebar state when it changes
   onSidebarExpandedChanged: {
     ShellState.setSettingsSidebarExpanded(sidebarExpanded);
@@ -586,7 +595,7 @@ Item {
           },
           {
             "id": SettingsPanel.Tab.Idle,
-            "label": "common.idle",
+            "label": "panels.idle.title",
             "icon": "settings-idle",
             "source": idleTab
           },
@@ -615,8 +624,8 @@ Item {
             "source": regionTab
           },
           {
-            "id": SettingsPanel.Tab.SystemMonitor,
-            "label": "system-monitor.title",
+            "id": SettingsPanel.Tab.System,
+            "label": "panels.system.title",
             "icon": "settings-system-monitor",
             "source": systemMonitorTab
           },

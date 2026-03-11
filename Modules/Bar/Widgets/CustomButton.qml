@@ -221,13 +221,22 @@ Item {
       if (showExecTooltip && hasExec) {
         if (leftClickExec !== "") {
           lines.push(I18n.tr("bar.custom-button.left-click-label") + `: ${leftClickExec}`);
+        } else if (!leftClickUpdateText) {
+          lines.push(I18n.tr("bar.custom-button.left-click-label") + ": " + I18n.tr("actions.widget-settings"));
         }
+
         if (rightClickExec !== "") {
           lines.push(I18n.tr("bar.custom-button.right-click-label") + `: ${rightClickExec}`);
+        } else if (!rightClickUpdateText) {
+          lines.push(I18n.tr("bar.custom-button.right-click-label") + ": " + I18n.tr("actions.widget-settings"));
         }
+
         if (middleClickExec !== "") {
           lines.push(I18n.tr("bar.custom-button.middle-click-label") + `: ${middleClickExec}`);
+        } else if (!middleClickUpdateText) {
+          lines.push(I18n.tr("bar.custom-button.middle-click-label") + ": " + I18n.tr("actions.widget-settings"));
         }
+
         if (wheelMode === "unified" && wheelExec !== "") {
           lines.push(I18n.tr("bar.custom-button.wheel-label") + `: ${wheelExec}`);
         } else if (wheelMode === "separate") {
@@ -502,7 +511,6 @@ Item {
       Logger.i("CustomButton", `Executing command: ${leftClickExec}`);
     } else if (!leftClickUpdateText) {
       BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
-      //SettingsPanelService.openToTab(SettingsPanel.Tab.Bar, 1, screen);
     }
     if (!textStream && leftClickUpdateText) {
       runTextCommand();
@@ -513,6 +521,8 @@ Item {
     if (rightClickExec) {
       Quickshell.execDetached(["sh", "-lc", rightClickExec]);
       Logger.i("CustomButton", `Executing command: ${rightClickExec}`);
+    } else if (!rightClickUpdateText) {
+      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
     }
     if (!textStream && rightClickUpdateText) {
       runTextCommand();
@@ -523,6 +533,8 @@ Item {
     if (middleClickExec) {
       Quickshell.execDetached(["sh", "-lc", middleClickExec]);
       Logger.i("CustomButton", `Executing command: ${middleClickExec}`);
+    } else if (!middleClickUpdateText) {
+      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
     }
     if (!textStream && middleClickUpdateText) {
       runTextCommand();

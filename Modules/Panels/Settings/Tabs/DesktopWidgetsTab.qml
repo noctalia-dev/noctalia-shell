@@ -80,11 +80,14 @@ ColumnLayout {
 
       NSectionEditor {
         required property var modelData
+        readonly property real compositorScale: {
+          const info = CompositorService.displayScales[modelData.name];
+          return (info && info.scale) ? info.scale : 1.0;
+        }
 
         Layout.fillWidth: true
         sectionName: modelData.name
         sectionSubtitle: {
-          var compositorScale = CompositorService.getDisplayScale(modelData.name);
           // Format scale to 2 decimal places to prevent overly long text
           var formattedScale = compositorScale.toFixed(2);
           return "(" + modelData.width + "x" + modelData.height + " @ " + formattedScale + "x)";
@@ -266,6 +269,9 @@ ColumnLayout {
     } else if (widgetId === "MediaPlayer") {
       newWidget.x = 100;
       newWidget.y = 200;
+    } else if (widgetId === "AudioVisualizer") {
+      newWidget.x = 120;
+      newWidget.y = 280;
     } else if (widgetId === "Weather") {
       newWidget.x = 100;
       newWidget.y = 300;

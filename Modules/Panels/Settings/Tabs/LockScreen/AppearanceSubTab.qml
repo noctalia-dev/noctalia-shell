@@ -77,6 +77,15 @@ ColumnLayout {
   }
 
   NToggle {
+    label: I18n.tr("panels.lock-screen.enable-lockscreen-media-controls-label")
+    description: I18n.tr("panels.lock-screen.enable-lockscreen-media-controls-description")
+    checked: Settings.data.general.enableLockScreenMediaControls
+    onToggled: checked => Settings.data.general.enableLockScreenMediaControls = checked
+    visible: !Settings.data.general.compactLockScreen
+    defaultValue: Settings.getDefaultValue("general.enableLockScreenMediaControls")
+  }
+
+  NToggle {
     label: I18n.tr("panels.lock-screen.lock-screen-animations-label")
     description: I18n.tr("panels.lock-screen.lock-screen-animations-description")
     checked: Settings.data.general.lockScreenAnimations

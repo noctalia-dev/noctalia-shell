@@ -111,7 +111,7 @@ Item {
 
   Image {
     id: lockBgImage
-    visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor
+    visible: source !== "" && Settings.data.wallpaper.enabled && !Settings.data.wallpaper.useSolidColor && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
     anchors.fill: parent
     fillMode: Image.PreserveAspectCrop
     source: resolvedWallpaperPath
@@ -142,19 +142,19 @@ Item {
     gradient: Gradient {
       GradientStop {
         position: 0.0
-        color: Qt.alpha(Color.mShadow, 0.8)
-      }
-      GradientStop {
-        position: 0.3
         color: Qt.alpha(Color.mShadow, 0.4)
       }
       GradientStop {
+        position: 0.3
+        color: Qt.alpha(Color.mShadow, 0.2)
+      }
+      GradientStop {
         position: 0.7
-        color: Qt.alpha(Color.mShadow, 0.5)
+        color: Qt.alpha(Color.mShadow, 0.25)
       }
       GradientStop {
         position: 1.0
-        color: Qt.alpha(Color.mShadow, 0.9)
+        color: Qt.alpha(Color.mShadow, 0.5)
       }
     }
   }

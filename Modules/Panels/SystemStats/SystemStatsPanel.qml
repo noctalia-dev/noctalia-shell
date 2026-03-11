@@ -80,6 +80,7 @@ SmartPanel {
         ColumnLayout {
           anchors.fill: parent
           anchors.margins: Style.marginS
+          anchors.bottomMargin: Style.radiusM * 0.5
           spacing: Style.marginXS
 
           RowLayout {
@@ -127,9 +128,6 @@ SmartPanel {
           NGraph {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.leftMargin: -Style.marginS
-            Layout.rightMargin: -Style.marginS
-            Layout.bottomMargin: 2
             values: SystemStatService.cpuHistory
             values2: SystemStatService.cpuTempHistory
             minValue: 0
@@ -138,6 +136,7 @@ SmartPanel {
             maxValue2: Math.max(SystemStatService.cpuTempHistoryMax + 5, 1)
             color: Color.mPrimary
             color2: Color.mSecondary
+            strokeWidth: 1.5 * Style.uiScaleRatio
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.cpuUsageIntervalMs
@@ -153,6 +152,7 @@ SmartPanel {
         ColumnLayout {
           anchors.fill: parent
           anchors.margins: Style.marginS
+          anchors.bottomMargin: Style.radiusM * 0.5
           spacing: Style.marginXS
 
           RowLayout {
@@ -166,7 +166,7 @@ SmartPanel {
             }
 
             NText {
-              text: `${Math.round(SystemStatService.memPercent)}% (${SystemStatService.formatGigabytes(SystemStatService.memGb).replace(/[^0-9.]/g, "")} GB)`
+              text: `${Math.round(SystemStatService.memPercent)}% (${(SystemStatService.memGb).toFixed(1)} GiB)`
               pointSize: Style.fontSizeXS
               color: Color.mPrimary
               font.family: Settings.data.ui.fontFixed
@@ -186,13 +186,11 @@ SmartPanel {
           NGraph {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.leftMargin: -Style.marginS
-            Layout.rightMargin: -Style.marginS
-            Layout.bottomMargin: 2
             values: SystemStatService.memHistory
             minValue: 0
             maxValue: 100
             color: Color.mPrimary
+            strokeWidth: 1.5 * Style.uiScaleRatio
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.memIntervalMs
@@ -208,6 +206,7 @@ SmartPanel {
         ColumnLayout {
           anchors.fill: parent
           anchors.margins: Style.marginS
+          anchors.bottomMargin: Style.radiusM * 0.5
           spacing: Style.marginXS
 
           RowLayout {
@@ -255,9 +254,6 @@ SmartPanel {
           NGraph {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            Layout.leftMargin: -Style.marginS
-            Layout.rightMargin: -Style.marginS
-            Layout.bottomMargin: 2
             values: SystemStatService.rxSpeedHistory
             values2: SystemStatService.txSpeedHistory
             minValue: 0
@@ -266,6 +262,7 @@ SmartPanel {
             maxValue2: SystemStatService.txMaxSpeed
             color: Color.mPrimary
             color2: Color.mSecondary
+            strokeWidth: 1.5 * Style.uiScaleRatio
             fill: true
             fillOpacity: 0.15
             updateInterval: SystemStatService.networkIntervalMs
@@ -392,7 +389,7 @@ SmartPanel {
             }
 
             NText {
-              text: `${SystemStatService.formatGigabytes(SystemStatService.swapGb).replace(/[^0-9.]/g, "")} / ${SystemStatService.formatGigabytes(SystemStatService.swapTotalGb).replace(/[^0-9.]/g, "")} GB`
+              text: `${(SystemStatService.swapGb).toFixed(1)} / ${(SystemStatService.swapTotalGb).toFixed(1)} GiB`
               pointSize: Style.fontSizeXS
               color: Color.mOnSurface
               Layout.fillWidth: true

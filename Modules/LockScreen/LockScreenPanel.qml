@@ -88,6 +88,9 @@ Item {
     case "reboot":
       CompositorService.reboot();
       break;
+    case "userspaceReboot":
+      CompositorService.userspaceReboot();
+      break;
     case "shutdown":
       CompositorService.shutdown();
       break;
@@ -265,7 +268,7 @@ Item {
             z: 0
             sourceComponent: NLinearSpectrum {
               anchors.fill: parent
-              values: CavaService.values
+              values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
             }
@@ -278,7 +281,7 @@ Item {
             z: 0
             sourceComponent: NMirroredSpectrum {
               anchors.fill: parent
-              values: CavaService.values
+              values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
             }
@@ -291,7 +294,7 @@ Item {
             z: 0
             sourceComponent: NWaveSpectrum {
               anchors.fill: parent
-              values: CavaService.values
+              values: SpectrumService.values
               fillColor: Color.mPrimary
               opacity: 0.4
             }
@@ -340,6 +343,124 @@ Item {
                 color: Color.mOnSurfaceVariant
                 Layout.fillWidth: true
                 elide: Text.ElideRight
+              }
+            }
+
+            // Media controls (when enabled)
+            RowLayout {
+              spacing: Style.marginXS
+              visible: Settings.data.general.enableLockScreenMediaControls
+              Layout.alignment: Qt.AlignHCenter
+
+              Rectangle {
+                width: 28
+                height: 28
+                radius: Math.min(Style.radiusL, width / 2)
+                color: prevButtonArea.containsMouse ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.1)
+                visible: MediaService.canGoPrevious
+
+                NIcon {
+                  anchors.centerIn: parent
+                  icon: "media-prev"
+                  pointSize: Style.fontSizeM
+                  color: prevButtonArea.containsMouse ? Color.mOnPrimary : Color.mOnSurface
+
+                  Behavior on color {
+                    ColorAnimation {
+                      duration: Style.animationFast
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+
+                MouseArea {
+                  id: prevButtonArea
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: MediaService.canGoPrevious ? MediaService.previous() : {}
+                }
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: Style.animationFast
+                    easing.type: Easing.OutCubic
+                  }
+                }
+              }
+
+              Rectangle {
+                width: 32
+                height: 32
+                radius: Math.min(Style.radiusL, width / 2)
+                color: playPauseButtonArea.containsMouse ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.15)
+                visible: MediaService.canPlay || MediaService.canPause
+
+                NIcon {
+                  anchors.centerIn: parent
+                  icon: MediaService.isPlaying ? "media-pause" : "media-play"
+                  pointSize: Style.fontSizeL
+                  color: playPauseButtonArea.containsMouse ? Color.mOnPrimary : Color.mOnSurface
+
+                  Behavior on color {
+                    ColorAnimation {
+                      duration: Style.animationFast
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+
+                MouseArea {
+                  id: playPauseButtonArea
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: (MediaService.canPlay || MediaService.canPause) ? MediaService.playPause() : {}
+                }
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: Style.animationFast
+                    easing.type: Easing.OutCubic
+                  }
+                }
+              }
+
+              Rectangle {
+                width: 28
+                height: 28
+                radius: Math.min(Style.radiusL, width / 2)
+                color: nextButtonArea.containsMouse ? Color.mPrimary : Qt.alpha(Color.mOnSurface, 0.1)
+                visible: MediaService.canGoNext
+
+                NIcon {
+                  anchors.centerIn: parent
+                  icon: "media-next"
+                  pointSize: Style.fontSizeM
+                  color: nextButtonArea.containsMouse ? Color.mOnPrimary : Color.mOnSurface
+
+                  Behavior on color {
+                    ColorAnimation {
+                      duration: Style.animationFast
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+
+                MouseArea {
+                  id: nextButtonArea
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: MediaService.canGoNext ? MediaService.next() : {}
+                }
+
+                Behavior on color {
+                  ColorAnimation {
+                    duration: Style.animationFast
+                    easing.type: Easing.OutCubic
+                  }
+                }
               }
             }
           }

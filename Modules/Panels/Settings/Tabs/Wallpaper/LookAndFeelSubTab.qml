@@ -59,6 +59,7 @@ ColumnLayout {
     from: 500
     to: 10000
     stepSize: 100
+    showReset: true
     value: Settings.data.wallpaper.transitionDuration
     onMoved: value => Settings.data.wallpaper.transitionDuration = value
     text: (Settings.data.wallpaper.transitionDuration / 1000).toFixed(1) + "s"
@@ -71,6 +72,7 @@ ColumnLayout {
     description: I18n.tr("panels.wallpaper.look-feel-edge-smoothness-description")
     from: 0.0
     to: 1.0
+    showReset: true
     value: Settings.data.wallpaper.transitionEdgeSmoothness
     onMoved: value => Settings.data.wallpaper.transitionEdgeSmoothness = value
     text: Math.round(Settings.data.wallpaper.transitionEdgeSmoothness * 100) + "%"

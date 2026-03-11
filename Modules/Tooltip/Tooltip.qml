@@ -639,7 +639,7 @@ PopupWindow {
 
     Rectangle {
       anchors.fill: parent
-      anchors.margins: border.width / 2
+      anchors.margins: border.width
       color: Color.mSurface
       border.color: Color.mOutline
       border.width: Style.borderS

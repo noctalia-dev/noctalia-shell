@@ -18,11 +18,13 @@ Text {
     }
     return fontScale;
   }
+  property var features: ({})
 
   opacity: enabled ? 1.0 : 0.6
   font.family: root.family
   font.weight: Style.fontWeightMedium
   font.pointSize: Math.max(1, root.pointSize * fontScale)
+  font.features: root.features
   color: Color.mOnSurface
   elide: Text.ElideRight
   wrapMode: Text.NoWrap

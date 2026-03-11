@@ -91,6 +91,7 @@ RowLayout {
   // Main spinbox container
   Rectangle {
     id: spinBoxContainer
+    Layout.margins: Style.borderS
     implicitWidth: 120
     implicitHeight: Math.round((root.baseSize - 4) / 2) * 2
     radius: Style.iRadiusS
@@ -372,7 +373,7 @@ RowLayout {
             top: root.to
           }
 
-          Keys.onReturnPressed: {
+          onAccepted: {
             applyValue();
             focus = false;
           }

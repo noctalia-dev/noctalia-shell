@@ -56,6 +56,7 @@ ColumnLayout {
 
     Layout.fillWidth: true
     Layout.minimumWidth: root.minimumInputWidth
+    Layout.margins: Style.borderS
     implicitHeight: Style.baseWidgetSize * 1.1 * Style.uiScaleRatio
 
     // This is important - makes the control accept focus
@@ -112,7 +113,7 @@ ColumnLayout {
                              mouse.accepted = true;
                            }
         onWheel: wheel => {
-                   wheel.accepted = true;
+                   wheel.accepted = false;
                  }
       }
 
@@ -121,7 +122,7 @@ ColumnLayout {
         id: inputContainer
         anchors.fill: parent
         anchors.leftMargin: Style.marginM
-        anchors.rightMargin: Style.marginM
+        anchors.rightMargin: 0
         clip: true
         z: 1
 
@@ -205,7 +206,7 @@ ColumnLayout {
                             mouse.accepted = true;
                           }
               onWheel: wheel => {
-                         wheel.accepted = true;
+                         wheel.accepted = false;
                        }
             }
           }

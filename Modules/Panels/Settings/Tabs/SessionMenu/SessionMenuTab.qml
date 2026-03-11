@@ -38,6 +38,12 @@ ColumnLayout {
       "required": false
     },
     {
+      "id": "userspaceReboot",
+      "text": I18n.tr("common.userspace-reboot"),
+      "enabled": false,
+      "required": false
+    },
+    {
       "id": "rebootToUefi",
       "text": I18n.tr("common.reboot-to-uefi"),
       "enabled": true,
@@ -59,15 +65,42 @@ ColumnLayout {
 
   function saveEntries() {
     var toSave = [];
+    var enabledNumber = 1;
+
     for (var i = 0; i < entriesModel.length; i++) {
+      var keybind = entriesModel[i].keybind || "";
+
+      if (entriesModel[i].enabled) {
+        // For enabled entries with numeric or empty keybinds, assign sequential number
+        if (keybind === "" || /^\d+$/.test(keybind)) {
+          keybind = String(enabledNumber);
+        }
+        enabledNumber++;
+      } else {
+        // For disabled entries with numeric keybinds, clear them
+        if (/^\d+$/.test(keybind)) {
+          keybind = "";
+        }
+      }
+
       toSave.push({
                     "action": entriesModel[i].id,
                     "enabled": entriesModel[i].enabled,
                     "countdownEnabled": entriesModel[i].countdownEnabled !== undefined ? entriesModel[i].countdownEnabled : true,
                     "command": entriesModel[i].command || "",
-                    "keybind": entriesModel[i].keybind || ""
+                    "keybind": keybind
                   });
     }
+
+    // Update local model with renumbered keybinds
+    var newModel = [];
+    for (var i = 0; i < entriesModel.length; i++) {
+      newModel.push(Object.assign({}, entriesModel[i], {
+                                    "keybind": toSave[i].keybind
+                                  }));
+    }
+    entriesModel = newModel;
+
     Settings.data.sessionMenu.powerOptions = toSave;
   }
 

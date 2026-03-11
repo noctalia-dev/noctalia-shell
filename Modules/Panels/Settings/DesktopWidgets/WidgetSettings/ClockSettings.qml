@@ -16,11 +16,11 @@ ColumnLayout {
   signal settingsChanged(var settings)
 
   property bool valueShowBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : widgetMetadata.showBackground
-  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : true
+  property bool valueRoundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : widgetMetadata.roundedCorners
   property string valueClockStyle: widgetData.clockStyle !== undefined ? widgetData.clockStyle : widgetMetadata.clockStyle
   property string valueClockColor: widgetData.clockColor !== undefined ? widgetData.clockColor : widgetMetadata.clockColor
   property bool valueUseCustomFont: widgetData.useCustomFont !== undefined ? widgetData.useCustomFont : widgetMetadata.useCustomFont
-  property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : ""
+  property string valueCustomFont: widgetData.customFont !== undefined ? widgetData.customFont : widgetMetadata.custonFont
   property string valueFormat: widgetData.format !== undefined ? widgetData.format : widgetMetadata.format
 
   // Track the currently focused input field
@@ -97,39 +97,18 @@ ColumnLayout {
                   valueClockStyle = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.clockStyle
   }
 
-  NComboBox {
+  NColorChoice {
     label: I18n.tr("common.select-color")
     description: I18n.tr("common.select-color-description")
-    model: [
-      {
-        "name": I18n.tr("common.none"),
-        "key": "none"
-      },
-      {
-        "key": "primary",
-        "name": I18n.tr("common.primary")
-      },
-      {
-        "key": "secondary",
-        "name": I18n.tr("common.secondary")
-      },
-      {
-        "key": "tertiary",
-        "name": I18n.tr("common.tertiary")
-      },
-      {
-        "key": "error",
-        "name": I18n.tr("common.error")
-      }
-    ]
     currentKey: valueClockColor
     onSelected: key => {
                   valueClockColor = key;
                   saveSettings();
                 }
-    minimumWidth: 200
+    defaultValue: widgetMetadata.clockColor
   }
 
   NToggle {
@@ -141,6 +120,7 @@ ColumnLayout {
                  valueUseCustomFont = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.useCustomFont
   }
 
   NSearchableComboBox {
@@ -158,6 +138,8 @@ ColumnLayout {
       valueCustomFont = key;
       saveSettings();
     }
+    enabled: valueClockStyle === "minimal"
+    defaultValue: Settings.data.ui.fontDefault
   }
 
   NDivider {
@@ -203,6 +185,7 @@ ColumnLayout {
             });
           }
         }
+        defaultValue: widgetMetadata.format
       }
     }
 
@@ -290,6 +273,7 @@ ColumnLayout {
                  valueShowBackground = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showBackground
   }
 
   NToggle {
@@ -302,5 +286,6 @@ ColumnLayout {
                  valueRoundedCorners = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.roundedCorners
   }
 }

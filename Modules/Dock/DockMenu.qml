@@ -505,7 +505,7 @@ PopupWindow {
     if (appId) {
       root.toggleAppPin(appId);
     }
-    closeAndReset();
+    Qt.callLater(() => closeAndReset());
   }
 
   function handleClose(targetToplevel) {
@@ -582,6 +582,7 @@ PopupWindow {
 
   Rectangle {
     anchors.fill: parent
+    anchors.margins: border.width
     color: Color.mSurfaceVariant
     radius: Style.radiusS
     border.color: Color.mOutline

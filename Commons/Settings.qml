@@ -25,7 +25,7 @@ Singleton {
   - Default cache directory: ~/.cache/noctalia
   */
   readonly property alias data: adapter  // Used to access via Settings.data.xxx.yyy
-  readonly property int settingsVersion: 53
+  readonly property int settingsVersion: 57
   property bool isDebug: Quickshell.env("NOCTALIA_DEBUG") === "1"
   readonly property string shellName: "noctalia"
   readonly property string configDir: Quickshell.env("NOCTALIA_CONFIG_DIR") || (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/" + shellName + "/"
@@ -184,6 +184,7 @@ Singleton {
       property int widgetSpacing: 6
       property int contentPadding: 2
       property real fontScale: 1.0
+      property bool enableExclusionZoneInset: true
 
       // Bar background opacity settings
       property real backgroundOpacity: 0.93
@@ -256,7 +257,15 @@ Singleton {
           }
         ]
       }
-
+      property string mouseWheelAction: "none"
+      property bool reverseScroll: false
+      property bool mouseWheelWrap: true
+      property string middleClickAction: "none"
+      property bool middleClickFollowMouse: false
+      property string middleClickCommand: ""
+      property string rightClickAction: "controlCenter"
+      property bool rightClickFollowMouse: true
+      property string rightClickCommand: ""
       // Per-screen overrides for position and widgets
       // Format: [{ "name": "HDMI-1", "position": "left" }, { "name": "DP-1", "position": "bottom", "widgets": {...} }]
       property list<var> screenOverrides: []
@@ -280,7 +289,9 @@ Singleton {
       property bool lockOnSuspend: true
       property bool showSessionButtonsOnLockScreen: true
       property bool showHibernateOnLockScreen: false
+      property bool enableLockScreenMediaControls: false
       property bool enableShadows: true
+      property bool enableBlurBehind: true
       property string shadowDirection: "bottom_right"
       property int shadowOffsetX: 2
       property int shadowOffsetY: 3
@@ -303,7 +314,7 @@ Singleton {
         property list<string> keyDown: ["Down"]
         property list<string> keyLeft: ["Left"]
         property list<string> keyRight: ["Right"]
-        property list<string> keyEnter: ["Return"]
+        property list<string> keyEnter: ["Return", "Enter"]
         property list<string> keyEscape: ["Esc"]
         property list<string> keyRemove: ["Del"]
       }
@@ -317,8 +328,10 @@ Singleton {
       property real fontDefaultScale: 1.0
       property real fontFixedScale: 1.0
       property bool tooltipsEnabled: true
+      property bool scrollbarAlwaysVisible: true
       property bool boxBorderEnabled: false
       property real panelBackgroundOpacity: 0.93
+      property bool translucentWidgets: false
       property bool panelsAttachedToBar: true
       property string settingsPanelMode: "attached" // "centered", "attached", "window"
       property bool settingsPanelSideBarCardStyle: false
@@ -523,6 +536,12 @@ Singleton {
       property string externalMonitor: "resources || missioncenter || jdsystemmonitor || corestats || system-monitoring-center || gnome-system-monitor || plasma-systemmonitor || mate-system-monitor || ukui-system-monitor || deepin-system-monitor || pantheon-system-monitor"
     }
 
+    // performance
+    property JsonObject noctaliaPerformance: JsonObject {
+      property bool disableWallpaper: true
+      property bool disableDesktopWidgets: true
+    }
+
     // dock
     property JsonObject dock: JsonObject {
       property bool enabled: true
@@ -548,7 +567,10 @@ Singleton {
       property double deadOpacity: 0.6
       property real animationSpeed: 1.0 // Speed multiplier for hide/show animations (0.1 = slowest, 2.0 = fastest)
       property bool sitOnFrame: false
-      property bool showFrameIndicator: true
+      property bool showDockIndicator: false
+      property int indicatorThickness: 3
+      property string indicatorColor: "primary"
+      property real indicatorOpacity: 0.6
     }
 
     // network
@@ -562,6 +584,7 @@ Singleton {
       property string bluetoothDetailsViewMode: "grid" // "grid" or "list"
       property bool bluetoothHideUnnamedDevices: false
       property bool disableDiscoverability: false
+      property bool bluetoothAutoConnect: true
     }
 
     // session menu
@@ -660,7 +683,7 @@ Singleton {
     property JsonObject audio: JsonObject {
       property int volumeStep: 5
       property bool volumeOverdrive: false
-      property int cavaFrameRate: 30
+      property int spectrumFrameRate: 30
       property string visualizerType: "linear"
       property list<string> mprisBlacklist: []
       property string preferredPlayer: ""
@@ -731,7 +754,13 @@ Singleton {
       property int lockTimeout: 660         // seconds, 0 = disabled
       property int suspendTimeout: 1800     // seconds, 0 = disabled
       property int fadeDuration: 5       // seconds of fade-to-black before action fires
-      property string customCommands: "[]" // JSON array of {timeout, command}
+      property string screenOffCommand: ""
+      property string lockCommand: ""
+      property string suspendCommand: ""
+      property string resumeScreenOffCommand: ""
+      property string resumeLockCommand: ""
+      property string resumeSuspendCommand: ""
+      property string customCommands: "[]" // JSON array of {timeout, command, resumeCommand}
     }
 
     // desktop widgets
@@ -739,6 +768,7 @@ Singleton {
       property bool enabled: false
       property bool overviewEnabled: true
       property bool gridSnap: false
+      property bool gridSnapScale: false
       property list<var> monitorWidgets: []
       // Format: [{ "name": "DP-1", "widgets": [...] }, { "name": "HDMI-1", "widgets": [...] }]
     }

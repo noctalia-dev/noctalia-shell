@@ -168,10 +168,12 @@ RowLayout {
   ComboBox {
     id: combo
 
+    Layout.margins: Style.borderS
     Layout.minimumWidth: Math.round(root.minimumWidth * Style.uiScaleRatio)
     Layout.preferredHeight: Math.round(root.preferredHeight * Style.uiScaleRatio)
     implicitWidth: Layout.minimumWidth
     model: root.activeModel
+    textRole: "name"
     currentIndex: findIndexInActiveModel(currentKey)
     onActivated: {
       if (combo.currentIndex >= 0 && root.activeModel && combo.currentIndex < root.activeModel.count) {

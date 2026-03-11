@@ -35,6 +35,7 @@ ColumnLayout {
     text: widgetData.width || widgetMetadata.width
     placeholderText: I18n.tr("placeholders.enter-width-pixels")
     onEditingFinished: saveSettings()
+    defaultValue: String(widgetMetadata.width)
   }
 
   NColorChoice {
@@ -46,6 +47,7 @@ ColumnLayout {
                   root.valueColorName = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.colorName
   }
 
   NToggle {
@@ -56,5 +58,6 @@ ColumnLayout {
                  valueHideWhenIdle = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.hideWhenIdle
   }
 }

@@ -41,7 +41,9 @@ Slider {
     // Background track
     Shape {
       anchors.fill: parent
+      visible: bgContainer.width > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
+      asynchronous: true
 
       ShapePath {
         id: bgPath
@@ -119,8 +121,9 @@ Slider {
     Shape {
       width: bgContainer.fillWidth
       height: bgContainer.height
-      visible: bgContainer.fillWidth > 0
+      visible: bgContainer.fillWidth > 0 && bgContainer.height > 0
       preferredRendererType: Shape.CurveRenderer
+      asynchronous: true
       clip: true
 
       ShapePath {

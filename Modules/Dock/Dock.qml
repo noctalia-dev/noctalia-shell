@@ -67,6 +67,7 @@ Loader {
         target: DesktopEntries.applications
         function onValuesChanged() {
           root.iconRevision++;
+          root._desktopEntryIdCache = {};
           updateDockApps();
         }
       }
@@ -80,8 +81,10 @@ Loader {
       readonly property int showDelay: 100
       readonly property int hideAnimationDuration: Math.max(0, Math.round(Style.animationFast / (Settings.data.dock.animationSpeed || 1.0)))
       readonly property int showAnimationDuration: Math.max(0, Math.round(Style.animationFast / (Settings.data.dock.animationSpeed || 1.0)))
-      readonly property int peekHeight: 1
-      readonly property int indicatorThickness: 3
+      readonly property int peekThickness: 1
+      readonly property int indicatorThickness: Settings.data.dock.indicatorThickness || 3
+      readonly property string indicatorColorKey: Settings.data.dock.indicatorColor || "primary"
+      readonly property real indicatorOpacity: Settings.data.dock.indicatorOpacity !== undefined ? Settings.data.dock.indicatorOpacity : 0.6
       readonly property int iconSize: Math.round(12 + 24 * (Settings.data.dock.size ?? 1))
       readonly property int floatingMargin: Settings.data.dock.floatingRatio * Style.marginL
       readonly property int maxWidth: modelData ? modelData.width * 0.8 : 1000
@@ -100,10 +103,18 @@ Loader {
       readonly property real barMarginH: Settings.data.bar.floating ? Math.ceil(Settings.data.bar.marginHorizontal) : 0
       readonly property real barMarginV: Settings.data.bar.floating ? Math.ceil(Settings.data.bar.marginVertical) : 0
       readonly property int barHeight: Style.getBarHeightForScreen(modelData?.name)
+      readonly property bool staticPanelOpen: {
+        if (!isStaticMode)
+          return false;
+        var panel = getStaticDockPanel();
+        if (panel && panel.isPanelOpen !== undefined)
+          return panel.isPanelOpen;
+        return false;
+      }
       readonly property int peekEdgeLength: {
         const edgeSize = isVertical ? Math.round(modelData?.height || maxHeight) : Math.round(modelData?.width || maxWidth);
-        const minLength = Math.max(1, Math.round(edgeSize * ((isStaticMode && Settings.data.dock.showFrameIndicator && Settings.data.bar.barType === "framed" && hasBar) ? 0.1 : 0.25)));
-        return Math.max(minLength, frameIndicatorLength);
+        const minLength = Math.max(1, Math.round(edgeSize * (Settings.data.dock.showDockIndicator ? 0.1 : 0.25)));
+        return Math.max(minLength, dockIndicatorLength);
       }
       readonly property int peekCenterOffsetX: {
         if (isVertical)
@@ -139,16 +150,14 @@ Loader {
         }
         return Math.max(0, Math.round((edgeSize - peekEdgeLength) / 2));
       }
-      readonly property bool showFrameIndicator: {
-        if (!isStaticMode || !Settings.data.dock.showFrameIndicator || Settings.data.bar.barType !== "framed" || !hasBar)
+      readonly property bool showDockIndicator: {
+        if (!Settings.data.dock.showDockIndicator || (!autoHide && !isStaticMode) || !hidden)
           return false;
-        var panel = getStaticDockPanel();
-        if (panel && panel.isPanelOpen !== undefined)
-          return !panel.isPanelOpen;
-        return hidden;
+        return !staticPanelOpen;
       }
       readonly property int dockItemCount: dockApps.length + (Settings.data.dock.showLauncherIcon ? 1 : 0)
-      readonly property int frameIndicatorLength: {
+      readonly property bool indicatorVisible: showDockIndicator && dockIndicatorLength > 0
+      readonly property int dockIndicatorLength: {
         if (dockItemCount <= 0)
           return 0;
         const spacing = Style.marginS;
@@ -313,7 +322,40 @@ Loader {
         if (!appId || !pinnedApps || pinnedApps.length === 0)
           return false;
         const normalizedId = normalizeAppId(appId);
-        return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId);
+        // Direct match
+        if (pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedId))
+          return true;
+        // Resolve via desktop entry lookup (handles StartupWMClass != .desktop filename)
+        const resolved = resolveToDesktopEntryId(appId);
+        if (resolved !== appId) {
+          const normalizedResolved = normalizeAppId(resolved);
+          return pinnedApps.some(pinnedId => normalizeAppId(pinnedId) === normalizedResolved);
+        }
+        return false;
+      }
+
+      // Desktop entry ID resolution cache (cleared when DesktopEntries change)
+      property var _desktopEntryIdCache: ({})
+
+      // Resolve a toplevel appId to its canonical .desktop entry ID via heuristic lookup.
+      // This handles cases where the Wayland appId (e.g. "zen" from StartupWMClass)
+      // differs from the .desktop filename (e.g. "zen-browser-bin").
+      function resolveToDesktopEntryId(appId) {
+        if (!appId)
+          return appId;
+        if (_desktopEntryIdCache.hasOwnProperty(appId))
+          return _desktopEntryIdCache[appId];
+        try {
+          if (typeof DesktopEntries !== 'undefined' && DesktopEntries.heuristicLookup) {
+            const entry = DesktopEntries.heuristicLookup(appId);
+            if (entry && entry.id) {
+              _desktopEntryIdCache[appId] = entry.id;
+              return entry.id;
+            }
+          }
+        } catch (e) {}
+        _desktopEntryIdCache[appId] = appId;
+        return appId;
       }
 
       // Helper function to get app name from desktop entry
@@ -489,7 +531,17 @@ Loader {
         function pushPinned() {
           pinnedApps.forEach(pinnedAppId => {
                                // Find all running instances of this pinned app using robust matching
-                               const matchingToplevels = runningApps.filter(app => app && normalizeAppId(app.appId) === normalizeAppId(pinnedAppId));
+                               // Also resolve toplevel appId via desktop entry lookup to handle
+                               // StartupWMClass != .desktop filename (e.g. zen -> zen-browser-bin)
+                               const normalizedPinned = normalizeAppId(pinnedAppId);
+                               const matchingToplevels = runningApps.filter(app => {
+                                                                              if (!app)
+                                                                              return false;
+                                                                              if (normalizeAppId(app.appId) === normalizedPinned)
+                                                                              return true;
+                                                                              const resolved = resolveToDesktopEntryId(app.appId);
+                                                                              return resolved !== app.appId && normalizeAppId(resolved) === normalizedPinned;
+                                                                            });
 
                                if (matchingToplevels.length > 0) {
                                  // Add all running instances as pinned-running
@@ -617,13 +669,7 @@ Loader {
         interval: showDelay
         onTriggered: {
           if (autoHide) {
-            if (isStaticMode) {
-              if (dockItemCount <= 0)
-                return;
-              const panel = getStaticDockPanel();
-              if (panel && !panel.isPanelOpen)
-                panel.open();
-            } else {
+            if (!isStaticMode) {
               dockLoaded = true; // Load dock immediately
             }
             hidden = false; // Then trigger show animation
@@ -648,7 +694,7 @@ Loader {
 
       // PEEK WINDOW
       Loader {
-        active: (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name)) && (autoHide || isStaticMode)
+        active: (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name))
 
         sourceComponent: PanelWindow {
           id: peekWindow
@@ -662,32 +708,15 @@ Loader {
           focusable: false
           color: "transparent"
 
-          // When bar is at same edge, position peek window past the bar so it receives mouse events
-          margins.top: isVertical ? peekCenterOffsetY : (dockPosition === "top" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0)) : 0)
-          margins.bottom: dockPosition === "bottom" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0)) : 0
-          margins.left: !isVertical ? peekCenterOffsetX : (dockPosition === "left" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginHorizontal : 0)) : 0)
-          margins.right: dockPosition === "right" && barAtSameEdge && !showFrameIndicator ? (barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginHorizontal : 0)) : 0
+          margins.top: peekCenterOffsetY
+          margins.left: peekCenterOffsetX
 
           WlrLayershell.namespace: "noctalia-dock-peek-" + (screen?.name || "unknown")
+          WlrLayershell.layer: WlrLayer.Overlay
           WlrLayershell.exclusionMode: ExclusionMode.Ignore
           // Larger peek area when bar is at same edge, normal 1px otherwise
-          implicitHeight: isVertical ? peekEdgeLength : ((showFrameIndicator || barAtSameEdge) ? indicatorThickness : peekHeight)
-          implicitWidth: isVertical ? ((showFrameIndicator || barAtSameEdge) ? indicatorThickness : peekHeight) : peekEdgeLength
-
-          Rectangle {
-            anchors.fill: parent
-            radius: indicatorThickness
-            color: Qt.alpha(Color.mPrimary, 0.6)
-            opacity: showFrameIndicator && frameIndicatorLength > 0 ? 1 : 0
-            visible: opacity > 0
-
-            Behavior on opacity {
-              NumberAnimation {
-                duration: Style.animationFast
-                easing.type: Easing.InOutQuad
-              }
-            }
-          }
+          implicitHeight: isVertical ? peekEdgeLength : peekThickness
+          implicitWidth: isVertical ? peekThickness : peekEdgeLength
 
           MouseArea {
             id: peekArea
@@ -696,16 +725,12 @@ Loader {
 
             onEntered: {
               peekHovered = true;
-              if (isStaticMode && !autoHide) {
+              if (isStaticMode) {
                 if (dockItemCount <= 0)
                   return;
                 const panel = getStaticDockPanel();
                 if (panel && !panel.isPanelOpen)
                   panel.open();
-                return;
-              }
-              if (isStaticMode) {
-                showTimer.start();
                 return;
               }
               if (hidden) {
@@ -718,6 +743,85 @@ Loader {
               showTimer.stop();
               if (!hidden && !dockHovered && !anyAppHovered && !menuHovered) {
                 hideTimer.restart();
+              }
+            }
+          }
+        }
+      }
+
+      // DOCK INDICATOR WINDOW
+      Loader {
+        active: (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name))
+
+        sourceComponent: PanelWindow {
+          id: dockIndicatorWindow
+
+          screen: modelData
+          // Dynamic anchors based on dock position
+          anchors.top: dockPosition === "top" || isVertical
+          anchors.bottom: dockPosition === "bottom"
+          anchors.left: dockPosition === "left" || !isVertical
+          anchors.right: dockPosition === "right"
+          focusable: false
+          color: "transparent"
+
+          property real targetIndicatorOffsetX: peekCenterOffsetX
+          property real targetIndicatorOffsetY: peekCenterOffsetY
+          property real animatedIndicatorOffsetX: targetIndicatorOffsetX
+          property real animatedIndicatorOffsetY: targetIndicatorOffsetY
+
+          onTargetIndicatorOffsetXChanged: animatedIndicatorOffsetX = targetIndicatorOffsetX
+          onTargetIndicatorOffsetYChanged: animatedIndicatorOffsetY = targetIndicatorOffsetY
+
+          Behavior on animatedIndicatorOffsetX {
+            NumberAnimation {
+              duration: Style.animationNormal
+              easing.type: Easing.InOutQuad
+            }
+          }
+
+          Behavior on animatedIndicatorOffsetY {
+            NumberAnimation {
+              duration: Style.animationNormal
+              easing.type: Easing.InOutQuad
+            }
+          }
+
+          margins.top: animatedIndicatorOffsetY
+          margins.left: animatedIndicatorOffsetX
+
+          WlrLayershell.namespace: "noctalia-dock-indicator-" + (screen?.name || "unknown")
+          WlrLayershell.layer: WlrLayer.Top
+          WlrLayershell.exclusionMode: ExclusionMode.Ignore
+          WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+          implicitHeight: isVertical ? peekEdgeLength : indicatorThickness
+          implicitWidth: isVertical ? indicatorThickness : peekEdgeLength
+
+          Behavior on implicitWidth {
+            NumberAnimation {
+              duration: Style.animationNormal
+              easing.type: Easing.InOutQuad
+            }
+          }
+          Behavior on implicitHeight {
+            NumberAnimation {
+              duration: Style.animationNormal
+              easing.type: Easing.InOutQuad
+            }
+          }
+
+          Rectangle {
+            id: indicatorRect
+            anchors.fill: parent
+            radius: indicatorThickness
+            color: Qt.alpha(Color.resolveColorKey(indicatorColorKey), indicatorOpacity)
+            opacity: indicatorVisible ? 1 : 0
+            visible: opacity > 0
+
+            Behavior on opacity {
+              NumberAnimation {
+                duration: Style.animationNormal
+                easing.type: Easing.InOutQuad
               }
             }
           }
@@ -759,6 +863,19 @@ Loader {
           WlrLayershell.namespace: "noctalia-dock-" + (screen?.name || "unknown")
           WlrLayershell.exclusionMode: exclusive ? ExclusionMode.Auto : ExclusionMode.Ignore
 
+          // Blur behind dock (User Interface → Blur behind)
+          BackgroundEffect.blurRegion: Settings.data.general.enableBlurBehind ? dockBlurRegion : null
+          Region {
+            id: dockBlurRegion
+            Region {
+              x: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).x)
+              y: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).y)
+              width: Math.round(dockContent.dockContainer.width)
+              height: Math.round(dockContent.dockContainer.height)
+              radius: Style.radiusL
+            }
+          }
+
           implicitWidth: dockContainerWrapper.width
           implicitHeight: dockContainerWrapper.height
 
@@ -792,7 +909,7 @@ Loader {
             readonly property int extraRight: (!isVertical && !exclusive && barOnRight) ? barHeight : 0
 
             // Add +2 buffer for fractional scaling issues
-            width: dockContent.dockContainer.width + extraLeft + extraRight + (root.isVertical ? 2 : Style.margin2XL * 6)
+            width: dockContent.dockContainer.width + extraLeft + extraRight + 2
             height: dockContent.dockContainer.height + extraTop + extraBottom + 2
 
             anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter

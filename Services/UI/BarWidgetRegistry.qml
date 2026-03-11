@@ -203,10 +203,7 @@ Singleton {
                                     "visualizerType": "linear",
                                     "textColor": "none",
                                     "compactMode": false,
-                                    "panelShowAlbumArt": true,
-                                    "panelShowVisualizer": true,
-                                    "compactShowAlbumArt": true,
-                                    "compactShowVisualizer": false
+                                    "panelShowAlbumArt": true
                                   },
                                   "Microphone": {
                                     "displayMode": "onhover",
@@ -237,6 +234,7 @@ Singleton {
                                     "useMonospaceFont": true,
                                     "usePadding": false,
                                     "showCpuUsage": true,
+                                    "showCpuCores": false,
                                     "showCpuFreq": false,
                                     "showCpuTemp": true,
                                     "showGpuTemp": false,
@@ -305,7 +303,8 @@ Singleton {
                                     "occupiedColor": "secondary",
                                     "emptyColor": "secondary",
                                     "showBadge": true,
-                                    "pillSize": 0.6
+                                    "pillSize": 0.6,
+                                    "fontWeight": "bold"
                                   },
                                   "Volume": {
                                     "displayMode": "onhover",

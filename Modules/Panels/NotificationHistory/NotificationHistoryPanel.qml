@@ -562,6 +562,7 @@ SmartPanel {
 
                     property int listIndex: index
                     property string notificationId: model.id
+                    property string appName: model.appName || ""
                     property bool isExpanded: scrollView.expandedId === notificationId
                     property bool canExpand: summaryText.truncated || bodyText.truncated
                     property real swipeOffset: 0
@@ -777,6 +778,19 @@ SmartPanel {
                                       notificationDelegate.pendingLink = "";
                                       return;
                                     }
+
+                                    // Focus sender window (and invoke default action if available)
+                                    var actions = notificationDelegate.actionsList;
+                                    var hasDefault = actions.some(function (a) {
+                                      return a.identifier === "default";
+                                    });
+                                    if (hasDefault) {
+                                      NotificationService.focusSenderWindow(notificationDelegate.appName);
+                                      NotificationService.invokeAction(notificationDelegate.notificationId, "default");
+                                    } else {
+                                      NotificationService.focusSenderWindow(notificationDelegate.appName);
+                                    }
+                                    root.close();
                                   }
                       onCanceled: {
                         notificationDelegate.isSwiping = false;
@@ -934,6 +948,8 @@ SmartPanel {
                                 // Capture modelData in a property to avoid reference errors
                                 property var actionData: modelData
                                 onClicked: {
+                                  NotificationService.focusSenderWindow(notificationDelegate.appName);
+                                  root.close();
                                   NotificationService.invokeAction(notificationDelegate.notificationId, actionData.identifier);
                                 }
                               }

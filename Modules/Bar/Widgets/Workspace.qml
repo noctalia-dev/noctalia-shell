@@ -44,6 +44,19 @@ Item {
 
   readonly property string labelMode: (widgetSettings.labelMode !== undefined) ? widgetSettings.labelMode : widgetMetadata.labelMode
   readonly property bool hasLabel: (labelMode !== "none")
+  readonly property string fontWeight: {
+    var fontWeightSetting = (widgetSettings.fontWeight !== undefined) ? widgetSettings.fontWeight : widgetMetadata.fontWeight;
+
+    if (fontWeightSetting === "regular")
+      return Style.fontWeightRegular;
+    if (fontWeightSetting === "medium")
+      return Style.fontWeightMedium;
+    if (fontWeightSetting === "semibold")
+      return Style.fontWeightSemiBold;
+    if (fontWeightSetting === "bold")
+      return Style.fontWeightBold;
+    return Style.fontWeightBold;
+  }
   readonly property bool hideUnoccupied: (widgetSettings.hideUnoccupied !== undefined) ? widgetSettings.hideUnoccupied : widgetMetadata.hideUnoccupied
   readonly property bool followFocusedScreen: (widgetSettings.followFocusedScreen !== undefined) ? widgetSettings.followFocusedScreen : widgetMetadata.followFocusedScreen
   readonly property int characterCount: isVertical ? 2 : ((widgetSettings.characterCount !== undefined) ? widgetSettings.characterCount : widgetMetadata.characterCount)
@@ -181,7 +194,7 @@ Item {
   }
 
   function switchByOffset(offset) {
-    if (localWorkspaces.count === 0)
+    if (localWorkspaces.count <= 1)
       return;
     var current = getFocusedLocalIndex();
     if (current < 0)
@@ -189,6 +202,8 @@ Item {
     var next = (current + offset) % localWorkspaces.count;
     if (next < 0)
       next = localWorkspaces.count - 1;
+    if (next === current)
+      return;
     const ws = localWorkspaces.get(next);
     if (ws && ws.idx !== undefined)
       CompositorService.switchToWorkspace(ws);
@@ -230,18 +245,20 @@ Item {
     Settings.data.dock.pinnedApps = pinnedApps;
   }
 
-  Component.onCompleted: {
-    refreshWorkspaces();
-  }
+  // Deferred to next event-loop tick via Qt.callLater to avoid re-entrant incubation:
+  // Calling localWorkspaces.append() synchronously there causes the inner Repeater to
+  // create WorkspacePill delegates mid-finalization, corrupting the V4 heap
+  // (SIGSEGV in QV4::Object::insertMember).
+  Component.onCompleted: Qt.callLater(refreshWorkspaces)
 
   Component.onDestruction: {
     root.isDestroying = true;
   }
 
-  onScreenChanged: refreshWorkspaces()
-  onScreenNameChanged: refreshWorkspaces()
-  onHideUnoccupiedChanged: refreshWorkspaces()
-  onShowApplicationsChanged: refreshWorkspaces()
+  onScreenChanged: Qt.callLater(refreshWorkspaces)
+  onScreenNameChanged: Qt.callLater(refreshWorkspaces)
+  onHideUnoccupiedChanged: Qt.callLater(refreshWorkspaces)
+  onShowApplicationsChanged: Qt.callLater(refreshWorkspaces)
 
   Connections {
     target: CompositorService
@@ -553,6 +570,7 @@ Item {
         capsuleHeight: root.capsuleHeight
         barHeight: root.barHeight
         labelMode: root.labelMode
+        fontWeight: root.fontWeight
         characterCount: root.characterCount
         textRatio: root.textRatio
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
@@ -587,6 +605,7 @@ Item {
         capsuleHeight: root.capsuleHeight
         barHeight: root.barHeight
         labelMode: root.labelMode
+        fontWeight: root.fontWeight
         characterCount: root.characterCount
         textRatio: root.textRatio
         showLabelsOnlyWhenOccupied: root.showLabelsOnlyWhenOccupied
@@ -659,8 +678,8 @@ Item {
       MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        enabled: !groupedContainer.hasWindows
-        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+        enabled: true
+        cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         preventStealing: true
         onPressed: mouse => {
@@ -851,7 +870,7 @@ Item {
           family: Settings.data.ui.fontFixed
           font {
             pointSize: barFontSize * 0.75
-            weight: Style.fontWeightBold
+            weight: fontWeight
             capitalization: Font.AllUppercase
           }
           applyUiScale: false

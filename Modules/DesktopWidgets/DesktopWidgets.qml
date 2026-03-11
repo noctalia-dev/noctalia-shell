@@ -51,7 +51,7 @@ Variants {
 
     // Only create PanelWindow if enabled AND (screen has widgets OR in edit mode)
     // During compositor overview, show widgets only when overviewEnabled is true.
-    active: modelData && Settings.data.desktopWidgets.enabled && (screenWidgets.length > 0 || DesktopWidgetRegistry.editMode) && (!CompositorService.overviewActive || Settings.data.desktopWidgets.overviewEnabled) && !PowerProfileService.noctaliaPerformanceMode && !PanelService.lockScreen?.active
+    active: modelData && Settings.data.desktopWidgets.enabled && (screenWidgets.length > 0 || DesktopWidgetRegistry.editMode) && (!CompositorService.overviewActive || Settings.data.desktopWidgets.overviewEnabled) && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableDesktopWidgets) && !PanelService.lockScreen?.active
 
     sourceComponent: PanelWindow {
       id: window
@@ -439,6 +439,15 @@ Variants {
                     });
                   }
                 }
+              }
+
+              NIconButton {
+                icon: "grid-3x3"
+                visible: Settings.data.desktopWidgets.gridSnap
+                tooltipText: I18n.tr("panels.desktop-widgets.edit-mode-grid-snap-scale-label")
+                colorBg: Settings.data.desktopWidgets.gridSnapScale ? Color.mPrimary : Color.mSurfaceVariant
+                colorFg: Settings.data.desktopWidgets.gridSnapScale ? Color.mOnPrimary : Color.mPrimary
+                onClicked: Settings.data.desktopWidgets.gridSnapScale = !Settings.data.desktopWidgets.gridSnapScale
               }
 
               NIconButton {

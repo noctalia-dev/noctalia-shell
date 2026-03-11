@@ -24,12 +24,12 @@ ColumnLayout {
   property int valueMaxTextLengthVertical: widgetData?.maxTextLength?.vertical ?? widgetMetadata?.maxTextLength?.vertical
   property string valueHideMode: (widgetData.hideMode !== undefined) ? widgetData.hideMode : widgetMetadata.hideMode
   property bool valueShowIcon: (widgetData.showIcon !== undefined) ? widgetData.showIcon : widgetMetadata.showIcon
-  property bool valueShowExecTooltip: widgetData.showExecTooltip !== undefined ? widgetData.showExecTooltip : (widgetMetadata.showExecTooltip !== undefined ? widgetMetadata.showExecTooltip : true)
-  property bool valueShowTextTooltip: widgetData.showTextTooltip !== undefined ? widgetData.showTextTooltip : (widgetMetadata.showTextTooltip !== undefined ? widgetMetadata.showTextTooltip : true)
-  property bool valueEnableColorization: widgetData.enableColorization || false
-  property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon || "none"
-  property string valueIpcIdentifier: widgetData.ipcIdentifier !== undefined ? widgetData.ipcIdentifier : widgetMetadata.ipcIdentifier || ""
-  property string valueGeneralTooltipText: widgetData.generalTooltipText !== undefined ? widgetData.generalTooltipText : widgetMetadata.generalTooltipText || ""
+  property bool valueShowExecTooltip: widgetData.showExecTooltip !== undefined ? widgetData.showExecTooltip : widgetMetadata.showExecTooltip
+  property bool valueShowTextTooltip: widgetData.showTextTooltip !== undefined ? widgetData.showTextTooltip : widgetMetadata.showTextTooltip
+  property bool valueEnableColorization: widgetData.enableColorization !== undefined ? widgetData.enableColorization : widgetMetadata.enableColorization
+  property string valueColorizeSystemIcon: widgetData.colorizeSystemIcon !== undefined ? widgetData.colorizeSystemIcon : widgetMetadata.colorizeSystemIcon
+  property string valueIpcIdentifier: widgetData.ipcIdentifier !== undefined ? widgetData.ipcIdentifier : widgetMetadata.ipcIdentifier
+  property string valueGeneralTooltipText: widgetData.generalTooltipText !== undefined ? widgetData.generalTooltipText : widgetMetadata.generalTooltipText
 
   function saveSettings() {
     var settings = Object.assign({}, widgetData || {});
@@ -107,6 +107,7 @@ ColumnLayout {
                  saveSettings();
                }
     visible: textCommandInput.text !== ""
+    defaultValue: widgetMetadata.showIcon
   }
 
   NToggle {
@@ -117,6 +118,7 @@ ColumnLayout {
                  valueEnableColorization = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.enableColorization
   }
 
   NColorChoice {
@@ -128,6 +130,7 @@ ColumnLayout {
                   valueColorizeSystemIcon = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.colorizeSystemIcon
   }
 
   NTextInput {
@@ -138,6 +141,7 @@ ColumnLayout {
     text: valueGeneralTooltipText
     onTextChanged: valueGeneralTooltipText = text
     onEditingFinished: saveSettings()
+    defaultValue: widgetMetadata.generalTooltipText
   }
 
   NToggle {
@@ -149,6 +153,7 @@ ColumnLayout {
                  valueShowExecTooltip = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showExecTooltip
   }
 
   NToggle {
@@ -160,6 +165,7 @@ ColumnLayout {
                  valueShowTextTooltip = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showTextTooltip
   }
 
   NTextInput {
@@ -170,6 +176,7 @@ ColumnLayout {
     text: valueIpcIdentifier
     onTextChanged: valueIpcIdentifier = text
     onEditingFinished: saveSettings()
+    defaultValue: widgetMetadata.ipcIdentifier
   }
 
   RowLayout {
@@ -183,6 +190,7 @@ ColumnLayout {
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData?.leftClickExec || widgetMetadata.leftClickExec
       onEditingFinished: saveSettings()
+      defaultValue: widgetMetadata.leftClickExec
     }
 
     NToggle {
@@ -197,6 +205,7 @@ ColumnLayout {
                    checked = isChecked;
                    saveSettings();
                  }
+      defaultValue: widgetMetadata.leftClickUpdateText
     }
   }
 
@@ -211,6 +220,7 @@ ColumnLayout {
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData?.rightClickExec || widgetMetadata.rightClickExec
       onEditingFinished: saveSettings()
+      defaultValue: widgetMetadata.rightClickExec
     }
 
     NToggle {
@@ -225,6 +235,7 @@ ColumnLayout {
                    checked = isChecked;
                    saveSettings();
                  }
+      defaultValue: widgetMetadata.rightClickUpdateText
     }
   }
 
@@ -239,6 +250,7 @@ ColumnLayout {
       placeholderText: I18n.tr("placeholders.enter-command")
       text: widgetData.middleClickExec || widgetMetadata.middleClickExec
       onEditingFinished: saveSettings()
+      defaultValue: widgetMetadata.middleClickExec
     }
 
     NToggle {
@@ -253,6 +265,7 @@ ColumnLayout {
                    checked = isChecked;
                    saveSettings();
                  }
+      defaultValue: widgetMetadata.middleClickUpdateText
     }
   }
 
@@ -268,6 +281,7 @@ ColumnLayout {
                  internalChecked = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.wheelMode === "separate"
   }
 
   ColumnLayout {
@@ -286,6 +300,7 @@ ColumnLayout {
         placeholderText: I18n.tr("placeholders.enter-command")
         text: widgetData?.wheelExec || widgetMetadata?.wheelExec
         onEditingFinished: saveSettings()
+        defaultValue: widgetMetadata.wheelExec
       }
 
       NToggle {
@@ -300,6 +315,7 @@ ColumnLayout {
                      checked = isChecked;
                      saveSettings();
                    }
+        defaultValue: widgetMetadata.wheelUpdateText
       }
     }
 
@@ -319,6 +335,7 @@ ColumnLayout {
           placeholderText: I18n.tr("placeholders.enter-command")
           text: widgetData?.wheelUpExec || widgetMetadata?.wheelUpExec
           onEditingFinished: saveSettings()
+          defaultValue: widgetMetadata.wheelUpExec
         }
 
         NToggle {
@@ -333,6 +350,7 @@ ColumnLayout {
                        checked = isChecked;
                        saveSettings();
                      }
+          defaultValue: widgetMetadata.wheelUpUpdateText
         }
       }
 
@@ -347,6 +365,7 @@ ColumnLayout {
           placeholderText: I18n.tr("placeholders.enter-command")
           text: widgetData?.wheelDownExec || widgetMetadata?.wheelDownExec
           onEditingFinished: saveSettings()
+          defaultValue: widgetMetadata.wheelDownExec
         }
 
         NToggle {
@@ -361,6 +380,7 @@ ColumnLayout {
                        checked = isChecked;
                        saveSettings();
                      }
+          defaultValue: widgetMetadata.wheelDownUpdateText
         }
       }
     }
@@ -384,6 +404,7 @@ ColumnLayout {
       valueMaxTextLengthHorizontal = value;
       saveSettings();
     }
+    defaultValue: widgetMetadata.maxTextLength.horizontal
   }
 
   NSpinBox {
@@ -396,6 +417,7 @@ ColumnLayout {
       valueMaxTextLengthVertical = value;
       saveSettings();
     }
+    defaultValue: widgetMetadata.maxTextLength.vertical
   }
 
   NToggle {
@@ -407,6 +429,7 @@ ColumnLayout {
                  valueTextStream = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.textStream
   }
 
   NToggle {
@@ -418,6 +441,7 @@ ColumnLayout {
                  valueParseJson = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.parseJson
   }
 
   NTextInput {
@@ -428,6 +452,7 @@ ColumnLayout {
     placeholderText: I18n.tr("placeholders.command-example")
     text: widgetData?.textCommand || widgetMetadata.textCommand
     onEditingFinished: saveSettings()
+    defaultValue: widgetMetadata.textCommand
   }
 
   NTextInput {
@@ -439,6 +464,7 @@ ColumnLayout {
     placeholderText: I18n.tr("placeholders.enter-text-to-collapse")
     text: widgetData?.textCollapse || widgetMetadata.textCollapse
     onEditingFinished: saveSettings()
+    defaultValue: widgetMetadata.textCollapse
   }
 
   NTextInput {
@@ -450,6 +476,7 @@ ColumnLayout {
     placeholderText: String(widgetMetadata.textIntervalMs)
     text: widgetData && widgetData.textIntervalMs !== undefined ? String(widgetData.textIntervalMs) : ""
     onEditingFinished: saveSettings()
+    defaultValue: String(widgetMetadata.textIntervalMs)
   }
 
   NComboBox {
@@ -476,5 +503,6 @@ ColumnLayout {
                   saveSettings();
                 }
     visible: textCommandInput.text !== "" && valueTextStream == true
+    defaultValue: widgetMetadata.hideMode
   }
 }

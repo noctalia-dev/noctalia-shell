@@ -48,6 +48,7 @@ ColumnLayout {
                  root.valueDrawerEnabled = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.drawerEnabled
   }
 
   NColorChoice {
@@ -59,6 +60,7 @@ ColumnLayout {
                   saveSettings();
                 }
     visible: root.valueDrawerEnabled
+    defaultValue: widgetMetadata.chevronColor
   }
 
   NToggle {
@@ -70,6 +72,7 @@ ColumnLayout {
                  root.valueColorizeIcons = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.colorizeIcons
   }
 
   NToggle {
@@ -81,6 +84,7 @@ ColumnLayout {
                  root.valueHidePassive = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.hidePassive
   }
 
   ColumnLayout {

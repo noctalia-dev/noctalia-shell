@@ -349,7 +349,13 @@ Item {
       visible: root.drawerEnabled && dropdownItems.length > 0 && BarService.getPillDirection(root)
       width: isVertical ? barHeight : capsuleHeight
       height: isVertical ? capsuleHeight : barHeight
-      tooltipText: I18n.tr("tooltips.open-tray-dropdown")
+      tooltipText: {
+        if (PanelService.getPanel("trayDrawerPanel", root.screen)?.isPanelOpen) {
+          return "";
+        } else {
+          return I18n.tr("tooltips.open-tray-dropdown");
+        }
+      }
       tooltipDirection: BarService.getTooltipDirection(root.screen?.name)
       baseSize: capsuleHeight
       applyUiScale: false

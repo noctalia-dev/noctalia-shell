@@ -17,7 +17,7 @@ ColumnLayout {
 
   // Local state
   property bool valueShowIcon: widgetData.showIcon !== undefined ? widgetData.showIcon : widgetMetadata.showIcon
-  property string valueHideMode: "hidden" // Default to 'Hide When Empty'
+  property string valueHideMode: widgetData.hideMode !== undefined ? widgetData.hideMode : widgetMetadata.hideMode
   property string valueScrollingMode: widgetData.scrollingMode || widgetMetadata.scrollingMode
   property int valueMaxWidth: widgetData.maxWidth !== undefined ? widgetData.maxWidth : widgetMetadata.maxWidth
   property bool valueUseFixedWidth: widgetData.useFixedWidth !== undefined ? widgetData.useFixedWidth : widgetMetadata.useFixedWidth
@@ -65,6 +65,7 @@ ColumnLayout {
                   root.valueHideMode = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.hideMode
   }
 
   NColorChoice {
@@ -74,6 +75,7 @@ ColumnLayout {
                   valueTextColor = key;
                   saveSettings();
                 }
+    defaultValue: widgetMetadata.textColor
   }
 
   NToggle {
@@ -85,6 +87,7 @@ ColumnLayout {
                  root.valueShowIcon = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.showIcon
   }
 
   NToggle {
@@ -97,6 +100,7 @@ ColumnLayout {
                  saveSettings();
                }
     visible: root.valueShowIcon
+    defaultValue: widgetMetadata.colorizeIcons
   }
 
   NTextInput {
@@ -107,6 +111,7 @@ ColumnLayout {
     placeholderText: widgetMetadata.maxWidth
     text: valueMaxWidth
     onEditingFinished: saveSettings()
+    defaultValue: String(widgetMetadata.maxWidth)
   }
 
   NToggle {
@@ -118,6 +123,7 @@ ColumnLayout {
                  valueUseFixedWidth = checked;
                  saveSettings();
                }
+    defaultValue: widgetMetadata.useFixedWidth
   }
 
   NComboBox {
@@ -138,6 +144,7 @@ ColumnLayout {
       }
     ]
     currentKey: valueScrollingMode
+    defaultValue: widgetMetadata.scrollingMode
     onSelected: key => {
                   valueScrollingMode = key;
                   saveSettings();

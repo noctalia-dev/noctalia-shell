@@ -23,6 +23,8 @@ ScrollView {
   property int gradientHeight: 16
   property bool reserveScrollbarSpace: true
   property real userRightPadding: 0
+  // Keep scrollbars visible whenever overflow exists (without forcing visibility when not scrollable)
+  property bool showScrollbarWhenScrollable: Settings.data.ui.scrollbarAlwaysVisible
 
   // Scroll speed multiplier for mouse wheel (1.0 = default, higher = faster)
   property real wheelScrollMultiplier: 2.0
@@ -141,7 +143,7 @@ ScrollView {
       implicitHeight: 100
       radius: root.handleRadius
       color: parent.pressed ? root.handlePressedColor : parent.hovered ? root.handleHoverColor : root.handleColor
-      opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollable ? (parent.active ? 1.0 : 0.0) : 0.0
+      opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.verticalScrollable ? ((root.showScrollbarWhenScrollable || parent.active) ? 1.0 : 0.0) : 0.0
 
       Behavior on opacity {
         NumberAnimation {
@@ -160,7 +162,7 @@ ScrollView {
       implicitWidth: root.handleWidth
       implicitHeight: 100
       color: root.trackColor
-      opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollable ? (parent.active ? 0.3 : 0.0) : 0.0
+      opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.verticalScrollable ? ((root.showScrollbarWhenScrollable || parent.active) ? 0.3 : 0.0) : 0.0
       radius: root.handleRadius / 2
 
       Behavior on opacity {
@@ -184,7 +186,7 @@ ScrollView {
       implicitHeight: root.handleWidth
       radius: root.handleRadius
       color: parent.pressed ? root.handlePressedColor : parent.hovered ? root.handleHoverColor : root.handleColor
-      opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.horizontalScrollable ? (parent.active ? 1.0 : 0.0) : 0.0
+      opacity: parent.policy === ScrollBar.AlwaysOn ? 1.0 : root.horizontalScrollable ? ((root.showScrollbarWhenScrollable || parent.active) ? 1.0 : 0.0) : 0.0
 
       Behavior on opacity {
         NumberAnimation {
@@ -203,7 +205,7 @@ ScrollView {
       implicitWidth: 100
       implicitHeight: root.handleWidth
       color: root.trackColor
-      opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.horizontalScrollable ? (parent.active ? 0.3 : 0.0) : 0.0
+      opacity: parent.policy === ScrollBar.AlwaysOn ? 0.3 : root.horizontalScrollable ? ((root.showScrollbarWhenScrollable || parent.active) ? 0.3 : 0.0) : 0.0
       radius: root.handleRadius / 2
 
       Behavior on opacity {

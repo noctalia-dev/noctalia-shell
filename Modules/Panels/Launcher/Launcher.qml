@@ -67,12 +67,12 @@ SmartPanel {
       return Settings.data.appLauncher.position;
     }
   }
-  panelAnchorHorizontalCenter: panelPosition === "center" || panelPosition.endsWith("_center")
-  panelAnchorVerticalCenter: panelPosition === "center"
-  panelAnchorLeft: panelPosition !== "center" && panelPosition.endsWith("_left")
-  panelAnchorRight: panelPosition !== "center" && panelPosition.endsWith("_right")
-  panelAnchorBottom: panelPosition.startsWith("bottom_")
-  panelAnchorTop: panelPosition.startsWith("top_")
+  panelAnchorHorizontalCenter: !root.useButtonPosition && (panelPosition === "center" || panelPosition.endsWith("_center"))
+  panelAnchorVerticalCenter: !root.useButtonPosition && panelPosition === "center"
+  panelAnchorLeft: !root.useButtonPosition && panelPosition !== "center" && panelPosition.endsWith("_left")
+  panelAnchorRight: !root.useButtonPosition && panelPosition !== "center" && panelPosition.endsWith("_right")
+  panelAnchorBottom: !root.useButtonPosition && panelPosition.startsWith("bottom_")
+  panelAnchorTop: !root.useButtonPosition && panelPosition.startsWith("top_")
 
   panelContent: Rectangle {
     id: ui
@@ -89,11 +89,20 @@ SmartPanel {
     }
 
     // Preview Panel (external) - uses provider's preview component
+    NDropShadow {
+      source: previewBox
+      anchors.fill: previewBox
+      autoPaddingEnabled: true
+      visible: previewBox.visible
+      z: previewBox.z - 1
+    }
+
     NBox {
       id: previewBox
       visible: root.previewActive
       width: root.previewPanelWidth
       height: Math.round(400 * Style.uiScaleRatio)
+      forceOpaque: true // no blur for now
       x: root.panelAnchorRight ? -(root.previewPanelWidth + Style.marginM) : ui.width + Style.marginM
       y: {
         var view = launcherCore.resultsView;
@@ -151,20 +160,15 @@ SmartPanel {
     }
 
     // Core launcher (state, providers, UI)
-    NBox {
+    LauncherCore {
+      id: launcherCore
       anchors.fill: parent
-      anchors.margins: Style.marginL
-
-      LauncherCore {
-        id: launcherCore
-        anchors.fill: parent
-        screen: root.screen
-        isOpen: root.isPanelOpen
-        onRequestClose: root.close()
-        // Defer so the signal emission completes before SmartPanel
-        // sets isPanelOpen=false and the contentLoader destroys us.
-        onRequestCloseImmediately: Qt.callLater(root.closeImmediately)
-      }
+      screen: root.screen
+      isOpen: root.isPanelOpen
+      onRequestClose: root.close()
+      // Defer so the signal emission completes before SmartPanel
+      // sets isPanelOpen=false and the contentLoader destroys us.
+      onRequestCloseImmediately: Qt.callLater(root.closeImmediately)
     }
 
     // Update preview when selection changes

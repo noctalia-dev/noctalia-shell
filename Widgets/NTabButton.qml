@@ -33,8 +33,8 @@ Rectangle {
   topRightRadius: isLast ? Style.iRadiusM : Style.iRadiusXXXS
   bottomRightRadius: isLast ? Style.iRadiusM : Style.iRadiusXXXS
 
-  color: root.isHovered ? Color.mHover : (root.checked ? Color.mPrimary : Color.mSurface)
-  border.color: Color.mOutline
+  color: root.isHovered ? Color.mHover : (root.checked ? Color.mPrimary : Color.smartAlpha(Color.mSurface))
+  border.color: root.checked ? Color.mPrimary : Color.mOutline
   border.width: Style.borderS
 
   Behavior on color {

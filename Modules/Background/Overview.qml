@@ -8,7 +8,7 @@ import qs.Services.Power
 import qs.Services.UI
 
 Loader {
-  active: CompositorService.isNiri && Settings.data.wallpaper.enabled && Settings.data.wallpaper.overviewEnabled
+  active: CompositorService.isNiri && Settings.data.wallpaper.enabled && Settings.data.wallpaper.overviewEnabled && (!PowerProfileService.noctaliaPerformanceMode || !Settings.data.noctaliaPerformance.disableWallpaper)
 
   sourceComponent: Variants {
     model: Quickshell.screens

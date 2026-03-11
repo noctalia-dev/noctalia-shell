@@ -7,6 +7,8 @@ import Quickshell.Wayland
 import qs.Commons
 import qs.Modules.Bar.Extras
 import qs.Modules.Notification
+import qs.Modules.Panels.Settings
+import qs.Services.Compositor
 import qs.Services.UI
 import qs.Widgets
 
@@ -127,18 +129,29 @@ Item {
     target: BarService
     function onWidgetsRevisionChanged() {
       Logger.d("Bar", "onWidgetsRevisionChanged, revision:", BarService.widgetsRevision, "screen:", root.screen?.name);
-      var widgets = Settings.getBarWidgetsForScreen(root.screen?.name);
-      if (widgets) {
-        root.syncWidgetModel(root.leftWidgetsModel, widgets.left);
-        root.syncWidgetModel(root.centerWidgetsModel, widgets.center);
-        root.syncWidgetModel(root.rightWidgetsModel, widgets.right);
-      }
+      Qt.callLater(root._syncFromRevision);
     }
   }
 
-  // Initialize models
+  function _syncFromRevision() {
+    var widgets = Settings.getBarWidgetsForScreen(screen?.name);
+    if (widgets) {
+      syncWidgetModel(leftWidgetsModel, widgets.left);
+      syncWidgetModel(centerWidgetsModel, widgets.center);
+      syncWidgetModel(rightWidgetsModel, widgets.right);
+    }
+  }
+
+  // Initialize models — deferred to next event-loop tick via Qt.callLater to avoid
+  // re-entrant incubation: Component.onCompleted fires during QQmlObjectCreator::finalize,
+  // and ListModel.append synchronously creates Repeater delegates whose own finalization
+  // can corrupt the V4 heap (SIGSEGV in QV4::Object::insertMember).
   Component.onCompleted: {
     Logger.d("Bar", "Bar Component.onCompleted for screen:", screen?.name);
+    Qt.callLater(root._initModels);
+  }
+
+  function _initModels() {
     var widgets = Settings.getBarWidgetsForScreen(screen?.name);
     if (widgets) {
       syncWidgetModel(leftWidgetsModel, widgets.left);
@@ -179,6 +192,14 @@ Item {
       // Bar container - Content
       Item {
         id: bar
+
+        // Wheel scroll handling (empty bar area)
+        property int barWheelAccumulatedDelta: 0
+        property bool barWheelCooldown: false
+        readonly property string barWheelAction: {
+          return Settings.data.bar.mouseWheelAction || "none";
+        }
+        readonly property string barRightClickAction: Settings.data.bar.rightClickAction || "controlCenter"
 
         // Position and size the bar content based on orientation
         x: (root.barPosition === "right") ? (parent.width - root.barHeight) : 0
@@ -263,45 +284,188 @@ Item {
           return -1;
         }
 
+        function isPointOverWidget(xPos, yPos) {
+          var widgets = BarService.getAllWidgetInstances(null, screen.name);
+          for (var i = 0; i < widgets.length; i++) {
+            var widget = widgets[i];
+            if (!widget || !widget.visible || widget.widgetId === "Spacer") {
+              continue;
+            }
+            var localPos = mapToItem(widget, xPos, yPos);
+
+            if (root.barIsVertical) {
+              if (localPos.y >= -Style.marginS && localPos.y <= widget.height + Style.marginS) {
+                return true;
+              }
+            } else {
+              if (localPos.x >= -Style.marginS && localPos.x <= widget.width + Style.marginS) {
+                return true;
+              }
+            }
+          }
+          return false;
+        }
+
+        function switchWorkspaceByOffset(offset) {
+          if (!root.screen || CompositorService.workspaces.count === 0)
+            return;
+
+          var screenName = root.screen.name.toLowerCase();
+          var candidates = [];
+          for (var i = 0; i < CompositorService.workspaces.count; i++) {
+            var ws = CompositorService.workspaces.get(i);
+            var matchesScreen = CompositorService.globalWorkspaces || (ws.output && ws.output.toLowerCase() === screenName);
+            if (matchesScreen)
+              candidates.push(ws);
+          }
+
+          if (candidates.length <= 1)
+            return;
+
+          var current = -1;
+          for (var j = 0; j < candidates.length; j++) {
+            if (candidates[j].isFocused) {
+              current = j;
+              break;
+            }
+          }
+          if (current < 0)
+            current = 0;
+
+          var next = current + offset;
+          if (Settings.data.bar.mouseWheelWrap) {
+            next = next % candidates.length;
+            if (next < 0)
+              next = candidates.length - 1;
+          } else {
+            if (next < 0 || next >= candidates.length)
+              return;
+          }
+
+          if (next === current)
+            return;
+          CompositorService.switchToWorkspace(candidates[next]);
+        }
+
+        function handleEmptyBarClick(action, followMouse, command, mouse) {
+          if (action === "none")
+            return;
+          if (action === "controlCenter") {
+            var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
+            controlCenterPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : "ControlCenter");
+            mouse.accepted = true;
+          } else if (action === "settings") {
+            var settingsPanel = PanelService.getPanel("settingsPanel", screen);
+            settingsPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : null);
+            mouse.accepted = true;
+          } else if (action === "launcherPanel") {
+            var launcherPanel = PanelService.getPanel("launcherPanel", screen);
+            launcherPanel?.toggle(null, followMouse ? mapToItem(null, mouse.x, mouse.y) : null);
+            mouse.accepted = true;
+          } else if (action === "command") {
+            runCustomCommand(command);
+            mouse.accepted = true;
+          }
+        }
+
+        function runCustomCommand(command) {
+          if (!command || command.trim() === "")
+            return;
+
+          const processString = "import QtQuick; import Quickshell.Io; Process { command: [\"sh\", \"-lc\", \"\"] }";
+
+          try {
+            const processObj = Qt.createQmlObject(processString, root, "BarCommandProcess_" + Date.now());
+            processObj.command = ["sh", "-lc", command];
+
+            processObj.exited.connect(function (exitCode) {
+              if (exitCode !== 0) {
+                ToastService.showError(I18n.tr("toast.custom-command-failed.title"), I18n.tr("toast.custom-command-failed.description", {
+                                                                                               command: command,
+                                                                                               code: exitCode
+                                                                                             }));
+              }
+              processObj.destroy();
+            });
+
+            processObj.running = true;
+          } catch (e) {
+            Logger.e("Bar", "Failed to start custom command:", e);
+            ToastService.showError(I18n.tr("toast.custom-command-failed.title"), I18n.tr("toast.custom-command-failed.description", {
+                                                                                           command: command,
+                                                                                           code: "start_error"
+                                                                                         }));
+          }
+        }
+
         MouseArea {
           anchors.fill: parent
-          acceptedButtons: Qt.RightButton
+          acceptedButtons: Qt.RightButton | Qt.MiddleButton
+          enabled: bar.barRightClickAction !== "none" || Settings.data.bar.middleClickAction !== "none"
           hoverEnabled: false
           preventStealing: true
           onClicked: mouse => {
                        if (mouse.button === Qt.RightButton) {
-                         // Check if click is over any widget
-                         var widgets = BarService.getAllWidgetInstances(null, screen.name);
-                         for (var i = 0; i < widgets.length; i++) {
-                           var widget = widgets[i];
-                           if (!widget || !widget.visible || widget.widgetId === "Spacer") {
-                             continue;
-                           }
-                           // Map click position to widget's coordinate space
-                           var localPos = mapToItem(widget, mouse.x, mouse.y);
-
-                           if (root.barIsVertical) {
-                             if (localPos.y >= -Style.marginS && localPos.y <= widget.height + Style.marginS) {
-                               return;
-                             }
-                           } else {
-                             if (localPos.x >= -Style.marginS && localPos.x <= widget.width + Style.marginS) {
-                               return;
-                             }
-                           }
-                         }
-                         // Click is on empty bar background - open control center
-                         var controlCenterPanel = PanelService.getPanel("controlCenterPanel", screen);
-
-                         // Map click position to screen-relative coordinates
-                         // We need to map from bar coordinates to screen coordinates
-                         var screenRelativePos = mapToItem(null, mouse.x, mouse.y);
-
-                         // Pass click position directly
-                         controlCenterPanel?.toggle(null, screenRelativePos);
-                         mouse.accepted = true;
+                         if (bar.isPointOverWidget(mouse.x, mouse.y))
+                         return;
+                         bar.handleEmptyBarClick(bar.barRightClickAction, Settings.data.bar.rightClickFollowMouse, Settings.data.bar.rightClickCommand, mouse);
+                         return;
+                       }
+                       if (mouse.button === Qt.MiddleButton) {
+                         if (bar.isPointOverWidget(mouse.x, mouse.y))
+                         return;
+                         bar.handleEmptyBarClick(Settings.data.bar.middleClickAction || "none", Settings.data.bar.middleClickFollowMouse, Settings.data.bar.middleClickCommand, mouse);
+                         return;
                        }
                      }
+        }
+
+        // Debounce timer for wheel interactions
+        Timer {
+          id: barWheelDebounce
+          interval: 150
+          repeat: false
+          onTriggered: {
+            bar.barWheelCooldown = false;
+            bar.barWheelAccumulatedDelta = 0;
+          }
+        }
+
+        // Scroll on empty bar area to switch workspaces
+        WheelHandler {
+          id: barWheelHandler
+          target: bar
+          acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+          enabled: bar.barWheelAction !== "none"
+
+          onWheel: function (event) {
+            if (bar.barWheelCooldown)
+              return;
+            if (bar.isPointOverWidget(event.x, event.y))
+              return;
+
+            var dy = event.angleDelta.y;
+            var dx = event.angleDelta.x;
+            var useDy = Math.abs(dy) >= Math.abs(dx);
+            var delta = useDy ? dy : dx;
+
+            bar.barWheelAccumulatedDelta += delta;
+            var step = 120;
+            if (Math.abs(bar.barWheelAccumulatedDelta) >= step) {
+              var direction = bar.barWheelAccumulatedDelta > 0 ? -1 : 1;
+              if (Settings.data.bar.reverseScroll)
+                direction *= -1;
+              if (bar.barWheelAction === "workspace") {
+                bar.switchWorkspaceByOffset(direction);
+              } else if (bar.barWheelAction === "content") {
+                CompositorService.scrollWorkspaceContent(direction);
+              }
+              bar.barWheelCooldown = true;
+              barWheelDebounce.restart();
+              bar.barWheelAccumulatedDelta = 0;
+              event.accepted = true;
+            }
+          }
         }
 
         Loader {

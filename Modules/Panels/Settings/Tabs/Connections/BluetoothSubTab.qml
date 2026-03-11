@@ -198,6 +198,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: connectedDevicesCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: connectedDevicesCol
@@ -228,6 +229,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: pairedDevicesCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: pairedDevicesCol
@@ -258,6 +260,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: availableDevicesCol.implicitHeight + Style.margin2M
       border.color: "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: availableDevicesCol
@@ -312,6 +315,13 @@ Item {
         anchors.fill: parent
         anchors.margins: Style.marginXL
         spacing: Style.marginM
+
+        NToggle {
+          label: I18n.tr("panels.connections.bluetooth-auto-connect-label")
+          description: I18n.tr("panels.connections.bluetooth-auto-connect-description")
+          checked: Settings.data.network.bluetoothAutoConnect
+          onToggled: checked => Settings.data.network.bluetoothAutoConnect = checked
+        }
 
         NToggle {
           label: I18n.tr("panels.connections.hide-unnamed-devices-label")
@@ -379,7 +389,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(Color.mPrimary, 0.15) : Color.mSurface
+      color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
 
       ColumnLayout {
         id: deviceColumn
@@ -546,10 +556,13 @@ Item {
             columnSpacing: Style.marginM
             rowSpacing: Style.marginXS
 
+            // --- Item 1: Signal Strength ---
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
+              Layout.row: detailsGrid ? 0 : 0
+              Layout.column: 0
               NIcon {
                 icon: BluetoothService.getSignalIcon(modelData)
                 pointSize: Style.fontSizeXS
@@ -562,9 +575,13 @@ Item {
                 Layout.fillWidth: true
               }
             }
+
+            // --- Item 2: Battery ---
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
+              Layout.row: detailsGrid ? 0 : 1
+              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: {
@@ -584,8 +601,12 @@ Item {
                 Layout.fillWidth: true
               }
             }
+            // --- Item 3: Pair state ---
             RowLayout {
               Layout.fillWidth: true
+              Layout.preferredWidth: 1
+              Layout.row: detailsGrid ? 1 : 2
+              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "link"
@@ -599,8 +620,12 @@ Item {
                 Layout.fillWidth: true
               }
             }
+            // --- Item 4: Trust state ---
             RowLayout {
               Layout.fillWidth: true
+              Layout.preferredWidth: 1
+              Layout.row: detailsGrid ? 1 : 3
+              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               NIcon {
                 icon: "shield-check"
@@ -614,9 +639,12 @@ Item {
                 Layout.fillWidth: true
               }
             }
+            // --- Item 5: Address ---
             RowLayout {
               Layout.fillWidth: true
-              Layout.columnSpan: infoColumn.columns === 2 ? 2 : 1
+              Layout.preferredWidth: 1
+              Layout.row: detailsGrid ? 2 : 4
+              Layout.column: 0
               spacing: Style.marginXS
               NIcon {
                 icon: "hash"
@@ -628,6 +656,39 @@ Item {
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
+              }
+            }
+            // --- Item 6: Auto-connect ---
+            RowLayout {
+              Layout.fillWidth: true
+              Layout.preferredWidth: 1
+              Layout.row: detailsGrid ? 2 : 5
+              Layout.column: detailsGrid ? 1 : 0
+              spacing: Style.marginXS
+              visible: Settings.data.network.bluetoothAutoConnect
+
+              NIcon {
+                icon: BluetoothService.getDeviceAutoConnect(modelData.address) ? "repeat" : "repeat-off"
+                pointSize: Style.fontSizeXS
+                color: BluetoothService.getDeviceAutoConnect(modelData.address) ? Color.mPrimary : Color.mOnSurface
+                Layout.alignment: Qt.AlignVCenter
+              }
+
+              NText {
+                text: I18n.tr("common.auto-connect")
+                pointSize: Style.fontSizeXS
+                color: BluetoothService.getDeviceAutoConnect(modelData.address) ? Color.mOnSurface : Color.mOnSurfaceVariant
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onEntered: TooltipService.show(parent, BluetoothService.getDeviceAutoConnect(modelData.address) ? I18n.tr("tooltips.bluetooth-auto-connect-on") : I18n.tr("tooltips.bluetooth-auto-connect-off"))
+                  onExited: TooltipService.hide()
+                  onClicked: BluetoothService.setDeviceAutoConnect(modelData, !BluetoothService.getDeviceAutoConnect(modelData.address))
+                }
               }
             }
           }

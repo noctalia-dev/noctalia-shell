@@ -26,8 +26,18 @@ var constants = {
 // Safe evaluation function that handles advanced math
 function evaluate(expression) {
     try {
-        // Replace mathematical constants
-        var processed = expression
+        // Fixes decimal arithmetic
+        var cleanExpr = expression.replace(/\s+/g, '').toLowerCase();
+        
+        // Allows numbers (including decimals), basic operators, and explicitly permitted math terms only
+        var safeRegex = /^(\d*\.?\d+|[+\-*/()^%,]|sin|cos|tan|asin|acos|atan|atan2|sinh|cosh|tanh|asinh|acosh|atanh|log|ln|exp|pow|sqrt|cbrt|abs|floor|ceil|round|trunc|min|max|random|pi|e|sind|cosd|tand)+$/;
+
+        if (!safeRegex.test(cleanExpr)) {
+            throw new Error("Invalid characters or unauthorized functions in expression");
+        }
+
+        // Replace mathematical constants (Original Structure)
+        var processed = cleanExpr
             .replace(/\bpi\b/gi, Math.PI)
             .replace(/\be\b/gi, Math.E);
 
@@ -41,7 +51,7 @@ function evaluate(expression) {
             .replace(/\bacos\s*\(/g, 'Math.acos(')
             .replace(/\batan\s*\(/g, 'Math.atan(')
             .replace(/\batan2\s*\(/g, 'Math.atan2(')
-            
+
             // Hyperbolic functions
             .replace(/\bsinh\s*\(/g, 'Math.sinh(')
             .replace(/\bcosh\s*\(/g, 'Math.cosh(')
@@ -49,28 +59,28 @@ function evaluate(expression) {
             .replace(/\basinh\s*\(/g, 'Math.asinh(')
             .replace(/\bacosh\s*\(/g, 'Math.acosh(')
             .replace(/\batanh\s*\(/g, 'Math.atanh(')
-            
+
             // Logarithmic and exponential functions
             .replace(/\blog\s*\(/g, 'Math.log10(')
             .replace(/\bln\s*\(/g, 'Math.log(')
             .replace(/\bexp\s*\(/g, 'Math.exp(')
             .replace(/\bpow\s*\(/g, 'Math.pow(')
-            
+
             // Root functions
             .replace(/\bsqrt\s*\(/g, 'Math.sqrt(')
             .replace(/\bcbrt\s*\(/g, 'Math.cbrt(')
-            
+
             // Rounding and absolute
             .replace(/\babs\s*\(/g, 'Math.abs(')
             .replace(/\bfloor\s*\(/g, 'Math.floor(')
             .replace(/\bceil\s*\(/g, 'Math.ceil(')
             .replace(/\bround\s*\(/g, 'Math.round(')
             .replace(/\btrunc\s*\(/g, 'Math.trunc(')
-            
+
             // Min/Max
             .replace(/\bmin\s*\(/g, 'Math.min(')
             .replace(/\bmax\s*\(/g, 'Math.max(')
-            
+
             // Random
             .replace(/\brandom\s*\(\s*\)/g, 'Math.random()');
 
@@ -83,14 +93,10 @@ function evaluate(expression) {
         // Handle ^ for exponentiation: convert 2^3 to Math.pow(2,3)
         processed = processed.replace(/([\d.]+|\))\^([\d.]+|\([^)]*\))/g, 'Math.pow($1,$2)');
 
-        // Sanitize expression (only allow safe characters)
-        if (!/^[0-9+\-*/().\s\w,]+$/.test(processed)) {
-            throw new Error("Invalid characters in expression");
-        }
+        // Replacing eval() with a scoped function constructor
+        // This is safe because the strict whitelist guarantees only math reaches this point
+        var result = new Function('return ' + processed)();
 
-        // Evaluate the processed expression
-        var result = eval(processed);
-        
         if (!isFinite(result) || isNaN(result)) {
             throw new Error("Invalid result");
         }
@@ -106,12 +112,12 @@ function formatResult(result) {
     if (Number.isInteger(result)) {
         return result.toString();
     }
-    
+
     // Handle very large or very small numbers
     if (Math.abs(result) >= 1e15 || (Math.abs(result) < 1e-6 && result !== 0)) {
         return result.toExponential(6);
     }
-    
+
     // Normal decimal formatting
     return parseFloat(result.toFixed(10)).toString();
 }
@@ -120,35 +126,35 @@ function formatResult(result) {
 function getAvailableFunctions() {
     return [
         // Basic arithmetic: +, -, *, /, %, ^, ()
-        
+
         // Trigonometric functions
         "sin(x), cos(x), tan(x) - trigonometric functions (radians)",
         "sind(x), cosd(x), tand(x) - trigonometric functions (degrees)",
         "asin(x), acos(x), atan(x) - inverse trigonometric",
         "atan2(y, x) - two-argument arctangent",
-        
+
         // Hyperbolic functions
         "sinh(x), cosh(x), tanh(x) - hyperbolic functions",
         "asinh(x), acosh(x), atanh(x) - inverse hyperbolic",
-        
+
         // Logarithmic and exponential
         "log(x) - base 10 logarithm",
         "ln(x) - natural logarithm",
         "exp(x) - e^x",
         "pow(x, y) - x^y",
-        
+
         // Root functions
         "sqrt(x) - square root",
         "cbrt(x) - cube root",
-        
+
         // Rounding and absolute
         "abs(x) - absolute value",
         "floor(x), ceil(x), round(x), trunc(x)",
-        
+
         // Min/Max/Random
         "min(a, b, ...), max(a, b, ...)",
         "random() - random number 0-1",
-        
+
         // Constants
         "pi, e - mathematical constants"
     ];
