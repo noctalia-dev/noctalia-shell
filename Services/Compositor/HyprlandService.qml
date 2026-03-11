@@ -281,7 +281,7 @@ Item {
         }
       }
 
-      windows = windowsList;
+      windows = toSortedWindowList(windowsList);
 
       if (newFocusedIndex !== focusedWindowIndex) {
         focusedWindowIndex = newFocusedIndex;
@@ -309,17 +309,52 @@ Item {
       const focused = toplevel.activated === true;
       const output = toplevel.monitor?.name || "";
 
+      // Extract position
+      let x = 0;
+      let y = 0;
+      try {
+        const ipcData = toplevel.lastIpcObject;
+        if (ipcData && ipcData.at) {
+          x = ipcData.at[0];
+          y = ipcData.at[1];
+        } else if (typeof toplevel.x !== 'undefined') {
+          x = toplevel.x;
+          y = toplevel.y;
+        }
+      } catch (e) {}
+
       return {
         "id": windowId,
         "title": title,
         "appId": appId,
         "workspaceId": wsId || -1,
         "isFocused": focused,
-        "output": output
+        "output": output,
+        "x": x,
+        "y": y
       };
     } catch (e) {
       return null;
     }
+  }
+
+  function toSortedWindowList(windowList) {
+    return windowList.sort((a, b) => {
+                             // Sort by workspace first (just in case they are mixed)
+                             if (a.workspaceId !== b.workspaceId) {
+                               return a.workspaceId - b.workspaceId;
+                             }
+                             // Then sort by X position (left to right)
+                             if (a.x !== b.x) {
+                               return a.x - b.x;
+                             }
+                             // Then sort by Y position (top to bottom)
+                             if (a.y !== b.y) {
+                               return a.y - b.y;
+                             }
+                             // Fallback to Window ID mapping
+                             return a.id.localeCompare(b.id);
+                           });
   }
 
   function getAppTitle(toplevel) {

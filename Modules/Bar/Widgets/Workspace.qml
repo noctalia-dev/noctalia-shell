@@ -245,18 +245,20 @@ Item {
     Settings.data.dock.pinnedApps = pinnedApps;
   }
 
-  Component.onCompleted: {
-    refreshWorkspaces();
-  }
+  // Deferred to next event-loop tick via Qt.callLater to avoid re-entrant incubation:
+  // Calling localWorkspaces.append() synchronously there causes the inner Repeater to
+  // create WorkspacePill delegates mid-finalization, corrupting the V4 heap
+  // (SIGSEGV in QV4::Object::insertMember).
+  Component.onCompleted: Qt.callLater(refreshWorkspaces)
 
   Component.onDestruction: {
     root.isDestroying = true;
   }
 
-  onScreenChanged: refreshWorkspaces()
-  onScreenNameChanged: refreshWorkspaces()
-  onHideUnoccupiedChanged: refreshWorkspaces()
-  onShowApplicationsChanged: refreshWorkspaces()
+  onScreenChanged: Qt.callLater(refreshWorkspaces)
+  onScreenNameChanged: Qt.callLater(refreshWorkspaces)
+  onHideUnoccupiedChanged: Qt.callLater(refreshWorkspaces)
+  onShowApplicationsChanged: Qt.callLater(refreshWorkspaces)
 
   Connections {
     target: CompositorService
