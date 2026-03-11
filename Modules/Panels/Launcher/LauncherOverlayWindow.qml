@@ -255,7 +255,7 @@ Variants {
 
           ShapePath {
             strokeWidth: -1
-            fillColor: Qt.alpha(Color.mSurfaceVariant, Settings.data.ui.panelBackgroundOpacity)
+            fillColor: Qt.alpha(Color.mSurfaceVariant, Color.panelBackgroundOpacity)
 
             // Offset by radius to account for Shape's extended bounds
             startX: panelShape.radius + panelShape.radius * panelShape.tlMultX

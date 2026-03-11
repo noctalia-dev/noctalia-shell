@@ -329,13 +329,16 @@ Singleton {
     if (!Settings.data.ui.translucentWidgets)
       return baseColor;
 
-    let baseOpacity = Settings.data.ui.panelBackgroundOpacity;
-    let targetOpacity = Settings.data.colorSchemes.darkMode ? baseOpacity : Math.pow(baseOpacity, 2);
-    let alpha = Math.max(targetOpacity, minAlpha);
+    let alpha = Math.max(root.panelBackgroundOpacity, minAlpha);
 
     // Combine with the base color's existing alpha
     let resultAlpha = Math.max(0, baseColor.a - (1.0 - alpha));
     return Qt.alpha(baseColor, resultAlpha);
+  }
+
+  readonly property real panelBackgroundOpacity: {
+    let baseOpacity = Settings.data.ui.panelBackgroundOpacity;
+    return Settings.data.colorSchemes.darkMode ? baseOpacity : Math.pow(baseOpacity, 2);
   }
 
   readonly property var colorKeyModel: [
