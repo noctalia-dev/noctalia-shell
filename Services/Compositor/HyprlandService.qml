@@ -399,6 +399,12 @@ Item {
       const layoutNameStart = beforeParenthesis.lastIndexOf(',') + 1;
       const layoutName = ev.substring(layoutNameStart);
 
+      // Ignore bogus "error" layout reported by virtual keyboards (e.g. wtype)
+      if (layoutName.toLowerCase() === "error") {
+        Logger.d("HyprlandService", "Ignoring bogus 'error' layout from activelayout event");
+        return;
+      }
+
       KeyboardLayoutService.setCurrentLayout(layoutName);
       Logger.d("HyprlandService", "Keyboard layout switched:", layoutName);
     } catch (e) {
