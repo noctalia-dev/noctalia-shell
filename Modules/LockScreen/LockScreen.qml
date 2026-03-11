@@ -78,6 +78,14 @@ Loader {
         }
       }
 
+      // Whether any monitor from the user's lockScreenMonitors list is currently connected.
+      readonly property bool anyConfiguredMonitorConnected: {
+        const configured = Settings.data.general.lockScreenMonitors;
+        if (!configured || configured.length === 0)
+          return false;
+        return (Quickshell.screens || []).some(s => configured.includes(s.name));
+      }
+
       WlSessionLock {
         id: lockSession
         locked: root.active
@@ -88,7 +96,7 @@ Loader {
           Loader {
             anchors.fill: parent
             active: true
-            sourceComponent: (Settings.data.general.lockScreenMonitors.length === 0 || (lockSurface.screen && Settings.data.general.lockScreenMonitors.includes(lockSurface.screen.name))) ? fullLockScreenComponent : blackScreenComponent
+            sourceComponent: (!lockContainer.anyConfiguredMonitorConnected || Settings.data.general.lockScreenMonitors.includes(lockSurface.screen?.name)) ? fullLockScreenComponent : blackScreenComponent
           }
 
           Component {
