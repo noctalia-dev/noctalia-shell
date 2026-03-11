@@ -12,6 +12,7 @@
     "widgetSpacing": 6,
     "contentPadding": 2,
     "fontScale": 1,
+    "enableExclusionZoneInset": true,
     "backgroundOpacity": 0.93,
     "useSeparateOpacity": false,
     "floating": false,

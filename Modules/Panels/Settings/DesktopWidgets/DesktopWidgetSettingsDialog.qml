@@ -63,7 +63,7 @@ Popup {
 
         NText {
           text: I18n.tr("system.widget-settings-title", {
-                          "widget": root.widgetId
+                          "widget": DesktopWidgetRegistry.getWidgetDisplayName(root.widgetId)
                         })
           pointSize: Style.fontSizeL
           font.weight: Style.fontWeightBold
