@@ -1025,6 +1025,7 @@
       "edit-mode-description": "Enable edit mode to move and reposition desktop widgets. When enabled, widgets show a drag outline and can be repositioned.",
       "edit-mode-exit-button": "Exit edit mode",
       "edit-mode-grid-snap-label": "Grid snap",
+      "edit-mode-grid-snap-scale-label": "Grid snap scale",
       "edit-mode-label": "Edit mode",
       "enabled-description": "Enable or disable desktop widgets entirely.",
       "enabled-label": "Enable desktop widgets",
