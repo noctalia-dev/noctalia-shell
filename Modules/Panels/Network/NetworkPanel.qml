@@ -433,8 +433,7 @@ SmartPanel {
                     radius: Style.radiusM
                     border.width: Style.borderS
                     border.color: modelData.connected ? Color.mPrimary : Color.mOutline
-                    color: modelData.connected ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Settings.data.ui.panelBackgroundOpacity, 0.75)) : Color.mSurface
-
+                    color: modelData.connected ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
                     ColumnLayout {
                       id: ethItemColumn
                       width: parent.width - Style.margin2M

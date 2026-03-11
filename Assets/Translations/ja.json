@@ -319,6 +319,7 @@
     }
   },
   "battery": {
+    "all-batteries": "すべてのバッテリー（合計）",
     "battery-health": "バッテリーの状態",
     "battery-level": "バッテリー残量",
     "capacity-level": "容量：{level}",
@@ -1214,7 +1215,7 @@
     },
     "hooks": {
       "info-command-info-description": "• コマンドはシェル (sh -lc) 経由で実行されます<br>• コマンドはバックグラウンドで実行されます<br>• テストボタンは現在の設定値を使って実行されます",
-      "info-parameters-description": "• 壁紙フック：$1 = 壁紙パス、$2 = 画面名<br>• テーマ切り替えフック：$1 = true/false（ダークモードの状態）<br>• 画面ロック/ロック解除フック：パラメータなし<br>• パフォーマンスモードフック：パラメータなし<br>• セッションフック：$1 = アクション（シャットダウン/再起動）",
+      "info-parameters-description": "• 壁紙フック: $1 = 壁紙のパス, $2 = 画面名<br>• テーマ切り替えフック: $1 = true/false (Dark Modeの状態)<br>• 画面ロック/ロック解除フック: $1 = lock/unlock (画面ロックの状態)<br>• パフォーマンスモードフック: パラメータなし<br>• セッションフック: $1 = action (shutdown/reboot)",
       "info-parameters-label": "利用可能なパラメータ（引数）",
       "noctalia-started-description": "Noctaliaのロードが完了したときに実行するコマンド。",
       "noctalia-started-label": "Noctalia が起動しました",
