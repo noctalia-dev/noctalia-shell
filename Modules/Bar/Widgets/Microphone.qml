@@ -147,13 +147,15 @@ Item {
       if (PanelService.getPanel("audioPanel", screen)?.isPanelOpen) {
         return "";
       } else {
-        return I18n.tr("tooltips.microphone-volume-at", {
-                         "volume": (() => {
-                                      const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
-                                      const displayVolume = Math.min(maxVolume, AudioService.inputVolume);
-                                      return Math.round(displayVolume * 100);
-                                    })()
-                       });
+        const nick = AudioService.source?.nickname ?? "";
+        const volumeText = I18n.tr("tooltips.microphone-volume-at", {
+                                     "volume": (() => {
+                                                  const maxVolume = Settings.data.audio.volumeOverdrive ? 1.5 : 1.0;
+                                                  const displayVolume = Math.min(maxVolume, AudioService.inputVolume);
+                                                  return Math.round(displayVolume * 100);
+                                                })()
+                                   });
+        return nick ? volumeText + "\n" + nick : volumeText;
       }
     }
 
