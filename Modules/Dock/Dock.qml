@@ -863,6 +863,19 @@ Loader {
           WlrLayershell.namespace: "noctalia-dock-" + (screen?.name || "unknown")
           WlrLayershell.exclusionMode: exclusive ? ExclusionMode.Auto : ExclusionMode.Ignore
 
+          // Blur behind dock (User Interface → Blur behind)
+          BackgroundEffect.blurRegion: Settings.data.general.enableBlurBehind ? dockBlurRegion : null
+          Region {
+            id: dockBlurRegion
+            Region {
+              x: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).x)
+              y: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).y)
+              width: Math.round(dockContent.dockContainer.width)
+              height: Math.round(dockContent.dockContainer.height)
+              radius: Style.radiusL
+            }
+          }
+
           implicitWidth: dockContainerWrapper.width
           implicitHeight: dockContainerWrapper.height
 
