@@ -659,8 +659,6 @@ Item {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               Layout.topMargin: -Style.marginXXS
-              Layout.row: detailsGrid ? 2 : 5
-              Layout.column: detailsGrid ? 1 : 0
               spacing: Style.marginXS
               visible: Settings.data.network.bluetoothAutoConnect
               NIcon {
