@@ -83,10 +83,11 @@ Singleton {
     }
   }
 
-  function getDeviceAutoConnect(mac) {
-    if (!mac || !cacheAdapter.autoConnectSettings) {
+  function getDeviceAutoConnect(device) {
+    if (!device || !device.address || !cacheAdapter.autoConnectSettings) {
       return false;
     }
+    const mac = device.address;
     const settings = cacheAdapter.autoConnectSettings[mac];
     return settings ? !!settings.autoConnect : false;
   }
@@ -679,7 +680,7 @@ Singleton {
       return;
     }
 
-    _autoConnectQueue = adapter.devices.values.filter(dev => dev && dev.paired && !dev.connected && !dev.blocked && getDeviceAutoConnect(dev.address) === true);
+    _autoConnectQueue = adapter.devices.values.filter(dev => dev && dev.paired && !dev.connected && !dev.blocked && getDeviceAutoConnect(dev) === true);
 
     if (root._autoConnectQueue.length > 0) {
       autoConnectStepTimer.restart();
