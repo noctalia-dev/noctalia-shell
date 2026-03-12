@@ -848,8 +848,8 @@ Loader {
           Region {
             id: dockBlurRegion
             Region {
-              x: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).x + dockWindow.slideX)
-              y: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).y + dockWindow.slideY)
+              x: Math.round(dockContainerWrapper.x + dockContent.dockContainer.x + dockWindow.slideX)
+              y: Math.round(dockContainerWrapper.y + dockContent.dockContainer.y + dockWindow.slideY)
               width: Math.round(dockContent.dockContainer.width)
               height: Math.round(dockContent.dockContainer.height)
               radius: Style.radiusL
