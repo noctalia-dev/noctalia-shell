@@ -17,7 +17,7 @@ Singleton {
   id: root
 
   // Configuration
-  property int maxVisible: 5
+  property int maxPopups: 5
   property int maxHistory: 100
   property string historyFile: Quickshell.env("NOCTALIA_NOTIF_HISTORY_FILE") || (Settings.cacheDir + "notifications.json")
 
@@ -27,11 +27,11 @@ Singleton {
   property bool doNotDisturb: false
 
   // Models
-  property ListModel activeList: ListModel {}
-  property ListModel historyList: ListModel {}
+  property ListModel popupModel: ListModel {}
+  property ListModel historyModel: ListModel {}
 
   // Internal state
-  property var activeNotifications: ({}) // Maps internal ID to {notification, watcher, metadata}
+  property var popupState: ({}) // Maps internal ID to {notification, watcher, cachedActions, metadata}
   property var quickshellIdToInternalId: ({})
 
   // Rate limiting for notification sounds (minimum 100ms between sounds)
@@ -167,19 +167,19 @@ Singleton {
 
     // Check if this is a replacement notification
     const existingInternalId = quickshellIdToInternalId[quickshellId];
-    if (existingInternalId && activeNotifications[existingInternalId]) {
-      updateExistingNotification(existingInternalId, notification, data);
+    if (existingInternalId && popupState[existingInternalId]) {
+      updatePopup(existingInternalId, notification, data);
       return;
     }
 
     // Check for duplicate content
     const duplicateId = findDuplicateNotification(data);
     if (duplicateId) {
-      removeNotification(duplicateId);
+      removePopup(duplicateId);
     }
 
     // Add new notification
-    addNewNotification(quickshellId, notification, data);
+    addPopup(quickshellId, notification, data);
     playNotificationSound(data.urgency, notification.appName);
   }
 
@@ -277,30 +277,30 @@ Singleton {
     return defaultSoundFile;
   }
 
-  function updateExistingNotification(internalId, notification, data) {
-    const index = findNotificationIndex(internalId);
+  function updatePopup(internalId, notification, data) {
+    const index = findPopupIndex(internalId);
     if (index < 0)
       return;
-    const existing = activeList.get(index);
+    const existing = popupModel.get(index);
     const oldTimestamp = existing.timestamp;
     const oldProgress = existing.progress;
 
     // Update properties (keeping original timestamp and progress)
-    activeList.setProperty(index, "summary", data.summary);
-    activeList.setProperty(index, "summaryMarkdown", data.summaryMarkdown);
-    activeList.setProperty(index, "body", data.body);
-    activeList.setProperty(index, "bodyMarkdown", data.bodyMarkdown);
-    activeList.setProperty(index, "appName", data.appName);
-    activeList.setProperty(index, "urgency", data.urgency);
-    activeList.setProperty(index, "expireTimeout", data.expireTimeout);
-    activeList.setProperty(index, "originalImage", data.originalImage);
-    activeList.setProperty(index, "cachedImage", data.cachedImage);
-    activeList.setProperty(index, "actionsJson", data.actionsJson);
-    activeList.setProperty(index, "timestamp", oldTimestamp);
-    activeList.setProperty(index, "progress", oldProgress);
+    popupModel.setProperty(index, "summary", data.summary);
+    popupModel.setProperty(index, "summaryMarkdown", data.summaryMarkdown);
+    popupModel.setProperty(index, "body", data.body);
+    popupModel.setProperty(index, "bodyMarkdown", data.bodyMarkdown);
+    popupModel.setProperty(index, "appName", data.appName);
+    popupModel.setProperty(index, "urgency", data.urgency);
+    popupModel.setProperty(index, "expireTimeout", data.expireTimeout);
+    popupModel.setProperty(index, "originalImage", data.originalImage);
+    popupModel.setProperty(index, "cachedImage", data.cachedImage);
+    popupModel.setProperty(index, "actionsJson", data.actionsJson);
+    popupModel.setProperty(index, "timestamp", oldTimestamp);
+    popupModel.setProperty(index, "progress", oldProgress);
 
     // Update stored notification object
-    const notifData = activeNotifications[internalId];
+    const notifData = popupState[internalId];
     notifData.notification = notification;
 
     // Deep copy actions to preserve them even if QML object clears list
@@ -319,7 +319,7 @@ Singleton {
     notification.tracked = true;
 
     function onClosed() {
-      userDismissNotification(internalId);
+      dismissPopup(internalId);
     }
     notification.closed.connect(onClosed);
     notifData.onClosed = onClosed;
@@ -329,7 +329,7 @@ Singleton {
     notifData.metadata.duration = calculateDuration(data);
   }
 
-  function addNewNotification(quickshellId, notification, data) {
+  function addPopup(quickshellId, notification, data) {
     // Map IDs
     quickshellIdToInternalId[quickshellId] = data.id;
 
@@ -351,7 +351,7 @@ Singleton {
     }
 
     // Store notification data
-    activeNotifications[data.id] = {
+    popupState[data.id] = {
       "notification": notification,
       "watcher": watcher,
       "cachedActions": safeActions // Cache actions
@@ -370,29 +370,34 @@ Singleton {
     notification.tracked = true;
 
     function onClosed() {
-      userDismissNotification(data.id);
+      dismissPopup(data.id);
     }
     notification.closed.connect(onClosed);
-    activeNotifications[data.id].onClosed = onClosed;
+    popupState[data.id].onClosed = onClosed;
 
-    // Add to list
-    activeList.insert(0, data);
+    // Defer list insertion to prevent re-entrant QML incubation crash.
+    // Direct insert triggers Repeater.modelUpdated synchronously, which
+    // incubates delegates whose signal handlers can re-enter the V4 engine
+    // and crash in QV4::Object::insertMember.
+    Qt.callLater(() => {
+                   popupModel.insert(0, data);
 
-    // Remove overflow
-    while (activeList.count > maxVisible) {
-      const last = activeList.get(activeList.count - 1);
-      // Overflow only removes from ACTIVE view, but keeps it for history
-      activeNotifications[last.id]?.notification?.dismiss(); // Visually dismiss
-      activeList.remove(activeList.count - 1);
-      // DO NOT call cleanupNotification here, we want to keep it for history actions
-    }
+                   // Remove overflow
+                   while (popupModel.count > maxPopups) {
+                     const last = popupModel.get(popupModel.count - 1);
+                     // Overflow only removes from ACTIVE view, but keeps it for history
+                     popupState[last.id]?.notification?.dismiss(); // Visually dismiss
+                     popupModel.remove(popupModel.count - 1);
+                     // DO NOT call cleanupNotification here, we want to keep it for history actions
+                   }
+                 });
   }
 
   function findDuplicateNotification(data) {
     const contentId = getContentId(data.summary, data.body, data.appName);
 
-    for (var i = 0; i < activeList.count; i++) {
-      const existing = activeList.get(i);
+    for (var i = 0; i < popupModel.count; i++) {
+      const existing = popupModel.get(i);
       const existingContentId = getContentId(existing.summary, existing.body, existing.appName);
       if (existingContentId === contentId) {
         return existing.id;
@@ -450,9 +455,9 @@ Singleton {
     };
   }
 
-  function findNotificationIndex(internalId) {
-    for (var i = 0; i < activeList.count; i++) {
-      if (activeList.get(i).id === internalId) {
+  function findPopupIndex(internalId) {
+    for (var i = 0; i < popupModel.count; i++) {
+      if (popupModel.get(i).id === internalId) {
         return i;
       }
     }
@@ -460,45 +465,45 @@ Singleton {
   }
 
   function updateNotificationFromObject(internalId) {
-    const notifData = activeNotifications[internalId];
+    const notifData = popupState[internalId];
     if (!notifData)
       return;
-    const index = findNotificationIndex(internalId);
+    const index = findPopupIndex(internalId);
     if (index < 0)
       return;
     const data = createData(notifData.notification);
-    const existing = activeList.get(index);
+    const existing = popupModel.get(index);
 
     // Update properties (keeping timestamp and progress)
-    activeList.setProperty(index, "summary", data.summary);
-    activeList.setProperty(index, "summaryMarkdown", data.summaryMarkdown);
-    activeList.setProperty(index, "body", data.body);
-    activeList.setProperty(index, "bodyMarkdown", data.bodyMarkdown);
-    activeList.setProperty(index, "appName", data.appName);
-    activeList.setProperty(index, "urgency", data.urgency);
-    activeList.setProperty(index, "expireTimeout", data.expireTimeout);
-    activeList.setProperty(index, "originalImage", data.originalImage);
-    activeList.setProperty(index, "cachedImage", data.cachedImage);
-    activeList.setProperty(index, "actionsJson", data.actionsJson);
+    popupModel.setProperty(index, "summary", data.summary);
+    popupModel.setProperty(index, "summaryMarkdown", data.summaryMarkdown);
+    popupModel.setProperty(index, "body", data.body);
+    popupModel.setProperty(index, "bodyMarkdown", data.bodyMarkdown);
+    popupModel.setProperty(index, "appName", data.appName);
+    popupModel.setProperty(index, "urgency", data.urgency);
+    popupModel.setProperty(index, "expireTimeout", data.expireTimeout);
+    popupModel.setProperty(index, "originalImage", data.originalImage);
+    popupModel.setProperty(index, "cachedImage", data.cachedImage);
+    popupModel.setProperty(index, "actionsJson", data.actionsJson);
 
     // Update metadata
     notifData.metadata.urgency = data.urgency;
     notifData.metadata.duration = calculateDuration(data);
   }
 
-  function removeNotification(id) {
-    const index = findNotificationIndex(id);
+  function removePopup(id) {
+    const index = findPopupIndex(id);
     if (index >= 0) {
-      activeList.remove(index);
+      popupModel.remove(index);
     }
     cleanupNotification(id);
   }
 
   function cleanupNotification(id) {
-    const notifData = activeNotifications[id];
+    const notifData = popupState[id];
     if (notifData) {
       notifData.watcher?.destroy();
-      delete activeNotifications[id];
+      delete popupState[id];
     }
 
     // Clean up quickshell ID mapping
@@ -514,7 +519,7 @@ Singleton {
   Timer {
     interval: 50
     repeat: true
-    running: activeList.count > 0
+    running: popupModel.count > 0
     onTriggered: updateAllProgress()
   }
 
@@ -522,9 +527,9 @@ Singleton {
     const now = Date.now();
     const toRemove = [];
 
-    for (var i = 0; i < activeList.count; i++) {
-      const notif = activeList.get(i);
-      const notifData = activeNotifications[notif.id];
+    for (var i = 0; i < popupModel.count; i++) {
+      const notif = popupModel.get(i);
+      const notifData = popupState[notif.id];
       if (!notifData)
         continue;
       const meta = notifData.metadata;
@@ -536,7 +541,7 @@ Singleton {
       if (progress <= 0) {
         toRemove.push(notif.id);
       } else if (Math.abs(notif.progress - progress) > 0.005) {
-        activeList.setProperty(i, "progress", progress);
+        popupModel.setProperty(i, "progress", progress);
       }
     }
 
@@ -566,8 +571,8 @@ Singleton {
   }
 
   function updateImagePath(notificationId, path) {
-    updateModel(activeList, notificationId, "cachedImage", path);
-    updateModel(historyList, notificationId, "cachedImage", path);
+    updateModel(popupModel, notificationId, "cachedImage", path);
+    updateModel(historyModel, notificationId, "cachedImage", path);
     saveHistory();
   }
 
@@ -582,18 +587,22 @@ Singleton {
 
   // History management
   function addToHistory(data) {
-    historyList.insert(0, data);
+    // Defer list insertion to prevent re-entrant QML incubation crash.
+    // See addPopup for full explanation.
+    Qt.callLater(() => {
+                   historyModel.insert(0, data);
 
-    while (historyList.count > maxHistory) {
-      const old = historyList.get(historyList.count - 1);
-      // Only delete cached images that are in our cache directory
-      const cachedPath = old.cachedImage ? old.cachedImage.replace(/^file:\/\//, "") : "";
-      if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
-        Quickshell.execDetached(["rm", "-f", cachedPath]);
-      }
-      historyList.remove(historyList.count - 1);
-    }
-    saveHistory();
+                   while (historyModel.count > maxHistory) {
+                     const old = historyModel.get(historyModel.count - 1);
+                     // Only delete cached images that are in our cache directory
+                     const cachedPath = old.cachedImage ? old.cachedImage.replace(/^file:\/\//, "") : "";
+                     if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
+                       Quickshell.execDetached(["rm", "-f", cachedPath]);
+                     }
+                     historyModel.remove(historyModel.count - 1);
+                   }
+                   saveHistory();
+                 });
   }
 
   // Persistence - History
@@ -626,8 +635,8 @@ Singleton {
   function performSaveHistory() {
     try {
       const items = [];
-      for (var i = 0; i < historyList.count; i++) {
-        const n = historyList.get(i);
+      for (var i = 0; i < historyModel.count; i++) {
+        const n = historyModel.get(i);
         const copy = Object.assign({}, n);
         copy.timestamp = n.timestamp.getTime();
         items.push(copy);
@@ -641,7 +650,7 @@ Singleton {
 
   function loadHistory() {
     try {
-      historyList.clear();
+      historyModel.clear();
       for (const item of adapter.notifications || []) {
         const time = new Date(item.timestamp);
 
@@ -651,20 +660,20 @@ Singleton {
           cachedImage = item.originalImage || "";
         }
 
-        historyList.append({
-                             "id": item.id || "",
-                             "summary": item.summary || "",
-                             "summaryMarkdown": processNotificationMarkdown(item.summary || ""),
-                             "body": item.body || "",
-                             "bodyMarkdown": processNotificationMarkdown(item.body || ""),
-                             "appName": item.appName || "",
-                             "urgency": item.urgency < 0 || item.urgency > 2 ? 1 : item.urgency,
-                             "timestamp": time,
-                             "originalImage": item.originalImage || "",
-                             "cachedImage": cachedImage,
-                             "actionsJson": item.actionsJson || "[]",
-                             "originalId": item.originalId || 0
-                           });
+        historyModel.append({
+                              "id": item.id || "",
+                              "summary": item.summary || "",
+                              "summaryMarkdown": processNotificationMarkdown(item.summary || ""),
+                              "body": item.body || "",
+                              "bodyMarkdown": processNotificationMarkdown(item.body || ""),
+                              "appName": item.appName || "",
+                              "urgency": item.urgency < 0 || item.urgency > 2 ? 1 : item.urgency,
+                              "timestamp": time,
+                              "originalImage": item.originalImage || "",
+                              "cachedImage": cachedImage,
+                              "actionsJson": item.actionsJson || "[]",
+                              "originalId": item.originalId || 0
+                            });
       }
     } catch (e) {
       Logger.e("Notifications", "Load failed:", e);
@@ -861,7 +870,7 @@ Singleton {
   }
 
   function pauseTimeout(id) {
-    const notifData = activeNotifications[id];
+    const notifData = popupState[id];
     if (notifData && !notifData.metadata.paused) {
       notifData.metadata.paused = true;
       notifData.metadata.pauseTime = Date.now();
@@ -869,46 +878,41 @@ Singleton {
   }
 
   function resumeTimeout(id) {
-    const notifData = activeNotifications[id];
+    const notifData = popupState[id];
     if (notifData && notifData.metadata.paused) {
       notifData.metadata.timestamp += Date.now() - notifData.metadata.pauseTime;
       notifData.metadata.paused = false;
     }
   }
 
-  // Public API
-  function dismissActiveNotification(id) {
-    userDismissNotification(id);
-  }
-
-  // User dismissed from active view (e.g. clicked close, or swipe)
-  // This behaves like "overflow" - removes from active list but KEEPS data for history
-  function userDismissNotification(id) {
-    const index = findNotificationIndex(id);
+  // Dismiss a popup notification (e.g. clicked close, swipe, or overflow).
+  // Removes from popup list but KEEPS data for history.
+  function dismissPopup(id) {
+    const index = findPopupIndex(id);
     if (index >= 0) {
-      activeList.remove(index);
+      popupModel.remove(index);
     }
   }
 
-  function dismissOldestActive() {
-    if (activeList.count > 0) {
-      const lastNotif = activeList.get(activeList.count - 1);
-      dismissActiveNotification(lastNotif.id);
+  function dismissOldestPopup() {
+    if (popupModel.count > 0) {
+      const lastNotif = popupModel.get(popupModel.count - 1);
+      dismissPopup(lastNotif.id);
     }
   }
 
-  function dismissAllActive() {
-    for (const id in activeNotifications) {
-      activeNotifications[id].notification?.dismiss();
-      activeNotifications[id].watcher?.destroy();
+  function dismissAllPopups() {
+    for (const id in popupState) {
+      popupState[id].notification?.dismiss();
+      popupState[id].watcher?.destroy();
     }
-    activeList.clear();
-    activeNotifications = {};
+    popupModel.clear();
+    popupState = {};
     quickshellIdToInternalId = {};
   }
 
   function invokeActionAndSuppressClose(id, actionId) {
-    const notifData = activeNotifications[id];
+    const notifData = popupState[id];
     if (notifData && notifData.notification && notifData.onClosed) {
       try {
         notifData.notification.closed.disconnect(notifData.onClosed);
@@ -920,7 +924,7 @@ Singleton {
 
   function invokeAction(id, actionId) {
     let invoked = false;
-    const notifData = activeNotifications[id];
+    const notifData = popupState[id];
 
     if (notifData && notifData.notification) {
       const actionsToUse = (notifData.notification.actions && notifData.notification.actions.length > 0) ? notifData.notification.actions : (notifData.cachedActions || []);
@@ -957,9 +961,9 @@ Singleton {
       }
     } else if (!notifData) {
       Logger.w("NotificationService", "No active notification data for id=" + id + ", searching history for manual invoke");
-      for (var i = 0; i < historyList.count; i++) {
-        if (historyList.get(i).id === id) {
-          const histEntry = historyList.get(i);
+      for (var i = 0; i < historyModel.count; i++) {
+        if (historyModel.get(i).id === id) {
+          const histEntry = historyModel.get(i);
           if (histEntry.originalId) {
             invoked = manualInvoke(histEntry.originalId, actionId);
           }
@@ -974,8 +978,8 @@ Singleton {
     }
 
     // Clear actions after use
-    updateModel(activeList, id, "actionsJson", "[]");
-    updateModel(historyList, id, "actionsJson", "[]");
+    updateModel(popupModel, id, "actionsJson", "[]");
+    updateModel(historyModel, id, "actionsJson", "[]");
     saveHistory();
 
     return true;
@@ -1023,15 +1027,15 @@ Singleton {
   }
 
   function removeFromHistory(notificationId) {
-    for (var i = 0; i < historyList.count; i++) {
-      const notif = historyList.get(i);
+    for (var i = 0; i < historyModel.count; i++) {
+      const notif = historyModel.get(i);
       if (notif.id === notificationId) {
         // Only delete cached images that are in our cache directory
         const cachedPath = notif.cachedImage ? notif.cachedImage.replace(/^file:\/\//, "") : "";
         if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
           Quickshell.execDetached(["rm", "-f", cachedPath]);
         }
-        historyList.remove(i);
+        historyModel.remove(i);
         saveHistory();
         return true;
       }
@@ -1040,14 +1044,14 @@ Singleton {
   }
 
   function removeOldestHistory() {
-    if (historyList.count > 0) {
-      const oldest = historyList.get(historyList.count - 1);
+    if (historyModel.count > 0) {
+      const oldest = historyModel.get(historyModel.count - 1);
       // Only delete cached images that are in our cache directory
       const cachedPath = oldest.cachedImage ? oldest.cachedImage.replace(/^file:\/\//, "") : "";
       if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
         Quickshell.execDetached(["rm", "-f", cachedPath]);
       }
-      historyList.remove(historyList.count - 1);
+      historyModel.remove(historyModel.count - 1);
       saveHistory();
       return true;
     }
@@ -1061,14 +1065,14 @@ Singleton {
       Logger.e("Notifications", "Failed to clear cache directory:", e);
     }
 
-    historyList.clear();
+    historyModel.clear();
     saveHistory();
   }
 
   function getHistorySnapshot() {
     const items = [];
-    for (var i = 0; i < historyList.count; i++) {
-      const entry = historyList.get(i);
+    for (var i = 0; i < historyModel.count; i++) {
+      const entry = historyModel.get(i);
       items.push({
                    "id": entry.id,
                    "summary": entry.summary,

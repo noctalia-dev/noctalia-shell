@@ -95,7 +95,7 @@ SmartPanel {
     }
 
     function moveSelection(dir) {
-      var m = NotificationService.historyList;
+      var m = NotificationService.historyModel;
       if (!m || m.count === 0)
         return;
 
@@ -139,7 +139,7 @@ SmartPanel {
     function moveAction(dir) {
       if (focusIndex === -1)
         return;
-      var item = NotificationService.historyList.get(focusIndex);
+      var item = NotificationService.historyModel.get(focusIndex);
       if (!item)
         return;
 
@@ -162,7 +162,7 @@ SmartPanel {
     function activateSelection() {
       if (focusIndex === -1)
         return;
-      var item = NotificationService.historyList.get(focusIndex);
+      var item = NotificationService.historyModel.get(focusIndex);
       if (!item)
         return;
 
@@ -189,7 +189,7 @@ SmartPanel {
     function removeSelection() {
       if (focusIndex === -1)
         return;
-      var item = NotificationService.historyList.get(focusIndex);
+      var item = NotificationService.historyModel.get(focusIndex);
       if (!item)
         return;
 
@@ -237,7 +237,7 @@ SmartPanel {
 
     // Calculate content height based on header + tabs (if visible) + content
     property real calculatedHeight: {
-      if (NotificationService.historyList.count === 0) {
+      if (NotificationService.historyModel.count === 0) {
         return headerBox.implicitHeight + scrollView.implicitHeight + Style.margin2L + Style.marginM;
       }
       return headerBox.implicitHeight + scrollView.implicitHeight + Style.margin2L + Style.marginM;
@@ -296,7 +296,7 @@ SmartPanel {
     }
 
     function recalcRangeCounts() {
-      var m = NotificationService.historyList;
+      var m = NotificationService.historyModel;
       if (!m || typeof m.count === "undefined" || m.count <= 0) {
         panelContent.rangeCounts = [0, 0, 0, 0];
         return;
@@ -328,7 +328,7 @@ SmartPanel {
     }
 
     function hasNotificationsInCurrentRange() {
-      var m = NotificationService.historyList;
+      var m = NotificationService.historyModel;
       if (!m || m.count === 0) {
         return false;
       }
@@ -347,7 +347,7 @@ SmartPanel {
     }
 
     Connections {
-      target: NotificationService.historyList
+      target: NotificationService.historyModel
       function onCountChanged() {
         panelContent.recalcRangeCounts();
       }
@@ -433,7 +433,7 @@ SmartPanel {
           NTabBar {
             id: tabsBox
             Layout.fillWidth: true
-            visible: NotificationService.historyList.count > 0 && panelContent.groupByDate
+            visible: NotificationService.historyModel.count > 0 && panelContent.groupByDate
             currentIndex: panelContent.currentRange
             tabHeight: Style.toOdd(Style.baseWidgetSize * 0.8)
             spacing: Style.marginXS
@@ -512,20 +512,20 @@ SmartPanel {
 
                 NIcon {
                   icon: "bell-off"
-                  pointSize: (NotificationService.historyList.count === 0) ? 48 : Style.baseWidgetSize
+                  pointSize: (NotificationService.historyModel.count === 0) ? 48 : Style.baseWidgetSize
                   color: Color.mOnSurfaceVariant
                   Layout.alignment: Qt.AlignHCenter
                 }
 
                 NText {
                   text: I18n.tr("notifications.panel.no-notifications")
-                  pointSize: (NotificationService.historyList.count === 0) ? Style.fontSizeL : Style.fontSizeM
+                  pointSize: (NotificationService.historyModel.count === 0) ? Style.fontSizeL : Style.fontSizeM
                   color: Color.mOnSurfaceVariant
                   Layout.alignment: Qt.AlignHCenter
                 }
 
                 NText {
-                  visible: NotificationService.historyList.count === 0
+                  visible: NotificationService.historyModel.count === 0
                   text: I18n.tr("notifications.panel.description")
                   pointSize: Style.fontSizeS
                   color: Color.mOnSurfaceVariant
@@ -552,7 +552,7 @@ SmartPanel {
                 spacing: Style.marginM
 
                 Repeater {
-                  model: NotificationService.historyList
+                  model: NotificationService.historyModel
 
                   delegate: Item {
                     id: notificationDelegate

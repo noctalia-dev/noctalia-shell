@@ -26,7 +26,7 @@ Variants {
 
     required property ShellScreen modelData
 
-    property ListModel notificationModel: NotificationService.activeList
+    property ListModel notificationModel: NotificationService.popupModel
 
     // Deferred activation to prevent re-entrant QML incubation crash.
     // Direct binding to notificationModel.count would activate the Loader
@@ -177,7 +177,7 @@ Variants {
             }
           } catch (e) {
             // Service fallback if delegate is already invalid
-            NotificationService.dismissActiveNotification(notificationId);
+            NotificationService.dismissPopup(notificationId);
           }
         };
 
@@ -369,7 +369,7 @@ Variants {
               interval: Style.animationSlow
               repeat: false
               onTriggered: {
-                NotificationService.dismissActiveNotification(notificationId);
+                NotificationService.dismissPopup(notificationId);
               }
             }
 
