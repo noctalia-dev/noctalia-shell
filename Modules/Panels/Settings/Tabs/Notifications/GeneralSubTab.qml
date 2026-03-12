@@ -9,7 +9,7 @@ import qs.Widgets
 
 ColumnLayout {
   id: root
-
+  spacing: Style.marginL
   Layout.fillWidth: true
 
   property var addMonitor
