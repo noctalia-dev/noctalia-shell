@@ -286,7 +286,95 @@ Singleton {
 
   // Bind all devices to ensure their properties are available
   PwObjectTracker {
-    objects: [...root.sinks, ...root.sources]
+    objects: [...root.sinks, ...root.sources, ...root.appStreams]
+  }
+
+  // Per-app volume cache (keyed by binary/name) + write guard to avoid loops.
+  property var appVolumeCache: ({})
+  property var appVolumeGuardIds: ({})
+  property var appVolumeWatchers: ({})
+
+  function getAppStreamKey(node) {
+    if (!node)
+      return "";
+    const p = node.properties;
+    return (p && (p["application.process.binary"] || p["application.name"])) || node.name || "";
+  }
+
+  function setAppStreamVolume(node, volume) {
+    if (!node || !node.audio)
+      return;
+    const key = getAppStreamKey(node);
+    // Use Object.assign so QML detects the new reference and re-evaluates bindings.
+    if (key)
+      appVolumeCache = Object.assign({}, appVolumeCache, {
+                                       [key]: volume
+                                     });
+    const nId = String(node.id);
+    appVolumeGuardIds = Object.assign({}, appVolumeGuardIds, {
+                                        [nId]: true
+                                      });
+    node.audio.volume = volume;
+    Qt.callLater(function () {
+      const g = Object.assign({}, root.appVolumeGuardIds);
+      delete g[nId];
+      root.appVolumeGuardIds = g;
+    });
+  }
+
+  // One Connections per stream node; restores cached volume if the app resets it.
+  Component {
+    id: volumeWatcherComponent
+    Connections {
+      property string appKey: ""
+      property string nodeId: ""
+      property var pwNode: null
+      function onVolumeChanged() {
+        if (!target || root.appVolumeGuardIds[nodeId])
+          return;
+        const desired = root.appVolumeCache[appKey];
+        if (desired !== undefined && Math.abs(target.volume - desired) >= root.epsilon)
+          root.setAppStreamVolume(pwNode, desired);
+      }
+    }
+  }
+
+  onAppStreamsChanged: {
+    const currentIds = {};
+    for (var i = 0; i < appStreams.length; i++) {
+      const node = appStreams[i];
+      if (!node || !node.audio)
+      continue;
+      const nId = String(node.id);
+      currentIds[nId] = true;
+      if (appVolumeWatchers[nId])
+      continue;
+      const key = getAppStreamKey(node);
+      if (!key)
+      continue;
+      const w = volumeWatcherComponent.createObject(root, {
+                                                      target: node.audio,
+                                                      appKey: key,
+                                                      nodeId: nId,
+                                                      pwNode: node
+                                                    });
+      if (w)
+      appVolumeWatchers = Object.assign({}, appVolumeWatchers, {
+                                          [nId]: w
+                                        });
+    }
+    const remaining = {};
+    let dirty = false;
+    for (const id in appVolumeWatchers) {
+      if (currentIds[id]) {
+        remaining[id] = appVolumeWatchers[id];
+      } else {
+        appVolumeWatchers[id].destroy();
+        dirty = true;
+      }
+    }
+    if (dirty)
+    appVolumeWatchers = remaining;
   }
 
   Component.onCompleted: {
