@@ -1,6 +1,4 @@
 import QtQuick
-import Quickshell
-import Quickshell.Io
 import qs.Commons
 import qs.Services.UI
 
@@ -13,23 +11,6 @@ Item {
   property bool handleSearch: Settings.data.appLauncher.enableSettingsSearch
   property string supportedLayouts: "list"
   property string iconMode: Settings.data.appLauncher.iconMode
-
-  property var searchIndex: []
-
-  FileView {
-    id: searchIndexFile
-    path: Quickshell.shellDir + "/Assets/settings-search-index.json"
-    watchChanges: false
-    printErrors: false
-
-    onLoaded: {
-      try {
-        root.searchIndex = JSON.parse(text());
-      } catch (e) {
-        root.searchIndex = [];
-      }
-    }
-  }
 
   function init() {
     Logger.d("SettingsProvider", "Initialized");
@@ -57,7 +38,7 @@ Item {
   }
 
   function getResults(query) {
-    if (!query || searchIndex.length === 0)
+    if (!query || SettingsSearchService.searchIndex.length === 0)
       return [];
 
     var trimmed = query.trim();
@@ -78,10 +59,12 @@ Item {
         return [];
     }
 
-    // Build searchable items with resolved translations
+    // Build searchable items with resolved translations, filtering out invisible entries
     let items = [];
-    for (let j = 0; j < searchIndex.length; j++) {
-      const entry = searchIndex[j];
+    for (let j = 0; j < SettingsSearchService.searchIndex.length; j++) {
+      const entry = SettingsSearchService.searchIndex[j];
+      if (!SettingsSearchService.isEntryVisible(entry))
+        continue;
       items.push({
                    "labelKey": entry.labelKey,
                    "descriptionKey": entry.descriptionKey,
@@ -133,8 +116,10 @@ Item {
   function getAllSettings() {
     var launcherItems = [];
 
-    for (var j = 0; j < searchIndex.length; j++) {
-      var entry = searchIndex[j];
+    for (var j = 0; j < SettingsSearchService.searchIndex.length; j++) {
+      var entry = SettingsSearchService.searchIndex[j];
+      if (!SettingsSearchService.isEntryVisible(entry))
+        continue;
       var label = I18n.tr(entry.labelKey);
       var tabName = I18n.tr(entry.tabLabel);
       var subTabName = entry.subTabLabel ? I18n.tr(entry.subTabLabel) : "";
