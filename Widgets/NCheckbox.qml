@@ -41,8 +41,8 @@ RowLayout {
     id: box
 
     Layout.margins: Style.borderS
-    implicitWidth: Math.round(root.baseSize)
-    implicitHeight: Math.round(root.baseSize)
+    implicitWidth: Style.toOdd(root.baseSize)
+    implicitHeight: Style.toOdd(root.baseSize)
     radius: Style.iRadiusXS * (root.baseSize / root.defaultSize)
     color: root.checked ? root.activeColor : Color.mSurface
     border.color: Color.mOutline
@@ -62,11 +62,11 @@ RowLayout {
 
     NIcon {
       visible: root.checked
-      anchors.centerIn: parent
-      anchors.horizontalCenterOffset: -1
+      x: Style.pixelAlignCenter(parent.width, width)
+      y: Style.pixelAlignCenter(parent.height, height)
       icon: "check"
       color: root.activeOnColor
-      pointSize: Math.max(Style.fontSizeXS, root.baseSize * 0.5)
+      pointSize: Style.toOdd(root.baseSize * 0.5)
     }
 
     MouseArea {
