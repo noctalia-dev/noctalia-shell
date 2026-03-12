@@ -96,6 +96,7 @@ Item {
 
     Loader {
       active: (labelMode !== "none") && (!showLabelsOnlyWhenOccupied || workspace.isOccupied || workspace.isFocused)
+      asynchronous: true
       anchors.fill: parent
       sourceComponent: Component {
         NText {
@@ -105,8 +106,6 @@ Item {
                 return workspace.name.substring(0, characterCount);
               }
               if (labelMode === "index+name") {
-                // Vertical mode: compact format (no space, first char only)
-                // Horizontal mode: full format (space, more chars)
                 if (isVertical) {
                   return workspace.idx.toString() + workspace.name.substring(0, 1);
                 }
@@ -116,7 +115,6 @@ Item {
             return workspace.idx.toString();
           }
           family: Settings.data.ui.fontFixed
-          // Size based on the fixed dimension (cross-axis) of the visual pill
           pointSize: (isVertical ? pillContainer.pillWidth : pillContainer.pillHeight) * textRatio
           applyUiScale: false
           font.capitalization: Font.AllUppercase

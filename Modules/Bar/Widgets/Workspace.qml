@@ -608,7 +608,7 @@ Item {
 
     Repeater {
       id: workspaceRepeaterHorizontal
-      model: localWorkspaces
+      model: (!isVertical && !appVisible) ? localWorkspaces : null
       delegate: WorkspacePill {
         required property var model
         workspace: model
@@ -651,7 +651,7 @@ Item {
 
     Repeater {
       id: workspaceRepeaterVertical
-      model: localWorkspaces
+      model: (isVertical && !appVisible) ? localWorkspaces : null
       delegate: WorkspacePill {
         required property var model
         workspace: model
