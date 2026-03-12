@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Die Richtung des Arbeitsflächenwechsels beim Scrollen umkehren.",
       "reverse-scrolling-label": "Scrollen umkehren",
       "show-applications-description": "Anwendungssymbole in jeder Arbeitsfläche anzeigen.",
+      "show-applications-hover-description": "Anwendungssymbole in jedem Arbeitsbereich anzeigen, wenn der Arbeitsbereich überfahren wird.",
+      "show-applications-hover-label": "Anwendungen beim Hovern anzeigen",
       "show-applications-label": "Anwendungen anzeigen",
       "show-badge-description": "Zeige die Arbeitsflächennummer als Abzeichen im gruppierten Modus an.",
       "show-badge-label": "Arbeitsflächen-Abzeichen anzeigen",

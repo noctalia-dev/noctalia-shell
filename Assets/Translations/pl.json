@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Odwróć kierunek przełączania obszarów roboczych podczas przewijania.",
       "reverse-scrolling-label": "Odwróć przewijanie",
       "show-applications-description": "Wyświetl ikony aplikacji wewnątrz każdego obszaru roboczego.",
+      "show-applications-hover-description": "Wyświetl ikony aplikacji w każdym obszarze roboczym po najechaniu na obszar roboczy.",
+      "show-applications-hover-label": "Pokaż aplikacje po najechaniu kursorem",
       "show-applications-label": "Pokaż aplikacje",
       "show-badge-description": "Pokaż plakietkę z numerem obszaru roboczego w trybie grupowym.",
       "show-badge-label": "Pokaż odznakę obszaru roboczego",

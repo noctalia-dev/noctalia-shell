@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "捲動時反轉工作區切換方向。",
       "reverse-scrolling-label": "反轉捲動",
       "show-applications-description": "顯示各個工作區的程式圖示",
+      "show-applications-hover-description": "當滑鼠懸停在工作區上時，在每個工作區內顯示應用程式圖示。",
+      "show-applications-hover-label": "滑鼠懸停時顯示應用程式",
       "show-applications-label": "顯示應用程式",
       "show-badge-description": "在群組模式下顯示工作區編號徽章。",
       "show-badge-label": "顯示工作區標記",

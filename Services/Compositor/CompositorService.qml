@@ -211,10 +211,7 @@ Singleton {
                                         });
 
     backend.windowListChanged.connect(() => {
-                                        // Sync windows when they change
                                         syncWindows();
-                                        // Forward the signal
-                                        windowListChanged();
                                       });
 
     // Property bindings - use automatic property change signal

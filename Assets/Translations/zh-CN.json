@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "滚动时反转工作区切换方向。",
       "reverse-scrolling-label": "反转滚动",
       "show-applications-description": "在每个工作区内显示应用程序图标。",
+      "show-applications-hover-description": "当鼠标悬停在工作区上时，在每个工作区内显示应用程序图标。",
+      "show-applications-hover-label": "鼠标悬停时显示应用程序",
       "show-applications-label": "显示应用程序",
       "show-badge-description": "在分组模式下显示工作区编号徽章。",
       "show-badge-label": "显示工作区徽章",

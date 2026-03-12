@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Inverti direzione del cambio workspace quando scorri.",
       "reverse-scrolling-label": "Inverti scorrimento",
       "show-applications-description": "Mostra icone applicazioni dentro ogni workspace.",
+      "show-applications-hover-description": "Mostra le icone delle applicazioni all'interno di ogni spazio di lavoro quando lo spazio di lavoro viene sorvolato.",
+      "show-applications-hover-label": "Mostra applicazioni al passaggio del mouse",
       "show-applications-label": "Mostra applicazioni",
       "show-badge-description": "Mostra badge numero workspace in modalità raggruppata.",
       "show-badge-label": "Mostra badge workspace",

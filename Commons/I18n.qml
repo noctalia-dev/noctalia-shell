@@ -187,6 +187,33 @@ Singleton {
     };
   }
 
+  // Default date format per language (used by lock screen, etc.)
+  readonly property var dateFormats: ({
+                                        "de": "dddd, d. MMMM",
+                                        "en": "dddd, MMMM d",
+                                        "es": "dddd, d 'de' MMMM",
+                                        "fr": "dddd d MMMM",
+                                        "hu": "dddd, MMMM d.",
+                                        "it": "dddd d MMMM",
+                                        "ja": "yyyy年M月d日 dddd",
+                                        "ko": "yyyy년 M월 d일 dddd",
+                                        "ku": "dddd, dê MMMM",
+                                        "nl": "dddd d MMMM",
+                                        "nn": "dddd d. MMMM",
+                                        "pl": "dddd, d MMMM",
+                                        "pt": "dddd, d 'de' MMMM",
+                                        "ru": "dddd, d MMMM",
+                                        "sv": "dddd d MMMM",
+                                        "tr": "dddd, d MMMM",
+                                        "uk": "dddd, d MMMM",
+                                        "zh": "yyyy年M月d日 dddd"
+                                      })
+
+  function dateFormat() {
+    var lang = langCode.split("-")[0];
+    return dateFormats[lang] || "dddd, d MMMM";
+  }
+
   // -------------------------------------------
   function setLanguage(newLangCode, fullLocale) {
     if (typeof fullLocale === "undefined") {

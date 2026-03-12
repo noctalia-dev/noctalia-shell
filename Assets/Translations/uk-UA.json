@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Змінити напрямок перемикання робочих просторів під час прокручування.",
       "reverse-scrolling-label": "Зворотне прокручування",
       "show-applications-description": "Відображати значки програм у кожному робочому просторі.",
+      "show-applications-hover-description": "Відображати піктограми програм всередині кожного робочого простору при наведенні на нього.",
+      "show-applications-hover-label": "Показувати програми при наведенні",
       "show-applications-label": "Показати застосунки",
       "show-badge-description": "Показувати значок номера робочого столу в згрупованому режимі.",
       "show-badge-label": "Показати значок робочого столу",

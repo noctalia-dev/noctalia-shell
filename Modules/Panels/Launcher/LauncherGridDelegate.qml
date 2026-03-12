@@ -57,7 +57,7 @@ Item {
         Rectangle {
           anchors.fill: parent
           radius: Style.radiusM
-          color: Color.mSurfaceVariant
+          color: Color.mSurface
           visible: Settings.data.appLauncher.showIconBackground && !modelData.isImage
         }
 
