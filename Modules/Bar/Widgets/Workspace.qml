@@ -700,13 +700,14 @@ Item {
         }
       }
 
-      Component.onCompleted: updateWindows()
-      onWorkspaceModelChanged: updateWindows()
+      // Deferred to avoid re-entrant incubation: when localWorkspaces.append()
+      Component.onCompleted: Qt.callLater(updateWindows)
+      onWorkspaceModelChanged: Qt.callLater(updateWindows)
 
       Connections {
         target: root
         function onWindowRevisionChanged() {
-          groupedContainer.updateWindows();
+          Qt.callLater(groupedContainer.updateWindows);
         }
       }
 
