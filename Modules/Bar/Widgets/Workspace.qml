@@ -293,18 +293,18 @@ Item {
   Connections {
     target: CompositorService
     function onWorkspacesChanged() {
-      refreshWorkspaces();
+      Qt.callLater(refreshWorkspaces);
     }
     function onWindowListChanged() {
       if (appVisible || showLabelsOnlyWhenOccupied) {
         root.windowRevision++;
-        refreshWorkspaces();
+        Qt.callLater(refreshWorkspaces);
       }
     }
     function onActiveWindowChanged() {
       if (appVisible) {
         root.windowRevision++;
-        refreshWorkspaces();
+        Qt.callLater(refreshWorkspaces);
       }
     }
   }
