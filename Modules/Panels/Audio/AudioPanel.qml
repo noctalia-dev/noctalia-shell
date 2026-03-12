@@ -628,7 +628,7 @@ SmartPanel {
                         enabled: !!(appBox.nodeAudio && appBox.modelData && appBox.modelData.ready === true)
                         onMoved: function (value) {
                           if (appBox.nodeAudio && appBox.modelData && appBox.modelData.ready === true) {
-                            AudioService.setAppStreamVolume(appBox.modelData, value);
+                            appBox.nodeAudio.volume = value;
                           }
                         }
                       }
