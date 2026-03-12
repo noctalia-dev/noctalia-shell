@@ -375,17 +375,22 @@ Singleton {
     notification.closed.connect(onClosed);
     activeNotifications[data.id].onClosed = onClosed;
 
-    // Add to list
-    activeList.insert(0, data);
+    // Defer list insertion to prevent re-entrant QML incubation crash.
+    // Direct insert triggers Repeater.modelUpdated synchronously, which
+    // incubates delegates whose signal handlers can re-enter the V4 engine
+    // and crash in QV4::Object::insertMember.
+    Qt.callLater(() => {
+                   activeList.insert(0, data);
 
-    // Remove overflow
-    while (activeList.count > maxVisible) {
-      const last = activeList.get(activeList.count - 1);
-      // Overflow only removes from ACTIVE view, but keeps it for history
-      activeNotifications[last.id]?.notification?.dismiss(); // Visually dismiss
-      activeList.remove(activeList.count - 1);
-      // DO NOT call cleanupNotification here, we want to keep it for history actions
-    }
+                   // Remove overflow
+                   while (activeList.count > maxVisible) {
+                     const last = activeList.get(activeList.count - 1);
+                     // Overflow only removes from ACTIVE view, but keeps it for history
+                     activeNotifications[last.id]?.notification?.dismiss(); // Visually dismiss
+                     activeList.remove(activeList.count - 1);
+                     // DO NOT call cleanupNotification here, we want to keep it for history actions
+                   }
+                 });
   }
 
   function findDuplicateNotification(data) {
@@ -582,18 +587,22 @@ Singleton {
 
   // History management
   function addToHistory(data) {
-    historyList.insert(0, data);
+    // Defer list insertion to prevent re-entrant QML incubation crash.
+    // See addNewNotification for full explanation.
+    Qt.callLater(() => {
+                   historyList.insert(0, data);
 
-    while (historyList.count > maxHistory) {
-      const old = historyList.get(historyList.count - 1);
-      // Only delete cached images that are in our cache directory
-      const cachedPath = old.cachedImage ? old.cachedImage.replace(/^file:\/\//, "") : "";
-      if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
-        Quickshell.execDetached(["rm", "-f", cachedPath]);
-      }
-      historyList.remove(historyList.count - 1);
-    }
-    saveHistory();
+                   while (historyList.count > maxHistory) {
+                     const old = historyList.get(historyList.count - 1);
+                     // Only delete cached images that are in our cache directory
+                     const cachedPath = old.cachedImage ? old.cachedImage.replace(/^file:\/\//, "") : "";
+                     if (cachedPath && cachedPath.startsWith(ImageCacheService.notificationsDir)) {
+                       Quickshell.execDetached(["rm", "-f", cachedPath]);
+                     }
+                     historyList.remove(historyList.count - 1);
+                   }
+                   saveHistory();
+                 });
   }
 
   // Persistence - History
