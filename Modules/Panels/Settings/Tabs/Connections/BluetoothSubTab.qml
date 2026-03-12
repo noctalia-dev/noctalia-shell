@@ -662,15 +662,14 @@ Item {
               spacing: Style.marginXS
               visible: Settings.data.network.bluetoothAutoConnect
               NIcon {
-                icon: BluetoothService.getDeviceAutoConnect(modelData.address) ? "repeat" : "repeat-off"
+                icon: BluetoothService.getDeviceAutoConnect(modelData) ? "repeat" : "repeat-off"
                 pointSize: Style.fontSizeXS
-                color: BluetoothService.getDeviceAutoConnect(modelData.address) ? Color.mPrimary : Color.mOnSurface
               }
               NCheckbox {
                 label: I18n.tr("common.auto-connect")
                 labelSize: Style.fontSizeXS
                 baseSize: Style.baseWidgetSize * 0.5
-                checked: BluetoothService.getDeviceAutoConnect(modelData.address)
+                checked: BluetoothService.getDeviceAutoConnect(modelData)
                 onToggled: checked => BluetoothService.setDeviceAutoConnect(modelData, checked)
               }
             }
