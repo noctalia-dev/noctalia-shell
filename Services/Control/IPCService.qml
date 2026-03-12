@@ -37,11 +37,11 @@ Singleton {
       Logger.w("IPC", "Argument to ipc call '" + funcName + "' must be a number");
       return null;
     }
-    if (idx < 0 || idx >= NotificationService.activeList.count) {
+    if (idx < 0 || idx >= NotificationService.popupModel.count) {
       Logger.w("IPC", "Notification index out of range: " + idx);
       return null;
     }
-    return NotificationService.activeList.get(idx);
+    return NotificationService.popupModel.get(idx);
   }
 
   IpcHandler {
@@ -191,7 +191,7 @@ Singleton {
     }
 
     function dismissOldest() {
-      NotificationService.dismissOldestActive();
+      NotificationService.dismissOldestPopup();
     }
 
     function removeOldestHistory() {
@@ -199,7 +199,7 @@ Singleton {
     }
 
     function dismissAll() {
-      NotificationService.dismissAllActive();
+      NotificationService.dismissAllPopups();
     }
 
     function getHistory(): string {
@@ -230,13 +230,13 @@ Singleton {
 
       var actions = JSON.parse(notif.actionsJson || "[]");
       if (actions.length === 0) {
-        NotificationService.dismissActiveNotification(notif.id);
+        NotificationService.dismissPopup(notif.id);
         return false;
       }
 
       var actionId = actions.find(a => a.identifier === "default")?.identifier ?? actions[0].identifier;
       var result = NotificationService.invokeAction(notif.id, actionId);
-      NotificationService.dismissActiveNotification(notif.id);
+      NotificationService.dismissPopup(notif.id);
       return result;
     }
 

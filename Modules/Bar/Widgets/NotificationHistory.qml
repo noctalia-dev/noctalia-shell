@@ -43,7 +43,7 @@ NIconButton {
   function computeUnreadCount() {
     var since = NotificationService.lastSeenTs;
     var count = 0;
-    var model = NotificationService.historyList;
+    var model = NotificationService.historyModel;
     for (var i = 0; i < model.count; i++) {
       var item = model.get(i);
       var ts = item.timestamp instanceof Date ? item.timestamp.getTime() : item.timestamp;
@@ -71,8 +71,8 @@ NIconButton {
   colorFg: Color.resolveColorKey(iconColorKey)
   border.color: Style.capsuleBorderColor
   border.width: Style.capsuleBorderWidth
-  visible: !((hideWhenZero && NotificationService.historyList.count === 0) || (hideWhenZeroUnread && count === 0))
-  opacity: !((hideWhenZero && NotificationService.historyList.count === 0) || (hideWhenZeroUnread && count === 0)) ? 1.0 : 0.0
+  visible: !((hideWhenZero && NotificationService.historyModel.count === 0) || (hideWhenZeroUnread && count === 0))
+  opacity: !((hideWhenZero && NotificationService.historyModel.count === 0) || (hideWhenZeroUnread && count === 0)) ? 1.0 : 0.0
 
   NPopupContextMenu {
     id: contextMenu
