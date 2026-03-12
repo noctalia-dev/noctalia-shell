@@ -83,16 +83,32 @@ FloatingWindow {
     onActivated: settingsContent.selectPreviousTab()
   }
 
-  Shortcut {
-    sequence: "Up"
-    enabled: !PanelService.isKeybindRecording
-    onActivated: settingsContent.scrollUp()
+  Instantiator {
+    model: Settings.data.general.keybinds.keyUp || []
+    Shortcut {
+      sequence: modelData
+      enabled: !PanelService.isKeybindRecording
+      onActivated: {
+        if (settingsContent.searchText.trim() !== "")
+          settingsContent.searchSelectPrevious();
+        else
+          settingsContent.scrollUp();
+      }
+    }
   }
 
-  Shortcut {
-    sequence: "Down"
-    enabled: !PanelService.isKeybindRecording
-    onActivated: settingsContent.scrollDown()
+  Instantiator {
+    model: Settings.data.general.keybinds.keyDown || []
+    Shortcut {
+      sequence: modelData
+      enabled: !PanelService.isKeybindRecording
+      onActivated: {
+        if (settingsContent.searchText.trim() !== "")
+          settingsContent.searchSelectNext();
+        else
+          settingsContent.scrollDown();
+      }
+    }
   }
 
   // Main content
