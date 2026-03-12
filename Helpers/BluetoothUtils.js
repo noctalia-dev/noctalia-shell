@@ -85,8 +85,8 @@ var signalIcon = (p) => {
 
 // Icon mapping
 var deviceIcon = (name, icon) => {
-  var s1 = (name || "").toLowerCase();
-  var s2 = (icon || "").toLowerCase();
+  var s1 = String(name || "").toLowerCase();
+  var s2 = String(icon || "").toLowerCase();
 
   // Prefer icon-based hints for display devices first to avoid "audio" catching TVs
   var displayHints = ["display", "tv", "monitor", "projector", "screen", "chromecast", "cast"];

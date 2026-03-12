@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Inverter a direção da troca de áreas de trabalho ao rolar.",
       "reverse-scrolling-label": "Rolagem invertida",
       "show-applications-description": "Exibir ícones de aplicativos dentro de cada espaço de trabalho.",
+      "show-applications-hover-description": "Exibir ícones de aplicativos dentro de cada área de trabalho quando a área de trabalho é sobreposta.",
+      "show-applications-hover-label": "Mostrar aplicativos ao passar o mouse",
       "show-applications-label": "Mostrar aplicativos",
       "show-badge-description": "Mostrar o selo do número da área de trabalho no modo agrupado.",
       "show-badge-label": "Mostrar selo da área de trabalho",

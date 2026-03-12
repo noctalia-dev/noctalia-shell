@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Kaydırırken çalışma alanı geçiş yönünü tersine çevir.",
       "reverse-scrolling-label": "Ters kaydırma",
       "show-applications-description": "Her çalışma alanının içinde uygulama simgelerini görüntüle.",
+      "show-applications-hover-description": "Çalışma alanının üzerine gelindiğinde, her çalışma alanının içinde uygulama simgelerini görüntüle.",
+      "show-applications-hover-label": "Üzerine gelindiğinde uygulamaları göster",
       "show-applications-label": "Uygulamaları göster",
       "show-badge-description": "Gruplandırılmış modda çalışma alanı numarası işaretini göster.",
       "show-badge-label": "Çalışma alanı rozetini göster",

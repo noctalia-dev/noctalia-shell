@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Görgetéskor fordított irányba váltson a munkaterületek között.",
       "reverse-scrolling-label": "Görgetés megfordítása",
       "show-applications-description": "Alkalmazásikonok megjelenítése minden munkaterületen belül.",
+      "show-applications-hover-description": "Alkalmazásikonok megjelenítése minden munkaterületen belül, amikor a munkaterület fölé viszi az egeret.",
+      "show-applications-hover-label": "Alkalmazások megjelenítése rámutatáskor",
       "show-applications-label": "Alkalmazások megjelenítése",
       "show-badge-description": "Munkaterület számának jelzése csoportosított módban.",
       "show-badge-label": "Munkafelület jelvény megjelenítése",

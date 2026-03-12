@@ -57,7 +57,7 @@ NBox {
         Rectangle {
           anchors.fill: parent
           radius: Style.radiusXS
-          color: Color.mSurfaceVariant
+          color: Color.mSurface
           visible: Settings.data.appLauncher.showIconBackground && !modelData.isImage
         }
 

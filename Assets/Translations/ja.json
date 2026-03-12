@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "スクロール時のワークスペース切り替え方向を反転する。",
       "reverse-scrolling-label": "スクロール方向を反転",
       "show-applications-description": "各ワークスペース内にアプリアイコンを表示します。",
+      "show-applications-hover-description": "ワークスペースにカーソルを合わせたときに、各ワークスペース内にアプリケーションアイコンを表示します。",
+      "show-applications-hover-label": "ホバー時にアプリケーションを表示",
       "show-applications-label": "アプリアイコンを表示",
       "show-badge-description": "グループ化モードでワークスペース番号バッジを表示します。",
       "show-badge-label": "ワークスペースバッジを表示",

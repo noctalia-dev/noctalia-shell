@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Vänd riktningen för arbetsyteväxling vid rullning.",
       "reverse-scrolling-label": "Omvänd rullning",
       "show-applications-description": "Visa applikationsikoner i varje arbetsyta.",
+      "show-applications-hover-description": "Visa programikoner i varje arbetsyta när arbetsytan hovras över.",
+      "show-applications-hover-label": "Visa applikationer vid hovring",
       "show-applications-label": "Visa applikationer",
       "show-badge-description": "Visa arbetsytans nummerskylt i grupperat läge.",
       "show-badge-label": "Visa arbetsytans skylt",

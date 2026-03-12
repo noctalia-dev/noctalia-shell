@@ -14,6 +14,7 @@ RowLayout {
   property color activeColor: Color.mPrimary
   property color activeOnColor: Color.mOnPrimary
   property int baseSize: Style.baseWidgetSize * 0.7
+  property real labelSize: Style.fontSizeL
 
   signal toggled(bool checked)
   signal entered
@@ -24,6 +25,7 @@ RowLayout {
 
   NLabel {
     label: root.label
+    labelSize: root.labelSize
     description: root.description
     visible: root.label !== "" || root.description !== ""
   }
