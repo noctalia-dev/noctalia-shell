@@ -765,30 +765,8 @@ Loader {
           focusable: false
           color: "transparent"
 
-          property real targetIndicatorOffsetX: peekCenterOffsetX
-          property real targetIndicatorOffsetY: peekCenterOffsetY
-          property real animatedIndicatorOffsetX: targetIndicatorOffsetX
-          property real animatedIndicatorOffsetY: targetIndicatorOffsetY
-
-          onTargetIndicatorOffsetXChanged: animatedIndicatorOffsetX = targetIndicatorOffsetX
-          onTargetIndicatorOffsetYChanged: animatedIndicatorOffsetY = targetIndicatorOffsetY
-
-          Behavior on animatedIndicatorOffsetX {
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.InOutQuad
-            }
-          }
-
-          Behavior on animatedIndicatorOffsetY {
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.InOutQuad
-            }
-          }
-
-          margins.top: animatedIndicatorOffsetY
-          margins.left: animatedIndicatorOffsetX
+          margins.top: peekCenterOffsetY
+          margins.left: peekCenterOffsetX
 
           WlrLayershell.namespace: "noctalia-dock-indicator-" + (screen?.name || "unknown")
           WlrLayershell.layer: WlrLayer.Top
@@ -796,19 +774,6 @@ Loader {
           WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
           implicitHeight: isVertical ? peekEdgeLength : indicatorThickness
           implicitWidth: isVertical ? indicatorThickness : peekEdgeLength
-
-          Behavior on implicitWidth {
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.InOutQuad
-            }
-          }
-          Behavior on implicitHeight {
-            NumberAnimation {
-              duration: Style.animationNormal
-              easing.type: Easing.InOutQuad
-            }
-          }
 
           Rectangle {
             id: indicatorRect
@@ -863,21 +828,37 @@ Loader {
           WlrLayershell.namespace: "noctalia-dock-" + (screen?.name || "unknown")
           WlrLayershell.exclusionMode: exclusive ? ExclusionMode.Auto : ExclusionMode.Ignore
 
-          // Blur behind dock (User Interface → Blur behind)
+          // Slide animation: content slides inside a fixed window, no margin animation
+          property int slideDistance: (isVertical ? dockContainerWrapper.contentWidth : dockContainerWrapper.contentHeight) + floatingMargin + 10
+          property real slideOffset: hidden ? slideDistance : 0
+
+          Behavior on slideOffset {
+            NumberAnimation {
+              duration: hidden ? hideAnimationDuration : showAnimationDuration
+              easing.type: hidden ? Easing.InCubic : Easing.OutCubic
+            }
+          }
+
+          // Signed slide: positive pushes content toward its edge (off-screen)
+          readonly property real slideX: dockPosition === "left" ? -slideOffset : dockPosition === "right" ? slideOffset : 0
+          readonly property real slideY: dockPosition === "top" ? -slideOffset : dockPosition === "bottom" ? slideOffset : 0
+
+          // Blur behind dock — offset by slide so it follows the content
           BackgroundEffect.blurRegion: Settings.data.general.enableBlurBehind ? dockBlurRegion : null
           Region {
             id: dockBlurRegion
             Region {
-              x: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).x)
-              y: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).y)
+              x: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).x + dockWindow.slideX)
+              y: Math.round(dockContainerWrapper.mapFromItem(dockContent.dockContainer, 0, 0).y + dockWindow.slideY)
               width: Math.round(dockContent.dockContainer.width)
               height: Math.round(dockContent.dockContainer.height)
               radius: Style.radiusL
             }
           }
 
-          implicitWidth: dockContainerWrapper.width
-          implicitHeight: dockContainerWrapper.height
+          // Window sized to fit content + slide distance so content can slide off-edge
+          implicitWidth: dockContainerWrapper.width + (isVertical ? slideDistance : 0)
+          implicitHeight: dockContainerWrapper.height + (!isVertical ? slideDistance : 0)
 
           // Position based on dock setting
           anchors.top: dockPosition === "top"
@@ -885,7 +866,7 @@ Loader {
           anchors.left: dockPosition === "left"
           anchors.right: dockPosition === "right"
 
-          // Offset past bar when at same edge (skip bar offset if dock is exclusive - exclusion zones stack)
+          // Static margins — no animation, window stays put
           margins.top: dockPosition === "top" ? (barAtSameEdge && !exclusive ? barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
           margins.bottom: dockPosition === "bottom" ? (barAtSameEdge && !exclusive ? barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginVertical : 0) + floatingMargin : floatingMargin) : 0
           margins.left: dockPosition === "left" ? (barAtSameEdge && !exclusive ? barHeight + (Settings.data.bar.floating ? Settings.data.bar.marginHorizontal : 0) + floatingMargin : floatingMargin) : 0
@@ -908,9 +889,13 @@ Loader {
             readonly property int extraLeft: (!isVertical && !exclusive && barOnLeft) ? barHeight : 0
             readonly property int extraRight: (!isVertical && !exclusive && barOnRight) ? barHeight : 0
 
+            // Expose content size for window sizing (before slide padding)
+            readonly property int contentWidth: dockContent.dockContainer.width + extraLeft + extraRight + 2
+            readonly property int contentHeight: dockContent.dockContainer.height + extraTop + extraBottom + 2
+
             // Add +2 buffer for fractional scaling issues
-            width: dockContent.dockContainer.width + extraLeft + extraRight + 2
-            height: dockContent.dockContainer.height + extraTop + extraBottom + 2
+            width: contentWidth
+            height: contentHeight
 
             anchors.horizontalCenter: isVertical ? undefined : parent.horizontalCenter
             anchors.verticalCenter: isVertical ? parent.verticalCenter : undefined
@@ -920,26 +905,14 @@ Loader {
             anchors.left: dockPosition === "left" ? parent.left : undefined
             anchors.right: dockPosition === "right" ? parent.right : undefined
 
+            // Slide content inside the fixed window
+            transform: Translate {
+              x: dockWindow.slideX
+              y: dockWindow.slideY
+            }
+
             // Enable layer caching to reduce GPU usage from continuous animations
             layer.enabled: true
-
-            opacity: hidden ? 0 : 1
-            scale: hidden ? 0.85 : 1
-
-            Behavior on opacity {
-              NumberAnimation {
-                duration: hidden ? hideAnimationDuration : showAnimationDuration
-                easing.type: Easing.InOutQuad
-              }
-            }
-
-            Behavior on scale {
-              NumberAnimation {
-                duration: hidden ? hideAnimationDuration : showAnimationDuration
-                easing.type: hidden ? Easing.InQuad : Easing.OutBack
-                easing.overshoot: hidden ? 0 : 1.05
-              }
-            }
 
             DockContent {
               id: dockContent
