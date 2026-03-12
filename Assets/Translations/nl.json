@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Keer de richting van het wisselen van werkruimtes om bij het scrollen.",
       "reverse-scrolling-label": "Omgekeerd scrollen",
       "show-applications-description": "Toon applicatiepictogrammen in elke werkruimte.",
+      "show-applications-hover-description": "Toon applicatiepictogrammen in elke werkruimte wanneer de werkruimte wordt aangewezen.",
+      "show-applications-hover-label": "Toon applicaties bij hoveren",
       "show-applications-label": "Toon applicaties",
       "show-badge-description": "Toon de werkomgevingnummerbadge in gegroepeerde modus.",
       "show-badge-label": "Werkruimtebadge weergeven",

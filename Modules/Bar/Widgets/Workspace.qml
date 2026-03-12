@@ -134,7 +134,7 @@ Item {
     id: workspaceHoverHandler
     enabled: showApplications && showApplicationsHover
     onHoveredChanged: {
-      if(hovered) {
+      if (hovered) {
         hoverEval.stop();
         isHovered = true;
       } else {
@@ -154,7 +154,7 @@ Item {
 
   readonly property bool appVisible: showApplications && (!showApplicationsHover || root.isHovered)
 
-  implicitWidth: appVisible  ? (isVertical ? groupedGrid.implicitWidth : Math.round(groupedGrid.implicitWidth + horizontalPadding * hasLabel)) : (isVertical ? barHeight : computeWidth())
+  implicitWidth: appVisible ? (isVertical ? groupedGrid.implicitWidth : Math.round(groupedGrid.implicitWidth + horizontalPadding * hasLabel)) : (isVertical ? barHeight : computeWidth())
   implicitHeight: appVisible ? (isVertical ? Math.round(groupedGrid.implicitHeight + horizontalPadding * 0.6 * hasLabel) : barHeight) : (isVertical ? computeHeight() : barHeight)
 
   function getWorkspaceWidth(ws, activeOverride) {
@@ -286,7 +286,7 @@ Item {
   onHideUnoccupiedChanged: Qt.callLater(refreshWorkspaces)
   onAppVisibleChanged: {
     if (appVisible) {
-       Qt.callLater(refreshWorkspaces)
+      Qt.callLater(refreshWorkspaces);
     }
   }
 
@@ -640,7 +640,7 @@ Item {
     x: 0
     y: horizontalPadding
     visible: isVertical && !appVisible
-    scale : visible ? 1.0 : 0.8
+    scale: visible ? 1.0 : 0.8
     Behavior on scale {
       NumberAnimation {
         duration: Style.animationFast

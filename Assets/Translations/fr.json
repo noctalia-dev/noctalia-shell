@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Inverser la direction du changement d'espace de travail lors du défilement.",
       "reverse-scrolling-label": "Défilement inversé",
       "show-applications-description": "Afficher les icônes des applications dans chaque espace de travail.",
+      "show-applications-hover-description": "Afficher les icônes d'application dans chaque espace de travail lorsque celui-ci est survolé.",
+      "show-applications-hover-label": "Afficher les applications au survol",
       "show-applications-label": "Afficher les applications",
       "show-badge-description": "Afficher le badge du numéro d'espace de travail en mode groupé.",
       "show-badge-label": "Afficher le badge de l'espace de travail",

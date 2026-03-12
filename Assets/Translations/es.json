@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Invertir la dirección del cambio de espacios de trabajo al desplazarse.",
       "reverse-scrolling-label": "Desplazamiento inverso",
       "show-applications-description": "Mostrar los iconos de las aplicaciones dentro de cada espacio de trabajo.",
+      "show-applications-hover-description": "Mostrar iconos de aplicación dentro de cada espacio de trabajo cuando se pasa el ratón por encima.",
+      "show-applications-hover-label": "Mostrar aplicaciones al pasar el ratón",
       "show-applications-label": "Mostrar aplicaciones",
       "show-badge-description": "Mostrar la insignia del número de espacio de trabajo en modo agrupado.",
       "show-badge-label": "Mostrar insignia del espacio de trabajo",
