@@ -657,6 +657,18 @@
     ]
   },
   {
+    "labelKey": "common.auto-connect",
+    "descriptionKey": null,
+    "widget": "NCheckbox",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 1,
+    "subTabLabel": "common.bluetooth",
+    "visibleWhen": [
+      "Settings.data.network.bluetoothAutoConnect"
+    ]
+  },
+  {
     "labelKey": "toast.airplane-mode.title",
     "descriptionKey": null,
     "widget": "NToggle",
