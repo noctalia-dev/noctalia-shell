@@ -163,12 +163,12 @@
     "lock-keys": {
       "hide-when-off-description": "Verstecke die Anzeige, wenn die Taste nicht aktiv ist.",
       "hide-when-off-label": "Ausblenden, wenn deaktiviert",
-      "show-caps-lock-description": "Caps-Lock-Status anzeigen.",
-      "show-caps-lock-label": "Feststelltaste",
-      "show-num-lock-description": "Num-Lock-Status anzeigen.",
-      "show-num-lock-label": "Num-Taste",
-      "show-scroll-lock-description": "Scroll-Lock-Status anzeigen.",
-      "show-scroll-lock-label": "Rollen-Taste"
+      "show-caps-lock-description": "Caps Lock-Status anzeigen.",
+      "show-caps-lock-label": "Caps Lock",
+      "show-num-lock-description": "Num Lock-Status anzeigen.",
+      "show-num-lock-label": "Num Lock",
+      "show-scroll-lock-description": "Scroll Lock-Status anzeigen.",
+      "show-scroll-lock-label": "Scroll Lock"
     },
     "media-mini": {
       "compact-mode-description": "Aktiviere ein platzsparendes Layout für das Medienplayer-Panel.",
@@ -1513,7 +1513,7 @@
       "types-desc": "Wählen Sie die Ereignisse aus, die das OSD auslösen.",
       "types-input-volume-description": "OSD anzeigen, wenn sich die Mikrofonlautstärke ändert.",
       "types-input-volume-label": "Eingangslautstärke",
-      "types-lockkey-description": "OSD anzeigen, wenn Feststelltaste, Num-Taste oder Rollen-Taste umgeschaltet werden.",
+      "types-lockkey-description": "OSD anzeigen, wenn Caps Lock, Num Lock oder Scroll Lock umgeschaltet werden.",
       "types-lockkey-label": "Feststelltasten",
       "types-media-description": "OSD anzeigen, wenn sich der Medienwiedergabestatus ändert (Wiedergabe, Pause, Überspringen).",
       "types-media-label": "Medienwiedergabe",

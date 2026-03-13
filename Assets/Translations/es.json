@@ -310,7 +310,7 @@
       "reverse-scrolling-label": "Desplazamiento inverso",
       "show-applications-description": "Mostrar los iconos de las aplicaciones dentro de cada espacio de trabajo.",
       "show-applications-hover-description": "Mostrar iconos de aplicación dentro de cada espacio de trabajo cuando se pasa el ratón por encima.",
-      "show-applications-hover-label": "Mostrar aplicaciones al pasar el ratón",
+      "show-applications-hover-label": "Mostrar aplicaciones al pasar",
       "show-applications-label": "Mostrar aplicaciones",
       "show-badge-description": "Mostrar la insignia del número de espacio de trabajo en modo agrupado.",
       "show-badge-label": "Mostrar insignia del espacio de trabajo",
@@ -566,7 +566,7 @@
     "always-hide": "Ocultar siempre",
     "always-show": "Mostrar siempre",
     "force-open": "Forzar abierto",
-    "on-hover": "Al pasar por encima"
+    "on-hover": "Al pasar"
   },
   "hide-modes": {
     "auto-hide": "Ocultación Automática",
@@ -1679,7 +1679,7 @@
       "panels-overlay-label": "Mantener paneles y barra en la parte superior",
       "scaling-description": "Cambia el tamaño de la interfaz de usuario general, excluyendo la barra.",
       "scaling-label": "Escalado de la interfaz",
-      "scrollbar-always-visible-description": "Mantener las barras de desplazamiento visibles siempre que el contenido sea desplazable, en lugar de mostrarlas solo al pasar el ratón.",
+      "scrollbar-always-visible-description": "Mantener las barras de desplazamiento visibles siempre que el contenido sea desplazable, en lugar de mostrarlas solo al pasar el cursor.",
       "scrollbar-always-visible-label": "Mostrar siempre barras de desplazamiento",
       "settings-panel-header": "Panel de Configuración",
       "settings-panel-mode-description": "Elegir diseño de configuración (puede requerir reapertura).",
