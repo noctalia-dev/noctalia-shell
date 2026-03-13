@@ -25,6 +25,8 @@ PanelWindow {
 
   Component.onCompleted: {
     Logger.d("BarContentWindow", "Bar content window created for screen:", barWindow.screen?.name);
+    if (!isHidden)
+      contentLoaded = true;
   }
 
   // Wayland layer configuration
@@ -144,8 +146,11 @@ PanelWindow {
     right: barPosition === "right" || !barIsVertical
   }
 
-  // Track if content should be loaded (stays true during fade-out animation)
-  property bool contentLoaded: !isHidden
+  // Track if content should be loaded (stays true during fade-out animation).
+  // Must NOT be a binding to isHidden — on the first hide cycle the binding
+  // would flip contentLoaded false synchronously (before onIsHiddenChanged can
+  // start the unload timer), unmapping the Wayland surface mid-animation.
+  property bool contentLoaded: false
 
   // Timer to delay unload until after fade animation
   Timer {
