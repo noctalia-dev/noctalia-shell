@@ -8,46 +8,48 @@ import qs.Widgets
 NIconButtonHot {
   property ShellScreen screen
 
-  icon: {
-    try {
-      if (NetworkService.ethernetConnected) {
-        return NetworkService.internetConnectivity ? "ethernet" : "ethernet-off";
-      }
-      let connected = false;
-      let signalStrength = 0;
-      for (const net in NetworkService.networks) {
-        if (NetworkService.networks[net].connected) {
-          connected = true;
-          signalStrength = NetworkService.networks[net].signal;
-          break;
-        }
-      }
-      return connected ? NetworkService.signalIcon(signalStrength, true) : "wifi-off";
-    } catch (error) {
-      Logger.e("Wi-Fi", "Error getting icon:", error);
-      return "wifi-off";
+  function getStatustxt() {
+    if (NetworkService.connecting) {
+      return NetworkService.connectingTo ? I18n.tr("common.connecting") + " " + NetworkService.connectingTo : I18n.tr("common.connecting"); // Im hoping for the best :P
     }
+
+    let p = [];
+
+    // Ethernet
+    if (NetworkService.ethernetConnected) {
+      const eth = NetworkService.activeEthernetDetails;
+      const name = eth.connectionName || (NetworkService.ethernetInterfaces.length > 0 ? NetworkService.ethernetInterfaces[0].connectionName : "") || NetworkService.activeEthernetIf || "";
+      const speed = eth.speed || "";
+      const s = name ? (speed ? name + " - " + speed : name) : "";
+      if (s) {
+        p.push(s);
+      }
+    }
+
+    // Wi-Fi
+    if (NetworkService.activeWifiIf) {
+      const wl = NetworkService.activeWifiDetails;
+      const speed = wl.rateShort || wl.rate || "";
+      const connectedNet = Object.values(NetworkService.networks).find(net => net.connected);
+      const name = connectedNet ? connectedNet.ssid : (wl.connectionName || NetworkService.activeWifiIf || "");
+      const s = name ? (speed ? name + " - " + speed : name) : "";
+      if (s) {
+        p.push(s);
+      }
+    }
+    return p.join(" + ");
   }
 
-  tooltipText: {
-    try {
-      if (NetworkService.ethernetConnected) {
-        // Match design: fixed label when on Ethernet
-        return I18n.tr("common.ethernet");
-      }
-      // Wi‑Fi: SSID — link speed (if available)
-      for (const net in NetworkService.networks) {
-        if (NetworkService.networks[net].connected) {
-          const w = NetworkService.activeWifiDetails || ({});
-          const rate = (w.rateShort && w.rateShort.length > 0) ? w.rateShort : (w.rate || "");
-          return rate && rate.length > 0 ? (net + " — " + rate) : net;
-        }
-      }
-    } catch (e) {
-      // noop
+  function getIcon() {
+    if (NetworkService.ethernetConnected) {
+      return NetworkService.internetConnectivity ? "ethernet" : "ethernet-off";
     }
-    return I18n.tr("common.wifi");
+    const connectedNet = Object.values(NetworkService.networks).find(net => net.connected);
+    return connectedNet ? NetworkService.signalIcon(connectedNet.signal, true) : "wifi-off";
   }
+
+  icon: getIcon()
+  tooltipText: getStatustxt()
   onClicked: {
     var panel = PanelService.getPanel("networkPanel", screen);
     panel?.toggle(this);
