@@ -43,40 +43,24 @@ Item {
   property string dateFilter: "all"
   property var availableDateFilters: [
     {
-      get label() {
-        return I18n.tr("launcher.date-filter-all-time");
-      },
+      "label": I18n.tr("launcher.date-filter-all-time"),
       "action": "all",
-      get icon() {
-        return iconMode === "tabler" ? "calendar" : "x-office-calendar";
-      }
+      "icon": iconMode === "tabler" ? "calendar" : "x-office-calendar"
     },
     {
-      get label() {
-        return I18n.tr("launcher.date-filter-today");
-      },
+      "label": I18n.tr("launcher.date-filter-today"),
       "action": "today",
-      get icon() {
-        return iconMode === "tabler" ? "calendar-event" : "view-calendar-timeline";
-      }
+      "icon": iconMode === "tabler" ? "calendar-event" : "view-calendar-timeline"
     },
     {
-      get label() {
-        return I18n.tr("launcher.date-filter-yesterday");
-      },
+      "label": I18n.tr("launcher.date-filter-yesterday"),
       "action": "yesterday",
-      get icon() {
-        return iconMode === "tabler" ? "calendar-time" : "view-calendar";
-      }
+      "icon": iconMode === "tabler" ? "calendar-time" : "view-calendar"
     },
     {
-      get label() {
-        return I18n.tr("launcher.date-filter-previous-7-days");
-      },
+      "label": I18n.tr("launcher.date-filter-previous-7-days"),
       "action": "week",
-      get icon() {
-        return iconMode === "tabler" ? "calendar-week" : "view-calendar-week";
-      }
+      "icon": iconMode === "tabler" ? "calendar-week" : "view-calendar-week"
     }
   ]
 
@@ -284,17 +268,18 @@ Item {
 
     let currentGroup = "";
 
+    const catMap = {
+      "Images": "image",
+      "Links": "link",
+      "Files": "file",
+      "Code": "code",
+      "Colors": "color"
+    };
+
     // Filter and format results
     items.forEach(function (item) {
       // Category filter
       if (Settings.data.appLauncher.enableClipboardChips && root.selectedCategory !== "All") {
-        const catMap = {
-          "Images": "image",
-          "Links": "link",
-          "Files": "file",
-          "Code": "code",
-          "Colors": "color"
-        };
         if (item.contentType !== catMap[root.selectedCategory]) {
           return;
         }

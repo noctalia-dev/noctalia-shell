@@ -93,8 +93,7 @@ Variants {
           return false;
         if (!Settings.data.appLauncher.enableClipPreview)
           return false;
-        var item = launcherCore.results[launcherCore.selectedIndex];
-        return launcherCore.selectedIndex >= 0 && launcherCore.results && !!item && !item.isHeader;
+        return launcherCore.selectedIndex >= 0 && launcherCore.results && !!launcherCore.results[launcherCore.selectedIndex] && !launcherCore.results[launcherCore.selectedIndex].isHeader;
       }
 
       // Dimmer background (click to close)
