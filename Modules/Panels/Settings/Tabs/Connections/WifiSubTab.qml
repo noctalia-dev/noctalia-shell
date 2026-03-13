@@ -25,6 +25,7 @@ Item {
   property string enterpriseEap: "peap"
   property string enterprisePhase2: "mschapv2"
   property string enterpriseAnonIdentity: ""
+  property string enterpriseCaCert: ""
   property string expandedSsid: ""
   property string infoSsid: ""
   property int ipVersion: 4
@@ -99,13 +100,15 @@ Item {
     enterpriseEap = "peap";
     enterprisePhase2 = "mschapv2";
     enterpriseAnonIdentity = "";
+    enterpriseCaCert = "";
     expandedSsid = "";
   }
   function submitPassword(ssid, password, identity = "") {
     NetworkService.connect(ssid, password, false, identity, {
                              eap: enterpriseEap,
                              phase2: enterprisePhase2,
-                             anonIdentity: enterpriseAnonIdentity
+                             anonIdentity: enterpriseAnonIdentity,
+                             caCert: enterpriseCaCert
                            });
     passwordSsid = "";
   }
@@ -372,6 +375,7 @@ Item {
     property string customEnterpriseEap: "peap"
     property string customEnterprisePhase2: "mschapv2"
     property string customEnterpriseAnonIdentity: ""
+    property string customEnterpriseCaCert: ""
     property bool customShowPassword: false
     property bool customIsHidden: false
 
@@ -446,7 +450,8 @@ Item {
             NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
                                            eap: addNetworkPopup.customEnterpriseEap,
                                            phase2: addNetworkPopup.customEnterprisePhase2,
-                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
                                          }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
@@ -521,6 +526,28 @@ Item {
         onTextChanged: addNetworkPopup.customEnterpriseAnonIdentity = text
       }
 
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+
+        NTextInput {
+          id: customCaCertInput
+          Layout.fillWidth: true
+          inputIconName: "certificate"
+          placeholderText: I18n.tr("wifi.enterprise.ca-cert")
+          label: I18n.tr("wifi.enterprise.ca-cert")
+          text: addNetworkPopup.customEnterpriseCaCert
+          onTextChanged: addNetworkPopup.customEnterpriseCaCert = text
+        }
+
+        NIconButton {
+          icon: "folder-open"
+          Layout.alignment: Qt.AlignBottom
+          onClicked: caCertPicker.openForAddNetwork()
+        }
+      }
+
       NTextInput {
         id: customIdentityInput
         Layout.fillWidth: true
@@ -547,7 +574,8 @@ Item {
             NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
                                            eap: addNetworkPopup.customEnterpriseEap,
                                            phase2: addNetworkPopup.customEnterprisePhase2,
-                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
                                          }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
@@ -601,7 +629,8 @@ Item {
             NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
                                            eap: addNetworkPopup.customEnterpriseEap,
                                            phase2: addNetworkPopup.customEnterprisePhase2,
-                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
                                          }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
@@ -1177,6 +1206,48 @@ Item {
                   currentKey: root.enterprisePhase2
                   onSelected: key => root.enterprisePhase2 = key
                 }
+
+                RowLayout {
+                  Layout.fillWidth: true
+                  spacing: Style.marginS
+
+                  Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                    radius: Style.iRadiusXS
+                    color: Color.mSurface
+                    border.color: caCertInput.activeFocus ? Color.mSecondary : Color.mOutline
+                    border.width: Style.borderS
+
+                    TextInput {
+                      id: caCertInput
+                      anchors.left: parent.left
+                      anchors.right: parent.right
+                      anchors.verticalCenter: parent.verticalCenter
+                      anchors.margins: Style.marginS
+                      font.family: Settings.data.ui.fontFixed
+                      font.pointSize: Style.fontSizeS
+                      color: Color.mOnSurface
+                      selectByMouse: true
+                      text: root.enterpriseCaCert
+                      onTextChanged: root.enterpriseCaCert = text
+
+                      NText {
+                        visible: parent.text.length === 0
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: I18n.tr("wifi.enterprise.ca-cert")
+                        color: Color.mOnSurfaceVariant
+                        pointSize: Style.fontSizeS
+                      }
+                    }
+                  }
+
+                  NIconButton {
+                    icon: "folder-open"
+                    baseSize: Style.baseWidgetSize * 0.8
+                    onClicked: caCertPicker.openForInline()
+                  }
+                }
               }
 
               // Anonymous Identity field (Enterprise only)
@@ -1369,5 +1440,33 @@ Item {
         }
       }
     }
+  }
+
+  NFilePicker {
+    id: caCertPicker
+    title: I18n.tr("wifi.enterprise.ca-cert")
+    nameFilters: ["*.pem", "*.crt", "*.cer", "*.der", "*"]
+
+    property bool isForAddNetwork: false
+
+    function openForInline() {
+      isForAddNetwork = false;
+      openFilePicker();
+    }
+
+    function openForAddNetwork() {
+      isForAddNetwork = true;
+      openFilePicker();
+    }
+
+    onAccepted: paths => {
+                  if (paths.length > 0) {
+                    if (isForAddNetwork) {
+                      addNetworkPopup.customEnterpriseCaCert = paths[0];
+                    } else {
+                      root.enterpriseCaCert = paths[0];
+                    }
+                  }
+                }
   }
 }

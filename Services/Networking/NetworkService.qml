@@ -390,6 +390,7 @@ Singleton {
     manualConnectProcess.eap = enterpriseConfig.eap || "peap";
     manualConnectProcess.phase2 = enterpriseConfig.phase2 || "mschapv2";
     manualConnectProcess.anonIdentity = enterpriseConfig.anonIdentity || "";
+    manualConnectProcess.caCert = enterpriseConfig.caCert || "";
     manualConnectProcess.running = true;
   }
 
@@ -1475,46 +1476,40 @@ Singleton {
     property string eap: "peap"
     property string phase2: "mschapv2"
     property string anonIdentity: ""
+    property string caCert: ""
     property bool isHidden: false
     running: false
 
     command: {
-      var script = `
-SSID="$1"
-PWD="$2"
-SEC="$3"
-IDENT="$4"
-EAP_METHOD="\${5:-peap}"
-PHASE2_AUTH="\${6:-mschapv2}"
-ANON_IDENT="$7"
-HIDDEN="\${8:-no}"
+      const nmArgs = ["connection", "add", "type", "wifi", "con-name", ssid, "ssid", ssid, "--", "802-11-wireless.hidden", isHidden ? "yes" : "no"];
 
-# Remove existing profile to avoid conflict
-nmcli connection delete id "$SSID" 2>/dev/null || true
+      if (securityKey === "wpa-psk" || securityKey === "wpa2-psk") {
+        nmArgs.push("wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password);
+      } else if (securityKey === "sae") {
+        nmArgs.push("wifi-sec.key-mgmt", "sae", "wifi-sec.psk", password);
+      } else if (securityKey === "wep") {
+        nmArgs.push("wifi-sec.key-mgmt", "none", "wifi-sec.wep-key0", password);
+      } else if (securityKey && securityKey.indexOf("-eap") !== -1) {
+        nmArgs.push("wifi-sec.key-mgmt", "wpa-eap", "802-1x.eap", eap, "802-1x.phase2-auth", phase2, "802-1x.identity", identity, "802-1x.password", password);
 
-# Create profile based on security key
-if [ "$SEC" = "wpa-psk" ] || [ "$SEC" = "wpa2-psk" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PWD" 802-11-wireless.hidden "$HIDDEN"
-elif [ "$SEC" = "sae" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt sae wifi-sec.psk "$PWD" 802-11-wireless.hidden "$HIDDEN"
-elif [ "$SEC" = "wep" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt none wifi-sec.wep-key0 "$PWD" 802-11-wireless.hidden "$HIDDEN"
-elif [[ "$SEC" == *-eap ]]; then
-    # WPA Enterprise
-    if [ -n "$ANON_IDENT" ]; then
-        nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-eap 802-1x.eap "$EAP_METHOD" 802-1x.phase2-auth "$PHASE2_AUTH" 802-1x.identity "$IDENT" 802-1x.password "$PWD" 802-1x.anonymous-identity "$ANON_IDENT" 802-11-wireless.hidden "$HIDDEN"
-    else
-        nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-eap 802-1x.eap "$EAP_METHOD" 802-1x.phase2-auth "$PHASE2_AUTH" 802-1x.identity "$IDENT" 802-1x.password "$PWD" 802-11-wireless.hidden "$HIDDEN"
-    fi
-else
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- 802-11-wireless.hidden "$HIDDEN"
-fi
+        if (anonIdentity) {
+          nmArgs.push("802-1x.anonymous-identity", anonIdentity);
+        }
 
-# Bring up the connection
-nmcli connection up id "$SSID"
-`;
+        if (caCert) {
+          nmArgs.push("802-1x.ca-cert", caCert);
+        }
+      }
 
-      return ["sh", "-c", script, "--", ssid, password, securityKey, identity, eap, phase2, anonIdentity, isHidden ? "yes" : "no"];
+      const script = `
+        ID="$1"
+        nmcli connection delete id "$ID" 2>/dev/null || true
+        shift
+        nmcli "$@"
+        nmcli connection up id "$ID"
+      `;
+
+      return ["sh", "-c", script, "--", ssid].concat(nmArgs);
     }
 
     stdout: StdioCollector {

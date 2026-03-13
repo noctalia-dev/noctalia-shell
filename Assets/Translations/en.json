@@ -2178,7 +2178,8 @@
       "password": "User password",
       "anonymous-identity": "Anonymous Identity",
       "eap-method": "EAP Method",
-      "phase2-auth": "Phase 2 Authentication"
+      "phase2-auth": "Phase 2 Authentication",
+      "ca-cert": "CA Certificate"
     }
   }
 }
