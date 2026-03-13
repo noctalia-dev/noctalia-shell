@@ -70,7 +70,7 @@ Item {
         p.push(s);
       }
     }
-    return p.join(isBarVertical ? "\n" : " | ");
+    return p.join(isBarVertical ? "\n" : " + ");
   }
 
   function getIcon() {
