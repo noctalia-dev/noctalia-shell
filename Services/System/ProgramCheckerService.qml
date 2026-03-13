@@ -14,7 +14,6 @@ Singleton {
   property bool nmcliAvailable: false
   property bool bluetoothctlAvailable: false
   property bool wlsunsetAvailable: false
-  property bool app2unitAvailable: false
   property bool gnomeCalendarAvailable: false
   property bool pythonAvailable: false
   property bool wtypeAvailable: false
@@ -24,7 +23,6 @@ Singleton {
                                             "bluetoothctlAvailable": ["sh", "-c", "command -v bluetoothctl"],
                                             "nmcliAvailable": ["sh", "-c", "command -v nmcli"],
                                             "wlsunsetAvailable": ["sh", "-c", "command -v wlsunset"],
-                                            "app2unitAvailable": ["sh", "-c", "command -v app2unit"],
                                             "gnomeCalendarAvailable": ["sh", "-c", "command -v gnome-calendar"],
                                             "wtypeAvailable": ["sh", "-c", "command -v wtype"],
                                             "pythonAvailable": ["sh", "-c", "command -v python3"]
@@ -42,19 +40,10 @@ Singleton {
   // Signal emitted when all checks are complete
   signal checksCompleted
 
-  // disable app2unit in settings if it is not available
+  // disable Night Light in settings if wlsunset is not available
   onChecksCompleted: {
-    if (!app2unitAvailable && Settings.data.appLauncher.useApp2Unit) {
-      Settings.data.appLauncher.useApp2Unit = false;
-    }
     if (!wlsunsetAvailable && Settings.data.nightLight.enabled) {
       Settings.data.nightLight.enabled = false;
-    }
-  }
-
-  onApp2unitAvailableChanged: {
-    if (!app2unitAvailable && Settings.data.appLauncher.useApp2Unit) {
-      Settings.data.appLauncher.useApp2Unit = false;
     }
   }
 

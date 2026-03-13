@@ -156,12 +156,6 @@ Item {
             const command = prefix.concat(app.command);
             Quickshell.execDetached(command);
           }
-        } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
-          Logger.d("Dock", `Using app2unit for: ${app.id}`);
-          if (app.runInTerminal)
-            Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
-          else
-            Quickshell.execDetached(["app2unit", "--"].concat(app.command));
         } else {
           if (app.runInTerminal) {
             Logger.d("Dock", "Executing terminal app manually: " + app.name);

@@ -235,7 +235,6 @@
     "clipboardWatchImageCommand": "wl-paste --type image --watch cliphist store",
     "position": "center",
     "pinnedApps": [],
-    "useApp2Unit": false,
     "sortByMostUsed": true,
     "terminalCommand": "alacritty -e",
     "customLaunchPrefixEnabled": false,

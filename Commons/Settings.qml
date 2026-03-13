@@ -424,7 +424,6 @@ Singleton {
       property string clipboardWatchImageCommand: "wl-paste --type image --watch cliphist store"
       property string position: "center"  // Position: center, top_left, top_right, bottom_left, bottom_right, bottom_center, top_center
       property list<string> pinnedApps: []
-      property bool useApp2Unit: false
       property bool sortByMostUsed: true
       property string terminalCommand: "alacritty -e"
       property bool customLaunchPrefixEnabled: false
