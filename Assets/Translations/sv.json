@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Kommandon exekveras via shell (sh -lc)<br>• Kommandon körs i bakgrunden (fristående)<br>• Testknappar exekveras med aktuella värden",
-      "info-parameters-description": "• Bakgrundsbildskrok: $1 = bakgrundsbildens sökväg, $2 = skärmnamn<br>• Temaväxlingskrok: $1 = true/false (Dark Mode-status)<br>• Skärmlås/upplåsningskrokar: $1 = lock/unlock (skärmlåsets status)<br>• Prestandalägeskrokar: Inga parametrar<br>• Sessionskrok: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = bakgrundsbildens sökväg, $2 = skärmnamn, $3 = tema (mörkt/ljust)<br>• Theme toggle hook: $1 = true/false (Dark Mode-status)<br>• Screen lock/unlock hooks: $1 = lock/unlock (skärmlåsstatus)<br>• Performance mode hooks: Inga parametrar<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Tillgängliga parametrar",
       "noctalia-started-description": "Kommando som ska utföras när Noctalia har laddats klart.",
       "noctalia-started-label": "Noctalia startat",
