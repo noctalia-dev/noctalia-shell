@@ -741,7 +741,12 @@ Loader {
             onExited: {
               peekHovered = false;
               showTimer.stop();
-              if (!hidden && !dockHovered && !anyAppHovered && !menuHovered) {
+              if (isStaticMode) {
+                // Start hideTimer which checks panel.isDockHovered before closing
+                if (!dockHovered && !anyAppHovered && !menuHovered) {
+                  hideTimer.restart();
+                }
+              } else if (!hidden && !dockHovered && !anyAppHovered && !menuHovered) {
                 hideTimer.restart();
               }
             }
