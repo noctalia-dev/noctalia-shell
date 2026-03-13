@@ -2154,7 +2154,9 @@
       "no-networks": "No Wi‑Fi networks found",
       "saved": "Saved",
       "searching": "Searching for networks...",
-      "add-hidden-network": "Add hidden network",
+      "add-network": "Add network",
+      "show-password": "Show password",
+      "hidden-network": "Hidden network",
       "network-name-ssid": "Network name (SSID)",
       "security-open": "None",
       "security-wpa": "WPA",
@@ -2173,7 +2175,10 @@
     },
     "enterprise": {
       "username": "Identity / Username",
-      "password": "User password"
+      "password": "User password",
+      "anonymous-identity": "Anonymous Identity",
+      "eap-method": "EAP Method",
+      "phase2-auth": "Phase 2 Authentication"
     }
   }
 }

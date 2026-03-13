@@ -22,6 +22,9 @@ Item {
   // State properties
   property string passwordSsid: ""
   property string identity: ""
+  property string enterpriseEap: "peap"
+  property string enterprisePhase2: "mschapv2"
+  property string enterpriseAnonIdentity: ""
   property string expandedSsid: ""
   property string infoSsid: ""
   property int ipVersion: 4
@@ -93,10 +96,17 @@ Item {
   function requestPassword(ssid) {
     passwordSsid = ssid;
     identity = "";
+    enterpriseEap = "peap";
+    enterprisePhase2 = "mschapv2";
+    enterpriseAnonIdentity = "";
     expandedSsid = "";
   }
   function submitPassword(ssid, password, identity = "") {
-    NetworkService.connect(ssid, password, false, identity);
+    NetworkService.connect(ssid, password, false, identity, {
+                             eap: enterpriseEap,
+                             phase2: enterprisePhase2,
+                             anonIdentity: enterpriseAnonIdentity
+                           });
     passwordSsid = "";
   }
   function cancelPassword() {
@@ -291,7 +301,7 @@ Item {
             }
 
             NText {
-              text: I18n.tr("wifi.panel.add-hidden-network")
+              text: I18n.tr("wifi.panel.add-network")
               pointSize: Style.fontSizeM
               color: Color.mOnSurface
               Layout.fillWidth: true
@@ -359,6 +369,11 @@ Item {
     property string customPassword: ""
     property string customIdentity: ""
     property string customSecurityKey: "wpa2-psk"
+    property string customEnterpriseEap: "peap"
+    property string customEnterprisePhase2: "mschapv2"
+    property string customEnterpriseAnonIdentity: ""
+    property bool customShowPassword: false
+    property bool customIsHidden: false
 
     onOpened: {
       customSsidInput.inputItem.forceActiveFocus();
@@ -407,7 +422,7 @@ Item {
           spacing: Style.marginXS
 
           NText {
-            text: I18n.tr("wifi.panel.add-hidden-network")
+            text: I18n.tr("wifi.panel.add-network")
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
@@ -428,7 +443,11 @@ Item {
         onTextChanged: addNetworkPopup.customSsid = text
         onAccepted: {
           if (addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0)) {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity
+                                         }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
         }
@@ -441,6 +460,65 @@ Item {
         onSelected: key => {
                       addNetworkPopup.customSecurityKey = key;
                     }
+      }
+
+      ColumnLayout {
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NComboBox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.enterprise.eap-method")
+          model: [
+            {
+              key: "peap",
+              name: "PEAP"
+            },
+            {
+              key: "ttls",
+              name: "TTLS"
+            }
+          ]
+          currentKey: addNetworkPopup.customEnterpriseEap
+          onSelected: key => addNetworkPopup.customEnterpriseEap = key
+        }
+
+        NComboBox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.enterprise.phase2-auth")
+          model: [
+            {
+              key: "mschapv2",
+              name: "MSCHAPv2"
+            },
+            {
+              key: "pap",
+              name: "PAP"
+            },
+            {
+              key: "mschap",
+              name: "MSCHAP"
+            },
+            {
+              key: "chap",
+              name: "CHAP"
+            }
+          ]
+          currentKey: addNetworkPopup.customEnterprisePhase2
+          onSelected: key => addNetworkPopup.customEnterprisePhase2 = key
+        }
+      }
+
+      NTextInput {
+        id: customAnonIdentityInput
+        Layout.fillWidth: true
+        inputIconName: "user-question"
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        placeholderText: I18n.tr("wifi.enterprise.anonymous-identity")
+        label: I18n.tr("wifi.enterprise.anonymous-identity")
+        text: addNetworkPopup.customEnterpriseAnonIdentity
+        onTextChanged: addNetworkPopup.customEnterpriseAnonIdentity = text
       }
 
       NTextInput {
@@ -463,12 +541,36 @@ Item {
         label: I18n.tr("common.password")
         text: addNetworkPopup.customPassword
         onTextChanged: addNetworkPopup.customPassword = text
-        inputItem.echoMode: TextInput.Password
+        inputItem.echoMode: addNetworkPopup.customShowPassword ? TextInput.Normal : TextInput.Password
         onAccepted: {
           if (addNetworkPopup.customSsid.length > 0 && addNetworkPopup.customPassword.length > 0) {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity
+                                         }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
+        }
+      }
+
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NCheckbox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.panel.show-password")
+          checked: addNetworkPopup.customShowPassword
+          onToggled: checked => addNetworkPopup.customShowPassword = checked
+          visible: addNetworkPopup.customSecurityKey !== "open"
+        }
+
+        NCheckbox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.panel.hidden-network")
+          checked: addNetworkPopup.customIsHidden
+          onToggled: checked => addNetworkPopup.customIsHidden = checked
         }
       }
 
@@ -496,7 +598,11 @@ Item {
           textColor: Color.mOnPrimary
           enabled: addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0) && (addNetworkPopup.customSecurityKey.indexOf("-eap") === -1 || addNetworkPopup.customIdentity.length > 0)
           onClicked: {
-            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity);
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity
+                                         }, addNetworkPopup.customIsHidden);
             addNetworkPopup.close();
           }
         }
@@ -1023,6 +1129,89 @@ Item {
             ColumnLayout {
               Layout.fillWidth: true
               spacing: Style.marginS
+
+              // Enterprise Configuration
+              ColumnLayout {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                spacing: Style.marginS
+
+                NComboBox {
+                  Layout.fillWidth: true
+                  label: I18n.tr("wifi.enterprise.eap-method")
+                  model: [
+                    {
+                      key: "peap",
+                      name: "PEAP"
+                    },
+                    {
+                      key: "ttls",
+                      name: "TTLS"
+                    }
+                  ]
+                  currentKey: root.enterpriseEap
+                  onSelected: key => root.enterpriseEap = key
+                }
+
+                NComboBox {
+                  Layout.fillWidth: true
+                  label: I18n.tr("wifi.enterprise.phase2-auth")
+                  model: [
+                    {
+                      key: "mschapv2",
+                      name: "MSCHAPv2"
+                    },
+                    {
+                      key: "pap",
+                      name: "PAP"
+                    },
+                    {
+                      key: "mschap",
+                      name: "MSCHAP"
+                    },
+                    {
+                      key: "chap",
+                      name: "CHAP"
+                    }
+                  ]
+                  currentKey: root.enterprisePhase2
+                  onSelected: key => root.enterprisePhase2 = key
+                }
+              }
+
+              // Anonymous Identity field (Enterprise only)
+              Rectangle {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: anonIdentityInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
+
+                TextInput {
+                  id: anonIdentityInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  selectByMouse: true
+                  text: root.enterpriseAnonIdentity
+                  onTextChanged: root.enterpriseAnonIdentity = text
+                  onAccepted: identityInput.forceActiveFocus()
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: I18n.tr("wifi.enterprise.anonymous-identity")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
+                }
+              }
 
               // Identity field (Enterprise only)
               Rectangle {

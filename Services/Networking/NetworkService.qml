@@ -342,7 +342,7 @@ Singleton {
     refreshActiveEthernetDetails();
   }
 
-  function connect(ssid, password = "", isHidden = false, identity = "") {
+  function connect(ssid, password = "", isHidden = false, identity = "", enterpriseConfig = {}) {
     if (!ProgramCheckerService.nmcliAvailable || connecting) {
       return;
     }
@@ -350,7 +350,7 @@ Singleton {
     // For enterprise networks, use the robust manual connection logic (profile creation)
     // as it handles 802.1X parameters much more reliably than 'device wifi connect'.
     if (isEnterprise(networks[ssid] ? networks[ssid].security : "")) {
-      connectManual(ssid, password, "wpa-eap", identity);
+      connectManual(ssid, password, "wpa-eap", identity, enterpriseConfig);
       return;
     }
 
@@ -374,7 +374,7 @@ Singleton {
     connectProcess.running = true;
   }
 
-  function connectManual(ssid, password, securityKey, identity = "") {
+  function connectManual(ssid, password, securityKey, identity = "", enterpriseConfig = {}, isHidden = false) {
     if (!ProgramCheckerService.nmcliAvailable || connecting) {
       return;
     }
@@ -386,6 +386,10 @@ Singleton {
     manualConnectProcess.password = password;
     manualConnectProcess.securityKey = securityKey;
     manualConnectProcess.identity = identity;
+    manualConnectProcess.isHidden = isHidden;
+    manualConnectProcess.eap = enterpriseConfig.eap || "peap";
+    manualConnectProcess.phase2 = enterpriseConfig.phase2 || "mschapv2";
+    manualConnectProcess.anonIdentity = enterpriseConfig.anonIdentity || "";
     manualConnectProcess.running = true;
   }
 
@@ -1468,6 +1472,10 @@ Singleton {
     property string password: ""
     property string securityKey: ""
     property string identity: ""
+    property string eap: "peap"
+    property string phase2: "mschapv2"
+    property string anonIdentity: ""
+    property bool isHidden: false
     running: false
 
     command: {
@@ -1476,29 +1484,37 @@ SSID="$1"
 PWD="$2"
 SEC="$3"
 IDENT="$4"
+EAP_METHOD="\${5:-peap}"
+PHASE2_AUTH="\${6:-mschapv2}"
+ANON_IDENT="$7"
+HIDDEN="\${8:-no}"
 
 # Remove existing profile to avoid conflict
 nmcli connection delete id "$SSID" 2>/dev/null || true
 
 # Create profile based on security key
 if [ "$SEC" = "wpa-psk" ] || [ "$SEC" = "wpa2-psk" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PWD" 802-11-wireless.hidden "$HIDDEN"
 elif [ "$SEC" = "sae" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt sae wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt sae wifi-sec.psk "$PWD" 802-11-wireless.hidden "$HIDDEN"
 elif [ "$SEC" = "wep" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt none wifi-sec.wep-key0 "$PWD" 802-11-wireless.hidden yes
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt none wifi-sec.wep-key0 "$PWD" 802-11-wireless.hidden "$HIDDEN"
 elif [[ "$SEC" == *-eap ]]; then
-    # WPA Enterprise (PEAP-MSCHAPv2 default)
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-eap 802-1x.eap peap 802-1x.phase2-auth mschapv2 802-1x.identity "$IDENT" 802-1x.password "$PWD" 802-11-wireless.hidden yes
+    # WPA Enterprise
+    if [ -n "$ANON_IDENT" ]; then
+        nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-eap 802-1x.eap "$EAP_METHOD" 802-1x.phase2-auth "$PHASE2_AUTH" 802-1x.identity "$IDENT" 802-1x.password "$PWD" 802-1x.anonymous-identity "$ANON_IDENT" 802-11-wireless.hidden "$HIDDEN"
+    else
+        nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-eap 802-1x.eap "$EAP_METHOD" 802-1x.phase2-auth "$PHASE2_AUTH" 802-1x.identity "$IDENT" 802-1x.password "$PWD" 802-11-wireless.hidden "$HIDDEN"
+    fi
 else
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- 802-11-wireless.hidden yes
+    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- 802-11-wireless.hidden "$HIDDEN"
 fi
 
 # Bring up the connection
 nmcli connection up id "$SSID"
 `;
 
-      return ["sh", "-c", script, "--", ssid, password, securityKey, identity];
+      return ["sh", "-c", script, "--", ssid, password, securityKey, identity, eap, phase2, anonIdentity, isHidden ? "yes" : "no"];
     }
 
     stdout: StdioCollector {
