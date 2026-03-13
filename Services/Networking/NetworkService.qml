@@ -43,7 +43,7 @@ Singleton {
   property var supportedSecurityTypes: [
     {
       key: "open",
-      name: "None"
+      name: I18n.tr("wifi.panel.security-open")
     },
     {
       key: "wep",
@@ -172,44 +172,8 @@ Singleton {
   // Function to detect host's networking capabilities eg has WiFi/Ethernet.
   function detectNetworkCapabilities() {
     if (ProgramCheckerService.nmcliAvailable) {
-      Logger.d("Network", "Starting network capability detection...");
-      capabilityDetectProcess.running = true;
-    }
-  }
-
-  // Process to detect host's networking capabilities
-  Process {
-    id: capabilityDetectProcess
-    running: false
-    command: ["nmcli", "-t", "-f", "DEVICE,TYPE", "device"]
-    stdout: StdioCollector {
-      onStreamFinished: {
-        var lines = text.trim().split("\n");
-        var wifi = false;
-        var eth = false;
-        var wifiDev = "";
-        for (var i = 0; i < lines.length; i++) {
-          var parts = lines[i].split(":");
-          if (parts.length < 2)
-          continue;
-          var dev = parts[0].trim();
-          var type = parts[1].trim();
-          if (type === "wifi") {
-            wifi = true;
-            if (!wifiDev)
-            wifiDev = dev;
-          } else if (type === "ethernet") {
-            eth = true;
-          }
-        }
-        root._wifiAvailable = wifi;
-        root._ethernetAvailable = eth;
-        Logger.d("Network", "Detected capabilities - WiFi:", wifi, "Ethernet:", eth);
-
-        if (wifi && wifiDev) {
-          // Additional initialization if needed
-        }
-      }
+      Logger.d("Network", "Refreshing network status and capabilities...");
+      ethernetStateProcess.running = true;
     }
   }
 
@@ -281,7 +245,6 @@ Singleton {
   }
 
   // Internet connectivity check timer
-  // Runs every 15s if nmcli is available
   Timer {
     id: connectivityCheckTimer
     interval: 15000
@@ -539,26 +502,40 @@ Singleton {
     stdout: StdioCollector {
       onStreamFinished: {
         var connected = false;
+        var wifiAvailable = false;
+        var ethernetAvailable = false;
         var devIf = "";
-        var lines = text.split("\n");
+        var lines = text.trim().split("\n");
         var ethList = [];
         for (var i = 0; i < lines.length; i++) {
           var parts = lines[i].split(":");
-          if (parts.length >= 3 && parts[1] === "ethernet" && parts[2] !== "unmanaged") {
+          if (parts.length >= 3) {
             var ifname = parts[0];
+            var type = parts[1];
             var state = parts[2];
-            var isConn = state === "connected";
-            ethList.push({
-                           ifname: ifname,
-                           state: state,
-                           connected: isConn
-                         });
-            if (isConn && !connected) {
-              connected = true;
-              devIf = ifname;
+
+            if (type === "wifi") {
+              wifiAvailable = true;
+            } else if (type === "ethernet" && state !== "unmanaged") {
+              ethernetAvailable = true;
+              var isConn = state === "connected";
+              ethList.push({
+                             ifname: ifname,
+                             state: state,
+                             connected: isConn
+                           });
+              if (isConn && !connected) {
+                connected = true;
+                devIf = ifname;
+              }
             }
           }
         }
+        
+        // Update capabilities
+        root._wifiAvailable = wifiAvailable;
+        root._ethernetAvailable = ethernetAvailable;
+
         // Sort interfaces: connected first, then by name
         ethList.sort(function (a, b) {
           if (a.connected !== b.connected) {
@@ -1017,6 +994,9 @@ Singleton {
     id: wifiStateProcess
     running: false
     command: ["nmcli", "radio", "wifi"]
+    environment: ({
+                    "LC_ALL": "C"
+                  })
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -1404,10 +1384,10 @@ Singleton {
 
     stderr: StdioCollector {
       onStreamFinished: {
-        root.connecting = false;
-        root.connectingTo = "";
-
         if (text.trim()) {
+          root.connecting = false;
+          root.connectingTo = "";
+
           // Parse common errors
           if (text.indexOf("Secrets were required") !== -1 || text.indexOf("no secrets provided") !== -1) {
             root.lastError = I18n.tr("toast.wifi.incorrect-password");
@@ -1438,34 +1418,41 @@ Singleton {
 
     command: {
       var script = `
-SSID="$1"
-PWD="$2"
-SEC="$3"
+      SSID="$1"
+      PWD="$2"
+      SEC="$3"
 
-# Remove existing profile to avoid conflict
-nmcli connection delete id "$SSID" 2>/dev/null || true
+      UUID=$(nmcli -t -f UUID,TYPE,NAME connection show | grep ":802-11-wireless:$SSID$" | head -n1 | cut -d: -f1)
+      if [ -n "$UUID" ]; then
+          nmcli connection delete uuid "$UUID" 2>/dev/null || true
+      fi
 
-# Create profile based on security key
-if [ "$SEC" = "wpa-psk" ] || [ "$SEC" = "wpa2-psk" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
-elif [ "$SEC" = "sae" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt sae wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
-elif [ "$SEC" = "wep" ]; then
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt none wifi-sec.wep-key0 "$PWD" 802-11-wireless.hidden yes
-elif [[ "$SEC" == *-eap ]]; then
-    # Enterprise not fully supported in Stage 1
-    echo "Enterprise networks not supported yet"
-    exit 1
-else
-    nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- 802-11-wireless.hidden yes
-fi
-
-# Bring up the connection
-nmcli connection up id "$SSID"
-`;
-
+      case "$SEC" in
+          wpa-psk|wpa2-psk)
+              nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
+              ;;
+          sae)
+              nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt sae wifi-sec.psk "$PWD" 802-11-wireless.hidden yes
+              ;;
+          wep)
+              nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- wifi-sec.key-mgmt none wifi-sec.wep-key0 "$PWD" 802-11-wireless.hidden yes
+              ;;
+          *-eap)
+              # Enterprise not fully supported in Stage 1
+              echo "Enterprise networks not supported yet"
+              exit 1
+              ;;
+          *)
+              nmcli connection add type wifi con-name "$SSID" ssid "$SSID" -- 802-11-wireless.hidden yes
+              ;;
+      esac
+      nmcli connection up id "$SSID"
+    `;
       return ["sh", "-c", script, "--", ssid, password, securityKey];
     }
+    environment: ({
+                    "LC_ALL": "C"
+                  })
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -1501,9 +1488,9 @@ nmcli connection up id "$SSID"
 
     stderr: StdioCollector {
       onStreamFinished: {
-        root.connecting = false;
-        root.connectingTo = "";
         if (text.trim()) {
+          root.connecting = false;
+          root.connectingTo = "";
           root.lastError = I18n.tr("toast.wifi.connection-failed");
           Logger.w("Network", "Manual connect error: " + text);
           ToastService.showWarning(I18n.tr("common.wifi"), root.lastError);
@@ -1552,32 +1539,46 @@ nmcli connection up id "$SSID"
     id: forgetProcess
     property string ssid: ""
     running: false
+    environment: ({
+                    "LC_ALL": "C"
+                  })
 
     // Try multiple common profile name patterns
     command: {
-      var script = "";
-      script += "ssid=\"$1\"\n";
-      script += "deleted=false\n\n";
-      script += "# Try exact SSID match first\n";
-      script += "if nmcli connection delete id \"$ssid\" 2>/dev/null; then\n";
-      script += "  echo \"Deleted profile: $ssid\"\n";
-      script += "  deleted=true\n";
-      script += "fi\n\n";
-      script += "# Try \"Auto $ssid\" pattern\n";
-      script += "if nmcli connection delete id \"Auto $ssid\" 2>/dev/null; then\n";
-      script += "  echo \"Deleted profile: Auto $ssid\"\n";
-      script += "  deleted=true\n";
-      script += "fi\n\n";
-      script += "# Try \"$ssid 1\", \"$ssid 2\", etc. patterns\n";
-      script += "for i in 1 2 3; do\n";
-      script += "  if nmcli connection delete id \"$ssid $i\" 2>/dev/null; then\n";
-      script += "    echo \"Deleted profile: $ssid $i\"\n";
-      script += "    deleted=true\n";
-      script += "  fi\n";
-      script += "done\n\n";
-      script += "if [ \"$deleted\" = \"false\" ]; then\n";
-      script += "  echo \"No profiles found for SSID: $ssid\"\n";
-      script += "fi\n";
+      var script = `
+ssid="$1"
+deleted=false
+
+# Try to find a wifi connection with this SSID and delete it
+UUID=$(nmcli -t -f UUID,TYPE,NAME connection show | grep ":802-11-wireless:$ssid$" | head -n1 | cut -d: -f1)
+if [ -n "$UUID" ]; then
+    if nmcli connection delete uuid "$UUID" 2>/dev/null; then
+        echo "Deleted profile: $ssid ($UUID)"
+        deleted=true
+    fi
+fi
+
+# Fallback: try common patterns if UUID lookup failed
+if [ "$deleted" = "false" ]; then
+    # Try "Auto $ssid" pattern
+    if nmcli connection delete id "Auto $ssid" 2>/dev/null; then
+        echo "Deleted profile: Auto $ssid"
+        deleted=true
+    fi
+
+    # Try "$ssid 1", "$ssid 2", etc. patterns
+    for i in 1 2 3; do
+        if nmcli connection delete id "$ssid $i" 2>/dev/null; then
+            echo "Deleted profile: $ssid $i"
+            deleted=true
+        fi
+    done
+fi
+
+if [ "$deleted" = "false" ]; then
+    echo "No profiles found for SSID: $ssid"
+fi
+`;
       return ["sh", "-c", script, "--", ssid];
     }
 
