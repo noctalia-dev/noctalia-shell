@@ -9,10 +9,9 @@ Rectangle {
   id: root
 
   // Public properties
-  // Public properties
   property string text: ""
   property string icon: ""
-  property string tooltipText: ""
+  property var tooltipText
   property bool checked: false
   property int tabIndex: 0
   property real pointSize: Style.fontSizeM
@@ -94,7 +93,7 @@ Rectangle {
     id: tooltipTimer
     interval: 500
     onTriggered: {
-      if (root.isHovered && root.tooltipText !== "") {
+      if (root.isHovered && root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
         TooltipService.show(root, root.tooltipText);
       }
     }
@@ -106,14 +105,14 @@ Rectangle {
     cursorShape: Qt.PointingHandCursor
     onEntered: {
       root.isHovered = true;
-      if (root.tooltipText !== "") {
+      if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
         tooltipTimer.start();
       }
     }
     onExited: {
       root.isHovered = false;
       tooltipTimer.stop();
-      if (root.tooltipText !== "") {
+      if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
         TooltipService.hide();
       }
     }

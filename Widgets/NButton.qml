@@ -10,7 +10,7 @@ Rectangle {
   // Public properties
   property string text: ""
   property string icon: ""
-  property string tooltipText
+  property var tooltipText
   property color backgroundColor: Color.mPrimary
   property color textColor: Color.mOnPrimary
   property color hoverColor: Color.mHover
@@ -142,19 +142,19 @@ Rectangle {
     onEntered: {
       root.hovered = true;
       root.entered();
-      if (tooltipText) {
+      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
         TooltipService.show(root, root.tooltipText);
       }
     }
     onExited: {
       root.hovered = false;
       root.exited();
-      if (tooltipText) {
+      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
         TooltipService.hide();
       }
     }
     onPressed: mouse => {
-                 if (tooltipText) {
+                 if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
                    TooltipService.hide();
                  }
                  if (mouse.button === Qt.LeftButton) {
@@ -168,7 +168,7 @@ Rectangle {
 
     onCanceled: {
       root.hovered = false;
-      if (tooltipText) {
+      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
         TooltipService.hide();
       }
     }
