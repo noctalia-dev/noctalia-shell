@@ -12,7 +12,7 @@ Item {
   property string icon: ""
   property string text: ""
   property string suffix: ""
-  property var tooltipText: ""
+  property var tooltipText
   property bool autoHide: false
   property bool forceOpen: false
   property bool forceClose: false

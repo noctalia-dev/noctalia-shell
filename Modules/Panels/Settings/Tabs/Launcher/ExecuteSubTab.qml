@@ -10,23 +10,6 @@ ColumnLayout {
   spacing: Style.marginL
   Layout.fillWidth: true
 
-  NToggle {
-    label: I18n.tr("panels.launcher.settings-use-app2unit-label")
-    description: I18n.tr("panels.launcher.settings-use-app2unit-description")
-    checked: Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable
-    enabled: ProgramCheckerService.app2unitAvailable && !Settings.data.appLauncher.customLaunchPrefixEnabled
-    opacity: ProgramCheckerService.app2unitAvailable ? 1.0 : 0.6
-    onToggled: checked => {
-                 if (ProgramCheckerService.app2unitAvailable) {
-                   Settings.data.appLauncher.useApp2Unit = checked;
-                   if (checked) {
-                     Settings.data.appLauncher.customLaunchPrefixEnabled = false;
-                   }
-                 }
-               }
-    defaultValue: Settings.getDefaultValue("appLauncher.useApp2Unit")
-  }
-
   NTextInput {
     label: I18n.tr("panels.launcher.settings-terminal-command-label")
     description: I18n.tr("panels.launcher.settings-terminal-command-description")
@@ -41,13 +24,7 @@ ColumnLayout {
     label: I18n.tr("panels.launcher.settings-custom-launch-prefix-enabled-label")
     description: I18n.tr("panels.launcher.settings-custom-launch-prefix-enabled-description")
     checked: Settings.data.appLauncher.customLaunchPrefixEnabled
-    enabled: !Settings.data.appLauncher.useApp2Unit
-    onToggled: checked => {
-                 Settings.data.appLauncher.customLaunchPrefixEnabled = checked;
-                 if (checked) {
-                   Settings.data.appLauncher.useApp2Unit = false;
-                 }
-               }
+    onToggled: checked => Settings.data.appLauncher.customLaunchPrefixEnabled = checked
     defaultValue: Settings.getDefaultValue("appLauncher.customLaunchPrefixEnabled")
   }
 

@@ -13,7 +13,7 @@ Item {
   property string suffix: "%"
   property real contentScale: 1.0
   property color fillColor: Color.mPrimary
-  property string tooltipText: ""
+  property var tooltipText
   property string tooltipDirection: "top"
 
   // Arc geometry constants
@@ -151,12 +151,12 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     onEntered: {
-      if (root.tooltipText) {
+      if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
         TooltipService.show(root, root.tooltipText, root.tooltipDirection);
       }
     }
     onExited: {
-      if (root.tooltipText) {
+      if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
         TooltipService.hide();
       }
     }

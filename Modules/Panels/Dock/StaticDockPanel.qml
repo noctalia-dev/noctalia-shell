@@ -70,9 +70,9 @@ SmartPanel {
   }
 
   onOpened: {
-    if (!panelHovered && !menuHovered) {
-      hoverCloseTimer.restart();
-    }
+    // Don't auto-start close timer here — the peek zone's onExited in Dock.qml
+    // starts hideTimer which checks panel.isDockHovered, giving the user time
+    // to move into the panel without it closing prematurely.
   }
 
   panelAnchorTop: dockPosition === "top"

@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 명령은 셸(sh -lc)을 통해 실행됩니다.<br>• 명령은 백그라운드(detached)에서 실행됩니다.<br>• 테스트 버튼은 현재 값으로 실행됩니다.",
-      "info-parameters-description": "• 배경화면 훅: $1 = 배경화면 경로, $2 = 화면 이름<br>• 테마 전환 훅: $1 = true/false (Dark Mode 상태)<br>• 화면 잠금/잠금 해제 훅: $1 = lock/unlock (화면 잠금 상태)<br>• 성능 모드 훅: 매개변수 없음<br>• 세션 훅: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = 배경화면 경로, $2 = 화면 이름, $3 = 테마 (어둡게/밝게)<br>• Theme toggle hook: $1 = true/false (Dark Mode 상태)<br>• Screen lock/unlock hooks: $1 = lock/unlock (화면 잠금 상태)<br>• Performance mode hooks: 매개변수 없음<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "사용 가능한 매개변수",
       "noctalia-started-description": "Noctalia 로딩이 완료되었을 때 실행할 명령입니다.",
       "noctalia-started-label": "Noctalia 시작됨",

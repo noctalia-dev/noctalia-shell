@@ -11,7 +11,7 @@ Slider {
   property var cutoutColor: Color.mSurface
   property bool snapAlways: true
   property real heightRatio: 0.7
-  property string tooltipText
+  property var tooltipText
   property string tooltipDirection: "auto"
   property bool hovering: false
 
@@ -226,14 +226,14 @@ Slider {
 
       onEntered: {
         root.hovering = true;
-        if (root.tooltipText) {
+        if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
           TooltipService.show(knob, root.tooltipText, root.tooltipDirection);
         }
       }
 
       onExited: {
         root.hovering = false;
-        if (root.tooltipText) {
+        if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
           TooltipService.hide();
         }
       }
@@ -243,7 +243,7 @@ Slider {
     Connections {
       target: root
       function onPressedChanged() {
-        if (root.pressed && root.tooltipText) {
+        if (root.pressed && root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
           TooltipService.hide();
         }
       }
