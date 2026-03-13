@@ -15,8 +15,10 @@ Item {
   property color borderColor: "transparent"
   property int imageFillMode: Image.PreserveAspectCrop
 
-  readonly property bool showFallback: (fallbackIcon !== undefined && fallbackIcon !== "") && (imagePath === undefined || imagePath === "" || imageSource.status === Image.Error)
-  readonly property int status: imageSource.status
+  readonly property bool _isAnimated: imagePath.toLowerCase().endsWith(".gif")
+  readonly property Item imageSource: imageSourceLoader.item
+  readonly property bool showFallback: fallbackIcon !== "" && (imagePath === "" || (imageSource && imageSource.status === Image.Error))
+  readonly property int status: imageSource ? imageSource.status : Image.Null
 
   Rectangle {
     anchors.fill: parent
@@ -25,28 +27,50 @@ Item {
     border.width: root.borderWidth
     border.color: root.borderColor
 
-    Image {
-      id: imageSource
+    Loader {
+      id: imageSourceLoader
       anchors.fill: parent
       anchors.margins: root.borderWidth
-      visible: false
-      source: root.imagePath
-      mipmap: true
-      smooth: true
-      asynchronous: true
-      antialiasing: true
-      fillMode: root.imageFillMode
+      active: root.imagePath !== ""
+      sourceComponent: root._isAnimated ? animatedComponent : staticComponent
+    }
+
+    Component {
+      id: staticComponent
+      Image {
+        visible: false
+        source: root.imagePath
+        mipmap: true
+        smooth: true
+        asynchronous: true
+        antialiasing: true
+        fillMode: root.imageFillMode
+      }
+    }
+
+    Component {
+      id: animatedComponent
+      AnimatedImage {
+        visible: false
+        source: root.imagePath
+        mipmap: true
+        smooth: true
+        asynchronous: true
+        antialiasing: true
+        fillMode: root.imageFillMode
+        playing: true
+      }
     }
 
     ShaderEffect {
       anchors.fill: parent
       anchors.margins: root.borderWidth
-      visible: !root.showFallback
-      property variant source: imageSource
+      visible: !root.showFallback && root.imageSource !== null && root.status === Image.Ready
+      property var source: root.imageSource
       property real itemWidth: width
       property real itemHeight: height
-      property real sourceWidth: imageSource.sourceSize.width
-      property real sourceHeight: imageSource.sourceSize.height
+      property real sourceWidth: root.imageSource?.sourceSize.width ?? 0
+      property real sourceHeight: root.imageSource?.sourceSize.height ?? 0
       property real cornerRadius: Math.max(0, root.radius - root.borderWidth)
       property real imageOpacity: 1.0
       property int fillMode: root.imageFillMode
