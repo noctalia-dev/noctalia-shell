@@ -568,14 +568,7 @@ Item {
                            Logger.d("ApplicationsProvider", `Executing command (with prefix): ${command.join(" ")}`);
                            Quickshell.execDetached(command);
                          }
-                       } else if (Settings.data.appLauncher.useApp2Unit && ProgramCheckerService.app2unitAvailable && app.id) {
-                         Logger.d("ApplicationsProvider", `Using app2unit for: ${app.id}`);
-                         if (app.runInTerminal)
-                         Quickshell.execDetached(["app2unit", "--", app.id + ".desktop"]);
-                         else
-                         Quickshell.execDetached(["app2unit", "--"].concat(app.command));
                        } else {
-                         // Fallback logic when app2unit is not used
                          if (app.runInTerminal) {
                            Logger.d("ApplicationsProvider", "Executing terminal app manually: " + app.name);
                            const terminal = Settings.data.appLauncher.terminalCommand.split(" ");
