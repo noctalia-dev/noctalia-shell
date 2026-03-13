@@ -15,7 +15,8 @@ Singleton {
   // Signal emitted when color generation completes successfully (for wallpaper-based theming)
   signal colorsGenerated
 
-  readonly property string dynamicConfigPath: Settings.cacheDir + "theming.dynamic.toml"
+  readonly property string dynamicShellConfigPath: Settings.cacheDir + "theming.dynamic.shell.toml"
+  readonly property string dynamicAppsConfigPath: Settings.cacheDir + "theming.dynamic.apps.toml"
   readonly property string templateProcessorScript: Quickshell.shellDir + "/Scripts/python/src/theming/template-processor.py"
 
   // Debounce state for wallpaper processing
@@ -61,6 +62,21 @@ Singleton {
     },
   ]
 
+  readonly property var wallpaperForegroundModes: [
+    {
+      "key": "adaptive",
+      "name": I18n.tr("panels.color-scheme.wallpaper-foreground-mode-adaptive")
+    },
+    {
+      "key": "static",
+      "name": I18n.tr("panels.color-scheme.wallpaper-foreground-mode-static")
+    },
+    {
+      "key": "app-static",
+      "name": I18n.tr("panels.color-scheme.wallpaper-foreground-mode-app-static")
+    }
+  ]
+
   // Check if a template is enabled in the activeTemplates array
   function isTemplateEnabled(templateId) {
     const activeTemplates = Settings.data.templates.activeTemplates;
@@ -97,14 +113,15 @@ Singleton {
 
   function executeWallpaperColors(wallpaperPath, mode) {
     Logger.d("TemplateProcessor", `executeWallpaperColors: path=${wallpaperPath}, mode=${mode}`);
-    const content = buildThemeConfig();
-    if (!content && !Settings.data.templates.enableUserTheming) {
+    const shellContent = buildShellThemeConfig();
+    const appContent = buildBuiltInAppConfig(mode);
+    if (!shellContent && !appContent && !Settings.data.templates.enableUserTheming) {
       Logger.d("TemplateProcessor", "executeWallpaperColors: no config content and no user theming, aborting");
       return;
     }
     const wp = wallpaperPath.replace(/'/g, "'\\''");
 
-    const script = buildGenerationScript(content, wp, mode);
+    const script = buildGenerationScript(shellContent, appContent, wp, mode);
 
     generateProcess.command = ["sh", "-c", script];
     generateProcess.running = true;
@@ -202,14 +219,23 @@ Singleton {
   // ================================================================================
   // WALLPAPER-BASED GENERATION
   // ================================================================================
-  function buildThemeConfig() {
+  function buildShellThemeConfig() {
     var lines = [];
-    var mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
 
     if (Settings.data.colorSchemes.useWallpaperColors) {
-      addWallpaperTheming(lines, mode);
+      addNoctaliaColours(lines);
     }
 
+    if (lines.length > 0) {
+      return ["[config]"].concat(lines).join("\n") + "\n";
+    }
+    return "";
+  }
+
+  function buildBuiltInAppConfig(mode) {
+    var lines = [];
+
+    addTerminalTheming(lines);
     addApplicationTheming(lines, mode);
 
     if (lines.length > 0) {
@@ -218,13 +244,16 @@ Singleton {
     return "";
   }
 
-  function addWallpaperTheming(lines, mode) {
+  function addNoctaliaColours(lines) {
     const homeDir = Quickshell.env("HOME");
     // Noctalia colors JSON
     lines.push("[templates.noctalia]");
     lines.push('input_path = "' + Quickshell.shellDir + '/Assets/Templates/noctalia.json"');
     lines.push('output_path = "' + Settings.configDir + 'colors.json"');
+  }
 
+  function addTerminalTheming(lines) {
+    const homeDir = Quickshell.env("HOME");
     // Terminal templates
     TemplateRegistry.terminals.forEach(terminal => {
                                          if (isTemplateEnabled(terminal.id)) {
@@ -331,23 +360,71 @@ Singleton {
     return validKeys.includes(method) ? method : "tonal-spot";
   }
 
-  function buildGenerationScript(content, wallpaper, mode) {
-    const pathEsc = dynamicConfigPath.replace(/'/g, "'\\''");
+  function getWallpaperForegroundMode() {
+    const mode = Settings.data.colorSchemes.wallpaperForegroundMode;
+    const validKeys = root.wallpaperForegroundModes.map(entry => entry.key);
+    return validKeys.includes(mode) ? mode : "adaptive";
+  }
+
+  function getStableForegroundSchemePath() {
+    if (!useStableForegroundsForShell() && !useStableForegroundsForApps())
+      return "";
+
+    const schemeName = Settings.data.colorSchemes.wallpaperForegroundSourceScheme || "Noctalia (default)";
+    if (!schemeName)
+      return "";
+
+    const path = ColorSchemeService.resolveSchemePath(schemeName);
+    return path || "";
+  }
+
+  function useStableForegroundsForShell() {
+    return getWallpaperForegroundMode() === "static";
+  }
+
+  function useStableForegroundsForApps() {
+    const mode = getWallpaperForegroundMode();
+    return mode === "static" || mode === "app-static";
+  }
+
+  function useStableForegroundsForUserTemplates() {
+    return getWallpaperForegroundMode() === "static";
+  }
+
+  function buildCliCommand(input, configPath, mode, applyStableForegrounds) {
+    const configPathEsc = configPath.replace(/'/g, "'\\''");
+    const schemeType = getSchemeType();
+    const foregroundMode = applyStableForegrounds ? "static" : "adaptive";
+
+    let command = `python3 "${templateProcessorScript}" ${input} --scheme-type ${schemeType} --foreground-mode ${foregroundMode} --config '${configPathEsc}' --default-mode ${mode}`;
+
+    const stableForegroundSchemePath = getStableForegroundSchemePath();
+    if (applyStableForegrounds && stableForegroundSchemePath) {
+      const schemePathEsc = stableForegroundSchemePath.replace(/'/g, "'\\''");
+      command += ` --foreground-scheme '${schemePathEsc}'`;
+    }
+
+    return command + "\n";
+  }
+
+  function buildGenerationScript(shellContent, appContent, wallpaper, mode) {
+    const shellPathEsc = dynamicShellConfigPath.replace(/'/g, "'\\''");
+    const appsPathEsc = dynamicAppsConfigPath.replace(/'/g, "'\\''");
     const wpDelimiter = "WALLPAPER_PATH_EOF_" + Math.random().toString(36).substr(2, 9);
 
     // Use heredoc for wallpaper path to avoid all escaping issues
     let script = `NOCTALIA_WP_PATH=$(cat << '${wpDelimiter}'\n${wallpaper}\n${wpDelimiter}\n)\n`;
 
-    // Run built-in template processor only if there are templates configured
-    if (content) {
-      const delimiter = "THEME_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
-      script += `cat > '${pathEsc}' << '${delimiter}'\n${content}\n${delimiter}\n`;
+    if (shellContent) {
+      const delimiter = "THEME_SHELL_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
+      script += `cat > '${shellPathEsc}' << '${delimiter}'\n${shellContent}\n${delimiter}\n`;
+      script += buildCliCommand("\"$NOCTALIA_WP_PATH\"", dynamicShellConfigPath, mode, useStableForegroundsForShell());
+    }
 
-      // Use template-processor.py (Python implementation)
-      // Don't pass --mode so templates get both dark and light colors (e.g., zed.json needs both)
-      // Pass --default-mode so "default" in templates resolves to the current theme mode
-      const schemeType = getSchemeType();
-      script += `python3 "${templateProcessorScript}" "$NOCTALIA_WP_PATH" --scheme-type ${schemeType} --config '${pathEsc}' --default-mode ${mode}\n`;
+    if (appContent) {
+      const delimiter = "THEME_APPS_CONFIG_EOF_" + Math.random().toString(36).substr(2, 9);
+      script += `cat > '${appsPathEsc}' << '${delimiter}'\n${appContent}\n${delimiter}\n`;
+      script += buildCliCommand("\"$NOCTALIA_WP_PATH\"", dynamicAppsConfigPath, mode, useStableForegroundsForApps());
     }
 
     script += buildUserTemplateCommand("$NOCTALIA_WP_PATH", mode);
@@ -368,11 +445,9 @@ Singleton {
     // If input is a shell variable (starts with $), use double quotes to allow expansion
     // Otherwise, use single quotes for safety with file paths
     const inputQuoted = input.startsWith("$") ? `"${input}"` : `'${input.replace(/'/g, "'\\''")}'`;
-
-    const schemeType = getSchemeType();
     // Don't pass --mode so user templates get both dark and light colors
     // Pass --default-mode so "default" in templates resolves to the current theme mode
-    script += `  python3 "${templateProcessorScript}" ${inputQuoted} --scheme-type ${schemeType} --config '${userConfigPath}' --default-mode ${mode}\n`;
+    script += "  " + buildCliCommand(inputQuoted, userConfigPath, mode, useStableForegroundsForUserTemplates());
     script += "fi";
 
     return script;
@@ -401,7 +476,7 @@ Singleton {
   }
 
   function getUserConfigPath() {
-    return (Settings.configDir + "user-templates.toml").replace(/'/g, "'\\''");
+    return Settings.configDir + "user-templates.toml";
   }
 
   // ================================================================================

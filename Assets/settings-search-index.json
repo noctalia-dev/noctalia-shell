@@ -564,6 +564,39 @@
     "subTabLabel": "common.colors"
   },
   {
+    "labelKey": "panels.color-scheme.wallpaper-foreground-enabled-label",
+    "descriptionKey": "panels.color-scheme.wallpaper-foreground-enabled-description",
+    "widget": "NToggle",
+    "tab": 2,
+    "tabLabel": "panels.color-scheme.title",
+    "subTab": 0,
+    "subTabLabel": "common.colors"
+  },
+  {
+    "labelKey": "panels.color-scheme.wallpaper-foreground-terminals-editors-only-label",
+    "descriptionKey": "panels.color-scheme.wallpaper-foreground-terminals-editors-only-description",
+    "widget": "NToggle",
+    "tab": 2,
+    "tabLabel": "panels.color-scheme.title",
+    "subTab": 0,
+    "subTabLabel": "common.colors",
+    "visibleWhen": [
+      "Settings.data.colorSchemes.useWallpaperColors && Settings.data.colorSchemes.wallpaperForegroundMode !== \"adaptive\""
+    ]
+  },
+  {
+    "labelKey": "panels.color-scheme.wallpaper-foreground-source-label",
+    "descriptionKey": "panels.color-scheme.wallpaper-foreground-source-description",
+    "widget": "NComboBox",
+    "tab": 2,
+    "tabLabel": "panels.color-scheme.title",
+    "subTab": 0,
+    "subTabLabel": "common.colors",
+    "visibleWhen": [
+      "Settings.data.colorSchemes.useWallpaperColors && (Settings.data.colorSchemes.wallpaperForegroundMode === \"static\" || Settings.data.colorSchemes.wallpaperForegroundMode === \"app-static\")"
+    ]
+  },
+  {
     "labelKey": "panels.color-scheme.templates-misc-user-templates-label",
     "descriptionKey": "panels.color-scheme.templates-misc-user-templates-description",
     "widget": "NCheckbox",

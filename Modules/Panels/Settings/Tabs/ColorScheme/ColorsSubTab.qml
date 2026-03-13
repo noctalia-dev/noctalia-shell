@@ -74,6 +74,24 @@ ColumnLayout {
     cacheVersion++;
   }
 
+  function shellPreviewColors() {
+    return [Color.mPrimary, Color.mSecondary, Color.mTertiary, Color.mError];
+  }
+
+  function defaultForegroundSourceScheme() {
+    return "Noctalia (default)";
+  }
+
+  function foregroundSourceScheme() {
+    const scheme = Settings.data.colorSchemes.wallpaperForegroundSourceScheme;
+    return scheme && scheme.length > 0 ? scheme : root.defaultForegroundSourceScheme();
+  }
+
+  function appPreviewColors() {
+    const scheme = root.foregroundSourceScheme();
+    return [root.getSchemeColor(scheme, "mPrimary"), root.getSchemeColor(scheme, "mSecondary"), root.getSchemeColor(scheme, "mTertiary"), root.getSchemeColor(scheme, "mError")];
+  }
+
   Connections {
     target: ColorSchemeService
     function onSchemesChanged() {
@@ -254,6 +272,54 @@ ColumnLayout {
                 }
   }
 
+  NToggle {
+    label: I18n.tr("panels.color-scheme.wallpaper-foreground-enabled-label")
+    description: I18n.tr("panels.color-scheme.wallpaper-foreground-enabled-description")
+    enabled: Settings.data.colorSchemes.useWallpaperColors
+    checked: Settings.data.colorSchemes.wallpaperForegroundMode !== "adaptive"
+    onToggled: checked => {
+                 if (!checked) {
+                   Settings.data.colorSchemes.wallpaperForegroundMode = "adaptive";
+                 } else if (Settings.data.colorSchemes.wallpaperForegroundMode === "adaptive") {
+                   Settings.data.colorSchemes.wallpaperForegroundMode = "static";
+                 }
+                 AppThemeService.generate();
+               }
+    defaultValue: false
+  }
+
+  NToggle {
+    label: I18n.tr("panels.color-scheme.wallpaper-foreground-terminals-editors-only-label")
+    description: I18n.tr("panels.color-scheme.wallpaper-foreground-terminals-editors-only-description")
+    enabled: Settings.data.colorSchemes.useWallpaperColors && Settings.data.colorSchemes.wallpaperForegroundMode !== "adaptive"
+    visible: Settings.data.colorSchemes.useWallpaperColors && Settings.data.colorSchemes.wallpaperForegroundMode !== "adaptive"
+    checked: Settings.data.colorSchemes.wallpaperForegroundMode === "app-static"
+    onToggled: checked => {
+                 Settings.data.colorSchemes.wallpaperForegroundMode = checked ? "app-static" : "static";
+                 AppThemeService.generate();
+               }
+  }
+
+  NComboBox {
+    Layout.fillWidth: true
+    label: I18n.tr("panels.color-scheme.wallpaper-foreground-source-label")
+    description: I18n.tr("panels.color-scheme.wallpaper-foreground-source-description")
+    enabled: Settings.data.colorSchemes.useWallpaperColors && (Settings.data.colorSchemes.wallpaperForegroundMode === "static" || Settings.data.colorSchemes.wallpaperForegroundMode === "app-static")
+    visible: Settings.data.colorSchemes.useWallpaperColors && (Settings.data.colorSchemes.wallpaperForegroundMode === "static" || Settings.data.colorSchemes.wallpaperForegroundMode === "app-static")
+    model: ColorSchemeService.schemes.map(function (schemePath) {
+      const schemeName = root.extractSchemeName(schemePath);
+      return {
+        "key": schemeName,
+        "name": schemeName
+      };
+    })
+    currentKey: root.foregroundSourceScheme()
+    onSelected: key => {
+                  Settings.data.colorSchemes.wallpaperForegroundSourceScheme = key;
+                  AppThemeService.generate();
+                }
+  }
+
   NBox {
     visible: Settings.data.colorSchemes.useWallpaperColors
     Layout.fillWidth: true
@@ -271,25 +337,73 @@ ColumnLayout {
       NText {
         width: parent.width
         wrapMode: Text.WordWrap
-        text: I18n.tr("panels.color-scheme.method-description." + Settings.data.colorSchemes.generationMethod)
+        text: {
+          const foregroundMode = Settings.data.colorSchemes.wallpaperForegroundMode;
+          if (foregroundMode === "static") {
+            return I18n.tr("panels.color-scheme.wallpaper-foreground-mode-description-static");
+          }
+          if (foregroundMode === "app-static") {
+            return I18n.tr("panels.color-scheme.wallpaper-foreground-mode-description-app-static");
+          }
+          return I18n.tr("panels.color-scheme.method-description." + Settings.data.colorSchemes.generationMethod);
+        }
         pointSize: Style.fontSizeS
         color: Color.mOnSurfaceVariant
       }
 
-      Row {
-        id: colorPreviewRow
+      Column {
+        width: parent.width
         spacing: Style.marginS
 
-        property int diameter: 16 * Style.uiScaleRatio
+        Row {
+          id: shellPreviewRow
+          spacing: Style.marginS
 
-        Repeater {
-          model: [Color.mPrimary, Color.mSecondary, Color.mTertiary, Color.mError]
+          property int diameter: 16 * Style.uiScaleRatio
 
-          Rectangle {
-            width: colorPreviewRow.diameter
-            height: colorPreviewRow.diameter
-            radius: width * 0.5
-            color: modelData
+          NText {
+            visible: Settings.data.colorSchemes.wallpaperForegroundMode === "app-static"
+            text: "Shell"
+            pointSize: Style.fontSizeS
+            color: Color.mOnSurfaceVariant
+            width: 48 * Style.uiScaleRatio
+          }
+
+          Repeater {
+            model: root.shellPreviewColors()
+
+            Rectangle {
+              width: shellPreviewRow.diameter
+              height: shellPreviewRow.diameter
+              radius: width * 0.5
+              color: modelData
+            }
+          }
+        }
+
+        Row {
+          id: appPreviewRow
+          visible: Settings.data.colorSchemes.wallpaperForegroundMode === "app-static"
+          spacing: Style.marginS
+
+          property int diameter: 16 * Style.uiScaleRatio
+
+          NText {
+            text: "Apps"
+            pointSize: Style.fontSizeS
+            color: Color.mOnSurfaceVariant
+            width: 48 * Style.uiScaleRatio
+          }
+
+          Repeater {
+            model: root.appPreviewColors()
+
+            Rectangle {
+              width: appPreviewRow.diameter
+              height: appPreviewRow.diameter
+              radius: width * 0.5
+              color: modelData
+            }
           }
         }
       }

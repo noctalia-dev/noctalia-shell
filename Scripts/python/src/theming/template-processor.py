@@ -15,21 +15,27 @@ Supported scheme types:
 - dysfunctional: Like faithful but picks the 2nd most dominant color family
 - muted: Preserves hue but caps saturation low (for monochrome/monotonal wallpapers)
 
+Foreground modes:
+- adaptive: Wallpaper colors drive both surfaces and accent/semantic foregrounds
+- static: Surfaces stay wallpaper-driven, but accent/semantic foregrounds are taken from a predefined scheme
+
 Usage:
-    python3 template-processor.py IMAGE_OR_JSON [OPTIONS]
+    python3 template-processor.py IMAGE [OPTIONS]
+    python3 template-processor.py --scheme SCHEME.json [OPTIONS]
 
-Options:
-    --scheme-type    Scheme type: tonal-spot (default), content, fruit-salad, rainbow, monochrome, vibrant, faithful, dysfunctional, muted
-    --dark           Generate dark theme only
-    --light          Generate light theme only
-    --both           Generate both themes (default)
-    -o, --output     Write JSON output to file (stdout if omitted)
-    -r, --render     Render a template (input_path:output_path)
-    -c, --config     Path to TOML configuration file with template definitions
-    --mode           Theme mode: dark or light
-
-Input:
-    Can be an image file (PNG/JPG) or a JSON color palette file.
+Key options:
+    --scheme-type         Scheme type: tonal-spot (default), content, fruit-salad, rainbow, monochrome, vibrant, faithful, dysfunctional, muted
+    --dark                Generate dark theme only
+    --light               Generate light theme only
+    --both                Generate both themes (default)
+    -o, --output          Write JSON output to file (stdout if omitted)
+    -r, --render          Render a template (input_path:output_path)    
+    -c, --config          Path to TOML configuration file with template definitions
+    --mode                Theme mode: dark or light
+    --default-mode        Theme mode used when templates request "default"
+    --foreground-mode     adaptive or static (default: adaptive)
+    --foreground-scheme   Predefined scheme JSON used as the static foreground source
+    --scheme              Predefined scheme JSON to expand instead of extracting from an image
 
 Example:
     python3 template-processor.py ~/wallpaper.png --scheme-type tonal-spot
@@ -37,6 +43,8 @@ Example:
     python3 template-processor.py ~/wallpaper.jpg --dark -o theme.json
     python3 template-processor.py ~/wallpaper.png -r template.txt:output.txt
     python3 template-processor.py ~/wallpaper.png -c config.toml --mode dark
+    python3 template-processor.py ~/wallpaper.png --foreground-mode static --foreground-scheme ~/Tokyo-Night.json
+    python3 template-processor.py --scheme ~/Noctalia-default.json -c config.toml --default-mode dark
 
 Author: Noctalia Team
 License: MIT
@@ -144,7 +152,48 @@ Examples:
         help='Theme mode to use for "default" in templates (default: dark)'
     )
 
+    parser.add_argument(
+        '--foreground-mode',
+        choices=['adaptive', 'static'],
+        default='adaptive',
+        help='Whether wallpaper colors should also drive accent foregrounds (default: adaptive)'
+    )
+
+    parser.add_argument(
+        '--foreground-scheme',
+        type=Path,
+        help='Path to a predefined scheme JSON used as the static foreground source'
+    )
+
     return parser.parse_args()
+
+
+def load_foreground_source_theme(
+    scheme_path: Path | None,
+    mode: str,
+) -> dict[str, str] | None:
+    """Load and expand a predefined colour scheme for static foreground source."""
+    if scheme_path is None:
+        return None
+
+    if not scheme_path.exists():
+        print(f"Warning: Foreground scheme file not found: {scheme_path}", file=sys.stderr)
+        return None
+
+    try:
+        with open(scheme_path, 'r') as f:
+            scheme_data = json.load(f)
+
+        if mode in scheme_data:
+            return expand_predefined_scheme(scheme_data[mode], mode)
+        if "mPrimary" in scheme_data:
+            return expand_predefined_scheme(scheme_data, mode)
+
+        print(f"Warning: Invalid foreground scheme format: {scheme_path}", file=sys.stderr)
+    except Exception as e:
+        print(f"Warning: Failed to load foreground scheme {scheme_path}: {e}", file=sys.stderr)
+
+    return None
 
 
 def main() -> int:
@@ -165,6 +214,11 @@ def main() -> int:
         modes = ["light"]
     else:
         modes = ["dark", "light"]
+
+    foreground_sources = {
+        mode: load_foreground_source_theme(args.foreground_scheme, mode)
+        for mode in modes
+    }
 
     # Path 1: Predefined scheme (--scheme flag)
     if args.scheme:
@@ -298,7 +352,13 @@ def main() -> int:
 
             # Generate theme for each mode
             for mode in modes:
-                result[mode] = generate_theme(palette, mode, scheme_type)
+                result[mode] = generate_theme(
+                    palette,
+                    mode,
+                    scheme_type,
+                    foreground_mode=args.foreground_mode,
+                    foreground_source_theme=foreground_sources.get(mode),
+                )
 
     # Output JSON
     json_output = json.dumps(result, indent=2)

@@ -46,6 +46,16 @@ Singleton {
       Logger.d("AppThemeService", "Generation method changed to:", Settings.data.colorSchemes.generationMethod);
       generate();
     }
+    function onWallpaperForegroundModeChanged() {
+      Logger.d("AppThemeService", "Wallpaper foreground mode changed to:", Settings.data.colorSchemes.wallpaperForegroundMode);
+      generate();
+    }
+    function onWallpaperForegroundSourceSchemeChanged() {
+      if (Settings.data.colorSchemes.useWallpaperColors && (Settings.data.colorSchemes.wallpaperForegroundMode === "static" || Settings.data.colorSchemes.wallpaperForegroundMode === "app-static")) {
+        Logger.d("AppThemeService", "Static foreground source changed to:", Settings.data.colorSchemes.wallpaperForegroundSourceScheme || "Noctalia (default)");
+        generate();
+      }
+    }
   }
 
   // PUBLIC FUNCTIONS

@@ -699,11 +699,13 @@ Singleton {
     property JsonObject colorSchemes: JsonObject {
       property bool useWallpaperColors: false
       property string predefinedScheme: "Noctalia (default)"
+      property string wallpaperForegroundSourceScheme: "Noctalia (default)"
       property bool darkMode: true
       property string schedulingMode: "off"
       property string manualSunrise: "06:30"
       property string manualSunset: "18:30"
       property string generationMethod: "tonal-spot"
+      property string wallpaperForegroundMode: "adaptive"
       property string monitorForColors: ""
     }
 

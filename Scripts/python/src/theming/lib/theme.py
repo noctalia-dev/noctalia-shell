@@ -13,6 +13,12 @@ Supported scheme types:
 - vibrant: Prioritizes the most saturated colors regardless of area
 - faithful: Prioritizes dominant colors by area coverage
 - muted: Preserves hue but caps saturation low (for monochrome wallpapers)
+
+Foreground modes:
+- adaptive: Accent and semantic foregrounds are derived from the wallpaper palette
+- static: Surface/background tokens remain wallpaper-derived while accent families
+  are anchored to a predefined source theme and contrast-adjusted against the
+  generated surfaces
 """
 
 from typing import Literal
@@ -25,6 +31,7 @@ from .palette import find_error_color
 # Type aliases
 ThemeMode = Literal["dark", "light"]
 SchemeType = Literal["tonal-spot", "fruit-salad", "rainbow", "content", "monochrome", "vibrant", "faithful", "muted"]
+ForegroundMode = Literal["adaptive", "static"]
 
 # Map scheme type strings to classes
 SCHEME_CLASSES = {
@@ -35,6 +42,90 @@ SCHEME_CLASSES = {
     "monochrome": SchemeMonochrome,
     # "vibrant", "faithful", and "muted" use generate_*_* functions, not a scheme class
 }
+
+# fallback values in case the default theme wasn't available (for whatver reason)
+
+STATIC_FOREGROUND_DEFAULTS = {
+    "dark": {
+        "primary": "#7aa2f7",
+        "secondary": "#9ece6a",
+        "tertiary": "#7dcfff",
+        "error": "#f7768e",
+    },
+    "light": {
+        "primary": "#2f5faf",
+        "secondary": "#4d7a24",
+        "tertiary": "#0f6f8f",
+        "error": "#c73a58",
+    },
+}
+
+ACCENT_FAMILY_KEYS = {
+    "primary": (
+        "primary", "on_primary", "primary_container", "on_primary_container",
+        "primary_fixed", "primary_fixed_dim", "on_primary_fixed",
+        "on_primary_fixed_variant", "surface_tint", "inverse_primary",
+    ),
+    "secondary": (
+        "secondary", "on_secondary", "secondary_container", "on_secondary_container",
+        "secondary_fixed", "secondary_fixed_dim", "on_secondary_fixed",
+        "on_secondary_fixed_variant",
+    ),
+    "tertiary": (
+        "tertiary", "on_tertiary", "tertiary_container", "on_tertiary_container",
+        "tertiary_fixed", "tertiary_fixed_dim", "on_tertiary_fixed",
+        "on_tertiary_fixed_variant",
+    ),
+    "error": (
+        "error", "on_error", "error_container", "on_error_container",
+    ),
+}
+
+
+def _fallback_static_foreground_theme(mode: ThemeMode) -> dict[str, str]:
+    defaults = STATIC_FOREGROUND_DEFAULTS[mode]
+    background = Color(10, 14, 24) if mode == "dark" else Color(245, 247, 252)
+    fallback = []
+    for key in ("primary", "secondary", "tertiary", "error"):
+        color = Color.from_hex(defaults[key])
+        fallback.append(ensure_contrast(color, background, 3.0))
+
+    if mode == "dark":
+        return generate_normal_dark(fallback)
+    return generate_normal_light(fallback)
+
+
+def _apply_static_foregrounds(
+    theme: dict[str, str],
+    mode: ThemeMode,
+    source_theme: dict[str, str] | None,
+) -> dict[str, str]:
+    static_theme = source_theme or _fallback_static_foreground_theme(mode)
+    surface = Color.from_hex(theme["surface"])
+
+    def adjusted_accent(key: str) -> str:
+        color = Color.from_hex(static_theme[key])
+        return ensure_contrast(color, surface, 3.0).to_hex()
+
+    adjusted = dict(theme)
+
+    for family, keys in ACCENT_FAMILY_KEYS.items():
+        for key in keys:
+            if key in static_theme:
+                adjusted[key] = static_theme[key]
+
+        if family in static_theme:
+            adjusted[family] = adjusted_accent(family)
+
+    if "surface_tint" in adjusted and "primary" in adjusted:
+        adjusted["surface_tint"] = adjusted["primary"]
+
+    if "inverse_primary" in static_theme:
+        inverse_surface = Color.from_hex(theme["inverse_surface"])
+        inverse_primary = Color.from_hex(static_theme["inverse_primary"])
+        adjusted["inverse_primary"] = ensure_contrast(inverse_primary, inverse_surface, 3.0).to_hex()
+
+    return adjusted
 
 
 def generate_material_dark(palette: list[Color], scheme_type: str = "tonal-spot") -> dict[str, str]:
@@ -846,7 +937,9 @@ def generate_muted_light(palette: list[Color]) -> dict[str, str]:
 def generate_theme(
     palette: list[Color],
     mode: ThemeMode,
-    scheme_type: str = "tonal-spot"
+    scheme_type: str = "tonal-spot",
+    foreground_mode: ForegroundMode = "adaptive",
+    foreground_source_theme: dict[str, str] | None = None,
 ) -> dict[str, str]:
     """
     Generate theme for specified mode and scheme type.
@@ -854,7 +947,12 @@ def generate_theme(
     Args:
         palette: List of extracted colors
         mode: "dark" or "light"
-        scheme_type: One of "tonal-spot", "fruit-salad", "rainbow", "vibrant", "faithful", "dysfunctional", "muted"
+        scheme_type: One of "tonal-spot", "content", "fruit-salad", "rainbow",
+            "monochrome", "vibrant", "faithful", "dysfunctional", or "muted"
+        foreground_mode: "adaptive" to derive accents from the wallpaper palette,
+            or "static" to keep accent families close to a predefined source theme
+        foreground_source_theme: Expanded source theme used when foreground_mode is
+            "static"; if omitted, a built-in fallback foreground theme is used
 
     Returns:
         Dictionary of color token names to hex values
@@ -863,16 +961,29 @@ def generate_theme(
     # All three use same theme generation, but different color extraction (handled in palette.py)
     if scheme_type in ("vibrant", "faithful", "dysfunctional"):
         if mode == "dark":
-            return generate_normal_dark(palette)
-        return generate_normal_light(palette)
+            theme = generate_normal_dark(palette)
+        else:
+            theme = generate_normal_light(palette)
+        if foreground_mode == "static":
+            return _apply_static_foregrounds(theme, mode, foreground_source_theme)
+        return theme
 
     # Handle muted mode (low saturation, monochrome wallpapers)
     if scheme_type == "muted":
         if mode == "dark":
-            return generate_muted_dark(palette)
-        return generate_muted_light(palette)
+            theme = generate_muted_dark(palette)
+        else:
+            theme = generate_muted_light(palette)
+        if foreground_mode == "static":
+            return _apply_static_foregrounds(theme, mode, foreground_source_theme)
+        return theme
 
     # All other schemes use Material Design 3 generation
     if mode == "dark":
-        return generate_material_dark(palette, scheme_type)
-    return generate_material_light(palette, scheme_type)
+        theme = generate_material_dark(palette, scheme_type)
+    else:
+        theme = generate_material_light(palette, scheme_type)
+
+    if foreground_mode == "static":
+        return _apply_static_foregrounds(theme, mode, foreground_source_theme)
+    return theme
