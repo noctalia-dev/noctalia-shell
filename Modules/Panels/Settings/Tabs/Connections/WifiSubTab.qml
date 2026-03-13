@@ -676,7 +676,7 @@ Item {
 
             NBusyIndicator {
               visible: networkItem.isBusy
-              running: visible
+              running: visible && root.effectivelyVisible
               color: Color.mPrimary
               size: Style.baseWidgetSize * 0.5
             }

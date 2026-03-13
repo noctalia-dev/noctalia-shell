@@ -46,13 +46,23 @@ SmartPanel {
     }
   }
 
+  // Effectively visible tracking
+  readonly property bool effectivelyVisible: root.visible && Window.window && Window.window.visible
+
+  onEffectivelyVisibleChanged: {
+    if (effectivelyVisible) {
+      SystemStatService.registerComponent("network-panel");
+      NetworkService.scan();
+      // Preload active Wi‑Fi details so Info shows instantly
+      NetworkService.refreshActiveWifiDetails();
+      // Also fetch Ethernet details if connected
+      NetworkService.refreshActiveEthernetDetails();
+    } else {
+      SystemStatService.unregisterComponent("network-panel");
+    }
+  }
+
   onOpened: {
-    SystemStatService.registerComponent("network-panel");
-    NetworkService.scan();
-    // Preload active Wi‑Fi details so Info shows instantly
-    NetworkService.refreshActiveWifiDetails();
-    // Also fetch Ethernet details if connected
-    NetworkService.refreshActiveEthernetDetails();
     // Restore last view if valid, otherwise choose what's available (prefer Wi‑Fi when both exist)
     if (Settings.data.network.networkPanelView) {
       const last = Settings.data.network.networkPanelView;
@@ -69,10 +79,6 @@ SmartPanel {
       }
     }
     panelViewPersistEnabled = true;
-  }
-
-  onClosed: {
-    SystemStatService.unregisterComponent("network-panel");
   }
 
   panelContent: Rectangle {
@@ -309,7 +315,7 @@ SmartPanel {
                 }
 
                 NBusyIndicator {
-                  running: visible
+                  running: visible && root.effectivelyVisible
                   color: Color.mPrimary
                   size: Style.baseWidgetSize
                   Layout.alignment: Qt.AlignHCenter
