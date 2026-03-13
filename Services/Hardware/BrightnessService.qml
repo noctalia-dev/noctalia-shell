@@ -233,7 +233,7 @@ Singleton {
   Process {
     id: ddcProc
     property list<var> ddcMonitors: []
-    command: ["ddcutil", "detect", "--sleep-multiplier=0.5"]
+    command: ["ddcutil", "detect", "--enable-dynamic-sleep", "--sleep-multiplier=0.5"]
     stdout: StdioCollector {
       onStreamFinished: {
         var displays = text.trim().split("\n\n");
@@ -367,7 +367,7 @@ Singleton {
         refreshProc.running = true;
       } else if (monitor.isDdc && monitor.busNum !== "") {
         // For DDC displays, get the current value
-        refreshProc.command = ["ddcutil", "-b", monitor.busNum, "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
+        refreshProc.command = ["ddcutil", "-b", monitor.busNum, "--enable-dynamic-sleep", "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
         refreshProc.running = true;
       } else if (monitor.isAppleDisplay) {
         // For Apple displays, get the current value
@@ -516,7 +516,7 @@ Singleton {
         var ddcValue = Math.round(value * monitor.maxBrightness);
         var ddcBus = busNum;
         Qt.callLater(() => {
-                       setBrightnessProc.command = ["ddcutil", "-b", ddcBus, "--noverify", "--async", "--sleep-multiplier=0.05", "setvcp", "10", ddcValue];
+                       setBrightnessProc.command = ["ddcutil", "-b", ddcBus, "--noverify", "--async", "--enable-dynamic-sleep", "--sleep-multiplier=0.05", "setvcp", "10", ddcValue];
                        setBrightnessProc.running = true;
                      });
       } else if (!isDdc) {
@@ -538,7 +538,7 @@ Singleton {
         initProc.command = ["asdbctl", "get"];
         initProc.running = true;
       } else if (isDdc && busNum !== "") {
-        initProc.command = ["ddcutil", "-b", busNum, "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
+        initProc.command = ["ddcutil", "-b", busNum, "--enable-dynamic-sleep", "--sleep-multiplier=0.05", "getvcp", "10", "--brief"];
         initProc.running = true;
       } else if (!isDdc) {
         // Internal backlight: first try explicit output mapping, then fall back to first available.
