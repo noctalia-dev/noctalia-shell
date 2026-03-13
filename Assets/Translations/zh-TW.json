@@ -599,10 +599,6 @@
       "system": "系統",
       "webbrowser": "瀏覽器"
     },
-    "date-filter-all-time": "所有時間",
-    "date-filter-previous-7-days": "過去 7 天",
-    "date-filter-today": "今天",
-    "date-filter-yesterday": "昨天",
     "providers": {
       "applications": "應用程式",
       "calculator": "計算機",
@@ -1949,7 +1945,6 @@
     "click-to-stop-recording": "螢幕錄影 (停止錄製)",
     "collapse": "收起側邊欄",
     "copy-address": "複製位址",
-    "date-filter": "日期過濾",
     "delete-notification": "刪除通知",
     "dismiss-notification": "關閉通知",
     "do-not-disturb-enabled": "勿擾模式",

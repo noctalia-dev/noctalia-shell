@@ -599,10 +599,6 @@
       "system": "系统",
       "webbrowser": "网页浏览器"
     },
-    "date-filter-all-time": "所有时间",
-    "date-filter-previous-7-days": "过去 7 天",
-    "date-filter-today": "今天",
-    "date-filter-yesterday": "昨天",
     "providers": {
       "applications": "应用程序",
       "calculator": "计算器",
@@ -1949,7 +1945,6 @@
     "click-to-stop-recording": "屏幕录制器（停止录制）",
     "collapse": "折叠侧边栏",
     "copy-address": "复制地址",
-    "date-filter": "日期过滤",
     "delete-notification": "删除通知",
     "dismiss-notification": "关闭通知",
     "do-not-disturb-enabled": "勿扰模式",

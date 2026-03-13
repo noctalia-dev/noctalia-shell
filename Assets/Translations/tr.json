@@ -599,10 +599,6 @@
       "system": "Sistem",
       "webbrowser": "Tarayıcı"
     },
-    "date-filter-all-time": "Tüm Zamanlar",
-    "date-filter-previous-7-days": "Son 7 Gün",
-    "date-filter-today": "Bugün",
-    "date-filter-yesterday": "Dün",
     "providers": {
       "applications": "Uygulamalar",
       "calculator": "Hesap makinesi",
@@ -1949,7 +1945,6 @@
     "click-to-stop-recording": "Ekran kaydedici (kaydı durdur)",
     "collapse": "Kenar çubuğunu daralt",
     "copy-address": "Adresi kopyala",
-    "date-filter": "Tarih filtresi",
     "delete-notification": "Bildiriyi sil",
     "dismiss-notification": "Bildirimi kapat",
     "do-not-disturb-enabled": "Rahatsız etme",

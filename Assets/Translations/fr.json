@@ -599,10 +599,6 @@
       "system": "Système",
       "webbrowser": "Navigateur web"
     },
-    "date-filter-all-time": "Tout le temps",
-    "date-filter-previous-7-days": "7 derniers jours",
-    "date-filter-today": "Aujourd'hui",
-    "date-filter-yesterday": "Hier",
     "providers": {
       "applications": "Applications",
       "calculator": "Calculatrice",
@@ -1949,7 +1945,6 @@
     "click-to-stop-recording": "Enregistreur d'écran (arrêter l'enregistrement)",
     "collapse": "Réduire la barre latérale",
     "copy-address": "Copier l'adresse",
-    "date-filter": "Filtre de date",
     "delete-notification": "Supprimer la notification",
     "dismiss-notification": "Ignorer la notification",
     "do-not-disturb-enabled": "Ne pas déranger",

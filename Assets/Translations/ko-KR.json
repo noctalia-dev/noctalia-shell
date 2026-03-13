@@ -599,10 +599,6 @@
       "system": "시스템",
       "webbrowser": "웹 브라우저"
     },
-    "date-filter-all-time": "모든 시간",
-    "date-filter-previous-7-days": "최근 7일",
-    "date-filter-today": "오늘",
-    "date-filter-yesterday": "어제",
     "providers": {
       "applications": "애플리케이션",
       "calculator": "계산기",
@@ -1949,7 +1945,6 @@
     "click-to-stop-recording": "화면 녹화 (녹화 중지)",
     "collapse": "사이드바 접기",
     "copy-address": "주소 복사",
-    "date-filter": "날짜 필터",
     "delete-notification": "알림 삭제",
     "dismiss-notification": "알림 닫기",
     "do-not-disturb-enabled": "방해 금지 모드",

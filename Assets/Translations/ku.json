@@ -545,10 +545,6 @@
       "system": "Pergal",
       "webbrowser": "Geroka tevnê"
     },
-    "date-filter-all-time": "Hemû Dem",
-    "date-filter-previous-7-days": "7 Rojên Borî",
-    "date-filter-today": "Îro",
-    "date-filter-yesterday": "Duh",
     "providers": {
       "applications": "Sepan",
       "calculator": "Jimarkar",
@@ -1654,7 +1650,6 @@
     "click-to-stop-recording": "Tomarkarê dîmenderê (tomarkirinê rawestîne)",
     "collapse": "Darika kêlelê veşêre",
     "copy-address": "Navnîşana kopî bike",
-    "date-filter": "Parzûna dîrokê",
     "delete-notification": "Agahdariyê jê bibe",
     "do-not-disturb-enabled": "Dengê dernexîne",
     "expand": "Darika kêlekê fereh bike",

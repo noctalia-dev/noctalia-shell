@@ -599,10 +599,6 @@
       "system": "System",
       "webbrowser": "Webbläsare"
     },
-    "date-filter-all-time": "Hela tiden",
-    "date-filter-previous-7-days": "Senaste 7 dagarna",
-    "date-filter-today": "Idag",
-    "date-filter-yesterday": "Igår",
     "providers": {
       "applications": "Applikationer",
       "calculator": "Kalkylator",
@@ -1949,7 +1945,6 @@
     "click-to-stop-recording": "Skärminspelare (stoppa inspelning)",
     "collapse": "Dölj sidofält",
     "copy-address": "Kopiera adress",
-    "date-filter": "Datumfilter",
     "delete-notification": "Ta bort avisering",
     "dismiss-notification": "Avfärda avisering",
     "do-not-disturb-enabled": "Stör inte",

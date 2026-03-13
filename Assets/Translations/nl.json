@@ -599,10 +599,6 @@
       "system": "Systeem",
       "webbrowser": "Webbrowser"
     },
-    "date-filter-all-time": "Alle tijd",
-    "date-filter-previous-7-days": "Afgelopen 7 dagen",
-    "date-filter-today": "Vandaag",
-    "date-filter-yesterday": "Gisteren",
     "providers": {
       "applications": "Applicaties",
       "calculator": "Rekenmachine",
@@ -1949,7 +1945,6 @@
     "click-to-stop-recording": "Schermrecorder (opname stoppen)",
     "collapse": "Zijbalk inklappen",
     "copy-address": "Adres kopiëren",
-    "date-filter": "Datumfilter",
     "delete-notification": "Melding verwijderen",
     "dismiss-notification": "Melding sluiten",
     "do-not-disturb-enabled": "Niet storen",
