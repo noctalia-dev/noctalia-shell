@@ -163,12 +163,12 @@
     "lock-keys": {
       "hide-when-off-description": "Tuş etkin olmadığında göstergeyi gizle.",
       "hide-when-off-label": "Kapatıldığında gizle",
-      "show-caps-lock-description": "Büyük Harf Kilidi düğmesi durumunu göster.",
-      "show-caps-lock-label": "Büyük Harf Kilidi",
-      "show-num-lock-description": "Sayı Kilidi durumunu göster.",
-      "show-num-lock-label": "Sayı Kilidi",
-      "show-scroll-lock-description": "Kaydırma Kilidi durumunu göster.",
-      "show-scroll-lock-label": "Kaydırma Kilidi"
+      "show-caps-lock-description": "Caps Lock düğmesi durumunu göster.",
+      "show-caps-lock-label": "Caps Lock",
+      "show-num-lock-description": "Num Lock durumunu göster.",
+      "show-num-lock-label": "Num Lock",
+      "show-scroll-lock-description": "Scroll Lock durumunu göster.",
+      "show-scroll-lock-label": "Scroll Lock"
     },
     "media-mini": {
       "compact-mode-description": "Medya oynatıcı paneli için yerden tasarruf sağlayan bir düzeni etkinleştirin.",
@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Komutlar kabuk (sh -lc) ile yürütülür<br>• Komutlar arka planda yürütülür (ayrık)<br>• Test düğmeleri mevcut değerlerle yürütülür",
-      "info-parameters-description": "• Duvar Kağıdı Kancası: $1 = duvar kağıdı yolu, $2 = ekran adı<br>• Tema Geçiş Kancası: $1 = true/false (Dark Mode durumu)<br>• Ekran Kilitleme/Kilit Açma Kancaları: $1 = lock/unlock (ekran kilidi durumu)<br>• Performans Modu Kancaları: Parametre yok<br>• Oturum Kancası: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = duvar kağıdı yolu, $2 = ekran adı, $3 = tema (koyu/açık)<br>• Theme toggle hook: $1 = true/false (Dark Mode durumu)<br>• Screen lock/unlock hooks: $1 = lock/unlock (ekran kilidi durumu)<br>• Performance mode hooks: Parametre yok<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Kullanılabilir parametreler",
       "noctalia-started-description": "Noctalia yüklendiğinde çalıştırılacak komut.",
       "noctalia-started-label": "Noctalia başladı",
@@ -1513,7 +1513,7 @@
       "types-desc": "OSD'yi tetikleyecek olayları seçin.",
       "types-input-volume-description": "Mikrofon ses düzeyi değiştiğinde OSD'yi göster.",
       "types-input-volume-label": "Giriş sesi",
-      "types-lockkey-description": "Büyük Harf Kilidi, Sayı Kilidi veya Kaydırma Kilidi değiştirildiğinde OSD'yi göster.",
+      "types-lockkey-description": "Caps Lock, Num Lock veya Scroll Lock değiştirildiğinde OSD'yi göster.",
       "types-lockkey-label": "Kilit tuşları",
       "types-media-description": "Medya oynatma durumu değiştiğinde OSD'yi göster (oynat, duraklat, atla).",
       "types-media-label": "Medya oynatma",
