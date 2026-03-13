@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Команды выполняются через shell (sh -lc)<br>• Команды выполняются в фоновом режиме (отдельно)<br>• Кнопки 'Тест' выполняются с текущими значениями",
-      "info-parameters-description": "• Хук обоев: $1 = путь к обоям, $2 = имя экрана<br>• Хук переключения темы: $1 = true/false (состояние Dark Mode)<br>• Хуки блокировки/разблокировки экрана: $1 = lock/unlock (состояние блокировки экрана)<br>• Хуки режима производительности: Без параметров<br>• Хук сессии: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = путь к обоям, $2 = имя экрана, $3 = тема (темная/светлая)<br>• Theme toggle hook: $1 = true/false (состояние Dark Mode)<br>• Screen lock/unlock hooks: $1 = lock/unlock (состояние блокировки экрана)<br>• Performance mode hooks: Без параметров<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Доступные параметры",
       "noctalia-started-description": "Команда для выполнения после завершения загрузки Noctalia.",
       "noctalia-started-label": "Noctalia запущена",

@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 命令通过 shell 执行（sh -lc）<br>• 命令在后台运行（分离）<br>• 测试按钮使用当前值执行",
-      "info-parameters-description": "• 壁纸挂钩: $1 = 壁纸路径, $2 = 屏幕名称<br>• 主题切换挂钩: $1 = true/false (Dark Mode状态)<br>• 屏幕锁定/解锁挂钩: $1 = lock/unlock (屏幕锁定状态)<br>• 性能模式挂钩: 无参数<br>• 会话挂钩: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = 壁纸路径, $2 = 屏幕名称, $3 = 主题 (深色/浅色)<br>• Theme toggle hook: $1 = true/false (Dark Mode 状态)<br>• Screen lock/unlock hooks: $1 = lock/unlock (屏幕锁定状态)<br>• Performance mode hooks: 无参数<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "可用参数",
       "noctalia-started-description": "Noctalia 加载完成后要执行的命令。",
       "noctalia-started-label": "Noctalia 已启动",

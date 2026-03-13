@@ -118,8 +118,10 @@ Singleton {
     }
 
     try {
+      const theme = Settings.data.colorSchemes.darkMode ? "dark" : "light";
       let command = script.replace(/\$1/g, wallpaperPath);
       command = command.replace(/\$2/g, screenName || "");
+      command = command.replace(/\$3/g, theme);
       Quickshell.execDetached(["sh", "-lc", command]);
       Logger.d("HooksService", `Executed wallpaper hook: ${command}`);
     } catch (e) {

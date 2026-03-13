@@ -68,7 +68,7 @@ ColumnLayout {
                               Settings.saveImmediate();
                             }, val => {
                               if (val)
-                              Quickshell.execDetached(["sh", "-lc", val.replace("$1", "test_wallpaper_path").replace("$2", "test_screen")]);
+                              Quickshell.execDetached(["sh", "-lc", val.replace("$1", "test_wallpaper_path").replace("$2", "test_screen").replace("$3", "dark")]);
                             })
   }
 

@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Comandos são executados via shell (sh -lc)<br>• Comandos rodam em segundo plano (desanexados)<br>• Botões de teste executam com os valores atuais",
-      "info-parameters-description": "• Hook de papel de parede: $1 = caminho do papel de parede, $2 = nome da tela<br>• Hook de alternância de tema: $1 = true/false (estado do Dark Mode)<br>• Hooks de bloqueio/desbloqueio de tela: $1 = lock/unlock (estado de bloqueio de tela)<br>• Hooks de modo de desempenho: Sem parâmetros<br>• Hook de sessão: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = caminho do papel de parede, $2 = nome da tela, $3 = tema (escuro/claro)<br>• Theme toggle hook: $1 = true/false (estado do Dark Mode)<br>• Screen lock/unlock hooks: $1 = lock/unlock (estado de bloqueio de tela)<br>• Performance mode hooks: Sem parâmetros<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Parâmetros disponíveis",
       "noctalia-started-description": "Comando para executar quando o Noctalia terminar de carregar.",
       "noctalia-started-label": "Noctalia iniciado",

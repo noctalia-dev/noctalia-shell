@@ -1309,15 +1309,6 @@
     ]
   },
   {
-    "labelKey": "panels.launcher.settings-use-app2unit-label",
-    "descriptionKey": "panels.launcher.settings-use-app2unit-description",
-    "widget": "NToggle",
-    "tab": 8,
-    "tabLabel": "panels.launcher.title",
-    "subTab": 2,
-    "subTabLabel": "common.execute"
-  },
-  {
     "labelKey": "panels.launcher.settings-terminal-command-label",
     "descriptionKey": "panels.launcher.settings-terminal-command-description",
     "widget": "NTextInput",

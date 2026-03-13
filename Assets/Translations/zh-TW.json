@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 指令將透過 shell (sh -lc) 執行<br>• 指令會在背景 (detached 狀態) 執行<br>• 測試按鈕會以當下填寫的內容執行",
-      "info-parameters-description": "• 桌布掛鉤: $1 = 桌布路徑, $2 = 螢幕名稱<br>• 主題切換掛鉤: $1 = true/false (Dark Mode狀態)<br>• 螢幕鎖定/解鎖掛鉤: $1 = lock/unlock (螢幕鎖定狀態)<br>• 效能模式掛鉤: 無參數<br>• 會話掛鉤: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = 桌面背景路徑, $2 = 螢幕名稱, $3 = 主題 (深色/淺色)<br>• Theme toggle hook: $1 = true/false (Dark Mode 狀態)<br>• Screen lock/unlock hooks: $1 = lock/unlock (螢幕鎖定狀態)<br>• Performance mode hooks: 無參數<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "可用參數",
       "noctalia-started-description": "Noctalia 完成載入時要執行的指令。",
       "noctalia-started-label": "Noctalia 已啟動",
