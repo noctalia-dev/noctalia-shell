@@ -22,8 +22,9 @@ Item {
   readonly property bool isScaling: internal.isScaling
 
   // All Desktop widgets have these settings, but fallback just in case
-  property bool showBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : (widgetMetadata?.showBackground ?? true)
-  property bool roundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : (widgetMetadata?.roundedCorners ?? true)
+  readonly property var _metadata: widgetData?.id ? DesktopWidgetRegistry.widgetMetadata[widgetData.id] : null
+  property bool showBackground: widgetData.showBackground !== undefined ? widgetData.showBackground : (_metadata?.showBackground ?? true)
+  property bool roundedCorners: widgetData.roundedCorners !== undefined ? widgetData.roundedCorners : (_metadata?.roundedCorners ?? true)
 
   property real widgetScale: 1.0
   property real minScale: 0.5
@@ -112,6 +113,35 @@ Item {
       return coord;
     }
     return Math.round(coord / root.gridSize) * root.gridSize;
+  }
+
+  function snapScaleToGrid(scale) {
+    if (!Settings.data.desktopWidgets.gridSnap || !Settings.data.desktopWidgets.gridSnapScale) {
+      return scale;
+    }
+
+    // Get widget's base width
+    var initialWidth = internal.initialWidth;
+    var initialScale = internal.initialScale;
+    if (initialWidth <= 0 || initialScale <= 0) {
+      return scale;
+    }
+
+    // Since initialWidth = baseWidth * initialScale
+    var baseWidth = initialWidth / initialScale;
+
+    // Snap the resulting width with the scale
+    var resultingWidth = baseWidth * scale;
+    var snappedWidth = root.snapToGrid(resultingWidth);
+
+    // Check that the snappedWidth isn't smaller than one grid size
+    if (snappedWidth < root.gridSize) {
+      snappedWidth = root.gridSize;
+    }
+
+    // Return the ratio of the snappedWidth and the baseWidth, which is the new snapped scale
+    var snappedScale = snappedWidth / baseWidth;
+    return Math.max(minScale, Math.min(maxScale, snappedScale));
   }
 
   function updateWidgetData(properties) {
@@ -553,6 +583,8 @@ Item {
                      internal.isScaling = true;
                      internal.initialScale = root.widgetScale;
                      internal.lastScale = root.widgetScale;
+                     internal.initialWidth = root.width;
+                     internal.initialHeight = root.height;
                    }
 
         onPositionChanged: mouse => {
@@ -570,6 +602,8 @@ Item {
                                var scaleDelta = diagonalDelta / sensitivity;
                                var newScale = Math.max(root.minScale, Math.min(root.maxScale, internal.initialScale + scaleDelta));
 
+                               newScale = root.snapScaleToGrid(newScale);
+
                                if (!isNaN(newScale) && newScale > 0) {
                                  root.widgetScale = newScale;
                                  internal.lastScale = newScale;
@@ -584,6 +618,7 @@ Item {
                                               });
                         internal.isScaling = false;
                         internal.operationType = "";
+                        root.widgetScale = root.snapScaleToGrid(root.widgetScale);
                         internal.lastScale = root.widgetScale;
                       }
                     }

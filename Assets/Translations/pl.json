@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Odwróć kierunek przełączania obszarów roboczych podczas przewijania.",
       "reverse-scrolling-label": "Odwróć przewijanie",
       "show-applications-description": "Wyświetl ikony aplikacji wewnątrz każdego obszaru roboczego.",
+      "show-applications-hover-description": "Wyświetl ikony aplikacji w każdym obszarze roboczym po najechaniu na obszar roboczy.",
+      "show-applications-hover-label": "Pokaż aplikacje po najechaniu kursorem",
       "show-applications-label": "Pokaż aplikacje",
       "show-badge-description": "Pokaż plakietkę z numerem obszaru roboczego w trybie grupowym.",
       "show-badge-label": "Pokaż odznakę obszaru roboczego",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Wszystkie baterie (łącznie)",
     "battery-health": "Stan baterii",
     "battery-level": "Poziom baterii",
     "capacity-level": "Pojemność: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "Zostań wspierającym",
       "changelog": "Zobacz dziennik zmian",
+      "changelog-on-startup": "Pokaż dziennik zmian po aktualizacji",
+      "changelog-on-startup-desc": "Automatycznie pokazuj dziennik zmian po aktualizacji Noctalia.",
       "contributors-description": "Podziękowania dla naszego {count} <b>niesamowitego</b> współtwórcy!",
       "contributors-description-plural": "Podziękowania dla naszych {count} <b>niesamowitych</b> współtwórców!",
       "copy-info": "Kopiuj informacje",
@@ -824,6 +829,8 @@
       "appearance-density-label": "Zagęszczenie paska",
       "appearance-desc": "Dostosuj wygląd i pozycję paska.",
       "appearance-display-mode-description": "Wybierz, kiedy pasek jest widoczny.",
+      "appearance-enable-exclusion-zone-inset-description": "Zmniejsz strefę wykluczenia o 1 fizyczny piksel, aby okna przylegające idealnie zachodziły pod krawędź Bar.",
+      "appearance-enable-exclusion-zone-inset-label": "Wewnętrzna strefa wykluczenia",
       "appearance-floating-description": "Wyświetl pasek jako pływającą 'pigułkę'.",
       "appearance-floating-label": "Pływający pasek",
       "appearance-font-scale-description": "Dostosuj skalę rozmiaru czcionki dla tekstu wyświetlanego na pasku.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "Włącz tryb edycji, aby przesuwać i zmieniać pozycję widżetów pulpitu. Gdy włączone, widżety pokazują ramkę przeciągania.",
       "edit-mode-exit-button": "Wyjdź z trybu edycji",
       "edit-mode-grid-snap-label": "Przyciągaj do siatki",
+      "edit-mode-grid-snap-scale-label": "Skala przyciągania do siatki",
       "edit-mode-label": "Tryb edycji",
       "enabled-description": "Włącz lub całkowicie wyłącz widżety pulpitu.",
       "enabled-label": "Włącz widżety pulpitu",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Polecenia są wykonywane przez powłokę (sh -lc)<br>• Polecenia działają w tle (detached)<br>• Przyciski testowe wykonują się z aktualnymi wartościami",
-      "info-parameters-description": "• Hak do tapety: $1 = ścieżka do tapety, $2 = nazwa ekranu<br>• Hak przełączania motywu: $1 = prawda/fałsz (stan trybu ciemnego)<br>• Haki blokowania/odblokowywania ekranu: Brak parametrów<br>• Haki trybu wydajności: Brak parametrów<br>• Hak sesji: $1 = akcja (zamknięcie/ponowne uruchomienie))",
+      "info-parameters-description": "• Hook tapety: $1 = ścieżka tapety, $2 = nazwa ekranu<br>• Hook przełączania motywu: $1 = true/false (stan Dark Mode)<br>• Hooki blokowania/odblokowywania ekranu: $1 = lock/unlock (stan blokady ekranu)<br>• Hooki trybu wydajności: Brak parametrów<br>• Hook sesji: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Dostępne parametry",
       "noctalia-started-description": "Polecenie do wykonania po zakończeniu ładowania Noctalii.",
       "noctalia-started-label": "Noctalia uruchomiona",
@@ -1684,7 +1692,9 @@
       "shadows-label": "Cienie",
       "title": "Interfejs użytkownika",
       "tooltips-description": "Włącz lub wyłącz podpowiedzi w całym interfejsie.",
-      "tooltips-label": "Pokaż podpowiedzi"
+      "tooltips-label": "Pokaż podpowiedzi",
+      "translucent-widgets-description": "Spraw, aby przyciski, zakładki i inne widżety w panelach były półprzezroczyste.",
+      "translucent-widgets-label": "Półprzezroczyste widżety"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetyczny",

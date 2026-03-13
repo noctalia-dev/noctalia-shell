@@ -14,6 +14,7 @@ Item {
   property string supportedLayouts: "both"
   property bool isDefaultProvider: true // This provider handles empty search
   property bool ignoreDensity: false // Apps should scale with launcher density
+  property bool trackUsage: true // Track usage frequency for "most used" sorting
 
   // Category support
   property string selectedCategory: "all"
@@ -60,6 +61,7 @@ Item {
 
   function init() {
     loadApplications();
+    migrateLegacyUsageKeys();
   }
 
   function onOpened() {
@@ -516,6 +518,7 @@ Item {
   function createResultEntry(app, score) {
     return {
       "appId": getAppKey(app),
+      "usageKey": getAppKey(app),
       "name": app.name || "Unknown",
       "description": app.genericName || app.comment || "",
       "icon": app.icon || "application-x-executable",
@@ -523,10 +526,6 @@ Item {
       "_score": (score !== undefined ? score : 0),
       "provider": root,
       "onActivate": function () {
-        if (Settings.data.appLauncher.sortByMostUsed) {
-          root.recordUsage(app);
-        }
-
         // Close the launcher/SmartPanel immediately without any animations.
         // Ensures we are not preventing the future focusing of the app
         launcher.closeImmediately();
@@ -645,7 +644,18 @@ Item {
     return ShellState.getLauncherUsageCount(getAppKey(app));
   }
 
-  function recordUsage(app) {
-    ShellState.recordLauncherUsage(getAppKey(app));
+  // Migrate legacy command-based usage keys to canonical app-id keys at startup
+  function migrateLegacyUsageKeys() {
+    for (let i = 0; i < entries.length; i++) {
+      const app = entries[i];
+      if (app && app.id && app.command && app.command.join) {
+        const key = getAppKey(app);
+        const legacyKey = app.command.join(" ");
+        if (legacyKey !== key && ShellState.getLauncherUsageCount(legacyKey) > 0) {
+          ShellState.migrateLauncherUsage(legacyKey, key);
+          Logger.d("ApplicationsProvider", `Migrated usage: "${legacyKey}" → "${key}"`);
+        }
+      }
+    }
   }
 }

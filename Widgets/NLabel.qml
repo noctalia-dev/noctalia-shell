@@ -14,6 +14,7 @@ ColumnLayout {
   property color iconColor: Color.mOnSurface
   property bool showIndicator: false
   property string indicatorTooltip: ""
+  property real labelSize: Style.fontSizeL
 
   opacity: enabled ? 1.0 : 0.6
   spacing: Style.marginXXS
@@ -38,7 +39,7 @@ ColumnLayout {
       id: labelText
       Layout.fillWidth: true
       text: root.label
-      pointSize: Style.fontSizeL
+      pointSize: root.labelSize
       font.weight: Style.fontWeightSemiBold
       color: labelColor
       wrapMode: Text.WordWrap

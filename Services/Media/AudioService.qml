@@ -289,6 +289,104 @@ Singleton {
     objects: [...root.sinks, ...root.sources]
   }
 
+  // Per-app volume persistence (survives stream recreation on track change/seek)
+  property var appVolumeOverrides: ({})
+  property var _knownAppStreamIds: ({})
+  property bool _isApplyingAppOverride: false
+
+  PwObjectTracker {
+    objects: root.appStreams
+  }
+
+  function getAppKey(node): string {
+    if (!node || !node.properties)
+      return "";
+    var props = node.properties;
+    var binary = props["application.process.binary"] || "";
+    if (binary) {
+      var parts = binary.split("/");
+      return parts[parts.length - 1].toLowerCase();
+    }
+    var appName = props["application.name"] || "";
+    if (appName)
+      return appName.toLowerCase();
+    var appId = props["application.id"] || "";
+    if (appId)
+      return appId.toLowerCase();
+    return "";
+  }
+
+  function setAppStreamVolume(appKey: string, volume: real): void {
+    if (!appKey)
+    return;
+    var o = appVolumeOverrides;
+    if (!o[appKey])
+    o[appKey] = {};
+    o[appKey].volume = volume;
+    appVolumeOverrides = o;
+  }
+
+  function setAppStreamMuted(appKey: string, muted: bool): void {
+    if (!appKey)
+    return;
+    var o = appVolumeOverrides;
+    if (!o[appKey])
+    o[appKey] = {};
+    o[appKey].muted = muted;
+    appVolumeOverrides = o;
+  }
+
+  function getAppVolumeOverride(appKey: string) {
+    return appKey ? (appVolumeOverrides[appKey] || null) : null;
+  }
+
+  function _applyAppOverrides(): void {
+    var streams = root.appStreams;
+    if (!streams)
+    return;
+    var currentIds = {};
+    _isApplyingAppOverride = true;
+    for (var i = 0; i < streams.length; i++) {
+      var s = streams[i];
+      if (!s)
+      continue;
+      currentIds[s.id] = true;
+      var key = getAppKey(s);
+      var ov = key ? appVolumeOverrides[key] : null;
+      if (!ov || !s.audio)
+      continue;
+      if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
+        s.audio.volume = ov.volume;
+      }
+      if (ov.muted !== undefined && s.audio.muted !== ov.muted) {
+        s.audio.muted = ov.muted;
+      }
+    }
+    _knownAppStreamIds = currentIds;
+    _isApplyingAppOverride = false;
+  }
+
+  Connections {
+    target: root
+    function onAppStreamsChanged() {
+      _appOverrideTimer.restart();
+    }
+  }
+
+  Timer {
+    id: _appOverrideTimer
+    interval: 50
+    onTriggered: root._applyAppOverrides()
+  }
+
+  Timer {
+    id: _appOverrideEnforcer
+    interval: 1000
+    running: Object.keys(root.appVolumeOverrides).length > 0 && root.appStreams.length > 0
+    repeat: true
+    onTriggered: root._applyAppOverrides()
+  }
+
   Component.onCompleted: {
     wpctlAvailabilityProcess.running = true;
   }

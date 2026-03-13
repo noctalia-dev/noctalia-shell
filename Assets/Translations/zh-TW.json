@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "捲動時反轉工作區切換方向。",
       "reverse-scrolling-label": "反轉捲動",
       "show-applications-description": "顯示各個工作區的程式圖示",
+      "show-applications-hover-description": "當滑鼠懸停在工作區上時，在每個工作區內顯示應用程式圖示。",
+      "show-applications-hover-label": "滑鼠懸停時顯示應用程式",
       "show-applications-label": "顯示應用程式",
       "show-badge-description": "在群組模式下顯示工作區編號徽章。",
       "show-badge-label": "顯示工作區標記",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "所有電池（組合）",
     "battery-health": "電池健康度",
     "battery-level": "電池電量",
     "capacity-level": "容量：{level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "成為支持者",
       "changelog": "檢視更新日誌",
+      "changelog-on-startup": "更新時顯示變更日誌",
+      "changelog-on-startup-desc": "Noctalia 更新時自動顯示更新日誌。",
       "contributors-description": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
       "contributors-description-plural": "特別感謝我們這{count}位<b>超讚</b>的貢獻者!!",
       "copy-info": "複製資訊",
@@ -824,6 +829,8 @@
       "appearance-density-label": "工具列密度",
       "appearance-desc": "自訂工具列的外觀及位置",
       "appearance-display-mode-description": "選擇列何時可見",
+      "appearance-enable-exclusion-zone-inset-description": "減少排除區域1個實體像素，以便齊平的視窗能完美地延伸到 Bar 邊緣下方。",
+      "appearance-enable-exclusion-zone-inset-label": "內嵌排除區域",
       "appearance-floating-description": "將工具列以懸浮的圓弧長條狀顯示",
       "appearance-floating-label": "懸浮工具列",
       "appearance-font-scale-description": "調整列中顯示的文字的字體大小比例。",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "啟用編輯模式以移動小工具; 當啟用時, 小工具會顯示一個可拖曳的外框以供移動.",
       "edit-mode-exit-button": "離開編輯模式",
       "edit-mode-grid-snap-label": "貼齊格線",
+      "edit-mode-grid-snap-scale-label": "格線吸附比例",
       "edit-mode-label": "編輯模式",
       "enabled-description": "啟用或完全停用桌面小工具",
       "enabled-label": "啟用桌面小工具",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 指令將透過 shell (sh -lc) 執行<br>• 指令會在背景 (detached 狀態) 執行<br>• 測試按鈕會以當下填寫的內容執行",
-      "info-parameters-description": "• 桌布的 hook: $1 = 桌布路徑, $2 = 螢幕名稱<br>• 主題切換的 hook: $1 = true/false (深色模式啟用或否)<br>• 畫面鎖定/解鎖的 hook: 沒有參數<br>• 效能模式的 hook: 沒有參數<br>• 工作階段的 hook: $1 = 執行動作 (shutdown/reboot)",
+      "info-parameters-description": "• 桌布掛鉤: $1 = 桌布路徑, $2 = 螢幕名稱<br>• 主題切換掛鉤: $1 = true/false (Dark Mode狀態)<br>• 螢幕鎖定/解鎖掛鉤: $1 = lock/unlock (螢幕鎖定狀態)<br>• 效能模式掛鉤: 無參數<br>• 會話掛鉤: $1 = action (shutdown/reboot)",
       "info-parameters-label": "可用參數",
       "noctalia-started-description": "Noctalia 完成載入時要執行的指令。",
       "noctalia-started-label": "Noctalia 已啟動",
@@ -1684,7 +1692,9 @@
       "shadows-label": "陰影",
       "title": "使用者介面",
       "tooltips-description": "在整個介面啟用或停用提示框",
-      "tooltips-label": "顯示提示框"
+      "tooltips-label": "顯示提示框",
+      "translucent-widgets-description": "使面板內的按鈕、分頁和其他小部件半透明。",
+      "translucent-widgets-label": "半透明小工具"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "照字母排序",

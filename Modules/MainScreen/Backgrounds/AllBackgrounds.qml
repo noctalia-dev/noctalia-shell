@@ -38,12 +38,13 @@ Item {
 
       // Enable layer caching to prevent continuous re-rendering
       layer.enabled: true
-      opacity: Settings.data.ui.panelBackgroundOpacity
+      opacity: Color.panelBackgroundOpacity
 
       Shape {
         id: unifiedBackgroundsShape
         anchors.fill: parent
         preferredRendererType: Shape.CurveRenderer
+        asynchronous: true
         enabled: false
 
         Component.onCompleted: {
@@ -105,12 +106,13 @@ Item {
         anchors.fill: parent
 
         layer.enabled: true
-        opacity: Settings.data.ui.panelBackgroundOpacity
+        opacity: Color.panelBackgroundOpacity
 
         Shape {
           id: panelBackgroundsShape
           anchors.fill: parent
           preferredRendererType: Shape.CurveRenderer
+          asynchronous: true
           enabled: false
 
           /**
@@ -159,6 +161,7 @@ Item {
           id: barBackgroundShape
           anchors.fill: parent
           preferredRendererType: Shape.CurveRenderer
+          asynchronous: true
           enabled: false
 
           BarBackground {

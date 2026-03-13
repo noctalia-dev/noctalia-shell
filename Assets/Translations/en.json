@@ -311,6 +311,8 @@
       "reverse-scrolling-description": "Reverse the direction of workspace switching when scrolling.",
       "reverse-scrolling-label": "Reverse scrolling",
       "show-applications-description": "Display application icons inside each workspace.",
+      "show-applications-hover-description": "Display application icons inside each workspace when the workspace is hovered.",
+      "show-applications-hover-label": "Show applications when hovered",
       "show-applications-label": "Show applications",
       "show-badge-description": "Show the workspace number badge in grouped mode.",
       "show-badge-label": "Show workspace badge",
@@ -321,6 +323,7 @@
     }
   },
   "battery": {
+    "all-batteries": "All batteries (combined)",
     "battery-health": "Battery health",
     "battery-level": "Battery level",
     "capacity-level": "Capacity: {level}",
@@ -716,6 +719,8 @@
     "about": {
       "become-supporter": "Become a supporter",
       "changelog": "View changelog",
+      "changelog-on-startup": "Show changelog on update",
+      "changelog-on-startup-desc": "Automatically show the changelog when Noctalia is updated",
       "contributors-description": "Shout-out to our {count} <b>awesome</b> contributor!",
       "contributors-description-plural": "Shout-out to our {count} <b>awesome</b> contributors!",
       "copy-info": "Copy info",
@@ -826,6 +831,8 @@
       "appearance-density-label": "Bar density",
       "appearance-desc": "Customize the bar's appearance and position.",
       "appearance-display-mode-description": "Choose when the bar is visible.",
+      "appearance-enable-exclusion-zone-inset-description": "Reduce the exclusion zone by 1 physical pixel so flush windows bleed perfectly under the bar edge.",
+      "appearance-enable-exclusion-zone-inset-label": "Inset exclusion zone",
       "appearance-floating-description": "Display the bar as a floating 'pill'.",
       "appearance-floating-label": "Floating bar",
       "appearance-font-scale-description": "Adjust the font size scale for text displayed in the bar.",
@@ -1022,6 +1029,7 @@
       "edit-mode-description": "Enable edit mode to move and reposition desktop widgets. When enabled, widgets show a drag outline and can be repositioned.",
       "edit-mode-exit-button": "Exit edit mode",
       "edit-mode-grid-snap-label": "Grid snap",
+      "edit-mode-grid-snap-scale-label": "Grid snap scale",
       "edit-mode-label": "Edit mode",
       "enabled-description": "Enable or disable desktop widgets entirely.",
       "enabled-label": "Enable desktop widgets",
@@ -1214,7 +1222,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Commands are executed via shell (sh -lc)<br>• Commands run in background (detached)<br>• Test buttons execute with current values",
-      "info-parameters-description": "• Wallpaper hook: $1 = wallpaper path, $2 = screen name<br>• Theme toggle hook: $1 = true/false (Dark Mode state)<br>• Screen lock/unlock hooks: No parameters<br>• Performance mode hooks: No parameters<br>• Session hook: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = wallpaper path, $2 = screen name<br>• Theme toggle hook: $1 = true/false (Dark Mode state)<br>• Screen lock/unlock hooks: $1 = lock/unlock (screen lock state)<br>• Performance mode hooks: No parameters<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Available parameters",
       "noctalia-started-description": "Command to execute when Noctalia has finished loading.",
       "noctalia-started-label": "Noctalia started",
@@ -1686,7 +1694,9 @@
       "shadows-label": "Drop shadows",
       "title": "User Interface",
       "tooltips-description": "Enable or disable tooltips throughout the interface.",
-      "tooltips-label": "Show tooltips"
+      "tooltips-label": "Show tooltips",
+      "translucent-widgets-description": "Make buttons, tabs, and other widgets inside panels semi-transparent.",
+      "translucent-widgets-label": "Translucent widgets"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alphabetical",

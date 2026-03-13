@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Invertir la dirección del cambio de espacios de trabajo al desplazarse.",
       "reverse-scrolling-label": "Desplazamiento inverso",
       "show-applications-description": "Mostrar los iconos de las aplicaciones dentro de cada espacio de trabajo.",
+      "show-applications-hover-description": "Mostrar iconos de aplicación dentro de cada espacio de trabajo cuando se pasa el ratón por encima.",
+      "show-applications-hover-label": "Mostrar aplicaciones al pasar el ratón",
       "show-applications-label": "Mostrar aplicaciones",
       "show-badge-description": "Mostrar la insignia del número de espacio de trabajo en modo agrupado.",
       "show-badge-label": "Mostrar insignia del espacio de trabajo",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Todas las baterías (combinadas)",
     "battery-health": "Estado de la batería",
     "battery-level": "Nivel de batería",
     "capacity-level": "Capacidad: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "Hazte patrocinador",
       "changelog": "Ver registro de cambios",
+      "changelog-on-startup": "Mostrar registro de cambios al actualizar",
+      "changelog-on-startup-desc": "Mostrar automáticamente el registro de cambios cuando Noctalia se actualice.",
       "contributors-description": "¡Un saludo a nuestro <b>increíble</b> colaborador número {count}!",
       "contributors-description-plural": "¡Un saludo a nuestros {count} <b>increíbles</b> colaboradores!",
       "copy-info": "Copiar información",
@@ -824,6 +829,8 @@
       "appearance-density-label": "Densidad de la barra",
       "appearance-desc": "Personaliza la apariencia y posición de la barra.",
       "appearance-display-mode-description": "Elige cuando será visible la barra.",
+      "appearance-enable-exclusion-zone-inset-description": "Reduce la zona de exclusión en 1 píxel físico para que las ventanas a ras se extiendan perfectamente por debajo del borde de la Bar.",
+      "appearance-enable-exclusion-zone-inset-label": "Zona de exclusión interior",
       "appearance-floating-description": "Muestra la barra como una 'píldora' flotante.",
       "appearance-floating-label": "Barra flotante",
       "appearance-font-scale-description": "Ajustar la escala del tamaño de fuente para el texto mostrado en la barra.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "Habilita el modo de edición para mover y cambiar la posición de los widgets del escritorio. Cuando está habilitado, los widgets muestran un contorno de arrastre y se pueden reposicionar.",
       "edit-mode-exit-button": "Salir del modo de edición",
       "edit-mode-grid-snap-label": "Ajustar a cuadrícula",
+      "edit-mode-grid-snap-scale-label": "Escala de ajuste a la cuadrícula",
       "edit-mode-label": "Modo de edición",
       "enabled-description": "Activar o desactivar los widgets de escritorio por completo.",
       "enabled-label": "Habilitar widgets de escritorio",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Los comandos se ejecutan a través de shell (sh -lc)<br>• Los comandos se ejecutan en segundo plano (desvinculados)<br>• Los botones de prueba se ejecutan con los valores actuales",
-      "info-parameters-description": "• Hook de fondo de pantalla: $1 = ruta del fondo de pantalla, $2 = nombre de la pantalla<br>• Hook de alternancia de tema: $1 = verdadero/falso (estado del modo oscuro)<br>• Hooks de bloqueo/desbloqueo de pantalla: Sin parámetros<br>• Hooks de modo de rendimiento: Sin parámetros<br>• Hook de sesión: $1 = acción (apagado/reinicio)",
+      "info-parameters-description": "• Hook de fondo de pantalla: $1 = ruta del fondo de pantalla, $2 = nombre de pantalla<br>• Hook de alternancia de tema: $1 = true/false (estado de Dark Mode)<br>• Hooks de bloqueo/desbloqueo de pantalla: $1 = lock/unlock (estado de bloqueo de pantalla)<br>• Hooks de modo de rendimiento: Sin parámetros<br>• Hook de sesión: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Parámetros disponibles",
       "noctalia-started-description": "Comando para ejecutar cuando Noctalia ha terminado de cargarse.",
       "noctalia-started-label": "Noctalia iniciado",
@@ -1684,7 +1692,9 @@
       "shadows-label": "Sombras paralelas",
       "title": "Interfaz de usuario",
       "tooltips-description": "Activar o desactivar los avisos emergentes en toda la interfaz.",
-      "tooltips-label": "Mostrar textos emergentes"
+      "tooltips-label": "Mostrar textos emergentes",
+      "translucent-widgets-description": "Haz que los botones, pestañas y otros widgets dentro de los paneles sean semitransparentes.",
+      "translucent-widgets-label": "Widgets translúcidos"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabético",

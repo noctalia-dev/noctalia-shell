@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import qs.Commons
 import qs.Modules.Panels.Settings.Tabs
 import qs.Modules.Panels.Settings.Tabs.About
@@ -25,6 +24,8 @@ import qs.Modules.Panels.Settings.Tabs.SessionMenu
 import qs.Modules.Panels.Settings.Tabs.SystemMonitor
 import qs.Modules.Panels.Settings.Tabs.UserInterface
 import qs.Modules.Panels.Settings.Tabs.Wallpaper
+import qs.Services.Compositor
+import qs.Services.Power
 import qs.Services.System
 import qs.Services.UI
 import qs.Widgets
@@ -51,7 +52,6 @@ Item {
 
   // Search state
   property string searchText: ""
-  property var searchIndex: []
   property var searchResults: []
   property int searchSelectedIndex: 0
   property string highlightLabelKey: ""
@@ -74,22 +74,6 @@ Item {
   // Signal when close button is clicked
   signal closeRequested
 
-  // Load search index
-  FileView {
-    id: searchIndexFile
-    path: Quickshell.shellDir + "/Assets/settings-search-index.json"
-    watchChanges: false
-    printErrors: false
-
-    onLoaded: {
-      try {
-        root.searchIndex = JSON.parse(text());
-      } catch (e) {
-        root.searchIndex = [];
-      }
-    }
-  }
-
   // Search function
   onSearchTextChanged: {
     if (searchText.trim() === "") {
@@ -110,13 +94,15 @@ Item {
       root.sidebarExpanded = true;
     }
 
-    if (searchIndex.length === 0)
+    if (SettingsSearchService.searchIndex.length === 0)
       return;
 
-    // Build searchable items with resolved translations
+    // Build searchable items with resolved translations, filtering out invisible entries
     let items = [];
-    for (let j = 0; j < searchIndex.length; j++) {
-      const entry = searchIndex[j];
+    for (let j = 0; j < SettingsSearchService.searchIndex.length; j++) {
+      const entry = SettingsSearchService.searchIndex[j];
+      if (!SettingsSearchService.isEntryVisible(entry))
+        continue;
       items.push({
                    "labelKey": entry.labelKey,
                    "descriptionKey": entry.descriptionKey,

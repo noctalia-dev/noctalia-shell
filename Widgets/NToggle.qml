@@ -45,6 +45,7 @@ RowLayout {
     id: switcher
 
     Layout.alignment: Qt.AlignVCenter
+    Layout.margins: Style.borderS
 
     implicitWidth: Math.round(root.baseSize * .85) * 2
     implicitHeight: Math.round(root.baseSize * .5) * 2

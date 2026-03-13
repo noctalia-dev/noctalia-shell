@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Змінити напрямок перемикання робочих просторів під час прокручування.",
       "reverse-scrolling-label": "Зворотне прокручування",
       "show-applications-description": "Відображати значки програм у кожному робочому просторі.",
+      "show-applications-hover-description": "Відображати піктограми програм всередині кожного робочого простору при наведенні на нього.",
+      "show-applications-hover-label": "Показувати програми при наведенні",
       "show-applications-label": "Показати застосунки",
       "show-badge-description": "Показувати значок номера робочого столу в згрупованому режимі.",
       "show-badge-label": "Показати значок робочого столу",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Усі батареї (об'єднані)",
     "battery-health": "Стан батареї",
     "battery-level": "Рівень заряду акумулятора",
     "capacity-level": "Місткість: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "Стати прихильником",
       "changelog": "Переглянути журнал змін",
+      "changelog-on-startup": "Показувати журнал змін під час оновлення",
+      "changelog-on-startup-desc": "Автоматично показувати журнал змін при оновленні Noctalia.",
       "contributors-description": "Подяка нашому {count} <b>чудовому</b> учаснику!",
       "contributors-description-plural": "Подяка нашим {count} <b>чудовим</b> учасникам!",
       "copy-info": "Копіювати інформацію",
@@ -824,6 +829,8 @@
       "appearance-density-label": "Щільність панелі",
       "appearance-desc": "Налаштуйте зовнішній вигляд та положення панелі.",
       "appearance-display-mode-description": "Виберіть, коли панель видима.",
+      "appearance-enable-exclusion-zone-inset-description": "Зменшіть зону виключення на 1 фізичний піксель, щоб вікна впритул ідеально заходили під край Bar.",
+      "appearance-enable-exclusion-zone-inset-label": "Внутрішня зона виключення",
       "appearance-floating-description": "Відображати панель як плаваючу 'капсулу'. Примітка: Це перемістить кути екрана до країв.",
       "appearance-floating-label": "Плаваюча панель (Острівець)",
       "appearance-font-scale-description": "Налаштуйте масштаб розміру шрифту для тексту, що відображається на панелі.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "Увімкніть режим редагування, щоб переміщувати та змінювати розташування віджетів робочого столу. У ввімкненому стані віджети відображають контур перетягування, і їх можна переміщувати.",
       "edit-mode-exit-button": "Вийти з режиму редагування",
       "edit-mode-grid-snap-label": "Прив'язка до сітки",
+      "edit-mode-grid-snap-scale-label": "Масштаб прив'язки до сітки",
       "edit-mode-label": "Режим редагування",
       "enabled-description": "Увімкнути або вимкнути віджети робочого столу повністю.",
       "enabled-label": "Увімкнути віджети робочого столу",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Команди виконуються через оболонку (sh -lc)<br>• Команди запускаються у фоні (відокремлено)<br>• Кнопки тестування виконують команди з поточними значеннями",
-      "info-parameters-description": "• Хук шпалер: $1 = шлях до шпалер, $2 = ім'я екрана<br>• Хук перемикання теми: $1 = true/false (стан темного режиму)<br>• Хуки блокування/розблокування екрана: Без параметрів<br>• Хуки режиму продуктивності: Без параметрів<br>• Хук сеансу: $1 = дія (вимкнення/перезавантаження)",
+      "info-parameters-description": "• Хук шпалер: $1 = шлях до шпалер, $2 = назва екрана<br>• Хук перемикання теми: $1 = true/false (стан Dark Mode)<br>• Хуки блокування/розблокування екрана: $1 = lock/unlock (стан блокування екрана)<br>• Хуки режиму продуктивності: Без параметрів<br>• Хук сесії: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Доступні параметри",
       "noctalia-started-description": "Команда для виконання після завершення завантаження Noctalia.",
       "noctalia-started-label": "Noctalia запущено",
@@ -1684,7 +1692,9 @@
       "shadows-label": "Тіні",
       "title": "Користувацький інтерфейс",
       "tooltips-description": "Увімкнути або вимкнути підказки в інтерфейсі.",
-      "tooltips-label": "Показувати підказки"
+      "tooltips-label": "Показувати підказки",
+      "translucent-widgets-description": "Зробіть кнопки, вкладки та інші віджети всередині панелей напівпрозорими.",
+      "translucent-widgets-label": "Напівпрозорі віджети"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Алфавітний",

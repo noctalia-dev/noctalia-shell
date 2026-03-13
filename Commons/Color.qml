@@ -324,6 +324,23 @@ Singleton {
     }
   }
 
+  // Smart alpha calculation: automatically makes light mode more transparent
+  function smartAlpha(baseColor, minAlpha = 0.4) {
+    if (!Settings.data.ui.translucentWidgets)
+      return baseColor;
+
+    let alpha = Math.max(root.panelBackgroundOpacity, minAlpha);
+
+    // Combine with the base color's existing alpha
+    let resultAlpha = Math.max(0, baseColor.a - (1.0 - alpha));
+    return Qt.alpha(baseColor, resultAlpha);
+  }
+
+  readonly property real panelBackgroundOpacity: {
+    let baseOpacity = Settings.data.ui.panelBackgroundOpacity;
+    return Settings.data.colorSchemes.darkMode ? baseOpacity : Math.pow(baseOpacity, 2);
+  }
+
   readonly property var colorKeyModel: [
     {
       "key": "none",

@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Inverti direzione del cambio workspace quando scorri.",
       "reverse-scrolling-label": "Inverti scorrimento",
       "show-applications-description": "Mostra icone applicazioni dentro ogni workspace.",
+      "show-applications-hover-description": "Mostra le icone delle applicazioni all'interno di ogni spazio di lavoro quando lo spazio di lavoro viene sorvolato.",
+      "show-applications-hover-label": "Mostra applicazioni al passaggio del mouse",
       "show-applications-label": "Mostra applicazioni",
       "show-badge-description": "Mostra badge numero workspace in modalità raggruppata.",
       "show-badge-label": "Mostra badge workspace",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Tutte le batterie (combinate)",
     "battery-health": "Stato batteria",
     "battery-level": "Livello batteria",
     "capacity-level": "Capacità: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "Diventa sostenitore",
       "changelog": "Visualizza changelog",
+      "changelog-on-startup": "Mostra il changelog all'aggiornamento",
+      "changelog-on-startup-desc": "Mostra automaticamente il changelog quando Noctalia viene aggiornato.",
       "contributors-description": "Un ringraziamento al nostro {count} contributore <b>fantastico</b>!",
       "contributors-description-plural": "Un ringraziamento ai nostri {count} contributori <b>fantastici</b>!",
       "copy-info": "Copia info",
@@ -824,6 +829,8 @@
       "appearance-density-label": "Densità barra",
       "appearance-desc": "Personalizza aspetto e posizione della barra.",
       "appearance-display-mode-description": "Scegli quando la barra è visibile.",
+      "appearance-enable-exclusion-zone-inset-description": "Riduci la zona di esclusione di 1 pixel fisico in modo che le finestre a filo si estendano perfettamente sotto il bordo della Bar.",
+      "appearance-enable-exclusion-zone-inset-label": "Zona di esclusione interna",
       "appearance-floating-description": "Mostra la barra come 'pill' flottante.",
       "appearance-floating-label": "Barra flottante",
       "appearance-font-scale-description": "Regola la scala dimensione font per il testo mostrato nella barra.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "Abilita modalità modifica per spostare e riposizionare i widget desktop. Quando attiva, i widget mostrano un contorno di trascinamento e possono essere riposizionati.",
       "edit-mode-exit-button": "Esci da modalità modifica",
       "edit-mode-grid-snap-label": "Aggancio griglia",
+      "edit-mode-grid-snap-scale-label": "Scala di aggancio alla griglia",
       "edit-mode-label": "Modalità modifica",
       "enabled-description": "Abilita o disabilita completamente i widget desktop.",
       "enabled-label": "Abilita widget desktop",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• I comandi vengono eseguiti via shell (sh -lc)<br>• I comandi girano in background (staccati)<br>• I pulsanti test eseguono con i valori correnti",
-      "info-parameters-description": "• Hook sfondo: $1 = percorso sfondo, $2 = nome schermo<br>• Hook cambio tema: $1 = true/false (stato Modalità Scura)<br>• Hook blocco/sblocco schermo: nessun parametro<br>• Hook modalità prestazioni: nessun parametro<br>• Hook sessione: $1 = azione (shutdown/reboot)",
+      "info-parameters-description": "• Hook sfondo: $1 = percorso sfondo, $2 = nome schermo<br>• Hook cambio tema: $1 = true/false (stato Dark Mode)<br>• Hook blocco/sblocco schermo: $1 = lock/unlock (stato blocco schermo)<br>• Hook modalità prestazioni: Nessun parametro<br>• Hook sessione: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Parametri disponibili",
       "noctalia-started-description": "Comando da eseguire quando Noctalia ha finito il caricamento.",
       "noctalia-started-label": "Noctalia avviata",
@@ -1684,7 +1692,9 @@
       "shadows-label": "Ombre esterne",
       "title": "Interfaccia utente",
       "tooltips-description": "Abilita o disabilita i tooltip in tutta l’interfaccia.",
-      "tooltips-label": "Mostra tooltip"
+      "tooltips-label": "Mostra tooltip",
+      "translucent-widgets-description": "Rendi semitrasparenti i pulsanti, le schede e gli altri widget all'interno dei pannelli.",
+      "translucent-widgets-label": "Widget traslucidi"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetico",

@@ -26,10 +26,15 @@ Variants {
 
     required property ShellScreen modelData
 
-    property ListModel notificationModel: NotificationService.activeList
+    property ListModel notificationModel: NotificationService.popupModel
 
-    // Always create window (but with 0x0 dimensions when no notifications)
-    active: notificationModel.count > 0 || delayTimer.running
+    // Deferred activation to prevent re-entrant QML incubation crash.
+    // Direct binding to notificationModel.count would activate the Loader
+    // synchronously during ListModel.insert(), causing nested incubation
+    // (Loader + inner Repeater both processing the model) which crashes
+    // the V4 engine in QV4::Object::insertMember.
+    property bool shouldBeActive: false
+    active: shouldBeActive || delayTimer.running
 
     // Keep loader active briefly after last notification to allow animations to complete
     Timer {
@@ -38,10 +43,23 @@ Variants {
       repeat: false
     }
 
+    // Deferred activation timer - activates Loader on next event loop iteration
+    Timer {
+      id: activationTimer
+      interval: 0
+      repeat: false
+      onTriggered: root.shouldBeActive = true
+    }
+
     Connections {
       target: notificationModel
       function onCountChanged() {
-        if (notificationModel.count === 0 && root.active) {
+        if (notificationModel.count > 0) {
+          if (!root.shouldBeActive) {
+            activationTimer.restart();
+          }
+        } else if (root.shouldBeActive) {
+          root.shouldBeActive = false;
           delayTimer.restart();
         }
       }
@@ -159,7 +177,7 @@ Variants {
             }
           } catch (e) {
             // Service fallback if delegate is already invalid
-            NotificationService.dismissActiveNotification(notificationId);
+            NotificationService.dismissPopup(notificationId);
           }
         };
 
@@ -351,7 +369,7 @@ Variants {
               interval: Style.animationSlow
               repeat: false
               onTriggered: {
-                NotificationService.dismissActiveNotification(notificationId);
+                NotificationService.dismissPopup(notificationId);
               }
             }
 

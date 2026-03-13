@@ -59,13 +59,18 @@ ShapePath {
   readonly property bool shouldFlatten: panelBg ? ShapeCornerHelper.shouldFlatten(panelWidth, panelHeight, radius) : false
   readonly property real effectiveRadius: shouldFlatten ? ShapeCornerHelper.getFlattenedRadius(Math.min(panelWidth, panelHeight), radius) : radius
 
+  // Minimum safe arc radius — prevents zero-displacement zero-radius PathArcs
+  // that crash qTriangulate in CurveRenderer. 0.01px is sub-pixel and invisible.
+  readonly property real _minR: 0.01
+
   // Helper function for getting corner radius based on state
   function getCornerRadius(cornerState) {
-    // State -1 = no radius (flat corner)
+    // State -1 = flat corner — use minimum safe radius instead of 0
+    // to prevent degenerate PathArc (zero displacement + zero radius)
     if (cornerState === -1)
-      return 0;
-    // All other states use effectiveRadius
-    return effectiveRadius;
+      return _minR;
+    // All other states use effectiveRadius (clamped to safe minimum)
+    return Math.max(_minR, effectiveRadius);
   }
 
   // Per-corner multipliers and radii based on panelBg's corner states
@@ -89,7 +94,9 @@ ShapePath {
   strokeWidth: -1 // No stroke, fill only
 
   // Start point - use tiny off-screen non-degenerate fallback when not renderable.
-  startX: isRenderable ? (panelX + tlRadius * tlMultX) : -1
+  // Fallback forms a 1×1 off-screen square where each edge is split between a PathLine
+  // and a PathArc, ensuring no arc has zero displacement (which can crash qTriangulate).
+  startX: isRenderable ? (panelX + tlRadius * tlMultX) : -0.75
   startY: isRenderable ? panelY : -1
 
   fillColor: isRenderable ? effectiveBackgroundColor : "transparent"
@@ -100,14 +107,14 @@ ShapePath {
 
   // Top edge (moving right)
   PathLine {
-    relativeX: root.isRenderable ? (root.panelWidth - root.tlRadius * root.tlMultX - root.trRadius * root.trMultX) : 1
+    relativeX: root.isRenderable ? (root.panelWidth - root.tlRadius * root.tlMultX - root.trRadius * root.trMultX) : 0.75
     relativeY: 0
   }
 
   // Top-right corner arc
   PathArc {
     relativeX: root.isRenderable ? (root.trRadius * root.trMultX) : 0
-    relativeY: root.isRenderable ? (root.trRadius * root.trMultY) : 0
+    relativeY: root.isRenderable ? (root.trRadius * root.trMultY) : 0.25
     radiusX: root.isRenderable ? root.trRadius : 0
     radiusY: root.isRenderable ? root.trRadius : 0
     direction: ShapeCornerHelper.getArcDirection(root.trMultX, root.trMultY)
@@ -116,12 +123,12 @@ ShapePath {
   // Right edge (moving down)
   PathLine {
     relativeX: 0
-    relativeY: root.isRenderable ? (root.panelHeight - root.trRadius * root.trMultY - root.brRadius * root.brMultY) : 1
+    relativeY: root.isRenderable ? (root.panelHeight - root.trRadius * root.trMultY - root.brRadius * root.brMultY) : 0.75
   }
 
   // Bottom-right corner arc
   PathArc {
-    relativeX: root.isRenderable ? (-root.brRadius * root.brMultX) : 0
+    relativeX: root.isRenderable ? (-root.brRadius * root.brMultX) : -0.25
     relativeY: root.isRenderable ? (root.brRadius * root.brMultY) : 0
     radiusX: root.isRenderable ? root.brRadius : 0
     radiusY: root.isRenderable ? root.brRadius : 0
@@ -130,14 +137,14 @@ ShapePath {
 
   // Bottom edge (moving left)
   PathLine {
-    relativeX: root.isRenderable ? (-(root.panelWidth - root.brRadius * root.brMultX - root.blRadius * root.blMultX)) : -1
+    relativeX: root.isRenderable ? (-(root.panelWidth - root.brRadius * root.brMultX - root.blRadius * root.blMultX)) : -0.75
     relativeY: 0
   }
 
   // Bottom-left corner arc
   PathArc {
     relativeX: root.isRenderable ? (-root.blRadius * root.blMultX) : 0
-    relativeY: root.isRenderable ? (-root.blRadius * root.blMultY) : 0
+    relativeY: root.isRenderable ? (-root.blRadius * root.blMultY) : -0.25
     radiusX: root.isRenderable ? root.blRadius : 0
     radiusY: root.isRenderable ? root.blRadius : 0
     direction: ShapeCornerHelper.getArcDirection(root.blMultX, root.blMultY)
@@ -146,12 +153,12 @@ ShapePath {
   // Left edge (moving up) - closes the path back to start
   PathLine {
     relativeX: 0
-    relativeY: root.isRenderable ? (-(root.panelHeight - root.blRadius * root.blMultY - root.tlRadius * root.tlMultY)) : -1
+    relativeY: root.isRenderable ? (-(root.panelHeight - root.blRadius * root.blMultY - root.tlRadius * root.tlMultY)) : -0.75
   }
 
   // Top-left corner arc (back to start)
   PathArc {
-    relativeX: root.isRenderable ? (root.tlRadius * root.tlMultX) : 0
+    relativeX: root.isRenderable ? (root.tlRadius * root.tlMultX) : 0.25
     relativeY: root.isRenderable ? (-root.tlRadius * root.tlMultY) : 0
     radiusX: root.isRenderable ? root.tlRadius : 0
     radiusY: root.isRenderable ? root.tlRadius : 0

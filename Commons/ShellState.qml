@@ -109,6 +109,17 @@ Singleton {
     save();
   }
 
+  // Migrate usage from one key to another, merging counts in a single save
+  function migrateLauncherUsage(fromKey, toKey) {
+    let counts = Object.assign({}, adapter.launcherUsage || {});
+    const fromCount = typeof counts[fromKey] === 'number' && isFinite(counts[fromKey]) ? counts[fromKey] : 0;
+    const toCount = typeof counts[toKey] === 'number' && isFinite(counts[toKey]) ? counts[toKey] : 0;
+    counts[toKey] = toCount + fromCount;
+    delete counts[fromKey];
+    adapter.launcherUsage = counts;
+    save();
+  }
+
   // Debounced save timer
   Timer {
     id: saveTimer

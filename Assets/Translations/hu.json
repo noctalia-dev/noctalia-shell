@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Görgetéskor fordított irányba váltson a munkaterületek között.",
       "reverse-scrolling-label": "Görgetés megfordítása",
       "show-applications-description": "Alkalmazásikonok megjelenítése minden munkaterületen belül.",
+      "show-applications-hover-description": "Alkalmazásikonok megjelenítése minden munkaterületen belül, amikor a munkaterület fölé viszi az egeret.",
+      "show-applications-hover-label": "Alkalmazások megjelenítése rámutatáskor",
       "show-applications-label": "Alkalmazások megjelenítése",
       "show-badge-description": "Munkaterület számának jelzése csoportosított módban.",
       "show-badge-label": "Munkafelület jelvény megjelenítése",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Összes akkumulátor (kombinálva)",
     "battery-health": "Akkumulátor állapota",
     "battery-level": "Akkumulátor töltöttségi szintje",
     "capacity-level": "Kapacitás: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "Legyél támogató",
       "changelog": "Változások megtekintése",
+      "changelog-on-startup": "Változási napló megjelenítése frissítéskor",
+      "changelog-on-startup-desc": "Automatikusan mutassa a változási naplót, amikor a Noctalia frissül.",
       "contributors-description": "Köszönet a(z) {count} <b>fantasztikus</b> közreműködőnknek!",
       "contributors-description-plural": "Köszönet a(z) {count} <b>fantasztikus</b> közreműködőnknek!",
       "copy-info": "Információk másolása",
@@ -824,6 +829,8 @@
       "appearance-density-label": "Sáv sűrűsége",
       "appearance-desc": "A sáv megjelenésének és pozíciójának testreszabása.",
       "appearance-display-mode-description": "Mikor látható a sáv.",
+      "appearance-enable-exclusion-zone-inset-description": "Csökkentse a kizárási zónát 1 fizikai pixellel, hogy a Bar széle alá tökéletesen illeszkedjenek a szélén lévő ablakok.",
+      "appearance-enable-exclusion-zone-inset-label": "Behúzott kizárási zóna",
       "appearance-floating-description": "Megjeleníti a sávot lebegő „kapszulaként”.",
       "appearance-floating-label": "Lebegő sáv",
       "appearance-font-scale-description": "A betűméret skálájának beállítása a sávon megjelenő szöveghez.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "Engedélyezi a szerkesztési módot az asztali widgetek mozgatásához és áthelyezéséhez. Ha engedélyezve van, a widgetek húzható körvonalat mutatnak, és áthelyezhetők.",
       "edit-mode-exit-button": "Kilépés a szerkesztési módból",
       "edit-mode-grid-snap-label": "Rácshoz igazítás",
+      "edit-mode-grid-snap-scale-label": "Rácsra illesztés skálája",
       "edit-mode-label": "Szerkesztési mód",
       "enabled-description": "Asztali widgetek engedlyezése vagy letiltása.",
       "enabled-label": "Asztali widgetek engedélyezése",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -lc)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
-      "info-parameters-description": "• Háttérkép horog: $1 = háttérkép útvonala, $2 = képernyő neve<br>• Téma váltó horog: $1 = igaz/hamis (Sötét mód állapota)<br>• Képernyő zárolás/feloldás horgok: Nincsenek paraméterek<br>• Teljesítmény mód horgok: Nincsenek paraméterek<br>• Munkamenet horog: $1 = művelet (leállítás/újraindítás)",
+      "info-parameters-description": "• Háttérkép hook: $1 = háttérkép útvonala, $2 = képernyő neve<br>• Téma váltó hook: $1 = true/false (Dark Mode állapot)<br>• Képernyő zár/feloldó hookok: $1 = lock/unlock (képernyőzár állapota)<br>• Teljesítmény mód hookok: Nincs paraméter<br>• Munkamenet hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Elérhető paraméterek",
       "noctalia-started-description": "Parancs, ami akkor fut le, amikor a Noctalia betöltése befejeződött.",
       "noctalia-started-label": "Noctalia elindult",
@@ -1684,7 +1692,9 @@
       "shadows-label": "Árnyékok",
       "title": "Felhasználói felület",
       "tooltips-description": "Engedélyezi vagy letiltja az eszköztippeket a felületen.",
-      "tooltips-label": "Eszköztippek megjelenítése"
+      "tooltips-label": "Eszköztippek megjelenítése",
+      "translucent-widgets-description": "Tedd a gombokat, füleket és egyéb widgeteket a paneleken belül félig átlátszóvá.",
+      "translucent-widgets-label": "Áttetsző widgetek"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Ábécérend",

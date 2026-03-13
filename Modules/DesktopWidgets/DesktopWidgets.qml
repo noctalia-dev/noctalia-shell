@@ -442,6 +442,15 @@ Variants {
               }
 
               NIconButton {
+                icon: "grid-3x3"
+                visible: Settings.data.desktopWidgets.gridSnap
+                tooltipText: I18n.tr("panels.desktop-widgets.edit-mode-grid-snap-scale-label")
+                colorBg: Settings.data.desktopWidgets.gridSnapScale ? Color.mPrimary : Color.mSurfaceVariant
+                colorFg: Settings.data.desktopWidgets.gridSnapScale ? Color.mOnPrimary : Color.mPrimary
+                onClicked: Settings.data.desktopWidgets.gridSnapScale = !Settings.data.desktopWidgets.gridSnapScale
+              }
+
+              NIconButton {
                 icon: "grid-4x4"
                 tooltipText: I18n.tr("panels.desktop-widgets.edit-mode-grid-snap-label")
                 colorBg: Settings.data.desktopWidgets.gridSnap ? Color.mPrimary : Color.mSurfaceVariant

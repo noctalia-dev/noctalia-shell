@@ -294,6 +294,7 @@ Singleton {
                                     "hideUnoccupied": false,
                                     "characterCount": 2,
                                     "showApplications": false,
+                                    "showApplicationsHover": false,
                                     "showLabelsOnlyWhenOccupied": true,
                                     "colorizeIcons": false,
                                     "unfocusedIconsOpacity": 1.0,

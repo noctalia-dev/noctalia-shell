@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "스크롤할 때 작업 공간 전환 방향을 반대로 합니다.",
       "reverse-scrolling-label": "스크롤 반전",
       "show-applications-description": "각 작업 공간 내부에 애플리케이션 아이콘을 표시합니다.",
+      "show-applications-hover-description": "작업 공간에 마우스를 올렸을 때 각 작업 공간 내에 애플리케이션 아이콘을 표시합니다.",
+      "show-applications-hover-label": "마우스 오버 시 애플리케이션 표시",
       "show-applications-label": "애플리케이션 표시",
       "show-badge-description": "그룹화 모드에서 작업 공간 번호 배지를 표시합니다.",
       "show-badge-label": "작업 공간 배지 표시",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "모든 배터리 (결합됨)",
     "battery-health": "배터리 수명",
     "battery-level": "배터리 잔량",
     "capacity-level": "용량: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "후원자 되기",
       "changelog": "변경 로그 보기",
+      "changelog-on-startup": "업데이트 시 변경 로그 표시",
+      "changelog-on-startup-desc": "Noctalia 업데이트 시 변경 로그를 자동으로 표시합니다.",
       "contributors-description": "{count}명의 <b>멋진</b> 기여자에게 감사를 전합니다!",
       "contributors-description-plural": "{count}명의 <b>멋진</b> 기여자들에게 감사를 전합니다!",
       "copy-info": "정보 복사",
@@ -824,6 +829,8 @@
       "appearance-density-label": "바 밀도",
       "appearance-desc": "바의 모양과 위치를 사용자 지정합니다.",
       "appearance-display-mode-description": "바가 언제 표시될지 선택하세요.",
+      "appearance-enable-exclusion-zone-inset-description": "제외 영역을 1 물리 픽셀만큼 줄여 Bar 가장자리 아래로 창이 완벽하게 겹치도록 합니다.",
+      "appearance-enable-exclusion-zone-inset-label": "인셋 제외 영역",
       "appearance-floating-description": "바를 플로팅 '알약' 형태로 표시합니다.",
       "appearance-floating-label": "플로팅 바",
       "appearance-font-scale-description": "바에 표시되는 텍스트의 글꼴 크기 배율을 조정합니다.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "바탕 화면 위젯을 이동하고 재배치하려면 편집 모드를 활성화하세요. 활성화되면 위젯에 드래그 윤곽선이 표시되며 재배치할 수 있습니다.",
       "edit-mode-exit-button": "편집 모드 종료",
       "edit-mode-grid-snap-label": "그리드 스냅",
+      "edit-mode-grid-snap-scale-label": "그리드 스냅 배율",
       "edit-mode-label": "편집 모드",
       "enabled-description": "바탕 화면 위젯을 완전히 활성화하거나 비활성화합니다.",
       "enabled-label": "바탕 화면 위젯 활성화",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 명령은 셸(sh -lc)을 통해 실행됩니다.<br>• 명령은 백그라운드(detached)에서 실행됩니다.<br>• 테스트 버튼은 현재 값으로 실행됩니다.",
-      "info-parameters-description": "• 배경화면 훅: $1 = 배경화면 경로, $2 = 화면 이름<br>• 테마 전환 훅: $1 = true/false (다크 모드 상태)<br>• 화면 잠금/잠금 해제 훅: 매개변수 없음<br>• 성능 모드 훅: 매개변수 없음<br>• 세션 훅: $1 = 작업 (shutdown/reboot)",
+      "info-parameters-description": "• 배경화면 훅: $1 = 배경화면 경로, $2 = 화면 이름<br>• 테마 전환 훅: $1 = true/false (Dark Mode 상태)<br>• 화면 잠금/잠금 해제 훅: $1 = lock/unlock (화면 잠금 상태)<br>• 성능 모드 훅: 매개변수 없음<br>• 세션 훅: $1 = action (shutdown/reboot)",
       "info-parameters-label": "사용 가능한 매개변수",
       "noctalia-started-description": "Noctalia 로딩이 완료되었을 때 실행할 명령입니다.",
       "noctalia-started-label": "Noctalia 시작됨",
@@ -1684,7 +1692,9 @@
       "shadows-label": "그림자",
       "title": "사용자 인터페이스",
       "tooltips-description": "인터페이스 전반에 툴팁을 활성화하거나 비활성화합니다.",
-      "tooltips-label": "툴팁 표시"
+      "tooltips-label": "툴팁 표시",
+      "translucent-widgets-description": "패널 내의 버튼, 탭 및 기타 위젯을 반투명하게 만듭니다.",
+      "translucent-widgets-label": "반투명 위젯"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "알파벳순",

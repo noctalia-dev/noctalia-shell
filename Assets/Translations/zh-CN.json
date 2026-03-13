@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "滚动时反转工作区切换方向。",
       "reverse-scrolling-label": "反转滚动",
       "show-applications-description": "在每个工作区内显示应用程序图标。",
+      "show-applications-hover-description": "当鼠标悬停在工作区上时，在每个工作区内显示应用程序图标。",
+      "show-applications-hover-label": "鼠标悬停时显示应用程序",
       "show-applications-label": "显示应用程序",
       "show-badge-description": "在分组模式下显示工作区编号徽章。",
       "show-badge-label": "显示工作区徽章",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "所有电池（组合）",
     "battery-health": "电池健康",
     "battery-level": "电池电量",
     "capacity-level": "容量：{level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "成为支持者",
       "changelog": "查看更改日志",
+      "changelog-on-startup": "更新时显示更新日志",
+      "changelog-on-startup-desc": "Noctalia 更新时自动显示更新日志。",
       "contributors-description": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
       "contributors-description-plural": "向我们 {count} 位<b>超棒的</b>贡献者致敬！",
       "copy-info": "复制信息",
@@ -824,6 +829,8 @@
       "appearance-density-label": "状态栏密度",
       "appearance-desc": "自定义状态栏的外观和位置。",
       "appearance-display-mode-description": "选择栏何时可见。",
+      "appearance-enable-exclusion-zone-inset-description": "减少排除区域1个物理像素，以便齐平的窗口完美地延伸到 Bar 边缘下方。",
+      "appearance-enable-exclusion-zone-inset-label": "内嵌排除区域",
       "appearance-floating-description": "将状态栏显示为浮动的“药丸”形状。",
       "appearance-floating-label": "浮动状态栏",
       "appearance-font-scale-description": "调整栏中显示的文本的字体大小比例。",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "启用编辑模式以移动和重新定位桌面小组件。启用后，小组件会显示拖动轮廓，并且可以重新定位。",
       "edit-mode-exit-button": "退出编辑模式",
       "edit-mode-grid-snap-label": "网格对齐",
+      "edit-mode-grid-snap-scale-label": "网格吸附比例",
       "edit-mode-label": "编辑模式",
       "enabled-description": "完全启用或禁用桌面小部件。",
       "enabled-label": "启用桌面小部件",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 命令通过 shell 执行（sh -lc）<br>• 命令在后台运行（分离）<br>• 测试按钮使用当前值执行",
-      "info-parameters-description": "• 壁纸钩子：$1 = 壁纸路径，$2 = 屏幕名称<br>• 主题切换钩子：$1 = true/false（深色模式状态）<br>• 屏幕锁定/解锁钩子：无参数<br>• 性能模式钩子：无参数<br>• 会话钩子：$1 = 操作（关机/重启）",
+      "info-parameters-description": "• 壁纸挂钩: $1 = 壁纸路径, $2 = 屏幕名称<br>• 主题切换挂钩: $1 = true/false (Dark Mode状态)<br>• 屏幕锁定/解锁挂钩: $1 = lock/unlock (屏幕锁定状态)<br>• 性能模式挂钩: 无参数<br>• 会话挂钩: $1 = action (shutdown/reboot)",
       "info-parameters-label": "可用参数",
       "noctalia-started-description": "Noctalia 加载完成后要执行的命令。",
       "noctalia-started-label": "Noctalia 已启动",
@@ -1684,7 +1692,9 @@
       "shadows-label": "阴影",
       "title": "用户界面",
       "tooltips-description": "启用或禁用整个界面的提示信息。",
-      "tooltips-label": "显示提示信息（Tooltip）"
+      "tooltips-label": "显示提示信息（Tooltip）",
+      "translucent-widgets-description": "使面板内的按钮、选项卡和其他小部件半透明。",
+      "translucent-widgets-label": "半透明小部件"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "按字母顺序",

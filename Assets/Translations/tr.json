@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Kaydırırken çalışma alanı geçiş yönünü tersine çevir.",
       "reverse-scrolling-label": "Ters kaydırma",
       "show-applications-description": "Her çalışma alanının içinde uygulama simgelerini görüntüle.",
+      "show-applications-hover-description": "Çalışma alanının üzerine gelindiğinde, her çalışma alanının içinde uygulama simgelerini görüntüle.",
+      "show-applications-hover-label": "Üzerine gelindiğinde uygulamaları göster",
       "show-applications-label": "Uygulamaları göster",
       "show-badge-description": "Gruplandırılmış modda çalışma alanı numarası işaretini göster.",
       "show-badge-label": "Çalışma alanı rozetini göster",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Tüm bataryalar (birleşik)",
     "battery-health": "Pil sağlığı",
     "battery-level": "Pil seviyesi",
     "capacity-level": "Kapasite: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "Destekçi ol",
       "changelog": "Değişiklik günlüğünü görüntüle",
+      "changelog-on-startup": "Güncellemede değişiklik günlüğünü göster",
+      "changelog-on-startup-desc": "Noctalia güncellendiğinde değişiklik günlüğünü otomatik olarak göster.",
       "contributors-description": "{count} <b>harika</b> katılımcımıza <b>teşekkürler</b>!",
       "contributors-description-plural": "{count} <b>harika</b> katılımcımıza <b>teşekkürler</b>!",
       "copy-info": "Bilgileri kopyala",
@@ -824,6 +829,8 @@
       "appearance-density-label": "Araç Çubuğu yoğunluğu",
       "appearance-desc": "Araç çubuğunun görünümünü ve konumunu özelleştirin.",
       "appearance-display-mode-description": "Çubuğun ne zaman görünür olacağını seçin.",
+      "appearance-enable-exclusion-zone-inset-description": "Hariç tutma bölgesini 1 fiziksel piksel kadar azaltın, böylece Bar kenarının altına tam oturan pencereler kusursuzca taşar.",
+      "appearance-enable-exclusion-zone-inset-label": "Girintili dışlama bölgesi",
       "appearance-floating-description": "Araç çubuğunu yüzen bir 'kapsül' olarak görüntüler. Not: Bu, ekran köşelerini kenarlara taşıyacaktır.",
       "appearance-floating-label": "Yüzen araç çubuğu",
       "appearance-font-scale-description": "Çubukta görüntülenen metin için yazı tipi boyutu ölçeğini ayarlayın.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "Masaüstü araçlarını taşımak ve yeniden konumlandırmak için düzenleme modunu etkinleştirin. Etkinleştirildiğinde, araçlar bir sürükleme ana hattı gösterir ve yeniden konumlandırılabilir.",
       "edit-mode-exit-button": "Düzenleme modundan çık",
       "edit-mode-grid-snap-label": "Izgaraya hizala",
+      "edit-mode-grid-snap-scale-label": "Izgara hizalama ölçeği",
       "edit-mode-label": "Düzenleme modu",
       "enabled-description": "Masaüstü araçlarını tamamen etkinleştir veya devre dışı bırak.",
       "enabled-label": "Masaüstü araçlarını etkinleştir",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Komutlar kabuk (sh -lc) ile yürütülür<br>• Komutlar arka planda yürütülür (ayrık)<br>• Test düğmeleri mevcut değerlerle yürütülür",
-      "info-parameters-description": "• Duvar kağıdı kancası: $1 = duvar kağıdı yolu, $2 = ekran adı<br>• Tema değiştirme kancası: $1 = doğru/yanlış (Karanlık Mod durumu)<br>• Ekran kilitleme/kilidi açma kancaları: Parametre yok<br>• Performans modu kancaları: Parametre yok<br>• Oturum kancası: $1 = eylem (kapatma/yeniden başlatma)",
+      "info-parameters-description": "• Duvar Kağıdı Kancası: $1 = duvar kağıdı yolu, $2 = ekran adı<br>• Tema Geçiş Kancası: $1 = true/false (Dark Mode durumu)<br>• Ekran Kilitleme/Kilit Açma Kancaları: $1 = lock/unlock (ekran kilidi durumu)<br>• Performans Modu Kancaları: Parametre yok<br>• Oturum Kancası: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Kullanılabilir parametreler",
       "noctalia-started-description": "Noctalia yüklendiğinde çalıştırılacak komut.",
       "noctalia-started-label": "Noctalia başladı",
@@ -1684,7 +1692,9 @@
       "shadows-label": "Gölge efektleri",
       "title": "Kullanıcı arayüzü",
       "tooltips-description": "Arayüz genelindeki ipuçlarını etkinleştirin veya devre dışı bırakın.",
-      "tooltips-label": "İpuçlarını göster"
+      "tooltips-label": "İpuçlarını göster",
+      "translucent-widgets-description": "Panellerin içindeki düğmeleri, sekmeleri ve diğer widget'ları yarı saydam yapın.",
+      "translucent-widgets-label": "Yarı saydam widget'lar"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetik",

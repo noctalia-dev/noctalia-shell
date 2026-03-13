@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Vänd riktningen för arbetsyteväxling vid rullning.",
       "reverse-scrolling-label": "Omvänd rullning",
       "show-applications-description": "Visa applikationsikoner i varje arbetsyta.",
+      "show-applications-hover-description": "Visa programikoner i varje arbetsyta när arbetsytan hovras över.",
+      "show-applications-hover-label": "Visa applikationer vid hovring",
       "show-applications-label": "Visa applikationer",
       "show-badge-description": "Visa arbetsytans nummerskylt i grupperat läge.",
       "show-badge-label": "Visa arbetsytans skylt",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Alla batterier (kombinerat)",
     "battery-health": "Batteriets hälsa",
     "battery-level": "Batterinivå",
     "capacity-level": "Kapacitet: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "Bli supporter",
       "changelog": "Visa ändringslogg",
+      "changelog-on-startup": "Visa ändringslogg vid uppdatering",
+      "changelog-on-startup-desc": "Visa ändringsloggen automatiskt när Noctalia uppdateras.",
       "contributors-description": "Tack till våra {count} <b>fantastiska</b> bidragsgivare!",
       "contributors-description-plural": "Tack till våra {count} <b>fantastiska</b> bidragsgivare!",
       "copy-info": "Kopiera info",
@@ -824,6 +829,8 @@
       "appearance-density-label": "Stapeldensitet",
       "appearance-desc": "Anpassa stapelns utseende och position.",
       "appearance-display-mode-description": "Välj när listen är synlig.",
+      "appearance-enable-exclusion-zone-inset-description": "Minska exklusionszonen med 1 fysisk pixel så att fönster som ligger kant i kant perfekt överlappar under Bar-kanten.",
+      "appearance-enable-exclusion-zone-inset-label": "Infälld uteslutningszon",
       "appearance-floating-description": "Visa stapeln som en flytande 'piller'.",
       "appearance-floating-label": "Flytande stapel",
       "appearance-font-scale-description": "Justera skalningen av teckenstorleken för text som visas i fältet.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "Aktivera redigeringsläge för att flytta och omplacera skrivbordswidgets. När det är aktiverat visas en dragram runt widgets och de kan omplaceras.",
       "edit-mode-exit-button": "Avsluta redigeringsläge",
       "edit-mode-grid-snap-label": "Rutnätsfästning",
+      "edit-mode-grid-snap-scale-label": "Rutnätsfästningsskala",
       "edit-mode-label": "Redigeringsläge",
       "enabled-description": "Aktivera eller inaktivera skrivbordswidgets helt.",
       "enabled-label": "Aktivera skrivbordswidgetar",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Kommandon exekveras via shell (sh -lc)<br>• Kommandon körs i bakgrunden (fristående)<br>• Testknappar exekveras med aktuella värden",
-      "info-parameters-description": "• Bakgrundsbildskrok: $1 = bakgrundsbildens sökväg, $2 = skärmnamn<br>• Temaväxlingskrok: $1 = sant/falskt (mörkt läge)<br>• Skärmlåsnings-/upplåsningskrokar: Inga parametrar<br>• Prestandalägeskrokar: Inga parametrar<br>• Sessionskrok: $1 = åtgärd (stänga av/starta om)",
+      "info-parameters-description": "• Bakgrundsbildskrok: $1 = bakgrundsbildens sökväg, $2 = skärmnamn<br>• Temaväxlingskrok: $1 = true/false (Dark Mode-status)<br>• Skärmlås/upplåsningskrokar: $1 = lock/unlock (skärmlåsets status)<br>• Prestandalägeskrokar: Inga parametrar<br>• Sessionskrok: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Tillgängliga parametrar",
       "noctalia-started-description": "Kommando som ska utföras när Noctalia har laddats klart.",
       "noctalia-started-label": "Noctalia startat",
@@ -1684,7 +1692,9 @@
       "shadows-label": "Fallskugga",
       "title": "Användargränssnitt",
       "tooltips-description": "Aktivera eller inaktivera verktygstips i hela gränssnittet.",
-      "tooltips-label": "Visa verktygstips"
+      "tooltips-label": "Visa verktygstips",
+      "translucent-widgets-description": "Gör knappar, flikar och andra widgets inuti paneler halvtransparenta.",
+      "translucent-widgets-label": "Genomskinliga widgetar"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Alfabetiskt",

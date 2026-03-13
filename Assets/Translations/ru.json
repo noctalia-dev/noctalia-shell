@@ -309,6 +309,8 @@
       "reverse-scrolling-description": "Изменить направление переключения рабочих пространств при прокрутке.",
       "reverse-scrolling-label": "Обратная прокрутка",
       "show-applications-description": "Отображать значки приложений внутри каждого рабочего пространства.",
+      "show-applications-hover-description": "Отображать значки приложений внутри каждого рабочего пространства при наведении на него.",
+      "show-applications-hover-label": "Показывать приложения при наведении",
       "show-applications-label": "Показать приложения",
       "show-badge-description": "Показывать значок номера рабочего пространства в сгруппированном режиме.",
       "show-badge-label": "Показывать значок рабочего стола",
@@ -319,6 +321,7 @@
     }
   },
   "battery": {
+    "all-batteries": "Все батареи (объединенные)",
     "battery-health": "Состояние батареи",
     "battery-level": "Уровень заряда батареи",
     "capacity-level": "Ёмкость: {level}",
@@ -714,6 +717,8 @@
     "about": {
       "become-supporter": "Стать спонсором",
       "changelog": "Посмотреть список изменений",
+      "changelog-on-startup": "Показывать журнал изменений при обновлении",
+      "changelog-on-startup-desc": "Автоматически показывать журнал изменений при обновлении Noctalia.",
       "contributors-description": "Благодарим нашего <b>замечательного</b> участника: {count}!",
       "contributors-description-plural": "Благодарим наших <b>замечательных</b> участников: {count}!",
       "copy-info": "Копировать информацию",
@@ -824,6 +829,8 @@
       "appearance-density-label": "Плотность панели",
       "appearance-desc": "Настройка внешнего вида и положения панели.",
       "appearance-display-mode-description": "Выберите, когда панель видна.",
+      "appearance-enable-exclusion-zone-inset-description": "Уменьшите зону исключения на 1 физический пиксель, чтобы окна вплотную идеально заходили под край Bar.",
+      "appearance-enable-exclusion-zone-inset-label": "Внутренняя зона исключения",
       "appearance-floating-description": "Отображает панель как плавающую 'таблетку'.",
       "appearance-floating-label": "Плавающая панель",
       "appearance-font-scale-description": "Настройте масштаб размера шрифта для текста, отображаемого на панели.",
@@ -1020,6 +1027,7 @@
       "edit-mode-description": "Включите режим редактирования, чтобы перемещать и изменять положение виджетов рабочего стола. В этом режиме виджеты отображаются с контуром перетаскивания и могут быть перемещены.",
       "edit-mode-exit-button": "Выйти из режима редактирования",
       "edit-mode-grid-snap-label": "Привязка к сетке",
+      "edit-mode-grid-snap-scale-label": "Масштаб привязки к сетке",
       "edit-mode-label": "Режим редактирования",
       "enabled-description": "Включить или отключить виджеты рабочего стола полностью.",
       "enabled-label": "Включить виджеты рабочего стола",
@@ -1212,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Команды выполняются через shell (sh -lc)<br>• Команды выполняются в фоновом режиме (отдельно)<br>• Кнопки 'Тест' выполняются с текущими значениями",
-      "info-parameters-description": "• Хук обоев: $1 = путь к обоям, $2 = имя экрана<br>• Хук переключения темы: $1 = true/false (состояние тёмного режима)<br>• Хуки блокировки/разблокировки экрана: Без параметров<br>• Хуки режима производительности: Без параметров<br>• Хук сеанса: $1 = действие (выключением/перезагрузкой)",
+      "info-parameters-description": "• Хук обоев: $1 = путь к обоям, $2 = имя экрана<br>• Хук переключения темы: $1 = true/false (состояние Dark Mode)<br>• Хуки блокировки/разблокировки экрана: $1 = lock/unlock (состояние блокировки экрана)<br>• Хуки режима производительности: Без параметров<br>• Хук сессии: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Доступные параметры",
       "noctalia-started-description": "Команда для выполнения после завершения загрузки Noctalia.",
       "noctalia-started-label": "Noctalia запущена",
@@ -1684,7 +1692,9 @@
       "shadows-label": "Отбрасываемые тени",
       "title": "Пользовательский интерфейс",
       "tooltips-description": "Включить или отключить всплывающие подсказки во всем интерфейсе.",
-      "tooltips-label": "Показывать всплывающие подсказки"
+      "tooltips-label": "Показывать всплывающие подсказки",
+      "translucent-widgets-description": "Сделайте кнопки, вкладки и другие виджеты внутри панелей полупрозрачными.",
+      "translucent-widgets-label": "Полупрозрачные виджеты"
     },
     "wallpaper": {
       "automation-change-mode-alphabetical": "Алфавитный",
