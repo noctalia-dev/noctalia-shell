@@ -197,6 +197,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: connectedCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: connectedCol
@@ -227,6 +228,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: savedCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: savedCol
@@ -257,6 +259,7 @@ Item {
       Layout.fillWidth: true
       Layout.preferredHeight: availableCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
+      color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
         id: availableCol
@@ -677,7 +680,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: (modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid) ? Qt.alpha(Color.mPrimary, Color.panelBackgroundOpacity) : Color.mSurface
+      color: (modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
 
       ColumnLayout {
         id: deviceColumn
