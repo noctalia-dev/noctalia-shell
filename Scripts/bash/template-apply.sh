@@ -23,23 +23,31 @@ kitty)
     ;;
 
 ghostty)
-    CONFIG_FILE="$HOME/.config/ghostty/config"
-    # Check if the config file exists before trying to modify it.
-    if [ -f "$CONFIG_FILE" ]; then
-        # Check if theme is already set to noctalia (flexible spacing)
-        if grep -qE "^theme\s*=\s*noctalia$" "$CONFIG_FILE"; then
-            : # Already correct
-        elif grep -qE "^theme\s*=" "$CONFIG_FILE"; then
-            # Replace existing theme line in-place
-            sed -i -E 's/^theme\s*=.*/theme = noctalia/' "$CONFIG_FILE"
-        else
-            # Add the new theme line to the end of the file
-            echo "theme = noctalia" >>"$CONFIG_FILE"
+    # Check both potential config files
+    CONFIG_FILES=("$HOME/.config/ghostty/config" "$HOME/.config/ghostty/config.ghostty")
+    FOUND_CONFIG=false
+
+    for CONFIG_FILE in "${CONFIG_FILES[@]}"; do
+        if [ -f "$CONFIG_FILE" ]; then
+            FOUND_CONFIG=true
+            # Check if theme is already set to noctalia (flexible spacing)
+            if grep -qE "^theme\s*=\s*noctalia$" "$CONFIG_FILE"; then
+                : # Already correct
+            elif grep -qE "^theme\s*=" "$CONFIG_FILE"; then
+                # Replace existing theme line in-place
+                sed -i -E 's/^theme\s*=.*/theme = noctalia/' "$CONFIG_FILE"
+            else
+                # Add the new theme line to the end of the file
+                echo "theme = noctalia" >>"$CONFIG_FILE"
+            fi
         fi
+    done
+
+    if [ "$FOUND_CONFIG" = true ]; then
         # Only signal if ghostty is running
         pgrep -f ghostty >/dev/null && pkill -SIGUSR2 ghostty || true
     else
-        echo "Error: ghostty config file not found at $CONFIG_FILE" >&2
+        echo "Error: No ghostty config file found at ${CONFIG_FILES[*]}" >&2
         exit 1
     fi
     ;;
