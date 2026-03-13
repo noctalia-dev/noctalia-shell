@@ -645,7 +645,7 @@ Loader {
                 restart();
                 return;
               }
-              if (panel && panel.isDockHovered) {
+              if (panel && (panel.isDockHovered || panel.dockHovered || panel.anyAppHovered)) {
                 restart();
                 return;
               }
