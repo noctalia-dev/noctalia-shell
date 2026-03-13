@@ -318,20 +318,20 @@ Singleton {
 
   function setAppStreamVolume(appKey: string, volume: real): void {
     if (!appKey)
-      return;
+    return;
     var o = appVolumeOverrides;
     if (!o[appKey])
-      o[appKey] = {};
+    o[appKey] = {};
     o[appKey].volume = volume;
     appVolumeOverrides = o;
   }
 
   function setAppStreamMuted(appKey: string, muted: bool): void {
     if (!appKey)
-      return;
+    return;
     var o = appVolumeOverrides;
     if (!o[appKey])
-      o[appKey] = {};
+    o[appKey] = {};
     o[appKey].muted = muted;
     appVolumeOverrides = o;
   }
@@ -343,18 +343,18 @@ Singleton {
   function _applyAppOverrides(): void {
     var streams = root.appStreams;
     if (!streams)
-      return;
+    return;
     var currentIds = {};
     _isApplyingAppOverride = true;
     for (var i = 0; i < streams.length; i++) {
       var s = streams[i];
       if (!s)
-        continue;
+      continue;
       currentIds[s.id] = true;
       var key = getAppKey(s);
       var ov = key ? appVolumeOverrides[key] : null;
       if (!ov || !s.audio)
-        continue;
+      continue;
       if (ov.volume !== undefined && Math.abs(s.audio.volume - ov.volume) > root.epsilon) {
         s.audio.volume = ov.volume;
       }
