@@ -278,6 +278,15 @@ Item {
           }
         }
 
+        // Auto-scan timer when panel is visible
+        Timer {
+          id: autoScanTimer
+          interval: 15000 // Scan every 15s
+          running: root.effectivelyVisible && Settings.data.network.wifiEnabled
+          repeat: true
+          onTriggered: NetworkService.scan()
+        }
+
         Repeater {
           model: root.availableNetworks
           delegate: nboxDelegate
@@ -668,7 +677,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: (modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Settings.data.ui.panelBackgroundOpacity, 0.75)) : Color.mSurface
+      color: (modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid) ? Qt.alpha(Color.mPrimary, Color.panelBackgroundOpacity) : Color.mSurface
 
       ColumnLayout {
         id: deviceColumn
@@ -742,7 +751,7 @@ Item {
                   if (modelData.cached && !modelData.existing) {
                     return I18n.tr("wifi.panel.saved");
                   }
-                  return NetworkService.isSecured(modelData.security) ? modelData.security : "Open";
+                  return NetworkService.isSecured(modelData.security) ? modelData.security : I18n.tr("wifi.panel.security-open");
                 }
                 pointSize: Style.fontSizeXXS
                 color: {
