@@ -11,7 +11,7 @@ Item {
   property bool applyUiScale: true
 
   property string icon
-  property string tooltipText
+  property var tooltipText
   property string tooltipDirection: "auto"
   property bool allowClickWhenDisabled: false
   property bool handleWheel: false
@@ -96,20 +96,20 @@ Item {
     hoverEnabled: true
     onEntered: {
       hovering = root.enabled ? true : false;
-      if (tooltipText) {
+      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
         TooltipService.show(root, tooltipText, tooltipDirection);
       }
       root.entered();
     }
     onExited: {
       hovering = false;
-      if (tooltipText) {
+      if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
         TooltipService.hide(root);
       }
       root.exited();
     }
     onClicked: mouse => {
-                 if (tooltipText) {
+                 if (tooltipText && (!Array.isArray(tooltipText) || tooltipText.length > 0)) {
                    TooltipService.hide(root);
                  }
                  if (!root.enabled && !allowClickWhenDisabled) {

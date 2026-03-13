@@ -59,8 +59,8 @@ ColumnLayout {
           "name": I18n.tr("panels.dock.appearance-type-floating")
         },
         {
-          "key": "static",
-          "name": I18n.tr("panels.dock.appearance-type-static")
+          "key": "attached",
+          "name": I18n.tr("panels.dock.appearance-type-attached")
         }
       ]
       currentKey: Settings.data.dock.dockType
@@ -96,7 +96,7 @@ ColumnLayout {
 
     NToggle {
       Layout.fillWidth: true
-      visible: Settings.data.dock.dockType === "static" && Settings.data.bar.barType === "framed"
+      visible: Settings.data.dock.dockType === "attached" && Settings.data.bar.barType === "framed"
       label: I18n.tr("panels.dock.appearance-sit-on-frame-label")
       description: I18n.tr("panels.dock.appearance-sit-on-frame-description")
       checked: Settings.data.dock.sitOnFrame

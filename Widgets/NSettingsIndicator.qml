@@ -7,7 +7,7 @@ Rectangle {
   id: root
 
   property bool show: false
-  property string tooltipText: ""
+  property var tooltipText
 
   implicitWidth: root.show ? 6 * Style.uiScaleRatio : 0
   implicitHeight: root.show ? 6 * Style.uiScaleRatio : 0
@@ -26,20 +26,20 @@ Rectangle {
   }
 
   MouseArea {
-    enabled: root.show && root.tooltipText !== ""
+    enabled: root.show && root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)
     anchors.fill: parent
     hoverEnabled: true
     acceptedButtons: Qt.NoButton
     cursorShape: Qt.PointingHandCursor
 
     onEntered: {
-      if (root.tooltipText) {
+      if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
         TooltipService.show(root, root.tooltipText);
       }
     }
 
     onExited: {
-      if (root.tooltipText) {
+      if (root.tooltipText && (!Array.isArray(root.tooltipText) || root.tooltipText.length > 0)) {
         TooltipService.hide();
       }
     }
