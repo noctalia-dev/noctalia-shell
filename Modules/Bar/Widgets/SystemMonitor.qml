@@ -175,7 +175,12 @@ Item {
                    PanelService.closeContextMenu(screen);
 
                    if (action === "sysmon-settings") {
+                     let monitorCmd = Settings.data.systemMonitor.externalMonitor;
+                     if (monitorCmd && monitorCmd.trim() !== "") {
+                       openExternalMonitor();
+                     } else {
                      SettingsPanelService.openToTab(SettingsPanel.Tab.System, 0, screen);
+                     }
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
                    }
