@@ -157,7 +157,7 @@ Item {
               }
               if (root.connectedNetworks.length > 0) {
                 const net = root.connectedNetworks[0];
-                return NetworkService.signalIcon(net.signal, true);
+                return NetworkService.getSignalInfo(net.signal, true).icon;
               }
               return "wifi";
             }
@@ -695,7 +695,7 @@ Item {
           Layout.alignment: Qt.AlignVCenter
 
           NIcon {
-            icon: NetworkService.signalIcon(modelData.signal, modelData.connected)
+            icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
             pointSize: Style.fontSizeXXL
             color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mPrimary : Color.mError) : networkItem.getContentColor(Color.mOnSurface)
             Layout.alignment: Qt.AlignVCenter
@@ -703,7 +703,7 @@ Item {
             MouseArea {
               anchors.fill: parent
               hoverEnabled: true
-              onEntered: TooltipService.show(parent, NetworkService.getSignalStrengthLabel(modelData.signal) + " (" + modelData.signal + "%)")
+              onEntered: TooltipService.show(parent, NetworkService.getSignalInfo(modelData.signal, modelData.connected).label + " (" + modelData.signal + "%)")
               onExited: TooltipService.hide()
             }
           }

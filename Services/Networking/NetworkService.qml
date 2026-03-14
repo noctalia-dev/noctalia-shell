@@ -423,23 +423,18 @@ Singleton {
   }
 
   // Helper functions
-  function signalIcon(signal, isConnected) {
-    if (isConnected === undefined) {
-      isConnected = false;
+  function getSignalInfo(signal, isConnected) {
+    let icon = "";
+    if (isConnected && root.networkConnectivity === "limited") {
+      icon = "wifi-x";
+    } else if (isConnected && root.networkConnectivity === "portal") {
+      icon = "wifi-q";
     }
-    if (isConnected && !root.internetConnectivity) {
-      return "world-off";
+    const label = signal >= 80 ? I18n.tr("wifi.signal.excellent") : signal >= 50 ? I18n.tr("wifi.signal.good") : signal >= 20 ? I18n.tr("wifi.signal.fair") : I18n.tr("wifi.signal.poor");
+    if (!icon) {
+      icon = signal >= 80 ? "wifi" : signal >= 50 ? "wifi-2" : signal >= 20 ? "wifi-1" : "wifi-0";
     }
-    if (signal >= 80) {
-      return "wifi";
-    }
-    if (signal >= 50) {
-      return "wifi-2";
-    }
-    if (signal >= 20) {
-      return "wifi-1";
-    }
-    return "wifi-0";
+    return {icon, label};
   }
 
   function isSecured(security) {
@@ -452,19 +447,6 @@ Singleton {
     }
     const s = security.toUpperCase();
     return s.indexOf("802.1X") !== -1 || s.indexOf("EAP") !== -1 || s.indexOf("ENTERPRISE") !== -1;
-  }
-
-  function getSignalStrengthLabel(signal) {
-    switch (true) {
-    case (signal >= 80):
-      return I18n.tr("wifi.signal.excellent");
-    case (signal >= 50):
-      return I18n.tr("wifi.signal.good");
-    case (signal >= 20):
-      return I18n.tr("wifi.signal.fair");
-    default:
-      return I18n.tr("wifi.signal.poor");
-    }
   }
 
   function parseIpDetails(text) {

@@ -43,7 +43,7 @@ Item {
 
   function getStatustxt() {
     if (NetworkService.connecting) {
-      return NetworkService.connectingTo ? I18n.tr("common.connecting") + " " + NetworkService.connectingTo : I18n.tr("common.connecting"); // Im hoping for the best :P
+      return NetworkService.connectingTo ? I18n.tr("common.connecting") + " " + NetworkService.connectingTo : I18n.tr("common.connecting");
     }
 
     let p = [];
@@ -78,7 +78,7 @@ Item {
       return NetworkService.internetConnectivity ? "ethernet" : "ethernet-off";
     }
     const connectedNet = Object.values(NetworkService.networks).find(net => net.connected);
-    return connectedNet ? NetworkService.signalIcon(connectedNet.signal, true) : "wifi-off";
+    return connectedNet ? NetworkService.getSignalInfo(connectedNet.signal, true).icon : "wifi-off";
   }
 
   NPopupContextMenu {
