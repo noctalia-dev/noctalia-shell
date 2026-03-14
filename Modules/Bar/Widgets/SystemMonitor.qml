@@ -179,7 +179,7 @@ Item {
                      if (monitorCmd && monitorCmd.trim() !== "") {
                        openExternalMonitor();
                      } else {
-                     SettingsPanelService.openToTab(SettingsPanel.Tab.System, 0, screen);
+                       SettingsPanelService.openToTab(SettingsPanel.Tab.System, 0, screen);
                      }
                    } else if (action === "widget-settings") {
                      BarService.openWidgetSettings(screen, section, sectionWidgetIndex, widgetId, widgetSettings);
