@@ -1472,7 +1472,7 @@ Singleton {
         if [ -n "$UUID" ]; then
             nmcli connection delete uuid "$UUID" 2>/dev/null || true
         fi
-        eval nmcli "$@"
+        nmcli "$@"
         nmcli connection up id "$SSID"
       `;
 
