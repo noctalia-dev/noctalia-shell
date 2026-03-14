@@ -433,7 +433,10 @@ Singleton {
     if (!icon) {
       icon = signal >= 80 ? "wifi" : signal >= 50 ? "wifi-2" : signal >= 20 ? "wifi-1" : "wifi-0";
     }
-    return {icon, label};
+    return {
+      icon,
+      label
+    };
   }
 
   function isSecured(security) {
@@ -550,7 +553,7 @@ Singleton {
             }
           }
         }
-        
+
         // Update capabilities
         root._wifiAvailable = wifiAvailable;
         root._ethernetAvailable = ethernetAvailable;
@@ -1607,6 +1610,7 @@ Singleton {
             echo "No profiles found for SSID: $ssid"
         fi
       `;
+
       return ["sh", "-c", script, "--", ssid];
     }
 
