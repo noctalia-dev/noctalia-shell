@@ -1151,7 +1151,7 @@
       "appearance-show-launcher-icon-label": "앱 런처 표시",
       "appearance-sit-on-frame-description": "독을 프레임 테두리 내부에 정렬하고, 위에 놓이지 않도록 합니다.",
       "appearance-sit-on-frame-label": "독은 프레임에 위치",
-      "appearance-type-attached": "정적",
+      "appearance-type-attached": "고정됨",
       "appearance-type-description": "플로팅 필 형태 또는 가장자리에 고정된 고정 바 중에서 선택하세요.",
       "appearance-type-floating": "플로팅",
       "appearance-type-label": "독 스타일",
@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 명령은 셸(sh -lc)을 통해 실행됩니다.<br>• 명령은 백그라운드(detached)에서 실행됩니다.<br>• 테스트 버튼은 현재 값으로 실행됩니다.",
-      "info-parameters-description": "• Wallpaper hook: $1 = 배경화면 경로, $2 = 화면 이름, $3 = 테마 (어둡게/밝게)<br>• Theme toggle hook: $1 = true/false (Dark Mode 상태)<br>• Screen lock/unlock hooks: $1 = lock/unlock (화면 잠금 상태)<br>• Performance mode hooks: 매개변수 없음<br>• Session hook: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = 배경화면 경로, $2 = 화면 이름, $3 = 테마 (어둡게/밝게)<br>• Theme toggle hook: $1 = true/false (다크 모드 상태)<br>• Screen lock/unlock hooks: $1 = lock/unlock (화면 잠금 상태)<br>• Performance mode hooks: 매개변수 없음<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "사용 가능한 매개변수",
       "noctalia-started-description": "Noctalia 로딩이 완료되었을 때 실행할 명령입니다.",
       "noctalia-started-label": "Noctalia 시작됨",

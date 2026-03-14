@@ -1854,8 +1854,8 @@
   },
   "toast": {
     "airplane-mode": {
-      "title": "Airplane Mode",
-      "description": "Disable all wireless communications."
+      "description": "Disable all wireless communications.",
+      "title": "Airplane Mode"
     },
     "battery": {
       "critical": "Critical battery",
@@ -2142,6 +2142,7 @@
   "wifi": {
     "panel": {
       "action-required": "Action required",
+      "add-hidden-network": "Add hidden network",
       "available-interfaces": "Available interfaces",
       "available-networks": "Available networks",
       "disabled": "Wi‑Fi is disabled",
@@ -2160,17 +2161,16 @@
       "ipv6": "IPv6",
       "known-networks": "Known networks",
       "link-speed": "Link speed",
+      "network-name-ssid": "Network name (SSID)",
       "no-ethernet-devices": "No Ethernet devices detected",
       "no-networks": "No Wi‑Fi networks found",
       "saved": "Saved",
       "scan-again": "Scan again",
       "searching": "Searching for networks...",
-      "title": "Wi‑Fi",
-      "add-hidden-network": "Add hidden network",
-      "network-name-ssid": "Network name (SSID)",
       "security-open": "Open",
+      "security-wep": "WEP",
       "security-wpa": "WPA/WPA2/WPA3 Personal",
-      "security-wep": "WEP"
+      "title": "Wi‑Fi"
     },
     "signal": {
       "excellent": "Excellent",

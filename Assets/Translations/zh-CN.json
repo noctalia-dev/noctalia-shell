@@ -1151,7 +1151,7 @@
       "appearance-show-launcher-icon-label": "显示应用启动器",
       "appearance-sit-on-frame-description": "将停靠栏对齐在框架边框内，而不是位于顶部。",
       "appearance-sit-on-frame-label": "停靠栏位于框架上",
-      "appearance-type-attached": "静态",
+      "appearance-type-attached": "停靠",
       "appearance-type-description": "选择浮动药丸样式或附着在边缘的静态栏。",
       "appearance-type-floating": "浮动",
       "appearance-type-label": "Dock 样式",
@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 命令通过 shell 执行（sh -lc）<br>• 命令在后台运行（分离）<br>• 测试按钮使用当前值执行",
-      "info-parameters-description": "• Wallpaper hook: $1 = 壁纸路径, $2 = 屏幕名称, $3 = 主题 (深色/浅色)<br>• Theme toggle hook: $1 = true/false (Dark Mode 状态)<br>• Screen lock/unlock hooks: $1 = lock/unlock (屏幕锁定状态)<br>• Performance mode hooks: 无参数<br>• Session hook: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = 壁纸路径, $2 = 屏幕名称, $3 = 主题 (深色/浅色)<br>• Theme toggle hook: $1 = true/false (深色模式状态)<br>• Screen lock/unlock hooks: $1 = lock/unlock (屏幕锁定状态)<br>• Performance mode hooks: 无参数<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "可用参数",
       "noctalia-started-description": "Noctalia 加载完成后要执行的命令。",
       "noctalia-started-label": "Noctalia 已启动",

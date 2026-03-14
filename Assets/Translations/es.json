@@ -1151,7 +1151,7 @@
       "appearance-show-launcher-icon-label": "Mostrar lanzador de aplicaciones",
       "appearance-sit-on-frame-description": "Alinear el dock dentro del borde del marco en lugar de que se superponga.",
       "appearance-sit-on-frame-label": "El Dock se asienta en el marco",
-      "appearance-type-attached": "Estático",
+      "appearance-type-attached": "Anclado",
       "appearance-type-description": "Elige entre una barra flotante con forma de píldora o una barra estática anclada al borde.",
       "appearance-type-floating": "Flotante",
       "appearance-type-label": "Estilo del dock",
@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Los comandos se ejecutan a través de shell (sh -lc)<br>• Los comandos se ejecutan en segundo plano (desvinculados)<br>• Los botones de prueba se ejecutan con los valores actuales",
-      "info-parameters-description": "• Wallpaper hook: $1 = ruta del fondo de pantalla, $2 = nombre de la pantalla, $3 = tema (oscuro/claro)<br>• Theme toggle hook: $1 = true/false (estado de Dark Mode)<br>• Screen lock/unlock hooks: $1 = lock/unlock (estado de bloqueo de pantalla)<br>• Performance mode hooks: Sin parámetros<br>• Session hook: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = ruta del fondo de pantalla, $2 = nombre de la pantalla, $3 = tema (oscuro/claro)<br>• Theme toggle hook: $1 = true/false (estado del modo oscuro)<br>• Screen lock/unlock hooks: $1 = lock/unlock (estado de bloqueo de pantalla)<br>• Performance mode hooks: Sin parámetros<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Parámetros disponibles",
       "noctalia-started-description": "Comando para ejecutar cuando Noctalia ha terminado de cargarse.",
       "noctalia-started-label": "Noctalia iniciado",
