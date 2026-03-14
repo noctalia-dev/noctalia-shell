@@ -1151,7 +1151,7 @@
       "appearance-show-launcher-icon-label": "Afficher le Lanceur d'applications",
       "appearance-sit-on-frame-description": "Aligner le dock à l'intérieur de la bordure du cadre au lieu qu'il se superpose.",
       "appearance-sit-on-frame-label": "Le dock est sur le cadre",
-      "appearance-type-attached": "Statique",
+      "appearance-type-attached": "Ancré",
       "appearance-type-description": "Choisissez entre une barre flottante en forme de pilule ou une barre statique attachée au bord.",
       "appearance-type-floating": "Flottant",
       "appearance-type-label": "Style du dock",
@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Les commandes sont exécutées via le shell (sh -lc)<br>• Les commandes s'exécutent en arrière-plan (détachées)<br>• Les boutons de test s'exécutent avec les valeurs actuelles",
-      "info-parameters-description": "• Wallpaper hook: $1 = chemin du fond d'écran, $2 = nom de l'écran, $3 = thème (sombre/clair)<br>• Theme toggle hook: $1 = true/false (état du Dark Mode)<br>• Screen lock/unlock hooks: $1 = lock/unlock (état de verrouillage de l'écran)<br>• Performance mode hooks: Aucun paramètre<br>• Session hook: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = chemin du fond d'écran, $2 = nom de l'écran, $3 = thème (sombre/clair)<br>• Theme toggle hook: $1 = true/false (état du mode sombre)<br>• Screen lock/unlock hooks: $1 = lock/unlock (état de verrouillage de l'écran)<br>• Performance mode hooks: Aucun paramètre<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Paramètres disponibles",
       "noctalia-started-description": "Commande à exécuter lorsque Noctalia a fini de charger.",
       "noctalia-started-label": "Noctalia démarré",

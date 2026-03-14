@@ -113,9 +113,9 @@ Item {
     if (useFixedWidth)
       return maxWidth;
 
-    // Calculate icon/art width
+    // Calculate icon/art width (must match RowLayout visibility)
     var iconWidth = 0;
-    if (!hasPlayer || (!showAlbumArt && !showProgressRing)) {
+    if (!hasPlayer) {
       iconWidth = iconSize;
     } else if (showAlbumArt || showProgressRing) {
       iconWidth = artSize;
@@ -126,7 +126,8 @@ Item {
     // Add spacing and text width
     var textWidth = 0;
     if (titleContainer.measuredWidth > 0) {
-      margins += Style.marginS;
+      if (iconWidth > 0)
+        margins += Style.marginS;
       textWidth = titleContainer.measuredWidth + Style.margin2XXS;
     }
 

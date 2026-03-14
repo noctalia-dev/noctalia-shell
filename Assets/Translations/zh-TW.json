@@ -1151,7 +1151,7 @@
       "appearance-show-launcher-icon-label": "顯示應用程式啟動器",
       "appearance-sit-on-frame-description": "將停靠欄對齊在框架邊框內，而不是位於頂部。",
       "appearance-sit-on-frame-label": "停靠欄位於框架上",
-      "appearance-type-attached": "靜態",
+      "appearance-type-attached": "停靠",
       "appearance-type-description": "選擇浮動藥丸樣式或附著在邊緣的靜態列。",
       "appearance-type-floating": "浮動",
       "appearance-type-label": "Dock 樣式",
@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• 指令將透過 shell (sh -lc) 執行<br>• 指令會在背景 (detached 狀態) 執行<br>• 測試按鈕會以當下填寫的內容執行",
-      "info-parameters-description": "• Wallpaper hook: $1 = 桌面背景路徑, $2 = 螢幕名稱, $3 = 主題 (深色/淺色)<br>• Theme toggle hook: $1 = true/false (Dark Mode 狀態)<br>• Screen lock/unlock hooks: $1 = lock/unlock (螢幕鎖定狀態)<br>• Performance mode hooks: 無參數<br>• Session hook: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = 桌面背景路徑, $2 = 螢幕名稱, $3 = 主題 (深色/淺色)<br>• Theme toggle hook: $1 = true/false (深色模式狀態)<br>• Screen lock/unlock hooks: $1 = lock/unlock (螢幕鎖定狀態)<br>• Performance mode hooks: 無參數<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "可用參數",
       "noctalia-started-description": "Noctalia 完成載入時要執行的指令。",
       "noctalia-started-label": "Noctalia 已啟動",

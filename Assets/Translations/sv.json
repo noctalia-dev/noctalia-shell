@@ -1151,7 +1151,7 @@
       "appearance-show-launcher-icon-label": "Visa appstartare",
       "appearance-sit-on-frame-description": "Justera dockan innanför ramkanten istället för att ligga ovanpå.",
       "appearance-sit-on-frame-label": "Dockan sitter på ramen",
-      "appearance-type-attached": "Statisk",
+      "appearance-type-attached": "Dockad",
       "appearance-type-description": "Välj mellan en flytande pillerform eller en statisk stapel fäst vid kanten.",
       "appearance-type-floating": "Flytande",
       "appearance-type-label": "Dockstil",
@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• Kommandon exekveras via shell (sh -lc)<br>• Kommandon körs i bakgrunden (fristående)<br>• Testknappar exekveras med aktuella värden",
-      "info-parameters-description": "• Wallpaper hook: $1 = bakgrundsbildens sökväg, $2 = skärmnamn, $3 = tema (mörkt/ljust)<br>• Theme toggle hook: $1 = true/false (Dark Mode-status)<br>• Screen lock/unlock hooks: $1 = lock/unlock (skärmlåsstatus)<br>• Performance mode hooks: Inga parametrar<br>• Session hook: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = bakgrundsbildens sökväg, $2 = skärmnamn, $3 = tema (mörkt/ljust)<br>• Theme toggle hook: $1 = true/false (mörkt lägestatus)<br>• Screen lock/unlock hooks: $1 = lock/unlock (skärmlåsstatus)<br>• Performance mode hooks: Inga parametrar<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Tillgängliga parametrar",
       "noctalia-started-description": "Kommando som ska utföras när Noctalia har laddats klart.",
       "noctalia-started-label": "Noctalia startat",

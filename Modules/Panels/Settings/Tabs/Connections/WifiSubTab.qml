@@ -284,7 +284,7 @@ Item {
         // Auto-scan timer when panel is visible
         Timer {
           id: autoScanTimer
-          interval: 15000 // Scan every 15s
+          interval: 5000
           running: root.effectivelyVisible && Settings.data.network.wifiEnabled
           repeat: true
           onTriggered: NetworkService.scan()

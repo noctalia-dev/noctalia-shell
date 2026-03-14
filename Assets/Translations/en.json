@@ -1296,8 +1296,12 @@
       "settings-annotation-tool-placeholder": "e.g. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Automatically paste the selected clipboard item. Requires wtype.",
       "settings-auto-paste-label": "Auto paste",
+      "settings-clip-chips-description": "Show a tab bar to filter clipboard history by type (Images, Links, Files, Code, etc).",
+      "settings-clip-chips-label": "Enable Category Chips",
       "settings-clip-preview-description": "Show a preview of the clipboard content when using the >clip command.",
       "settings-clip-preview-label": "Enable clip preview",
+      "settings-clip-smart-icons-description": "Show specific icons for links, files, colors, and code instead of a generic clipboard icon.",
+      "settings-clip-smart-icons-label": "Enable Smart Icons",
       "settings-clip-wrap-text-description": "Wrap text in the clipboard list instead of truncating it.",
       "settings-clip-wrap-text-label": "Wrap clipboard text",
       "settings-clipboard-history-description": "Access previously copied items from the launcher.",
@@ -1845,8 +1849,8 @@
   },
   "toast": {
     "airplane-mode": {
-      "title": "Airplane Mode",
-      "description": "Disable all wireless communications."
+      "description": "Disable all wireless communications.",
+      "title": "Airplane Mode"
     },
     "battery": {
       "critical": "Critical battery",
@@ -2132,6 +2136,7 @@
   "wifi": {
     "panel": {
       "action-required": "Action required",
+      "add-hidden-network": "Add hidden network",
       "available-interfaces": "Available interfaces",
       "available-networks": "Available networks",
       "disabled": "Wi‑Fi is disabled",
@@ -2150,6 +2155,7 @@
       "ipv6": "IPv6",
       "known-networks": "Known networks",
       "link-speed": "Link speed",
+      "network-name-ssid": "Network name (SSID)",
       "no-ethernet-devices": "No Ethernet devices detected",
       "no-networks": "No Wi‑Fi networks found",
       "saved": "Saved",

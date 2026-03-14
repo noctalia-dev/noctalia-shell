@@ -1151,7 +1151,7 @@
       "appearance-show-launcher-icon-label": "Alkalmazásindító megjelenítése",
       "appearance-sit-on-frame-description": "Igazítsa a dokkot a keret szegélyén belülre, ahelyett, hogy a tetején ülne.",
       "appearance-sit-on-frame-label": "A dokk a kereten ül",
-      "appearance-type-attached": "Statikus",
+      "appearance-type-attached": "Rögzített",
       "appearance-type-description": "Lebegő, kapszula alakú sáv vagy statikus, a szélhez rögzített sáv.",
       "appearance-type-floating": "Lebegő",
       "appearance-type-label": "Dokk stílus",
@@ -1220,7 +1220,7 @@
     },
     "hooks": {
       "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -lc)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
-      "info-parameters-description": "• Wallpaper hook: $1 = háttérkép útvonala, $2 = képernyő neve, $3 = téma (sötét/világos)<br>• Theme toggle hook: $1 = true/false (Dark Mode állapot)<br>• Screen lock/unlock hooks: $1 = lock/unlock (képernyőzár állapot)<br>• Performance mode hooks: Nincs paraméter<br>• Session hook: $1 = action (shutdown/reboot)",
+      "info-parameters-description": "• Wallpaper hook: $1 = háttérkép útvonala, $2 = képernyő neve, $3 = téma (sötét/világos)<br>• Theme toggle hook: $1 = true/false (sötét mód állapot)<br>• Screen lock/unlock hooks: $1 = lock/unlock (képernyőzár állapot)<br>• Performance mode hooks: Nincs paraméter<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Elérhető paraméterek",
       "noctalia-started-description": "Parancs, ami akkor fut le, amikor a Noctalia betöltése befejeződött.",
       "noctalia-started-label": "Noctalia elindult",

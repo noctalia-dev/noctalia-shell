@@ -669,7 +669,7 @@
     ]
   },
   {
-    "labelKey": "toast.airplane-mode.title",
+    "labelKey": "common.wifi",
     "descriptionKey": null,
     "widget": "NToggle",
     "tab": 16,
@@ -678,13 +678,64 @@
     "subTabLabel": "common.wifi"
   },
   {
-    "labelKey": "common.wifi",
+    "labelKey": "common.connected",
     "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "wifi.panel.known-networks",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "wifi.panel.available-networks",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "toast.airplane-mode.title",
+    "descriptionKey": "toast.airplane-mode.description",
     "widget": "NToggle",
     "tab": 16,
     "tabLabel": "panels.connections.title",
     "subTab": 0,
     "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "wifi.panel.network-name-ssid",
+    "descriptionKey": null,
+    "widget": "NTextInput",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
+    "labelKey": "common.password",
+    "descriptionKey": null,
+    "widget": "NTextInput",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
   },
   {
     "labelKey": "common.position",
@@ -1278,6 +1329,24 @@
   {
     "labelKey": "panels.launcher.settings-auto-paste-label",
     "descriptionKey": "panels.launcher.settings-auto-paste-description",
+    "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 1,
+    "subTabLabel": "common.clipboard"
+  },
+  {
+    "labelKey": "panels.launcher.settings-clip-smart-icons-label",
+    "descriptionKey": "panels.launcher.settings-clip-smart-icons-description",
+    "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 1,
+    "subTabLabel": "common.clipboard"
+  },
+  {
+    "labelKey": "panels.launcher.settings-clip-chips-label",
+    "descriptionKey": "panels.launcher.settings-clip-chips-description",
     "widget": "NToggle",
     "tab": 8,
     "tabLabel": "panels.launcher.title",
