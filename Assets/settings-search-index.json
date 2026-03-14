@@ -669,7 +669,7 @@
     ]
   },
   {
-    "labelKey": "toast.airplane-mode.title",
+    "labelKey": "common.wifi",
     "descriptionKey": null,
     "widget": "NToggle",
     "tab": 16,
@@ -678,13 +678,64 @@
     "subTabLabel": "common.wifi"
   },
   {
-    "labelKey": "common.wifi",
+    "labelKey": "common.connected",
     "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "wifi.panel.known-networks",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "wifi.panel.available-networks",
+    "descriptionKey": null,
+    "widget": "NLabel",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "toast.airplane-mode.title",
+    "descriptionKey": "toast.airplane-mode.description",
     "widget": "NToggle",
     "tab": 16,
     "tabLabel": "panels.connections.title",
     "subTab": 0,
     "subTabLabel": "common.wifi"
+  },
+  {
+    "labelKey": "wifi.panel.network-name-ssid",
+    "descriptionKey": null,
+    "widget": "NTextInput",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
+    "labelKey": "common.password",
+    "descriptionKey": null,
+    "widget": "NTextInput",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
   },
   {
     "labelKey": "common.position",

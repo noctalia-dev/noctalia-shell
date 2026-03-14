@@ -531,7 +531,7 @@ Singleton {
             }
           }
         }
-        
+
         // Update capabilities
         root._wifiAvailable = wifiAvailable;
         root._ethernetAvailable = ethernetAvailable;
@@ -1448,6 +1448,7 @@ Singleton {
       esac
       nmcli connection up id "$SSID"
     `;
+
       return ["sh", "-c", script, "--", ssid, password, securityKey];
     }
     environment: ({
@@ -1579,6 +1580,7 @@ if [ "$deleted" = "false" ]; then
     echo "No profiles found for SSID: $ssid"
 fi
 `;
+
       return ["sh", "-c", script, "--", ssid];
     }
 
