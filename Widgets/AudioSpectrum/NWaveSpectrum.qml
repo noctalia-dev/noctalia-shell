@@ -14,7 +14,7 @@ Item {
   property bool showMinimumSignal: false
   property real minimumSignalValue: 0.05 // Default to 5% of height
 
-  readonly property int valuesCount: (values && Array.isArray(values)) ? values.length : 0
+  readonly property int valuesCount: (values && values.length !== undefined) ? values.length : 0
   readonly property bool hasData: valuesCount >= 2
 
   // Data texture: one pixel per value, R channel = amplitude
