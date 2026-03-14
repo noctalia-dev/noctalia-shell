@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Hide devices that appear only as Bluetooth addresses.",
       "hide-unnamed-devices-label": "Hide unnamed devices",
       "pin-instructions": "Please enter the PIN code displayed on your device.",
-      "title": "Connections"
+      "title": "Connections",
+      "wifi-header-text": "Use Wi-Fi to see available networks and connect to the internet."
     },
     "control-center": {
       "cards-desc": "Customize which controls appear in the control center and in what order.",
@@ -1849,7 +1850,8 @@
   },
   "toast": {
     "airplane-mode": {
-      "title": "Airplane Mode"
+      "title": "Airplane Mode",
+      "description": "Disable all wireless communications."
     },
     "battery": {
       "critical": "Critical battery",
@@ -2151,6 +2153,7 @@
       "internet-limited": "No internet",
       "internet-status": "Internet status",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Known networks",
       "link-speed": "Link speed",
       "no-ethernet-devices": "No Ethernet devices detected",
@@ -2158,7 +2161,12 @@
       "saved": "Saved",
       "scan-again": "Scan again",
       "searching": "Searching for networks...",
-      "title": "Wi‑Fi"
+      "title": "Wi‑Fi",
+      "add-hidden-network": "Add hidden network",
+      "network-name-ssid": "Network name (SSID)",
+      "security-open": "Open",
+      "security-wpa": "WPA/WPA2/WPA3 Personal",
+      "security-wep": "WEP"
     },
     "signal": {
       "excellent": "Excellent",
