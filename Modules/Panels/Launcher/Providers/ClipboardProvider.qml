@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import qs.Commons
 import qs.Services.Keyboard
+import qs.Services.Noctalia
 
 Item {
   id: root
@@ -22,6 +23,64 @@ Item {
 
   // Image handling - expose revision for reactive updates in delegates
   readonly property int imageRevision: ClipboardService.revision
+
+  // Categories
+  property var availableCategories: Settings.data.appLauncher.enableClipboardChips ? ["All", "Images", "Links", "Files", "Code", "Colors"] : []
+  property bool showsCategories: Settings.data.appLauncher.enableClipboardChips
+  property string selectedCategory: "All"
+
+  function selectCategory(cat) {
+    if (selectedCategory !== cat) {
+      selectedCategory = cat;
+      if (launcher) {
+        launcher.updateResults();
+      }
+    }
+  }
+
+  // Date Filtering
+  property bool hasDateFilter: Settings.data.appLauncher.enableClipboardDateHeaders
+  property string dateFilter: "all"
+  property var availableDateFilters: [
+    {
+      "label": I18n.tr("launcher.date-filter-all-time"),
+      "action": "all",
+      "icon": iconMode === "tabler" ? "calendar" : "x-office-calendar"
+    },
+    {
+      "label": I18n.tr("launcher.date-filter-today"),
+      "action": "today",
+      "icon": iconMode === "tabler" ? "calendar-event" : "view-calendar-timeline"
+    },
+    {
+      "label": I18n.tr("launcher.date-filter-yesterday"),
+      "action": "yesterday",
+      "icon": iconMode === "tabler" ? "calendar-time" : "view-calendar"
+    },
+    {
+      "label": I18n.tr("launcher.date-filter-previous-7-days"),
+      "action": "week",
+      "icon": iconMode === "tabler" ? "calendar-week" : "view-calendar-week"
+    }
+  ]
+
+  function selectDateFilter(filter) {
+    if (dateFilter !== filter) {
+      dateFilter = filter;
+      if (launcher) {
+        launcher.updateResults();
+      }
+    }
+  }
+
+  property var categoryIcons: {
+    "All": iconMode === "tabler" ? "border-all" : "view-grid",
+    "Images": iconMode === "tabler" ? "photo" : "image",
+    "Links": iconMode === "tabler" ? "link" : "insert-link",
+    "Files": iconMode === "tabler" ? "file" : "text-x-generic",
+    "Code": iconMode === "tabler" ? "code" : "text-x-script",
+    "Colors": iconMode === "tabler" ? "palette" : "color-picker"
+  }
 
   // Internal state
   property bool isWaitingForData: false
@@ -199,13 +258,76 @@ Item {
     // Search clipboard items
     const searchTerm = query.toLowerCase();
 
+    // Date grouping trackers
+    const headersEnabled = Settings.data.appLauncher.enableClipboardDateHeaders;
+    const now = Date.now() / 1000;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartTs = todayStart.getTime() / 1000;
+    const yesterdayStartTs = todayStartTs - 86400;
+
+    let currentGroup = "";
+
+    const catMap = {
+      "Images": "image",
+      "Links": "link",
+      "Files": "file",
+      "Code": "code",
+      "Colors": "color"
+    };
+
     // Filter and format results
     items.forEach(function (item) {
+      // Category filter
+      if (Settings.data.appLauncher.enableClipboardChips && root.selectedCategory !== "All") {
+        if (item.contentType !== catMap[root.selectedCategory]) {
+          return;
+        }
+      }
+
       const preview = (item.preview || "").toLowerCase();
 
       // Skip if search term doesn't match
       if (searchTerm && preview.indexOf(searchTerm) === -1) {
         return;
+      }
+
+      // Date Filter
+      const firstSeen = ClipboardService.firstSeenById[item.id] || now;
+      if (root.dateFilter !== "all") {
+        if (root.dateFilter === "today" && firstSeen < todayStartTs)
+          return;
+        if (root.dateFilter === "yesterday" && (firstSeen >= todayStartTs || firstSeen < yesterdayStartTs))
+          return;
+        if (root.dateFilter === "week" && (firstSeen >= yesterdayStartTs || firstSeen < (todayStartTs - (86400 * 7))))
+          return;
+      }
+
+      // Check date group logic
+      if (headersEnabled && !searchTerm && root.selectedCategory === "All" && root.dateFilter === "all") {
+        let groupName = I18n.tr("launcher.date-filter-all-time");
+        if (firstSeen >= todayStartTs) {
+          groupName = I18n.tr("launcher.date-filter-today");
+        } else if (firstSeen >= yesterdayStartTs) {
+          groupName = I18n.tr("launcher.date-filter-yesterday");
+        } else if (firstSeen >= todayStartTs - (86400 * 7)) {
+          groupName = I18n.tr("launcher.date-filter-previous-7-days");
+        }
+
+        if (groupName !== currentGroup) {
+          currentGroup = groupName;
+          results.push({
+                         "name": currentGroup,
+                         "description": "",
+                         "icon": iconMode === "tabler" ? "calendar" : "x-office-calendar",
+                         "isTablerIcon": true,
+                         "isImage": false,
+                         "hideIcon": true,
+                         "isHeader": true,
+                         "clipboardId": "",
+                         "onActivate": function () {}
+                       });
+        }
       }
 
       // Format the result based on type
@@ -293,14 +415,31 @@ Item {
       }
     }
 
+    let defaultIcon = iconMode === "tabler" ? "clipboard" : "text-x-generic";
+    let colorHex = "";
+    if (Settings.data.appLauncher.enableClipboardSmartIcons) {
+      if (item.contentType === "link")
+        defaultIcon = iconMode === "tabler" ? "link" : "insert-link";
+      else if (item.contentType === "file")
+        defaultIcon = iconMode === "tabler" ? "file" : "text-x-generic";
+      else if (item.contentType === "code")
+        defaultIcon = iconMode === "tabler" ? "code" : "text-x-script";
+      else if (item.contentType === "color") {
+        defaultIcon = iconMode === "tabler" ? "palette" : "color-picker";
+        colorHex = preview;
+      }
+    }
+
     return {
       "name": title,
       "description": description,
-      "icon": iconMode === "tabler" ? "clipboard" : "text-x-generic",
+      "icon": defaultIcon,
       "isTablerIcon": true,
       "isImage": false,
       "clipboardId": item.id,
       "preview": preview,
+      "contentType": item.contentType,
+      "colorHex": colorHex,
       "provider": root
     };
   }
@@ -378,7 +517,7 @@ Item {
 
   // Get preview data for the preview panel
   function getPreviewData(item) {
-    if (!item)
+    if (!item || item.isHeader)
       return null;
     return {
       "clipboardId": item.clipboardId,

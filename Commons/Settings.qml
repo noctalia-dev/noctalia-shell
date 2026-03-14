@@ -420,6 +420,9 @@ Singleton {
       property bool autoPasteClipboard: false
       property bool enableClipPreview: true
       property bool clipboardWrapText: true
+      property bool enableClipboardSmartIcons: true
+      property bool enableClipboardChips: true
+      property bool enableClipboardDateHeaders: true
       property string clipboardWatchTextCommand: "wl-paste --type text --watch cliphist store"
       property string clipboardWatchImageCommand: "wl-paste --type image --watch cliphist store"
       property string position: "center"  // Position: center, top_left, top_right, bottom_left, bottom_right, bottom_center, top_center

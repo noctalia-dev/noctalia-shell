@@ -45,6 +45,33 @@ ColumnLayout {
     enabled: Settings.data.appLauncher.enableClipboardHistory && ProgramCheckerService.wtypeAvailable
   }
 
+  NToggle {
+    label: I18n.tr("panels.launcher.settings-clip-smart-icons-label")
+    description: I18n.tr("panels.launcher.settings-clip-smart-icons-description")
+    checked: Settings.data.appLauncher.enableClipboardSmartIcons
+    onToggled: checked => Settings.data.appLauncher.enableClipboardSmartIcons = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardSmartIcons")
+    enabled: Settings.data.appLauncher.enableClipboardHistory
+  }
+
+  NToggle {
+    label: I18n.tr("panels.launcher.settings-clip-chips-label")
+    description: I18n.tr("panels.launcher.settings-clip-chips-description")
+    checked: Settings.data.appLauncher.enableClipboardChips
+    onToggled: checked => Settings.data.appLauncher.enableClipboardChips = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardChips")
+    enabled: Settings.data.appLauncher.enableClipboardHistory
+  }
+
+  NToggle {
+    label: I18n.tr("panels.launcher.settings-clip-date-headers-label")
+    description: I18n.tr("panels.launcher.settings-clip-date-headers-description")
+    checked: Settings.data.appLauncher.enableClipboardDateHeaders
+    onToggled: checked => Settings.data.appLauncher.enableClipboardDateHeaders = checked
+    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardDateHeaders")
+    enabled: Settings.data.appLauncher.enableClipboardHistory
+  }
+
   NDivider {
     Layout.fillWidth: true
     visible: Settings.data.appLauncher.enableClipboardHistory
