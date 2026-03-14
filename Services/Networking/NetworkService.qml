@@ -506,55 +506,7 @@ Singleton {
         handlers[key](val);
       }
     }
-    return details;
-  }
 
-  function parseIpDetails(text) {
-    const details = {
-      ipv4: "",
-      gateway4: "",
-      ipv6: "",
-      gateway6: "",
-      dns4: [],
-      dns6: [],
-      dns: "",
-      connectionName: ""
-    };
-    const lines = text.split("\n");
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) {
-        continue;
-      }
-      const idx = line.indexOf(":");
-      if (idx === -1) {
-        continue;
-      }
-      const key = line.substring(0, idx);
-      const val = line.substring(idx + 1);
-      if (key === "GENERAL.CONNECTION") {
-        details.connectionName = val;
-      } else if (key.indexOf("IP4.ADDRESS") === 0) {
-        details.ipv4 = val.split("/")[0];
-      } else if (key === "IP4.GATEWAY") {
-        details.gateway4 = val;
-      } else if (key.indexOf("IP6.ADDRESS") === 0) {
-        details.ipv6 = val.split("/")[0];
-      } else if (key === "IP6.GATEWAY") {
-        details.gateway6 = val;
-      } else if (key.indexOf("IP4.DNS") === 0) {
-        if (val && details.dns4.indexOf(val) === -1) {
-          details.dns4.push(val);
-        }
-      } else if (key.indexOf("IP6.DNS") === 0) {
-        if (val && details.dns6.indexOf(val) === -1) {
-          details.dns6.push(val);
-        }
-      }
-    }
-    details.dns4 = details.dns4.join(", ");
-    details.dns6 = details.dns6.join(", ");
-    details.dns = [].concat(details.dns4 ? [details.dns4] : [], details.dns6 ? [details.dns6] : []).join(", ");
     return details;
   }
 
