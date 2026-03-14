@@ -135,7 +135,7 @@ ColumnLayout {
     property bool selected: false
     signal clicked
 
-    radius: height * 0.5
+    radius: Style.iRadiusS
     color: selected ? Color.mPrimary : Color.mSurfaceVariant
     implicitHeight: Math.max(Style.baseWidgetSize * 0.55, 24)
     implicitWidth: chipLabel.implicitWidth + Style.marginM * 1.5
