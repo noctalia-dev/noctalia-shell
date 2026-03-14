@@ -562,6 +562,50 @@ Singleton {
     }
   }
 
+  // Lock screen before external suspend (power button, lid close) by
+  // monitoring systemd-logind's PrepareForSleep D-Bus signal.
+  Process {
+    id: sleepMonitor
+    running: true
+    command: [
+      "gdbus", "monitor", "--system",
+      "--dest", "org.freedesktop.login1",
+      "--object-path", "/org/freedesktop/login1"
+    ]
+
+    stdout: SplitParser {
+      onRead: line => {
+        if (line.indexOf("PrepareForSleep") !== -1 && line.indexOf("true") !== -1)
+          root._lockIfNeeded("PrepareForSleep");
+      }
+    }
+
+    onExited: () => sleepMonitorRestart.start()
+  }
+
+  Timer {
+    id: sleepMonitorRestart
+    interval: 2000
+    onTriggered: sleepMonitor.running = true
+  }
+
+  // Fallback: lock on resume via time-jump detection if D-Bus signal was missed.
+  Connections {
+    target: Time
+    function onResumed() {
+      root._lockIfNeeded("resume fallback");
+    }
+  }
+
+  function _lockIfNeeded(source) {
+    if (!Settings.data.general.lockOnSuspend)
+      return;
+    if (!PanelService || !PanelService.lockScreen || PanelService.lockScreen.active)
+      return;
+    Logger.i("Compositor", "Locking screen (" + source + ")");
+    root.lock();
+  }
+
   property int lockAndSuspendCheckCount: 0
 
   function lockAndSuspend() {
