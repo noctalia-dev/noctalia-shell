@@ -105,12 +105,22 @@ NBox {
                            }
         }
 
+        // Color swatch - shown for clipboard color entries
+        Rectangle {
+          anchors.fill: parent
+          radius: Style.radiusXS
+          color: modelData.colorHex || "transparent"
+          visible: !!modelData.colorHex
+          border.color: Color.mOnSurface
+          border.width: Style.borderM
+        }
+
         Loader {
           id: iconLoader
           anchors.fill: parent
           anchors.margins: Style.marginXS
 
-          visible: (!modelData.isImage && !modelData.displayString) || (!!modelData.isImage && imagePreview.status === Image.Error)
+          visible: (!modelData.isImage && !modelData.displayString && !modelData.colorHex) || (!!modelData.isImage && imagePreview.status === Image.Error)
           active: visible
 
           sourceComponent: Component {
