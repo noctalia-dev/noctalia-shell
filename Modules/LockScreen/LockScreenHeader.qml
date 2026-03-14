@@ -172,6 +172,7 @@ Rectangle {
       // Custom Clock (Stacked)
       ColumnLayout {
         anchors.centerIn: parent
+        width: parent.width
         visible: Settings.data.general.clockStyle === "custom"
         spacing: -3
 
@@ -182,8 +183,11 @@ Rectangle {
             pointSize: Style.fontSizeL
             font.weight: Style.fontWeightBold
             color: Color.mOnSurface
+            wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignHCenter
             Layout.alignment: Qt.AlignHCenter
+            Layout.maximumWidth: parent.width
+            Layout.fillWidth: true
           }
         }
       }
