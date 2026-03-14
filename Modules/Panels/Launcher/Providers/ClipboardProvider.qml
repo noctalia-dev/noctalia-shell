@@ -26,47 +26,11 @@ Item {
 
   // Categories
   property var availableCategories: Settings.data.appLauncher.enableClipboardChips ? ["All", "Images", "Links", "Files", "Code", "Colors"] : []
-  property bool showsCategories: Settings.data.appLauncher.enableClipboardChips
   property string selectedCategory: "All"
 
   function selectCategory(cat) {
     if (selectedCategory !== cat) {
       selectedCategory = cat;
-      if (launcher) {
-        launcher.updateResults();
-      }
-    }
-  }
-
-  // Date Filtering
-  property bool hasDateFilter: Settings.data.appLauncher.enableClipboardDateHeaders
-  property string dateFilter: "all"
-  property var availableDateFilters: [
-    {
-      "label": I18n.tr("launcher.date-filter-all-time"),
-      "action": "all",
-      "icon": iconMode === "tabler" ? "calendar" : "x-office-calendar"
-    },
-    {
-      "label": I18n.tr("launcher.date-filter-today"),
-      "action": "today",
-      "icon": iconMode === "tabler" ? "calendar-event" : "view-calendar-timeline"
-    },
-    {
-      "label": I18n.tr("launcher.date-filter-yesterday"),
-      "action": "yesterday",
-      "icon": iconMode === "tabler" ? "calendar-time" : "view-calendar"
-    },
-    {
-      "label": I18n.tr("launcher.date-filter-previous-7-days"),
-      "action": "week",
-      "icon": iconMode === "tabler" ? "calendar-week" : "view-calendar-week"
-    }
-  ]
-
-  function selectDateFilter(filter) {
-    if (dateFilter !== filter) {
-      dateFilter = filter;
       if (launcher) {
         launcher.updateResults();
       }
@@ -258,15 +222,7 @@ Item {
     // Search clipboard items
     const searchTerm = query.toLowerCase();
 
-    // Date grouping trackers
-    const headersEnabled = Settings.data.appLauncher.enableClipboardDateHeaders;
     const now = Date.now() / 1000;
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayStartTs = todayStart.getTime() / 1000;
-    const yesterdayStartTs = todayStartTs - 86400;
-
-    let currentGroup = "";
 
     const catMap = {
       "Images": "image",
@@ -292,50 +248,14 @@ Item {
         return;
       }
 
-      // Date Filter
       const firstSeen = ClipboardService.firstSeenById[item.id] || now;
-      if (root.dateFilter !== "all") {
-        if (root.dateFilter === "today" && firstSeen < todayStartTs)
-          return;
-        if (root.dateFilter === "yesterday" && (firstSeen >= todayStartTs || firstSeen < yesterdayStartTs))
-          return;
-        if (root.dateFilter === "week" && (firstSeen >= yesterdayStartTs || firstSeen < (todayStartTs - (86400 * 7))))
-          return;
-      }
-
-      // Check date group logic
-      if (headersEnabled && !searchTerm && root.selectedCategory === "All" && root.dateFilter === "all") {
-        let groupName = I18n.tr("launcher.date-filter-all-time");
-        if (firstSeen >= todayStartTs) {
-          groupName = I18n.tr("launcher.date-filter-today");
-        } else if (firstSeen >= yesterdayStartTs) {
-          groupName = I18n.tr("launcher.date-filter-yesterday");
-        } else if (firstSeen >= todayStartTs - (86400 * 7)) {
-          groupName = I18n.tr("launcher.date-filter-previous-7-days");
-        }
-
-        if (groupName !== currentGroup) {
-          currentGroup = groupName;
-          results.push({
-                         "name": currentGroup,
-                         "description": "",
-                         "icon": iconMode === "tabler" ? "calendar" : "x-office-calendar",
-                         "isTablerIcon": true,
-                         "isImage": false,
-                         "hideIcon": true,
-                         "isHeader": true,
-                         "clipboardId": "",
-                         "onActivate": function () {}
-                       });
-        }
-      }
 
       // Format the result based on type
       let entry;
       if (item.isImage) {
-        entry = formatImageEntry(item);
+        entry = formatImageEntry(item, firstSeen);
       } else {
-        entry = formatTextEntry(item);
+        entry = formatTextEntry(item, firstSeen);
       }
 
       // Add activation handler
@@ -371,12 +291,16 @@ Item {
     return results;
   }
 
-  function formatImageEntry(item) {
+  function formatImageEntry(item, firstSeen) {
     const meta = ClipboardService.parseImageMeta(item.preview);
+    const timeStr = Time.formatRelativeTime(new Date(firstSeen * 1000));
+    let desc = meta ? `${meta.fmt} • ${meta.size}` : item.mime || "Image data";
+    if (timeStr)
+      desc += ` • ${timeStr}`;
 
     return {
       "name": meta ? `Image ${meta.w}×${meta.h}` : "Image",
-      "description": meta ? `${meta.fmt} • ${meta.size}` : item.mime || "Image data",
+      "description": desc,
       "icon": iconMode === "tabler" ? "photo" : "image",
       "isTablerIcon": true,
       "isImage": true,
@@ -389,7 +313,7 @@ Item {
     };
   }
 
-  function formatTextEntry(item) {
+  function formatTextEntry(item, firstSeen) {
     const preview = (item.preview || "").trim();
     const lines = preview.split('\n').filter(l => l.trim());
 
@@ -414,6 +338,10 @@ Item {
         description = `${chars} characters, ${words} word${words !== 1 ? 's' : ''}`;
       }
     }
+
+    const timeStr = Time.formatRelativeTime(new Date(firstSeen * 1000));
+    if (timeStr)
+      description += ` • ${timeStr}`;
 
     let defaultIcon = iconMode === "tabler" ? "clipboard" : "text-x-generic";
     let colorHex = "";
@@ -517,7 +445,7 @@ Item {
 
   // Get preview data for the preview panel
   function getPreviewData(item) {
-    if (!item || item.isHeader)
+    if (!item)
       return null;
     return {
       "clipboardId": item.clipboardId,

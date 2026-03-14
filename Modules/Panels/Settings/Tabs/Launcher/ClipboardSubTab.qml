@@ -63,15 +63,6 @@ ColumnLayout {
     enabled: Settings.data.appLauncher.enableClipboardHistory
   }
 
-  NToggle {
-    label: I18n.tr("panels.launcher.settings-clip-date-headers-label")
-    description: I18n.tr("panels.launcher.settings-clip-date-headers-description")
-    checked: Settings.data.appLauncher.enableClipboardDateHeaders
-    onToggled: checked => Settings.data.appLauncher.enableClipboardDateHeaders = checked
-    defaultValue: Settings.getDefaultValue("appLauncher.enableClipboardDateHeaders")
-    enabled: Settings.data.appLauncher.enableClipboardHistory
-  }
-
   NDivider {
     Layout.fillWidth: true
     visible: Settings.data.appLauncher.enableClipboardHistory

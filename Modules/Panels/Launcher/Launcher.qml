@@ -40,7 +40,7 @@ SmartPanel {
       return false;
     if (!Settings.data.appLauncher.enableClipPreview)
       return false;
-    return selectedIndex >= 0 && results && !!results[selectedIndex] && !results[selectedIndex].isHeader;
+    return selectedIndex >= 0 && results && !!results[selectedIndex];
   }
   readonly property int previewPanelWidth: Math.round(400 * Style.uiScaleRatio)
 

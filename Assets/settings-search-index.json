@@ -1336,6 +1336,24 @@
     "subTabLabel": "common.clipboard"
   },
   {
+    "labelKey": "panels.launcher.settings-clip-smart-icons-label",
+    "descriptionKey": "panels.launcher.settings-clip-smart-icons-description",
+    "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 1,
+    "subTabLabel": "common.clipboard"
+  },
+  {
+    "labelKey": "panels.launcher.settings-clip-chips-label",
+    "descriptionKey": "panels.launcher.settings-clip-chips-description",
+    "widget": "NToggle",
+    "tab": 8,
+    "tabLabel": "panels.launcher.title",
+    "subTab": 1,
+    "subTabLabel": "common.clipboard"
+  },
+  {
     "labelKey": "panels.launcher.settings-clipboard-watch-text-label",
     "descriptionKey": "panels.launcher.settings-clipboard-watch-text-description",
     "widget": "NTextInput",

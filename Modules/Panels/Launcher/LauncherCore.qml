@@ -65,7 +65,7 @@ Rectangle {
   readonly property int badgeSize: Math.round(effectiveIconSize * Style.uiScaleRatio)
   readonly property int entryHeight: Math.round(badgeSize + (launcherDensity === "compact" ? (Style.marginL + Style.marginXXS) : (Style.marginXL + Style.marginS)))
 
-  readonly property bool providerShowsCategories: currentProvider.showsCategories === true
+  readonly property bool providerShowsCategories: (currentProvider.showsCategories !== undefined ? currentProvider.showsCategories : true) && providerCategories.length > 0
 
   readonly property var providerCategories: {
     if (currentProvider.availableCategories && currentProvider.availableCategories.length > 0) {
