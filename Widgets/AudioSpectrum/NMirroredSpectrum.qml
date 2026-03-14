@@ -14,7 +14,7 @@ Item {
   property real minimumSignalValue: 0.05 // Default to 5% of height
 
   // Pre-compute mirroring
-  readonly property int valuesCount: (values && Array.isArray(values)) ? values.length : 0
+  readonly property int valuesCount: (values && values.length !== undefined) ? values.length : 0
   readonly property int totalBars: valuesCount * 2
   readonly property real barSlotSize: totalBars > 0 ? (vertical ? height : width) / totalBars : 0
   readonly property bool highQuality: (Settings.data.audio.visualizerType === "low") ? false : true

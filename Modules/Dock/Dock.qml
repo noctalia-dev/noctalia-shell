@@ -692,9 +692,9 @@ Loader {
         }
       }
 
-      // PEEK WINDOW
+      // PEEK WINDOW — only needed when dock can auto-hide or is in attached mode
       Loader {
-        active: (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name))
+        active: (autoHide || isAttachedMode) && (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name))
 
         sourceComponent: PanelWindow {
           id: peekWindow
@@ -754,9 +754,9 @@ Loader {
         }
       }
 
-      // DOCK INDICATOR WINDOW
+      // DOCK INDICATOR WINDOW — only needed when dock can auto-hide/attach and indicator is enabled
       Loader {
-        active: (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name))
+        active: (autoHide || isAttachedMode) && Settings.data.dock.showDockIndicator && (barIsReady || !hasBar) && modelData && (Settings.data.dock.monitors.length === 0 || Settings.data.dock.monitors.includes(modelData.name))
 
         sourceComponent: PanelWindow {
           id: dockIndicatorWindow
@@ -780,13 +780,16 @@ Loader {
           implicitHeight: isVertical ? peekEdgeLength : indicatorThickness
           implicitWidth: isVertical ? indicatorThickness : peekEdgeLength
 
+          // Hide the window surface when indicator is not visible, so the compositor
+          // can skip compositing this layer-shell surface entirely (saves GPU on NVIDIA)
+          visible: indicatorRect.opacity > 0 || indicatorVisible
+
           Rectangle {
             id: indicatorRect
             anchors.fill: parent
             radius: indicatorThickness
             color: Qt.alpha(Color.resolveColorKey(indicatorColorKey), indicatorOpacity)
             opacity: indicatorVisible ? 1 : 0
-            visible: opacity > 0
 
             Behavior on opacity {
               NumberAnimation {
