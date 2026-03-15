@@ -1951,6 +1951,15 @@
     "subTabLabel": "common.installed"
   },
   {
+    "labelKey": "panels.plugins.notify-updates",
+    "descriptionKey": "panels.plugins.notify-updates-description",
+    "widget": "NToggle",
+    "tab": 19,
+    "tabLabel": "panels.plugins.title",
+    "subTab": 0,
+    "subTabLabel": "common.installed"
+  },
+  {
     "labelKey": "panels.plugins.installed-no-plugins-label",
     "descriptionKey": "panels.plugins.installed-no-plugins-description",
     "widget": "NLabel",
