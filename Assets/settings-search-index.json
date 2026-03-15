@@ -1198,6 +1198,15 @@
     "subTabLabel": "panels.hooks.title"
   },
   {
+    "labelKey": "panels.hooks.color-generation-label",
+    "descriptionKey": "panels.hooks.color-generation-description",
+    "widget": "HookRow",
+    "tab": 20,
+    "tabLabel": "panels.hooks.title",
+    "subTab": 1,
+    "subTabLabel": "panels.hooks.title"
+  },
+  {
     "labelKey": "panels.hooks.theme-changed-label",
     "descriptionKey": "panels.hooks.theme-changed-description",
     "widget": "HookRow",
