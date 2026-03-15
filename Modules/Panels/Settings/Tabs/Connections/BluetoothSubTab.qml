@@ -6,7 +6,6 @@ import Quickshell
 import Quickshell.Bluetooth
 
 import qs.Commons
-import qs.Services.Hardware
 import qs.Services.Networking
 import qs.Services.System
 import qs.Services.UI
@@ -17,121 +16,114 @@ Item {
   Layout.fillWidth: true
   implicitHeight: mainLayout.implicitHeight
 
-  // Configuration for shared use (e.g. by BluetoothPanel)
+  // Configuration for shared use (e.g. by NetworkPanel)
   property bool showOnlyLists: false
 
-  readonly property bool isScanningActive: BluetoothService.scanningActive
-  readonly property bool isDiscoverable: BluetoothService.discoverable
+  // State properties
+  property string passwordSsid: ""
+  property string identity: ""
+  property string enterpriseEap: "peap"
+  property string enterprisePhase2: "mschapv2"
+  property string enterpriseAnonIdentity: ""
+  property string enterpriseCaCert: ""
+  property string expandedSsid: ""
+  property string infoSsid: ""
+  property int ipVersion: 4
+  property bool detailsGrid: (Settings.data && Settings.data.network && Settings.data.network.wifiDetailsViewMode === "grid")
 
-  // Device lists with local filtering logic
-  readonly property var connectedDevices: {
-    if (!BluetoothService.adapter || !BluetoothService.adapter.devices)
-      return [];
-    var filtered = BluetoothService.adapter.devices.values.filter(dev => dev && !dev.blocked && dev.connected);
-    filtered = BluetoothService.dedupeDevices(filtered);
-    return BluetoothService.sortDevices(filtered);
-  }
+  // Freezing models for password entry
+  property var cachedNetworks: ({})
 
-  readonly property var pairedDevices: {
-    if (!BluetoothService.adapter || !BluetoothService.adapter.devices)
-      return [];
-    var filtered = BluetoothService.adapter.devices.values.filter(dev => dev && !dev.blocked && !dev.connected && (dev.paired || dev.trusted));
-    filtered = BluetoothService.dedupeDevices(filtered);
-    return BluetoothService.sortDevices(filtered);
-  }
-
-  readonly property var unnamedAvailableDevices: {
-    if (!BluetoothService.adapter || !BluetoothService.adapter.devices)
-      return [];
-    return BluetoothService.adapter.devices.values.filter(dev => dev && !dev.blocked && !dev.paired && !dev.trusted);
-  }
-
-  readonly property var availableDevices: {
-    var list = root.unnamedAvailableDevices;
-
-    if (Settings.data.network.bluetoothHideUnnamedDevices) {
-      list = list.filter(function (dev) {
-        var dn = dev.name || dev.deviceName || "";
-        var s = String(dn).trim();
-        if (s.length === 0)
-          return false;
-        var lower = s.toLowerCase();
-        if (lower === "unknown" || lower === "unnamed" || lower === "n/a" || lower === "na")
-          return false;
-        var addr = dev.address || dev.bdaddr || dev.mac || "";
-        if (addr.length > 0) {
-          var normName = s.toLowerCase().replace(/[^0-9a-z]/g, "");
-          var normAddr = String(addr).toLowerCase().replace(/[^0-9a-z]/g, "");
-          if (normName.length > 0 && normName === normAddr)
-            return false;
-        }
-        var macRegexComb = /^(([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}|([0-9A-Fa-f]{4}\.){2}[0-9A-Fa-f]{4}|[0-9A-Fa-f]{12})$/;
-        if (macRegexComb.test(s)) {
-          return false;
-        }
-        return true;
-      });
+  onPasswordSsidChanged: {
+    if (passwordSsid && passwordSsid.length > 0) {
+      try {
+        cachedNetworks = JSON.parse(JSON.stringify(NetworkService.networks));
+      } catch (e) {
+        cachedNetworks = Object.assign({}, NetworkService.networks);
+      }
+    } else {
+      cachedNetworks = ({});
     }
-    list = BluetoothService.dedupeDevices(list);
-    return BluetoothService.sortDevices(list);
   }
 
-  // For managing expanded device details
-  property string expandedDeviceKey: ""
-  property bool detailsGrid: (Settings.data.network.bluetoothDetailsViewMode === "grid")
+  readonly property var activeNetworks: (passwordSsid && passwordSsid.length > 0) ? Object.values(cachedNetworks) : Object.values(NetworkService.networks)
+
+  readonly property var connectedNetworks: {
+    if (!Settings.data.network.wifiEnabled) {
+      return [];
+    }
+    return activeNetworks.filter(n => n.connected).sort((a, b) => b.signal - a.signal);
+  }
+
+  readonly property var savedNetworks: {
+    if (!Settings.data.network.wifiEnabled) {
+      return [];
+    }
+    return activeNetworks.filter(n => !n.connected && (n.existing || n.cached)).sort((a, b) => b.signal - a.signal);
+  }
+
+  readonly property var availableNetworks: {
+    if (!Settings.data.network.wifiEnabled) {
+      return [];
+    }
+    return activeNetworks.filter(n => !n.connected && !n.existing && !n.cached).sort((a, b) => b.signal - a.signal);
+  }
 
   // Combined visibility check: tab must be visible AND the window must be visible
   readonly property bool effectivelyVisible: root.visible && Window.window && Window.window.visible
 
-  Connections {
-    target: BluetoothService
-    function onEnabledChanged() {
-      stateChangeDebouncer.restart();
+  onEffectivelyVisibleChanged: {
+    if (effectivelyVisible && Settings.data.network.wifiEnabled && !showOnlyLists) {
+      NetworkService.scan();
     }
-    function onDiscoverableChanged() {
-      stateChangeDebouncer.restart();
-    }
-  }
-
-  onEffectivelyVisibleChanged: stateChangeDebouncer.restart()
-
-  Timer {
-    id: stateChangeDebouncer
-    interval: 100 // 100ms debounce
-    repeat: false
-    onTriggered: root._updateScanningState()
-  }
-
-  function _updateScanningState() {
-    if (effectivelyVisible && BluetoothService.enabled && !showOnlyLists) {
-      Logger.d("BluetoothPrefs", "Panel/tab active");
-      if (!isScanningActive) {
-        BluetoothService.setScanActive(true);
-      }
-      if (!Settings.data.network.disableDiscoverability && !isDiscoverable) {
-        BluetoothService.setDiscoverable(true);
-      }
+    if (effectivelyVisible) {
+      SystemStatService.registerComponent("wifi-subtab");
     } else {
-      Logger.d("BluetoothPrefs", "Panel/tab inactive");
-      if (isScanningActive && !showOnlyLists) {
-        BluetoothService.setScanActive(false);
-      }
-      if (isDiscoverable && !showOnlyLists) {
-        BluetoothService.setDiscoverable(false);
-      }
+      SystemStatService.unregisterComponent("wifi-subtab");
+    }
+  }
+
+  Component.onCompleted: {
+    if (effectivelyVisible) {
+      SystemStatService.registerComponent("wifi-subtab");
     }
   }
 
   Component.onDestruction: {
-    // Ensure scanning is stopped when component is closed
-    if (isScanningActive && !showOnlyLists) {
-      BluetoothService.setScanActive(false);
-    }
-    // Ensure discoverable is disabled when component is closed
-    if (isDiscoverable && !showOnlyLists) {
-      BluetoothService.setDiscoverable(false);
-    }
-    Logger.d("BluetoothPrefs", "Panel closed");
+    SystemStatService.unregisterComponent("wifi-subtab");
+  }
+
+  // Actions
+  function requestPassword(ssid) {
+    passwordSsid = ssid;
+    identity = "";
+    enterpriseEap = "peap";
+    enterprisePhase2 = "mschapv2";
+    enterpriseAnonIdentity = "";
+    enterpriseCaCert = "";
+    expandedSsid = "";
+  }
+  function submitPassword(ssid, password, identity = "") {
+    NetworkService.connect(ssid, password, false, identity, {
+                             eap: enterpriseEap,
+                             phase2: enterprisePhase2,
+                             anonIdentity: enterpriseAnonIdentity,
+                             caCert: enterpriseCaCert
+                           });
+    passwordSsid = "";
+  }
+  function cancelPassword() {
+    passwordSsid = "";
+  }
+  function requestForget(ssid) {
+    expandedSsid = (expandedSsid === ssid) ? "" : ssid;
+  }
+  function confirmForget(ssid) {
+    NetworkService.forget(ssid);
+    expandedSsid = "";
+  }
+  function cancelForget() {
+    expandedSsid = "";
   }
 
   ColumnLayout {
@@ -158,26 +150,24 @@ Item {
           spacing: Style.marginM
 
           NToggle {
-            label: I18n.tr("common.bluetooth")
-            icon: BluetoothService.enabled ? "bluetooth" : "bluetooth-off"
-            checked: BluetoothService.enabled
-            enabled: !Settings.data.network.airplaneModeEnabled && BluetoothService.bluetoothAvailable
-            onToggled: checked => BluetoothService.setBluetoothEnabled(checked)
+            label: I18n.tr("common.wifi")
+            icon: NetworkService.getIcon(false)
+            checked: Settings.data.network.wifiEnabled
+            onToggled: checked => NetworkService.setWifiEnabled(checked)
+            enabled: ProgramCheckerService.nmcliAvailable && !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable
             Layout.alignment: Qt.AlignVCenter
           }
         }
 
         NDivider {
           Layout.fillWidth: true
-          visible: BluetoothService.enabled && isDiscoverable
+          visible: Settings.data.network.wifiEnabled && root.connectedNetworks.length > 0
         }
 
         NText {
-          visible: BluetoothService.enabled && isDiscoverable
+          visible: !root.showOnlyLists && Settings.data.network.wifiEnabled
           Layout.fillWidth: true
-          text: I18n.tr("panels.connections.bluetooth-discoverable", {
-                          hostName: HostService.hostName
-                        })
+          text: I18n.tr("panels.connections.wifi-header-text")
           color: Color.mOnSurfaceVariant
           richTextEnabled: true
           wrapMode: Text.WordWrap
@@ -191,17 +181,17 @@ Item {
       Layout.fillWidth: true
     }
 
-    // Device List [1] (Connected)
+    // Network List [1] (Connected)
     NBox {
-      id: connectedDevicesBox
-      visible: root.connectedDevices.length > 0 && BluetoothService.enabled
+      id: connectedBox
+      visible: root.connectedNetworks.length > 0 && Settings.data.network.wifiEnabled
       Layout.fillWidth: true
-      Layout.preferredHeight: connectedDevicesCol.implicitHeight + Style.margin2M
+      Layout.preferredHeight: connectedCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
       color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
-        id: connectedDevicesCol
+        id: connectedCol
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
@@ -210,29 +200,29 @@ Item {
         spacing: Style.marginM
 
         NLabel {
-          label: I18n.tr("bluetooth.panel.connected-devices")
+          label: I18n.tr("common.connected")
           Layout.fillWidth: true
           Layout.leftMargin: Style.marginS
         }
 
         Repeater {
-          model: root.connectedDevices
+          model: root.connectedNetworks
           delegate: nboxDelegate
         }
       }
     }
 
-    // Devices List [2] (Paired)
+    // Network List [2] (Saved)
     NBox {
-      id: pairedDevicesBox
-      visible: root.pairedDevices.length > 0 && BluetoothService.enabled
+      id: savedBox
+      visible: root.savedNetworks.length > 0 && Settings.data.network.wifiEnabled
       Layout.fillWidth: true
-      Layout.preferredHeight: pairedDevicesCol.implicitHeight + Style.margin2M
+      Layout.preferredHeight: savedCol.implicitHeight + Style.margin2M
       border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
       color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
-        id: pairedDevicesCol
+        id: savedCol
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
@@ -241,32 +231,34 @@ Item {
         spacing: Style.marginM
 
         NLabel {
-          label: I18n.tr("bluetooth.panel.paired-devices")
+          label: I18n.tr("wifi.panel.known-networks")
           Layout.fillWidth: true
           Layout.leftMargin: Style.marginS
         }
 
         Repeater {
-          model: root.pairedDevices
+          model: root.savedNetworks
           delegate: nboxDelegate
         }
       }
     }
 
-    // Device List [3] (Available)
+    // Network List [3] (Available)
     NBox {
-      id: availableDevicesBox
-      visible: !root.showOnlyLists && root.unnamedAvailableDevices.length > 0 && BluetoothService.enabled
+      id: availableBox
+      visible: root.availableNetworks.length > 0 && Settings.data.network.wifiEnabled
       Layout.fillWidth: true
-      Layout.preferredHeight: availableDevicesCol.implicitHeight + Style.margin2M
-      border.color: "transparent"
+      Layout.preferredHeight: availableCol.implicitHeight + Style.margin2M
+      border.color: showOnlyLists ? Style.boxBorderColor : "transparent"
       color: showOnlyLists ? Color.mSurfaceVariant : "transparent"
 
       ColumnLayout {
-        id: availableDevicesCol
+        id: availableCol
         anchors.fill: parent
         anchors.topMargin: Style.marginM
         anchors.bottomMargin: Style.marginM
+        anchors.leftMargin: showOnlyLists ? Style.marginL : 0
+        anchors.rightMargin: showOnlyLists ? Style.marginL : 0
         spacing: Style.marginM
 
         RowLayout {
@@ -275,25 +267,65 @@ Item {
           spacing: Style.marginS
 
           NLabel {
-            label: I18n.tr("bluetooth.panel.available-devices")
-            description: BluetoothService.scanningActive ? I18n.tr("bluetooth.panel.scanning") : ""
+            label: I18n.tr("wifi.panel.available-networks")
             Layout.fillWidth: true
           }
         }
 
+        // Auto-scan timer when panel is visible
+        Timer {
+          id: autoScanTimer
+          interval: 5000
+          running: root.effectivelyVisible && Settings.data.network.wifiEnabled
+          repeat: true
+          onTriggered: NetworkService.scan()
+        }
+
         Repeater {
-          model: root.availableDevices
+          model: root.availableNetworks
           delegate: nboxDelegate
         }
 
-        NText {
-          visible: root.availableDevices.length === 0 && root.unnamedAvailableDevices.length > 0
-          text: I18n.tr("panels.connections.bluetooth-devices-unnamed")
-          pointSize: Style.fontSizeS
-          color: Color.mOnSurfaceVariant
-          horizontalAlignment: Text.AlignHCenter
+        // Add hidden network button
+        NBox {
+          visible: !root.showOnlyLists
           Layout.fillWidth: true
-          Layout.margins: Style.marginL
+          Layout.preferredHeight: addHiddenContent.implicitHeight + Style.margin2M
+          color: addHiddenMouseArea.containsMouse ? Color.mSurfaceVariant : Color.mSurface
+          radius: Style.radiusM
+
+          RowLayout {
+            id: addHiddenContent
+            anchors.fill: parent
+            anchors.margins: Style.marginM
+            spacing: Style.marginM
+
+            NIcon {
+              icon: "plus"
+              pointSize: Style.fontSizeXXL
+              color: Color.mOnSurfaceVariant
+            }
+
+            NText {
+              text: I18n.tr("wifi.panel.add-network")
+              pointSize: Style.fontSizeM
+              color: Color.mOnSurface
+              Layout.fillWidth: true
+            }
+          }
+
+          MouseArea {
+            id: addHiddenMouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+              addNetworkPopup.customSsid = "";
+              addNetworkPopup.customPassword = "";
+              addNetworkPopup.customSecurityKey = "wpa2-psk";
+              addNetworkPopup.open();
+            }
+          }
         }
       }
     }
@@ -303,9 +335,10 @@ Item {
       Layout.fillWidth: true
     }
 
+    // Airplane Mode
     NBox {
       id: miscSettingsBox
-      visible: !root.showOnlyLists && BluetoothService.enabled
+      visible: !root.showOnlyLists && Settings.data.network.wifiEnabled
       Layout.fillWidth: true
       Layout.preferredHeight: miscSettingsCol.implicitHeight + Style.margin2XL
       color: Color.mSurface
@@ -317,48 +350,293 @@ Item {
         spacing: Style.marginM
 
         NToggle {
-          label: I18n.tr("panels.connections.bluetooth-auto-connect-label")
-          description: I18n.tr("panels.connections.bluetooth-auto-connect-description")
-          checked: Settings.data.network.bluetoothAutoConnect
-          onToggled: checked => Settings.data.network.bluetoothAutoConnect = checked
+          label: I18n.tr("toast.airplane-mode.title")
+          description: I18n.tr("toast.airplane-mode.description")
+          icon: Settings.data.network.airplaneModeEnabled ? "plane" : "plane-off"
+          checked: Settings.data.network.airplaneModeEnabled
+          onToggled: checked => BluetoothService.setAirplaneMode(checked)
+        }
+      }
+    }
+  }
+
+  // Add Hidden Network Popup
+  Popup {
+    id: addNetworkPopup
+    visible: false
+    anchors.centerIn: parent
+    width: Math.min(parent.width * 0.9, 400 * Style.uiScaleRatio)
+    height: addNetworkContent.implicitHeight + Style.margin2L
+    modal: true
+    focus: true
+    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+    property string customSsid: ""
+    property string customPassword: ""
+    property string customIdentity: ""
+    property string customSecurityKey: "wpa2-psk"
+    property string customEnterpriseEap: "peap"
+    property string customEnterprisePhase2: "mschapv2"
+    property string customEnterpriseAnonIdentity: ""
+    property string customEnterpriseCaCert: ""
+    property bool customShowPassword: false
+    property bool customIsHidden: false
+
+    onOpened: {
+      customSsidInput.inputItem.forceActiveFocus();
+    }
+
+    // Make background transparent so we can use NDropShadow
+    background: Item {}
+
+    // Shadow effect (behind background)
+    NDropShadow {
+      anchors.fill: customPopupBg
+      source: customPopupBg
+      autoPaddingEnabled: true
+      z: -1
+    }
+
+    Rectangle {
+      id: customPopupBg
+      anchors.fill: parent
+      radius: Style.radiusL
+      color: Qt.alpha(Color.mSurface, 0.95)
+      border.color: Color.mOutline
+      border.width: Style.borderS
+    }
+
+    ColumnLayout {
+      id: addNetworkContent
+      anchors.centerIn: parent
+      width: parent.width - (Style.marginL * 2)
+      spacing: Style.marginM
+
+      // Header with Icon
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NImageRounded {
+          Layout.preferredWidth: Style.fontSizeXXL * 2
+          Layout.preferredHeight: Style.fontSizeXXL * 2
+          fallbackIcon: "wifi"
+          borderWidth: 0
         }
 
-        NToggle {
-          label: I18n.tr("panels.connections.hide-unnamed-devices-label")
-          description: I18n.tr("panels.connections.hide-unnamed-devices-description")
-          checked: Settings.data.network.bluetoothHideUnnamedDevices
-          onToggled: checked => Settings.data.network.bluetoothHideUnnamedDevices = checked
+        ColumnLayout {
+          Layout.fillWidth: true
+          spacing: Style.marginXS
+
+          NText {
+            text: I18n.tr("wifi.panel.add-network")
+            pointSize: Style.fontSizeL
+            font.weight: Style.fontWeightBold
+            color: Color.mOnSurface
+            wrapMode: Text.Wrap
+            Layout.fillWidth: true
+          }
+        }
+      }
+
+      // Input Fields
+      NTextInput {
+        id: customSsidInput
+        Layout.fillWidth: true
+        inputIconName: "wifi"
+        placeholderText: I18n.tr("wifi.panel.network-name-ssid")
+        label: I18n.tr("wifi.panel.network-name-ssid")
+        text: addNetworkPopup.customSsid
+        onTextChanged: addNetworkPopup.customSsid = text
+        onAccepted: {
+          if (addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0)) {
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
+                                         }, addNetworkPopup.customIsHidden);
+            addNetworkPopup.close();
+          }
+        }
+      }
+
+      NComboBox {
+        Layout.fillWidth: true
+        model: NetworkService.supportedSecurityTypes
+        currentKey: addNetworkPopup.customSecurityKey
+        onSelected: key => {
+                      addNetworkPopup.customSecurityKey = key;
+                    }
+      }
+
+      ColumnLayout {
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NComboBox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.enterprise.eap-method")
+          model: [
+            {
+              key: "peap",
+              name: "PEAP"
+            },
+            {
+              key: "ttls",
+              name: "TTLS"
+            }
+          ]
+          currentKey: addNetworkPopup.customEnterpriseEap
+          onSelected: key => addNetworkPopup.customEnterpriseEap = key
         }
 
-        NToggle {
-          label: I18n.tr("panels.connections.disable-discoverability-label")
-          description: I18n.tr("panels.connections.disable-discoverability-description")
-          checked: Settings.data.network.disableDiscoverability
-          onToggled: checked => {
-                       Settings.data.network.disableDiscoverability = checked;
-                       BluetoothService.setDiscoverable(!checked);
-                     }
+        NComboBox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.enterprise.phase2-auth")
+          model: [
+            {
+              key: "mschapv2",
+              name: "MSCHAPv2"
+            },
+            {
+              key: "pap",
+              name: "PAP"
+            },
+            {
+              key: "mschap",
+              name: "MSCHAP"
+            },
+            {
+              key: "chap",
+              name: "CHAP"
+            }
+          ]
+          currentKey: addNetworkPopup.customEnterprisePhase2
+          onSelected: key => addNetworkPopup.customEnterprisePhase2 = key
+        }
+      }
+
+      NTextInput {
+        id: customAnonIdentityInput
+        Layout.fillWidth: true
+        inputIconName: "user-question"
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        placeholderText: I18n.tr("wifi.enterprise.anonymous-identity")
+        label: I18n.tr("wifi.enterprise.anonymous-identity")
+        text: addNetworkPopup.customEnterpriseAnonIdentity
+        onTextChanged: addNetworkPopup.customEnterpriseAnonIdentity = text
+      }
+
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+
+        NTextInput {
+          id: customCaCertInput
+          Layout.fillWidth: true
+          inputIconName: "certificate"
+          placeholderText: I18n.tr("wifi.enterprise.ca-cert")
+          label: I18n.tr("wifi.enterprise.ca-cert")
+          text: addNetworkPopup.customEnterpriseCaCert
+          onTextChanged: addNetworkPopup.customEnterpriseCaCert = text
         }
 
-        // RSSI Polling
-        NToggle {
-          label: I18n.tr("panels.connections.bluetooth-rssi-polling-label")
-          description: I18n.tr("panels.connections.bluetooth-rssi-polling-description")
-          checked: Settings.data.network.bluetoothRssiPollingEnabled
-          onToggled: checked => Settings.data.network.bluetoothRssiPollingEnabled = checked
+        NIconButton {
+          icon: "folder-open"
+          Layout.alignment: Qt.AlignBottom
+          onClicked: caCertPicker.openForAddNetwork()
         }
-        NSpinBox {
-          label: I18n.tr("panels.connections.bluetooth-rssi-polling-interval-label")
-          description: I18n.tr("panels.connections.bluetooth-rssi-polling-interval-description")
-          from: 10000
-          to: 120000
-          stepSize: 1000
-          value: Settings.data.network.bluetoothRssiPollIntervalMs
-          defaultValue: Settings.getDefaultValue("network.bluetoothRssiPollIntervalMs")
-          onValueChanged: Settings.data.network.bluetoothRssiPollIntervalMs = value
-          suffix: " ms"
-          Layout.alignment: Qt.AlignVCenter
-          visible: Settings.data.network.bluetoothRssiPollingEnabled
+      }
+
+      NTextInput {
+        id: customIdentityInput
+        Layout.fillWidth: true
+        inputIconName: "user"
+        visible: addNetworkPopup.customSecurityKey.indexOf("-eap") !== -1
+        placeholderText: I18n.tr("wifi.enterprise.username")
+        label: I18n.tr("wifi.enterprise.username")
+        text: addNetworkPopup.customIdentity
+        onTextChanged: addNetworkPopup.customIdentity = text
+      }
+
+      NTextInput {
+        id: customPasswordInput
+        Layout.fillWidth: true
+        inputIconName: "key"
+        visible: addNetworkPopup.customSecurityKey !== "open"
+        placeholderText: I18n.tr("common.password")
+        label: I18n.tr("common.password")
+        text: addNetworkPopup.customPassword
+        onTextChanged: addNetworkPopup.customPassword = text
+        inputItem.echoMode: addNetworkPopup.customShowPassword ? TextInput.Normal : TextInput.Password
+        onAccepted: {
+          if (addNetworkPopup.customSsid.length > 0 && addNetworkPopup.customPassword.length > 0) {
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
+                                         }, addNetworkPopup.customIsHidden);
+            addNetworkPopup.close();
+          }
+        }
+      }
+
+      RowLayout {
+        Layout.fillWidth: true
+        spacing: Style.marginM
+
+        NCheckbox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.panel.show-password")
+          checked: addNetworkPopup.customShowPassword
+          onToggled: checked => addNetworkPopup.customShowPassword = checked
+          visible: addNetworkPopup.customSecurityKey !== "open"
+        }
+
+        NCheckbox {
+          Layout.fillWidth: true
+          label: I18n.tr("wifi.panel.hidden-network")
+          checked: addNetworkPopup.customIsHidden
+          onToggled: checked => addNetworkPopup.customIsHidden = checked
+        }
+      }
+
+      // Actions
+      RowLayout {
+        Layout.fillWidth: true
+        Layout.topMargin: Style.marginS
+        spacing: Style.marginM
+
+        Item {
+          Layout.fillWidth: true
+        } // Spacer
+
+        NButton {
+          text: I18n.tr("common.cancel")
+          backgroundColor: Color.mSurfaceVariant
+          textColor: Color.mOnSurfaceVariant
+          outlined: false
+          onClicked: addNetworkPopup.close()
+        }
+
+        NButton {
+          text: I18n.tr("common.connect")
+          backgroundColor: Color.mPrimary
+          textColor: Color.mOnPrimary
+          enabled: addNetworkPopup.customSsid.length > 0 && (addNetworkPopup.customSecurityKey === "open" || addNetworkPopup.customPassword.length > 0) && (addNetworkPopup.customSecurityKey.indexOf("-eap") === -1 || addNetworkPopup.customIdentity.length > 0)
+          onClicked: {
+            NetworkService.connectManual(addNetworkPopup.customSsid, addNetworkPopup.customPassword, addNetworkPopup.customSecurityKey, addNetworkPopup.customIdentity, {
+                                           eap: addNetworkPopup.customEnterpriseEap,
+                                           phase2: addNetworkPopup.customEnterprisePhase2,
+                                           anonIdentity: addNetworkPopup.customEnterpriseAnonIdentity,
+                                           caCert: addNetworkPopup.customEnterpriseCaCert
+                                         }, addNetworkPopup.customIsHidden);
+            addNetworkPopup.close();
+          }
         }
       }
     }
@@ -368,35 +646,26 @@ Item {
   Component {
     id: nboxDelegate
     NBox {
-      id: device
+      id: networkItem
 
-      HoverHandler {
-        id: itemHover
-      }
-
-      readonly property bool canConnect: BluetoothService.canConnect(modelData)
-      readonly property bool canDisconnect: BluetoothService.canDisconnect(modelData)
-      readonly property bool canPair: BluetoothService.canPair(modelData)
-      readonly property bool isBusy: BluetoothService.isDeviceBusy(modelData)
-      readonly property bool isExpanded: root.expandedDeviceKey === BluetoothService.deviceKey(modelData)
+      readonly property bool isBusy: NetworkService.connectingTo === modelData.ssid || NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid
+      readonly property bool isExpanded: root.infoSsid === modelData.ssid
+      readonly property bool isEnterprise: NetworkService.isEnterprise(modelData.security)
 
       function getContentColors(defaultColors = [Color.mSurface, Color.mOnSurface]) {
-        if (modelData.pairing || modelData.state === BluetoothDeviceState.Connecting) {
+        if (root.passwordSsid === modelData.ssid || NetworkService.connectingTo === modelData.ssid) {
           return [Color.mPrimary, Color.mOnPrimary];
         }
-        if (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) {
-          // Special alpha for connected item background
-          let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
-          return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
+        if (modelData.connected && NetworkService.internetConnectivity && NetworkService.disconnectingFrom !== modelData.ssid) {
+          return [Color.mPrimary, Color.mOnPrimary];
         }
-        if (modelData.blocked || modelData.state === BluetoothDeviceState.Disconnecting) {
+        if (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) {
+          return [Color.mError, Color.mOnError];
+        }
+        if (modelData.connected && !NetworkService.internetConnectivity) {
           return [Color.mError, Color.mOnError];
         }
         return defaultColors;
-      }
-
-      function getContentColor(defaultColor = Color.mOnSurface) {
-        return getContentColors([Color.mSurface, defaultColor])[1];
       }
 
       Layout.fillWidth: true
@@ -404,7 +673,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: device.getContentColors()[0]
+      color: networkItem.getContentColors()[0]
 
       ColumnLayout {
         id: deviceColumn
@@ -418,19 +687,18 @@ Item {
           spacing: Style.marginM
           Layout.alignment: Qt.AlignVCenter
 
-          Rectangle {
-            id: deviceIconBg
-            Layout.preferredWidth: Style.baseWidgetSize
-            Layout.preferredHeight: Style.baseWidgetSize
-            radius: Style.radiusM
-            color: Color.smartAlpha(Color.mSurfaceVariant)
-            Layout.alignment: Qt.AlignVCenter
+          NIcon {
+            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+            horizontalAlignment: Text.AlignLeft
+            icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
+            pointSize: Style.fontSizeXXL
+            color: networkItem.getContentColors()[1]
 
-            NIcon {
-              anchors.centerIn: parent
-              icon: BluetoothService.getDeviceIcon(modelData)
-              pointSize: Style.fontSizeXXL
-              color: device.getContentColors()[1]
+            MouseArea {
+              anchors.fill: parent
+              hoverEnabled: true
+              onEntered: TooltipService.show(parent, NetworkService.getSignalInfo(modelData.signal, modelData.connected).label + " (" + modelData.signal + "%)")
+              onExited: TooltipService.hide()
             }
           }
 
@@ -439,50 +707,95 @@ Item {
             spacing: Style.marginXXS
 
             NText {
-              text: modelData.name || modelData.deviceName
+              text: modelData.ssid
               pointSize: Style.fontSizeM
               font.weight: modelData.connected ? Style.fontWeightBold : Style.fontWeightMedium
               elide: Text.ElideRight
-              color: device.getContentColors()[1]
+              color: networkItem.getContentColors()[1]
               Layout.fillWidth: true
             }
 
-            NText {
-              text: {
-                const k = BluetoothService.getStatusKey(modelData);
-                if (k === "pairing")
-                  return I18n.tr("common.pairing");
-                if (k === "blocked")
-                  return I18n.tr("bluetooth.panel.blocked");
-                if (k === "connecting")
-                  return I18n.tr("common.connecting");
-                if (k === "disconnecting")
-                  return I18n.tr("common.disconnecting");
-                return "";
-              }
-              visible: text !== ""
-              pointSize: Style.fontSizeXS
-              color: device.getContentColor(Color.mOnSurfaceVariant)
-            }
-
             RowLayout {
-              visible: modelData.batteryAvailable
-              spacing: Style.marginS
+              spacing: Style.marginXS
+
               NIcon {
-                icon: {
-                  var b = BluetoothService.getBatteryPercent(modelData);
-                  return BatteryService.getIcon(b !== null ? b : 0, false, false, b !== null);
-                }
-                pointSize: Style.fontSizeXS
-                color: device.getContentColors()[1]
+                icon: NetworkService.isSecured(modelData.security) ? "lock" : "lock-open"
+                pointSize: Style.fontSizeXXS
+                color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                visible: !modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid && NetworkService.forgettingNetwork !== modelData.ssid
               }
+
               NText {
                 text: {
-                  var b = BluetoothService.getBatteryPercent(modelData);
-                  return b === null ? "-" : (b + "%");
+                  if (NetworkService.disconnectingFrom === modelData.ssid) {
+                    return I18n.tr("wifi.panel.disconnecting");
+                  }
+                  if (NetworkService.forgettingNetwork === modelData.ssid) {
+                    return I18n.tr("wifi.panel.forgetting");
+                  }
+                  if (modelData.connected) {
+                    switch (NetworkService.networkConnectivity) {
+                    case "full":
+                      return I18n.tr("common.connected");
+                    case "limited":
+                      return I18n.tr("wifi.panel.internet-limited");
+                    case "portal":
+                      return I18n.tr("wifi.panel.action-required");
+                    default:
+                      return NetworkService.networkConnectivity;
+                    }
+                  }
+                  if (modelData.cached && !modelData.existing) {
+                    return I18n.tr("wifi.panel.saved");
+                  }
+                  return NetworkService.isSecured(modelData.security) ? modelData.security : I18n.tr("wifi.panel.security-open");
                 }
-                pointSize: Style.fontSizeXS
-                color: device.getContentColor(Color.mOnSurfaceVariant)
+                pointSize: Style.fontSizeXXS
+                color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+              }
+
+              // Network speed indicators (visible when connected and speed > 0)
+              RowLayout {
+                visible: (modelData.connected && NetworkService.networkConnectivity === "full") && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
+                spacing: 2
+                Layout.leftMargin: Style.marginXS
+                Layout.fillWidth: false
+
+                NIcon {
+                  visible: SystemStatService.rxSpeed > 0
+                  icon: "arrow-down"
+                  pointSize: Style.fontSizeXXS
+                  color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                }
+
+                NText {
+                  visible: SystemStatService.rxSpeed > 0
+                  text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
+                  pointSize: Style.fontSizeXXS
+                  color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                  elide: Text.ElideNone
+                }
+
+                Item {
+                  visible: SystemStatService.rxSpeed > 0 && SystemStatService.txSpeed > 0
+                  width: Style.marginXS
+                  height: 1
+                }
+
+                NIcon {
+                  visible: SystemStatService.txSpeed > 0
+                  icon: "arrow-up"
+                  pointSize: Style.fontSizeXXS
+                  color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                }
+
+                NText {
+                  visible: SystemStatService.txSpeed > 0
+                  text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
+                  pointSize: Style.fontSizeXXS
+                  color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                  elide: Text.ElideNone
+                }
               }
             }
           }
@@ -494,62 +807,76 @@ Item {
           RowLayout {
             spacing: Style.marginS
 
+            NBusyIndicator {
+              visible: networkItem.isBusy
+              running: visible && root.effectivelyVisible
+              color: networkItem.getContentColors()[1]
+              size: Style.baseWidgetSize * 0.5
+            }
+
             NIconButton {
-              visible: itemHover.hovered && modelData.connected
+              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
+              colorBg: Color.mSurfaceVariant
+              colorFg: Color.mOnSurface
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: {
-                const key = BluetoothService.deviceKey(modelData);
-                root.expandedDeviceKey = (root.expandedDeviceKey === key) ? "" : key;
+                if (root.infoSsid === modelData.ssid) {
+                  root.infoSsid = "";
+                } else {
+                  root.infoSsid = modelData.ssid;
+                  NetworkService.refreshActiveWifiDetails();
+                }
               }
             }
 
             NIconButton {
-              visible: itemHover.hovered && !root.showOnlyLists && (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
+              visible: !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
               icon: "trash"
-              tooltipText: I18n.tr("common.unpair")
+              tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.8
-              onClicked: BluetoothService.unpairDevice(modelData)
+              colorBg: Color.mSurfaceVariant
+              colorFg: Color.mOnSurface
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
+              onClicked: root.requestForget(modelData.ssid)
             }
 
             NButton {
               id: button
-              visible: itemHover.hovered && (modelData.state !== BluetoothDeviceState.Connecting)
-              enabled: (canConnect || canDisconnect || (root.showOnlyLists ? false : canPair)) && !isBusy
-              outlined: !button.hovered
+              visible: !modelData.connected && NetworkService.connectingTo !== modelData.ssid && root.passwordSsid !== modelData.ssid
+              enabled: !NetworkService.connecting && !networkItem.isBusy
               fontSize: Style.fontSizeS
-              backgroundColor: modelData.connected ? Color.mError : Color.mPrimary
-              text: {
-                if (modelData.pairing)
-                  return I18n.tr("common.pairing");
-                if (modelData.blocked)
-                  return I18n.tr("bluetooth.panel.blocked");
-                if (modelData.connected)
-                  return I18n.tr("common.disconnect");
-                if (!root.showOnlyLists && device.canPair)
-                  return I18n.tr("common.pair");
-                return I18n.tr("common.connect");
-              }
-              icon: (isBusy ? "busy" : null)
+              backgroundColor: Color.mPrimary
+              textColor: Color.mOnPrimary
+              text: I18n.tr("common.connect")
               onClicked: {
-                if (modelData.connected) {
-                  BluetoothService.disconnectDevice(modelData);
+                if (modelData.existing || modelData.cached || !NetworkService.isSecured(modelData.security)) {
+                  NetworkService.connect(modelData.ssid);
                 } else {
-                  if (!root.showOnlyLists && device.canPair) {
-                    BluetoothService.pairDevice(modelData);
-                  } else {
-                    BluetoothService.connectDeviceWithTrust(modelData);
-                  }
+                  root.requestPassword(modelData.ssid);
                 }
               }
+            }
+
+            NButton {
+              id: disconnectButton
+              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              text: I18n.tr("common.disconnect")
+              fontSize: Style.fontSizeS
+              backgroundColor: Color.mSurfaceVariant
+              textColor: Color.mOnSurface
+              onClicked: NetworkService.disconnect(modelData.ssid)
             }
           }
         }
 
-        // Expanded info section
+        // Connection info details
         Rectangle {
-          visible: device.isExpanded
+          visible: networkItem.isExpanded
           Layout.fillWidth: true
           implicitHeight: infoColumn.implicitHeight + Style.margin2S
           radius: Style.radiusS
@@ -557,6 +884,14 @@ Item {
           border.width: Style.borderS
           border.color: Color.mOutline
           clip: true
+
+          onVisibleChanged: {
+            if (visible && infoColumn && infoColumn.forceLayout) {
+              Qt.callLater(function () {
+                infoColumn.forceLayout();
+              });
+            }
+          }
 
           NIconButton {
             anchors.top: parent.top
@@ -567,7 +902,7 @@ Item {
             baseSize: Style.baseWidgetSize * 0.8
             onClicked: {
               root.detailsGrid = !root.detailsGrid;
-              Settings.data.network.bluetoothDetailsViewMode = root.detailsGrid ? "grid" : "list";
+              Settings.data.network.wifiDetailsViewMode = root.detailsGrid ? "grid" : "list";
             }
             z: 1
           }
@@ -581,117 +916,531 @@ Item {
             columns: root.detailsGrid ? 2 : 1
             columnSpacing: Style.marginM
             rowSpacing: Style.marginXS
-
-            // --- Item 1: Signal Strength ---
-            RowLayout {
-              Layout.fillWidth: true
-              Layout.preferredWidth: 1
-              spacing: Style.marginXS
-              NIcon {
-                icon: BluetoothService.getSignalIcon(modelData)
-                pointSize: Style.fontSizeXS
-                color: Color.mOnSurface
-              }
-              NText {
-                text: BluetoothService.getSignalStrength(modelData)
-                pointSize: Style.fontSizeXS
-                color: Color.mOnSurface
-                Layout.fillWidth: true
+            onColumnsChanged: {
+              if (infoColumn.forceLayout) {
+                Qt.callLater(function () {
+                  infoColumn.forceLayout();
+                });
               }
             }
 
-            // --- Item 2: Battery ---
+            // --- Item 1: Interface ---
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
               NIcon {
-                icon: {
-                  var b = BluetoothService.getBatteryPercent(modelData);
-                  return BatteryService.getIcon(b !== null ? b : 0, false, false, b !== null);
+                icon: "network"
+                pointSize: Style.fontSizeXS
+                color: Color.mOnSurface
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.interface"))
+                  onExited: TooltipService.hide()
                 }
-                pointSize: Style.fontSizeXS
-                color: Color.mOnSurface
               }
               NText {
-                text: {
-                  var b = BluetoothService.getBatteryPercent(modelData);
-                  return b === null ? "-" : (b + "%");
+                text: NetworkService.activeWifiIf || "-"
+                pointSize: Style.fontSizeXS
+                color: Color.mOnSurface
+                Layout.fillWidth: true
+                wrapMode: root.detailsGrid ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
+                elide: root.detailsGrid ? Text.ElideRight : Text.ElideNone
+                maximumLineCount: root.detailsGrid ? 1 : 6
+                clip: true
+
+                MouseArea {
+                  anchors.fill: parent
+                  enabled: (NetworkService.activeWifiIf && NetworkService.activeWifiIf.length > 0)
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                  onExited: TooltipService.hide()
+                  onClicked: {
+                    const value = NetworkService.activeWifiIf || "";
+                    if (value.length > 0) {
+                      Quickshell.execDetached(["wl-copy", value]);
+                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                    }
+                  }
                 }
-                pointSize: Style.fontSizeXS
-                color: Color.mOnSurface
-                Layout.fillWidth: true
               }
             }
-            // --- Item 3: Pair state ---
+            // --- Item 2: Band & Channel & Width of channel ---
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
               NIcon {
-                icon: "link"
+                icon: "router"
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onEntered: TooltipService.show(parent, I18n.tr("common.frequency"))
+                  onExited: TooltipService.hide()
+                }
               }
               NText {
-                text: modelData.paired ? I18n.tr("common.yes") : I18n.tr("common.no")
+                text: NetworkService.activeWifiDetails.band || "-"
                 pointSize: Style.fontSizeXS
-                color: Color.mOnSurface
                 Layout.fillWidth: true
               }
             }
-            // --- Item 4: Trust state ---
+            // --- Item 3: Link Speed ---
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
               NIcon {
-                icon: "shield-check"
+                icon: "gauge"
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onEntered: TooltipService.show(parent, I18n.tr("wifi.panel.link-speed"))
+                  onExited: TooltipService.hide()
+                }
               }
               NText {
-                text: modelData.trusted ? I18n.tr("common.yes") : I18n.tr("common.no")
+                text: (NetworkService.activeWifiDetails.rateShort && NetworkService.activeWifiDetails.rateShort.length > 0) ? NetworkService.activeWifiDetails.rateShort : ((NetworkService.activeWifiDetails.rate && NetworkService.activeWifiDetails.rate.length > 0) ? NetworkService.activeWifiDetails.rate : "-")
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
               }
             }
-            // --- Item 5: Address ---
+            // --- Item 4: IPv4 || IPv6 ---
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
               spacing: Style.marginXS
               NIcon {
-                icon: "hash"
+                icon: "network"
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onEntered: TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("wifi.panel.ipv4") : I18n.tr("wifi.panel.ipv6"))
+                  onExited: TooltipService.hide()
+                  onClicked: {
+                    root.ipVersion = root.ipVersion === 4 ? 6 : 4;
+                    TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("wifi.panel.ipv4") : I18n.tr("wifi.panel.ipv6"));
+                  }
+                }
               }
               NText {
-                text: modelData.address || "-"
+                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "-") : ((NetworkService.activeWifiDetails.ipv6 || []).join(", ") || "-")
                 pointSize: Style.fontSizeXS
                 color: Color.mOnSurface
                 Layout.fillWidth: true
+
+                MouseArea {
+                  anchors.fill: parent
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.ipv4 && NetworkService.activeWifiDetails.ipv4.length > 0) : !!(NetworkService.activeWifiDetails.ipv6 && NetworkService.activeWifiDetails.ipv6.length > 0)
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                  onExited: TooltipService.hide()
+                  onClicked: {
+                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "") : ((NetworkService.activeWifiDetails.ipv6 || []).join(", ") || "");
+                    if (value.length > 0) {
+                      Quickshell.execDetached(["wl-copy", value]);
+                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                    }
+                  }
+                }
               }
             }
-            // --- Item 6: Auto-connect ---
+            // --- Item 5: DNS ---
             RowLayout {
               Layout.fillWidth: true
               Layout.preferredWidth: 1
-              Layout.topMargin: -Style.marginXXS
               spacing: Style.marginXS
-              visible: Settings.data.network.bluetoothAutoConnect
               NIcon {
-                icon: BluetoothService.getDeviceAutoConnect(modelData) ? "repeat" : "repeat-off"
+                icon: "world"
                 pointSize: Style.fontSizeXS
+                color: Color.mOnSurface
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onEntered: TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("wifi.panel.dns") + " (" + I18n.tr("wifi.panel.ipv4") + ")" : I18n.tr("wifi.panel.dns") + " (" + I18n.tr("wifi.panel.ipv6") + ")")
+                  onExited: TooltipService.hide()
+                  onClicked: {
+                    root.ipVersion = root.ipVersion === 4 ? 6 : 4;
+                    TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("wifi.panel.dns") + " (" + I18n.tr("wifi.panel.ipv4") + ")" : I18n.tr("wifi.panel.dns") + " (" + I18n.tr("wifi.panel.ipv6") + ")");
+                  }
+                }
               }
-              NCheckbox {
-                label: I18n.tr("common.auto-connect")
-                labelSize: Style.fontSizeXS
-                baseSize: Style.baseWidgetSize * 0.5
-                checked: BluetoothService.getDeviceAutoConnect(modelData)
-                onToggled: checked => BluetoothService.setDeviceAutoConnect(modelData, checked)
+              NText {
+                text: root.ipVersion === 4 ? ((NetworkService.activeWifiDetails.dns4 || []).join(", ") || "-") : ((NetworkService.activeWifiDetails.dns6 || []).join(", ") || "-")
+                pointSize: Style.fontSizeXS
+                color: Color.mOnSurface
+                Layout.fillWidth: true
+
+                MouseArea {
+                  anchors.fill: parent
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.dns4 && NetworkService.activeWifiDetails.dns4.length > 0) : !!(NetworkService.activeWifiDetails.dns6 && NetworkService.activeWifiDetails.dns6.length > 0)
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                  onExited: TooltipService.hide()
+                  onClicked: {
+                    const value = root.ipVersion === 4 ? ((NetworkService.activeWifiDetails.dns4 || []).join(", ") || "") : ((NetworkService.activeWifiDetails.dns6 || []).join(", ") || "");
+                    if (value.length > 0) {
+                      Quickshell.execDetached(["wl-copy", value]);
+                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                    }
+                  }
+                }
               }
+            }
+            // --- Item 6: Gateway ---
+            RowLayout {
+              Layout.fillWidth: true
+              Layout.preferredWidth: 1
+              spacing: Style.marginXS
+              NIcon {
+                icon: "router"
+                pointSize: Style.fontSizeXS
+                color: Color.mOnSurface
+                MouseArea {
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onEntered: TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("common.gateway") + " (" + I18n.tr("wifi.panel.ipv4") + ")" : I18n.tr("common.gateway") + " (" + I18n.tr("wifi.panel.ipv6") + ")")
+                  onExited: TooltipService.hide()
+                  onClicked: {
+                    root.ipVersion = root.ipVersion === 4 ? 6 : 4;
+                    TooltipService.show(parent, root.ipVersion === 4 ? I18n.tr("common.gateway") + " (" + I18n.tr("wifi.panel.ipv4") + ")" : I18n.tr("common.gateway") + " (" + I18n.tr("wifi.panel.ipv6") + ")");
+                  }
+                }
+              }
+              NText {
+                text: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "-") : ((NetworkService.activeWifiDetails.gateway6 || []).join(", ") || "-")
+                pointSize: Style.fontSizeXS
+                color: Color.mOnSurface
+                Layout.fillWidth: true
+
+                MouseArea {
+                  anchors.fill: parent
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.gateway4 && NetworkService.activeWifiDetails.gateway4.length > 0) : !!(NetworkService.activeWifiDetails.gateway6 && NetworkService.activeWifiDetails.gateway6.length > 0)
+                  hoverEnabled: true
+                  cursorShape: Qt.PointingHandCursor
+                  onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
+                  onExited: TooltipService.hide()
+                  onClicked: {
+                    const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "") : ((NetworkService.activeWifiDetails.gateway6 || []).join(", ") || "");
+                    if (value.length > 0) {
+                      Quickshell.execDetached(["wl-copy", value]);
+                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Password input overlay-style within card
+        Rectangle {
+          visible: root.passwordSsid === modelData.ssid && !networkItem.isBusy
+          Layout.fillWidth: true
+          height: passwordLayout.implicitHeight + Style.margin2S
+          color: Color.mSurfaceVariant
+          border.color: Color.mOutline
+          border.width: Style.borderS
+          radius: Style.iRadiusXS
+
+          ColumnLayout {
+            id: passwordLayout
+            anchors.fill: parent
+            anchors.margins: Style.marginS
+            spacing: Style.marginS
+
+            // Inputs Container
+            ColumnLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
+
+              // Enterprise Configuration
+              ColumnLayout {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                spacing: Style.marginS
+
+                NComboBox {
+                  Layout.fillWidth: true
+                  label: I18n.tr("wifi.enterprise.eap-method")
+                  model: [
+                    {
+                      key: "peap",
+                      name: "PEAP"
+                    },
+                    {
+                      key: "ttls",
+                      name: "TTLS"
+                    }
+                  ]
+                  currentKey: root.enterpriseEap
+                  onSelected: key => root.enterpriseEap = key
+                }
+
+                NComboBox {
+                  Layout.fillWidth: true
+                  label: I18n.tr("wifi.enterprise.phase2-auth")
+                  model: [
+                    {
+                      key: "mschapv2",
+                      name: "MSCHAPv2"
+                    },
+                    {
+                      key: "pap",
+                      name: "PAP"
+                    },
+                    {
+                      key: "mschap",
+                      name: "MSCHAP"
+                    },
+                    {
+                      key: "chap",
+                      name: "CHAP"
+                    }
+                  ]
+                  currentKey: root.enterprisePhase2
+                  onSelected: key => root.enterprisePhase2 = key
+                }
+
+                RowLayout {
+                  Layout.fillWidth: true
+                  spacing: Style.marginS
+
+                  Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                    radius: Style.iRadiusXS
+                    color: Color.mSurface
+                    border.color: caCertInput.activeFocus ? Color.mSecondary : Color.mOutline
+                    border.width: Style.borderS
+
+                    TextInput {
+                      id: caCertInput
+                      anchors.left: parent.left
+                      anchors.right: parent.right
+                      anchors.verticalCenter: parent.verticalCenter
+                      anchors.margins: Style.marginS
+                      font.family: Settings.data.ui.fontFixed
+                      font.pointSize: Style.fontSizeS
+                      color: Color.mOnSurface
+                      selectByMouse: true
+                      text: root.enterpriseCaCert
+                      onTextChanged: root.enterpriseCaCert = text
+
+                      NText {
+                        visible: parent.text.length === 0
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: I18n.tr("wifi.enterprise.ca-cert")
+                        color: Color.mOnSurfaceVariant
+                        pointSize: Style.fontSizeS
+                      }
+                    }
+                  }
+
+                  NIconButton {
+                    icon: "folder-open"
+                    baseSize: Style.baseWidgetSize * 0.8
+                    onClicked: caCertPicker.openForInline()
+                  }
+                }
+              }
+
+              // Anonymous Identity field (Enterprise only)
+              Rectangle {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: anonIdentityInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
+
+                TextInput {
+                  id: anonIdentityInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  selectByMouse: true
+                  text: root.enterpriseAnonIdentity
+                  onTextChanged: root.enterpriseAnonIdentity = text
+                  onAccepted: identityInput.forceActiveFocus()
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: I18n.tr("wifi.enterprise.anonymous-identity")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
+                }
+              }
+
+              // Identity field (Enterprise only)
+              Rectangle {
+                visible: networkItem.isEnterprise
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: identityInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
+
+                TextInput {
+                  id: identityInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  selectByMouse: true
+                  onVisibleChanged: {
+                    if (visible) {
+                      forceActiveFocus();
+                    }
+                  }
+                  onAccepted: pwdInput.forceActiveFocus()
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: I18n.tr("wifi.enterprise.username")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
+                }
+              }
+
+              // Password field
+              Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.baseWidgetSize * 0.9
+                radius: Style.iRadiusXS
+                color: Color.mSurface
+                border.color: pwdInput.activeFocus ? Color.mSecondary : Color.mOutline
+                border.width: Style.borderS
+
+                TextInput {
+                  id: pwdInput
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  anchors.margins: Style.marginS
+                  font.family: Settings.data.ui.fontFixed
+                  font.pointSize: Style.fontSizeS
+                  color: Color.mOnSurface
+                  echoMode: TextInput.Password
+                  selectByMouse: true
+                  passwordCharacter: "●"
+                  onVisibleChanged: {
+                    if (visible && !networkItem.isEnterprise) {
+                      forceActiveFocus();
+                    }
+                  }
+                  onAccepted: {
+                    if (text && !NetworkService.connecting) {
+                      if (!networkItem.isEnterprise || identityInput.text.length > 0) {
+                        root.submitPassword(modelData.ssid, text, identityInput.text);
+                      }
+                    }
+                  }
+
+                  NText {
+                    visible: parent.text.length === 0
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: networkItem.isEnterprise ? I18n.tr("wifi.enterprise.password") : I18n.tr("wifi.panel.enter-password")
+                    color: Color.mOnSurfaceVariant
+                    pointSize: Style.fontSizeS
+                  }
+                }
+              }
+            }
+
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: Style.marginS
+
+              Item {
+                Layout.fillWidth: true
+              }
+
+              NButton {
+                text: I18n.tr("common.connect")
+                fontSize: Style.fontSizeS
+                enabled: pwdInput.text.length > 0 && (!networkItem.isEnterprise || identityInput.text.length > 0) && !NetworkService.connecting
+                outlined: true
+                onClicked: root.submitPassword(modelData.ssid, pwdInput.text, identityInput.text)
+              }
+
+              NIconButton {
+                icon: "close"
+                baseSize: Style.baseWidgetSize * 0.8
+                onClicked: root.cancelPassword()
+              }
+            }
+          }
+        }
+
+        // Forget network confirmation within card
+        Rectangle {
+          visible: root.expandedSsid === modelData.ssid && !networkItem.isBusy
+          Layout.fillWidth: true
+          height: forgetRow.implicitHeight + Style.margin2S
+          color: Color.mSurfaceVariant
+          radius: Style.radiusS
+          border.width: Style.borderS
+          border.color: Color.mOutline
+
+          RowLayout {
+            id: forgetRow
+            anchors.fill: parent
+            anchors.margins: Style.marginS
+            spacing: Style.marginM
+
+            RowLayout {
+              NIcon {
+                icon: "trash"
+                pointSize: Style.fontSizeL
+                color: Color.mError
+              }
+
+              NText {
+                text: I18n.tr("wifi.panel.forget-network")
+                pointSize: Style.fontSizeS
+                color: Color.mError
+                Layout.fillWidth: true
+              }
+            }
+
+            NButton {
+              id: forgetButton
+              text: I18n.tr("wifi.panel.forget")
+              fontSize: Style.fontSizeXXS
+              backgroundColor: Color.mError
+              outlined: !forgetButton.hovered
+              onClicked: root.confirmForget(modelData.ssid)
+            }
+
+            NIconButton {
+              icon: "close"
+              baseSize: Style.baseWidgetSize * 0.8
+              onClicked: root.cancelForget()
             }
           }
         }
@@ -699,92 +1448,31 @@ Item {
     }
   }
 
-  // PIN Authentication Overlay (This part needs some love :P)
-  Rectangle {
-    id: pinOverlay
-    visible: !root.showOnlyLists && BluetoothService.pinRequired
-    anchors.centerIn: parent
-    width: Math.min(parent.width * 0.9, 400)
-    height: pinCol.implicitHeight + Style.margin2L
-    color: Color.mSurface
-    radius: Style.radiusM
-    border.color: Style.boxBorderColor
-    border.width: Style.borderS
-    z: 1000
+  NFilePicker {
+    id: caCertPicker
+    title: I18n.tr("wifi.enterprise.ca-cert")
+    nameFilters: ["*.pem", "*.crt", "*.cer", "*.der", "*"]
 
-    MouseArea {
-      anchors.fill: parent
-      acceptedButtons: Qt.AllButtons
-      onClicked: mouse => mouse.accepted = true
-      onWheel: wheel => wheel.accepted = true
+    property bool isForAddNetwork: false
+
+    function openForInline() {
+      isForAddNetwork = false;
+      openFilePicker();
     }
 
-    ColumnLayout {
-      id: pinCol
-      anchors.fill: parent
-      anchors.margins: Style.marginL
-      spacing: Style.marginL
-
-      NIcon {
-        icon: "lock"
-        pointSize: 48
-        color: Color.mPrimary
-        Layout.alignment: Qt.AlignHCenter
-      }
-      NText {
-        text: I18n.tr("panels.connections.authentication-required")
-        pointSize: Style.fontSizeXL
-        font.weight: Style.fontWeightBold
-        color: Color.mOnSurface
-        horizontalAlignment: Text.AlignHCenter
-        Layout.fillWidth: true
-      }
-      NText {
-        text: I18n.tr("panels.connections.pin-instructions")
-        pointSize: Style.fontSizeM
-        color: Color.mOnSurfaceVariant
-        wrapMode: Text.WordWrap
-        horizontalAlignment: Text.AlignHCenter
-        Layout.fillWidth: true
-      }
-      NTextInput {
-        id: pinInput
-        Layout.fillWidth: true
-        placeholderText: "123456"
-        inputIconName: "key"
-        onVisibleChanged: {
-          if (visible) {
-            text = "";
-            inputItem.forceActiveFocus();
-          }
-        }
-        inputItem.onAccepted: {
-          if (text.length > 0) {
-            BluetoothService.submitPin(text);
-            text = "";
-          }
-        }
-      }
-      RowLayout {
-        Layout.alignment: Qt.AlignHCenter
-        spacing: Style.marginM
-        NButton {
-          text: I18n.tr("common.cancel")
-          icon: "x"
-          onClicked: BluetoothService.cancelPairing()
-        }
-        NButton {
-          text: I18n.tr("common.confirm")
-          icon: "check"
-          backgroundColor: Color.mPrimary
-          textColor: Color.mOnPrimary
-          enabled: pinInput.text.length > 0
-          onClicked: {
-            BluetoothService.submitPin(pinInput.text);
-            pinInput.text = "";
-          }
-        }
-      }
+    function openForAddNetwork() {
+      isForAddNetwork = true;
+      openFilePicker();
     }
+
+    onAccepted: paths => {
+                  if (paths.length > 0) {
+                    if (isForAddNetwork) {
+                      addNetworkPopup.customEnterpriseCaCert = paths[0];
+                    } else {
+                      root.enterpriseCaCert = paths[0];
+                    }
+                  }
+                }
   }
 }
