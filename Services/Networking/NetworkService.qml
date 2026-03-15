@@ -779,10 +779,13 @@ Singleton {
           root.activeEthernetDetails = details;
           root.activeEthernetDetailsTimestamp = Date.now();
           root.ethernetDetailsLoading = false;
-        } else {
+        } else if (ProgramCheckerService.ethtoolAvailable) {
           // Fallback to ethtool if sysfs unreadable or invalid
           ethernetEthtoolProcess.ifname = ethernetSysfsSpeedProcess.ifname;
           ethernetEthtoolProcess.running = true;
+        } else {
+          root.activeEthernetDetailsTimestamp = Date.now();
+          root.ethernetDetailsLoading = false;
         }
       }
     }
