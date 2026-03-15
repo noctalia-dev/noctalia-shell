@@ -139,6 +139,45 @@ Singleton {
   }
 
   Connections {
+    target: Settings.data.wallpaper.themedWallpapers
+    function onEnabledChanged() {
+      if (!Settings.data.wallpaper.themedWallpapers.enabled)
+        return;
+      if (Settings.data.wallpaper.automationEnabled) {
+        ToastService.showNotice(
+          I18n.tr("panels.wallpaper.settings-theme-toggle-label"),
+          I18n.tr("panels.wallpaper.settings-theme-automation-disabled")
+        );
+        Settings.data.wallpaper.automationEnabled = false;
+      }
+      root.applyThemedWallpaperForCurrentMode();
+    }
+    function onLightChanged() {
+      if (!Settings.data.wallpaper.themedWallpapers.enabled)
+        return;
+      if (!Settings.data.colorSchemes.darkMode) {
+        root.applyThemedWallpaperForMode("light");
+      }
+    }
+    function onDarkChanged() {
+      if (!Settings.data.wallpaper.themedWallpapers.enabled)
+        return;
+      if (Settings.data.colorSchemes.darkMode) {
+        root.applyThemedWallpaperForMode("dark");
+      }
+    }
+  }
+
+  Connections {
+    target: Settings.data.colorSchemes
+    function onDarkModeChanged() {
+      if (Settings.data.wallpaper.themedWallpapers.enabled) {
+        root.applyThemedWallpaperForCurrentMode();
+      }
+    }
+  }
+
+  Connections {
     target: WallhavenService
     function onWallpaperDownloaded() {
       root.refreshWallpapersList();
@@ -427,6 +466,66 @@ Singleton {
     // Restart the random wallpaper timer
     if (randomWallpaperTimer.running) {
       randomWallpaperTimer.restart();
+    }
+  }
+
+  // -------------------------------------------------------------------
+  function getThemedWallpaperPath(mode) {
+    if (!mode)
+      return "";
+    var normalized = mode.toLowerCase() === "dark" ? "dark" : "light";
+    var value = Settings.data.wallpaper.themedWallpapers[normalized];
+    if (!value)
+      return "";
+    return Settings.preprocessPath(value);
+  }
+
+  function applyThemedWallpaperForMode(mode) {
+    if (!Settings.data.wallpaper.themedWallpapers.enabled)
+      return;
+    var path = getThemedWallpaperPath(mode);
+    if (!path)
+      return;
+    changeWallpaper(path, undefined);
+  }
+
+  function applyThemedWallpaperForCurrentMode() {
+    var mode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+    applyThemedWallpaperForMode(mode);
+  }
+
+  function setThemedWallpaper(mode, path) {
+    if (!mode || !path)
+      return;
+    var normalizedMode = mode.toLowerCase() === "dark" ? "dark" : "light";
+    var processedPath = Settings.preprocessPath(path);
+    if (!processedPath)
+      return;
+    var themed = Settings.data.wallpaper.themedWallpapers;
+    if (themed[normalizedMode] === processedPath)
+      return;
+    if (normalizedMode === "dark") {
+      Settings.data.wallpaper.themedWallpapers.dark = processedPath;
+    } else {
+      Settings.data.wallpaper.themedWallpapers.light = processedPath;
+    }
+    var justEnabled = false;
+    if (!Settings.data.wallpaper.themedWallpapers.enabled) {
+      Settings.data.wallpaper.themedWallpapers.enabled = true;
+      justEnabled = true;
+    }
+    ToastService.showNotice(
+      I18n.tr("wallpaper.panel.title"),
+      I18n.tr("wallpaper.panel.theme-assigned-toast", {
+        "mode": I18n.tr(normalizedMode === "dark" ? "common.dark" : "common.light")
+      }),
+      normalizedMode === "dark" ? "moon" : "sun"
+    );
+    if (!justEnabled && Settings.data.wallpaper.themedWallpapers.enabled) {
+      var currentMode = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+      if (currentMode === normalizedMode) {
+        changeWallpaper(processedPath, undefined);
+      }
     }
   }
 
@@ -1119,6 +1218,11 @@ Singleton {
 
       Logger.d("Wallpaper", "Loaded wallpapers from cache file:", Object.keys(root.currentWallpapers).length, "screens");
       root.isInitialized = true;
+
+      if (Settings.data.wallpaper.themedWallpapers.enabled) {
+        Qt.callLater(() => {
+          root.applyThemedWallpaperForCurrentMode();
+      });}
     }
 
     onLoadFailed: error => {

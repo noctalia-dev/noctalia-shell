@@ -852,11 +852,18 @@ SmartPanel {
     function selectItem(path, isDirectory) {
       if (isDirectory) {
         WallpaperService.setBrowsePath(targetScreen.name, path);
-      } else {
-        var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
-        WallpaperService.changeWallpaper(path, screen);
-        WallpaperService.applyFavoriteTheme(path, screen);
+        return;
       }
+      if (Settings.data.wallpaper.themedWallpapers.enabled) {
+        ToastService.showNotice(
+          I18n.tr("panels.wallpaper.settings-theme-toggle-label"),
+          I18n.tr("panels.wallpaper.settings-theme-select-item-notice")
+        );
+        return;
+      }
+      var screen = Settings.data.wallpaper.setWallpaperOnAllMonitors ? undefined : targetScreen.name;
+      WallpaperService.changeWallpaper(path, screen);
+      WallpaperService.applyFavoriteTheme(path, screen);
     }
 
     // Helper function to cycle view modes
@@ -1092,6 +1099,28 @@ SmartPanel {
             property bool isFavorited: !isDirectory && WallpaperService.isFavorite(wallpaperPath)
             property string filename: model.name ?? wallpaperPath.split('/').pop()
             property string cachedPath: ""
+            property bool darkMode: false
+            property bool lightMode: false
+
+            function updateThemeFlags() {
+              var normalizedPath = Settings.preprocessPath(wallpaperItem.wallpaperPath);
+              var lightPath = WallpaperService.getThemedWallpaperPath("light");
+              var darkPath = WallpaperService.getThemedWallpaperPath("dark");
+              wallpaperItem.lightMode = !!normalizedPath && !!lightPath && normalizedPath === lightPath;
+              wallpaperItem.darkMode = !!normalizedPath && !!darkPath && normalizedPath === darkPath;
+            }
+
+            onWallpaperPathChanged: updateThemeFlags();
+
+            Connections {
+              target: Settings.data.wallpaper.themedWallpapers
+              function onLightChanged() {
+                wallpaperItem.updateThemeFlags();
+              }
+              function onDarkChanged() {
+                wallpaperItem.updateThemeFlags();
+              }
+            }
 
             spacing: Style.marginXS
 
@@ -1149,10 +1178,16 @@ SmartPanel {
                 imagePath: wallpaperItem.cachedPath
                 radius: Style.radiusM
                 borderColor: {
+                  if (wallpaperItem.darkMode) {
+                    return Color.resolveColorKey("primary");
+                  }
+                  if (wallpaperItem.lightMode) {
+                    return Color.resolveOnColorKey("primary");
+                  }
                   if (wallpaperItem.isSelected) {
                     return Color.mSecondary;
                   }
-                  if (wallpaperGridView.currentIndex === index) {
+                  if (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index) {
                     return Color.mHover;
                   }
                   return Color.mSurface;
@@ -1209,20 +1244,35 @@ SmartPanel {
 
               // Favorite star button (top-left)
               Rectangle {
+                id: favoriteStarRect
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.margins: Style.marginS
                 width: 28
                 height: 28
                 radius: width / 2
-                visible: !wallpaperItem.isDirectory && (wallpaperItem.isFavorited || hoverHandler.hovered || wallpaperGridView.currentIndex === index)
+                property bool starActive: !wallpaperItem.isDirectory &&
+                  (wallpaperItem.isFavorited ||
+                    (typeof hoverHandler !== "undefined" && hoverHandler.hovered) ||
+                    wallpaperGridView.currentIndex === index)
                 color: {
                   if (wallpaperItem.isFavorited)
                     return starHoverHandler.hovered ? Color.mHover : Color.mPrimary;
                   return starHoverHandler.hovered ? Color.mSurfaceVariant : Color.mSurface;
                 }
-                opacity: wallpaperItem.isFavorited || starHoverHandler.hovered ? 1.0 : 0.7
+                opacity: starActive ? 1.0 : 0.0
+                enabled: starActive
                 z: 5
+                transform: Translate {
+                  id: starTranslate
+                  y: favoriteStarRect.starActive ? 0 : -Style.marginS
+                  Behavior on y {
+                    NumberAnimation {
+                      duration: Style.animationFast
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
 
                 Behavior on color {
                   ColorAnimation {
@@ -1251,6 +1301,7 @@ SmartPanel {
                 }
 
                 TapHandler {
+                  enabled: favoriteStarRect.starActive
                   onTapped: {
                     WallpaperService.toggleFavorite(wallpaperItem.wallpaperPath);
                   }
@@ -1315,6 +1366,67 @@ SmartPanel {
                 }
               }
 
+              // Themed wallpaper markers (Top-center)
+              Rectangle {
+                id: themedMarker
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: Style.marginS
+                radius: Style.radiusL
+                color: Color.mSurfaceVariant
+                border.color: Color.mOutline
+                border.width: Style.borderS
+                z: 5
+                implicitWidth: themedRow.implicitWidth + Style.marginXS * 2
+                implicitHeight: themedRow.implicitHeight + Style.marginXS * 2
+                property bool isThemedActive: !wallpaperItem.isDirectory &&
+                  ((typeof hoverHandler !== "undefined" && hoverHandler.hovered) ||
+                    (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index))
+                transform: Translate {
+                  id: themedMarkerTranslate
+                  y: themedMarker.isThemedActive ? 0 : -Style.marginS
+                  Behavior on y {
+                    NumberAnimation {
+                      duration: Style.animationFast
+                      easing.type: Easing.OutCubic
+                    }
+                  }
+                }
+                opacity: themedMarker.isThemedActive ? 1 : 0
+                Behavior on opacity {
+                  NumberAnimation {
+                    duration: Style.animationFast
+                  }
+                }
+                enabled: themedMarker.isThemedActive
+
+                RowLayout {
+                  id: themedRow
+                  anchors.centerIn: parent
+                  spacing: Style.marginXS
+
+                  NIconButton {
+                    icon: "moon"
+                    tooltipText: I18n.tr("wallpaper.panel.theme-assign-dark-tooltip")
+                    baseSize: Style.baseWidgetSize * 0.7
+                    enabled: !wallpaperItem.isDirectory
+                    colorBg: wallpaperItem.darkMode ? Color.mPrimary : Color.mSurface
+                    colorFg: wallpaperItem.darkMode ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                    onClicked: WallpaperService.setThemedWallpaper("dark", wallpaperItem.wallpaperPath)
+                  }
+
+                  NIconButton {
+                    icon: "sun"
+                    tooltipText: I18n.tr("wallpaper.panel.theme-assign-light-tooltip")
+                    baseSize: Style.baseWidgetSize * 0.7
+                    enabled: !wallpaperItem.isDirectory
+                    colorBg: wallpaperItem.lightMode ? Color.mPrimary : Color.mSurface
+                    colorFg: wallpaperItem.lightMode ? Color.mOnPrimary : Color.mOnSurfaceVariant
+                    onClicked: WallpaperService.setThemedWallpaper("light", wallpaperItem.wallpaperPath)
+                  }
+                }
+              }
+
               Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -1322,7 +1434,8 @@ SmartPanel {
                 height: imageContainer.imageHeight
                 color: Color.mSurface
                 radius: Style.radiusM
-                opacity: (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index) ? 0 : 0.3
+                opacity: Settings.data.wallpaper.themedWallpapers.enabled ? 0 :
+                  (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index ? 0 : 0.3)
                 Behavior on opacity {
                   NumberAnimation {
                     duration: Style.animationFast
@@ -1346,7 +1459,10 @@ SmartPanel {
             NText {
               text: wallpaperItem.filename
               visible: !Settings.data.wallpaper.hideWallpaperFilenames
-              color: (hoverHandler.hovered || wallpaperItem.isSelected || wallpaperGridView.currentIndex === index) ? Color.mOnSurface : Color.mOnSurfaceVariant
+              color: (hoverHandler.hovered || wallpaperItem.isSelected ||
+                (!Settings.data.wallpaper.themedWallpapers.enabled && wallpaperGridView.currentIndex === index))
+                ? Color.mOnSurface
+                : Color.mOnSurfaceVariant
               pointSize: Style.fontSizeXS
               Layout.fillWidth: true
               Layout.leftMargin: Style.marginS
@@ -1356,6 +1472,14 @@ SmartPanel {
               elide: Text.ElideRight
             }
           }
+        }
+      }
+
+      Connections {
+        target: Settings.data.wallpaper.themedWallpapers
+        function onEnabledChanged() {
+          if (wallpaperGridView)
+            wallpaperGridView.currentIndex = -1;
         }
       }
 

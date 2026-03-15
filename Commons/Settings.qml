@@ -388,6 +388,11 @@ Singleton {
       property bool automationEnabled: false
       property string wallpaperChangeMode: "random" // "random" or "alphabetical"
       property int randomIntervalSec: 300 // 5 min
+      property JsonObject themedWallpapers: JsonObject {
+        property bool enabled: false
+        property string light: ""
+        property string dark: ""
+      }
       property int transitionDuration: 1500 // 1500 ms
       property list<string> transitionType: ["fade", "disc", "stripes", "wipe", "pixelate", "honeycomb"]
       property bool skipStartupTransition: false
