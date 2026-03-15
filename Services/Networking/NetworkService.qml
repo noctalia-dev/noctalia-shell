@@ -423,9 +423,9 @@ Singleton {
   function getSignalInfo(signal, isConnected) {
     let icon = "";
     if (isConnected && root.networkConnectivity === "limited") {
-      icon = "circle-x"; // Placeholder for actual icon.
-    } else if (isConnected && root.networkConnectivity === "portal") {
-      icon = "question-mark"; // Placeholder for actual icon.
+      icon = "wifi-exclamation";
+    } else if (isConnected && root.networkConnectivity === "portal" || root.networkConnectivity === "unknown") {
+      icon = "wifi-question";
     }
     // This is a draft actual ranges can be changed.
     const label = signal >= 80 ? I18n.tr("wifi.signal.excellent") : signal >= 60 ? I18n.tr("wifi.signal.good") : signal >= 35 ? I18n.tr("wifi.signal.fair") : signal >= 10 ? I18n.tr("wifi.signal.poor") : I18n.tr("wifi.signal.weak");
@@ -549,14 +549,14 @@ Singleton {
     if (root.ethernetConnected) {
       switch (root.networkConnectivity) {
         case "limited":
-          return "circle-x"; // Placeholder for actual icon
+          return "ethernet-exclamation";
         case "portal":
         case "unknown":
-          return "question-mark"; // Placeholder for actual icon
+          return "ethernet-question";
         case "full":
-          return "circle-check"; // Placeholder for actual icon
+          return "ethernet";
         default:
-          return "wired-off"; // Placeholder for actual icon
+          return "ethernet-off";
       }
     }
     const connectedNet = Object.values(root.networks).find(net => net.connected); // This might be inefficient...
