@@ -669,7 +669,9 @@ Item {
           return [Color.mPrimary, Color.mOnPrimary];
         }
         if (modelData.connected && NetworkService.internetConnectivity && NetworkService.disconnectingFrom !== modelData.ssid) {
-          return [Color.mPrimary, Color.mOnPrimary];
+          // Special alpha for connected item background from HEAD branch
+          let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
+          return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
         }
         if (NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid) {
           return [Color.mError, Color.mOnError];
@@ -707,11 +709,11 @@ Item {
             color: Color.smartAlpha(Color.mSurfaceVariant)
             Layout.alignment: Qt.AlignVCenter
 
-          NIcon {
-            icon: NetworkService.signalIcon(modelData.signal, modelData.connected)
-            pointSize: Style.fontSizeXXL
-            color: networkItem.getContentColors()[1]
-            Layout.alignment: Qt.AlignVCenter
+            NIcon {
+              anchors.centerIn: parent
+              icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
+              pointSize: Style.fontSizeXXL
+              color: networkItem.getContentColors()[1]
 
               MouseArea {
                 anchors.fill: parent
@@ -793,6 +795,7 @@ Item {
                   text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
                   pointSize: Style.fontSizeXXS
                   color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                  elide: Text.ElideNone
                 }
 
                 Item {
@@ -813,6 +816,7 @@ Item {
                   text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
                   pointSize: Style.fontSizeXXS
                   color: Qt.alpha(networkItem.getContentColors()[1], Style.opacityHeavy)
+                  elide: Text.ElideNone
                 }
               }
             }

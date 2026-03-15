@@ -380,12 +380,23 @@ Item {
       readonly property bool isBusy: BluetoothService.isDeviceBusy(modelData)
       readonly property bool isExpanded: root.expandedDeviceKey === BluetoothService.deviceKey(modelData)
 
+      function getContentColors(defaultColors = [Color.mSurface, Color.mOnSurface]) {
+        if (modelData.pairing || modelData.state === BluetoothDeviceState.Connecting) {
+          return [Color.mPrimary, Color.mOnPrimary];
+        }
+        if (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) {
+          // Special alpha for connected item background
+          let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
+          return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
+        }
+        if (modelData.blocked || modelData.state === BluetoothDeviceState.Disconnecting) {
+          return [Color.mError, Color.mOnError];
+        }
+        return defaultColors;
+      }
+
       function getContentColor(defaultColor = Color.mOnSurface) {
-        if (modelData.pairing || modelData.state === BluetoothDeviceState.Connecting)
-          return Color.mPrimary;
-        if (modelData.blocked || modelData.state === BluetoothDeviceState.Disconnecting)
-          return Color.mError;
-        return defaultColor;
+        return getContentColors([Color.mSurface, defaultColor])[1];
       }
 
       Layout.fillWidth: true
@@ -393,7 +404,7 @@ Item {
       radius: Style.radiusM
       clip: true
 
-      color: (modelData.connected && modelData.state !== BluetoothDeviceState.Disconnecting) ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
+      color: device.getContentColors()[0]
 
       ColumnLayout {
         id: deviceColumn
@@ -419,7 +430,7 @@ Item {
               anchors.centerIn: parent
               icon: BluetoothService.getDeviceIcon(modelData)
               pointSize: Style.fontSizeXXL
-              color: modelData.connected ? Color.mPrimary : device.getContentColor(Color.mOnSurface)
+              color: device.getContentColors()[1]
             }
           }
 
@@ -432,7 +443,7 @@ Item {
               pointSize: Style.fontSizeM
               font.weight: modelData.connected ? Style.fontWeightBold : Style.fontWeightMedium
               elide: Text.ElideRight
-              color: device.getContentColor(Color.mOnSurface)
+              color: device.getContentColors()[1]
               Layout.fillWidth: true
             }
 
@@ -463,7 +474,7 @@ Item {
                   return BatteryService.getIcon(b !== null ? b : 0, false, false, b !== null);
                 }
                 pointSize: Style.fontSizeXS
-                color: device.getContentColor(Color.mOnSurface)
+                color: device.getContentColors()[1]
               }
               NText {
                 text: {

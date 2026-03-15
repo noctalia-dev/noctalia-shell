@@ -449,6 +449,15 @@ SmartPanel {
                       id: itemHover
                     }
 
+                    function getContentColors(defaultColors = [Color.mSurface, Color.mOnSurface]) {
+                      if (modelData.connected) {
+                        // Special alpha for connected item background
+                        let bgAlpha = Math.min(1.15 - Color.panelBackgroundOpacity, 0.75);
+                        return [Qt.alpha(Color.mPrimary, bgAlpha), Color.mOnPrimary];
+                      }
+                      return defaultColors;
+                    }
+
                     Layout.fillWidth: true
                     Layout.leftMargin: Style.marginXS
                     Layout.rightMargin: Style.marginXS
@@ -456,7 +465,7 @@ SmartPanel {
                     radius: Style.radiusM
                     border.width: Style.borderS
                     border.color: modelData.connected ? Color.mPrimary : Color.mOutline
-                    color: modelData.connected ? Qt.alpha(Color.mPrimary, Math.min(1.15 - Color.panelBackgroundOpacity, 0.75)) : Color.mSurface
+                    color: ethItem.getContentColors()[0]
 
                     ColumnLayout {
                       id: ethItemColumn
@@ -486,7 +495,7 @@ SmartPanel {
                             anchors.centerIn: parent
                             icon: NetworkService.getIcon()
                             pointSize: Style.fontSizeXXL
-                            color: modelData.connected ? Color.mPrimary : Color.mOnSurface
+                            color: ethItem.getContentColors()[1]
                           }
                         }
 
@@ -498,7 +507,7 @@ SmartPanel {
                             text: modelData.connectionName || modelData.ifname
                             pointSize: Style.fontSizeM
                             font.weight: modelData.connected ? Style.fontWeightBold : Style.fontWeightMedium
-                            color: Color.mOnSurface
+                            color: ethItem.getContentColors()[1]
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                           }
@@ -524,7 +533,7 @@ SmartPanel {
                                 return I18n.tr("common.disconnected");
                               }
                               pointSize: Style.fontSizeXXS
-                              color: (!modelData.connected || NetworkService.networkConnectivity === "limited" || NetworkService.networkConnectivity === "portal" || NetworkService.networkConnectivity === "unknown") ? Color.mError : Color.mPrimary
+                              color: (!modelData.connected || NetworkService.networkConnectivity === "limited" || NetworkService.networkConnectivity === "portal" || NetworkService.networkConnectivity === "unknown") ? Color.mError : ethItem.getContentColors()[1]
                             }
 
                             // Network speed indicators (visible when connected and speed > 0)
@@ -538,14 +547,14 @@ SmartPanel {
                                 visible: SystemStatService.rxSpeed > 0
                                 icon: "arrow-down"
                                 pointSize: Style.fontSizeXXS
-                                color: Color.mOnSurfaceVariant
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
                               }
 
                               NText {
                                 visible: SystemStatService.rxSpeed > 0
                                 text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
                                 pointSize: Style.fontSizeXXS
-                                color: Color.mOnSurfaceVariant
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
                                 elide: Text.ElideNone
                               }
 
@@ -559,14 +568,14 @@ SmartPanel {
                                 visible: SystemStatService.txSpeed > 0
                                 icon: "arrow-up"
                                 pointSize: Style.fontSizeXXS
-                                color: Color.mOnSurfaceVariant
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
                               }
 
                               NText {
                                 visible: SystemStatService.txSpeed > 0
                                 text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
                                 pointSize: Style.fontSizeXXS
-                                color: Color.mOnSurfaceVariant
+                                color: Qt.alpha(ethItem.getContentColors()[1], Style.opacityHeavy)
                                 elide: Text.ElideNone
                               }
                             }
