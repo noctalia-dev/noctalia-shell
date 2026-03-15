@@ -540,7 +540,7 @@ SmartPanel {
                               }
 
                               Item {
-                                visible: modelData.connectivity === "full" && && SystemStatService.rxSpeed > 0 && SystemStatService.txSpeed > 0
+                                visible: modelData.connectivity === "full" && SystemStatService.rxSpeed > 0 && SystemStatService.txSpeed > 0
                                 width: Style.marginXS
                                 height: 1
                               }
