@@ -156,8 +156,7 @@ Item {
                 return "wifi-off";
               }
               if (root.connectedNetworks.length > 0) {
-                const net = root.connectedNetworks[0];
-                return NetworkService.getSignalInfo(net.signal, true).icon;
+                return NetworkService.getSignalInfo(root.connectedNetworks[0].signal, true).icon;
               }
               return "wifi";
             }
@@ -770,7 +769,7 @@ Item {
 
               // Network speed indicators (visible when connected and speed > 0)
               RowLayout {
-                visible: modelData.connected && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
+                visible: (modelData.connected && NetworkService.networkConnectivity === "full") && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
                 spacing: 2
                 Layout.leftMargin: Style.marginXS
                 Layout.fillWidth: false
