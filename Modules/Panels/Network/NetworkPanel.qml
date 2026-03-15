@@ -129,7 +129,7 @@ SmartPanel {
                     panelViewMode = "wifi";
                   }
                 }
-                onEntered: TooltipService.show(parent, panelViewMode === "wifi" ? I18n.tr("common.ethernet") : I18n.tr("common.wifi"))
+                onEntered: TooltipService.show(parent, panelViewMode === "wifi" ? I18n.tr("common.wifi") : I18n.tr("common.ethernet"))
                 onExited: TooltipService.hide()
               }
             }
@@ -475,7 +475,7 @@ SmartPanel {
                         // anchored to this row (defined right after this RowLayout).
 
                         NIcon {
-                          icon: "ethernet"
+                          icon: NetworkService.getIcon()
                           pointSize: Style.fontSizeXXL
                           color: modelData.connected ? Color.mPrimary : Color.mOnSurface
                         }
@@ -499,47 +499,40 @@ SmartPanel {
                             NText {
                               text: {
                                 if (modelData.connected) {
-                                  switch (NetworkService.networkConnectivity) {
+                                  switch (modelData.connectivity) {
                                   case "full":
                                     return I18n.tr("common.connected");
                                   case "limited":
+                                  case "unknown":
                                     return I18n.tr("wifi.panel.internet-limited");
                                   case "portal":
                                     return I18n.tr("wifi.panel.action-required");
                                   default:
-                                    return NetworkService.networkConnectivity;
+                                    return modelData.connectivity || "unknown";
                                   }
                                 }
                                 return I18n.tr("common.disconnected");
                               }
                               pointSize: Style.fontSizeXXS
-                              color: {
-                                if (!modelData.connected) {
-                                  return Color.mError;
-                                }
-                                if (NetworkService.networkConnectivity === "limited" || NetworkService.networkConnectivity === "portal") {
-                                  return Color.mError;
-                                }
-                                return Color.mPrimary;
-                              }
+                              color: (!modelData.connected || modelData.connectivity === "limited" || modelData.connectivity === "portal" || modelData.connectivity === "unknown") ? Color.mError : Color.mPrimary
                             }
 
                             // Network speed indicators (visible when connected and speed > 0)
                             RowLayout {
-                              visible: modelData.connected && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
+                              visible: modelData.connectivity === "full" && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
                               spacing: 2
                               Layout.leftMargin: Style.marginXS
                               Layout.fillWidth: false
 
                               NIcon {
-                                visible: SystemStatService.rxSpeed > 0
+                                visible: modelData.connectivity === "full" && SystemStatService.rxSpeed > 0
                                 icon: "arrow-down"
                                 pointSize: Style.fontSizeXXS
                                 color: Color.mOnSurfaceVariant
                               }
 
                               NText {
-                                visible: SystemStatService.rxSpeed > 0
+                                visible: modelData.connectivity === "full" && SystemStatService.rxSpeed > 0
                                 text: SystemStatService.formatSpeed(SystemStatService.rxSpeed)
                                 pointSize: Style.fontSizeXXS
                                 color: Color.mOnSurfaceVariant
@@ -547,20 +540,20 @@ SmartPanel {
                               }
 
                               Item {
-                                visible: SystemStatService.rxSpeed > 0 && SystemStatService.txSpeed > 0
+                                visible: modelData.connectivity === "full" && && SystemStatService.rxSpeed > 0 && SystemStatService.txSpeed > 0
                                 width: Style.marginXS
                                 height: 1
                               }
 
                               NIcon {
-                                visible: SystemStatService.txSpeed > 0
+                                visible: modelData.connectivity === "full" && SystemStatService.txSpeed > 0
                                 icon: "arrow-up"
                                 pointSize: Style.fontSizeXXS
                                 color: Color.mOnSurfaceVariant
                               }
 
                               NText {
-                                visible: SystemStatService.txSpeed > 0
+                                visible: modelData.connectivity === "full" && SystemStatService.txSpeed > 0
                                 text: SystemStatService.formatSpeed(SystemStatService.txSpeed)
                                 pointSize: Style.fontSizeXXS
                                 color: Color.mOnSurfaceVariant
