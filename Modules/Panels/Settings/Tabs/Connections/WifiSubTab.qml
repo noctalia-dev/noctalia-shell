@@ -1046,7 +1046,7 @@ Item {
 
                 MouseArea {
                   anchors.fill: parent
-                  enabled: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 && NetworkService.activeWifiDetails.ipv4.length > 0) : (NetworkService.activeWifiDetails.ipv6 && NetworkService.activeWifiDetails.ipv6.length > 0)
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.ipv4 && NetworkService.activeWifiDetails.ipv4.length > 0) : !!(NetworkService.activeWifiDetails.ipv6 && NetworkService.activeWifiDetails.ipv6.length > 0)
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
@@ -1089,7 +1089,7 @@ Item {
 
                 MouseArea {
                   anchors.fill: parent
-                  enabled: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.dns4 && NetworkService.activeWifiDetails.dns4.length > 0) : (NetworkService.activeWifiDetails.dns6 && NetworkService.activeWifiDetails.dns6.length > 0)
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.dns4 && NetworkService.activeWifiDetails.dns4.length > 0) : !!(NetworkService.activeWifiDetails.dns6 && NetworkService.activeWifiDetails.dns6.length > 0)
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
@@ -1132,7 +1132,7 @@ Item {
 
                 MouseArea {
                   anchors.fill: parent
-                  enabled: root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 && NetworkService.activeWifiDetails.gateway4.length > 0) : (NetworkService.activeWifiDetails.gateway6 && NetworkService.activeWifiDetails.gateway6.length > 0)
+                  enabled: root.ipVersion === 4 ? !!(NetworkService.activeWifiDetails.gateway4 && NetworkService.activeWifiDetails.gateway4.length > 0) : !!(NetworkService.activeWifiDetails.gateway6 && NetworkService.activeWifiDetails.gateway6.length > 0)
                   hoverEnabled: true
                   cursorShape: Qt.PointingHandCursor
                   onEntered: TooltipService.show(parent, I18n.tr("tooltips.copy-address"))
