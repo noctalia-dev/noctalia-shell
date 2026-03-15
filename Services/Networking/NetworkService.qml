@@ -80,7 +80,7 @@ Singleton {
   property string activeWifiIf: ""
   property bool detailsLoading: false
   property double activeWifiDetailsTimestamp: 0
-  // Cache TTL to avoid spamming nmcli/iw on rapid toggles
+  // Cache TTL to avoid spamming nmcli on rapid toggles
   property int activeWifiDetailsTtlMs: 5000
 
   // Persistent cache
@@ -461,7 +461,8 @@ Singleton {
       ipv6: [],
       gateway6: [],
       dns6: [],
-      hwAddr: ""
+      hwAddr: "",
+      nmSpeed: ""
     };
     const addUnique = (arr, val) => {
       if (val && arr.indexOf(val) === -1) {
@@ -474,6 +475,9 @@ Singleton {
       },
       "GENERAL.HWADDR": v => {
         details.hwAddr = v;
+      },
+      "CAPABILITIES.SPEED": v => {
+        details.nmSpeed = v;
       },
       "IP4.ADDRESS": v => {
         details.ipv4 = v.split("/")[0];
@@ -888,7 +892,8 @@ Singleton {
     id: wifiDeviceShowProcess
     property string ifname: ""
     running: false
-    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS", "device", "show", ifname]
+    command: ["nmcli", "-t", "-f", "GENERAL.CONNECTION,IP4.ADDRESS,IP4.GATEWAY,IP4.DNS,IP6.ADDRESS,IP6.GATEWAY,IP6.DNS,CAPABILITIES.SPEED", "device", "show", ifname]
+    // Find Signal (%) Bandwidth (MHz) Rate (Mbit/s) Freq (MHz) Chan (int)
 
     stdout: StdioCollector {
       onStreamFinished: {
@@ -902,11 +907,12 @@ Singleton {
         details.gateway6 = parsed.gateway6;
         details.dns4 = parsed.dns4;
         details.dns6 = parsed.dns6;
+        details.nmSpeed = parsed.nmSpeed;
         root.activeWifiDetails = details;
 
         // Try to get link rate (best effort)
-        wifiIwLinkProcess.ifname = wifiDeviceShowProcess.ifname;
-        wifiIwLinkProcess.running = true;
+        wifiDetailsProcess.ifname = wifiDeviceShowProcess.ifname;
+        wifiDetailsProcess.running = true;
       }
     }
     stderr: StdioCollector {
@@ -920,45 +926,43 @@ Singleton {
     }
   }
 
-  // Optional: query Wi‑Fi bitrate and link info via iw if available
+  // Optional: query Wi‑Fi bitrate and link info via nmcli
   Process {
-    id: wifiIwLinkProcess
+    id: wifiDetailsProcess
     property string ifname: ""
     running: false
-    command: ["sh", "-c", "iw dev '" + ifname + "' link 2>/dev/null; iw dev '" + ifname + "' info 2>/dev/null || true"]
+    command: ["nmcli", "-t", "-f", "IN-USE,SIGNAL,RATE,CHAN,FREQ,BANDWIDTH", "device", "wifi", "list", "ifname", ifname]
 
     stdout: StdioCollector {
       onStreamFinished: {
         const details = root.activeWifiDetails || ({});
         let rate = "";
         let freq = "";
-        let iwChannel = "";
-        let iwWidth = "";
+        let channel = "";
+        let width = "";
+        let signal = "";
+
         const lines = text.split("\n");
-        for (var k = 0; k < lines.length; k++) {
-          var line2 = lines[k].trim();
-          var low = line2.toLowerCase();
-          if (low.indexOf("tx bitrate:") === 0) {
-            rate = line2.substring(11).trim();
-          } else if (low.indexOf("freq:") === 0) {
-            freq = line2.substring(5).trim();
-          } else if (low.indexOf("channel") === 0) {
-            // Parse "channel 9 (2452 MHz), width: 20 MHz, center1: 2452 MHz"
-            var chanMatch = line2.match(/channel\s+(\d+)/i);
-            if (chanMatch) {
-              iwChannel = chanMatch[1];
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.startsWith("*")) {
+            // Found the in-use network
+            // Format: *:SIGNAL:RATE:CHAN:FREQ:BANDWIDTH
+            const parts = line.split(":");
+            if (parts.length >= 6) {
+              signal = parts[1];
+              rate = parts[2];
+              channel = parts[3];
+              freq = parts[4].replace(" MHz", "");
+              width = parts[5];
             }
-            var widthMatchInfo = line2.match(/width:\s+(\d+)\s+MHz/i);
-            if (widthMatchInfo) {
-              iwWidth = widthMatchInfo[1] + " MHz";
-            }
+            break;
           }
         }
 
-        // Determine band and channel from frequency
+        // Determine band from frequency
         // https://en.wikipedia.org/wiki/List_of_WLAN_channels
         let band = "";
-        let channel = iwChannel;
         if (freq) {
           const f = +freq;
           if (f) {
@@ -966,27 +970,14 @@ Singleton {
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#6_GHz_(802.11ax_and_802.11be)
               case (f >= 5925 && f < 7125):
               band = "6 GHz";
-              if (!channel) {
-                channel = Math.round((f - 5940) / 5).toString();
-              }
               break;
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#5_GHz_(802.11a/h/n/ac/ax/be)
               case (f >= 5150 && f < 5925):
               band = "5 GHz";
-              if (!channel) {
-                channel = Math.round((f - 5000) / 5).toString();
-              }
               break;
               // https://en.wikipedia.org/wiki/List_of_WLAN_channels#2.4_GHz_(802.11b/g/n/ax/be)
               case (f >= 2400 && f < 2500):
               band = "2.4 GHz";
-              if (!channel) {
-                if (f === 2484) {
-                  channel = "14";
-                } else {
-                  channel = Math.round((f - 2407) / 5).toString();
-                }
-              }
               break;
               default:
               band = `${f} MHz`;
@@ -996,16 +987,7 @@ Singleton {
 
         // Shorten verbose bitrate strings like: "360.0 MBit/s VHT-MCS 8 40MHz short GI"
         let rateShort = "";
-        let width = iwWidth;
         if (rate) {
-          // Extract width from bitrate if not already found in info (fallback)
-          if (!width) {
-            var widthMatchBitrate = rate.match(/(\d+)MHz/i);
-            if (widthMatchBitrate) {
-              width = widthMatchBitrate[1] + " MHz";
-            }
-          }
-
           var parts = rate.trim().split(" ");
           // compact consecutive spaces
           var compact = [];
@@ -1038,12 +1020,20 @@ Singleton {
           }
         }
 
-        // Enhance band string with channel and width: "Band / Ch Channel (Width)"
+        // Enhance band string with channel and width: "Band / Channel (Width)"
         let enhancedBand = band;
         if (channel && width) {
-          enhancedBand = `${band} / Ch ${channel} (${width})`;
+          enhancedBand = `${band} / ${channel} (${width})`;
         } else if (channel) {
-          enhancedBand = `${band} / Ch ${channel}`;
+          enhancedBand = `${band} / ${channel}`;
+        }
+
+        // Use dynamic speed if available
+        if (details.nmSpeed) {
+          rate = details.nmSpeed;
+          // Standardize 'Mb/s' to 'Mbit/s' for UI consistency
+          rate = rate.replace(/Mb\/s/i, "Mbit/s");
+          rateShort = rate;
         }
 
         details.rate = rate;
@@ -1051,6 +1041,7 @@ Singleton {
         details.band = enhancedBand;
         details.channel = channel;
         details.width = width;
+        details.signal = signal;
         root.activeWifiDetails = details;
         root.activeWifiDetailsTimestamp = Date.now();
         root.detailsLoading = false;
@@ -1059,7 +1050,7 @@ Singleton {
     stderr: StdioCollector {
       onStreamFinished: {
         if (text && text.trim()) {
-          Logger.w("Network", "iw link stderr:", text.trim());
+          Logger.w("Network", "nmcli wifi details stderr:", text.trim());
         }
         root.activeWifiDetailsTimestamp = Date.now();
         root.detailsLoading = false;
