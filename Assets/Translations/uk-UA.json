@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "Встановіть плагіни з розділу \"Доступний\".",
       "installed-no-plugins-label": "Немає встановлених плагінів",
       "installing": "Встановлення {plugin}...",
+      "notify-updates": "Сповіщення про оновлення плагінів",
+      "notify-updates-description": "Показувати спливаюче сповіщення, коли доступні нові оновлення плагінів.",
       "open-plugin-page": "Відкрити сторінку плагіна",
       "open-plugins-tab": "Відкрити налаштування плагінів",
       "plugin-settings-title": "Налаштування {plugin}",

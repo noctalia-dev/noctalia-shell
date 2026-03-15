@@ -529,7 +529,8 @@
     "session": ""
   },
   "plugins": {
-    "autoUpdate": false
+    "autoUpdate": false,
+    "notifyUpdates": true
   },
   "idle": {
     "enabled": false,

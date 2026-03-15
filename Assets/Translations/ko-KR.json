@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "\"사용 가능\" 섹션에서 플러그인을 설치하세요.",
       "installed-no-plugins-label": "설치된 플러그인 없음",
       "installing": "{plugin} 설치 중...",
+      "notify-updates": "플러그인 업데이트 알림",
+      "notify-updates-description": "새로운 플러그인 업데이트가 있을 때 알림 팝업을 표시합니다.",
       "open-plugin-page": "플러그인 페이지 열기",
       "open-plugins-tab": "플러그인 설정 열기",
       "plugin-settings-title": "{plugin} 설정",

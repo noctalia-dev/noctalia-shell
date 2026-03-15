@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "\"Mevcut\" bölümünden eklentileri kurun.",
       "installed-no-plugins-label": "Eklenti kurulu değil",
       "installing": "{eklenti} kuruluyor...",
+      "notify-updates": "Eklenti güncelleme bildirimleri",
+      "notify-updates-description": "Yeni eklenti güncellemeleri olduğunda bir bildirim penceresi göster.",
       "open-plugin-page": "Eklenti sayfasını aç",
       "open-plugins-tab": "Eklenti ayarlarına git",
       "plugin-settings-title": "{plugin} ayarları",

@@ -1451,25 +1451,28 @@ Singleton {
 
     if (updateCount > 0) {
       Logger.i("PluginService", updateCount, "plugin update(s) available");
-      ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.trp("panels.plugins.update-available", updateCount) + "\n\n" + updatesDescription, "plugin", 5000, I18n.tr("panels.plugins.open-plugins-tab"), function () {
-        // Open settings panel to Plugins tab on the screen where the cursor is
-        if (root.screenDetector) {
-          root.screenDetector.withCurrentScreen(function (screen) {
-            var panel = PanelService.getPanel("settingsPanel", screen);
+
+      if (Settings.data.plugins.notifyUpdates) {
+        ToastService.showNotice(I18n.tr("panels.plugins.title"), I18n.trp("panels.plugins.update-available", updateCount) + "\n\n" + updatesDescription, "plugin", 5000, I18n.tr("panels.plugins.open-plugins-tab"), function () {
+          // Open settings panel to Plugins tab on the screen where the cursor is
+          if (root.screenDetector) {
+            root.screenDetector.withCurrentScreen(function (screen) {
+              var panel = PanelService.getPanel("settingsPanel", screen);
+              if (panel) {
+                panel.requestedTab = SettingsPanel.Tab.Plugins;
+                panel.open();
+              }
+            });
+          } else {
+            // Fallback to primary screen if screen detector is not available
+            var panel = PanelService.getPanel("settingsPanel", Quickshell.screens[0]);
             if (panel) {
               panel.requestedTab = SettingsPanel.Tab.Plugins;
               panel.open();
             }
-          });
-        } else {
-          // Fallback to primary screen if screen detector is not available
-          var panel = PanelService.getPanel("settingsPanel", Quickshell.screens[0]);
-          if (panel) {
-            panel.requestedTab = SettingsPanel.Tab.Plugins;
-            panel.open();
           }
-        }
-      });
+        });
+      }
     } else if (pendingCount > 0) {
       Logger.i("PluginService", pendingCount, "plugin update(s) pending (require newer Noctalia)");
     } else {

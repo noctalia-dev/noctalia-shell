@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "Bővítmények telepítése az \"Elérhető\" szakaszban lehetséges.",
       "installed-no-plugins-label": "Nincs telepített bővítmény",
       "installing": "{plugin} telepítése...",
+      "notify-updates": "Bővítményfrissítési értesítések",
+      "notify-updates-description": "Értesítési előugró ablak megjelenítése, ha új bővítményfrissítések érhetők el.",
       "open-plugin-page": "Bővítmény oldal megnyitása",
       "open-plugins-tab": "Bővítmények beállításainak megnyitása",
       "plugin-settings-title": "{plugin} beállításai",

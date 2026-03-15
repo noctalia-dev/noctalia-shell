@@ -744,6 +744,7 @@ Singleton {
     // plugins
     property JsonObject plugins: JsonObject {
       property bool autoUpdate: false
+      property bool notifyUpdates: true
     }
 
     // idle management

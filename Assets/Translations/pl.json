@@ -1558,6 +1558,8 @@
       "installed-no-plugins-description": "Zainstaluj wtyczki z sekcji \"Dostępne\".",
       "installed-no-plugins-label": "Brak zainstalowanych wtyczek",
       "installing": "Instalowanie {plugin}...",
+      "notify-updates": "Powiadomienia o aktualizacjach wtyczek",
+      "notify-updates-description": "Wyświetl wyskakujące powiadomienie, gdy dostępne są nowe aktualizacje wtyczek.",
       "open-plugin-page": "Otwórz stronę wtyczki",
       "open-plugins-tab": "Otwórz ustawienia wtyczek",
       "plugin-settings-title": "Ustawienia {plugin}",
