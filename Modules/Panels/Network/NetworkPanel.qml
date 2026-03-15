@@ -493,7 +493,7 @@ SmartPanel {
 
                           NIcon {
                             anchors.centerIn: parent
-                            icon: NetworkService.getIcon()
+                            icon: NetworkService.getIcon(true)
                             pointSize: Style.fontSizeXXL
                             color: ethItem.getContentColors()[1]
                           }

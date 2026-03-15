@@ -151,15 +151,7 @@ Item {
 
           NToggle {
             label: I18n.tr("common.wifi")
-            icon: {
-              if (!Settings.data.network.wifiEnabled) {
-                return "wifi-off";
-              }
-              if (root.connectedNetworks.length > 0) {
-                return NetworkService.getSignalInfo(root.connectedNetworks[0].signal, true).icon;
-              }
-              return "wifi";
-            }
+            icon: NetworkService.getIcon(false)
             checked: Settings.data.network.wifiEnabled
             onToggled: checked => NetworkService.setWifiEnabled(checked)
             enabled: ProgramCheckerService.nmcliAvailable && !Settings.data.network.airplaneModeEnabled && NetworkService.wifiAvailable

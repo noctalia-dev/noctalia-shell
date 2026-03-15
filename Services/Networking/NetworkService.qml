@@ -550,23 +550,51 @@ Singleton {
     return I18n.tr("common.disconnected"); // p.length === 0
   }
 
-  function getIcon() {
-    // This function doesn't know what to do when more than one ethernet device is connected. most people doesn't use but just in case.
-    if (root.ethernetConnected) {
+  function getIcon(forceEthernet = false) {
+    let i = "wifi-off"; // Default to prevent empty space on launch.
+    // Ethernet has priority over Wi-Fi which is standard.
+    if (root.ethernetConnected || forceEthernet) {
+      // Ethernet connected or forced (by the NetworkPanel)
       switch (root.networkConnectivity) {
       case "limited":
-        return "ethernet-exclamation";
+        // Ethernet connected, no internet access
+        i = "ethernet-exclamation";
+        break;
       case "portal":
       case "unknown":
-        return "ethernet-question";
+        // Ethernet connected, status unknown or behind portal
+        i = "ethernet-question";
+        break;
       case "full":
-        return "ethernet";
+        // Ethernet connected and internet access
+        i = "ethernet";
+        break;
       default:
-        return "ethernet-off";
+        // Ethernet not connected (Forced by the NetworkPanel)
+        i = "ethernet-off";
+        break;
+      }
+    } else {
+      // Wi-Fi
+      const connectedNet = Object.values(root.networks).find(net => net.connected);
+      const availableNet = Object.values(root.networks).length;
+      if (connectedNet) {
+        // Wi-Fi Connected
+        i = root.getSignalInfo(connectedNet.signal, true).icon;
+      } else if (root.connecting || availableNet > 0) {
+        // Wi-Fi Connecting or Wi-Fi available but not connected
+        i = "wifi-question";
+      } else if (!Settings.data.network.wifiEnabled) {
+        // Wi-Fi is off
+        i = "wifi-off";
       }
     }
-    const connectedNet = Object.values(root.networks).find(net => net.connected); // This might be inefficient...
-    return connectedNet ? root.getSignalInfo(connectedNet.signal, true).icon : "wifi-off";
+    if (Settings.data.network.airplaneModeEnabled) {
+      // Airplane mode show icon if enabled
+      i = "plane";
+    }
+    return i;
+    // This function should be covering all possibilities i think it does. Tbh became fairly complicated...
   }
 
   // Processes
