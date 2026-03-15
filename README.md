@@ -101,7 +101,7 @@ Check out our comprehensive documentation and installation guide to get up and r
 
 ## 🖥️ Wayland Compositors
 
-Noctalia provides native support for **Niri**, **Hyprland**, **Sway**, **Labwc** and **MangoWC**. Other Wayland compositors may work but could require additional configuration for compositor-specific features like workspaces and window management.
+Noctalia provides native support for **Niri**, **Hyprland**, **Sway**, **Scroll**, **Labwc** and **MangoWC**. Other Wayland compositors may work but could require additional configuration for compositor-specific features like workspaces and window management.
 
 ---
 
