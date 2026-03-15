@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Shapes
+import Quickshell
 import qs.Commons
+import qs.Services.UI
 
 /**
 * ScreenCorners - Shape component for rendering screen corners
@@ -10,6 +12,19 @@ import qs.Commons
 */
 Item {
   id: root
+
+  property string screenName: ""
+  property real cornerRadius: Style.screenRadius
+  property real cornerSize: Style.screenRadius
+  readonly property bool feedbackEnabled: Settings.data.general.showScreenCorners && Settings.data.general.showScreenCornersFeedback
+  property real feedbackTopLeftOpacity: 0
+  property real feedbackTopRightOpacity: 0
+  property real feedbackBottomLeftOpacity: 0
+  property real feedbackBottomRightOpacity: 0
+
+  function feedbackColor(opacity) {
+    return Qt.rgba(Color.mPrimary.r, Color.mPrimary.g, Color.mPrimary.b, opacity);
+  }
 
   anchors.fill: parent
 
@@ -27,15 +42,15 @@ Item {
       preferredRendererType: Shape.CurveRenderer
       asynchronous: true
       enabled: false // Disable mouse input
-      visible: cornersPath.cornerRadius > 0 && width > 0 && height > 0
+      visible: cornersPath.cornerRadius > 0 && width > 0 && height > 0 && (Settings.data.general.showScreenCorners || root.feedbackEnabled)
 
       ShapePath {
         id: cornersPath
 
         // Corner configuration
         readonly property color cornerColor: Settings.data.general.forceBlackScreenCorners ? "black" : Color.mSurface
-        readonly property real cornerRadius: Style.screenRadius
-        readonly property real cornerSize: Style.screenRadius
+        readonly property real cornerRadius: root.cornerRadius
+        readonly property real cornerSize: root.cornerSize
 
         // Determine margins based on bar position
         readonly property real topMargin: 0
@@ -225,6 +240,222 @@ Item {
           relativeX: 0
           relativeY: cornersPath.cornerSize
         }
+      }
+
+      ShapePath {
+        strokeWidth: -1
+        fillColor: root.feedbackColor(root.feedbackTopLeftOpacity)
+
+        startX: cornersPath.leftMargin
+        startY: cornersPath.topMargin
+
+        PathLine { relativeX: cornersPath.cornerSize; relativeY: 0 }
+        PathLine { relativeX: 0; relativeY: cornersPath.cornerSize - cornersPath.cornerRadius }
+        PathArc {
+          relativeX: -cornersPath.cornerRadius
+          relativeY: cornersPath.cornerRadius
+          radiusX: cornersPath.cornerRadius
+          radiusY: cornersPath.cornerRadius
+          direction: PathArc.Counterclockwise
+        }
+        PathLine { relativeX: -(cornersPath.cornerSize - cornersPath.cornerRadius); relativeY: 0 }
+        PathLine { relativeX: 0; relativeY: -cornersPath.cornerSize }
+      }
+
+      ShapePath {
+        strokeWidth: -1
+        fillColor: root.feedbackColor(root.feedbackTopRightOpacity)
+
+        startX: cornersPath.screenWidth - cornersPath.rightMargin - cornersPath.cornerSize
+        startY: cornersPath.topMargin
+
+        PathLine { relativeX: cornersPath.cornerSize; relativeY: 0 }
+        PathLine { relativeX: 0; relativeY: cornersPath.cornerSize }
+        PathLine { relativeX: -(cornersPath.cornerSize - cornersPath.cornerRadius); relativeY: 0 }
+        PathArc {
+          relativeX: -cornersPath.cornerRadius
+          relativeY: -cornersPath.cornerRadius
+          radiusX: cornersPath.cornerRadius
+          radiusY: cornersPath.cornerRadius
+          direction: PathArc.Counterclockwise
+        }
+        PathLine { relativeX: 0; relativeY: -(cornersPath.cornerSize - cornersPath.cornerRadius) }
+      }
+
+      ShapePath {
+        strokeWidth: -1
+        fillColor: root.feedbackColor(root.feedbackBottomLeftOpacity)
+
+        startX: cornersPath.leftMargin
+        startY: cornersPath.screenHeight - cornersPath.bottomMargin - cornersPath.cornerSize
+
+        PathLine { relativeX: cornersPath.cornerSize - cornersPath.cornerRadius; relativeY: 0 }
+        PathArc {
+          relativeX: cornersPath.cornerRadius
+          relativeY: cornersPath.cornerRadius
+          radiusX: cornersPath.cornerRadius
+          radiusY: cornersPath.cornerRadius
+          direction: PathArc.Counterclockwise
+        }
+        PathLine { relativeX: 0; relativeY: cornersPath.cornerSize - cornersPath.cornerRadius }
+        PathLine { relativeX: -cornersPath.cornerSize; relativeY: 0 }
+        PathLine { relativeX: 0; relativeY: -cornersPath.cornerSize }
+      }
+
+      ShapePath {
+        strokeWidth: -1
+        fillColor: root.feedbackColor(root.feedbackBottomRightOpacity)
+
+        startX: cornersPath.screenWidth - cornersPath.rightMargin
+        startY: cornersPath.screenHeight - cornersPath.bottomMargin
+
+        PathLine { relativeX: -cornersPath.cornerSize; relativeY: 0 }
+        PathLine { relativeX: 0; relativeY: -(cornersPath.cornerSize - cornersPath.cornerRadius) }
+        PathArc {
+          relativeX: cornersPath.cornerRadius
+          relativeY: -cornersPath.cornerRadius
+          radiusX: cornersPath.cornerRadius
+          radiusY: cornersPath.cornerRadius
+          direction: PathArc.Counterclockwise
+        }
+        PathLine { relativeX: cornersPath.cornerSize - cornersPath.cornerRadius; relativeY: 0 }
+        PathLine { relativeX: 0; relativeY: cornersPath.cornerSize }
+      }
+    }
+  }
+
+  SequentialAnimation {
+    id: feedbackTopLeftAnim
+    PropertyAnimation { target: root; property: "feedbackTopLeftOpacity"; to: 1; duration: Style.animationNormal }
+    PropertyAnimation { target: root; property: "feedbackTopLeftOpacity"; to: 0; duration: Style.animationSlowest }
+  }
+
+  SequentialAnimation {
+    id: feedbackTopRightAnim
+    PropertyAnimation { target: root; property: "feedbackTopRightOpacity"; to: 1; duration: Style.animationNormal }
+    PropertyAnimation { target: root; property: "feedbackTopRightOpacity"; to: 0; duration: Style.animationSlowest }
+  }
+
+  SequentialAnimation {
+    id: feedbackBottomLeftAnim
+    PropertyAnimation { target: root; property: "feedbackBottomLeftOpacity"; to: 1; duration: Style.animationNormal }
+    PropertyAnimation { target: root; property: "feedbackBottomLeftOpacity"; to: 0; duration: Style.animationSlowest }
+  }
+
+  SequentialAnimation {
+    id: feedbackBottomRightAnim
+    PropertyAnimation { target: root; property: "feedbackBottomRightOpacity"; to: 1; duration: Style.animationNormal }
+    PropertyAnimation { target: root; property: "feedbackBottomRightOpacity"; to: 0; duration: Style.animationSlowest }
+  }
+
+  function triggerHotCorner(cornerKey) {
+    var command = Settings.getHotCornerCommandForScreen(root.screenName, cornerKey);
+    runHotCornerCommand(command);
+  }
+
+  function runHotCornerCommand(command) {
+    if (!command || command.trim() === "")
+      return;
+
+    const processString = "import QtQuick; import Quickshell.Io; Process { command: [\"sh\", \"-lc\", \"\"] }";
+
+    try {
+      const processObj = Qt.createQmlObject(processString, root, "HotCornerCommandProcess_" + Date.now());
+      processObj.command = ["sh", "-lc", command];
+
+      processObj.exited.connect(function (exitCode) {
+        if (exitCode !== 0) {
+          ToastService.showError(I18n.tr("toast.custom-command-failed.title"), I18n.tr("toast.custom-command-failed.description", {
+                                                                                         command: command,
+                                                                                         code: exitCode
+                                                                                       }));
+        }
+        processObj.destroy();
+      });
+
+      processObj.running = true;
+    } catch (e) {
+      Logger.e("HotCorner", "Failed to start hot corner command:", e);
+      ToastService.showError(I18n.tr("toast.custom-command-failed.title"), I18n.tr("toast.custom-command-failed.description", {
+                                                                                     command: command,
+                                                                                     code: "start_error"
+                                                                                   }));
+    }
+  }
+
+  function triggerFeedback(cornerKey) {
+    if (!feedbackEnabled) {
+      return;
+    }
+
+    if (cornerKey === "TopLeft") {
+      feedbackTopLeftAnim.stop();
+      root.feedbackTopLeftOpacity = 0;
+      feedbackTopLeftAnim.start();
+      return;
+    }
+    if (cornerKey === "TopRight") {
+      feedbackTopRightAnim.stop();
+      root.feedbackTopRightOpacity = 0;
+      feedbackTopRightAnim.start();
+      return;
+    }
+    if (cornerKey === "BottomLeft") {
+      feedbackBottomLeftAnim.stop();
+      root.feedbackBottomLeftOpacity = 0;
+      feedbackBottomLeftAnim.start();
+      return;
+    }
+    if (cornerKey === "BottomRight") {
+      feedbackBottomRightAnim.stop();
+      root.feedbackBottomRightOpacity = 0;
+      feedbackBottomRightAnim.start();
+    }
+  }
+
+  Repeater {
+    model: [
+      {
+        "key": "TopLeft",
+        "top": true,
+        "left": true
+      },
+      {
+        "key": "TopRight",
+        "top": true,
+        "right": true
+      },
+      {
+        "key": "BottomLeft",
+        "bottom": true,
+        "left": true
+      },
+      {
+        "key": "BottomRight",
+        "bottom": true,
+        "right": true
+      }
+    ]
+    delegate: MouseArea {
+      anchors.top: modelData.top ? parent.top : undefined
+      anchors.bottom: modelData.bottom ? parent.bottom : undefined
+      anchors.left: modelData.left ? parent.left : undefined
+      anchors.right: modelData.right ? parent.right : undefined
+      width: 3
+      height: 3
+      hoverEnabled: true
+      enabled: Settings.getHotCornerEnabledForScreen(root.screenName, modelData.key)
+      property int cooldownMs: 500
+      property double lastTriggeredMs: 0
+
+      onEntered: {
+        var now = Date.now();
+        if (now - lastTriggeredMs < cooldownMs) {
+          return;
+        }
+        lastTriggeredMs = now;
+        triggerFeedback(modelData.key);
+        triggerHotCorner(modelData.key);
       }
     }
   }
