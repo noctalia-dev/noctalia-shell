@@ -673,12 +673,15 @@ Variants {
       // ------------------------------------------------------
       // Main method that actually trigger the wallpaper change
       function changeWallpaper() {
-        // Get the transitionType from the settings
-        transitionType = Settings.data.wallpaper.transitionType;
-
-        if (transitionType == "random") {
-          var index = Math.floor(Math.random() * allTransitions.length);
-          transitionType = allTransitions[index];
+        // Pick a transition from the user's selected list
+        var selected = Settings.data.wallpaper.transitionType;
+        if (!selected || selected.length === 0) {
+          transitionType = "none";
+        } else if (selected.length === 1) {
+          transitionType = selected[0];
+        } else {
+          var index = Math.floor(Math.random() * selected.length);
+          transitionType = selected[index];
         }
 
         // Ensure the transition type really exists
@@ -732,12 +735,15 @@ Variants {
           return;
         }
 
-        // Get the transitionType from the settings
-        transitionType = Settings.data.wallpaper.transitionType;
-
-        if (transitionType == "random") {
-          var index = Math.floor(Math.random() * allTransitions.length);
-          transitionType = allTransitions[index];
+        // Pick a transition from the user's selected list
+        var selected = Settings.data.wallpaper.transitionType;
+        if (!selected || selected.length === 0) {
+          transitionType = "none";
+        } else if (selected.length === 1) {
+          transitionType = selected[0];
+        } else {
+          var index = Math.floor(Math.random() * selected.length);
+          transitionType = selected[index];
         }
 
         // Ensure the transition type really exists
