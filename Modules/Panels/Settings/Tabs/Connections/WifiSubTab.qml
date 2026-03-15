@@ -662,7 +662,7 @@ Item {
             NBusyIndicator {
               visible: networkItem.isBusy
               running: visible
-              color: Color.mOnSurface
+              color: networkItem.getContentColors()[1]
               size: Style.baseWidgetSize * 0.5
             }
 
@@ -672,7 +672,7 @@ Item {
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
               colorBg: Color.mSurfaceVariant
-              colorFg: Color.mOnSurfaceVariant
+              colorFg: Color.mOnSurface
               colorBorder: "transparent"
               colorBorderHover: "transparent"
               onClicked: {
@@ -691,7 +691,7 @@ Item {
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.8
               colorBg: Color.mSurfaceVariant
-              colorFg: Color.mOnSurfaceVariant
+              colorFg: Color.mOnSurface
               colorBorder: "transparent"
               colorBorderHover: "transparent"
               onClicked: root.requestForget(modelData.ssid)
@@ -720,7 +720,7 @@ Item {
               text: I18n.tr("common.disconnect")
               fontSize: Style.fontSizeS
               backgroundColor: Color.mSurfaceVariant
-              textColor: Color.mOnSurfaceVariant
+              textColor: Color.mOnSurface
               onClicked: NetworkService.disconnect(modelData.ssid)
             }
           }
