@@ -423,11 +423,11 @@ Singleton {
   function getSignalInfo(signal, isConnected) {
     let icon = "";
     if (isConnected && root.networkConnectivity === "limited") {
-      icon = "wifi-x";
+      icon = "circle-x"; // Placeholder for actual icon.
     } else if (isConnected && root.networkConnectivity === "portal") {
-      icon = "wifi-q";
+      icon = "question-mark"; // Placeholder for actual icon.
     }
-    // This is a draft actuak ranges can be changed. 
+    // This is a draft actual ranges can be changed.
     const label = signal >= 80 ? I18n.tr("wifi.signal.excellent") : signal >= 60 ? I18n.tr("wifi.signal.good") : signal >= 35 ? I18n.tr("wifi.signal.fair") : signal >= 10 ? I18n.tr("wifi.signal.poor") : I18n.tr("wifi.signal.weak");
     if (!icon) {
       icon = signal >= 80 ? "wifi" : signal >= 60 ? "wifi-3" : signal >= 35 ? "wifi-2" : signal >= 10 ? "wifi-1" : "wifi-0";
@@ -510,6 +510,57 @@ Singleton {
     }
 
     return details;
+  }
+
+  // Functions used in /Modules/Panels/ControlCenter/Widgets/Network.qml & /Modules/Bar/Widgets/Network.qml
+  function getStatustxt() {
+    if (root.connecting) {
+      return root.connectingTo ? I18n.tr("common.connecting") + " " + root.connectingTo : I18n.tr("common.connecting");
+    }
+
+    let p = [];
+
+    // Ethernet
+    if (root.ethernetConnected) {
+      const eth = root.activeEthernetDetails;
+      const name = eth.connectionName || (root.ethernetInterfaces.length > 0 ? root.ethernetInterfaces[0].connectionName : "") || "";
+      const speed = eth.speed || "";
+      p.push(name + (speed ? " - " + speed : ""));
+    }
+
+    // Wi-Fi
+    if (root.activeWifiIf) {
+      const wl = root.activeWifiDetails;
+      const speed = wl.rateShort || wl.rate || "";
+      const connectedNet = Object.values(root.networks).find(net => net.connected);
+      const name = connectedNet ? connectedNet.ssid : (wl.connectionName || "");
+      p.push(name + (speed ? " - " + speed : ""));
+    }
+
+    if (p.length > 0) {
+      return p.join(" + "); // p.length > 0 & === 1 no join used. (eg: Only Wi-Fi)
+    }
+
+    return I18n.tr("common.disconnected"); // p.length === 0
+  }
+
+  function getIcon() {
+    // This function doesn't know what to do when more than one ethernet device is connected. most people doesn't use but just in case.
+    if (root.ethernetConnected) {
+      switch (root.networkConnectivity) {
+        case "limited":
+          return "circle-x"; // Placeholder for actual icon
+        case "portal":
+        case "unknown":
+          return "question-mark"; // Placeholder for actual icon
+        case "full":
+          return "circle-check"; // Placeholder for actual icon
+        default:
+          return "wired-off"; // Placeholder for actual icon
+      }
+    }
+    const connectedNet = Object.values(root.networks).find(net => net.connected); // This might be inefficient...
+    return connectedNet ? root.getSignalInfo(connectedNet.signal, true).icon : "wifi-off";
   }
 
   // Processes
