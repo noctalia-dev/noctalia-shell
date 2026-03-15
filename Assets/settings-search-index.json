@@ -2499,7 +2499,7 @@
   {
     "labelKey": "panels.wallpaper.look-feel-transition-type-label",
     "descriptionKey": "panels.wallpaper.look-feel-transition-type-description",
-    "widget": "NComboBox",
+    "widget": "NLabel",
     "tab": 3,
     "tabLabel": "common.wallpaper",
     "subTab": 1,

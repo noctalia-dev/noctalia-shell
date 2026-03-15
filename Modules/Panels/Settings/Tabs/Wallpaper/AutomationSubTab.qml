@@ -40,120 +40,26 @@ ColumnLayout {
       ]
       currentKey: Settings.data.wallpaper.wallpaperChangeMode || "random"
       onSelected: key => Settings.data.wallpaper.wallpaperChangeMode = key
-      defaultValue: Settings.getDefaultValue("wallpaper.transitionType")
+      defaultValue: Settings.getDefaultValue("wallpaper.wallpaperChangeMode")
     }
 
-    RowLayout {
-      NLabel {
-        label: I18n.tr("panels.wallpaper.automation-interval-label")
-        description: I18n.tr("panels.wallpaper.automation-interval-description")
-        Layout.fillWidth: true
-      }
-
-      NText {
-        text: Time.formatVagueHumanReadableDuration(Settings.data.wallpaper.randomIntervalSec)
-        Layout.alignment: Qt.AlignBottom | Qt.AlignRight
-      }
-    }
-
-    RowLayout {
-      id: presetRow
-      spacing: Style.marginS
-      opacity: enabled ? 1.0 : 0.6
-
-      property var intervalPresets: [5 * 60, 10 * 60, 15 * 60, 30 * 60, 45 * 60, 60 * 60, 90 * 60, 120 * 60]
-      property bool isCurrentPreset: {
-        return intervalPresets.some(seconds => seconds === Settings.data.wallpaper.randomIntervalSec);
-      }
-      property bool customForcedVisible: false
-
-      function setIntervalSeconds(sec) {
-        Settings.data.wallpaper.randomIntervalSec = sec;
-        WallpaperService.restartRandomWallpaperTimer();
-        customForcedVisible = false;
-      }
-
-      function isSelected(sec) {
-        return Settings.data.wallpaper.randomIntervalSec === sec;
-      }
-
-      Repeater {
-        model: presetRow.intervalPresets
-        delegate: IntervalPresetChip {
-          seconds: modelData
-          label: Time.formatVagueHumanReadableDuration(modelData)
-          selected: presetRow.isSelected(modelData) && !customRow.visible
-          onClicked: presetRow.setIntervalSeconds(modelData)
+    NSpinBox {
+      label: I18n.tr("panels.wallpaper.automation-interval-label")
+      description: I18n.tr("panels.wallpaper.automation-interval-description")
+      Layout.fillWidth: true
+      from: 1
+      to: 1440
+      stepSize: 1
+      suffix: "m"
+      value: Math.round(Settings.data.wallpaper.randomIntervalSec / 60)
+      defaultValue: Settings.getDefaultValue("wallpaper.randomIntervalSec") !== undefined ? Math.round(Settings.getDefaultValue("wallpaper.randomIntervalSec") / 60) : undefined
+      onValueChanged: {
+        let newSec = value * 60;
+        if (newSec !== Settings.data.wallpaper.randomIntervalSec) {
+          Settings.data.wallpaper.randomIntervalSec = newSec;
+          WallpaperService.restartRandomWallpaperTimer();
         }
       }
-
-      IntervalPresetChip {
-        label: customRow.visible ? "Custom" : "Custom…"
-        selected: customRow.visible
-        onClicked: presetRow.customForcedVisible = !presetRow.customForcedVisible
-      }
-    }
-
-    RowLayout {
-      id: customRow
-
-      visible: presetRow.customForcedVisible || !presetRow.isCurrentPreset
-      spacing: Style.marginS
-      opacity: enabled ? 1.0 : 0.6
-      Layout.topMargin: Style.marginS
-
-      NTextInput {
-        label: I18n.tr("panels.wallpaper.automation-custom-interval-label")
-        description: I18n.tr("panels.wallpaper.automation-custom-interval-description")
-        text: {
-          const s = Settings.data.wallpaper.randomIntervalSec;
-          const h = Math.floor(s / 3600);
-          const m = Math.floor((s % 3600) / 60);
-          return h + ":" + (m < 10 ? ("0" + m) : m);
-        }
-        onEditingFinished: {
-          const m = text.trim().match(/^(\d{1,2}):(\d{2})$/);
-          if (m) {
-            let h = parseInt(m[1]);
-            let min = parseInt(m[2]);
-            if (isNaN(h) || isNaN(min))
-              return;
-            h = Math.max(0, Math.min(24, h));
-            min = Math.max(0, Math.min(59, min));
-            Settings.data.wallpaper.randomIntervalSec = (h * 3600) + (min * 60);
-            WallpaperService.restartRandomWallpaperTimer();
-            presetRow.customForcedVisible = true;
-          }
-        }
-      }
-    }
-  }
-
-  component IntervalPresetChip: Rectangle {
-    property int seconds: 0
-    property string label: ""
-    property bool selected: false
-    signal clicked
-
-    radius: Style.iRadiusS
-    color: selected ? Color.mPrimary : Color.mSurfaceVariant
-    implicitHeight: Math.max(Style.baseWidgetSize * 0.55, 24)
-    implicitWidth: chipLabel.implicitWidth + Style.marginM * 1.5
-    border.width: Style.borderS
-    border.color: selected ? "transparent" : Color.mOutline
-
-    MouseArea {
-      anchors.fill: parent
-      cursorShape: Qt.PointingHandCursor
-      onClicked: parent.clicked()
-    }
-
-    NText {
-      id: chipLabel
-      anchors.centerIn: parent
-      text: parent.label
-      pointSize: Style.fontSizeS
-      color: parent.selected ? Color.mOnPrimary : Color.mOnSurface
     }
   }
 }

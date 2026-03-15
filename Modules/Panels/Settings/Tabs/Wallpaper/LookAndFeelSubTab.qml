@@ -36,13 +36,46 @@ ColumnLayout {
     }
   }
 
-  NComboBox {
-    label: I18n.tr("panels.wallpaper.look-feel-transition-type-label")
-    description: I18n.tr("panels.wallpaper.look-feel-transition-type-description")
-    model: WallpaperService.transitionsModel
-    currentKey: Settings.data.wallpaper.transitionType
-    onSelected: key => Settings.data.wallpaper.transitionType = key
-    defaultValue: Settings.getDefaultValue("wallpaper.transitionType")
+  NDivider {
+    Layout.fillWidth: true
+  }
+
+  ColumnLayout {
+    spacing: Style.marginS
+    Layout.fillWidth: true
+
+    NLabel {
+      label: I18n.tr("panels.wallpaper.look-feel-transition-type-label")
+      description: I18n.tr("panels.wallpaper.look-feel-transition-type-description")
+    }
+
+    Repeater {
+      model: WallpaperService.allTransitions
+
+      NCheckbox {
+        required property string modelData
+
+        label: {
+          var key = "wallpaper.transitions." + modelData;
+          return I18n.tr(key);
+        }
+        checked: Settings.data.wallpaper.transitionType.includes(modelData)
+        onToggled: {
+          var arr = Array.from(Settings.data.wallpaper.transitionType);
+          if (checked) {
+            if (!arr.includes(modelData))
+              arr.push(modelData);
+          } else {
+            arr = arr.filter(k => k !== modelData);
+          }
+          Settings.data.wallpaper.transitionType = arr;
+        }
+      }
+    }
+  }
+
+  NDivider {
+    Layout.fillWidth: true
   }
 
   NToggle {
