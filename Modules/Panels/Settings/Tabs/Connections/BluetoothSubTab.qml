@@ -407,11 +407,20 @@ Item {
           spacing: Style.marginM
           Layout.alignment: Qt.AlignVCenter
 
-          NIcon {
-            icon: BluetoothService.getDeviceIcon(modelData)
-            pointSize: Style.fontSizeXXL
-            color: modelData.connected ? Color.mPrimary : device.getContentColor(Color.mOnSurface)
+          Rectangle {
+            id: deviceIconBg
+            Layout.preferredWidth: Style.baseWidgetSize
+            Layout.preferredHeight: Style.baseWidgetSize
+            radius: Style.radiusM
+            color: Color.smartAlpha(Color.mSurfaceVariant)
             Layout.alignment: Qt.AlignVCenter
+
+            NIcon {
+              anchors.centerIn: parent
+              icon: BluetoothService.getDeviceIcon(modelData)
+              pointSize: Style.fontSizeXXL
+              color: modelData.connected ? Color.mPrimary : device.getContentColor(Color.mOnSurface)
+            }
           }
 
           ColumnLayout {

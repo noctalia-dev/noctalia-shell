@@ -474,10 +474,20 @@ SmartPanel {
                         // Click handling for the whole header row is provided by a sibling MouseArea
                         // anchored to this row (defined right after this RowLayout).
 
-                        NIcon {
-                          icon: NetworkService.getIcon()
-                          pointSize: Style.fontSizeXXL
-                          color: modelData.connected ? Color.mPrimary : Color.mOnSurface
+                        Rectangle {
+                          id: ethIconBg
+                          Layout.preferredWidth: Style.baseWidgetSize
+                          Layout.preferredHeight: Style.baseWidgetSize
+                          radius: Style.radiusM
+                          color: Color.smartAlpha(Color.mSurfaceVariant)
+                          Layout.alignment: Qt.AlignVCenter
+
+                          NIcon {
+                            anchors.centerIn: parent
+                            icon: NetworkService.getIcon()
+                            pointSize: Style.fontSizeXXL
+                            color: modelData.connected ? Color.mPrimary : Color.mOnSurface
+                          }
                         }
 
                         ColumnLayout {

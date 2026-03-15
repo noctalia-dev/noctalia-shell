@@ -693,17 +693,26 @@ Item {
           spacing: Style.marginM
           Layout.alignment: Qt.AlignVCenter
 
-          NIcon {
-            icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
-            pointSize: Style.fontSizeXXL
-            color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mPrimary : Color.mError) : networkItem.getContentColor(Color.mOnSurface)
+          Rectangle {
+            id: signalIconBg
+            Layout.preferredWidth: Style.baseWidgetSize
+            Layout.preferredHeight: Style.baseWidgetSize
+            radius: Style.radiusM
+            color: Color.smartAlpha(Color.mSurfaceVariant)
             Layout.alignment: Qt.AlignVCenter
 
-            MouseArea {
-              anchors.fill: parent
-              hoverEnabled: true
-              onEntered: TooltipService.show(parent, NetworkService.getSignalInfo(modelData.signal, modelData.connected).label + " (" + modelData.signal + "%)")
-              onExited: TooltipService.hide()
+            NIcon {
+              anchors.centerIn: parent
+              icon: NetworkService.getSignalInfo(modelData.signal, modelData.connected).icon
+              pointSize: Style.fontSizeXXL
+              color: modelData.connected ? (NetworkService.internetConnectivity ? Color.mPrimary : Color.mError) : networkItem.getContentColor(Color.mOnSurface)
+
+              MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                onEntered: TooltipService.show(parent, NetworkService.getSignalInfo(modelData.signal, modelData.connected).label + " (" + modelData.signal + "%)")
+                onExited: TooltipService.hide()
+              }
             }
           }
 
