@@ -648,6 +648,10 @@ Item {
     NBox {
       id: networkItem
 
+      HoverHandler {
+        id: itemHover
+      }
+
       readonly property bool isBusy: NetworkService.connectingTo === modelData.ssid || NetworkService.disconnectingFrom === modelData.ssid || NetworkService.forgettingNetwork === modelData.ssid
       readonly property bool isExpanded: root.infoSsid === modelData.ssid
       readonly property bool isEnterprise: NetworkService.isEnterprise(modelData.security)
@@ -815,10 +819,10 @@ Item {
             }
 
             NIconButton {
-              visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
+              visible: itemHover.hovered && modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               icon: "info"
               tooltipText: I18n.tr("common.info")
-              baseSize: Style.baseWidgetSize * 0.8
+              baseSize: Style.baseWidgetSize * 0.75
               colorBg: Color.mSurfaceVariant
               colorFg: Color.mOnSurface
               colorBorder: "transparent"
@@ -834,10 +838,10 @@ Item {
             }
 
             NIconButton {
-              visible: !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
+              visible: itemHover.hovered && !root.showOnlyLists && (modelData.existing || modelData.cached) && !modelData.connected && !networkItem.isBusy
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
-              baseSize: Style.baseWidgetSize * 0.8
+              baseSize: Style.baseWidgetSize * 0.75
               colorBg: Color.mSurfaceVariant
               colorFg: Color.mOnSurface
               colorBorder: "transparent"
@@ -899,7 +903,7 @@ Item {
             anchors.margins: Style.marginS
             icon: root.detailsGrid ? "layout-list" : "layout-grid"
             tooltipText: root.detailsGrid ? I18n.tr("tooltips.list-view") : I18n.tr("tooltips.grid-view")
-            baseSize: Style.baseWidgetSize * 0.8
+            baseSize: Style.baseWidgetSize * 0.75
             onClicked: {
               root.detailsGrid = !root.detailsGrid;
               Settings.data.network.wifiDetailsViewMode = root.detailsGrid ? "grid" : "list";
@@ -961,7 +965,7 @@ Item {
                     const value = NetworkService.activeWifiIf || "";
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
-                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.copied-to-clipboard"), "wifi");
                     }
                   }
                 }
@@ -1049,7 +1053,7 @@ Item {
                     const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.ipv4 || "") : ((NetworkService.activeWifiDetails.ipv6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
-                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.copied-to-clipboard"), "wifi");
                     }
                   }
                 }
@@ -1092,7 +1096,7 @@ Item {
                     const value = root.ipVersion === 4 ? ((NetworkService.activeWifiDetails.dns4 || []).join(", ") || "") : ((NetworkService.activeWifiDetails.dns6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
-                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.copied-to-clipboard"), "wifi");
                     }
                   }
                 }
@@ -1135,7 +1139,7 @@ Item {
                     const value = root.ipVersion === 4 ? (NetworkService.activeWifiDetails.gateway4 || "") : ((NetworkService.activeWifiDetails.gateway6 || []).join(", ") || "");
                     if (value.length > 0) {
                       Quickshell.execDetached(["wl-copy", value]);
-                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("toast.bluetooth.address-copied"), "wifi");
+                      ToastService.showNotice(I18n.tr("common.wifi"), I18n.tr("common.copied-to-clipboard"), "wifi");
                     }
                   }
                 }
@@ -1250,7 +1254,7 @@ Item {
 
                   NIconButton {
                     icon: "folder-open"
-                    baseSize: Style.baseWidgetSize * 0.8
+                    baseSize: Style.baseWidgetSize * 0.75
                     onClicked: caCertPicker.openForInline()
                   }
                 }
@@ -1390,7 +1394,7 @@ Item {
 
               NIconButton {
                 icon: "close"
-                baseSize: Style.baseWidgetSize * 0.8
+                baseSize: Style.baseWidgetSize * 0.75
                 onClicked: root.cancelPassword()
               }
             }
@@ -1439,7 +1443,7 @@ Item {
 
             NIconButton {
               icon: "close"
-              baseSize: Style.baseWidgetSize * 0.8
+              baseSize: Style.baseWidgetSize * 0.75
               onClicked: root.cancelForget()
             }
           }

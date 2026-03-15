@@ -726,9 +726,93 @@
     ]
   },
   {
+    "labelKey": "wifi.enterprise.eap-method",
+    "descriptionKey": null,
+    "widget": "NComboBox",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
+    "labelKey": "wifi.enterprise.phase2-auth",
+    "descriptionKey": null,
+    "widget": "NComboBox",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
+    "labelKey": "wifi.enterprise.anonymous-identity",
+    "descriptionKey": null,
+    "widget": "NTextInput",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
+    "labelKey": "wifi.enterprise.ca-cert",
+    "descriptionKey": null,
+    "widget": "NTextInput",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
+    "labelKey": "wifi.enterprise.username",
+    "descriptionKey": null,
+    "widget": "NTextInput",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
     "labelKey": "common.password",
     "descriptionKey": null,
     "widget": "NTextInput",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
+    "labelKey": "wifi.panel.show-password",
+    "descriptionKey": null,
+    "widget": "NCheckbox",
+    "tab": 16,
+    "tabLabel": "panels.connections.title",
+    "subTab": 0,
+    "subTabLabel": "common.wifi",
+    "visibleWhen": [
+      "false"
+    ]
+  },
+  {
+    "labelKey": "wifi.panel.hidden-network",
+    "descriptionKey": null,
+    "widget": "NCheckbox",
     "tab": 16,
     "tabLabel": "panels.connections.title",
     "subTab": 0,

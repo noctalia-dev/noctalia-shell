@@ -84,7 +84,7 @@ Item {
     customIconColor: Color.resolveColorKeyOptional(root.iconColorKey)
     customTextColor: Color.resolveColorKeyOptional(root.textColorKey)
     icon: NetworkService.getIcon()
-    text: NetworkService.getStatustxt()
+    text: NetworkService.getStatusText()
     autoHide: false
     forceOpen: !isBarVertical && root.displayMode === "alwaysShow"
     forceClose: isBarVertical || root.displayMode === "alwaysHide" || text === ""
@@ -99,7 +99,7 @@ Item {
       if (PanelService.getPanel("networkPanel", screen)?.isPanelOpen) {
         return "";
       }
-      return pill.text; // pill.text is exact copy of getStatustxt
+      return pill.text; // pill.text is exact copy of getStatusText
     }
   }
 }

@@ -395,10 +395,6 @@ Item {
         return defaultColors;
       }
 
-      function getContentColor(defaultColor = Color.mOnSurface) {
-        return getContentColors([Color.mSurface, defaultColor])[1];
-      }
-
       Layout.fillWidth: true
       Layout.preferredHeight: deviceColumn.implicitHeight + (Style.marginXL)
       radius: Style.radiusM
@@ -418,20 +414,12 @@ Item {
           spacing: Style.marginM
           Layout.alignment: Qt.AlignVCenter
 
-          Rectangle {
-            id: deviceIconBg
-            Layout.preferredWidth: Style.baseWidgetSize
-            Layout.preferredHeight: Style.baseWidgetSize
-            radius: Style.radiusM
-            color: Color.smartAlpha(Color.mSurfaceVariant)
-            Layout.alignment: Qt.AlignVCenter
-
-            NIcon {
-              anchors.centerIn: parent
-              icon: BluetoothService.getDeviceIcon(modelData)
-              pointSize: Style.fontSizeXXL
-              color: device.getContentColors()[1]
-            }
+          NIcon {
+            Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+            horizontalAlignment: Text.AlignLeft
+            icon: BluetoothService.getDeviceIcon(modelData)
+            pointSize: Style.fontSizeXXL
+            color: device.getContentColors()[1]
           }
 
           ColumnLayout {
@@ -462,7 +450,7 @@ Item {
               }
               visible: text !== ""
               pointSize: Style.fontSizeXS
-              color: device.getContentColor(Color.mOnSurfaceVariant)
+              color: device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1]
             }
 
             RowLayout {
@@ -482,7 +470,7 @@ Item {
                   return b === null ? "-" : (b + "%");
                 }
                 pointSize: Style.fontSizeXS
-                color: device.getContentColor(Color.mOnSurfaceVariant)
+                color: device.getContentColors([Color.mSurfaceVariant, Color.mOnSurfaceVariant])[1]
               }
             }
           }
@@ -498,7 +486,7 @@ Item {
               visible: itemHover.hovered && modelData.connected
               icon: "info"
               tooltipText: I18n.tr("common.info")
-              baseSize: Style.baseWidgetSize * 0.8
+              baseSize: Style.baseWidgetSize * 0.75
               onClicked: {
                 const key = BluetoothService.deviceKey(modelData);
                 root.expandedDeviceKey = (root.expandedDeviceKey === key) ? "" : key;
@@ -509,15 +497,14 @@ Item {
               visible: itemHover.hovered && !root.showOnlyLists && (modelData.paired || modelData.trusted) && !modelData.connected && !isBusy && !modelData.blocked
               icon: "trash"
               tooltipText: I18n.tr("common.unpair")
-              baseSize: Style.baseWidgetSize * 0.8
+              baseSize: Style.baseWidgetSize * 0.75
               onClicked: BluetoothService.unpairDevice(modelData)
             }
 
             NButton {
               id: button
-              visible: itemHover.hovered && (modelData.state !== BluetoothDeviceState.Connecting)
+              visible: (modelData.state !== BluetoothDeviceState.Connecting)
               enabled: (canConnect || canDisconnect || (root.showOnlyLists ? false : canPair)) && !isBusy
-              outlined: !button.hovered
               fontSize: Style.fontSizeS
               backgroundColor: modelData.connected ? Color.mError : Color.mPrimary
               text: {
@@ -564,7 +551,7 @@ Item {
             anchors.margins: Style.marginS
             icon: root.detailsGrid ? "layout-list" : "layout-grid"
             tooltipText: root.detailsGrid ? I18n.tr("tooltips.list-view") : I18n.tr("tooltips.grid-view")
-            baseSize: Style.baseWidgetSize * 0.8
+            baseSize: Style.baseWidgetSize * 0.75
             onClicked: {
               root.detailsGrid = !root.detailsGrid;
               Settings.data.network.bluetoothDetailsViewMode = root.detailsGrid ? "grid" : "list";

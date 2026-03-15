@@ -429,7 +429,6 @@ Singleton {
         icon = "wifi-question";
       }
     }
-    // This is a draft actual ranges can be changed.
     const label = signal >= 80 ? I18n.tr("wifi.signal.excellent") : signal >= 60 ? I18n.tr("wifi.signal.good") : signal >= 35 ? I18n.tr("wifi.signal.fair") : signal >= 15 ? I18n.tr("wifi.signal.poor") : I18n.tr("wifi.signal.weak");
     if (!icon) {
       icon = signal >= 80 ? "wifi" : signal >= 60 ? "wifi-3" : signal >= 35 ? "wifi-2" : signal >= 15 ? "wifi-1" : "wifi-0";
@@ -519,7 +518,7 @@ Singleton {
   }
 
   // Functions used in /Modules/Panels/ControlCenter/Widgets/Network.qml & /Modules/Bar/Widgets/Network.qml
-  function getStatustxt() {
+  function getStatusText() {
     if (root.connecting) {
       return root.connectingTo ? I18n.tr("common.connecting") + " " + root.connectingTo : I18n.tr("common.connecting");
     }
@@ -577,11 +576,11 @@ Singleton {
     } else {
       // Wi-Fi
       const connectedNet = Object.values(root.networks).find(net => net.connected);
-      const availableNet = Object.values(root.networks).length;
+      const networkCount = Object.values(root.networks).length;
       if (connectedNet) {
         // Wi-Fi Connected
         i = root.getSignalInfo(connectedNet.signal, true).icon;
-      } else if (root.connecting || availableNet > 0) {
+      } else if (root.connecting || networkCount > 0) {
         // Wi-Fi Connecting or Wi-Fi available but not connected
         i = "wifi-question";
       } else if (!Settings.data.network.wifiEnabled) {
@@ -589,12 +588,10 @@ Singleton {
         i = "wifi-off";
       }
     }
-    if (Settings.data.network.airplaneModeEnabled) {
-      // Airplane mode show icon if enabled
+    if (Settings.data.network.airplaneModeEnabled && !forceEthernet) {
       i = "plane";
     }
     return i;
-    // This function should be covering all possibilities i think it does. Tbh became fairly complicated...
   }
 
   // Processes
