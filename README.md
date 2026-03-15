@@ -112,20 +112,7 @@ Noctalia is a **desktop shell**, not a full desktop environment. It provides the
 
 ### What Noctalia does
 
-Noctalia focuses on the things a shell is responsible for:
-
-- **Status bar** with configurable widgets (clock, battery, audio, network, etc.)
-- **Panels** for quick access to settings, media controls, notifications, and more
-- **Application launcher** with extensible search providers
-- **Notification daemon** with history and Do Not Disturb
-- **Lock screen**
-- **Idle management** with screen locking and idle inhibition
-- **OSD** for volume and brightness feedback
-- **Theming** with predefined color schemes, automatic color generation from your wallpaper, and more
-- **Wallpaper management** with Wallhaven integration
-- **Desktop widgets** (clock, media player)
-- **Dock** for pinned and running applications
-- **Multi-monitor support**
+Noctalia focuses on the things a shell is responsible for: status bar, panels, application launcher, notifications, lock screen, idle management, OSD, theming, wallpapers, desktop widgets, dock, and multi-monitor support.
 
 ### What belongs in a plugin
 
