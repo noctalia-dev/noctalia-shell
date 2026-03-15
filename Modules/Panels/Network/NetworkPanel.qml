@@ -499,7 +499,7 @@ SmartPanel {
                             NText {
                               text: {
                                 if (modelData.connected) {
-                                  switch (modelData.connectivity) {
+                                  switch (NetworkService.networkConnectivity) {
                                   case "full":
                                     return I18n.tr("common.connected");
                                   case "limited":
@@ -508,18 +508,18 @@ SmartPanel {
                                   case "portal":
                                     return I18n.tr("wifi.panel.action-required");
                                   default:
-                                    return modelData.connectivity || "unknown";
+                                    return NetworkService.networkConnectivity;
                                   }
                                 }
                                 return I18n.tr("common.disconnected");
                               }
                               pointSize: Style.fontSizeXXS
-                              color: (!modelData.connected || modelData.connectivity === "limited" || modelData.connectivity === "portal" || modelData.connectivity === "unknown") ? Color.mPrimary : Color.mError
+                              color: (!modelData.connected || NetworkService.networkConnectivity === "limited" || NetworkService.networkConnectivity === "portal" || NetworkService.networkConnectivity === "unknown") ? Color.mError : Color.mPrimary
                             }
 
                             // Network speed indicators (visible when connected and speed > 0)
                             RowLayout {
-                              visible: (modelData.connected && modelData.networkConnectivity === "full") && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
+                              visible: (modelData.connected && NetworkService.networkConnectivity === "full") && (SystemStatService.rxSpeed > 0 || SystemStatService.txSpeed > 0)
                               spacing: 2
                               Layout.leftMargin: Style.marginXS
                               Layout.fillWidth: false
