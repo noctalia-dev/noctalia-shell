@@ -662,7 +662,7 @@ Item {
             NBusyIndicator {
               visible: networkItem.isBusy
               running: visible
-              color: Color.mPrimary
+              color: Color.mOnSurface
               size: Style.baseWidgetSize * 0.5
             }
 
@@ -671,6 +671,10 @@ Item {
               icon: "info"
               tooltipText: I18n.tr("common.info")
               baseSize: Style.baseWidgetSize * 0.8
+              colorBg: Color.mSurfaceVariant
+              colorFg: Color.mOnSurfaceVariant
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: {
                 if (root.infoSsid === modelData.ssid) {
                   root.infoSsid = "";
@@ -686,6 +690,10 @@ Item {
               icon: "trash"
               tooltipText: I18n.tr("tooltips.forget-network")
               baseSize: Style.baseWidgetSize * 0.8
+              colorBg: Color.mSurfaceVariant
+              colorFg: Color.mOnSurfaceVariant
+              colorBorder: "transparent"
+              colorBorderHover: "transparent"
               onClicked: root.requestForget(modelData.ssid)
             }
 
@@ -711,8 +719,8 @@ Item {
               visible: modelData.connected && NetworkService.disconnectingFrom !== modelData.ssid
               text: I18n.tr("common.disconnect")
               fontSize: Style.fontSizeS
-              backgroundColor: Color.mError
-              textColor: Color.mOnError
+              backgroundColor: Color.mSurfaceVariant
+              textColor: Color.mOnSurfaceVariant
               onClicked: NetworkService.disconnect(modelData.ssid)
             }
           }
