@@ -91,7 +91,7 @@ ColumnLayout {
   }
 
   // Add source dialog
-  Popup {
+  NPopup {
     id: addSourceDialog
     parent: Overlay.overlay
     modal: true

@@ -699,6 +699,11 @@
       "centered": "Centered panel",
       "window": "Separate window"
     },
+    "settings-panel-auto-hide": {
+      "never": "Never",
+      "once-entered": "Once entered",
+      "always": "Always"
+    },
     "visualizer-types": {
       "linear": "Linear",
       "mirrored": "Mirrored",
@@ -1683,6 +1688,12 @@
       "panel-background-opacity-label": "Panel background opacity",
       "panels-attached-to-bar-description": "Panels lock to the bar and screen edges, creating a seamless look with stylish inverted corners.",
       "panels-attached-to-bar-label": "Snap panels to edges",
+      "panels-auto-hide-description": "Auto-hide a panel after mouse leaves",
+      "panels-auto-hide-label": "Auto-hide",
+      "panels-auto-hide-delay-description": "Time before panel hides automatically after mouse leaves.",
+      "panels-auto-hide-delay-label": "Auto hide delay",
+      "panels-auto-hide-delay-before-enter-description": "Time before panel hides automatically before mouse enters.",
+      "panels-auto-hide-delay-before-enter-label": "Auto hide delay before entering",
       "panels-overlay-description": "Ensures panels and the bar remain visible, even over fullscreen applications.",
       "panels-overlay-label": "Keep panels & bar on top",
       "scaling-description": "Changes the size of the general user interface, excluding the bar.",

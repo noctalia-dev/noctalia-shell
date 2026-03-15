@@ -218,7 +218,7 @@ RowLayout {
       pointSize: Style.fontSizeL
     }
 
-    popup: Popup {
+    popup: NPopup {
       y: combo.height + Style.marginS
       width: combo.width
       height: Math.round((root.popupHeight + 60) * Style.uiScaleRatio)

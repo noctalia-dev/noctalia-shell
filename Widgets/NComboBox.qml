@@ -246,7 +246,7 @@ RowLayout {
       pointSize: Style.fontSizeL
     }
 
-    popup: Popup {
+    popup: NPopup {
       y: combo.height + Style.marginS
       implicitWidth: combo.width
       implicitHeight: Math.min(Math.round(root.popupHeight * Style.uiScaleRatio), listView.contentHeight + Style.margin2M)

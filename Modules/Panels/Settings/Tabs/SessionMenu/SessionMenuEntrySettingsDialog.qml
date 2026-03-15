@@ -5,7 +5,7 @@ import qs.Commons
 import qs.Widgets
 
 // Session Menu Entry Settings Dialog Component
-Popup {
+NPopup {
   id: root
 
   property int entryIndex: -1

@@ -51,6 +51,21 @@ Item {
   // Track actual visibility (delayed until content is loaded and sized)
   property bool isPanelVisible: false
 
+  // Track if the panel is hovered or any popup
+  property bool isDirectlyHovered: false
+  property bool isChildrenVisible: false
+  property bool isChildrenHovered: false
+  property bool isHovered: isDirectlyHovered || isChildrenVisible || isChildrenHovered
+
+  onIsHoveredChanged: {
+    if(isHovered) {
+      hoverEval.stop();
+    } else {
+        hoverEval.interval = Settings.data.ui.panelsHideDelay;
+        hoverEval.restart();
+    }
+  }
+
   // Track size animation completion for sequential opacity animation
   property bool sizeAnimationComplete: false
 
@@ -276,6 +291,12 @@ Item {
     closeWatchdogActive = false;
     closeWatchdogTimer.stop();
 
+    // Reset hovering status
+    isDirectlyHovered = false;
+    isChildrenVisible = false;
+    isChildrenHovered = false;
+    hoverEval.stop();
+
     // Don't set opacity directly as it breaks the binding
     root.isPanelVisible = false;
     root.sizeAnimationComplete = false;
@@ -304,6 +325,12 @@ Item {
     root.closeFinalized = true;
     root.closeWatchdogActive = false;
     closeWatchdogTimer.stop();
+
+    // Reset hovering
+    isDirectlyHovered = false;
+    isChildrenVisible = false;
+    isChildrenHovered = false;
+    hoverEval.stop();
 
     root.isPanelVisible = false;
     root.isPanelOpen = false;
@@ -772,6 +799,25 @@ Item {
         Logger.w("SmartPanel", "Close watchdog timeout - forcing panel close", root.objectName);
         // Force finalization
         Qt.callLater(root.finalizeClose);
+      }
+    }
+  }
+
+  onOpened: {
+    if (Settings.data.ui.panelsAutoHide === "always") {
+      hoverEval.interval = Settings.data.ui.panelsHideBeforeEnterDelay;
+      hoverEval.restart();
+    }
+  }
+
+  // Hover timer to close panel when exited
+  Timer {
+    id: hoverEval
+    interval: Settings.data.ui.panelsHideDelay
+    repeat: false
+    onTriggered: {
+      if (!isHovered && root.isPanelOpen && Settings.data.ui.panelsAutoHide !== "never"){
+        root.close();
       }
     }
   }
@@ -1298,6 +1344,11 @@ Item {
       width: panelBackground.width
       height: panelBackground.height
       sourceComponent: root.panelContent
+
+      HoverHandler {
+        id: hoverHandler
+        onHoveredChanged: isDirectlyHovered = hovered
+      }
 
       onLoaded: {
         // Wait for contentPreferredWidth/Height to be available before making visible

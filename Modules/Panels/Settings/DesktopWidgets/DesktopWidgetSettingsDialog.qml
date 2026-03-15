@@ -8,7 +8,7 @@ import qs.Services.Noctalia
 import qs.Services.UI
 import qs.Widgets
 
-Popup {
+NPopup {
   id: root
 
   property int widgetIndex: -1
