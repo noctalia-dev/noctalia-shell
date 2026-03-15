@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Elrejti azokat az eszközöket, amelyek csak Bluetooth-címként jelennek meg.",
       "hide-unnamed-devices-label": "Névtelen eszközök elrejtése",
       "pin-instructions": "Írja be az eszközén megjelenő PIN-kódot.",
-      "title": "Kapcsolatok"
+      "title": "Kapcsolatok",
+      "wifi-header-text": "Használja a Wi-Fi-t az elérhető hálózatok megtekintéséhez és az internethez való csatlakozáshoz."
     },
     "control-center": {
       "cards-desc": "Mely vezérlők jelenjenek meg a vezérlőközpontban és milyen sorrendben.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Gyorsbillentyűk"
     },
     "hooks": {
+      "color-generation-description": "Parancs, amely akkor fut le, amikor a színlétrehozás befejeződik (pl. háttérkép alapú téma alkalmazása után).",
+      "color-generation-label": "Színek generálva",
+      "color-generation-placeholder": "pl. notify-send \"Színek\" \"Generálva\"",
       "info-command-info-description": "• A parancsok shellen keresztül futnak (sh -lc)<br>• A parancsok a háttérben futnak (leválasztva)<br>• A tesztgombok az aktuális értékekkel futnak le",
       "info-parameters-description": "• Wallpaper hook: $1 = háttérkép útvonala, $2 = képernyő neve, $3 = téma (sötét/világos)<br>• Theme toggle hook: $1 = true/false (sötét mód állapot)<br>• Screen lock/unlock hooks: $1 = lock/unlock (képernyőzár állapot)<br>• Performance mode hooks: Nincs paraméter<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Elérhető paraméterek",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "pl. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Automatikusan beilleszti a kiválasztott vágólap elemet. Wtype szükséges hozzá.",
       "settings-auto-paste-label": "Automatikus beillesztés",
+      "settings-clip-chips-description": "Fülmenü megjelenítése a vágólap előzmények típus szerinti szűréséhez (Képek, Linkek, Fájlok, Kód stb.).",
+      "settings-clip-chips-label": "Kategória chipek engedélyezése",
       "settings-clip-preview-description": "A vágólap tartalmának előnézetének megjelenítése a >clip parancs használatakor.",
       "settings-clip-preview-label": "Vágólap előnézet engedélyezése",
+      "settings-clip-smart-icons-description": "Mutasson specifikus ikonokat linkekhez, fájlokhoz, színekhez és kódhoz egy általános vágólap ikon helyett.",
+      "settings-clip-smart-icons-label": "Intelligens ikonok engedélyezése",
       "settings-clip-wrap-text-description": "A szöveg tördelése a vágólap listában a csonkítás helyett.",
       "settings-clip-wrap-text-label": "Clipboard szöveg becsomagolása",
       "settings-clipboard-history-description": "Hozzáférés a korábban másolt elemekhez az indítóból.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Az összes vezeték nélküli kommunikáció kikapcsolása.",
       "title": "Repülőgép üzemmód"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Szükseges akció",
+      "add-hidden-network": "Rejtett hálózat hozzáadása",
       "available-interfaces": "Elérhető interfészek",
       "available-networks": "Elérhető hálózatok",
       "disabled": "A Wi‑Fi le van tiltva",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Nincs internet",
       "internet-status": "Internet állapota",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Ismert hálózatok",
       "link-speed": "Kapcsolati sebesség",
+      "network-name-ssid": "Hálózat neve (SSID)",
       "no-ethernet-devices": "Nem található Ethernet eszköz",
       "no-networks": "Nem található Wi‑Fi-hálózat",
       "saved": "Mentve",
       "scan-again": "Keresés újra",
       "searching": "Hálózatok keresése...",
+      "security-open": "Megnyitás",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Személyes",
       "title": "Wi‑Fi"
     },
     "signal": {

@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Приховати пристрої, які відображаються лише як Bluetooth-адреси.",
       "hide-unnamed-devices-label": "Приховати безіменні пристрої",
       "pin-instructions": "Будь ласка, введіть PIN-код, що відображається на вашому пристрої.",
-      "title": "Підключення"
+      "title": "Підключення",
+      "wifi-header-text": "Використовуйте Wi-Fi, щоб переглядати доступні мережі та підключатися до інтернету."
     },
     "control-center": {
       "cards-desc": "Налаштуйте, які елементи керування з'являються в центрі керування та в якому порядку.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Гарячі клавіші"
     },
     "hooks": {
+      "color-generation-description": "Команда, яка буде виконана після завершення генерації кольору (наприклад, після застосування теми на основі шпалер).",
+      "color-generation-label": "Кольори згенеровано",
+      "color-generation-placeholder": "напр. notify-send \"Кольори\" \"Згенеровано\"",
       "info-command-info-description": "• Команди виконуються через оболонку (sh -lc)<br>• Команди запускаються у фоні (відокремлено)<br>• Кнопки тестування виконують команди з поточними значеннями",
       "info-parameters-description": "• Wallpaper hook: $1 = шлях до шпалер, $2 = назва екрана, $3 = тема (темна/світла)<br>• Theme toggle hook: $1 = true/false (стан темного режиму)<br>• Screen lock/unlock hooks: $1 = lock/unlock (стан блокування екрана)<br>• Performance mode hooks: Без параметрів<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Доступні параметри",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "напр. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Автоматично вставити вибраний елемент з буфера обміну. Потребує wtype.",
       "settings-auto-paste-label": "Автоматична вставка",
+      "settings-clip-chips-description": "Показати панель вкладок для фільтрації історії буфера обміну за типом (Зображення, Посилання, Файли, Код тощо).",
+      "settings-clip-chips-label": "Увімкнути чіпи категорій",
       "settings-clip-preview-description": "Показувати попередній перегляд вмісту буфера обміну при використанні команди >clip.",
       "settings-clip-preview-label": "Попередній перегляд буфера обміну",
+      "settings-clip-smart-icons-description": "Показувати спеціальні іконки для посилань, файлів, кольорів та коду замість загальної іконки буфера обміну.",
+      "settings-clip-smart-icons-label": "Увімкнути розумні іконки",
       "settings-clip-wrap-text-description": "Переносити текст у списку буфера обміну замість обрізання.",
       "settings-clip-wrap-text-label": "Загорнути текст з буфера обміну",
       "settings-clipboard-history-description": "Отримати доступ до раніше скопійованих елементів із лаунчера.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Вимкнути всі бездротові комунікації.",
       "title": "Режим польоту"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Вимагається дія",
+      "add-hidden-network": "Додати приховану мережу",
       "available-interfaces": "Доступні інтерфейси",
       "available-networks": "Доступні мережі",
       "disabled": "Wi-Fi вимкнено",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Немає інтернету",
       "internet-status": "Статус Інтернету",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Відомі мережі",
       "link-speed": "Швидкість з'єднання",
+      "network-name-ssid": "Ім'я мережі (SSID)",
       "no-ethernet-devices": "Не виявлено Ethernet-пристроїв",
       "no-networks": "Мереж не знайдено",
       "saved": "Збережено",
       "scan-again": "Сканувати знову",
       "searching": "Пошук близьких мереж...",
+      "security-open": "Відкрити",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Персональний",
       "title": "Wi-Fi"
     },
     "signal": {

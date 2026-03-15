@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Ocultar dispositivos que aparecen solo como direcciones Bluetooth.",
       "hide-unnamed-devices-label": "Ocultar dispositivos sin nombre",
       "pin-instructions": "Por favor, introduce el código PIN que aparece en tu dispositivo.",
-      "title": "Conexiones"
+      "title": "Conexiones",
+      "wifi-header-text": "Usa Wi-Fi para ver las redes disponibles y conectarte a internet."
     },
     "control-center": {
       "cards-desc": "Personaliza qué controles aparecen en el centro de control y en qué orden.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Atajos de teclado"
     },
     "hooks": {
+      "color-generation-description": "Comando a ejecutar cuando la generación de color se complete (p. ej., después de la tematización basada en el fondo de pantalla).",
+      "color-generation-label": "Colores generados",
+      "color-generation-placeholder": "p. ej. notify-send \"Colores\" \"Generados\"",
       "info-command-info-description": "• Los comandos se ejecutan a través de shell (sh -lc)<br>• Los comandos se ejecutan en segundo plano (desvinculados)<br>• Los botones de prueba se ejecutan con los valores actuales",
       "info-parameters-description": "• Wallpaper hook: $1 = ruta del fondo de pantalla, $2 = nombre de la pantalla, $3 = tema (oscuro/claro)<br>• Theme toggle hook: $1 = true/false (estado del modo oscuro)<br>• Screen lock/unlock hooks: $1 = lock/unlock (estado de bloqueo de pantalla)<br>• Performance mode hooks: Sin parámetros<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Parámetros disponibles",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "p. ej. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Pegar automáticamente el elemento seleccionado del portapapeles. Requiere wtype.",
       "settings-auto-paste-label": "Pegado automático",
+      "settings-clip-chips-description": "Mostrar una barra de pestañas para filtrar el historial del portapapeles por tipo (Imágenes, Enlaces, Archivos, Código, etc.).",
+      "settings-clip-chips-label": "Habilitar chips de categoría",
       "settings-clip-preview-description": "Muestra una vista previa del contenido del portapapeles al usar el comando >clip.",
       "settings-clip-preview-label": "Activar vista previa del portapapeles",
+      "settings-clip-smart-icons-description": "Mostrar iconos específicos para enlaces, archivos, colores y código en lugar de un icono de portapapeles genérico.",
+      "settings-clip-smart-icons-label": "Habilitar iconos inteligentes",
       "settings-clip-wrap-text-description": "Ajustar el texto en la lista del portapapeles en lugar de truncarlo.",
       "settings-clip-wrap-text-label": "Ajustar texto del portapapeles",
       "settings-clipboard-history-description": "Accede a los elementos copiados anteriormente desde el lanzador.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Desactivar todas las comunicaciones inalámbricas.",
       "title": "Modo avión"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Acción requerida",
+      "add-hidden-network": "Añadir red oculta",
       "available-interfaces": "Interfaces disponibles",
       "available-networks": "Redes disponibles",
       "disabled": "Wi-Fi está desactivado",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Sin internet",
       "internet-status": "Estado de internet",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Redes conocidas",
       "link-speed": "Velocidad de enlace",
+      "network-name-ssid": "Nombre de red (SSID)",
       "no-ethernet-devices": "No se detectaron dispositivos Ethernet",
       "no-networks": "No se encontraron redes Wi-Fi",
       "saved": "Guardado",
       "scan-again": "Escanear de nuevo",
       "searching": "Buscando redes cercanas...",
+      "security-open": "Abrir",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Personal",
       "title": "Wi-Fi"
     },
     "signal": {

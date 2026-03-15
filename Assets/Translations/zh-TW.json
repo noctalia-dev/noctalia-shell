@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "隱藏僅顯示為 Bluetooth 位址的裝置。",
       "hide-unnamed-devices-label": "隱藏未命名裝置",
       "pin-instructions": "請輸入您裝置上顯示的PIN碼。",
-      "title": "連線"
+      "title": "連線",
+      "wifi-header-text": "使用 Wi-Fi 查看可用網路並連接到網際網路。"
     },
     "control-center": {
       "cards-desc": "自訂控制中心出現的控制項目及排序",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "按鍵綁定"
     },
     "hooks": {
+      "color-generation-description": "顏色生成完成後執行的命令（例如，基於桌布的主題設定後）。",
+      "color-generation-label": "顏色已生成",
+      "color-generation-placeholder": "例如：notify-send \"顏色\" \"已生成\"",
       "info-command-info-description": "• 指令將透過 shell (sh -lc) 執行<br>• 指令會在背景 (detached 狀態) 執行<br>• 測試按鈕會以當下填寫的內容執行",
       "info-parameters-description": "• Wallpaper hook: $1 = 桌面背景路徑, $2 = 螢幕名稱, $3 = 主題 (深色/淺色)<br>• Theme toggle hook: $1 = true/false (深色模式狀態)<br>• Screen lock/unlock hooks: $1 = lock/unlock (螢幕鎖定狀態)<br>• Performance mode hooks: 無參數<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "可用參數",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "例如: gradia', 'satty -f -'",
       "settings-auto-paste-description": "自動貼上選取的剪貼簿項目, 需要 wtype 套件",
       "settings-auto-paste-label": "自動貼上",
+      "settings-clip-chips-description": "顯示一個分頁列，以按類型（圖片、連結、檔案、程式碼等）篩選剪貼簿歷史記錄。",
+      "settings-clip-chips-label": "啟用類別標籤",
       "settings-clip-preview-description": "使用 >clip 命令時顯示剪貼簿內容的預覽。",
       "settings-clip-preview-label": "啟用剪貼簿預覽",
+      "settings-clip-smart-icons-description": "為連結、檔案、顏色和程式碼顯示特定圖示，而不是通用的剪貼簿圖示。",
+      "settings-clip-smart-icons-label": "啟用智慧圖示",
       "settings-clip-wrap-text-description": "將剪貼簿的文字換行顯示而不是截掉",
       "settings-clip-wrap-text-label": "剪貼簿文字換行",
       "settings-clipboard-history-description": "在啟動器存取先前所複製的項目",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "停用所有無線通訊。",
       "title": "飛航模式"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "需要額外操作",
+      "add-hidden-network": "新增隱藏網路",
       "available-interfaces": "可用的介面",
       "available-networks": "可用的網路",
       "disabled": "Wi-Fi 已關閉",
@@ -2151,13 +2161,18 @@
       "internet-limited": "沒有網際網路",
       "internet-status": "上線狀態",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "已知的網路",
       "link-speed": "連結速度",
+      "network-name-ssid": "網路名稱 (SSID)",
       "no-ethernet-devices": "沒有偵測到任何乙太網路裝置",
       "no-networks": "找不到 Wi-Fi 網路",
       "saved": "已儲存",
       "scan-again": "再次掃描",
       "searching": "正在搜尋網路...",
+      "security-open": "開啟",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 個人",
       "title": "Wi‑Fi"
     },
     "signal": {

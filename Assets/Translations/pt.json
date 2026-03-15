@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Ocultar dispositivos que aparecem apenas como endereços Bluetooth.",
       "hide-unnamed-devices-label": "Ocultar dispositivos sem nome",
       "pin-instructions": "Por favor, insira o código PIN exibido no seu dispositivo.",
-      "title": "Conexões"
+      "title": "Conexões",
+      "wifi-header-text": "Use o Wi-Fi para ver as redes disponíveis e conectar-se à internet."
     },
     "control-center": {
       "cards-desc": "Personalize quais controles aparecem na central de controle e em que ordem.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Atalhos de teclado"
     },
     "hooks": {
+      "color-generation-description": "Comando a ser executado quando a geração de cores for concluída (p. ex., após a tematização baseada no papel de parede).",
+      "color-generation-label": "Cores geradas",
+      "color-generation-placeholder": "ex. notify-send \"Cores\" \"Gerados\"",
       "info-command-info-description": "• Comandos são executados via shell (sh -lc)<br>• Comandos rodam em segundo plano (desanexados)<br>• Botões de teste executam com os valores atuais",
       "info-parameters-description": "• Wallpaper hook: $1 = caminho do papel de parede, $2 = nome da tela, $3 = tema (escuro/claro)<br>• Theme toggle hook: $1 = true/false (estado do modo escuro)<br>• Screen lock/unlock hooks: $1 = lock/unlock (estado de bloqueio de tela)<br>• Performance mode hooks: Sem parâmetros<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Parâmetros disponíveis",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "p. ex. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Colar automaticamente o item selecionado da área de transferência. Requer wtype.",
       "settings-auto-paste-label": "Colar automaticamente",
+      "settings-clip-chips-description": "Mostrar uma barra de abas para filtrar o histórico da área de transferência por tipo (Imagens, Links, Ficheiros, Código, etc.).",
+      "settings-clip-chips-label": "Ativar chips de categoria",
       "settings-clip-preview-description": "Mostra uma pré-visualização do conteúdo da área de transferência ao usar o comando >clip.",
       "settings-clip-preview-label": "Ativar pré-visualização da área de transferência",
+      "settings-clip-smart-icons-description": "Mostrar ícones específicos para links, arquivos, cores e código em vez de um ícone de área de transferência genérico.",
+      "settings-clip-smart-icons-label": "Ativar ícones inteligentes",
       "settings-clip-wrap-text-description": "Quebrar o texto na lista da área de transferência em vez de truncá-lo.",
       "settings-clip-wrap-text-label": "Quebrar texto da área de transferência",
       "settings-clipboard-history-description": "Acesse itens copiados anteriormente a partir do lançador.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Desativar todas as comunicações sem fio.",
       "title": "Modo avião"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Ação requerida",
+      "add-hidden-network": "Adicionar rede oculta",
       "available-interfaces": "Interfaces disponíveis",
       "available-networks": "Redes disponíveis",
       "disabled": "O Wi-Fi está desativado",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Sem internet",
       "internet-status": "Status da internet",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Redes conhecidas",
       "link-speed": "Velocidade de ligação",
+      "network-name-ssid": "Nome da rede (SSID)",
       "no-ethernet-devices": "Nenhum dispositivo Ethernet detectado",
       "no-networks": "Nenhuma rede encontrada",
       "saved": "Salva",
       "scan-again": "Escanear novamente",
       "searching": "Procurando redes próximas...",
+      "security-open": "Abrir",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Pessoal",
       "title": "Wi-Fi"
     },
     "signal": {

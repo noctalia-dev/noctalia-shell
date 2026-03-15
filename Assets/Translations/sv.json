@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Dölj enheter som endast visas som Bluetooth-adresser.",
       "hide-unnamed-devices-label": "Dölj namnlösa enheter",
       "pin-instructions": "Ange PIN-koden som visas på din enhet.",
-      "title": "Anslutningar"
+      "title": "Anslutningar",
+      "wifi-header-text": "Använd Wi-Fi för att se tillgängliga nätverk och ansluta till internet."
     },
     "control-center": {
       "cards-desc": "Anpassa vilka kontroller som ska visas i kontrollcentret och i vilken ordning.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Tangentbindningar"
     },
     "hooks": {
+      "color-generation-description": "Kommando som ska köras när färggenereringen är klar (t.ex. efter tapetbaserad tematisering).",
+      "color-generation-label": "Färger genererade",
+      "color-generation-placeholder": "t.ex. notify-send \"Färger\" \"Genererade\"",
       "info-command-info-description": "• Kommandon exekveras via shell (sh -lc)<br>• Kommandon körs i bakgrunden (fristående)<br>• Testknappar exekveras med aktuella värden",
       "info-parameters-description": "• Wallpaper hook: $1 = bakgrundsbildens sökväg, $2 = skärmnamn, $3 = tema (mörkt/ljust)<br>• Theme toggle hook: $1 = true/false (mörkt lägestatus)<br>• Screen lock/unlock hooks: $1 = lock/unlock (skärmlåsstatus)<br>• Performance mode hooks: Inga parametrar<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Tillgängliga parametrar",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "t.ex. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Klistra in det valda klippbordsinnehållet automatiskt. Kräver wtype. ",
       "settings-auto-paste-label": "Automatisk klistra in",
+      "settings-clip-chips-description": "Visa en flikfält för att filtrera klippbordshistoriken efter typ (Bilder, Länkar, Filer, Kod, etc.).",
+      "settings-clip-chips-label": "Aktivera kategorichips",
       "settings-clip-preview-description": "Visa en förhandsgranskning av klippbordets innehåll när du använder kommandot >clip.",
       "settings-clip-preview-label": "Aktivera förhandsgranskning av klipp",
+      "settings-clip-smart-icons-description": "Visa specifika ikoner för länkar, filer, färger och kod istället för en generisk urklippsikon.",
+      "settings-clip-smart-icons-label": "Aktivera smarta ikoner",
       "settings-clip-wrap-text-description": "Vik text i klippbordslistan istället för att avkorta den.",
       "settings-clip-wrap-text-label": "Vik in text i urklipp",
       "settings-clipboard-history-description": "Öppna tidigare kopierade objekt från startprogrammet.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Inaktivera all trådlös kommunikation.",
       "title": "Flygplansläge"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Åtgärd krävs",
+      "add-hidden-network": "Lägg till dolt nätverk",
       "available-interfaces": "Tillgängliga gränssnitt",
       "available-networks": "Tillgängliga nätverk",
       "disabled": "Wi‑Fi är inaktiverat",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Inget internet",
       "internet-status": "Internetstatus",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Kända nätverk",
       "link-speed": "Länkhastighet",
+      "network-name-ssid": "Nätverksnamn (SSID)",
       "no-ethernet-devices": "Inga Ethernet-enheter upptäckta",
       "no-networks": "Inga Wi‑Fi-nätverk hittades",
       "saved": "Sparat",
       "scan-again": "Sök igen",
       "searching": "Söker efter nätverk...",
+      "security-open": "Öppna",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Personligt",
       "title": "Wi‑Fi"
     },
     "signal": {
