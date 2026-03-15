@@ -548,15 +548,15 @@ Singleton {
     // This function doesn't know what to do when more than one ethernet device is connected. most people doesn't use but just in case.
     if (root.ethernetConnected) {
       switch (root.networkConnectivity) {
-        case "limited":
-          return "ethernet-exclamation";
-        case "portal":
-        case "unknown":
-          return "ethernet-question";
-        case "full":
-          return "ethernet";
-        default:
-          return "ethernet-off";
+      case "limited":
+        return "ethernet-exclamation";
+      case "portal":
+      case "unknown":
+        return "ethernet-question";
+      case "full":
+        return "ethernet";
+      default:
+        return "ethernet-off";
       }
     }
     const connectedNet = Object.values(root.networks).find(net => net.connected); // This might be inefficient...
