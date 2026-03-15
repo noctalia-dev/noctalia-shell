@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Masquer les appareils qui n'apparaissent que sous forme d'adresses Bluetooth.",
       "hide-unnamed-devices-label": "Masquer les appareils sans nom",
       "pin-instructions": "Veuillez saisir le code PIN affiché sur votre appareil.",
-      "title": "Connexions"
+      "title": "Connexions",
+      "wifi-header-text": "Utilisez le Wi-Fi pour voir les réseaux disponibles et vous connecter à internet."
     },
     "control-center": {
       "cards-desc": "Personnalisez les commandes qui apparaissent dans le centre de contrôle et leur ordre d'affichage.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Raccourcis clavier"
     },
     "hooks": {
+      "color-generation-description": "Commande à exécuter lorsque la génération de couleurs est terminée (par ex. après la thématisation basée sur le fond d'écran).",
+      "color-generation-label": "Couleurs générées",
+      "color-generation-placeholder": "par ex. notify-send \"Couleurs\" \"Générées\"",
       "info-command-info-description": "• Les commandes sont exécutées via le shell (sh -lc)<br>• Les commandes s'exécutent en arrière-plan (détachées)<br>• Les boutons de test s'exécutent avec les valeurs actuelles",
       "info-parameters-description": "• Wallpaper hook: $1 = chemin du fond d'écran, $2 = nom de l'écran, $3 = thème (sombre/clair)<br>• Theme toggle hook: $1 = true/false (état du mode sombre)<br>• Screen lock/unlock hooks: $1 = lock/unlock (état de verrouillage de l'écran)<br>• Performance mode hooks: Aucun paramètre<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Paramètres disponibles",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "ex : 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Coller automatiquement l'élément sélectionné du presse-papiers. Nécessite wtype.",
       "settings-auto-paste-label": "Collage automatique",
+      "settings-clip-chips-description": "Afficher une barre d'onglets pour filtrer l'historique du presse-papiers par type (Images, Liens, Fichiers, Code, etc.).",
+      "settings-clip-chips-label": "Activer les puces de catégorie",
       "settings-clip-preview-description": "Afficher un aperçu du contenu du presse-papiers lors de l'utilisation de la commande >clip.",
       "settings-clip-preview-label": "Activer l'aperçu du presse-papiers",
+      "settings-clip-smart-icons-description": "Afficher des icônes spécifiques pour les liens, les fichiers, les couleurs et le code au lieu d'une icône de presse-papiers générique.",
+      "settings-clip-smart-icons-label": "Activer les icônes intelligentes",
       "settings-clip-wrap-text-description": "Envelopper le texte dans la liste du presse-papiers au lieu de le tronquer.",
       "settings-clip-wrap-text-label": "Envelopper le texte du presse-papiers",
       "settings-clipboard-history-description": "Accédez aux éléments précédemment copiés depuis le lanceur.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Désactiver toutes les communications sans fil.",
       "title": "Mode avion"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Action requise",
+      "add-hidden-network": "Ajouter un réseau masqué",
       "available-interfaces": "Interfaces disponibles",
       "available-networks": "Réseaux disponibles",
       "disabled": "Le Wi-Fi est désactivé",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Pas d'internet",
       "internet-status": "État de la connexion Internet",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Réseaux connus",
       "link-speed": "Vitesse de liaison",
+      "network-name-ssid": "Nom du réseau (SSID)",
       "no-ethernet-devices": "Aucun périphérique Ethernet détecté",
       "no-networks": "Aucun réseau trouvé",
       "saved": "Enregistré",
       "scan-again": "Analyser à nouveau",
       "searching": "Recherche de réseaux à proximité en cours...",
+      "security-open": "Ouvrir",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Personnel",
       "title": "Wi-Fi"
     },
     "signal": {

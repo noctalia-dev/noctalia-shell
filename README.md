@@ -51,6 +51,7 @@ A beautiful, minimal desktop shell for Wayland that actually gets out of your wa
 - 🔌 30+ plugins available ([explore plugins](https://noctalia.dev/plugins/))
 - 🪄 Setup wizard for first-time users
 - ⚡ Built on Quickshell for performance
+
 ---
 
 ## Preview
@@ -74,8 +75,8 @@ https://github.com/user-attachments/assets/bf46f233-8d66-439a-a1ae-ab0446270f2d
 
 ## 📋 Requirements
 
-- Wayland compositor (Niri, Hyprland, Sway, Scroll, MangoWC or labwc recommended)
-- Quickshell
+- Wayland compositor (see supported compositors below)
+- Quickshell: [noctalia-qs](https://github.com/noctalia-dev/noctalia-qs)
 - Additional dependencies are listed in our [documentation](https://docs.noctalia.dev)
 
 ---
@@ -101,7 +102,42 @@ Check out our comprehensive documentation and installation guide to get up and r
 
 ## 🖥️ Wayland Compositors
 
-Noctalia provides native support for **Niri**, **Hyprland**, **Sway**, **Labwc** and **MangoWC**. Other Wayland compositors may work but could require additional configuration for compositor-specific features like workspaces and window management.
+Noctalia provides native support for **Niri**, **Hyprland**, **Sway**, **Scroll**, **Labwc** and **MangoWC**. Other Wayland compositors may work but could require additional configuration for compositor-specific features like workspaces and window management.
+
+---
+
+## Scope
+
+Noctalia is a **desktop shell**, not a full desktop environment. It provides the visual layer that sits on top of your Wayland compositor (bars, panels, notifications, a dock, and widgets) but it intentionally stays within that boundary. Understanding this helps set the right expectations for feature requests.
+
+### What Noctalia does
+
+Noctalia focuses on the things a shell is responsible for: status bar, panels, application launcher, notifications, lock screen, idle management, OSD, theming, wallpapers, desktop widgets, dock, and multi-monitor support.
+
+### What belongs in a plugin
+
+If a feature is useful to some users but not essential to the core shell experience, it's a great candidate for a [plugin](https://noctalia.dev/plugins/). The plugin system is designed to make this easy: plugins can add bar widgets, panels, launcher providers, desktop widgets, and more.
+
+Some examples of features that are better suited as plugins:
+- Compositor-specific extras (e.g., Steam overlay for Hyprland)
+- Hardware-specific controls (e.g., laptop fan profiles, battery thresholds)
+- Third-party service integrations (e.g., smart home controls, Tailscale)
+- Niche productivity tools (e.g., Pomodoro timer, RSS reader, Docker manager)
+- Alternative visualizations or widgets
+
+If you have an idea that fits this category, consider [building a plugin](https://docs.noctalia.dev/development/guideline) for it!
+
+### What falls outside our scope
+
+Some features go beyond what a desktop shell can or should do. These are typically responsibilities of the compositor, a dedicated application, or the system itself:
+
+- **File management**: use a file manager application
+- **Display/login greeter**: this runs before the shell and is managed separately
+- **Window management and overview**: workspace switching and window tiling are compositor responsibilities
+- **Removable drive mounting**: handled by system services like udisks and desktop applications
+- **Screen mirroring/casting**: managed by the compositor or dedicated tools
+
+We appreciate feature suggestions, but if a request falls into this category, it's likely outside what Noctalia can provide. When in doubt, feel free to ask in our [Discord](https://discord.noctalia.dev).
 
 ---
 
@@ -113,16 +149,6 @@ We welcome contributions of any size - bug fixes, new features, documentation im
 - **Found a bug?** [Open an issue](https://github.com/noctalia-dev/noctalia-shell/issues/new)
 - **Want to code?** Check out our [development guidelines](https://docs.noctalia.dev/development/guideline)
 - **Need help?** Join our [Discord](https://discord.noctalia.dev)
-
----
-
-## ⭐ Star History
-
-<p align="center">
-  <a href="https://github.com/noctalia-dev/noctalia-shell/stargazers">
-    <img src="https://api.noctalia.dev/stars" alt="Star History" />
-  </a>
-</p>
 
 ---
 
@@ -151,3 +177,13 @@ Thank you to everyone who supports the project! 💜
 ## 📄 License
 
 MIT License - see [LICENSE](./LICENSE) for details.
+
+---
+
+## ⭐ Star History
+
+<p align="center">
+  <a href="https://github.com/noctalia-dev/noctalia-shell/stargazers">
+    <img src="https://api.noctalia.dev/stars" alt="Star History" />
+  </a>
+</p>

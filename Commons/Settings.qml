@@ -738,6 +738,7 @@ Singleton {
       property string performanceModeDisabled: ""
       property string startup: ""
       property string session: ""
+      property string colorGeneration: ""
     }
 
     // plugins

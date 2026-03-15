@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Verstecke Geräte, die nur als Bluetooth-Adressen erscheinen.",
       "hide-unnamed-devices-label": "Unbenannte Geräte ausblenden",
       "pin-instructions": "Bitte geben Sie den auf Ihrem Gerät angezeigten PIN-Code ein.",
-      "title": "Verbindungen"
+      "title": "Verbindungen",
+      "wifi-header-text": "Verwenden Sie Wi-Fi, um verfügbare Netzwerke anzuzeigen und sich mit dem Internet zu verbinden."
     },
     "control-center": {
       "cards-desc": "Passen Sie an, welche Steuerelemente im Kontrollzentrum angezeigt werden und in welcher Reihenfolge.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Tastenkombinationen"
     },
     "hooks": {
+      "color-generation-description": "Befehl, der ausgeführt wird, wenn die Farberzeugung abgeschlossen ist (z.B. nach der Hintergrundbild-basierten Thematisierung).",
+      "color-generation-label": "Farben generiert",
+      "color-generation-placeholder": "z.B. notify-send \"Farben\" \"Generiert\"",
       "info-command-info-description": "• Befehle werden über Shell ausgeführt (sh -lc)<br>• Befehle laufen im Hintergrund (getrennt)<br>• Test-Buttons führen mit aktuellen Werten aus",
       "info-parameters-description": "• Wallpaper hook: $1 = Hintergrundbildpfad, $2 = Bildschirmname, $3 = Thema (dunkel/hell)<br>• Theme toggle hook: $1 = true/false (Dunkelmodus-Status)<br>• Screen lock/unlock hooks: $1 = lock/unlock (Bildschirmsperrstatus)<br>• Performance mode hooks: Keine Parameter<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Verfügbare Parameter",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "z.B. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Automatisches Einfügen des ausgewählten Zwischenablageinhalts. Benötigt wtype.",
       "settings-auto-paste-label": "Automatisches Einfügen",
+      "settings-clip-chips-description": "Eine Registerkartenleiste anzeigen, um die Zwischenablagehistorie nach Typ zu filtern (Bilder, Links, Dateien, Code usw.).",
+      "settings-clip-chips-label": "Kategorie-Chips aktivieren",
       "settings-clip-preview-description": "Zeige eine Vorschau des Inhalts der Zwischenablage an, wenn der Befehl >clip verwendet wird.",
       "settings-clip-preview-label": "Clip-Vorschau aktivieren",
+      "settings-clip-smart-icons-description": "Spezifische Symbole für Links, Dateien, Farben und Code anzeigen, anstatt eines generischen Zwischenablagesymbols.",
+      "settings-clip-smart-icons-label": "Intelligente Symbole aktivieren",
       "settings-clip-wrap-text-description": "Text in der Zwischenablage-Liste umbrechen, anstatt ihn abzuschneiden.",
       "settings-clip-wrap-text-label": "Zwischenablage-Text umbrechen",
       "settings-clipboard-history-description": "Zugriff auf zuvor kopierte Elemente über den Launcher.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Alle drahtlosen Kommunikationen deaktivieren.",
       "title": "Flugmodus"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Aktion erforderlich",
+      "add-hidden-network": "Verstecktes Netzwerk hinzufügen",
       "available-interfaces": "Verfügbare Schnittstellen",
       "available-networks": "Verfügbare Netzwerke",
       "disabled": "WLAN ist deaktiviert",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Kein Internet",
       "internet-status": "Internetstatus",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Bekannte Netzwerke",
       "link-speed": "Verbindungsgeschwindigkeit",
+      "network-name-ssid": "Netzwerkname (SSID)",
       "no-ethernet-devices": "Keine Ethernet-Geräte erkannt",
       "no-networks": "Keine Netzwerke gefunden",
       "saved": "Gespeichert",
       "scan-again": "Erneut scannen",
       "searching": "Suche nach nahegelegenen Netzwerken...",
+      "security-open": "Öffnen",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Persönlich",
       "title": "WLAN"
     },
     "signal": {

@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "블루투스 주소로만 표시되는 장치를 숨깁니다.",
       "hide-unnamed-devices-label": "이름 없는 장치 숨기기",
       "pin-instructions": "기기에 표시된 PIN 코드를 입력해주세요.",
-      "title": "연결"
+      "title": "연결",
+      "wifi-header-text": "사용 가능한 네트워크를 확인하고 인터넷에 연결하려면 Wi-Fi를 사용하세요."
     },
     "control-center": {
       "cards-desc": "제어 센터에 표시될 컨트롤과 순서를 사용자 지정합니다.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "키 바인딩"
     },
     "hooks": {
+      "color-generation-description": "색상 생성이 완료될 때 실행될 명령 (예: 배경화면 기반 테마 적용 후).",
+      "color-generation-label": "색상 생성됨",
+      "color-generation-placeholder": "예: notify-send \"색상\" \"생성됨\"",
       "info-command-info-description": "• 명령은 셸(sh -lc)을 통해 실행됩니다.<br>• 명령은 백그라운드(detached)에서 실행됩니다.<br>• 테스트 버튼은 현재 값으로 실행됩니다.",
       "info-parameters-description": "• Wallpaper hook: $1 = 배경화면 경로, $2 = 화면 이름, $3 = 테마 (어둡게/밝게)<br>• Theme toggle hook: $1 = true/false (다크 모드 상태)<br>• Screen lock/unlock hooks: $1 = lock/unlock (화면 잠금 상태)<br>• Performance mode hooks: 매개변수 없음<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "사용 가능한 매개변수",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "예: 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "선택한 클립보드 항목을 자동으로 붙여넣습니다. wtype이 필요합니다.",
       "settings-auto-paste-label": "자동 붙여넣기",
+      "settings-clip-chips-description": "탭 바를 표시하여 클립보드 기록을 유형별(이미지, 링크, 파일, 코드 등)로 필터링합니다.",
+      "settings-clip-chips-label": "카테고리 칩 활성화",
       "settings-clip-preview-description": ">clip 명령 사용 시 클립보드 내용의 미리보기를 표시합니다.",
       "settings-clip-preview-label": "클립 미리보기 활성화",
+      "settings-clip-smart-icons-description": "일반적인 클립보드 아이콘 대신 링크, 파일, 색상, 코드에 대한 특정 아이콘을 표시합니다.",
+      "settings-clip-smart-icons-label": "스마트 아이콘 활성화",
       "settings-clip-wrap-text-description": "클립보드 목록에서 텍스트를 자르지 않고 줄바꿈합니다.",
       "settings-clip-wrap-text-label": "클립보드 텍스트 줄바꿈",
       "settings-clipboard-history-description": "이전에 복사한 항목에 런처에서 액세스합니다.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "모든 무선 통신을 비활성화합니다.",
       "title": "비행기 모드"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "조치 필요",
+      "add-hidden-network": "숨겨진 네트워크 추가",
       "available-interfaces": "사용 가능한 인터페이스",
       "available-networks": "사용 가능한 네트워크",
       "disabled": "Wi‑Fi가 비활성화됨",
@@ -2151,13 +2161,18 @@
       "internet-limited": "인터넷 없음",
       "internet-status": "인터넷 상태",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "알려진 네트워크",
       "link-speed": "링크 속도",
+      "network-name-ssid": "네트워크 이름 (SSID)",
       "no-ethernet-devices": "이더넷 장치 감지되지 않음",
       "no-networks": "Wi‑Fi 네트워크를 찾을 수 없음",
       "saved": "저장됨",
       "scan-again": "다시 검색",
       "searching": "네트워크 검색 중...",
+      "security-open": "열기",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 개인",
       "title": "Wi‑Fi"
     },
     "signal": {

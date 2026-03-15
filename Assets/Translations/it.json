@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Nascondi dispositivi che appaiono solo come indirizzi Bluetooth.",
       "hide-unnamed-devices-label": "Nascondi dispositivi senza nome",
       "pin-instructions": "Inserisci il codice PIN mostrato sul tuo dispositivo.",
-      "title": "Connessioni"
+      "title": "Connessioni",
+      "wifi-header-text": "Usa il Wi-Fi per vedere le reti disponibili e connetterti a internet."
     },
     "control-center": {
       "cards-desc": "Personalizza quali controlli appaiono nel centro di controllo e in quale ordine.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Scorciatoie"
     },
     "hooks": {
+      "color-generation-description": "Comando da eseguire al completamento della generazione del colore (ad es. dopo la tematizzazione basata sullo sfondo).",
+      "color-generation-label": "Colori generati",
+      "color-generation-placeholder": "ad es. notify-send \"Colori\" \"Generati\"",
       "info-command-info-description": "• I comandi vengono eseguiti via shell (sh -lc)<br>• I comandi girano in background (staccati)<br>• I pulsanti test eseguono con i valori correnti",
       "info-parameters-description": "• Wallpaper hook: $1 = percorso dello sfondo, $2 = nome dello schermo, $3 = tema (scuro/chiaro)<br>• Theme toggle hook: $1 = true/false (stato della modalità scura)<br>• Screen lock/unlock hooks: $1 = lock/unlock (stato di blocco schermo)<br>• Performance mode hooks: Nessun parametro<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Parametri disponibili",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "es. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Incolla automaticamente l’elemento appunti selezionato. Richiede wtype.",
       "settings-auto-paste-label": "Incolla automaticamente",
+      "settings-clip-chips-description": "Mostra una barra delle schede per filtrare la cronologia degli appunti per tipo (Immagini, Link, File, Codice, ecc.).",
+      "settings-clip-chips-label": "Abilita chip di categoria",
       "settings-clip-preview-description": "Mostra un’anteprima del contenuto appunti quando usi il comando >clip.",
       "settings-clip-preview-label": "Abilita anteprima clip",
+      "settings-clip-smart-icons-description": "Mostra icone specifiche per link, file, colori e codice invece di un'icona generica per gli appunti.",
+      "settings-clip-smart-icons-label": "Abilita icone intelligenti",
       "settings-clip-wrap-text-description": "Va a capo il testo nell’elenco appunti invece di troncarlo.",
       "settings-clip-wrap-text-label": "Testo appunti a capo",
       "settings-clipboard-history-description": "Accedi agli elementi copiati in precedenza dal launcher.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Disabilita tutte le comunicazioni wireless.",
       "title": "Modalità aereo"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Azione richiesta",
+      "add-hidden-network": "Aggiungi rete nascosta",
       "available-interfaces": "Interfacce disponibili",
       "available-networks": "Reti disponibili",
       "disabled": "Wi‑Fi disattivato",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Nessun accesso a Internet",
       "internet-status": "Stato Internet",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Reti conosciute",
       "link-speed": "Velocità collegamento",
+      "network-name-ssid": "Nome rete (SSID)",
       "no-ethernet-devices": "Nessun dispositivo Ethernet rilevato",
       "no-networks": "Nessuna rete Wi‑Fi trovata",
       "saved": "Salvata",
       "scan-again": "Scansiona di nuovo",
       "searching": "Ricerca reti in corso...",
+      "security-open": "Apri",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Personale",
       "title": "Wi‑Fi"
     },
     "signal": {

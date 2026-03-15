@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Yalnızca Bluetooth adresleri olarak görünen cihazları gizle.",
       "hide-unnamed-devices-label": "İsimsiz cihazları gizle",
       "pin-instructions": "Lütfen cihazınızda gösterilen PIN kodunu girin.",
-      "title": "Bağlantılar"
+      "title": "Bağlantılar",
+      "wifi-header-text": "Mevcut ağları görmek ve internete bağlanmak için Wi-Fi kullanın."
     },
     "control-center": {
       "cards-desc": "Kontrol merkezinde hangi kontrollerin ve hangi sırada görüneceğini özelleştirin.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Tuş atamaları"
     },
     "hooks": {
+      "color-generation-description": "Renk oluşturma tamamlandığında (örn. duvar kağıdı tabanlı tema uygulandıktan sonra) çalıştırılacak komut.",
+      "color-generation-label": "Renkler oluşturuldu",
+      "color-generation-placeholder": "örn. notify-send \"Renkler\" \"Oluşturuldu\"",
       "info-command-info-description": "• Komutlar kabuk (sh -lc) ile yürütülür<br>• Komutlar arka planda yürütülür (ayrık)<br>• Test düğmeleri mevcut değerlerle yürütülür",
       "info-parameters-description": "• Wallpaper hook: $1 = duvar kağıdı yolu, $2 = ekran adı, $3 = tema (koyu/açık)<br>• Theme toggle hook: $1 = true/false (koyu mod durumu)<br>• Screen lock/unlock hooks: $1 = lock/unlock (ekran kilidi durumu)<br>• Performance mode hooks: Parametre yok<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Kullanılabilir parametreler",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "örn. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Seçili panodaki öğeyi otomatik olarak yapıştır. Wtype gerektirir.",
       "settings-auto-paste-label": "Otomatik yapıştırma",
+      "settings-clip-chips-description": "Panoya geçmişini türe göre filtrelemek için bir sekme çubuğu göster (Görseller, Bağlantılar, Dosyalar, Kod vb.).",
+      "settings-clip-chips-label": "Kategori Çiplerini Etkinleştir",
       "settings-clip-preview-description": ">clip komutu kullanılırken panodaki içeriğin önizlemesini gösterir.",
       "settings-clip-preview-label": "Panoyu önizlemeyi etkinleştir",
+      "settings-clip-smart-icons-description": "Genel bir pano simgesi yerine bağlantılar, dosyalar, renkler ve kod için belirli simgeler göster.",
+      "settings-clip-smart-icons-label": "Akıllı Simgeleri Etkinleştir",
       "settings-clip-wrap-text-description": "Panodaki metni kırpmak yerine listeye sığdır.",
       "settings-clip-wrap-text-label": "Panoyu metni kaydır",
       "settings-clipboard-history-description": "Başlatıcıdan daha önce kopyalanan öğelere erişin.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Tüm kablosuz iletişimleri devre dışı bırak.",
       "title": "Uçak modu"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Eylem gerekiyor",
+      "add-hidden-network": "Gizli ağ ekle",
       "available-interfaces": "Kullanılabilir arayüzler",
       "available-networks": "Kullanılabilir ağlar",
       "disabled": "Kablosuz bağlantı devre dışı",
@@ -2151,13 +2161,18 @@
       "internet-limited": "İnternet yok",
       "internet-status": "İnternet durumu",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Bilinen ağlar",
       "link-speed": "Bağlantı hızı",
+      "network-name-ssid": "Ağ adı (SSID)",
       "no-ethernet-devices": "Ethernet aygıtı algılanmadı",
       "no-networks": "Ağ bulunamadı",
       "saved": "Kaydedildi",
       "scan-again": "Yeniden tara",
       "searching": "Yakındaki ağlar aranıyor...",
+      "security-open": "Aç",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Kişisel",
       "title": "Kablosuz bağlantı"
     },
     "signal": {

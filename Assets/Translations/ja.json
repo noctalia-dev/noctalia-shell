@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Bluetoothアドレスとしてのみ表示されるデバイスを非表示にする。",
       "hide-unnamed-devices-label": "名前のないデバイスを非表示にする",
       "pin-instructions": "デバイスに表示されているPINコードを入力してください。",
-      "title": "接続"
+      "title": "接続",
+      "wifi-header-text": "利用可能なネットワークを表示し、インターネットに接続するにはWi-Fiを使用してください。"
     },
     "control-center": {
       "cards-desc": "コントロールセンターに表示する項目と、その順序をカスタマイズします。",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "キーバインド"
     },
     "hooks": {
+      "color-generation-description": "色の生成が完了したときに実行されるコマンド（例：壁紙ベースのテーマ適用後など）。",
+      "color-generation-label": "色が生成されました",
+      "color-generation-placeholder": "例: notify-send \"色\" \"生成済み\"",
       "info-command-info-description": "• コマンドはシェル (sh -lc) 経由で実行されます<br>• コマンドはバックグラウンドで実行されます<br>• テストボタンは現在の設定値を使って実行されます",
       "info-parameters-description": "• Wallpaper hook: $1 = 壁紙のパス, $2 = 画面名, $3 = テーマ (ダーク/ライト)<br>• Theme toggle hook: $1 = true/false (ダークモードの状態)<br>• Screen lock/unlock hooks: $1 = lock/unlock (画面ロックの状態)<br>• Performance mode hooks: パラメータなし<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "利用可能なパラメータ（引数）",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "例：'gradia', 'satty -f -'",
       "settings-auto-paste-description": "選択されたクリップボードの項目を自動的に貼り付けます。wtypeが必要です。",
       "settings-auto-paste-label": "自動貼り付け",
+      "settings-clip-chips-description": "タブバーを表示して、クリップボードの履歴をタイプ別（画像、リンク、ファイル、コードなど）にフィルタリングします。",
+      "settings-clip-chips-label": "カテゴリチップを有効にする",
       "settings-clip-preview-description": ">clip コマンド使用時に、クリップボードの内容をプレビュー表示します。",
       "settings-clip-preview-label": "クリップボードのプレビューを有効化",
+      "settings-clip-smart-icons-description": "一般的なクリップボードアイコンの代わりに、リンク、ファイル、色、コードに固有のアイコンを表示します。",
+      "settings-clip-smart-icons-label": "スマートアイコンを有効にする",
       "settings-clip-wrap-text-description": "クリップボードのリストでテキストを切り捨てる代わりに、折り返して表示する。",
       "settings-clip-wrap-text-label": "クリップボードのテキストを折り返す",
       "settings-clipboard-history-description": "以前コピーした項目にランチャーからアクセスできるようにします。",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "すべてのワイヤレス通信を無効にする。",
       "title": "機内モード"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "アクションが必要",
+      "add-hidden-network": "非表示のネットワークを追加",
       "available-interfaces": "利用可能なインターフェース",
       "available-networks": "利用可能なネットワーク",
       "disabled": "Wi-Fi は無効です",
@@ -2151,13 +2161,18 @@
       "internet-limited": "インターネットなし",
       "internet-status": "インターネット接続状況",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "保存済みネットワーク",
       "link-speed": "リンク速度",
+      "network-name-ssid": "ネットワーク名 (SSID)",
       "no-ethernet-devices": "イーサネットデバイスが検出されませんでした",
       "no-networks": "ネットワークが見つかりません",
       "saved": "保存済み",
       "scan-again": "再スキャン",
       "searching": "近くのネットワークを検索中...",
+      "security-open": "開く",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 パーソナル",
       "title": "Wi-Fi"
     },
     "signal": {

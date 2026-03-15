@@ -55,6 +55,7 @@ Singleton {
         root.pendingWallpaperHook = null;
         executeWallpaperHook(hook.path, hook.screenName);
       }
+      executeColorGenerationHook();
     }
   }
 
@@ -222,6 +223,27 @@ Singleton {
       Quickshell.execDetached(["sh", "-lc", script]);
     } catch (e) {
       Logger.e("HooksService", `Failed to execute performance mode disabled hook: ${e}`);
+    }
+  }
+
+  // Execute color generation hook
+  function executeColorGenerationHook() {
+    if (!Settings.data.hooks?.enabled) {
+      return;
+    }
+
+    const script = Settings.data.hooks?.colorGeneration;
+    if (!script || script === "") {
+      return;
+    }
+
+    try {
+      const theme = Settings.data.colorSchemes.darkMode ? "dark" : "light";
+      const command = script.replace(/\$1/g, theme);
+      Quickshell.execDetached(["sh", "-lc", command]);
+      Logger.d("HooksService", `Executed color generation hook: ${command}`);
+    } catch (e) {
+      Logger.e("HooksService", `Failed to execute color generation hook: ${e}`);
     }
   }
 

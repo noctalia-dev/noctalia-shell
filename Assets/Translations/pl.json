@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Ukryj urządzenia, które pojawiają się tylko jako adresy Bluetooth.",
       "hide-unnamed-devices-label": "Ukryj nienazwane urządzenia",
       "pin-instructions": "Wprowadź kod PIN wyświetlony na Twoim urządzeniu.",
-      "title": "Połączenia"
+      "title": "Połączenia",
+      "wifi-header-text": "Użyj Wi-Fi, aby zobaczyć dostępne sieci i połączyć się z internetem."
     },
     "control-center": {
       "cards-desc": "Dostosuj, które kontrolki pojawiają się w centrum sterowania i w jakiej kolejności.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Skróty klawiszowe"
     },
     "hooks": {
+      "color-generation-description": "Polecenie do wykonania po zakończeniu generowania kolorów (np. po motywowaniu na podstawie tapety).",
+      "color-generation-label": "Kolory wygenerowane",
+      "color-generation-placeholder": "np. notify-send \"Kolory\" \"Wygenerowano\"",
       "info-command-info-description": "• Polecenia są wykonywane przez powłokę (sh -lc)<br>• Polecenia działają w tle (detached)<br>• Przyciski testowe wykonują się z aktualnymi wartościami",
       "info-parameters-description": "• Wallpaper hook: $1 = ścieżka tapety, $2 = nazwa ekranu, $3 = motyw (ciemny/jasny)<br>• Theme toggle hook: $1 = true/false (stan trybu ciemnego)<br>• Screen lock/unlock hooks: $1 = lock/unlock (stan blokady ekranu)<br>• Performance mode hooks: Brak parametrów<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Dostępne parametry",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "np. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Automatyczne wklejanie wybranego elementu ze schowka. Wymaga wtype.",
       "settings-auto-paste-label": "Automatyczne wklejanie",
+      "settings-clip-chips-description": "Pokaż pasek zakładek, aby filtrować historię schowka według typu (Obrazy, Linki, Pliki, Kod itp.).",
+      "settings-clip-chips-label": "Włącz chipy kategorii",
       "settings-clip-preview-description": "Pokaż podgląd zawartości schowka przy użyciu polecenia >clip.",
       "settings-clip-preview-label": "Włącz podgląd schowka",
+      "settings-clip-smart-icons-description": "Pokazuj specyficzne ikony dla linków, plików, kolorów i kodu zamiast ogólnej ikony schowka.",
+      "settings-clip-smart-icons-label": "Włącz inteligentne ikony",
       "settings-clip-wrap-text-description": "Zawijaj tekst na liście schowka zamiast go obcinać.",
       "settings-clip-wrap-text-label": "Zawijaj tekst ze schowka",
       "settings-clipboard-history-description": "Dostęp do wcześniej skopiowanych elementów z poziomu launchera.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Wyłącz wszystkie komunikacje bezprzewodowe.",
       "title": "Tryb samolotowy"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Wymagane działanie",
+      "add-hidden-network": "Dodaj ukrytą sieć",
       "available-interfaces": "Dostępne interfejsy",
       "available-networks": "Dostępne sieci",
       "disabled": "Wi-Fi jest wyłączone",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Brak internetu",
       "internet-status": "Status internetu",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Znane sieci",
       "link-speed": "Prędkość łącza",
+      "network-name-ssid": "Nazwa sieci (SSID)",
       "no-ethernet-devices": "Nie wykryto żadnych urządzeń Ethernet",
       "no-networks": "Nie znaleziono żadnych sieci",
       "saved": "Zapisano",
       "scan-again": "Skanuj ponownie",
       "searching": "Szukanie pobliskich sieci...",
+      "security-open": "Otwórz",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Osobiste",
       "title": "Wi-Fi"
     },
     "signal": {

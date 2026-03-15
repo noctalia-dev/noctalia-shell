@@ -969,7 +969,8 @@
       "hide-unnamed-devices-description": "Verberg apparaten die alleen als Bluetooth-adressen verschijnen.",
       "hide-unnamed-devices-label": "Onbenoemde apparaten verbergen",
       "pin-instructions": "Voer de PIN-code in die op uw apparaat wordt weergegeven.",
-      "title": "Verbindingen"
+      "title": "Verbindingen",
+      "wifi-header-text": "Gebruik Wi-Fi om beschikbare netwerken te zien en verbinding te maken met het internet."
     },
     "control-center": {
       "cards-desc": "Pas aan welke bedieningselementen in het bedieningscentrum verschijnen en in welke volgorde.",
@@ -1219,6 +1220,9 @@
       "tab-keybinds": "Toetsencombinaties"
     },
     "hooks": {
+      "color-generation-description": "Commando dat wordt uitgevoerd wanneer de kleurgeneratie is voltooid (bijv. na thematisering op basis van de achtergrond).",
+      "color-generation-label": "Kleuren gegenereerd",
+      "color-generation-placeholder": "bijv. notify-send \"Kleuren\" \"Gegenereerd\"",
       "info-command-info-description": "• Commando's worden uitgevoerd via shell (sh -lc)<br>• Commando's draaien op de achtergrond (losgekoppeld)<br>• Testknoppen worden uitgevoerd met de huidige waarden",
       "info-parameters-description": "• Wallpaper hook: $1 = achtergrondpad, $2 = schermnaam, $3 = thema (donker/licht)<br>• Theme toggle hook: $1 = true/false (donkere modus-status)<br>• Screen lock/unlock hooks: $1 = lock/unlock (schermvergrendelingsstatus)<br>• Performance mode hooks: Geen parameters<br>• Session hook: $1 = action (shutdown/reboot)",
       "info-parameters-label": "Beschikbare parameters",
@@ -1298,8 +1302,12 @@
       "settings-annotation-tool-placeholder": "bijv. 'gradia', 'satty -f -'",
       "settings-auto-paste-description": "Plak automatisch het geselecteerde klemborditem. Vereist wtype.",
       "settings-auto-paste-label": "Automatisch plakken",
+      "settings-clip-chips-description": "Toon een tabbladbalk om de klembordgeschiedenis op type te filteren (Afbeeldingen, Links, Bestanden, Code, enz.).",
+      "settings-clip-chips-label": "Categoriechips inschakelen",
       "settings-clip-preview-description": "Toon een voorbeeld van de inhoud van het klembord bij gebruik van het >clip-commando.",
       "settings-clip-preview-label": "Klembordvoorbeeld inschakelen",
+      "settings-clip-smart-icons-description": "Toon specifieke pictogrammen voor links, bestanden, kleuren en code in plaats van een generiek klembordpictogram.",
+      "settings-clip-smart-icons-label": "Slimme pictogrammen inschakelen",
       "settings-clip-wrap-text-description": "Tekst in de klembordlijst wrappen in plaats van af te breken.",
       "settings-clip-wrap-text-label": "Klembordtekst omwikkelen",
       "settings-clipboard-history-description": "Toegang tot eerder gekopieerde items vanuit de launcher.",
@@ -1849,6 +1857,7 @@
   },
   "toast": {
     "airplane-mode": {
+      "description": "Alle draadloze communicatie uitschakelen.",
       "title": "Vliegtuigmodus"
     },
     "battery": {
@@ -2136,6 +2145,7 @@
   "wifi": {
     "panel": {
       "action-required": "Actie vereist",
+      "add-hidden-network": "Verborgen netwerk toevoegen",
       "available-interfaces": "Beschikbare interfaces",
       "available-networks": "Beschikbare netwerken",
       "disabled": "Wi-Fi is uitgeschakeld",
@@ -2151,13 +2161,18 @@
       "internet-limited": "Geen internet",
       "internet-status": "Internetstatus",
       "ipv4": "IPv4",
+      "ipv6": "IPv6",
       "known-networks": "Bekende netwerken",
       "link-speed": "Link snelheid",
+      "network-name-ssid": "Netwerknaam (SSID)",
       "no-ethernet-devices": "Geen Ethernet-apparaten gedetecteerd",
       "no-networks": "Geen netwerken gevonden",
       "saved": "Opgeslagen",
       "scan-again": "Opnieuw scannen",
       "searching": "Zoeken naar netwerken in de buurt...",
+      "security-open": "Openen",
+      "security-wep": "WEP",
+      "security-wpa": "WPA/WPA2/WPA3 Persoonlijk",
       "title": "Wi-Fi"
     },
     "signal": {

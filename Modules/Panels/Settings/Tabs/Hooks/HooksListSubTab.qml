@@ -72,6 +72,20 @@ ColumnLayout {
                             })
   }
 
+  // Color Generation Hook
+  HookRow {
+    label: I18n.tr("panels.hooks.color-generation-label")
+    description: I18n.tr("panels.hooks.color-generation-description")
+    value: Settings.data.hooks.colorGeneration
+    onEditClicked: openEdit(label, description, I18n.tr("panels.hooks.color-generation-placeholder"), value, newValue => {
+                              Settings.data.hooks.colorGeneration = newValue;
+                              Settings.saveImmediate();
+                            }, val => {
+                              if (val)
+                              Quickshell.execDetached(["sh", "-lc", val.replace("$1", "dark")]);
+                            })
+  }
+
   // Theme Hook
   HookRow {
     label: I18n.tr("panels.hooks.theme-changed-label")
