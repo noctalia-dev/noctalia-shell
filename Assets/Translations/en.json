@@ -2176,7 +2176,8 @@
       "excellent": "Excellent",
       "fair": "Fair",
       "good": "Good",
-      "poor": "Poor"
+      "poor": "Poor",
+      "weak": "Weak"
     },
     "enterprise": {
       "username": "Identity / Username",

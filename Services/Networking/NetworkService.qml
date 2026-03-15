@@ -310,8 +310,6 @@ Singleton {
       return;
     }
 
-    // For enterprise networks, use the robust manual connection logic (profile creation)
-    // as it handles 802.1X parameters much more reliably than 'device wifi connect'.
     if (isEnterprise(networks[ssid] ? networks[ssid].security : "")) {
       connectManual(ssid, password, "wpa-eap", identity, enterpriseConfig);
       return;
@@ -429,9 +427,10 @@ Singleton {
     } else if (isConnected && root.networkConnectivity === "portal") {
       icon = "wifi-q";
     }
-    const label = signal >= 80 ? I18n.tr("wifi.signal.excellent") : signal >= 50 ? I18n.tr("wifi.signal.good") : signal >= 20 ? I18n.tr("wifi.signal.fair") : I18n.tr("wifi.signal.poor");
+    // This is a draft actuak ranges can be changed. 
+    const label = signal >= 80 ? I18n.tr("wifi.signal.excellent") : signal >= 60 ? I18n.tr("wifi.signal.good") : signal >= 35 ? I18n.tr("wifi.signal.fair") : signal >= 10 ? I18n.tr("wifi.signal.poor") : I18n.tr("wifi.signal.weak");
     if (!icon) {
-      icon = signal >= 80 ? "wifi" : signal >= 50 ? "wifi-2" : signal >= 20 ? "wifi-1" : "wifi-0";
+      icon = signal >= 80 ? "wifi" : signal >= 60 ? "wifi-3" : signal >= 35 ? "wifi-2" : signal >= 10 ? "wifi-1" : "wifi-0";
     }
     return {
       icon,

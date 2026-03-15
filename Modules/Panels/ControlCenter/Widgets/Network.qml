@@ -42,7 +42,7 @@ NIconButtonHot {
 
   function getIcon() {
     if (NetworkService.ethernetConnected) {
-      return NetworkService.internetConnectivity ? "ethernet" : "ethernet-off";
+      return NetworkService.internetConnectivity ? "wired" : "wired-off";
     }
     const connectedNet = Object.values(NetworkService.networks).find(net => net.connected);
     return connectedNet ? NetworkService.getSignalInfo(connectedNet.signal, true).icon : "wifi-off";
